@@ -6,6 +6,7 @@ mod api_key_secret_generator;
 mod async_usage_registration;
 mod async_usage_settlement;
 mod async_usage_task_worker;
+mod async_usage_worker_config;
 mod billing_subject_cache;
 mod cache_runtime;
 mod gateway_accounting_retry;
@@ -69,6 +70,9 @@ pub use async_usage_settlement::{
 };
 pub use async_usage_task_worker::{
     AsyncUsagePoll, AsyncUsagePollFuture, AsyncUsageTaskExecutor, AsyncUsageTaskWorker,
+};
+pub use async_usage_worker_config::{
+    async_usage_worker_config_from_env, resolve_async_usage_worker_config, AsyncUsageWorkerConfig,
 };
 pub use cache_runtime::{
     default_desktop_cache_manager, default_desktop_cache_runtime, default_service_cache_manager,

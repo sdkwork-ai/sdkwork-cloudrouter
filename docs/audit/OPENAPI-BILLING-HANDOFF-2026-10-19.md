@@ -9,7 +9,7 @@
 
 - **可售 166/176（94.3%）**，剩余 **10 个**全部 fail-closed，不存在静默免费路径。
 - 176 = **118 Free + 44 计量可售 + 1 音效 + 3 已补价按次 + 5 未定价按次 + 5 已登记不可售**。
-- 计费回归 **60 个 target / 418 passed**；router-service `--lib` **618**；edge-runtime `--lib` **101**；clippy 0；fmt 干净。
+- 计费回归 **60 个 target / 418 passed**；router-service `--lib` **621**；edge-runtime `--lib` **101**；clippy 0；fmt 干净。
 - 逐层锁的变异证据在主审计第五节；就绪计数由
   `commercial_readiness_counts_are_exactly_166_of_176` 钉住。
 
@@ -30,7 +30,8 @@
 | 异步完成态结算 | `application/async_usage_settlement.rs` + `tests/async_usage_settlement.rs` | 已实现：完成时重新定价、单笔 postpaid、幂等重放、无用量失败关闭 |
 | 异步创建入队 | `AsyncUsageRegistrationInterceptor` + 5 条单测 | 已实现：四个创建面登记、`pollPath`、失败/缺 id 失败关闭 |
 | 异步轮询执行器 | `ProviderAsyncUsageExecutor` + `AsyncUsagePollTransport` 端口 + 7 条单测 | 已实现：账号/凭证解析、状态机、404/429/5xx 分流、batch 未实现 |
-| 异步轮询传输 | `PipelineAsyncPollTransport`（`invocation/async_poll_transport.rs`）+ 4 条单测 | 已实现：合成 Free GET 走既有 dispatcher，凭证由 ProviderRequestBuilder 注入；runtime 构造/启动待做 |
+| 异步轮询传输 | `PipelineAsyncPollTransport`（`invocation/async_poll_transport.rs`）+ 4 条单测 | 已实现：合成 Free GET 走既有 dispatcher，凭证由 ProviderRequestBuilder 注入 |
+| 异步 worker 配置 | `AsyncUsageWorkerConfig`（`application/async_usage_worker_config.rs`）+ 3 条单测 | 已实现：默认关闭、边界 clamp、非法值拒绝；runtime 启动待接 |
 | 向量库存储可测量性 | `usage_extraction::storage_line` | 缺 `usage_bytes` ⇒ 记账失败；显式 0 字节 ⇒ waive |
 
 ## 3. 剩余 10 个 operation 的阻塞
@@ -55,8 +56,8 @@
    `ProviderAsyncUsageExecutor::new(catalog, PipelineAsyncPollTransport::new(dispatcher))`
    + `with_secret_resolver(...)` 构造 executor，worker 用
    `with_settler(ReplayAsyncUsageSettler::new(catalog, billing_store).with_recorder(...))`
-   接结算，feature flag 启动轮询循环；同时把 `AsyncUsageRegistrationInterceptor`
-   加进 pipeline。
+   接结算，再由 `resolve_async_usage_worker_config(...)` 决定是否启动轮询循环；
+   同时把 `AsyncUsageRegistrationInterceptor` 加进 pipeline。
 2. 解除 `unmetered_batch_submission` / background / run 的预检守卫（仅
    background Responses 与 threads run 可先解；batch 仍缺结果文件对账）。
 3. batch 结果文件读取（`GET /v1/files/{id}/content` JSONL 按 `custom_id` 求和）
