@@ -80,6 +80,7 @@
 | Vector store 存储 | `billing_vector_store_storage`：2,000,000,000 bytes → 2 GB-day、$0.20；`storage_gb_day` $0.10/GB/day；缺 `usage_bytes` ⇒ 记账失败（不产 0 元事实）；显式 0 字节 ⇒ waive；file_batches 仍 501 |
 | Token Bank 追收 | `gateway_billing_account` 单测 + `gateway_billing_contract`：hold 过期/已释放时按 `hold-expired-capture` 独立幂等后缀记账；释放容忍过期；异步对账识别该后缀；非过期错误仍失败 |
 | 超额应收 | `gateway_billing_contract::uncollected_overage_is_recorded_instead_of_being_marked_settled` + edge 单测：hold 已捕获而差额扣费失败时写 `uncollected_overage` 终态，避免 worker 误标已结算 |
+| Token Bank 行为回归 | `tests/billing_token_bank_flow.rs`：冻结 → 捕获 → 超额 → 余额不足 402 → 失败释放 → 应收标记，全部断言账户侧金额与动作 |
 | Assistants 流式用量 | `usage_extraction` 单测：`thread.run.completed.data.usage` 的输入/输出 token 必须进入结算用量 |
 
 每条锁都有"关掉实现 → 指定用例转红、对照保持绿"的变异证据，记录在主审计文档
@@ -177,7 +178,7 @@ fail-closed 或留给下一轮，不凭空收费。
 
 | 项 | 结果 |
 | --- | --- |
-| 计费 test target | **58 个 target / 410 passed / 0 failed** |
+| 计费 test target | **59 个 target / 415 passed / 0 failed** |
 | router-service `--lib` | **599 passed** |
 | router-service 全量 | **171 个 target / 1770 passed / 6 failed（全部 HEAD 既有，与计费无关）** |
 | edge-runtime `--lib` | **100 passed** |
