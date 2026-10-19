@@ -1,6 +1,7 @@
 mod account;
 mod account_resolution;
 mod async_poll_transport;
+mod batch_usage;
 mod billing;
 mod billing_policy;
 mod billing_transaction;
@@ -46,6 +47,7 @@ mod web_tool_billing;
 pub use account::{AccountBillingMode, InvocationAccount};
 pub use account_resolution::AccountResolutionInterceptor;
 pub use async_poll_transport::PipelineAsyncPollTransport;
+pub use batch_usage::{sum_openai_batch_usage, BatchUsageTotals};
 pub use billing::{BillingMode, BillingQuantitySource, BillingResultGate, InvocationBilling};
 pub use billing_policy::BillingPolicyInterceptor;
 pub use billing_transaction::{BillingSettlementInterceptor, BillingTransactionInterceptor};
