@@ -75,7 +75,7 @@ use sdkwork_cloudrouter_router_service::infrastructure::{
 use sdkwork_cloudrouter_router_service::ports::RuntimeRegionSettingsStore;
 use sdkwork_cloudrouter_router_service::ports::{
     AsyncUsageTaskStore, ChatCompletionRelay, ChatCompletionStreamRelay, EmbeddingsRelay,
-    GatewayAccountingRecordContext, GatewayAccountingRetryQueue, GatewayRequestTraceCommand,
+    GatewayAccountingRecordContext, GatewayAccountingRetryQueue, GatewayBillingStore, GatewayRequestTraceCommand,
     GatewayTraceAttribution, GatewayUsageRecordCommand, GatewayUsageRecordFuture,
     GatewayUsageRecorder, ProviderSecretResolver, ResponsesRelay, ResponsesStreamRelay,
     RoutingDecisionLogRecorder, StickyRouteStore, UpstreamAccountRouteCatalog,
@@ -204,8 +204,45 @@ struct InvocationRuntimeRoutesInput<'a, C> {
         Option<Arc<dyn sdkwork_cloudrouter_router_service::ports::BillingSubjectResolver>>,
 }
 
-fn router_with_invocation_runtime_routes<C>(
-    input: InvocationRuntimeRoutesInput<'_, C>,
+#[allow(clippy::too_many_arguments)]
+fn spawn_async_usage_reconciliation<C>(
+    dispatcher: Arc<InvocationHttpDispatcher>,
+    catalog: Arc<C>,
+    async_usage_store: Option<Arc<dyn AsyncUsageTaskStore + Send + Sync>>,
+    billing_store: Option<Arc<dyn GatewayBillingStore + Send + Sync>>,
+    usage_recorder: Option<UsageRecorder>,
+    secret_resolver: Option<Arc<dyn ProviderSecretResolver + Send + Sync>>,
+    runtime_toml: Option<&RuntimeTomlConfig>,
+) where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    let config = sdkwork_cloudrouter_router_service::application::resolve_async_usage_worker_config(
+        runtime_toml,
+    );
+    if !config.enabled {
+        return;
+    }
+    let (Some(store), Some(billing_store)) = (async_usage_store, billing_store) else {
+        tracing::warn!(
+            "async usage worker is enabled but the reconciliation store or billing store is missing; \
+             asynchronous creates stay fail-closed"
+        );
+        return;
+    };
+    let worker = crate::build_async_usage_worker(
+        store,
+        catalog,
+        dispatcher,
+        billing_store,
+        usage_recorder,
+        secret_resolver,
+        config,
+    );
+    crate::spawn_async_usage_worker(worker, config.interval_millis, config.batch_size);
+    tracing::info!("async usage reconciliation worker started");
+}
+
+fn router_with_invocation_runtime_routes<C>(    input: InvocationRuntimeRoutesInput<'_, C>,
 ) -> Result<Router, GatewayRouterError>
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
@@ -244,18 +281,31 @@ where
         sdkwork_cloudrouter_config::RedisConfig::from_env_or_runtime_toml(runtime_toml)
             .ok()
             .flatten();
-    let dispatcher = InvocationHttpDispatcher::with_provider_runtime_and_shared_memory_budget(
-        response_max_bytes,
-        response_memory_budget,
-        provider_response_timeout,
-        provider_http_pool_config,
-    )
-    .map_err(GatewayRouterError::Config)?;
+    let dispatcher = Arc::new(
+        InvocationHttpDispatcher::with_provider_runtime_and_shared_memory_budget(
+            response_max_bytes,
+            response_memory_budget,
+            provider_response_timeout,
+            provider_http_pool_config,
+        )
+        .map_err(GatewayRouterError::Config)?,
+    );
+    // Polling reuses this exact dispatcher so it inherits the gateway's egress
+    // policy, TLS, proxy and timeouts; the worker is opt-in via config.
+    spawn_async_usage_reconciliation(
+        Arc::clone(&dispatcher),
+        Arc::clone(&catalog),
+        async_usage_store.clone(),
+        billing_store.clone(),
+        usage_recorder.clone(),
+        secret_resolver.clone(),
+        runtime_toml,
+    );
     Ok(base_router.merge(
         crate::invocation_router::invocation_router_with_full_pipeline_provider_adapter_tenant_inflight_and_query_string_api_key_policy(
             catalog,
             api_key_hasher,
-            Arc::new(dispatcher),
+            dispatcher,
             crate::invocation_router::InvocationRouterOptions {
                 secret_resolver,
                 sticky_store,
