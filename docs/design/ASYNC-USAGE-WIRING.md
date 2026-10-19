@@ -14,6 +14,7 @@
 | 轮询传输 | `PipelineAsyncPollTransport::new(dispatcher)`（`invocation/async_poll_transport.rs`） |
 | 完成态结算 | `ReplayAsyncUsageSettler::new(catalog, billing_store).with_recorder(usage_recorder)` |
 | worker 编排 | `AsyncUsageTaskWorker::new(store, executor, lease, retry, max_attempts).with_settler(settler)` |
+| 装配 + 启动 | edge-runtime::build_async_usage_worker(...) / spawn_async_usage_worker(worker, interval, batch)（已实现，cargo check 通过） |
 | 运行配置 | `resolve_async_usage_worker_config(runtime_toml)`（默认关闭、边界有界） |
 | 纵向回归 | `tests/async_usage_reconciliation.rs` |
 

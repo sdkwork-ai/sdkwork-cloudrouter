@@ -58,3 +58,49 @@ where
     )
     .with_settler(Arc::new(settler))
 }
+
+/// Runs the reconciliation worker until process shutdown.
+///
+/// The loop mirrors the usage settlement worker: one bounded claim/poll pass per
+/// interval, a shutdown signal observed before and during the sleep, and errors
+/// logged rather than fatal (a failed pass is retried next tick; the worker's
+/// per-task lease and attempt counters bound the retries).
+pub fn spawn_async_usage_worker(
+    worker: AsyncUsageTaskWorker,
+    interval_millis: u64,
+    batch_size: i64,
+) -> tokio::task::JoinHandle<()> {
+    let interval = std::time::Duration::from_millis(
+        interval_millis.max(AsyncUsageWorkerConfig::MIN_INTERVAL_MILLIS),
+    );
+    let batch_size = batch_size.clamp(1, AsyncUsageWorkerConfig::MAX_BATCH_SIZE);
+    let mut shutdown_rx = sdkwork_cloudrouter_http::subscribe_shutdown_signal();
+    tokio::spawn(async move {
+        loop {
+            if shutdown_rx.try_recv().is_ok() {
+                break;
+            }
+            match worker.run_once(chrono::Utc::now(), batch_size).await {
+                Ok(0) => {}
+                Ok(processed) => {
+                    tracing::debug!(
+                        processed,
+                        "async usage reconciliation pass claimed tasks"
+                    );
+                }
+                Err(error) => {
+                    tracing::warn!(
+                        error = %error,
+                        "async usage reconciliation pass failed; retrying next interval"
+                    );
+                }
+            }
+            tokio::select! {
+                _ = shutdown_rx.recv() => break,
+                _ = tokio::time::sleep(interval) => {}
+            }
+        }
+        tracing::info!("async usage reconciliation worker stopped");
+    })
+}
+
