@@ -100,6 +100,7 @@
     {
       "operation": "POST /midjourney/v1/images/generations",
       "group": "no-supplier-namespace",
+    "deprecated": true,
       "apiCode": "midjourney.image_generation",
       "failClosedScope": "midjourney.generations",
       "reason": "no supplier/vendor/account: generations dispatches the midjourney slug through the OpenAI-compatible image surface instead"
@@ -107,11 +108,13 @@
     {
       "operation": "GET /midjourney/v1/images/generations/{task_id}",
       "group": "no-supplier-namespace",
+    "deprecated": true,
       "reason": "no supplier/vendor/account: generations dispatches the midjourney slug through the OpenAI-compatible image surface instead"
     },
     {
       "operation": "POST /nano-banana/v1/images/generations",
       "group": "no-supplier-namespace",
+    "deprecated": true,
       "apiCode": "nano_banana.image_generation",
       "failClosedScope": "nano-banana.generations",
       "reason": "no supplier/vendor/account, and the wired nano-banana ingress is the Gemini-native /google/v1beta/models/nano-banana:generateImages — but `dispatch_nano_banana` in sdkwork-generations drives THIS path, so it is a live cross-repo breakage (API authority ambiguity), not something an arm can paper over"
@@ -119,6 +122,7 @@
     {
       "operation": "GET /nano-banana/v1/images/generations/{task_id}",
       "group": "no-supplier-namespace",
+    "deprecated": true,
       "reason": "no supplier/vendor/account, and the wired nano-banana ingress is the Gemini-native /google/v1beta/models/nano-banana:generateImages — but `dispatch_nano_banana` in sdkwork-generations drives THIS path, so it is a live cross-repo breakage (API authority ambiguity), not something an arm can paper over"
     }
   ]
