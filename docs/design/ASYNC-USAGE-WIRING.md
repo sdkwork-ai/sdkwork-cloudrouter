@@ -92,3 +92,10 @@ cargo clippy -p sdkwork-cloudrouter-router-service -p sdkwork-cloudrouter-edge-r
 
 有数据库时再跑 `SDKWORK_DATABASE_URL=... cargo test -p sdkwork-cloudrouter-router-service --test postgres_usage_settlement_store_e2e`，
 并用 `tests/async_usage_settlement.rs` 的金额（175 000 micro / $0.0025）核对真实账户扣费。
+
+## 当前基线（第 10 轮核对）
+
+- 计费回归：**61 targets / 419 passed / 0 failed**
+- router-service --lib：**621 passed**
+- 全量：**173 targets / 1805 passed / 2 failed**（仅 postgres_payment_intent_runtime_sql_contract 2 条，payment 域、HEAD 既有）
+- 异步链路各层与纵向集成均已绿；接线前不要解除预检拒单。
