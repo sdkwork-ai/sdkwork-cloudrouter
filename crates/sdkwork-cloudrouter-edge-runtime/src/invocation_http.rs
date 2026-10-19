@@ -495,7 +495,14 @@ fn deferred_stream_response_to_http(
         deferred.stream_timeout(),
         stream_response_timeout,
     );
-    let body = wrap_invocation_stream(body, content_type.as_deref(), deferred, timeout);
+    let suppress_usage_only_events = deferred.suppress_usage_only_chunks();
+    let body = wrap_invocation_stream(
+        body,
+        content_type.as_deref(),
+        deferred,
+        timeout,
+        suppress_usage_only_events,
+    );
     let status = StatusCode::from_u16(status_code).unwrap_or(StatusCode::BAD_GATEWAY);
     let mut response = Response::new(body);
     *response.status_mut() = status;

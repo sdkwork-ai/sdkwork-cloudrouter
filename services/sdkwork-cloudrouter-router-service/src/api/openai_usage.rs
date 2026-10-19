@@ -227,7 +227,17 @@ impl GatewayUsageRecordCommandBuilder {
         &self,
         usage: OpenAiTokenUsage,
     ) -> DomainResult<Vec<GatewayUsageRecordCommand>> {
-        let input_tokens = billable_input_tokens(usage.prompt_tokens, usage.cached_tokens)?;
+        // 目录里没有缓存读费率时，缓存命中部分**并入输入**按输入价结算。
+        // 按 `prompt - cached` 计费会把命中部分永久留成 0 元——上游对缓存命中
+        // 仍然收费（OpenAI 约 0.25–0.5×、Anthropic 约 0.1×），长上下文场景下
+        // 命中常占 prompt 的 50%–95%，等于整条请求按输入价的零头收费。
+        // 上限是 1× 输入价（目录补数据后自动回到真实缓存价），下限不能是 0。
+        let cache_read_priced = self
+            .cache_read_quote
+            .as_ref()
+            .is_some_and(|quote| quote.resolved_price.is_some());
+        let input_tokens =
+            input_tokens_for_billing(usage.prompt_tokens, usage.cached_tokens, cache_read_priced)?;
         let mut commands = Vec::with_capacity(3);
         commands.push(self.build_line(
             &self.input_quote,
@@ -984,8 +994,30 @@ fn openai_pricing_snapshot(
     .to_string()
 }
 
+/// 计入输入（全价）的 prompt token 数。
+///
+/// 目录给缓存读定价时，缓存命中部分单独成行（`cached_tokens` 列），输入只收未命中；
+/// 目录没有缓存读费率时，命中部分**并入输入**按输入价收——不能让那部分落成 0 元。
+fn input_tokens_for_billing(
+    prompt_tokens: i64,
+    cached_tokens: i64,
+    cache_read_priced: bool,
+) -> DomainResult<i64> {
+    let miss_tokens = billable_input_tokens(prompt_tokens, cached_tokens)?;
+    Ok(if cache_read_priced {
+        miss_tokens
+    } else {
+        prompt_tokens
+    })
+}
+
 fn billable_input_tokens(prompt_tokens: i64, cached_tokens: i64) -> DomainResult<i64> {
-    prompt_tokens.checked_sub(cached_tokens).ok_or_else(|| {
+    // `checked_sub` 只在整数溢出时返回 None，`cached > prompt` 会安静地得到**负数**
+    // 计费量——那不是溢出而是脏数据，必须显式拒掉：负数量进账本比少收更难修。
+    prompt_tokens
+        .checked_sub(cached_tokens)
+        .filter(|miss_tokens| *miss_tokens >= 0)
+        .ok_or_else(|| {
         DomainError::new(format!(
             "provider usage.cached_tokens must not exceed prompt_tokens: cached_tokens={cached_tokens}, prompt_tokens={prompt_tokens}"
         ))
@@ -1137,6 +1169,32 @@ mod tests {
             provider_timeout_ms: None,
             provider_retry_policy: None,
         }
+    }
+
+    /// 🔴 目录没有缓存读费率时，缓存命中部分必须并入输入按输入价收。
+    ///
+    /// 改造前 `input = prompt - cached` 且缓存行只在有报价时才生成 ⇒ 命中部分
+    /// 既不进输入行、也没有独立的缓存行 = **永久 0 元**。长上下文下命中常占
+    /// prompt 的 50%–95%，上游仍按缓存价收费，等于整条请求按零头计费。
+    #[test]
+    fn unpriced_cache_reads_fold_into_the_billed_input() {
+        assert_eq!(
+            100,
+            input_tokens_for_billing(100, 20, false).expect("fold"),
+            "without a cache-read rate the cached prompt tokens must still be billed as input"
+        );
+        assert_eq!(
+            80,
+            input_tokens_for_billing(100, 20, true).expect("separate"),
+            "with a cache-read rate the cached share stays on its own meter"
+        );
+        assert_eq!(
+            100,
+            input_tokens_for_billing(100, 0, false).expect("no cache hits"),
+            "a cache-less prompt is unaffected"
+        );
+        // 命中数超过 prompt（miss-only 上报已被上游归一，这里只验证不会 panic/溢出）
+        assert!(input_tokens_for_billing(20, 128, false).is_err());
     }
 
     /// Explicit regional routes must keep their region untouched — the usage

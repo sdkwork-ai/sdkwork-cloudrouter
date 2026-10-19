@@ -40,10 +40,11 @@ mod trace;
 mod usage;
 mod usage_extraction;
 mod usage_recording;
+mod web_tool_billing;
 
 pub use account::{AccountBillingMode, InvocationAccount};
 pub use account_resolution::AccountResolutionInterceptor;
-pub use billing::{BillingMode, BillingQuantitySource, InvocationBilling};
+pub use billing::{BillingMode, BillingQuantitySource, BillingResultGate, InvocationBilling};
 pub use billing_policy::BillingPolicyInterceptor;
 pub use billing_transaction::{BillingSettlementInterceptor, BillingTransactionInterceptor};
 pub use body::InvocationBody;
@@ -77,9 +78,11 @@ pub use pricing::{PricingFinalizationInterceptor, PricingPreflightInterceptor};
 // 只再导出调用链真正消费的两个入口：预检/结算用 `resolve_pricing_identity`
 // 取身份，流水线用 `apply_pricing_identity` 回写计量档。身份类型本身留在
 // `pricing_identity` 模块内，避免 `pub use` 未使用告警。
+pub(crate) use pricing_identity::measurement_profile_for_catalog_meter;
 pub use pricing_identity::{
     apply_pricing_identity, requested_resolution, resolve_pricing_identity,
 };
+pub(crate) use pricing_identity::{context_tier_code, single_catalog_tier_code};
 pub use provider_adapter_dispatch::ProviderAdapterDispatchInterceptor;
 pub use provider_native_classifier::{
     canonical_provider_native_catalog_key, normalize_standard_api_path,
@@ -108,7 +111,7 @@ pub use telemetry::{InvocationNormalizedResponse, InvocationTelemetry};
 pub(crate) use tenant_inflight::tenant_lease_loss_error;
 pub use tenant_inflight::{TenantInflightConfig, TenantInflightInterceptor};
 pub use trace::TraceTelemetryInterceptor;
-pub(crate) use usage::{is_token_meter, quote_rate_hash};
+pub(crate) use usage::{is_token_meter, meter_is_streamable, quote_rate_hash};
 pub use usage::{
     InvocationPreflightResolution, InvocationPricingQuote, InvocationUsage, InvocationUsageLine,
     InvocationUsageLineRole,
@@ -118,3 +121,4 @@ pub use usage_extraction::{
     UsageExtractionInterceptor,
 };
 pub use usage_recording::UsageRecordingInterceptor;
+pub use web_tool_billing::{result_gate_for_api_code, result_gate_satisfied, waived_reason};

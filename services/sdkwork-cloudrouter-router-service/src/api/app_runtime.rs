@@ -4373,11 +4373,12 @@ fn build_runtime_chat_request_body(
     if !stream_options.is_object() {
         *stream_options = Value::Object(Map::new());
     }
+    // 强制打开而非"缺省时补上"：客户端显式 `include_usage: false` 会让上游
+    // 不回流式 usage，EOF 兜底只能估输出、输入恒 0（输入 token 免单）。
     stream_options
         .as_object_mut()
         .expect("stream_options is normalized to an object")
-        .entry("include_usage".to_owned())
-        .or_insert(Value::Bool(true));
+        .insert("include_usage".to_owned(), Value::Bool(true));
 
     for runtime_only_field in [
         "routeKeyId",

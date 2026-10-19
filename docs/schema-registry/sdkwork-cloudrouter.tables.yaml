@@ -285,12 +285,13 @@ modules:
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
   ai-metering:
     owner: cloud-router-platform
-    description: AI usage facts and request traces.
+    description: AI usage facts, request traces, and the async usage reconciliation queue.
     compliance_level: L3
-    tables_count: 2
+    tables_count: 3
     tables:
     - ai_metering_usage
     - ai_metering_request_trace
+    - ai_metering_async_task
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
   iam-gateway:
     owner: cloud-router-platform

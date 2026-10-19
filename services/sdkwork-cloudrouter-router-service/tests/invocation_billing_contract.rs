@@ -10,12 +10,12 @@
 
 use axum::http::Method;
 use sdkwork_cloudrouter_router_service::application::{
-    AccountBillingMode, AuthenticatedApiKeyContext, BillingMode, BillingQuantitySource, Invocation,
-    InvocationAccount, InvocationBilling, InvocationBody, InvocationClassificationRequest,
-    InvocationDispatch, InvocationInterceptor, InvocationRequest, InvocationResourceClassifier,
-    InvocationSubject, OpenAiResourceClassifier, PricingFinalizationInterceptor,
-    PricingPreflightInterceptor, PricingSettlementInterceptor, ResourceType,
-    UsageExtractionInterceptor,
+    AccountBillingMode, AuthenticatedApiKeyContext, BillingMode, BillingQuantitySource,
+    BillingResultGate, Invocation, InvocationAccount, InvocationBilling, InvocationBody,
+    InvocationClassificationRequest, InvocationDispatch, InvocationInterceptor, InvocationRequest,
+    InvocationResourceClassifier, InvocationSubject, OpenAiResourceClassifier,
+    PricingFinalizationInterceptor, PricingPreflightInterceptor, PricingSettlementInterceptor,
+    ResourceType, UsageExtractionInterceptor,
 };
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
@@ -216,7 +216,7 @@ async fn image_result_billing_contract() {
             quantity_source: BillingQuantitySource::ResponseBody,
             pricing_required: true,
             settlement_required: true,
-            prepaid_required: false,
+            result_gate: BillingResultGate::Any,
         },
     );
     // Provider returns 3 generated images.
@@ -253,7 +253,7 @@ async fn video_result_billing_contract() {
             quantity_source: BillingQuantitySource::ResponseBody,
             pricing_required: true,
             settlement_required: true,
-            prepaid_required: false,
+            result_gate: BillingResultGate::Any,
         },
     );
     let mut invocation = invocation;
@@ -286,7 +286,7 @@ async fn audio_seconds_billing_contract() {
             quantity_source: BillingQuantitySource::ResponseBody,
             pricing_required: true,
             settlement_required: true,
-            prepaid_required: false,
+            result_gate: BillingResultGate::Any,
         },
     );
     let mut invocation = invocation;
@@ -320,7 +320,7 @@ async fn music_output_seconds_billing_contract() {
             quantity_source: BillingQuantitySource::ResponseBody,
             pricing_required: true,
             settlement_required: true,
-            prepaid_required: false,
+            result_gate: BillingResultGate::Any,
         },
     );
     let mut invocation = invocation;
@@ -354,7 +354,7 @@ async fn model_chat_billing_contract_stays_consistent() {
             quantity_source: BillingQuantitySource::Composite,
             pricing_required: true,
             settlement_required: true,
-            prepaid_required: false,
+            result_gate: BillingResultGate::Any,
         },
     );
     let mut invocation = invocation;

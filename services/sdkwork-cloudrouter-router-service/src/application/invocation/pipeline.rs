@@ -8,8 +8,8 @@ use tracing::Instrument;
 
 use super::{
     record_streaming_usage_body, tenant_lease_loss_error, BillingMode, BillingQuantitySource,
-    Invocation, InvocationCancellationSignal, InvocationError, InvocationErrorKind,
-    InvocationInterceptor,
+    Invocation, InvocationBody, InvocationCancellationSignal, InvocationError, InvocationErrorKind,
+    InvocationInterceptor, InvocationSurface,
 };
 #[cfg(test)]
 use crate::domain::BillingOwnerKind;
@@ -325,6 +325,22 @@ impl DeferredStreamInvocation {
             headers: normalized.headers.clone(),
             body,
         })
+    }
+
+    /// 网关是否为这条流强制打开了 `stream_options.include_usage`。
+    ///
+    /// 只有 OpenAI 兼容面的 Chat Completions 流会这样做（见
+    /// `ProviderRequestBuilder::ensure_stream_usage_requested`）；对应的
+    /// usage-only chunk 应在转发给客户端前剔除，避免改变未主动开启该选项的
+    /// 客户端可见的流形状。
+    pub fn suppress_usage_only_chunks(&self) -> bool {
+        self.invocation.resource.surface == InvocationSurface::OpenAiCompatible
+            && self.invocation.resource.api_code == "openai.chat_completions"
+            && matches!(
+                &self.invocation.request.body,
+                InvocationBody::Json(body)
+                    if body.get("stream").and_then(Value::as_bool) == Some(true)
+            )
     }
 
     /// Returns the selected provider account's stream-body timeout when the

@@ -1,5 +1,9 @@
 use std::sync::Arc;
 
+use super::usage_extraction::{
+    character_count_in, integer_field, nested_media_seconds, AUDIO_SECOND_FIELDS,
+    VIDEO_SECOND_FIELDS,
+};
 use super::{
     is_token_meter, provider_response_succeeded, AccountBillingMode, BillingMode, Invocation,
     InvocationError, InvocationErrorKind, InvocationFuture, InvocationInterceptor,
@@ -180,6 +184,12 @@ impl InvocationInterceptor for BillingTransactionInterceptor {
             {
                 return Ok(());
             }
+            // A waived charge never becomes billable, even if a later accounting
+            // stage fails: release the reservation instead of holding it.
+            if invocation.charging.waived.is_some() {
+                let context = billing_context(invocation);
+                return release_without_charge(self.store.as_ref(), invocation, &context).await;
+            }
             // A successful provider response can still reach the error path
             // when usage extraction, persistence, streaming termination, or
             // reconciliation fails. Keep the reservation in that case: the
@@ -250,6 +260,23 @@ impl InvocationInterceptor for BillingSettlementInterceptor {
                 return Ok(());
             }
             let context = billing_context(invocation);
+            // A waived charge is a *successful* provider call that produced
+            // nothing the vendor bills for (DeepSeek Search with `results: []`,
+            // Fetch without a body). There is no billable amount to demand, so
+            // demanding one would turn a free upstream call into a gateway 502.
+            // Release whatever the precharge reserved and record the zero charge.
+            // Checked before loading exchange settings so a settings outage
+            // cannot trap a reservation that will never be charged.
+            if let Some(reason) = invocation.charging.waived.clone() {
+                tracing::info!(
+                    stage = "billing_settlement",
+                    billing_waived = %reason,
+                    request_id = %invocation.request.request_id,
+                    trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+                    "releasing the reservation without a customer charge"
+                );
+                return release_without_charge(self.store.as_ref(), invocation, &context).await;
+            }
             let settings = self
                 .store
                 .load_cash_to_points_settings(context.clone())
@@ -379,6 +406,43 @@ fn billing_context(invocation: &Invocation) -> GatewayBillingContext {
     }
 }
 
+/// Returns a reservation without charging the customer.
+///
+/// Used when the provider call succeeded but the vendor would not have billed it
+/// (a gated web tool that produced no result). Synchronous billing releases the
+/// frozen account hold — no ledger entry appears — while asynchronous billing
+/// refunds the legacy direct precharge debit, mirroring `on_error`. The usage
+/// facts of the request are marked settled so the asynchronous settlement worker
+/// does not resurrect the charge from an earlier precharge.
+async fn release_without_charge(
+    store: &(dyn GatewayBillingStore + Send + Sync),
+    invocation: &mut Invocation,
+    context: &GatewayBillingContext,
+) -> Result<(), InvocationError> {
+    if invocation.charging.settlement_mode
+        == crate::ports::GatewayBillingSettlementMode::Synchronous
+    {
+        if let Some(hold_id) = invocation.charging.hold_id.clone() {
+            store
+                .release_hold(context.clone(), hold_id)
+                .await
+                .map_err(billing_error)?;
+        }
+        store
+            .mark_usage_settled(context.clone())
+            .await
+            .map_err(billing_error)?;
+    } else if let Some(reserved) = invocation.charging.reserved_amount.clone() {
+        store
+            .refund(context.clone(), reserved)
+            .await
+            .map_err(billing_error)?;
+    }
+    invocation.charging.settled = true;
+    invocation.charging.provider_completed = true;
+    Ok(())
+}
+
 fn single_pricing_plan(invocation: &Invocation) -> bool {
     let Some(first) = invocation.usage.pricing_quotes.first() else {
         return true;
@@ -406,18 +470,32 @@ fn estimated_amount(
     let first = invocation.usage.pricing_quotes.first()?;
     let currency = first.customer_charge_unit_price.currency.clone();
     let mut total = DecimalValue::ZERO;
+    // 输入侧同一批 prompt token 可能同时有 input / cache-read / cache-write
+    // 三档报价（互斥覆盖，不是三段相加）。逐项相加会把冻结额放大到实际成本的
+    // 1.8–2.35 倍，余额刚好够的用户会被误拒。这里取三档中的最高价作为输入侧
+    // 上界；输出与媒体计量仍逐项相加。
+    let mut input_pool_max = DecimalValue::ZERO;
     let input_units = conservative_input_units(invocation);
     let output_units = conservative_output_units(invocation);
+    let request_body = request_body_json(invocation);
     for quote in &invocation.usage.pricing_quotes {
         if quote.customer_charge_unit_price.currency != currency {
             return None;
         }
-        let quantity = conservative_quantity(&quote.meter, input_units, output_units);
+        // 媒体计量的下界不是一个"单位"：预付余额只够 1 秒的用户不应该被放行
+        // 去下单一条 20 秒视频。请求声明了多少就按多少预扣（token 类仍走
+        // `max_tokens × n` 的上界算法）。
+        let quantity = conservative_media_units(&quote.meter, request_body).or_else(|| {
+            DecimalValue::parse(
+                &conservative_quantity(&quote.meter, input_units, output_units).to_string(),
+            )
+            .ok()
+        })?;
         let unit_price =
             DecimalValue::parse(&quote.customer_charge_unit_price.to_fixed_string(12)).ok()?;
         let unit_size = unit_size_or_default(&quote.meter, &quote.unit_size)?;
         let calculated = unit_price
-            .multiply_i64(quantity)
+            .checked_multiply(quantity)
             .ok()?
             .checked_divide(unit_size)
             .ok()?;
@@ -428,8 +506,21 @@ fn estimated_amount(
                 DecimalValue::parse(&billing.customer_charge_amount.to_fixed_string(12)).ok()
             })
             .unwrap_or(DecimalValue::ZERO);
-        total = total.checked_add(calculated.max(quoted_minimum)).ok()?;
+        let amount = calculated.max(quoted_minimum);
+        if matches!(
+            quote.meter,
+            BillingMeter::LlmInputToken
+                | BillingMeter::LlmCacheReadToken
+                | BillingMeter::LlmCacheWriteToken
+        ) {
+            if amount > input_pool_max {
+                input_pool_max = amount;
+            }
+        } else {
+            total = total.checked_add(amount).ok()?;
+        }
     }
+    total = total.checked_add(input_pool_max).ok()?;
     let amount = token_points_for_charge(&total.to_fixed_string(12), &currency, settings).ok()?;
     Some(GatewayBillingAmount {
         amount: amount.to_string(),
@@ -524,14 +615,75 @@ fn unit_size_or_default(meter: &BillingMeter, persisted: &str) -> Option<Decimal
     }
 }
 
+/// 请求体（仅 JSON 形态），供预扣估算读取"用户声明了多少"。
+fn request_body_json(invocation: &Invocation) -> Option<&serde_json::Value> {
+    match &invocation.request.body {
+        super::InvocationBody::Json(value) => Some(value),
+        _ => None,
+    }
+}
+
+/// 媒体类计量的预扣下界：从**请求**读用户声明/将要产生的数量。
+///
+/// token 类可以在响应前用 `max_tokens × n` 估上界，但时长/字符/张数类不行——
+/// 视频请求写 `seconds: "20"`、TTS 请求写 200 字，响应里没有任何东西能事前
+/// 推出这些数。此前这类计量全部落到 [`conservative_quantity`] 的 `_ => 1`，
+/// 于是"余额只够 1 秒"的账号也能下单 20 秒视频，超额消费后才在结算环节暴露。
+///
+/// 返回 `None` 表示请求里读不到数量，由调用方回落到 token 估算或 1 单位。
+fn conservative_media_units(
+    meter: &BillingMeter,
+    body: Option<&serde_json::Value>,
+) -> Option<DecimalValue> {
+    let body = body?;
+    match meter {
+        BillingMeter::VideoOutputSecond | BillingMeter::VideoInputSecond => {
+            seconds_units(body, VIDEO_SECOND_FIELDS)
+        }
+        BillingMeter::MusicOutputSecond
+        | BillingMeter::AudioOutputSecond
+        | BillingMeter::AudioInputSecond => seconds_units(body, AUDIO_SECOND_FIELDS),
+        // 分钟档：请求里仍是秒，按 60 折算成小数分钟，避免 12 秒被向上取整
+        // 成整整 1 分钟（过度冻结 5 倍余额）。
+        BillingMeter::AudioOutputMinute
+        | BillingMeter::AudioInputMinute
+        | BillingMeter::SttAudioMinute => {
+            let seconds = seconds_units(body, AUDIO_SECOND_FIELDS)?;
+            seconds.checked_divide(DecimalValue::parse("60").ok()?).ok()
+        }
+        BillingMeter::TtsInputCharacter | BillingMeter::SpeechCharacter => {
+            decimal_units(character_count_in(body)?)
+        }
+        // 一次请求产出 N 张图/条视频时 `n` 就是张数下界。
+        BillingMeter::ImageResult
+        | BillingMeter::VideoResult
+        | BillingMeter::SfxResult
+        | BillingMeter::ApiResult => decimal_units(integer_field(
+            body,
+            &["n", "count", "num_images", "num_videos", "variants"],
+        )?),
+        _ => None,
+    }
+}
+
+/// 请求/响应里声明的秒数（含毫秒拼写与嵌套容器）。
+fn seconds_units(body: &serde_json::Value, names: &[&str]) -> Option<DecimalValue> {
+    let seconds = nested_media_seconds(body, names)?;
+    DecimalValue::parse(seconds.trim()).ok()
+}
+
+fn decimal_units(count: i64) -> Option<DecimalValue> {
+    DecimalValue::parse(&count.max(1).to_string()).ok()
+}
+
 fn conservative_quantity(meter: &BillingMeter, input: i64, output: i64) -> i64 {
     match meter {
         BillingMeter::LlmOutputToken
+        | BillingMeter::LlmReasoningToken
         | BillingMeter::AudioOutputToken
         | BillingMeter::ImageOutputToken
         | BillingMeter::VideoOutputToken => output,
         BillingMeter::LlmInputToken
-        | BillingMeter::LlmReasoningToken
         | BillingMeter::LlmCacheWriteToken
         | BillingMeter::LlmCacheReadToken
         | BillingMeter::EmbeddingInputToken

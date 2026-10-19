@@ -64,6 +64,7 @@ pub(crate) fn wrap_invocation_stream(
     content_type: Option<&str>,
     deferred: DeferredStreamInvocation,
     timeouts: InvocationStreamTimeouts,
+    suppress_usage_only_events: bool,
 ) -> Body {
     let cancellation_signal = deferred.cancellation_signal();
     let (completion, mut terminal_receiver) = StreamCompletion::new();
@@ -91,6 +92,7 @@ pub(crate) fn wrap_invocation_stream(
             demand_receiver,
             producer_completion,
             cancellation_signal,
+            suppress_usage_only_events,
         )
         .await;
     });
@@ -203,6 +205,10 @@ impl Drop for DownstreamStreamState {
 struct StreamProducerState {
     upstream: BoxStream<'static, Result<Bytes, axum::Error>>,
     usage: StreamingUsageAccumulator,
+    /// 是否从转发给客户端的流里剔除 usage-only SSE 事件。网关为计费强制
+    /// `stream_options.include_usage` 后，上游会多回一个 `choices: []` 的
+    /// usage chunk；不希望让未主动开启该选项的客户端看到它。
+    suppress_usage_only_events: bool,
     started_at: Instant,
     first_frame_at: Option<Instant>,
     total_deadline: TokioInstant,
@@ -216,12 +222,15 @@ impl StreamProducerState {
         body: Body,
         usage_format: StreamingUsageFormat,
         timeouts: InvocationStreamTimeouts,
+        suppress_usage_only_events: bool,
     ) -> Self {
         let started_at = Instant::now();
         let started_deadline = TokioInstant::now();
         Self {
             upstream: body.into_data_stream().boxed(),
             usage: StreamingUsageAccumulator::new(usage_format),
+            suppress_usage_only_events: suppress_usage_only_events
+                && usage_format == StreamingUsageFormat::ServerSentEvents,
             started_at,
             first_frame_at: None,
             total_deadline: started_deadline + timeouts.total,
@@ -229,6 +238,17 @@ impl StreamProducerState {
             idle_deadline: None,
             idle_timeout: timeouts.idle,
         }
+    }
+
+    /// 决定这一帧要不要转发；`None` 表示整帧都是 usage-only 事件，丢弃。
+    fn forward_frame(&self, bytes: Bytes) -> Option<Bytes> {
+        if bytes.is_empty() {
+            return None;
+        }
+        if !self.suppress_usage_only_events {
+            return Some(bytes);
+        }
+        strip_usage_only_events(bytes)
     }
 
     fn next_upstream_deadline(&self) -> (TokioInstant, &'static str) {
@@ -266,8 +286,10 @@ async fn run_stream_producer(
     mut demand_receiver: mpsc::Receiver<oneshot::Sender<StreamEvent>>,
     completion: StreamCompletion,
     cancellation_signal: InvocationCancellationSignal,
+    suppress_usage_only_events: bool,
 ) {
-    let mut state = StreamProducerState::new(body, usage_format, timeouts);
+    let mut state =
+        StreamProducerState::new(body, usage_format, timeouts, suppress_usage_only_events);
     loop {
         let demand_result = tokio::select! {
             biased;
@@ -302,44 +324,23 @@ async fn run_stream_producer(
             }
         };
 
-        let (deadline, timeout_stage) = state.next_upstream_deadline();
         let mut response_sender = response_sender;
-        let next_frame = tokio::select! {
-            biased;
-            _ = cancellation_signal.wait_for_tenant_lease_loss() => {
-                let partial_usage = state.usage.partial_usage_body();
-                completion.complete(StreamTerminalOutcome::LeaseLost {
-                    ttft_ms: state.ttft_ms(),
-                    partial_usage,
-                });
-                return;
-            }
-            result = timeout_at(deadline, state.upstream.next()) => result,
-            _ = response_sender.closed() => {
-                let partial_usage = state.usage.partial_usage_body();
-                completion.complete(StreamTerminalOutcome::Cancelled {
-                    ttft_ms: state.ttft_ms(),
-                    partial_usage,
-                });
-                return;
-            }
-        };
-        match next_frame {
-            Ok(Some(Ok(bytes))) => {
-                if !bytes.is_empty() {
-                    state.record_frame_received();
-                    if let Err(error) = state.usage.observe(&bytes) {
-                        tracing::warn!(error_kind = ?error.kind, "stream usage accumulator rejected provider data");
-                        let partial_usage = state.usage.partial_usage_body();
-                        completion.complete(StreamTerminalOutcome::UpstreamError {
-                            message: "stream usage accounting failed".to_owned(),
-                            ttft_ms: state.ttft_ms(),
-                            partial_usage,
-                        });
-                        return;
-                    }
+        // 一帧可能整帧都是 usage-only 事件（被过滤）。此时继续读下一帧，
+        // 而不是给这次 demand 回一个空帧——空帧会被视为有效数据并刷新 TTFT。
+        loop {
+            let (deadline, timeout_stage) = state.next_upstream_deadline();
+            let next_frame = tokio::select! {
+                biased;
+                _ = cancellation_signal.wait_for_tenant_lease_loss() => {
+                    let partial_usage = state.usage.partial_usage_body();
+                    completion.complete(StreamTerminalOutcome::LeaseLost {
+                        ttft_ms: state.ttft_ms(),
+                        partial_usage,
+                    });
+                    return;
                 }
-                if response_sender.send(StreamEvent::Data(bytes)).is_err() {
+                result = timeout_at(deadline, state.upstream.next()) => result,
+                _ = response_sender.closed() => {
                     let partial_usage = state.usage.partial_usage_body();
                     completion.complete(StreamTerminalOutcome::Cancelled {
                         ttft_ms: state.ttft_ms(),
@@ -347,65 +348,196 @@ async fn run_stream_producer(
                     });
                     return;
                 }
-            }
-            Ok(Some(Err(error))) => {
-                let partial_usage = state.usage.partial_usage_body();
-                let outcome = StreamTerminalOutcome::UpstreamError {
-                    message: "upstream stream body could not be read".to_owned(),
-                    ttft_ms: state.ttft_ms(),
-                    partial_usage,
-                };
-                if response_sender
-                    .send(StreamEvent::Failure { error, outcome })
-                    .is_err()
-                {
-                    let partial_usage = state.usage.partial_usage_body();
-                    completion.complete(StreamTerminalOutcome::Cancelled {
-                        ttft_ms: state.ttft_ms(),
-                        partial_usage,
-                    });
-                }
-                return;
-            }
-            Ok(None) => {
-                let outcome = match state.usage.finish() {
-                    Ok(usage_body) => StreamTerminalOutcome::Completed {
-                        usage_body,
-                        ttft_ms: state.ttft_ms(),
-                    },
-                    Err(error) => {
-                        tracing::warn!(error_kind = ?error.kind, "stream usage accumulator failed at EOF");
-                        let partial_usage = state.usage.partial_usage_body();
-                        StreamTerminalOutcome::UpstreamError {
-                            message: "stream usage accounting failed".to_owned(),
-                            ttft_ms: state.ttft_ms(),
-                            partial_usage,
+            };
+            match next_frame {
+                Ok(Some(Ok(bytes))) => {
+                    if !bytes.is_empty() {
+                        state.record_frame_received();
+                        if let Err(error) = state.usage.observe(&bytes) {
+                            tracing::warn!(error_kind = ?error.kind, "stream usage accumulator rejected provider data");
+                            let partial_usage = state.usage.partial_usage_body();
+                            completion.complete(StreamTerminalOutcome::UpstreamError {
+                                message: "stream usage accounting failed".to_owned(),
+                                ttft_ms: state.ttft_ms(),
+                                partial_usage,
+                            });
+                            return;
                         }
                     }
-                };
-                if response_sender
-                    .send(StreamEvent::Terminal(outcome))
-                    .is_err()
-                {
+                    let Some(forward) = state.forward_frame(bytes) else {
+                        // 整帧都是 usage-only 事件：丢弃，继续读下一帧（账单已由
+                        // 累加器观察原始字节）。
+                        continue;
+                    };
+                    if response_sender.send(StreamEvent::Data(forward)).is_err() {
+                        let partial_usage = state.usage.partial_usage_body();
+                        completion.complete(StreamTerminalOutcome::Cancelled {
+                            ttft_ms: state.ttft_ms(),
+                            partial_usage,
+                        });
+                        return;
+                    }
+                    break;
+                }
+                Ok(Some(Err(error))) => {
                     let partial_usage = state.usage.partial_usage_body();
-                    completion.complete(StreamTerminalOutcome::Cancelled {
+                    let outcome = StreamTerminalOutcome::UpstreamError {
+                        message: "upstream stream body could not be read".to_owned(),
+                        ttft_ms: state.ttft_ms(),
+                        partial_usage,
+                    };
+                    if response_sender
+                        .send(StreamEvent::Failure { error, outcome })
+                        .is_err()
+                    {
+                        let partial_usage = state.usage.partial_usage_body();
+                        completion.complete(StreamTerminalOutcome::Cancelled {
+                            ttft_ms: state.ttft_ms(),
+                            partial_usage,
+                        });
+                    }
+                    return;
+                }
+                Ok(None) => {
+                    let outcome = match state.usage.finish() {
+                        Ok(Some(usage_body)) => StreamTerminalOutcome::Completed {
+                            usage_body: Some(usage_body),
+                            ttft_ms: state.ttft_ms(),
+                        },
+                        // 上游正常结束却没有发 usage 帧：兼容上游忽略了
+                        // `stream_options.include_usage`，或者该 vendor 的健康 SSE
+                        // 本来就不带 usage。此时必须回落到「按已观测输出文本」的保守
+                        // 估算——客户端已经完整收到响应，整条流免单是不可恢复的收入
+                        // 损失，而低估只影响这一轮、下一轮可修正。只有连一个字符都没
+                        // 观测到时才返回 `None`，由管线按 produces-no-billable-usage
+                        // 报错（那是真的没有可结算的内容）。
+                        Ok(None) => {
+                            let estimated = state.usage.partial_usage_body();
+                            StreamTerminalOutcome::Completed {
+                                usage_body: estimated,
+                                ttft_ms: state.ttft_ms(),
+                            }
+                        }
+                        Err(error) => {
+                            tracing::warn!(error_kind = ?error.kind, "stream usage accumulator failed at EOF");
+                            let partial_usage = state.usage.partial_usage_body();
+                            StreamTerminalOutcome::UpstreamError {
+                                message: "stream usage accounting failed".to_owned(),
+                                ttft_ms: state.ttft_ms(),
+                                partial_usage,
+                            }
+                        }
+                    };
+                    if response_sender
+                        .send(StreamEvent::Terminal(outcome))
+                        .is_err()
+                    {
+                        let partial_usage = state.usage.partial_usage_body();
+                        completion.complete(StreamTerminalOutcome::Cancelled {
+                            ttft_ms: state.ttft_ms(),
+                            partial_usage,
+                        });
+                    }
+                    return;
+                }
+                Err(_) => {
+                    let partial_usage = state.usage.partial_usage_body();
+                    completion.complete(StreamTerminalOutcome::TimedOut {
+                        stage: timeout_stage,
                         ttft_ms: state.ttft_ms(),
                         partial_usage,
                     });
+                    return;
                 }
-                return;
-            }
-            Err(_) => {
-                let partial_usage = state.usage.partial_usage_body();
-                completion.complete(StreamTerminalOutcome::TimedOut {
-                    stage: timeout_stage,
-                    ttft_ms: state.ttft_ms(),
-                    partial_usage,
-                });
-                return;
             }
         }
     }
+}
+
+/// 从一帧 SSE 字节里剔除**完整的** usage-only 事件。
+///
+/// 只处理在同一帧内闭合的事件（以空行结尾）；跨帧拆分的 usage 事件保持原样
+/// 转发（计费不受影响，客户端可能多看到一个空 choices 的 chunk）。这避免在
+/// 转发链里引入逐事件缓冲与额外延迟。
+fn strip_usage_only_events(bytes: Bytes) -> Option<Bytes> {
+    let mut kept: Option<Vec<u8>> = None;
+    let mut event_start = 0_usize;
+    let mut cursor = 0_usize;
+    while cursor < bytes.len() {
+        let boundary = if bytes[cursor] == b'\n' && bytes.get(cursor + 1) == Some(&b'\n') {
+            Some(cursor + 2)
+        } else if bytes[cursor] == b'\r'
+            && bytes.get(cursor + 1) == Some(&b'\n')
+            && bytes.get(cursor + 2) == Some(&b'\r')
+            && bytes.get(cursor + 3) == Some(&b'\n')
+        {
+            Some(cursor + 4)
+        } else {
+            None
+        };
+        let Some(event_end) = boundary else {
+            cursor += 1;
+            continue;
+        };
+        let event = &bytes[event_start..event_end];
+        if is_usage_only_sse_event(event) {
+            if kept.is_none() {
+                let mut buffer = Vec::with_capacity(bytes.len());
+                buffer.extend_from_slice(&bytes[..event_start]);
+                kept = Some(buffer);
+            }
+            // 事件被丢弃：kept 已包含丢弃点之前的内容。
+        } else if let Some(buffer) = kept.as_mut() {
+            buffer.extend_from_slice(event);
+        }
+        event_start = event_end;
+        cursor = event_end;
+    }
+    match kept {
+        Some(mut buffer) => {
+            buffer.extend_from_slice(&bytes[event_start..]);
+            (!buffer.is_empty()).then(|| Bytes::from(buffer))
+        }
+        // 没有事件被剔除：原样返回（避免无谓的拷贝）。
+        None => Some(bytes),
+    }
+}
+
+/// 该 SSE 事件是否"只带 usage、没有内容"。
+///
+/// OpenAI 的 `include_usage` 终端帧形如
+/// `data: {"choices":[],"usage":{...}}`；`choices` 为空（或缺省）且有非空
+/// `usage` 即判定为 usage-only。无法解析的帧一律保留——过滤不能吞掉内容。
+fn is_usage_only_sse_event(event: &[u8]) -> bool {
+    let Ok(text) = std::str::from_utf8(event) else {
+        return false;
+    };
+    let mut data = String::new();
+    for line in text.split('\n') {
+        let line = line.strip_suffix('\r').unwrap_or(line);
+        let Some(payload) = line.strip_prefix("data:") else {
+            continue;
+        };
+        if !data.is_empty() {
+            data.push('\n');
+        }
+        data.push_str(payload.strip_prefix(' ').unwrap_or(payload));
+    }
+    let data = data.trim();
+    if data.is_empty() || data == "[DONE]" {
+        return false;
+    }
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(data) else {
+        return false;
+    };
+    let Some(object) = value.as_object() else {
+        return false;
+    };
+    let has_usage = object.get("usage").is_some_and(|usage| !usage.is_null());
+    let choices_empty = object
+        .get("choices")
+        .is_none_or(|choices| choices.as_array().is_some_and(|items| items.is_empty()));
+    has_usage && choices_empty
 }
 
 fn streaming_usage_format(content_type: Option<&str>) -> StreamingUsageFormat {
@@ -418,10 +550,18 @@ fn streaming_usage_format(content_type: Option<&str>) -> StreamingUsageFormat {
     if content_type.eq_ignore_ascii_case("application/x-ndjson")
         || content_type.eq_ignore_ascii_case("application/ndjson")
     {
-        StreamingUsageFormat::Ndjson
-    } else {
-        StreamingUsageFormat::ServerSentEvents
+        return StreamingUsageFormat::Ndjson;
     }
+    // Gemini 的 `:streamGenerateContent` 契约 200 响应是 `application/json`
+    // （分块下发的 JSON 数组），不是 `text/event-stream`。缺这条映射时每一行都
+    // 不是 `data:` 前缀，SSE 解析器一个用量字段都读不到 ⇒ 整条流免单。
+    if content_type.eq_ignore_ascii_case("application/json")
+        || content_type.eq_ignore_ascii_case("application/x-json")
+        || content_type.eq_ignore_ascii_case("text/json")
+    {
+        return StreamingUsageFormat::JsonArray;
+    }
+    StreamingUsageFormat::ServerSentEvents
 }
 
 #[cfg(test)]
@@ -446,5 +586,59 @@ mod tests {
         assert_eq!(Duration::from_millis(40), timeouts.total);
         assert_eq!(Duration::from_millis(40), timeouts.first_frame);
         assert_eq!(Duration::from_millis(40), timeouts.idle);
+    }
+
+    fn stripped(input: &'static str) -> Option<String> {
+        strip_usage_only_events(Bytes::from_static(input.as_bytes()))
+            .map(|bytes| String::from_utf8(bytes.to_vec()).expect("utf-8"))
+    }
+
+    #[test]
+    fn usage_only_event_is_stripped_and_done_is_kept() {
+        let input = "data: {\"choices\":[],\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":2}}\n\ndata: [DONE]\n\n";
+        assert_eq!(Some("data: [DONE]\n\n".to_owned()), stripped(input));
+    }
+
+    #[test]
+    fn content_event_is_preserved_byte_for_byte() {
+        let input = "data: {\"choices\":[{\"delta\":{\"content\":\"hi\"}}]}\n\n";
+        let output = strip_usage_only_events(Bytes::from_static(input.as_bytes()));
+        assert_eq!(
+            Some(Bytes::from_static(input.as_bytes())),
+            output,
+            "a normal content event must be forwarded unchanged"
+        );
+    }
+
+    #[test]
+    fn usage_with_non_empty_choices_is_kept() {
+        let input = "data: {\"choices\":[{\"delta\":{\"content\":\"hi\"}}],\"usage\":{\"prompt_tokens\":10}}\n\n";
+        assert_eq!(Some(input.to_owned()), stripped(input));
+    }
+
+    #[test]
+    fn a_usage_event_split_across_frames_is_forwarded_untouched() {
+        // 只有完整闭合的事件才可能被剔除；跨帧拆分时保持原样（计费不受影响）。
+        let input = "data: {\"choices\":[],\"usage\":{\"prompt_tokens\":10}}\n";
+        assert_eq!(Some(input.to_owned()), stripped(input));
+    }
+
+    #[test]
+    fn multiple_events_in_one_frame_strip_only_the_usage_event() {
+        let input = concat!(
+            "data: {\"choices\":[{\"delta\":{\"content\":\"a\"}}]}\n\n",
+            "data: {\"choices\":[],\"usage\":{\"prompt_tokens\":3}}\n\n",
+            "data: [DONE]\n\n"
+        );
+        assert_eq!(
+            Some(
+                concat!(
+                    "data: {\"choices\":[{\"delta\":{\"content\":\"a\"}}]}\n\n",
+                    "data: [DONE]\n\n"
+                )
+                .to_owned()
+            ),
+            stripped(input)
+        );
     }
 }

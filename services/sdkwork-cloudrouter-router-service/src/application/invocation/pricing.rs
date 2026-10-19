@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
 use super::{
-    quote_rate_hash, requested_resolution, resolve_pricing_identity, BillingMode,
-    BillingQuantitySource, DispatchMode, Invocation, InvocationAccount, InvocationBody,
-    InvocationError, InvocationErrorKind, InvocationFuture, InvocationPreflightResolution,
-    InvocationPricingQuote, InvocationUsageLine, RouteKind,
+    context_tier_code, quote_rate_hash, requested_resolution, resolve_pricing_identity,
+    single_catalog_tier_code, BillingMode, BillingQuantitySource, DispatchMode, Invocation,
+    InvocationAccount, InvocationBody, InvocationError, InvocationErrorKind, InvocationFuture,
+    InvocationPreflightResolution, InvocationPricingQuote, InvocationUsageLine, RouteKind,
 };
 use crate::application::{
     InvocationInterceptor, PriceResolution, PriceResolutionStatus, PriceService, ResolvedModelPrice,
@@ -13,7 +13,9 @@ use crate::domain::{
     AiRouteModelRequirement, BillingMeter, DecimalValue, PriceSide, PricingDimensionContext,
     ResourceDefinition,
 };
-use crate::ports::{PricingCatalog, PricingDefaultRegionProvider, UpstreamAccountRouteCatalog};
+use crate::ports::{
+    GatewayUsageQuantity, PricingCatalog, PricingDefaultRegionProvider, UpstreamAccountRouteCatalog,
+};
 
 #[derive(Clone)]
 pub struct PricingPreflightInterceptor<C>
@@ -72,10 +74,66 @@ where
                 return Ok(());
             }
 
+            // 语音合成端点的 2xx 响应是**二进制音频**，上游不回 `usage`。
+            // 目录若把这类路由改写成 token 计费，数量在派发后根本量不出来：
+            // 抽取失败发生在音频已经发给客户之后，结算不执行 ⇒ 整条合成免单。
+            // 预检是最后一道能"拒单"的关口；放行等于免费，拒单至少账目诚实。
+            if binary_audio_synthesis_without_usage(invocation) {
+                return Err(pricing_error(format!(
+                    "route {} returns binary audio and the provider reports no token usage, so a \
+                     token-priced request on it cannot be metered after dispatch; refusing before \
+                     dispatch instead of serving the call unmetered. Configure a per-character \
+                     rate for this model, or keep the route on its declared character meter.",
+                    invocation.resource.api_code
+                )));
+            }
+
+            // 批量任务在上游异步执行，逐请求 `usage` 只出现在**输出文件**里，而
+            // 网关目前不回收批结果（没有任何代码读 `output_file_id` / JSONL）。
+            // 放行一次 10k 条的 batch，等于只收一次管理请求费、却承担全部上游
+            // token 成本。在批价与结果回收链路落地前拒单。
+            if unmetered_batch_submission(invocation) {
+                return Err(pricing_error(format!(
+                    "route {} submits a batch whose per-request usage is produced asynchronously \
+                     in an output file the gateway does not reconcile, so the workload would run \
+                     unbilled; refusing the submission until batch usage reconciliation is \
+                     enabled. Use the synchronous endpoints for billable traffic.",
+                    invocation.resource.api_code
+                )));
+            }
+
+            // `background: true` 的 Responses 会先回一个 queued 响应（没有 usage），
+            // 真正的 token 用量在完成后的 `GET /v1/responses/{id}` 里；而那次
+            // GET 按 `api_request` 收。也就是说模型调用本身完全不进账。在
+            // "异步响应完成时回填结算"落地前拒单。
+            if unmetered_background_response(invocation) {
+                return Err(pricing_error(
+                    "background responses return before the provider reports usage; the usage \
+                     only appears on a later poll that the gateway bills per request, so the \
+                     model call would run unbilled. Refusing background=true until async \
+                     response usage reconciliation is enabled; use a synchronous response \
+                     for billable traffic.",
+                ));
+            }
+
+            // 实时语音的创建面只回一个会话对象（含上游签发的 `client_secret`），
+            // 音频随后走 WebSocket 直连上游；本仓没有任何 WebSocket 代理或
+            // `response.done` 用量回收。放行的结果是：客户拿着上游临时密钥
+            // 绕过网关，音频 token 完全不进账。在 WS 代理 + 用量结算落地前拒单。
+            if unmetered_realtime_session(invocation) {
+                return Err(pricing_error(format!(
+                    "route {} mints an upstream realtime client secret and the audio then streams \
+                     over a WebSocket the gateway does not proxy, so the realtime usage would run \
+                     unbilled and outside gateway controls; refusing session creation until \
+                     WebSocket proxying and usage settlement are enabled.",
+                    invocation.resource.api_code
+                )));
+            }
+
             let price_service = PriceService::new();
             let meters = meters_for_pricing(self.catalog.as_ref(), invocation);
             for meter in meters {
-                let resolution = resolve_price(
+                let mut resolution = resolve_price(
                     &price_service,
                     self.catalog.as_ref(),
                     invocation,
@@ -83,6 +141,26 @@ where
                     None,
                     None,
                 )?;
+                // 缓存读的费率可能按 `media_type`（text/audio/image）分档
+                // （OpenAI realtime / gpt-image）。预检没有响应，不知道这一行
+                // 属于哪个模态；若直接放弃出价，抽取层会把缓存命中折进输入
+                // 按全价收（多收客户）。用合成行逐个模态试探，拿到任一可用价
+                // 即可阻断"折进输入"，真实模态在结算时按行解析。
+                if meter == BillingMeter::LlmCacheReadToken
+                    && !matches!(
+                        resolution.status,
+                        PriceResolutionStatus::Quoted | PriceResolutionStatus::Rated
+                    )
+                {
+                    if let Some(retried) = resolve_cache_read_by_media_type(
+                        &price_service,
+                        self.catalog.as_ref(),
+                        invocation,
+                        &meter,
+                    ) {
+                        resolution = retried;
+                    }
+                }
                 tracing::debug!(
                     stage = "pricing_preflight",
                     meter = %meter.code(),
@@ -115,8 +193,12 @@ where
                 // the same invariant as the openai relay preflight — instead
                 // of silently relaying traffic that can never be charged.
                 // Cache meters stay optional: providers may report cache hits
-                // on catalogs without cache pricing, which settlement records
-                // as an unrated fact rather than a rejected request.
+                // on catalogs without cache pricing, and rejecting the request
+                // for a missing cache rate would drop otherwise-billable
+                // traffic.
+                // 但"可选"不等于"收 0"：没有缓存价时，抽取层会把缓存 token
+                // 并入输入行按输入价结算（见 `extract_composite_usage_from_body`
+                // 与 `billing_cache_token_fallback`），不会留下 0 元事实。
                 let fully_resolved = matches!(
                     resolution.status,
                     PriceResolutionStatus::Quoted | PriceResolutionStatus::Rated
@@ -212,7 +294,11 @@ where
                         .usage
                         .preflight_resolution_for_meter(&line.meter)
                     {
-                        if !preflight_resolution_matches(preflight, &resolution) {
+                        // 带逐行模态的行本来就会解析到不同费率（预检用合成
+                        // 行试探 text 档），这不是漂移。
+                        if line.pricing_media_type.is_none()
+                            && !preflight_resolution_matches(preflight, &resolution)
+                        {
                             tracing::warn!(
                                 stage = "pricing_finalization",
                                 meter = %line.meter.code(),
@@ -286,7 +372,8 @@ fn preflight_resolution_matches(preflight: &PriceResolution, fresh: &PriceResolu
 /// line for this invocation, so an unresolved price must fail the request at
 /// the preflight instead of silently relaying unbillable traffic. Cache
 /// meters are excluded: providers may report cache hits even when the
-/// catalog defines no cache price, and those hits settle as unrated facts.
+/// catalog defines no cache price, and those hits are folded into the input
+/// line at the input rate by the usage extractor — never zero-amount facts.
 fn requires_complete_pricing(invocation: &Invocation, meter: &BillingMeter) -> bool {
     if matches!(
         meter,
@@ -320,6 +407,13 @@ fn meters_for_pricing<C>(catalog: &C, invocation: &Invocation) -> Vec<BillingMet
 where
     C: PricingCatalog,
 {
+    // 路由规划已经把身份解析结果钉在调用上；重新解析会在主档回写之后把
+    // "声明 ∩ 目录"缩成主档一个（多模态路由的其余档位没有写进路由声明），
+    // 抽取层随后因"无报价"拒绝拆行。只有没走过路由规划的调用
+    // （单测 / 直接构造）才回退到即时解析。
+    if !invocation.usage.pricing_meters.is_empty() {
+        return invocation.usage.pricing_meters.clone();
+    }
     resolve_pricing_identity(catalog, invocation).meters
 }
 
@@ -379,12 +473,36 @@ where
         &meter,
         requested_resolution(invocation).as_deref(),
     );
-    let dimensions = pricing_dimensions(
-        invocation,
-        &meter,
-        usage_line,
-        pricing_tier_decision.tier_code(),
-    );
+    // 视频档位只覆盖视频计量单位。图像模型有一批费率同样条件化在 `tier_code`
+    // 上，而请求 schema 不暴露档位；当目录对该计量单位只有**一个**档位时，
+    // 注入它不会改变价格（见 `single_catalog_tier_code` 的边界）。
+    let tier_code = pricing_tier_decision
+        .tier_code()
+        .map(str::to_owned)
+        .or_else(|| cache_write_tier_code(catalog, invocation, &catalog_key, &meter))
+        .or_else(|| cache_read_tier_code(catalog, invocation, &catalog_key, &meter))
+        .or_else(|| image_mode_tier_code(catalog, invocation, &catalog_key, &meter))
+        .or_else(|| {
+            // 上下文分档：预检用请求估算，结算用已抽取的输入/缓存用量。
+            context_tier_code(
+                catalog,
+                invocation.subject.tenant_id,
+                invocation.subject.organization_id,
+                &catalog_key,
+                &meter,
+                pricing_context_tokens(invocation),
+            )
+        })
+        .or_else(|| {
+            single_catalog_tier_code(
+                catalog,
+                invocation.subject.tenant_id,
+                invocation.subject.organization_id,
+                &catalog_key,
+                &meter,
+            )
+        });
+    let dimensions = pricing_dimensions(invocation, &meter, usage_line, tier_code.as_deref());
     // 账号未显式指定 region（空或 global）时，回退到该模型配置的默认计费
     // region，使多 region 模型仍按正确的地域价格计费；未配置默认 region 则
     // 保持账号原值，历史行为不变。默认 region 同时挂到资源上，作为价格解析
@@ -523,6 +641,48 @@ where
     regions.len() >= 2 && has_cn
 }
 
+/// 用合成行逐个 `media_type` 试探缓存读价格，返回第一个可用的解。
+///
+/// 只用于**预检**：真实行还没有产生。按 text → audio → image 顺序试探；
+/// 首个命中即可阻止抽取层把缓存命中折进输入。预扣按该价估算（可能略低于
+/// audio 档），结算仍按真实行的模态重算。
+fn resolve_cache_read_by_media_type<C>(
+    price_service: &PriceService,
+    catalog: &C,
+    invocation: &Invocation,
+    meter: &BillingMeter,
+) -> Option<PriceResolution>
+where
+    C: PricingCatalog
+        + PricingDefaultRegionProvider
+        + UpstreamAccountRouteCatalog
+        + Send
+        + Sync
+        + 'static,
+{
+    for media_type in ["text", "audio", "image"] {
+        let quantity = GatewayUsageQuantity::tokens(1).ok()?;
+        let line =
+            InvocationUsageLine::new(meter.clone(), quantity).with_pricing_media_type(media_type);
+        if let Ok(resolution) = resolve_price(
+            price_service,
+            catalog,
+            invocation,
+            meter.clone(),
+            None,
+            Some(&line),
+        ) {
+            if matches!(
+                resolution.status,
+                PriceResolutionStatus::Quoted | PriceResolutionStatus::Rated
+            ) {
+                return Some(resolution);
+            }
+        }
+    }
+    None
+}
+
 fn priced_catalog_key<C>(
     catalog: &C,
     invocation: &Invocation,
@@ -653,22 +813,13 @@ fn pricing_dimensions(
         dimensions.insert("tier_code", serde_json::json!(tier_code));
     }
     add_meter_dimensions(&mut dimensions, meter, usage_line);
+    // 逐行模态维度优先于"计量单位推导的模态"：同一条缓存读 meter 在
+    // realtime 上可以同时有音频行与文本行，调用级只能给一个值。
+    if let Some(media_type) = usage_line.and_then(|line| line.pricing_media_type.as_deref()) {
+        dimensions.insert("media_type", serde_json::json!(media_type));
+    }
     if dimensions.get("context_tokens").is_none() {
-        let context_tokens = invocation
-            .usage
-            .lines
-            .iter()
-            .filter(|line| {
-                matches!(
-                    line.meter,
-                    BillingMeter::LlmInputToken
-                        | BillingMeter::LlmCacheReadToken
-                        | BillingMeter::LlmCacheWriteToken
-                )
-            })
-            .filter_map(|line| line.quantity.billable_quantity.parse::<i64>().ok())
-            .fold(0_i64, i64::saturating_add);
-        if context_tokens > 0 {
+        if let Some(context_tokens) = billed_context_tokens(invocation) {
             dimensions.insert("context_tokens", serde_json::json!(context_tokens));
         }
     }
@@ -768,6 +919,396 @@ fn priced_requested_model(
         .requested_model
         .clone()
         .unwrap_or_else(|| resolved.model.clone())
+}
+
+/// 响应体是**二进制音频**、且上游不上报 `usage` 的语音合成端点。
+///
+/// 只列"合成"面：`/v1/audio/transcriptions` 等识别端点回的是 JSON（有的还带
+/// `usage`），按 token 计费是可量的，不能一并拒掉。新增厂商合成端点时，
+/// 只有确认"二进制 + 无 usage"才加进来。
+const BINARY_AUDIO_SYNTHESIS_API_CODES: &[&str] = &[
+    "elevenlabs.text_to_speech",
+    "openai.audio.speech",
+    "volcengine.speech",
+];
+
+/// 该调用是否属于"token 计价但数量不可测"的二进制语音合成。
+///
+/// 判定读的是**目录改写之后**的计费档（预检在 `RoutingPipeline::plan_route`
+/// 之后执行）：路由声明是 Character/ApiRequest 时不会命中；只有目录把它改成
+/// Token（或 Composite）才会命中。`Composite` 也要挡：响应没有 `usage` 时复合
+/// 抽取产出 0 行，结算层同样当"无可结算量"跳过。
+fn binary_audio_synthesis_without_usage(invocation: &Invocation) -> bool {
+    matches!(
+        invocation.billing.mode,
+        BillingMode::Token | BillingMode::Composite
+    ) && BINARY_AUDIO_SYNTHESIS_API_CODES.contains(&invocation.resource.api_code.as_str())
+}
+
+/// 批量**提交**（不是轮询/取消）：逐请求用量在异步输出文件里，网关不回收。
+///
+/// 只匹配创建动作的精确路径：`POST /v1/batches/{id}/cancel` 与各类 GET 轮询
+/// 不产生新的上游 token 成本，必须继续放行，否则客户连取消/查询都做不了。
+fn unmetered_batch_submission(invocation: &Invocation) -> bool {
+    if invocation.request.method != axum::http::Method::POST {
+        return false;
+    }
+    match (
+        invocation.resource.api_code.as_str(),
+        invocation.request.path.as_str(),
+    ) {
+        ("openai.batches", "/v1/batches") => true,
+        ("anthropic.batches", "/anthropic/v1/messages/batches") => true,
+        _ => false,
+    }
+}
+
+/// `POST /v1/responses` 且请求体 `background: true`。
+///
+/// 只认创建路径与布尔真值：同步 Responses 必须继续放行；轮询 / 取消等 GET、
+/// POST 不产生新的模型用量。字符串 `"true"` 不接受——契约声明的是 boolean，
+/// 宽容解析只会让"以为后台、实际同步"的账单歧义更难查。
+fn unmetered_background_response(invocation: &Invocation) -> bool {
+    if invocation.request.method != axum::http::Method::POST
+        || invocation.resource.api_code != "openai.responses"
+        || invocation.request.path != "/v1/responses"
+    {
+        return false;
+    }
+    let InvocationBody::Json(body) = &invocation.request.body else {
+        return false;
+    };
+    body.get("background").and_then(serde_json::Value::as_bool) == Some(true)
+}
+
+/// 实时语音的**创建**面：响应只含会话对象与上游 `client_secret`，真正的音频
+/// 用量在 WebSocket 流里。
+///
+/// 管理动作（accept / hangup / refer / reject）不在表内：它们不创建新的模型
+/// 用量；真正创建会话的是下面四条路径。
+const UNMETERED_REALTIME_CREATION_PATHS: &[&str] = &[
+    "/v1/realtime/calls",
+    "/v1/realtime/sessions",
+    "/v1/realtime/transcription_sessions",
+    "/v1/realtime/translations",
+];
+
+fn unmetered_realtime_session(invocation: &Invocation) -> bool {
+    invocation.request.method == axum::http::Method::POST
+        && invocation.resource.api_code == "openai.realtime"
+        && UNMETERED_REALTIME_CREATION_PATHS.contains(&invocation.request.path.as_str())
+}
+
+/// 已抽取的上下文长度：输入 + 缓存读 + 缓存写（三者互斥地覆盖同一段 prompt）。
+fn billed_context_tokens(invocation: &Invocation) -> Option<i64> {
+    let tokens = invocation
+        .usage
+        .lines
+        .iter()
+        .filter(|line| {
+            matches!(
+                line.meter,
+                BillingMeter::LlmInputToken
+                    | BillingMeter::LlmCacheReadToken
+                    | BillingMeter::LlmCacheWriteToken
+            )
+        })
+        .filter_map(|line| line.quantity.billable_quantity.parse::<i64>().ok())
+        .fold(0_i64, i64::saturating_add);
+    (tokens > 0).then_some(tokens)
+}
+
+/// 预检阶段的上下文长度估算（请求体字节数 ÷ 4 + 1）。
+///
+/// 预检发生在派发前，拿不到 `usage`；上下文分档模型的"有没有价"必须在此刻
+/// 判定。估算偏保守（CJK 的 UTF-8 字节数约为字符数的 3 倍，会高估 token），
+/// 因此只会把请求推进更高的档位，不会漏收；真实档位在结算阶段按
+/// `billed_context_tokens` 重算。
+fn estimated_context_tokens(invocation: &Invocation) -> Option<i64> {
+    let bytes = match &invocation.request.body {
+        InvocationBody::Json(value) => serde_json::to_string(value).ok()?.len(),
+        InvocationBody::Bytes(value) => value.len(),
+        InvocationBody::Empty => 0,
+    };
+    (bytes > 0).then(|| ((bytes as i64) / 4).saturating_add(1).clamp(1, 10_000_000))
+}
+
+/// 定价用的上下文长度：优先用真实用量，其次用请求估算。
+fn pricing_context_tokens(invocation: &Invocation) -> Option<i64> {
+    billed_context_tokens(invocation).or_else(|| estimated_context_tokens(invocation))
+}
+
+/// 图像模型的**输入模式**档位（`t2i_*` / `i2i_*` / `multi_ref_*`）。
+///
+/// Kling v2.1 图像按文生图 / 图生图 / 多参考图三档报价（价格 1:2:4），请求
+/// schema 没有档位字段，但模式完全由请求形状决定：
+///
+/// * `image_reference_list` / `reference_images` 非空 ⇒ `multi_ref`；
+/// * `image` 非空 ⇒ `i2i`；
+/// * 否则 ⇒ `t2i`。
+///
+/// 只在**所有**档位都属于这三种模式词汇、且请求模式恰好对应一条费率时返回；
+/// 带分辨率后缀的档位（同一模式多条）或多词汇混用一律返回 None，继续
+/// fail-closed——按错误模式计费会差数倍。
+fn image_mode_tier_code<C>(
+    catalog: &C,
+    invocation: &Invocation,
+    catalog_key: &str,
+    meter: &BillingMeter,
+) -> Option<String>
+where
+    C: PricingCatalog,
+{
+    if !matches!(
+        meter,
+        BillingMeter::ImageResult | BillingMeter::ImageMegapixel | BillingMeter::ImagePixel
+    ) {
+        return None;
+    }
+    let prices = catalog.list_model_prices_for_scope_side(
+        invocation.subject.tenant_id,
+        invocation.subject.organization_id,
+        catalog_key,
+        PriceSide::OfficialReference,
+    );
+    let mut tiers: Vec<String> = Vec::new();
+    for price in prices.iter().filter(|price| &price.billing_meter == meter) {
+        let Some(metadata) = price.rate_metadata.as_ref() else {
+            return None;
+        };
+        if metadata.conditions.is_empty() {
+            return None;
+        }
+        let mut tier_code: Option<String> = None;
+        for condition in &metadata.conditions {
+            if condition.dimension_code != "tier_code" || condition.operator_code != "eq" {
+                return None;
+            }
+            let value = condition.value.as_str()?.trim().to_owned();
+            match &tier_code {
+                Some(existing) if existing != &value => return None,
+                _ => tier_code = Some(value),
+            }
+        }
+        tiers.push(tier_code?);
+    }
+    if tiers.is_empty() {
+        return None;
+    }
+    tiers.sort();
+    tiers.dedup();
+    let mut per_mode = std::collections::BTreeMap::<&'static str, Vec<&String>>::new();
+    for tier in &tiers {
+        let normalized = tier.to_ascii_lowercase();
+        let mode = if normalized.starts_with("multi_ref") {
+            "multi_ref"
+        } else if normalized.starts_with("i2i") {
+            "i2i"
+        } else if normalized.starts_with("t2i") {
+            "t2i"
+        } else {
+            return None;
+        };
+        per_mode.entry(mode).or_default().push(tier);
+    }
+    let candidates = per_mode.get(request_image_mode(invocation))?;
+    (candidates.len() == 1).then(|| candidates[0].clone())
+}
+
+/// 请求形状对应的图像输入模式。
+fn request_image_mode(invocation: &Invocation) -> &'static str {
+    let InvocationBody::Json(body) = &invocation.request.body else {
+        return "t2i";
+    };
+    if ["image_reference_list", "reference_images"]
+        .iter()
+        .any(|field| {
+            body.get(*field)
+                .and_then(serde_json::Value::as_array)
+                .is_some_and(|items| !items.is_empty())
+        })
+    {
+        return "multi_ref";
+    }
+    let has_image = body.get("image").is_some_and(|image| match image {
+        serde_json::Value::String(value) => !value.trim().is_empty(),
+        serde_json::Value::Array(items) => !items.is_empty(),
+        serde_json::Value::Object(_) => true,
+        _ => false,
+    });
+    if has_image {
+        "i2i"
+    } else {
+        "t2i"
+    }
+}
+
+/// Anthropic 缓存写入的 TTL 档位（`cache_write_5m` / `cache_write_1h`）。
+///
+/// 目录为每个 Anthropic 模型发布两条 `llm_cache_write_token` 费率，条件分别是
+/// 两个 TTL 档。请求侧只有 `cache_control.ttl` 能区分：缺省 = 5m，显式
+/// `"1h"` = 1h。不传这一维时两条候选都会被过滤，预检因"缓存档可选"不报错，
+/// 抽取层则把缓存写入并入输入按 1× 收（实际应为 1.25× / 2×）。
+///
+/// 只在目录**同时**提供这两个档位时返回；其他档位词汇
+/// （`long_context` / `explicit_cache_write`）不猜，交给
+/// `single_catalog_tier_code` 或"无价则并入输入"兜底。
+fn cache_write_tier_code<C>(
+    catalog: &C,
+    invocation: &Invocation,
+    catalog_key: &str,
+    meter: &BillingMeter,
+) -> Option<String>
+where
+    C: PricingCatalog,
+{
+    if *meter != BillingMeter::LlmCacheWriteToken {
+        return None;
+    }
+    let prices = catalog.list_model_prices_for_scope_side(
+        invocation.subject.tenant_id,
+        invocation.subject.organization_id,
+        catalog_key,
+        PriceSide::OfficialReference,
+    );
+    let mut saw_rate = false;
+    let mut has_5m = false;
+    let mut has_1h = false;
+    for price in prices.iter().filter(|price| &price.billing_meter == meter) {
+        saw_rate = true;
+        let Some(metadata) = price.rate_metadata.as_ref() else {
+            // 存在无条件费率：正常解析即可命中。
+            return None;
+        };
+        if metadata.conditions.is_empty() {
+            return None;
+        }
+        for condition in &metadata.conditions {
+            if condition.dimension_code != "tier_code" || condition.operator_code != "eq" {
+                return None;
+            }
+            match condition.value.as_str()? {
+                "cache_write_5m" => has_5m = true,
+                "cache_write_1h" => has_1h = true,
+                _ => return None,
+            }
+        }
+    }
+    (saw_rate && has_5m && has_1h).then(|| {
+        if request_uses_one_hour_cache(invocation) {
+            "cache_write_1h".to_owned()
+        } else {
+            "cache_write_5m".to_owned()
+        }
+    })
+}
+
+/// 请求体里是否有一个 `cache_control` 声明了 1 小时 TTL。
+///
+/// 遍历深度上限 64：请求体是客户可控 JSON，递归扫描必须有界。只认
+/// `cache_control.ttl == "1h"`（大小写不敏感），不把别处的同名字段当信号。
+fn request_uses_one_hour_cache(invocation: &Invocation) -> bool {
+    scan_cache_control(invocation, true)
+}
+
+/// 请求体里是否有任意 `cache_control` 标记（显式缓存断点）。
+///
+/// Alibaba 的显式上下文缓存与隐式缓存是**两个不同费率**
+/// （`explicit_cache_read` / `implicit_cache`）；请求侧没有强制字段，行业实现
+/// 以 `cache_control` 标记区分显式缓存，缺省即隐式缓存。
+fn request_has_cache_control(invocation: &Invocation) -> bool {
+    scan_cache_control(invocation, false)
+}
+
+fn scan_cache_control(invocation: &Invocation, require_one_hour: bool) -> bool {
+    fn walk(value: &serde_json::Value, depth: u8, require_one_hour: bool) -> bool {
+        if depth > 64 {
+            return false;
+        }
+        match value {
+            serde_json::Value::Object(map) => {
+                if let Some(cache) = map
+                    .get("cache_control")
+                    .and_then(serde_json::Value::as_object)
+                {
+                    if !require_one_hour {
+                        return true;
+                    }
+                    if cache
+                        .get("ttl")
+                        .and_then(serde_json::Value::as_str)
+                        .is_some_and(|ttl| ttl.eq_ignore_ascii_case("1h"))
+                    {
+                        return true;
+                    }
+                }
+                map.values()
+                    .any(|child| walk(child, depth + 1, require_one_hour))
+            }
+            serde_json::Value::Array(items) => items
+                .iter()
+                .any(|child| walk(child, depth + 1, require_one_hour)),
+            _ => false,
+        }
+    }
+    let InvocationBody::Json(body) = &invocation.request.body else {
+        return false;
+    };
+    walk(body, 0, require_one_hour)
+}
+
+/// Alibaba 缓存读的显式/隐式档位。
+///
+/// 目录为该模型只提供 `explicit_cache_read` 与 `implicit_cache` 两条缓存读
+/// 费率（价格不同：显式通常更便宜）。请求带 `cache_control` 标记即为显式，
+/// 否则为隐式。只在恰好这两档时返回，其他词汇不猜。
+fn cache_read_tier_code<C>(
+    catalog: &C,
+    invocation: &Invocation,
+    catalog_key: &str,
+    meter: &BillingMeter,
+) -> Option<String>
+where
+    C: PricingCatalog,
+{
+    if *meter != BillingMeter::LlmCacheReadToken {
+        return None;
+    }
+    let prices = catalog.list_model_prices_for_scope_side(
+        invocation.subject.tenant_id,
+        invocation.subject.organization_id,
+        catalog_key,
+        PriceSide::OfficialReference,
+    );
+    let mut saw_rate = false;
+    let mut has_explicit = false;
+    let mut has_implicit = false;
+    for price in prices.iter().filter(|price| &price.billing_meter == meter) {
+        saw_rate = true;
+        let Some(metadata) = price.rate_metadata.as_ref() else {
+            return None;
+        };
+        if metadata.conditions.is_empty() {
+            return None;
+        }
+        for condition in &metadata.conditions {
+            if condition.dimension_code != "tier_code" || condition.operator_code != "eq" {
+                return None;
+            }
+            match condition.value.as_str()? {
+                "explicit_cache_read" => has_explicit = true,
+                "implicit_cache" => has_implicit = true,
+                _ => return None,
+            }
+        }
+    }
+    (saw_rate && has_explicit && has_implicit).then(|| {
+        if request_has_cache_control(invocation) {
+            "explicit_cache_read".to_owned()
+        } else {
+            "implicit_cache".to_owned()
+        }
+    })
 }
 
 fn pricing_error(message: impl Into<String>) -> InvocationError {

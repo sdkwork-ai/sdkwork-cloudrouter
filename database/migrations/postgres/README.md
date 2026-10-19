@@ -65,6 +65,12 @@ development lifecycle history stays readable.
   installed from the earlier 0.5.0 baseline never received the new objects and
   the `postgres-runtime-schema` readiness probe failed closed; the migration
   provisions them idempotently so migrated and fresh-install schemas converge.
+- `0046_ai_metering_async_task.up.sql` creates
+  `ai_metering_async_task`, the durable queue for async usage reconciliation
+  (OpenAI/Anthropic batch, `background: true` Responses, thread runs). A worker
+  polls the upstream, records the reported usage once, and settles through the
+  normal billing path keyed by `(tenant_id, organization_id, task_kind,
+  upstream_id)`. The baseline carries the same definition for clean installs.
 
 ## Historical migrations
 

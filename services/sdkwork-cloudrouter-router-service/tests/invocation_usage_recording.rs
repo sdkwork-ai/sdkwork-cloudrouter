@@ -2,12 +2,12 @@ use std::sync::{Arc, Mutex};
 
 use axum::http::Method;
 use sdkwork_cloudrouter_router_service::application::{
-    AccountBillingMode, AuthenticatedApiKeyContext, BillingMode, BillingQuantitySource, Invocation,
-    InvocationAccount, InvocationBilling, InvocationBody, InvocationDispatch, InvocationError,
-    InvocationErrorKind, InvocationFuture, InvocationInterceptor, InvocationPipeline,
-    InvocationRequest, InvocationResource, InvocationSubject, InvocationSurface,
-    InvocationUsageLine, ResourceType, ResponseNormalizationInterceptor, TraceTelemetryInterceptor,
-    UsageRecordingInterceptor,
+    AccountBillingMode, AuthenticatedApiKeyContext, BillingMode, BillingQuantitySource,
+    BillingResultGate, Invocation, InvocationAccount, InvocationBilling, InvocationBody,
+    InvocationDispatch, InvocationError, InvocationErrorKind, InvocationFuture,
+    InvocationInterceptor, InvocationPipeline, InvocationRequest, InvocationResource,
+    InvocationSubject, InvocationSurface, InvocationUsageLine, ResourceType,
+    ResponseNormalizationInterceptor, TraceTelemetryInterceptor, UsageRecordingInterceptor,
 };
 use sdkwork_cloudrouter_router_service::domain::{
     AiRouteModelRequirement, BillingMeter, BillingOwnerKind, DomainError, RoutingCapability,
@@ -255,7 +255,7 @@ fn provider_native_invocation() -> Invocation {
             quantity_source: BillingQuantitySource::AdapterUsageLines,
             pricing_required: true,
             settlement_required: true,
-            prepaid_required: false,
+            result_gate: BillingResultGate::Any,
         },
     );
     invocation.account = Some(InvocationAccount {

@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.5.0.
--- Registry SHA-256: 06b32c0efa9e086c12c6c17e9d2f2622eca9e1d36b478ce5ba279ee8d2060d9f.
+-- Registry SHA-256: 5609eecd8e59f39da9168c57852a256359e35992e6ed21687c504eb0b042381e.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -353,6 +353,47 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_config_version_uuid ON ai_config_version
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_config_version_scope ON ai_config_version (tenant_id, organization_id, config_scope);
 CREATE INDEX IF NOT EXISTS idx_ai_config_version_scope_updated ON ai_config_version (tenant_id, organization_id, config_scope, updated_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_config_version_scope_status ON ai_config_version (config_scope, status, deleted_at, id);
+
+CREATE TABLE IF NOT EXISTS ai_metering_async_task (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    user_id BIGINT,
+    request_id VARCHAR(128) NOT NULL,
+    api_key_id BIGINT NOT NULL,
+    task_kind VARCHAR(32) NOT NULL,
+    upstream_id VARCHAR(256) NOT NULL,
+    catalog_key VARCHAR(256),
+    supplier_code VARCHAR(64) NOT NULL,
+    account_id BIGINT NOT NULL,
+    region_code VARCHAR(64) NOT NULL,
+    task_status VARCHAR(32)  NOT NULL DEFAULT 'pending',
+    attempts INTEGER NOT NULL DEFAULT 0,
+    next_poll_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_error VARCHAR(1024),
+    billing_request_id VARCHAR(160),
+    usage_snapshot JSONB,
+    settled_at TIMESTAMPTZ,
+    CONSTRAINT ck_ai_metering_async_task_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_ai_metering_async_task_kind CHECK (task_kind IN ('openai_batch', 'anthropic_batch', 'background_response', 'thread_run')),
+    CONSTRAINT ck_ai_metering_async_task_status CHECK (task_status IN ('pending', 'running', 'settled', 'failed', 'expired')),
+    CONSTRAINT ck_ai_metering_async_task_attempts CHECK (attempts >= 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_metering_async_task_uuid ON ai_metering_async_task (uuid) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_metering_async_task_upstream ON ai_metering_async_task (tenant_id, organization_id, task_kind, upstream_id) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_metering_async_task_billing_request ON ai_metering_async_task (tenant_id, organization_id, billing_request_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_ai_metering_async_task_due ON ai_metering_async_task (next_poll_at, id) WHERE task_status IN ('pending', 'running');
+CREATE INDEX IF NOT EXISTS idx_ai_metering_async_task_tenant_status ON ai_metering_async_task (tenant_id, organization_id, task_status, next_poll_at, id);
 
 CREATE TABLE IF NOT EXISTS ai_metering_request_trace (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -2676,6 +2717,7 @@ CREATE TABLE IF NOT EXISTS sdkwork_node_registry (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sdkwork_node_registry_service_expiry ON sdkwork_node_registry (service_name, expires_at_ms);
+
 
 -- -----------------------------------------------------------------------------
 -- payment-reconciliation module tables (federated module: payment-reconciliation)

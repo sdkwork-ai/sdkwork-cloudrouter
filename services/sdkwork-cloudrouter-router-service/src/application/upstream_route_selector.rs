@@ -1,3 +1,4 @@
+use super::invocation::{context_tier_code, single_catalog_tier_code};
 use crate::application::{
     upstream_account_route_planner::plan_upstream_account_routes, AuthenticatedApiKeyContext,
     PriceResolution, PriceResolutionStatus, PriceService,
@@ -1089,8 +1090,34 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                 } else {
                     VideoPricingTierDecision::unknown()
                 };
+                // 图像模型的费率也可能条件化在 `tier_code` 上，而请求 schema
+                // 不暴露档位。目录对该计量单位只有唯一档位时注入它（不会改变
+                // 价格）；多档位继续 fail-closed。
+                let single_tier = if is_video_meter(meter) {
+                    None
+                } else {
+                    // 资格预检没有响应上下文；上下文分档模型返回最低档，仅用于
+                    // 证明"该模型有价"，真实档位由调用层按请求/用量解析。
+                    context_tier_code(
+                        self.catalog,
+                        query.context.tenant_id,
+                        query.context.organization_id,
+                        catalog_key,
+                        meter,
+                        None,
+                    )
+                    .or_else(|| {
+                        single_catalog_tier_code(
+                            self.catalog,
+                            query.context.tenant_id,
+                            query.context.organization_id,
+                            catalog_key,
+                            meter,
+                        )
+                    })
+                };
                 let mut dimensions = PricingDimensionContext::new();
-                if let Some(tier_code) = tier_decision.tier_code() {
+                if let Some(tier_code) = tier_decision.tier_code().or(single_tier.as_deref()) {
                     dimensions = dimensions.with_value("tier_code", serde_json::json!(tier_code));
                 }
                 // 图像计量单位的费率常以 `output_type` 条件区分输入/输出
@@ -1320,8 +1347,29 @@ where
         } else {
             VideoPricingTierDecision::unknown()
         };
+        let single_tier = if is_video_meter(&meter) {
+            None
+        } else {
+            context_tier_code(
+                catalog,
+                probe.tenant_id,
+                probe.organization_id,
+                probe.catalog_key,
+                &meter,
+                None,
+            )
+            .or_else(|| {
+                single_catalog_tier_code(
+                    catalog,
+                    probe.tenant_id,
+                    probe.organization_id,
+                    probe.catalog_key,
+                    &meter,
+                )
+            })
+        };
         let mut dimensions = PricingDimensionContext::new();
-        if let Some(tier_code) = tier_decision.tier_code() {
+        if let Some(tier_code) = tier_decision.tier_code().or(single_tier.as_deref()) {
             dimensions = dimensions.with_value("tier_code", serde_json::json!(tier_code));
         }
         if let Some(output_type) = output_type_for_meter(&meter) {

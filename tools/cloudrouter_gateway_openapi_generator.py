@@ -1286,8 +1286,8 @@ class CloudRouterGatewayOpenApiGenerator:
             "createRealtimeSession": "OpenAiRealtimeSessionCreateRequest",
             "createRealtimeTranscriptionSession": "OpenAiRealtimeTranscriptionSessionCreateRequest",
             "createRealtimeTranslationSession": "OpenAiRealtimeTranslationSessionCreateRequest",
-            "searchWeb": "DeepSeekWebSearchRequest",
-            "fetchWeb": "DeepSeekWebFetchRequest",
+            "searchWeb": "OpenAiDeepSeekWebSearchRequest",
+            "fetchWeb": "OpenAiDeepSeekWebFetchRequest",
         }.get(operation_id)
 
     def _public_multipart_request_schema_override(self, operation_id: str) -> str | None:
@@ -1388,8 +1388,8 @@ class CloudRouterGatewayOpenApiGenerator:
             "createRealtimeSession": "OpenAiRealtimeSession",
             "createRealtimeTranscriptionSession": "OpenAiRealtimeTranscriptionSession",
             "createRealtimeTranslationSession": "OpenAiRealtimeTranslationSession",
-            "searchWeb": "DeepSeekWebSearchResponse",
-            "fetchWeb": "DeepSeekWebFetchResponse",
+            "searchWeb": "OpenAiDeepSeekWebSearchResponse",
+            "fetchWeb": "OpenAiDeepSeekWebFetchResponse",
         }.get(operation_id)
 
     def _is_public_v1_path(self, path: str) -> bool:
@@ -2014,7 +2014,7 @@ class CloudRouterGatewayOpenApiGenerator:
         than omitted.
         """
         return {
-            "DeepSeekWebSearchRequest": {
+            "OpenAiDeepSeekWebSearchRequest": {
                 "type": "object",
                 "description": "DeepSeek-compatible web search request.",
                 "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
@@ -2026,8 +2026,9 @@ class CloudRouterGatewayOpenApiGenerator:
                         "maxLength": 128,
                         "description": (
                             "Search query of 1 to 128 Unicode characters, not all whitespace. "
-                            "Supports site:, -site:, -term, \"exact phrase\", lang:, after: and "
-                            "before: operators, which are forwarded unchanged."
+                            "Supports the site:, -site:, -term, -\"exact phrase\", \"exact "
+                            "phrase\", lang:, after: and before: operators, which are forwarded "
+                            "unchanged."
                         ),
                     },
                     "count": {
@@ -2062,7 +2063,7 @@ class CloudRouterGatewayOpenApiGenerator:
                     },
                 },
             },
-            "DeepSeekWebSearchResult": {
+            "OpenAiDeepSeekWebSearchResult": {
                 "type": "object",
                 "description": "One ranked DeepSeek web search result.",
                 "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
@@ -2126,7 +2127,7 @@ class CloudRouterGatewayOpenApiGenerator:
                     },
                 },
             },
-            "DeepSeekWebSearchResponse": {
+            "OpenAiDeepSeekWebSearchResponse": {
                 "type": "object",
                 "description": "DeepSeek-compatible web search response.",
                 "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
@@ -2134,12 +2135,15 @@ class CloudRouterGatewayOpenApiGenerator:
                 "properties": {
                     "results": {
                         "type": "array",
-                        "items": {"$ref": "#/components/schemas/DeepSeekWebSearchResult"},
-                        "description": "Ranked search results; empty when the search matched nothing.",
+                        "items": {"$ref": "#/components/schemas/OpenAiDeepSeekWebSearchResult"},
+                        "description": (
+                            "Ranked search results; empty when the search matched nothing. "
+                            "An empty array is a successful but unbilled request."
+                        ),
                     }
                 },
             },
-            "DeepSeekWebFetchRequest": {
+            "OpenAiDeepSeekWebFetchRequest": {
                 "type": "object",
                 "description": "DeepSeek-compatible request to fetch a single web page as Markdown.",
                 "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
@@ -2157,7 +2161,7 @@ class CloudRouterGatewayOpenApiGenerator:
                     }
                 },
             },
-            "DeepSeekWebFetchResponse": {
+            "OpenAiDeepSeekWebFetchResponse": {
                 "type": "object",
                 "description": "DeepSeek-compatible fetched page: title plus Markdown body.",
                 "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
@@ -2169,7 +2173,11 @@ class CloudRouterGatewayOpenApiGenerator:
                     },
                     "content": {
                         "type": "string",
-                        "description": "Extracted page body rendered as Markdown.",
+                        "description": (
+                            "Extracted page body rendered as Markdown. A response whose body "
+                            "could not be extracted is never billed, which is why an empty "
+                            "body is a free call rather than a chargeable one."
+                        ),
                     },
                 },
             },
@@ -3445,12 +3453,16 @@ class CloudRouterGatewayOpenApiGenerator:
                 "Search the web",
                 (
                     "Searches the live web for a query and returns structured results. Query "
-                    "operators such as site:, -site:, \"exact phrase\", lang:, after: and before: "
-                    "are forwarded unchanged to the DeepSeek search engine. Billing is per "
-                    "successful request, independent of count and of the number of results."
+                    "operators (site:, -site:, -term, -\"exact phrase\", \"exact phrase\", lang:, "
+                    "after:, before:) are forwarded unchanged to the DeepSeek search engine. "
+                    "Billing is per successful request and independent of count: a request that "
+                    "returns an empty `results` array is not billed, and raising `count` never "
+                    "changes the price. DeepSeek limits Search to 5 requests per second per "
+                    "account, counted independently of Fetch."
                 ),
-                "DeepSeekWebSearchRequest",
-                "DeepSeekWebSearchResponse",
+                "OpenAiDeepSeekWebSearchRequest",
+                "OpenAiDeepSeekWebSearchResponse",
+                surface="search",
             )
         }
         paths["/v1/tools/fetch"] = {
@@ -3460,10 +3472,14 @@ class CloudRouterGatewayOpenApiGenerator:
                 (
                     "Fetches a single web page and returns its title and content as Markdown. "
                     "Results depend on the target site's availability and access policy; blocked "
-                    "or unextractable pages answer 404."
+                    "or unextractable pages answer 404. Billing is per successful request: a fetch "
+                    "that returns no extractable body is not billed. DeepSeek limits Fetch to 5 "
+                    "requests per second per account, counted independently of Search, and the "
+                    "target host may impose its own per-domain limit."
                 ),
-                "DeepSeekWebFetchRequest",
-                "DeepSeekWebFetchResponse",
+                "OpenAiDeepSeekWebFetchRequest",
+                "OpenAiDeepSeekWebFetchResponse",
+                surface="fetch",
             )
         }
         paths["/v1/responses"] = {"post": self._operation("Responses", "createResponse", "Create response", "Creates a model response through an OpenAI-compatible Responses API request.", "OpenAiResponsesRequest", "OpenAiResponse")}
@@ -3684,6 +3700,8 @@ class CloudRouterGatewayOpenApiGenerator:
         description: str,
         request_schema: str,
         response_schema: str,
+        *,
+        surface: str,
     ) -> dict[str, Any]:
         """Operation for DeepSeek's raw-JSON web tools.
 
@@ -3691,6 +3709,13 @@ class CloudRouterGatewayOpenApiGenerator:
         wider one for these two APIs (balance, safety policy, body-read timeout,
         body size, per-account QPS, upstream timeout), so the extra statuses are
         appended here rather than widening every other operation.
+
+        `surface` keeps the two published error sets honest. DeepSeek answers
+        `403` (safety policy) and `404` (no extractable content) only for *page*
+        reads, i.e. Fetch; its Search reference documents neither, and Search
+        never reads a third-party site. Publishing those two codes on Search
+        would advertise retry branches that cannot happen and would describe a
+        search failure as a fetch failure.
         """
         operation = self._operation(
             "Tools",
@@ -3701,17 +3726,43 @@ class CloudRouterGatewayOpenApiGenerator:
             response_schema,
         )
         operation["requestBody"]["description"] = (
-            f"DeepSeek-compatible JSON payload for the {operation_id} operation."
+            f"DeepSeek-compatible JSON payload for the {operation_id} operation. "
+            "Fields DeepSeek does not recognize are ignored by the upstream rather "
+            "than rejected, so unknown keys are forwarded as-is."
         )
         extra_errors = {
             "402": "Insufficient account balance.",
-            "403": "The fetch request was rejected by a safety policy.",
             "408": "Timed out while reading the request body.",
             "413": "Request body exceeds the size limit.",
-            "429": "Search or fetch QPS limit exceeded.",
+            "429": (
+                "Account-level QPS limit exceeded (Search and Fetch are limited "
+                "independently at 5 requests per second per account)."
+                if surface == "search"
+                else "Account-level QPS limit exceeded, or the target host's per-domain "
+                "limit was reached (Search and Fetch are limited independently at 5 "
+                "requests per second per account)."
+            ),
             "500": "Internal server error.",
+            "501": "Cloud Router-specific: the route is declared but no upstream provider account is configured.",
+            "502": "Cloud Router-specific: the gateway's upstream relay failed.",
             "504": "The downstream request timed out.",
         }
+        if surface == "fetch":
+            extra_errors["403"] = (
+                "The requested page was rejected by the target site's safety policy; "
+                "retrying the same URL will not help."
+            )
+            extra_errors["404"] = (
+                "Fetch could not extract usable content: the URL is unreachable, blocked "
+                "by the site policy, answered an error, served an unsupported content type, "
+                "or produced no extractable Markdown body."
+            )
+        else:
+            # The generic gateway set carries a 404 ("resource or route target not
+            # found"). It cannot occur here — the route is mounted by contract —
+            # and DeepSeek documents no 404 for Search, so advertising one would
+            # only invent a retry branch.
+            operation["responses"].pop("404", None)
         for status, error_description in extra_errors.items():
             operation["responses"][status] = {
                 "description": error_description,

@@ -88,11 +88,12 @@ pub use gateway_pricing_decision::GatewayPricingDecision;
 pub use iam_runtime_context::IamRuntimeContext;
 pub(crate) use invocation::is_token_meter;
 pub use invocation::{
-    canonical_provider_native_catalog_key, normalize_standard_api_path,
-    provider_native_api_code_from_normalized_path, AccountBillingMode,
+    apply_pricing_identity, canonical_provider_native_catalog_key, normalize_standard_api_path,
+    provider_native_api_code_from_normalized_path, resolve_pricing_identity,
+    result_gate_for_api_code, result_gate_satisfied, waived_reason, AccountBillingMode,
     AccountResolutionInterceptor, BillingMode, BillingPolicyInterceptor, BillingQuantitySource,
-    BillingSettlementInterceptor, BillingTransactionInterceptor, CircuitBreakerConfig,
-    CircuitBreakerInterceptor, CircuitBreakerStateStore, CircuitCallPermit,
+    BillingResultGate, BillingSettlementInterceptor, BillingTransactionInterceptor,
+    CircuitBreakerConfig, CircuitBreakerInterceptor, CircuitBreakerStateStore, CircuitCallPermit,
     DeferredStreamInvocation, DeferredStreamResponse, DispatchExecutor, DispatchMode,
     IdempotencyConfig, IdempotencyInterceptor, IdempotencyKeyStatus, IdempotencyLockAcquisition,
     IdempotencyStore, IdempotencyStoreEntry, IdempotencyStoreError, Invocation, InvocationAccount,

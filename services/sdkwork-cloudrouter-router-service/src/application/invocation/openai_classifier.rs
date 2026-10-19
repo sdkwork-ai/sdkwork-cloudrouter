@@ -22,6 +22,11 @@ struct OpenAiRouteSpec {
     strategy: AiRouteStrategy,
     sticky_object_type: Option<&'static str>,
     sticky_scope: ClassifiedStickyScope,
+    /// Catalog model that owns the rate for an operation whose route key is a
+    /// management surface (for example vector-store search uses the
+    /// `openai/vector-stores` tool SKU). `None` keeps the route-key behavior.
+    billing_model: Option<&'static str>,
+    billing_catalog_key: Option<&'static str>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -75,8 +80,8 @@ impl OpenAiRouteSpec {
             capability: self.capability,
             model_requirement: self.model_requirement,
             route_kind: None,
-            requested_model: None,
-            requested_model_catalog_key: None,
+            requested_model: self.billing_model.map(str::to_owned),
+            requested_model_catalog_key: self.billing_catalog_key.map(str::to_owned),
             resolved_vendor_codes: Vec::new(),
             provider_native_model: None,
         };
@@ -213,7 +218,7 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
             "openai.audio.transcriptions",
             ResourceType::Audio,
             RoutingCapability::Audio,
-            BillingMeter::AudioInputSecond,
+            BillingMeter::SttAudioMinute,
         ));
     }
     if method == Method::POST && path == "/v1/audio/translations" {
@@ -222,7 +227,7 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
             "openai.audio.translations",
             ResourceType::Audio,
             RoutingCapability::Audio,
-            BillingMeter::AudioInputSecond,
+            BillingMeter::SttAudioMinute,
         ));
     }
     if path == "/v1/audio/voices" {
@@ -289,19 +294,23 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
     // `BillingPolicyInterceptor`. Without these arms the gateway answers 404 for
     // a path the open-api contract advertises.
     if method == Method::POST && path == "/v1/tools/search" {
-        return Ok(api(
+        return Ok(api_with_billing_model(
             "deepseek/web/tools_search",
             "deepseek.web_search",
             ResourceType::ProviderNativeApi,
             RoutingCapability::Network,
+            "web_tools",
+            "deepseek/web_tools",
         ));
     }
     if method == Method::POST && path == "/v1/tools/fetch" {
-        return Ok(api(
+        return Ok(api_with_billing_model(
             "deepseek/web/tools_fetch",
             "deepseek.web_fetch",
             ResourceType::ProviderNativeApi,
             RoutingCapability::Network,
+            "web_tools",
+            "deepseek/web_tools",
         ));
     }
     if method == Method::GET && path == "/v1/models" {
@@ -479,6 +488,17 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
             RoutingCapability::Embedding,
         ));
     }
+    if method == Method::POST && path.starts_with("/v1/vector_stores/") && path.ends_with("/search")
+    {
+        return Ok(api_with_billing_model(
+            "openai/management/vector_stores",
+            "openai.vector_stores.search",
+            ResourceType::VectorStore,
+            RoutingCapability::Embedding,
+            "vector-stores",
+            "openai/vector-stores",
+        ));
+    }
     if path.starts_with("/v1/vector_stores/") {
         return Ok(lookup_api(
             "openai/management/vector_stores",
@@ -582,12 +602,17 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
         // 目录侧导入器写的一直是单数（`model_catalog_import.rs` 的
         // `endpoint_code: "openai.video"`），分类器必须与之一致。
         if method == Method::POST {
-            return Ok(create_api(
+            // 视频生成按**秒**计价，而不是按调用次数：同一条 `POST /v1/videos`
+            // 可能渲染 4 秒 720p，也可能渲染 20 秒 1080p，按次计费把上游成本
+            // 与对客收费彻底解耦。请求体与响应体都带 `seconds`，抽取层优先读
+            // 响应、再回落请求，最终才是 1 秒兜底。
+            return Ok(create_api_with_meter(
                 "openai/management/videos",
                 "openai.video",
                 ResourceType::Video,
                 RoutingCapability::Video,
                 "video",
+                BillingMeter::VideoOutputSecond,
             ));
         }
         return Ok(api(
@@ -604,6 +629,40 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
             ResourceType::Video,
             RoutingCapability::Video,
             BillingMeter::VideoResult,
+        ));
+    }
+    // 二次创作（编辑 / 延长 / remix）同样产出新视频，按秒计价；素材类端点
+    // （`/v1/videos/characters`）不产出视频，仍按请求计费。
+    //
+    // 三个臂分开写而不是一个 `path == a || path == b || ends_with(c)` 的复合
+    // 条件：`tools/check-cloudrouter-ai-routing-consistency.mjs` 逐臂解析谓词
+    // 形状，复合析取它无法建模，会直接判红（"extend the gate instead of
+    // leaving them unchecked"）。分开写既让门禁可评估，也让每个端点各自有臂。
+    if method == Method::POST && path == "/v1/videos/edits" {
+        return Ok(api_with_meter(
+            "openai/management/videos",
+            "openai.video",
+            ResourceType::Video,
+            RoutingCapability::Video,
+            BillingMeter::VideoOutputSecond,
+        ));
+    }
+    if method == Method::POST && path == "/v1/videos/extensions" {
+        return Ok(api_with_meter(
+            "openai/management/videos",
+            "openai.video",
+            ResourceType::Video,
+            RoutingCapability::Video,
+            BillingMeter::VideoOutputSecond,
+        ));
+    }
+    if method == Method::POST && path.starts_with("/v1/videos/") && path.ends_with("/remix") {
+        return Ok(api_with_meter(
+            "openai/management/videos",
+            "openai.video",
+            ResourceType::Video,
+            RoutingCapability::Video,
+            BillingMeter::VideoOutputSecond,
         ));
     }
     if path.starts_with("/v1/videos/") {
@@ -675,6 +734,8 @@ fn model(
         strategy: AiRouteStrategy::StatelessFailover,
         sticky_object_type: None,
         sticky_scope: ClassifiedStickyScope::None,
+        billing_model: None,
+        billing_catalog_key: None,
     }
 }
 
@@ -724,6 +785,8 @@ fn api(
         strategy: AiRouteStrategy::PrimaryAccount,
         sticky_object_type: None,
         sticky_scope: ClassifiedStickyScope::None,
+        billing_model: None,
+        billing_catalog_key: None,
     }
 }
 
@@ -739,6 +802,65 @@ fn create_api(
         sticky_object_type: Some(sticky_object_type),
         sticky_scope: ClassifiedStickyScope::ObjectCreate,
         ..api(route_key, api_code, resource_type, capability)
+    }
+}
+
+/// Management/create operation with **no model requirement** that is still
+/// billed by a measurable media unit.
+///
+/// `api()` hard-codes `ApiRequest`, which is right for management surfaces (list,
+/// retrieve, cancel) but wrong for the operations that actually produce a
+/// billable artifact: a video render is priced per second, a TTS call per
+/// character. Those declarations only reach settlement because
+/// `billing_policy_for` honours a declared media meter instead of collapsing it
+/// back to the per-request fallback.
+fn api_with_meter(
+    route_key: &'static str,
+    api_code: &'static str,
+    resource_type: ResourceType,
+    capability: RoutingCapability,
+    meter: BillingMeter,
+) -> OpenAiRouteSpec {
+    OpenAiRouteSpec {
+        meter: Some(meter),
+        ..api(route_key, api_code, resource_type, capability)
+    }
+}
+
+/// Management surface whose per-request rate is published on a dedicated
+/// catalog tool SKU rather than on the route key (vector-store search).
+fn api_with_billing_model(
+    route_key: &'static str,
+    api_code: &'static str,
+    resource_type: ResourceType,
+    capability: RoutingCapability,
+    billing_model: &'static str,
+    billing_catalog_key: &'static str,
+) -> OpenAiRouteSpec {
+    OpenAiRouteSpec {
+        billing_model: Some(billing_model),
+        billing_catalog_key: Some(billing_catalog_key),
+        ..api(route_key, api_code, resource_type, capability)
+    }
+}
+
+fn create_api_with_meter(
+    route_key: &'static str,
+    api_code: &'static str,
+    resource_type: ResourceType,
+    capability: RoutingCapability,
+    sticky_object_type: &'static str,
+    meter: BillingMeter,
+) -> OpenAiRouteSpec {
+    OpenAiRouteSpec {
+        meter: Some(meter),
+        ..create_api(
+            route_key,
+            api_code,
+            resource_type,
+            capability,
+            sticky_object_type,
+        )
     }
 }
 
@@ -849,6 +971,8 @@ fn free_endpoint(
         strategy: AiRouteStrategy::PrimaryAccount,
         sticky_object_type: None,
         sticky_scope: ClassifiedStickyScope::None,
+        billing_model: None,
+        billing_catalog_key: None,
     }
 }
 

@@ -1,9 +1,9 @@
 use super::classification::normalize_key;
 use super::{
-    BillingMode, BillingQuantitySource, InvocationBilling, InvocationClassification,
-    InvocationClassificationRequest, InvocationError, InvocationErrorKind, InvocationResource,
-    InvocationResourceClassifier, InvocationRouting, InvocationSurface, ResourceType, RouteKind,
-    StickyRouting,
+    BillingMode, BillingQuantitySource, BillingResultGate, InvocationBilling,
+    InvocationClassification, InvocationClassificationRequest, InvocationError,
+    InvocationErrorKind, InvocationResource, InvocationResourceClassifier, InvocationRouting,
+    InvocationSurface, ResourceType, RouteKind, StickyRouting,
 };
 use crate::application::find_builtin_ai_route;
 use crate::domain::{
@@ -97,7 +97,18 @@ fn classify_provider_native_spec(
         provider_native_api_code_from_standard_path(supplier_code, &request.path)
     {
         if let Some(route) = find_builtin_ai_route(&api_code) {
-            let provider_native_model = provider_native_model_from_standard_path(&request.path);
+            // The model lives in the provider-native path
+            // (`/v1beta/models/{model}:action`), but the inbound path often
+            // carries the vendor namespace (`/google/v1beta/...`). Normalize
+            // before extracting, otherwise the route has no requested model
+            // and pricing falls back to the non-catalog route key.
+            let normalized_path = normalize_provider_api_path(
+                supplier_code,
+                &normalize_provider_match_key(supplier_code),
+                &request.path,
+            );
+            let provider_native_model = provider_native_model_from_standard_path(&normalized_path)
+                .or_else(|| provider_native_model_from_standard_path(&request.path));
             return ProviderNativeRouteSpec {
                 route_key: route.route_key.to_owned(),
                 api_code: route.api_code.to_owned(),
@@ -169,7 +180,7 @@ fn external_usage_line_billing(meter: Option<BillingMeter>) -> InvocationBilling
         quantity_source: BillingQuantitySource::AdapterUsageLines,
         pricing_required: true,
         settlement_required: true,
-        prepaid_required: false,
+        result_gate: BillingResultGate::Any,
     }
 }
 
@@ -294,6 +305,9 @@ pub fn provider_native_api_code_from_normalized_path(
         }
         "google" | "gemini" if gemini_model_action_matches(path, "streamgeneratecontent") => {
             "gemini.stream_generate_content"
+        }
+        "google" | "gemini" if gemini_model_action_matches(path, "batchembedcontents") => {
+            "gemini.batch_embed_contents"
         }
         "google" | "gemini" if gemini_model_action_matches(path, "embedcontent") => {
             "gemini.embed_content"

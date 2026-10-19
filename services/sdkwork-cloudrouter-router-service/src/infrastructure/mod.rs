@@ -4,6 +4,7 @@ pub mod crypto;
 pub mod database_framework;
 pub mod decimal_math;
 mod gateway_accounting_retry_queue;
+mod in_memory_async_usage_task_store;
 mod in_memory_pricing_catalog;
 pub mod payment;
 pub mod provider;
@@ -17,5 +18,6 @@ pub use app_runtime_gateway_http_client::{
 pub use gateway_accounting_retry_queue::{
     InMemoryGatewayAccountingRetryQueue, RedisGatewayAccountingRetryQueue,
 };
+pub use in_memory_async_usage_task_store::InMemoryAsyncUsageTaskStore;
 pub use in_memory_pricing_catalog::InMemoryPricingCatalog;
 pub use redis_runtime_stream_bus::RedisRuntimeStreamBus;

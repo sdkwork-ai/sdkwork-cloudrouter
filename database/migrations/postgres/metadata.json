@@ -30,6 +30,15 @@
       "lock": "exclusive",
       "lock_timeout": "2s",
       "statement_timeout": "30s"
+    },
+    "0046_ai_metering_async_task.up.sql": {
+      "engine": "postgres",
+      "reversible": "false",
+      "rollback": "forward-fix",
+      "transactional": "true",
+      "lock": "lightweight",
+      "lock_timeout": "2s",
+      "statement_timeout": "30s"
     }
   }
 }

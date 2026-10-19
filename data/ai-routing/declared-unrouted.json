@@ -93,11 +93,6 @@
       "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
     },
     {
-      "operation": "POST /google/v1beta/models/{model}:batchEmbedContents",
-      "group": "vendor-utility",
-      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
-    },
-    {
       "operation": "POST /google/v1beta/models/{model}:countTokens",
       "group": "vendor-utility",
       "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"

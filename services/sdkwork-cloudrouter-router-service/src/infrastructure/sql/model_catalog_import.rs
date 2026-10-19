@@ -1883,7 +1883,7 @@ fn endpoint_modality_code(endpoint_code: &str) -> Option<String> {
         | "gemini.stream_generate_content"
         | "anthropic.messages"
         | "anthropic.claude_code" => Some("chat"),
-        "gemini.embed_content" => Some("embedding"),
+        "gemini.embed_content" | "gemini.batch_embed_contents" => Some("embedding"),
         // The thirteen vendors that had no `api.*` entitlement at all. Their
         // endpoints are declared in `vendor-native-resources.json` and every
         // one of them must resolve to a modality, otherwise the
@@ -3394,6 +3394,10 @@ mod tests {
                 "/v1beta/models/{model}:embedContent",
             ),
             (
+                "gemini.batch_embed_contents",
+                "/v1beta/models/{model}:batchEmbedContents",
+            ),
+            (
                 "gemini.generate_content",
                 "/v1beta/models/{model}:generateContent",
             ),
@@ -3779,6 +3783,7 @@ mod tests {
             "xiaomi.anthropic_messages",
             "zhipu.anthropic_messages",
             "gemini.embed_content",
+            "gemini.batch_embed_contents",
             "gemini.generate_content",
             "gemini.stream_generate_content",
             // Poll surfaces: reached by a submitted task id, not by a model.
@@ -3791,6 +3796,12 @@ mod tests {
             "bytedance.task_query",
             "jimeng.task_query",
             "kling.task_query",
+            // `gemini.video_task_query` polls the long-running operation created
+            // by `gemini.video_generation` (`GET /v1beta/models/{model}/operations/
+            // {operationId}`). No model declares a `task_query` capability, so the
+            // descriptor sweep can never reach it — same shape as every other
+            // poll surface in this list.
+            "gemini.video_task_query",
             "runway.task_query",
             "suno.music_generation",
             "suno.music_task_query",

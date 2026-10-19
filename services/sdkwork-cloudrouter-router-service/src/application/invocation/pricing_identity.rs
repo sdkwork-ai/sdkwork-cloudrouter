@@ -45,7 +45,7 @@
 //!    并把计费配置（meter + mode + quantity_source）回写到调用上，使
 //!    预检、用量抽取、结算三者读到同一个身份。
 
-use crate::domain::BillingMeter;
+use crate::domain::{BillingMeter, PriceSide};
 use crate::ports::PricingCatalog;
 
 use super::{
@@ -285,6 +285,291 @@ where
     meters
 }
 
+/// 目录为某图像模型/计量单位定义的**唯一** `tier_code`，仅在"没有选择余地"时返回。
+///
+/// sdkwork-models 把一批图像费率条件化在 `tier_code` 上，而对应的请求 schema
+/// 并不暴露档位（`kuaishou/kling-image-3.0` 只有一条 `res_1k_2k` 费率，
+/// `KlingImageGenerationRequest` 里没有 resolution/tier 字段）。计费侧原先只给
+/// **视频**计量单位解析档位（`ai_model_video_profile`），图像计量单位拿到的是
+/// "未知档位"，于是带条件的候选全部被过滤 ⇒ 预检 `PriceNotFound` ⇒ 有价却卖
+/// 不出去。
+///
+/// 这里只处理**不会改变价格**的情形：
+/// * 该计量单位的所有官方费率都带条件（存在无条件费率时走正常解析）；
+/// * 所有候选共享**同一个** `tier_code`；
+/// * 其余条件维度都是解析器能从计量单位自身推导的
+///   （`media_type` / `output_type` / `input_type`）。
+///
+/// 多档位模型（Seedream / Runway 等）返回 `None`，继续 fail-closed——按错误的
+/// 档位计价比"有诊断的缺口"更糟。
+pub(crate) fn single_catalog_tier_code<C>(
+    catalog: &C,
+    tenant_id: i64,
+    organization_id: i64,
+    catalog_key: &str,
+    meter: &BillingMeter,
+) -> Option<String>
+where
+    C: PricingCatalog,
+{
+    if !matches!(
+        meter,
+        BillingMeter::ImageResult
+            | BillingMeter::ImageMegapixel
+            | BillingMeter::ImagePixel
+            | BillingMeter::ImageInputToken
+            | BillingMeter::ImageOutputToken
+            | BillingMeter::EmbeddingImage
+            // 缓存档位也存在"目录只发布一条"的形态（Alibaba 的
+            // `explicit_cache_write`）。只有一条价时注入它不会改变价格；
+            // 多条档位仍由 cache_write/cache_read/context 的专用规则处理。
+            | BillingMeter::LlmCacheReadToken
+            | BillingMeter::LlmCacheWriteToken
+    ) {
+        return None;
+    }
+    let prices = catalog.list_model_prices_for_scope_side(
+        tenant_id,
+        organization_id,
+        catalog_key,
+        PriceSide::OfficialReference,
+    );
+    let mut tier: Option<String> = None;
+    let mut saw_rate = false;
+    for price in prices.iter().filter(|price| &price.billing_meter == meter) {
+        saw_rate = true;
+        let Some(metadata) = price.rate_metadata.as_ref() else {
+            // 存在无条件费率：正常解析就能命中，不需要也不应该注入档位。
+            return None;
+        };
+        if metadata.conditions.is_empty() {
+            return None;
+        }
+        let mut rate_tier: Option<&str> = None;
+        for condition in &metadata.conditions {
+            match condition.dimension_code.as_str() {
+                "tier_code" => {
+                    if condition.operator_code != "eq" {
+                        return None;
+                    }
+                    let value = condition.value.as_str()?;
+                    match rate_tier {
+                        Some(existing) if existing != value => return None,
+                        _ => rate_tier = Some(value),
+                    }
+                }
+                // 解析器会从计量单位自身推导这些维度。
+                "media_type" | "output_type" | "input_type" => {}
+                _ => return None,
+            }
+        }
+        let rate_tier = rate_tier?;
+        match &tier {
+            Some(existing) if existing != rate_tier => return None,
+            _ => tier = Some(rate_tier.to_owned()),
+        }
+    }
+    saw_rate.then_some(tier).flatten()
+}
+
+/// 目录用**可解析的上下文分档**定义该计量单位时，按上下文长度选档。
+///
+/// 一批旗舰 chat 模型（Bytedance Doubao/Seed）把 input/output/cache-read 三个
+/// 计量单位都条件化在同一组上下文档位上：
+///
+/// ```text
+/// input_le_32k        → [0, 32k)
+/// input_32k_128k      → [32k, 128k)
+/// input_128k_256k     → [128k, 256k)
+/// ```
+///
+/// 请求侧没有档位字段；不注入 `tier_code` 时所有候选都会被过滤，模型直接
+/// `PriceNotFound`（有价却不可售）。这里接受两种**语义明确**的词汇：
+///
+/// * 显式区间：`input_le_<n>k` / `input_<n>k_<m>k` / `input_gt_<n>k`，要求
+///   档位集合从 0 开始连续、不重叠；
+/// * 累计上界：`tier_<n>k` / `tier_<n>m`（Alibaba/Baidu）。集合里没有更小的
+///   下界，唯一自洽的解释就是"递增上界"——`tier_32k`/`tier_128k` 即
+///   `[0,32k)`、`[32k,128k)`。
+///
+/// 两种词汇都不匹配（如 `tier_fast`）时返回 None，继续 fail-closed——猜错会按
+/// 错误档位收费。
+///
+/// `context_tokens = None` 表示调用方只做"有没有价"的资格预检（路由选择阶段
+/// 还没有响应用量）：此时返回最低档，仅用于证明该模型可定价，不产生金额。
+pub(crate) fn context_tier_code<C>(
+    catalog: &C,
+    tenant_id: i64,
+    organization_id: i64,
+    catalog_key: &str,
+    meter: &BillingMeter,
+    context_tokens: Option<i64>,
+) -> Option<String>
+where
+    C: PricingCatalog,
+{
+    if !matches!(
+        meter,
+        BillingMeter::LlmInputToken
+            | BillingMeter::LlmOutputToken
+            | BillingMeter::LlmCacheReadToken
+            | BillingMeter::LlmCacheWriteToken
+            | BillingMeter::LlmReasoningToken
+            | BillingMeter::EmbeddingInputToken
+    ) {
+        return None;
+    }
+    let prices = catalog.list_model_prices_for_scope_side(
+        tenant_id,
+        organization_id,
+        catalog_key,
+        PriceSide::OfficialReference,
+    );
+    let mut codes: Vec<String> = Vec::new();
+    for price in prices.iter().filter(|price| &price.billing_meter == meter) {
+        let Some(metadata) = price.rate_metadata.as_ref() else {
+            // 存在无条件费率：正常解析即可命中，不需要注入档位。
+            return None;
+        };
+        if metadata.conditions.is_empty() {
+            return None;
+        }
+        let mut tier_code: Option<String> = None;
+        for condition in &metadata.conditions {
+            if condition.dimension_code != "tier_code" || condition.operator_code != "eq" {
+                return None;
+            }
+            let value = condition.value.as_str()?.trim().to_owned();
+            match &tier_code {
+                Some(existing) if existing != &value => return None,
+                _ => tier_code = Some(value),
+            }
+        }
+        codes.push(tier_code?);
+    }
+    if codes.is_empty() {
+        return None;
+    }
+    codes.sort();
+    codes.dedup();
+    // 词汇一：显式区间（`input_le_32k` / `input_32k_128k`）。
+    if let Some(tiers) = explicit_context_tiers(&codes) {
+        return select_explicit_context_tier(&tiers, context_tokens);
+    }
+    // 词汇二：累计上界（`tier_32k` / `tier_256k` / `tier_1m`）。集合里没有更小
+    // 的下界，唯一自洽的解释就是"递增上界"；无法解析的命名（`tier_fast`）返回 None。
+    let tiers = cumulative_context_tiers(&codes)?;
+    select_cumulative_context_tier(&tiers, context_tokens)
+}
+
+fn explicit_context_tiers(codes: &[String]) -> Option<Vec<(i64, Option<i64>, String)>> {
+    let mut tiers = Vec::with_capacity(codes.len());
+    for code in codes {
+        let (lower, upper) = parse_context_tier(code)?;
+        tiers.push((lower, upper, code.clone()));
+    }
+    tiers.sort_by_key(|(lower, _, _)| *lower);
+    // 必须从 0 开始、连续、不重叠；出现无法判定上界的档位时它只能排在最后。
+    let mut expected_lower = 0_i64;
+    for (index, (lower, upper, _)) in tiers.iter().enumerate() {
+        if *lower != expected_lower {
+            return None;
+        }
+        match upper {
+            Some(upper) if *upper > *lower => expected_lower = *upper,
+            _ => {
+                if index + 1 != tiers.len() {
+                    return None;
+                }
+            }
+        }
+    }
+    Some(tiers)
+}
+
+fn select_explicit_context_tier(
+    tiers: &[(i64, Option<i64>, String)],
+    context_tokens: Option<i64>,
+) -> Option<String> {
+    match context_tokens {
+        Some(context) => tiers
+            .iter()
+            .find(|(lower, upper, _)| {
+                context >= *lower && upper.is_none_or(|upper| context < upper)
+            })
+            // 超出目录最后一档：用最高档，绝不因为目录缺一档就免单。
+            .or_else(|| tiers.last())
+            .map(|(_, _, code)| code.clone()),
+        // 资格预检：最低档足以证明"该模型有价"。
+        None => tiers.first().map(|(_, _, code)| code.clone()),
+    }
+}
+
+/// 解析 `tier_32k` 这类"累计上界"命名（返回上界 token 数）。
+fn parse_cumulative_tier(code: &str) -> Option<i64> {
+    let normalized = code.trim().to_ascii_lowercase();
+    parse_token_bound(normalized.strip_prefix("tier_")?)
+}
+
+fn cumulative_context_tiers(codes: &[String]) -> Option<Vec<(i64, String)>> {
+    let mut tiers = codes
+        .iter()
+        .map(|code| Some((parse_cumulative_tier(code)?, code.clone())))
+        .collect::<Option<Vec<_>>>()?;
+    tiers.sort_by_key(|(bound, _)| *bound);
+    for pair in tiers.windows(2) {
+        if pair[0].0 >= pair[1].0 {
+            return None;
+        }
+    }
+    Some(tiers)
+}
+
+fn select_cumulative_context_tier(
+    tiers: &[(i64, String)],
+    context_tokens: Option<i64>,
+) -> Option<String> {
+    match context_tokens {
+        // 每个档位是"小于该上界"的累计区间。
+        Some(context) => tiers
+            .iter()
+            .find(|(upper, _)| context < *upper)
+            .or_else(|| tiers.last())
+            .map(|(_, code)| code.clone()),
+        None => tiers.first().map(|(_, code)| code.clone()),
+    }
+}
+
+/// 解析 `input_le_32k` / `input_32k_128k` / `input_gt_32k` 为数值区间。
+fn parse_context_tier(code: &str) -> Option<(i64, Option<i64>)> {
+    let normalized = code.trim().to_ascii_lowercase();
+    let rest = normalized.strip_prefix("input_")?;
+    if let Some(value) = rest.strip_prefix("le_") {
+        return Some((0, Some(parse_token_bound(value)?)));
+    }
+    if let Some(value) = rest.strip_prefix("gt_") {
+        return Some((parse_token_bound(value)?, None));
+    }
+    let (lower, upper) = rest.split_once('_')?;
+    Some((parse_token_bound(lower)?, Some(parse_token_bound(upper)?)))
+}
+
+fn parse_token_bound(value: &str) -> Option<i64> {
+    if let Some(number) = value.strip_suffix('k') {
+        return number
+            .parse::<i64>()
+            .ok()
+            .map(|number| number.saturating_mul(1024));
+    }
+    if let Some(number) = value.strip_suffix('m') {
+        return number
+            .parse::<i64>()
+            .ok()
+            .map(|number| number.saturating_mul(1024 * 1024));
+    }
+    None
+}
+
 /// 主计量单位的优先档位：越小越靠近产出。
 fn meter_preference(meter: &BillingMeter) -> u8 {
     let code = meter.code();
@@ -297,8 +582,15 @@ fn meter_preference(meter: &BillingMeter) -> u8 {
     if code.contains("cache") || code.contains("reasoning") || code.contains("storage") {
         return 3;
     }
-    if code.contains("input") {
+    // 文本输入是"没有模态明细时的缺省输入档"。目录只给一组输入侧模态报
+    // 价时（`google/gemini-embedding-2`：audio/image/video/llm 四个），按
+    // meter code 字母序会把 `audio_input_token` 选成主档，整段文本输入将被
+    // 按音频价结算。文本档必须排在模态输入之前。
+    if matches!(code, "llm_input_token" | "embedding_input_token") {
         return 2;
+    }
+    if code.contains("input") {
+        return 4;
     }
     2
 }
@@ -344,6 +636,39 @@ pub fn declared_meters_for(billing: &InvocationBilling) -> Vec<BillingMeter> {
             }
             meters.push(BillingMeter::LlmOutputToken);
             meters.push(BillingMeter::LlmCacheReadToken);
+            // 缓存写入也是目录单独定价的计量单位（Anthropic：5m 1.25×、1h 2×）。
+            // 不声明它，预检就不会为它出价，抽取层的"无价则并入输入"会把
+            // 缓存写入按 1× 输入价结算——系统性少收。
+            meters.push(BillingMeter::LlmCacheWriteToken);
+            // 复合模式原先只声明文本三档，而目录给多模态模型**按模态**单独定价
+            // （`openai/gpt-realtime-2`：`audio_input_token` $32/1M 对
+            // `llm_input_token` $4/1M，8×；`audio_output_token` $64 对 $24；
+            // `image_input_token` $5 对 $4）。声明侧不提出这些码位，报价侧就永远
+            // 拿不到价格，抽取层只能把音频/图像令牌并进文本行按文本价结算。
+            //
+            // 声明顺序**必须**保持文本档在前：`apply_pricing_identity` 取
+            // `meters.first()` 当主档，顺序变了会改写路由声明的计量单位。
+            // 目录没有这些码位时 `reconcile_pricing_meters` 取交集会把它们丢掉，
+            // 行为与从前完全一致（不会触发 fail-closed：`requires_complete_pricing`
+            // 只把主档与 `llm_output_token` 当必需项）。
+            meters.push(BillingMeter::AudioInputToken);
+            meters.push(BillingMeter::ImageInputToken);
+            meters.push(BillingMeter::AudioOutputToken);
+            // Google 的 TTS / 图像模型把**产出侧**单独定价为
+            // `audio_output_token` / `image_output_token`，没有 `llm_output_token`；
+            // 实时模型还按 `video_input_token` 收视频输入。声明侧不提出这些码位，
+            // 抽取层即使按模态拆出了令牌也拿不到报价（结算失败 = 免单）。
+            // 顺序仍保持文本档在前：主计量单位不变。
+            meters.push(BillingMeter::ImageOutputToken);
+            meters.push(BillingMeter::VideoInputToken);
+            // Hosted server tools are priced per call independently of tokens.
+            // Declaring them lets preflight quote the catalog rate; extraction
+            // emits the line only when the provider reports the tool call.
+            // They are optional: `requires_complete_pricing` keeps only the
+            // primary/output meters mandatory, and `reconcile_pricing_meters`
+            // drops them when a model's catalog declares no tool rate.
+            meters.push(BillingMeter::WebSearchCall);
+            meters.push(BillingMeter::FileSearchCall);
         }
         BillingMode::ExternalUsageLine => {
             // 路由声明的计量单位排在最前，它才是"这个媒体路由按什么计价"的
@@ -377,7 +702,28 @@ pub fn declared_meters_for(billing: &InvocationBilling) -> Vec<BillingMeter> {
         }
         _ => {
             if let Some(meter) = billing.meter.clone() {
+                // Token 模式原先只声明主档一个计量单位，报价侧就只会给主档出价。
+                // 而目录把多模态模型拆成"输入侧 / 产出侧"两个码位
+                // （`openai/gpt-image-*`、`openai/gpt-realtime-*`），主档取产出侧时
+                // 输入侧永远拿不到报价 ⇒ 抽取层即使量到输入量也只能不记。
+                // 声明顺序保持主档在前：`apply_pricing_identity` 取 `meters.first()`
+                // 当主档，顺序变了会把主计量单位换成输入侧。
+                let complement = match meter {
+                    BillingMeter::ImageOutputToken => Some(BillingMeter::ImageInputToken),
+                    BillingMeter::ImageInputToken => Some(BillingMeter::ImageOutputToken),
+                    BillingMeter::AudioOutputToken => Some(BillingMeter::AudioInputToken),
+                    BillingMeter::AudioInputToken => Some(BillingMeter::AudioOutputToken),
+                    BillingMeter::VideoOutputToken => Some(BillingMeter::VideoInputToken),
+                    BillingMeter::VideoInputToken => Some(BillingMeter::VideoOutputToken),
+                    _ => None,
+                };
                 meters.push(meter);
+                if let Some(complement) = complement {
+                    meters.push(complement);
+                    // 图片的提示词部分按文本价计（OpenAI：文本输入 $5/1M 对
+                    // 图像输入 $10/1M），只有上游给出 `text_tokens` 拆分时才会用到。
+                    meters.push(BillingMeter::LlmInputToken);
+                }
             }
         }
     }
@@ -400,6 +746,10 @@ fn dedupe_meters(meters: Vec<BillingMeter>) -> Vec<BillingMeter> {
 /// （mode + quantity_source）一起换上，使后续的用量抽取与结算都按目录口径
 /// 计量。目录未改写时保持计费策略拦截器算出的配置不变。
 pub fn apply_pricing_identity(invocation: &mut Invocation, identity: &InvocationPricingIdentity) {
+    // 无论是否改写主档，都要把**完整**的计量单位集合钉在调用上：预检与结算
+    // 按它取价。改写后再重新解析身份会丢掉未写进路由声明的模态档（见
+    // `InvocationUsage::pricing_meters` 的说明）。
+    invocation.usage.pricing_meters = identity.meters.clone();
     if !identity.overrides_declared_meters() {
         return;
     }

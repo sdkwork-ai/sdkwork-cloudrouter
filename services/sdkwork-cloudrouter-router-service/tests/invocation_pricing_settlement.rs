@@ -1,10 +1,10 @@
 use axum::http::Method;
 use chrono::Utc;
 use sdkwork_cloudrouter_router_service::application::{
-    AccountBillingMode, AuthenticatedApiKeyContext, BillingMode, BillingQuantitySource, Invocation,
-    InvocationAccount, InvocationBilling, InvocationBody, InvocationClassificationRequest,
-    InvocationDispatch, InvocationInterceptor, InvocationRequest, InvocationResource,
-    InvocationResourceClassifier, InvocationSubject, OpenAiResourceClassifier,
+    AccountBillingMode, AuthenticatedApiKeyContext, BillingMode, BillingQuantitySource,
+    BillingResultGate, Invocation, InvocationAccount, InvocationBilling, InvocationBody,
+    InvocationClassificationRequest, InvocationDispatch, InvocationInterceptor, InvocationRequest,
+    InvocationResource, InvocationResourceClassifier, InvocationSubject, OpenAiResourceClassifier,
     PricingFinalizationInterceptor, PricingPreflightInterceptor, PricingSettlementInterceptor,
     ResourceType,
 };
@@ -496,7 +496,7 @@ async fn pricing_preflight_creates_fixed_api_request_usage_line() {
         quantity_source: BillingQuantitySource::FixedRequest,
         pricing_required: true,
         settlement_required: true,
-        prepaid_required: false,
+        result_gate: BillingResultGate::Any,
     };
 
     PricingPreflightInterceptor::new(Arc::clone(&catalog))
@@ -527,7 +527,7 @@ async fn pricing_preflight_prices_api_request_resources_by_route_key_without_mod
         quantity_source: BillingQuantitySource::FixedRequest,
         pricing_required: true,
         settlement_required: true,
-        prepaid_required: false,
+        result_gate: BillingResultGate::Any,
     };
 
     PricingPreflightInterceptor::new(Arc::clone(&catalog))
@@ -605,7 +605,7 @@ async fn pricing_preflight_uses_route_key_for_model_ignored_api_resources_even_w
         quantity_source: BillingQuantitySource::FixedRequest,
         pricing_required: true,
         settlement_required: true,
-        prepaid_required: false,
+        result_gate: BillingResultGate::Any,
     };
 
     PricingPreflightInterceptor::new(Arc::clone(&catalog))
@@ -906,7 +906,7 @@ async fn finalization_rates_adapter_usage_through_price_service() {
         quantity_source: BillingQuantitySource::AdapterUsageLines,
         pricing_required: true,
         settlement_required: true,
-        prepaid_required: false,
+        result_gate: BillingResultGate::Any,
     };
     let mut catalog = catalog_with_chat_prices();
     // AdapterUsageLines billing requires complete pricing for ApiResult AND

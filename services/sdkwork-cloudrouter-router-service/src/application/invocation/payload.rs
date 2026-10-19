@@ -8,9 +8,9 @@ use super::multipart_form::{
 };
 use super::routing::SESSION_STICKY_OBJECT_TYPE;
 use super::{
-    Invocation, InvocationBody, InvocationDispatch, InvocationError, InvocationErrorKind,
-    InvocationFuture, InvocationInterceptor, InvocationShape, InvocationSurface, StickyMode,
-    StickyRouting,
+    meter_is_streamable, Invocation, InvocationBody, InvocationDispatch, InvocationError,
+    InvocationErrorKind, InvocationFuture, InvocationInterceptor, InvocationShape,
+    InvocationSurface, StickyMode, StickyRouting,
 };
 use crate::domain::AiRouteModelRequirement;
 
@@ -148,7 +148,28 @@ fn extract_stream_flag(invocation: &mut Invocation) {
     })
     .unwrap_or(false);
 
-    if stream {
+    // 客户端可以把 `"stream": true` 写进任何请求体，而媒体路由（视频 / 图片 /
+    // 音乐 / TTS / STT）声明的计量单位必须从**完整响应体**量出来。若照单全收地
+    // 把形状改成 `SseStream`，计费就会切到流式累加器、在媒体响应里找不到 token
+    // 字段 ⇒ 产不出用量行 ⇒ 免单。所以形状改写必须同时满足"该路由的单位能从流里
+    // 量出来"。计费策略侧有一道同样的守卫（`declared_meter_is_streamable`），
+    // 两处共用 `meter_is_streamable` 这一个判据。
+    let streamable = meter_is_streamable(invocation.billing.meter.as_ref());
+    if stream && !streamable {
+        tracing::warn!(
+            stage = "payload_extraction",
+            api_code = %invocation.resource.api_code,
+            request_id = %invocation.request.request_id,
+            meter = invocation
+                .billing
+                .meter
+                .as_ref()
+                .map(|meter| meter.code())
+                .unwrap_or("unknown"),
+            "stream flag ignored: this route bills a unit that cannot be measured from a stream"
+        );
+    }
+    if stream && streamable {
         invocation.dispatch = InvocationDispatch::sse_stream();
     } else if invocation.request.body.is_empty() {
         invocation.dispatch.invocation_shape = InvocationShape::Empty;

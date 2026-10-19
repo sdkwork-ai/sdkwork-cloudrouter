@@ -1,12 +1,12 @@
 use axum::http::Method;
 use sdkwork_cloudrouter_router_service::application::{
     AuthenticatedApiKeyContext, BillingMode, BillingPolicyInterceptor, BillingQuantitySource,
-    Invocation, InvocationBilling, InvocationBody, InvocationClassificationRequest,
-    InvocationDispatch, InvocationDispatchResponse, InvocationInterceptor, InvocationPricingQuote,
-    InvocationRequest, InvocationResource, InvocationResourceClassifier, InvocationSubject,
-    InvocationSurface, OpenAiResourceClassifier, PriceResolutionStatus, PricingAuditSnapshot,
-    ProviderNativeResourceClassifier, ResourceBillability, ResourceType,
-    UsageExtractionInterceptor,
+    BillingResultGate, Invocation, InvocationBilling, InvocationBody,
+    InvocationClassificationRequest, InvocationDispatch, InvocationDispatchResponse,
+    InvocationInterceptor, InvocationPricingQuote, InvocationRequest, InvocationResource,
+    InvocationResourceClassifier, InvocationSubject, InvocationSurface, OpenAiResourceClassifier,
+    PriceResolutionStatus, PricingAuditSnapshot, ProviderNativeResourceClassifier,
+    ResourceBillability, ResourceType, UsageExtractionInterceptor,
 };
 use sdkwork_cloudrouter_router_service::domain::{
     AiRouteModelRequirement, BillingMeter, Money, ResourceDefinition, RoutingCapability,
@@ -154,7 +154,7 @@ async fn extracts_openai_streaming_usage_lines_from_sse_chunks() {
         quantity_source: BillingQuantitySource::StreamingAccumulator,
         pricing_required: true,
         settlement_required: true,
-        prepaid_required: false,
+        result_gate: BillingResultGate::Any,
     };
     invocation.dispatch = InvocationDispatch::sse_stream();
     invocation.dispatch.response = Some(
@@ -198,7 +198,7 @@ async fn skips_streaming_usage_extraction_when_sse_has_no_usage_chunk() {
         quantity_source: BillingQuantitySource::StreamingAccumulator,
         pricing_required: true,
         settlement_required: true,
-        prepaid_required: false,
+        result_gate: BillingResultGate::Any,
     };
     invocation.dispatch = InvocationDispatch::sse_stream();
     invocation.dispatch.response = Some(
@@ -278,7 +278,7 @@ async fn extracts_embeddings_usage_line() {
         quantity_source: BillingQuantitySource::ResponseBody,
         pricing_required: true,
         settlement_required: true,
-        prepaid_required: false,
+        result_gate: BillingResultGate::Any,
     };
     invocation.dispatch = InvocationDispatch::json_response(
         200,
@@ -333,7 +333,7 @@ async fn extracts_adapter_usage_lines_from_standard_response_shape() {
             quantity_source: BillingQuantitySource::AdapterUsageLines,
             pricing_required: true,
             settlement_required: true,
-            prepaid_required: false,
+            result_gate: BillingResultGate::Any,
         },
     );
     invocation.resource.resource_type = ResourceType::ProviderNativeApi;
@@ -386,7 +386,7 @@ async fn extracts_adapter_usage_lines_from_adapter_invocation_response_wrapper()
             quantity_source: BillingQuantitySource::AdapterUsageLines,
             pricing_required: true,
             settlement_required: true,
-            prepaid_required: false,
+            result_gate: BillingResultGate::Any,
         },
     );
     invocation.resource.resource_type = ResourceType::ProviderNativeApi;
@@ -434,7 +434,7 @@ async fn skips_adapter_usage_extraction_when_adapter_wrapper_status_is_not_succe
             quantity_source: BillingQuantitySource::AdapterUsageLines,
             pricing_required: true,
             settlement_required: true,
-            prepaid_required: false,
+            result_gate: BillingResultGate::Any,
         },
     );
     invocation.resource.resource_type = ResourceType::ProviderNativeApi;
@@ -497,7 +497,7 @@ async fn extracts_image_result_count() {
         quantity_source: BillingQuantitySource::ResponseBody,
         pricing_required: true,
         settlement_required: true,
-        prepaid_required: false,
+        result_gate: BillingResultGate::Any,
     };
     invocation.dispatch =
         InvocationDispatch::json_response(200, json!({"data": [{"url": "a"}, {"url": "b"}]}));
@@ -522,7 +522,7 @@ async fn extracts_audio_seconds_from_response_body() {
         quantity_source: BillingQuantitySource::ResponseBody,
         pricing_required: true,
         settlement_required: true,
-        prepaid_required: false,
+        result_gate: BillingResultGate::Any,
     };
     invocation.dispatch =
         InvocationDispatch::json_response(200, json!({"usage": {"audio_seconds": "3.5"}}));
@@ -772,10 +772,10 @@ async fn bills_speech_to_text_by_verbose_json_duration() {
         .await
         .expect("billing policy");
     assert_eq!(BillingMode::AudioSecond, invocation.billing.mode);
-    assert_eq!(
-        Some(BillingMeter::AudioInputSecond),
-        invocation.billing.meter
-    );
+    // STT 在行业口径上按**音频分钟**计价（Whisper / 各家 ASR 价目表都是
+    // 每分钟），不是每秒：`stt_audio_minute` 的 `unit_size` 是 1 分钟，
+    // 抽出秒数后必须先换算成分钟，否则实收是 60 倍。
+    assert_eq!(Some(BillingMeter::SttAudioMinute), invocation.billing.meter);
     invocation.dispatch = InvocationDispatch::json_response(
         200,
         json!({
@@ -793,20 +793,25 @@ async fn bills_speech_to_text_by_verbose_json_duration() {
 
     assert_eq!(1, invocation.usage.lines.len());
     assert_eq!(
-        BillingMeter::AudioInputSecond,
+        BillingMeter::SttAudioMinute,
         invocation.usage.lines[0].meter
     );
+    // 12.5 秒 = 0.208333... 分钟（截断到 12 位小数）。
     assert_eq!(
-        "12.500000000000",
+        "0.208333333333",
         invocation.usage.lines[0].quantity.billable_quantity
     );
 }
 
 #[tokio::test]
-async fn bills_speech_to_text_single_second_when_duration_is_not_reported() {
+async fn bills_speech_to_text_one_minute_when_duration_is_not_reported() {
     // OpenAI only reports `duration` on `verbose_json`; a default `json`
     // response (and `text`/`srt`/`vtt` formats) carries none. That shape must
-    // still settle instead of aborting the chain.
+    // still settle instead of aborting the chain — but the floor has to be on
+    // the **meter's own scale**. A one-*second* floor on a per-*minute* meter is
+    // 1/60 of the minimum billable unit, so a 30-minute transcription whose
+    // response is plain text would settle at 0.0167 minutes: three orders of
+    // magnitude of undercharge.
     let mut invocation = openai_invocation(Method::POST, "/v1/audio/transcriptions");
     BillingPolicyInterceptor
         .before(&mut invocation)
@@ -820,6 +825,7 @@ async fn bills_speech_to_text_single_second_when_duration_is_not_reported() {
         .expect("usage extraction");
 
     assert_eq!(1, invocation.usage.lines.len());
+    // 分钟档的兜底 = 1 分钟（最小计费单位）。
     assert_eq!(
         "1.000000000000",
         invocation.usage.lines[0].quantity.billable_quantity

@@ -466,6 +466,12 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         RoutingCapability::Embedding,
         BillingMeter::EmbeddingInputToken,
     ),
+    model(
+        "gemini.batch_embed_contents",
+        "gemini.batch_embed_contents",
+        RoutingCapability::Embedding,
+        BillingMeter::EmbeddingInputToken,
+    ),
     sticky_model(
         "gemini.live",
         "gemini.live",

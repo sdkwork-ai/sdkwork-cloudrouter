@@ -7,6 +7,13 @@ pub struct InvocationUsage {
     pub request_count: i64,
     pub lines: Vec<InvocationUsageLine>,
     pub pricing_quotes: Vec<InvocationPricingQuote>,
+    /// 路由规划阶段由 `pricing_identity` 解析出的**完整**计量单位集合（主档在前）。
+    ///
+    /// 预检、抽取、结算都必须按这一份取价，不能在计费配置被回写成主档之后重新
+    /// 解析：embedding 路由只声明 `embedding_input_token`，目录按文本/音频/图像/
+    /// 视频四个输入档报价，回写后的"声明 ∩ 目录"会缩成主档一个，其余模态即使
+    /// 量到了也拿不到报价（抽取层的"有价才拆行"会直接跳过它们）。
+    pub pricing_meters: Vec<BillingMeter>,
     /// Full price resolutions captured once by the pricing preflight, keyed by
     /// meter. Usage recording and settlement must consume these resolutions —
     /// the single price object that flows through the whole pipeline — instead
@@ -95,6 +102,14 @@ pub struct InvocationUsageLine {
     pub quantity: GatewayUsageQuantity,
     pub role: InvocationUsageLineRole,
     pub requested_model_catalog_key: Option<String>,
+    /// 该行自己的 `media_type` 定价维度（`text` / `audio` / `image` / `video`）。
+    ///
+    /// 同一计量单位可以有**按模态分档**的费率（`llm_cache_read_token` 在
+    /// OpenAI realtime 上分 text/audio/image 三档），而调用级的
+    /// `media_type` 是从计量单位推导的单一值。缓存读这类"同一 meter、多种
+    /// 模态"的行必须自带维度，否则条件把候选过滤干净、抽取层再把缓存命中
+    /// 折进输入按全价收。
+    pub pricing_media_type: Option<String>,
     pub pricing_quote: Option<InvocationPricingQuote>,
     pub pricing_resolution: Option<PriceResolution>,
 }
@@ -106,9 +121,15 @@ impl InvocationUsageLine {
             meter,
             quantity,
             requested_model_catalog_key: None,
+            pricing_media_type: None,
             pricing_quote: None,
             pricing_resolution: None,
         }
+    }
+
+    pub fn with_pricing_media_type(mut self, media_type: impl Into<String>) -> Self {
+        self.pricing_media_type = Some(media_type.into());
+        self
     }
 
     pub fn fixed_request() -> Self {
@@ -184,6 +205,21 @@ pub(crate) fn is_token_meter(meter: &BillingMeter) -> bool {
             | BillingMeter::VideoInputToken
             | BillingMeter::VideoOutputToken
     )
+}
+
+/// 该计量单位能否**从流式响应里**量出来。
+///
+/// 只有 token 类单位可以在流里逐帧累计；媒体类单位（按条 / 按张 / 按秒 / 按字符
+/// / 按分钟）必须读完整响应体，流式下根本没有完整响应体。声明里没有计量单位
+/// （`None`）时返回 true —— 那是还没定价的路由，不该被这条守卫卡住。
+///
+/// 单一权威：计费策略（决定 `quantity_source`）与载荷抽取（决定 `SseStream`
+/// 形状）必须用同一判据，否则会出现"策略按媒体算、形状按流式给"的组合。
+pub(crate) fn meter_is_streamable(meter: Option<&BillingMeter>) -> bool {
+    match meter {
+        Some(meter) => is_token_meter(meter),
+        None => true,
+    }
 }
 
 fn usage_line_role_for_meter(meter: &BillingMeter) -> InvocationUsageLineRole {

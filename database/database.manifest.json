@@ -50,7 +50,7 @@
     "provider": "default",
     "hooks": []
   },
-  "materializedTableCount": 38,
+  "materializedTableCount": 39,
   "materializedTables": [
     "ai_chat_context_snapshot",
     "ai_chat_conversation",
@@ -60,6 +60,7 @@
     "ai_chat_turn",
     "ai_config_change_event",
     "ai_config_version",
+    "ai_metering_async_task",
     "ai_metering_request_trace",
     "ai_metering_usage",
     "ai_model_access_policy",

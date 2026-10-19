@@ -86,6 +86,23 @@
       "sortOrder": 420
     },
     {
+      "resourceCode": "api.gemini.batch_embed_contents",
+      "resourceType": "api_endpoint",
+      "displayName": "Gemini Batch Embed Contents",
+      "vendorCode": "gemini",
+      "modalityCode": "embedding",
+      "apiCode": "gemini.batch_embed_contents",
+      "method": "POST",
+      "pathTemplate": "/v1beta/models/{model}:batchEmbedContents",
+      "capability": "embedding",
+      "capabilities": [
+        "embedding",
+        "embeddings",
+        "llm"
+      ],
+      "sortOrder": 425
+    },
+    {
       "resourceCode": "api.gemini.live",
       "resourceType": "api_endpoint",
       "displayName": "Gemini Live",

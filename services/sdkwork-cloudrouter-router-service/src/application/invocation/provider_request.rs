@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 use super::multipart_form::{request_content_type_is_multipart_form, rewrite_multipart_model};
 use super::{
     DispatchMode, Invocation, InvocationAccount, InvocationBody, InvocationError,
-    InvocationErrorKind, InvocationProviderRequest, ResolvedProviderSecret,
+    InvocationErrorKind, InvocationProviderRequest, InvocationSurface, ResolvedProviderSecret,
 };
 use crate::domain::{ProviderAuthProfile, ProviderAuthType};
 
@@ -51,6 +51,11 @@ impl ProviderRequestBuilder {
             &invocation.request.headers,
             account.provider_model.as_deref(),
         )?;
+        let body = ensure_stream_usage_requested(
+            &invocation.resource.surface,
+            &invocation.resource.api_code,
+            body,
+        );
         let path = rewrite_path_model(&invocation.request.path, account.provider_model.as_deref());
         Ok(InvocationProviderRequest {
             method: invocation.request.method.clone(),
@@ -547,4 +552,131 @@ fn path_has_parent_segment(path: &str) -> bool {
     path.trim_matches('/')
         .split('/')
         .any(|segment| segment == "..")
+}
+
+/// 为流式 Chat Completions 强制打开 `stream_options.include_usage`。
+///
+/// OpenAI 在未显式要求时**不回流式 usage**；流结束后网关只看到文本，EOF 兜底
+/// 只能按文本估算输出、输入恒为 0 ⇒ 输入 token 免单（客户端可控的计费绕过）。
+/// 这里覆盖客户端显式的 `false`，同时保留其他 `stream_options` 键。
+///
+/// 只对 OpenAI 兼容面的 `openai.chat_completions` 生效：Anthropic / Gemini 的
+/// 流式用量在各自协议里默认就有，塞入 `stream_options` 会被上游拒绝。上游随后
+/// 多发的 usage-only chunk 是 OpenAI 规范行为（`choices: []`），SDK 会忽略。
+fn ensure_stream_usage_requested(
+    surface: &InvocationSurface,
+    api_code: &str,
+    body: InvocationBody,
+) -> InvocationBody {
+    if *surface != InvocationSurface::OpenAiCompatible || api_code != "openai.chat_completions" {
+        return body;
+    }
+    match body {
+        InvocationBody::Json(mut value) => {
+            if value.get("stream").and_then(Value::as_bool) != Some(true) {
+                return InvocationBody::Json(value);
+            }
+            force_include_usage(&mut value);
+            InvocationBody::Json(value)
+        }
+        InvocationBody::Bytes(bytes) => {
+            let Ok(mut value) = serde_json::from_slice::<Value>(&bytes) else {
+                return InvocationBody::Bytes(bytes);
+            };
+            if value.get("stream").and_then(Value::as_bool) != Some(true) {
+                return InvocationBody::Bytes(bytes);
+            }
+            force_include_usage(&mut value);
+            match serde_json::to_vec(&value) {
+                Ok(encoded) => InvocationBody::Bytes(encoded),
+                Err(_) => InvocationBody::Bytes(bytes),
+            }
+        }
+        other => other,
+    }
+}
+
+fn force_include_usage(value: &mut Value) {
+    let Some(object) = value.as_object_mut() else {
+        return;
+    };
+    let stream_options = object
+        .entry("stream_options".to_owned())
+        .or_insert_with(|| Value::Object(serde_json::Map::new()));
+    if !stream_options.is_object() {
+        *stream_options = Value::Object(serde_json::Map::new());
+    }
+    if let Some(options) = stream_options.as_object_mut() {
+        options.insert("include_usage".to_owned(), Value::Bool(true));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ensure_stream_usage_requested;
+    use crate::application::invocation::InvocationBody;
+    use crate::application::InvocationSurface;
+    use serde_json::json;
+
+    fn streaming_chat(value: serde_json::Value) -> InvocationBody {
+        ensure_stream_usage_requested(
+            &InvocationSurface::OpenAiCompatible,
+            "openai.chat_completions",
+            InvocationBody::Json(value),
+        )
+    }
+
+    fn body_json(body: InvocationBody) -> serde_json::Value {
+        match body {
+            InvocationBody::Json(value) => value,
+            other => panic!("expected JSON body, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn streaming_chat_forces_include_usage_and_keeps_other_options() {
+        let body = body_json(streaming_chat(json!({
+            "model": "gpt-5",
+            "stream": true,
+            "stream_options": {"other": 1}
+        })));
+        assert_eq!(true, body["stream_options"]["include_usage"]);
+        assert_eq!(1, body["stream_options"]["other"]);
+    }
+
+    #[test]
+    fn a_client_supplied_false_is_overridden() {
+        let body = body_json(streaming_chat(json!({
+            "model": "gpt-5",
+            "stream": true,
+            "stream_options": {"include_usage": false}
+        })));
+        assert_eq!(
+            true, body["stream_options"]["include_usage"],
+            "client-controlled false must not disable billing usage"
+        );
+    }
+
+    #[test]
+    fn non_streaming_chat_is_untouched() {
+        let body = body_json(streaming_chat(json!({
+            "model": "gpt-5",
+            "messages": []
+        })));
+        assert!(body.get("stream_options").is_none());
+    }
+
+    #[test]
+    fn provider_native_streaming_is_untouched() {
+        let body = ensure_stream_usage_requested(
+            &InvocationSurface::ProviderNative,
+            "anthropic.messages",
+            InvocationBody::Json(json!({"stream": true, "messages": []})),
+        );
+        let body = body_json(body);
+        assert!(
+            body.get("stream_options").is_none(),
+            "vendor-native protocols carry their own usage shape"
+        );
+    }
 }

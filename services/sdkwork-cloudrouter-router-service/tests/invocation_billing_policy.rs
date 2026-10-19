@@ -74,7 +74,6 @@ async fn maps_chat_and_responses_to_composite_token_billing() {
         );
         assert!(invocation.billing.pricing_required);
         assert!(invocation.billing.settlement_required);
-        assert!(!invocation.billing.prepaid_required);
     }
 }
 
@@ -204,8 +203,34 @@ async fn maps_modal_and_realtime_model_resources_to_metered_billing() {
 }
 
 #[tokio::test]
-async fn maps_management_resources_to_fixed_api_request_billing() {
+async fn maps_management_resources_to_free_billing() {
+    // 文件 / moderation / 批量查询等管理面在 OpenAI 侧不按次收费（2.37）。
     let mut invocation = openai_invocation(Method::POST, "/v1/files", InvocationBody::Empty);
+
+    BillingPolicyInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("billing policy");
+
+    assert_eq!(BillingMode::Free, invocation.billing.mode);
+    assert_eq!(None, invocation.billing.meter);
+    assert_eq!(
+        BillingQuantitySource::None,
+        invocation.billing.quantity_source
+    );
+    assert!(!invocation.billing.pricing_required);
+    assert!(!invocation.billing.settlement_required);
+}
+
+/// 计算型子端点仍按次计费：threads runs 会消耗模型 token，不能被管理面
+/// Free 规则吞掉。
+#[tokio::test]
+async fn keeps_compute_bearing_management_subresources_on_api_request() {
+    let mut invocation = openai_invocation(
+        Method::POST,
+        "/v1/threads/thread-1/runs",
+        InvocationBody::Empty,
+    );
 
     BillingPolicyInterceptor
         .before(&mut invocation)
@@ -218,12 +243,10 @@ async fn maps_management_resources_to_fixed_api_request_billing() {
         BillingQuantitySource::FixedRequest,
         invocation.billing.quantity_source
     );
-    assert!(invocation.billing.pricing_required);
-    assert!(invocation.billing.settlement_required);
 }
 
 #[tokio::test]
-async fn maps_provider_native_resources_to_fixed_request_until_adapter_resolution() {
+async fn bills_provider_native_video_generation_by_produced_video() {
     let classification = ProviderNativeResourceClassifier
         .classify(
             &InvocationClassificationRequest::new(Method::POST, "/kling/v1/videos/text2video")
@@ -248,10 +271,10 @@ async fn maps_provider_native_resources_to_fixed_request_until_adapter_resolutio
         .await
         .expect("billing policy");
 
-    assert_eq!(BillingMode::ExternalUsageLine, invocation.billing.mode);
+    assert_eq!(BillingMode::ResultCount, invocation.billing.mode);
     assert_eq!(Some(BillingMeter::VideoResult), invocation.billing.meter);
     assert_eq!(
-        BillingQuantitySource::FixedRequest,
+        BillingQuantitySource::ResponseBody,
         invocation.billing.quantity_source
     );
     assert!(invocation.billing.pricing_required);
@@ -361,9 +384,11 @@ async fn maps_provider_native_streaming_llm_to_streaming_accumulator_billing() {
 }
 
 #[tokio::test]
-async fn maps_provider_native_non_streaming_media_to_request_fact_billing() {
-    // 媒体类（视频/图片）结果量由 adapter 异步产出，非流式 body 里没有
-    // 可用量，保持请求事实计费不变。
+async fn maps_provider_native_non_streaming_media_to_result_count_billing() {
+    // 媒体类（视频/图片）的计量单位由路由声明（taxonomy 的 `billing_meter`），
+    // 数量从响应里的产物计数而来：Veo 的 `:generateVideos` 声明
+    // `video_result`，就按产出的视频条数结算，而不是把整条路由压成一次
+    // `api_request`——后者会让一条 20 秒视频与一次 4 秒视频同价。
     let mut invocation = provider_native_invocation(
         Method::POST,
         "/google/v1beta/models/veo-3.0-generate-preview:generateVideos",
@@ -375,10 +400,10 @@ async fn maps_provider_native_non_streaming_media_to_request_fact_billing() {
         .await
         .expect("billing policy");
 
-    assert_eq!(BillingMode::ExternalUsageLine, invocation.billing.mode);
+    assert_eq!(BillingMode::ResultCount, invocation.billing.mode);
     assert_eq!(Some(BillingMeter::VideoResult), invocation.billing.meter);
     assert_eq!(
-        BillingQuantitySource::FixedRequest,
+        BillingQuantitySource::ResponseBody,
         invocation.billing.quantity_source
     );
 }
@@ -420,5 +445,4 @@ async fn maps_free_resources_to_trace_only_billing() {
     );
     assert!(!invocation.billing.pricing_required);
     assert!(!invocation.billing.settlement_required);
-    assert!(!invocation.billing.prepaid_required);
 }

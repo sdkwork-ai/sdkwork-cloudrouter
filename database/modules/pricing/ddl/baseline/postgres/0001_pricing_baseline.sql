@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.5.0.
--- Registry SHA-256: 06b32c0efa9e086c12c6c17e9d2f2622eca9e1d36b478ce5ba279ee8d2060d9f.
+-- Registry SHA-256: 5609eecd8e59f39da9168c57852a256359e35992e6ed21687c504eb0b042381e.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.

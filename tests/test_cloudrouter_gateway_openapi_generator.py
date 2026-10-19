@@ -1997,6 +1997,104 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
             self.assertFalse(result.ok)
             self.assertIn(f"Cloud Router gateway OpenAPI spec is stale: {output}", result.messages)
 
+    def _deepseek_web_tool_operations(self) -> tuple[dict[str, object], dict[str, object]]:
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+        return (
+            spec["paths"]["/v1/tools/search"]["post"],
+            spec["paths"]["/v1/tools/fetch"]["post"],
+        )
+
+    def test_deepseek_web_tools_publish_only_their_own_error_sets(self) -> None:
+        search, fetch = self._deepseek_web_tool_operations()
+
+        # DeepSeek answers 403 (safety policy) and 404 (no extractable content)
+        # only for page reads, i.e. Fetch. Publishing either on Search would
+        # advertise a retry branch that cannot happen.
+        self.assertNotIn("403", search["responses"])
+        self.assertNotIn("404", search["responses"])
+        self.assertIn("403", fetch["responses"])
+        self.assertIn("404", fetch["responses"])
+
+        # 404 must not survive on Search as the generic gateway "route target not
+        # found": the route is mounted by contract.
+        self.assertEqual(
+            {"402", "408", "413", "429", "500", "501", "502", "504"},
+            set(search["responses"]) - {"200", "400", "401"},
+        )
+        self.assertEqual(
+            {"402", "403", "404", "408", "413", "429", "500", "501", "502", "504"},
+            set(fetch["responses"]) - {"200", "400", "401"},
+        )
+        self.assertIn("extract", fetch["responses"]["404"]["description"])
+
+    def test_deepseek_web_tools_mark_gateway_only_statuses(self) -> None:
+        search, fetch = self._deepseek_web_tool_operations()
+
+        # 501/502 do not come from DeepSeek; they are gateway states. The
+        # prefix keeps a reader from looking them up in the vendor reference.
+        for operation in (search, fetch):
+            for status in ("501", "502"):
+                description = operation["responses"][status]["description"]
+                self.assertTrue(
+                    description.startswith("Cloud Router-specific:"),
+                    f"{status} must be marked as a gateway status, got {description!r}",
+                )
+
+    def test_deepseek_web_tools_document_per_account_qps_limits(self) -> None:
+        search, fetch = self._deepseek_web_tool_operations()
+
+        # DeepSeek limits both tools to 5 QPS per account, independently of each
+        # other, and Fetch additionally hits per-domain limits of the target host.
+        self.assertIn(
+            "5 requests per second per account",
+            search["responses"]["429"]["description"],
+        )
+        self.assertIn(
+            "5 requests per second per account",
+            fetch["responses"]["429"]["description"],
+        )
+        self.assertIn("per-domain", fetch["responses"]["429"]["description"])
+        self.assertNotIn("per-domain", search["responses"]["429"]["description"])
+
+    def test_deepseek_web_tools_document_forwarded_unknown_fields(self) -> None:
+        search, fetch = self._deepseek_web_tool_operations()
+
+        # The gateway relays the body verbatim, so unknown keys are ignored by
+        # DeepSeek instead of being rejected at the edge.
+        for operation in (search, fetch):
+            self.assertTrue(operation["requestBody"]["required"])
+            self.assertIn("ignored", operation["requestBody"]["description"])
+
+    def test_deepseek_web_tools_document_result_dependent_billing(self) -> None:
+        search, fetch = self._deepseek_web_tool_operations()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+        schemas = spec["components"]["schemas"]
+
+        # Billing is per successful request and conditional on producing a
+        # result — the contract has to state that, because a customer reading
+        # only the schema would otherwise expect every 200 to be charged.
+        self.assertIn("empty `results` array is not billed", search["description"])
+        self.assertIn("no extractable body is not billed", fetch["description"])
+        self.assertIn(
+            "does not change the per-request price",
+            schemas["OpenAiDeepSeekWebSearchRequest"]["properties"]["count"]["description"],
+        )
+        self.assertIn(
+            "unbilled",
+            schemas["OpenAiDeepSeekWebSearchResponse"]["properties"]["results"]["description"],
+        )
+        self.assertIn(
+            "never billed",
+            schemas["OpenAiDeepSeekWebFetchResponse"]["properties"]["content"]["description"],
+        )
+        self.assertIn(
+            '-"exact phrase"',
+            schemas["OpenAiDeepSeekWebSearchRequest"]["properties"]["query"]["description"],
+        )
+
     def _provider_prefixes(self) -> set[str]:
         return set(VENDOR_PROVIDER_PREFIXES)
 

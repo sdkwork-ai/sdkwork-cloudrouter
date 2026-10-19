@@ -135,6 +135,10 @@
         },
         {
           "itemType": "resource",
+          "resourceCode": "api.gemini.batch_embed_contents"
+        },
+        {
+          "itemType": "resource",
           "resourceCode": "api.gemini.live"
         },
         {
@@ -512,6 +516,10 @@
         {
           "itemType": "resource",
           "resourceCode": "api.gemini.embed_content"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.batch_embed_contents"
         },
         {
           "itemType": "resource",

@@ -1,8 +1,12 @@
+mod async_usage_task;
 mod billing_owner;
 mod upstream_account_group_selection;
 mod upstream_auth;
 mod vendor_code_alias;
 
+pub use async_usage_task::{
+    AsyncUsageTask, AsyncUsageTaskKind, AsyncUsageTaskStatus, NewAsyncUsageTask,
+};
 pub use billing_owner::BillingOwnerKind;
 pub use sdkwork_models_catalog_service::domain::ResourceDefinition;
 pub use sdkwork_models_catalog_service::domain::{

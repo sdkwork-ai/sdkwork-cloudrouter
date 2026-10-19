@@ -1034,201 +1034,6 @@
         },
         "type": "object"
       },
-      "DeepSeekWebFetchRequest": {
-        "additionalProperties": {
-          "allOf": [
-            {
-              "$ref": "#/components/schemas/ProviderJsonValue"
-            }
-          ],
-          "description": "Additional deep seek web fetch request values using the provider json value module."
-        },
-        "description": "DeepSeek-compatible request to fetch a single web page as Markdown.",
-        "properties": {
-          "url": {
-            "description": "Absolute HTTP or HTTPS URL to fetch. Must contain a host, must not carry a username or password, and is limited to 8192 characters.",
-            "format": "uri",
-            "maxLength": 8192,
-            "minLength": 1,
-            "type": "string"
-          }
-        },
-        "required": [
-          "url"
-        ],
-        "type": "object"
-      },
-      "DeepSeekWebFetchResponse": {
-        "additionalProperties": {
-          "allOf": [
-            {
-              "$ref": "#/components/schemas/ProviderJsonValue"
-            }
-          ],
-          "description": "Additional deep seek web fetch response values using the provider json value module."
-        },
-        "description": "DeepSeek-compatible fetched page: title plus Markdown body.",
-        "properties": {
-          "content": {
-            "description": "Extracted page body rendered as Markdown.",
-            "type": "string"
-          },
-          "title": {
-            "description": "Page title; an empty string when the page declares none.",
-            "type": "string"
-          }
-        },
-        "required": [
-          "title",
-          "content"
-        ],
-        "type": "object"
-      },
-      "DeepSeekWebSearchRequest": {
-        "additionalProperties": {
-          "allOf": [
-            {
-              "$ref": "#/components/schemas/ProviderJsonValue"
-            }
-          ],
-          "description": "Additional deep seek web search request values using the provider json value module."
-        },
-        "description": "DeepSeek-compatible web search request.",
-        "properties": {
-          "count": {
-            "default": 10,
-            "description": "Number of results to return; does not change the per-request price.",
-            "maximum": 50,
-            "minimum": 1,
-            "type": "integer"
-          },
-          "localization": {
-            "default": "",
-            "description": "Optional IP address used to prefer localized search results.",
-            "type": "string"
-          },
-          "need_content": {
-            "default": false,
-            "description": "Whether to return full page content in each result's content field. When false, content is always an empty string.",
-            "type": "boolean"
-          },
-          "ori_question": {
-            "description": "The user's original question that triggered the search, used to improve query understanding. A null value is treated as absent.",
-            "maxLength": 128,
-            "minLength": 1,
-            "nullable": true,
-            "type": "string"
-          },
-          "query": {
-            "description": "Search query of 1 to 128 Unicode characters, not all whitespace. Supports site:, -site:, -term, \"exact phrase\", lang:, after: and before: operators, which are forwarded unchanged.",
-            "maxLength": 128,
-            "minLength": 1,
-            "type": "string"
-          }
-        },
-        "required": [
-          "query"
-        ],
-        "type": "object"
-      },
-      "DeepSeekWebSearchResponse": {
-        "additionalProperties": {
-          "allOf": [
-            {
-              "$ref": "#/components/schemas/ProviderJsonValue"
-            }
-          ],
-          "description": "Additional deep seek web search response values using the provider json value module."
-        },
-        "description": "DeepSeek-compatible web search response.",
-        "properties": {
-          "results": {
-            "description": "Ranked search results; empty when the search matched nothing.",
-            "items": {
-              "$ref": "#/components/schemas/DeepSeekWebSearchResult"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "results"
-        ],
-        "type": "object"
-      },
-      "DeepSeekWebSearchResult": {
-        "additionalProperties": {
-          "allOf": [
-            {
-              "$ref": "#/components/schemas/ProviderJsonValue"
-            }
-          ],
-          "description": "Additional deep seek web search result values using the provider json value module."
-        },
-        "description": "One ranked DeepSeek web search result.",
-        "properties": {
-          "authority": {
-            "description": "Page authority from 0 to 4, where -1 means unknown.",
-            "maximum": 4,
-            "minimum": -1,
-            "type": "integer"
-          },
-          "content": {
-            "description": "Full page content when need_content is true, otherwise empty.",
-            "type": "string"
-          },
-          "date": {
-            "description": "Publication time in UTC RFC 3339 format, or null when unknown.",
-            "format": "date-time",
-            "nullable": true,
-            "type": "string"
-          },
-          "rerank_score": {
-            "description": "Relevance score from 0 to 3 combining relevance, authority and freshness; 1.5 or above is considered high quality.",
-            "maximum": 3,
-            "minimum": 0,
-            "type": "number"
-          },
-          "site_icon": {
-            "description": "Site icon URL, or null when unavailable.",
-            "nullable": true,
-            "type": "string"
-          },
-          "site_name": {
-            "description": "Site name, or null when unavailable.",
-            "nullable": true,
-            "type": "string"
-          },
-          "snippet": {
-            "description": "Short query-relevant excerpt intended for display.",
-            "type": "string"
-          },
-          "summary": {
-            "description": "Longer query-relevant summary intended for model consumption.",
-            "type": "string"
-          },
-          "title": {
-            "description": "Result title.",
-            "type": "string"
-          },
-          "url": {
-            "description": "Result URL.",
-            "type": "string"
-          }
-        },
-        "required": [
-          "rerank_score",
-          "title",
-          "url",
-          "snippet",
-          "summary",
-          "content",
-          "site_name",
-          "site_icon",
-          "date",
-          "authority"
-        ],
-        "type": "object"
-      },
       "DeleteResult": {
         "additionalProperties": false,
         "description": "Delete result schema exposed by Cloud Router.",
@@ -6325,6 +6130,201 @@
             "type": "object"
           }
         },
+        "type": "object"
+      },
+      "OpenAiDeepSeekWebFetchRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional open ai deep seek web fetch request values using the provider json value module."
+        },
+        "description": "DeepSeek-compatible request to fetch a single web page as Markdown.",
+        "properties": {
+          "url": {
+            "description": "Absolute HTTP or HTTPS URL to fetch. Must contain a host, must not carry a username or password, and is limited to 8192 characters.",
+            "format": "uri",
+            "maxLength": 8192,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "type": "object"
+      },
+      "OpenAiDeepSeekWebFetchResponse": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional open ai deep seek web fetch response values using the provider json value module."
+        },
+        "description": "DeepSeek-compatible fetched page: title plus Markdown body.",
+        "properties": {
+          "content": {
+            "description": "Extracted page body rendered as Markdown. A response whose body could not be extracted is never billed, which is why an empty body is a free call rather than a chargeable one.",
+            "type": "string"
+          },
+          "title": {
+            "description": "Page title; an empty string when the page declares none.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "content"
+        ],
+        "type": "object"
+      },
+      "OpenAiDeepSeekWebSearchRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional open ai deep seek web search request values using the provider json value module."
+        },
+        "description": "DeepSeek-compatible web search request.",
+        "properties": {
+          "count": {
+            "default": 10,
+            "description": "Number of results to return; does not change the per-request price.",
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "localization": {
+            "default": "",
+            "description": "Optional IP address used to prefer localized search results.",
+            "type": "string"
+          },
+          "need_content": {
+            "default": false,
+            "description": "Whether to return full page content in each result's content field. When false, content is always an empty string.",
+            "type": "boolean"
+          },
+          "ori_question": {
+            "description": "The user's original question that triggered the search, used to improve query understanding. A null value is treated as absent.",
+            "maxLength": 128,
+            "minLength": 1,
+            "nullable": true,
+            "type": "string"
+          },
+          "query": {
+            "description": "Search query of 1 to 128 Unicode characters, not all whitespace. Supports the site:, -site:, -term, -\"exact phrase\", \"exact phrase\", lang:, after: and before: operators, which are forwarded unchanged.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "OpenAiDeepSeekWebSearchResponse": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional open ai deep seek web search response values using the provider json value module."
+        },
+        "description": "DeepSeek-compatible web search response.",
+        "properties": {
+          "results": {
+            "description": "Ranked search results; empty when the search matched nothing. An empty array is a successful but unbilled request.",
+            "items": {
+              "$ref": "#/components/schemas/OpenAiDeepSeekWebSearchResult"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "results"
+        ],
+        "type": "object"
+      },
+      "OpenAiDeepSeekWebSearchResult": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional open ai deep seek web search result values using the provider json value module."
+        },
+        "description": "One ranked DeepSeek web search result.",
+        "properties": {
+          "authority": {
+            "description": "Page authority from 0 to 4, where -1 means unknown.",
+            "maximum": 4,
+            "minimum": -1,
+            "type": "integer"
+          },
+          "content": {
+            "description": "Full page content when need_content is true, otherwise empty.",
+            "type": "string"
+          },
+          "date": {
+            "description": "Publication time in UTC RFC 3339 format, or null when unknown.",
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "rerank_score": {
+            "description": "Relevance score from 0 to 3 combining relevance, authority and freshness; 1.5 or above is considered high quality.",
+            "maximum": 3,
+            "minimum": 0,
+            "type": "number"
+          },
+          "site_icon": {
+            "description": "Site icon URL, or null when unavailable.",
+            "nullable": true,
+            "type": "string"
+          },
+          "site_name": {
+            "description": "Site name, or null when unavailable.",
+            "nullable": true,
+            "type": "string"
+          },
+          "snippet": {
+            "description": "Short query-relevant excerpt intended for display.",
+            "type": "string"
+          },
+          "summary": {
+            "description": "Longer query-relevant summary intended for model consumption.",
+            "type": "string"
+          },
+          "title": {
+            "description": "Result title.",
+            "type": "string"
+          },
+          "url": {
+            "description": "Result URL.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rerank_score",
+          "title",
+          "url",
+          "snippet",
+          "summary",
+          "content",
+          "site_name",
+          "site_icon",
+          "date",
+          "authority"
+        ],
         "type": "object"
       },
       "OpenAiEmbedding": {
@@ -27678,18 +27678,18 @@
     },
     "/v1/tools/fetch": {
       "post": {
-        "description": "Fetches a single web page and returns its title and content as Markdown. Results depend on the target site's availability and access policy; blocked or unextractable pages answer 404.",
+        "description": "Fetches a single web page and returns its title and content as Markdown. Results depend on the target site's availability and access policy; blocked or unextractable pages answer 404. Billing is per successful request: a fetch that returns no extractable body is not billed. DeepSeek limits Fetch to 5 requests per second per account, counted independently of Search, and the target host may impose its own per-domain limit.",
         "operationId": "fetchWeb",
         "parameters": [],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeepSeekWebFetchRequest"
+                "$ref": "#/components/schemas/OpenAiDeepSeekWebFetchRequest"
               }
             }
           },
-          "description": "DeepSeek-compatible JSON payload for the fetchWeb operation.",
+          "description": "DeepSeek-compatible JSON payload for the fetchWeb operation. Fields DeepSeek does not recognize are ignored by the upstream rather than rejected, so unknown keys are forwarded as-is.",
           "required": true
         },
         "responses": {
@@ -27697,7 +27697,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeepSeekWebFetchResponse"
+                  "$ref": "#/components/schemas/OpenAiDeepSeekWebFetchResponse"
                 }
               }
             },
@@ -27741,7 +27741,7 @@
                 }
               }
             },
-            "description": "The fetch request was rejected by a safety policy."
+            "description": "The requested page was rejected by the target site's safety policy; retrying the same URL will not help."
           },
           "404": {
             "content": {
@@ -27751,7 +27751,7 @@
                 }
               }
             },
-            "description": "Resource or route target not found."
+            "description": "Fetch could not extract usable content: the URL is unreachable, blocked by the site policy, answered an error, served an unsupported content type, or produced no extractable Markdown body."
           },
           "408": {
             "content": {
@@ -27781,7 +27781,7 @@
                 }
               }
             },
-            "description": "Search or fetch QPS limit exceeded."
+            "description": "Account-level QPS limit exceeded, or the target host's per-domain limit was reached (Search and Fetch are limited independently at 5 requests per second per account)."
           },
           "500": {
             "content": {
@@ -27801,7 +27801,7 @@
                 }
               }
             },
-            "description": "Route is declared but no upstream provider account is configured."
+            "description": "Cloud Router-specific: the route is declared but no upstream provider account is configured."
           },
           "502": {
             "content": {
@@ -27811,7 +27811,7 @@
                 }
               }
             },
-            "description": "Upstream provider relay failed."
+            "description": "Cloud Router-specific: the gateway's upstream relay failed."
           },
           "504": {
             "content": {
@@ -27846,18 +27846,18 @@
     },
     "/v1/tools/search": {
       "post": {
-        "description": "Searches the live web for a query and returns structured results. Query operators such as site:, -site:, \"exact phrase\", lang:, after: and before: are forwarded unchanged to the DeepSeek search engine. Billing is per successful request, independent of count and of the number of results.",
+        "description": "Searches the live web for a query and returns structured results. Query operators (site:, -site:, -term, -\"exact phrase\", \"exact phrase\", lang:, after:, before:) are forwarded unchanged to the DeepSeek search engine. Billing is per successful request and independent of count: a request that returns an empty `results` array is not billed, and raising `count` never changes the price. DeepSeek limits Search to 5 requests per second per account, counted independently of Fetch.",
         "operationId": "searchWeb",
         "parameters": [],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeepSeekWebSearchRequest"
+                "$ref": "#/components/schemas/OpenAiDeepSeekWebSearchRequest"
               }
             }
           },
-          "description": "DeepSeek-compatible JSON payload for the searchWeb operation.",
+          "description": "DeepSeek-compatible JSON payload for the searchWeb operation. Fields DeepSeek does not recognize are ignored by the upstream rather than rejected, so unknown keys are forwarded as-is.",
           "required": true
         },
         "responses": {
@@ -27865,7 +27865,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeepSeekWebSearchResponse"
+                  "$ref": "#/components/schemas/OpenAiDeepSeekWebSearchResponse"
                 }
               }
             },
@@ -27901,26 +27901,6 @@
             },
             "description": "Insufficient account balance."
           },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
-                }
-              }
-            },
-            "description": "The fetch request was rejected by a safety policy."
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
-                }
-              }
-            },
-            "description": "Resource or route target not found."
-          },
           "408": {
             "content": {
               "application/json": {
@@ -27949,7 +27929,7 @@
                 }
               }
             },
-            "description": "Search or fetch QPS limit exceeded."
+            "description": "Account-level QPS limit exceeded (Search and Fetch are limited independently at 5 requests per second per account)."
           },
           "500": {
             "content": {
@@ -27969,7 +27949,7 @@
                 }
               }
             },
-            "description": "Route is declared but no upstream provider account is configured."
+            "description": "Cloud Router-specific: the route is declared but no upstream provider account is configured."
           },
           "502": {
             "content": {
@@ -27979,7 +27959,7 @@
                 }
               }
             },
-            "description": "Upstream provider relay failed."
+            "description": "Cloud Router-specific: the gateway's upstream relay failed."
           },
           "504": {
             "content": {

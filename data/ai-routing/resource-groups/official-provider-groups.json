@@ -145,6 +145,10 @@
         },
         {
           "itemType": "resource",
+          "resourceCode": "api.gemini.batch_embed_contents"
+        },
+        {
+          "itemType": "resource",
           "resourceCode": "api.gemini.live"
         },
         {

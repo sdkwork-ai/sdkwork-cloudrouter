@@ -227,6 +227,12 @@ pub struct InvocationCharging {
     /// as a provider failure that is safe to refund blindly.
     pub provider_completed: bool,
     pub settled: bool,
+    /// Reason code set when the provider answered 2xx but produced nothing the
+    /// vendor bills for (DeepSeek's Search returning `results: []`, Fetch
+    /// returning no body). The reservation is released without a customer
+    /// charge, so `settlement_required` paths must consult this flag before
+    /// demanding a billable amount.
+    pub waived: Option<String>,
 }
 
 fn split_path_query(value: &str) -> (String, Option<String>) {
