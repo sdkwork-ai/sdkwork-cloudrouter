@@ -97,7 +97,7 @@ cargo clippy -p sdkwork-cloudrouter-router-service -p sdkwork-cloudrouter-edge-r
 ## 当前基线（第 10 轮核对）
 
 - 计费回归：**61 targets / 419 passed / 0 failed**
-- router-service --lib：**621 passed**
+- router-service --lib：**624 passed**
 - 全量：**173 targets / 1805 passed / 2 failed**（仅 postgres_payment_intent_runtime_sql_contract 2 条，payment 域、HEAD 既有）
 - 异步链路各层与纵向集成均已绿；接线前不要解除预检拒单。
 
