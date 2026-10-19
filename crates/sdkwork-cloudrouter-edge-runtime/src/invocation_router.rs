@@ -14,20 +14,21 @@ use sdkwork_cloudrouter_http::QueryStringApiKeyPolicy;
 use sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenAuthenticator;
 use sdkwork_cloudrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::application::{
-    AccountResolutionInterceptor, BillingPolicyInterceptor, BillingSettlementInterceptor,
-    BillingTransactionInterceptor, CircuitBreakerConfig, CircuitBreakerInterceptor,
-    DispatchExecutor, GatewayInvocationPolicyGuard, GatewayInvocationRateLimiter,
-    IdempotencyInterceptor, InvocationPipeline, MetricsInterceptor, PayloadExtractionInterceptor,
-    PricingFinalizationInterceptor, PricingPreflightInterceptor, PricingSettlementInterceptor,
-    ProviderAdapterDispatchInterceptor, ResponseNormalizationInterceptor, RoutePlanningInterceptor,
-    RoutingDecisionLogInterceptor, StickyCommitInterceptor, StickyResolutionInterceptor,
-    TenantInflightConfig, TenantInflightInterceptor, TraceTelemetryInterceptor,
-    UsageExtractionInterceptor, UsageRecordingInterceptor,
+    AccountResolutionInterceptor, AsyncUsageRegistrationInterceptor, BillingPolicyInterceptor,
+    BillingSettlementInterceptor, BillingTransactionInterceptor, CircuitBreakerConfig,
+    CircuitBreakerInterceptor, DispatchExecutor, GatewayInvocationPolicyGuard,
+    GatewayInvocationRateLimiter, IdempotencyInterceptor, InvocationPipeline, MetricsInterceptor,
+    PayloadExtractionInterceptor, PricingFinalizationInterceptor, PricingPreflightInterceptor,
+    PricingSettlementInterceptor, ProviderAdapterDispatchInterceptor,
+    ResponseNormalizationInterceptor, RoutePlanningInterceptor, RoutingDecisionLogInterceptor,
+    StickyCommitInterceptor, StickyResolutionInterceptor, TenantInflightConfig,
+    TenantInflightInterceptor, TraceTelemetryInterceptor, UsageExtractionInterceptor,
+    UsageRecordingInterceptor,
 };
 use sdkwork_cloudrouter_router_service::ports::{
-    BillingSubjectResolver, GatewayBillingStore, GatewayUsageRecorder, InvocationDispatcher,
-    ProviderAdapterRouteResolver, ProviderSecretResolver, RoutingDecisionLogRecorder,
-    StickyRouteStore, UpstreamAccountRouteCatalog,
+    AsyncUsageTaskStore, BillingSubjectResolver, GatewayBillingStore, GatewayUsageRecorder,
+    InvocationDispatcher, ProviderAdapterRouteResolver, ProviderSecretResolver,
+    RoutingDecisionLogRecorder, StickyRouteStore, UpstreamAccountRouteCatalog,
 };
 use sdkwork_cloudrouter_security::{InternalGatewayRequestVerifier, INTERNAL_GATEWAY_ROUTE_PREFIX};
 
@@ -109,6 +110,10 @@ pub struct InvocationRouterOptions<'a> {
     pub secret_resolver: Option<Arc<dyn ProviderSecretResolver + Send + Sync>>,
     pub sticky_store: Option<Arc<dyn StickyRouteStore>>,
     pub usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
+    /// Async usage reconciliation store. When set, a successful asynchronous
+    /// create (batch / background response / thread run) enqueues a task so its
+    /// completion usage can be priced and charged later.
+    pub async_usage_store: Option<Arc<dyn AsyncUsageTaskStore + Send + Sync>>,
     pub decision_log_recorder: Option<Arc<dyn RoutingDecisionLogRecorder + Send + Sync>>,
     pub provider_adapter_config: Option<ProviderAdapterConfig>,
     pub invocation_policy_guard: Option<Arc<GatewayInvocationPolicyGuard>>,
@@ -138,6 +143,7 @@ impl Default for InvocationRouterOptions<'_> {
             secret_resolver: None,
             sticky_store: None,
             usage_recorder: None,
+            async_usage_store: None,
             decision_log_recorder: None,
             provider_adapter_config: None,
             invocation_policy_guard: None,
@@ -169,6 +175,7 @@ where
         secret_resolver,
         sticky_store,
         usage_recorder,
+        async_usage_store,
         decision_log_recorder,
         provider_adapter_config,
         invocation_policy_guard,
@@ -193,6 +200,7 @@ where
         secret_resolver,
         sticky_store,
         usage_recorder,
+        async_usage_store,
         decision_log_recorder,
         adapter_resolver,
         redis_config,
@@ -448,6 +456,7 @@ struct InvocationPipelineInput<'a, C> {
     secret_resolver: Option<Arc<dyn ProviderSecretResolver + Send + Sync>>,
     sticky_store: Option<Arc<dyn StickyRouteStore>>,
     usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
+    async_usage_store: Option<Arc<dyn AsyncUsageTaskStore + Send + Sync>>,
     decision_log_recorder: Option<Arc<dyn RoutingDecisionLogRecorder + Send + Sync>>,
     adapter_resolver: Option<Arc<dyn ProviderAdapterRouteResolver>>,
     redis_config: Option<&'a RedisConfig>,
@@ -466,6 +475,7 @@ where
         secret_resolver,
         sticky_store,
         usage_recorder,
+        async_usage_store,
         decision_log_recorder,
         adapter_resolver,
         redis_config,
@@ -561,6 +571,16 @@ where
         pipeline = pipeline.with_interceptor(RoutingDecisionLogInterceptor::new(
             Arc::clone(&catalog),
             decision_log_recorder,
+        ));
+    }
+
+    if let Some(async_usage_store) = async_usage_store {
+        // `after` hooks run in reverse registration order, so this stage runs
+        // after extraction/finalization/settlement: the response is normalized
+        // and the request has been priced before a reconciliation row is
+        // enqueued.
+        pipeline = pipeline.with_interceptor(AsyncUsageRegistrationInterceptor::new(
+            async_usage_store,
         ));
     }
 
