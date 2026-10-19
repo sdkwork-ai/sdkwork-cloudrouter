@@ -185,8 +185,8 @@ fail-closed 或留给下一轮，不凭空收费。
 | 项 | 结果 |
 | --- | --- |
 | 计费 test target | **62 个 target / 422 passed / 0 failed** |
-| router-service `--lib` | **624 passed** |
-| router-service 全量 | **174 个 target / 1806 passed / 2 failed（payment SQL contract，HEAD 既有，与计费无关）** |
+| router-service `--lib` | **628 passed** |
+| router-service 全量 | **175 个 target / 1816 passed / 2 failed（payment SQL contract，HEAD 既有，与计费无关）** |
 | edge-runtime `--lib` | **100 passed** |
 | 既有红目标（非计费） | `postgres_payment_intent_runtime_sql_contract` 2（退款 SQL 列/状态词汇已变更，测试未同步；支付域，需人工确认后修）。原 `upstream_route_selector` 4 已按新定价契约修正（见主审计 2.75） |
 | clippy（两 crate，`--lib --tests`） | 0 |

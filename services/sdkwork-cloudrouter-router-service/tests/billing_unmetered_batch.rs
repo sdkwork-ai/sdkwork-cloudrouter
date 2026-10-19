@@ -28,7 +28,7 @@ use sdkwork_cloudrouter_router_service::application::{
 };
 use sdkwork_cloudrouter_router_service::domain::ProviderAuthProfile;
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
-use serde_json::{json, Value};
+use serde_json::json;
 use std::sync::Arc;
 
 fn subject() -> InvocationSubject {
