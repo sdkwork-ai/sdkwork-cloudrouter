@@ -519,6 +519,44 @@ impl GatewayBillingStore for PostgresGatewayBillingStore {
             Ok(())
         })
     }
+
+    /// Terminal "uncollected" marker for the overage part of a prepaid capture.
+    ///
+    /// The hold was captured (so the request owns a `consumption` ledger marker)
+    /// but the difference could not be debited. Leaving the fact pending would
+    /// make the async settlement worker treat the request as settled and drop
+    /// the remainder silently. Status 4 removes it from the worker's retry set
+    /// (0 pending / 3 retryable) and the failure code turns it into a visible
+    /// receivable for operator collection. Facts already settled by a concurrent
+    /// replay are not rewritten.
+    fn mark_usage_uncollected<'a>(
+        &'a self,
+        context: GatewayBillingContext,
+        reason: String,
+    ) -> GatewayBillingFuture<'a, ()> {
+        Box::pin(async move {
+            sqlx::query(
+                r#"
+                UPDATE ai_metering_usage
+                SET settlement_status = 4,
+                    failure_code = 'uncollected_overage',
+                    failure_message = $1
+                WHERE tenant_id = $2
+                  AND organization_id = $3
+                  AND request_id = $4
+                  AND settlement_status IN (0, 3)
+                "#,
+            )
+            .bind(truncate_message(&reason, 1024))
+            .bind(context.tenant_id)
+            .bind(context.organization_id)
+            .bind(&context.request_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|error| DomainError::new(error.to_string()))?;
+            Ok(())
+        })
+    }
 }
 
 /// Loads the active cash→points exchange settings for a tenant (platform
@@ -648,6 +686,13 @@ fn hold_is_gone(message: &str) -> bool {
     message.contains("not in held status") || message.contains("hold has expired")
 }
 
+/// `ai_metering_usage.failure_message` is constrained to 1024 characters. The
+/// account error text can be longer, and a rejected UPDATE must not hide the
+/// receivable marker it is trying to write.
+fn truncate_message(message: &str, max_chars: usize) -> String {
+    message.chars().take(max_chars).collect()
+}
+
 fn jsonb_string_map(value: serde_json::Value) -> Option<BTreeMap<String, String>> {
     let object = value.as_object()?;
     let mut map = BTreeMap::new();
@@ -736,7 +781,7 @@ fn prepay_hold_ttl_from_value(value: Option<&str>) -> Duration {
 mod tests {
     use super::{
         hold_is_gone, parse_charge_mode, parse_settlement_mode, prepay_hold_ttl_from_value,
-        EXPIRED_HOLD_CAPTURE_SUFFIX,
+        truncate_message, EXPIRED_HOLD_CAPTURE_SUFFIX,
     };
     use chrono::Duration;
     use sdkwork_account_service::CreateAccountHoldCommand;
@@ -774,6 +819,20 @@ mod tests {
         // with the hold settle (`consumption`) or a genuine overage debit
         // (`postpaid`) from the same request.
         assert_eq!("hold-expired-capture", EXPIRED_HOLD_CAPTURE_SUFFIX);
+    }
+
+    /// The usage-fact failure message column is `string(1024)`; a longer account
+    /// error must be truncated by characters (not bytes) so a multi-byte
+    /// message cannot overflow the column and hide the receivable marker.
+    #[test]
+    fn uncollected_reason_is_truncated_to_the_usage_fact_column_width() {
+        let short = "overage debit failed: insufficient account balance";
+        assert_eq!(short, truncate_message(short, 1024));
+
+        let long = "错".repeat(2_000);
+        let truncated = truncate_message(&long, 1_024);
+        assert_eq!(1_024, truncated.chars().count());
+        assert_eq!(2_000, long.chars().count());
     }
 
     #[test]

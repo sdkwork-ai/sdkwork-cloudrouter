@@ -168,6 +168,28 @@ fn expired_holds_capture_the_spend_under_a_distinct_suffix() {
     }
 }
 
+/// Regression: when the prepaid hold is captured but the overage debit fails,
+/// the request already owns a `consumption` marker. Leaving the usage facts
+/// pending would make the async settlement worker mark them settled without
+/// collecting the difference, so the interceptor must stamp the shortfall as an
+/// uncollected receivable (terminal status outside the worker's retry set).
+#[test]
+fn uncollected_overage_is_recorded_instead_of_being_marked_settled() {
+    for needle in [
+        "mark_usage_uncollected",
+        "recording an uncollected receivable",
+        "overage debit failed",
+        "settlement_status = 4",
+        "uncollected_overage",
+        "settlement_status IN (0, 3)",
+    ] {
+        assert!(
+            BILLING_TRANSACTION.contains(needle) || BILLING_STORE.contains(needle),
+            "uncollected overage handling must contain {needle:?}"
+        );
+    }
+}
+
 /// Regression: async billing keeps the legacy precharge/refund reconciliation
 /// so the asynchronous worker path remains self-consistent with historical data.
 #[test]

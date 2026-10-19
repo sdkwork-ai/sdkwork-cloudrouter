@@ -159,4 +159,25 @@ pub trait GatewayBillingStore: Send + Sync {
     ) -> GatewayBillingFuture<'a, ()> {
         Box::pin(async { Ok(()) })
     }
+
+    /// Records a charge the wallet could not cover **after the prepaid hold was
+    /// already captured** (the overage part of `actual > reserved`).
+    ///
+    /// The request then owns a `consumption` ledger marker, so leaving its usage
+    /// facts pending makes the asynchronous settlement worker treat the request
+    /// as fully settled and silently drop the remainder. Implementations must
+    /// therefore move the pending facts out of the worker's retry set and stamp
+    /// the shortfall so operators can collect it (receivable), instead of
+    /// pretending the request was paid.
+    ///
+    /// Postpaid charges are deliberately excluded: they have no capture marker,
+    /// so their facts must stay pending and the worker retries them once the
+    /// wallet is funded.
+    fn mark_usage_uncollected<'a>(
+        &'a self,
+        _context: GatewayBillingContext,
+        _reason: String,
+    ) -> GatewayBillingFuture<'a, ()> {
+        Box::pin(async { Ok(()) })
+    }
 }

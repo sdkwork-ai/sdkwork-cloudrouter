@@ -79,6 +79,7 @@
 | 预扣 TTL | `prepay_hold_ttl_is_configurable_and_bounded`：默认 1800 秒，合法值生效，越界/非法回退；上限 86400 |
 | Vector store 存储 | `billing_vector_store_storage`：2,000,000,000 bytes → 2 GB-day、$0.20；`storage_gb_day` $0.10/GB/day；缺 `usage_bytes` ⇒ 记账失败（不产 0 元事实）；显式 0 字节 ⇒ waive；file_batches 仍 501 |
 | Token Bank 追收 | `gateway_billing_account` 单测 + `gateway_billing_contract`：hold 过期/已释放时按 `hold-expired-capture` 独立幂等后缀记账；释放容忍过期；异步对账识别该后缀；非过期错误仍失败 |
+| 超额应收 | `gateway_billing_contract::uncollected_overage_is_recorded_instead_of_being_marked_settled` + edge 单测：hold 已捕获而差额扣费失败时写 `uncollected_overage` 终态，避免 worker 误标已结算 |
 | Assistants 流式用量 | `usage_extraction` 单测：`thread.run.completed.data.usage` 的输入/输出 token 必须进入结算用量 |
 
 每条锁都有"关掉实现 → 指定用例转红、对照保持绿"的变异证据，记录在主审计文档
@@ -169,13 +170,14 @@ fail-closed 或留给下一轮，不凭空收费。
 | 厂商时段价节假日 | 工作日 peak / 其余与周末 off-peak；`includeDates` / `excludeDates` 为空 | 工作日法定节假日仍按 peak 计；需要 vendor 日历数据写入目录，已在主审计 2.59 标记 |
 | Vector store `usage_bytes` | 按契约"单文件存储字节"收首日 GB-day | 若上游把该字段填成**整库总量**，连续摄取会按总量重复计费；需契约/目录确认字段语义，并在按天 worker 落地时改为增量 |
 | Hold 过期 | 过期/已释放时按 `hold-expired-capture` 追收 | 追收仍受可用余额约束；余额不足时该笔转为待对账事实，需要开启 settlement worker 才会重试 |
-| 预付超额（actual > hold） | 先捕获 hold，再把差额作为 postpaid 扣 | 差额扣费若遇余额不足，请求的 `consumption` 标记会让 worker 认为"已结算"，差额不会自动补收——已登记为下一轮修复项（把差额写成可追收事实） |
+| 预付超额（actual > hold） | 先捕获 hold；差额扣费失败时写 `uncollected_overage` 终态（status 4） | 差额不会自动重试（需要运营按应收清单追收）；但不会再被 worker 误标"已结算"而静默消失 |
+| Postpaid 扣费失败 | 事实保持 pending，worker 充值后重试 | 依赖 settlement worker 启用；默认关闭时只停留在待结算清单 |
 
 ## 六、验证基线（2026-10-19）
 
 | 项 | 结果 |
 | --- | --- |
-| 计费 test target | **58 个 target / 409 passed / 0 failed** |
+| 计费 test target | **58 个 target / 410 passed / 0 failed** |
 | router-service `--lib` | **599 passed** |
 | router-service 全量 | **171 个 target / 1770 passed / 6 failed（全部 HEAD 既有，与计费无关）** |
 | edge-runtime `--lib` | **100 passed** |

@@ -9,7 +9,7 @@
 
 - **可售 166/176（94.3%）**，剩余 **10 个**全部 fail-closed，不存在静默免费路径。
 - 176 = **118 Free + 44 计量可售 + 1 音效 + 3 已补价按次 + 5 未定价按次 + 5 已登记不可售**。
-- 计费回归 **58 个 target / 409 passed**；router-service `--lib` **599**；edge-runtime `--lib` **100**；clippy 0；fmt 干净。
+- 计费回归 **58 个 target / 410 passed**；router-service `--lib` **599**；edge-runtime `--lib` **101**；clippy 0；fmt 干净。
 - 41 把锁的变异证据在主审计第五节；就绪计数由
   `commercial_readiness_counts_are_exactly_166_of_176` 钉住。
 
@@ -25,6 +25,7 @@
 | 货币 → Token Bank 换算 | `admin_marketing_recharge.rs`（严格汇率、零金额免费、微积分 ceil） | 已实现，未知正币种 fail-closed |
 | Token Bank 原子捕获 | `sdkwork-account` 的 `SettleAccountHoldCommand.settled_amount` + `settle_account_hold` | 已实现，部分捕获/余额退回单事务，账号侧 2 条单测 |
 | 过期 hold 追收 | `edge-runtime/gateway_billing_account.rs` 的 `hold_is_gone` + `hold-expired-capture` 后缀；对账查询已识别该后缀 | 已实现，hold 过期不再丢单；单测 + 源码契约测试 |
+| 超额应收 | `GatewayBillingStore::mark_usage_uncollected` + 结算拦截器 | 已实现：hold 已捕获而差额扣费失败 ⇒ `uncollected_overage` 终态，worker 不会误标已结算 |
 | 向量库存储可测量性 | `usage_extraction::storage_line` | 缺 `usage_bytes` ⇒ 记账失败；显式 0 字节 ⇒ waive |
 
 ## 3. 剩余 10 个 operation 的阻塞

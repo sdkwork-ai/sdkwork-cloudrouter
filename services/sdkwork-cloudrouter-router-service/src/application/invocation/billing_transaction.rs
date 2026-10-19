@@ -397,10 +397,39 @@ impl InvocationInterceptor for BillingSettlementInterceptor {
                                     .settle_hold(context.clone(), hold_id, reserved)
                                     .await
                                     .map_err(billing_error)?;
-                                self.store
-                                    .charge_postpaid(context, overage)
-                                    .await
-                                    .map_err(billing_error)?;
+                                if let Err(error) =
+                                    self.store.charge_postpaid(context, overage.clone()).await
+                                {
+                                    // The hold capture above already committed,
+                                    // so this request owns a `consumption`
+                                    // ledger marker. If the shortfall were left
+                                    // as a pending usage fact, the async
+                                    // settlement worker would see that marker
+                                    // and mark the request settled without ever
+                                    // collecting the difference. Stamp the
+                                    // uncollected receivable instead of
+                                    // pretending the request was paid.
+                                    tracing::warn!(
+                                        stage = "billing_settlement",
+                                        overage = %overage.amount,
+                                        %error,
+                                        request_id = %invocation.request.request_id,
+                                        trace_id = %invocation
+                                            .telemetry
+                                            .trace_id
+                                            .as_deref()
+                                            .unwrap_or(""),
+                                        "prepaid hold captured but the overage debit failed; recording an uncollected receivable"
+                                    );
+                                    let _ = self
+                                        .store
+                                        .mark_usage_uncollected(
+                                            billing_context(invocation),
+                                            format!("overage debit failed: {error}"),
+                                        )
+                                        .await;
+                                    return Err(billing_error(error));
+                                }
                             }
                             None => {
                                 self.store
