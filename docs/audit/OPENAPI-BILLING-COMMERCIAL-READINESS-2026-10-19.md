@@ -235,3 +235,14 @@ cargo test -p sdkwork-cloudrouter-edge-runtime --lib
 cargo clippy -p sdkwork-cloudrouter-router-service -p sdkwork-cloudrouter-edge-runtime --lib --tests
 node tools/check-cloudrouter-ai-routing-consistency.mjs
 ```
+
+## 九、条件可售（部署开关）
+
+以下 operation 的计费代码已完成并有回归，但可售性取决于部署是否启用异步对账 worker（`SDKWORK_CLOUDROUTER_ASYNC_USAGE_WORKER_ENABLED`，默认关闭）：
+
+| operation | 启用 worker 时 | 关闭 worker 时 |
+| --- | --- | --- |
+| `POST /v1/responses` + `background:true` | 放行；完成态按实测 token 重新定价并单笔 postpaid 扣费 | 预检拒单，且注册拦截器不挂载（不入队） |
+| `POST /v1/threads[/{id}]/runs`（带 `model`） | 按 Composite token 计费并入队；完成态 `thread.run.completed.data.usage` 结算 | 不入队；无 `model` 时仍因目录无 `api_request` 价而拒单 |
+
+两条不变量已由代码强制：**入队与结算同开关**、**放行与可结算同开关**，不存在接单但不收钱的时间窗。batch（OpenAI/Anthropic）与 `file_batches` 不在此列——它们仍 fail-closed，等待结果文件/逐文件字节对账。
