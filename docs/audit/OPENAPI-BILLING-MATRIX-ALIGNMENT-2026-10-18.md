@@ -14,7 +14,7 @@
 >
 > **2026-10-19 第 30 轮补充**：新增 2.76（异步对账 worker 运行配置 `AsyncUsageWorkerConfig`：默认关闭，interval/batch/lease/retry/max-attempts 全部有界，非法值降级为关闭而不是带着错误参数启动）。router lib **621**。
 >
-> **2026-10-19 第 29 轮补充**：新增 2.75（`upstream_route_selector` 4 条旧定价门禁用例按新契约修正：缺采购价不阻断、无目录费率仍 fail-closed）。全量回归 **173 targets / 1805 passed / 2 failed（payment 域，HEAD 既有）**。
+> **2026-10-19 第 29 轮补充**：新增 2.75（`upstream_route_selector` 4 条旧定价门禁用例按新契约修正：缺采购价不阻断、无目录费率仍 fail-closed）。全量回归 **174 targets / 1806 passed / 2 failed（payment 域，HEAD 既有）**。
 >
 > **2026-10-19 第 28 轮补充**：新增 2.74（`PipelineAsyncPollTransport`：把轮询表达为合成 Free `GET` 调用、复用既有 `InvocationDispatcher` 的 TLS/代理/出站策略/超时/响应上限；带账号凭证的 GET 由 `ProviderRequestBuilder` 注入）。router lib **618**。
 >
@@ -1846,7 +1846,7 @@ git diff services/sdkwork-cloudrouter-router-service/tests/golden/openapi_billin
 | `node tools/check-cloudrouter-ai-routing-consistency.mjs` | **passed**（122 个 OpenAI-compatible operation 全部有分类臂） |
 | `cargo fmt --check` | 干净 |
 
-第 25 轮基线：**61 个计费 target / 419 passed / 0 failed**（历史分项快照：形态 15 + 逐接口媒体数量 17 + 逐接口流式数量 16 + 逐模态单价 OpenAI 5 + 逐模态单价 Google 7 + 可结算性守卫 35 + 图像档位 5 + 缓存写入档位 4 + 上下文分档 7 + 缓存读模态 4 + Alibaba 缓存 4 + 缓存缺价回退 3 + 家族数量 11 + 目录改写 5 + 预扣 12 + 音乐兜底 2 + 就绪计数 1 + 空结果 waive 4 + 业务失败 waive 7 + 服务端工具 1 + 向量库检索 1 + 向量库存储 3 + 批 embedding 1 + DeepSeek web tools 2 + Token Bank 行为 5 + 异步结算 3 + 既有计费/契约/分类/payload；新增用例已计入 418）。edge-runtime `--lib` **101 passed**（流式传输层 + 流式协议映射 + usage-only chunk 过滤 5 条 + BillingUnavailable 501 映射 1 条 + hold TTL 1 条 + 过期 hold 分类 1 条）。`--lib openai_usage` **12 passed**（中继侧输入量口径）。router-service 全量 **173 个 target / 1805 passed / 2 failed**，2 条均为 **payment 域 HEAD 既有**（与本轮计费改动无关）：`postgres_payment_intent_runtime_sql_contract` 2（退款 SQL 列/状态词汇已变更，测试未同步；需人工确认后修）。原 `upstream_route_selector` 4 已按新定价契约修正（见 2.75）。**注意 `verify.yml` 不跑 `cargo test`**（只 clippy/audit/deny/SBOM），所以"green verify gate"不能当作测试基线。
+第 25 轮基线：**61 个计费 target / 419 passed / 0 failed**（历史分项快照：形态 15 + 逐接口媒体数量 17 + 逐接口流式数量 16 + 逐模态单价 OpenAI 5 + 逐模态单价 Google 7 + 可结算性守卫 35 + 图像档位 5 + 缓存写入档位 4 + 上下文分档 7 + 缓存读模态 4 + Alibaba 缓存 4 + 缓存缺价回退 3 + 家族数量 11 + 目录改写 5 + 预扣 12 + 音乐兜底 2 + 就绪计数 1 + 空结果 waive 4 + 业务失败 waive 7 + 服务端工具 1 + 向量库检索 1 + 向量库存储 3 + 批 embedding 1 + DeepSeek web tools 2 + Token Bank 行为 5 + 异步结算 3 + 既有计费/契约/分类/payload；新增用例已计入 418）。edge-runtime `--lib` **101 passed**（流式传输层 + 流式协议映射 + usage-only chunk 过滤 5 条 + BillingUnavailable 501 映射 1 条 + hold TTL 1 条 + 过期 hold 分类 1 条）。`--lib openai_usage` **12 passed**（中继侧输入量口径）。router-service 全量 **174 个 target / 1806 passed / 2 failed**，2 条均为 **payment 域 HEAD 既有**（与本轮计费改动无关）：`postgres_payment_intent_runtime_sql_contract` 2（退款 SQL 列/状态词汇已变更，测试未同步；需人工确认后修）。原 `upstream_route_selector` 4 已按新定价契约修正（见 2.75）。**注意 `verify.yml` 不跑 `cargo test`**（只 clippy/audit/deny/SBOM），所以"green verify gate"不能当作测试基线。
 
 ### 变异自证（三层）
 
