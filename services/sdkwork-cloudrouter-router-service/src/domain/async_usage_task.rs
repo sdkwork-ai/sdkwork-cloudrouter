@@ -94,6 +94,12 @@ pub struct NewAsyncUsageTask {
     pub supplier_code: String,
     pub account_id: i64,
     pub region_code: String,
+    /// Creation-time context needed to re-price the completed usage: the
+    /// original method/path/model/account-group/plan. The pricing resolution is
+    /// deliberately **not** stored (it carries non-serializable strategy
+    /// types); the settler re-prices at completion, which is why this context
+    /// is captured instead.
+    pub metadata: Option<Value>,
 }
 
 /// The persisted task returned by a due-claim.
@@ -117,6 +123,7 @@ pub struct AsyncUsageTask {
     pub next_poll_at: DateTime<Utc>,
     pub billing_request_id: Option<String>,
     pub usage_snapshot: Option<Value>,
+    pub metadata: Option<Value>,
 }
 
 impl AsyncUsageTask {

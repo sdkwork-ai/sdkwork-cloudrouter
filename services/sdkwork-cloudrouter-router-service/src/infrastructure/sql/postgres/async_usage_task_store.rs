@@ -34,11 +34,11 @@ impl AsyncUsageTaskStore for PostgresAsyncUsageTaskStore {
                 INSERT INTO ai_metering_async_task (
                     id, uuid, tenant_id, organization_id, user_id, request_id,
                     api_key_id, task_kind, upstream_id, catalog_key, supplier_code,
-                    account_id, region_code, task_status, attempts, next_poll_at
+                    account_id, region_code, task_status, attempts, next_poll_at, metadata
                 ) VALUES (
                     $1, $2, $3, $4, $5, $6,
                     $7, $8, $9, $10, $11,
-                    $12, $13, 'pending', 0, now()
+                    $12, $13, 'pending', 0, now(), $14
                 )
                 ON CONFLICT (tenant_id, organization_id, task_kind, upstream_id)
                     WHERE deleted_at IS NULL
@@ -58,6 +58,14 @@ impl AsyncUsageTaskStore for PostgresAsyncUsageTaskStore {
             .bind(task.supplier_code)
             .bind(task.account_id)
             .bind(task.region_code)
+            // `metadata` is NOT NULL with a '{}' default: binding SQL NULL
+            // would reject the row. A task without creation context stores an
+            // empty object instead, and the settler fails closed on the missing
+            // model rather than mispricing it.
+            .bind(
+                task.metadata
+                    .unwrap_or_else(|| Value::Object(Default::default())),
+            )
             .execute(&self.pool)
             .await
             .map_err(|error| store_error("failed to enqueue async usage task", error))?;
@@ -128,7 +136,7 @@ impl AsyncUsageTaskStore for PostgresAsyncUsageTaskStore {
                 SELECT id, uuid, tenant_id, organization_id, user_id, api_key_id,
                        request_id, task_kind, upstream_id, catalog_key, supplier_code,
                        account_id, region_code, task_status, attempts, next_poll_at,
-                       billing_request_id, usage_snapshot
+                       billing_request_id, usage_snapshot, metadata
                 FROM ai_metering_async_task
                 WHERE id = ANY($1)
                 ORDER BY id
@@ -202,6 +210,12 @@ impl AsyncUsageTaskStore for PostgresAsyncUsageTaskStore {
                         usage_snapshot: row.try_get("usage_snapshot").map_err(|error| {
                             store_error("async task usage_snapshot is missing", error)
                         })?,
+                        metadata: row
+                            .try_get("metadata")
+                            .map(|value: Value| (!value.is_null()).then_some(value))
+                            .map_err(|error| {
+                                store_error("async task metadata is missing", error)
+                            })?,
                     })
                 })
                 .collect()

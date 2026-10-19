@@ -70,6 +70,7 @@ impl AsyncUsageTaskStore for InMemoryAsyncUsageTaskStore {
                     next_poll_at: Utc::now(),
                     billing_request_id: None,
                     usage_snapshot: None,
+                    metadata: task.metadata,
                 },
             );
             Ok(())
@@ -198,6 +199,7 @@ mod tests {
             supplier_code: "openai".to_owned(),
             account_id: 3001,
             region_code: "global".to_owned(),
+            metadata: None,
         }
     }
 

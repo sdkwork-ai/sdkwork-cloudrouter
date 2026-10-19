@@ -9,7 +9,7 @@
 
 - **可售 166/176（94.3%）**，剩余 **10 个**全部 fail-closed，不存在静默免费路径。
 - 176 = **118 Free + 44 计量可售 + 1 音效 + 3 已补价按次 + 5 未定价按次 + 5 已登记不可售**。
-- 计费回归 **59 个 target / 415 passed**；router-service `--lib` **599**；edge-runtime `--lib` **101**；clippy 0；fmt 干净。
+- 计费回归 **60 个 target / 418 passed**；router-service `--lib` **602**；edge-runtime `--lib` **101**；clippy 0；fmt 干净。
 - 逐层锁的变异证据在主审计第五节；就绪计数由
   `commercial_readiness_counts_are_exactly_166_of_176` 钉住。
 
@@ -27,6 +27,7 @@
 | 过期 hold 追收 | `edge-runtime/gateway_billing_account.rs` 的 `hold_is_gone` + `hold-expired-capture` 后缀；对账查询已识别该后缀 | 已实现，hold 过期不再丢单；单测 + 源码契约测试 |
 | 超额应收 | `GatewayBillingStore::mark_usage_uncollected` + 结算拦截器 | 已实现：hold 已捕获而差额扣费失败 ⇒ `uncollected_overage` 终态，worker 不会误标已结算 |
 | Token Bank 行为回归 | `tests/billing_token_bank_flow.rs` | 5 条：冻结/捕获/超额/402/失败释放/应收标记 |
+| 异步完成态结算 | `application/async_usage_settlement.rs` + `tests/async_usage_settlement.rs` | 已实现：完成时重新定价、单笔 postpaid、幂等重放、无用量失败关闭；executor/runtime 未接线 |
 | 向量库存储可测量性 | `usage_extraction::storage_line` | 缺 `usage_bytes` ⇒ 记账失败；显式 0 字节 ⇒ waive |
 
 ## 3. 剩余 10 个 operation 的阻塞
@@ -37,7 +38,9 @@
 `POST /v1/threads/runs`、`POST /v1/threads/{thread_id}/runs`、
 `POST /v1/threads/{thread_id}/runs/{run_id}/submit_tool_outputs`。
 
-已有：表、store、注册器、worker 编排。
+已有：表、store、注册器（含创建期 metadata）、worker 编排、**完成态结算核心
+`ReplayAsyncUsageSettler`**（完成时重新定价 + 单笔 postpaid + 幂等重放 + 无用量
+失败关闭，已由 `tests/async_usage_settlement.rs` 覆盖）。
 仍缺：
 
 1. `AsyncUsageTaskExecutor` 的 provider 实现：
@@ -46,7 +49,8 @@
    - Anthropic batch：对应的 results URL；
    - background Responses / threads run：完成态响应里的 `usage`。
 2. 把 `AsyncUsageRegistrar` 挂到创建成功后的响应（拿到 upstream id 才入队）。
-3. 在 `app_runtime` 启动 worker（feature flag），并复用上游账号凭证解析。
+3. 在 `app_runtime` 启动 worker（feature flag），用
+   `AsyncUsageTaskWorker::with_settler(...)` 接入结算核心，并复用上游账号凭证解析。
 4. 解除 `unmetered_batch_submission` / background / run 的预检守卫。
 
 在 1–3 完成前不得解除拒单，否则批任务会变成未计量放行。
@@ -89,7 +93,8 @@ cargo test -p sdkwork-cloudrouter-router-service \
   --test billing_vector_store_storage --test billing_hosted_tools \
   --test billing_deepseek_web_tools --test billing_media_entrypoints \
   --test billing_token_entrypoints --test billing_quantity_families \
-  --test billing_token_bank_flow --test openapi_billing_matrix
+  --test billing_token_bank_flow --test async_usage_settlement \
+  --test openapi_billing_matrix
 
 # 单测 / 静态门
 cargo test -p sdkwork-cloudrouter-router-service --lib        # 599

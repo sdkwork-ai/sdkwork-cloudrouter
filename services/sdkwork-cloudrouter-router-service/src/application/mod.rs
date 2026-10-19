@@ -4,6 +4,7 @@ mod alipay_payment_adapter;
 mod api_key_secret_codec;
 mod api_key_secret_generator;
 mod async_usage_registration;
+mod async_usage_settlement;
 mod async_usage_task_worker;
 mod billing_subject_cache;
 mod cache_runtime;
@@ -62,6 +63,9 @@ pub use api_key_secret_codec::{
 };
 pub use api_key_secret_generator::{ApiKeySecretGenerator, EntityUuidGenerator};
 pub use async_usage_registration::AsyncUsageRegistrar;
+pub use async_usage_settlement::{
+    AsyncUsageSettlementFuture, AsyncUsageSettler, ReplayAsyncUsageSettler,
+};
 pub use async_usage_task_worker::{
     AsyncUsagePoll, AsyncUsagePollFuture, AsyncUsageTaskExecutor, AsyncUsageTaskWorker,
 };

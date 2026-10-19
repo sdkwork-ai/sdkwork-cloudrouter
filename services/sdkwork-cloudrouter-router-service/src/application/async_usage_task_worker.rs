@@ -8,6 +8,8 @@ use serde_json::Value;
 use crate::domain::{AsyncUsageTask, DomainResult};
 use crate::ports::AsyncUsageTaskStore;
 
+use super::AsyncUsageSettler;
+
 /// Result of one upstream poll for a claimed task.
 #[derive(Debug, Clone, PartialEq)]
 pub enum AsyncUsagePoll {
@@ -35,6 +37,7 @@ pub trait AsyncUsageTaskExecutor: Send + Sync {
 pub struct AsyncUsageTaskWorker {
     store: Arc<dyn AsyncUsageTaskStore>,
     executor: Arc<dyn AsyncUsageTaskExecutor>,
+    settler: Option<Arc<dyn AsyncUsageSettler>>,
     lease: Duration,
     retry_delay: Duration,
     max_attempts: i32,
@@ -51,10 +54,23 @@ impl AsyncUsageTaskWorker {
         Self {
             store,
             executor,
+            settler: None,
             lease,
             retry_delay,
             max_attempts: max_attempts.max(1),
         }
+    }
+
+    /// Charges the completed upstream usage.
+    ///
+    /// Without a settler the worker only advances the task state; with one, the
+    /// snapshot is priced and debited **before** the row becomes terminal. A
+    /// settlement failure reschedules the task instead of marking it settled,
+    /// because both the usage fact and the ledger entry are idempotent on the
+    /// task's billing request id.
+    pub fn with_settler(mut self, settler: Arc<dyn AsyncUsageSettler>) -> Self {
+        self.settler = Some(settler);
+        self
     }
 
     /// Runs one bounded claim/poll pass and returns the number of claimed rows.
@@ -78,6 +94,18 @@ impl AsyncUsageTaskWorker {
                     usage_snapshot,
                     billing_request_id,
                 } => {
+                    if let Some(settler) = self.settler.as_ref() {
+                        if let Err(error) = settler.settle(task, &usage_snapshot).await {
+                            self.store
+                                .reschedule(
+                                    task.id,
+                                    format!("async usage settlement failed: {error}"),
+                                    now + self.retry_delay,
+                                )
+                                .await?;
+                            continue;
+                        }
+                    }
                     self.store
                         .mark_settled(task.id, billing_request_id, usage_snapshot)
                         .await?;
@@ -103,8 +131,10 @@ impl AsyncUsageTaskWorker {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::{AsyncUsageTaskKind, NewAsyncUsageTask};
+    use crate::application::AsyncUsageSettlementFuture;
+    use crate::domain::{AsyncUsageTaskKind, DomainError, NewAsyncUsageTask};
     use crate::infrastructure::InMemoryAsyncUsageTaskStore;
+    use serde_json::Value;
     use std::sync::Mutex;
 
     struct FixedExecutor {
@@ -138,6 +168,7 @@ mod tests {
             supplier_code: "openai".to_owned(),
             account_id: 3001,
             region_code: "global".to_owned(),
+            metadata: None,
         }
     }
 
@@ -194,6 +225,44 @@ mod tests {
             .unwrap();
         assert_eq!(1, due.len());
         assert_eq!(2, due[0].attempts, "the second claim increments again");
+    }
+
+    /// A completed poll whose billing settlement fails must not become
+    /// terminal: the row is rescheduled so the idempotent settlement can be
+    /// retried after the wallet/accounting outage clears.
+    #[tokio::test]
+    async fn settlement_failure_reschedules_instead_of_settling() {
+        struct FailingSettler;
+
+        impl AsyncUsageSettler for FailingSettler {
+            fn settle<'a>(
+                &'a self,
+                _task: &'a AsyncUsageTask,
+                _snapshot: &'a Value,
+            ) -> AsyncUsageSettlementFuture<'a> {
+                Box::pin(async { Err(DomainError::new("wallet temporarily unavailable")) })
+            }
+        }
+
+        let store = Arc::new(InMemoryAsyncUsageTaskStore::new());
+        store.enqueue(task("batch-1")).await.unwrap();
+        let worker = worker(
+            Arc::clone(&store),
+            AsyncUsagePoll::Completed {
+                usage_snapshot: serde_json::json!({"usage": {"input_tokens": 10}}),
+                billing_request_id: "async:openai_batch:batch-1".to_owned(),
+            },
+        )
+        .with_settler(Arc::new(FailingSettler));
+        let now = Utc::now() + Duration::seconds(1);
+        worker.run_once(now, 10).await.unwrap();
+
+        let claimed = store
+            .claim_due(now + Duration::seconds(10), 10, Duration::seconds(30))
+            .await
+            .unwrap();
+        assert_eq!(1, claimed.len(), "a failed settlement is retryable");
+        assert_eq!(2, claimed[0].attempts);
     }
 
     #[tokio::test]

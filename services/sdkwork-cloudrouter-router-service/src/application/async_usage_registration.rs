@@ -65,6 +65,25 @@ fn new_task_from_invocation(
         supplier_code: account.supplier_code.clone(),
         account_id: account.account_id,
         region_code: account.region_code.clone(),
+        // The pricing resolution is not serializable, so the settler re-prices
+        // at completion. Capture the creation context that re-pricing needs:
+        // the original surface, model, account group and plan.
+        metadata: Some(serde_json::json!({
+            "method": invocation.request.method.as_str(),
+            "path": invocation.request.path.as_str(),
+            "model": invocation.resource.requested_model.as_deref(),
+            "apiCode": invocation.resource.api_code.as_str(),
+            "routeKey": invocation.resource.route_key.as_str(),
+            "accountGroupId": invocation
+                .subject
+                .account_group_id
+                .or(account.account_group_id),
+            "pricingPlanCode": invocation
+                .subject
+                .pricing_plan_code
+                .as_deref()
+                .or(account.pricing_plan_code.as_deref()),
+        })),
     })
 }
 
