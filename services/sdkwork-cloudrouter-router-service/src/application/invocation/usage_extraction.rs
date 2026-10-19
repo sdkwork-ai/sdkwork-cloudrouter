@@ -259,7 +259,30 @@ fn extract_composite_usage_from_body(
                 .add_line(InvocationUsageLine::new(meter, quantity));
         }
     }
+    let anthropic_searches = anthropic_web_search_count(body);
+    if anthropic_searches > 0 {
+        let quantity = GatewayUsageQuantity::for_meter(
+            BillingMeter::WebSearchCall,
+            anthropic_searches.to_string(),
+        )
+        .map_err(|error| usage_error(error.to_string()))?;
+        invocation.usage.add_line(InvocationUsageLine::new(
+            BillingMeter::WebSearchCall,
+            quantity,
+        ));
+    }
     Ok(())
+}
+
+/// Anthropic reports server-tool usage separately from token usage:
+/// `usage.server_tool_use.web_search_requests` is the vendor-authoritative
+/// count. Content blocks also contain `server_tool_use` items, but using them
+/// would double-count retries and is not needed when the usage object exists.
+fn anthropic_web_search_count(body: &Value) -> i64 {
+    body.pointer("/usage/server_tool_use/web_search_requests")
+        .and_then(Value::as_i64)
+        .unwrap_or(0)
+        .max(0)
 }
 
 /// Counts hosted server-tool calls reported in a Responses payload.
@@ -269,14 +292,18 @@ fn extract_composite_usage_from_body(
 /// tool count, so the item array is the only authoritative source. Only
 /// completed items are counted (`response.output_item.done` in streaming is
 /// folded into the same array by the accumulator).
-fn tool_call_counts(body: &Value) -> [(BillingMeter, i64); 2] {
+fn tool_call_counts(body: &Value) -> [(BillingMeter, i64); 3] {
     let mut web_search = 0_i64;
     let mut file_search = 0_i64;
+    let mut code_interpreter_sessions = 0_i64;
     if let Some(items) = body.get("output").and_then(Value::as_array) {
         for item in items {
             match item.get("type").and_then(Value::as_str) {
                 Some("web_search_call") => web_search += 1,
                 Some("file_search_call") => file_search += 1,
+                // One Responses call can run several code cells in the same
+                // container session; OpenAI bills the session, not each cell.
+                Some("code_interpreter_call") => code_interpreter_sessions = 1,
                 _ => {}
             }
         }
@@ -284,6 +311,10 @@ fn tool_call_counts(body: &Value) -> [(BillingMeter, i64); 2] {
     [
         (BillingMeter::WebSearchCall, web_search),
         (BillingMeter::FileSearchCall, file_search),
+        (
+            BillingMeter::CodeInterpreterSession,
+            code_interpreter_sessions,
+        ),
     ]
 }
 
@@ -389,6 +420,9 @@ pub struct StreamingUsageAccumulator {
     /// into a synthetic `output[]` array before extraction.
     web_search_calls: u64,
     file_search_calls: u64,
+    /// A code interpreter response opens a billable container session; the
+    /// session is counted once per response, not once per code cell.
+    code_interpreter_session: bool,
 }
 
 const MAX_STREAM_USAGE_LINE_BYTES: usize = 64 * 1024;
@@ -405,6 +439,7 @@ impl StreamingUsageAccumulator {
             observed_wide_chars: 0,
             web_search_calls: 0,
             file_search_calls: 0,
+            code_interpreter_session: false,
         }
     }
 
@@ -443,7 +478,11 @@ impl StreamingUsageAccumulator {
             self.finish_sse_event();
         }
         let mut body = self.latest_usage_body.clone();
-        if body.is_none() && (self.web_search_calls > 0 || self.file_search_calls > 0) {
+        if body.is_none()
+            && (self.web_search_calls > 0
+                || self.file_search_calls > 0
+                || self.code_interpreter_session)
+        {
             body = Some(serde_json::json!({ "usage": {} }));
         }
         if let Some(body) = body.as_mut().and_then(Value::as_object_mut) {
@@ -453,6 +492,9 @@ impl StreamingUsageAccumulator {
             }
             for _ in 0..self.file_search_calls {
                 output.push(serde_json::json!({ "type": "file_search_call" }));
+            }
+            if self.code_interpreter_session {
+                output.push(serde_json::json!({ "type": "code_interpreter_call" }));
             }
             if !output.is_empty() {
                 body.insert("output".to_owned(), Value::Array(output));
@@ -649,6 +691,7 @@ impl StreamingUsageAccumulator {
             {
                 Some("web_search_call") => self.web_search_calls += 1,
                 Some("file_search_call") => self.file_search_calls += 1,
+                Some("code_interpreter_call") => self.code_interpreter_session = true,
                 _ => {}
             }
         }
@@ -2353,9 +2396,9 @@ mod tests {
     use serde_json::{json, Value};
 
     use super::{
-        augment_missing_prompt_tokens, cached_tokens, composite_usage_components,
-        normalized_input_tokens, token_line, tool_call_counts, InvocationBody,
-        StreamingUsageAccumulator, StreamingUsageFormat,
+        anthropic_web_search_count, augment_missing_prompt_tokens, cached_tokens,
+        composite_usage_components, normalized_input_tokens, token_line, tool_call_counts,
+        InvocationBody, StreamingUsageAccumulator, StreamingUsageFormat,
     };
     use crate::domain::BillingMeter;
 
@@ -2465,6 +2508,8 @@ mod tests {
             "output": [
                 {"type": "web_search_call"},
                 {"type": "file_search_call"},
+                {"type": "code_interpreter_call"},
+                {"type": "code_interpreter_call"},
                 {"type": "message"},
                 {"type": "web_search_call"}
             ]
@@ -2472,6 +2517,13 @@ mod tests {
         let counts = tool_call_counts(&body);
         assert_eq!((BillingMeter::WebSearchCall, 2), counts[0]);
         assert_eq!((BillingMeter::FileSearchCall, 1), counts[1]);
+        assert_eq!((BillingMeter::CodeInterpreterSession, 1), counts[2]);
+        assert_eq!(
+            2,
+            anthropic_web_search_count(&json!({
+                "usage": {"server_tool_use": {"web_search_requests": 2}}
+            }))
+        );
     }
 
     #[test]
@@ -2490,6 +2542,16 @@ mod tests {
             .unwrap();
         accumulator
             .observe(
+                b"data: {\"type\":\"response.output_item.done\",\"item\":{\"type\":\"code_interpreter_call\"}}\n\n",
+            )
+            .unwrap();
+        accumulator
+            .observe(
+                b"data: {\"type\":\"response.output_item.done\",\"item\":{\"type\":\"code_interpreter_call\"}}\n\n",
+            )
+            .unwrap();
+        accumulator
+            .observe(
                 b"data: {\"type\":\"response.completed\",\"response\":{\"usage\":{\"input_tokens\":10,\"output_tokens\":5}}}\n\n",
             )
             .unwrap();
@@ -2499,7 +2561,15 @@ mod tests {
             .get("output")
             .and_then(Value::as_array)
             .expect("synthetic output array");
-        assert_eq!(2, output.len());
+        assert_eq!(3, output.len(), "two code cells collapse to one session");
+        assert_eq!(
+            1,
+            output
+                .iter()
+                .filter(|item| item.get("type").and_then(Value::as_str)
+                    == Some("code_interpreter_call"))
+                .count()
+        );
         assert_eq!(
             Some(10),
             body.pointer("/usage/input_tokens").and_then(Value::as_i64)

@@ -4,16 +4,17 @@
 > 目标：每个接口的计费档（`BillingMode`）、计量单位（`BillingMeter`）、数量来源（`BillingQuantitySource`）都落到行业专业口径，可以按此商业化售卖。
 > 配套可执行口径：`services/sdkwork-cloudrouter-router-service/tests/openapi_billing_matrix.rs` + `tests/golden/openapi_billing_matrix.tsv`。
 > **商业化就绪总报告（165/176 可售、11 个阻塞项与解除条件）**：[OPENAPI-BILLING-COMMERCIAL-READINESS-2026-10-19.md](OPENAPI-BILLING-COMMERCIAL-READINESS-2026-10-19.md)。
+> **交接单（复现命令与逐项复位步骤）**：[OPENAPI-BILLING-HANDOFF-2026-10-19.md](OPENAPI-BILLING-HANDOFF-2026-10-19.md)。
 >
 > **2026-10-19 第 9 轮补充**：新增 2.21（Google/Gemini 逐模态令牌）与 `billing_google_modality_tokens.rs`（7 个用例），并修掉 `pricing_meters` 的"目录改写后重解析缩表"缺陷。
 >
-> **2026-10-19 第 10–22 轮补充**：新增 2.22（token 计价的二进制语音合成必须在派发前拒单）、2.23（批量提交在结果回收前必须拒单）、2.24（`background: true` 在用量回填前必须拒单）、2.25（实时语音在 WebSocket 代理落地前必须拒单）、2.26（图像单档位费率必须可解析）、2.27（Anthropic 缓存写入必须按 TTL 档位计价）、2.28（上下文分档 token 费率必须可解析）、2.29（缓存读必须按逐行模态计价）、2.30（Alibaba 显式/隐式缓存读必须可区分）、2.31（输入侧预扣取最高价不求和）、2.32（累计上界档位词汇）、2.33（流式 Chat 必须索取 usage）、2.34（usage-only chunk 不透传）、2.35（图像输入模式档位）、2.36（管理面归 Free）、2.37（OpenAI 管理/CRUD 归 Free）、2.38（异步轮询归 Free）、2.39（管理面几个"过度排除"的端点归 Free）、2.40（Responses 压缩按 token 计费）、2.41（音效按分钟计费已生效）、2.42（容器文件归 Free）、2.43（未定价按次端点不得静默免费）、2.44（音乐时长兜底歧义显式化）、2.45（就绪计数锁 165/176）、2.46（零产出必须 waive）、2.47（2xx 业务失败必须 waive）、2.48（中断流补输入估算）、2.49（服务端工具按次计费）、2.50（异步对账表与数据库初始化）、2.51（向量库检索按次计费）、2.52（异步对账 store）、2.53（批 embedding 按请求 token 估算）、2.54（DeepSeek web tools 按成功请求计费）、2.55（异步注册器）与二十二个测试文件（5+5+6+6+5+4+7+4+4+4+3+2+1+1+2+2+4+4+1+1+1+1 个用例，另在 precharge 文件新增 2 条、provider_request 单测 4 条、stream 过滤单测 5 条、usage_extraction 单测 5 条、async registrar 单测 2 条）。回归合计 **279** 个计费用例 + router-service `--lib` **592** 个单测 + edge-runtime `--lib` **97** 个单测全绿。
+> **2026-10-19 第 10–22 轮补充**：新增 2.22（token 计价的二进制语音合成必须在派发前拒单）、2.23（批量提交在结果回收前必须拒单）、2.24（`background: true` 在用量回填前必须拒单）、2.25（实时语音在 WebSocket 代理落地前必须拒单）、2.26（图像单档位费率必须可解析）、2.27（Anthropic 缓存写入必须按 TTL 档位计价）、2.28（上下文分档 token 费率必须可解析）、2.29（缓存读必须按逐行模态计价）、2.30（Alibaba 显式/隐式缓存读必须可区分）、2.31（输入侧预扣取最高价不求和）、2.32（累计上界档位词汇）、2.33（流式 Chat 必须索取 usage）、2.34（usage-only chunk 不透传）、2.35（图像输入模式档位）、2.36（管理面归 Free）、2.37（OpenAI 管理/CRUD 归 Free）、2.38（异步轮询归 Free）、2.39（管理面几个"过度排除"的端点归 Free）、2.40（Responses 压缩按 token 计费）、2.41（音效按分钟计费已生效）、2.42（容器文件归 Free）、2.43（未定价按次端点不得静默免费）、2.44（音乐时长兜底歧义显式化）、2.45（就绪计数锁 165/176）、2.46（零产出必须 waive）、2.47（2xx 业务失败必须 waive）、2.48（中断流补输入估算）、2.49（服务端工具按次计费）、2.50（异步对账表与数据库初始化）、2.51（向量库检索按次计费）、2.52（异步对账 store）、2.53（批 embedding 按请求 token 估算）、2.54（DeepSeek web tools 按成功请求计费）、2.55（异步注册器）、2.56（异步 worker 编排）、2.57（货币→Token Bank 严格换算）、2.58（hold 原子捕获）、2.59（厂商时段价）、2.60（计费未就绪返回 501）、2.61（Code Interpreter 会话计费）、2.62（Anthropic web search 按次）、2.63（预扣 hold TTL 可配置）与二十四个测试文件（5+5+6+6+5+4+7+4+4+4+3+2+1+1+2+2+4+4+1+1+1+1+1+1 个用例，另在 precharge 文件新增 2 条、provider_request 单测 4 条、stream 过滤单测 5 条、usage_extraction 单测 5 条、async registrar 单测 2 条、async worker 单测 3 条、account hold 单测 2 条、overage split 单测 1 条、time-window 单测 3 条、BillingUnavailable 单测 1 条）。回归合计 **287** 个计费用例 + router-service `--lib` **598** 个单测全绿 + edge-runtime `--lib` **99** 个单测全绿。
 
 ## 一句话结论
 
 176 个 operation 全部可分类、全部有确定计费形态：**109 个按次**（其中 24 个是无专属计量单位的通用请求）、**11 个复合 token**、**3 个 embedding token**、**7 个图片张**、**10 个视频条 + 4 个视频秒**、**2 个音乐秒**、**3 个 TTS 字符**、**2 个 STT 分钟**、**2 个免费**。累计修掉 **21 类**会让"上游成本"与"对客收费"脱钩的偏差（2.1–2.21），剩余 24 个无计量单位端点已逐个登记原因。
 
-**商业化判断看五个面，缺一不可**：形态（按什么单位收）、数量（这个单位量出多少，**逐接口**而非逐家族）、**单价（同一个数量有没有落在正确的计量单位上——音频 token 与文本 token 差 8 倍）**、预扣（派发前冻结多少）、可结算性（声明了数量来源就一定要能被抽取）。五个面各有可执行锁，合计 **279 个测试**常绿；数量层、预扣层、模态层、厂商形状层、可结算性守卫层都做过变异自证（见第六节）。
+**商业化判断看五个面，缺一不可**：形态（按什么单位收）、数量（这个单位量出多少，**逐接口**而非逐家族）、**单价（同一个数量有没有落在正确的计量单位上——音频 token 与文本 token 差 8 倍）**、预扣（派发前冻结多少）、可结算性（声明了数量来源就一定要能被抽取）。五个面各有可执行锁，合计 **287 个计费测试 + 598 个 router lib 测试**；数量层、预扣层、模态层、厂商形状层、可结算性守卫层都做过变异自证（见第六节）。
 
 ## 一、家族分布（快照统计）
 
@@ -1241,8 +1242,177 @@ worker 与注册拦截器仍未接线；下一轮把 `enqueue` 挂到 batch/back
 - 单测 2 条：重复注册只留一条（并断言 catalog_key/supplier 落库）、空
   upstream id 拒绝。
 
-注册器尚未挂到 batch/background/run 创建后的成功响应；worker 也尚未实现，
-两者都留到下一轮接线。
+注册器尚未挂到 batch/background/run 创建后的成功响应；worker 编排已由 2.56
+补齐，provider executor 仍待接入。
+
+### 2.56 异步 worker 编排：claim → poll → settle/reschedule/expire
+
+`AsyncUsageTaskWorker` 负责状态机，provider 只实现 `AsyncUsageTaskExecutor::poll`：
+
+- `run_once(now, limit)` 从 store 领取到期任务（`FOR UPDATE SKIP LOCKED` +
+  lease），逐条 poll；
+- `Completed` → `mark_settled(billing_request_id, usage_snapshot)`；
+- `Pending` → `reschedule(now + retry_delay)`，attempts 已在 claim 时 +1；
+- `Failed` → `mark_failed`（终态，不收费）；
+- 超过 `max_attempts` → `mark_expired`，避免无限轮询与无限保留。
+
+单测 3 条：completed 后不再被领取、pending 按 retry_delay 延后且 attempts
+递增、failed 终态。`router-service --lib` 从 592 增至 **595**。
+
+worker 尚未挂到应用启动生命周期，也还没有真实 provider executor；在两者落地
+前，batch / background / threads 继续拒单，不会出现"领取了任务却无人结算"的
+半成品状态。
+
+### 2.57 货币金额 → Token Bank 积分：正数必须显式汇率，零金额免费
+
+Token Bank 的扣款单位是积分，目录价是货币金额；两者之间只允许一条确定的换算
+路径：
+
+1. `customer_charge_amount`（货币）→ `token_points_for_charge`：
+   `ceil(amount × currency→CNY × base_points_per_CNY × 1e6)` 微积分；
+2. 请求内多条 usage fact 用**累计上界法**分配 `debit_points`，各条之和恰好
+   等于总额的向上取整（不会因逐条 ceil 多收）；
+3. 钱包按同一总额扣积分，usage 行记录同一 `debit_points`。
+
+本轮把三个隐性偏差改成 fail-closed：
+
+- **未知币种**不再回退到 CNY 汇率。正金额且没有显式
+  `currency_to_cny_rates` 时直接报错，避免把 JPY/EUR 按 1:1 扣成人民币；
+- **换算失败**不再把该 usage fact 的 `debit_points` 写成 0 后继续扣款。分配
+  函数返回错误，结算中止，预扣保留待对账；
+- **多币种混单**在分配阶段直接拒绝，不再用第一条 fact 的币种换算其余 fact。
+
+零金额仍是免费：`token_points_for_charge("0", unsupported)` 返回 0，不因
+缺少汇率把"无消费"变成结算失败。
+
+`invocation_pricing_settlement` 的 USD 双行用例同时钉住总额与逐行分配：
+`$0.0000018 + $0.0000048` 在默认 `70 points/USD` 下是
+`126 + 336 = 462` 微积分，而不是两条各自 ceil 后的其它组合。
+
+### 2.58 Token Bank 原子捕获：hold 结算不再 release-then-debit
+
+同步预付路径原来在 `settle_hold` 中先释放 hold，再单独追加实际消费
+ledger。两步之间崩溃会丢失扣款；重试也无法判断 debit 是否已经发生。本轮改为
+账号域**一次事务内捕获**：
+
+- `SettleAccountHoldCommand` 增加可选 `settled_amount`（不传保持历史全额
+  捕获）；
+- 账号仓库在同一事务内完成：校验 `0 < settled_amount <= hold.amount`、
+  冻结额清零、未用余额退回 available、写入实际消费 ledger、hold 标记
+  settled 并记录实际 `settled_amount`；
+- edge gateway 的 `settle_hold` 直接用 `settled_amount = actual` 调
+  `settle_account_hold`，不再先 release 再 append；
+- 幂等：hold settle scope 以 `cloudrouter:<request>:consumption` 为
+  idempotency key，请求哈希包含 `settled_amount`；同额重试返回 replay，
+  不同额重试哈希冲突而不是复用旧金额；
+- 余额审计：ledger 的 `balance_before/after` 是退回未用部分后的 available，
+  冻结额与 available 之和守恒；
+- 若实际用量超过预扣，账号约束不允许 `settled_amount > hold.amount`，因此先
+  全额捕获 hold，再用 `cloudrouter:<request>:postpaid` 幂等键扣差额；差额扣款
+  失败时至少基础预扣已经入账，不会退化成整单未收。该分支由
+  `billing_transaction` 的 `split_hold_capture` 单测钉住；
+- 结算复用 **precharge 当时捕获的汇率快照**，不在响应后重新读管理端配置：
+  否则请求中途改汇率会让钱包扣款与 usage 行 `debit_points` 不一致；
+- 预扣估算为 0 时本来不会创建 hold；若实际 usage 为正，同步模式回退为
+  postpaid 扣款并标记 usage settled，异步模式仍交给 worker，避免重复扣款。
+
+锁：账号仓库 2 条纯校验单测（全额默认、部分捕获上界/零值拒绝）、cloudrouter
+`gateway_billing_contract` 的原子捕获/金额入哈希静态契约，以及
+`postgres_usage_settlement_store_e2e::hold_partial_capture_is_atomic_and_returns_the_unused_reservation`
+（真实 Postgres，断言 available +100、frozen 0、ledger 仅 200），以及
+`concurrent_settlement_debits_the_wallet_once`（两个 worker 并发 settle 同一
+usage fact，只能一个成功、只产生一条 ledger），以及
+`concurrent_hold_capture_debits_once`（两个请求并发捕获同一 hold，只产生一条
+200 的消费 ledger、available 只减 200），以及
+`concurrent_holds_cannot_overdraw_the_wallet`（两个 600 的 hold 并发争 1,000
+余额，只能一个成功，available 400 / frozen 600）。该 e2e 遵循既有约定，未设置
+`SDKWORK_DATABASE_URL` 时跳过；当前本地验证因未设置该变量而跳过，CI 需带上
+数据库运行。
+
+### 2.59 厂商时段价：time-window 费率只在窗口内覆盖标准价
+
+DeepSeek 的 off-peak 价、部分厂商的夜间价属于 `rate_variant = time_window`：
+同一 meter 同时存在 standard 与 time_window 两条费率，窗口外必须落回 standard。
+
+`invocation_pricing_settlement` 新增用例固定：
+
+- `occurred_at = 2026-10-19T02:00:00Z`（Asia/Shanghai 10:00，周一窗口内）
+  → 选中 `0.500000` 的 time-window 单价，`matchedWindowCode = weekday-morning`；
+- `occurred_at = 2026-10-19T05:00:00Z`（13:00，窗口外）
+  → 落回 `0.150000` 的 standard 单价；
+- 另有互补窗口用例：工作日 10:00 落 peak `0.5`、工作日 13:00 落 off-peak
+  `0.2`、周六 10:00 落 off-peak `0.2`，覆盖 DeepSeek 周末全天谷时的
+  日历形状；
+- 另有 `includeDates` / `excludeDates` 用例：被排除的周一落 standard，
+  被 include 的周二即使不在 `daysOfWeek` 也落 holiday 价，普通周三回落
+  standard；证明节假日/调休日历的机制本身已可执行。
+
+该锁同时验证 `PriceService` 收到的是 invocation 的 `occurred_at`，而不是
+“当前墙钟”或缓存价；否则窗口价会全天生效，夜间折扣/峰时加价都会失真。
+
+目录当前把 DeepSeek 工作日 `09:00–12:00 / 14:00–18:00` 编码为 peak，其余
+工作日时段与周末编码为 off-peak。**法定节假日/调休日历还没有写入
+`includeDates` / `excludeDates`**：工作日节假日仍会落到 peak。这是下一项
+vendor 日历数据完善，不能靠结算层猜。
+
+### 2.60 已发布但计费未就绪：返回 501，而不是 502
+
+批量创建、background Responses、Realtime 会话，以及 vector store
+`files` / `file_batches` 摄取这些“已发布但计费链路尚未启用”的端点，原来走
+`Pricing` 错误，HTTP 映射为 **502 Bad Gateway**。这会让客户端误判为上游故障
+并自动重试，重试仍然拿不到结果。
+
+现在新增 `InvocationErrorKind::BillingUnavailable`：
+
+- 机器码 `billing_unavailable`；
+- HTTP **501 Not Implemented**；
+- OpenAI 错误 `type` 仍走 `server_error`（官方 vocabulary 无 501 专用值）；
+- 只用于“网关明确尚未实现该计费模式”，不用于价格配置错误（后者仍是
+  `pricing_failed`/502）；
+- vector store 摄取单独在预检前返回 501，并明确提示“storage byte-day worker
+  未启用”，而不是让客户端按 502 重试。
+
+对应测试从断言 `Pricing` 改为断言 `BillingUnavailable`；router lib 新增
+501 映射用例，edge 进一步断言响应体
+`error.code = billing_unavailable`、`error.type = server_error`、HTTP 501，
+避免只改状态码而契约字段漂移。
+
+### 2.61 Code Interpreter：按会话计费，不按代码单元
+
+OpenAI Responses 的 `code_interpreter_call` 只出现在 `output[]`，token usage
+frame 里没有它；vendor 按 **$0.03 / container session** 收，不是每个代码单元。
+
+- 目录给 6 个 OpenAI 在售 chat 模型补 `code_interpreter_session`
+  （$0.03/session，official）；
+- 抽取层看到任意数量 `code_interpreter_call` 只产生 **一条** session 行；
+- 流式 `response.output_item.done` 同样折叠为一次 session；`usage_extraction`
+  单测覆盖两个 `done` 事件只合成一个 `code_interpreter_call`；
+- 新增 `billing_code_interpreter`：一个响应含两个 code cell，断言只生成
+  一条 `code_interpreter_session`、数量 1、金额 `$0.03`。
+
+### 2.62 Anthropic web search：按 vendor 的 request 数计费
+
+Anthropic 把 server-tool 用量单独放在
+`usage.server_tool_use.web_search_requests`，token usage 里没有搜索次数。
+vendor 价是 **$10 / 1K searches**。
+
+- 抽取层只读该 usage 字段，不按 content block 重复计数（重试会重复 block）；
+- 目录给 13 个 Anthropic 模型补 `web_search_call`（$10/1k，official）；
+- 新增 `billing_anthropic_web_search`：一个响应报告 2 次搜索，
+  `web_search_call` 数量 2、金额 `$0.02`，并与 token 行共存；
+- 流式用例证明 `message_start.message.usage.server_tool_use` 在
+  `message_delta` 覆盖后仍被保留，不会因最后一帧只有 output 而丢失搜索费。
+
+### 2.63 预扣 hold TTL 可配置且有界
+
+固定 30 分钟的 hold 生命周期会让长流式请求在结算前过期：上游成功、客户已收到
+内容，但 `settle_hold` 因 hold 过期失败，形成未收款。现在：
+
+- env `SDKWORK_CLOUDROUTER_PREPAY_HOLD_TTL_SECONDS` 可配置；
+- 允许范围 `60..86400` 秒；非法/越界/非数字回退默认 1800；
+- `create_hold` 使用该 TTL，测试断言默认、合法值和越界回退。
+
+这不是鼓励无限冻结；上限 24 小时防止运营误配把余额长期锁死。
 
 ## 四、5 个"无专属计量单位且仍不可售"端点（已登记）
 
@@ -1371,7 +1541,7 @@ git diff services/sdkwork-cloudrouter-router-service/tests/golden/openapi_billin
 | `node tools/check-cloudrouter-ai-routing-consistency.mjs` | **passed**（122 个 OpenAI-compatible operation 全部有分类臂） |
 | `cargo fmt --check` | 干净 |
 
-合计 **279 个测试全绿**（形态 15 + 逐接口媒体数量 17 + 逐接口流式数量 16 + 逐模态单价 OpenAI 5 + 逐模态单价 Google 7 + 可结算性守卫 35 + 图像档位 5 + 缓存写入档位 4 + 上下文分档 7 + 缓存读模态 4 + Alibaba 缓存 4 + 缓存缺价回退 3 + 家族数量 11 + 目录改写 5 + 预扣 12 + 音乐兜底 2 + 就绪计数 1 + 空结果 waive 4 + 业务失败 waive 7 + 服务端工具 1 + 向量库检索 1 + 批 embedding 1 + DeepSeek web tools 2 + 既有计费/契约/分类/payload 111），另加 `cargo test -p sdkwork-cloudrouter-edge-runtime --lib` **97 passed**（流式传输层 + 流式协议映射 + usage-only chunk 过滤 5 条）与 `--lib openai_usage` **12 passed**（中继侧输入量口径）。router-service 全量还有 2 个红目标，全部 **HEAD 既有**（与本轮计费改动无关）：`upstream_route_selector` 4、`postgres_payment_intent_runtime_sql_contract` 2。第 9 轮把原来的第 3 个红目标修掉了：`--lib` 的 `every_capability_binds_only_to_a_declared_vendor_native_endpoint` 之所以报 `gemini.video_task_query`，是**测试的 poll-surface 白名单漏了这一条**（该端点确实是 `gemini.video_generation` 的轮询面，`GET /v1beta/models/{model}/operations/{operationId}`，没有任何模型声明 `task_query` capability），补进白名单后 `--lib` 全绿（第 17 轮起为 **583/583**，含 4 条 provider_request 单测）。这不是计费缺陷，但"声明了却永远无法被描述符绑定"会出现在商业审计里，所以同轮修掉。**注意 `verify.yml` 不跑 `cargo test`**（只 clippy/audit/deny/SBOM），所以"green verify gate"不能当作测试基线。
+合计 **287 个计费测试全绿**（形态 15 + 逐接口媒体数量 17 + 逐接口流式数量 16 + 逐模态单价 OpenAI 5 + 逐模态单价 Google 7 + 可结算性守卫 35 + 图像档位 5 + 缓存写入档位 4 + 上下文分档 7 + 缓存读模态 4 + Alibaba 缓存 4 + 缓存缺价回退 3 + 家族数量 11 + 目录改写 5 + 预扣 12 + 音乐兜底 2 + 就绪计数 1 + 空结果 waive 4 + 业务失败 waive 7 + 服务端工具 1 + 向量库检索 1 + 批 embedding 1 + DeepSeek web tools 2 + 既有计费/契约/分类/payload 118），edge-runtime `--lib` **99 passed**（流式传输层 + 流式协议映射 + usage-only chunk 过滤 5 条 + BillingUnavailable 501 映射 1 条 + hold TTL 1 条）。`--lib openai_usage` **12 passed**（中继侧输入量口径）。router-service 全量还有 2 个红目标，全部 **HEAD 既有**（与本轮计费改动无关）：`upstream_route_selector` 4、`postgres_payment_intent_runtime_sql_contract` 2。第 9 轮把原来的第 3 个红目标修掉了：`--lib` 的 `every_capability_binds_only_to_a_declared_vendor_native_endpoint` 之所以报 `gemini.video_task_query`，是**测试的 poll-surface 白名单漏了这一条**（该端点确实是 `gemini.video_generation` 的轮询面，`GET /v1beta/models/{model}/operations/{operationId}`，没有任何模型声明 `task_query` capability），补进白名单后 `--lib` 全绿（第 17 轮起为 **583/583**，含 4 条 provider_request 单测）。这不是计费缺陷，但"声明了却永远无法被描述符绑定"会出现在商业审计里，所以同轮修掉。**注意 `verify.yml` 不跑 `cargo test`**（只 clippy/audit/deny/SBOM），所以"green verify gate"不能当作测试基线。
 
 ### 变异自证（三层）
 

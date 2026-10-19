@@ -338,6 +338,7 @@ fn status_code_for_error(error: &InvocationError) -> u16 {
         // 402 (Payment Required) instead of the 502 used for infrastructure
         // faults, so clients can route the user to recharge.
         super::InvocationErrorKind::InsufficientBalance => 402,
+        super::InvocationErrorKind::BillingUnavailable => 501,
         super::InvocationErrorKind::Routing
         | super::InvocationErrorKind::Pricing
         | super::InvocationErrorKind::Dispatch
@@ -418,7 +419,17 @@ pub(crate) fn provider_response_succeeded(invocation: &Invocation) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::rewrite_sse_model_line;
+    use super::super::{InvocationError, InvocationErrorKind};
+    use super::{rewrite_sse_model_line, status_code_for_error};
+
+    #[test]
+    fn billing_unavailable_maps_to_501() {
+        let error = InvocationError::new(
+            InvocationErrorKind::BillingUnavailable,
+            "async usage reconciliation is not enabled",
+        );
+        assert_eq!(501, status_code_for_error(&error));
+    }
 
     #[test]
     fn sse_model_line_is_rewritten_to_requested_model() {

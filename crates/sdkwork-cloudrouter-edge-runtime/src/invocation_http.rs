@@ -1012,6 +1012,10 @@ pub(crate) fn response_from_invocation_error(error: &InvocationError) -> Respons
         // request right now → 503, consistent with the router-service explicit
         // routers (`upstream_route_unavailable`) and the auth-token channel.
         InvocationErrorKind::Routing => StatusCode::SERVICE_UNAVAILABLE,
+        // Published operation whose vendor billing/reconciliation path is not
+        // enabled. A retry will not help; 501 tells the caller this gateway
+        // deliberately does not implement that billing mode yet.
+        InvocationErrorKind::BillingUnavailable => StatusCode::NOT_IMPLEMENTED,
         // Genuine upstream/transport failures after a route was selected → 502.
         InvocationErrorKind::Pricing
         | InvocationErrorKind::Dispatch
@@ -1382,5 +1386,28 @@ mod gateway_dispatch_defaults_tests {
         let response = invocation.dispatch.response.expect("synthetic response");
         let body = response.body.expect("json body");
         assert_eq!(0, body["data"].as_array().expect("models array").len());
+    }
+}
+
+#[cfg(test)]
+mod billing_unavailable_tests {
+    use super::response_from_invocation_error;
+    use axum::http::StatusCode;
+    use sdkwork_cloudrouter_router_service::application::{InvocationError, InvocationErrorKind};
+
+    #[tokio::test]
+    async fn billing_unavailable_maps_to_not_implemented() {
+        let error = InvocationError::new(
+            InvocationErrorKind::BillingUnavailable,
+            "async usage reconciliation is not enabled",
+        );
+        let response = response_from_invocation_error(&error);
+        assert_eq!(StatusCode::NOT_IMPLEMENTED, response.status());
+        let bytes = axum::body::to_bytes(response.into_body(), 4096)
+            .await
+            .expect("error body");
+        let body: serde_json::Value = serde_json::from_slice(&bytes).expect("json error");
+        assert_eq!("billing_unavailable", body["error"]["code"]);
+        assert_eq!("server_error", body["error"]["type"]);
     }
 }

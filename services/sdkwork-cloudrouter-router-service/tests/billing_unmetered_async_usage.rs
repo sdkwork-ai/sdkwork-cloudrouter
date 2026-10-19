@@ -112,9 +112,9 @@ const ASYNC_REFUSAL: &str = "async response usage reconciliation";
 
 fn assert_async_refusal(error: InvocationError) {
     assert_eq!(
-        InvocationErrorKind::Pricing,
+        InvocationErrorKind::BillingUnavailable,
         error.kind,
-        "the refusal must be a pricing failure: {error:?}"
+        "the refusal must be a billing-unavailable failure: {error:?}"
     );
     assert!(
         error.message.contains(ASYNC_REFUSAL),

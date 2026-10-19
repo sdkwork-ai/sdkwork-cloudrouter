@@ -4,7 +4,7 @@ use chrono::{Duration, Utc};
 use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
 use sdkwork_account_service::{
     AppendLedgerEntryCommand, CreateAccountHoldCommand, ReleaseAccountHoldCommand,
-    WalletAccountListQuery,
+    SettleAccountHoldCommand, WalletAccountListQuery,
 };
 use sdkwork_cloudrouter_router_service::domain::DomainError;
 use sdkwork_cloudrouter_router_service::ports::{
@@ -24,6 +24,8 @@ const TOKEN_BANK_CURRENCY_CODE: &str = "TOKEN_BANK";
 /// Each billing operation carries a distinct suffix so ledger mutations are
 /// idempotent and recoverable by the async settlement worker.
 const RELEASE_SUFFIX: &str = "release";
+/// Request-scoped idempotency suffix for the actual-consumption capture.
+const CONSUMPTION_SUFFIX: &str = "consumption";
 /// Active cash→points exchange rule marker (mirrors sdkwork-order). The
 /// recharge settings model is parsed from this rule's base points-per-CNY
 /// rate plus its child currency→CNY rates, and is reused for usage debit
@@ -180,7 +182,7 @@ impl PostgresGatewayBillingStore {
             .map_err(|error| DomainError::new(error.to_owned()))?;
         let business_no = format!("cloudrouter:{}:precharge", context.request_id);
         let idempotency_key = business_no.clone();
-        let expires_at = (Utc::now() + Duration::minutes(30)).to_rfc3339();
+        let expires_at = (Utc::now() + prepay_hold_ttl()).to_rfc3339();
         let command = CreateAccountHoldCommand::new(
             &context.tenant_id.to_string(),
             Some(&context.organization_id.to_string()),
@@ -346,18 +348,60 @@ impl GatewayBillingStore for PostgresGatewayBillingStore {
         actual: GatewayBillingAmount,
     ) -> GatewayBillingFuture<'a, ()> {
         Box::pin(async move {
-            // Unfreeze the full reservation back to available (no ledger entry),
-            // then append exactly ONE actual-consumption debit. Any over-
-            // reservation returns silently, so the wallet never shows a
-            // provisional "消费" paired with a later "返还" transaction.
-            self.release_hold_inner(&context, &hold_id).await?;
-            self.append(
-                &context,
-                &actual,
-                CommerceLedgerDirection::Debit,
-                "consumption",
+            if actual.amount == "0" {
+                return self.release_hold_inner(&context, &hold_id).await;
+            }
+            if actual
+                .amount
+                .parse::<i128>()
+                .map_or(true, |value| value <= 0)
+            {
+                return Err(DomainError::new(
+                    "hold settlement amount must be a positive integer",
+                ));
+            }
+            // Capture the actual amount and return the unused reservation in
+            // ONE account transaction. The wallet history therefore contains a
+            // single actual-consumption debit, never a provisional "消费" paired
+            // with a later "返还". The previous release-then-append order had a
+            // crash window: a released hold with a failed ledger append lost the
+            // charge, and a retry could not tell whether the debit had happened.
+            // The hold settle scope is idempotent on the consumption transaction
+            // number, and the request hash includes the captured amount so a
+            // retry with different pricing fails instead of silently replaying
+            // the old amount.
+            let transaction_no =
+                format!("cloudrouter:{}:{}", context.request_id, CONSUMPTION_SUFFIX);
+            let request_no = context.request_id.clone();
+            let idempotency_key = transaction_no.clone();
+            let command = SettleAccountHoldCommand::new(
+                &context.tenant_id.to_string(),
+                &hold_id,
+                BUSINESS_TYPE,
+                &transaction_no,
+                &request_no,
+                &idempotency_key,
             )
-            .await
+            .map_err(|error| DomainError::new(error.message().to_owned()))?
+            .with_settled_amount(&actual.amount)
+            .map_err(|error| DomainError::new(error.message().to_owned()))?;
+            let request_hash_payload = format!(
+                "{}|{}|{}|{}|{}|{}|{}",
+                command.tenant_id,
+                command.hold_id,
+                command.business_type,
+                command.transaction_no,
+                command.request_no,
+                command.idempotency_key,
+                command.settled_amount.as_deref().unwrap_or_default(),
+            );
+            let hash = CommerceRequestHash::new(&sha256_hex(&request_hash_payload))
+                .map_err(|error| DomainError::new(error.message().to_owned()))?;
+            self.account_store
+                .settle_account_hold(command, hash)
+                .await
+                .map_err(account_hold_error)?;
+            Ok(())
         })
     }
 
@@ -617,14 +661,61 @@ fn parse_charge_mode(value: Option<&str>) -> Result<CustomerChargeMode, DomainEr
     }
 }
 
+const DEFAULT_PREPAY_HOLD_TTL_SECONDS: i64 = 30 * 60;
+const MIN_PREPAY_HOLD_TTL_SECONDS: i64 = 60;
+const MAX_PREPAY_HOLD_TTL_SECONDS: i64 = 24 * 60 * 60;
+
+/// Hold lifetime for synchronous prepaid requests. A fixed 30 minutes fails
+/// settlement for long-running streams and background-like work; operators can
+/// raise it via `SDKWORK_CLOUDROUTER_PREPAY_HOLD_TTL_SECONDS` within the clamp.
+fn prepay_hold_ttl() -> Duration {
+    prepay_hold_ttl_from_value(
+        std::env::var("SDKWORK_CLOUDROUTER_PREPAY_HOLD_TTL_SECONDS")
+            .ok()
+            .as_deref(),
+    )
+}
+
+fn prepay_hold_ttl_from_value(value: Option<&str>) -> Duration {
+    let seconds = value
+        .and_then(|value| value.trim().parse::<i64>().ok())
+        .filter(|seconds| {
+            (MIN_PREPAY_HOLD_TTL_SECONDS..=MAX_PREPAY_HOLD_TTL_SECONDS).contains(seconds)
+        })
+        .unwrap_or(DEFAULT_PREPAY_HOLD_TTL_SECONDS);
+    Duration::seconds(seconds)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{parse_charge_mode, parse_settlement_mode};
+    use super::{parse_charge_mode, parse_settlement_mode, prepay_hold_ttl_from_value};
+    use chrono::Duration;
     use sdkwork_account_service::CreateAccountHoldCommand;
     use sdkwork_cloudrouter_router_service::ports::{
         CustomerChargeMode, GatewayBillingContext, GatewayBillingSettlementMode,
     };
     use sdkwork_contract_service::{CommerceAccountAssetType, CommerceMoney};
+
+    #[test]
+    fn prepay_hold_ttl_is_configurable_and_bounded() {
+        assert_eq!(Duration::seconds(30 * 60), prepay_hold_ttl_from_value(None));
+        assert_eq!(
+            Duration::seconds(90 * 60),
+            prepay_hold_ttl_from_value(Some("5400"))
+        );
+        assert_eq!(
+            Duration::seconds(30 * 60),
+            prepay_hold_ttl_from_value(Some("10"))
+        );
+        assert_eq!(
+            Duration::seconds(30 * 60),
+            prepay_hold_ttl_from_value(Some("999999"))
+        );
+        assert_eq!(
+            Duration::seconds(30 * 60),
+            prepay_hold_ttl_from_value(Some("not-a-number"))
+        );
+    }
 
     #[test]
     fn billing_mode_parsers_accept_supported_aliases_and_reject_unknown_values() {

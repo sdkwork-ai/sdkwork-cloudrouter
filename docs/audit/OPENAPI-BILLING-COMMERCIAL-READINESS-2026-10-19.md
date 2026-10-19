@@ -1,6 +1,8 @@
 # Cloud Router Open-API 计费商业化就绪报告（2026-10-19）
 
 > 配套明细与逐条证据：[OPENAPI-BILLING-MATRIX-ALIGNMENT-2026-10-18.md](OPENAPI-BILLING-MATRIX-ALIGNMENT-2026-10-18.md)
+> 交接单（剩余 11 个的精确复位步骤）：[OPENAPI-BILLING-HANDOFF-2026-10-19.md](OPENAPI-BILLING-HANDOFF-2026-10-19.md)
+> Vendor 落地方案与决策：[../design/VENDOR-BILLING-ROLLOUT-DECISIONS.md](../design/VENDOR-BILLING-ROLLOUT-DECISIONS.md)
 >
 > 覆盖 176 个 open-api operation。结论：**可售 165/176（93.8%）**，其余 11 个全部
 > 有明确阻塞原因且 **fail-closed**；不存在"静默免费"或"按错单位收费"的已发布路径。
@@ -46,7 +48,7 @@
 7. **可结算性**：批量提交、`background: true`、实时会话创建、token 计价的二进制
    TTS 在预检拒单；其余端点先预扣、后按用量结算/释放。
 
-## 三、33 把回归锁
+## 三、40 把回归锁
 
 | 层 | 锁 |
 | --- | --- |
@@ -67,6 +69,13 @@
 | 向量库检索 | `billing_vector_store_search`（分类器绑定 `openai/vector-stores` 工具 SKU；一次 search = 一次 `api_request`，$0.0025） |
 | 批 embedding | `billing_batch_embed`（`RequestBody` 估算 `embedding_input_token`，2 token ⇒ $0.000002；响应无 usage） |
 | DeepSeek web tools | `billing_deepseek_web_tools`（search/fetch 各一次成功请求；5 CNY/1k，global $0.75/1k） |
+| 货币→Token Bank | `admin_marketing_recharge` 单测（正数未知币种拒付、零金额免费、微积分 ceil）与 `allocate_request_debit_points` fail-closed |
+| Token Bank 捕获 | `gateway_billing_contract`（原子 `settle_account_hold`、`settled_amount` 入哈希）+ 账号仓库 2 条部分捕获单测 |
+| 厂商时段价 | `invocation_pricing_settlement` 的 time-window 用例（窗口内 `0.5`、窗口外回退 `0.15`，并断言 `matchedWindowCode`；含周末与 include/exclude 日历） |
+| 计费未就绪 | `BillingUnavailable` 映射 HTTP 501 + `billing_unavailable` 机器码；batch/background/realtime 拒绝用例改为断言该类型；vector store 摄取在预检前同样 501 |
+| Code Interpreter | `billing_code_interpreter`：两个 code cell 折叠为一条 `code_interpreter_session`，$0.03/session；6 个 OpenAI 模型已补目录价 |
+| Anthropic web search | `billing_anthropic_web_search`：`usage.server_tool_use.web_search_requests=2` → 数量 2、金额 $0.02；13 个模型已补 $10/1k 费率 |
+| 预扣 TTL | `prepay_hold_ttl_is_configurable_and_bounded`：默认 1800 秒，合法值生效，越界/非法回退；上限 86400 |
 
 每条锁都有"关掉实现 → 指定用例转红、对照保持绿"的变异证据，记录在主审计文档
 第五节的变异表。
@@ -96,8 +105,9 @@
 Responses、threads runs：用量只在上游完成后的响应/结果文件里。需要：
 
 1. 创建时持久化 `(tenant, api_key, upstream_id, model, kind)`——表
-   `ai_metering_async_task` 已随 `0046` 落地（主审计 2.50），幂等入队/租约
-   领取/终态 store 已实现（2.52），注册与 worker 尚未接线；
+   `ai_metering_async_task` 已落地（2.50），store（2.52）、注册器（2.55）与
+   claim→poll→settle 编排（2.56）已实现；provider executor、应用启动接线与
+   注册拦截器尚未完成；
 2. worker 定期拉取完成态，解析 usage（batch 需流式读 JSONL）；
 3. 以 `response_id` / `batch_id` / `custom_id` 为幂等键走后扣结算；
 4. 余额不足记应收而不是丢账。
@@ -149,14 +159,15 @@ fail-closed 或留给下一轮，不凭空收费。
 | `cache_control` 契约 | 请求体标记推导显式/隐式缓存 | 供应商换标记名会按隐式价（多收 2× 缓存读） |
 | `stream_options` | 对 OpenAI 兼容面强制注入 | 个别兼容上游可能拒绝未知字段 |
 | 中断流输入 token | 按请求体估算（ASCII 4 字符/token、宽字符 1.33 字符/token） | 估算值与真实 tokenizer 有偏差；方向是"补记而非免单"，真实 usage 到达时不覆盖 |
+| 厂商时段价节假日 | 工作日 peak / 其余与周末 off-peak；`includeDates` / `excludeDates` 为空 | 工作日法定节假日仍按 peak 计；需要 vendor 日历数据写入目录，已在主审计 2.59 标记 |
 
 ## 六、验证基线（2026-10-19）
 
 | 项 | 结果 |
 | --- | --- |
-| 计费 test target | **45 个 target / 279 passed / 0 failed** |
-| router-service `--lib` | **592 passed** |
-| edge-runtime `--lib` | **97 passed** |
+| 计费 test target | **47 个 target / 287 passed / 0 failed** |
+| router-service `--lib` | **598 passed** |
+| edge-runtime `--lib` | **99 passed** |
 | clippy（两 crate，`--lib --tests`） | 0 |
 | `cargo fmt --check` | 干净 |
 | `node tools/check-cloudrouter-ai-routing-consistency.mjs` | **passed**（81 arms / 64 codes；83 endpoints；122 OpenAI-compatible ops 全有分类臂） |

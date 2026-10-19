@@ -123,9 +123,9 @@ const BATCH_REFUSAL: &str = "does not reconcile";
 
 fn assert_batch_refusal(error: InvocationError, api_code: &str) {
     assert_eq!(
-        InvocationErrorKind::Pricing,
+        InvocationErrorKind::BillingUnavailable,
         error.kind,
-        "batch refusal must be a pricing failure: {error:?}"
+        "batch refusal must be a billing-unavailable failure: {error:?}"
     );
     assert!(
         error.message.contains(BATCH_REFUSAL),

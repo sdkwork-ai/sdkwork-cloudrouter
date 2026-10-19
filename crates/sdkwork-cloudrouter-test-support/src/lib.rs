@@ -171,6 +171,14 @@ pub fn postgres_account_ledger_append_port(
     std::sync::Arc::new(sdkwork_account_repository_sqlx::PostgresCommerceAccountStore::new(pool))
 }
 
+/// Concrete account store for e2e tests that need hold create/settle APIs in
+/// addition to the ledger-append port.
+pub fn postgres_commerce_account_store(
+    pool: sqlx::PgPool,
+) -> std::sync::Arc<sdkwork_account_repository_sqlx::PostgresCommerceAccountStore> {
+    std::sync::Arc::new(sdkwork_account_repository_sqlx::PostgresCommerceAccountStore::new(pool))
+}
+
 /// Relative path (from the repository root) of the development upstream
 /// credential key ring that `scripts/dev/start-workspace.mjs` materializes and
 /// that every `pnpm dev` run uses to wrap upstream credentials at rest.

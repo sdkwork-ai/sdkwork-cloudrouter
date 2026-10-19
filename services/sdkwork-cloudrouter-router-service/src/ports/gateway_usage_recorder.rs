@@ -815,13 +815,13 @@ pub fn token_points_for_decimal(value: DecimalValue) -> Option<i64> {
 pub fn allocate_request_debit_points(
     commands: &mut [GatewayUsageRecordCommand],
     settings: &RechargeSettingsModel,
-) {
+) -> DomainResult<()> {
     let Some(currency) = commands
         .iter()
         .find(|command| command.decision_status == "rated" && command.billability == "chargeable")
         .map(|command| command.currency.clone())
     else {
-        return;
+        return Ok(());
     };
     let mut cumulative = DecimalValue::ZERO;
     let mut allocated = 0_i64;
@@ -830,33 +830,38 @@ pub fn allocate_request_debit_points(
             command.debit_points = Some(0);
             continue;
         }
-        let amount = match DecimalValue::parse(&command.customer_charge_amount) {
-            Ok(amount) => amount,
-            Err(_) => {
-                command.debit_points = Some(0);
-                continue;
-            }
-        };
-        let Ok(sum) = cumulative.checked_add(amount) else {
-            command.debit_points = Some(0);
-            continue;
-        };
+        if command.currency != currency {
+            return Err(DomainError::new(format!(
+                "request usage facts mix charge currencies {} and {}",
+                currency, command.currency
+            )));
+        }
+        let amount = DecimalValue::parse(&command.customer_charge_amount).map_err(|error| {
+            DomainError::new(format!(
+                "usage charge amount cannot be converted to Token Bank points: {error}"
+            ))
+        })?;
+        let sum = cumulative.checked_add(amount).map_err(|error| {
+            DomainError::new(format!(
+                "usage charge amount overflow while allocating Token Bank points: {error}"
+            ))
+        })?;
         let cumulative_points =
-            match token_points_for_charge(&sum.to_fixed_string(12), &currency, settings) {
-                Ok(points) => points,
-                Err(_) => {
-                    command.debit_points = Some(0);
-                    continue;
-                }
-            };
-        let Some(command_points) = cumulative_points.checked_sub(allocated) else {
-            command.debit_points = Some(0);
-            continue;
-        };
+            token_points_for_charge(&sum.to_fixed_string(12), &currency, settings).map_err(
+                |error| {
+                    DomainError::new(format!(
+                        "usage charge cannot be converted to Token Bank points: {error}"
+                    ))
+                },
+            )?;
+        let command_points = cumulative_points
+            .checked_sub(allocated)
+            .ok_or_else(|| DomainError::new("Token Bank point allocation moved backwards"))?;
         command.debit_points = Some(command_points);
         cumulative = sum;
         allocated = cumulative_points;
     }
+    Ok(())
 }
 
 impl GatewayUsageRecordCommand {

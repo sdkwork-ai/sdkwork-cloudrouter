@@ -93,7 +93,7 @@ where
             // 放行一次 10k 条的 batch，等于只收一次管理请求费、却承担全部上游
             // token 成本。在批价与结果回收链路落地前拒单。
             if unmetered_batch_submission(invocation) {
-                return Err(pricing_error(format!(
+                return Err(billing_unavailable_error(format!(
                     "route {} submits a batch whose per-request usage is produced asynchronously \
                      in an output file the gateway does not reconcile, so the workload would run \
                      unbilled; refusing the submission until batch usage reconciliation is \
@@ -107,7 +107,7 @@ where
             // GET 按 `api_request` 收。也就是说模型调用本身完全不进账。在
             // "异步响应完成时回填结算"落地前拒单。
             if unmetered_background_response(invocation) {
-                return Err(pricing_error(
+                return Err(billing_unavailable_error(
                     "background responses return before the provider reports usage; the usage \
                      only appears on a later poll that the gateway bills per request, so the \
                      model call would run unbilled. Refusing background=true until async \
@@ -121,13 +121,26 @@ where
             // `response.done` 用量回收。放行的结果是：客户拿着上游临时密钥
             // 绕过网关，音频 token 完全不进账。在 WS 代理 + 用量结算落地前拒单。
             if unmetered_realtime_session(invocation) {
-                return Err(pricing_error(format!(
+                return Err(billing_unavailable_error(format!(
                     "route {} mints an upstream realtime client secret and the audio then streams \
                      over a WebSocket the gateway does not proxy, so the realtime usage would run \
                      unbilled and outside gateway controls; refusing session creation until \
                      WebSocket proxying and usage settlement are enabled.",
                     invocation.resource.api_code
                 )));
+            }
+
+            // Vector-store ingestion is billed by storage byte-day at the
+            // vendor, not by request. Until the daily storage worker exists,
+            // refuse it as an unimplemented billing mode (501) rather than a
+            // price-book gap (502), which would invite meaningless retries.
+            if unmetered_vector_store_ingestion(invocation) {
+                return Err(billing_unavailable_error(
+                    "vector store ingestion is billed by storage byte-day; the daily \
+                     storage reconciliation worker is not enabled yet, so the request \
+                     was not dispatched. Remove or batch files only after storage \
+                     metering is enabled.",
+                ));
             }
 
             let price_service = PriceService::new();
@@ -949,6 +962,13 @@ fn binary_audio_synthesis_without_usage(invocation: &Invocation) -> bool {
 ///
 /// 只匹配创建动作的精确路径：`POST /v1/batches/{id}/cancel` 与各类 GET 轮询
 /// 不产生新的上游 token 成本，必须继续放行，否则客户连取消/查询都做不了。
+fn unmetered_vector_store_ingestion(invocation: &Invocation) -> bool {
+    let path = invocation.request.path.as_str();
+    invocation.request.method == axum::http::Method::POST
+        && path.starts_with("/v1/vector_stores/")
+        && (path.ends_with("/files") || path.ends_with("/file_batches"))
+}
+
 fn unmetered_batch_submission(invocation: &Invocation) -> bool {
     if invocation.request.method != axum::http::Method::POST {
         return false;
@@ -1313,6 +1333,10 @@ where
 
 fn pricing_error(message: impl Into<String>) -> InvocationError {
     InvocationError::new(InvocationErrorKind::Pricing, message)
+}
+
+fn billing_unavailable_error(message: impl Into<String>) -> InvocationError {
+    InvocationError::new(InvocationErrorKind::BillingUnavailable, message)
 }
 
 fn should_price_by_route_key_only(invocation: &Invocation) -> bool {

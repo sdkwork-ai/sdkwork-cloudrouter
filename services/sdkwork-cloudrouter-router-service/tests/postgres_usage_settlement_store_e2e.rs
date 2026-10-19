@@ -10,12 +10,16 @@
 //! `postgres_transaction_integration`).
 
 use chrono::{DateTime, Utc};
-use sdkwork_account_service::AppendLedgerEntryCommand;
+use sdkwork_account_service::{
+    AppendLedgerEntryCommand, CreateAccountHoldCommand, SettleAccountHoldCommand,
+};
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::PostgresUsageSettlementStore;
 use sdkwork_cloudrouter_router_service::ports::{
     UsageSettlementCommand, UsageSettlementStore as _,
 };
-use sdkwork_cloudrouter_test_support::postgres_account_ledger_append_port;
+use sdkwork_cloudrouter_test_support::{
+    postgres_account_ledger_append_port, postgres_commerce_account_store,
+};
 use sdkwork_contract_service::{
     CommerceAccountAssetType, CommerceLedgerDirection, CommerceMoney, CommerceRequestHash,
 };
@@ -180,6 +184,334 @@ async fn settlement_replays_idempotently_without_double_debit() {
         1_400_000_000, debits,
         "only one usage_settlement ledger entry may exist"
     );
+
+    ctx.cleanup().await;
+}
+
+#[tokio::test]
+async fn concurrent_settlement_debits_the_wallet_once() {
+    let Some(ctx) = PostgresTestContext::new("usage_settlement_concurrent").await else {
+        return;
+    };
+    credit_token_bank(
+        &ctx.pool,
+        USER_ID,
+        "settle-e2e-concurrent-credit",
+        2_000_000_000,
+    )
+    .await
+    .expect("credit token bank wallet");
+    insert_usage_fact(
+        &ctx.pool,
+        1,
+        USER_ID,
+        "settle-e2e-concurrent-fact",
+        "20.000000",
+    )
+    .await
+    .expect("insert pending usage fact");
+
+    let settlement = PostgresUsageSettlementStore::new(
+        ctx.pool.clone(),
+        postgres_account_ledger_append_port(ctx.pool.clone()),
+    );
+    let left = settlement.clone();
+    let right = settlement.clone();
+    let (first, second) = tokio::join!(
+        left.settle_pending_usage(settlement_command(100)),
+        right.settle_pending_usage(settlement_command(100))
+    );
+    let first = first.expect("first concurrent settlement");
+    let second = second.expect("second concurrent settlement");
+    assert_eq!(
+        1,
+        first.settled_count + second.settled_count,
+        "only one concurrent settlement may claim the usage fact"
+    );
+    assert_eq!(
+        1_400_000_000,
+        first.debited_tokens + second.debited_tokens,
+        "20 USD must debit exactly 1.4B micro-points once"
+    );
+
+    let balance = token_bank_balance(&ctx.pool, USER_ID).await;
+    assert_eq!(
+        600_000_000, balance,
+        "concurrent settlement must not double-debit"
+    );
+    let debits = ledger_debit_total(&ctx.pool, USER_ID).await;
+    assert_eq!(1_400_000_000, debits, "exactly one debit ledger entry");
+
+    ctx.cleanup().await;
+}
+
+#[tokio::test]
+async fn hold_partial_capture_is_atomic_and_returns_the_unused_reservation() {
+    let Some(ctx) = PostgresTestContext::new("hold_partial_capture").await else {
+        return;
+    };
+    credit_token_bank(
+        &ctx.pool,
+        USER_ID,
+        "hold-partial-capture-credit",
+        1_000_000_000,
+    )
+    .await
+    .expect("credit token bank wallet");
+    let account_id: i64 = sqlx::query_scalar(
+        r#"
+        SELECT id FROM acct_account
+        WHERE tenant_id = $1 AND organization_id = $2 AND owner_type = 'USER'
+          AND owner_id = $3 AND asset_code = 'token_bank' AND account_purpose = 'GENERAL'
+          AND status = 1
+        "#,
+    )
+    .bind(TENANT_ID)
+    .bind(ORGANIZATION_ID)
+    .bind(USER_ID)
+    .fetch_one(&ctx.pool)
+    .await
+    .expect("read token bank account id");
+
+    let store = postgres_commerce_account_store(ctx.pool.clone());
+    let create = CreateAccountHoldCommand::new(
+        &TENANT_ID.to_string(),
+        Some(&ORGANIZATION_ID.to_string()),
+        &account_id.to_string(),
+        &USER_ID.to_string(),
+        CommerceAccountAssetType::TokenBank,
+        CommerceMoney::new("300000000").expect("hold money"),
+        "gateway_invocation_billing",
+        "cloudrouter:hold-partial:precharge",
+        "gateway",
+        &USER_ID.to_string(),
+        "cloudrouter:hold-partial:precharge",
+        "cloudrouter:hold-partial:precharge",
+        None,
+    )
+    .expect("create hold command")
+    .with_account_subject("USER", "GENERAL");
+    let hold = store
+        .create_account_hold(
+            create,
+            CommerceRequestHash::new(&sha256_hash(b"hold-partial-create")).unwrap(),
+        )
+        .await
+        .expect("create hold");
+
+    let settle = SettleAccountHoldCommand::new(
+        &TENANT_ID.to_string(),
+        &hold.hold.uuid,
+        "gateway_invocation_billing",
+        "cloudrouter:hold-partial:consumption",
+        "cloudrouter:hold-partial:consumption",
+        "cloudrouter:hold-partial:consumption",
+    )
+    .expect("settle command")
+    .with_settled_amount("200000000")
+    .expect("partial capture amount");
+    store
+        .settle_account_hold(
+            settle,
+            CommerceRequestHash::new(&sha256_hash(b"hold-partial-settle-200000000")).unwrap(),
+        )
+        .await
+        .expect("settle hold");
+
+    let (available, frozen): (i64, i64) =
+        sqlx::query_as("SELECT available_amount, frozen_amount FROM acct_account WHERE id = $1")
+            .bind(account_id)
+            .fetch_one(&ctx.pool)
+            .await
+            .expect("read account balances");
+    assert_eq!(800_000_000, available, "unused 100 points must return");
+    assert_eq!(0, frozen, "hold must be fully unfrozen");
+
+    let ledger_debit: i64 = sqlx::query_scalar(
+        "SELECT CAST(COALESCE(SUM(amount), 0) AS BIGINT) FROM acct_ledger_entry \
+         WHERE tenant_id = $1 AND business_no = 'cloudrouter:hold-partial:consumption'",
+    )
+    .bind(TENANT_ID)
+    .fetch_one(&ctx.pool)
+    .await
+    .expect("read hold capture ledger");
+    assert_eq!(
+        200_000_000, ledger_debit,
+        "only the captured amount is debited"
+    );
+
+    ctx.cleanup().await;
+}
+
+#[tokio::test]
+async fn concurrent_hold_capture_debits_once() {
+    let Some(ctx) = PostgresTestContext::new("hold_concurrent_capture").await else {
+        return;
+    };
+    credit_token_bank(
+        &ctx.pool,
+        USER_ID,
+        "hold-concurrent-capture-credit",
+        1_000_000_000,
+    )
+    .await
+    .expect("credit token bank wallet");
+    let account_id: i64 = sqlx::query_scalar(
+        r#"
+        SELECT id FROM acct_account
+        WHERE tenant_id = $1 AND organization_id = $2 AND owner_type = 'USER'
+          AND owner_id = $3 AND asset_code = 'token_bank' AND account_purpose = 'GENERAL'
+          AND status = 1
+        "#,
+    )
+    .bind(TENANT_ID)
+    .bind(ORGANIZATION_ID)
+    .bind(USER_ID)
+    .fetch_one(&ctx.pool)
+    .await
+    .expect("read token bank account id");
+
+    let store = postgres_commerce_account_store(ctx.pool.clone());
+    let create = CreateAccountHoldCommand::new(
+        &TENANT_ID.to_string(),
+        Some(&ORGANIZATION_ID.to_string()),
+        &account_id.to_string(),
+        &USER_ID.to_string(),
+        CommerceAccountAssetType::TokenBank,
+        CommerceMoney::new("300000000").expect("hold money"),
+        "gateway_invocation_billing",
+        "cloudrouter:hold-concurrent:precharge",
+        "gateway",
+        &USER_ID.to_string(),
+        "cloudrouter:hold-concurrent:precharge",
+        "cloudrouter:hold-concurrent:precharge",
+        None,
+    )
+    .expect("create hold command")
+    .with_account_subject("USER", "GENERAL");
+    let hold = store
+        .create_account_hold(
+            create,
+            CommerceRequestHash::new(&sha256_hash(b"hold-concurrent-create")).unwrap(),
+        )
+        .await
+        .expect("create hold");
+
+    let settle = SettleAccountHoldCommand::new(
+        &TENANT_ID.to_string(),
+        &hold.hold.uuid,
+        "gateway_invocation_billing",
+        "cloudrouter:hold-concurrent:consumption",
+        "cloudrouter:hold-concurrent:consumption",
+        "cloudrouter:hold-concurrent:consumption",
+    )
+    .expect("settle command")
+    .with_settled_amount("200000000")
+    .expect("partial capture amount");
+    let hash = CommerceRequestHash::new(&sha256_hash(b"hold-concurrent-settle")).unwrap();
+    let left = store.settle_account_hold(settle.clone(), hash.clone());
+    let right = store.settle_account_hold(settle, hash);
+    let (first, second) = tokio::join!(left, right);
+    first.expect("first concurrent hold capture");
+    second.expect("second concurrent hold capture");
+
+    let (available, frozen): (i64, i64) =
+        sqlx::query_as("SELECT available_amount, frozen_amount FROM acct_account WHERE id = $1")
+            .bind(account_id)
+            .fetch_one(&ctx.pool)
+            .await
+            .expect("read account balances");
+    assert_eq!(800_000_000, available, "only 200 points may be captured");
+    assert_eq!(0, frozen, "hold must be fully unfrozen");
+
+    let ledger_debit: i64 = sqlx::query_scalar(
+        "SELECT CAST(COALESCE(SUM(amount), 0) AS BIGINT) FROM acct_ledger_entry \
+         WHERE tenant_id = $1 AND business_no = 'cloudrouter:hold-concurrent:consumption'",
+    )
+    .bind(TENANT_ID)
+    .fetch_one(&ctx.pool)
+    .await
+    .expect("read hold capture ledger");
+    assert_eq!(200_000_000, ledger_debit, "only one capture ledger entry");
+
+    let settled_amount: i64 = sqlx::query_scalar(
+        "SELECT settled_amount FROM acct_hold WHERE tenant_id = $1 AND uuid = $2",
+    )
+    .bind(TENANT_ID)
+    .bind(&hold.hold.uuid)
+    .fetch_one(&ctx.pool)
+    .await
+    .expect("read hold settled amount");
+    assert_eq!(200_000_000, settled_amount);
+
+    ctx.cleanup().await;
+}
+
+#[tokio::test]
+async fn concurrent_holds_cannot_overdraw_the_wallet() {
+    let Some(ctx) = PostgresTestContext::new("hold_concurrent_overdraft").await else {
+        return;
+    };
+    credit_token_bank(&ctx.pool, USER_ID, "hold-overdraft-credit", 1_000_000_000)
+        .await
+        .expect("credit token bank wallet");
+    let account_id: i64 = sqlx::query_scalar(
+        r#"
+        SELECT id FROM acct_account
+        WHERE tenant_id = $1 AND organization_id = $2 AND owner_type = 'USER'
+          AND owner_id = $3 AND asset_code = 'token_bank' AND account_purpose = 'GENERAL'
+          AND status = 1
+        "#,
+    )
+    .bind(TENANT_ID)
+    .bind(ORGANIZATION_ID)
+    .bind(USER_ID)
+    .fetch_one(&ctx.pool)
+    .await
+    .expect("read token bank account id");
+
+    let store = postgres_commerce_account_store(ctx.pool.clone());
+    let create = |suffix: &str| {
+        CreateAccountHoldCommand::new(
+            &TENANT_ID.to_string(),
+            Some(&ORGANIZATION_ID.to_string()),
+            &account_id.to_string(),
+            &USER_ID.to_string(),
+            CommerceAccountAssetType::TokenBank,
+            CommerceMoney::new("600000000").expect("hold money"),
+            "gateway_invocation_billing",
+            &format!("cloudrouter:hold-overdraft-{suffix}:precharge"),
+            "gateway",
+            &USER_ID.to_string(),
+            &format!("cloudrouter:hold-overdraft-{suffix}:precharge"),
+            &format!("cloudrouter:hold-overdraft-{suffix}:precharge"),
+            None,
+        )
+        .expect("create hold command")
+        .with_account_subject("USER", "GENERAL")
+    };
+    let left = store.create_account_hold(
+        create("a"),
+        CommerceRequestHash::new(&sha256_hash(b"hold-overdraft-a")).unwrap(),
+    );
+    let right = store.create_account_hold(
+        create("b"),
+        CommerceRequestHash::new(&sha256_hash(b"hold-overdraft-b")).unwrap(),
+    );
+    let (first, second) = tokio::join!(left, right);
+    assert!(
+        first.is_ok() ^ second.is_ok(),
+        "exactly one concurrent 600 hold may fit in a 1000 wallet"
+    );
+
+    let (available, frozen): (i64, i64) =
+        sqlx::query_as("SELECT available_amount, frozen_amount FROM acct_account WHERE id = $1")
+            .bind(account_id)
+            .fetch_one(&ctx.pool)
+            .await
+            .expect("read account balances");
+    assert_eq!(400_000_000, available, "only one hold may be funded");
+    assert_eq!(600_000_000, frozen, "only one hold may be frozen");
 
     ctx.cleanup().await;
 }

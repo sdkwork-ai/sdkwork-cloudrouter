@@ -277,11 +277,20 @@ impl InvocationInterceptor for BillingSettlementInterceptor {
                 );
                 return release_without_charge(self.store.as_ref(), invocation, &context).await;
             }
-            let settings = self
-                .store
-                .load_cash_to_points_settings(context.clone())
-                .await
-                .map_err(billing_error)?;
+            // Use the exchange settings captured before dispatch, not a fresh
+            // read. The precharge amount and the usage-fact `debit_points` were
+            // already computed with that snapshot; re-reading here would let an
+            // admin rate change mid-request debit a different number of points
+            // than the usage row records (and could make a fully covered hold
+            // look like an overage).
+            let settings = match invocation.charging.points_settings.clone() {
+                Some(settings) => settings,
+                None => self
+                    .store
+                    .load_cash_to_points_settings(context.clone())
+                    .await
+                    .map_err(billing_error)?,
+            };
             // The provider outcome is checked before the amount on purpose. A
             // vendor that rejected the call (401/403/4xx/5xx) produces no usage
             // and therefore no billable amount **by construction**, so asking
@@ -347,15 +356,59 @@ impl InvocationInterceptor for BillingSettlementInterceptor {
                     if invocation.charging.settlement_mode
                         == crate::ports::GatewayBillingSettlementMode::Synchronous
                     {
-                        let hold_id = invocation.charging.hold_id.clone().ok_or_else(|| {
-                            billing_error(
-                                "prepaid synchronous settlement is missing its account hold",
-                            )
-                        })?;
-                        self.store
-                            .settle_hold(context, hold_id, actual)
-                            .await
-                            .map_err(billing_error)?;
+                        let Some(hold_id) = invocation.charging.hold_id.clone() else {
+                            // A zero estimate intentionally creates no hold. If
+                            // actual usage is positive anyway, charge it as a
+                            // postpaid fact instead of failing settlement and
+                            // giving the request away. In asynchronous mode the
+                            // settlement worker owns this fact; never charge it
+                            // synchronously as well.
+                            if invocation.charging.settlement_mode
+                                == crate::ports::GatewayBillingSettlementMode::Synchronous
+                            {
+                                self.store
+                                    .charge_postpaid(context, actual)
+                                    .await
+                                    .map_err(billing_error)?;
+                                self.store
+                                    .mark_usage_settled(billing_context(invocation))
+                                    .await
+                                    .map_err(billing_error)?;
+                                invocation.charging.settled = true;
+                            }
+                            return Ok(());
+                        };
+                        // The hold is a lower-bound estimate. If actual usage
+                        // exceeds it, capture the full hold first and charge the
+                        // overage as a separate idempotent postpaid debit. The
+                        // account hold API deliberately cannot capture more than
+                        // the frozen amount (the `acct_hold` amount constraint),
+                        // so charging only `actual` would fail and leave the
+                        // entire request uncollected.
+                        match split_hold_capture(
+                            &actual,
+                            invocation.charging.reserved_amount.as_ref(),
+                        ) {
+                            Some(overage) => {
+                                let reserved = invocation.charging.reserved_amount.clone().expect(
+                                    "split_hold_capture only yields Some with a reservation",
+                                );
+                                self.store
+                                    .settle_hold(context.clone(), hold_id, reserved)
+                                    .await
+                                    .map_err(billing_error)?;
+                                self.store
+                                    .charge_postpaid(context, overage)
+                                    .await
+                                    .map_err(billing_error)?;
+                            }
+                            None => {
+                                self.store
+                                    .settle_hold(context, hold_id, actual)
+                                    .await
+                                    .map_err(billing_error)?;
+                            }
+                        }
                     }
                 }
             }
@@ -707,6 +760,28 @@ fn billing_error(error: impl std::fmt::Display) -> InvocationError {
     InvocationError::new(InvocationErrorKind::Pricing, error.to_string())
 }
 
+/// Returns the postpaid overage when actual usage exceeds the hold estimate.
+///
+/// The hold can only be captured up to its frozen amount. The caller settles
+/// the hold for `reserved` and charges the returned overage as a separate
+/// request-scoped postpaid debit; both operations carry deterministic
+/// idempotency keys, so a retry after either succeeds cannot double-charge.
+fn split_hold_capture(
+    actual: &GatewayBillingAmount,
+    reserved: Option<&GatewayBillingAmount>,
+) -> Option<GatewayBillingAmount> {
+    let reserved = reserved?;
+    let actual_points = actual.amount.parse::<i128>().ok()?;
+    let reserved_points = reserved.amount.parse::<i128>().ok()?;
+    if actual_points <= reserved_points {
+        return None;
+    }
+    Some(GatewayBillingAmount {
+        amount: (actual_points - reserved_points).to_string(),
+        currency: actual.currency.clone(),
+    })
+}
+
 /// Same as [`billing_error`], but preserves the insufficient-balance
 /// classification carried by a [`DomainError`] coming through the billing port.
 fn billing_port_error(error: DomainError) -> InvocationError {
@@ -719,7 +794,7 @@ fn billing_port_error(error: DomainError) -> InvocationError {
 #[cfg(test)]
 mod tests {
     use super::aggregate_token_amounts;
-    use super::{is_token_meter, unit_size_or_default};
+    use super::{is_token_meter, split_hold_capture, unit_size_or_default};
     use crate::domain::{BillingMeter, DecimalValue};
     use crate::infrastructure::sql::admin_marketing_recharge::parse_recharge_settings_model;
     use crate::ports::RechargeSettingsModel;
@@ -735,6 +810,23 @@ mod tests {
             ])),
         )
         .expect("valid settings")
+    }
+
+    #[test]
+    fn split_hold_capture_charges_only_the_excess_over_the_reservation() {
+        let reserved = crate::ports::GatewayBillingAmount {
+            amount: "100".to_owned(),
+            currency: "USD".to_owned(),
+        };
+        let actual = crate::ports::GatewayBillingAmount {
+            amount: "130".to_owned(),
+            currency: "USD".to_owned(),
+        };
+        let overage = split_hold_capture(&actual, Some(&reserved)).expect("overage");
+        assert_eq!("30", overage.amount);
+        assert_eq!("USD", overage.currency);
+        assert!(split_hold_capture(&reserved, Some(&reserved)).is_none());
+        assert!(split_hold_capture(&actual, None).is_none());
     }
 
     #[test]

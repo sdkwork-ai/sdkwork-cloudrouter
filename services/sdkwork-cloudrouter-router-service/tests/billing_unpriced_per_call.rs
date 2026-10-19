@@ -159,13 +159,16 @@ async fn unpriced_per_call_operations_are_refused_not_free() {
             .before(&mut invocation)
             .await
             .expect_err("an unpriced per-call operation must not be dispatched");
-        assert_eq!(
-            sdkwork_cloudrouter_router_service::application::InvocationErrorKind::Pricing,
-            error.kind,
-            "{label} must fail as a pricing gap: {error:?}"
-        );
+        let expected_kind = if path.contains("/vector_stores/") {
+            sdkwork_cloudrouter_router_service::application::InvocationErrorKind::BillingUnavailable
+        } else {
+            sdkwork_cloudrouter_router_service::application::InvocationErrorKind::Pricing
+        };
+        assert_eq!(expected_kind, error.kind, "{label} refusal kind: {error:?}");
         assert!(
-            error.message.contains("api_request") || error.message.contains("pricing"),
+            error.message.contains("api_request")
+                || error.message.contains("pricing")
+                || error.message.contains("storage"),
             "{label} failure must be diagnosable: {error:?}"
         );
     }

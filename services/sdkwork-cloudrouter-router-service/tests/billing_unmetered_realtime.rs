@@ -99,9 +99,9 @@ const REALTIME_REFUSAL: &str = "does not proxy";
 
 fn assert_realtime_refusal(error: InvocationError) {
     assert_eq!(
-        InvocationErrorKind::Pricing,
+        InvocationErrorKind::BillingUnavailable,
         error.kind,
-        "the refusal must be a pricing failure: {error:?}"
+        "the refusal must be a billing-unavailable failure: {error:?}"
     );
     assert!(
         error.message.contains(REALTIME_REFUSAL),

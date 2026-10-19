@@ -95,7 +95,8 @@ impl InvocationInterceptor for PricingSettlementInterceptor {
                 .clone()
                 .or_else(|| parse_recharge_settings_model(None, None, None).ok());
             if let Some(settings) = settings {
-                allocate_request_debit_points(&mut commands, &settings);
+                allocate_request_debit_points(&mut commands, &settings)
+                    .map_err(|error| settlement_error(error.to_string()))?;
             }
             invocation.usage.settlement_commands = commands;
             Ok(())

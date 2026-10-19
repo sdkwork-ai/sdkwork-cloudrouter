@@ -9,6 +9,10 @@ pub enum InvocationErrorKind {
     ResourceClassification,
     Routing,
     Pricing,
+    /// The operation is published but its vendor billing/reconciliation path is
+    /// deliberately not enabled yet. Distinct from `Pricing` (a misconfigured
+    /// price book) because retrying cannot fix it; maps to HTTP 501.
+    BillingUnavailable,
     /// The wallet, credits, or plan backing the request cannot fund it and the
     /// caller can self-heal by recharging. Distinct from `Pricing` (misconfigured
     /// price book) and `Dispatch` (upstream failure) because it maps to HTTP 402
@@ -35,6 +39,7 @@ impl InvocationErrorKind {
             Self::ResourceClassification => "resource_classification_failed",
             Self::Routing => "routing_failed",
             Self::Pricing => "pricing_failed",
+            Self::BillingUnavailable => "billing_unavailable",
             Self::InsufficientBalance => "insufficient_balance",
             Self::Dispatch => "dispatch_failed",
             Self::ProviderPassthroughFailed => "provider_passthrough_failed",
@@ -67,6 +72,7 @@ impl InvocationErrorKind {
             Self::InsufficientBalance => "insufficient_quota",
             Self::Routing
             | Self::Pricing
+            | Self::BillingUnavailable
             | Self::Dispatch
             | Self::ProviderPassthroughFailed
             | Self::Usage

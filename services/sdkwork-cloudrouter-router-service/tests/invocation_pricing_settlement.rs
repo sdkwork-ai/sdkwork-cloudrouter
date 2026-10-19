@@ -1,5 +1,5 @@
 use axum::http::Method;
-use chrono::Utc;
+use chrono::{DateTime, NaiveDate, NaiveTime, Utc};
 use sdkwork_cloudrouter_router_service::application::{
     AccountBillingMode, AuthenticatedApiKeyContext, BillingMode, BillingQuantitySource,
     BillingResultGate, Invocation, InvocationAccount, InvocationBilling, InvocationBody,
@@ -11,8 +11,8 @@ use sdkwork_cloudrouter_router_service::application::{
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
     ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, PricingRateCondition,
-    PricingRateMetadata, PricingRateVariant, ProviderAuthProfile, RoutingCapability,
-    UpstreamAccountGroup, UpstreamAccountRoute,
+    PricingRateMetadata, PricingRateVariant, PricingSchedule, PricingWeeklyWindow,
+    ProviderAuthProfile, RoutingCapability, UpstreamAccountGroup, UpstreamAccountRoute,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use sdkwork_cloudrouter_router_service::ports::GatewayUsageQuantity;
@@ -287,6 +287,47 @@ fn conditional_rate_metadata() -> PricingRateMetadata {
     }
 }
 
+fn time_window_rate_metadata() -> PricingRateMetadata {
+    let mut metadata = conditional_rate_metadata();
+    metadata.rate_hash = "sha256:time-window-input-rate".to_owned();
+    metadata.rate_variant = PricingRateVariant::TimeWindow;
+    metadata.schedule = Some(PricingSchedule {
+        time_zone: "Asia/Shanghai".parse().expect("valid timezone"),
+        weekly_windows: vec![PricingWeeklyWindow {
+            window_code: "weekday-morning".to_owned(),
+            days_of_week: vec![1],
+            start_time: NaiveTime::from_hms_opt(9, 0, 0).expect("start"),
+            end_time: NaiveTime::from_hms_opt(12, 0, 0).expect("end"),
+            end_day_offset: 0,
+        }],
+        include_dates: Vec::new(),
+        exclude_dates: Vec::new(),
+    });
+    metadata.conditions.clear();
+    metadata.minimum_quantity = DecimalValue::ONE;
+    metadata.quantity_step = None;
+    metadata.priority = 100;
+    metadata.effective_from = DateTime::parse_from_rfc3339("2026-01-01T00:00:00Z")
+        .expect("effective date")
+        .with_timezone(&Utc);
+    metadata
+}
+
+fn deepseek_window_metadata(
+    rate_hash: &str,
+    windows: Vec<PricingWeeklyWindow>,
+) -> PricingRateMetadata {
+    let mut metadata = time_window_rate_metadata();
+    metadata.rate_hash = rate_hash.to_owned();
+    metadata.schedule = Some(PricingSchedule {
+        time_zone: "Asia/Shanghai".parse().expect("valid timezone"),
+        weekly_windows: windows,
+        include_dates: Vec::new(),
+        exclude_dates: Vec::new(),
+    });
+    metadata
+}
+
 fn subject() -> InvocationSubject {
     InvocationSubject::from_api_key_context(AuthenticatedApiKeyContext {
         tenant_id: 100001,
@@ -483,6 +524,207 @@ async fn conditional_rate_dimensions_and_quantity_steps_drive_final_charge() {
         Some("4.000000000000"),
         official_rate.quantity_step.as_deref()
     );
+}
+
+#[tokio::test]
+async fn time_window_rate_overrides_standard_rate_only_inside_vendor_window() {
+    let mut catalog = catalog_with_chat_prices();
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "openai/gpt-4o-mini",
+            "gpt-4o-mini",
+            PriceSide::OfficialReference,
+            BillingMeter::LlmInputToken,
+            Money::usd("0.500000").unwrap(),
+        )
+        .with_rate_metadata(time_window_rate_metadata()),
+    );
+    let catalog = Arc::new(catalog);
+
+    let mut inside = chat_invocation();
+    inside.occurred_at = DateTime::parse_from_rfc3339("2026-10-19T02:00:00Z")
+        .unwrap()
+        .with_timezone(&Utc);
+    PricingPreflightInterceptor::new(Arc::clone(&catalog))
+        .before(&mut inside)
+        .await
+        .expect("inside-window pricing");
+    let inside_quote = inside
+        .usage
+        .quote_for_meter(&BillingMeter::LlmInputToken)
+        .expect("inside quote");
+    assert_eq!(
+        "0.500000",
+        inside_quote.customer_charge_unit_price.to_fixed_string(6)
+    );
+    assert_eq!(
+        Some("weekday-morning".to_owned()),
+        inside_quote
+            .rate_metadata
+            .as_ref()
+            .and_then(|metadata| metadata.matched_window_code(inside.occurred_at))
+            .map(str::to_owned)
+    );
+
+    let mut outside = chat_invocation();
+    outside.occurred_at = DateTime::parse_from_rfc3339("2026-10-19T05:00:00Z")
+        .unwrap()
+        .with_timezone(&Utc);
+    PricingPreflightInterceptor::new(Arc::clone(&catalog))
+        .before(&mut outside)
+        .await
+        .expect("outside-window pricing");
+    let outside_quote = outside
+        .usage
+        .quote_for_meter(&BillingMeter::LlmInputToken)
+        .expect("outside quote");
+    assert_eq!(
+        "0.150000",
+        outside_quote.customer_charge_unit_price.to_fixed_string(6)
+    );
+}
+
+#[tokio::test]
+async fn deepseek_peak_and_weekend_offpeak_windows_partition_the_week() {
+    let weekday = |start: u32, end: u32, code: &str| PricingWeeklyWindow {
+        window_code: code.to_owned(),
+        days_of_week: vec![1, 2, 3, 4, 5],
+        start_time: NaiveTime::from_hms_opt(start, 0, 0).expect("start"),
+        end_time: NaiveTime::from_hms_opt(end, 0, 0).expect("end"),
+        end_day_offset: 0,
+    };
+    let weekend = |code: &str| PricingWeeklyWindow {
+        window_code: code.to_owned(),
+        days_of_week: vec![6, 7],
+        start_time: NaiveTime::from_hms_opt(0, 0, 0).expect("start"),
+        end_time: NaiveTime::from_hms_opt(23, 59, 59).expect("end"),
+        end_day_offset: 0,
+    };
+    let night = PricingWeeklyWindow {
+        window_code: "off_peak_weekday_night".to_owned(),
+        days_of_week: vec![1, 2, 3, 4, 5],
+        start_time: NaiveTime::from_hms_opt(18, 0, 0).expect("start"),
+        end_time: NaiveTime::from_hms_opt(0, 0, 0).expect("end"),
+        end_day_offset: 1,
+    };
+    let peak = vec![
+        weekday(9, 12, "peak_weekday_morning"),
+        weekday(14, 18, "peak_weekday_afternoon"),
+    ];
+    let offpeak = vec![
+        weekday(0, 9, "off_peak_weekday_morning"),
+        weekday(12, 14, "off_peak_weekday_midday"),
+        night,
+        weekend("off_peak_weekend"),
+    ];
+
+    let mut catalog = catalog_with_chat_prices();
+    for (price, metadata) in [
+        (
+            "0.500000",
+            deepseek_window_metadata("sha256:deepseek-peak", peak),
+        ),
+        (
+            "0.200000",
+            deepseek_window_metadata("sha256:deepseek-offpeak", offpeak),
+        ),
+    ] {
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                "openai/gpt-4o-mini",
+                "gpt-4o-mini",
+                PriceSide::OfficialReference,
+                BillingMeter::LlmInputToken,
+                Money::usd(price).unwrap(),
+            )
+            .with_rate_metadata(metadata),
+        );
+    }
+    let catalog = Arc::new(catalog);
+
+    for (timestamp, expected) in [
+        ("2026-10-19T02:00:00Z", "0.500000"), // Monday 10:00 peak
+        ("2026-10-19T05:00:00Z", "0.200000"), // Monday 13:00 off-peak
+        ("2026-10-24T02:00:00Z", "0.200000"), // Saturday 10:00 off-peak
+    ] {
+        let mut invocation = chat_invocation();
+        invocation.occurred_at = DateTime::parse_from_rfc3339(timestamp)
+            .unwrap()
+            .with_timezone(&Utc);
+        PricingPreflightInterceptor::new(Arc::clone(&catalog))
+            .before(&mut invocation)
+            .await
+            .expect("window pricing");
+        let quote = invocation
+            .usage
+            .quote_for_meter(&BillingMeter::LlmInputToken)
+            .expect("window quote");
+        assert_eq!(
+            expected,
+            quote.customer_charge_unit_price.to_fixed_string(6),
+            "timestamp {timestamp}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn time_window_calendar_include_and_exclude_dates_override_weekday() {
+    let mut metadata = deepseek_window_metadata(
+        "sha256:deepseek-calendar",
+        vec![PricingWeeklyWindow {
+            window_code: "holiday_window".to_owned(),
+            days_of_week: vec![1],
+            start_time: NaiveTime::from_hms_opt(9, 0, 0).expect("start"),
+            end_time: NaiveTime::from_hms_opt(12, 0, 0).expect("end"),
+            end_day_offset: 0,
+        }],
+    );
+    let schedule = metadata.schedule.as_mut().expect("schedule");
+    // Tuesday is included as a holiday even though only Monday is weekly;
+    // Monday is excluded as a make-up working day.
+    schedule
+        .include_dates
+        .push(NaiveDate::from_ymd_opt(2026, 10, 20).expect("include date"));
+    schedule
+        .exclude_dates
+        .push(NaiveDate::from_ymd_opt(2026, 10, 19).expect("exclude date"));
+
+    let mut catalog = catalog_with_chat_prices();
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "openai/gpt-4o-mini",
+            "gpt-4o-mini",
+            PriceSide::OfficialReference,
+            BillingMeter::LlmInputToken,
+            Money::usd("0.500000").unwrap(),
+        )
+        .with_rate_metadata(metadata),
+    );
+    let catalog = Arc::new(catalog);
+
+    for (timestamp, expected) in [
+        ("2026-10-19T02:00:00Z", "0.150000"), // Monday excluded -> standard
+        ("2026-10-20T02:00:00Z", "0.500000"), // Tuesday included -> holiday rate
+        ("2026-10-21T02:00:00Z", "0.150000"), // ordinary Wednesday -> standard
+    ] {
+        let mut invocation = chat_invocation();
+        invocation.occurred_at = DateTime::parse_from_rfc3339(timestamp)
+            .unwrap()
+            .with_timezone(&Utc);
+        PricingPreflightInterceptor::new(Arc::clone(&catalog))
+            .before(&mut invocation)
+            .await
+            .expect("calendar pricing");
+        let quote = invocation
+            .usage
+            .quote_for_meter(&BillingMeter::LlmInputToken)
+            .expect("calendar quote");
+        assert_eq!(
+            expected,
+            quote.customer_charge_unit_price.to_fixed_string(6),
+            "timestamp {timestamp}"
+        );
+    }
 }
 
 #[tokio::test]
@@ -697,6 +939,16 @@ async fn settlement_produces_usage_commands_for_each_usage_line() {
     assert_eq!(0, output.request_count);
     assert_eq!("0.600000000000", output.base_output_unit_price);
     assert_eq!("0.000004800000", output.customer_charge_amount);
+    // USD → Token Bank with the default 70 points/USD: the two fiat amounts
+    // convert to 126 + 336 = 462 micro-points. The per-fact allocation uses a
+    // cumulative ceiling, so the sum is exactly the conversion of the total,
+    // not the sum of two independently ceiled values.
+    assert_eq!(Some(126), input.debit_points);
+    assert_eq!(Some(336), output.debit_points);
+    assert_eq!(
+        462,
+        input.debit_points.unwrap() + output.debit_points.unwrap()
+    );
 }
 
 #[tokio::test]

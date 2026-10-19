@@ -4,7 +4,7 @@ use crate::infrastructure::decimal_math::{
     decimal_multiply, decimal_to_scaled, DecimalMathError, DecimalRounding,
 };
 
-use crate::domain::{DomainError, DomainResult};
+use crate::domain::{DecimalValue, DomainError, DomainResult};
 use crate::ports::{AdminRechargePackageItem, AdminRechargeSettingsItem};
 
 /// Convert a shared exact-arithmetic error into a domain error so callers see
@@ -43,10 +43,16 @@ pub fn token_points_for_charge(
     currency_code: &str,
     settings: &RechargeSettingsModel,
 ) -> DomainResult<i64> {
+    // A true zero charge is free regardless of whether a rate is configured;
+    // do not turn "no usage" into a settlement failure for an unsupported
+    // currency. Positive amounts still require an explicit rate below.
+    if DecimalValue::parse(amount).is_ok_and(|value| value <= DecimalValue::ZERO) {
+        return Ok(0);
+    }
     // `points_per_currency_unit_string` is "points awarded per one major unit
     // of the pricing currency" (≈ currency→CNY × base points per CNY), already
     // computed through exact integer multiplication.
-    let factor = points_per_currency_unit_string(currency_code, settings)?;
+    let factor = points_per_currency_unit_strict(currency_code, settings)?;
     // Ceil at the micro scale: the shared exact product at scale 6 already
     // yields `ceil(amount × factor × 1e6) / 1e6` points, and reading it back as
     // integer micro-points gives the ceilinged micro value in one pass.
@@ -70,7 +76,10 @@ pub fn token_points_for_aggregation(
     currency_code: &str,
     settings: &RechargeSettingsModel,
 ) -> DomainResult<i64> {
-    let factor = points_per_currency_unit_string(currency_code, settings)?;
+    if DecimalValue::parse(amount).is_ok_and(|value| value <= DecimalValue::ZERO) {
+        return Ok(0);
+    }
+    let factor = points_per_currency_unit_strict(currency_code, settings)?;
     let product =
         decimal_multiply(amount, &factor, 6, DecimalRounding::Floor).map_err(decimal_error)?;
     let micro = decimal_to_scaled(&product, 6, DecimalRounding::Floor).map_err(decimal_error)?;
@@ -100,6 +109,41 @@ pub fn points_per_currency_unit_string(
 
 /// Resolves the currency→CNY rate with the recharge fallback chain:
 /// explicit currency rate → base-currency rate → 1 CNY per CNY.
+/// Strict resolver used by **money movements** (precharge, settlement, usage
+/// `debit_points`). A pricing currency without an explicit rate must fail the
+/// charge instead of silently borrowing the base-currency rate and under- or
+/// over-debiting the wallet. Display/read projections keep the lenient
+/// `currency_to_cny_rate` fallback so historical rows remain renderable.
+fn currency_to_cny_rate_strict(
+    currency_code: &str,
+    settings: &RechargeSettingsModel,
+) -> DomainResult<String> {
+    let currency_code = currency_code.trim().to_ascii_uppercase();
+    if let Some(rate) = settings.currency_to_cny_rates.get(&currency_code) {
+        return Ok(rate.clone());
+    }
+    if currency_code == DEFAULT_BASE_CURRENCY_CODE {
+        return Ok("1".to_owned());
+    }
+    Err(DomainError::new(format!(
+        "missing currency-to-CNY conversion rate for {currency_code}"
+    )))
+}
+
+fn points_per_currency_unit_strict(
+    currency_code: &str,
+    settings: &RechargeSettingsModel,
+) -> DomainResult<String> {
+    let rate = currency_to_cny_rate_strict(currency_code, settings)?;
+    decimal_multiply(
+        &rate,
+        &settings.base_points_per_cny,
+        12,
+        DecimalRounding::Ceil,
+    )
+    .map_err(decimal_error)
+}
+
 fn currency_to_cny_rate(currency_code: &str, settings: &RechargeSettingsModel) -> String {
     let currency_code = currency_code.trim().to_ascii_uppercase();
     settings
@@ -191,7 +235,9 @@ pub(crate) fn compute_grant_amount(
             "recharge amount must be greater than zero",
         ));
     }
-    let currency_rate = currency_to_cny_rate(currency_code, settings);
+    // Recharge credit is the mirror of usage debit: a positive amount in an
+    // unconfigured currency must fail instead of being credited at the CNY rate.
+    let currency_rate = currency_to_cny_rate_strict(currency_code, settings)?;
     let base_points = &settings.base_points_per_cny;
     // grant points = amount × currency→CNY × base points per CNY, rounded to the
     // nearest micro (all factors are at most 6 decimals each, so the scale-24
@@ -339,6 +385,10 @@ mod tests {
             1_550_000_000,
             compute_grant_amount("20.00", "USD", 50, &settings).unwrap()
         );
+        assert!(
+            compute_grant_amount("20.00", "JPY", 0, &settings).is_err(),
+            "recharge credit must not borrow an unconfigured currency rate"
+        );
     }
 
     #[test]
@@ -369,6 +419,24 @@ mod tests {
         );
         // Non-positive charges award nothing.
         assert_eq!(0, token_points_for_charge("0", "CNY", &settings).unwrap());
+    }
+
+    #[test]
+    fn charging_a_currency_without_a_rate_fails_closed() {
+        let settings = RechargeSettingsModel {
+            base_currency_code: "CNY".to_owned(),
+            base_points_per_cny: "10".to_owned(),
+            currency_to_cny_rates: BTreeMap::from([
+                ("CNY".to_owned(), "1".to_owned()),
+                ("USD".to_owned(), "7".to_owned()),
+            ]),
+        };
+        // Never silently borrow the CNY rate for an unconfigured currency:
+        // that would debit the wallet by an arbitrary factor.
+        assert!(token_points_for_charge("1.00", "JPY", &settings).is_err());
+        assert!(token_points_for_aggregation("1.00", "JPY", &settings).is_err());
+        // A true zero charge is free and must not be blocked by a missing rate.
+        assert_eq!(0, token_points_for_charge("0", "JPY", &settings).unwrap());
     }
 
     #[test]

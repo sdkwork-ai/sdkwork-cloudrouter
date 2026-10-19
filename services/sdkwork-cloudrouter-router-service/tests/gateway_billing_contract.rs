@@ -106,6 +106,44 @@ fn synchronous_prepaid_settlement_writes_a_single_consumption_debit_not_a_pair()
     );
 }
 
+/// Regression: capture must be one atomic account-hold settlement, not a
+/// release followed by a separate ledger append. The request hash must cover
+/// the captured amount so a retry with different final pricing cannot replay
+/// the previous (possibly lower) charge.
+#[test]
+fn hold_capture_is_atomic_and_hashes_the_settled_amount() {
+    for needle in [
+        "SettleAccountHoldCommand",
+        "with_settled_amount",
+        "settle_account_hold",
+        "command.settled_amount",
+    ] {
+        assert!(
+            BILLING_STORE.contains(needle),
+            "atomic hold capture must contain {needle:?}"
+        );
+    }
+}
+
+/// Regression: settlement must reuse the exchange-rate snapshot captured for
+/// the precharge, and a zero-estimate request with positive actual usage must
+/// still be charged (postpaid fallback) instead of failing on a missing hold.
+#[test]
+fn settlement_reuses_the_precharge_rate_and_charges_zero_hold_usage() {
+    assert!(
+        BILLING_TRANSACTION.contains("points_settings.clone()"),
+        "settlement must reuse the precharge exchange-rate snapshot"
+    );
+    assert!(
+        BILLING_TRANSACTION.contains("A zero estimate intentionally creates no hold"),
+        "zero-hold positive usage must be documented and charged"
+    );
+    assert!(
+        BILLING_TRANSACTION.contains("charge_postpaid(context, actual)"),
+        "zero-hold positive usage must fall back to a postpaid debit"
+    );
+}
+
 /// Regression: async billing keeps the legacy precharge/refund reconciliation
 /// so the asynchronous worker path remains self-consistent with historical data.
 #[test]
