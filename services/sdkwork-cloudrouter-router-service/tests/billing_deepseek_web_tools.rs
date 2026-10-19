@@ -15,9 +15,9 @@ use sdkwork_cloudrouter_router_service::application::{
     PricingSettlementInterceptor, UsageExtractionInterceptor,
 };
 use sdkwork_cloudrouter_router_service::domain::{
-    AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute, ModelVendor,
-    ModelVendorDefinition, Money, PriceSide, PricingPlan, PricingRateMetadata, PricingRateVariant,
-    ProviderAuthProfile, UpstreamAccountGroup, UpstreamAccountRoute,
+    AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
+    ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, PricingRateMetadata,
+    PricingRateVariant, ProviderAuthProfile, UpstreamAccountGroup, UpstreamAccountRoute,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use serde_json::{json, Value};
@@ -190,7 +190,11 @@ async fn settle(path: &str, request: Value, response: Value) -> (String, String,
         .after(&mut invocation)
         .await
         .expect("settlement");
-    let commands = invocation.usage.settlement_commands.iter().collect::<Vec<_>>();
+    let commands = invocation
+        .usage
+        .settlement_commands
+        .iter()
+        .collect::<Vec<_>>();
     assert_eq!(1, commands.len());
     (
         commands[0].billing_meter_code.clone(),
@@ -207,7 +211,10 @@ async fn web_search_and_fetch_bill_one_successful_request() {
         json!({"results": [{"title": "a", "url": "https://example.com"}]}),
     )
     .await;
-    assert_eq!(("api_request".to_owned(), "1".to_owned()), (meter, quantity));
+    assert_eq!(
+        ("api_request".to_owned(), "1".to_owned()),
+        (meter, quantity)
+    );
     assert_eq!("0.000750000000", amount);
 
     let (meter, quantity, amount) = settle(
@@ -216,6 +223,9 @@ async fn web_search_and_fetch_bill_one_successful_request() {
         json!({"content": "hello"}),
     )
     .await;
-    assert_eq!(("api_request".to_owned(), "1".to_owned()), (meter, quantity));
+    assert_eq!(
+        ("api_request".to_owned(), "1".to_owned()),
+        (meter, quantity)
+    );
     assert_eq!("0.000750000000", amount);
 }
