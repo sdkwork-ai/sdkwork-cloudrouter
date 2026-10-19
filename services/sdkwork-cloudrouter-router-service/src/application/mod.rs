@@ -62,7 +62,7 @@ pub use api_key_secret_codec::{
     ApiKeySecretCodec, ApiKeySecretContext, ApiKeySecretStorageConfig, EncodedApiKeySecret,
 };
 pub use api_key_secret_generator::{ApiKeySecretGenerator, EntityUuidGenerator};
-pub use async_usage_registration::AsyncUsageRegistrar;
+pub use async_usage_registration::{AsyncUsageRegistrar, AsyncUsageRegistrationInterceptor};
 pub use async_usage_settlement::{
     AsyncUsageSettlementFuture, AsyncUsageSettler, ReplayAsyncUsageSettler,
 };
