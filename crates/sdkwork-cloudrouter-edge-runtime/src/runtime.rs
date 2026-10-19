@@ -64,7 +64,7 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::installer::{
     DatabaseInstallError, DatabaseInstaller,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
-    PostgresCatalogLoadError, PostgresGatewayUsageRecorder,
+    PostgresAsyncUsageTaskStore, PostgresCatalogLoadError, PostgresGatewayUsageRecorder,
     PostgresPaymentReconciliationRuntimeStore, PostgresPricingCatalogLoader,
     PostgresRoutingDecisionLogRecorder, PostgresUpstreamCredentialRotationStore,
     PostgresUsageRetentionStore, PostgresUsageSettlementStore,
@@ -74,7 +74,7 @@ use sdkwork_cloudrouter_router_service::infrastructure::{
 };
 use sdkwork_cloudrouter_router_service::ports::RuntimeRegionSettingsStore;
 use sdkwork_cloudrouter_router_service::ports::{
-    ChatCompletionRelay, ChatCompletionStreamRelay, EmbeddingsRelay,
+    AsyncUsageTaskStore, ChatCompletionRelay, ChatCompletionStreamRelay, EmbeddingsRelay,
     GatewayAccountingRecordContext, GatewayAccountingRetryQueue, GatewayRequestTraceCommand,
     GatewayTraceAttribution, GatewayUsageRecordCommand, GatewayUsageRecordFuture,
     GatewayUsageRecorder, ProviderSecretResolver, ResponsesRelay, ResponsesStreamRelay,
@@ -180,6 +180,8 @@ struct InvocationRuntimeRoutesInput<'a, C> {
     provider_secret_resolver: Option<Arc<RefreshableProviderSecretMapResolver>>,
     sticky_store: Option<Arc<dyn StickyRouteStore>>,
     usage_recorder: Option<UsageRecorder>,
+    /// Enqueues reconciliation rows for successful asynchronous creates.
+    async_usage_store: Option<Arc<dyn AsyncUsageTaskStore + Send + Sync>>,
     decision_log_recorder: Option<Arc<dyn RoutingDecisionLogRecorder + Send + Sync>>,
     provider_adapter_config: Option<ProviderAdapterConfig>,
     query_string_api_key_policy: QueryStringApiKeyPolicy,
@@ -215,6 +217,7 @@ where
         provider_secret_resolver,
         sticky_store,
         usage_recorder,
+        async_usage_store,
         decision_log_recorder,
         provider_adapter_config,
         query_string_api_key_policy,
@@ -257,6 +260,7 @@ where
                 secret_resolver,
                 sticky_store,
                 usage_recorder,
+                async_usage_store,
                 decision_log_recorder,
                 provider_adapter_config,
                 invocation_policy_guard: Some(
@@ -363,6 +367,8 @@ struct DatabaseRuntimeRoutesInput<'a, C> {
     provider_secret_resolver: Option<Arc<RefreshableProviderSecretMapResolver>>,
     invocation_sticky_store: Option<Arc<dyn StickyRouteStore>>,
     usage_recorder: Option<UsageRecorder>,
+    /// Enqueues reconciliation rows for successful asynchronous creates.
+    async_usage_store: Option<Arc<dyn AsyncUsageTaskStore + Send + Sync>>,
     decision_log_recorder: Option<Arc<dyn RoutingDecisionLogRecorder + Send + Sync>>,
     provider_passthrough_config: Option<ProviderRelayConfig>,
     provider_adapter_config: Option<ProviderAdapterConfig>,
@@ -401,6 +407,7 @@ where
         provider_secret_resolver,
         invocation_sticky_store,
         usage_recorder,
+        async_usage_store,
         decision_log_recorder,
         provider_passthrough_config,
         provider_adapter_config,
@@ -431,6 +438,7 @@ where
             provider_secret_resolver,
             sticky_store: invocation_sticky_store,
             usage_recorder: usage_recorder.clone(),
+            async_usage_store: async_usage_store.clone(),
             decision_log_recorder: decision_log_recorder.clone(),
             provider_adapter_config: provider_adapter_config.clone(),
             query_string_api_key_policy,
@@ -491,6 +499,7 @@ where
             auth_token_authenticator: auth_token_authenticator.clone(),
             sticky_store: invocation_sticky_store,
             usage_recorder: usage_recorder.clone(),
+            async_usage_store: async_usage_store.clone(),
             decision_log_recorder,
             provider_adapter_config: provider_adapter_config.clone(),
             query_string_api_key_policy,
@@ -1638,6 +1647,7 @@ async fn router_with_database_bootstrap(
             provider_secret_resolver: provider_secret_resolver.clone(),
             invocation_sticky_store: invocation_sticky,
             usage_recorder: Some(usage_recorder),
+            async_usage_store: Some(Arc::new(PostgresAsyncUsageTaskStore::new(pool.clone()))),
             decision_log_recorder: Some(Arc::new(PostgresRoutingDecisionLogRecorder::new(
                 pool.clone(),
             ))),
@@ -2449,6 +2459,9 @@ async fn build_gateway_router_from_all_in_one_context(
             pool.clone(),
         ))),
         usage_recorder: Some(usage_recorder),
+        async_usage_store: Some(Arc::new(PostgresAsyncUsageTaskStore::new(
+            context.commerce_pool.clone(),
+        ))),
         decision_log_recorder: Some(Arc::new(PostgresRoutingDecisionLogRecorder::new(
             pool.clone(),
         ))),
