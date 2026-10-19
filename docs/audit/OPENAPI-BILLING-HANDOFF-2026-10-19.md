@@ -63,7 +63,7 @@
 3. batch 结果文件读取（`GET /v1/files/{id}/content` JSONL 按 `custom_id` 求和）
    与 Anthropic results URL —— 未实现前 batch 任务只会停在可见错误上。
 
-在 1 完成前不得解除拒单，否则会变成未计量放行。
+在 1 完成前不得解除拒单，否则会变成未计量放行。逐步骤执行单（含代码骨架与验证顺序）：[../design/ASYNC-USAGE-WIRING.md](../design/ASYNC-USAGE-WIRING.md)。
 
 ### B. 向量库存储（1 个）
 
