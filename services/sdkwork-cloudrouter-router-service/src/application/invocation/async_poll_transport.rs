@@ -110,6 +110,7 @@ impl AsyncUsagePollTransport for PipelineAsyncPollTransport {
             Ok(AsyncPollResponse {
                 status_code: response.status_code,
                 body: response.body,
+                body_bytes: response.body_bytes,
             })
         })
     }

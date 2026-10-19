@@ -218,6 +218,7 @@ mod tests {
                 response: Mutex::new(Some(AsyncPollResponse {
                     status_code,
                     body: Some(body),
+                    body_bytes: None,
                 })),
                 ..Self::default()
             })
@@ -236,6 +237,7 @@ mod tests {
                     .unwrap_or(AsyncPollResponse {
                         status_code: 500,
                         body: None,
+                        body_bytes: None,
                     });
             Box::pin(async move { Ok(response) })
         }

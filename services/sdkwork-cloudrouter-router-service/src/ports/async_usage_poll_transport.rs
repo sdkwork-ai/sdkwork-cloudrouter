@@ -30,6 +30,10 @@ pub struct AsyncPollRequest {
 pub struct AsyncPollResponse {
     pub status_code: u16,
     pub body: Option<serde_json::Value>,
+    /// Raw response bytes. JSON responses also populate `body`; a batch result
+    /// file (`application/jsonl` / `text/plain`) is not one JSON document, so
+    /// reconciliation reads it from here.
+    pub body_bytes: Option<Vec<u8>>,
 }
 
 pub type AsyncPollFuture<'a> =
