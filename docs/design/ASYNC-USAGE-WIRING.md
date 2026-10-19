@@ -1,6 +1,6 @@
 # 异步用量对账：runtime 接线执行单
 
-> 状态：所有组件已实现并有回归；**仅剩 runtime 装配与预检拒单解除**。
+> 状态（第 26 轮）：runtime 装配、worker 启动、入队与预检放行的门控**已完成**；worker 启用时 `background:true` Responses 可按完成态异步扣费。剩余：batch 结果文件对账、`file_batches`、midjourney/nano-banana（跨仓）。
 > 关联：[OPENAPI-BILLING-HANDOFF-2026-10-19.md](../audit/OPENAPI-BILLING-HANDOFF-2026-10-19.md) §3.A、
 > [OPENAPI-BILLING-MATRIX-ALIGNMENT-2026-10-18.md](../audit/OPENAPI-BILLING-MATRIX-ALIGNMENT-2026-10-18.md) 2.71–2.77。
 
