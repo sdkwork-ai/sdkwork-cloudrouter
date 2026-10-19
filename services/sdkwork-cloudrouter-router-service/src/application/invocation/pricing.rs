@@ -1390,6 +1390,33 @@ mod tests {
     /// Serializes tests that mutate `SDKWORK_CLOUDROUTER_ROUTER_REGION_CODE`.
     static REGION_ENV_LOCK: Mutex<()> = Mutex::new(());
 
+    /// Serializes tests that flip the async reconciliation deployment switch.
+    static ASYNC_ENV_LOCK: Mutex<()> = Mutex::new(());
+
+    #[test]
+    fn reconciliation_flag_follows_the_deployment_switch() {
+        let _guard = ASYNC_ENV_LOCK.lock().expect("async env lock");
+        const KEY: &str = "SDKWORK_CLOUDROUTER_ASYNC_USAGE_WORKER_ENABLED";
+        let previous = std::env::var(KEY).ok();
+
+        std::env::remove_var(KEY);
+        assert!(
+            !async_usage_reconciliation_enabled(),
+            "the worker is disabled by default"
+        );
+
+        std::env::set_var(KEY, "true");
+        assert!(
+            async_usage_reconciliation_enabled(),
+            "an explicitly enabled worker must open the gate"
+        );
+
+        match previous {
+            Some(value) => std::env::set_var(KEY, value),
+            None => std::env::remove_var(KEY),
+        }
+    }
+
     /// A catalog where the model advertises official prices in both `cn`
     /// (CNY) and `global` (USD) but declares no model upstream routes — the
     /// real-world shape of a mainland-China deployment such as deepseek.
