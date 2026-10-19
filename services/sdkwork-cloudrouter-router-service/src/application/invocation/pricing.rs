@@ -1002,6 +1002,22 @@ fn unmetered_background_response(invocation: &Invocation) -> bool {
         return false;
     };
     body.get("background").and_then(serde_json::Value::as_bool) == Some(true)
+        // Accept the create only when the reconciliation worker can later price
+        // and charge the completion. With the worker disabled, accepting it
+        // would leave an upstream call unbilled.
+        && !async_usage_reconciliation_enabled()
+}
+
+/// True when the deployment enabled asynchronous usage reconciliation.
+///
+/// The worker is opt-in (default off). This flag is deliberately read at the
+/// gate rather than cached: enabling it is a deliberate deployment change, and
+/// the gate is the only place where an acceptance would otherwise become a
+/// permanent unbilled call.
+fn async_usage_reconciliation_enabled() -> bool {
+    crate::application::async_usage_worker_config_from_env(None)
+        .map(|config| config.enabled)
+        .unwrap_or(false)
 }
 
 /// 实时语音的**创建**面：响应只含会话对象与上游 `client_secret`，真正的音频
