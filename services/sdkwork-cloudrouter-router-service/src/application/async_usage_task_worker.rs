@@ -84,7 +84,11 @@ impl AsyncUsageTaskWorker {
                 }
                 AsyncUsagePoll::Pending => {
                     self.store
-                        .reschedule(task.id, "upstream task still running".to_owned(), now + self.retry_delay)
+                        .reschedule(
+                            task.id,
+                            "upstream task still running".to_owned(),
+                            now + self.retry_delay,
+                        )
                         .await?;
                 }
                 AsyncUsagePoll::Failed(error) => {
