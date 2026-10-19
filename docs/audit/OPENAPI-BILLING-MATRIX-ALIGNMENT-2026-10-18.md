@@ -7,13 +7,13 @@
 >
 > **2026-10-19 第 9 轮补充**：新增 2.21（Google/Gemini 逐模态令牌）与 `billing_google_modality_tokens.rs`（7 个用例），并修掉 `pricing_meters` 的"目录改写后重解析缩表"缺陷。
 >
-> **2026-10-19 第 10–22 轮补充**：新增 2.22（token 计价的二进制语音合成必须在派发前拒单）、2.23（批量提交在结果回收前必须拒单）、2.24（`background: true` 在用量回填前必须拒单）、2.25（实时语音在 WebSocket 代理落地前必须拒单）、2.26（图像单档位费率必须可解析）、2.27（Anthropic 缓存写入必须按 TTL 档位计价）、2.28（上下文分档 token 费率必须可解析）、2.29（缓存读必须按逐行模态计价）、2.30（Alibaba 显式/隐式缓存读必须可区分）、2.31（输入侧预扣取最高价不求和）、2.32（累计上界档位词汇）、2.33（流式 Chat 必须索取 usage）、2.34（usage-only chunk 不透传）、2.35（图像输入模式档位）、2.36（管理面归 Free）、2.37（OpenAI 管理/CRUD 归 Free）、2.38（异步轮询归 Free）、2.39（管理面几个"过度排除"的端点归 Free）、2.40（Responses 压缩按 token 计费）、2.41（音效按分钟计费已生效）、2.42（容器文件归 Free）、2.43（未定价按次端点不得静默免费）、2.44（音乐时长兜底歧义显式化）、2.45（就绪计数锁 163/176）、2.46（零产出必须 waive）、2.47（2xx 业务失败必须 waive）、2.48（中断流补输入估算）、2.49（服务端工具按次计费）、2.50（异步对账表与数据库初始化）、2.51（向量库检索按次计费）、2.52（异步对账 store）、2.53（批 embedding 按请求 token 估算）、2.54（DeepSeek web tools 按成功请求计费）与二十二个测试文件（5+5+6+6+5+4+7+4+4+4+3+2+1+1+2+2+4+4+1+1+1+1 个用例，另在 precharge 文件新增 2 条、provider_request 单测 4 条、stream 过滤单测 5 条、usage_extraction 单测 5 条）。回归合计 **278** 个计费用例 + router-service `--lib` **590** 个单测 + edge-runtime `--lib` **97** 个单测全绿。
+> **2026-10-19 第 10–22 轮补充**：新增 2.22（token 计价的二进制语音合成必须在派发前拒单）、2.23（批量提交在结果回收前必须拒单）、2.24（`background: true` 在用量回填前必须拒单）、2.25（实时语音在 WebSocket 代理落地前必须拒单）、2.26（图像单档位费率必须可解析）、2.27（Anthropic 缓存写入必须按 TTL 档位计价）、2.28（上下文分档 token 费率必须可解析）、2.29（缓存读必须按逐行模态计价）、2.30（Alibaba 显式/隐式缓存读必须可区分）、2.31（输入侧预扣取最高价不求和）、2.32（累计上界档位词汇）、2.33（流式 Chat 必须索取 usage）、2.34（usage-only chunk 不透传）、2.35（图像输入模式档位）、2.36（管理面归 Free）、2.37（OpenAI 管理/CRUD 归 Free）、2.38（异步轮询归 Free）、2.39（管理面几个"过度排除"的端点归 Free）、2.40（Responses 压缩按 token 计费）、2.41（音效按分钟计费已生效）、2.42（容器文件归 Free）、2.43（未定价按次端点不得静默免费）、2.44（音乐时长兜底歧义显式化）、2.45（就绪计数锁 165/176）、2.46（零产出必须 waive）、2.47（2xx 业务失败必须 waive）、2.48（中断流补输入估算）、2.49（服务端工具按次计费）、2.50（异步对账表与数据库初始化）、2.51（向量库检索按次计费）、2.52（异步对账 store）、2.53（批 embedding 按请求 token 估算）、2.54（DeepSeek web tools 按成功请求计费）、2.55（异步注册器）与二十二个测试文件（5+5+6+6+5+4+7+4+4+4+3+2+1+1+2+2+4+4+1+1+1+1 个用例，另在 precharge 文件新增 2 条、provider_request 单测 4 条、stream 过滤单测 5 条、usage_extraction 单测 5 条、async registrar 单测 2 条）。回归合计 **279** 个计费用例 + router-service `--lib` **592** 个单测 + edge-runtime `--lib` **97** 个单测全绿。
 
 ## 一句话结论
 
 176 个 operation 全部可分类、全部有确定计费形态：**109 个按次**（其中 24 个是无专属计量单位的通用请求）、**11 个复合 token**、**3 个 embedding token**、**7 个图片张**、**10 个视频条 + 4 个视频秒**、**2 个音乐秒**、**3 个 TTS 字符**、**2 个 STT 分钟**、**2 个免费**。累计修掉 **21 类**会让"上游成本"与"对客收费"脱钩的偏差（2.1–2.21），剩余 24 个无计量单位端点已逐个登记原因。
 
-**商业化判断看五个面，缺一不可**：形态（按什么单位收）、数量（这个单位量出多少，**逐接口**而非逐家族）、**单价（同一个数量有没有落在正确的计量单位上——音频 token 与文本 token 差 8 倍）**、预扣（派发前冻结多少）、可结算性（声明了数量来源就一定要能被抽取）。五个面各有可执行锁，合计 **278 个测试**常绿；数量层、预扣层、模态层、厂商形状层、可结算性守卫层都做过变异自证（见第六节）。
+**商业化判断看五个面，缺一不可**：形态（按什么单位收）、数量（这个单位量出多少，**逐接口**而非逐家族）、**单价（同一个数量有没有落在正确的计量单位上——音频 token 与文本 token 差 8 倍）**、预扣（派发前冻结多少）、可结算性（声明了数量来源就一定要能被抽取）。五个面各有可执行锁，合计 **279 个测试**常绿；数量层、预扣层、模态层、厂商形状层、可结算性守卫层都做过变异自证（见第六节）。
 
 ## 一、家族分布（快照统计）
 
@@ -1226,6 +1226,24 @@ worker 与注册拦截器仍未接线；下一轮把 `enqueue` 挂到 batch/back
    请求 = 一条 `api_request`、数量 1、金额 `$0.00075`；空结果仍由
    `billing_result_gate` waive（`deepseek_web_tools_billing` 原有 3 条锁保留）。
 
+### 2.55 异步注册器：把创建响应转成幂等对账任务
+
+2.52 的 store 只有队列语义；本轮补上"谁来入队"的边界对象：
+
+- `AsyncUsageRegistrar` 持有 `Arc<dyn AsyncUsageTaskStore>`，`register(invocation,
+  kind, upstream_id)` 从调用上下文构造 `NewAsyncUsageTask`：
+  `tenant/organization/user/api_key/request_id`、`task_kind`、upstream id、
+  `catalog_key`（请求模型目录键）、`supplier/account/region`。
+- 空 upstream id 或未解析上游账号时返回 `DomainError`，不写脏行。
+- store 的 `(tenant, organization, task_kind, upstream_id)` 唯一键保证同一创建
+  响应重放只入队一次；后续 worker 使用 `billing_request_id =
+  async:<kind>:<upstream_id>` 结算，轮询重复不会重复扣费。
+- 单测 2 条：重复注册只留一条（并断言 catalog_key/supplier 落库）、空
+  upstream id 拒绝。
+
+注册器尚未挂到 batch/background/run 创建后的成功响应；worker 也尚未实现，
+两者都留到下一轮接线。
+
 ## 四、5 个"无专属计量单位且仍不可售"端点（已登记）
 
 
@@ -1353,7 +1371,7 @@ git diff services/sdkwork-cloudrouter-router-service/tests/golden/openapi_billin
 | `node tools/check-cloudrouter-ai-routing-consistency.mjs` | **passed**（122 个 OpenAI-compatible operation 全部有分类臂） |
 | `cargo fmt --check` | 干净 |
 
-合计 **278 个测试全绿**（形态 15 + 逐接口媒体数量 17 + 逐接口流式数量 16 + 逐模态单价 OpenAI 5 + 逐模态单价 Google 7 + 可结算性守卫 35 + 图像档位 5 + 缓存写入档位 4 + 上下文分档 7 + 缓存读模态 4 + Alibaba 缓存 4 + 缓存缺价回退 3 + 家族数量 11 + 目录改写 5 + 预扣 12 + 音乐兜底 2 + 就绪计数 1 + 空结果 waive 4 + 业务失败 waive 7 + 服务端工具 1 + 向量库检索 1 + 批 embedding 1 + DeepSeek web tools 1 + 既有计费/契约/分类/payload 111），另加 `cargo test -p sdkwork-cloudrouter-edge-runtime --lib` **97 passed**（流式传输层 + 流式协议映射 + usage-only chunk 过滤 5 条）与 `--lib openai_usage` **12 passed**（中继侧输入量口径）。router-service 全量还有 2 个红目标，全部 **HEAD 既有**（与本轮计费改动无关）：`upstream_route_selector` 4、`postgres_payment_intent_runtime_sql_contract` 2。第 9 轮把原来的第 3 个红目标修掉了：`--lib` 的 `every_capability_binds_only_to_a_declared_vendor_native_endpoint` 之所以报 `gemini.video_task_query`，是**测试的 poll-surface 白名单漏了这一条**（该端点确实是 `gemini.video_generation` 的轮询面，`GET /v1beta/models/{model}/operations/{operationId}`，没有任何模型声明 `task_query` capability），补进白名单后 `--lib` 全绿（第 17 轮起为 **583/583**，含 4 条 provider_request 单测）。这不是计费缺陷，但"声明了却永远无法被描述符绑定"会出现在商业审计里，所以同轮修掉。**注意 `verify.yml` 不跑 `cargo test`**（只 clippy/audit/deny/SBOM），所以"green verify gate"不能当作测试基线。
+合计 **279 个测试全绿**（形态 15 + 逐接口媒体数量 17 + 逐接口流式数量 16 + 逐模态单价 OpenAI 5 + 逐模态单价 Google 7 + 可结算性守卫 35 + 图像档位 5 + 缓存写入档位 4 + 上下文分档 7 + 缓存读模态 4 + Alibaba 缓存 4 + 缓存缺价回退 3 + 家族数量 11 + 目录改写 5 + 预扣 12 + 音乐兜底 2 + 就绪计数 1 + 空结果 waive 4 + 业务失败 waive 7 + 服务端工具 1 + 向量库检索 1 + 批 embedding 1 + DeepSeek web tools 2 + 既有计费/契约/分类/payload 111），另加 `cargo test -p sdkwork-cloudrouter-edge-runtime --lib` **97 passed**（流式传输层 + 流式协议映射 + usage-only chunk 过滤 5 条）与 `--lib openai_usage` **12 passed**（中继侧输入量口径）。router-service 全量还有 2 个红目标，全部 **HEAD 既有**（与本轮计费改动无关）：`upstream_route_selector` 4、`postgres_payment_intent_runtime_sql_contract` 2。第 9 轮把原来的第 3 个红目标修掉了：`--lib` 的 `every_capability_binds_only_to_a_declared_vendor_native_endpoint` 之所以报 `gemini.video_task_query`，是**测试的 poll-surface 白名单漏了这一条**（该端点确实是 `gemini.video_generation` 的轮询面，`GET /v1beta/models/{model}/operations/{operationId}`，没有任何模型声明 `task_query` capability），补进白名单后 `--lib` 全绿（第 17 轮起为 **583/583**，含 4 条 provider_request 单测）。这不是计费缺陷，但"声明了却永远无法被描述符绑定"会出现在商业审计里，所以同轮修掉。**注意 `verify.yml` 不跑 `cargo test`**（只 clippy/audit/deny/SBOM），所以"green verify gate"不能当作测试基线。
 
 ### 变异自证（三层）
 

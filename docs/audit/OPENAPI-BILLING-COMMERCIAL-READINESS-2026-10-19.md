@@ -154,14 +154,14 @@ fail-closed 或留给下一轮，不凭空收费。
 
 | 项 | 结果 |
 | --- | --- |
-| 计费 test target | **45 个 target / 278 passed / 0 failed** |
-| router-service `--lib` | **590 passed** |
+| 计费 test target | **45 个 target / 279 passed / 0 failed** |
+| router-service `--lib` | **592 passed** |
 | edge-runtime `--lib` | **97 passed** |
 | clippy（两 crate，`--lib --tests`） | 0 |
 | `cargo fmt --check` | 干净 |
 | `node tools/check-cloudrouter-ai-routing-consistency.mjs` | **passed**（81 arms / 64 codes；83 endpoints；122 OpenAI-compatible ops 全有分类臂） |
 | 数据库初始化 | `pnpm db:validate` 通过；`pnpm db:plan` 显示 `pending_migrations: ["0046_ai_metering_async_task"]` 且 exit 0；schema registry / baseline / contract / manifest 已同步（`ai_metering_async_task`，39 张物化表） |
-| sdkwork-models 目录 | 6 个 OpenAI 模型补 12 条 tool 费率；`validate-catalog` exit 0、`audit-pricing-consistency` exit 0、`report-unreachable-pricing.py --check` current（252 行）、`migrate-pricing-v2` 0 待迁移 |
+| sdkwork-models 目录 | 6 个 OpenAI 模型 12 条 tool 费率 + `openai/vector-stores` + `deepseek/web_tools`；`validate-catalog` / `catalog-audit` / `unreachable --check` 通过，`migrate-pricing-v2` 0 待迁移 |
 
 ## 七、商业化结论
 

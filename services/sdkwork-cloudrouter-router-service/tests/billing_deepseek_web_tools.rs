@@ -204,6 +204,40 @@ async fn settle(path: &str, request: Value, response: Value) -> (String, String,
 }
 
 #[tokio::test]
+async fn empty_search_results_are_waived_even_when_the_route_is_priced() {
+    let catalog = Arc::new(catalog());
+    let mut invocation = invocation("/v1/tools/search", json!({"query": "no hits"})).await;
+    let identity = resolve_pricing_identity(catalog.as_ref(), &invocation);
+    apply_pricing_identity(&mut invocation, &identity);
+    PricingPreflightInterceptor::new(Arc::clone(&catalog))
+        .before(&mut invocation)
+        .await
+        .expect("pricing preflight");
+    invocation.dispatch = InvocationDispatch::json_response(200, json!({"results": []}));
+    UsageExtractionInterceptor
+        .after(&mut invocation)
+        .await
+        .expect("usage extraction");
+    PricingFinalizationInterceptor::new(Arc::clone(&catalog))
+        .after(&mut invocation)
+        .await
+        .expect("final pricing");
+    PricingSettlementInterceptor
+        .after(&mut invocation)
+        .await
+        .expect("settlement");
+
+    assert_eq!(
+        Some("search_returned_no_results".to_owned()),
+        invocation.charging.waived
+    );
+    assert!(
+        invocation.usage.settlement_commands.is_empty(),
+        "an empty search result must not be charged"
+    );
+}
+
+#[tokio::test]
 async fn web_search_and_fetch_bill_one_successful_request() {
     let (meter, quantity, amount) = settle(
         "/v1/tools/search",
