@@ -273,8 +273,12 @@ fn provider_native_management_is_free(invocation: &Invocation) -> bool {
         return true;
     }
     if path.starts_with("/anthropic/v1/messages/batches") {
-        // 查询 / 取详情 / 取消免费；创建仍由预检守卫拒单。
-        return method == "GET" || path.ends_with("/cancel");
+        // 查询 / 取详情 / 取消免费；创建同样只在异步对账开启时免费。
+        return method == "GET"
+            || path.ends_with("/cancel")
+            || (method == "POST"
+                && path == "/anthropic/v1/messages/batches"
+                && super::pricing::async_usage_reconciliation_is_enabled());
     }
     false
 }
@@ -369,7 +373,10 @@ fn openai_management_is_free(invocation: &Invocation) -> bool {
         return true;
     }
     if path == "/v1/batches" {
-        return method == "GET";
+        // 创建免费但**只在异步对账开启时**：用量在结果文件里，由完成态按每个
+        // (model, endpoint) 行重新定价后扣费。没有 worker 时预检守卫仍拒单。
+        return method == "GET"
+            || (method == "POST" && super::pricing::async_usage_reconciliation_is_enabled());
     }
     if path.starts_with("/v1/batches/") {
         return method == "GET" || path.ends_with("/cancel");

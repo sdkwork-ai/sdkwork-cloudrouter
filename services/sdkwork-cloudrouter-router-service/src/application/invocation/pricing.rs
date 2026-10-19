@@ -972,18 +972,24 @@ fn unmetered_vector_store_ingestion(invocation: &Invocation) -> bool {
         && path.ends_with("/file_batches")
 }
 
+/// `POST /v1/batches` 与 `POST /anthropic/v1/messages/batches`。
+///
+/// 批处理创建本身没有可定价的 `api_request` 费率：真正的用量在完成态的结果文件里，
+/// 由异步对账按每个 `(model, endpoint)` 行重新定价。因此只有在 worker 启用时才能
+/// 接受创建——否则任务永远无人结算，等于把拒单换成静默免费。
 fn unmetered_batch_submission(invocation: &Invocation) -> bool {
     if invocation.request.method != axum::http::Method::POST {
         return false;
     }
-    match (
+    let batch = match (
         invocation.resource.api_code.as_str(),
         invocation.request.path.as_str(),
     ) {
         ("openai.batches", "/v1/batches") => true,
         ("anthropic.batches", "/anthropic/v1/messages/batches") => true,
         _ => false,
-    }
+    };
+    batch && !async_usage_reconciliation_enabled()
 }
 
 /// `POST /v1/responses` 且请求体 `background: true`。
@@ -1018,6 +1024,12 @@ fn async_usage_reconciliation_enabled() -> bool {
     crate::application::async_usage_worker_config_from_env(None)
         .map(|config| config.enabled)
         .unwrap_or(false)
+}
+
+/// Shared with the billing policy: a batch create is free at the gateway only
+/// when the completion charge is guaranteed by the reconciliation worker.
+pub(super) fn async_usage_reconciliation_is_enabled() -> bool {
+    async_usage_reconciliation_enabled()
 }
 
 /// 实时语音的**创建**面：响应只含会话对象与上游 `client_secret`，真正的音频
@@ -1410,6 +1422,76 @@ mod tests {
             async_usage_reconciliation_enabled(),
             "an explicitly enabled worker must open the gate"
         );
+
+        match previous {
+            Some(value) => std::env::set_var(KEY, value),
+            None => std::env::remove_var(KEY),
+        }
+    }
+
+    fn batch_invocation() -> Invocation {
+        use crate::application::{
+            InvocationAuthType, InvocationClassificationRequest, InvocationRequest,
+            InvocationResourceClassifier, InvocationSubject, OpenAiResourceClassifier,
+        };
+        let classification = OpenAiResourceClassifier
+            .classify(&InvocationClassificationRequest::new(
+                axum::http::Method::POST,
+                "/v1/batches",
+            ))
+            .expect("classify batch create");
+        let (resource, billing, routing) = classification.into_parts();
+        let mut invocation = Invocation::new(
+            InvocationRequest::new(axum::http::Method::POST, "/v1/batches")
+                .with_request_id("req-batch"),
+            InvocationSubject {
+                auth_type: InvocationAuthType::InternalService,
+                api_key_id: None,
+                api_key_name_snapshot: None,
+                tenant_id: 10,
+                organization_id: 20,
+                user_id: 0,
+                billing_organization_id: 0,
+                billing_owner: Default::default(),
+                account_group_id: Some(10),
+                account_group_code: None,
+                pricing_plan_code: Some("standard".to_owned()),
+                roles: Vec::new(),
+                scopes: Vec::new(),
+            },
+            resource,
+            billing,
+        );
+        invocation.routing = routing;
+        invocation
+    }
+
+    /// 批处理创建没有可定价的 `api_request` 费率：只有对账 worker 启用时，
+    /// 创建才按 Free 放行、完成态再按结果文件逐行扣费；关闭时仍是 ApiRequest，
+    /// 由预检守卫拒单，不会出现"接了单没人收钱"。
+    #[tokio::test]
+    async fn batch_create_is_free_only_while_reconciliation_is_enabled() {
+        use crate::application::BillingPolicyInterceptor;
+
+        let _guard = ASYNC_ENV_LOCK.lock().expect("async env lock");
+        const KEY: &str = "SDKWORK_CLOUDROUTER_ASYNC_USAGE_WORKER_ENABLED";
+        let previous = std::env::var(KEY).ok();
+
+        std::env::remove_var(KEY);
+        let mut invocation = batch_invocation();
+        BillingPolicyInterceptor
+            .before(&mut invocation)
+            .await
+            .expect("policy");
+        assert_eq!(BillingMode::ApiRequest, invocation.billing.mode);
+
+        std::env::set_var(KEY, "true");
+        let mut invocation = batch_invocation();
+        BillingPolicyInterceptor
+            .before(&mut invocation)
+            .await
+            .expect("policy");
+        assert_eq!(BillingMode::Free, invocation.billing.mode);
 
         match previous {
             Some(value) => std::env::set_var(KEY, value),
