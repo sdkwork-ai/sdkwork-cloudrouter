@@ -1954,3 +1954,16 @@ git diff services/sdkwork-cloudrouter-router-service/tests/golden/openapi_billin
     （目前假定 OpenAI 兼容面都接受该字段）。
 
 
+
+### 2.78 vendor 不存在的入口：标记 Deprecated，而不是长期"待补资源"
+
+按"对齐 vendor 实现"的口径复核剩余不可售入口，两组的性质必须区分开：
+
+| 入口 | vendor 是否有该 API | 处置 |
+| --- | --- | --- |
+| `POST/GET /midjourney/v1/images/generations` | **没有**。Midjourney 不提供公开 API，该路径是第三方非官方形状 | **Deprecated**：不应继续作为可售入口维护；如需接入应改为官方支持的渠道 |
+| `POST/GET /nano-banana/v1/images/generations` | **没有该命名空间**。Google/Gemini 的官方入口是 `/google/v1beta/models/nano-banana:generateImages`（本仓已接通） | **Deprecated**：`/nano-banana/**` 属于跨仓 API 权威冲突，应迁移到 Google 原生入口 |
+| `POST /v1/batches`、`POST /anthropic/v1/messages/batches` | **有**，且官方按 50% 折扣计价 | 保持 fail-closed，等结果文件对账（2.73/执行单 batch 缺口） |
+| `POST /v1/vector_stores/{id}/file_batches` | **有** | 保持 fail-closed，等逐文件字节读取 worker |
+
+因此商业化口径应改为：**166 无条件可售 + 2 条件可售（worker 启用）+ 3 待补基础设施 + 4 Deprecated**，而不是把 4 个 vendor 不存在的入口长期计入"待补资源"。契约层面把它们标记 `deprecated: true` 需要同步重新生成 5 个语言的 SDK（OpenAPI 是生成器输入），应在具备完整预算的会话中一次性完成，并在 `data/ai-routing/declared-unrouted.json` 对应条目上补 `deprecated` 字段。
