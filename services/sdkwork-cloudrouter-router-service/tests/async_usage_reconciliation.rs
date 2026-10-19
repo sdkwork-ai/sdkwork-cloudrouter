@@ -14,7 +14,8 @@ use sdkwork_cloudrouter_router_service::application::{
     AsyncUsageTaskExecutor, AsyncUsageTaskWorker, BillingPolicyInterceptor, Invocation,
     InvocationAccount, InvocationBilling, InvocationBody, InvocationClassificationRequest,
     InvocationDispatch, InvocationInterceptor, InvocationRequest, InvocationResourceClassifier,
-    InvocationSubject, OpenAiResourceClassifier, ReplayAsyncUsageSettler,
+    InvocationSubject, OpenAiResourceClassifier, ProviderAsyncUsageExecutor,
+    ReplayAsyncUsageSettler,
 };
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, AsyncUsageTask, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice,
@@ -26,6 +27,7 @@ use sdkwork_cloudrouter_router_service::infrastructure::{
     InMemoryAsyncUsageTaskStore, InMemoryPricingCatalog,
 };
 use sdkwork_cloudrouter_router_service::ports::{
+    AsyncPollFuture, AsyncPollRequest, AsyncPollResponse, AsyncUsagePollTransport,
     CustomerChargeMode, GatewayBillingAmount, GatewayBillingContext, GatewayBillingFuture,
     GatewayBillingSettlementMode, GatewayBillingStore, RechargeSettingsModel,
 };
@@ -357,4 +359,131 @@ async fn a_background_response_is_enqueued_polled_priced_and_charged_once() {
         .expect("second pass");
     assert_eq!(0, second, "settled tasks are not claimed again");
     assert_eq!(1, billing.postpaid.lock().expect("postpaid").len());
+}
+struct BatchTransport {
+    responses: Mutex<Vec<AsyncPollResponse>>,
+    paths: Mutex<Vec<String>>,
+}
+
+impl BatchTransport {
+    fn new(responses: Vec<AsyncPollResponse>) -> Self {
+        Self {
+            responses: Mutex::new(responses),
+            paths: Mutex::new(Vec::new()),
+        }
+    }
+}
+
+impl AsyncUsagePollTransport for BatchTransport {
+    fn get(&self, request: AsyncPollRequest) -> AsyncPollFuture<'_> {
+        self.paths.lock().expect("paths").push(request.path);
+        let response = self.responses.lock().expect("responses").remove(0);
+        Box::pin(async move { Ok(response) })
+    }
+}
+
+fn batch_creation_invocation() -> Invocation {
+    let mut invocation = creation_invocation();
+    let classification = OpenAiResourceClassifier
+        .classify(&InvocationClassificationRequest::new(
+            Method::POST,
+            "/v1/batches",
+        ))
+        .expect("classification");
+    let (resource, billing, routing) = classification.into_parts();
+    invocation.request = InvocationRequest::new(Method::POST, "/v1/batches")
+        .with_request_id("req-batch-create")
+        .with_body(InvocationBody::json(json!({
+            "input_file_id": "file_in",
+            "endpoint": "/v1/chat/completions",
+            "completion_window": "24h"
+        })));
+    invocation.resource = resource;
+    invocation.billing = billing;
+    invocation.routing = routing;
+    invocation
+}
+
+/// 批处理的完整链路：创建入队 → 轮询到 completed → 下载结果文件 → 按
+/// `(model, endpoint)` 逐行定价 → 每行一笔后扣。
+#[tokio::test]
+async fn a_batch_is_enqueued_polled_downloaded_and_charged_per_row() {
+    let catalog = catalog();
+    let store = Arc::new(InMemoryAsyncUsageTaskStore::new());
+    let billing = Arc::new(RecordingBillingStore::default());
+
+    let mut invocation = batch_creation_invocation();
+    BillingPolicyInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("billing policy");
+    invocation.dispatch = InvocationDispatch::json_response(200, json!({"id": "batch_1"}));
+    AsyncUsageRegistrationInterceptor::new(store.clone())
+        .after(&mut invocation)
+        .await
+        .expect("registration");
+
+    let jsonl = br#"{"custom_id":"a","response":{"status_code":200,"body":{"model":"gpt-4o","object":"chat.completion","usage":{"prompt_tokens":100,"completion_tokens":50}}},"error":null}
+{"custom_id":"b","response":{"status_code":200,"body":{"model":"gpt-4o","object":"response","usage":{"input_tokens":200,"output_tokens":100}}},"error":null}
+"#;
+    let transport = Arc::new(BatchTransport::new(vec![
+        AsyncPollResponse {
+            status_code: 200,
+            body: Some(json!({
+                "id": "batch_1",
+                "status": "completed",
+                "output_file_id": "file_1"
+            })),
+            body_bytes: None,
+        },
+        AsyncPollResponse {
+            status_code: 200,
+            body: None,
+            body_bytes: Some(jsonl.to_vec()),
+        },
+    ]));
+    let executor = ProviderAsyncUsageExecutor::new(Arc::clone(&catalog), transport.clone());
+    let settler = Arc::new(ReplayAsyncUsageSettler::new(
+        Arc::clone(&catalog),
+        billing.clone(),
+    ));
+    let worker = AsyncUsageTaskWorker::new(
+        store.clone(),
+        Arc::new(executor),
+        Duration::seconds(30),
+        Duration::seconds(5),
+        5,
+    )
+    .with_settler(settler);
+
+    assert_eq!(
+        1,
+        worker
+            .run_once(Utc::now() + Duration::seconds(1), 10)
+            .await
+            .expect("worker pass")
+    );
+
+    let postpaid = billing.postpaid.lock().expect("postpaid").clone();
+    assert_eq!(
+        vec!["175000", "350000"],
+        postpaid
+            .iter()
+            .map(|amount| amount.amount.as_str())
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        vec![
+            "async:openai_batch:batch_1:gpt-4o:chat.completion".to_owned(),
+            "async:openai_batch:batch_1:gpt-4o:responses".to_owned()
+        ],
+        billing.settled_requests.lock().expect("settled").clone()
+    );
+    assert_eq!(
+        vec![
+            "/v1/batches/batch_1".to_owned(),
+            "/v1/files/file_1/content".to_owned()
+        ],
+        transport.paths.lock().expect("paths").clone()
+    );
 }
