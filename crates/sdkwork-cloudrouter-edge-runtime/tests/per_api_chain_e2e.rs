@@ -283,7 +283,8 @@ impl ApiCase {
 /// Coverage is by *route*, not by vendor: some vendors (`runway`,
 /// `stability_ai`, `black_forest_labs`, `jimeng`) publish no vendor-namespaced
 /// inbound route at all and are reached through a shared surface (the generic
-/// `/v1/...` paths, or `/nano-banana/...`), which is itself worth pinning —
+/// `/v1/...` paths, or the Gemini-native `/google/...` paths), which is itself
+/// worth pinning —
 /// "the vendor is in the catalog" and "the vendor has an addressable door" are
 /// different facts.
 const API_CASES: &[ApiCase] = &[
@@ -424,22 +425,6 @@ const API_CASES: &[ApiCase] = &[
         method: "POST",
         expectation: ApiExpectation::Routable,
         body: r#"{"model":"gpt-image-2","prompt":"add a hat"}"#,
-    },
-    ApiCase {
-        api_code: "nano_banana.image_generation",
-        path: "/nano-banana/v1/images/generations",
-        published_path: "",
-        method: "POST",
-        expectation: ApiExpectation::Routable,
-        body: r#"{"model":"gemini-3-pro-image","prompt":"a red apple"}"#,
-    },
-    ApiCase {
-        api_code: "midjourney.image_generation",
-        path: "/midjourney/v1/images/generations",
-        published_path: "",
-        method: "POST",
-        expectation: ApiExpectation::Routable,
-        body: r#"{"model":"midjourney-v7","prompt":"a red apple"}"#,
     },
     // --- video ---
     ApiCase {
@@ -776,22 +761,6 @@ const API_CASES: &[ApiCase] = &[
         method: "GET",
         path: "/kling/v1/videos/generations/task-probe-001",
         published_path: "/kling/v1/videos/generations/{task_id}",
-        body: r#"{}"#,
-        expectation: ApiExpectation::Routable,
-    },
-    ApiCase {
-        api_code: "midjourneyRetrieveImageGeneration",
-        method: "GET",
-        path: "/midjourney/v1/images/generations/task-probe-001",
-        published_path: "/midjourney/v1/images/generations/{task_id}",
-        body: r#"{}"#,
-        expectation: ApiExpectation::Routable,
-    },
-    ApiCase {
-        api_code: "nanoBananaRetrieveImageGeneration",
-        method: "GET",
-        path: "/nano-banana/v1/images/generations/task-probe-001",
-        published_path: "/nano-banana/v1/images/generations/{task_id}",
         body: r#"{}"#,
         expectation: ApiExpectation::Routable,
     },

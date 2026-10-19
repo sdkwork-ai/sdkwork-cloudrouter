@@ -216,33 +216,9 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
-        "/midjourney/v1/images/generations",
-        "Images/midjourney",
-        "midjourneyCreateImageGeneration",
-    ),
-    HttpRoute::api_key_or_dual_token(
-        HttpMethod::Get,
-        "/midjourney/v1/images/generations/{task_id}",
-        "Images/midjourney",
-        "midjourneyRetrieveImageGeneration",
-    ),
-    HttpRoute::api_key_or_dual_token(
-        HttpMethod::Post,
         "/minimax/v1/music_generation",
         "Audio/minimax",
         "minimaxCreateMusicGeneration",
-    ),
-    HttpRoute::api_key_or_dual_token(
-        HttpMethod::Post,
-        "/nano-banana/v1/images/generations",
-        "Images/nano-banana",
-        "nanoBananaCreateImageGeneration",
-    ),
-    HttpRoute::api_key_or_dual_token(
-        HttpMethod::Get,
-        "/nano-banana/v1/images/generations/{task_id}",
-        "Images/nano-banana",
-        "nanoBananaRetrieveImageGeneration",
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,

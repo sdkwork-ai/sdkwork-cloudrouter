@@ -7,7 +7,7 @@
 
 ## 1. 当前结论
 
-- **可售 166/176（94.3%）**，剩余 **10 个**全部 fail-closed，不存在静默免费路径。
+- **可售 166/172（96.5%）**，剩余 **6 个**全部 fail-closed，不存在静默免费路径。
 - 176 = **118 Free + 44 计量可售 + 1 音效 + 3 已补价按次 + 5 未定价按次 + 5 已登记不可售**。
 - 计费回归 **62 个 target / 423 passed**；router-service `--lib` **628**；edge-runtime `--lib` **101**；全量 **175 targets / 1817 passed / 2 failed**（仅 payment 域 `postgres_payment_intent_runtime_sql_contract`，HEAD 既有、与计费无关）；clippy 0；fmt 干净。
 - 逐层锁的变异证据在主审计第五节；就绪计数由
@@ -81,23 +81,18 @@
 
 当前 `file_batches` 返回 501，不把批量摄取伪装成按次。
 
-### C. midjourney / nano-banana（4 个，跨仓资源与 API 权威）
+### C. midjourney / nano-banana（已从契约移除）
 
-`POST/GET /midjourney/v1/images/generations`、`POST/GET /nano-banana/v1/images/generations`。
-
-- 本仓没有对应 supplier/account/resource 绑定；
-- nano-banana 的 `dispatch_nano_banana` 驱动 `/nano-banana` 路径，而已接通的
-  Gemini 原生入口是 `/google/v1beta/models/nano-banana:generateImages`，
-  属于跨仓 API 权威冲突（见 `data/ai-routing/declared-unrouted.json`）；
-- midjourney 没有官方按张 API 价目。
-
-需要 sdkwork-generations / 产品确认入口归属后，再补资源、账号能力与目录价；
-不能在本仓凭空造价。
+`POST/GET /midjourney/v1/images/generations` 与 `POST/GET /nano-banana/v1/images/generations`
+已整体删除：Midjourney 不提供公开 API，`/nano-banana` 命名空间也不属于任何 vendor
+（Google 的原生入口是 `/google/v1beta/models/nano-banana:generateImages`，本仓已接通）。
+生成器、契约权威、SDK 快照、路由清单、`declared-unrouted` 台账与二分探测均已同步移除，
+不存在"挂着但不可用"的入口。
 
 ## 4. 复现与验证
 
 ```bash
-# 计费回归（59 target / 415 passed）
+# 计费回归（62 target / 423 passed）
 cargo test -p sdkwork-cloudrouter-router-service \
   --test billing_batch_embed --test billing_vector_store_search \
   --test billing_vector_store_storage --test billing_hosted_tools \

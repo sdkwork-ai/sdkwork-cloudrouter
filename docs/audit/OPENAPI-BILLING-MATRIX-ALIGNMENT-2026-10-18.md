@@ -1,16 +1,18 @@
 # Open-API 计费口径逐接口对齐审计（2026-10-18）
 
-> 范围：`apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json` 发布的**全部 176 个 operation**。
+> 范围：`apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json` 发布的**全部 172 个 operation**。
 > 目标：每个接口的计费档（`BillingMode`）、计量单位（`BillingMeter`）、数量来源（`BillingQuantitySource`）都落到行业专业口径，可以按此商业化售卖。
 > 配套可执行口径：`services/sdkwork-cloudrouter-router-service/tests/openapi_billing_matrix.rs` + `tests/golden/openapi_billing_matrix.tsv`。
-> **商业化就绪总报告（166/176 可售、10 个阻塞项与解除条件）**：[OPENAPI-BILLING-COMMERCIAL-READINESS-2026-10-19.md](OPENAPI-BILLING-COMMERCIAL-READINESS-2026-10-19.md)。
+> **商业化就绪总报告（166/172 可售、6 个阻塞项与解除条件）**：[OPENAPI-BILLING-COMMERCIAL-READINESS-2026-10-19.md](OPENAPI-BILLING-COMMERCIAL-READINESS-2026-10-19.md)。
 > **交接单（复现命令与逐项复位步骤）**：[OPENAPI-BILLING-HANDOFF-2026-10-19.md](OPENAPI-BILLING-HANDOFF-2026-10-19.md)。
 >
 > **2026-10-19 第 9 轮补充**：新增 2.21（Google/Gemini 逐模态令牌）与 `billing_google_modality_tokens.rs`（7 个用例），并修掉 `pricing_meters` 的"目录改写后重解析缩表"缺陷。
 >
 > **2026-10-19 第 10–22 轮补充**：新增 2.22（token 计价的二进制语音合成必须在派发前拒单）、2.23（批量提交在结果回收前必须拒单）、2.24（`background: true` 在用量回填前必须拒单）、2.25（实时语音在 WebSocket 代理落地前必须拒单）、2.26（图像单档位费率必须可解析）、2.27（Anthropic 缓存写入必须按 TTL 档位计价）、2.28（上下文分档 token 费率必须可解析）、2.29（缓存读必须按逐行模态计价）、2.30（Alibaba 显式/隐式缓存读必须可区分）、2.31（输入侧预扣取最高价不求和）、2.32（累计上界档位词汇）、2.33（流式 Chat 必须索取 usage）、2.34（usage-only chunk 不透传）、2.35（图像输入模式档位）、2.36（管理面归 Free）、2.37（OpenAI 管理/CRUD 归 Free）、2.38（异步轮询归 Free）、2.39（管理面几个"过度排除"的端点归 Free）、2.40（Responses 压缩按 token 计费）、2.41（音效按分钟计费已生效）、2.42（容器文件归 Free）、2.43（未定价按次端点不得静默免费）、2.44（音乐时长兜底歧义显式化）、2.45（就绪计数锁 165/176）、2.46（零产出必须 waive）、2.47（2xx 业务失败必须 waive）、2.48（中断流补输入估算）、2.49（服务端工具按次计费）、2.50（异步对账表与数据库初始化）、2.51（向量库检索按次计费）、2.52（异步对账 store）、2.53（批 embedding 按请求 token 估算）、2.54（DeepSeek web tools 按成功请求计费）、2.55（异步注册器）、2.56（异步 worker 编排）、2.57（货币→Token Bank 严格换算）、2.58（hold 原子捕获）、2.59（厂商时段价）、2.60（计费未就绪返回 501）、2.61（Code Interpreter 会话计费）、2.62（Anthropic web search 按次）、2.63（预扣 hold TTL 可配置）与二十四个测试文件（5+5+6+6+5+4+7+4+4+4+3+2+1+1+2+2+4+4+1+1+1+1+1+1 个用例，另在 precharge 文件新增 2 条、provider_request 单测 4 条、stream 过滤单测 5 条、usage_extraction 单测 5 条、async registrar 单测 2 条、async worker 单测 3 条、account hold 单测 2 条、overage split 单测 1 条、time-window 单测 3 条、BillingUnavailable 单测 1 条）。回归合计 **287** 个计费用例 + router-service `--lib` **598** 个单测全绿 + edge-runtime `--lib` **99** 个单测全绿。
 
-> **2026-10-19 第 44 轮补充**：批处理对账全链路落地（创建门控 + 结果文件下载 + 按 `(model, endpoint)` 逐行结算 + 行级幂等键），详见 2.79；剩余唯一非 Deprecated 缺口是 `file_batches`（2.80）。计费套件 **62 targets / 423 passed**，全量 **175 targets / 1817 passed / 2 failed**（仅 payment 域）。
+> **2026-10-20 补充**：midjourney / nano-banana 四个 operation 已从生成器、契约权威、SDK 快照、路由清单、台账与黄金矩阵**整体移除**（2.81）；发布面 176 → 172。
+>
+> **2026-10-19 第 44 轮补充**：批处理对账全链路落地（创建门控 + 结果文件下载 + 按 `(model, endpoint)` 逐行结算 + 行级幂等键），详见 2.79；剩余唯一不可售缺口是 `file_batches`（2.80）；midjourney/nano-banana 命名空间已从契约移除。计费套件 **62 targets / 423 passed**，全量 **175 targets / 1817 passed / 2 failed**（仅 payment 域）。
 >
 > **2026-10-19 第 31 轮补充**：新增 2.77（`async_usage_reconciliation` 纵向集成：入队 → 领取 → 轮询 → 重新定价 → `175000` micro 单笔后扣 → 幂等终态）。计费回归 **61 targets / 419 passed**。
 >
@@ -32,7 +34,7 @@
 
 ## 一句话结论
 
-176 个 operation 全部可分类、全部有确定计费形态：**109 个按次**（其中 24 个是无专属计量单位的通用请求）、**11 个复合 token**、**3 个 embedding token**、**7 个图片张**、**10 个视频条 + 4 个视频秒**、**2 个音乐秒**、**3 个 TTS 字符**、**2 个 STT 分钟**、**2 个免费**。累计修掉 **21 类**会让"上游成本"与"对客收费"脱钩的偏差（2.1–2.21），剩余 24 个无计量单位端点已逐个登记原因。
+172 个 operation 全部可分类、全部有确定计费形态：**109 个按次**（其中 24 个是无专属计量单位的通用请求）、**11 个复合 token**、**3 个 embedding token**、**7 个图片张**、**10 个视频条 + 4 个视频秒**、**2 个音乐秒**、**3 个 TTS 字符**、**2 个 STT 分钟**、**2 个免费**。累计修掉 **21 类**会让"上游成本"与"对客收费"脱钩的偏差（2.1–2.21），剩余 24 个无计量单位端点已逐个登记原因。
 
 **商业化判断看五个面，缺一不可**：形态（按什么单位收）、数量（这个单位量出多少，**逐接口**而非逐家族）、**单价（同一个数量有没有落在正确的计量单位上——音频 token 与文本 token 差 8 倍）**、预扣（派发前冻结多少）、可结算性（声明了数量来源就一定要能被抽取）。五个面各有可执行锁，合计 **418 个计费测试 + 602 个 router lib 测试**；数量层、预扣层、模态层、厂商形状层、可结算性守卫层都做过变异自证（见第六节）。
 
@@ -41,7 +43,7 @@
 | 计费档 | 计量单位 | 数量 | 代表接口 |
 | --- | --- | --- | --- |
 | `ApiRequest` | `api_request` | 109 | `/v1/moderations`、`/v1/files`、`*.task_query`、`/v1/tools/*` |
-| `ExternalUsageLine` | 无（通用请求兜底） | 24 | `/midjourney/v1/images/generations`、`/anthropic/v1/files`、`/google/v1beta/cachedContents` |
+| `ExternalUsageLine` | 无（通用请求兜底） | 24 | `/anthropic/v1/files`、`/google/v1beta/cachedContents`、`/google/v1beta/files` |
 | `Composite` | `llm_input_token`（+output/cache） | 11 | `/v1/chat/completions`、`/v1/responses`、`/anthropic/v1/messages`、`gemini:generateContent`、`typesafe/v1/systemone` |
 | `ResultCount` | `video_result` | 10 | `kling`/`vidu`/`volcengine`/`gemini:generateVideos` 视频任务 |
 | `ResultCount` | `image_result` | 7 | `/v1/images/*`、`kling`/`volcengine`/`vidu`/`gemini` 图像 |
@@ -906,7 +908,7 @@ Kling / Vidu / 火山 / Suno / Gemini 的任务查询（`*.task_query`）只是�
 * videos：`characters` 全部免费；`edits/extensions/remix` 仍 VideoSecond。
 
 矩阵：Free **117**，ApiRequest **12**。剩余按次端点全部是真实上游动作：批量创建
-（守卫）、付费工具、容器/向量库摄取与检索、批 embedding、midjourney/nano-banana。
+（守卫）、付费工具、容器/向量库摄取与检索、批 embedding。
 
 ### 2.40 Responses 压缩：明明有 usage，却按"无价的按次"拒单
 
@@ -971,7 +973,7 @@ runs ×3、tools ×2、vector store 摄取 ×2）；vector store 检索已在 2.
 可诊断），批量创建必须由守卫拒单；vector store search 的已补价路径由
 `billing_vector_store_search.rs` 单独钉住。任何把它们误判成 Free 的改动都会红。
 
-### 商业化就绪盘点（176 个 operation）
+### 商业化就绪盘点（172 个 operation）
 
 | 状态 | 数量 | 说明 |
 | --- | ---: | --- |
@@ -981,11 +983,11 @@ runs ×3、tools ×2、vector store 摄取 ×2）；vector store 检索已在 2.
 | Storage（GB-day） | 1 | vector store file 摄取：`$0.10/GB/day`，读 `usage_bytes`（2.64） |
 | 已补价按次 | 3 | vector store search $2.50/1k；DeepSeek web tools 5 CNY/1k（global $0.75/1k） |
 | 未定价按次（fail-closed） | 5 | 批量创建、threads runs ×3、vector store `file_batches` |
-| 已登记不可售 | 5 | Anthropic batch 创建、midjourney ×2、nano-banana ×2 |
+| 已登记不可售 | 1 | Anthropic batch 创建 |
 
-可售 **166/176（94.3%）**；剩余 10 个全部有明确阻塞原因（目录缺价 / 结果回收
+可售 **166/172（96.5%）**；剩余 6 个全部有明确阻塞原因（目录缺价 / 结果回收
 链路 / 资源绑定），没有任何一个"静默免费"或"按错单位收费"。计数由
-`commercial_readiness_counts_are_exactly_166_of_176` 钉住（见 2.45、2.51、2.53、2.54、2.64）。
+`commercial_readiness_counts_are_exactly_166_of_172` 钉住（见 2.45、2.51、2.53、2.54、2.64）。
 
 ### 2.44 音乐时长兜底：$0.02/秒还是 $0.02/首？先停下来
 
@@ -1012,13 +1014,13 @@ $0.02/秒 × 1 秒 = $0.02/首
 同类的 `video_output_second` 1 秒兜底也受此约束，但视频请求通常声明时长，影响
 面较小。
 
-### 2.45 就绪计数锁：166/176，不是 165/176
+### 2.45 就绪计数锁：166/172，不是 165/172
 
 就绪报告最初把 `ApiRequest` 形态数（10）当成了"未定价按次数"，漏掉
 `sound-generation` 的真实请求按分钟计费（2.41），因此把可售数低估成 160。
 修正后的口径必须由可执行锁钉住，而不是只改文档：
 
-* `commercial_readiness_counts_are_exactly_166_of_176` 断言
+* `commercial_readiness_counts_are_exactly_166_of_172` 断言
   `176 = Free 118 + 计量可售 44 + 音效 1 + 已补价按次 3 + 未定价按次 5 + 已登记不可售 5`；
 * `UNPRICED_PER_CALL` 明确列出 5 个路径，`PRICED_PER_CALL` 单列已补价的
   vector-store search 与 DeepSeek web tools，并把 `sound-generation` 排除在
@@ -1223,8 +1225,8 @@ worker 与 runtime 已完成（见 2.56 / 2.71 / 2.72）；注册拦截器已挂
 4. **锁**：`tests/billing_batch_embed.rs` 走完整
    classifier → policy → identity → preflight → extraction → finalization →
    settlement，断言 2 token × `$1/1M` = `$0.000002`；矩阵计数锁改为
-   166/176，`UNMETERED_OPERATIONS` 只剩 5 条（Anthropic batch + midjourney ×2 +
-   nano-banana ×2）。
+   166/172，`UNMETERED_OPERATIONS` 只剩 1 条（Anthropic batch 创建）。
+   
 
 代价是**估算精度**：没有 provider tokenizer，估算值可能偏离 Google 实际计数；
 方向是"按请求文本保守下界"，不会把空请求算成 1 个 token 以上。`countTokens`
@@ -1729,9 +1731,9 @@ OpenAI / Anthropic 批处理是"创建时无用量、完成时才有用量"的�
 执行器 3 条、聚合 3 条、创建门控 1 条；计费套件 **62 targets / 423 passed**。
 
 
-### 2.80 剩余唯一非 Deprecated 入口：`file_batches` 的存储计费缺口
+### 2.80 剩余唯一不可售入口：`file_batches` 的存储计费缺口
 
-`POST /v1/vector_stores/{id}/file_batches` 是 OpenAI 官方接口（非 Deprecated），继续
+`POST /v1/vector_stores/{id}/file_batches` 是 OpenAI 官方接口，继续
 fail-closed 的原因不是"没有用量"，而是**用量不在响应里**：创建响应只有 `file_counts`，
 而计费单位是这些文件进入向量库后的**存储字节**（GB-day），字节数需要按 `file_ids`
 逐个读取文件元数据。
@@ -1747,8 +1749,41 @@ fail-closed 的原因不是"没有用量"，而是**用量不在响应里**：�
 4. 任一文件取不到大小即失败关闭，不按"估算字节"计费。
 
 在实现 2–4 之前保持拒单：接受创建却收不到存储费，就是静默免费。该入口是唯一剩余
-的非 Deprecated 缺口；4 个 midjourney/nano-banana 入口已按 vendor 不存在标记
-Deprecated（2.78）。
+的不可售缺口；midjourney / nano-banana 命名空间已从契约整体移除（2.78）。
+
+
+### 2.81 vendor 缺失命名空间的移除（不是标记 Deprecated）
+
+产品尚未上线，保留"标记为 Deprecated 的入口"本身就是技术债。本轮把
+`/midjourney/**` 与 `/nano-banana/**` 四个 operation 从**所有权威面**删除：
+
+1. `tools/cloudrouter_gateway_openapi_generator.py`：删除 4 条 path、2 个 tag、
+   4 个 request/response schema、2 个 provider 前缀与相关描述；
+2. 重新生成 `apps/sdkwork-cloudrouter-pc/public/openapi.json` 与
+   `apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json`（172 operations）；
+3. `tools/sync-cloudrouter-api-standard-extensions.mjs --apply` 同步
+   `sdks/cloudrouter-open-sdk/openapi/*.json` 与 open-api 路由清单；
+4. `tools/generate-cloudrouter-http-route-manifest-rs.mjs --apply` 重新生成
+   `generated_open_http_route_manifest.rs`；
+5. `data/ai-routing/declared-unrouted.json` 删除 4 条台账；
+6. 独立网关与 assembly 的 `OPEN_API_PREFIXES` 删除两个前缀；
+7. 二分探测（`per_api_chain_e2e`）、`service_router` 契约、台账/矩阵黄金文件与
+   `cloud-router-audit/inventory.json` 同步删除，并新增"这些路径不得再发布"的负向断言。
+
+回归：`ai-routing-consistency` passed（172 routes）、
+`check-api-operation-patterns` passed、`check-api-response-envelope` passed、
+`every_probe_path_is_a_published_route` passed、计费矩阵 15 passed、
+管理面 Free 规则 4 passed、assembly lib 11 passed。
+
+**生成语言 SDK 的残留**：`sdks/cloudrouter-open-sdk/*/generated/server-openapi`
+里仍有两个 vendor 方法（8 个语言各 2 个方法）。用当前 `sdkwork-sdk-generator`
+重新生成会改变 Rust 侧 `models::*` 的导出形状，导致 `sdkwork-agents` 与
+`sdkwork-generations` 编译失败（已实测）；属跨仓生成器迁移，不能在本次移除里
+强行落地。权威契约、路由清单与网关已不再发布这些路径，因此残留只影响客户端
+库的可用方法，不影响服务端拒绝行为。该迁移需要 sdkwork-sdk-generator 与两个
+下游仓一起评审。
+
+## 四、5 个"无专属计量单位且仍不可售"端点（已登记）
 
 ## 四、5 个"无专属计量单位且仍不可售"端点（已登记）
 
@@ -1767,8 +1802,6 @@ Deprecated（2.78）。
 
 | 端点组 | 原因 |
 | --- | --- |
-| `/midjourney/v1/images/generations`（+ 轮询） | 本仓没有 `midjourney.*` 资源与账号绑定；要按张计费需先补资源（功能项，非计费项） |
-| `/nano-banana/v1/images/generations`（+ 轮询） | `nano-banana` 命名空间没有目录模型；`gemini.nano_banana.image_generation` 只服务 `/google/v1beta/models/nano-banana:generateImages` |
 | `/anthropic/v1/messages/batches`（POST 创建） | 结果回收链路未落地，预检守卫拒单（2.23） |
 
 ## 五、如何维护这份口径
@@ -2003,15 +2036,15 @@ git diff services/sdkwork-cloudrouter-router-service/tests/golden/openapi_billin
 
 
 
-### 2.78 vendor 不存在的入口：标记 Deprecated，而不是长期"待补资源"
+### 2.78 vendor 不存在的命名空间：已从契约移除，而不是长期"待补资源"
 
-按"对齐 vendor 实现"的口径复核剩余不可售入口，两组的性质必须区分开：
+按"对齐 vendor 实现"的口径复核不可售入口，两组性质必须区分：
 
 | 入口 | vendor 是否有该 API | 处置 |
 | --- | --- | --- |
-| `POST/GET /midjourney/v1/images/generations` | **没有**。Midjourney 不提供公开 API，该路径是第三方非官方形状 | **Deprecated**：不应继续作为可售入口维护；如需接入应改为官方支持的渠道 |
-| `POST/GET /nano-banana/v1/images/generations` | **没有该命名空间**。Google/Gemini 的官方入口是 `/google/v1beta/models/nano-banana:generateImages`（本仓已接通） | **Deprecated**：`/nano-banana/**` 属于跨仓 API 权威冲突，应迁移到 Google 原生入口 |
-| `POST /v1/batches`、`POST /anthropic/v1/messages/batches` | **有**，且官方按 50% 折扣计价 | 保持 fail-closed，等结果文件对账（2.73/执行单 batch 缺口） |
-| `POST /v1/vector_stores/{id}/file_batches` | **有** | 保持 fail-closed，等逐文件字节读取 worker |
+| `POST/GET /midjourney/v1/images/generations` | **没有**。Midjourney 不提供公开 API，该路径是第三方非官方形状 | **已移除**：从生成器、契约权威、SDK 快照、路由清单与台账删除 |
+| `POST/GET /nano-banana/v1/images/generations` | **没有该命名空间**。Google/Gemini 的官方入口是 `/google/v1beta/models/nano-banana:generateImages`（本仓已接通） | **已移除**：客户端应使用 Google 原生入口 |
+| `POST /v1/batches`、`POST /anthropic/v1/messages/batches` | **有**，且官方按 50% 折扣计价 | 已接通结果文件对账（2.79）；worker 启用时可售 |
+| `POST /v1/vector_stores/{id}/file_batches` | **有** | 保持 fail-closed，等逐文件字节读取 worker（2.80） |
 
-因此商业化口径应改为：**166 无条件可售 + 4 条件可售（worker 启用：background Responses、threads runs、batch ×2）+ 1 待补基础设施（file_batches）+ 4 Deprecated**，而不是把 4 个 vendor 不存在的入口长期计入"待补资源"。契约层面把它们标记 `deprecated: true` 需要同步重新生成 5 个语言的 SDK（OpenAPI 是生成器输入），应在具备完整预算的会话中一次性完成，并在 `data/ai-routing/declared-unrouted.json` 对应条目上补 `deprecated` 字段。
+商业化口径：**166 无条件可售 + 4 条件可售（worker 启用：background Responses、threads runs、batch ×2）+ 1 待补（file_batches）**，合计 171 个仍发布的 operation（172 − 1 不可售）。移除后发布面从 176 降为 172，不再有"挂着但不可用"的入口。

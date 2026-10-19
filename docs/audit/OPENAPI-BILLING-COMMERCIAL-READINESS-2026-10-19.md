@@ -4,7 +4,7 @@
 > 交接单（剩余 10 个的精确复位步骤）：[OPENAPI-BILLING-HANDOFF-2026-10-19.md](OPENAPI-BILLING-HANDOFF-2026-10-19.md)
 > Vendor 落地方案与决策：[../design/VENDOR-BILLING-ROLLOUT-DECISIONS.md](../design/VENDOR-BILLING-ROLLOUT-DECISIONS.md)
 >
-> 覆盖 176 个 open-api operation。结论：**可售 166/176（94.3%）**，其余 10 个全部
+> 覆盖 172 个 open-api operation。结论：**可售 166/172（96.5%）**，其余 6 个全部
 > 有明确阻塞原因且 **fail-closed**；不存在"静默免费"或"按错单位收费"的已发布路径。
 
 ## 一、状态盘点
@@ -23,7 +23,7 @@
 | 已补价按次 | 3 | `api_request` 目录价 | vector store search $2.50/1k；DeepSeek web tools 5 CNY/1k（global $0.75/1k） |
 | **可售小计** | **166** | | |
 | 未定价按次 | 5 | `api_request` 缺目录价 ⇒ 预检拒单 | 批量创建、threads runs ×3、vector store `file_batches` |
-| 已登记不可售 | 5 | 结果回收/资源绑定缺失 | Anthropic batch 创建、midjourney ×2、nano-banana ×2 |
+| 已登记不可售 | 1 | 结果回收未落地 | Anthropic batch 创建 |
 
 ## 二、已对齐的行业口径（按家族）
 
@@ -130,7 +130,7 @@ Responses、threads runs：用量只在上游完成后的响应/结果文件里�
 
 ### C. 资源/绑定缺失（4）—— 功能项
 
-`midjourney` 与 `nano-banana` 的生成/轮询：本仓没有对应资源、账号绑定与目录模型。
+`midjourney` 与 `nano-banana` 命名空间已从契约移除（vendor 无对应 API）；图像生成统一走 OpenAI 兼容面或 Google 原生入口。
 需要先补资源（endpoint/resource descriptor + 账号能力），再按图像条数计费。
 
 ### D. taxonomy/价目（0，已关闭）
@@ -203,7 +203,7 @@ fail-closed 或留给下一轮，不凭空收费。
   "客户免费用、平台付成本"的静默漏洞。
 * 距离"176 全对齐"还差：sdkwork-models 的 5 条 `api_request` 费率（批量/线程 runs/
   file_batches）、异步结果回收 worker（batch / background Responses / threads runs）、
-  midjourney/nano-banana 资源，以及实时 WS 与按天存储计量两块基础设施。这些都不是
+  实时 WS、按天存储计量与 file_batches 字节对账。这些都不是
   计费逻辑本身的偏差。
 
 ## 八、复跑命令

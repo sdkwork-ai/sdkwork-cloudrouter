@@ -99,7 +99,6 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
                 "/anthropic/v1/messages/count_tokens",
                 "/volcengine/api/v3/contents/generations/tasks",
                 "/suno/v1/music/generations",
-                "/midjourney/v1/images/generations",
                 "/kling/v1/videos/generations",
                 "/vidu/ent/v2/text2video",
                 "/vidu/ent/v2/img2video",
@@ -107,9 +106,17 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
                 "/vidu/ent/v2/start-end2video",
                 "/vidu/ent/v2/reference2image",
                 "/vidu/ent/v2/tasks/{task_id}/creations",
-                "/nano-banana/v1/images/generations",
             ]:
                 self.assertIn(path, spec["paths"])
+
+            # Vendor-absent namespaces must not be published: Midjourney has no
+            # public API and nano-banana's official ingress is the Gemini
+            # native generateImages surface.
+            for absent in (
+                "/midjourney/v1/images/generations",
+                "/nano-banana/v1/images/generations",
+            ):
+                self.assertNotIn(absent, spec["paths"])
 
             self.assertNotIn("delete", spec["paths"]["/v1/models/{model}"])
 
@@ -443,10 +450,8 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
                 "/anthropic/v1/files",
                 "/anthropic/v1/files/{file_id}/content",
                 "/suno/v1/music/generations/{task_id}",
-                "/midjourney/v1/images/generations/{task_id}",
                 "/kling/v1/videos/generations/{task_id}",
                 "/vidu/ent/v2/tasks/{task_id}/creations",
-                "/nano-banana/v1/images/generations/{task_id}",
             ]:
                 self.assertIn(path, spec["paths"])
 
@@ -1180,6 +1185,8 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
             # components (TypeSafeSystemOneRequest / TypeSafeSystemOneResponse);
             # the nested TypeSafeQuestion / TypeSafeAnswer / TypeSafeUsage schemas
             # are not referenced directly from a path, so they are not roots.
+            # 59 = the previous 63 roots minus the four Midjourney/NanoBanana
+            # payload components that belonged to removed vendor-absent routes.
             self.assertEqual(59, len(audit.root_schema_names))
             self.assertIn("ProviderJsonNull", audit.reachable_schema_names)
             self.assertEqual([], audit.unresolved_refs)

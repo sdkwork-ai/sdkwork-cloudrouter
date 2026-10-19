@@ -65,11 +65,9 @@ VENDOR_PROVIDER_PREFIXES = {
     "anthropic",
     "volcengine",
     "suno",
-    "midjourney",
     "kling",
     "vidu",
     "minimax",
-    "nano-banana",
     "elevenlabs",
     "typesafe",
 }
@@ -631,7 +629,7 @@ class CloudRouterGatewayOpenApiGenerator:
                 "description": (
                     "Cloud Router Open API exposes OpenAI-compatible /v1 APIs and "
                     "provider-specific APIs for OpenAI, Google Gemini, "
-                    "Anthropic Claude, Volcengine Ark, Suno, Midjourney, Kling, "
+                    "Anthropic Claude, Volcengine Ark, Suno, Kling, "
                     "Vidu, and Nano Banana compatible media providers, plus the "
                     "TypeSafe AI System One decision endpoint."
                 ),
@@ -1074,12 +1072,8 @@ class CloudRouterGatewayOpenApiGenerator:
             return f"Volcengine Ark {label} schema exposed by Cloud Router vendor routing."
         if schema_name.startswith("Suno"):
             return f"Suno-compatible {label} schema exposed by Cloud Router vendor routing."
-        if schema_name.startswith("Midjourney"):
-            return f"Midjourney-compatible {label} schema exposed by Cloud Router vendor routing."
         if schema_name.startswith("Kling"):
             return f"Kling-compatible {label} schema exposed by Cloud Router vendor routing."
-        if schema_name.startswith("NanoBanana"):
-            return f"Nano Banana compatible {label} schema exposed by Cloud Router vendor routing."
         if schema_name.startswith("Vidu"):
             return f"Vidu {label} schema exposed by Cloud Router vendor routing."
         if schema_name.startswith("Provider"):
@@ -3417,8 +3411,6 @@ class CloudRouterGatewayOpenApiGenerator:
             {"name": "Realtime", "description": "OpenAI-compatible realtime session bootstrap APIs."},
             {"name": "Images/vidu", "description": "Vidu image generation APIs exposed through Cloud Router vendor routing."},
             {"name": "Videos/vidu", "description": "Vidu video generation APIs exposed through Cloud Router vendor routing."},
-            {"name": "Images/midjourney", "description": "Midjourney-compatible image APIs exposed through Cloud Router vendor routing."},
-            {"name": "Images/nano-banana", "description": "Nano Banana compatible image APIs exposed through Cloud Router vendor routing."},
             {"name": "Videos/kling", "description": "Kling-compatible video APIs exposed through Cloud Router vendor routing."},
             {"name": "Images/kling", "description": "Kling-compatible image APIs exposed through Cloud Router vendor routing."},
             {"name": "Audio/suno", "description": "Suno-compatible music APIs exposed through Cloud Router vendor routing."},
@@ -3672,8 +3664,6 @@ class CloudRouterGatewayOpenApiGenerator:
             "/suno/v1/music/generations/{task_id}": {"get": self._operation("Audio/suno", "sunoRetrieveMusicGeneration", "Suno retrieve music generation", "Retrieves a Suno-compatible music generation task using the configured Suno provider account.", None, "SunoMusicGenerationTaskResponse", parameters=[self._path_param("task_id", "Suno task identifier.")], provider="suno")},
             "/elevenlabs/v1/sound-generation": {"post": self._operation("Audio/elevenlabs", "elevenlabsCreateSoundGeneration", "Generate sound effect", "Generates a sound effect from a text description through the ElevenLabs-compatible sound generation surface.", "ElevenLabsSoundGenerationRequest", "ElevenLabsSoundGenerationResponse", parameters=[self._query_param("output_format", "Requested output audio format, for example mp3_44100_128.")], provider="elevenlabs")},
             "/elevenlabs/v1/text-to-speech/{voice_id}": {"post": self._operation("Audio/elevenlabs", "elevenlabsCreateTextToSpeech", "Synthesize speech", "Synthesizes speech for the given voice through the ElevenLabs-compatible text-to-speech surface.", "ElevenLabsTextToSpeechRequest", "ElevenLabsTextToSpeechResponse", parameters=[self._path_param("voice_id", "ElevenLabs voice identifier."), self._query_param("output_format", "Requested output audio format, for example mp3_44100_128.")], provider="elevenlabs")},
-            "/midjourney/v1/images/generations": {"post": self._operation("Images/midjourney", "midjourneyCreateImageGeneration", "Midjourney image generation", "Creates a Midjourney-compatible image generation using the configured Midjourney provider account.", "MidjourneyImageGenerationRequest", "MidjourneyImageGenerationTask", provider="midjourney")},
-            "/midjourney/v1/images/generations/{task_id}": {"get": self._operation("Images/midjourney", "midjourneyRetrieveImageGeneration", "Midjourney retrieve image generation", "Retrieves a Midjourney-compatible image generation task using the configured Midjourney provider account.", None, "MidjourneyImageGenerationTask", parameters=[self._path_param("task_id", "Midjourney task identifier.")], provider="midjourney")},
             "/minimax/v1/music_generation": {"post": self._operation("Audio/minimax", "minimaxCreateMusicGeneration", "Minimax create music generation", "Generates music through the MiniMax-compatible music generation surface using the configured MiniMax provider account.", "MiniMaxMusicGenerationRequest", "MiniMaxMusicGenerationResponse", provider="minimax")},
             "/kling/v1/videos/generations": {"post": self._operation("Videos/kling", "klingCreateVideoGeneration", "Kling video generation", "Creates a Kling-compatible video generation using the configured Kling provider account.", "KlingVideoGenerationRequest", "KlingVideoGenerationTask", provider="kling")},
             "/kling/v1/videos/generations/{task_id}": {"get": self._operation("Videos/kling", "klingRetrieveVideoGeneration", "Kling retrieve video generation", "Retrieves a Kling-compatible video generation task using the configured Kling provider account.", None, "KlingVideoGenerationTask", parameters=[self._path_param("task_id", "Kling task identifier.")], provider="kling")},
@@ -3688,8 +3678,6 @@ class CloudRouterGatewayOpenApiGenerator:
             "/vidu/ent/v2/reference2image": {"post": self._operation("Images/vidu", "viduCreateReferenceToImage", "Vidu reference to image", "Creates Vidu reference-to-image outputs using the configured Vidu provider account.", "ViduReferenceToImageRequest", "ViduImageGenerationTask", provider="vidu")},
             "/vidu/ent/v2/tasks/{task_id}/creations": {"get": self._operation("Videos/vidu", "viduGetTaskCreations", "Vidu get task creations", "Retrieves Vidu task creations using the configured Vidu provider account.", None, "ViduTaskCreationsResponse", parameters=[self._path_param("task_id", "Vidu task identifier.")], provider="vidu")},
             "/vidu/ent/v2/template": {"post": self._operation("Videos/vidu", "viduCreateTemplate", "Vidu create template video", "Creates a Vidu template video using the configured Vidu provider account.", "ViduTemplateRequest", "ViduVideoGenerationTask", provider="vidu")},
-            "/nano-banana/v1/images/generations": {"post": self._operation("Images/nano-banana", "nanoBananaCreateImageGeneration", "Nano Banana image generation", "Creates a Nano Banana compatible image generation using the configured Nano Banana provider account.", "NanoBananaImageGenerationRequest", "NanoBananaImageGenerationTask", provider="nano-banana")},
-            "/nano-banana/v1/images/generations/{task_id}": {"get": self._operation("Images/nano-banana", "nanoBananaRetrieveImageGeneration", "Nano Banana retrieve image generation", "Retrieves a Nano Banana compatible image generation task using the configured Nano Banana provider account.", None, "NanoBananaImageGenerationTask", parameters=[self._path_param("task_id", "Nano Banana task identifier.")], provider="nano-banana")},
             "/typesafe/v1/systemone": {"post": self._operation("Chat/typesafe", "typesafeCreateSystemOneDecision", "TypeSafe AI System One decision", "Evaluates typed questions against one state through the TypeSafe AI System One endpoint using the configured TypeSafe AI provider account.", "TypeSafeSystemOneRequest", "TypeSafeSystemOneResponse", provider="typesafe")},
         }
 
@@ -5633,24 +5621,6 @@ class CloudRouterGatewayOpenApiGenerator:
                     "url": {"type": "string", "description": "Alias for the synthesized audio URL."},
                 },
             },
-            "MidjourneyImageGenerationRequest": {
-                "type": "object",
-                "additionalProperties": True,
-                "required": ["prompt"],
-                "properties": {
-                    "prompt": {"type": "string", "description": "Image prompt sent to the Midjourney-compatible provider."},
-                    "model": {"type": "string", "description": "Model or mode identifier."},
-                    "aspect_ratio": {"type": "string", "description": "Requested aspect ratio."},
-                    "style": {"type": "string", "description": "Style option."},
-                    "seed": {"type": "integer", "format": "int64", "description": "Optional deterministic seed."},
-                    "callback_url": {"type": "string", "description": "Optional callback URL."},
-                },
-            },
-            "MidjourneyImageGenerationTask": {
-                "type": "object",
-                "additionalProperties": True,
-                "properties": image_task_properties,
-            },
             "KlingVideoGenerationRequest": {
                 "type": "object",
                 "additionalProperties": True,
@@ -5934,25 +5904,6 @@ class CloudRouterGatewayOpenApiGenerator:
                     "bitrate": {"type": "integer", "description": "Generated audio bitrate."},
                     "music_size": {"type": "integer", "description": "Generated audio size in bytes."},
                 },
-            },
-            "NanoBananaImageGenerationRequest": {
-                "type": "object",
-                "additionalProperties": True,
-                "required": ["prompt"],
-                "properties": {
-                    "prompt": {"type": "string", "description": "Image prompt sent to the Nano Banana compatible provider."},
-                    "model": {"type": "string", "description": "Image model identifier."},
-                    "images": {"type": "array", "items": {"type": "string"}, "description": "Optional reference image URLs or file identifiers."},
-                    "size": {"type": "string", "description": "Requested image size."},
-                    "aspect_ratio": {"type": "string", "description": "Requested aspect ratio."},
-                    "seed": {"type": "integer", "format": "int64", "description": "Optional deterministic seed."},
-                    "callback_url": {"type": "string", "description": "Optional callback URL."},
-                },
-            },
-            "NanoBananaImageGenerationTask": {
-                "type": "object",
-                "additionalProperties": True,
-                "properties": image_task_properties,
             },
         }
 

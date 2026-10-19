@@ -170,7 +170,7 @@ async fn collect_matrix() -> BTreeMap<(String, String), BillingShape> {
         }
     }
     assert!(
-        matrix.len() >= 176,
+        matrix.len() >= 172,
         "the published contract should keep every operation classifiable, got {}",
         matrix.len()
     );
@@ -538,22 +538,14 @@ async fn every_billable_operation_declares_where_its_quantity_comes_from() {
 /// 已登记"无计量单位、且仍不可售"的 operation。
 ///
 /// 文件、缓存、批量查询/取消与 `count_tokens` 已按行业口径归为 **Free**（见
-/// `billing_unmetered_management`），不再出现在这里。剩下的只有两类：
-///
-/// * 本仓没有对应资源/账号绑定的生成面（`midjourney` / `nano-banana`）；
-/// * 尚未接 taxonomy/价目表的批 embedding。
-///
-/// 它们要么被预检守卫拒单（批量创建），要么因目录无价在预检失败——共同点是
-/// **不可售**，而不是免费送。新增的"无计量单位"端点必须显式登记在这里，让计费
-/// 缺口在 PR 里可见，而不是悄悄溜进生产。
+/// `billing_unmetered_management`）；midjourney / nano-banana 命名空间已从契约
+/// 移除（vendor 无此 API），不再出现在这里。剩下的只有尚未接 taxonomy 的
+/// Anthropic 批处理创建：它被预检守卫拒单，共同点是**不可售**，而不是免费送。
+/// 新增的"无计量单位"端点必须显式登记在这里，让计费缺口在 PR 里可见，而不是
+/// 悄悄溜进生产。
 const UNMETERED_OPERATIONS: &[(&str, &str)] = &[
     // 创建仍被预检守卫拒单（结果回收链路未落地），因此保留"无计量单位"登记。
     ("POST", "/anthropic/v1/messages/batches"),
-    // 本仓没有 midjourney / nano-banana 资源与账号绑定，生成面暂不可售。
-    ("POST", "/midjourney/v1/images/generations"),
-    ("GET", "/midjourney/v1/images/generations/{task_id}"),
-    ("POST", "/nano-banana/v1/images/generations"),
-    ("GET", "/nano-banana/v1/images/generations/{task_id}"),
 ];
 
 #[tokio::test]
@@ -615,11 +607,11 @@ const PRICED_PER_CALL: &[(&str, &str)] = &[
     ("POST", "/v1/tools/fetch"),
 ];
 
-/// 商业化就绪计数锁：176 = Free 118 + 可售计量 44 + 音效 1 + 已补价按次 3 +
-/// 未定价按次 5 + 已登记不可售 5。任何操作的状态漂移都会让这条断言红，迫使
+/// 商业化就绪计数锁：172 = Free 118 + 可售计量 44 + 音效 1 + 已补价按次 3 +
+/// 未定价按次 5 + 已登记不可售 1。任何操作的状态漂移都会让这条断言红，迫使
 /// 同步更新就绪报告。
 #[tokio::test]
-async fn commercial_readiness_counts_are_exactly_166_of_176() {
+async fn commercial_readiness_counts_are_exactly_166_of_172() {
     let matrix = collect_matrix().await;
     let (mut free, mut metered, mut api_request, mut unsellable) = (0, 0, 0, 0);
     for shape in matrix.values() {
@@ -630,10 +622,10 @@ async fn commercial_readiness_counts_are_exactly_166_of_176() {
             _ => metered += 1,
         }
     }
-    assert_eq!(176, matrix.len(), "published operation count drifted");
+    assert_eq!(172, matrix.len(), "published operation count drifted");
     assert_eq!(118, free, "Free operation count drifted");
     assert_eq!(44, metered, "metered sellable operation count drifted");
-    assert_eq!(5, unsellable, "acknowledged unsellable count drifted");
+    assert_eq!(1, unsellable, "acknowledged unsellable count drifted");
     assert_eq!(
         9, api_request,
         "per-call shape count drifted (5 unpriced + 3 priced + sound-generation)"

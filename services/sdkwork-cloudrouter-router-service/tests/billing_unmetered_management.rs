@@ -180,21 +180,8 @@ async fn batch_creation_is_still_guarded() {
 #[tokio::test]
 async fn paid_generation_endpoints_are_not_free() {
     for (method, path, supplier) in [
-        (
-            Method::POST,
-            "/midjourney/v1/images/generations",
-            "midjourney",
-        ),
-        (
-            Method::GET,
-            "/midjourney/v1/images/generations/task-1",
-            "midjourney",
-        ),
-        (
-            Method::POST,
-            "/nano-banana/v1/images/generations",
-            "nano-banana",
-        ),
+        (Method::POST, "/suno/v1/music/generations", "suno"),
+        (Method::POST, "/kling/v1/videos/generations", "kling"),
         (
             Method::POST,
             "/google/v1beta/models/gemini-2.5-flash:batchEmbedContents",

@@ -155,9 +155,14 @@ async fn service_router_exposes_gateway_openapi_document() {
     assert!(payload["paths"]
         .get("/vidu/ent/v2/reference2image")
         .is_some());
+    // 这些命名空间不属于任何 vendor API：midjourney 没有公开 API，nano-banana
+    // 的官方入口是 Gemini 原生 generateImages。发布它们会把不存在的接口卖给客户。
     assert!(payload["paths"]
         .get("/midjourney/v1/images/generations")
-        .is_some());
+        .is_none());
+    assert!(payload["paths"]
+        .get("/nano-banana/v1/images/generations")
+        .is_none());
     assert!(payload["paths"]
         .get("/volcengine/api/v3/contents/generations/tasks")
         .is_some());

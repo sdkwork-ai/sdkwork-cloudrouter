@@ -33,11 +33,7 @@ POST	/kling/v1/videos/avatar	kling.avatar	ProviderNativeApi	VideoResult	ResultCo
 POST	/kling/v1/videos/generations	kling.text_to_video	ProviderNativeApi	VideoResult	ResultCount	VideoResult	ResponseBody
 GET	/kling/v1/videos/generations/{task_id}	kling.task_query	ProviderNativeApi	ApiRequest	Free	None	None
 POST	/kling/v1/videos/motion-control	kling.motion_control	ProviderNativeApi	VideoResult	ResultCount	VideoResult	ResponseBody
-POST	/midjourney/v1/images/generations	midjourney.generations	ProviderNativeApi	None	ExternalUsageLine	None	FixedRequest
-GET	/midjourney/v1/images/generations/{task_id}	midjourney.{task_id}	ProviderNativeApi	None	ExternalUsageLine	None	FixedRequest
 POST	/minimax/v1/music_generation	minimax.music_generation	ProviderNativeApi	MusicOutputSecond	AudioSecond	MusicOutputSecond	ResponseBody
-POST	/nano-banana/v1/images/generations	nano-banana.generations	ProviderNativeApi	None	ExternalUsageLine	None	FixedRequest
-GET	/nano-banana/v1/images/generations/{task_id}	nano-banana.{task_id}	ProviderNativeApi	None	ExternalUsageLine	None	FixedRequest
 POST	/suno/v1/music/generations	suno.music_generation	ProviderNativeApi	MusicOutputSecond	AudioSecond	MusicOutputSecond	ResponseBody
 GET	/suno/v1/music/generations/{task_id}	suno.music_task_query	ProviderNativeApi	ApiRequest	Free	None	None
 POST	/typesafe/v1/systemone	typesafe.systemone	ProviderNativeApi	LlmInputToken	Composite	LlmInputToken	Composite

@@ -939,8 +939,7 @@ if (parsedArmsByCopy.size > 0) {
 //
 // This is not hypothetical. The image adapter of `sdkwork-generations`
 // (`sdkwork-generations-provider-adapter/src/gateway.rs`) drives the generated
-// open SDK, so it sends `/nano-banana/v1/images/generations`,
-// `/vidu/ent/v2/text2video`, `/vidu/ent/v2/img2video`,
+// open SDK, so it sends `/vidu/ent/v2/text2video`, `/vidu/ent/v2/img2video`,
 // `/vidu/ent/v2/tasks/{task_id}/creations` and
 // `/volcengine/api/v3/contents/generations/tasks` — every one of them published
 // by the contract and, before this check existed, every one of them nameable by
