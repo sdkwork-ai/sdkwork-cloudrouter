@@ -100,3 +100,19 @@ cargo clippy -p sdkwork-cloudrouter-router-service -p sdkwork-cloudrouter-edge-r
 - router-service --lib：**621 passed**
 - 全量：**173 targets / 1805 passed / 2 failed**（仅 postgres_payment_intent_runtime_sql_contract 2 条，payment 域、HEAD 既有）
 - 异步链路各层与纵向集成均已绿；接线前不要解除预检拒单。
+
+## batch 结算的剩余缺口（第 33 轮梳理）
+
+聚合核心 `sum_openai_batch_usage` 已就绪（按模型返回 request/input/output token，失败行只计数不计量，非法行整体失败）。要解除 2 个 batch operation，还差三件事：
+
+1. **executor 分支**：`ProviderAsyncUsageExecutor` 目前对 batch kind 返回"未实现"。需要：
+   - OpenAI：轮询 `GET /v1/batches/{id}`，`status=completed` 后读 `output_file_id`，再
+     `GET /v1/files/{output_file_id}/content` 原始字节交给 `sum_openai_batch_usage`；
+   - Anthropic：`processing_status=ended` 后读 `results_url`（JSONL，字段名不同，需要独立解析器）。
+2. **多模型结算**：现有 `ReplayAsyncUsageSettler` 按任务里的单个 `catalog_key` 定价，而一个 batch 可包含多个模型。二选一：
+   - 让 settler 接受"每个模型一组用量"并为每组构造独立 invocation；或
+   - 提交时为每个模型生成 one task per model（需要从输入文件解析模型，成本更高）。
+   推荐前者：`sum_openai_batch_usage` 的输出正好是 `BTreeMap<model, BatchUsageTotals>`。
+3. **预检放行**：`unmetered_batch_submission` 目前对 batch 创建一律拒单，必须在 1–2 完成并接到同一个 worker 开关后才能解除。
+
+注意 batch 的折扣（OpenAI 50%）应在**目录侧**（pricing rate）表达，而不是在结算代码里乘系数——否则同一模型在线与 batch 两条路径会出现两套价格逻辑。
