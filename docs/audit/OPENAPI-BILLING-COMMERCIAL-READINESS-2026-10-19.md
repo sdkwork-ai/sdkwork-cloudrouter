@@ -83,6 +83,7 @@
 | Token Bank 行为回归 | `tests/billing_token_bank_flow.rs`：冻结 → 捕获 → 超额 → 余额不足 402 → 失败释放 → 应收标记，全部断言账户侧金额与动作 |
 | 异步完成态结算 | `tests/async_usage_settlement.rs` + worker 单测：完成时重新定价、单笔 postpaid、任务幂等键重放、无用量失败关闭、结算失败重排 |
 | 异步创建入队 | `async_usage_registration` 单测（5 条）：background / thread run 登记 + 可轮询 `pollPath`；同步与失败创建不登记；缺 thread id 失败关闭 |
+| 异步纵向集成 | `tests/async_usage_reconciliation.rs`：创建登记 → 领取 → 轮询 → 重新定价 → `175000` micro 单笔后扣 → 二次 pass 不重扣 |
 | 异步轮询状态机 | `provider_async_usage_executor` 单测（7 条）：完成/运行/失败、404/429/5xx 分流、缺 pollPath/未知账号失败关闭、batch 未实现 |
 | 异步轮询传输 | `async_poll_transport` 单测（4 条）：带凭证 GET 走既有 dispatcher、匿名轮询、429 透传、传输失败映射 |
 | 异步 worker 配置 | `async_usage_worker_config` 单测（3 条）：默认关闭、越界 clamp、非法值拒绝 |
@@ -183,7 +184,7 @@ fail-closed 或留给下一轮，不凭空收费。
 
 | 项 | 结果 |
 | --- | --- |
-| 计费 test target | **60 个 target / 418 passed / 0 failed** |
+| 计费 test target | **61 个 target / 419 passed / 0 failed** |
 | router-service `--lib` | **621 passed** |
 | router-service 全量 | **173 个 target / 1805 passed / 2 failed（payment SQL contract，HEAD 既有，与计费无关）** |
 | edge-runtime `--lib` | **100 passed** |

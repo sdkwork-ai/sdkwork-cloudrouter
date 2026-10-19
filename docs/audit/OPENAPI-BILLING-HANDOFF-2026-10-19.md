@@ -9,7 +9,7 @@
 
 - **可售 166/176（94.3%）**，剩余 **10 个**全部 fail-closed，不存在静默免费路径。
 - 176 = **118 Free + 44 计量可售 + 1 音效 + 3 已补价按次 + 5 未定价按次 + 5 已登记不可售**。
-- 计费回归 **60 个 target / 418 passed**；router-service `--lib` **621**；edge-runtime `--lib` **101**；clippy 0；fmt 干净。
+- 计费回归 **61 个 target / 419 passed**；router-service `--lib` **621**；edge-runtime `--lib` **101**；clippy 0；fmt 干净。
 - 逐层锁的变异证据在主审计第五节；就绪计数由
   `commercial_readiness_counts_are_exactly_166_of_176` 钉住。
 
@@ -103,7 +103,7 @@ cargo test -p sdkwork-cloudrouter-router-service \
   --test billing_vector_store_storage --test billing_hosted_tools \
   --test billing_deepseek_web_tools --test billing_media_entrypoints \
   --test billing_token_entrypoints --test billing_quantity_families \
-  --test billing_token_bank_flow --test async_usage_settlement \
+  --test billing_token_bank_flow --test async_usage_settlement --test async_usage_reconciliation \
   --test openapi_billing_matrix
 
 # 单测 / 静态门
