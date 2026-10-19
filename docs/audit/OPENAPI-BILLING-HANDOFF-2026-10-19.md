@@ -9,7 +9,7 @@
 
 - **可售 166/176（94.3%）**，剩余 **10 个**全部 fail-closed，不存在静默免费路径。
 - 176 = **118 Free + 44 计量可售 + 1 音效 + 3 已补价按次 + 5 未定价按次 + 5 已登记不可售**。
-- 计费回归 **61 个 target / 419 passed**；router-service `--lib` **621**；edge-runtime `--lib` **101**；clippy 0；fmt 干净。
+- 计费回归 **61 个 target / 419 passed**；router-service `--lib` **621**；edge-runtime `--lib` **101**；全量 **174 targets / 1806 passed / 2 failed**（仅 payment 域 `postgres_payment_intent_runtime_sql_contract`，HEAD 既有、与计费无关）；clippy 0；fmt 干净。
 - 逐层锁的变异证据在主审计第五节；就绪计数由
   `commercial_readiness_counts_are_exactly_166_of_176` 钉住。
 
