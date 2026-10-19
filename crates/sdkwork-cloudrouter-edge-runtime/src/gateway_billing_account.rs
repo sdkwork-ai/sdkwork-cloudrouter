@@ -26,6 +26,13 @@ const TOKEN_BANK_CURRENCY_CODE: &str = "TOKEN_BANK";
 const RELEASE_SUFFIX: &str = "release";
 /// Request-scoped idempotency suffix for the actual-consumption capture.
 const CONSUMPTION_SUFFIX: &str = "consumption";
+/// Request-scoped idempotency suffix used when the frozen hold is already gone
+/// (expired by the TTL sweep, or released before settlement). The spend still
+/// happened, so it is captured as a single postpaid debit under its own
+/// idempotency key: reusing `consumption` would collide with the hold settle
+/// scope, and reusing `postpaid` would collide with a genuine overage debit
+/// from the same request.
+const EXPIRED_HOLD_CAPTURE_SUFFIX: &str = "hold-expired-capture";
 /// Active cash→points exchange rule marker (mirrors sdkwork-order). The
 /// recharge settings model is parsed from this rule's base points-per-CNY
 /// rate plus its child currency→CNY rates, and is reused for usage debit
@@ -262,7 +269,7 @@ impl PostgresGatewayBillingStore {
             Ok(_) => Ok(()),
             Err(error) => {
                 let message = error.message().to_owned();
-                if message.contains("not in held status") {
+                if hold_is_gone(&message) {
                     // Already released (replay) or expired after a long-running
                     // invocation; nothing left to unfreeze.
                     return Ok(());
@@ -397,11 +404,35 @@ impl GatewayBillingStore for PostgresGatewayBillingStore {
             );
             let hash = CommerceRequestHash::new(&sha256_hex(&request_hash_payload))
                 .map_err(|error| DomainError::new(error.message().to_owned()))?;
-            self.account_store
-                .settle_account_hold(command, hash)
-                .await
-                .map_err(account_hold_error)?;
-            Ok(())
+            match self.account_store.settle_account_hold(command, hash).await {
+                Ok(_) => Ok(()),
+                Err(error) if hold_is_gone(error.message()) => {
+                    // The hold expired (TTL sweep returned the frozen amount to
+                    // available balance) or was already released. The provider
+                    // call completed and its measured spend is real, so capture
+                    // it as one postpaid debit instead of dropping the charge.
+                    // Nothing was captured by the failed settle: the account
+                    // repository runs status validation before any mutation and
+                    // its idempotency replay (same transaction number, same
+                    // amount) is checked first, so a retried invocation either
+                    // replays this debit or reaches this branch again — never
+                    // both.
+                    tracing::warn!(
+                        request_id = %context.request_id,
+                        hold_id = %hold_id,
+                        amount = %actual.amount,
+                        "prepaid hold was no longer active at settlement; capturing the spend as a postpaid debit"
+                    );
+                    self.append(
+                        &context,
+                        &actual,
+                        CommerceLedgerDirection::Debit,
+                        EXPIRED_HOLD_CAPTURE_SUFFIX,
+                    )
+                    .await
+                }
+                Err(error) => Err(account_hold_error(error)),
+            }
         })
     }
 
@@ -602,6 +633,21 @@ fn account_hold_error(error: CommerceServiceError) -> DomainError {
     DomainError::new(message)
 }
 
+/// Whether an account-domain hold rejection means the hold no longer exists in
+/// a capturable state.
+///
+/// The account repository has two distinct messages for that one condition:
+/// a status sweep marked the hold `expired`/`released` ("not in held status"),
+/// or the settle request itself observed `expires_at` in the past ("hold has
+/// expired and cannot be settled or released"). Both mean the frozen amount is
+/// already back in available balance, so the caller can capture the real spend
+/// through the ledger instead of losing it. Anything else (insufficient balance,
+/// amount validation, storage failure) must stay an error.
+fn hold_is_gone(message: &str) -> bool {
+    let message = message.to_ascii_lowercase();
+    message.contains("not in held status") || message.contains("hold has expired")
+}
+
 fn jsonb_string_map(value: serde_json::Value) -> Option<BTreeMap<String, String>> {
     let object = value.as_object()?;
     let mut map = BTreeMap::new();
@@ -688,13 +734,47 @@ fn prepay_hold_ttl_from_value(value: Option<&str>) -> Duration {
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_charge_mode, parse_settlement_mode, prepay_hold_ttl_from_value};
+    use super::{
+        hold_is_gone, parse_charge_mode, parse_settlement_mode, prepay_hold_ttl_from_value,
+        EXPIRED_HOLD_CAPTURE_SUFFIX,
+    };
     use chrono::Duration;
     use sdkwork_account_service::CreateAccountHoldCommand;
     use sdkwork_cloudrouter_router_service::ports::{
         CustomerChargeMode, GatewayBillingContext, GatewayBillingSettlementMode,
     };
     use sdkwork_contract_service::{CommerceAccountAssetType, CommerceMoney};
+
+    /// The two account-domain messages that mean "there is nothing to capture".
+    /// Both must route the measured spend to the ledger fallback instead of
+    /// dropping it; every other rejection must keep failing.
+    #[test]
+    fn gone_hold_classification_covers_expiry_and_release_only() {
+        for message in [
+            "hold is not in held status",
+            "hold has expired and cannot be settled or released",
+            "HOLD IS NOT IN HELD STATUS",
+        ] {
+            assert!(hold_is_gone(message), "{message:?} must classify as gone");
+        }
+        for message in [
+            "insufficient account balance",
+            "settled_amount exceeds the hold amount",
+            "settled_amount must be a positive amount",
+            "hold settle exceeds frozen balance",
+            "commerce account balance update was not applied atomically",
+            "",
+        ] {
+            assert!(
+                !hold_is_gone(message),
+                "{message:?} must not be treated as a gone hold"
+            );
+        }
+        // The fallback debit owns a request-scoped suffix that cannot collide
+        // with the hold settle (`consumption`) or a genuine overage debit
+        // (`postpaid`) from the same request.
+        assert_eq!("hold-expired-capture", EXPIRED_HOLD_CAPTURE_SUFFIX);
+    }
 
     #[test]
     fn prepay_hold_ttl_is_configurable_and_bounded() {

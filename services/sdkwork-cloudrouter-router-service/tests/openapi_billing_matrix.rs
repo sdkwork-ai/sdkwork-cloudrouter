@@ -580,7 +580,14 @@ async fn unmetered_operations_are_exactly_the_ones_we_acknowledged() {
     );
 }
 
-/// 未定价的按次端点（6 个）：真实上游动作，但目录没有 `api_request` 官方费率。
+/// 未定价的按次端点（5 个）：真实上游动作，但目录没有 `api_request` 官方费率。
+///
+/// `POST /v1/threads/runs`、`/v1/threads/{thread_id}/runs` 与
+/// `.../submit_tool_outputs` 这一组是**条件性**的：矩阵用空 body 采样，所以形态是
+/// `ApiRequest`；真实请求带 `model` 时，payload 阶段会把模型写到资源上，计费策略
+/// 选中 `Composite`（token），目录有 token 价即可售。`invocation_billing_policy` 的
+/// `threads_runs_with_a_model_bill_model_tokens` 钉住这条分支。不带 `model` 的请求
+/// 只能继承 assistant 的模型，网关看不到实际模型，因此仍 fail-closed。
 ///
 /// `POST /elevenlabs/v1/sound-generation` **不在此列**：矩阵快照把它记成
 /// `ApiRequest`（空 body 形态），但契约强制 `model_id`，真实请求会被身份对账
@@ -599,7 +606,6 @@ const UNPRICED_PER_CALL: &[(&str, &str)] = &[
         "/v1/threads/{thread_id}/runs/{run_id}/submit_tool_outputs",
     ),
     ("POST", "/v1/vector_stores/{vector_store_id}/file_batches"),
-    ("POST", "/v1/vector_stores/{vector_store_id}/files"),
 ];
 
 /// 已补价、但仍按 `ApiRequest` 形态计费的端点（3 个）。
@@ -609,11 +615,11 @@ const PRICED_PER_CALL: &[(&str, &str)] = &[
     ("POST", "/v1/tools/fetch"),
 ];
 
-/// 商业化就绪计数锁：176 = Free 118 + 可售计量 43 + 音效 1 + 已补价按次 3 +
-/// 未定价按次 6 + 已登记不可售 5。任何操作的状态漂移都会让这条断言红，迫使
+/// 商业化就绪计数锁：176 = Free 118 + 可售计量 44 + 音效 1 + 已补价按次 3 +
+/// 未定价按次 5 + 已登记不可售 5。任何操作的状态漂移都会让这条断言红，迫使
 /// 同步更新就绪报告。
 #[tokio::test]
-async fn commercial_readiness_counts_are_exactly_165_of_176() {
+async fn commercial_readiness_counts_are_exactly_166_of_176() {
     let matrix = collect_matrix().await;
     let (mut free, mut metered, mut api_request, mut unsellable) = (0, 0, 0, 0);
     for shape in matrix.values() {
@@ -626,11 +632,11 @@ async fn commercial_readiness_counts_are_exactly_165_of_176() {
     }
     assert_eq!(176, matrix.len(), "published operation count drifted");
     assert_eq!(118, free, "Free operation count drifted");
-    assert_eq!(43, metered, "metered sellable operation count drifted");
+    assert_eq!(44, metered, "metered sellable operation count drifted");
     assert_eq!(5, unsellable, "acknowledged unsellable count drifted");
     assert_eq!(
-        10, api_request,
-        "per-call shape count drifted (6 unpriced + 3 priced + sound-generation)"
+        9, api_request,
+        "per-call shape count drifted (5 unpriced + 3 priced + sound-generation)"
     );
 
     let mut unpriced: Vec<(String, String)> = matrix
@@ -663,7 +669,7 @@ async fn commercial_readiness_counts_are_exactly_165_of_176() {
     }
 
     assert_eq!(
-        165,
+        166,
         free + metered + 1 + PRICED_PER_CALL.len(),
         "sellable count = Free + metered + sound-generation + priced per-call"
     );

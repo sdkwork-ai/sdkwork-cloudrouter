@@ -963,10 +963,13 @@ fn binary_audio_synthesis_without_usage(invocation: &Invocation) -> bool {
 /// 只匹配创建动作的精确路径：`POST /v1/batches/{id}/cancel` 与各类 GET 轮询
 /// 不产生新的上游 token 成本，必须继续放行，否则客户连取消/查询都做不了。
 fn unmetered_vector_store_ingestion(invocation: &Invocation) -> bool {
+    // `/files` is storage byte-day and now billable; `/file_batches` has no
+    // byte count in its response, so it stays fail-closed until a batch
+    // storage worker can read each file object.
     let path = invocation.request.path.as_str();
     invocation.request.method == axum::http::Method::POST
         && path.starts_with("/v1/vector_stores/")
-        && (path.ends_with("/files") || path.ends_with("/file_batches"))
+        && path.ends_with("/file_batches")
 }
 
 fn unmetered_batch_submission(invocation: &Invocation) -> bool {

@@ -1,10 +1,10 @@
 # Cloud Router Open-API 计费商业化就绪报告（2026-10-19）
 
 > 配套明细与逐条证据：[OPENAPI-BILLING-MATRIX-ALIGNMENT-2026-10-18.md](OPENAPI-BILLING-MATRIX-ALIGNMENT-2026-10-18.md)
-> 交接单（剩余 11 个的精确复位步骤）：[OPENAPI-BILLING-HANDOFF-2026-10-19.md](OPENAPI-BILLING-HANDOFF-2026-10-19.md)
+> 交接单（剩余 10 个的精确复位步骤）：[OPENAPI-BILLING-HANDOFF-2026-10-19.md](OPENAPI-BILLING-HANDOFF-2026-10-19.md)
 > Vendor 落地方案与决策：[../design/VENDOR-BILLING-ROLLOUT-DECISIONS.md](../design/VENDOR-BILLING-ROLLOUT-DECISIONS.md)
 >
-> 覆盖 176 个 open-api operation。结论：**可售 165/176（93.8%）**，其余 11 个全部
+> 覆盖 176 个 open-api operation。结论：**可售 166/176（94.3%）**，其余 10 个全部
 > 有明确阻塞原因且 **fail-closed**；不存在"静默免费"或"按错单位收费"的已发布路径。
 
 ## 一、状态盘点
@@ -19,9 +19,10 @@
 | Character | 3 | 按输入字符 | OpenAI/ElevenLabs/火山 TTS |
 | Token | 3 | 按 embedding token | OpenAI/Gemini embeddings、Gemini batchEmbedContents |
 | 可售（模型驱动） | 1 | 矩阵行 ApiRequest，真实请求按分钟 | ElevenLabs sound-generation |
+| Storage | 1 | `storage_gb_day` | vector store file 摄取：`$0.10/GB/day`，读 `usage_bytes` |
 | 已补价按次 | 3 | `api_request` 目录价 | vector store search $2.50/1k；DeepSeek web tools 5 CNY/1k（global $0.75/1k） |
-| **可售小计** | **165** | | |
-| 未定价按次 | 6 | `api_request` 缺目录价 ⇒ 预检拒单 | 批量创建、threads runs ×3、vector store 摄取 ×2 |
+| **可售小计** | **166** | | |
+| 未定价按次 | 5 | `api_request` 缺目录价 ⇒ 预检拒单 | 批量创建、threads runs ×3、vector store `file_batches` |
 | 已登记不可售 | 5 | 结果回收/资源绑定缺失 | Anthropic batch 创建、midjourney ×2、nano-banana ×2 |
 
 ## 二、已对齐的行业口径（按家族）
@@ -48,7 +49,7 @@
 7. **可结算性**：批量提交、`background: true`、实时会话创建、token 计价的二进制
    TTS 在预检拒单；其余端点先预扣、后按用量结算/释放。
 
-## 三、40 把回归锁
+## 三、逐层回归锁
 
 | 层 | 锁 |
 | --- | --- |
@@ -61,7 +62,7 @@
 | 缺价/防绕过 | `billing_cache_token_fallback`、`billing_unpriced_per_call`、`provider_request` 单测、`invocation_stream` 单测 |
 | 目录改写 | `billing_catalog_resolution`、`billing_responses_compact`、`billing_sound_generation` |
 | 定价语义 | `billing_music_duration_fallback`（Suno 1 秒/180 秒两态，防止兜底值被顺手改动） |
-| 就绪计数 | `commercial_readiness_counts_are_exactly_165_of_176`（176 = 118 + 43 + 1 + 3 + 6 + 5；未定价/已补价集合逐条枚举） |
+| 就绪计数 | `commercial_readiness_counts_are_exactly_166_of_176`（176 = 118 + 44 + 1 + 3 + 5 + 5；未定价/已补价集合逐条枚举） |
 | 零产出 | `billing_empty_result_waiver`（空数组 / 显式 0 waive；正常 2 张、任务回执 1 条对照） |
 | 业务失败 | `billing_business_failure_waiver`（Kling `code != 0` / `status: failed` waive；成功码与 `error: null` 对照） |
 | 中断流输入 | `usage_extraction` 单测（缺输入按请求体补值、真实输入不覆盖、Anthropic 字段补值） |
@@ -76,16 +77,19 @@
 | Code Interpreter | `billing_code_interpreter`：两个 code cell 折叠为一条 `code_interpreter_session`，$0.03/session；6 个 OpenAI 模型已补目录价 |
 | Anthropic web search | `billing_anthropic_web_search`：`usage.server_tool_use.web_search_requests=2` → 数量 2、金额 $0.02；13 个模型已补 $10/1k 费率 |
 | 预扣 TTL | `prepay_hold_ttl_is_configurable_and_bounded`：默认 1800 秒，合法值生效，越界/非法回退；上限 86400 |
+| Vector store 存储 | `billing_vector_store_storage`：2,000,000,000 bytes → 2 GB-day、$0.20；`storage_gb_day` $0.10/GB/day；缺 `usage_bytes` ⇒ 记账失败（不产 0 元事实）；显式 0 字节 ⇒ waive；file_batches 仍 501 |
+| Token Bank 追收 | `gateway_billing_account` 单测 + `gateway_billing_contract`：hold 过期/已释放时按 `hold-expired-capture` 独立幂等后缀记账；释放容忍过期；异步对账识别该后缀；非过期错误仍失败 |
+| Assistants 流式用量 | `usage_extraction` 单测：`thread.run.completed.data.usage` 的输入/输出 token 必须进入结算用量 |
 
 每条锁都有"关掉实现 → 指定用例转红、对照保持绿"的变异证据，记录在主审计文档
 第五节的变异表。
 
-## 四、剩余 11 个的阻塞与解除条件
+## 四、剩余 10 个的阻塞与解除条件
 
-### A. 未定价按次（6）—— 数据项
+### A. 未定价按次（5）—— 数据项
 
 端点：`POST /v1/batches`、`/v1/threads/runs`、`/v1/threads/{id}/runs`、
-`.../submit_tool_outputs`、`/v1/vector_stores/{id}/files`、`/file_batches`
+`.../submit_tool_outputs`、`/v1/vector_stores/{id}/file_batches`
 （另含 Anthropic batch 创建在 B 类）。`POST /elevenlabs/v1/sound-generation`
 **不属于此列**：它必填 `model_id`，真实请求按 `audio_output_minute` 结算
 （2.41）；`/v1/tools/search|fetch` 已由 DeepSeek 官方 5 CNY/1k 费率关闭（2.54）。
@@ -93,6 +97,8 @@
 `/v1/vector_stores/{id}/search` 已移出：分类器把它绑定到
 `openai/vector-stores` 工具 SKU，按一次 search = 一次 `api_request` 收
 `$2.50/1k`（2.51），不再依赖未定价的 management 路由键。
+`/v1/vector_stores/{id}/files` 也已移出：按 `usage_bytes` 收首日
+`storage_gb_day`（2.64），file_batches 仍缺字节数。
 
 解除条件（sdkwork-models）：为对应 catalog key 发布一条
 `meterCode: "api_request"`、`unitPrice > 0` 的官方费率（或按 B 类改成异步后扣）。
@@ -128,8 +134,9 @@ Responses、threads runs：用量只在上游完成后的响应/结果文件里�
 
 ### E. 存储/会话计量（3 类）
 
-vector store 存储、container session、file storage：目录无 `storage_gb_day` /
-`container_session` 费率。补价后需新增"按天累计"的计量 worker（与 B 同类基础设施）。
+vector store file 首日存储已按 `storage_gb_day` 收（2.64），但长生命周期文件的
+按天 worker 仍未实现；container session / file storage 仍无费率。补齐后需新增
+“按天累计”的计量 worker（与 B 同类基础设施）。
 
 ### F. 实时语音 WebSocket（1 类）
 
@@ -160,29 +167,35 @@ fail-closed 或留给下一轮，不凭空收费。
 | `stream_options` | 对 OpenAI 兼容面强制注入 | 个别兼容上游可能拒绝未知字段 |
 | 中断流输入 token | 按请求体估算（ASCII 4 字符/token、宽字符 1.33 字符/token） | 估算值与真实 tokenizer 有偏差；方向是"补记而非免单"，真实 usage 到达时不覆盖 |
 | 厂商时段价节假日 | 工作日 peak / 其余与周末 off-peak；`includeDates` / `excludeDates` 为空 | 工作日法定节假日仍按 peak 计；需要 vendor 日历数据写入目录，已在主审计 2.59 标记 |
+| Vector store `usage_bytes` | 按契约"单文件存储字节"收首日 GB-day | 若上游把该字段填成**整库总量**，连续摄取会按总量重复计费；需契约/目录确认字段语义，并在按天 worker 落地时改为增量 |
+| Hold 过期 | 过期/已释放时按 `hold-expired-capture` 追收 | 追收仍受可用余额约束；余额不足时该笔转为待对账事实，需要开启 settlement worker 才会重试 |
+| 预付超额（actual > hold） | 先捕获 hold，再把差额作为 postpaid 扣 | 差额扣费若遇余额不足，请求的 `consumption` 标记会让 worker 认为"已结算"，差额不会自动补收——已登记为下一轮修复项（把差额写成可追收事实） |
 
 ## 六、验证基线（2026-10-19）
 
 | 项 | 结果 |
 | --- | --- |
-| 计费 test target | **47 个 target / 287 passed / 0 failed** |
-| router-service `--lib` | **598 passed** |
-| edge-runtime `--lib` | **99 passed** |
+| 计费 test target | **58 个 target / 409 passed / 0 failed** |
+| router-service `--lib` | **599 passed** |
+| router-service 全量 | **171 个 target / 1770 passed / 6 failed（全部 HEAD 既有，与计费无关）** |
+| edge-runtime `--lib` | **100 passed** |
+| 既有红目标（非计费） | `upstream_route_selector` 4（价格门禁已移到 preflight，测试未同步）、`postgres_payment_intent_runtime_sql_contract` 2（退款 SQL 列已变更，测试未同步） |
 | clippy（两 crate，`--lib --tests`） | 0 |
-| `cargo fmt --check` | 干净 |
+| `cargo fmt --check` | 干净（edition 2021） |
 | `node tools/check-cloudrouter-ai-routing-consistency.mjs` | **passed**（81 arms / 64 codes；83 endpoints；122 OpenAI-compatible ops 全有分类臂） |
 | 数据库初始化 | `pnpm db:validate` 通过；`pnpm db:plan` 显示 `pending_migrations: ["0046_ai_metering_async_task"]` 且 exit 0；schema registry / baseline / contract / manifest 已同步（`ai_metering_async_task`，39 张物化表） |
 | sdkwork-models 目录 | 6 个 OpenAI 模型 12 条 tool 费率 + `openai/vector-stores` + `deepseek/web_tools`；`validate-catalog` / `catalog-audit` / `unreachable --check` 通过，`migrate-pricing-v2` 0 待迁移 |
 
 ## 七、商业化结论
 
-* **165 个 operation 已可按行业口径直接售卖**，每一族都有形态/数量/单价/预扣/
+* **166 个 operation 已可按行业口径直接售卖**，每一族都有形态/数量/单价/预扣/
   可结算性/流式/缺价回退/防绕过锁。
-* **11 个 operation 不可售但有明确原因与解除路径**，全部 fail-closed，不会产生
+* **10 个 operation 不可售但有明确原因与解除路径**，全部 fail-closed，不会产生
   "客户免费用、平台付成本"的静默漏洞。
-* 距离"176 全对齐"还差：sdkwork-models 的 10 条 `api_request` 费率、一次 DB
-  迁移授权的异步对账 worker、midjourney/nano-banana 资源、以及实时 WS/存储计量
-  三块基础设施。这些都不是计费逻辑本身的偏差。
+* 距离"176 全对齐"还差：sdkwork-models 的 5 条 `api_request` 费率（批量/线程 runs/
+  file_batches）、异步结果回收 worker（batch / background Responses / threads runs）、
+  midjourney/nano-banana 资源，以及实时 WS 与按天存储计量两块基础设施。这些都不是
+  计费逻辑本身的偏差。
 
 ## 八、复跑命令
 

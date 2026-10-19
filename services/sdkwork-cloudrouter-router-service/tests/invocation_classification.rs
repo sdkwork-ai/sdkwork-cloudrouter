@@ -126,7 +126,20 @@ fn classifies_deepseek_web_tools_as_request_billed_api_endpoints() {
         assert_eq!(ResourceType::ProviderNativeApi, resource.resource_type);
         assert_eq!(RoutingCapability::Network, resource.capability);
         assert_eq!(AiRouteModelRequirement::Ignored, resource.model_requirement);
-        assert_eq!(None, resource.requested_model, "{path}");
+        // The route carries no client-supplied model, but the classifier binds
+        // the DeepSeek tool SKU so the catalog can price the call ("web_tools"
+        // on the `deepseek/web_tools` catalog key). Both `requested_model` and
+        // the catalog key are therefore the tool identity, not a model name.
+        assert_eq!(
+            Some("web_tools"),
+            resource.requested_model.as_deref(),
+            "{path}"
+        );
+        assert_eq!(
+            Some("deepseek/web_tools"),
+            resource.requested_model_catalog_key.as_deref(),
+            "{path}"
+        );
         assert_eq!(BillingMode::ApiRequest, billing.mode, "{path}");
         assert_eq!(Some(BillingMeter::ApiRequest), billing.meter, "{path}");
         assert_eq!(AiRouteStrategy::PrimaryAccount, routing.strategy, "{path}");

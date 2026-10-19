@@ -572,6 +572,11 @@ async fn has_existing_request_settlement(
     let sync_postpaid = format!("cloudrouter:{request_id}:postpaid");
     let async_adjust_debit = format!("cloudrouter:{request_id}:async-adjust-debit");
     let async_adjust_credit = format!("cloudrouter:{request_id}:async-adjust-credit");
+    // A prepaid hold that was already gone at settlement (expired by the TTL
+    // sweep) is captured through this ledger fallback instead of the hold
+    // settle. Recovery must recognize it too, or the worker would debit the
+    // same request a second time.
+    let sync_expired_hold_capture = format!("cloudrouter:{request_id}:hold-expired-capture");
     let exists = sqlx::query_scalar::<_, bool>(
         r#"
         SELECT EXISTS (
@@ -581,7 +586,7 @@ async fn has_existing_request_settlement(
               AND request_no = $2
               AND organization_id = $3
               AND asset_code = 'token_bank'
-              AND business_no IN ($4, $5, $6, $7, $8, $9)
+              AND business_no IN ($4, $5, $6, $7, $8, $9, $10)
         )
         "#,
     )
@@ -594,6 +599,7 @@ async fn has_existing_request_settlement(
     .bind(sync_postpaid)
     .bind(async_adjust_debit)
     .bind(async_adjust_credit)
+    .bind(sync_expired_hold_capture)
     .fetch_one(&mut **tx)
     .await
     .map_err(|error| store_error("failed to load existing invocation settlement", error))?;

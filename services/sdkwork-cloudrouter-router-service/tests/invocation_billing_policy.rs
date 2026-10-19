@@ -245,6 +245,65 @@ async fn keeps_compute_bearing_management_subresources_on_api_request() {
     );
 }
 
+/// A Threads run **with a model** is a model call: the payload stage copies the
+/// model onto the resource and the billing policy then selects Composite token
+/// billing. The matrix samples an empty body, so its row stays `ApiRequest`;
+/// real clients that pass `model` are sellable, not stuck in the unpriced
+/// per-call bucket.
+#[tokio::test]
+async fn threads_runs_with_a_model_bill_model_tokens() {
+    let mut invocation = openai_invocation(
+        Method::POST,
+        "/v1/threads/thread-1/runs",
+        InvocationBody::json(json!({"assistant_id": "asst_1", "model": "gpt-4o"})),
+    );
+    PayloadExtractionInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("payload extraction");
+    BillingPolicyInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("billing policy");
+
+    assert_eq!(
+        Some("gpt-4o"),
+        invocation.resource.requested_model.as_deref(),
+        "the payload stage must surface the requested model"
+    );
+    assert_eq!(BillingMode::Composite, invocation.billing.mode);
+    assert_eq!(Some(BillingMeter::LlmInputToken), invocation.billing.meter);
+    assert_eq!(
+        BillingQuantitySource::Composite,
+        invocation.billing.quantity_source
+    );
+}
+
+/// The same run with `stream: true` must settle through the streaming
+/// accumulator (the Assistants terminal event carries `usage` under `data`).
+#[tokio::test]
+async fn streaming_threads_runs_use_the_streaming_accumulator() {
+    let mut invocation = openai_invocation(
+        Method::POST,
+        "/v1/threads/thread-1/runs",
+        InvocationBody::json(json!({"assistant_id": "asst_1", "model": "gpt-4o", "stream": true})),
+    );
+    PayloadExtractionInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("payload extraction");
+    BillingPolicyInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("billing policy");
+
+    assert_eq!(BillingMode::Composite, invocation.billing.mode);
+    assert_eq!(
+        BillingQuantitySource::StreamingAccumulator,
+        invocation.billing.quantity_source
+    );
+}
+
 #[tokio::test]
 async fn bills_provider_native_video_generation_by_produced_video() {
     let classification = ProviderNativeResourceClassifier

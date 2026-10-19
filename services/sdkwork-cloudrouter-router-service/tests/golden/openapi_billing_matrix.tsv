@@ -148,7 +148,7 @@ GET	/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}	openai.vector_st
 POST	/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/cancel	openai.vector_stores	VectorStore	ApiRequest	Free	None	None
 GET	/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/files	openai.vector_stores	VectorStore	ApiRequest	Free	None	None
 GET	/v1/vector_stores/{vector_store_id}/files	openai.vector_stores	VectorStore	ApiRequest	Free	None	None
-POST	/v1/vector_stores/{vector_store_id}/files	openai.vector_stores	VectorStore	ApiRequest	ApiRequest	ApiRequest	FixedRequest
+POST	/v1/vector_stores/{vector_store_id}/files	openai.vector_stores	VectorStore	ApiRequest	Storage	StorageGbDay	ResponseBody
 DELETE	/v1/vector_stores/{vector_store_id}/files/{file_id}	openai.vector_stores	VectorStore	ApiRequest	Free	None	None
 GET	/v1/vector_stores/{vector_store_id}/files/{file_id}	openai.vector_stores	VectorStore	ApiRequest	Free	None	None
 POST	/v1/vector_stores/{vector_store_id}/files/{file_id}	openai.vector_stores	VectorStore	ApiRequest	Free	None	None

@@ -139,11 +139,6 @@ async fn unpriced_per_call_operations_are_refused_not_free() {
         ),
         (
             Method::POST,
-            "/v1/vector_stores/vs-1/files",
-            json!({"file_id": "file-1"}),
-        ),
-        (
-            Method::POST,
             "/v1/vector_stores/vs-1/file_batches",
             json!({"file_ids": ["file-1"]}),
         ),
@@ -159,7 +154,7 @@ async fn unpriced_per_call_operations_are_refused_not_free() {
             .before(&mut invocation)
             .await
             .expect_err("an unpriced per-call operation must not be dispatched");
-        let expected_kind = if path.contains("/vector_stores/") {
+        let expected_kind = if path.ends_with("/file_batches") {
             sdkwork_cloudrouter_router_service::application::InvocationErrorKind::BillingUnavailable
         } else {
             sdkwork_cloudrouter_router_service::application::InvocationErrorKind::Pricing

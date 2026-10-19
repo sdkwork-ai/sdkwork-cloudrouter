@@ -144,6 +144,30 @@ fn settlement_reuses_the_precharge_rate_and_charges_zero_hold_usage() {
     );
 }
 
+/// Regression: a prepaid hold that is already gone at settlement (the TTL sweep
+/// expired it, or an earlier release ran) must still capture the spend that the
+/// provider already produced. The frozen amount has returned to available
+/// balance, so the only correct recovery is a ledger debit under its own
+/// request-scoped idempotency suffix — reusing `consumption` would collide with
+/// the hold settle scope, and reusing `postpaid` would collide with a genuine
+/// overage debit from the same request.
+#[test]
+fn expired_holds_capture_the_spend_under_a_distinct_suffix() {
+    for needle in [
+        "EXPIRED_HOLD_CAPTURE_SUFFIX",
+        "\"hold-expired-capture\"",
+        "hold_is_gone",
+        "hold has expired",
+        "not in held status",
+        "capturing the spend as a postpaid debit",
+    ] {
+        assert!(
+            BILLING_STORE.contains(needle),
+            "expired-hold capture must contain {needle:?}"
+        );
+    }
+}
+
 /// Regression: async billing keeps the legacy precharge/refund reconciliation
 /// so the asynchronous worker path remains self-consistent with historical data.
 #[test]

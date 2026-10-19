@@ -7,11 +7,11 @@
 
 ## 1. 当前结论
 
-- **可售 165/176（93.8%）**，剩余 **11 个**全部 fail-closed，不存在静默免费路径。
-- 176 = **118 Free + 43 计量可售 + 1 音效 + 3 已补价按次 + 6 未定价按次 + 5 已登记不可售**。
-- 计费回归 **47 个 target / 287 passed**；router-service `--lib` **598**；edge-runtime `--lib` **99**；账号仓库 `--lib` **13**；clippy 0；fmt 干净。
-- 40 把锁的变异证据在主审计第五节；就绪计数由
-  `commercial_readiness_counts_are_exactly_165_of_176` 钉住。
+- **可售 166/176（94.3%）**，剩余 **10 个**全部 fail-closed，不存在静默免费路径。
+- 176 = **118 Free + 44 计量可售 + 1 音效 + 3 已补价按次 + 5 未定价按次 + 5 已登记不可售**。
+- 计费回归 **58 个 target / 409 passed**；router-service `--lib` **599**；edge-runtime `--lib` **100**；clippy 0；fmt 干净。
+- 41 把锁的变异证据在主审计第五节；就绪计数由
+  `commercial_readiness_counts_are_exactly_166_of_176` 钉住。
 
 ## 2. 本轮已交付的基础设施
 
@@ -24,8 +24,10 @@
 | 服务端工具费率 | `sdkwork-models` 的 6 个 OpenAI 模型 + `openai/vector-stores` + `deepseek/web_tools` | 已发布并通过目录审计 |
 | 货币 → Token Bank 换算 | `admin_marketing_recharge.rs`（严格汇率、零金额免费、微积分 ceil） | 已实现，未知正币种 fail-closed |
 | Token Bank 原子捕获 | `sdkwork-account` 的 `SettleAccountHoldCommand.settled_amount` + `settle_account_hold` | 已实现，部分捕获/余额退回单事务，账号侧 2 条单测 |
+| 过期 hold 追收 | `edge-runtime/gateway_billing_account.rs` 的 `hold_is_gone` + `hold-expired-capture` 后缀；对账查询已识别该后缀 | 已实现，hold 过期不再丢单；单测 + 源码契约测试 |
+| 向量库存储可测量性 | `usage_extraction::storage_line` | 缺 `usage_bytes` ⇒ 记账失败；显式 0 字节 ⇒ waive |
 
-## 3. 剩余 11 个 operation 的阻塞
+## 3. 剩余 10 个 operation 的阻塞
 
 ### A. 异步结果回收（5 个，缺 executor 与应用接线）
 
@@ -47,17 +49,21 @@
 
 在 1–3 完成前不得解除拒单，否则批任务会变成未计量放行。
 
-### B. 向量库存储（2 个，缺存储计量）
+### B. 向量库存储（1 个）
 
-`POST /v1/vector_stores/{id}/files`、`POST /v1/vector_stores/{id}/file_batches`。
+`POST /v1/vector_stores/{id}/file_batches`。
 
-OpenAI 按 **$0.10/GB/day** 收存储，不是按次。需要：
+`POST /v1/vector_stores/{id}/files` 已关闭：目录已补
+`storage_gb_day`（$0.10/GB/day），按 `usage_bytes` 收首日存储；
+`billing_vector_store_storage` 验证 2 GB → $0.20。
 
-1. 目录给 `openai/vector-stores` 补 `storage_gb_day` 费率；
-2. 按 `usage_bytes` 写入首日（或按天 worker 结算）；
-3. 处理删除/缩容的退款或停止计费。
+仍缺：
 
-不能把 `/files` 伪装成 `$2.50/1k` 的 file search 调用。
+1. `file_batches` 响应没有字节数，需要批量逐文件读取后登记存储；
+2. 长生命周期文件的按天 worker（首日之后）；
+3. 删除/缩容的停止计费与退款条款。
+
+当前 `file_batches` 返回 501，不把批量摄取伪装成按次。
 
 ### C. midjourney / nano-banana（4 个，跨仓资源与 API 权威）
 
@@ -75,16 +81,17 @@ OpenAI 按 **$0.10/GB/day** 收存储，不是按次。需要：
 ## 4. 复现与验证
 
 ```bash
-# 计费回归（47 target / 287）
+# 计费回归（58 target / 409 passed）
 cargo test -p sdkwork-cloudrouter-router-service \
   --test billing_batch_embed --test billing_vector_store_search \
-  --test billing_hosted_tools --test billing_deepseek_web_tools \
-  --test billing_media_entrypoints --test billing_token_entrypoints \
-  --test billing_quantity_families --test openapi_billing_matrix
+  --test billing_vector_store_storage --test billing_hosted_tools \
+  --test billing_deepseek_web_tools --test billing_media_entrypoints \
+  --test billing_token_entrypoints --test billing_quantity_families \
+  --test openapi_billing_matrix
 
 # 单测 / 静态门
-cargo test -p sdkwork-cloudrouter-router-service --lib        # 598
-cargo test -p sdkwork-cloudrouter-edge-runtime --lib          # 97
+cargo test -p sdkwork-cloudrouter-router-service --lib        # 599
+cargo test -p sdkwork-cloudrouter-edge-runtime --lib          # 100
 cargo clippy -p sdkwork-cloudrouter-router-service -p sdkwork-cloudrouter-edge-runtime --lib --tests
 cargo fmt --check -p sdkwork-cloudrouter-router-service -p sdkwork-cloudrouter-edge-runtime
 pnpm db:validate
@@ -97,8 +104,30 @@ node tools/build-index.mjs --check
 python tools/report-unreachable-pricing.py --check
 ```
 
-## 5. 不可售 ≠ 免费送
+## 5. 标准门禁结果（2026-10-19）
 
-剩余 11 个均由预检/守卫 fail-closed，不产生用量事实也不免费放行。任何解除
+通过：
+
+- `check-rust-crate-naming-standard`
+- `check-rust-manifest-standard`
+- `check-rust-backend-composition`
+- `check-api-operation-patterns`
+- `check-api-response-envelope`
+- `audit-repository-baseline --only branch-main`
+- `sync-agent-main-branch-standard --check`
+- `sync-agent-destructive-operation-standard --check`
+- `sync-agent-rollback-restriction-standard --check`
+- `check:pnpm-script-standard`
+
+遗留（非本轮计费改动）：`check:agent-workflow-standard` 报
+`.github/workflows/package.yml` 缺少 50 个 `workflow_dispatch` 依赖 ref 输入，
+`dependency_refs_json` 只读了 `vars.*`。`sdkwork.workflow.json` 本身与依赖
+对齐工具 dry-run 一致，问题在发布工作流入口的生成/同步层。按 `AGENTS.md`
+的 release governance 要求，不手改 `.github/workflows/package.yml`；需用
+官方 workflow 生成器或人工审核后同步。
+
+## 6. 不可售 ≠ 免费送
+
+剩余 10 个均由预检/守卫 fail-closed，不产生用量事实也不免费放行。任何解除
 守卫的改动必须先让对应 `billing_*` 测试从"拒单"变为"可结算"，并同步
-`commercial_readiness_counts_are_exactly_165_of_176` 与商业化报告。
+`commercial_readiness_counts_are_exactly_166_of_176` 与商业化报告。

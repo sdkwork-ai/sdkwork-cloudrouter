@@ -148,6 +148,12 @@ fn is_response_measured_media_meter(meter: &BillingMeter) -> bool {
     )
 }
 
+fn is_vector_store_file_storage(invocation: &Invocation) -> bool {
+    invocation.request.method == "POST"
+        && invocation.request.path.starts_with("/v1/vector_stores/")
+        && invocation.request.path.ends_with("/files")
+}
+
 fn openai_compatible_policy(invocation: &Invocation) -> InvocationBilling {
     // 管理面必须在 `Ignored` 短路**之前**判定：`/v1/files` 这类路由没有模型，
     // 会先落到 `api_request_policy`，而目录没有 `api_request` 价。
@@ -159,6 +165,12 @@ fn openai_compatible_policy(invocation: &Invocation) -> InvocationBilling {
     // 有可回收的 token 用量。
     if invocation.request.path == "/v1/responses/compact" {
         return model_composite_policy(invocation, BillingMeter::LlmInputToken);
+    }
+    // Vector-store file ingestion is storage byte-day, not a per-request tool
+    // call. The file object response carries `usage_bytes`, so this route can
+    // be priced and settled on the same storage meter as bucket/object routes.
+    if is_vector_store_file_storage(invocation) {
+        return storage_policy(invocation);
     }
     if invocation.resource.model_requirement == AiRouteModelRequirement::Ignored {
         return api_request_policy();
@@ -582,14 +594,16 @@ fn duration_policy(meter: BillingMeter) -> InvocationBilling {
 
 fn storage_policy(invocation: &Invocation) -> InvocationBilling {
     match invocation.resource.resource_type {
-        ResourceType::StorageBucket | ResourceType::StorageObject => InvocationBilling {
-            mode: BillingMode::Storage,
-            meter: Some(BillingMeter::StorageGbDay),
-            quantity_source: BillingQuantitySource::ResponseBody,
-            pricing_required: true,
-            settlement_required: true,
-            result_gate: BillingResultGate::Any,
-        },
+        ResourceType::StorageBucket | ResourceType::StorageObject | ResourceType::VectorStore => {
+            InvocationBilling {
+                mode: BillingMode::Storage,
+                meter: Some(BillingMeter::StorageGbDay),
+                quantity_source: BillingQuantitySource::ResponseBody,
+                pricing_required: true,
+                settlement_required: true,
+                result_gate: BillingResultGate::Any,
+            }
+        }
         _ => api_request_policy(),
     }
 }

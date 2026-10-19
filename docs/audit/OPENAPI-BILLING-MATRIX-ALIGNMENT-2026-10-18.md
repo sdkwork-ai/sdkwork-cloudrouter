@@ -3,18 +3,20 @@
 > 范围：`apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json` 发布的**全部 176 个 operation**。
 > 目标：每个接口的计费档（`BillingMode`）、计量单位（`BillingMeter`）、数量来源（`BillingQuantitySource`）都落到行业专业口径，可以按此商业化售卖。
 > 配套可执行口径：`services/sdkwork-cloudrouter-router-service/tests/openapi_billing_matrix.rs` + `tests/golden/openapi_billing_matrix.tsv`。
-> **商业化就绪总报告（165/176 可售、11 个阻塞项与解除条件）**：[OPENAPI-BILLING-COMMERCIAL-READINESS-2026-10-19.md](OPENAPI-BILLING-COMMERCIAL-READINESS-2026-10-19.md)。
+> **商业化就绪总报告（166/176 可售、10 个阻塞项与解除条件）**：[OPENAPI-BILLING-COMMERCIAL-READINESS-2026-10-19.md](OPENAPI-BILLING-COMMERCIAL-READINESS-2026-10-19.md)。
 > **交接单（复现命令与逐项复位步骤）**：[OPENAPI-BILLING-HANDOFF-2026-10-19.md](OPENAPI-BILLING-HANDOFF-2026-10-19.md)。
 >
 > **2026-10-19 第 9 轮补充**：新增 2.21（Google/Gemini 逐模态令牌）与 `billing_google_modality_tokens.rs`（7 个用例），并修掉 `pricing_meters` 的"目录改写后重解析缩表"缺陷。
 >
 > **2026-10-19 第 10–22 轮补充**：新增 2.22（token 计价的二进制语音合成必须在派发前拒单）、2.23（批量提交在结果回收前必须拒单）、2.24（`background: true` 在用量回填前必须拒单）、2.25（实时语音在 WebSocket 代理落地前必须拒单）、2.26（图像单档位费率必须可解析）、2.27（Anthropic 缓存写入必须按 TTL 档位计价）、2.28（上下文分档 token 费率必须可解析）、2.29（缓存读必须按逐行模态计价）、2.30（Alibaba 显式/隐式缓存读必须可区分）、2.31（输入侧预扣取最高价不求和）、2.32（累计上界档位词汇）、2.33（流式 Chat 必须索取 usage）、2.34（usage-only chunk 不透传）、2.35（图像输入模式档位）、2.36（管理面归 Free）、2.37（OpenAI 管理/CRUD 归 Free）、2.38（异步轮询归 Free）、2.39（管理面几个"过度排除"的端点归 Free）、2.40（Responses 压缩按 token 计费）、2.41（音效按分钟计费已生效）、2.42（容器文件归 Free）、2.43（未定价按次端点不得静默免费）、2.44（音乐时长兜底歧义显式化）、2.45（就绪计数锁 165/176）、2.46（零产出必须 waive）、2.47（2xx 业务失败必须 waive）、2.48（中断流补输入估算）、2.49（服务端工具按次计费）、2.50（异步对账表与数据库初始化）、2.51（向量库检索按次计费）、2.52（异步对账 store）、2.53（批 embedding 按请求 token 估算）、2.54（DeepSeek web tools 按成功请求计费）、2.55（异步注册器）、2.56（异步 worker 编排）、2.57（货币→Token Bank 严格换算）、2.58（hold 原子捕获）、2.59（厂商时段价）、2.60（计费未就绪返回 501）、2.61（Code Interpreter 会话计费）、2.62（Anthropic web search 按次）、2.63（预扣 hold TTL 可配置）与二十四个测试文件（5+5+6+6+5+4+7+4+4+4+3+2+1+1+2+2+4+4+1+1+1+1+1+1 个用例，另在 precharge 文件新增 2 条、provider_request 单测 4 条、stream 过滤单测 5 条、usage_extraction 单测 5 条、async registrar 单测 2 条、async worker 单测 3 条、account hold 单测 2 条、overage split 单测 1 条、time-window 单测 3 条、BillingUnavailable 单测 1 条）。回归合计 **287** 个计费用例 + router-service `--lib` **598** 个单测全绿 + edge-runtime `--lib` **99** 个单测全绿。
 
+> **2026-10-19 第 23 轮补充**：新增 2.64（vector store 首日存储，166/176）、2.65（存储字节数缺失必须 fail-closed、显式 0 字节 waive）、2.66（结算时 hold 已过期 ⇒ 按 ledger 追收，不再丢单）、2.67（Assistants 流式的 usage 在 `data` 下，必须读取终态事件）、2.68（Threads runs 带 `model` 时是 token 计费，不是永远不可售）。同时修正 `invocation_classification` 的 DeepSeek 工具 SKU 断言（分类器已绑定 `deepseek/web_tools`）。完整计数见第六节回归矩阵。
+
 ## 一句话结论
 
 176 个 operation 全部可分类、全部有确定计费形态：**109 个按次**（其中 24 个是无专属计量单位的通用请求）、**11 个复合 token**、**3 个 embedding token**、**7 个图片张**、**10 个视频条 + 4 个视频秒**、**2 个音乐秒**、**3 个 TTS 字符**、**2 个 STT 分钟**、**2 个免费**。累计修掉 **21 类**会让"上游成本"与"对客收费"脱钩的偏差（2.1–2.21），剩余 24 个无计量单位端点已逐个登记原因。
 
-**商业化判断看五个面，缺一不可**：形态（按什么单位收）、数量（这个单位量出多少，**逐接口**而非逐家族）、**单价（同一个数量有没有落在正确的计量单位上——音频 token 与文本 token 差 8 倍）**、预扣（派发前冻结多少）、可结算性（声明了数量来源就一定要能被抽取）。五个面各有可执行锁，合计 **287 个计费测试 + 598 个 router lib 测试**；数量层、预扣层、模态层、厂商形状层、可结算性守卫层都做过变异自证（见第六节）。
+**商业化判断看五个面，缺一不可**：形态（按什么单位收）、数量（这个单位量出多少，**逐接口**而非逐家族）、**单价（同一个数量有没有落在正确的计量单位上——音频 token 与文本 token 差 8 倍）**、预扣（派发前冻结多少）、可结算性（声明了数量来源就一定要能被抽取）。五个面各有可执行锁，合计 **409 个计费测试 + 599 个 router lib 测试**；数量层、预扣层、模态层、厂商形状层、可结算性守卫层都做过变异自证（见第六节）。
 
 ## 一、家族分布（快照统计）
 
@@ -921,7 +923,7 @@ model_id + duration_seconds: 10
 模型的请求走的是目录价。`per_call_operations_bill_a_single_request` 里的
 `api_request` 行因此不代表该端点不可售。
 
-剩余 11 个按次行仍全部是**真实上游动作**（批量创建、runs、容器/向量库摄取与
+剩余 10 个按次行仍全部是**真实上游动作**（批量创建、runs、容器/向量库摄取与
 检索、付费工具），其中没有"带模型但被按次"的隐藏项。
 
 ### 2.42 容器文件上传：按会话计费，文件对象本身免费
@@ -958,13 +960,14 @@ runs ×3、tools ×2、vector store 摄取 ×2）；vector store 检索已在 2.
 | Free | 118 | 文件/缓存/查询/轮询/管理 CRUD，行业不按次收费 |
 | 可售（计量） | 43 | Composite 12 + ResultCount 17 + AudioSecond 4 + VideoSecond 4 + Character 3 + Token 3 |
 | 可售（模型驱动） | 1 | `sound-generation`：矩阵行 ApiRequest，真实请求按 `audio_output_minute` |
+| Storage（GB-day） | 1 | vector store file 摄取：`$0.10/GB/day`，读 `usage_bytes`（2.64） |
 | 已补价按次 | 3 | vector store search $2.50/1k；DeepSeek web tools 5 CNY/1k（global $0.75/1k） |
-| 未定价按次（fail-closed） | 6 | 批量创建、threads runs ×3、vector store 摄取 ×2 |
+| 未定价按次（fail-closed） | 5 | 批量创建、threads runs ×3、vector store `file_batches` |
 | 已登记不可售 | 5 | Anthropic batch 创建、midjourney ×2、nano-banana ×2 |
 
-可售 **165/176（93.8%）**；剩余 11 个全部有明确阻塞原因（目录缺价 / 结果回收
+可售 **166/176（94.3%）**；剩余 10 个全部有明确阻塞原因（目录缺价 / 结果回收
 链路 / 资源绑定），没有任何一个"静默免费"或"按错单位收费"。计数由
-`commercial_readiness_counts_are_exactly_165_of_176` 钉住（见 2.45、2.51、2.53、2.54）。
+`commercial_readiness_counts_are_exactly_166_of_176` 钉住（见 2.45、2.51、2.53、2.54、2.64）。
 
 ### 2.44 音乐时长兜底：$0.02/秒还是 $0.02/首？先停下来
 
@@ -991,15 +994,15 @@ $0.02/秒 × 1 秒 = $0.02/首
 同类的 `video_output_second` 1 秒兜底也受此约束，但视频请求通常声明时长，影响
 面较小。
 
-### 2.45 就绪计数锁：165/176，不是 164/176
+### 2.45 就绪计数锁：166/176，不是 165/176
 
 就绪报告最初把 `ApiRequest` 形态数（10）当成了"未定价按次数"，漏掉
 `sound-generation` 的真实请求按分钟计费（2.41），因此把可售数低估成 160。
 修正后的口径必须由可执行锁钉住，而不是只改文档：
 
-* `commercial_readiness_counts_are_exactly_165_of_176` 断言
-  `176 = Free 118 + 计量可售 43 + 音效 1 + 已补价按次 3 + 未定价按次 6 + 已登记不可售 5`；
-* `UNPRICED_PER_CALL` 明确列出 6 个路径，`PRICED_PER_CALL` 单列已补价的
+* `commercial_readiness_counts_are_exactly_166_of_176` 断言
+  `176 = Free 118 + 计量可售 44 + 音效 1 + 已补价按次 3 + 未定价按次 5 + 已登记不可售 5`；
+* `UNPRICED_PER_CALL` 明确列出 5 个路径，`PRICED_PER_CALL` 单列已补价的
   vector-store search 与 DeepSeek web tools，并把 `sound-generation` 排除在
   "未定价"之外；
 * 任何 operation 的状态漂移（新增 Free、改 mode、补价）都会让计数断言红，
@@ -1151,11 +1154,11 @@ worker 仍未实现：表只提供幂等落点，上述入口继续 fail-closed�
 3. **锁**：`tests/billing_vector_store_search.rs` 走完整
    identity → preflight → extraction → finalization → settlement，断言一次 search
    产生一条 `api_request`、数量 1、金额 `$0.002500000000`；矩阵计数锁改为
-   165/176，`UNPRICED_PER_CALL` 6 条 + `PRICED_PER_CALL` 3 条。
+   166/176，`UNPRICED_PER_CALL` 5 条 + `PRICED_PER_CALL` 3 条。
 
-未做：`/files` 与 `/file_batches` 的摄取仍按次未定价（官方按存储计费，需
-`storage_gb_day` 与按天 worker）；`/search` 的响应条目数不是计费单位，不能按
-`data` 数组长度收。
+未做：`/file_batches` 的摄取仍按次未定价（响应没有字节数，需逐文件读取的
+worker）；`/files` 已按 `storage_gb_day` 收首日存储（2.64）；`/search` 的响应
+条目数不是计费单位，不能按 `data` 数组长度收。
 
 ### 2.52 异步对账 store：幂等入队、租约领取、终态收敛
 
@@ -1202,7 +1205,7 @@ worker 与注册拦截器仍未接线；下一轮把 `enqueue` 挂到 batch/back
 4. **锁**：`tests/billing_batch_embed.rs` 走完整
    classifier → policy → identity → preflight → extraction → finalization →
    settlement，断言 2 token × `$1/1M` = `$0.000002`；矩阵计数锁改为
-   165/176，`UNMETERED_OPERATIONS` 只剩 5 条（Anthropic batch + midjourney ×2 +
+   166/176，`UNMETERED_OPERATIONS` 只剩 5 条（Anthropic batch + midjourney ×2 +
    nano-banana ×2）。
 
 代价是**估算精度**：没有 provider tokenizer，估算值可能偏离 Google 实际计数；
@@ -1414,6 +1417,92 @@ vendor 价是 **$10 / 1K searches**。
 
 这不是鼓励无限冻结；上限 24 小时防止运营误配把余额长期锁死。
 
+### 2.64 Vector store file 摄取：按 storage GB-day 计费
+
+`POST /v1/vector_stores/{id}/files` 的响应是 vector-store file 对象，带
+`usage_bytes`。目录给 `openai/vector-stores` 补 `storage_gb_day`
+（$0.10/GB/day）。
+
+- billing policy 把该路由切成 `Storage` + `StorageGbDay` + `ResponseBody`；
+- 抽取层读 `usage_bytes`，按 `bytes / 1e9 × 1 day` 生成一条
+  `storage_gb_day`；
+- `billing_vector_store_storage` 断言 2,000,000,000 bytes → 数量 2、
+  金额 `$0.20`；
+- `/file_batches` 响应没有字节数，继续 501，等批量逐文件读取的 worker。
+
+**边界**：这里只收首日存储。长生命周期文件的按天 worker 仍是后续项；不能把
+首日计费说成完整存储对账，但至少不再让文件摄取完全免费。
+
+### 2.65 存储计量必须"可测量"：缺字节数不得静默收 0
+
+2.64 把 `POST /v1/vector_stores/{id}/files` 切到 `storage_gb_day`，但抽取层对响应里
+没有 `usage_bytes` / `bytes` / `size_bytes` 的形态用 `unwrap_or(0)`：数量 0 ⇒ 金额 0。
+**0 字节与"读不到"在数量上无法区分**，上游一改字段名，整类摄取就变成静默免费，
+而且 0 元事实不触发任何告警。
+
+修法（`usage_extraction::storage_line`）：
+
+- 三个字段都缺失 ⇒ 记账失败（`storage-metered ... carried no usage_bytes`），
+  预扣保留交给对账，不再产出 0 元事实；
+- 字段**存在且为 0** ⇒ 真实空文件，waive（`provider_reported_zero_storage`）：
+  释放预扣、正常返回、不收费；
+- `billing_vector_store_storage` 增加两条回归：缺字段必须失败；显式 0 必须 waive
+  （与 2 000 000 000 bytes ⇒ 2 GB-day / `$0.20` 的正例对照）。
+
+### 2.66 结算时 hold 已过期 ⇒ 按 ledger 追收，不再丢单
+
+预扣 hold 的 TTL 可配置（2.63），但 `settle_hold` 在 hold 已过期或已释放时直接失败：
+账户域已把冻结额退回可用余额，客户也拿到了上游产物，账上却没有扣费。长流式请求
+超过 TTL 是必然会发生的情形，不是异常。
+
+修法（`crates/sdkwork-cloudrouter-edge-runtime/src/gateway_billing_account.rs`）：
+
+- `hold_is_gone` 统一识别账户域两条"无法捕获"消息
+  （`not in held status` / `hold has expired`）；其余错误（余额不足、金额越界、
+  并发冲突）继续原样失败；
+- 命中的结算改走 ledger 追收，使用**独立**幂等后缀 `hold-expired-capture`：
+  不能复用 `consumption`（与 hold 结算幂等域冲突），也不能复用 `postpaid`
+  （与同一次请求的超额扣费冲突）；
+- 失败路径的 `release_hold` 同样容忍过期（此前只容忍 `not in held status`，
+  过期 hold 会让失败请求的释放报错并把错误冒泡给客户端）；
+- 异步对账的"该请求已结算"查询（`has_existing_request_settlement`）把该后缀
+  也算作已结算，避免 worker 在追收成功后二次扣费；
+- 单测覆盖两条过期消息、七类非过期错误与后缀常量；`gateway_billing_contract`
+  与 `postgres_usage_settlement_store_sql_contract` 分别钉住源码行为与 7 个
+  `business_no` 占位符。
+
+### 2.67 Assistants 流式：usage 在终态事件的 `data` 下
+
+`POST /v1/threads/runs`（带 `model` 时是 Composite token 计费）的流式响应是 Assistants
+事件流，终态帧形如：
+
+```text
+event: thread.run.completed
+data: {"id":"run_1","object":"thread.run","status":"completed",
+       "usage":{"prompt_tokens":100,"completion_tokens":20,"total_tokens":120}}
+```
+
+抽取器只认顶层 `usage`、`message.usage`（Anthropic）与 `response.usage`（Responses），
+`data.usage` 读不到 ⇒ 正常 EOF 时整条流按输出文本估算，**输入侧完全丢失**。
+
+修法：`streaming_usage_body_from_event` 增加 `data` 容器分支；单测用真实的
+`thread.run.created` → `thread.message.delta` → `thread.run.completed` 帧序列断言
+`prompt_tokens` / `completion_tokens` 都被合并进结算用量。
+
+### 2.68 Threads runs：带 `model` 时是 token 计费
+
+矩阵用空 body 采样，`POST /v1/threads/runs`、`/v1/threads/{thread_id}/runs` 与
+`.../submit_tool_outputs` 因此被记成 `ApiRequest`（未定价）。真实请求带 `model`
+时，`PayloadExtractionInterceptor` 会把模型写到 `resource.requested_model`，
+计费策略走 `Composite` + `llm_input_token`，目录有 token 价即可售。
+
+本轮补两条回归
+（`invocation_billing_policy::threads_runs_with_a_model_bill_model_tokens` /
+`streaming_threads_runs_use_the_streaming_accumulator`）钉住这条分支，并在
+`openapi_billing_matrix` 的 `UNPRICED_PER_CALL` 注释里写明"条件性"——
+不带 `model` 的请求只能继承 assistant 的模型，网关看不到实际模型，继续
+fail-closed；这不是"永远不可售"。
+
 ## 四、5 个"无专属计量单位且仍不可售"端点（已登记）
 
 
@@ -1433,7 +1522,7 @@ vendor 价是 **$10 / 1K searches**。
 
 ## 五、如何维护这份口径
 
-三十三把锁，缺一不可。它们各自能红在不同的地方，少一把就有一类缺陷不带报警地过：
+逐层加的锁，缺一不可。它们各自能红在不同的地方，少一把就有一类缺陷不带报警地过：
 
 | 测试 | 锁住什么 |
 | --- | --- |
@@ -1460,8 +1549,12 @@ vendor 价是 **$10 / 1K searches**。
 | `tests/billing_async_task_query.rs` | **异步轮询 Free**：Kling/Vidu/火山/Suno/Gemini 5 个 task_query + input_tokens 不预扣 / 空目录预检 / 4 个生成或工具面不被误放行 |
 | `tests/billing_responses_compact.rs` | **压缩按 token**：compact 是 Composite、预检可解析、输入/输出各自落在自己的计量单位与金额 |
 | `tests/billing_sound_generation.rs` | **音效按分钟**：必填 `model_id` 把 `api_request` 兜底改写成 `audio_output_minute`、10 秒按 1/6 分钟结算 |
-| `tests/billing_unpriced_per_call.rs` | **未定价不得免费**：8 个按次端点保持 ApiRequest + 预检失败，批量创建由守卫拒单 |
+| `tests/billing_unpriced_per_call.rs` | **未定价不得免费**：7 个按次端点保持 ApiRequest + 预检失败，批量创建与 file_batches 由守卫拒单 |
 | `tests/billing_vector_store_search.rs` | **向量库检索按次**：management 路由绑定 `openai/vector-stores` 工具 SKU，一次 search = 一条 api_request（$0.0025） |
+| `tests/billing_vector_store_storage.rs` | **向量库存储**：2 GB-day ⇒ `$0.20`；缺 `usage_bytes` ⇒ 记账失败（不产 0 元事实）；显式 0 字节 ⇒ waive |
+| `gateway_billing_account` 单测 + `gateway_billing_contract` | **Token Bank 追收**：过期 hold 走 `hold-expired-capture` 独立幂等后缀；释放容忍过期；对账查询识别该后缀；非过期错误仍失败 |
+| `usage_extraction` 单测（Assistants 帧序列） | **Assistants 流式用量**：`thread.run.completed.data.usage` 的输入/输出 token 必须进入结算用量 |
+| `invocation_billing_policy`（threads runs 带 model / stream） | **条件性可售**：带 `model` 的 run 是 Composite token；`stream: true` 走流式累加器 |
 | `tests/billing_batch_embed.rs` | **批 embedding 估算**：响应无 usage 时按 `requests[].content.parts[].text` 估算 `embedding_input_token`，2 token ⇒ $0.000002 |
 | `tests/billing_deepseek_web_tools.rs` | **DeepSeek web tools**：search/fetch 各一次成功请求 = 一条 `api_request`（5 CNY/1k，global $0.00075/次） |
 | `tests/billing_music_duration_fallback.rs` | **音乐时长兜底**：不声明时长 = 1 秒 / $0.02；声明 180 秒 = $3.60。兜底值变更必须先确认目录语义 |
@@ -1481,7 +1574,7 @@ git diff services/sdkwork-cloudrouter-router-service/tests/golden/openapi_billin
 
 快照的每一行是 `METHOD\tPATH\tapi_code\tresource_type\t声明meter\t最终mode\t最终meter\t数量来源`。**diff 即计费变更**，review 时只需要看有没有哪一行从"按秒/按张"掉回"按次"。
 
-**为什么必须三十三把锁**：每一层都能单独"看起来正常"。
+**为什么必须逐层加锁**：每一层都能单独"看起来正常"。
 
 - 只有形态锁：Suno 按 `music_output_second` 计费（形态正确）却只量到 1 秒，一条 3 分钟的曲子少收 120 倍（2.7）。
 - 只有**家族级**数量锁：MiniMax 用扁平 `extra_info` 跑绿，契约里的 `data.extra_info` 却读不到（2.11）——家族级用例只能证明"某一种形状读对"。
@@ -1526,13 +1619,15 @@ git diff services/sdkwork-cloudrouter-router-service/tests/golden/openapi_billin
 | `cargo test --test billing_context_tier` | **7 passed**（20k / 40k / 200k 三档金额、300k 取最高档、累计词汇 20k/100k/500k/2M、非数值 fail-closed、无条件对照） |
 | `cargo test --test billing_cache_read_modality` | **4 passed**（音频缓存 $8 档 / 混合模态拆分 / 无明细文本 / 无条件对照） |
 | `cargo test --test billing_alibaba_cache` | **4 passed**（隐式档 / 显式档 / 单档位缓存写入 / 单档位缓存读对照） |
-| `cargo test --test invocation_billing_policy` | 13 passed（两个媒体用例已按新语义重写） |
+| `cargo test --test invocation_billing_policy` | 16 passed（两个媒体用例已按新语义重写；新增 threads runs 带 `model` 与 `stream` 两条） |
 | `cargo test --test invocation_usage_extraction` | 23 passed（STT 用例改为按分钟断言） |
 | `cargo test --test invocation_billing_contract` | 5 passed |
 | `cargo test --test invocation_pricing_settlement` | 14 passed |
 | `cargo test --test invocation_usage_recording` | 10 passed |
 | `cargo test --test invocation_provider_adapter_dispatch` | 6 passed |
-| `cargo test --test gateway_billing_contract` | 8 passed（含预扣保留 / 释放的源码契约） |
+| `cargo test --test gateway_billing_contract` | 11 passed（含预扣保留 / 释放 / 过期 hold 追收的源码契约） |
+| `cargo test --test billing_vector_store_storage` | 3 passed（2 GB-day ⇒ $0.20 / 缺字节数 fail-closed / 显式 0 字节 waive） |
+| `cargo test --test invocation_classification` | 10 passed（DeepSeek 工具 SKU 断言同步到 `deepseek/web_tools`） |
 | `cargo test --test deepseek_web_tools_billing` | 9 passed |
 | `cargo test --test ai_route_taxonomy` | 3 passed |
 | `cargo test --test openai_contract` | 7 passed |
@@ -1541,7 +1636,7 @@ git diff services/sdkwork-cloudrouter-router-service/tests/golden/openapi_billin
 | `node tools/check-cloudrouter-ai-routing-consistency.mjs` | **passed**（122 个 OpenAI-compatible operation 全部有分类臂） |
 | `cargo fmt --check` | 干净 |
 
-合计 **287 个计费测试全绿**（形态 15 + 逐接口媒体数量 17 + 逐接口流式数量 16 + 逐模态单价 OpenAI 5 + 逐模态单价 Google 7 + 可结算性守卫 35 + 图像档位 5 + 缓存写入档位 4 + 上下文分档 7 + 缓存读模态 4 + Alibaba 缓存 4 + 缓存缺价回退 3 + 家族数量 11 + 目录改写 5 + 预扣 12 + 音乐兜底 2 + 就绪计数 1 + 空结果 waive 4 + 业务失败 waive 7 + 服务端工具 1 + 向量库检索 1 + 批 embedding 1 + DeepSeek web tools 2 + 既有计费/契约/分类/payload 118），edge-runtime `--lib` **99 passed**（流式传输层 + 流式协议映射 + usage-only chunk 过滤 5 条 + BillingUnavailable 501 映射 1 条 + hold TTL 1 条）。`--lib openai_usage` **12 passed**（中继侧输入量口径）。router-service 全量还有 2 个红目标，全部 **HEAD 既有**（与本轮计费改动无关）：`upstream_route_selector` 4、`postgres_payment_intent_runtime_sql_contract` 2。第 9 轮把原来的第 3 个红目标修掉了：`--lib` 的 `every_capability_binds_only_to_a_declared_vendor_native_endpoint` 之所以报 `gemini.video_task_query`，是**测试的 poll-surface 白名单漏了这一条**（该端点确实是 `gemini.video_generation` 的轮询面，`GET /v1beta/models/{model}/operations/{operationId}`，没有任何模型声明 `task_query` capability），补进白名单后 `--lib` 全绿（第 17 轮起为 **583/583**，含 4 条 provider_request 单测）。这不是计费缺陷，但"声明了却永远无法被描述符绑定"会出现在商业审计里，所以同轮修掉。**注意 `verify.yml` 不跑 `cargo test`**（只 clippy/audit/deny/SBOM），所以"green verify gate"不能当作测试基线。
+第 23 轮基线：**58 个计费 target / 409 passed / 0 failed**（历史分项快照：形态 15 + 逐接口媒体数量 17 + 逐接口流式数量 16 + 逐模态单价 OpenAI 5 + 逐模态单价 Google 7 + 可结算性守卫 35 + 图像档位 5 + 缓存写入档位 4 + 上下文分档 7 + 缓存读模态 4 + Alibaba 缓存 4 + 缓存缺价回退 3 + 家族数量 11 + 目录改写 5 + 预扣 12 + 音乐兜底 2 + 就绪计数 1 + 空结果 waive 4 + 业务失败 waive 7 + 服务端工具 1 + 向量库检索 1 + 向量库存储 3 + 批 embedding 1 + DeepSeek web tools 2 + 既有计费/契约/分类/payload；新增用例已计入 409）。edge-runtime `--lib` **100 passed**（流式传输层 + 流式协议映射 + usage-only chunk 过滤 5 条 + BillingUnavailable 501 映射 1 条 + hold TTL 1 条 + 过期 hold 分类 1 条）。`--lib openai_usage` **12 passed**（中继侧输入量口径）。router-service 全量 **171 个 target / 1770 passed / 6 failed**，6 条全部 **HEAD 既有**（与本轮计费改动无关）：`upstream_route_selector` 4（价格门禁已移到 preflight，测试未同步）、`postgres_payment_intent_runtime_sql_contract` 2（退款 SQL 列已变更，测试未同步）。**注意 `verify.yml` 不跑 `cargo test`**（只 clippy/audit/deny/SBOM），所以"green verify gate"不能当作测试基线。
 
 ### 变异自证（三层）
 

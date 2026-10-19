@@ -762,6 +762,19 @@ fn streaming_usage_body_from_event(mut event: Value) -> Option<Value> {
         return Some(usage_body);
     }
 
+    // Assistants (`thread.run.*`) and the newer event envelopes put the
+    // completed object under `data`: {"event":"thread.run.completed",
+    // "data":{...,"usage":{"prompt_tokens":N,...}}}. Only the terminal event
+    // carries usage, so without this branch a streaming run settles purely from
+    // the output-text estimate and drops the prompt half entirely.
+    if let Some(usage_body) = event
+        .get_mut("data")
+        .and_then(Value::as_object_mut)
+        .and_then(take_usage_body)
+    {
+        return Some(usage_body);
+    }
+
     event
         .get_mut("response")
         .and_then(Value::as_object_mut)
@@ -1019,6 +1032,24 @@ fn extract_response_body_usage(invocation: &mut Invocation) -> Result<(), Invoca
         BillingMode::Character => vec![character_line(&meter, invocation)?],
         BillingMode::AudioSecond => vec![audio_line(&meter, invocation)?],
         BillingMode::VideoSecond => vec![video_line(&meter, invocation)?],
+        BillingMode::Storage => match storage_line(&meter, invocation)? {
+            Some(line) => vec![line],
+            // A present, explicit zero-byte count is a real empty object: there
+            // is nothing to charge, but it is not an accounting failure either.
+            // Waive it like a zero-result media call so the reservation is
+            // released instead of failing settlement.
+            None => {
+                invocation.charging.waived = Some("provider_reported_zero_storage".to_owned());
+                tracing::info!(
+                    stage = "billing_waived",
+                    api_code = %invocation.resource.api_code,
+                    request_id = %invocation.request.request_id,
+                    meter = %meter.code(),
+                    "provider reported zero stored bytes; the storage charge is waived"
+                );
+                return Ok(());
+            }
+        },
         _ => vec![generic_line(&meter, invocation)?],
     };
     for line in lines {
@@ -2083,6 +2114,43 @@ fn video_line(
     measured_line(meter, quantity)
 }
 
+/// One storage day for a file/object, using the vendor-reported byte count.
+/// `usage_bytes` is the OpenAI vector-store file field; `bytes`/`size_bytes`
+/// cover the object-storage shapes. The first day is prepaid at ingestion;
+/// a recurring daily worker is a separate follow-up for long-lived files.
+///
+/// The byte count is **required** on a storage-metered route. Defaulting a
+/// missing field to `0` is indistinguishable from a legitimately empty file,
+/// so an upstream shape change would silently turn paid storage into a free
+/// ingestion. A missing measurement surfaces as an accounting failure instead;
+/// an explicit `0` is returned as `None` and waived (nothing to charge).
+fn storage_line(
+    meter: &BillingMeter,
+    invocation: &Invocation,
+) -> Result<Option<InvocationUsageLine>, InvocationError> {
+    let body = response_body(invocation)?;
+    let bytes = integer_field(&body, &["usage_bytes", "bytes", "size_bytes"])
+        .ok_or_else(|| {
+            usage_error(format!(
+                "storage-metered {} response carried no usage_bytes/bytes/size_bytes field",
+                invocation.resource.api_code
+            ))
+        })?
+        .max(0);
+    if bytes == 0 {
+        return Ok(None);
+    }
+    let gb = DecimalValue::parse(&bytes.to_string())
+        .map_err(|error| usage_error(error.to_string()))?
+        .checked_divide(
+            DecimalValue::parse("1000000000").map_err(|error| usage_error(error.to_string()))?,
+        )
+        .map_err(|error| usage_error(error.to_string()))?;
+    let quantity = GatewayUsageQuantity::for_meter(meter.clone(), gb.to_fixed_string(12))
+        .map_err(|error| usage_error(error.to_string()))?;
+    Ok(Some(InvocationUsageLine::new(meter.clone(), quantity)))
+}
+
 fn generic_line(
     meter: &BillingMeter,
     invocation: &Invocation,
@@ -2816,6 +2884,40 @@ mod tests {
             Some(42),
             usage
                 .pointer("/usage/output_tokens")
+                .and_then(|v| v.as_i64())
+        );
+    }
+
+    #[test]
+    fn assistants_streaming_terminal_event_bills_prompt_and_completion_tokens() {
+        // Assistants 的流式事件把 Run 对象放在 `data` 里，usage 只在终态
+        // `thread.run.completed` 出现。此前抽取器只认顶层 / `message` /
+        // `response`，整条流的 prompt token 会被丢掉，只剩文本估算。
+        let mut accumulator =
+            StreamingUsageAccumulator::new(StreamingUsageFormat::ServerSentEvents);
+        accumulator
+            .observe(
+                b"event: thread.run.created\n\
+                  data: {\"id\":\"run_1\",\"object\":\"thread.run\",\"status\":\"queued\"}\n\n\
+                  event: thread.message.delta\n\
+                  data: {\"id\":\"msg_1\",\"object\":\"thread.message.delta\"}\n\n\
+                  event: thread.run.completed\n\
+                  data: {\"id\":\"run_1\",\"object\":\"thread.run\",\"status\":\"completed\",\
+                  \"usage\":{\"prompt_tokens\":100,\"completion_tokens\":20,\"total_tokens\":120}}\n\n",
+            )
+            .unwrap();
+
+        let usage = accumulator.finish().unwrap().expect("terminal run usage");
+        assert_eq!(
+            Some(100),
+            usage
+                .pointer("/usage/prompt_tokens")
+                .and_then(|v| v.as_i64())
+        );
+        assert_eq!(
+            Some(20),
+            usage
+                .pointer("/usage/completion_tokens")
                 .and_then(|v| v.as_i64())
         );
     }
