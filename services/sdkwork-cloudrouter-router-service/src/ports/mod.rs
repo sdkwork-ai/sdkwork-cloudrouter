@@ -1,7 +1,11 @@
 mod admin_ai_resource_store;
 mod admin_user_store;
+mod async_usage_poll_transport;
 mod async_usage_task_store;
 pub use admin_user_store::{AdminUserApiKeyItem, AdminUserSubject};
+pub use async_usage_poll_transport::{
+    AsyncPollFuture, AsyncPollRequest, AsyncPollResponse, AsyncUsagePollTransport,
+};
 pub use async_usage_task_store::{task_kind_for_route, AsyncUsageTaskFuture, AsyncUsageTaskStore};
 pub use billing_subject_resolver::{
     BillingSubjectError, BillingSubjectFuture, BillingSubjectResolver, BillingSubjectSource,

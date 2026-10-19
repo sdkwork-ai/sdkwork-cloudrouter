@@ -10,6 +10,8 @@
 >
 > **2026-10-19 第 10–22 轮补充**：新增 2.22（token 计价的二进制语音合成必须在派发前拒单）、2.23（批量提交在结果回收前必须拒单）、2.24（`background: true` 在用量回填前必须拒单）、2.25（实时语音在 WebSocket 代理落地前必须拒单）、2.26（图像单档位费率必须可解析）、2.27（Anthropic 缓存写入必须按 TTL 档位计价）、2.28（上下文分档 token 费率必须可解析）、2.29（缓存读必须按逐行模态计价）、2.30（Alibaba 显式/隐式缓存读必须可区分）、2.31（输入侧预扣取最高价不求和）、2.32（累计上界档位词汇）、2.33（流式 Chat 必须索取 usage）、2.34（usage-only chunk 不透传）、2.35（图像输入模式档位）、2.36（管理面归 Free）、2.37（OpenAI 管理/CRUD 归 Free）、2.38（异步轮询归 Free）、2.39（管理面几个"过度排除"的端点归 Free）、2.40（Responses 压缩按 token 计费）、2.41（音效按分钟计费已生效）、2.42（容器文件归 Free）、2.43（未定价按次端点不得静默免费）、2.44（音乐时长兜底歧义显式化）、2.45（就绪计数锁 165/176）、2.46（零产出必须 waive）、2.47（2xx 业务失败必须 waive）、2.48（中断流补输入估算）、2.49（服务端工具按次计费）、2.50（异步对账表与数据库初始化）、2.51（向量库检索按次计费）、2.52（异步对账 store）、2.53（批 embedding 按请求 token 估算）、2.54（DeepSeek web tools 按成功请求计费）、2.55（异步注册器）、2.56（异步 worker 编排）、2.57（货币→Token Bank 严格换算）、2.58（hold 原子捕获）、2.59（厂商时段价）、2.60（计费未就绪返回 501）、2.61（Code Interpreter 会话计费）、2.62（Anthropic web search 按次）、2.63（预扣 hold TTL 可配置）与二十四个测试文件（5+5+6+6+5+4+7+4+4+4+3+2+1+1+2+2+4+4+1+1+1+1+1+1 个用例，另在 precharge 文件新增 2 条、provider_request 单测 4 条、stream 过滤单测 5 条、usage_extraction 单测 5 条、async registrar 单测 2 条、async worker 单测 3 条、account hold 单测 2 条、overage split 单测 1 条、time-window 单测 3 条、BillingUnavailable 单测 1 条）。回归合计 **287** 个计费用例 + router-service `--lib` **598** 个单测全绿 + edge-runtime `--lib` **99** 个单测全绿。
 
+> **2026-10-19 第 27 轮补充**：新增 2.73（异步轮询执行器核心 `ProviderAsyncUsageExecutor` + `AsyncUsagePollTransport` 端口：账号/凭证解析、状态机判定、404/429/5xx 分流、batch 明确未实现）。router lib **614**。
+>
 > **2026-10-19 第 26 轮补充**：新增 2.72（异步创建注册拦截器 + 可轮询路径 `pollPath`；创建失败不登记、缺 id/thread id 失败关闭）。router lib **607**。
 >
 > **2026-10-19 第 25 轮补充**：新增 2.71（异步任务完成态计价/扣费核心 `ReplayAsyncUsageSettler`：完成时重新定价 + postpaid 单笔扣费 + 幂等重放 + 无用量失败关闭；任务表 metadata 持久化创建期上下文）。基线 **60 个计费 target / 418 passed**、router lib **602**。
@@ -1599,7 +1601,34 @@ micro 单笔后扣；重放复用同一 request id；无用量失败关闭）+ w
 不登记；thread run 登记出完整轮询路径；400 响应不登记；缺 thread id 失败关闭。
 
 仍缺 `AsyncUsageTaskExecutor`（HTTP 轮询）与 runtime 启动/接线，因此异步面继续
-fail-closed。
+fail-closed。执行器核心见 2.73。
+
+### 2.73 异步轮询执行器：状态机与传输分离
+
+`AsyncUsageTaskExecutor` 的实现拆成两半：
+
+- **状态解释（本轮，`ProviderAsyncUsageExecutor`）**：按任务
+  `metadata.pollPath` 读上游；用 `shared_upstream_account_routes()` 找回创建任务的
+  账号（supplier + account_id 必须同时匹配，找不到即失败关闭），解析
+  `secret_ref`（有凭证但没配 resolver 也失败关闭，不能匿名轮询）；把 provider
+  状态映射成 `Pending` / `Completed` / `Failed`：
+  - Responses：`completed` 完成；`failed/cancelled/incomplete` 终结失败；
+  - Thread run：`completed` 完成；`failed/cancelled/expired` 终结失败；
+    `requires_action` 仍是 `Pending`（等 `submit_tool_outputs`）；
+  - HTTP 语义：`404` ⇒ 终结失败（对象不存在，永远不会产生用量）；`429`/`5xx`
+    ⇒ `Pending`（下次重试）；其余非 2xx ⇒ 错误（配置/契约问题，任务保持可见）；
+  - **batch 明确未实现**：用量在结果文件里，batch 对象本身不含 per-request usage；
+    返回错误让任务保持可见，绝不用一个不含用量的对象走结算（创建面仍被预检拒单）。
+- **传输（`AsyncUsagePollTransport` 端口）**：请求携带账号 base_url/auth
+  profile/凭证与路径，由宿主实现 HTTP/TLS/代理/出站策略/超时/响应体上限。这样
+  轮询不会另开一条绕过既有出站安全策略的 HTTP 路径；测试用假 transport 覆盖状态
+  机，无需网络。
+
+回归（router `--lib` 7 条）：completed 就绪、四种运行态保持 pending、三种终结
+失败、404/429/5xx 分流、缺 `pollPath` 失败关闭、未知账号失败关闭、batch 未实现。
+
+仍缺：edge-runtime 的 `AsyncUsagePollTransport` 实现（复用现有 dispatcher/出站
+策略）与 runtime 启动接线；5 个异步 operation 继续 fail-closed。
 
 ## 四、5 个"无专属计量单位且仍不可售"端点（已登记）
 
@@ -1657,6 +1686,7 @@ fail-closed。
 | `tests/billing_token_bank_flow.rs` | **扣费链路行为**：冻结 → 捕获 → 部分/超额 → 余额不足 402 → 失败释放 → 应收标记，全部断言账户侧金额与动作 |
 | `tests/async_usage_settlement.rs` + worker 单测 | **异步完成态结算**：完成时重新定价、单笔 postpaid、任务幂等键重放、无用量失败关闭、结算失败重排 |
 | `async_usage_registration` 单测（5 条） | **异步创建入队**：background/thread run 登记 + `pollPath`、同步与失败创建不登记、缺 thread id 失败关闭 |
+| `provider_async_usage_executor` 单测（7 条） | **异步轮询状态机**：完成/运行/失败、404/429/5xx 分流、缺 pollPath/未知账号失败关闭、batch 未实现 |
 | `tests/billing_batch_embed.rs` | **批 embedding 估算**：响应无 usage 时按 `requests[].content.parts[].text` 估算 `embedding_input_token`，2 token ⇒ $0.000002 |
 | `tests/billing_deepseek_web_tools.rs` | **DeepSeek web tools**：search/fetch 各一次成功请求 = 一条 `api_request`（5 CNY/1k，global $0.00075/次） |
 | `tests/billing_music_duration_fallback.rs` | **音乐时长兜底**：不声明时长 = 1 秒 / $0.02；声明 180 秒 = $3.60。兜底值变更必须先确认目录语义 |

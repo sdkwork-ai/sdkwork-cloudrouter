@@ -30,7 +30,7 @@ pub type AsyncUsagePollFuture<'a> =
 /// Provider-specific poller. The worker owns leasing/state transitions; the
 /// executor only talks to one provider and returns the reported usage.
 pub trait AsyncUsageTaskExecutor: Send + Sync {
-    fn poll(&self, task: &AsyncUsageTask) -> AsyncUsagePollFuture<'_>;
+    fn poll<'a>(&'a self, task: &'a AsyncUsageTask) -> AsyncUsagePollFuture<'a>;
 }
 
 /// Claim → poll → settle/reschedule/expire loop.
@@ -150,7 +150,7 @@ mod tests {
     }
 
     impl AsyncUsageTaskExecutor for FixedExecutor {
-        fn poll(&self, _task: &AsyncUsageTask) -> AsyncUsagePollFuture<'_> {
+        fn poll<'a>(&'a self, _task: &'a AsyncUsageTask) -> AsyncUsagePollFuture<'a> {
             Box::pin(async move { Ok(self.result.lock().unwrap().clone()) })
         }
     }

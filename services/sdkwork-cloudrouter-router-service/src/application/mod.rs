@@ -30,6 +30,7 @@ mod payment_reconciliation_runtime;
 mod payment_reconciliation_worker;
 mod payment_refund_runtime;
 mod paypal_payment_adapter;
+mod provider_async_usage_executor;
 mod route_selection_diagnostics;
 mod route_strategy;
 mod runtime_stream_bus;
@@ -188,6 +189,7 @@ pub use payment_reconciliation_runtime::{
     RuntimeImportPaymentStatementCommand, RuntimeImportPaymentStatementItemCommand,
     RuntimeReconciliationLedgerEntry,
 };
+pub use provider_async_usage_executor::ProviderAsyncUsageExecutor;
 
 pub use billing_subject_cache::{BillingSubjectCacheMetrics, CachedBillingSubjectResolver};
 #[cfg(test)]

@@ -83,6 +83,7 @@
 | Token Bank 行为回归 | `tests/billing_token_bank_flow.rs`：冻结 → 捕获 → 超额 → 余额不足 402 → 失败释放 → 应收标记，全部断言账户侧金额与动作 |
 | 异步完成态结算 | `tests/async_usage_settlement.rs` + worker 单测：完成时重新定价、单笔 postpaid、任务幂等键重放、无用量失败关闭、结算失败重排 |
 | 异步创建入队 | `async_usage_registration` 单测（5 条）：background / thread run 登记 + 可轮询 `pollPath`；同步与失败创建不登记；缺 thread id 失败关闭 |
+| 异步轮询状态机 | `provider_async_usage_executor` 单测（7 条）：完成/运行/失败、404/429/5xx 分流、缺 pollPath/未知账号失败关闭、batch 未实现 |
 | Assistants 流式用量 | `usage_extraction` 单测：`thread.run.completed.data.usage` 的输入/输出 token 必须进入结算用量 |
 
 每条锁都有"关掉实现 → 指定用例转红、对照保持绿"的变异证据，记录在主审计文档
@@ -181,7 +182,7 @@ fail-closed 或留给下一轮，不凭空收费。
 | 项 | 结果 |
 | --- | --- |
 | 计费 test target | **60 个 target / 418 passed / 0 failed** |
-| router-service `--lib` | **607 passed** |
+| router-service `--lib` | **614 passed** |
 | router-service 全量 | **171 个 target / 1770 passed / 6 failed（全部 HEAD 既有，与计费无关）** |
 | edge-runtime `--lib` | **100 passed** |
 | 既有红目标（非计费） | `upstream_route_selector` 4（价格门禁已移到 preflight，测试未同步）、`postgres_payment_intent_runtime_sql_contract` 2（退款 SQL 列已变更，测试未同步） |
