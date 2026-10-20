@@ -30,7 +30,7 @@
 >
 > **2026-10-19 第 24 轮补充**：新增 2.70（Token Bank 扣费链路行为级回归 `billing_token_bank_flow`，5 条：冻结/捕获/超额/402/释放/应收）。基线 **59 个计费 target / 415 passed**。
 >
-> **2026-10-19 第 23 轮补充**：新增 2.64（vector store 首日存储，166/176）、2.65（存储字节数缺失必须 fail-closed、显式 0 字节 waive）、2.66（结算时 hold 已过期 ⇒ 按 ledger 追收，不再丢单）、2.67（Assistants 流式的 usage 在 `data` 下，必须读取终态事件）、2.68（Threads runs 带 `model` 时是 token 计费，不是永远不可售）、2.69（预付超额扣费失败写成待收应收，不得被 worker 当成已结算）。同时修正 `invocation_classification` 的 DeepSeek 工具 SKU 断言（分类器已绑定 `deepseek/web_tools`）。完整计数见第六节回归矩阵。
+> **2026-10-19 第 23 轮补充**：新增 2.64（vector store 首日存储，166/172）、2.65（存储字节数缺失必须 fail-closed、显式 0 字节 waive）、2.66（结算时 hold 已过期 ⇒ 按 ledger 追收，不再丢单）、2.67（Assistants 流式的 usage 在 `data` 下，必须读取终态事件）、2.68（Threads runs 带 `model` 时是 token 计费，不是永远不可售）、2.69（预付超额扣费失败写成待收应收，不得被 worker 当成已结算）。同时修正 `invocation_classification` 的 DeepSeek 工具 SKU 断言（分类器已绑定 `deepseek/web_tools`）。完整计数见第六节回归矩阵。
 
 ## 一句话结论
 
@@ -223,7 +223,7 @@ _ => 1,
 抽取层对这两个数量来源是 `Ok(())`（不产行），结算层见空行直接 `return Ok(())`。两句合起来：**谁把某路由声明成它们，该路由就永久免单，且上线不报错**——上游花了钱，账上一分不记。
 
 `RequestBody` 已在 2.53 实现（Gemini `batchEmbedContents` 按请求文本估算
-embedding token）；`ResponseHeaders` 仍无实现，当前 176 个 operation 也没有
+embedding token）；`ResponseHeaders` 仍无实现，当前 172 个 operation 也没有
 任何计费路由声明它。源码在 `ResponseHeaders` 分支保留显式警示注释，
 `billable_operations_never_declare_an_unimplemented_quantity_source` 继续把它
 判红，逼改动方先实现抽取分支。
@@ -1174,7 +1174,7 @@ worker 仍未实现：表只提供幂等落点，上述入口继续 fail-closed�
 3. **锁**：`tests/billing_vector_store_search.rs` 走完整
    identity → preflight → extraction → finalization → settlement，断言一次 search
    产生一条 `api_request`、数量 1、金额 `$0.002500000000`；矩阵计数锁改为
-   166/176，`UNPRICED_PER_CALL` 5 条 + `PRICED_PER_CALL` 3 条。
+   166/172，`UNPRICED_PER_CALL` 5 条 + `PRICED_PER_CALL` 3 条。
 
 未做：`/file_batches` 的摄取仍按次未定价（响应没有字节数，需逐文件读取的
 worker）；`/files` 已按 `storage_gb_day` 收首日存储（2.64）；`/search` 的响应
@@ -1810,7 +1810,7 @@ fail-closed 的原因不是"没有用量"，而是**用量不在响应里**：�
 
 | 测试 | 锁住什么 |
 | --- | --- |
-| `tests/openapi_billing_matrix.rs` + `tests/golden/openapi_billing_matrix.tsv` | **形态**：176 个 operation 各自按什么单位计费（路由声明层） |
+| `tests/openapi_billing_matrix.rs` + `tests/golden/openapi_billing_matrix.tsv` | **形态**：172 个 operation 各自按什么单位计费（路由声明层） |
 | `tests/billing_quantity_families.rs` | **数量**：这个单位量出多少（每个家族一条真实上游响应） |
 | `tests/billing_catalog_resolution.rs` | **目录改写**：目录把计量单位改掉之后，形态与数量都跟着改对 |
 | `tests/billing_precharge_estimate.rs` | **预扣下界**：派发前冻结的金额 == 请求声明的量 × 单价 |
