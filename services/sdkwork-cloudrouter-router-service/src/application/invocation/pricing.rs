@@ -963,13 +963,15 @@ fn binary_audio_synthesis_without_usage(invocation: &Invocation) -> bool {
 /// 只匹配创建动作的精确路径：`POST /v1/batches/{id}/cancel` 与各类 GET 轮询
 /// 不产生新的上游 token 成本，必须继续放行，否则客户连取消/查询都做不了。
 fn unmetered_vector_store_ingestion(invocation: &Invocation) -> bool {
-    // `/files` is storage byte-day and now billable; `/file_batches` has no
-    // byte count in its response, so it stays fail-closed until a batch
-    // storage worker can read each file object.
+    // `/files` is storage byte-day and billable from its response. `/file_batches`
+    // has no byte count in its response: it is accepted only while the async
+    // worker can later read each file object and charge storage; otherwise it
+    // stays fail-closed.
     let path = invocation.request.path.as_str();
     invocation.request.method == axum::http::Method::POST
         && path.starts_with("/v1/vector_stores/")
         && path.ends_with("/file_batches")
+        && !async_usage_reconciliation_enabled()
 }
 
 /// `POST /v1/batches` 与 `POST /anthropic/v1/messages/batches`。
@@ -1492,6 +1494,68 @@ mod tests {
             .await
             .expect("policy");
         assert_eq!(BillingMode::Free, invocation.billing.mode);
+
+        match previous {
+            Some(value) => std::env::set_var(KEY, value),
+            None => std::env::remove_var(KEY),
+        }
+    }
+
+    fn file_batch_invocation() -> Invocation {
+        use crate::application::{
+            InvocationClassificationRequest, InvocationRequest, InvocationResourceClassifier,
+            OpenAiResourceClassifier,
+        };
+        let path = "/v1/vector_stores/vs_1/file_batches";
+        let classification = OpenAiResourceClassifier
+            .classify(&InvocationClassificationRequest::new(
+                axum::http::Method::POST,
+                path,
+            ))
+            .expect("classify file batch create");
+        let (resource, billing, routing) = classification.into_parts();
+        let mut invocation = batch_invocation();
+        invocation.request =
+            InvocationRequest::new(axum::http::Method::POST, path).with_request_id("req-file-b");
+        invocation.resource = resource;
+        invocation.billing = billing;
+        invocation.routing = routing;
+        invocation
+    }
+
+    /// 向量库批量摄取同批处理：创建无字节数，只有 worker 启用时按 Free 放行，
+    /// 完成态再按批内文件字节计存储费；关闭时创建仍是按次并被守卫拒单。
+    #[tokio::test]
+    async fn file_batch_create_is_free_only_while_reconciliation_is_enabled() {
+        use crate::application::BillingPolicyInterceptor;
+
+        let _guard = ASYNC_ENV_LOCK.lock().expect("async env lock");
+        const KEY: &str = "SDKWORK_CLOUDROUTER_ASYNC_USAGE_WORKER_ENABLED";
+        let previous = std::env::var(KEY).ok();
+
+        std::env::remove_var(KEY);
+        let mut invocation = file_batch_invocation();
+        BillingPolicyInterceptor
+            .before(&mut invocation)
+            .await
+            .expect("policy");
+        assert_eq!(BillingMode::ApiRequest, invocation.billing.mode);
+        assert!(
+            unmetered_vector_store_ingestion(&invocation),
+            "a file batch create must stay fail-closed without the worker"
+        );
+
+        std::env::set_var(KEY, "true");
+        let mut invocation = file_batch_invocation();
+        BillingPolicyInterceptor
+            .before(&mut invocation)
+            .await
+            .expect("policy");
+        assert_eq!(BillingMode::Free, invocation.billing.mode);
+        assert!(
+            !unmetered_vector_store_ingestion(&invocation),
+            "the worker-enabled deployment accepts the deferred create"
+        );
 
         match previous {
             Some(value) => std::env::set_var(KEY, value),

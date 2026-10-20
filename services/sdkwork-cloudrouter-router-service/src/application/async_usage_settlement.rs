@@ -89,31 +89,41 @@ where
             .or_else(|| metadata_string(metadata, "path").map(str::to_owned))
             .unwrap_or_else(|| default_poll_path(task));
         let model = target
-            .map(|target| target.model.clone())
+            .and_then(|target| target.model.clone())
             .or_else(|| metadata_string(metadata, "model").map(str::to_owned))
             .or_else(|| {
                 task.catalog_key
                     .as_deref()
                     .and_then(|key| key.split_once('/').map(|(_, model)| model.to_owned()))
-            })
-            .ok_or_else(|| {
-                DomainError::new("async usage settlement requires the requested model")
-            })?;
+            });
 
         let classification = classify(&method, &path, &task.supplier_code)?;
         let (mut resource, billing, routing) = classification.into_parts();
-        resource.requested_model = Some(model.clone());
+        // A storage-metered target (vector-store ingestion) does not name a
+        // model; model-metered targets must.
+        let model_optional =
+            resource.model_requirement == crate::domain::AiRouteModelRequirement::Ignored;
+        if !model_optional && model.is_none() {
+            return Err(DomainError::new(
+                "async usage settlement requires the requested model",
+            ));
+        }
+        resource.requested_model = model.clone();
         resource.requested_model_catalog_key = target
             .and_then(|target| target.catalog_key.clone())
             .or_else(|| task.catalog_key.clone());
 
+        let body = model
+            .clone()
+            .map(|model| json!({ "model": model }))
+            .unwrap_or_else(|| json!({}));
         let request_id = target
             .map(|target| target.request_id.clone())
             .unwrap_or_else(|| task.billing_request_id());
         let mut invocation = Invocation::new(
             InvocationRequest::new(method, path)
                 .with_request_id(request_id.clone())
-                .with_body(InvocationBody::json(json!({ "model": model }))),
+                .with_body(InvocationBody::json(body)),
             InvocationSubject {
                 auth_type: InvocationAuthType::GatewayApiKey,
                 api_key_id: Some(task.api_key_id),
@@ -172,6 +182,9 @@ where
         Box::pin(async move {
             if let Some(rows) = snapshot.get("batchUsage").and_then(Value::as_array) {
                 return self.settle_batch(task, rows).await;
+            }
+            if let Some(bytes) = snapshot.get("storageBytes").and_then(Value::as_i64) {
+                return self.settle_storage(task, bytes).await;
             }
             let invocation = self.invocation(task, None)?;
             self.settle_invocation(invocation, snapshot).await
@@ -300,7 +313,7 @@ where
                 .into_iter()
                 .next();
             let target = SettleTarget {
-                model: model.to_owned(),
+                model: Some(model.to_owned()),
                 catalog_key,
                 path: path.to_owned(),
                 request_id: format!("{}:{}:{}", task.billing_request_id(), model, kind.as_str()),
@@ -310,12 +323,60 @@ where
         }
         Ok(())
     }
+
+    /// Settles a completed vector-store file batch as one storage charge.
+    ///
+    /// Ingestion is billed by the bytes it puts into the store, so the synthetic
+    /// settlement call is a `POST /v1/vector_stores/{store}/files` carrying the
+    /// summed `usage_bytes`; the storage meter then prices GB-day exactly like a
+    /// single-file attach.
+    async fn settle_storage(&self, task: &AsyncUsageTask, bytes: i64) -> DomainResult<()> {
+        if bytes <= 0 {
+            return Err(DomainError::new(
+                "async storage settlement requires a positive byte count",
+            ));
+        }
+        let path = vector_store_files_path(task)?;
+        let target = SettleTarget {
+            // The OpenAI vector-store surface prices through the `vector-stores`
+            // tool SKU; naming it lets the identity resolver pick the catalog
+            // key instead of hardcoding a key in the settler.
+            model: Some("vector-stores".to_owned()),
+            catalog_key: None,
+            path,
+            request_id: format!("{}:storage", task.billing_request_id()),
+        };
+        let invocation = self.invocation(task, Some(&target))?;
+        self.settle_invocation(invocation, &json!({ "usage_bytes": bytes }))
+            .await
+    }
+}
+
+/// `/v1/vector_stores/{store}/files` from a stored file-batch create path.
+fn vector_store_files_path(task: &AsyncUsageTask) -> DomainResult<String> {
+    let path = task
+        .metadata
+        .as_ref()
+        .and_then(|metadata| metadata.get("path"))
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let store_id = path
+        .strip_prefix("/v1/vector_stores/")
+        .and_then(|rest| rest.strip_suffix("/file_batches"))
+        .map(str::trim)
+        .filter(|store_id| !store_id.is_empty())
+        .ok_or_else(|| {
+            DomainError::new(format!(
+                "async storage settlement cannot derive the vector store from {path:?}"
+            ))
+        })?;
+    Ok(format!("/v1/vector_stores/{store_id}/files"))
 }
 
 /// Per-row pricing context for a batch: which endpoint, model and idempotency
 /// key the completion charge uses.
 struct SettleTarget {
-    model: String,
+    model: Option<String>,
     catalog_key: Option<String>,
     path: String,
     request_id: String,

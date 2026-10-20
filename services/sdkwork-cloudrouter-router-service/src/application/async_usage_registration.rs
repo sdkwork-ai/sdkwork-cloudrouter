@@ -155,6 +155,14 @@ struct PendingAsyncTask {
     poll_path: String,
 }
 
+/// Vector-store id from `POST /v1/vector_stores/{store}/file_batches`.
+fn vector_store_file_batch_id(path: &str) -> Option<&str> {
+    path.strip_prefix("/v1/vector_stores/")?
+        .strip_suffix("/file_batches")
+        .map(str::trim)
+        .filter(|store_id| !store_id.is_empty())
+}
+
 /// Identifies a successful asynchronous create and its pollable read path.
 ///
 /// `Ok(None)` means "not an asynchronous creation route" and is the common
@@ -163,15 +171,25 @@ struct PendingAsyncTask {
 fn pending_async_task(
     invocation: &Invocation,
 ) -> Result<Option<PendingAsyncTask>, InvocationError> {
-    if invocation.request.method != Method::POST || !invocation.billing.settlement_required {
+    if invocation.request.method != Method::POST {
         return Ok(None);
     }
+    // No `settlement_required` gate here: a deferred create is deliberately
+    // Free at creation (the charge happens at completion), so requiring a
+    // settlement flag would skip registration and silently leave the call
+    // unbilled. The match below is the only allow-list.
     let path = invocation.request.path.as_str();
     let api_code = invocation.resource.api_code.as_str();
     let kind = match (api_code, path) {
         ("openai.batches", "/v1/batches") => AsyncUsageTaskKind::OpenAiBatch,
         ("anthropic.batches", "/anthropic/v1/messages/batches") => {
             AsyncUsageTaskKind::AnthropicBatch
+        }
+        ("openai.vector_stores", path) if vector_store_file_batch_id(path).is_some() => {
+            // File-batch ingestion has no byte count in its create response; the
+            // completion carries per-file usage_bytes, so it reconciles as an
+            // OpenAiBatch-shaped task over the vector-store file objects.
+            AsyncUsageTaskKind::OpenAiBatch
         }
         ("openai.responses", "/v1/responses") if background_requested(invocation) => {
             AsyncUsageTaskKind::BackgroundResponse
@@ -206,7 +224,10 @@ fn pending_async_task(
         .to_owned();
 
     let poll_path = match kind {
-        AsyncUsageTaskKind::OpenAiBatch => format!("/v1/batches/{upstream_id}"),
+        AsyncUsageTaskKind::OpenAiBatch => match vector_store_file_batch_id(path) {
+            Some(store_id) => format!("/v1/vector_stores/{store_id}/file_batches/{upstream_id}"),
+            None => format!("/v1/batches/{upstream_id}"),
+        },
         AsyncUsageTaskKind::AnthropicBatch => {
             format!("/anthropic/v1/messages/batches/{upstream_id}")
         }
@@ -377,6 +398,51 @@ mod tests {
                 .metadata
                 .as_ref()
                 .and_then(|metadata| metadata.get("pollPath"))
+                .and_then(|value| value.as_str())
+        );
+    }
+
+    #[tokio::test]
+    async fn a_file_batch_create_registers_with_a_file_batch_poll_path() {
+        let store = Arc::new(InMemoryAsyncUsageTaskStore::new());
+        let mut invocation = async_creation(
+            "/v1/vector_stores/vs_1/file_batches",
+            "openai.vector_stores",
+            serde_json::json!({"file_ids": ["file_1"]}),
+        );
+        invocation.dispatch =
+            InvocationDispatch::json_response(200, serde_json::json!({"id": "fb_1"}));
+
+        AsyncUsageRegistrationInterceptor::new(store.clone())
+            .after(&mut invocation)
+            .await
+            .expect("register");
+
+        let claimed = store
+            .claim_due(
+                chrono::Utc::now() + chrono::Duration::seconds(1),
+                10,
+                chrono::Duration::seconds(30),
+            )
+            .await
+            .expect("claim");
+        assert_eq!(1, claimed.len());
+        assert_eq!("fb_1", claimed[0].upstream_id);
+        assert_eq!(
+            Some("/v1/vector_stores/vs_1/file_batches/fb_1"),
+            claimed[0]
+                .metadata
+                .as_ref()
+                .and_then(|metadata| metadata.get("pollPath"))
+                .and_then(|value| value.as_str()),
+            "the poll path must target the file-batch status route"
+        );
+        assert_eq!(
+            Some("/v1/vector_stores/vs_1/file_batches"),
+            claimed[0]
+                .metadata
+                .as_ref()
+                .and_then(|metadata| metadata.get("path"))
                 .and_then(|value| value.as_str())
         );
     }

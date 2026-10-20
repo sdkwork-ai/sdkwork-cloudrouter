@@ -413,7 +413,14 @@ fn openai_management_is_free(invocation: &Invocation) -> bool {
     }
     if path == "/v1/vector_stores" || path.starts_with("/v1/vector_stores/") {
         if path.contains("/file_batches") || path.ends_with("/search") {
-            return method == "GET" || path.ends_with("/cancel");
+            // 批量摄取创建本身没有可定价的响应用量：字节数要等批处理完成、读取
+            // 批内文件对象后才知道。只有对账 worker 启用时才按 Free 放行，完成态
+            // 再按存储字节计费；关闭时仍是 ApiRequest，由预检守卫拒单。
+            return method == "GET"
+                || path.ends_with("/cancel")
+                || (method == "POST"
+                    && path.ends_with("/file_batches")
+                    && super::pricing::async_usage_reconciliation_is_enabled());
         }
         // 更新单个文件的属性不触发摄取/存储，免费；向集合新增文件才计费。
         if method == "POST" && is_single_file_attribute_update(path) {

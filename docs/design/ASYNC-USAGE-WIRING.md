@@ -1,6 +1,6 @@
 # 异步用量对账：runtime 接线执行单
 
-> 状态（第 26 轮）：runtime 装配、worker 启动、入队与预检放行的门控**已完成**；worker 启用时 `background:true` Responses 可按完成态异步扣费。剩余：`file_batches` 的逐文件字节对账（唯一非 vendor 缺失的缺口；midjourney/nano-banana 命名空间已从契约移除）。
+> 状态（第 26 轮）：runtime 装配、worker 启动、入队与预检放行的门控**已完成**；worker 启用时 `background:true` Responses 可按完成态异步扣费。剩余：无未接线的 operation；`file_batches` 已在 2.80 接通，midjourney/nano-banana 命名空间已从契约移除。
 > 关联：[OPENAPI-BILLING-HANDOFF-2026-10-19.md](../audit/OPENAPI-BILLING-HANDOFF-2026-10-19.md) §3.A、
 > [OPENAPI-BILLING-MATRIX-ALIGNMENT-2026-10-18.md](../audit/OPENAPI-BILLING-MATRIX-ALIGNMENT-2026-10-18.md) 2.71–2.77。
 

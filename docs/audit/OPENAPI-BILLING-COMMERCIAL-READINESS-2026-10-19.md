@@ -97,7 +97,7 @@
 ### A. 未定价按次（5）—— 数据项
 
 端点：`POST /v1/batches`、`/v1/threads/runs`、`/v1/threads/{id}/runs`、
-`.../submit_tool_outputs`、`/v1/vector_stores/{id}/file_batches`
+`.../submit_tool_outputs`、`/v1/vector_stores/{id}/file_batches`（后两者在 worker 启用时可按完成态计费）
 （另含 Anthropic batch 创建在 B 类）。`POST /elevenlabs/v1/sound-generation`
 **不属于此列**：它必填 `model_id`，真实请求按 `audio_output_minute` 结算
 （2.41）；`/v1/tools/search|fetch` 已由 DeepSeek 官方 5 CNY/1k 费率关闭（2.54）。
@@ -106,7 +106,7 @@
 `openai/vector-stores` 工具 SKU，按一次 search = 一次 `api_request` 收
 `$2.50/1k`（2.51），不再依赖未定价的 management 路由键。
 `/v1/vector_stores/{id}/files` 也已移出：按 `usage_bytes` 收首日
-`storage_gb_day`（2.64），file_batches 仍缺字节数。
+`storage_gb_day`（2.64）；file_batches 完成态按批内文件字节结算（2.80），仅在 worker 启用时放行创建。
 
 解除条件（sdkwork-models）：为对应 catalog key 发布一条
 `meterCode: "api_request"`、`unitPrice > 0` 的官方费率（或按 B 类改成异步后扣）。
@@ -184,9 +184,9 @@ fail-closed 或留给下一轮，不凭空收费。
 
 | 项 | 结果 |
 | --- | --- |
-| 计费 test target | **62 个 target / 423 passed / 0 failed** |
-| router-service `--lib` | **628 passed** |
-| router-service 全量 | **175 个 target / 1817 passed / 2 failed（payment SQL contract，HEAD 既有，与计费无关）** |
+| 计费 test target | **62 个 target / 424 passed / 0 failed** |
+| router-service `--lib` | **632 passed** |
+| router-service 全量 | **175 个 target / 1822 passed / 2 failed（payment SQL contract，HEAD 既有，与计费无关）** |
 | edge-runtime `--lib` | **100 passed** |
 | 既有红目标（非计费） | `postgres_payment_intent_runtime_sql_contract` 2（退款 SQL 列/状态词汇已变更，测试未同步；支付域，需人工确认后修）。原 `upstream_route_selector` 4 已按新定价契约修正（见主审计 2.75） |
 | clippy（两 crate，`--lib --tests`） | 0 |

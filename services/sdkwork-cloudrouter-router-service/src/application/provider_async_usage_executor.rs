@@ -107,6 +107,76 @@ where
             .await
     }
 
+    /// Reconciles a completed vector-store file batch.
+    ///
+    /// The batch object reports file counts only; the byte usage lives on each
+    /// file object, so completion reads the (Free) batch file list and sums
+    /// `usage_bytes` into one storage charge. Zero bytes is terminal: there is
+    /// nothing to bill and completing with no usage would retry forever.
+    async fn poll_vector_store_file_batch(
+        &self,
+        task: &AsyncUsageTask,
+        account: &UpstreamAccountRoute,
+        secret: Option<String>,
+        store_id: &str,
+        batch_id: &str,
+        response: AsyncPollResponse,
+    ) -> DomainResult<AsyncUsagePoll> {
+        if let Some(poll) = transport_terminal_poll(task, response.status_code) {
+            return Ok(poll);
+        }
+        require_success(&task.upstream_id, response.status_code, "file batch status")?;
+        let body = response.body.ok_or_else(|| {
+            DomainError::new(format!(
+                "file batch poll for {} returned no JSON body",
+                task.upstream_id
+            ))
+        })?;
+        let status = body
+            .get("status")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .trim()
+            .to_ascii_lowercase();
+        match status.as_str() {
+            "completed" => {}
+            "failed" | "cancelled" | "expired" => {
+                return Ok(AsyncUsagePoll::Failed(format!(
+                    "file batch finished with status {status}"
+                )))
+            }
+            _ => return Ok(AsyncUsagePoll::Pending),
+        }
+        let list = self
+            .get(
+                account,
+                secret,
+                format!("/v1/vector_stores/{store_id}/file_batches/{batch_id}/files"),
+            )
+            .await?;
+        if let Some(poll) = transport_terminal_poll(task, list.status_code) {
+            return Ok(poll);
+        }
+        require_success(&task.upstream_id, list.status_code, "file batch file list")?;
+        let list_body = list.body.ok_or_else(|| {
+            DomainError::new(format!(
+                "file batch list for {} returned no JSON body",
+                task.upstream_id
+            ))
+        })?;
+        let bytes = sum_file_usage_bytes(&list_body);
+        if bytes <= 0 {
+            return Ok(AsyncUsagePoll::Failed(format!(
+                "file batch {} ingested no billable bytes",
+                task.upstream_id
+            )));
+        }
+        Ok(AsyncUsagePoll::Completed {
+            usage_snapshot: json!({ "storageBytes": bytes }),
+            billing_request_id: task.billing_request_id(),
+        })
+    }
+
     async fn poll_openai_batch(
         &self,
         task: &AsyncUsageTask,
@@ -306,12 +376,20 @@ where
             let path = poll_path(task)?;
             let account = self.route_for(task)?;
             let secret = self.resolve_secret(&account)?;
-            let response = self.get(&account, secret.clone(), path).await?;
+            let response = self.get(&account, secret.clone(), path.clone()).await?;
             match task.task_kind {
-                AsyncUsageTaskKind::OpenAiBatch => {
-                    self.poll_openai_batch(task, &account, secret, response)
+                AsyncUsageTaskKind::OpenAiBatch => match vector_store_file_batch_target(&path) {
+                    Some((store_id, batch_id)) => {
+                        self.poll_vector_store_file_batch(
+                            task, &account, secret, &store_id, &batch_id, response,
+                        )
                         .await
-                }
+                    }
+                    None => {
+                        self.poll_openai_batch(task, &account, secret, response)
+                            .await
+                    }
+                },
                 AsyncUsageTaskKind::AnthropicBatch => {
                     self.poll_anthropic_batch(task, &account, secret, response)
                         .await
@@ -320,6 +398,35 @@ where
             }
         })
     }
+}
+
+/// `(store_id, batch_id)` from `/v1/vector_stores/{store}/file_batches/{batch}`.
+fn vector_store_file_batch_target(poll_path: &str) -> Option<(String, String)> {
+    let rest = poll_path.strip_prefix("/v1/vector_stores/")?;
+    let (store_id, rest) = rest.split_once("/file_batches/")?;
+    let batch_id = rest.split('/').next().unwrap_or_default();
+    if store_id.is_empty() || batch_id.is_empty() {
+        return None;
+    }
+    Some((store_id.to_owned(), batch_id.to_owned()))
+}
+
+/// Sums `usage_bytes` over a vector-store file list body.
+fn sum_file_usage_bytes(body: &Value) -> i64 {
+    body.get("data")
+        .and_then(Value::as_array)
+        .map(|items| {
+            items
+                .iter()
+                .map(|item| {
+                    item.get("usage_bytes")
+                        .and_then(Value::as_i64)
+                        .unwrap_or(0)
+                        .max(0)
+                })
+                .sum()
+        })
+        .unwrap_or(0)
 }
 
 fn poll_path(task: &AsyncUsageTask) -> DomainResult<String> {
@@ -692,6 +799,81 @@ mod tests {
         let mut task = task(AsyncUsageTaskKind::OpenAiBatch);
         task.metadata = Some(serde_json::json!({"pollPath": "/v1/batches/batch_1"}));
 
+        assert!(matches!(
+            executor.poll(&task).await.expect("poll"),
+            AsyncUsagePoll::Failed(_)
+        ));
+    }
+
+    #[tokio::test]
+    async fn a_completed_file_batch_sums_file_usage_bytes_for_storage() {
+        let transport = FakeTransport::sequence(vec![
+            AsyncPollResponse {
+                status_code: 200,
+                body: Some(serde_json::json!({
+                    "id": "fb_1",
+                    "status": "completed",
+                    "file_counts": {"completed": 2, "failed": 0, "total": 2}
+                })),
+                body_bytes: None,
+            },
+            AsyncPollResponse {
+                status_code: 200,
+                body: Some(serde_json::json!({
+                    "object": "list",
+                    "data": [
+                        {"id": "file_1", "usage_bytes": 1000},
+                        {"id": "file_2", "usage_bytes": 2500}
+                    ]
+                })),
+                body_bytes: None,
+            },
+        ]);
+        let executor = ProviderAsyncUsageExecutor::new(catalog(), transport.clone());
+        let mut task = task(AsyncUsageTaskKind::OpenAiBatch);
+        task.metadata = Some(serde_json::json!({
+            "path": "/v1/vector_stores/vs_1/file_batches",
+            "pollPath": "/v1/vector_stores/vs_1/file_batches/fb_1"
+        }));
+
+        match executor.poll(&task).await.expect("poll") {
+            AsyncUsagePoll::Completed {
+                usage_snapshot,
+                billing_request_id,
+            } => {
+                assert_eq!("async:openai_batch:up_1", billing_request_id);
+                assert_eq!(3500, usage_snapshot["storageBytes"]);
+            }
+            other => panic!("expected completion, got {other:?}"),
+        }
+        assert_eq!(
+            vec![
+                "/v1/vector_stores/vs_1/file_batches/fb_1".to_owned(),
+                "/v1/vector_stores/vs_1/file_batches/fb_1/files".to_owned()
+            ],
+            *transport.paths.lock().unwrap()
+        );
+    }
+
+    #[tokio::test]
+    async fn a_file_batch_with_no_billable_bytes_is_terminal() {
+        let transport = FakeTransport::sequence(vec![
+            AsyncPollResponse {
+                status_code: 200,
+                body: Some(serde_json::json!({"status": "completed"})),
+                body_bytes: None,
+            },
+            AsyncPollResponse {
+                status_code: 200,
+                body: Some(serde_json::json!({"object": "list", "data": []})),
+                body_bytes: None,
+            },
+        ]);
+        let executor = ProviderAsyncUsageExecutor::new(catalog(), transport);
+        let mut task = task(AsyncUsageTaskKind::OpenAiBatch);
+        task.metadata = Some(serde_json::json!({
+            "pollPath": "/v1/vector_stores/vs_1/file_batches/fb_1"
+        }));
         assert!(matches!(
             executor.poll(&task).await.expect("poll"),
             AsyncUsagePoll::Failed(_)

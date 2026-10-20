@@ -10,15 +10,17 @@
 >
 > **2026-10-19 第 10–22 轮补充**：新增 2.22（token 计价的二进制语音合成必须在派发前拒单）、2.23（批量提交在结果回收前必须拒单）、2.24（`background: true` 在用量回填前必须拒单）、2.25（实时语音在 WebSocket 代理落地前必须拒单）、2.26（图像单档位费率必须可解析）、2.27（Anthropic 缓存写入必须按 TTL 档位计价）、2.28（上下文分档 token 费率必须可解析）、2.29（缓存读必须按逐行模态计价）、2.30（Alibaba 显式/隐式缓存读必须可区分）、2.31（输入侧预扣取最高价不求和）、2.32（累计上界档位词汇）、2.33（流式 Chat 必须索取 usage）、2.34（usage-only chunk 不透传）、2.35（图像输入模式档位）、2.36（管理面归 Free）、2.37（OpenAI 管理/CRUD 归 Free）、2.38（异步轮询归 Free）、2.39（管理面几个"过度排除"的端点归 Free）、2.40（Responses 压缩按 token 计费）、2.41（音效按分钟计费已生效）、2.42（容器文件归 Free）、2.43（未定价按次端点不得静默免费）、2.44（音乐时长兜底歧义显式化）、2.45（就绪计数锁 165/176）、2.46（零产出必须 waive）、2.47（2xx 业务失败必须 waive）、2.48（中断流补输入估算）、2.49（服务端工具按次计费）、2.50（异步对账表与数据库初始化）、2.51（向量库检索按次计费）、2.52（异步对账 store）、2.53（批 embedding 按请求 token 估算）、2.54（DeepSeek web tools 按成功请求计费）、2.55（异步注册器）、2.56（异步 worker 编排）、2.57（货币→Token Bank 严格换算）、2.58（hold 原子捕获）、2.59（厂商时段价）、2.60（计费未就绪返回 501）、2.61（Code Interpreter 会话计费）、2.62（Anthropic web search 按次）、2.63（预扣 hold TTL 可配置）与二十四个测试文件（5+5+6+6+5+4+7+4+4+4+3+2+1+1+2+2+4+4+1+1+1+1+1+1 个用例，另在 precharge 文件新增 2 条、provider_request 单测 4 条、stream 过滤单测 5 条、usage_extraction 单测 5 条、async registrar 单测 2 条、async worker 单测 3 条、account hold 单测 2 条、overage split 单测 1 条、time-window 单测 3 条、BillingUnavailable 单测 1 条）。回归合计 **287** 个计费用例 + router-service `--lib` **598** 个单测全绿 + edge-runtime `--lib` **99** 个单测全绿。
 
+> **2026-10-20 第 42 轮补充**：`file_batches` 存储对账接通（创建门控 + 完成态汇总 `usage_bytes` + `storage_gb_day` 单笔后扣，2.80）；172 个 operation 全部具备确定计费路径。
+>
 > **2026-10-20 补充**：midjourney / nano-banana 四个 operation 已从生成器、契约权威、SDK 快照、路由清单、台账与黄金矩阵**整体移除**（2.81）；发布面 176 → 172。
 >
-> **2026-10-19 第 44 轮补充**：批处理对账全链路落地（创建门控 + 结果文件下载 + 按 `(model, endpoint)` 逐行结算 + 行级幂等键），详见 2.79；剩余唯一不可售缺口是 `file_batches`（2.80）；midjourney/nano-banana 命名空间已从契约移除。计费套件 **62 targets / 423 passed**，全量 **175 targets / 1817 passed / 2 failed**（仅 payment 域）。
+> **2026-10-19 第 44 轮补充**：批处理对账全链路落地（创建门控 + 结果文件下载 + 按 `(model, endpoint)` 逐行结算 + 行级幂等键），详见 2.79；剩余唯一不可售缺口是 `file_batches`（2.80）；midjourney/nano-banana 命名空间已从契约移除。计费套件 **62 targets / 424 passed**，全量 **175 targets / 1822 passed / 2 failed**（仅 payment 域）。
 >
 > **2026-10-19 第 31 轮补充**：新增 2.77（`async_usage_reconciliation` 纵向集成：入队 → 领取 → 轮询 → 重新定价 → `175000` micro 单笔后扣 → 幂等终态）。计费回归 **61 targets / 419 passed**。
 >
 > **2026-10-19 第 30 轮补充**：新增 2.76（异步对账 worker 运行配置 `AsyncUsageWorkerConfig`：默认关闭，interval/batch/lease/retry/max-attempts 全部有界，非法值降级为关闭而不是带着错误参数启动）。router lib **621**。
 >
-> **2026-10-19 第 29 轮补充**：新增 2.75（`upstream_route_selector` 4 条旧定价门禁用例按新契约修正：缺采购价不阻断、无目录费率仍 fail-closed）。全量回归 **175 targets / 1817 passed / 2 failed（payment 域，HEAD 既有）**。
+> **2026-10-19 第 29 轮补充**：新增 2.75（`upstream_route_selector` 4 条旧定价门禁用例按新契约修正：缺采购价不阻断、无目录费率仍 fail-closed）。全量回归 **175 targets / 1822 passed / 2 failed（payment 域，HEAD 既有）**。
 >
 > **2026-10-19 第 28 轮补充**：新增 2.74（`PipelineAsyncPollTransport`：把轮询表达为合成 Free `GET` 调用、复用既有 `InvocationDispatcher` 的 TLS/代理/出站策略/超时/响应上限；带账号凭证的 GET 由 `ProviderRequestBuilder` 注入）。router lib **618**。
 >
@@ -1728,28 +1730,26 @@ OpenAI / Anthropic 批处理是"创建时无用量、完成时才有用量"的�
    并使用 `task:model:kind` 作为幂等键，因此重试不会重复扣费。
 
 回归：批处理结算 1 条（chat 175 000 micro + responses 350 000 micro 两笔后扣）、
-执行器 3 条、聚合 3 条、创建门控 1 条；计费套件 **62 targets / 423 passed**。
+执行器 3 条、聚合 3 条、创建门控 1 条；计费套件 **62 targets / 424 passed**。
 
 
-### 2.80 剩余唯一不可售入口：`file_batches` 的存储计费缺口
+### 2.80 `file_batches` 存储计费：创建放行、完成态按批内文件字节结算
 
-`POST /v1/vector_stores/{id}/file_batches` 是 OpenAI 官方接口，继续
-fail-closed 的原因不是"没有用量"，而是**用量不在响应里**：创建响应只有 `file_counts`，
-而计费单位是这些文件进入向量库后的**存储字节**（GB-day），字节数需要按 `file_ids`
-逐个读取文件元数据。
+`POST /v1/vector_stores/{id}/file_batches` 的创建响应只有 `file_counts`，真正的
+用量是文件进入向量库后的**存储字节**（GB-day）。现在与批处理同构地接通：
 
-因此它不能像单文件 `POST /v1/vector_stores/{id}/files` 那样从响应 `usage_bytes` 直接
-取数。正确做法与批处理同构：
+1. **创建**：worker 启用时按 `Free` 放行；关闭时仍是 `ApiRequest`，预检守卫拒单；
+2. **轮询**：`GET /v1/vector_stores/{store}/file_batches/{batch}`，`status=completed`
+   后读 `GET .../files`（Free 管理面）；
+3. **聚合**：汇总返回 `data[].usage_bytes`；全为 0 或取不到字节即终止且不收费；
+4. **结算**：`ReplayAsyncUsageSettler` 用合成路径 `POST /v1/vector_stores/{store}/files`
+   走 `storage_gb_day`，幂等键 `task:storage`，重试不重复扣费。
 
-1. 创建按 `Free` 放行（仅 worker 启用时）；
-2. 后台任务读取 `file_ids`，对每个 id 通过既有 dispatcher 调 `GET /v1/files/{id}`
-   取 `bytes`（同账户凭证、同出站策略）；
-3. 汇总字节后按 `storage_gb_day` 记一条完成态用量，走与现在一致的
-   `ReplayAsyncUsageSettler` 后扣；
-4. 任一文件取不到大小即失败关闭，不按"估算字节"计费。
-
-在实现 2–4 之前保持拒单：接受创建却收不到存储费，就是静默免费。该入口是唯一剩余
-的不可售缺口；midjourney / nano-banana 命名空间已从契约整体移除（2.78）。
+回归：执行器 2 条（字节汇总 3500、空批次终止）、注册 1 条（file_batch 轮询路径）、
+创建门控 1 条、结算 1 条（2 GB × $0.10 = 14 000 000 micro 单笔后扣，键
+`async:openai_batch:fb_1:storage`）。midjourney / nano-banana 命名空间已整体移除
+（2.81），因此所有 172 个 operation 都不再停在"无计量单位且不可售"的状态：
+默认部署下只有 1 个显式登记项（Anthropic batch 创建，见 2.73 的开关说明）。
 
 
 ### 2.81 vendor 缺失命名空间的移除（不是标记 Deprecated）
@@ -1927,7 +1927,7 @@ git diff services/sdkwork-cloudrouter-router-service/tests/golden/openapi_billin
 | `node tools/check-cloudrouter-ai-routing-consistency.mjs` | **passed**（122 个 OpenAI-compatible operation 全部有分类臂） |
 | `cargo fmt --check` | 干净 |
 
-第 25 轮基线：**62 个计费 target / 422 passed / 0 failed**（历史分项快照：形态 15 + 逐接口媒体数量 17 + 逐接口流式数量 16 + 逐模态单价 OpenAI 5 + 逐模态单价 Google 7 + 可结算性守卫 35 + 图像档位 5 + 缓存写入档位 4 + 上下文分档 7 + 缓存读模态 4 + Alibaba 缓存 4 + 缓存缺价回退 3 + 家族数量 11 + 目录改写 5 + 预扣 12 + 音乐兜底 2 + 就绪计数 1 + 空结果 waive 4 + 业务失败 waive 7 + 服务端工具 1 + 向量库检索 1 + 向量库存储 3 + 批 embedding 1 + DeepSeek web tools 2 + Token Bank 行为 5 + 异步结算 3 + 既有计费/契约/分类/payload；新增用例已计入 418）。edge-runtime `--lib` **101 passed**（流式传输层 + 流式协议映射 + usage-only chunk 过滤 5 条 + BillingUnavailable 501 映射 1 条 + hold TTL 1 条 + 过期 hold 分类 1 条）。`--lib openai_usage` **12 passed**（中继侧输入量口径）。router-service 全量 **175 个 target / 1817 passed / 2 failed**，2 条均为 **payment 域 HEAD 既有**（与本轮计费改动无关）：`postgres_payment_intent_runtime_sql_contract` 2（退款 SQL 列/状态词汇已变更，测试未同步；需人工确认后修）。原 `upstream_route_selector` 4 已按新定价契约修正（见 2.75）。**注意 `verify.yml` 不跑 `cargo test`**（只 clippy/audit/deny/SBOM），所以"green verify gate"不能当作测试基线。
+第 25 轮基线：**62 个计费 target / 422 passed / 0 failed**（历史分项快照：形态 15 + 逐接口媒体数量 17 + 逐接口流式数量 16 + 逐模态单价 OpenAI 5 + 逐模态单价 Google 7 + 可结算性守卫 35 + 图像档位 5 + 缓存写入档位 4 + 上下文分档 7 + 缓存读模态 4 + Alibaba 缓存 4 + 缓存缺价回退 3 + 家族数量 11 + 目录改写 5 + 预扣 12 + 音乐兜底 2 + 就绪计数 1 + 空结果 waive 4 + 业务失败 waive 7 + 服务端工具 1 + 向量库检索 1 + 向量库存储 3 + 批 embedding 1 + DeepSeek web tools 2 + Token Bank 行为 5 + 异步结算 3 + 既有计费/契约/分类/payload；新增用例已计入 418）。edge-runtime `--lib` **101 passed**（流式传输层 + 流式协议映射 + usage-only chunk 过滤 5 条 + BillingUnavailable 501 映射 1 条 + hold TTL 1 条 + 过期 hold 分类 1 条）。`--lib openai_usage` **12 passed**（中继侧输入量口径）。router-service 全量 **175 个 target / 1822 passed / 2 failed**，2 条均为 **payment 域 HEAD 既有**（与本轮计费改动无关）：`postgres_payment_intent_runtime_sql_contract` 2（退款 SQL 列/状态词汇已变更，测试未同步；需人工确认后修）。原 `upstream_route_selector` 4 已按新定价契约修正（见 2.75）。**注意 `verify.yml` 不跑 `cargo test`**（只 clippy/audit/deny/SBOM），所以"green verify gate"不能当作测试基线。
 
 ### 变异自证（三层）
 
