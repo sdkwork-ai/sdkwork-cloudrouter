@@ -77,7 +77,9 @@ fn payment_intent_runtime_records_and_finishes_provider_operation_attempts() {
 fn payment_refund_runtime_writes_refund_attempt_event_and_operation_contract() {
     for expected in [
         "INSERT INTO commerce_refund",
-        "(id, tenant_id, organization_id, payment_intent_id, payment_attempt_id, refund_no, amount, currency_code, supplier_code, reason, status, request_no, idempotency_key, created_at, updated_at)",
+        // Federated `commerce_refund` shape: the refund belongs to an order
+        // (order_id) and carries the coded reason, not a free-text one.
+        "(id, tenant_id, organization_id, order_id, payment_attempt_id, refund_no, amount, currency_code, status, refund_reason_code, request_no, idempotency_key, created_at, updated_at)",
         "INSERT INTO commerce_refund_attempt",
         "(id, tenant_id, organization_id, refund_attempt_no, refund_id, supplier_code, provider_account_id, out_refund_no, provider_refund_id, amount, currency_code, status, failure_code, failure_message, submitted_at, succeeded_at, failed_at, created_at, updated_at)",
         "INSERT INTO commerce_refund_item",
@@ -110,7 +112,10 @@ fn payment_intent_and_refund_inserts_are_atomic_idempotent_and_cap_guarded() {
         // same-statement subquery, so it must be excluded by id — otherwise
         // the amount counts twice and full refunds are always rejected.
         "AND active.id <> $5",
-        "AND active.status IN ('pending', 'processing', 'succeeded')",
+        // Federated refund status domain (`submitted/processing/succeeded`);
+        // a new refund is inserted as `submitted`, so it must count toward the
+        // cap immediately.
+        "AND active.status IN ('submitted', 'processing', 'succeeded')",
         "), 0) <= amount::numeric",
         "if reserved_rows == 0",
         "payment refund amount exceeds the remaining refundable amount",
