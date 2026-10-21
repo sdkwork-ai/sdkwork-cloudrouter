@@ -65,9 +65,18 @@ export function CommunityOverviewPage() {
         return;
       }
       const sumCount = (items: CommunityAdminCategoryItem[], pick: (item: CommunityAdminCategoryItem) => string): string => {
-        return String(
-          items.reduce((total, item) => total + Number.parseInt(pick(item) || '0', 10), 0),
-        );
+        // Counts are int64 wire strings. Aggregating them with BigInt keeps
+        // exactness past Number.MAX_SAFE_INTEGER instead of rounding through a
+        // JavaScript number.
+        return items
+          .reduce((total, item) => {
+            try {
+              return total + BigInt(pick(item) || '0');
+            } catch {
+              return total;
+            }
+          }, 0n)
+          .toString();
       };
       setStats({
         circleCount: categories.length,

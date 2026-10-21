@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod background_tasks;
 pub mod contract_routes;
 pub mod error;
 pub mod federated_database_env;
@@ -35,6 +36,9 @@ pub use auth::{
     ApiKeyIdentity, ApiKeyIdentityError, AppSessionTokenClaims, AppSessionTokenError,
     AppSessionTokenKind, AppSubjectBoundaryConfig, QueryStringApiKeyPolicy, TrustedRequestSubject,
     TrustedRequestSubjectError, TrustedSubjectBoundaryError,
+};
+pub use background_tasks::{
+    background_task_registry, track_background_task, BackgroundTaskGuard, BackgroundTaskRegistry,
 };
 pub use contract_routes::{
     app_openapi_response, backend_openapi_response, cloud_services_openapi_response,

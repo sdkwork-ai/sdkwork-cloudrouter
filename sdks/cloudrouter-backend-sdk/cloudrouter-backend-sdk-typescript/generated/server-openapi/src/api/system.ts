@@ -119,7 +119,7 @@ export class SystemRuntimeRegionApi {
 }
 
 export interface SystemRecordsListParams {
-  page?: number;
+  cursor?: string;
   pageSize?: number;
   user?: string;
   token?: string;
@@ -137,7 +137,7 @@ export class SystemRecordsApi {
 /** List logs */
   async list(params?: SystemRecordsListParams, requestOptions?: ApiRequestOptions): Promise<AdminRecordPage> {
     const query = buildQueryString([
-      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'user', value: params?.user, style: 'form', explode: true, allowReserved: false },
       { name: 'token', value: params?.token, style: 'form', explode: true, allowReserved: false },

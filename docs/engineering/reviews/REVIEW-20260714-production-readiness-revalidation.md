@@ -90,14 +90,14 @@ rustfmt --edition 2021 --check services/sdkwork-cloudrouter-router-service/src/p
 node ../sdkwork-specs/tools/check-api-operation-patterns.mjs --workspace .
 node ../sdkwork-specs/tools/check-route-path-collisions.mjs --root .
 pnpm test:postgres:required
-cargo test -p sdkwork-cloudrouter-router-service --test app_chat_api
+# The Chat HTTP API/SQL tests and the app_chat_store checks below were removed
+# with the orphaned Chat HTTP surface (ADR-20261021); the persistence contract
+# remains covered by tests.test_chat_runtime_database_contract.
 pnpm db:materialize:contract
 python -B -m tools.database_contract_materializer --root . --check
 python -B -m tools.schema_compiler --root . --dialect postgres --materialize --check
 python -B -m unittest tests.test_chat_runtime_database_contract -v
-cargo test -p sdkwork-cloudrouter-router-service --test postgres_app_chat_sql_contract
 rg -n -i "ai_chat_|ai_runtime_usage_link" database/ddl/baseline database/migrations generated/schema/postgres
-rg -n "COUNT\\(\\*\\).*\\+ 1|FOR UPDATE|context_snapshot_count" services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/app_chat_store.rs
 cargo test -p sdkwork-cloudrouter-admin-analytics-repository-sqlx --lib
 cargo test -p sdkwork-cloudrouter-router-service --test admin_analytics_api
 cargo test -p sdkwork-cloudrouter-router-service --test postgres_admin_analytics_read_store_sql_contract

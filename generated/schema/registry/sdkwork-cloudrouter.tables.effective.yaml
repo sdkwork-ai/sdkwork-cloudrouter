@@ -275,12 +275,14 @@ modules:
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
   ai-metering:
     owner: cloud-router-platform
-    description: AI usage facts and request traces.
+    description: AI usage facts, request traces, and the async usage reconciliation
+      queue.
     compliance_level: L3
-    tables_count: 2
+    tables_count: 3
     tables:
     - ai_metering_usage
     - ai_metering_request_trace
+    - ai_metering_async_task
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
   iam-gateway:
     owner: cloud-router-platform
@@ -1390,6 +1392,100 @@ tables:
     - config_scope
     - status
     - deleted_at
+    - id
+  imported: false
+- table: ai_metering_async_task
+  domain: ai
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - backend
+  - worker
+  columns:
+    user_id: int64
+    request_id:
+      type: string(128)
+      constraints: NOT NULL
+    api_key_id:
+      type: int64
+      constraints: NOT NULL
+    task_kind:
+      type: string(32)
+      constraints: NOT NULL
+    upstream_id:
+      type: string(256)
+      constraints: NOT NULL
+    catalog_key: string(256)
+    supplier_code:
+      type: string(64)
+      constraints: NOT NULL
+    account_id:
+      type: int64
+      constraints: NOT NULL
+    region_code:
+      type: string(64)
+      constraints: NOT NULL
+    task_status:
+      type: string(32)
+      constraints: DEFAULT 'pending'
+    attempts:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+    next_poll_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+    last_error: string(1024)
+    billing_request_id: string(160)
+    usage_snapshot: json
+    settled_at: instant
+  required_columns:
+  - request_id
+  - api_key_id
+  - task_kind
+  - upstream_id
+  - supplier_code
+  - account_id
+  - region_code
+  - task_status
+  - next_poll_at
+  unique_constraints:
+  - name: uk_ai_metering_async_task_uuid
+    columns:
+    - uuid
+  - name: uk_ai_metering_async_task_upstream
+    columns:
+    - tenant_id
+    - organization_id
+    - task_kind
+    - upstream_id
+  - name: uk_ai_metering_async_task_billing_request
+    columns:
+    - tenant_id
+    - organization_id
+    - billing_request_id
+  check_constraints:
+  - name: ck_ai_metering_async_task_kind
+    expression: task_kind IN ('openai_batch', 'anthropic_batch', 'background_response',
+      'thread_run')
+  - name: ck_ai_metering_async_task_status
+    expression: task_status IN ('pending', 'running', 'settled', 'failed', 'expired')
+  - name: ck_ai_metering_async_task_attempts
+    expression: attempts >= 0
+  indexes:
+  - name: idx_ai_metering_async_task_due
+    columns:
+    - next_poll_at
+    - id
+    where: task_status IN ('pending', 'running')
+  - name: idx_ai_metering_async_task_tenant_status
+    columns:
+    - tenant_id
+    - organization_id
+    - task_status
+    - next_poll_at
     - id
   imported: false
 - table: ai_metering_request_trace
@@ -7552,6 +7648,7 @@ tables:
   system_of_record: true
   write_owner: router-service
   common_columns: user_runtime_entity
+  soft_delete_policy: active_unique
   api_surfaces:
   - app
   frontend_routes:
@@ -7612,6 +7709,7 @@ tables:
   system_of_record: true
   write_owner: router-service
   common_columns: user_runtime_entity
+  soft_delete_policy: active_unique
   api_surfaces:
   - app
   frontend_routes:
@@ -9132,6 +9230,7 @@ tables:
         - cleanup_candidates
         - cleanup_archived
         - cleanup_deleted
+        - cleanup_skipped_legal_hold
         - cleanup_failures
         alerts:
         - retention_lag

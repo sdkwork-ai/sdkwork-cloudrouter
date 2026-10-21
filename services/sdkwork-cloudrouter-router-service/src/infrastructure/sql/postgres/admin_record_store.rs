@@ -7,29 +7,12 @@ use crate::infrastructure::sql::postgres::admin_marketing_store::load_recharge_s
 use crate::infrastructure::sql::postgres::billing_read_projection::with_billable_usage;
 use crate::ports::points_per_currency_unit_string;
 use crate::ports::{
-    AdminMarketingSubject, AdminRecordListPage, AdminRecordLogItem, AdminRecordReadFuture,
-    AdminRecordStore, AdminRecordSubject, ListAdminRecordLogsQuery,
+    AdminMarketingSubject, AdminRecordCursor, AdminRecordListPage, AdminRecordLogItem,
+    AdminRecordReadFuture, AdminRecordStore, AdminRecordSubject, ListAdminRecordLogsQuery,
 };
 
 const LIST_ADMIN_RECORD_LOGS: &str = r#"
-, selected_trace AS (
-    SELECT *
-    FROM (
-        SELECT
-            t.*,
-            ROW_NUMBER() OVER (
-                PARTITION BY COALESCE(NULLIF(t.request_id, ''), CAST(t.id AS TEXT))
-                ORDER BY t.started_at DESC NULLS LAST, t.id DESC
-            ) AS trace_rank
-        FROM ai_metering_request_trace t
-        WHERE t.status = 1
-          AND t.tenant_id = $1
-          AND t.organization_id = $2
-          AND t.started_at IS NOT NULL
-    ) ranked_trace
-    WHERE trace_rank = 1
-),
-usage_by_request AS (
+, usage_by_request AS (
     SELECT
         tenant_id,
         organization_id,
@@ -128,8 +111,9 @@ SELECT
     COALESCE(NULLIF(t.reasoning_effort, ''), '-') AS reasoning_effort,
     COALESCE(NULLIF(t.client_ip_masked, ''), '-') AS client_ip_masked,
     COALESCE(NULLIF(t.metadata->>'userAgent', ''), '') AS user_agent,
-    COUNT(*) OVER() AS total
-FROM selected_trace t
+    CAST(TRUNC(EXTRACT(EPOCH FROM t.started_at) * 1000000) AS BIGINT) AS cursor_started_at_micros,
+    t.id AS cursor_id
+FROM ai_metering_request_trace t
 LEFT JOIN usage_by_request u
   ON u.tenant_id = t.tenant_id
  AND u.organization_id = t.organization_id
@@ -142,7 +126,11 @@ LEFT JOIN ai_routing_decision_log d
  AND d.tenant_id = t.tenant_id
  AND d.organization_id = t.organization_id
  AND d.request_id = t.request_id
-WHERE (
+WHERE t.status = 1
+  AND t.tenant_id = $1
+  AND t.organization_id = $2
+  AND t.started_at IS NOT NULL
+AND (
     $3::text IS NULL
     OR lower(COALESCE(t.owner_name_snapshot, '')) LIKE $3
     OR lower(COALESCE(u.owner_name_snapshot, '')) LIKE $3
@@ -168,8 +156,16 @@ AND (
     OR lower(COALESCE(d.requested_model, '')) LIKE $5
     OR lower(COALESCE(d.resolved_model, '')) LIKE $5
 )
+AND (
+    $7::bigint IS NULL
+    OR t.started_at < TIMESTAMPTZ 'epoch' + ($7::bigint * INTERVAL '1 microsecond')
+    OR (
+        t.started_at = TIMESTAMPTZ 'epoch' + ($7::bigint * INTERVAL '1 microsecond')
+        AND t.id < $8::bigint
+    )
+)
 ORDER BY t.started_at DESC NULLS LAST, t.id DESC
-LIMIT $6 OFFSET $7
+LIMIT $6
 "#;
 
 #[derive(Debug, Clone)]
@@ -189,22 +185,33 @@ impl AdminRecordStore for PostgresAdminRecordStore {
         query: ListAdminRecordLogsQuery,
     ) -> AdminRecordReadFuture<'a, AdminRecordListPage> {
         Box::pin(async move {
+            let fetch_limit = query.page_size.saturating_add(1);
             let rows = sqlx::query(with_billable_usage(LIST_ADMIN_RECORD_LOGS))
                 .bind(query.subject.tenant_id)
                 .bind(query.subject.organization_id)
                 .bind(like_filter(query.user.as_deref()))
                 .bind(like_filter(query.token.as_deref()))
                 .bind(like_filter(query.model.as_deref()))
-                .bind(query.page_size)
-                .bind(query.offset)
+                .bind(fetch_limit)
+                .bind(query.cursor.as_ref().map(|cursor| cursor.started_at_micros))
+                .bind(query.cursor.as_ref().map(|cursor| cursor.id))
                 .fetch_all(&self.pool)
                 .await
                 .map_err(sql_error)?;
 
-            let total = rows
-                .first()
-                .map(|row| integer_cell(row, "total"))
-                .unwrap_or(0);
+            let has_more = i64::try_from(rows.len()).unwrap_or(i64::MAX) > query.page_size;
+            let rows = rows
+                .into_iter()
+                .take(usize::try_from(query.page_size).unwrap_or(usize::MAX))
+                .collect::<Vec<_>>();
+            let next_cursor = if has_more {
+                rows.last().map(|row| AdminRecordCursor {
+                    started_at_micros: integer_cell(row, "cursor_started_at_micros"),
+                    id: integer_cell(row, "cursor_id"),
+                })
+            } else {
+                None
+            };
             let mut items: Vec<AdminRecordLogItem> = rows
                 .into_iter()
                 .map(row_to_log)
@@ -212,9 +219,9 @@ impl AdminRecordStore for PostgresAdminRecordStore {
             enrich_with_points_per_unit(&self.pool, &query.subject, &mut items).await;
             Ok(AdminRecordListPage {
                 items,
-                total,
-                page_no: query.page_no,
                 page_size: query.page_size,
+                has_more,
+                next_cursor,
             })
         })
     }
@@ -462,11 +469,33 @@ mod tests {
     }
 
     #[test]
-    fn list_logs_aliases_ranked_trace_subquery() {
+    fn list_logs_uses_keyset_pagination_without_offset_or_window_count() {
         assert!(
-            LIST_ADMIN_RECORD_LOGS.contains(") ranked_trace"),
-            "admin record Postgres SQL must alias the ROW_NUMBER subquery so PostgreSQL can parse FROM (SELECT ...)"
+            LIST_ADMIN_RECORD_LOGS.contains("t.started_at < TIMESTAMPTZ 'epoch'"),
+            "admin record SQL must page by the (started_at, id) keyset"
         );
+        assert!(
+            LIST_ADMIN_RECORD_LOGS.contains("LIMIT $6"),
+            "admin record SQL must bound the page with LIMIT"
+        );
+        assert!(
+            !LIST_ADMIN_RECORD_LOGS.contains("COUNT(*) OVER()"),
+            "admin record SQL must not compute a window count over the whole tenant"
+        );
+        assert!(
+            !LIST_ADMIN_RECORD_LOGS.contains("OFFSET"),
+            "admin record SQL must not paginate with OFFSET"
+        );
+        assert!(
+            !LIST_ADMIN_RECORD_LOGS.contains("ROW_NUMBER() OVER"),
+            "admin record SQL must not rank the whole tenant before paging"
+        );
+    }
+
+    #[test]
+    fn list_logs_projects_the_last_row_cursor() {
+        assert!(LIST_ADMIN_RECORD_LOGS.contains("AS cursor_started_at_micros"));
+        assert!(LIST_ADMIN_RECORD_LOGS.contains("t.id AS cursor_id"));
     }
 
     #[test]

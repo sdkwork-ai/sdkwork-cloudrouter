@@ -15,6 +15,7 @@
     "react-i18next": "catalog:"
   },
   "devDependencies": {
+    "@types/node": "catalog:",
     "typescript": "catalog:"
   },
   "private": true,

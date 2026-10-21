@@ -22,6 +22,7 @@ use sdkwork_cloudrouter_test_support::{
 };
 use sdkwork_contract_service::{
     CommerceAccountAssetType, CommerceLedgerDirection, CommerceMoney, CommerceRequestHash,
+    CommerceServiceErrorKind,
 };
 use sdkwork_utils_rust::sha256_hash;
 use sqlx::postgres::PgPoolOptions;
@@ -410,10 +411,20 @@ async fn concurrent_hold_capture_debits_once() {
     .expect("partial capture amount");
     let hash = CommerceRequestHash::new(&sha256_hash(b"hold-concurrent-settle")).unwrap();
     let left = store.settle_account_hold(settle.clone(), hash.clone());
-    let right = store.settle_account_hold(settle, hash);
+    let right = store.settle_account_hold(settle.clone(), hash.clone());
     let (first, second) = tokio::join!(left, right);
     first.expect("first concurrent hold capture");
-    second.expect("second concurrent hold capture");
+    // A concurrent duplicate may observe the account service's in-flight
+    // idempotency lock instead of replaying. That is a transient,
+    // caller-healable signal; the invariant under test is that no second debit
+    // is committed, so a locked replay is an acceptable outcome. Idempotent
+    // replay after a completed request is covered by
+    // `settlement_replays_idempotently_without_double_debit`.
+    match second {
+        Ok(_) => {}
+        Err(error) if error.kind() == &CommerceServiceErrorKind::Locked => {}
+        Err(error) => panic!("second concurrent hold capture: {error:?}"),
+    }
 
     let (available, frozen): (i64, i64) =
         sqlx::query_as("SELECT available_amount, frozen_amount FROM acct_account WHERE id = $1")

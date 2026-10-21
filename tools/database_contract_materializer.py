@@ -156,6 +156,16 @@ HAND_AUTHORED_MODULES = (
         baseline_file="0001_payment_control_plane_baseline.sql",
         relative_root="database/modules/payment-control-plane",
     ),
+    DatabaseModuleSpec(
+        module_id="payment-reconciliation",
+        service_code="CLOUD_ROUTER_PAYMENT_RECONCILIATION",
+        display_name="Cloud Router Payment Reconciliation Database",
+        owner="cloud-router-platform",
+        table_prefix="commerce_payment_",
+        baseline_anchor_table="commerce_payment_statement",
+        baseline_file="0001_payment_reconciliation_baseline.sql",
+        relative_root="database/modules/payment-reconciliation",
+    ),
 )
 
 

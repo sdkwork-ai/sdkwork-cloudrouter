@@ -60,8 +60,12 @@ const TARGETS = [
     prefix: "/v1",
     crateRoot: "crates/sdkwork-routes-cloudrouter-llm-open-api",
     openApiPaths: [
-      "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json",
-      "sdks/cloudrouter-open-sdk/openapi/cloudrouter-open-sdk.openapi.json",
+      // The gateway generator authors the portal contract and this script
+      // stamps it. The open SDK family snapshot is a generator-owned
+      // owner-only projection of this file, and `apis/` is materialized from
+      // that projection, so neither may be written here: writing the full
+      // document would overwrite the projection.
+      "apps/sdkwork-cloudrouter-pc/public/openapi.json",
     ],
     routeManifestPath:
       "sdks/_route-manifests/open-api/sdkwork-routes-cloudrouter-open-api.route-manifest.json",
@@ -418,10 +422,11 @@ async function processTarget(target, mode) {
   const openApiJson = `${JSON.stringify(document, null, 2)}\n`;
   const manifestSha = createHash("sha256").update(manifestJson).digest("hex");
 
-  const stampedOpenApiPaths =
-    target.surface === "open-api"
-      ? target.openApiPaths.filter((relativePath) => relativePath.startsWith("apis/"))
-      : target.openApiPaths;
+  // Every derived mirror of a surface's authority receives the same stamped
+  // document. The previous open-api special case stamped only `apis/` and left
+  // the SDK family copy unstamped, so `materialize-apis-contracts.mjs` copied
+  // the unstamped copy over `apis/` and the two gates could never both pass.
+  const stampedOpenApiPaths = target.openApiPaths;
 
   const outputs = [
     ...stampedOpenApiPaths.map((relativePath) => ({

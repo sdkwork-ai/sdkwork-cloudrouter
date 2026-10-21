@@ -12,7 +12,7 @@
   "source": {
     "crateRoot": "crates/sdkwork-routes-cloudrouter-llm-open-api",
     "crateImport": "sdkwork_routes_cloudrouter_open_api",
-    "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+    "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
   },
   "routes": [
     {
@@ -38,7 +38,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -66,7 +66,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -94,7 +94,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -122,7 +122,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -150,7 +150,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -178,7 +178,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -206,7 +206,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -234,7 +234,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -262,7 +262,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -290,7 +290,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -318,7 +318,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -346,7 +346,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -374,7 +374,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -402,7 +402,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -430,7 +430,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -458,7 +458,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -486,7 +486,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -514,7 +514,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -542,7 +542,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -570,7 +570,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -598,7 +598,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -626,7 +626,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -654,7 +654,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -682,7 +682,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -710,7 +710,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -738,7 +738,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -766,7 +766,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -794,7 +794,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -822,7 +822,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -850,7 +850,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -878,7 +878,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -906,7 +906,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -934,7 +934,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -962,7 +962,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -990,7 +990,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1018,7 +1018,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1046,7 +1046,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1074,7 +1074,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1102,7 +1102,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1130,7 +1130,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1158,7 +1158,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1186,7 +1186,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1214,7 +1214,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1242,7 +1242,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1270,7 +1270,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1298,7 +1298,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1326,7 +1326,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1354,7 +1354,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1382,7 +1382,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1410,7 +1410,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1438,7 +1438,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1466,7 +1466,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1494,7 +1494,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1522,7 +1522,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1550,7 +1550,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1578,7 +1578,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1606,7 +1606,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1634,7 +1634,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1662,7 +1662,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1690,7 +1690,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1718,7 +1718,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1746,7 +1746,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1774,7 +1774,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1802,7 +1802,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1830,7 +1830,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1858,7 +1858,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1886,7 +1886,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1914,7 +1914,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1942,7 +1942,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1970,7 +1970,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -1998,7 +1998,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2026,7 +2026,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2054,7 +2054,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2082,7 +2082,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2110,7 +2110,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2138,7 +2138,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2166,7 +2166,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2194,7 +2194,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2222,7 +2222,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2250,7 +2250,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2278,7 +2278,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2306,7 +2306,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2334,7 +2334,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2362,7 +2362,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2390,7 +2390,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2418,7 +2418,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2446,7 +2446,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2474,7 +2474,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2502,7 +2502,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2530,7 +2530,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2558,7 +2558,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2586,7 +2586,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2614,7 +2614,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2642,7 +2642,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2670,7 +2670,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2698,7 +2698,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2726,7 +2726,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2754,7 +2754,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2782,7 +2782,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2810,7 +2810,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2838,7 +2838,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2866,7 +2866,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2894,7 +2894,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2922,7 +2922,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2950,7 +2950,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -2978,7 +2978,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3006,7 +3006,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3034,7 +3034,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3062,7 +3062,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3090,7 +3090,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3118,7 +3118,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3146,7 +3146,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3174,7 +3174,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3202,7 +3202,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3230,7 +3230,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3258,7 +3258,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3286,7 +3286,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3314,7 +3314,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3342,7 +3342,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3370,7 +3370,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3398,7 +3398,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3426,7 +3426,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3454,7 +3454,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3482,7 +3482,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3510,7 +3510,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3538,7 +3538,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3566,7 +3566,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3594,7 +3594,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3622,7 +3622,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3650,7 +3650,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3678,7 +3678,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3706,7 +3706,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3734,7 +3734,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3762,7 +3762,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3790,7 +3790,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3818,7 +3818,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3846,7 +3846,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3874,7 +3874,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3902,7 +3902,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3930,7 +3930,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3958,7 +3958,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -3986,7 +3986,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4014,7 +4014,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4042,7 +4042,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4070,7 +4070,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4098,7 +4098,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4126,7 +4126,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4154,7 +4154,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4182,7 +4182,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4210,7 +4210,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4238,7 +4238,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4266,7 +4266,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4294,7 +4294,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4322,7 +4322,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4350,7 +4350,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4378,7 +4378,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4406,7 +4406,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4434,7 +4434,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4462,7 +4462,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4490,7 +4490,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4518,7 +4518,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4546,7 +4546,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4574,7 +4574,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4602,7 +4602,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4630,7 +4630,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4658,7 +4658,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4686,7 +4686,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4714,7 +4714,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4742,7 +4742,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4770,7 +4770,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4798,7 +4798,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"
@@ -4826,7 +4826,7 @@
       },
       "source": {
         "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
       },
       "requestContext": "WebRequestContext",
       "apiSurface": "open-api"

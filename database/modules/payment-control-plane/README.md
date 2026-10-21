@@ -28,6 +28,21 @@ federated `sdkwork-payment` module:
 `services/sdkwork-cloudrouter-installer/src/federated.rs`, so it creates its tables before
 this application's own modules run.
 
+## Runtime projection guard
+
+Cloud Router projects a provider-dispatch payload (`next_action_json`,
+`provider_native_json`), the merchant order reference, and the
+`requires_confirmation` / `requires_action` statuses onto those federated
+facts. When `payment-runtime` was retired those projections stopped being
+provisioned, and every payment-intent insert failed on a freshly installed
+database. The module baseline now appends an additive `ALTER TABLE ... ADD
+COLUMN IF NOT EXISTS` guard plus the widened status checks, and migration
+`0047_payment_runtime_shape_guard` applies the same statements on upgrade.
+
+This guard is temporary by ownership: `sdkwork-payment` remains the authority
+for those tables. Remove the guard once its baseline ships the projection
+columns and status values itself.
+
 ## Why this module replaced `payment-runtime`
 
 The retired `payment-runtime` module declared all eight tables above. Because its baseline

@@ -40,9 +40,9 @@ fn payment_intent_runtime_create_writes_intent_attempt_and_route_decision_in_one
     for expected in [
         "failed to begin payment intent transaction",
         "INSERT INTO commerce_payment_intent",
-        "(id, tenant_id, organization_id, owner_user_id, order_id, merchant_order_no, subject, provider, supplier_code, payment_method, scene_code, amount, currency_code, status, request_no, idempotency_key, metadata_json, provider_native_json, next_action_json, captured_amount, refunded_amount, created_at, updated_at)",
+        "(id, tenant_id, organization_id, owner_user_id, order_id, merchant_order_no, subject, provider, supplier_code, provider_code, payment_method, scene_code, amount, currency_code, status, request_no, idempotency_key, metadata_json, provider_native_json, next_action_json, captured_amount, refunded_amount, created_at, updated_at, payment_intent_no)",
         "INSERT INTO commerce_payment_attempt",
-        "(id, tenant_id, organization_id, owner_user_id, payment_intent_id, order_id, provider, out_trade_no, amount, currency_code, status, callback_payload, created_at, paid_at, updated_at)",
+        "(id, tenant_id, organization_id, owner_user_id, payment_intent_id, order_id, provider, out_trade_no, amount, currency_code, status, callback_payload, created_at, paid_at, updated_at, payment_method, provider_code, idempotency_key)",
         "INSERT INTO commerce_payment_route_decision",
         "(id, tenant_id, organization_id, payment_intent_id, payment_attempt_id, route_rule_id, account_id, supplier_code, provider_account_id, method_code, scene_code, country_code, currency_code, amount, risk_level, decision_reason, fallback_from_account_id, created_at)",
         "failed to commit payment intent transaction",
@@ -88,7 +88,7 @@ fn payment_refund_runtime_writes_refund_attempt_event_and_operation_contract() {
         "UPDATE commerce_refund_attempt SET status = $1",
         "UPDATE commerce_refund SET status = $1",
         "INSERT INTO commerce_refund_event",
-        "(id, tenant_id, organization_id, refund_id, event_type, from_status, to_status, reason, created_at)",
+        "(id, tenant_id, organization_id, event_no, refund_id, event_type, from_status, to_status, actor_type, reason, idempotency_key, created_at)",
         "\"create_refund\" => Ok(crate::application::PaymentAdapterOperation::CreateRefund)",
         "\"cancel_refund\" => Ok(crate::application::PaymentAdapterOperation::CancelRefund)",
     ] {

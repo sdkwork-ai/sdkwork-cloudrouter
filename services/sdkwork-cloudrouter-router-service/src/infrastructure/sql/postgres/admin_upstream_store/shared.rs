@@ -132,6 +132,68 @@ pub(super) fn generated_uuid() -> String {
     sdkwork_utils_rust::uuid()
 }
 
+/// Resource-binding scope that owns a `replace` operation.
+#[derive(Clone, Copy)]
+pub(super) enum ResourceBindingScope {
+    Supplier,
+    AccountGroup,
+    Account,
+}
+
+impl ResourceBindingScope {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Supplier => "supplier",
+            Self::AccountGroup => "account_group",
+            Self::Account => "account",
+        }
+    }
+
+    fn column(self) -> &'static str {
+        match self {
+            Self::Supplier => "supplier_id",
+            Self::AccountGroup => "account_group_id",
+            Self::Account => "account_id",
+        }
+    }
+}
+
+/// Retires every active binding of one scope before a replacement insert.
+///
+/// `uk_ai_resource_binding_scope_resource` lists nullable scope columns, and
+/// PostgreSQL treats NULLs as distinct, so its `ON CONFLICT` arbiter never
+/// fires for a supplier/account/account-group row. Relying on the arbiter made
+/// every save append a fresh active row instead of replacing the previous one.
+/// The caller already holds the owning aggregate row lock, so an explicit
+/// retire-then-insert makes the replacement idempotent and bounded.
+pub(super) async fn retire_active_resource_bindings(
+    tx: &mut sqlx::Transaction<'_, Postgres>,
+    subject: &AdminUpstreamSubject,
+    scope: ResourceBindingScope,
+    scope_id: i64,
+    requested_at: &str,
+) -> DomainResult<()> {
+    let sql = format!(
+        "UPDATE ai_resource_binding \
+         SET deleted_at = $1::timestamptz, deleted_by = $2, status = 0, \
+             version = version + 1, updated_at = $1::timestamptz \
+         WHERE tenant_id = $3 AND organization_id = $4 AND binding_scope = $5 \
+           AND {} = $6 AND deleted_at IS NULL",
+        scope.column()
+    );
+    sqlx::query(sqlx::AssertSqlSafe(sql))
+        .bind(requested_at)
+        .bind(subject.operator_id)
+        .bind(subject.tenant_id)
+        .bind(subject.organization_id)
+        .bind(scope.as_str())
+        .bind(scope_id)
+        .execute(&mut **tx)
+        .await
+        .map_err(|error| store_error("failed to retire active resource bindings", error))?;
+    Ok(())
+}
+
 pub(super) async fn record_routing_change(
     tx: &mut sqlx::Transaction<'_, Postgres>,
     subject: &AdminUpstreamSubject,

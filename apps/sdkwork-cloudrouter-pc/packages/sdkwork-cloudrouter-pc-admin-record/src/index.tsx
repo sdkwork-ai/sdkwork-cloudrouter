@@ -58,39 +58,49 @@ export function RecordAdmin() {
     formatDecimalAmount(String(recordPointsRate(logItem)), RECORD_COST_DECIMAL_DIGITS);
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const [logs, setLogs] = useState<LogRecord[]>([]);
-  const [total, setTotal] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
   const [userFilter, setUserFilter] = useState('');
   const [tokenFilter, setTokenFilter] = useState('');
   const [modelFilter, setModelFilter] = useState('');
 
-  const loadRecords = async (filters: { user?: string; token?: string; model?: string } = {}) => {
-    setLoading(true);
-    setLoadError(null);
+  const loadRecords = async (
+    filters: { user?: string; token?: string; model?: string } = {},
+    cursor?: string,
+  ) => {
+    const appending = Boolean(cursor);
+    if (appending) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+      setLoadError(null);
+    }
     try {
-      const res = await RecordService.fetchLogs({ ...filters, page, pageSize });
-      setLogs(res.logs);
-      setTotal(res.total);
+      const res = await RecordService.fetchLogs({ ...filters, pageSize, cursor });
+      setLogs((current) => (appending ? [...current, ...res.logs] : res.logs));
+      setHasMore(res.hasMore);
+      setNextCursor(res.nextCursor);
     } catch (error) {
       setLoadError(resolveProblemMessage(error, t, t('admin.record.list.loadError', 'Failed to load request records')));
     } finally {
-      setLoading(false);
+      if (appending) {
+        setLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     void loadRecords({ user: userFilter, token: tokenFilter, model: modelFilter });
-  }, [page, pageSize]);
+  }, [pageSize]);
 
   const handleSearch = () => {
-    if (page !== 1) {
-      setPage(1);
-      return;
-    }
     void loadRecords({ user: userFilter, token: tokenFilter, model: modelFilter });
   };
 
@@ -98,11 +108,14 @@ export function RecordAdmin() {
     setUserFilter('');
     setTokenFilter('');
     setModelFilter('');
-    if (page !== 1) {
-      setPage(1);
+    void loadRecords();
+  };
+
+  const handleLoadMore = () => {
+    if (!hasMore || !nextCursor || loadingMore || loading) {
       return;
     }
-    void loadRecords();
+    void loadRecords({ user: userFilter, token: tokenFilter, model: modelFilter }, nextCursor);
   };
 
   const toggleExpand = (id: string, e: React.MouseEvent) => {
@@ -112,9 +125,6 @@ export function RecordAdmin() {
     );
   };
 
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const firstRow = logs.length > 0 ? (page - 1) * pageSize + 1 : 0;
-  const lastRow = logs.length > 0 ? (page - 1) * pageSize + logs.length : 0;
   const pageCost = sumDecimalStrings(logs.map(log => log.cost), 6);
   // Aggregate points follow the billing formula "汇总现金之后，再乘以积分汇率":
   // each record's cost is converted to integer micro-points (amount × rate,
@@ -207,39 +217,25 @@ export function RecordAdmin() {
         footer={(
           <div className="p-4 border-t border-slate-200 dark:border-white/10 flex items-center justify-between text-xs mt-auto bg-slate-50 dark:bg-[#121212]">
             <div className="text-slate-500">
-              {t('admin.record.index.text.1v5bfx3', 'Showing ')}
-              {firstRow}
-              {' '}
-              {t('admin.record.index.text.z5dszr', 'to ')}
-              {lastRow}
-              {' '}
-              {t('admin.record.index.text.1b7ol37', 'of ')}
-              {total}
-              {' '}
-              {t('admin.record.index.text.1rfm5gs', 'rows')}
+              {hasMore
+                ? t('admin.record.pagination.loadedRows', { count: logs.length, defaultValue: '{{count}} rows loaded' })
+                : t('admin.record.pagination.end', 'All matching rows loaded')}
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-slate-500 mr-2">{t("admin.record.index.text.wtrnlj", "Total pages:")}{totalPages}</span>
               <button
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
-                disabled={page <= 1 || loading}
-                className="w-7 h-7 flex items-center justify-center rounded border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+                type="button"
+                onClick={handleLoadMore}
+                disabled={!hasMore || loadingMore || loading}
+                className="inline-flex h-7 items-center rounded border border-slate-200 px-3 font-medium text-slate-600 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5"
               >
-                <ChevronRight className="w-3.5 h-3.5 rotate-180" />
-              </button>
-              <span className="min-w-7 h-7 px-2 flex items-center justify-center rounded bg-lobster-500 text-white font-medium">{page}</span>
-              <button
-                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-                disabled={page >= totalPages || loading}
-                className="w-7 h-7 flex items-center justify-center rounded border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronRight className="w-3.5 h-3.5" />
+                {loadingMore
+                  ? t('admin.record.pagination.loadingMore', 'Loading...')
+                  : t('admin.record.pagination.loadMore', 'Load more')}
               </button>
               <select
                 value={pageSize}
                 onChange={(event) => {
                   setPageSize(Number(event.target.value));
-                  setPage(1);
                 }}
                 className="ml-2 bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-white/10 rounded px-2 py-1 focus:outline-none focus:border-lobster-500 text-slate-700 dark:text-slate-300"
               >

@@ -6,6 +6,7 @@ tables:
   system_of_record: true
   write_owner: router-service
   common_columns: user_runtime_entity
+  soft_delete_policy: active_unique
   api_surfaces:
   - app
   frontend_routes:
@@ -68,6 +69,7 @@ tables:
   system_of_record: true
   write_owner: router-service
   common_columns: user_runtime_entity
+  soft_delete_policy: active_unique
   api_surfaces:
   - app
   frontend_routes:

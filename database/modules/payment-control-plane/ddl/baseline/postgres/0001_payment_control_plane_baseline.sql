@@ -159,3 +159,55 @@ CREATE INDEX IF NOT EXISTS idx_commerce_refund_attempt_refund
     ON commerce_refund_attempt (tenant_id, refund_id);
 CREATE INDEX IF NOT EXISTS idx_commerce_refund_item_refund
     ON commerce_refund_item (tenant_id, refund_id);
+
+-- Cloud Router projects a provider-dispatch payload and two pre-confirmation
+-- statuses onto the federated `commerce_payment_intent` / `attempt` facts. The
+-- retired `payment-runtime` module used to provision that wider shape; this
+-- additive guard restores it on a fresh install. `sdkwork-payment` is a hard
+-- dependency installed before this module, so the tables always exist here.
+-- Kept semantically identical to
+-- `database/migrations/postgres/0047_payment_runtime_shape_guard.up.sql`, which
+-- wraps the same statements in `to_regclass` guards for upgrades.
+ALTER TABLE commerce_payment_intent
+    ADD COLUMN IF NOT EXISTS merchant_order_no TEXT NOT NULL DEFAULT '';
+ALTER TABLE commerce_payment_intent
+    ADD COLUMN IF NOT EXISTS subject TEXT NOT NULL DEFAULT '';
+ALTER TABLE commerce_payment_intent
+    ADD COLUMN IF NOT EXISTS provider TEXT NOT NULL DEFAULT '';
+ALTER TABLE commerce_payment_intent
+    ADD COLUMN IF NOT EXISTS supplier_code TEXT NOT NULL DEFAULT '';
+ALTER TABLE commerce_payment_intent
+    ADD COLUMN IF NOT EXISTS scene_code TEXT NOT NULL DEFAULT '';
+ALTER TABLE commerce_payment_intent
+    ADD COLUMN IF NOT EXISTS metadata_json JSONB NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE commerce_payment_intent
+    ADD COLUMN IF NOT EXISTS provider_native_json JSONB;
+ALTER TABLE commerce_payment_intent
+    ADD COLUMN IF NOT EXISTS next_action_json JSONB;
+ALTER TABLE commerce_payment_intent
+    ADD COLUMN IF NOT EXISTS captured_amount NUMERIC(18, 2) NOT NULL DEFAULT 0;
+ALTER TABLE commerce_payment_intent
+    ADD COLUMN IF NOT EXISTS refunded_amount NUMERIC(18, 2) NOT NULL DEFAULT 0;
+ALTER TABLE commerce_payment_intent
+    DROP CONSTRAINT IF EXISTS commerce_payment_intent_status_check;
+ALTER TABLE commerce_payment_intent
+    ADD CONSTRAINT commerce_payment_intent_status_check
+    CHECK (status IN (
+        'created', 'pending', 'processing', 'succeeded', 'failed',
+        'canceled', 'closed', 'requires_confirmation', 'requires_action'
+    ));
+
+ALTER TABLE commerce_payment_attempt
+    ADD COLUMN IF NOT EXISTS provider TEXT NOT NULL DEFAULT '';
+ALTER TABLE commerce_payment_attempt
+    DROP CONSTRAINT IF EXISTS commerce_payment_attempt_status_check;
+ALTER TABLE commerce_payment_attempt
+    ADD CONSTRAINT commerce_payment_attempt_status_check
+    CHECK (status IN (
+        'created', 'pending', 'processing', 'succeeded', 'failed',
+        'canceled', 'closed', 'requires_confirmation', 'requires_action'
+    ));
+
+-- Cloud Router records the operator/system reason on the refund event; the
+-- federated shape keeps only the coded reason on `commerce_refund`.
+ALTER TABLE commerce_refund_event ADD COLUMN IF NOT EXISTS reason TEXT;

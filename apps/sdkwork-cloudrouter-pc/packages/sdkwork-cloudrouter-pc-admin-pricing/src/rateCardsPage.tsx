@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Edit3, Plus, Trash2 } from 'lucide-react';
 import { BottomPagination, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
 import { useTranslation } from 'react-i18next';
@@ -68,7 +68,10 @@ export function RateCardsAdmin() {
   const [plans, setPlans] = useState<AdminPricingPlanItem[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [pageInfo, setPageInfo] = useState<{ totalItems?: string | number } | null>(null);
+  const [pageInfo, setPageInfo] = useState<{
+    totalItems?: string;
+    totalPages?: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -107,10 +110,7 @@ export function RateCardsAdmin() {
     void load();
   }, [load]);
 
-  const totalItems = useMemo(() => {
-    const raw = pageInfo?.totalItems;
-    return typeof raw === 'string' ? Number.parseInt(raw, 10) : (raw ?? 0);
-  }, [pageInfo]);
+  const totalPages = pageInfo?.totalPages;
 
   const openCreate = () => {
     setForm(EMPTY_RATE_CARD_FORM);
@@ -235,7 +235,9 @@ export function RateCardsAdmin() {
             page={page}
             pageSize={pageSize}
             itemCount={items.length}
-            hasNextPage={Boolean(pageInfo?.totalItems && totalItems > page * pageSize)}
+            hasNextPage={
+              totalPages !== undefined ? page < totalPages : items.length === pageSize
+            }
             pageLabel={t('admin.pricing.common.pagination.page', { page })}
             pageSizeLabel={t('admin.pricing.common.pagination.rows')}
             previousLabel={t('admin.pricing.common.pagination.previous')}

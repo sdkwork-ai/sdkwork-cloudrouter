@@ -61,9 +61,9 @@ evidence.
   recovery cannot create an unbounded in-process payload.
 - Give operators a bounded, tenant-scoped analytics overview without losing
   integer or financial precision in API, SDK, or UI boundaries.
-- Persist first-party Chat conversations, turns, visible messages, context
-  snapshots, runtime references, and usage links with strict user isolation and
-  concurrent-write correctness.
+- Retain the ten-table Chat/runtime persistence contract with strict user
+  isolation and concurrent-write correctness while the Chat HTTP surface is
+  deferred.
 
 ### Non-Goals
 
@@ -71,8 +71,9 @@ evidence.
 - Supplier-specific columns or conditionals in the core routing domain.
 - A second provider-account or service-provider aggregate alongside the
   upstream domain.
-- Claiming unimplemented agent, memory, or full Chat lifecycle behavior (such
-  as rename/archive/delete) from the current Chat persistence tables.
+- Shipping a Chat HTTP, contract, or SDK surface in this release; the orphaned
+  `/app/v3/api/chat/*` projection was removed and requires a new decision to
+  restore.
 - Advertising OAuth support before authorization, refresh, revocation,
   encrypted persistence, audit, and failure recovery are implemented end to
   end.
@@ -108,27 +109,24 @@ The detailed product contract is
 is
 [ADR-20260728](../../architecture/decisions/ADR-20260728-standardize-upstream-supplier-routing.md).
 
-### First-Party Chat
+### First-Party Chat (Deferred Surface)
 
-- Create, retrieve, and list user-owned conversations.
-- Create a turn with its input message and pending output item, then complete
-  that output with normalized message content, context snapshot, runtime
-  reference, and optional usage linkage.
-- List messages through bounded server-side pagination without loading a user's
-  entire transcript into process memory.
-- Persist the current ten-table Chat/runtime authority in PostgreSQL with
-  tenant, organization, and user predicates on every read and mutation.
-- Serialize per-conversation turn, item, and message ordinals under concurrent
-  writers and fail closed on invalid or exhausted counters.
-- Persist invocation events (including terminal lifecycle events) and runtime
-  artifacts with scoped ordinals, bounded payloads, and user isolation.
+- The six `/app/v3/api/chat/*` routes, their PostgreSQL adapter, and their
+  tests were removed because the first-party Chat UI/service was deleted and
+  the routes were never authored into the API contract, OpenAPI, or App SDK.
+- Retain the ten-table Chat/runtime PostgreSQL authority
+  (`ai_chat_*` and `ai_runtime_*`) with tenant, organization, and user
+  predicates; the tables stay empty until a Chat surface is approved.
+- Re-introducing Chat requires a new ADR that authors the operations into the
+  frontend field contract, regenerates the app OpenAPI and App SDK, restores
+  the HTTP store, and adds dispatch tests.
 
-The implemented boundary does not yet include conversation rename/archive/
-delete commands, or agent and long-term-memory persistence. Those capabilities
-require separate product contracts and executable authorities before they may
-be advertised. Chat data ownership
-is recorded in
-[ADR-20260730](../../architecture/decisions/ADR-20260730-own-chat-runtime-postgres-authority.md).
+The persistence decision is recorded in
+[ADR-20260730](../../architecture/decisions/ADR-20260730-own-chat-runtime-postgres-authority.md);
+the HTTP removal is recorded in
+[ADR-20261021](../../architecture/decisions/ADR-20261021-remove-orphaned-chat-http-surface.md).
+Neither includes conversation rename/archive/delete, agent, or long-term-memory
+persistence.
 
 ### Product Surfaces
 
@@ -216,8 +214,8 @@ These are launch targets and require production-like evidence.
 | Usage pricing snapshots over 16 KiB or retry envelopes over 32 KiB admitted | 0 |
 | Admin analytics responses with bounded UTC windows, rankings, and exact string numerics | 100% |
 | Server write replicas using healthy database-leased runtime IDs in readiness | 100% |
-| Chat tables, reads, joins, and mutations binding tenant/org/user scope | 100% |
-| Chat sequence collisions under accepted concurrent-write load | 0 |
+| Chat persistence schema validated against the contract baseline | 100% |
+| Chat HTTP/API/SDK operations shipped in this release | 0 (deferred) |
 | Release artifacts with checksum, signature, and SBOM | 100% |
 
 Latency, throughput, recovery time, failover time, and memory ceilings must be
@@ -230,7 +228,7 @@ backup/restore, and multi-replica tests. They are not inferred from design.
 | --- | --- | --- |
 | Domain convergence | Supplier/account/account-group model, PostgreSQL schema, APIs, SDKs, UI, tests, and docs agree | In progress |
 | Payment composition convergence | Payment owner SDK, Cloud extension boundary, write-only credentials, exact action RBAC, server pagination, and docs agree | In progress |
-| Chat persistence convergence | Ten-table PostgreSQL authority, API/SDK pagination, concurrency, readiness, recovery, and docs agree | In progress |
+| Chat surface removal | Orphaned `/app/v3/api/chat/*` projection removed; ten-table persistence contract retained and validated | Done (surface deferred) |
 | Production hardening | Security, streaming, financial, load, recovery, observability, and HA gates pass | Planned |
 | Commercial beta | Clean release candidate, signed artifacts, runbooks, support controls, and reviewed evidence | Planned |
 | General availability | Accepted SLO/SLA, operational history, recovery drills, and supply-chain evidence | Planned |
@@ -245,6 +243,7 @@ manifest remains `preLaunch: true` until the release gate is accepted.
 - [Technical architecture](../../architecture/tech/TECH_ARCHITECTURE.md)
 - [Upstream supplier architecture decision](../../architecture/decisions/ADR-20260728-standardize-upstream-supplier-routing.md)
 - [Chat PostgreSQL ownership decision](../../architecture/decisions/ADR-20260730-own-chat-runtime-postgres-authority.md)
+- [Chat HTTP surface removal](../../architecture/decisions/ADR-20261021-remove-orphaned-chat-http-surface.md)
 - [Production-readiness revalidation](../../engineering/reviews/REVIEW-20260714-production-readiness-revalidation.md)
 - [Security policy](../../../SECURITY.md)
 - [Commercial pricing](../../commercial/PRICING.md)

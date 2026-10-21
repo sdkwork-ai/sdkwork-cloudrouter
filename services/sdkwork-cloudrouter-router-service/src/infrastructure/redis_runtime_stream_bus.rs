@@ -265,6 +265,14 @@ impl RuntimeStreamBus for RedisRuntimeStreamBus {
                     Err(error) => Err(error),
                 }
             } else {
+                // Permit saturation is a capacity signal, not a reason to spin.
+                // Without this bounded wait the caller's tail loop would issue a
+                // Redis round-trip plus at least one PostgreSQL query per
+                // iteration for every follower above the blocking-read ceiling,
+                // turning >64 concurrent streams into a database livelock.
+                // Persisted events stay the source of truth, so a bounded poll
+                // interval is correctness-safe.
+                tokio::time::sleep(Duration::from_millis(100).min(timeout)).await;
                 let mut connection = self.connection();
                 self.with_timeout(
                     redis::cmd("XREAD")

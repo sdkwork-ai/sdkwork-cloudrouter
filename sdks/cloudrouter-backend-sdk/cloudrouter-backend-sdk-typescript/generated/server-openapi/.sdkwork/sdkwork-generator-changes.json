@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "@sdkwork/cloudrouter-backend-sdk"
   },
-  "changeFingerprint": "510e4e204d903e02be9c022c35991a85f606fb447c938d716eeb1e270107a401",
+  "changeFingerprint": "a6760a75718d908f62bad5f8e90e4c1f84e28ff3fcf102cbda3d89652f1b3a44",
   "changes": {
     "createdGeneratedFiles": [
       "bin/publish-core.mjs",

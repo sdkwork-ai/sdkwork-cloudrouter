@@ -13484,7 +13484,7 @@
           "Files/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -13580,7 +13580,7 @@
           "Files/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -13677,7 +13677,7 @@
           "Files/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -13772,7 +13772,7 @@
           "Files/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -13870,7 +13870,7 @@
           "Files/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -13968,7 +13968,7 @@
           "Chat/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -14085,7 +14085,7 @@
           "Batches/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -14181,7 +14181,7 @@
           "Batches/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -14278,7 +14278,7 @@
           "Batches/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -14375,7 +14375,7 @@
           "Batches/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -14473,7 +14473,7 @@
           "Chat/anthropic"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -14581,7 +14581,7 @@
           "Audio/elevenlabs"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -14698,7 +14698,7 @@
           "Audio/elevenlabs"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -14806,7 +14806,7 @@
           "Responses/google"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -14902,7 +14902,7 @@
           "Responses/google"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -14999,7 +14999,7 @@
           "Responses/google"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -15094,7 +15094,7 @@
           "Responses/google"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -15202,7 +15202,7 @@
           "Files/google"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -15298,7 +15298,7 @@
           "Files/google"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -15395,7 +15395,7 @@
           "Files/google"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -15490,7 +15490,7 @@
           "Files/google"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -15596,7 +15596,7 @@
           "Videos/google"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -15704,7 +15704,7 @@
           "Embeddings/google"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -15812,7 +15812,7 @@
           "Chat/google"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -15920,7 +15920,7 @@
           "Embeddings/google"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -16028,7 +16028,7 @@
           "Chat/google"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -16136,7 +16136,7 @@
           "Images/google"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -16244,7 +16244,7 @@
           "Videos/google"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -16352,7 +16352,7 @@
           "Chat/google"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -16450,7 +16450,7 @@
           "Images/kling"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -16547,7 +16547,7 @@
           "Images/kling"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -16645,7 +16645,7 @@
           "Videos/kling"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -16743,7 +16743,7 @@
           "Videos/kling"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -16840,7 +16840,7 @@
           "Videos/kling"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -16938,7 +16938,7 @@
           "Videos/kling"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -17036,7 +17036,7 @@
           "Audio/minimax"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -17134,7 +17134,7 @@
           "Audio/suno"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -17231,7 +17231,7 @@
           "Audio/suno"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -17329,7 +17329,7 @@
           "Chat/typesafe"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -17459,7 +17459,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -17555,7 +17555,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -17652,7 +17652,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -17747,7 +17747,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -17853,7 +17853,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -17952,7 +17952,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -18055,7 +18055,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -18158,7 +18158,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -18288,7 +18288,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -18389,7 +18389,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -18486,7 +18486,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -18581,7 +18581,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -18687,7 +18687,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -18817,7 +18817,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -18918,7 +18918,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -19015,7 +19015,7 @@
           "Audio"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -19145,7 +19145,7 @@
           "Batches"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -19241,7 +19241,7 @@
           "Batches"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -19338,7 +19338,7 @@
           "Batches"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -19435,7 +19435,7 @@
           "Batches"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -19583,7 +19583,7 @@
           "Chat"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -19679,7 +19679,7 @@
           "Chat"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -19776,7 +19776,7 @@
           "Chat"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -19871,7 +19871,7 @@
           "Chat"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -19977,7 +19977,7 @@
           "Chat"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -20116,7 +20116,7 @@
           "Chat"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -20214,7 +20214,7 @@
           "Completions"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -20344,7 +20344,7 @@
           "Containers"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -20440,7 +20440,7 @@
           "Containers"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -20537,7 +20537,7 @@
           "Containers"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -20632,7 +20632,7 @@
           "Containers"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -20771,7 +20771,7 @@
           "Containers"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -20877,7 +20877,7 @@
           "Containers"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -20983,7 +20983,7 @@
           "Containers"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -21087,7 +21087,7 @@
           "Containers"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -21194,7 +21194,7 @@
           "Containers"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -21324,7 +21324,7 @@
           "Conversations"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -21420,7 +21420,7 @@
           "Conversations"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -21517,7 +21517,7 @@
           "Conversations"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -21612,7 +21612,7 @@
           "Conversations"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -21718,7 +21718,7 @@
           "Conversations"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -21857,7 +21857,7 @@
           "Conversations"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -21963,7 +21963,7 @@
           "Conversations"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -22069,7 +22069,7 @@
           "Conversations"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -22173,7 +22173,7 @@
           "Conversations"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -22271,7 +22271,7 @@
           "Embeddings"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -22401,7 +22401,7 @@
           "Files"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -22497,7 +22497,7 @@
           "Files"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -22594,7 +22594,7 @@
           "Files"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -22689,7 +22689,7 @@
           "Files"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -22787,7 +22787,7 @@
           "Files"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -22890,7 +22890,7 @@
           "Images"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -22988,7 +22988,7 @@
           "Images"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -23091,7 +23091,7 @@
           "Images"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -23178,7 +23178,7 @@
           "Models"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -23275,7 +23275,7 @@
           "Models"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -23373,7 +23373,7 @@
           "Moderations"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -23476,7 +23476,7 @@
           "Realtime"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -23584,7 +23584,7 @@
           "Realtime"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -23692,7 +23692,7 @@
           "Realtime"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -23800,7 +23800,7 @@
           "Realtime"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -23908,7 +23908,7 @@
           "Realtime"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -24006,7 +24006,7 @@
           "Realtime"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -24104,7 +24104,7 @@
           "Realtime"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -24202,7 +24202,7 @@
           "Realtime"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -24300,7 +24300,7 @@
           "Realtime"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -24398,7 +24398,7 @@
           "Responses"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -24496,7 +24496,7 @@
           "Responses"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -24594,7 +24594,7 @@
           "Responses"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -24691,7 +24691,7 @@
           "Responses"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -24798,7 +24798,7 @@
           "Responses"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -24895,7 +24895,7 @@
           "Responses"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -25046,7 +25046,7 @@
           "Responses"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -25144,7 +25144,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -25242,7 +25242,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -25339,7 +25339,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -25434,7 +25434,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -25540,7 +25540,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -25679,7 +25679,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -25785,7 +25785,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -25891,7 +25891,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -25995,7 +25995,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -26110,7 +26110,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -26249,7 +26249,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -26355,7 +26355,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -26461,7 +26461,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -26576,7 +26576,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -26682,7 +26682,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -26830,7 +26830,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -26945,7 +26945,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -27062,7 +27062,7 @@
           "Assistants"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -27230,7 +27230,7 @@
           "Tools"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -27378,7 +27378,7 @@
           "Tools"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -27476,7 +27476,7 @@
           "Uploads"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -27573,7 +27573,7 @@
           "Uploads"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -27681,7 +27681,7 @@
           "Uploads"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -27789,7 +27789,7 @@
           "Uploads"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -27919,7 +27919,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -28015,7 +28015,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -28112,7 +28112,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -28207,7 +28207,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -28313,7 +28313,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -28421,7 +28421,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -28527,7 +28527,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -28633,7 +28633,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -28781,7 +28781,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -28920,7 +28920,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -29026,7 +29026,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -29132,7 +29132,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -29236,7 +29236,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -29351,7 +29351,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -29459,7 +29459,7 @@
           "Vector Stores"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -29589,7 +29589,7 @@
           "Videos"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -29685,7 +29685,7 @@
           "Videos"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -29788,7 +29788,7 @@
           "Videos"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -29885,7 +29885,7 @@
           "Videos"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -29983,7 +29983,7 @@
           "Videos"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -30081,7 +30081,7 @@
           "Videos"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -30178,7 +30178,7 @@
           "Videos"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -30273,7 +30273,7 @@
           "Videos"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -30371,7 +30371,7 @@
           "Videos"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -30479,7 +30479,7 @@
           "Videos"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "gateway-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -30577,7 +30577,7 @@
           "Videos/vidu"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -30675,7 +30675,7 @@
           "Images/vidu"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -30773,7 +30773,7 @@
           "Videos/vidu"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -30871,7 +30871,7 @@
           "Videos/vidu"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -30968,7 +30968,7 @@
           "Videos/vidu"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -31066,7 +31066,7 @@
           "Videos/vidu"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -31164,7 +31164,7 @@
           "Videos/vidu"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -31263,7 +31263,7 @@
           "Audio/volcengine"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -31361,7 +31361,7 @@
           "Videos/volcengine"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -31458,7 +31458,7 @@
           "Videos/volcengine"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -31556,7 +31556,7 @@
           "Images/volcengine"
         ],
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "open-api",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
@@ -31750,5 +31750,7 @@
     "typesafe",
     "vidu",
     "volcengine"
-  ]
+  ],
+  "x-sdkwork-owner": "sdkwork-cloudrouter",
+  "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai"
 }

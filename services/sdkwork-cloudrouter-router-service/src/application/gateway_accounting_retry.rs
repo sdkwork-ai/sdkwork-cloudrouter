@@ -344,7 +344,11 @@ impl GatewayUsageRecorder for RetryingGatewayUsageRecorder {
                         readiness_degraded = true,
                         "gateway trace persistence context could not be captured"
                     );
-                    Ok(())
+                    // A context failure means nothing was persisted and no
+                    // durable retry envelope exists. Reporting success here hid
+                    // the loss from `observe_recording_failure`, so the
+                    // fail-closed settlement guard never fired.
+                    Err(error)
                 }
             }
         })
@@ -369,7 +373,9 @@ impl GatewayUsageRecorder for RetryingGatewayUsageRecorder {
                         readiness_degraded = true,
                         "gateway usage persistence context could not be captured"
                     );
-                    Ok(())
+                    // See `record_gateway_request_trace`: a dropped usage fact
+                    // is a settlement loss, not a success.
+                    Err(error)
                 }
             }
         })

@@ -8536,7 +8536,7 @@ tables:
     write_owner: router-service
     system_of_record: true
     tenant_scope: tenant_required
-    soft_delete_policy: null
+    soft_delete_policy: active_unique
     columns:
       id:
         type: int64
@@ -8658,7 +8658,7 @@ tables:
       - name: uk_iam_user_preference_scope
         columns: *id077
         unique: true
-        where: null
+        where: deleted_at IS NULL
       - name: idx_iam_user_preference_user_updated
         columns:
           - tenant_id
@@ -8682,7 +8682,7 @@ tables:
     write_owner: router-service
     system_of_record: true
     tenant_scope: tenant_required
-    soft_delete_policy: null
+    soft_delete_policy: active_unique
     columns:
       id:
         type: int64
@@ -8825,7 +8825,7 @@ tables:
       - name: uk_integration_webhook_endpoint_scope_code
         columns: *id078
         unique: true
-        where: null
+        where: deleted_at IS NULL
       - name: idx_integration_webhook_endpoint_scope_code
         columns:
           - tenant_id

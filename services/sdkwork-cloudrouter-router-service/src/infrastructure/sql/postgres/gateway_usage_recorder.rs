@@ -489,6 +489,13 @@ impl GatewayUsageRecorder for PostgresGatewayUsageRecorder {
                 upsert_trace(&mut transaction, &trace_command, &context).await?;
             }
             for (command, context) in &records {
+                // A frozen fact (settled or awaiting settlement retry) must not
+                // rewrite its measurement/rating/charge projections from a
+                // replay payload. The fact and its ledger lines commit in one
+                // transaction, so a frozen fact implies the projections exist.
+                if usage_fact_is_frozen(&mut transaction, command).await? {
+                    continue;
+                }
                 let chargeable = upsert_billing_ledger(&mut transaction, command, context).await?;
                 if chargeable {
                     upsert_usage_fact(&mut transaction, command, context).await?;
@@ -531,9 +538,12 @@ impl GatewayUsageRecorder for PostgresGatewayUsageRecorder {
                     store_error("failed to begin gateway usage transaction", error)
                 })?;
             upsert_trace(&mut transaction, &trace_command, &context).await?;
-            let chargeable = upsert_billing_ledger(&mut transaction, &command, &context).await?;
-            if chargeable {
-                upsert_usage_fact(&mut transaction, &command, &context).await?;
+            if !usage_fact_is_frozen(&mut transaction, &command).await? {
+                let chargeable =
+                    upsert_billing_ledger(&mut transaction, &command, &context).await?;
+                if chargeable {
+                    upsert_usage_fact(&mut transaction, &command, &context).await?;
+                }
             }
             transaction.commit().await.map_err(|error| {
                 store_error("failed to commit gateway usage transaction", error)
@@ -673,6 +683,36 @@ async fn upsert_trace(
         .await
         .map_err(|error| store_error("failed to upsert gateway request trace", error))?;
     Ok(())
+}
+
+/// Returns true when the stored usage fact has left the pending state.
+///
+/// `settlement_status = 0` is the only mutable state. Any other value means the
+/// fact was already settled (or is owned by the settlement retry worker), so a
+/// duplicate recording must leave the fact and its projections untouched.
+async fn usage_fact_is_frozen(
+    connection: &mut PgConnection,
+    command: &GatewayUsageRecordCommand,
+) -> Result<bool, DomainError> {
+    let status = sqlx::query_scalar::<_, i32>(
+        r#"
+        SELECT settlement_status
+        FROM ai_metering_usage
+        WHERE tenant_id = $1
+          AND organization_id = $2
+          AND request_id = $3
+          AND usage_type = $4
+        LIMIT 1
+        "#,
+    )
+    .bind(command.tenant_id)
+    .bind(command.organization_id)
+    .bind(&command.request_id)
+    .bind(command.usage_type)
+    .fetch_optional(&mut *connection)
+    .await
+    .map_err(|error| store_error("failed to load gateway usage fact settlement state", error))?;
+    Ok(status.is_some_and(|status| i64::from(status) != SETTLEMENT_PENDING))
 }
 
 async fn upsert_usage_fact(

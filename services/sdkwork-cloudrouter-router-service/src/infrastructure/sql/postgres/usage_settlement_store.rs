@@ -577,6 +577,12 @@ async fn has_existing_request_settlement(
     // settle. Recovery must recognize it too, or the worker would debit the
     // same request a second time.
     let sync_expired_hold_capture = format!("cloudrouter:{request_id}:hold-expired-capture");
+    // Pure postpaid settlement keys are per-usage-fact (single) or per-request
+    // (multi-fact). They carry no `cloudrouter:` prefix, so they must be probed
+    // explicitly; the previous list omitted both and a replay after a committed
+    // debit could charge the request again.
+    let postpaid_single_fact = settlement_no(usage_fact.id);
+    let postpaid_request = format!("usage-settlement-{request_id}");
     let exists = sqlx::query_scalar::<_, bool>(
         r#"
         SELECT EXISTS (
@@ -586,7 +592,7 @@ async fn has_existing_request_settlement(
               AND request_no = $2
               AND organization_id = $3
               AND asset_code = 'token_bank'
-              AND business_no IN ($4, $5, $6, $7, $8, $9, $10)
+              AND business_no IN ($4, $5, $6, $7, $8, $9, $10, $11, $12)
         )
         "#,
     )
@@ -600,6 +606,8 @@ async fn has_existing_request_settlement(
     .bind(async_adjust_debit)
     .bind(async_adjust_credit)
     .bind(sync_expired_hold_capture)
+    .bind(postpaid_single_fact)
+    .bind(postpaid_request)
     .fetch_one(&mut **tx)
     .await
     .map_err(|error| store_error("failed to load existing invocation settlement", error))?;
@@ -1142,16 +1150,23 @@ fn parse_decimal_scaled(value: &str) -> Result<i128, DomainError> {
 }
 
 fn settlement_batch_no(candidates: &[SettlementCandidate]) -> String {
+    // Postpaid families are grouped by request id only, so the request id is a
+    // stable per-request operation key. A member-set hash (the previous shape)
+    // changed whenever the claimed batch composition changed, so a debit that
+    // committed before its claim transaction rolled back could be replayed
+    // under a new `business_no` and charged twice.
+    debug_assert!(
+        candidates
+            .windows(2)
+            .all(|pair| pair[0].usage_fact.request_id == pair[1].usage_fact.request_id),
+        "postpaid settlement batches always contain one request id"
+    );
+    let request_id = &candidates[0].usage_fact.request_id;
     if candidates.len() == 1 {
-        return settlement_no(candidates[0].usage_fact.id);
+        settlement_no(candidates[0].usage_fact.id)
+    } else {
+        format!("usage-settlement-{request_id}")
     }
-    let mut ids: Vec<String> = candidates
-        .iter()
-        .map(|candidate| candidate.usage_fact.id.to_string())
-        .collect();
-    ids.sort();
-    let digest = sha256_hash(ids.join(",").as_bytes());
-    format!("usage-settlement-batch-{digest}")
 }
 
 fn settlement_retry_delay(attempt: usize) -> Duration {

@@ -135,8 +135,10 @@ class DatabaseContractMaterializerTest(unittest.TestCase):
             self.assertEqual(2, manifest["schemaVersion"])
             self.assertEqual("authoritative-server", manifest["databaseRole"])
             self.assertEqual(["postgres"], manifest["engines"])
-            self.assertEqual("ai_", manifest["tablePrefix"])
-            self.assertNotIn("tablePrefixes", manifest)
+            self.assertEqual(
+                ["ai_", "iam_user_", "integration_"], manifest["tablePrefixes"]
+            )
+            self.assertNotIn("tablePrefix", manifest)
             self.assertEqual("ai_upstream_supplier", manifest["baselineAnchorTable"])
             self.assertFalse(manifest["lifecycle"]["autoMigrate"])
             self.assertEqual(1, manifest["materializedTableCount"])

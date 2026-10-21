@@ -88,7 +88,19 @@ pub async fn serve_with_graceful_shutdown_deadline(
             // shutdown begins; then start the bounded grace window.
             let mut receiver = subscribe_shutdown_signal();
             if receiver.recv().await.is_ok() {
-                tokio::time::sleep(grace).await;
+                // Detached stream producers and terminal-event writers are
+                // not tied to an HTTP connection: wait for them inside the
+                // same budget so a rolling restart does not drop a terminal
+                // event mid-flight.
+                let registry = crate::background_tasks::background_task_registry();
+                if registry.wait_idle(grace).await {                    tracing::info!("background stream tasks drained before the shutdown deadline");
+                } else {
+                    tracing::warn!(
+                        active_background_tasks = registry.active(),
+                        grace_seconds = grace.as_secs(),
+                        "background stream tasks still active after the grace window"
+                    );
+                }
             } else {
                 std::future::pending::<()>().await;
             }

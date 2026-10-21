@@ -35,7 +35,7 @@ INSERT INTO iam_user_preference
     (uuid, tenant_id, organization_id, user_id, owner_type, owner_id, data_scope, status, created_at, updated_at, version, metadata, language, timezone, notification_preferences, id)
 VALUES
     ($1, $2, $3, $4, 1, $4, 1, 1, $5::timestamp AT TIME ZONE 'UTC', $5::timestamp AT TIME ZONE 'UTC', 0, '{}'::jsonb, $6, $7, $8::jsonb, $9)
-ON CONFLICT(tenant_id, organization_id, user_id) DO UPDATE SET
+ON CONFLICT(tenant_id, organization_id, user_id) WHERE deleted_at IS NULL DO UPDATE SET
     language = excluded.language,
     timezone = excluded.timezone,
     notification_preferences = excluded.notification_preferences,
@@ -51,7 +51,7 @@ INSERT INTO integration_webhook_endpoint
     (uuid, tenant_id, organization_id, user_id, owner_type, owner_id, data_scope, status, created_at, updated_at, version, metadata, endpoint_code, name, target_url, event_types, signing_alg, retry_policy, failure_count, id)
 VALUES
     ($1, $2, $3, $4, 1, $4, 1, 1, $5::timestamp AT TIME ZONE 'UTC', $5::timestamp AT TIME ZONE 'UTC', 0, $6::jsonb, $7, 'Console Settings Webhook', $8, $9::jsonb, 'hmac-sha256', $10::jsonb, 0, $11)
-ON CONFLICT(tenant_id, organization_id, endpoint_code) DO UPDATE SET
+ON CONFLICT(tenant_id, organization_id, endpoint_code) WHERE deleted_at IS NULL DO UPDATE SET
     user_id = excluded.user_id,
     owner_id = excluded.owner_id,
     target_url = excluded.target_url,

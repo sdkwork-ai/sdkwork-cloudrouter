@@ -35,6 +35,14 @@ CLEANUP_OWNERS = {
     "pricing_import_run": "pricing-service",
 }
 
+# (online_retention, archive_retention, grace_period). Pricing import runs are
+# the audit lineage for published price books, so they keep a longer window
+# than the operational event/usage tables.
+RETENTION_WINDOWS = {
+    "pricing_import_run": ("24mo", "7y", "24h"),
+}
+DEFAULT_RETENTION_WINDOW = ("12mo", "5y", "24h")
+
 OPS_QUERY_INDEXES = {
     "ops_alert_event": (
         "idx_ops_alert_event_tenant_status_latest",
@@ -104,10 +112,13 @@ class DatabaseLifecycleIndexesTest(unittest.TestCase):
                 self.assertEqual(["retention_until", "id"], indexes[index_name])
 
                 lifecycle = table["lifecycle"]
+                online_retention, archive_retention, grace_period = RETENTION_WINDOWS.get(
+                    table_name, DEFAULT_RETENTION_WINDOW
+                )
                 self.assertEqual("indexed_append_only", lifecycle["storage_strategy"])
-                self.assertEqual("12mo", lifecycle["retention"]["online_retention"])
-                self.assertEqual("5y", lifecycle["retention"]["archive_retention"])
-                self.assertEqual("24h", lifecycle["retention"]["grace_period"])
+                self.assertEqual(online_retention, lifecycle["retention"]["online_retention"])
+                self.assertEqual(archive_retention, lifecycle["retention"]["archive_retention"])
+                self.assertEqual(grace_period, lifecycle["retention"]["grace_period"])
 
                 cleanup = lifecycle["cleanup"]
                 self.assertEqual(CLEANUP_OWNERS[table_name], cleanup["owner"])

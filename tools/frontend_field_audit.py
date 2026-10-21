@@ -40,7 +40,7 @@ def _is_field_audit_exempt_source(source: str) -> bool:
 _COMPOSED_CAPABILITY_SDK_PATTERN = re.compile(
     r"\b(?:getSdkworkPaymentBackendSdkClient|getSdkworkMembershipBackendSdkClient|"
     r"getSdkworkPromotionBackendSdkClient|getSdkworkBaseDataBackendSdkClient|"
-    r"getSdkworkDriveAppSdkClient|getSdkworkCommerceService)\s*\("
+    r"getSdkworkDriveAppSdkClient|getSdkworkCourseBackendSdkClient|getSdkworkCommerceService)\s*\("
 )
 
 

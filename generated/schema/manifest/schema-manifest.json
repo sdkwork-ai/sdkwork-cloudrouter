@@ -9,6 +9,7 @@
     "ai_chat_turn",
     "ai_config_change_event",
     "ai_config_version",
+    "ai_metering_async_task",
     "ai_metering_request_trace",
     "ai_metering_usage",
     "ai_model_access_policy",
@@ -1027,15 +1028,15 @@
   "summary": {
     "api_surface_counts": {
       "app": 111,
-      "backend": 106,
+      "backend": 107,
       "openai_v1": 3,
-      "worker": 113
+      "worker": 114
     },
     "external_legacy_table_count": 0,
     "frontend_route_count": 66,
-    "generated_table_count": 73,
+    "generated_table_count": 74,
     "legacy_table_count": 0,
-    "table_count": 134
+    "table_count": 135
   },
   "tables": [
     {
@@ -3842,6 +3843,303 @@
         }
       ],
       "write_owner": "ai-routing-service"
+    },
+    {
+      "api_surfaces": [
+        "backend",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "user_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "request_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "api_key_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "task_kind",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "upstream_id",
+          "source": "explicit",
+          "type": "string(256)"
+        },
+        {
+          "name": "catalog_key",
+          "source": "explicit",
+          "type": "string(256)"
+        },
+        {
+          "name": "supplier_code",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "account_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "region_code",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "task_status",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "attempts",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "next_poll_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "last_error",
+          "source": "explicit",
+          "type": "string(1024)"
+        },
+        {
+          "name": "billing_request_id",
+          "source": "explicit",
+          "type": "string(160)"
+        },
+        {
+          "name": "usage_snapshot",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "settled_at",
+          "source": "explicit",
+          "type": "instant"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ai",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "next_poll_at",
+            "id"
+          ],
+          "name": "idx_ai_metering_async_task_due",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "task_status",
+            "next_poll_at",
+            "id"
+          ],
+          "name": "idx_ai_metering_async_task_tenant_status",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "tenant_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ai_metering_async_task",
+      "unique_constraints": [
+        {
+          "columns": [
+            "uuid"
+          ],
+          "name": "uk_ai_metering_async_task_uuid"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "task_kind",
+            "upstream_id"
+          ],
+          "name": "uk_ai_metering_async_task_upstream"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "billing_request_id"
+          ],
+          "name": "uk_ai_metering_async_task_billing_request"
+        }
+      ],
+      "write_owner": "router-service"
     },
     {
       "api_surfaces": [
@@ -34661,6 +34959,7 @@
               "cleanup_candidates",
               "cleanup_archived",
               "cleanup_deleted",
+              "cleanup_skipped_legal_hold",
               "cleanup_failures"
             ]
           },

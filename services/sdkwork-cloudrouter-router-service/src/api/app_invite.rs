@@ -38,7 +38,6 @@ struct AppInviteState {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 struct AppInviteScopeQuery {
     tenant_code: Option<String>,
     organization_code: Option<String>,

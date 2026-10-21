@@ -28329,28 +28329,25 @@
     },
     "/backend/v3/api/system/records": {
       "get": {
-        "description": "List logs. Reads ai_request_trace, ai_usage, ai_routing_decision_log. Writes none. File targets none.",
+        "description": "List gateway request attempts newest first with an opaque keyset cursor. Each retry attempt is an independent row, so a page never ranks or counts the whole tenant. Reads ai_request_trace, ai_usage, ai_routing_decision_log. Writes none. File targets none.",
         "operationId": "records.list",
         "parameters": [
           {
-            "description": "Page query parameter.",
+            "description": "Opaque keyset cursor from the previous page's nextCursor.",
             "in": "query",
-            "name": "page",
+            "name": "cursor",
             "required": false,
             "schema": {
-              "default": 1,
-              "format": "int32",
-              "minimum": 1,
-              "type": "integer"
+              "maxLength": 512,
+              "type": "string"
             }
           },
           {
-            "description": "Page size query parameter.",
+            "description": "Page size between 1 and 200.",
             "in": "query",
             "name": "page_size",
             "required": false,
             "schema": {
-              "default": 20,
               "format": "int32",
               "maximum": 200,
               "minimum": 1,
@@ -28358,7 +28355,7 @@
             }
           },
           {
-            "description": "User query parameter.",
+            "description": "User label, email, or numeric id filter.",
             "in": "query",
             "name": "user",
             "required": false,
@@ -28368,7 +28365,7 @@
             }
           },
           {
-            "description": "Token query parameter.",
+            "description": "API key name, group, or request id filter.",
             "in": "query",
             "name": "token",
             "required": false,
@@ -28378,7 +28375,7 @@
             }
           },
           {
-            "description": "Model query parameter.",
+            "description": "Requested or resolved model filter.",
             "in": "query",
             "name": "model",
             "required": false,

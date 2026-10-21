@@ -29,7 +29,7 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::installer::{
 };
 use sdkwork_cloudrouter_router_service::infrastructure::sql::pool::connect_standard_database_pool;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
-    PostgresAdminAuthSettingsStore, PostgresAdminTransactionCenterStore, PostgresAppChatStore,
+    PostgresAdminAuthSettingsStore, PostgresAdminTransactionCenterStore,
     PostgresAppGatewayTracesReadStore, PostgresAppInviteStore, PostgresAppNotificationStore,
     PostgresAppRoutingReadStore, PostgresAppRuntimeStore, PostgresCatalogLoadError,
     PostgresDashboardOverviewReadStore, PostgresGatewayApiKeyCommandStore,
@@ -44,12 +44,12 @@ use sdkwork_cloudrouter_router_service::ports::AdminTransactionCenterSubject;
 use sdkwork_cloudrouter_router_service::ports::ChatCompletionStreamRelay;
 use sdkwork_cloudrouter_router_service::ports::UpstreamAccountRouteCatalog;
 use sdkwork_cloudrouter_router_service::ports::{
-    AdminAuthSettingsStore, AppChatStore, AppGatewayTracesReadStore, AppInviteStore,
-    AppNotificationStore, AppRoutingReadStore, AppRuntimeStore, DashboardOverviewReadStore,
-    GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore, ModelRankingRefreshOutcome,
-    ModelRankingRefreshRunStatus, ModelRankingRefreshStore, ModelRankingsCacheInvalidation,
-    ModelRankingsReadModelStore, OfficialPricingCatalogReadStore, SettingsStore,
-    SettlementsDashboardReadStore, SiteSettingsStore, UsageLogsReadStore,
+    AdminAuthSettingsStore, AppGatewayTracesReadStore, AppInviteStore, AppNotificationStore,
+    AppRoutingReadStore, AppRuntimeStore, DashboardOverviewReadStore, GatewayApiKeyCommandStore,
+    GatewayApiKeyManagementReadStore, ModelRankingRefreshOutcome, ModelRankingRefreshRunStatus,
+    ModelRankingRefreshStore, ModelRankingsCacheInvalidation, ModelRankingsReadModelStore,
+    OfficialPricingCatalogReadStore, SettingsStore, SettlementsDashboardReadStore,
+    SiteSettingsStore, UsageLogsReadStore,
 };
 use sdkwork_cloudrouter_settlements_dashboard_repository_sqlx::PostgresSettlementsDashboardReadStore;
 use sdkwork_content_documents_sdk_reference::app_sdk_reference_router;
@@ -126,7 +126,6 @@ fn app_api_key_runtime_deps_for_postgres(
 }
 
 type AppNotificationRuntimeStore = Arc<dyn AppNotificationStore + Send + Sync>;
-type AppChatRuntimeStore = Arc<dyn AppChatStore + Send + Sync>;
 type AppRuntimeRuntimeStore = Arc<dyn AppRuntimeStore + Send + Sync>;
 type AppRuntimeExecutionCatalog = Arc<RefreshableSqlPricingCatalog>;
 type AppRuntimeChatStreamRelay = Arc<dyn ChatCompletionStreamRelay + Send + Sync>;
@@ -178,7 +177,6 @@ pub fn router() -> Router {
         .merge(sdkwork_cloudrouter_router_service::api::app_usage_logs_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_gateway_traces_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_notification_router())
-        .merge(sdkwork_cloudrouter_router_service::api::app_chat_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_runtime_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_routing_router())
 }
@@ -295,7 +293,6 @@ where
         .merge(sdkwork_cloudrouter_router_service::api::app_usage_logs_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_gateway_traces_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_notification_router())
-        .merge(sdkwork_cloudrouter_router_service::api::app_chat_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_runtime_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_routing_router())
         .merge(app_model_catalog_router(Arc::clone(&catalog)))
@@ -406,7 +403,6 @@ struct AppRouterRuntime<'a> {
     usage_logs_read_store: Option<UsageLogsStore>,
     gateway_traces_read_store: Option<GatewayTracesStore>,
     app_notification_store: Option<AppNotificationRuntimeStore>,
-    app_chat_store: Option<AppChatRuntimeStore>,
     app_runtime_store: Option<AppRuntimeRuntimeStore>,
     app_runtime_execution_catalog: Option<AppRuntimeExecutionCatalog>,
     app_runtime_chat_stream_relay: Option<AppRuntimeChatStreamRelay>,
@@ -438,7 +434,6 @@ fn router_with_runtime_stores_and_database_status(runtime: AppRouterRuntime<'_>)
         usage_logs_read_store,
         gateway_traces_read_store,
         app_notification_store,
-        app_chat_store,
         app_runtime_store,
         app_runtime_execution_catalog,
         app_runtime_chat_stream_relay,
@@ -530,17 +525,6 @@ fn router_with_runtime_stores_and_database_status(runtime: AppRouterRuntime<'_>)
             subject_boundary_config.clone(),
         ),
         None => router.merge(sdkwork_cloudrouter_router_service::api::app_notification_router()),
-    };
-    router = match app_chat_store {
-        Some(store) => sdkwork_cloudrouter_http::merge_web_framework_scoped_app_router(
-            router,
-            sdkwork_cloudrouter_router_service::api::app_chat_router_with_store(
-                store,
-                Arc::clone(&entity_uuid_generator),
-            ),
-            subject_boundary_config.clone(),
-        ),
-        None => router.merge(sdkwork_cloudrouter_router_service::api::app_chat_router()),
     };
     router = match app_runtime_store {
         Some(store) => {
@@ -673,7 +657,6 @@ pub async fn router_with_postgres_product_catalog(
     let usage_logs_read_store = Arc::new(PostgresUsageLogsReadStore::new(pool.clone()));
     let gateway_traces_read_store = Arc::new(PostgresAppGatewayTracesReadStore::new(pool.clone()));
     let app_notification_store = Arc::new(PostgresAppNotificationStore::new(pool.clone()));
-    let app_chat_store = Arc::new(PostgresAppChatStore::new(pool.clone()));
     let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));
     let app_routing_read_store = Arc::new(PostgresAppRoutingReadStore::new(pool.clone()));
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
@@ -708,7 +691,6 @@ pub async fn router_with_postgres_product_catalog(
             usage_logs_read_store: Some(usage_logs_read_store),
             gateway_traces_read_store: Some(gateway_traces_read_store),
             app_notification_store: Some(app_notification_store),
-            app_chat_store: Some(app_chat_store),
             app_runtime_store: Some(app_runtime_store),
             app_runtime_execution_catalog: None,
             app_runtime_chat_stream_relay: None,
@@ -815,7 +797,6 @@ pub async fn router_with_postgres_shared_runtime(
         commerce_pool.clone(),
     ));
     let app_notification_store = Arc::new(PostgresAppNotificationStore::new(pool.clone()));
-    let app_chat_store = Arc::new(PostgresAppChatStore::new(pool.clone()));
     let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));
     let app_routing_read_store = Arc::new(PostgresAppRoutingReadStore::new(commerce_pool.clone()));
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
@@ -849,7 +830,6 @@ pub async fn router_with_postgres_shared_runtime(
             usage_logs_read_store: Some(usage_logs_read_store),
             gateway_traces_read_store: Some(gateway_traces_read_store),
             app_notification_store: Some(app_notification_store),
-            app_chat_store: Some(app_chat_store),
             app_runtime_store: Some(app_runtime_store),
             app_runtime_execution_catalog: Some(catalog),
             app_runtime_chat_stream_relay: None,
@@ -1065,7 +1045,6 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
     let usage_logs_read_store = Arc::new(PostgresUsageLogsReadStore::new(pool.clone()));
     let gateway_traces_read_store = Arc::new(PostgresAppGatewayTracesReadStore::new(pool.clone()));
     let app_notification_store = Arc::new(PostgresAppNotificationStore::new(pool.clone()));
-    let app_chat_store = Arc::new(PostgresAppChatStore::new(pool.clone()));
     let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));
     let app_routing_read_store = Arc::new(PostgresAppRoutingReadStore::new(pool.clone()));
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
@@ -1106,7 +1085,6 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
             usage_logs_read_store: Some(usage_logs_read_store),
             gateway_traces_read_store: Some(gateway_traces_read_store),
             app_notification_store: Some(app_notification_store),
-            app_chat_store: Some(app_chat_store),
             app_runtime_store: Some(app_runtime_store),
             app_runtime_execution_catalog: Some(app_runtime_execution_catalog),
             app_runtime_chat_stream_relay: None,
@@ -1329,10 +1307,12 @@ fn allow_implicit_in_memory_runtime_stream_bus(deployment_mode: DeploymentMode) 
 }
 
 fn allow_in_memory_runtime_stream_bus_fallback(deployment_mode: DeploymentMode) -> bool {
-    matches!(
-        deployment_mode,
-        DeploymentMode::Desktop | DeploymentMode::Server
-    )
+    // Only a single-process desktop runtime may degrade to process-local
+    // execution claims. A `Server` deployment can run multiple replicas; an
+    // in-process bus there makes `claim_execution` process-local, so two
+    // replicas can execute (and bill) the same invocation while cancellation
+    // never crosses processes. Server and cloud must fail closed.
+    deployment_mode == DeploymentMode::Desktop
 }
 
 fn app_runtime_gateway_base_url(runtime_toml: Option<&RuntimeTomlConfig>) -> String {

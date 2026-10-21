@@ -27,7 +27,9 @@ use sdkwork_cloudrouter_router_service::infrastructure::provider::{
 use sdkwork_cloudrouter_router_service::ports::{
     InvocationDispatchError, InvocationDispatcher, InvocationDispatcherFuture,
 };
-use sdkwork_cloudrouter_security::{validate_outbound_url, OutboundTargetPolicy};
+use sdkwork_cloudrouter_security::{
+    validate_outbound_url, validate_resolved_outbound_ip, OutboundTargetPolicy,
+};
 use tower::Service as TowerService;
 
 const INVOCATION_UPSTREAM_BODY_LIMIT_BYTES: usize = 32 * 1024 * 1024;
@@ -55,6 +57,10 @@ pub struct InvocationHttpDispatcher {
     response_max_bytes: NonZeroUsize,
     response_timeout: Duration,
     response_memory_budget: ProviderResponseMemoryBudget,
+    /// A tunnelled CONNECT target is resolved by the proxy, so the local
+    /// `OutboundDnsResolver` never sees it. When a proxy is configured the
+    /// dispatcher pre-resolves the target locally as defence in depth.
+    proxy_configured: bool,
 }
 
 impl InvocationHttpDispatcher {
@@ -117,16 +123,15 @@ impl InvocationHttpDispatcher {
         http_pool_config: ProviderRelayHttpPoolConfig,
     ) -> Self {
         let response_memory_budget = ProviderResponseMemoryBudget::with_default_limit();
+        let proxy = outbound_http_proxy_or_warn();
+        let proxy_configured = proxy.is_some();
         Self {
-            client: build_invocation_http_client(
-                outbound_target_policy,
-                http_pool_config,
-                outbound_http_proxy_or_warn(),
-            ),
+            client: build_invocation_http_client(outbound_target_policy, http_pool_config, proxy),
             outbound_target_policy,
             response_max_bytes,
             response_timeout,
             response_memory_budget,
+            proxy_configured,
         }
     }
 
@@ -160,12 +165,14 @@ impl InvocationHttpDispatcher {
             .map_err(|error| error.to_string())?;
         let outbound_target_policy = outbound_target_policy_from_process_env();
         let proxy = outbound_http_proxy_from_process_env()?;
+        let proxy_configured = proxy.is_some();
         Ok(Self {
             client: build_invocation_http_client(outbound_target_policy, http_pool_config, proxy),
             outbound_target_policy,
             response_max_bytes,
             response_timeout,
             response_memory_budget,
+            proxy_configured,
         })
     }
 }
@@ -208,6 +215,9 @@ impl InvocationDispatcher for InvocationHttpDispatcher {
                 )
             })?;
             let uri = validated_provider_uri(provider_url, self.outbound_target_policy)?;
+            if self.proxy_configured {
+                ensure_proxy_target_resolves_public(&uri, self.outbound_target_policy).await?;
+            }
             let provider_url_redacted = redact_provider_url(uri.to_string().as_str());
 
             let request = build_upstream_request(provider_request, uri)?;
@@ -625,6 +635,79 @@ fn validated_provider_uri(
     })
 }
 
+/// Rejects a tunnelled provider target whose local DNS answer is not public.
+///
+/// With an outbound proxy configured, hyper sends `CONNECT <host>` and the
+/// proxy resolves the name, so [`OutboundDnsResolver`] never validates the
+/// address that is actually connected. URL-shape validation alone accepts an
+/// attacker-chosen hostname such as `internal.example.com` that resolves to
+/// `10.0.0.5` or `169.254.169.254`. This pre-resolution closes the casual
+/// bypass for the tunnelled path; the proxy must still enforce its own egress
+/// ACL because a CONNECT tunnel re-resolves the name.
+async fn ensure_proxy_target_resolves_public(
+    uri: &Uri,
+    policy: OutboundTargetPolicy,
+) -> Result<(), InvocationDispatchError> {
+    if policy == OutboundTargetPolicy::Development {
+        return Ok(());
+    }
+    let Some(host) = uri.host() else {
+        return Err(dispatch_error(
+            "provider_target_not_allowed",
+            "provider URL has no host",
+            None,
+            false,
+        ));
+    };
+    if host.parse::<std::net::IpAddr>().is_ok() {
+        // IP literals are already rejected by the URL policy.
+        return Ok(());
+    }
+    let port = uri.port_u16().unwrap_or(443);
+    let resolved = tokio::time::timeout(
+        Duration::from_secs(2),
+        tokio::net::lookup_host((host, port)),
+    )
+    .await
+    .map_err(|_| {
+        dispatch_error(
+            "provider_target_dns_timeout",
+            "provider target DNS resolution timed out",
+            None,
+            true,
+        )
+    })?
+    .map_err(|error| {
+        dispatch_error(
+            "provider_target_dns_failed",
+            format!("provider target DNS resolution failed: {error}"),
+            None,
+            true,
+        )
+    })?;
+    let mut resolved_any = false;
+    for address in resolved {
+        resolved_any = true;
+        if validate_resolved_outbound_ip(address.ip(), policy).is_err() {
+            return Err(dispatch_error(
+                "provider_target_not_allowed",
+                "provider target resolved to a non-public address",
+                None,
+                false,
+            ));
+        }
+    }
+    if !resolved_any {
+        return Err(dispatch_error(
+            "provider_target_dns_failed",
+            "provider target DNS resolution returned no addresses",
+            None,
+            true,
+        ));
+    }
+    Ok(())
+}
+
 fn build_upstream_request(
     provider_request: &sdkwork_cloudrouter_router_service::application::InvocationProviderRequest,
     uri: Uri,
@@ -804,6 +887,21 @@ mod tests {
         assert!(parse_outbound_http_proxy("https://127.0.0.1:7897").is_err());
         assert!(parse_outbound_http_proxy("not a uri").is_err());
         assert!(parse_outbound_http_proxy("http://").is_err());
+    }
+
+    #[tokio::test]
+    async fn proxy_target_pre_resolution_rejects_private_dns_answers() {
+        let uri: Uri = "https://localhost/v1".parse().expect("valid uri");
+
+        assert!(
+            ensure_proxy_target_resolves_public(&uri, OutboundTargetPolicy::Production)
+                .await
+                .is_err(),
+            "a tunnelled hostname resolving to loopback must be rejected before CONNECT"
+        );
+        ensure_proxy_target_resolves_public(&uri, OutboundTargetPolicy::Development)
+            .await
+            .expect("development fixtures may target loopback");
     }
 
     #[test]

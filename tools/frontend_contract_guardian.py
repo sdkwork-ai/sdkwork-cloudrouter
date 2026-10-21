@@ -403,21 +403,30 @@ class FrontendContractGuardian:
             # Compiled twin of quickImport.ts (Vite resolves the .js artifact).
             "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/quick-import/quickImport.js",
             "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/playgroundSender.ts",
+            # Compiled twins of the documents reference surface; the portal
+            # Vite runtime resolves the .js artifacts.
+            "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/playgroundSender.js",
             "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/modelKitIntegration.ts",
+            "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/modelKitIntegration.js",
             "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/apiReferenceSchemaTabs.ts",
+            "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/apiReferenceSchemaTabs.js",
             "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/codeSnippetClient.ts",
+            "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/codeSnippetClient.js",
             "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/components/ApiPlayground.tsx",
         }
     )
     DOCUMENTS_RUNTIME_BOUNDARY_FILES = frozenset(
         {
             "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-commons/src/documents-reference-runtime.tsx",
+            "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-commons/src/documents-reference-runtime.js",
+            "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-commons/src/documents-reference-runtime.d.ts",
             "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/documents-reference-runtime-adapter.ts",
         }
     )
     EXTERNAL_DEPENDENCY_SDK_FAMILIES_WITHOUT_LOCAL_OPERATIONS = frozenset(
         {
             "sdkwork-documents-app-sdk",
+            "sdkwork-course-backend-sdk",
             "sdkwork-iam-app-sdk",
             "sdkwork-iam-backend-sdk",
             "sdkwork-cloudrouter-app-sdk",

@@ -10,6 +10,9 @@
   "dependencies": {
     "@sdkwork/cloudroutes-pc-commons": "workspace:*"
   },
+  "devDependencies": {
+    "typescript": "catalog:"
+  },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"

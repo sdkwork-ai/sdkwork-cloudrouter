@@ -15,12 +15,17 @@ pub struct AdminRecordSubject {
     pub operator_type: i32,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AdminRecordCursor {
+    pub started_at_micros: i64,
+    pub id: i64,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListAdminRecordLogsQuery {
     pub subject: AdminRecordSubject,
-    pub page_no: i64,
     pub page_size: i64,
-    pub offset: i64,
+    pub cursor: Option<AdminRecordCursor>,
     pub user: Option<String>,
     pub token: Option<String>,
     pub model: Option<String>,
@@ -29,9 +34,9 @@ pub struct ListAdminRecordLogsQuery {
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct AdminRecordListPage {
     pub items: Vec<AdminRecordLogItem>,
-    pub total: i64,
-    pub page_no: i64,
     pub page_size: i64,
+    pub has_more: bool,
+    pub next_cursor: Option<AdminRecordCursor>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, PartialEq)]

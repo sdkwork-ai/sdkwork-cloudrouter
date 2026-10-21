@@ -51,14 +51,14 @@ struct AdminMarketingItemEnvelope<T> {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[serde(deny_unknown_fields)]
 struct AdminMarketingListQueryRequest {
     page: Option<i64>,
     page_size: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[serde(deny_unknown_fields)]
 struct RechargePackageListQueryRequest {
     status: Option<String>,
     page: Option<i64>,
@@ -84,7 +84,7 @@ struct RechargeSettingsUpdateRequest {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[serde(deny_unknown_fields)]
 struct ExchangeRuleListQueryRequest {
     source_asset_type: Option<String>,
     target_asset_type: Option<String>,

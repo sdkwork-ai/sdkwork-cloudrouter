@@ -23,6 +23,10 @@ const CLOUDROUTER_BILLING_BASELINE: &str = include_str!(
 #[tokio::test]
 async fn postgres_gateway_usage_recorder_preserves_non_pending_usage_fact_on_duplicate_request_id()
 {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::ERROR)
+        .with_test_writer()
+        .try_init();
     let Some(ctx) = PostgresTestContext::new("gateway_usage_recorder").await else {
         return;
     };
@@ -101,6 +105,10 @@ async fn postgres_gateway_usage_recorder_preserves_non_pending_usage_fact_on_dup
 
     let mut unrated = usage_command("pg-usage-unrated", 200);
     unrated.official_rate = None;
+    unrated.decision_status = "unrated".to_owned();
+    unrated.billability = "unknown".to_owned();
+    unrated.reason_code = "price_unavailable".to_owned();
+    unrated.pricing_plan_code = String::new();
     recorder.record_gateway_usage(unrated).await.unwrap();
     let unrated_counts = sqlx::query(
         r#"
@@ -408,7 +416,7 @@ async fn create_schema(pool: &PgPool) {
             api_key_id BIGINT,
             api_key_name_snapshot VARCHAR(128),
             account_group_id BIGINT,
-            upstream_account_group_snapshot VARCHAR(128),
+            account_group_snapshot VARCHAR(128),
             owner_type INTEGER,
             owner_id BIGINT,
             owner_name_snapshot VARCHAR(128),
@@ -461,6 +469,7 @@ async fn create_schema(pool: &PgPool) {
             occurred_at TIMESTAMPTZ,
             settlement_status INTEGER,
             settlement_id BIGINT,
+            debit_points BIGINT,
             CONSTRAINT uk_ai_metering_usage_idempotency UNIQUE (tenant_id, organization_id, idempotency_key),
             CONSTRAINT uk_ai_metering_usage_request_type UNIQUE (tenant_id, organization_id, request_id, usage_type)
         )"#,

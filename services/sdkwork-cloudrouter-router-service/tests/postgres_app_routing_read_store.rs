@@ -12,6 +12,10 @@ const POSTGRES_TEST_DATABASE_URL: &str = "SDKWORK_DATABASE_URL";
 
 #[tokio::test]
 async fn postgres_app_routing_projects_authorized_account_groups_api_keys_and_traces() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::ERROR)
+        .with_test_writer()
+        .try_init();
     let Some(context) = PostgresTestContext::new("app_routing_read").await else {
         return;
     };
@@ -400,6 +404,7 @@ async fn create_schema(pool: &PgPool) {
             catalog_key VARCHAR(256),
             total_tokens BIGINT,
             request_count BIGINT,
+            customer_charge_amount NUMERIC(38, 12),
             status INTEGER NOT NULL
         )"#,
         r#"CREATE TABLE ai_routing_decision_log (
@@ -409,6 +414,47 @@ async fn create_schema(pool: &PgPool) {
             request_id VARCHAR(128),
             resolved_model VARCHAR(256),
             selected_account_id BIGINT,
+            status INTEGER NOT NULL
+        )"#,
+        // Billing projections used by the API-key usage aggregate. The routing
+        // read model joins the rated charge chain; the fixture only needs the
+        // referenced columns because the test asserts routing authorization,
+        // not billing amounts.
+        r#"CREATE TABLE cloudrouter_usage_measurement (
+            id BIGINT PRIMARY KEY,
+            tenant_id BIGINT NOT NULL,
+            organization_id BIGINT NOT NULL,
+            user_id BIGINT,
+            api_key_id BIGINT,
+            account_group_id BIGINT,
+            account_id BIGINT,
+            catalog_key VARCHAR(256),
+            invocation_id VARCHAR(128),
+            dimensions_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+            status INTEGER NOT NULL DEFAULT 1,
+            enabled BOOLEAN NOT NULL DEFAULT TRUE,
+            effective_from TIMESTAMPTZ,
+            effective_to TIMESTAMPTZ,
+            deleted_at TIMESTAMPTZ
+        )"#,
+        r#"CREATE TABLE cloudrouter_rating_decision (
+            id BIGINT PRIMARY KEY,
+            tenant_id BIGINT NOT NULL,
+            organization_id BIGINT NOT NULL,
+            measurement_id BIGINT NOT NULL,
+            invocation_id VARCHAR(128),
+            decision_status VARCHAR(32) NOT NULL,
+            billability VARCHAR(32) NOT NULL,
+            status INTEGER NOT NULL
+        )"#,
+        r#"CREATE TABLE cloudrouter_charge_line (
+            id BIGINT PRIMARY KEY,
+            tenant_id BIGINT NOT NULL,
+            organization_id BIGINT NOT NULL,
+            user_id BIGINT,
+            rating_decision_id BIGINT NOT NULL,
+            charge_status VARCHAR(32) NOT NULL,
+            amount NUMERIC(38, 12) NOT NULL,
             status INTEGER NOT NULL
         )"#,
     ] {
@@ -429,12 +475,12 @@ async fn seed_routing_projection(pool: &PgPool) {
         "INSERT INTO ai_upstream_account_credential (id, tenant_id, organization_id, account_id, secret_ciphertext, secret_key_id, secret_fingerprint, status, is_active, expires_at) VALUES (201, 100001, 0, 101, 'encrypted-primary-secret', 'test-active', 'fingerprint-primary', 1, true, CURRENT_TIMESTAMP + INTERVAL '1 day'), (202, 100001, 0, 102, 'encrypted-expired-secret', 'test-active', 'fingerprint-expired', 1, true, CURRENT_TIMESTAMP - INTERVAL '1 day'), (203, 100001, 0, 103, 'encrypted-fallback-secret', 'test-active', 'fingerprint-fallback', 1, true, CURRENT_TIMESTAMP + INTERVAL '1 day')",
         "INSERT INTO ai_upstream_account_group (id, tenant_id, organization_id, group_code, group_name, description, routing_strategy, fallback_mode, cost_multiplier, sale_multiplier, modalities, tags, status, priority) VALUES (10, 100001, 0, 'standard', 'Standard routing', 'Primary commercial route', 'weighted', 'cross_supplier', 1.100000000000, 1.250000000000, '[]', '[]', 1, 10), (11, 100001, 0, 'fallback', 'Fallback routing', 'Fallback route', 'priority', 'reject', 1.200000000000, 1.300000000000, '[]', '[]', 1, 20), (12, 100001, 0, 'private', 'Private routing', 'Unauthorized route', 'priority', 'reject', 1.000000000000, 1.100000000000, '[]', '[]', 1, 30)",
         "INSERT INTO ai_upstream_account_group_member (id, tenant_id, organization_id, account_group_id, account_id, status, enabled) VALUES (301, 100001, 0, 10, 101, 1, true), (302, 100001, 0, 10, 102, 1, true), (303, 100001, 0, 11, 103, 1, true)",
-        "INSERT INTO ai_resource_binding (id, tenant_id, organization_id, binding_scope, account_group_id, resource_code, grant_type, priority, status) VALUES (401, 100001, 0, 'account_group', 10, 'model.openai.gpt-4.1', 'allow', 10, 1)",
-        "INSERT INTO ai_resource_binding (id, tenant_id, organization_id, binding_scope, account_group_id, resource_group_code, grant_type, priority, status) VALUES (402, 100001, 0, 'account_group', 11, 'bundle.deepseek.chat', 'allow', 10, 1)",
+        "INSERT INTO ai_resource_binding (id, tenant_id, organization_id, binding_scope, account_group_id, resource_code, route_kind, grant_type, priority, status) VALUES (401, 100001, 0, 'account_group', 10, 'model.openai.gpt-4.1', 'model', 'allow', 10, 1)",
+        "INSERT INTO ai_resource_binding (id, tenant_id, organization_id, binding_scope, account_group_id, resource_group_code, route_kind, grant_type, priority, status) VALUES (402, 100001, 0, 'account_group', 11, 'bundle.deepseek.chat', 'model', 'allow', 10, 1)",
         "INSERT INTO iam_gateway_api_key (id, tenant_id, organization_id, user_id, account_group_id, name, key_prefix, key_display_masked, status, created_at, updated_at) VALUES (501, 100001, 0, 30, 10, 'Production gateway key', 'sk-live', 'sk-live-****-0001', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
         "INSERT INTO iam_gateway_api_key_account_group (id, tenant_id, organization_id, api_key_id, account_group_id, binding_role, status, effective_to) VALUES (601, 100001, 0, 501, 11, 'route', 1, CURRENT_TIMESTAMP + INTERVAL '1 day'), (602, 100001, 0, 501, 12, 'route', 1, CURRENT_TIMESTAMP - INTERVAL '1 day')",
         "INSERT INTO ai_metering_request_trace (id, request_id, trace_id, tenant_id, organization_id, user_id, status, created_at, ended_at, account_group_id, account_group_snapshot, account_id, account_name_snapshot, requested_model, provider_model, request_path, http_method, http_status, request_payload_hash, response_payload_hash, request_bytes, response_bytes, streaming, started_at, latency_ms, total_tokens) VALUES (701, 'request-701', 'trace-701', 100001, 0, 30, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 10, 'Standard routing snapshot', 101, 'OpenAI primary snapshot', 'gpt-4.1', 'gpt-4.1-2026-01-01', '/v1/responses', 'POST', 200, 'request-hash', 'response-hash', 1024, 2048, true, CURRENT_TIMESTAMP - INTERVAL '125 milliseconds', 125, 20)",
-        "INSERT INTO ai_metering_usage (id, tenant_id, organization_id, user_id, api_key_id, request_id, catalog_key, total_tokens, request_count, status) VALUES (801, 100001, 0, 30, 501, 'request-701', 'openai/gpt-4.1', 24, 3, 1)",
+        "INSERT INTO ai_metering_usage (id, tenant_id, organization_id, user_id, api_key_id, request_id, catalog_key, total_tokens, request_count, customer_charge_amount, status) VALUES (801, 100001, 0, 30, 501, 'request-701', 'openai/gpt-4.1', 24, 3, 1.500000, 1)",
         "INSERT INTO ai_routing_decision_log (id, tenant_id, organization_id, request_id, resolved_model, selected_account_id, status) VALUES (901, 100001, 0, 'request-701', 'openai/gpt-4.1', 101, 1)",
     ] {
         sqlx::query(statement)

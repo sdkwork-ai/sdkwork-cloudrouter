@@ -34,7 +34,6 @@ mod admin_upstream_account_verifier;
 mod admin_upstream_store;
 mod api_key_command_store;
 mod api_key_management_read_store;
-mod app_chat_store;
 mod app_gateway_traces_read_store;
 mod app_invite_store;
 mod app_notification_store;
@@ -62,6 +61,7 @@ mod response_memory;
 mod responses_relay;
 mod responses_stream_relay;
 mod routing_decision_log_recorder;
+mod runtime_invocation_reaper_store;
 mod runtime_region_settings_store;
 mod settings_store;
 mod settlements_dashboard_read_store;
@@ -183,8 +183,8 @@ pub use admin_pricing_store::{
     UpdateAdminRateCardCommand,
 };
 pub use admin_record_store::{
-    AdminRecordListPage, AdminRecordLogItem, AdminRecordReadFuture, AdminRecordStore,
-    AdminRecordSubject, ListAdminRecordLogsQuery,
+    AdminRecordCursor, AdminRecordListPage, AdminRecordLogItem, AdminRecordReadFuture,
+    AdminRecordStore, AdminRecordSubject, ListAdminRecordLogsQuery,
 };
 pub use admin_referral_store::{
     AdminReferralCommandFuture, AdminReferralListPage, AdminReferralRelationItem,
@@ -226,12 +226,6 @@ pub use api_key_command_store::{
 pub use api_key_management_read_store::{
     ApiKeyManagementReadFuture, GatewayApiKeyListPage, GatewayApiKeyManagementReadStore,
     GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery,
-};
-pub use app_chat_store::{
-    AppChatConversationCursor, AppChatConversationItem, AppChatConversationList, AppChatFuture,
-    AppChatMessageCursor, AppChatMessageItem, AppChatMessageList, AppChatStore, AppChatSubject,
-    AppChatTurnItem, AppChatTurnOutcome, AppChatUsageSnapshot, CompleteAppChatTurnCommand,
-    CreateAppChatConversationCommand, CreateAppChatTurnCommand,
 };
 pub use app_gateway_traces_read_store::{
     AppGatewayTraceItem, AppGatewayTracesCursor, AppGatewayTracesPage, AppGatewayTracesQuery,
@@ -347,6 +341,9 @@ pub use responses_stream_relay::{
 };
 pub use routing_decision_log_recorder::{
     RoutingDecisionLogRecorder, RoutingDecisionRecordCommand, RoutingDecisionRecordFuture,
+};
+pub use runtime_invocation_reaper_store::{
+    RuntimeInvocationReaperFuture, RuntimeInvocationReaperStore,
 };
 pub use runtime_region_settings_store::{
     GetRuntimeRegionSettingsQuery, GetRuntimeRegionSettingsScopeQuery, RuntimeRegionSettings,

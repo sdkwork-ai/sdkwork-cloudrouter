@@ -132,6 +132,12 @@ pnpm dev:cloud
      └─ 本仓库不启动任何网关/DB/边缘进程；3900 由 sdkwork-api-cloud-gateway 仓库的 pnpm dev 启动
 ```
 
+> `cloud.development` 档案刻意**不声明**应用面 `*_BIND`（3900 / 18080 / 18081）：拓扑 surface
+> `bindEnv` 是监听器归属声明，`pnpm stop` 与会话清理按它回收端口。3900 属于兄弟仓库的网关进程，
+> 本仓库一旦声明就会在 stop 时按端口杀掉该外部网关（PNPM_SCRIPT_SPEC §3：stop 只回收本仓库自己的
+> 开发监听器）。cloud 模式本仓库只归属 4734 / 4736 / 4737，回归断言见
+> `scripts/dev/browser-dev-access-contract.test.mjs`。
+
 ## 5. 配置分层与优先级（dev 时浏览器 SDK base 的实际生效链）
 
 ```

@@ -17,6 +17,11 @@ use crate::application::AuthenticatedApiKeyContext;
 use crate::domain::ProviderRetryPolicy;
 use crate::ports::{GatewayUsageRecorder, ProviderResponseMemoryGuard};
 
+/// A single SSE line longer than this is forwarded verbatim instead of being
+/// buffered until the newline arrives, so a misbehaving upstream cannot grow
+/// `pending_line` for the whole stream lifetime.
+const RELAY_SSE_MAX_PENDING_LINE_BYTES: usize = 1024 * 1024;
+
 pub(crate) fn guarded_openai_json_response(
     status: StatusCode,
     body: Value,
@@ -109,6 +114,12 @@ async fn next_relay_sse_model_restore_frame(
                     continue;
                 }
                 state.pending_line.push(byte);
+                if state.pending_line.len() >= RELAY_SSE_MAX_PENDING_LINE_BYTES {
+                    // The model-restore rewrite only applies to a complete
+                    // `data:` line; a line this large is forwarded as an opaque
+                    // chunk instead of being retained in memory.
+                    output.extend_from_slice(&std::mem::take(&mut state.pending_line));
+                }
             }
             Some((Ok(Bytes::from(output)), state))
         }

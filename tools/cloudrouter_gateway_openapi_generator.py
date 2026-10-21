@@ -77,6 +77,25 @@ VENDOR_PROVIDER_PREFIXES = {
 OPEN_API_PREFIX = "/v1"
 
 
+def _without_standard_extensions(value: Any) -> Any:
+    """Return the document with `x-sdkwork-*` metadata removed.
+
+    Standard contract extensions are applied by
+    `tools.sync-cloudrouter-api-standard-extensions.mjs`; the gateway
+    generator's staleness check must compare the authored contract, not the
+    stamping layer.
+    """
+    if isinstance(value, dict):
+        return {
+            key: _without_standard_extensions(item)
+            for key, item in value.items()
+            if not key.startswith("x-sdkwork-")
+        }
+    if isinstance(value, list):
+        return [_without_standard_extensions(item) for item in value]
+    return value
+
+
 def vendor_path_prefixes_from_paths(
     paths: dict[str, Any],
     api_prefix: str = OPEN_API_PREFIX,
@@ -3316,7 +3335,14 @@ class CloudRouterGatewayOpenApiGenerator:
             return CloudRouterGatewayOpenApiCheckResult(ok=False, messages=audit_messages)
 
         expected = self.render_json()
-        if actual != expected:
+        # The published contract also carries the standard `x-sdkwork-*`
+        # extensions applied by `tools.sync-cloudrouter-api-standard-extensions.mjs`.
+        # Those extensions are presentation metadata owned by that stamper, so
+        # this check compares the authored contract modulo them instead of
+        # forcing the stamper to never write.
+        if _without_standard_extensions(actual_spec) != _without_standard_extensions(
+            json.loads(expected)
+        ):
             return CloudRouterGatewayOpenApiCheckResult(
                 ok=False,
                 messages=[f"Cloud Router gateway OpenAPI spec is stale: {self.output_path}"],

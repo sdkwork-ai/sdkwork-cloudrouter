@@ -112,9 +112,6 @@ Problem Details. They do not own SQL or provider calls.
   through `Arc<[UpstreamAccountRoute]>`.
 - Invocation application modules coordinate entitlement, routing, dispatch,
   telemetry, and accounting ports.
-- `api/app_chat.rs`, `ports/app_chat_store.rs`, and
-  `infrastructure/sql/postgres/app_chat_store.rs` own the currently implemented
-  first-party Chat HTTP adaptation, persistence port, and PostgreSQL adapter.
 
 The refreshable SQL catalog publishes `ArcSwap<SqlPricingCatalogSnapshot>`.
 Each request borrows an immutable `Arc` snapshot; refresh performs a pointer
@@ -167,38 +164,22 @@ router-service SQLite adapter directory.
 
 ### Chat Persistence
 
-Cloud Router is the current system of record for the first-party Chat surface.
-The authored fragment `docs/schema-registry/tables/ai-chat-runtime.yaml`
+Cloud Router retains the PostgreSQL system of record for the ten Chat/runtime
+tables. The authored fragment `docs/schema-registry/tables/ai-chat-runtime.yaml`
 declares six transcript/context tables plus `ai_runtime_invocation`,
 `ai_runtime_invocation_event`, `ai_runtime_artifact`, and
 `ai_runtime_usage_link`. All ten are PostgreSQL-only server authorities and
 bind numeric `tenant_id`, `organization_id`, and `user_id` scope.
 
-One turn creation transaction locks its conversation row with `FOR UPDATE`,
-allocates turn/item/message ordinals from the locked aggregate counters, writes
-the input and pending output timeline, and advances the counters. Completion
-locks the same aggregate, reconciles the output message and optional usage link,
-uses an atomic counter for context snapshots, and updates the conversation.
-Scoped unique indexes remain the final collision guard. Counter underflow and
-`BIGINT` exhaustion fail closed. Conversation previews are bounded to the
-schema's 1024-character limit before persistence.
-
-Conversation lists and message history both use cursor/keyset pagination. The
-message history surface uses an opaque `(message_no, id)` cursor, the scoped
-backward tuple keyset predicate, stable descending database seek, and
-`LIMIT page_size + 1`; each bounded page is normalized to chronological order
-before it leaves the repository. Conversation lists seek over `(updated_at, id)`
-descending through the scoped
-`idx_ai_chat_conversation_user_status_updated` index with the same
-`LIMIT page_size + 1` bound and an opaque continuation cursor. Neither surface
-issues `OFFSET` or a total-count window. The first page therefore contains the
-latest context, while the HTTP boundary accepts only `cursor` and `page_size`,
-caps pages at 200, and the generated Cloud Router App SDK exposes
-`pageInfo.nextCursor` for bounded earlier-window reads. The mounted `/playground`
-UI is the composed Agents
-Workbench and uses the separately owned Agents session/message APIs; it does
-not claim to consume the Cloud Router Chat history endpoint. The existing scoped
-conversation/message indexes cover the seek prefix.
+The `/app/v3/api/chat/*` HTTP projection, its persistence port, and its
+PostgreSQL adapter were removed by
+[ADR-20261021](../decisions/ADR-20261021-remove-orphaned-chat-http-surface.md)
+because the first-party Chat UI/service was deleted and the routes were never
+authored into the frontend field contract, OpenAPI, or App SDK. The tables are
+retained but have no writer, so a future Chat surface must add a new ADR, author
+the operations, regenerate the App SDK, restore the store, and add dispatch
+tests before any Chat capability is advertised. Agent state and memory state
+remain outside the current ten-table implementation.
 
 Routing request trace lists (`/app/v3/api/ai/routing/request_traces` and
 `/app/v3/api/ai/gateway/traces`) use the same keyset discipline: opaque
@@ -258,9 +239,10 @@ is 2026-10-31 23:59:59Z. Invocation events and runtime artifacts are persisted i
 scoped `ai_runtime_invocation_event` and `ai_runtime_artifact` tables with
 transactional ordinal allocation and a scoped unique sequence index. Agent
 state and memory state remain outside the current ten-table implementation.
-Data ownership and future transfer requirements are
-recorded in
-[ADR-20260730](../decisions/ADR-20260730-own-chat-runtime-postgres-authority.md).
+Data ownership and future transfer requirements are recorded in
+[ADR-20260730](../decisions/ADR-20260730-own-chat-runtime-postgres-authority.md);
+the HTTP surface removal is recorded in
+[ADR-20261021](../decisions/ADR-20261021-remove-orphaned-chat-http-surface.md).
 
 ### MCP Runtime Persistence
 
@@ -514,6 +496,11 @@ negative authorization evidence.
 - Provider transport is HTTPS-only for production upstream dispatch.
 - Targets are validated before credentials are attached; DNS/IP policy rejects
   forbidden local/private destinations according to the security boundary.
+- The direct transport validates every DNS answer at connect time
+  (`OutboundDnsResolver`). When an operator egress proxy is configured, the
+  tunnelled CONNECT target is resolved by the proxy, so the dispatcher also
+  pre-resolves and validates the target locally before CONNECT; the proxy must
+  still enforce its own egress ACL because a tunnel re-resolves the name.
 - Request and response bodies, retry batches, query pages, and worker batches
   require explicit bounds. Streaming paths must apply backpressure and terminal
   cleanup rather than buffering complete responses.
@@ -609,8 +596,8 @@ soak evidence required by the PRD.
 
 | Profile | Server database | Coordination | Shape |
 | --- | --- | --- | --- |
-| `standalone` development | PostgreSQL | Redis optional only where feature policy permits | Unified local process or standard standalone gateway |
-| `standalone` production | PostgreSQL | External Redis where enabled features require it | Unified or split application services |
+| `standalone` development | PostgreSQL | Redis required when app-runtime streaming or durable accounting retries are enabled | Unified local process or standard standalone gateway |
+| `standalone` production | PostgreSQL | External Redis where enabled features require it; app-runtime streaming fails closed without it | Unified or split application services |
 | `cloud` | Managed/operated PostgreSQL | Managed/operated Redis | Split services behind dedicated ingress |
 | Explicit client-local feature | Separate SQLite client-local contract | No server authority | Device/profile scoped only |
 
@@ -623,7 +610,8 @@ injection evidence from the release candidate.
 
 - [ADR-20260815: Composable pricing and billing](../decisions/ADR-20260815-composable-pricing-and-billing.md)
 - [ADR-20260728: Standardize upstream supplier routing](../decisions/ADR-20260728-standardize-upstream-supplier-routing.md)
-- [ADR-20260730: Own Chat runtime PostgreSQL authority](../decisions/ADR-20260730-own-chat-runtime-postgres-authority.md)
+- [ADR-20260730: Own Chat runtime PostgreSQL authority](../decisions/ADR-20260730-own-chat-runtime-postgres-authority.md) (superseded for the HTTP projection)
+- [ADR-20261021: Remove orphaned Chat HTTP surface](../decisions/ADR-20261021-remove-orphaned-chat-http-surface.md)
 - [ADR-20260720: Dedicated cloud ingress](../decisions/ADR-20260720-dedicated-cloud-ingress.md)
 - [ADR-20260710: Commercial gateway safety boundaries](../decisions/ADR-20260710-commercial-gateway-safety-boundaries.md)
 

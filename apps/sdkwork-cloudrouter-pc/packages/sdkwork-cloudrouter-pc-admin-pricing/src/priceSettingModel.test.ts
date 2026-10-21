@@ -409,7 +409,9 @@ describe('price setting model', () => {
     expect(cn?.priority).toBe('50');
     expect(cn?.status).toBe('active');
     expect(cn?.priceMode).toBe('time_window');
-    expect(cn?.weeklyWindows).toEqual([{ windowCode: 'business', daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00:00', endTime: '18:00:00', endDayOffset: 0 }]);
+    // `rowUid` is a UI-only React key added when the editor seeds windows; the
+    // schedule contract carries only the persisted fields.
+    expect(cn?.weeklyWindows.map(({ rowUid: _rowUid, ...window }) => window)).toEqual([{ windowCode: 'business', daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00:00', endTime: '18:00:00', endDayOffset: 0 }]);
     expect(cn?.meters).toHaveLength(2);
     // The two cn rules disagree on priority/status, so applying the group's
     // unified lifecycle needs an explicit acknowledgement before saving.

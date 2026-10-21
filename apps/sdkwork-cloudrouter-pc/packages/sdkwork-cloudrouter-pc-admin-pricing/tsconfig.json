@@ -16,6 +16,9 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "strict": true,
+    "types": [
+      "node"
+    ],
     "noFallthroughCasesInSwitch": true
   },
   "include": [

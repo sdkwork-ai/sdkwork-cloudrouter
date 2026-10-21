@@ -540,53 +540,11 @@ where
     )
 }
 
-pub fn app_runtime_router_with_store_and_gateway_client_chat_stream_relay<C>(
-    store: Arc<dyn AppRuntimeStore + Send + Sync>,
-    entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
-    catalog: Arc<C>,
-    gateway_client: Arc<dyn AppRuntimeGatewayClient + Send + Sync>,
-    _chat_stream_relay: Arc<dyn ChatCompletionStreamRelay + Send + Sync>,
-) -> Router
-where
-    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
-{
-    let executor: Arc<dyn AppRuntimeExecutor + Send + Sync> = Arc::new(GatewayRuntimeExecutor {
-        catalog,
-        gateway_client,
-    });
-    app_runtime_router_with_state(
-        store,
-        entity_uuid_generator,
-        Some(executor),
-        Arc::new(InMemoryRuntimeStreamBus::default()),
-    )
-}
-
 pub fn app_runtime_router_with_store_and_gateway_client_and_runtime_stream_bus<C>(
     store: Arc<dyn AppRuntimeStore + Send + Sync>,
     entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
     catalog: Arc<C>,
     gateway_client: Arc<dyn AppRuntimeGatewayClient + Send + Sync>,
-    stream_bus: Arc<dyn RuntimeStreamBus + Send + Sync>,
-) -> Router
-where
-    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
-{
-    let executor: Arc<dyn AppRuntimeExecutor + Send + Sync> = Arc::new(GatewayRuntimeExecutor {
-        catalog,
-        gateway_client,
-    });
-    app_runtime_router_with_state(store, entity_uuid_generator, Some(executor), stream_bus)
-}
-
-pub fn app_runtime_router_with_store_and_gateway_client_chat_stream_relay_and_runtime_stream_bus<
-    C,
->(
-    store: Arc<dyn AppRuntimeStore + Send + Sync>,
-    entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
-    catalog: Arc<C>,
-    gateway_client: Arc<dyn AppRuntimeGatewayClient + Send + Sync>,
-    _chat_stream_relay: Arc<dyn ChatCompletionStreamRelay + Send + Sync>,
     stream_bus: Arc<dyn RuntimeStreamBus + Send + Sync>,
 ) -> Router
 where
@@ -1256,7 +1214,9 @@ async fn start_runtime_stream_execution_if_needed(
         }
     };
 
+    let execution_task = sdkwork_cloudrouter_http::track_background_task();
     tokio::spawn(async move {
+        let _execution_task = execution_task;
         let mut heartbeat = tokio::time::interval(RUNTIME_STREAM_EXECUTION_HEARTBEAT_INTERVAL);
         heartbeat.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
         let mut cancellation_check =

@@ -100,6 +100,16 @@ impl InMemoryRuntimeStreamBus {
         let mut notifiers = lock_or_recover(&self.notifiers);
         notifiers.remove(invocation_id);
     }
+
+    fn drop_notifier_if_unclaimed(&self, invocation_id: &str) {
+        let has_claim = {
+            let claims = lock_or_recover(&self.claims);
+            claims.contains_key(invocation_id)
+        };
+        if !has_claim {
+            self.drop_notifier(invocation_id);
+        }
+    }
 }
 
 impl RuntimeStreamBus for InMemoryRuntimeStreamBus {
@@ -192,6 +202,13 @@ impl RuntimeStreamBus for InMemoryRuntimeStreamBus {
         Box::pin(async move {
             let notifier = self.notifier(invocation_id);
             let _ = tokio::time::timeout(timeout, notifier.notified()).await;
+            // `notifiers` used to be removed only by `release_execution`, so a
+            // follower waiting on an invocation executed by another replica (or
+            // a tail that outlives its claim) grew the map without bound. A
+            // waiter owns no claim, so dropping its entry after the wait is
+            // safe: the next iteration re-creates it, and persisted events stay
+            // the source of truth.
+            self.drop_notifier_if_unclaimed(invocation_id);
             Ok(())
         })
     }

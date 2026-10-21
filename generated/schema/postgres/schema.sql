@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.5.0.
--- Registry SHA-256: 5609eecd8e59f39da9168c57852a256359e35992e6ed21687c504eb0b042381e.
+-- Registry SHA-256: dcef7bbf2e72953d37bbe4671408dfcc3cb78904c57acb46a37954cd8d12e0f6.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -2226,7 +2226,7 @@ CREATE TABLE IF NOT EXISTS iam_user_preference (
     CONSTRAINT ck_iam_user_preference_values CHECK (length(language) <= 32 AND length(timezone) <= 64 AND version >= 0)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_user_preference_scope ON iam_user_preference (tenant_id, organization_id, user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_user_preference_scope ON iam_user_preference (tenant_id, organization_id, user_id) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_iam_user_preference_user_updated ON iam_user_preference (tenant_id, organization_id, user_id, updated_at, id);
 
 CREATE TABLE IF NOT EXISTS integration_webhook_endpoint (
@@ -2257,7 +2257,7 @@ CREATE TABLE IF NOT EXISTS integration_webhook_endpoint (
     CONSTRAINT ck_integration_webhook_endpoint_values CHECK (length(endpoint_code) > 0 AND length(name) > 0 AND length(target_url) <= 1024 AND failure_count >= 0 AND version >= 0)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS uk_integration_webhook_endpoint_scope_code ON integration_webhook_endpoint (tenant_id, organization_id, endpoint_code);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_integration_webhook_endpoint_scope_code ON integration_webhook_endpoint (tenant_id, organization_id, endpoint_code) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_integration_webhook_endpoint_scope_code ON integration_webhook_endpoint (tenant_id, organization_id, endpoint_code, id);
 
 CREATE TABLE IF NOT EXISTS ops_alert_event (

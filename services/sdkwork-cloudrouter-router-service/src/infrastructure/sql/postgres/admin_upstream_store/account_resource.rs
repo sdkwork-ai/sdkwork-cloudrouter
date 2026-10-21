@@ -2,8 +2,9 @@ use sqlx::{PgPool, Postgres, Transaction};
 
 use super::account;
 use super::shared::{
-    generated_uuid, map_resource_row, record_routing_change, store_error, validate_resource_inputs,
-    DEFAULT_DATA_SCOPE, MAX_NESTED_ITEMS,
+    generated_uuid, map_resource_row, record_routing_change, retire_active_resource_bindings,
+    store_error, validate_resource_inputs, ResourceBindingScope, DEFAULT_DATA_SCOPE,
+    MAX_NESTED_ITEMS,
 };
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
@@ -57,14 +58,14 @@ pub(super) async fn replace(
         )
     })?;
     account::lock_account_version(&mut tx, &subject, account_id, expected_version).await?;
-    let resource_codes = items
-        .iter()
-        .map(|item| item.resource_code.trim().to_owned())
-        .collect::<Vec<_>>();
-    let group_codes = items
-        .iter()
-        .map(|item| item.resource_group_code.trim().to_owned())
-        .collect::<Vec<_>>();
+    retire_active_resource_bindings(
+        &mut tx,
+        &subject,
+        ResourceBindingScope::Account,
+        account_id,
+        &requested_at,
+    )
+    .await?;
 
     for item in &items {
         let binding_id = next_cloud_runtime_id("upstream account resource")?;
@@ -111,15 +112,6 @@ pub(super) async fn replace(
         .map_err(|error| store_error("failed to upsert upstream account resource", error))?;
     }
 
-    retire_omitted(
-        &mut tx,
-        &subject,
-        account_id,
-        &resource_codes,
-        &group_codes,
-        &requested_at,
-    )
-    .await?;
     account::bump_account_version(
         &mut tx,
         &subject,
@@ -146,46 +138,6 @@ pub(super) async fn replace(
         )
     })?;
     Ok(result)
-}
-
-async fn retire_omitted(
-    tx: &mut Transaction<'_, Postgres>,
-    subject: &AdminUpstreamSubject,
-    account_id: i64,
-    resource_codes: &[String],
-    group_codes: &[String],
-    requested_at: &str,
-) -> DomainResult<()> {
-    sqlx::query(
-        r#"
-        UPDATE ai_resource_binding binding
-        SET deleted_at = $1::timestamptz,
-            deleted_by = $2,
-            status = 0,
-            version = version + 1,
-            updated_at = $1::timestamptz
-        WHERE tenant_id = $3 AND organization_id = $4
-          AND binding_scope = 'account'
-          AND account_id = $5 AND deleted_at IS NULL
-          AND NOT EXISTS (
-              SELECT 1
-              FROM UNNEST($6::text[], $7::text[]) AS retained(resource_code, group_code)
-              WHERE retained.resource_code = binding.resource_code
-                AND retained.group_code = binding.resource_group_code
-          )
-        "#,
-    )
-    .bind(requested_at)
-    .bind(subject.operator_id)
-    .bind(subject.tenant_id)
-    .bind(subject.organization_id)
-    .bind(account_id)
-    .bind(resource_codes)
-    .bind(group_codes)
-    .execute(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to retire omitted upstream account resources", error))?;
-    Ok(())
 }
 
 async fn list_in_transaction(

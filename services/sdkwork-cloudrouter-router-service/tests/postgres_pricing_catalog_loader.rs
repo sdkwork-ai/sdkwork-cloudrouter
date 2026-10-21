@@ -100,6 +100,7 @@ async fn postgres_executes_the_authoritative_upstream_account_route_query() {
             provider_native_model TEXT,
             resource_code TEXT,
             resource_type TEXT,
+            route_kind TEXT,
             status INTEGER,
             tenant_id BIGINT,
             vendor_code TEXT
@@ -129,6 +130,7 @@ async fn postgres_executes_the_authoritative_upstream_account_route_query() {
             resource_id BIGINT,
             resource_code TEXT,
             resource_group_code TEXT,
+            route_kind TEXT,
             grant_type TEXT,
             priority INTEGER,
             deleted_at TIMESTAMPTZ,
@@ -143,6 +145,7 @@ async fn postgres_executes_the_authoritative_upstream_account_route_query() {
             default_base_url TEXT,
             deleted_at TIMESTAMPTZ,
             organization_id BIGINT NOT NULL DEFAULT 0,
+            protocols JSONB,
             status INTEGER,
             supplier_code TEXT,
             tenant_id BIGINT
@@ -150,9 +153,13 @@ async fn postgres_executes_the_authoritative_upstream_account_route_query() {
         r#"CREATE TEMP TABLE ai_upstream_account (
             account_code TEXT,
             auth_method_code TEXT,
+            billing_mode TEXT,
             contract_cost_multiplier NUMERIC(38, 12),
             credential_rotation_strategy TEXT,
+            default_base_url TEXT,
+            model_id BIGINT,
             preferred_endpoint_id BIGINT,
+            protocols JSONB,
             region_code TEXT,
             retry_policy TEXT,
             supplier_code TEXT,
@@ -166,6 +173,7 @@ async fn postgres_executes_the_authoritative_upstream_account_route_query() {
 )"#,
         r#"CREATE TEMP TABLE ai_upstream_account_health_state (
             last_latency_ms INTEGER,
+            consecutive_error_count INTEGER,
             updated_at TIMESTAMPTZ,
             id BIGINT PRIMARY KEY,
             account_id BIGINT,
@@ -255,7 +263,7 @@ async fn postgres_executes_the_authoritative_upstream_account_route_query() {
         .bind(30_i64)
         .fetch_all(&pool)
         .await
-        .unwrap();
+        .unwrap_or_else(|error| panic!("authoritative route query failed: {error}"));
 
     assert!(rows.is_empty());
     pool.close().await;

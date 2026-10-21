@@ -1539,9 +1539,8 @@ async fn app_runtime_prefers_gateway_chat_completions_over_local_relay_when_both
     ));
     store.list_events_items.lock().unwrap().clear();
     let gateway_requests = Arc::new(Mutex::new(Vec::new()));
-    let relay_requests = Arc::new(Mutex::new(Vec::new()));
     let router =
-        sdkwork_cloudrouter_router_service::api::app_runtime_router_with_store_and_gateway_client_chat_stream_relay(
+        sdkwork_cloudrouter_router_service::api::app_runtime_router_with_store_and_gateway_client(
             store.clone(),
             Arc::new(SequentialUuidGenerator::new(vec!["runtime-event-uuid-1"])),
             Arc::new(TestRuntimeCatalog::without_model_upstream_route(
@@ -1550,7 +1549,6 @@ async fn app_runtime_prefers_gateway_chat_completions_over_local_relay_when_both
             Arc::new(RecordingGatewayRuntimeClient::new(Arc::clone(
                 &gateway_requests,
             ))),
-            Arc::new(RecordingStreamRelay::new(Arc::clone(&relay_requests))),
         );
 
     let response = runtime_stream_request(router).await;
@@ -1565,12 +1563,6 @@ async fn app_runtime_prefers_gateway_chat_completions_over_local_relay_when_both
     assert_eq!("/v1/chat/completions", gateway_requests[0].path);
     assert_eq!("gpt-5.5", gateway_requests[0].body["model"]);
     assert_eq!(Some(true), gateway_requests[0].body["stream"].as_bool());
-    drop(gateway_requests);
-    let relay_requests = relay_requests.lock().unwrap();
-    assert!(
-        relay_requests.is_empty(),
-        "app runtime chat streaming must go through gateway /v1/chat/completions when a gateway client is configured"
-    );
 }
 
 #[tokio::test]

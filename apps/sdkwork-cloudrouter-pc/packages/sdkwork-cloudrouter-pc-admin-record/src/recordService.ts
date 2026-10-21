@@ -15,6 +15,7 @@ import {
 
 const MAX_RECORD_LOG_PAGE_SIZE = 200;
 const MAX_RECORD_LOG_FILTER_LENGTH = 128;
+const MAX_RECORD_LOG_CURSOR_LENGTH = 512;
 
 type RecordLogFilters = Record<string, unknown>;
 type LogRecordStatus = 'success' | 'error';
@@ -63,44 +64,51 @@ export interface LogRecord {
 }
 
 export class RecordService {
-  static async fetchLogs(filters: RecordLogFilters = {}): Promise<{ logs: LogRecord[]; total: number }> {
+  static async fetchLogs(
+    filters: RecordLogFilters = {},
+  ): Promise<{ logs: LogRecord[]; hasMore: boolean; nextCursor?: string }> {
     const result = await getCloudRouterBackendSdkClient().system.records.list(toRecordLogQueryParams(filters));
     ensureSdkworkApiSuccess(result, 'Failed to fetch backend logs');
     const data = readApiRecord(result);
     const logs = readRequiredApiItems(result, 'Failed to fetch backend logs', ['logs', 'items', 'records', 'list'])
       .map(normalizeLogRecord);
+    const pageInfo = readRequiredRecord(data.pageInfo, 'Backend log pageInfo is required');
+    const nextCursor = typeof pageInfo.nextCursor === 'string' && pageInfo.nextCursor ? pageInfo.nextCursor : undefined;
     return {
       logs,
-      total: readRequiredPageTotal(data),
+      hasMore: pageInfo.hasMore === true,
+      nextCursor,
     };
   }
 }
 
-function readRequiredPageTotal(data: ApiRecord): number {
-  const pageInfo = readRequiredRecord(data.pageInfo, 'Backend log pageInfo is required');
-  const totalItems = readRequiredNonNegativeInt64String(
-    pageInfo,
-    'totalItems',
-    'Backend log pageInfo.totalItems is required',
-  );
-  const normalized = Number(totalItems);
-  if (!Number.isSafeInteger(normalized) || normalized < 0) {
-    throw new Error('Backend log pageInfo.totalItems exceeds the supported range');
-  }
-  return normalized;
-}
-
 function toRecordLogQueryParams(filters: RecordLogFilters = {}): Record<string, string | number> {
-  const page = optionalPositiveInteger(filters.page, 'page');
   const pageSize = optionalBoundedPositiveInteger(filters.pageSize, 'pageSize', MAX_RECORD_LOG_PAGE_SIZE);
 
   return pruneUndefinedQueryParams({
-    page,
+    cursor: optionalCursor(filters.cursor),
     pageSize,
     user: optionalVisibleAsciiText(filters.user, 'user'),
     token: optionalVisibleAsciiText(filters.token, 'token'),
     model: optionalVisibleAsciiText(filters.model, 'model'),
   });
+}
+
+function optionalCursor(value: unknown): string | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value !== 'string') {
+    throw new Error('cursor must be a string');
+  }
+  const normalized = value.trim();
+  if (!normalized) {
+    return undefined;
+  }
+  if (normalized.length > MAX_RECORD_LOG_CURSOR_LENGTH) {
+    throw new Error(`cursor must be at most ${MAX_RECORD_LOG_CURSOR_LENGTH} characters`);
+  }
+  return normalized;
 }
 
 function optionalVisibleAsciiText(value: unknown, fieldName: string): string | undefined {

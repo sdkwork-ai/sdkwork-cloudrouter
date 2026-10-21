@@ -32,9 +32,10 @@ use sdkwork_cloudrouter_router_service::application::{
     GatewayAccountingRetryHealth, GatewayAccountingRetryWorker, GatewayAccountingRetryWorkerConfig,
     PaymentReconciliationRuntimeStore, PaymentReconciliationWorker,
     PaymentReconciliationWorkerConfig, RetryingGatewayUsageRecorder, RuntimeCacheManager,
-    RuntimeStreamBus, TenantInflightConfig, UpstreamCredentialRotationConfig,
-    UpstreamCredentialRotationWorker, UpstreamCredentialSecretCodec, UsageRetentionConfig,
-    UsageRetentionWorker, UsageSettlementWorker, UsageSettlementWorkerConfig,
+    RuntimeInvocationReaper, RuntimeInvocationReaperConfig, RuntimeStreamBus, TenantInflightConfig,
+    UpstreamCredentialRotationConfig, UpstreamCredentialRotationWorker,
+    UpstreamCredentialSecretCodec, UsageRetentionConfig, UsageRetentionWorker,
+    UsageSettlementWorker, UsageSettlementWorkerConfig,
 };
 use sdkwork_cloudrouter_router_service::domain::{
     ProviderRetryPolicy, DEFAULT_PROVIDER_CIRCUIT_BREAKER_RECOVERY_WINDOW_SECONDS,
@@ -66,20 +67,24 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::installer::{
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
     PostgresAsyncUsageTaskStore, PostgresCatalogLoadError, PostgresGatewayUsageRecorder,
     PostgresPaymentReconciliationRuntimeStore, PostgresPricingCatalogLoader,
-    PostgresRoutingDecisionLogRecorder, PostgresUpstreamCredentialRotationStore,
-    PostgresUsageRetentionStore, PostgresUsageSettlementStore,
+    PostgresRoutingDecisionLogRecorder, PostgresRuntimeInvocationReaperStore,
+    PostgresUpstreamCredentialRotationStore, PostgresUsageRetentionStore,
+    PostgresUsageSettlementStore,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::{
     InMemoryGatewayAccountingRetryQueue, OsApiKeySecretGenerator, RedisGatewayAccountingRetryQueue,
 };
-use sdkwork_cloudrouter_router_service::ports::RuntimeRegionSettingsStore;
 use sdkwork_cloudrouter_router_service::ports::{
     AsyncUsageTaskStore, ChatCompletionRelay, ChatCompletionStreamRelay, EmbeddingsRelay,
-    GatewayAccountingRecordContext, GatewayAccountingRetryQueue, GatewayBillingStore, GatewayRequestTraceCommand,
-    GatewayTraceAttribution, GatewayUsageRecordCommand, GatewayUsageRecordFuture,
-    GatewayUsageRecorder, ProviderSecretResolver, ResponsesRelay, ResponsesStreamRelay,
-    RoutingDecisionLogRecorder, StickyRouteStore, UpstreamAccountRouteCatalog,
-    UpstreamCredentialRotationStore, UsageRetentionStore, UsageSettlementStore,
+    GatewayAccountingRecordContext, GatewayAccountingRetryQueue, GatewayBillingStore,
+    GatewayRequestTraceCommand, GatewayTraceAttribution, GatewayUsageRecordCommand,
+    GatewayUsageRecordFuture, GatewayUsageRecorder, ProviderSecretResolver, ResponsesRelay,
+    ResponsesStreamRelay, RoutingDecisionLogRecorder, StickyRouteStore,
+    UpstreamAccountRouteCatalog, UpstreamCredentialRotationStore, UsageRetentionStore,
+    UsageSettlementStore,
+};
+use sdkwork_cloudrouter_router_service::ports::{
+    RuntimeInvocationReaperStore, RuntimeRegionSettingsStore,
 };
 use sdkwork_cloudrouter_security::{
     redact_error_message, InMemoryInternalGatewayReplayStore, InternalGatewayReplayStore,
@@ -242,7 +247,8 @@ fn spawn_async_usage_reconciliation<C>(
     tracing::info!("async usage reconciliation worker started");
 }
 
-fn router_with_invocation_runtime_routes<C>(    input: InvocationRuntimeRoutesInput<'_, C>,
+fn router_with_invocation_runtime_routes<C>(
+    input: InvocationRuntimeRoutesInput<'_, C>,
 ) -> Result<Router, GatewayRouterError>
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
@@ -1626,6 +1632,7 @@ async fn router_with_database_bootstrap(
             resolve_upstream_credential_rotation_config(runtime_toml),
         )
         .await?;
+        maybe_spawn_postgres_runtime_invocation_reaper(&pool).await?;
         let primary_usage_recorder = wrap_usage_recorder_with_settlement_wakeup(
             Arc::new(PostgresGatewayUsageRecorder::new_with_attribution(
                 pool.clone(),
@@ -2376,6 +2383,9 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
         )
         .await
         .map_err(anyhow::Error::new)?;
+        maybe_spawn_postgres_runtime_invocation_reaper(&commerce_pool)
+            .await
+            .map_err(anyhow::Error::new)?;
         spawn_postgres_catalog_refresh_worker(
             &pool,
             Arc::clone(&catalog),
@@ -2691,6 +2701,52 @@ async fn maybe_spawn_postgres_usage_retention_worker(
             }
         }
         tracing::info!("usage retention worker stopped");
+    });
+    Ok(())
+}
+
+/// Closes runtime invocations that never reached a terminal state.
+///
+/// A graceful shutdown waits for stream producers, but a producer that exceeds
+/// the hard deadline is killed mid-flight. This sweep runs at startup (and
+/// periodically) so those invocations do not stay `running` forever: it writes
+/// the missing terminal event and marks the invocation failed.
+async fn maybe_spawn_postgres_runtime_invocation_reaper(
+    pool: &PgPool,
+) -> Result<(), GatewayRouterError> {
+    if !sdkwork_cloudrouter_router_service::infrastructure::sql::pool::postgres_runtime_schema_ready(
+        pool,
+    )
+    .await
+    .map_err(|error| GatewayRouterError::Postgres(PostgresCatalogLoadError::Database(error)))?
+    {
+        return Ok(());
+    }
+    let store: Arc<dyn RuntimeInvocationReaperStore + Send + Sync> =
+        Arc::new(PostgresRuntimeInvocationReaperStore::new(pool.clone()));
+    let reaper = RuntimeInvocationReaper::new(store, RuntimeInvocationReaperConfig::default());
+    let interval = reaper.config().interval;
+    let mut shutdown_rx = sdkwork_cloudrouter_http::subscribe_shutdown_signal();
+    tokio::spawn(async move {
+        loop {
+            match reaper.run_once().await {
+                Ok(0) => {}
+                Ok(reaped) => {
+                    tracing::warn!(
+                        reaped,
+                        "closed abandoned runtime invocations that missed their terminal event"
+                    );
+                }
+                Err(error) => {
+                    tracing::warn!(error = %error, "runtime invocation reaper run failed");
+                }
+            }
+            tokio::select! {
+                _ = shutdown_rx.recv() => break,
+                _ = sleep(interval) => {}
+            }
+        }
+        tracing::info!("runtime invocation reaper stopped");
     });
     Ok(())
 }

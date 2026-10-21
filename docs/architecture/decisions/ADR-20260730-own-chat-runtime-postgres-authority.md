@@ -1,9 +1,10 @@
 # ADR-20260730-own-chat-runtime-postgres-authority
 
-Status: accepted  
-Requirement: REQ-2026-0001  
-Owner: cloudrouter-platform  
-Date: 2026-07-30  
+Status: superseded
+Requirement: REQ-2026-0001
+Owner: cloudrouter-platform
+Date: 2026-07-30
+Superseded-By: ADR-20261021-remove-orphaned-chat-http-surface
 Specs: `ARCHITECTURE_DECISION_SPEC.md`, `DATABASE_SPEC.md`, `DATABASE_FRAMEWORK_SPEC.md`, `SUBJECT_ID_SPEC.md`, `PAGINATION_SPEC.md`, `SECURITY_SPEC.md`
 
 ## Context
@@ -98,10 +99,13 @@ horizontal replicas require durable tenant-scoped state.
 - `python -B -m tools.database_contract_materializer --root . --check`
 - `python -B -m tools.schema_compiler --root . --dialect postgres --materialize --check`
 - `python -B -m unittest tests.test_chat_runtime_database_contract -v`
-- `cargo test -p sdkwork-cloudrouter-router-service --test postgres_app_chat_sql_contract`
 - `cargo test -p sdkwork-cloudrouter-database-host`
 - PostgreSQL migration and concurrent Chat write tests against an isolated
   release-candidate database
+
+The former `postgres_app_chat_sql_contract` test covered the removed HTTP
+store; the persistence contract is covered by the Python contract test and the
+baseline above.
 
 ## Supersedes / Superseded By
 
@@ -110,4 +114,8 @@ For Chat ownership, this decision supersedes the unimplemented proposals in:
 - `TECH-2026-06-20-router-minimal-domain-migration-design.md`
 - `TECH-2026-06-21-kernel-field-mapping-ai-to-agent.md`
 
-No decision currently supersedes this ADR.
+The HTTP projection described in the Context is superseded by
+[ADR-20261021-remove-orphaned-chat-http-surface.md](ADR-20261021-remove-orphaned-chat-http-surface.md).
+The PostgreSQL system-of-record decision for the ten tables remains in force;
+only the orphaned `/app/v3/api/chat/*` routes, store, and HTTP tests were
+removed.

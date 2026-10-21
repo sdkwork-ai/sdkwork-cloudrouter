@@ -465,6 +465,7 @@ tables:
             - cleanup_candidates
             - cleanup_archived
             - cleanup_deleted
+            - cleanup_skipped_legal_hold
             - cleanup_failures
           alerts:
             - retention_lag

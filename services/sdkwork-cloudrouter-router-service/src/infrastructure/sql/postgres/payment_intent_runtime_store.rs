@@ -236,12 +236,18 @@ async fn insert_payment_intent(
     // into an atomic dedupe: a lost insert race is reported as a typed
     // conflict so the caller can replay the winner's record instead of
     // double-placing a provider order.
+    // The federated `sdkwork-payment` shape declares `payment_intent_no` as
+    // NOT NULL with a tenant-scoped unique index, and CloudRouter never used to
+    // set it. The merchant order number is unique per tenant and is the
+    // operator-facing reference for this attempt, so it is the stable value.
+    // The remaining runtime-only columns still require the owning module's
+    // forward shape (tracked in docs/audit/REMEDIATION-2026-10-21.md §3.1).
     let inserted_rows = sqlx::query(
         r#"
         INSERT INTO commerce_payment_intent
-            (id, tenant_id, organization_id, owner_user_id, order_id, merchant_order_no, subject, provider, supplier_code, payment_method, scene_code, amount, currency_code, status, request_no, idempotency_key, metadata_json, provider_native_json, next_action_json, captured_amount, refunded_amount, created_at, updated_at)
+            (id, tenant_id, organization_id, owner_user_id, order_id, merchant_order_no, subject, provider, supplier_code, provider_code, payment_method, scene_code, amount, currency_code, status, request_no, idempotency_key, metadata_json, provider_native_json, next_action_json, captured_amount, refunded_amount, created_at, updated_at, payment_intent_no)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NULL, NULL, $18, $19, $20::timestamptz, $21::timestamptz)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9, $10, $11, $12::numeric, $13, $14, $15, $16, $17::jsonb, NULL, NULL, $18::numeric, $19::numeric, $20::timestamptz, $21::timestamptz, $22)
         ON CONFLICT DO NOTHING
         "#,
     )
@@ -266,6 +272,7 @@ async fn insert_payment_intent(
     .bind("0.00")
     .bind(&intent.created_at)
     .bind(&intent.updated_at)
+    .bind(&intent.merchant_order_no)
     .execute(&mut *tx)
     .await
     .map_err(|error| store_error("failed to insert payment intent", error))?
@@ -278,9 +285,9 @@ async fn insert_payment_intent(
     sqlx::query(
         r#"
         INSERT INTO commerce_payment_attempt
-            (id, tenant_id, organization_id, owner_user_id, payment_intent_id, order_id, provider, out_trade_no, amount, currency_code, status, callback_payload, created_at, paid_at, updated_at)
+            (id, tenant_id, organization_id, owner_user_id, payment_intent_id, order_id, provider, out_trade_no, amount, currency_code, status, callback_payload, created_at, paid_at, updated_at, payment_method, provider_code, idempotency_key)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::timestamptz, NULL, $14::timestamptz)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9::numeric, $10, $11, $12::jsonb, $13::timestamptz, NULL, $14::timestamptz, $15, $16, $17)
         "#,
     )
     .bind(&route_decision.payment_attempt_id)
@@ -297,6 +304,9 @@ async fn insert_payment_intent(
     .bind(payment_attempt_callback_payload(&intent))
     .bind(&intent.created_at)
     .bind(&intent.updated_at)
+    .bind(&intent.payment_method)
+    .bind(&intent.supplier_code)
+    .bind(&intent.idempotency_key)
     .execute(&mut *tx)
     .await
     .map_err(|error| store_error("failed to insert payment attempt", error))?;
@@ -569,7 +579,7 @@ async fn insert_refund(
         VALUES
             ($1, $2, $3,
              (SELECT i.order_id FROM commerce_payment_intent i WHERE i.tenant_id = $2 AND i.id = $4),
-             $5, $6, $7, $8, $9, $10, $4, $11, $12::timestamptz, $13::timestamptz)
+             $5, $6, $7::numeric, $8, $9, $10, $4, $11, $12::timestamptz, $13::timestamptz)
         ON CONFLICT (tenant_id, order_id, idempotency_key) WHERE deleted_at IS NULL
         DO NOTHING
         "#,
@@ -829,9 +839,9 @@ async fn finish_refund(
     sqlx::query(
         r#"
         INSERT INTO commerce_refund_event
-            (id, tenant_id, organization_id, refund_id, event_type, from_status, to_status, reason, created_at)
+            (id, tenant_id, organization_id, event_no, refund_id, event_type, from_status, to_status, actor_type, reason, idempotency_key, created_at)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9::timestamptz)
+            ($1, $2, $3, $1, $4, $5, $6, $7, 'system', $8, $1, $9::timestamptz)
         "#,
     )
     .bind(&event.id)

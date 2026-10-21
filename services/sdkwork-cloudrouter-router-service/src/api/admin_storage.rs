@@ -11,8 +11,8 @@ use serde::{Deserialize, Serialize};
 use crate::api::command_error::system_error_response;
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
-    json_success_list_response, platform_problem, problem_from_wire_code, success_envelope,
-    ApiResponseError,
+    json_created_response, json_success_list_response, platform_problem, problem_from_wire_code,
+    success_envelope, ApiResponseError,
 };
 use crate::api::text_normalization::{
     normalize_visible_ascii_optional as normalize_optional_text,
@@ -239,11 +239,13 @@ async fn create_quota_policy(
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.create_quota_policy(command).await {
-        Ok(quota_policy) => Json(success_envelope(StorageQuotaPolicyMutationResponse {
-            quota_policy,
-            request_id,
-        }))
-        .into_response(),
+        Ok(quota_policy) => json_created_response(
+            None,
+            StorageQuotaPolicyMutationResponse {
+                quota_policy,
+                request_id,
+            },
+        ),
         Err(error) => storage_error_response("storage quota policy create is unavailable", error),
     }
 }
@@ -290,13 +292,13 @@ async fn create_reconciliation_run(
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.create_reconciliation_run(command).await {
-        Ok(reconciliation_run) => {
-            Json(success_envelope(StorageReconciliationRunMutationResponse {
+        Ok(reconciliation_run) => json_created_response(
+            None,
+            StorageReconciliationRunMutationResponse {
                 reconciliation_run,
                 request_id,
-            }))
-            .into_response()
-        }
+            },
+        ),
         Err(error) => storage_error_response("storage reconciliation create is unavailable", error),
     }
 }
@@ -322,10 +324,10 @@ async fn create_gc_job(
     };
     let request_id = response_request_id(command.request_id.as_deref());
     match state.store.create_gc_job(command).await {
-        Ok(job) => Json(success_envelope(
+        Ok(job) => json_created_response(
+            None,
             StorageGarbageCollectionJobMutationResponse { job, request_id },
-        ))
-        .into_response(),
+        ),
         Err(error) => {
             storage_error_response("storage garbage collection create is unavailable", error)
         }

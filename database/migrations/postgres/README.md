@@ -71,6 +71,21 @@ development lifecycle history stays readable.
   polls the upstream, records the reported usage once, and settles through the
   normal billing path keyed by `(tenant_id, organization_id, task_kind,
   upstream_id)`. The baseline carries the same definition for clean installs.
+- `0047_payment_runtime_shape_guard.up.sql` converges the federated
+  `commerce_payment_intent` / `commerce_payment_attempt` /
+  `commerce_refund_event` shape with the Cloud Router payment runtime
+  projections (provider dispatch payload, merchant order reference, and the
+  `requires_confirmation` / `requires_action` statuses). It is additive,
+  idempotent, and a no-op when the owning `sdkwork-payment` baseline already
+  carries the columns. The same statements are appended to the
+  `payment-control-plane` module baseline for clean installs; remove the guard
+  once the owning repository ships the shape itself.
+- `0048_soft_delete_active_unique_indexes.up.sql` makes the
+  `iam_user_preference` and `integration_webhook_endpoint` natural keys unique
+  among active rows only. Both tables are soft-deleted, so the previous index
+  prevented re-creating a deleted webhook `endpoint_code` or preference row.
+  The registry now declares `soft_delete_policy: active_unique` and the compiler
+  emits the same partial predicate for clean installs.
 
 ## Historical migrations
 

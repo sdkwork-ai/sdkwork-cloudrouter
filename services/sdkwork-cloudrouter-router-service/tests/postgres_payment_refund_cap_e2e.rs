@@ -46,6 +46,11 @@ const PAYMENT_BASELINE: &str = concat!(
     ),
 );
 
+/// Upgrade path for databases installed before the runtime-shape guard existed.
+/// Applying it after the module baseline also proves the guard is idempotent.
+const PAYMENT_RUNTIME_SHAPE_GUARD: &str =
+    include_str!("../../../database/migrations/postgres/0047_payment_runtime_shape_guard.up.sql");
+
 const TENANT_ID: &str = "tenant-refund-cap-e2e";
 
 struct PostgresTestContext {
@@ -110,6 +115,10 @@ impl PostgresTestContext {
                 .await
                 .expect("apply payment baseline DDL");
         }
+        sqlx::raw_sql(PAYMENT_RUNTIME_SHAPE_GUARD)
+            .execute(&pool)
+            .await
+            .expect("apply payment runtime shape guard");
 
         Some(Self {
             pool,
@@ -314,12 +323,23 @@ async fn insert_refund_conflict(
 }
 
 async fn refund_row_count(pool: &PgPool, intent_id: &str) -> i64 {
-    sqlx::query("SELECT COUNT(*) AS rows FROM commerce_refund WHERE payment_intent_id = $1")
-        .bind(intent_id)
-        .fetch_one(pool)
-        .await
-        .unwrap()
-        .get::<i64, _>("rows")
+    // The federated refund aggregate links to the attempt, not directly to the
+    // intent (`commerce_refund.payment_intent_id` does not exist).
+    sqlx::query(
+        r#"
+        SELECT COUNT(*) AS rows
+        FROM commerce_refund refund
+        JOIN commerce_payment_attempt attempt
+          ON attempt.tenant_id = refund.tenant_id
+         AND attempt.id = refund.payment_attempt_id
+        WHERE attempt.payment_intent_id = $1
+        "#,
+    )
+    .bind(intent_id)
+    .fetch_one(pool)
+    .await
+    .unwrap()
+    .get::<i64, _>("rows")
 }
 
 #[tokio::test]

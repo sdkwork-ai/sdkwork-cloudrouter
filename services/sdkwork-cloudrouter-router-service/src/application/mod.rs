@@ -34,6 +34,7 @@ mod paypal_payment_adapter;
 mod provider_async_usage_executor;
 mod route_selection_diagnostics;
 mod route_strategy;
+mod runtime_invocation_reaper;
 mod runtime_stream_bus;
 mod site_settings_cache;
 mod stripe_payment_adapter;
@@ -105,21 +106,21 @@ pub(crate) use invocation::is_token_meter;
 pub use invocation::{
     apply_pricing_identity, canonical_provider_native_catalog_key, normalize_standard_api_path,
     provider_native_api_code_from_normalized_path, resolve_pricing_identity,
-    result_gate_for_api_code, result_gate_satisfied, waived_reason, AccountBillingMode,
-    AccountResolutionInterceptor, BatchUsageBucket, BatchUsageKind, BatchUsageTotals, BillingMode,
-    BillingPolicyInterceptor, BillingQuantitySource,
-    sum_anthropic_batch_usage, sum_openai_batch_usage,
-    BillingResultGate, BillingSettlementInterceptor, BillingTransactionInterceptor,
-    CircuitBreakerConfig, CircuitBreakerInterceptor, CircuitBreakerStateStore, CircuitCallPermit,
-    DeferredStreamInvocation, DeferredStreamResponse, DispatchExecutor, DispatchMode,
-    IdempotencyConfig, IdempotencyInterceptor, IdempotencyKeyStatus, IdempotencyLockAcquisition,
-    IdempotencyStore, IdempotencyStoreEntry, IdempotencyStoreError, Invocation, InvocationAccount,
-    InvocationAdapterTarget, InvocationAuthType, InvocationBilling, InvocationBody,
-    InvocationCancellationSignal, InvocationClassification, InvocationClassificationRequest,
-    InvocationDispatch, InvocationDispatchResponse, InvocationError, InvocationErrorKind,
-    InvocationFuture, InvocationId, InvocationInterceptor, InvocationNormalizedResponse,
-    InvocationPipeline, InvocationPipelineExecution, InvocationPricingQuote,
-    InvocationProviderRequest, InvocationRequest, InvocationResource, InvocationResourceClassifier,
+    result_gate_for_api_code, result_gate_satisfied, sum_anthropic_batch_usage,
+    sum_openai_batch_usage, waived_reason, AccountBillingMode, AccountResolutionInterceptor,
+    BatchUsageBucket, BatchUsageKind, BatchUsageTotals, BillingMode, BillingPolicyInterceptor,
+    BillingQuantitySource, BillingResultGate, BillingSettlementInterceptor,
+    BillingTransactionInterceptor, CircuitBreakerConfig, CircuitBreakerInterceptor,
+    CircuitBreakerStateStore, CircuitCallPermit, DeferredStreamInvocation, DeferredStreamResponse,
+    DispatchExecutor, DispatchMode, IdempotencyConfig, IdempotencyInterceptor,
+    IdempotencyKeyStatus, IdempotencyLockAcquisition, IdempotencyStore, IdempotencyStoreEntry,
+    IdempotencyStoreError, Invocation, InvocationAccount, InvocationAdapterTarget,
+    InvocationAuthType, InvocationBilling, InvocationBody, InvocationCancellationSignal,
+    InvocationClassification, InvocationClassificationRequest, InvocationDispatch,
+    InvocationDispatchResponse, InvocationError, InvocationErrorKind, InvocationFuture,
+    InvocationId, InvocationInterceptor, InvocationNormalizedResponse, InvocationPipeline,
+    InvocationPipelineExecution, InvocationPricingQuote, InvocationProviderRequest,
+    InvocationRequest, InvocationResource, InvocationResourceClassifier,
     InvocationResponseMemoryGuard, InvocationRouteAttempt, InvocationRouteCandidate,
     InvocationRouteCandidateKind, InvocationRoutePlan, InvocationRouting, InvocationShape,
     InvocationSubject, InvocationSurface, InvocationTelemetry, InvocationUsage,
@@ -223,6 +224,7 @@ pub use route_strategy::{
     RoutingStrategyRegistry, StrategySelection, STRATEGY_LATENCY_FIRST, STRATEGY_PRICE_FIRST,
     STRATEGY_QUALITY_FIRST, STRATEGY_ROUND_ROBIN, STRATEGY_STICKY, STRATEGY_WEIGHTED,
 };
+pub use runtime_invocation_reaper::{RuntimeInvocationReaper, RuntimeInvocationReaperConfig};
 pub use runtime_stream_bus::{InMemoryRuntimeStreamBus, RuntimeStreamBus, RuntimeStreamBusFuture};
 pub use sdkwork_models_catalog_service::{
     ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,

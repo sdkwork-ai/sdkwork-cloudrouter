@@ -83,7 +83,7 @@ fn gateway_trace_upsert_placeholder_order_matches_all_postgres_bindings() {
     let postgres_bindings = function_block(
         POSTGRES_GATEWAY_USAGE_RECORDER,
         "async fn upsert_trace(",
-        "async fn upsert_usage_fact(",
+        "async fn usage_fact_is_frozen(",
     );
     assert_eq!(
         (1..=44).collect::<std::collections::BTreeSet<_>>(),

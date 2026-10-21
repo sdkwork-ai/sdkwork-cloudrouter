@@ -68,7 +68,9 @@ pub(crate) fn wrap_invocation_stream(
 ) -> Body {
     let cancellation_signal = deferred.cancellation_signal();
     let (completion, mut terminal_receiver) = StreamCompletion::new();
+    let terminal_task = sdkwork_cloudrouter_http::track_background_task();
     tokio::spawn(async move {
+        let _terminal_task = terminal_task;
         let outcome = terminal_receiver
             .recv()
             .await
@@ -84,7 +86,9 @@ pub(crate) fn wrap_invocation_stream(
     let (demand_sender, demand_receiver) = mpsc::channel(1);
     let usage_format = streaming_usage_format(content_type);
     let producer_completion = completion.clone();
+    let producer_task = sdkwork_cloudrouter_http::track_background_task();
     tokio::spawn(async move {
+        let _producer_task = producer_task;
         run_stream_producer(
             body,
             usage_format,

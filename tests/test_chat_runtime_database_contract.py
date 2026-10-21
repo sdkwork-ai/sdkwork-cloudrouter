@@ -12,16 +12,6 @@ DATABASE_MANIFEST = ROOT / "database" / "database.manifest.json"
 POSTGRES_BASELINE = (
     ROOT / "database" / "ddl" / "baseline" / "postgres" / "0001_cloudrouter_baseline.sql"
 )
-POSTGRES_MIGRATION = (
-    ROOT / "database" / "migrations" / "postgres" / "0004_add_chat_runtime_schema.up.sql"
-)
-POSTGRES_OPTIONAL_COST_MIGRATION = (
-    ROOT
-    / "database"
-    / "migrations"
-    / "postgres"
-    / "0006_align_chat_runtime_optional_cost.up.sql"
-)
 
 CHAT_RUNTIME_TABLES = {
     "ai_chat_conversation",
@@ -32,6 +22,8 @@ CHAT_RUNTIME_TABLES = {
     "ai_chat_context_snapshot",
     "ai_runtime_invocation",
     "ai_runtime_usage_link",
+    "ai_runtime_invocation_event",
+    "ai_runtime_artifact",
 }
 
 CRITICAL_UNIQUE_INDEXES = {
@@ -43,6 +35,8 @@ CRITICAL_UNIQUE_INDEXES = {
     "ai_chat_context_snapshot": "uk_ai_chat_context_snapshot_scope_turn_no",
     "ai_runtime_invocation": "uk_ai_runtime_invocation_scope_uuid",
     "ai_runtime_usage_link": "uk_ai_runtime_usage_link_scope_uuid",
+    "ai_runtime_invocation_event": "uk_ai_runtime_invocation_event_scope_uuid",
+    "ai_runtime_artifact": "uk_ai_runtime_artifact_scope_uuid",
 }
 
 
@@ -81,12 +75,8 @@ class ChatRuntimeDatabaseContractTest(unittest.TestCase):
         cls.fragment = load_yaml(CHAT_FRAGMENT)
         cls.contract = load_yaml(MATERIALIZED_CONTRACT)
         cls.baseline_sql = POSTGRES_BASELINE.read_text(encoding="utf-8")
-        cls.migration_sql = POSTGRES_MIGRATION.read_text(encoding="utf-8")
-        cls.optional_cost_migration_sql = POSTGRES_OPTIONAL_COST_MIGRATION.read_text(
-            encoding="utf-8"
-        )
 
-    def test_fragment_declares_exactly_the_eight_user_scoped_authorities(self) -> None:
+    def test_fragment_declares_exactly_the_ten_user_scoped_authorities(self) -> None:
         tables = {table["table"]: table for table in self.fragment["tables"]}
         self.assertEqual(CHAT_RUNTIME_TABLES, set(tables))
         for table_name, table in tables.items():
@@ -112,57 +102,31 @@ class ChatRuntimeDatabaseContractTest(unittest.TestCase):
             self.assertEqual("NUMERIC(38, 12)", cost_amount["postgres_type"])
             self.assertFalse(cost_amount["required"])
 
-    def test_folded_baseline_includes_the_forward_optional_cost_alignment(self) -> None:
+    def test_folded_baseline_keeps_optional_cost_nullable_and_non_negative(self) -> None:
+        # The pre-release consolidation folded the historical chat migrations
+        # into the baseline; only the final folded shape is authoritative now.
         for table_name in ("ai_chat_turn", "ai_runtime_usage_link"):
             baseline_body = create_table_body(self.baseline_sql, table_name)
-            original_migration_body = create_table_body(self.migration_sql, table_name)
 
             self.assertIn("cost_amount NUMERIC(38, 12),", baseline_body, table_name)
             self.assertNotIn("cost_amount NUMERIC(38, 12) NOT NULL", baseline_body, table_name)
             self.assertIn(
-                "cost_amount NUMERIC(38, 12) NOT NULL DEFAULT 0",
-                original_migration_body,
-                table_name,
-            )
-            self.assertIn(
-                f"ALTER TABLE {table_name}",
-                self.optional_cost_migration_sql,
-                table_name,
-            )
-            self.assertIn(
-                "ALTER COLUMN cost_amount DROP NOT NULL",
-                self.optional_cost_migration_sql,
+                "(cost_amount IS NULL OR cost_amount >= 0)",
+                baseline_body,
                 table_name,
             )
 
-        self.assertIn(
-            "(cost_amount IS NULL OR cost_amount >= 0)",
-            create_table_body(self.baseline_sql, "ai_chat_turn"),
-        )
-        self.assertIn(
-            "(cost_amount IS NULL OR cost_amount >= 0)",
-            create_table_body(self.baseline_sql, "ai_runtime_usage_link"),
-        )
-
-    def test_original_chat_migration_owns_all_chat_tables_and_indexes(self) -> None:
+    def test_baseline_owns_every_chat_table_and_critical_index(self) -> None:
         for table_name in CHAT_RUNTIME_TABLES:
-            create_table_body(self.migration_sql, table_name)
-            migration_indexes = table_indexes(self.migration_sql, table_name)
+            create_table_body(self.baseline_sql, table_name)
             baseline_indexes = table_indexes(self.baseline_sql, table_name)
-            self.assertEqual(baseline_indexes, migration_indexes, table_name)
-
-    def test_migration_is_transactional_bounded_and_fails_closed_on_partial_schema(self) -> None:
-        for expected in (
-            "-- transactional: true",
-            "-- reversible: false",
-            "SET LOCAL lock_timeout = '2s'",
-            "SET LOCAL statement_timeout = '5min'",
-            "IF present_table_count NOT IN (0, 8)",
-            "IF required_column_count <> 10 OR required_index_count <> 7",
-            "BEGIN;",
-            "COMMIT;",
-        ):
-            self.assertIn(expected, self.migration_sql)
+            self.assertTrue(
+                any(
+                    CRITICAL_UNIQUE_INDEXES[table_name] in sql
+                    for sql in baseline_indexes
+                ),
+                f"{table_name} must keep {CRITICAL_UNIQUE_INDEXES[table_name]}",
+            )
 
 
 if __name__ == "__main__":

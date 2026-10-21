@@ -94,7 +94,9 @@ pub struct AppRoutingAccountGroupItem {
     pub tags: Vec<String>,
     pub status: String,
     pub authorized: bool,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub member_account_count: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub available_account_count: i64,
     pub resource_codes: Vec<String>,
     pub resource_group_codes: Vec<String>,
@@ -132,8 +134,10 @@ pub struct AppRoutingRequestTraceItem {
     pub upstream_account_group_id: String,
     pub upstream_account_group_code: String,
     pub upstream_account_group_name: String,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub status: i64,
     pub duration: String,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub tokens: i64,
     pub trace_id: String,
     pub request_id: String,
@@ -141,7 +145,9 @@ pub struct AppRoutingRequestTraceItem {
     pub http_method: String,
     pub request_payload_hash: String,
     pub response_payload_hash: String,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub request_bytes: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub response_bytes: i64,
     pub provider_error_code: String,
     pub error_type: String,
@@ -155,7 +161,9 @@ pub struct AppRoutingRequestTraceItem {
 #[serde(rename_all = "camelCase")]
 pub struct AppRoutingUsageData {
     pub time: String,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub requests: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub latency: i64,
 }
 
@@ -202,4 +210,52 @@ pub trait AppRoutingReadStore {
         &'a self,
         subject: Option<AppRoutingSubject>,
     ) -> AppRoutingReadFuture<'a, AppRoutingUsageSnapshot>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn request_trace_int64_fields_serialize_as_strings() {
+        let item = AppRoutingRequestTraceItem {
+            status: 200,
+            tokens: 9_007_199_254_740_993,
+            request_bytes: 1024,
+            response_bytes: 2048,
+            ..AppRoutingRequestTraceItem::default()
+        };
+
+        let value = serde_json::to_value(&item).expect("request trace must serialize");
+
+        assert_eq!(serde_json::json!("200"), value["status"]);
+        assert_eq!(
+            serde_json::json!("9007199254740993"),
+            value["tokens"],
+            "int64 trace values must stay strings above the JavaScript safe-integer range"
+        );
+        assert_eq!(serde_json::json!("1024"), value["requestBytes"]);
+        assert_eq!(serde_json::json!("2048"), value["responseBytes"]);
+    }
+
+    #[test]
+    fn account_group_and_usage_int64_fields_serialize_as_strings() {
+        let group = AppRoutingAccountGroupItem {
+            member_account_count: 12,
+            available_account_count: 7,
+            ..AppRoutingAccountGroupItem::default()
+        };
+        let group_value = serde_json::to_value(&group).expect("account group must serialize");
+        assert_eq!(serde_json::json!("12"), group_value["memberAccountCount"]);
+        assert_eq!(serde_json::json!("7"), group_value["availableAccountCount"]);
+
+        let usage = AppRoutingUsageData {
+            requests: 42,
+            latency: 350,
+            ..AppRoutingUsageData::default()
+        };
+        let usage_value = serde_json::to_value(&usage).expect("usage data must serialize");
+        assert_eq!(serde_json::json!("42"), usage_value["requests"]);
+        assert_eq!(serde_json::json!("350"), usage_value["latency"]);
+    }
 }

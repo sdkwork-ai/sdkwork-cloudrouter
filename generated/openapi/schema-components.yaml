@@ -1018,6 +1018,120 @@ components:
         published_at:
           type: string
           format: date-time
+    AiMeteringAsyncTaskRecord:
+      type: object
+      x-table: ai_metering_async_task
+      x-domain: ai
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        uuid:
+          type: string
+          maxLength: 64
+        tenant_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        organization_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        data_scope:
+          type: string
+          x-db-type: enum_int32
+        status:
+          type: string
+          x-db-type: enum_int32
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        version:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        deleted_at:
+          type: string
+          format: date-time
+        deleted_by:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        metadata:
+          type: object
+          additionalProperties: true
+        user_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        request_id:
+          type: string
+          maxLength: 128
+        api_key_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        task_kind:
+          type: string
+          maxLength: 32
+        upstream_id:
+          type: string
+          maxLength: 256
+        catalog_key:
+          type: string
+          maxLength: 256
+        supplier_code:
+          type: string
+          maxLength: 64
+        account_id:
+          type: string
+          format: int64
+          pattern: ^-?[0-9]+$
+          x-sdkwork-int64-string: true
+          x-sdkwork-rust-type: i64
+        region_code:
+          type: string
+          maxLength: 64
+        task_status:
+          type: string
+          maxLength: 32
+        attempts:
+          type: integer
+          format: int32
+        next_poll_at:
+          type: string
+          format: date-time
+        last_error:
+          type: string
+          maxLength: 1024
+        billing_request_id:
+          type: string
+          maxLength: 160
+        usage_snapshot:
+          type: object
+          additionalProperties: true
+        settled_at:
+          type: string
+          format: date-time
     AiMeteringRequestTraceRecord:
       type: object
       x-table: ai_metering_request_trace

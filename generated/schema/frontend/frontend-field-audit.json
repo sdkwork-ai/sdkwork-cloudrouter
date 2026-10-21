@@ -1388,6 +1388,430 @@
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts"
     },
     {
+      "data_sources": [],
+      "fields": [
+        "id",
+        "courseId",
+        "courseTitle",
+        "applicantName",
+        "applicantContact",
+        "status",
+        "remark",
+        "submittedAt"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminApplicationItem",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "decision",
+        "remark"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminApplicationReviewInput",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "id",
+        "action",
+        "resource",
+        "resourceId",
+        "operatorName",
+        "status",
+        "createdAt"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminAuditLogItem",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "id",
+        "name",
+        "slug",
+        "description",
+        "status",
+        "sortOrder"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminCategoryItem",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "name",
+        "slug",
+        "description"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminCategoryMutationInput",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "id",
+        "courseId",
+        "lessonId",
+        "authorName",
+        "body",
+        "moderationState",
+        "createdAt"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminCommentItem",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "id",
+        "courseCode",
+        "title",
+        "subtitle",
+        "status",
+        "studentsCount",
+        "lessonsCount",
+        "categoryName",
+        "instructorName",
+        "updatedAt"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminCourseItem",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "title",
+        "subtitle",
+        "description"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminCourseMutationInput",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "courseId",
+        "userId",
+        "source",
+        "remark"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminEnrollmentGrantInput",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "id",
+        "courseId",
+        "courseTitle",
+        "userId",
+        "userName",
+        "status",
+        "source",
+        "enrolledAt"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminEnrollmentItem",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "id",
+        "name",
+        "title",
+        "bio",
+        "avatarUrl",
+        "status",
+        "courseCount",
+        "studentCount"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminInstructorItem",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "name",
+        "title",
+        "bio",
+        "avatarUrl"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminInstructorMutationInput",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "id",
+        "courseId",
+        "sectionId",
+        "title",
+        "kind",
+        "durationSeconds",
+        "freePreview",
+        "status",
+        "externalSourceId",
+        "sourceProvider"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminLessonItem",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "title",
+        "sectionId",
+        "description",
+        "kind",
+        "freePreview",
+        "externalSourceId",
+        "sourceProvider"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminLessonMutationInput",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "q",
+        "status",
+        "page",
+        "pageSize"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminListParams",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "id",
+        "courseId",
+        "title",
+        "status",
+        "instructorName",
+        "scheduledStartAt",
+        "scheduledEndAt",
+        "playbackUrl"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminLiveSessionItem",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "courseId",
+        "title",
+        "scheduledStartAt",
+        "scheduledEndAt",
+        "instructorId"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminLiveSessionMutationInput",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "id",
+        "courseId",
+        "title",
+        "status",
+        "capacity",
+        "enrolledCount",
+        "startAt",
+        "endAt"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminOfferingItem",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "title",
+        "capacity",
+        "startAt",
+        "endAt"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminOfferingMutationInput",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "mode",
+        "page",
+        "pageSize",
+        "totalItems",
+        "totalPages",
+        "nextCursor",
+        "hasMore"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminPageInfo",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "id",
+        "enrollmentId",
+        "courseId",
+        "userId",
+        "status",
+        "progressPercent",
+        "completedLessons",
+        "totalLessons",
+        "lastStudiedAt"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminProgressItem",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "id",
+        "targetType",
+        "targetId",
+        "reaction",
+        "count",
+        "updatedAt"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminReactionItem",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "courseCount",
+        "publishedCourseCount",
+        "studentCount",
+        "enrollmentCount",
+        "liveSessionCount",
+        "completionRate"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminReportOverview",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "id",
+        "label",
+        "primaryValue",
+        "secondaryValue",
+        "status",
+        "period"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminReportRow",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "id",
+        "lessonId",
+        "resourceRole",
+        "resourceKind",
+        "fileName",
+        "driveResourceId",
+        "mimeType",
+        "status"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminResourceItem",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "resourceRole",
+        "resourceKind",
+        "driveResourceId",
+        "fileName",
+        "mimeType"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminResourceMutationInput",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "id",
+        "courseId",
+        "title",
+        "description",
+        "lessonCount",
+        "sortWeight",
+        "status"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminSectionItem",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "title",
+        "description"
+      ],
+      "file_targets": [],
+      "interface": "CourseAdminSectionMutationInput",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
+    },
+    {
       "data_sources": [
         "ai_usage",
         "ai_request_trace"
@@ -3797,7 +4221,7 @@
     }
   ],
   "summary": {
-    "interface_count": 165,
-    "source_file_count": 29
+    "interface_count": 193,
+    "source_file_count": 30
   }
 }

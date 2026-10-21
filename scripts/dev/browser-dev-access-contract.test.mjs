@@ -118,6 +118,16 @@ for (const profileId of DEV_PROFILES) {
       const gatewayProcesses = plan.localProcesses.filter((process) => process.role === 'api-standalone-gateway');
       assert.equal(gatewayProcesses.length, 1);
       assert.equal(plan.localDataStores.length, 0, 'browser dev must not own a database process');
+      // Standalone owns what it binds: `stop` reconstructs listener ownership
+      // from the profile `bindEnv` declarations (PNPM_SCRIPT_SPEC.md section 3),
+      // so an application ingress bind it really serves must stay declared.
+      const ingressPort = new URL(
+        profileEnv.SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL,
+      ).port;
+      assert.ok(
+        plan.ownedBindings.some((binding) => String(binding.port) === ingressPort),
+        'standalone dev must own the application ingress bind it serves',
+      );
     } else {
       assert.equal(delivery.apiSurfaceId, 'platform.api-gateway');
       assert.equal(
@@ -128,6 +138,23 @@ for (const profileId of DEV_PROFILES) {
       for (const process of plan.localProcesses) {
         assert.equal(process.role, 'client', `cloud dev must not start local ${process.role} processes`);
       }
+      // PNPM_SCRIPT_SPEC.md section 3: `stop` and dev-session cleanup reclaim
+      // listeners by the profile's `bindEnv` declarations. A client-only cloud
+      // profile therefore owns nothing but its browser tooling listeners;
+      // claiming the platform gateway port would terminate the external
+      // sdkwork-api-cloud-gateway process this session does not own.
+      assert.deepEqual(
+        plan.ownedBindings.map((binding) => binding.id).sort(),
+        ['cloudrouter-adaptive-web:h5', 'cloudrouter-adaptive-web:pc-web', 'portal-renderer'],
+        'cloud dev must own only the adaptive ingress and its renderers',
+      );
+      const gatewayPort = new URL(
+        profileEnv.SDKWORK_LOCAL_PLATFORM_API_GATEWAY_HTTP_URL,
+      ).port;
+      assert.ok(
+        plan.ownedBindings.every((binding) => String(binding.port) !== gatewayPort),
+        'cloud dev must not claim ownership of the local platform gateway port',
+      );
     }
 
     // The single browser entry is the primary access endpoint.

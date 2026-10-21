@@ -10073,6 +10073,7 @@ frontend_operations:
     api_surface: backend
     api_method: GET
     api_path: /backend/v3/api/system/records
+    description: List gateway request attempts newest first with an opaque keyset cursor. Each retry attempt is an independent row, so a page never ranks or counts the whole tenant.
     sdk_domain: system
     read_sources:
       - ai_request_trace
@@ -10154,16 +10155,22 @@ frontend_operations:
             $ref: '#/components/schemas/PageInfo'
         required: [items, pageInfo]
         type: object
+    query_parameters_declared: true
     query_parameters:
-      - name: page
-        schema: { type: integer, format: int32, minimum: 1, default: 1 }
+      - name: cursor
+        description: Opaque keyset cursor from the previous page's nextCursor.
+        schema: { type: string, maxLength: 512 }
       - name: page_size
-        schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+        description: Page size between 1 and 200.
+        schema: { type: integer, format: int32, minimum: 1, maximum: 200 }
       - name: user
+        description: User label, email, or numeric id filter.
         schema: { type: string, maxLength: 128 }
       - name: token
+        description: API key name, group, or request id filter.
         schema: { type: string, maxLength: 128 }
       - name: model
+        description: Requested or resolved model filter.
         schema: { type: string, maxLength: 128 }
   - route: /admin/runtime-region
     source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-runtime-region/src/runtimeRegionService.ts
@@ -12590,6 +12597,10 @@ routes:
     required_tables:
       - ops_audit_log
       - ops_config_snapshot
+  - route: /admin/course/:sectionId?
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-course-backend-sdk
+    required_tables: []
   - route: /admin/dashboard
     dependency_owned: true
     dependency_sdk_family: sdkwork-cloudrouter-backend-sdk

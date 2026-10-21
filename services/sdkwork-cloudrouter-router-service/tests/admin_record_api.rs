@@ -4,8 +4,8 @@ use std::sync::{Arc, Mutex};
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_cloudrouter_router_service::ports::{
-    AdminRecordListPage, AdminRecordLogItem, AdminRecordReadFuture, AdminRecordStore,
-    ListAdminRecordLogsQuery,
+    AdminRecordCursor, AdminRecordListPage, AdminRecordLogItem, AdminRecordReadFuture,
+    AdminRecordStore, ListAdminRecordLogsQuery,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -20,15 +20,21 @@ async fn admin_record_route_lists_logs_and_normalizes_filters() {
         router,
         signed_request(
             "GET",
-            "/backend/v3/api/system/records?user=%20owner@example.com%20&token=Production&model=gpt-4o-mini&page=2&page_size=50",
+            "/backend/v3/api/system/records?user=%20owner@example.com%20&token=Production&model=gpt-4o-mini&page_size=50&cursor=eyJzdGFydGVkX2F0X21pY3JvcyI6MTc2MjAwMDAwMDAwMDAwMCwiaWQiOjQyfQ",
         ),
     )
     .await;
 
     assert_eq!(0, payload["code"].as_i64().unwrap());
-    assert_eq!("7", payload["data"]["pageInfo"]["totalItems"]);
-    assert_eq!(2, payload["data"]["pageInfo"]["page"]);
+    assert_eq!("cursor", payload["data"]["pageInfo"]["mode"]);
     assert_eq!(50, payload["data"]["pageInfo"]["pageSize"]);
+    assert_eq!(true, payload["data"]["pageInfo"]["hasMore"]);
+    assert!(
+        payload["data"]["pageInfo"]["nextCursor"]
+            .as_str()
+            .is_some_and(|cursor| !cursor.is_empty()),
+        "cursor mode must return the opaque next cursor"
+    );
     assert_eq!("trace-100", payload["data"]["items"][0]["id"]);
     assert_eq!("owner@example.com", payload["data"]["items"][0]["user"]);
     assert_eq!(
@@ -79,12 +85,57 @@ async fn admin_record_route_lists_logs_and_normalizes_filters() {
     assert_eq!(100001, query.subject.tenant_id);
     assert_eq!(0, query.subject.organization_id);
     assert_eq!(30, query.subject.operator_id);
-    assert_eq!(2, query.page_no);
     assert_eq!(50, query.page_size);
-    assert_eq!(50, query.offset);
+    assert_eq!(
+        Some(AdminRecordCursor {
+            started_at_micros: 1_762_000_000_000_000,
+            id: 42,
+        }),
+        query.cursor
+    );
     assert_eq!(Some("owner@example.com".to_owned()), query.user);
     assert_eq!(Some("Production".to_owned()), query.token);
     assert_eq!(Some("gpt-4o-mini".to_owned()), query.model);
+}
+
+#[tokio::test]
+async fn admin_record_route_rejects_offset_parameters_in_cursor_mode() {
+    let store = Arc::new(TestAdminRecordStore::default());
+    let router =
+        sdkwork_cloudrouter_router_service::api::admin_record_router_with_store(store.clone());
+
+    let response = router
+        .oneshot(signed_request(
+            "GET",
+            "/backend/v3/api/system/records?page=2&page_size=50",
+        ))
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::BAD_REQUEST, response.status());
+    let payload = json_payload(response).await;
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(store.captured.lock().unwrap().is_none());
+}
+
+#[tokio::test]
+async fn admin_record_route_rejects_a_malformed_cursor_without_calling_store() {
+    let store = Arc::new(TestAdminRecordStore::default());
+    let router =
+        sdkwork_cloudrouter_router_service::api::admin_record_router_with_store(store.clone());
+
+    let response = router
+        .oneshot(signed_request(
+            "GET",
+            "/backend/v3/api/system/records?cursor=not-a-cursor",
+        ))
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::BAD_REQUEST, response.status());
+    let payload = json_payload(response).await;
+    assert_eq!(40001, payload["code"].as_i64().unwrap());
+    assert!(store.captured.lock().unwrap().is_none());
 }
 
 #[tokio::test]
@@ -204,9 +255,12 @@ impl AdminRecordStore for TestAdminRecordStore {
                     user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126.0.0.0"
                         .to_owned(),
                 }],
-                total: 7,
-                page_no: query.page_no,
                 page_size: query.page_size,
+                has_more: true,
+                next_cursor: Some(AdminRecordCursor {
+                    started_at_micros: 1_762_000_000_000_000,
+                    id: 100,
+                }),
             })
         })
     }

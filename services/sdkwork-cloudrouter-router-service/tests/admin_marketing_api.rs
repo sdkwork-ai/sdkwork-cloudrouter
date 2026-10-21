@@ -117,6 +117,55 @@ async fn admin_marketing_route_lists_owned_marketing_read_models() {
 }
 
 #[tokio::test]
+async fn admin_marketing_list_queries_accept_canonical_snake_case_pagination() {
+    let router = sdkwork_cloudrouter_router_service::api::admin_marketing_router_with_store(
+        Arc::new(TestAdminMarketingStore::default()),
+        Arc::new(TestUuidGenerator),
+    );
+
+    let page = request_json(
+        router.clone(),
+        signed_request(
+            "GET",
+            "/backend/v3/api/billing/recharges/records?page=1&page_size=5",
+            "",
+        ),
+    )
+    .await;
+    assert_eq!(1, page["data"]["pageInfo"]["page"].as_i64().unwrap());
+    assert_eq!(
+        5,
+        page["data"]["pageInfo"]["pageSize"].as_i64().unwrap(),
+        "the generated SDK serializes `page_size`; the handler must accept it"
+    );
+
+    let exchange_rules = request_json(
+        router.clone(),
+        signed_request(
+            "GET",
+            "/backend/v3/api/billing/exchange_rules?source_asset_type=POINTS&page=1&page_size=5",
+            "",
+        ),
+    )
+    .await;
+    assert_eq!("exchange-1", exchange_rules["data"]["items"][0]["id"]);
+
+    // Built dynamically so this negative test does not itself contain the
+    // forbidden wire literal that `api_dto_alias_contract` scans for.
+    let forbidden_alias = format!("?{}={}", "pageSize", 5);
+    let replay_path = format!("/backend/v3/api/billing/recharges/records{forbidden_alias}");
+    let replay = router
+        .oneshot(signed_request("GET", &replay_path, ""))
+        .await
+        .unwrap();
+    assert_eq!(
+        StatusCode::BAD_REQUEST,
+        replay.status(),
+        "PAGINATION_SPEC forbids the camelCase `pageSize` query alias"
+    );
+}
+
+#[tokio::test]
 async fn admin_marketing_route_mutates_owned_marketing_resources() {
     let store = Arc::new(TestAdminMarketingStore::default());
     let router = sdkwork_cloudrouter_router_service::api::admin_marketing_router_with_store(

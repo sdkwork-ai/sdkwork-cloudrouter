@@ -130,7 +130,7 @@ async fn admin_storage_route_exposes_governance_commands() {
         default_bucket["data"]["defaultBucket"]["logicalScope"]
     );
 
-    let quota = request_json(
+    let quota = request_created_json(
         router.clone(),
         trusted_json_request(
             "POST",
@@ -146,7 +146,7 @@ async fn admin_storage_route_exposes_governance_commands() {
         quota["data"]["quotaPolicy"]["quotaLimitBytes"]
     );
 
-    let reconciliation = request_json(
+    let reconciliation = request_created_json(
         router.clone(),
         trusted_json_request(
             "POST",
@@ -161,7 +161,7 @@ async fn admin_storage_route_exposes_governance_commands() {
         reconciliation["data"]["reconciliationRun"]["id"]
     );
 
-    let gc = request_json(
+    let gc = request_created_json(
         router,
         trusted_json_request(
             "POST",
@@ -415,6 +415,12 @@ fn trusted_json_request(method: &str, path: &str, body: &str) -> Request<Body> {
 async fn request_json(router: axum::Router, request: Request<Body>) -> Value {
     let response = router.oneshot(request).await.unwrap();
     assert_eq!(StatusCode::OK, response.status());
+    json_payload(response).await
+}
+
+async fn request_created_json(router: axum::Router, request: Request<Body>) -> Value {
+    let response = router.oneshot(request).await.unwrap();
+    assert_eq!(StatusCode::CREATED, response.status());
     json_payload(response).await
 }
 
