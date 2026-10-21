@@ -67,17 +67,17 @@ pub struct AdminAnalyticsSnapshot {
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminAnalyticsSummary {
-    #[serde(serialize_with = "serialize_i64_as_string")]
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub total_users: i64,
-    #[serde(serialize_with = "serialize_i64_as_string")]
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub active_users: i64,
-    #[serde(serialize_with = "serialize_i64_as_string")]
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub active_models: i64,
-    #[serde(serialize_with = "serialize_i64_as_string")]
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub total_requests: i64,
-    #[serde(serialize_with = "serialize_i64_as_string")]
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub successful_requests: i64,
-    #[serde(serialize_with = "serialize_i64_as_string")]
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub failed_requests: i64,
     #[serde(serialize_with = "serialize_decimal_as_string")]
     pub total_tokens: DecimalValue,
@@ -103,7 +103,7 @@ pub struct AdminAnalyticsTrendPoint {
     pub tokens: DecimalValue,
     #[serde(serialize_with = "serialize_decimal_as_string")]
     pub points: DecimalValue,
-    #[serde(serialize_with = "serialize_i64_as_string")]
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub users: i64,
 }
 
@@ -123,7 +123,7 @@ pub struct AdminAnalyticsUserRankItem {
     pub user_name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
-    #[serde(serialize_with = "serialize_i64_as_string")]
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub request_count: i64,
     #[serde(serialize_with = "serialize_decimal_as_string")]
     pub total_tokens: DecimalValue,
@@ -148,7 +148,7 @@ pub struct AdminAnalyticsModelRankItem {
     pub catalog_key: String,
     pub vendor: String,
     pub modality: String,
-    #[serde(serialize_with = "serialize_i64_as_string")]
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub request_count: i64,
     #[serde(serialize_with = "serialize_decimal_as_string")]
     pub total_tokens: DecimalValue,
@@ -156,7 +156,7 @@ pub struct AdminAnalyticsModelRankItem {
     pub points: DecimalValue,
     #[serde(serialize_with = "serialize_decimal_as_string")]
     pub upstream_cost: DecimalValue,
-    #[serde(serialize_with = "serialize_i64_as_string")]
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub user_count: i64,
     #[serde(serialize_with = "serialize_decimal_as_string")]
     pub average_tokens_per_request: DecimalValue,
@@ -188,13 +188,6 @@ pub trait AdminAnalyticsReadStore {
         &'a self,
         query: AdminAnalyticsQuery,
     ) -> AdminAnalyticsReadFuture<'a>;
-}
-
-fn serialize_i64_as_string<S>(value: &i64, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    serializer.serialize_str(&value.to_string())
 }
 
 fn serialize_decimal_as_string<S>(value: &DecimalValue, serializer: S) -> Result<S::Ok, S::Error>

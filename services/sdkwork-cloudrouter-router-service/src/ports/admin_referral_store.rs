@@ -119,18 +119,11 @@ pub struct AdminReferralStrategyItem {
     pub reward_value: String,
     pub reward_target: String,
     pub trigger_event: String,
-    #[serde(serialize_with = "serialize_i64_as_string")]
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub max_rewards_per_inviter: i64,
     pub starts_at: String,
     pub ends_at: String,
     pub updated_at: String,
-}
-
-fn serialize_i64_as_string<S>(value: &i64, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    serializer.serialize_str(&value.to_string())
 }
 
 pub trait AdminReferralStore {

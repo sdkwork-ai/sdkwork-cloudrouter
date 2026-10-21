@@ -163,12 +163,12 @@ pub struct AdminRechargePackageItem {
     pub sku_id: String,
     pub price_amount: String,
     pub currency_code: String,
-    #[serde(serialize_with = "serialize_i64_as_string")]
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub bonus_points: i64,
     pub discount: i64,
-    #[serde(serialize_with = "serialize_i64_as_string")]
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub grant_amount: i64,
-    #[serde(serialize_with = "serialize_i64_as_string")]
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub points: i64,
     pub status: String,
     pub updated_at: String,
@@ -208,18 +208,11 @@ pub struct AdminPaymentAttemptItem {
 pub struct AdminReferralStatItem {
     pub id: String,
     pub inviter: String,
-    #[serde(serialize_with = "serialize_i64_as_string")]
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub total_invited: i64,
     pub total_revenue: String,
     pub bonus_awarded: String,
     pub link: String,
-}
-
-fn serialize_i64_as_string<S>(value: &i64, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    serializer.serialize_str(&value.to_string())
 }
 
 pub trait AdminMarketingStore {
