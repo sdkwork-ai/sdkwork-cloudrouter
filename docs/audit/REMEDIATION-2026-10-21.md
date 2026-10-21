@@ -7,10 +7,10 @@ Branch: `main`
 Scope rule: every item is closed only with code + executable evidence; no
 documentation-only closures.
 
-**当前状态（2026-10-21 更新）**：审计中的 P0 全部关闭；24 项标准/生成/质量门禁
-全绿（含 SDK guardian、schema quality gate）；20 个 PostgreSQL 测试二进制全绿；
-`sdkwork-router-service` lib 636 项全绿；pricing/record 前端 typecheck 与测试全绿。
-剩余项为 P1-12 终态 sweeper 与 P2 清理，见 §3.2。
+**当前状态（2026-10-21 更新）**：审计中的 P0 全部关闭；P1 全部关闭（含 P1-12
+tombstone reaper）；25 项标准/生成/质量门禁全绿；21 个 PostgreSQL 测试二进制全绿；
+`sdkwork-router-service` lib 638 项全绿。剩余 P2：`success_envelope` trace 统一与
+依赖升级批次，见 §3.2。
 
 ## 1. 本轮已关闭
 
@@ -37,7 +37,7 @@ documentation-only closures.
 | 记账冻结事实被重放覆盖 | `record_gateway_usage` 在写 measurement/rating/charge 前检查 `settlement_status`，已冻结则整体跳过 | `gateway_usage_recorder.rs`；PG 事务集成测试通过 |
 | PG 测试夹具过期 | 修正 `account_group_snapshot`/`debit_points`/`route_kind`/billing 投影/health 列等夹具，恢复真实 PostgreSQL 可执行性 | `postgres_transaction_integration`、`postgres_app_routing_read_store`、`postgres_pricing_catalog_loader` 等全部通过 |
 | P1-10 软删除唯一索引 | registry 两表声明 `soft_delete_policy: active_unique`，重新生成 partial unique index；upsert 冲突目标补 `WHERE deleted_at IS NULL`；新增升级迁移 | `postgres_soft_delete_active_unique` 1/1 通过（删除后可复用、活跃重复 23505、迁移幂等） |
-| P1-12 流任务优雅退出 | 新增 `background_tasks` 注册表；`serve_with_graceful_shutdown_deadline` 在 grace 内等待后台任务归零；三条流任务（runtime drain、terminal writer、stream producer）纳入跟踪 | `background_tasks` 3/3；`app_runtime_api` 58/58；`--lib` 634/634 |
+| P1-12 流任务优雅退出 | `background_tasks` 注册表 + grace 内 drain；超出 grace 的终态补偿由启动/周期 reaper 完成：补写 `runtime.failed` 事件、标记 invocation failed，`FOR UPDATE SKIP LOCKED` 且可重放 | `background_tasks` 3/3；reaper 单测 2/2；`postgres_runtime_invocation_reaper` 1/1（真实 PG：只回收超时项、实时/已终态不动、二次执行 0）；`--lib` 638 |
 | P1-6 请求记录全租户排序/计数/OFFSET | `/backend/v3/api/system/records` 改为 `(started_at,id)` keyset：删除 `ROW_NUMBER()` 与 `COUNT(*) OVER()`，去掉 OFFSET；查询参数改 `cursor`/`page_size`，返回 cursor 模式 `pageInfo`；前端改“加载更多”；OpenAPI/SDK 重新生成 | `postgres_admin_record_keyset` 1/1（真实 PG：翻页、游标前进、过滤）；`admin_record_api` 5/5；`--lib` 638；record typecheck 通过 |
 | P1-7 Chat 无契约/无 SDK | Chat 前端 service 已在 `44cc29a28` 删除，6 个 `/app/v3/api/chat/*` 路由、store、port 与陈旧测试成为孤儿。经确认移除 HTTP 投影并保留 `ai_chat_*`/`ai_runtime_*` 持久化权威；新增 ADR-20261021，旧 ADR-20260730 标记 superseded；PRD/TECH_ARCHITECTURE 改为“surface deferred”；store inventory 以 `async_usage_task_store` 补位 | `cargo check` 两 crate 通过；`--lib` 636；`rg 'app_chat\|AppChat'` 0 命中；console 测试可加载（其余 agent 断言针对已变更的实现，属既有测试债） |
 | P2 SDK 生成族漂移 | 重新生成 app/backend/open 三个 family；修正 open-api 单一序列化写入链（gateway → extensions → SDK → materialize）；gateway 检查改为忽略 `x-sdkwork-*` 元数据比较 | `sdk_guardian`、`schema_quality_gate`、`materialize`、`extensions`、`gateway --check` 全部 0 |
@@ -154,6 +154,14 @@ cargo test -p sdkwork-cloudrouter-router-service --test postgres_admin_record_ke
 
 pnpm --filter @sdkwork/cloudrouter-pc-admin-record typecheck
 → 0 error
+
+# P1-12 terminal reaper
+cargo test -p sdkwork-cloudrouter-router-service --lib runtime_invocation_reaper
+→ 2 passed
+
+SDKWORK_DATABASE_URL=postgres://…/sdkwork_ai_dev \
+cargo test -p sdkwork-cloudrouter-router-service --test postgres_runtime_invocation_reaper
+→ 1 passed（2 小时前 running 项补写 runtime.failed 并置 failed；实时/已终态不动；重放 0）
 ```
 
 ## 3. 未关闭项与后续顺序
@@ -185,7 +193,6 @@ pnpm --filter @sdkwork/cloudrouter-pc-admin-record typecheck
 
 | 项 | 计划 |
 | --- | --- |
-| P1-12 剩余：超出 grace 的终态补偿 | tracker + drain 已完成；下一步加启动期终态 sweeper，回收硬截止后仍非终态的流调用 |
 | P2 64 处 `Json(success_envelope(...))` | 统一走 `json_success_response`，补 trace 关联测试 |
 | 依赖升级 | 需单独批次：`cargo update` + SDK/前端锁文件 + 全量回归，避免与本轮逻辑修复混合 |
 

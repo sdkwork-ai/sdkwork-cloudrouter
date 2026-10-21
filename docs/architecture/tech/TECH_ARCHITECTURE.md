@@ -244,6 +244,15 @@ Data ownership and future transfer requirements are recorded in
 the HTTP surface removal is recorded in
 [ADR-20261021](../decisions/ADR-20261021-remove-orphaned-chat-http-surface.md).
 
+Runtime invocations that miss their terminal event (a stream producer killed at
+the hard shutdown deadline) are closed by the startup/periodic invocation
+reaper: it selects `pending`/`running`/`streaming` rows older than the threshold
+with no terminal event, appends one `runtime.failed` event with the next scoped
+`event_no`, and marks the invocation failed with `error_code =
+runtime_invocation_abandoned`. The sweep uses `FOR UPDATE SKIP LOCKED`, binds
+each row's own tenant/organization/user triple, and is idempotent on replay. It
+runs only when the runtime schema readiness probe passes.
+
 ### MCP Runtime Persistence
 
 Cloud Router does **not** own an MCP runtime registry. The MCP surface — server
