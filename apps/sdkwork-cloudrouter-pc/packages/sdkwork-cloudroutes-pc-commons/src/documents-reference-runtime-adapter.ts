@@ -31,6 +31,12 @@ export function getDocumentsAppSdkClient(): DocumentsAppSdkClient {
     documentsAppSdkClient = createClient({
       baseUrl: resolveDocumentsAppApiBaseUrl(),
       tokenManager: getCloudRouterGlobalTokenManager(),
+      headers: {
+        'Accept-Language':
+          globalThis.document?.documentElement.lang?.trim()
+          || globalThis.navigator?.language
+          || 'en-US',
+      },
     });
   }
   return documentsAppSdkClient as unknown as DocumentsAppSdkClient;
