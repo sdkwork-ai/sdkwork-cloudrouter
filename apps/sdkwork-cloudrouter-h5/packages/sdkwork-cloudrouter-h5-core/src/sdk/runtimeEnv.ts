@@ -1,9 +1,12 @@
 import { resolveBaseUrlWithAlignProtocol } from '@sdkwork/sdk-common';
 
+export type CloudRouterH5BrowserOriginMode = 'same-origin' | 'cross-origin';
+
 export interface CloudRouterH5RuntimeEnv {
   readonly environment: string;
   readonly deploymentProfile: string;
   readonly profileId: string;
+  readonly browserOriginMode: CloudRouterH5BrowserOriginMode;
   readonly appApiBaseUrl: string | null;
   readonly backendApiBaseUrl: string | null;
   readonly openApiBaseUrl: string | null;
@@ -13,6 +16,7 @@ const DEFAULT_RUNTIME_ENV: CloudRouterH5RuntimeEnv = {
   environment: 'development',
   deploymentProfile: 'standalone',
   profileId: 'standalone.development',
+  browserOriginMode: 'same-origin',
   appApiBaseUrl: null,
   backendApiBaseUrl: null,
   openApiBaseUrl: null,
@@ -38,16 +42,40 @@ declare global {
   var SDKWORK_RUNTIME_ENV: Record<string, unknown> | undefined;
 }
 
+/**
+ * The `/runtime-env.json` document resolved at bootstrap. It is the
+ * deploy-time authority (BROWSER_RUNTIME_ENV_SPEC.md §3) and must win over any
+ * build-time `import.meta.env` fallback: a JSON document has no Vite-inlined
+ * copies, so `import.meta.env` can only ever carry defaults here.
+ */
+let loadedRuntimeEnv: CloudRouterH5RuntimeEnv | null = null;
+
 function readString(source: Record<string, unknown>, key: string): string | null {
   const value = source[key];
   return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
-export function normalizeRuntimeEnv(source: Record<string, unknown>): CloudRouterH5RuntimeEnv {
+function normalizeBrowserOriginMode(
+  source: Record<string, unknown>,
+  deploymentProfile: string,
+): CloudRouterH5BrowserOriginMode {
+  const declared = readString(source, 'browserOriginMode');
+  if (declared === 'same-origin' || declared === 'cross-origin') {
+    return declared;
+  }
+  return deploymentProfile === 'standalone' ? 'same-origin' : 'cross-origin';
+}
+
+export function normalizeRuntimeEnv(source: Record<string, unknown> = {}): CloudRouterH5RuntimeEnv {
+  const deploymentProfile = readString(source, 'deploymentProfile') ?? DEFAULT_RUNTIME_ENV.deploymentProfile;
   return {
     environment: readString(source, 'environment') ?? DEFAULT_RUNTIME_ENV.environment,
-    deploymentProfile: readString(source, 'deploymentProfile') ?? DEFAULT_RUNTIME_ENV.deploymentProfile,
+    deploymentProfile,
     profileId: readString(source, 'profileId') ?? DEFAULT_RUNTIME_ENV.profileId,
+    // The document's declared origin mode is authoritative: a cloud
+    // DEVELOPMENT document is `same-origin` (dev ingress), while a deployed
+    // cloud document is `cross-origin` (BROWSER_RUNTIME_ENV_SPEC §2).
+    browserOriginMode: normalizeBrowserOriginMode(source, deploymentProfile),
     appApiBaseUrl: readString(source, 'appApiBaseUrl'),
     backendApiBaseUrl: readString(source, 'backendApiBaseUrl'),
     openApiBaseUrl: readString(source, 'openApiBaseUrl'),
@@ -69,8 +97,7 @@ export function publishRuntimeEnvGlobal(
     environment: document.environment,
     deploymentProfile: document.deploymentProfile,
     profileId: document.profileId,
-    browserOriginMode:
-      document.deploymentProfile === 'standalone' ? 'same-origin' : 'cross-origin',
+    browserOriginMode: document.browserOriginMode,
     appApiBaseUrl: document.appApiBaseUrl ?? undefined,
     backendApiBaseUrl: document.backendApiBaseUrl ?? undefined,
     openApiBaseUrl: document.openApiBaseUrl ?? undefined,
@@ -94,13 +121,26 @@ export async function loadRuntimeEnv(fetchImpl: typeof fetch = fetch): Promise<C
   // §4: the bridge must exist before the first SDK client call, so it is
   // published here (the single point where the document is resolved) rather
   // than left to each caller.
+  loadedRuntimeEnv = resolved;
   publishRuntimeEnvGlobal(resolved);
   return resolved;
 }
 
+/**
+ * Current runtime document: the `/runtime-env.json` document loaded at
+ * bootstrap, falling back to build-time `import.meta.env` only before it is
+ * loaded (and in tests). Reading `import.meta.env` after bootstrap would
+ * silently replace a cloud deployment document with the standalone defaults
+ * and point the generated SDK at the static page origin.
+ */
 export function resolveRuntimeEnv(): CloudRouterH5RuntimeEnv {
+  if (loadedRuntimeEnv) {
+    return loadedRuntimeEnv;
+  }
   return normalizeRuntimeEnv(
-    typeof import.meta === 'undefined' ? {} : (import.meta.env as unknown as Record<string, unknown>),
+    typeof import.meta === 'undefined'
+      ? {}
+      : ((import.meta.env ?? {}) as unknown as Record<string, unknown>),
   );
 }
 
@@ -124,5 +164,20 @@ export function resolveCloudRouterAppApiBaseUrl(env: CloudRouterH5RuntimeEnv = r
   const withoutSuffix = stripped.endsWith(APP_API_SUFFIX)
     ? stripped.slice(0, -APP_API_SUFFIX.length)
     : stripped;
-  return resolveBaseUrlWithAlignProtocol({ baseUrls: [withoutSuffix], preservePath: true }).url;
+  // Same-origin relative base (`/app/v3/api` in the dev and standalone
+  // documents): the page origin fronts the canonical prefix, so the generated
+  // SDK transport root is the empty same-origin base. Passing an empty string
+  // through `resolveBaseUrl` would treat it as "no candidate", fall back to
+  // deployment-mode derivation and fabricate the cloud-gateway dev port
+  // (`<host>:3910`) that the dev ingress never serves
+  // (BROWSER_RUNTIME_ENV_SPEC.md §5.1/§5.2).
+  if (!withoutSuffix || withoutSuffix === '/') {
+    return '';
+  }
+  if (withoutSuffix.startsWith('/')) {
+    return withoutSuffix;
+  }
+  return resolveBaseUrlWithAlignProtocol({ baseUrls: [withoutSuffix], preservePath: true })
+    .url
+    .replace(/\/+$/u, '');
 }

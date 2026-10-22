@@ -74,6 +74,20 @@ test('non-runtime-env requests pass through to the vite static stack', async () 
   assert.equal(passed, null);
 });
 
+test('the dependency cache carries the adaptive renderer label', async () => {
+  // APP_RUNTIME_TOPOLOGY_SPEC.md §8.2: the adaptive ingress attributes every
+  // `/node_modules/.vite/` dependency URL to the renderer whose cache label
+  // equals the application-root basename. An unlabeled default cache
+  // (`node_modules/.vite`) is rejected with 410 and the H5 page never boots.
+  const config = await defineViteConfig({ mode: 'cloud.development', command: 'serve' });
+  const cacheDir = String(config.cacheDir ?? '').replaceAll('\\', '/');
+  assert.match(
+    cacheDir,
+    /\/node_modules\/\.vite\/sdkwork-cloudrouter-h5$/u,
+    `h5 cacheDir must be node_modules/.vite/sdkwork-cloudrouter-h5, got ${cacheDir}`,
+  );
+});
+
 test('the source tree never carries a deploy-time runtime-env.json that would poison dev', () => {
   // public/runtime-env.json is a build artifact materialized per profile by the
   // canonical browser build runner (gitignored). A leftover of a previous

@@ -10,6 +10,18 @@ import { resolveBrowserDistOutDir } from '../../../sdkwork-specs/tools/browser-d
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+/**
+ * Adaptive Web renderer cache label (APP_RUNTIME_TOPOLOGY_SPEC.md §8.2).
+ *
+ * The framework-owned adaptive ingress attributes every `/node_modules/.vite/`
+ * dependency URL to a renderer by the cache label segment, which MUST equal the
+ * renderer application-root basename (`sdkwork-cloudrouter-h5`). An unlabeled
+ * cache (Vite's default `node_modules/.vite`) is rejected with 410 "cache URL is
+ * stale" before it reaches this server, which leaves the H5 page blank behind
+ * `pnpm dev` / `pnpm dev:cloud`.
+ */
+const ADAPTIVE_RENDERER_CACHE_LABEL = path.basename(__dirname);
+
 const RUNTIME_ENV_DOCUMENT_PATH = '/runtime-env.json';
 
 /**
@@ -42,6 +54,10 @@ function cloudrouterRuntimeEnvDocumentPlugin(mode: string): Plugin {
 //   dist/<deploymentProfile>/<envAlias> — e.g. dist/cloud/dev, dist/cloud/prod
 // (browser-dist-layout.mjs is the authority; FRONTEND_CODE_SPEC.md §7.)
 export default defineConfig(({ mode }) => ({
+  // Renderer-owned, label-carrying dependency cache (see
+  // ADAPTIVE_RENDERER_CACHE_LABEL): the adaptive ingress routes
+  // `/node_modules/.vite/<label>/...` back to this renderer.
+  cacheDir: path.resolve(__dirname, 'node_modules/.vite', ADAPTIVE_RENDERER_CACHE_LABEL),
   plugins: [react(), tailwindcss(), cloudrouterRuntimeEnvDocumentPlugin(mode)],
   build: {
     outDir: resolveBrowserDistOutDir(resolveViteEnvironment(mode), process.env.SDKWORK_DEPLOYMENT_PROFILE),

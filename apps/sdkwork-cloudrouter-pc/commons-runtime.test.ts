@@ -28,7 +28,7 @@ import {
   resolvePortalLoginRequiredAction,
 } from "./packages/sdkwork-cloudroutes-pc-commons/src/portal-auth.ts";
 import { PORTAL_EXTERNAL_TAILWIND_SOURCES } from "./src/portal-external-tailwind-sources.ts";
-import { normalizeGeneratedSdkBaseUrl } from "./packages/sdkwork-cloudroutes-pc-commons/src/sdk-base-url.ts";
+import { normalizeGeneratedSdkBaseUrl, resolveSharedDependencySurfaceBaseUrl } from "./packages/sdkwork-cloudroutes-pc-commons/src/sdk-base-url.ts";
 import { formatRechargeCurrencyAmount } from "./packages/sdkwork-cloudroutes-pc-commons/src/recharge-math.ts";
 import {
   createCloudRouterAiSdkClient,
@@ -38,6 +38,8 @@ import {
   getCloudRouterGlobalTokenManager,
   prepareCloudRouterCredentialEntryTokens,
   resetCloudRouterSdkClients,
+  resolveRequiredAppbaseAppBaseUrl,
+  resolveRequiredMessagingAppBaseUrl,
   SDK_SYSTEM_CONFIG,
 } from "./packages/sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts";
 import {
@@ -209,6 +211,263 @@ test("normalizeGeneratedSdkBaseUrl preserves raw origins and unrelated root-rela
   assert.equal(normalizeGeneratedSdkBaseUrl("https://tenant.example.com", "/app/v3/api"), "https://tenant.example.com");
   assert.equal(normalizeGeneratedSdkBaseUrl("/tenant-a", "/app/v3/api"), "/tenant-a");
   assert.equal(normalizeGeneratedSdkBaseUrl("", "/app/v3/api"), "");
+});
+
+type BrowserRuntimeLocationStub = {
+  hostname: string;
+  protocol: string;
+  port: string;
+  origin: string;
+};
+
+function withBrowserRuntimeDocument<T>(
+  document: Record<string, string>,
+  fn: () => T,
+  location: BrowserRuntimeLocationStub = {
+    hostname: "127.0.0.1",
+    protocol: "http:",
+    port: "4734",
+    origin: "http://127.0.0.1:4734",
+  },
+): T {
+  const globals = globalThis as unknown as Record<string, unknown>;
+  const previousBridge = globals.SDKWORK_RUNTIME_ENV;
+  // `readRuntimeEnv` falls back to process.env in Node; the host process env
+  // (e.g. SDKWORK_DEPLOYMENT_PROFILE=standalone from a desktop shell) must not
+  // reshape the browser document simulation.
+  const shadowedProcessKeys = [
+    "SDKWORK_DEPLOY_MODE",
+    "SDKWORK_DEPLOYMENT_PROFILE",
+    "SDKWORK_API_BASE_URL",
+    "SDKWORK_API_DEV_PORT",
+    "VITE_SDKWORK_DEPLOY_MODE",
+    "VITE_SDKWORK_DEPLOYMENT_PROFILE",
+    "VITE_API_BASE_URL",
+  ];
+  const previousProcessEnv = new Map(shadowedProcessKeys.map((key) => [key, process.env[key]]));
+  for (const key of shadowedProcessKeys) {
+    delete process.env[key];
+  }
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    enumerable: true,
+    value: { __CLOUDROUTER_ENV__: document, location },
+  });
+  globals.SDKWORK_RUNTIME_ENV = document;
+  try {
+    return fn();
+  } finally {
+    for (const [key, value] of previousProcessEnv) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+    if (previousBridge === undefined) {
+      delete globals.SDKWORK_RUNTIME_ENV;
+    } else {
+      globals.SDKWORK_RUNTIME_ENV = previousBridge;
+    }
+    if (originalWindowDescriptor) {
+      Object.defineProperty(globalThis, "window", originalWindowDescriptor);
+    } else {
+      delete (globalThis as { window?: Window }).window;
+    }
+  }
+}
+
+test("dev:cloud dependency bases stay same-origin instead of deriving the gateway dev port", () => {
+  // The dev runtime document authors the canonical same-origin RELATIVE bases
+  // (BROWSER_RUNTIME_ENV_SPEC.md §2/§5.1). `resolveSharedDependencySurfaceBaseUrl`
+  // must return them instead of calling `resolveBaseUrl()` with no candidate,
+  // which derived `http://127.0.0.1:3910` (sdk-common's cloud-gateway dev port)
+  // and made IAM/auth startup calls fail with ERR_CONNECTION_REFUSED.
+  const devCloudDocument = {
+    VITE_API_BASE_URL: "/v1",
+    VITE_CLOUDROUTER_APP_API_BASE_URL: "/app/v3/api",
+    VITE_CLOUDROUTER_BACKEND_API_BASE_URL: "/backend/v3/api",
+    VITE_CLOUDROUTER_OPEN_API_BASE_URL: "/v1",
+    VITE_SDKWORK_DEPLOYMENT_PROFILE: "cloud",
+    VITE_SDKWORK_CLOUDROUTER_ROUTER_PROFILE_ID: "cloud.development",
+  };
+  withBrowserRuntimeDocument(devCloudDocument, () => {
+    assert.equal(resolveSharedDependencySurfaceBaseUrl("/app/v3/api"), "/app/v3/api");
+    assert.equal(resolveSharedDependencySurfaceBaseUrl("/backend/v3/api"), "/backend/v3/api");
+    assert.equal(resolveSharedDependencySurfaceBaseUrl("/v1"), "/v1");
+    // Generated SDK transport root: the canonical prefix folds to the empty
+    // same-origin base, never to a fabricated gateway dev port.
+    assert.equal(
+      normalizeGeneratedSdkBaseUrl(resolveSharedDependencySurfaceBaseUrl("/app/v3/api")!, "/app/v3/api"),
+      "",
+    );
+    assert.equal(
+      normalizeGeneratedSdkBaseUrl(resolveSharedDependencySurfaceBaseUrl("/backend/v3/api")!, "/backend/v3/api"),
+      "",
+    );
+    // The two dependency chains without an inline VITE_CLOUDROUTER_* fallback
+    // (the IAM/auth and messaging startup paths) resolve through the authored
+    // surface bases too.
+    assert.equal(resolveRequiredAppbaseAppBaseUrl({}), "/app/v3/api");
+    assert.equal(resolveRequiredMessagingAppBaseUrl({}), "/app/v3/api");
+    const resolved = [
+      resolveSharedDependencySurfaceBaseUrl("/app/v3/api"),
+      resolveSharedDependencySurfaceBaseUrl("/backend/v3/api"),
+      resolveRequiredAppbaseAppBaseUrl({}),
+      resolveRequiredMessagingAppBaseUrl({}),
+    ].join(" ");
+    assert.doesNotMatch(resolved, /3910|api-dev\.sdkwork\.com/u);
+  });
+});
+
+test("deployed cloud documents keep the absolute dependency family base", () => {
+  const deployedCloudDocument = {
+    VITE_API_BASE_URL: "https://api.sdkwork.com/v1",
+    VITE_CLOUDROUTER_APP_API_BASE_URL: "https://api.sdkwork.com/app/v3/api",
+    VITE_CLOUDROUTER_BACKEND_API_BASE_URL: "https://api.sdkwork.com/backend/v3/api",
+    VITE_CLOUDROUTER_OPEN_API_BASE_URL: "https://api.sdkwork.com/v1",
+    VITE_SDKWORK_DEPLOYMENT_PROFILE: "cloud",
+  };
+  withBrowserRuntimeDocument(
+    deployedCloudDocument,
+    () => {
+      assert.equal(
+        resolveSharedDependencySurfaceBaseUrl("/app/v3/api"),
+        "https://api.sdkwork.com/app/v3/api",
+      );
+      assert.equal(
+        normalizeGeneratedSdkBaseUrl(resolveSharedDependencySurfaceBaseUrl("/app/v3/api")!, "/app/v3/api"),
+        "https://api.sdkwork.com",
+      );
+      assert.equal(
+        resolveSharedDependencySurfaceBaseUrl("/backend/v3/api"),
+        "https://api.sdkwork.com/backend/v3/api",
+      );
+    },
+    {
+      hostname: "router.sdkwork.com",
+      protocol: "https:",
+      port: "",
+      origin: "https://router.sdkwork.com",
+    },
+  );
+});
+
+test("declared cloud build documents resolve to the matching deployment family member", () => {
+  // Real build document (etc/browser/runtime-env.cloud.production.json): the
+  // authored surface base is the `;`-joined multi-domain family, not a single
+  // origin. The dependency base must select the family member of the page's
+  // domain and keep exactly one origin.
+  const cloudProduction = JSON.parse(
+    readPortalSource("./etc/browser/runtime-env.cloud.production.json"),
+  ) as Record<string, string>;
+  const document = {
+    VITE_API_BASE_URL: cloudProduction.openApiBaseUrl,
+    VITE_CLOUDROUTER_APP_API_BASE_URL: cloudProduction.appApiBaseUrl,
+    VITE_CLOUDROUTER_BACKEND_API_BASE_URL: cloudProduction.backendApiBaseUrl,
+    VITE_CLOUDROUTER_OPEN_API_BASE_URL: cloudProduction.openApiBaseUrl,
+    VITE_SDKWORK_DEPLOYMENT_PROFILE: "cloud",
+  };
+  const sdkworkLocation = {
+    hostname: "router.sdkwork.com",
+    protocol: "https:",
+    port: "",
+    origin: "https://router.sdkwork.com",
+  };
+  withBrowserRuntimeDocument(document, () => {
+    assert.equal(resolveSharedDependencySurfaceBaseUrl("/app/v3/api"), "https://api.sdkwork.com/app/v3/api");
+    assert.equal(
+      resolveSharedDependencySurfaceBaseUrl("/backend/v3/api"),
+      "https://api.sdkwork.com/backend/v3/api",
+    );
+  }, sdkworkLocation);
+
+  // Multi-domain family selection follows the page's registered domain.
+  withBrowserRuntimeDocument(document, () => {
+    assert.equal(resolveSharedDependencySurfaceBaseUrl("/app/v3/api"), "https://api.birdcoder.com/app/v3/api");
+  }, {
+    hostname: "router.birdcoder.com",
+    protocol: "https:",
+    port: "",
+    origin: "https://router.birdcoder.com",
+  });
+
+  // Defensive: a page no declared candidate matches keeps the PRIMARY declared
+  // origin instead of deriving the gateway dev port.
+  withBrowserRuntimeDocument(document, () => {
+    assert.equal(resolveSharedDependencySurfaceBaseUrl("/app/v3/api"), "https://api.sdkwork.com/app/v3/api");
+  });
+});
+
+test("declared standalone build documents stay same-origin", () => {
+  // Real build document (etc/browser/runtime-env.standalone.production.json):
+  // every SDK base is the canonical same-origin root `/`.
+  const standaloneProduction = JSON.parse(
+    readPortalSource("./etc/browser/runtime-env.standalone.production.json"),
+  ) as Record<string, string>;
+  const document = {
+    VITE_API_BASE_URL: standaloneProduction.openApiBaseUrl,
+    VITE_CLOUDROUTER_APP_API_BASE_URL: standaloneProduction.appApiBaseUrl,
+    VITE_CLOUDROUTER_BACKEND_API_BASE_URL: standaloneProduction.backendApiBaseUrl,
+    VITE_SDKWORK_DEPLOYMENT_PROFILE: "standalone",
+  };
+  withBrowserRuntimeDocument(document, () => {
+    assert.equal(resolveSharedDependencySurfaceBaseUrl("/app/v3/api"), "/app/v3/api");
+    assert.equal(resolveSharedDependencySurfaceBaseUrl("/backend/v3/api"), "/backend/v3/api");
+    assert.equal(
+      normalizeGeneratedSdkBaseUrl(resolveSharedDependencySurfaceBaseUrl("/app/v3/api")!, "/app/v3/api"),
+      "",
+    );
+  }, {
+    hostname: "router.sdkwork.com",
+    protocol: "https:",
+    port: "",
+    origin: "https://router.sdkwork.com",
+  });
+});
+
+test("documents without authored surface bases keep the same-origin prefix", () => {
+  // Legacy bundle: only the shared API base exists. A relative shared base IS
+  // the same-origin contract, so no host/port derivation may run.
+  withBrowserRuntimeDocument(
+    { VITE_API_BASE_URL: "/v1", VITE_SDKWORK_DEPLOYMENT_PROFILE: "cloud" },
+    () => {
+      assert.equal(resolveSharedDependencySurfaceBaseUrl("/app/v3/api"), "/app/v3/api");
+      assert.equal(resolveSharedDependencySurfaceBaseUrl("/backend/v3/api"), "/backend/v3/api");
+    },
+  );
+});
+
+test("standalone dev keeps the same same-origin dependency bases", () => {
+  withBrowserRuntimeDocument(
+    {
+      VITE_API_BASE_URL: "/v1",
+      VITE_CLOUDROUTER_APP_API_BASE_URL: "/app/v3/api",
+      VITE_CLOUDROUTER_BACKEND_API_BASE_URL: "/backend/v3/api",
+      VITE_SDKWORK_DEPLOYMENT_PROFILE: "standalone",
+      VITE_SDKWORK_CLOUDROUTER_ROUTER_PROFILE_ID: "standalone.development",
+    },
+    () => {
+      assert.equal(resolveSharedDependencySurfaceBaseUrl("/app/v3/api"), "/app/v3/api");
+      assert.equal(resolveRequiredAppbaseAppBaseUrl({}), "/app/v3/api");
+      assert.equal(
+        normalizeGeneratedSdkBaseUrl(resolveSharedDependencySurfaceBaseUrl("/backend/v3/api")!, "/backend/v3/api"),
+        "",
+      );
+    },
+  );
+});
+
+test("dependency base resolution never derives from an empty candidate list", () => {
+  // Regression guard for the 3910 defect: `resolveBaseUrlWithAlignProtocol()`
+  // with no candidates derives sdk-common's cloud-gateway dev port on a local
+  // page, which the dev ingress never serves.
+  const source = readPortalSource(
+    "./packages/sdkwork-cloudroutes-pc-commons/src/sdk-base-url.ts",
+  );
+  assert.doesNotMatch(source, /resolveBaseUrlWithAlignProtocol\(\s*\)/u);
+  assert.match(source, /VITE_CLOUDROUTER_APP_API_BASE_URL/u);
+  assert.match(source, /VITE_CLOUDROUTER_BACKEND_API_BASE_URL/u);
 });
 
 test("agents app SDK factory preserves the canonical app-api surface URL", async () => {

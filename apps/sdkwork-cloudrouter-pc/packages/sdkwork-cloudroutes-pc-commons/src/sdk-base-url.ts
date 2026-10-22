@@ -1,5 +1,6 @@
 import {resolveBaseUrlWithAlignProtocol} from '@sdkwork/sdk-common';
 import { isBlank, trim } from './sdkwork-utils.ts';
+import { readCloudRouterRuntimeEnv } from './utils/env.ts';
 export { resolveBrowserReachableBaseUrl } from './browser-base-url.ts';
 
 function normalizePrefix(prefix: string): string {
@@ -50,15 +51,92 @@ export function normalizeGeneratedSdkBaseUrl(baseUrl: string, apiPrefix: string)
 }
 
 /**
- * Shared §6.3 dependency-surface fallback (ENVIRONMENT_SPEC.md):
- * resolveBaseUrl matches the unified SDKWORK_API_BASE_URL candidates against
- * the current page host, environment and deployment profile, and derives
- * api[-<env>].<brand> for built cloud pages, the same origin for standalone,
- * and the local dev-server origin / cloud-gateway dev port for pnpm dev
- * pages. The canonical API prefix is re-applied so downstream
- * normalizeGeneratedSdkBaseUrl keeps its contract.
+ * Authored canonical surface base per canonical API prefix
+ * (BROWSER_RUNTIME_ENV_SPEC.md §5.1: the runtime document authors these and the
+ * composition root MUST NOT re-derive them).
+ */
+const AUTHORED_SURFACE_BASE_ENV_KEYS: Readonly<Record<string, readonly string[]>> = Object.freeze({
+  '/app/v3/api': ['VITE_CLOUDROUTER_APP_API_BASE_URL'],
+  '/backend/v3/api': ['VITE_CLOUDROUTER_BACKEND_API_BASE_URL'],
+  '/v1': ['VITE_CLOUDROUTER_OPEN_API_BASE_URL'],
+});
+
+function readAuthoredSurfaceBaseUrl(apiPrefix: string): string | undefined {
+  for (const key of AUTHORED_SURFACE_BASE_ENV_KEYS[apiPrefix] ?? []) {
+    const value = trim(readCloudRouterRuntimeEnv(key) ?? '');
+    if (!isBlank(value)) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Normalize an authored base into the dependency surface URL a generated SDK
+ * transport expects.
+ *
+ * - Same-origin RELATIVE prefix (`/app/v3/api`, or `/` in the standalone
+ *   build document): the page origin fronts the canonical prefix, so the
+ *   result is the local relative prefix and host/port derivation never runs.
+ * - Absolute deployment value (single origin, or the `;`-joined multi-domain
+ *   family declared by `etc/browser/runtime-env.cloud.*.json`): select the
+ *   family member matching the current page (ENVIRONMENT_SPEC.md §5.1.0.1,
+ *   §6.3). A page no declared candidate matches keeps the PRIMARY declared
+ *   origin — never a fabricated gateway dev port.
+ */
+function resolveAuthoredSurfaceBase(
+  authoredValue: string,
+  normalizedPrefix: string,
+): string | undefined {
+  const trimmedValue = trim(authoredValue);
+  if (!trimmedValue) {
+    return undefined;
+  }
+  // `'/app/v3/api'`, `'/'` (standalone build document) and root-relative mount
+  // paths all mean "the page origin fronts the canonical prefix".
+  if (trimmedValue.startsWith('/')) {
+    return normalizedPrefix || undefined;
+  }
+  const trimmed = stripTrailingSlash(trimmedValue);
+  const resolution = resolveBaseUrlWithAlignProtocol({ baseUrls: [trimmed] });
+  const resolved = stripTrailingSlash(resolution.url);
+  if (resolved && !resolved.startsWith('/') && resolution.reason !== 'derived-from-host') {
+    return `${resolved}${normalizedPrefix}`;
+  }
+  const [primary] = trimmed
+    .split(/[,;]/u)
+    .map((candidate) => stripTrailingSlash(candidate.trim()))
+    .filter((candidate) => /^[a-z][a-z\d+\-.]*:\/\//iu.test(candidate));
+  return primary ? `${primary}${normalizedPrefix}` : undefined;
+}
+
+/**
+ * Dependency-surface base URL (ENVIRONMENT_SPEC.md §6.3,
+ * BROWSER_RUNTIME_ENV_SPEC.md §5.1/§5.2).
+ *
+ * The runtime document's authored canonical surface base wins: dev documents
+ * carry the same-origin relative prefix, build documents the deployment family
+ * URL. Only a document that does not author the key falls back to the shared
+ * `SDKWORK_API_BASE_URL` / `VITE_API_BASE_URL` origin, and a relative shared
+ * base keeps the same-origin prefix.
+ *
+ * `resolveBaseUrl()` is deliberately NOT called without candidates and allowed
+ * to derive: on a local page it produces `<host>:3910` (sdk-common's
+ * cloud-gateway dev port), a cross-origin loopback the dev ingress never serves
+ * — the regression that made IAM/auth startup calls fail with
+ * `ERR_CONNECTION_REFUSED` under `pnpm dev:cloud`.
  */
 export function resolveSharedDependencySurfaceBaseUrl(apiPrefix: string): string | undefined {
-  const origin = resolveBaseUrlWithAlignProtocol().url;
-  return origin ? `${origin}${apiPrefix}` : undefined;
+  const normalizedPrefix = normalizePrefix(apiPrefix);
+  const authored = readAuthoredSurfaceBaseUrl(normalizedPrefix);
+  if (authored) {
+    return resolveAuthoredSurfaceBase(authored, normalizedPrefix) ?? (normalizedPrefix || undefined);
+  }
+
+  const sharedBase = trim(readCloudRouterRuntimeEnv('SDKWORK_API_BASE_URL') ?? '')
+    || trim(readCloudRouterRuntimeEnv('VITE_API_BASE_URL') ?? '');
+  if (!sharedBase) {
+    return normalizedPrefix || undefined;
+  }
+  return resolveAuthoredSurfaceBase(sharedBase, normalizedPrefix) ?? (normalizedPrefix || undefined);
 }
