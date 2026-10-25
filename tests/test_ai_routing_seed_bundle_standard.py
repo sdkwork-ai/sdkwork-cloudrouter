@@ -363,6 +363,25 @@ class AiRoutingSeedBundleStandardTest(unittest.TestCase):
         )
         self.assertIn('unwrap_or("")', ai_seed)
 
+    def test_default_group_seed_uses_the_effective_price_first_strategy(self) -> None:
+        ai_seed = (
+            ROOT
+            / "services"
+            / "sdkwork-cloudrouter-router-service"
+            / "src"
+            / "infrastructure"
+            / "sql"
+            / "ai_routing_seed.rs"
+        ).read_text(encoding="utf-8")
+
+        # `least_cost` is the stored spelling of price-first, and
+        # `routing_strategy` is the column the selector reads. Seeding
+        # `weighted` next to `routing_strategy_code='price_first'` made every
+        # fresh install route by weight instead of the documented cheapest
+        # account.
+        self.assertIn("'least_cost', 'price_first', 'sequential'", ai_seed)
+        self.assertNotIn("'weighted', 'price_first', 'sequential'", ai_seed)
+
     def test_ai_routing_seed_uuid_generation_fits_database_uuid_column(self) -> None:
         ai_seed = (
             ROOT

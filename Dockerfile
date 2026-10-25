@@ -100,7 +100,7 @@ ENV SDKWORK_MODELS_APP_ROOT=${INSTALL_ROOT}/database-modules/sdkwork-models \
     SDKWORK_MESSAGING_APP_ROOT=${INSTALL_ROOT}/database-modules/sdkwork-messaging \
     SDKWORK_RTC_APP_ROOT=${INSTALL_ROOT}/database-modules/sdkwork-rtc \
     SDKWORK_SKILLS_APP_ROOT=${INSTALL_ROOT}/database-modules/sdkwork-skills
-# Application identity root: sdkwork.app.config.json is installed at the
+# Application identity root: agent.app.config.json is installed at the
 # install root; IAM tenant provisioning resolves it via SDKWORK_APP_ROOT.
 ENV SDKWORK_APP_ROOT=${INSTALL_ROOT}
 # Adaptive Web static delivery (SDKWORK_DEPLOY_SPEC.md section 8): the gateway

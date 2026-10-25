@@ -46,6 +46,7 @@ impl StickyRouteStore for InvocationStickyObjectRouteStore {
                   AND object_id = $4
                   AND object_key_hash = $5
                   AND status = 1
+                  AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
                 ORDER BY id DESC
                 LIMIT 1
                 "#,
@@ -106,7 +107,11 @@ impl StickyRouteStore for InvocationStickyObjectRouteStore {
                     version = ai_upstream_object_route.version + 1
                 "#,
             )
-            .bind(&command.request_id)
+            // `uuid` is the row identity, not the request identity. Deriving it
+            // from the object key keeps it stable across upserts and unique per
+            // sticky object; binding `request_id` here made two bindings
+            // committed by one request collide on `uk_..._uuid`.
+            .bind(&object_key_hash)
             .bind(command.tenant_id)
             .bind(command.organization_id)
             .bind(command.api_key_id)
@@ -193,7 +198,34 @@ fn sticky_object_key_hash(
 
 #[cfg(test)]
 mod tests {
-    use super::sticky_store_error;
+    use super::{sticky_object_key_hash, sticky_store_error};
+
+    #[test]
+    fn sticky_object_key_hash_is_stable_and_scope_qualified() {
+        let first = sticky_object_key_hash(7, 9, "session", "session-1");
+        assert_eq!(
+            first,
+            sticky_object_key_hash(7, 9, "session", "session-1"),
+            "the row identity must be stable across upserts"
+        );
+        assert_eq!(64, first.len(), "uuid column is VARCHAR(64)");
+        assert!(first.chars().all(|character| character.is_ascii_hexdigit()));
+        assert_ne!(
+            first,
+            sticky_object_key_hash(7, 9, "session", "session-2"),
+            "different sticky objects must not share a row identity"
+        );
+        assert_ne!(
+            first,
+            sticky_object_key_hash(7, 10, "session", "session-1"),
+            "the row identity must be tenant/organization scoped"
+        );
+        assert_ne!(
+            first,
+            sticky_object_key_hash(7, 9, "object", "session-1"),
+            "the row identity must include the object type"
+        );
+    }
 
     #[test]
     fn sticky_store_error_redacts_sqlx_details() {

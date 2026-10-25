@@ -121,7 +121,7 @@ class ArchitectureStandardGuardianTest(unittest.TestCase):
 
         Read `AGENTS.md` and `../../../sdkwork-specs/README.md`.
         """)
-        self.write_doc(root, "apps/sdkwork-cloudrouter-pc/sdkwork.app.config.json", '{"kind":"sdkwork.app"}')
+        self.write_doc(root, "apps/sdkwork-cloudrouter-pc/agent.app.config.json", '{"kind":"agent.app"}')
         self.write_doc(root, "apps/sdkwork-cloudrouter-pc/package.json", '{"name":"sdkwork-cloudrouter-pc"}')
         for relative in (
             ".sdkwork/README.md",

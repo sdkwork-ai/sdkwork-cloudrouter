@@ -83,7 +83,7 @@ function lineCount(rel) {
 // --- Fact collectors -------------------------------------------------------
 
 function collectIdentityFacts() {
-  const appConfig = readJson(join(REPO_ROOT, "sdkwork.app.config.json"));
+  const appConfig = readJson(join(REPO_ROOT, "agent.app.config.json"));
   const workflow = readJson(join(REPO_ROOT, "sdkwork.workflow.json"));
   return {
     appKey: appConfig.app?.key,
@@ -203,7 +203,7 @@ function collectClientLocalSqliteFacts() {
     "crates/sdkwork-routes-cloudrouter-backend-api/src/routes.rs",
   ];
   const runtimeFacts = analyzeClientLocalSqliteRuntime({
-    appConfig: readJson(join(REPO_ROOT, "sdkwork.app.config.json")),
+    appConfig: readJson(join(REPO_ROOT, "agent.app.config.json")),
     packageJson: readJson(join(REPO_ROOT, "package.json")),
     applicationLauncherSource: readText("scripts/run-cloud-router-application.mjs"),
     tauriConfigPaths,

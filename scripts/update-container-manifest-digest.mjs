@@ -22,7 +22,7 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const DEFAULT_APP_CONFIG = 'sdkwork.app.config.json';
+const DEFAULT_APP_CONFIG = 'agent.app.config.json';
 const SUPPORTED_DEPLOYMENT_PROFILES = ['standalone', 'cloud'];
 // The operator/default channel is the single-container `standalone` image, so it
 // stays the manifest default package id even when a cloud image also ships.
@@ -39,7 +39,7 @@ function printHelp() {
     '  --manifest <path>    dist/container-image.json from a pushed image build',
     '                       (repeat once per architecture and deployment profile;',
     '                       the file records both).',
-    '  --app-config <path>  App manifest path (default sdkwork.app.config.json).',
+    '  --app-config <path>  App manifest path (default agent.app.config.json).',
     '  --check              Fail when the manifest is out of sync; write nothing.',
     '  --json               Print a machine-readable summary.',
     '  -h, --help           Show this help.',
@@ -138,7 +138,7 @@ export function applyContainerDigests(appConfig, images) {
   }
   const installConfig = appConfig.artifacts?.installConfig;
   if (!installConfig || !Array.isArray(installConfig.packages)) {
-    throw new Error('sdkwork.app.config.json artifacts.installConfig.packages must be an array');
+    throw new Error('agent.app.config.json artifacts.installConfig.packages must be an array');
   }
   const byId = new Map(installConfig.packages.map((item) => [item.id, item]));
   for (const image of released) {
@@ -156,7 +156,7 @@ export function applyContainerDigests(appConfig, images) {
   }
   const notes = appConfig.release?.notes;
   const current = Array.isArray(notes) ? notes.find((note) => note?.current === true) : null;
-  if (!current) throw new Error('sdkwork.app.config.json release.notes must contain exactly one current entry');
+  if (!current) throw new Error('agent.app.config.json release.notes must contain exactly one current entry');
   if (current.version !== version) {
     throw new Error('current release note version ' + current.version + ' does not match the packaged version ' + version);
   }

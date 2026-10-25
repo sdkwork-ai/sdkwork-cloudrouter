@@ -17,7 +17,7 @@
     "manifests": [
       "Cargo.toml",
       "package.json",
-      "sdkwork.app.config.json",
+      "agent.app.config.json",
       "sdkwork.workflow.json"
     ]
   },
@@ -191,7 +191,7 @@
     ],
     "events": [],
     "configKeys": [
-      "sdkwork.app.config.json",
+      "agent.app.config.json",
       "sdkwork.workflow.json",
       "specs/topology.spec.json",
       "etc/topology/*.env"

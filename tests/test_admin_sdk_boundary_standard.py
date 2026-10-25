@@ -78,8 +78,8 @@ def source_contains_backend_sdk_marker(source: str) -> bool:
 
 class AdminSdkBoundaryStandardTest(unittest.TestCase):
     def test_portal_manifest_inherits_root_backend_admin_identity_and_scope(self) -> None:
-        root_backend = read_json(ROOT / "sdkwork.app.config.json")["backend"]
-        portal_backend = read_json(PORTAL_ROOT / "sdkwork.app.config.json")["backend"]
+        root_backend = read_json(ROOT / "agent.app.config.json")["backend"]
+        portal_backend = read_json(PORTAL_ROOT / "agent.app.config.json")["backend"]
 
         self.assertEqual(root_backend["appId"], portal_backend["appId"])
         self.assertEqual(

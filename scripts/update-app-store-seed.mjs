@@ -284,7 +284,7 @@ Options:
   --distro <value>         Optional Linux distro selector.
   --check                  Check data/app seed files without writing them.
   --sync-db                After writing seed files, run cloudrouterctl ensure through Cargo.
-  --no-initialize-missing  Do not create missing sdkwork.app.config.json files.
+  --no-initialize-missing  Do not create missing agent.app.config.json files.
   --force                  Rewrite existing app manifests through the standard initializer.
   --dry-run                Print intended writes and commands without changing files or database.
   --json                   Print a machine-readable summary.
@@ -582,7 +582,7 @@ async function initializeMissingAppManifests(settings, initModule) {
   if (settings.check && results.length > 0) {
     throw new Error(
       [
-        'app store seed check found app roots without sdkwork.app.config.json:',
+        'app store seed check found app roots without agent.app.config.json:',
         ...results.map((result) => `- ${posixRelative(settings.appsRoot, result.appRoot)}`),
         'Run pnpm app-store:seed:update to initialize the missing manifests.',
       ].join('\n'),

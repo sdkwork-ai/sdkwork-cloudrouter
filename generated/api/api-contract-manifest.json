@@ -19343,9 +19343,7 @@
         "ai_resource",
         "ai_resource_group",
         "iam_gateway_api_key",
-        "ai_upstream_object_route",
-        "ai_routing_policy",
-        "ai_routing_rule"
+        "ai_upstream_object_route"
       ],
       "request_body_required": null,
       "request_id_header": false,
@@ -19484,15 +19482,6 @@
                   "nullable": true,
                   "type": "string"
                 },
-                "policyId": {
-                  "maxLength": 32,
-                  "nullable": true,
-                  "type": "string"
-                },
-                "policySnapshotVersion": {
-                  "maxLength": 128,
-                  "type": "string"
-                },
                 "pricingPlanCode": {
                   "maxLength": 128,
                   "type": "string"
@@ -19502,11 +19491,6 @@
                 },
                 "resourceCode": {
                   "maxLength": 128,
-                  "type": "string"
-                },
-                "ruleId": {
-                  "maxLength": 32,
-                  "nullable": true,
                   "type": "string"
                 },
                 "selectedCandidates": {
@@ -19539,11 +19523,6 @@
                         "maxLength": 32,
                         "type": "string"
                       },
-                      "policyId": {
-                        "maxLength": 32,
-                        "nullable": true,
-                        "type": "string"
-                      },
                       "pricingPlanCode": {
                         "maxLength": 128,
                         "type": "string"
@@ -19559,11 +19538,6 @@
                       },
                       "requestedModel": {
                         "maxLength": 256,
-                        "nullable": true,
-                        "type": "string"
-                      },
-                      "ruleId": {
-                        "maxLength": 32,
                         "nullable": true,
                         "type": "string"
                       },
@@ -19584,8 +19558,6 @@
                       "accountGroupId",
                       "accountGroupCode",
                       "pricingPlanCode",
-                      "policyId",
-                      "ruleId",
                       "apiCode",
                       "catalogKey",
                       "requestedModel",
@@ -19625,10 +19597,7 @@
                 "candidateCount",
                 "selectedCandidates",
                 "blockedReasons",
-                "warnings",
-                "policyId",
-                "ruleId",
-                "policySnapshotVersion"
+                "warnings"
               ],
               "type": "object"
             }

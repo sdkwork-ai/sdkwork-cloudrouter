@@ -331,17 +331,13 @@ tables:
       constraints: NOT NULL DEFAULT 'mixed'
     routing_strategy:
       type: string(32)
-      constraints: NOT NULL DEFAULT 'weighted'
-    routing_strategy_code:
-      type: string(64)
-      constraints: NOT NULL DEFAULT 'price_first'
+      constraints: NOT NULL DEFAULT 'least_cost'
     fallback_mode:
       type: string(32)
       constraints: NOT NULL DEFAULT 'sequential'
     priority:
       type: int32
       constraints: NOT NULL DEFAULT 100
-    routing_policy_id: int64
     quota_policy_id: int64
     rate_limit_policy_id: int64
     environment: int32
@@ -364,6 +360,9 @@ tables:
     tags:
       type: json
       constraints: NOT NULL DEFAULT '[]'::jsonb
+    is_default:
+      type: bool
+      constraints: NOT NULL DEFAULT FALSE
   unique_constraints:
   - name: uk_ai_upstream_account_group_uuid
     columns:
@@ -377,7 +376,7 @@ tables:
   - name: ck_ai_upstream_account_group_type
     expression: group_type IN ('mixed', 'llm', 'image', 'video', 'audio', 'music', 'other')
   - name: ck_ai_upstream_account_group_routing_strategy
-    expression: routing_strategy IN ('weighted', 'round_robin', 'least_latency', 'least_cost', 'failover')
+    expression: routing_strategy IN ('weighted', 'round_robin', 'least_latency', 'least_cost', 'quality_first', 'failover')
   - name: ck_ai_upstream_account_group_fallback_mode
     expression: fallback_mode IN ('none', 'sequential', 'same_supplier', 'cross_supplier')
   - name: ck_ai_upstream_account_group_financial_values
@@ -389,6 +388,12 @@ tables:
     columns:
     - tags
     using: gin
+  - name: uk_ai_upstream_account_group_default_per_tenant
+    unique: true
+    columns:
+    - tenant_id
+    - organization_id
+    where: is_default AND deleted_at IS NULL
   - name: uk_ai_upstream_account_group_scope_id
     unique: true
     columns:
@@ -1211,9 +1216,6 @@ tables:
   - /console/usage
   columns:
     api_key_id: int64
-    policy_id: int64
-    profile_id: int64
-    rule_id: int64
     requested_model: string(256)
     resolved_model: string(256)
     capability: int32
@@ -1287,160 +1289,6 @@ tables:
       dry_run:
         supported: true
         default: true
-- table: ai_routing_policy
-  domain: ai
-  profile: tenant_entity
-  soft_delete_policy: full_lifecycle_unique
-  compliance_level: L2
-  system_of_record: true
-  write_owner: ai-routing-service
-  common_columns: tenant_entity
-  api_surfaces:
-  - app
-  - backend
-  - worker
-  frontend_routes:
-  - /admin/upstream
-  columns:
-    policy_code: string(64)
-    name: string(128)
-    policy_scope: int32
-    subject_id: int64
-    capability: int32
-    default_profile_id: int64
-    fallback_mode: int32
-    slo_latency_ms: int32
-    slo_success_rate: decimal
-    cost_ceiling: decimal
-    currency: string(10)
-  required_columns:
-  - policy_code
-  unique_constraints:
-  - name: uk_ai_routing_policy_tenant_code
-    columns:
-    - tenant_id
-    - organization_id
-    - policy_code
-  check_constraints:
-  - name: ck_ai_routing_policy_non_negative_limits
-    expression: (slo_latency_ms IS NULL OR slo_latency_ms >= 0)
-      AND (cost_ceiling IS NULL OR cost_ceiling >= 0)
-  indexes:
-  - name: uk_ai_routing_policy_scope_id
-    unique: true
-    columns:
-    - tenant_id
-    - organization_id
-    - id
-- table: ai_routing_profile
-  domain: ai
-  profile: tenant_entity
-  compliance_level: L2
-  system_of_record: true
-  write_owner: ai-routing-service
-  common_columns: tenant_entity
-  api_surfaces:
-  - app
-  - backend
-  - worker
-  columns:
-    policy_id: int64
-    profile_version: int64
-    profile_name: string(128)
-    release_status: int32
-    traffic_percent: decimal
-    config_hash: string(128)
-    published_at: instant
-    published_by: int64
-    rollback_from_profile_id: int64
-  required_columns:
-  - policy_id
-  - profile_version
-  unique_constraints:
-  - name: uk_ai_routing_profile_policy_version
-    columns:
-    - policy_id
-    - profile_version
-  foreign_keys:
-  - name: fk_ai_routing_profile_policy
-    columns:
-    - tenant_id
-    - organization_id
-    - policy_id
-    references_table: ai_routing_policy
-    references_columns:
-    - tenant_id
-    - organization_id
-    - id
-    on_delete: RESTRICT
-  check_constraints:
-  - name: ck_ai_routing_profile_version
-    expression: profile_version > 0
-  indexes:
-  - name: uk_ai_routing_profile_scope_id
-    unique: true
-    columns:
-    - tenant_id
-    - organization_id
-    - id
-- table: ai_routing_rule
-  domain: ai
-  profile: tenant_entity
-  compliance_level: L2
-  system_of_record: true
-  write_owner: ai-routing-service
-  common_columns: tenant_entity
-  api_surfaces:
-  - app
-  - backend
-  - worker
-  frontend_routes:
-  - /admin/upstream
-  columns:
-    profile_id: int64
-    rule_code: string(64)
-    priority: int32
-    match_expression: json
-    target_model: string(256)
-    candidate_account_groups: json
-    fallback_chain: json
-    constraints: json
-    rate_limit_policy_id: int64
-    effective_from: instant
-    effective_to: instant
-  required_columns:
-  - profile_id
-  - rule_code
-  unique_constraints:
-  - name: uk_ai_routing_rule_profile_code
-    columns:
-    - profile_id
-    - rule_code
-  foreign_keys:
-  - name: fk_ai_routing_rule_profile
-    columns:
-    - tenant_id
-    - organization_id
-    - profile_id
-    references_table: ai_routing_profile
-    references_columns:
-    - tenant_id
-    - organization_id
-    - id
-    on_delete: RESTRICT
-  check_constraints:
-  - name: ck_ai_routing_rule_priority
-    expression: priority IS NULL OR priority >= 0
-  - name: ck_ai_routing_rule_effective_interval
-    expression: effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from
-  indexes:
-  - name: idx_ai_routing_rule_tenant_profile_priority
-    columns:
-    - tenant_id
-    - organization_id
-    - profile_id
-    - priority
-    - status
 - table: ai_upstream_supplier_endpoint
   domain: ai
   profile: tenant_entity
@@ -1681,78 +1529,6 @@ tables:
     - organization_id
     - auth_type
     - status
-    - id
-- table: ai_routing_strategy
-  domain: ai
-  profile: tenant_entity
-  soft_delete_policy: full_lifecycle_unique
-  compliance_level: L2
-  system_of_record: true
-  write_owner: ai-routing-service
-  common_columns: tenant_entity
-  api_surfaces:
-  - app
-  - backend
-  - worker
-  frontend_routes:
-  - /admin/routing-strategies
-  columns:
-    strategy_code:
-      type: string(64)
-      constraints: NOT NULL
-    strategy_name:
-      type: string(128)
-      constraints: NOT NULL
-    strategy_name_i18n: json
-    description: string(512)
-    strategy_type:
-      type: string(32)
-      constraints: NOT NULL
-    params:
-      type: json
-      constraints: NOT NULL DEFAULT '{}'::jsonb
-    priority:
-      type: int32
-      constraints: NOT NULL DEFAULT 100
-    enabled:
-      type: bool
-      constraints: NOT NULL DEFAULT true
-    is_default:
-      type: bool
-      constraints: NOT NULL DEFAULT false
-    tags:
-      type: json
-      constraints: NOT NULL DEFAULT '[]'::jsonb
-  unique_constraints:
-  - name: uk_ai_routing_strategy_uuid
-    columns:
-    - uuid
-  - name: uk_ai_routing_strategy_tenant_code
-    columns:
-    - tenant_id
-    - organization_id
-    - strategy_code
-  check_constraints:
-  - name: ck_ai_routing_strategy_type
-    expression: strategy_type IN ('price_first', 'sticky', 'quality_first', 'latency_first', 'weighted', 'round_robin')
-      AND priority >= 0
-  - name: ck_ai_routing_strategy_params
-    expression: jsonb_typeof(params) = 'object'
-  indexes:
-  - name: idx_ai_routing_strategy_tenant_status
-    columns:
-    - tenant_id
-    - organization_id
-    - status
-    - strategy_type
-    - priority
-    - id
-  - name: idx_ai_routing_strategy_tenant_default
-    columns:
-    - tenant_id
-    - organization_id
-    - is_default
-    - enabled
     - id
 - table: ai_model_access_policy
   domain: ai

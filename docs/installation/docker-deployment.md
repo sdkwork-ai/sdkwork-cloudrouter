@@ -25,7 +25,7 @@ For the cloud orchestration layout (edge + gateway + admin/app API pods), see
 | Install manifest | `/opt/sdkwork/router/install-manifest.json` | generated | release evidence |
 | Install guide | `/opt/sdkwork/router/INSTALL.md` | generated | release evidence |
 | Env template | `/opt/sdkwork/router/.env.release.example` | repository root | reference only, never loaded |
-| App identity | `/opt/sdkwork/router/sdkwork.app.config.json` | repository root | IAM tenant provisioning (`SDKWORK_APP_ROOT`) |
+| App identity | `/opt/sdkwork/router/agent.app.config.json` | repository root | IAM tenant provisioning (`SDKWORK_APP_ROOT`) |
 | Federated DB modules | `/opt/sdkwork/router/database-modules/<repo>/database` | sibling repos (`sdkwork-models`, `sdkwork-cloudrouter`, `sdkwork-payment`, `sdkwork-account`, `sdkwork-agents`, `sdkwork-appbase`, `sdkwork-community`, `sdkwork-course`, `sdkwork-drive`, `sdkwork-iam`, `sdkwork-inventory`, `sdkwork-invoice`, `sdkwork-log`, `sdkwork-membership`, `sdkwork-order`, `sdkwork-partner`, `sdkwork-promotion`, `sdkwork-aiot`, `sdkwork-image`, `sdkwork-web-framework`) | manifests + migrations + seeds; each host resolves its module via `SDKWORK_<NAME>_APP_ROOT` |
 | IAM registry data | `/opt/sdkwork/router/database-modules/sdkwork-iam/iam` | `sdkwork-iam/iam` | registry config + module manifests |
 | Models catalog | `/opt/sdkwork/router/data/sdkwork-models` | `sdkwork-models/{sdkwork-models.json,models,overlays}` | `SDKWORK_MODELS_CATALOG_ROOT` |

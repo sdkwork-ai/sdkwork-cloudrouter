@@ -10,6 +10,42 @@
 
 > 本小节随每次实施迭代追加，避免蓝本与实际漂移。
 
+### 2026-10-25 迭代（路由规则与路由数据库设计复核）
+复核确认 `ai_upstream_account_group.routing_strategy` 与
+`iam_gateway_api_key_account_group.routing_strategy` 是运行期真正被 selector /
+planner 消费的两个策略来源；`ai_routing_strategy` 与
+`ai_upstream_account_group.routing_strategy_code` 目前只是旁路标注，没有读路径。
+本轮修复：
+- **默认分组并非价格优先**：种子写入 `routing_strategy='weighted'` +
+  `routing_strategy_code='price_first'`，而 selector 只读 `routing_strategy`，
+  新装默认按权重而不是最低价选号。种子改为 `least_cost`，并停止在
+  `ON CONFLICT` 中覆盖运维已配置的 `routing_strategy` / `fallback_mode`；
+  新增 `0049_align_default_group_price_first` 收敛既有安装，并让管理端
+  create/update 同步维护 `routing_strategy_code` 标注。
+- **sticky 行身份错误**：`ai_upstream_object_route` 的 INSERT 把
+  `request_id` 绑定进 `uuid`，同一请求提交多个粘滞对象时会撞
+  `uk_ai_upstream_object_route_uuid`；改为用对象键哈希作为稳定的行身份，
+  并在查询时尊重 `expires_at`。
+- **`is_default` 契约缺失**：该列被代码、管理 API 和种子使用，却不在
+  Schema Registry / baseline 中（只靠迁移 0020 补列）。已补入
+  `docs/schema-registry/tables/ai-routing.yaml`，重新生成 baseline、schema
+  contract、table registry 与 OpenAPI schema components。
+- **非 route 绑定覆盖路由策略**：`binding_strategy_for_group` 现在只接受
+  `binding_role='route'` 的绑定，避免 `settlement` 等角色的同组绑定覆盖
+  key 级路由策略。
+- **遗留引用**：locale 种子仍指向已退役的 `standard-group`，已改为
+  `default-group`，并修正 en-US 名称。
+
+仍未关闭（需单独评审后执行，不在本轮做破坏性 DDL）：
+- `ai_routing_policy` / `ai_routing_profile` / `ai_routing_rule` 三表、
+  `ai_routing_decision_log.policy_id/profile_id/rule_id`、
+  `ai_upstream_account_group.routing_policy_id` 仍存在，但已无代码读路径；
+  `route_explain` 的 OpenAPI `x-read-sources` 仍错误列出这两张已退役表。
+- `ai_routing_strategy` 仍由种子写入但 selector 不消费；要么接入策略解析，
+  要么按 A4 决策删除，不能继续以“唯一策略配置表”自居。
+- `ck_ai_upstream_account_group_routing_strategy` 仍拒绝 `quality_first`，
+  而领域枚举/planner 已支持该策略，需产品确认后统一契约。
+
 ### 2026-08-23 迭代（第三轮：死字段链清理 + 死契约引用清理）
 审计确认三处安全可清理的历史债务，已完整清理并回归：
 - **`ai_routing_decision_log.policy_id/profile_id/rule_id` 死列 + 恒 None 字段链**：旧路由体系退役后，`invocation.routing.policy_id/rule_id`、`SelectedUpstream{Model,Account}Route.policy_id/rule_id`、`SelectedUpstreamModelRoutePlan`、`InvocationRouteCandidate`、`ResolvedOpenAiUpstreamRoute`、`RoutingDecisionRecordCommand`、route explain 响应 DTO 的 `policyId/ruleId/policySnapshotVersion` 全链路恒为 None/死字段。已从 DB DDL、schema.yaml、SQL recorder、port command、decision_log、route_planning、openai_runtime、admin_route_explain、决策日志 JSON 序列化、及全部 8 个测试文件中移除。

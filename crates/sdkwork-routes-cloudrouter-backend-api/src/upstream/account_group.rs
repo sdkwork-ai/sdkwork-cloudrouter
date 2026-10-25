@@ -463,7 +463,7 @@ fn create_command(
         routing_strategy: routing_strategy(
             request
                 .routing_strategy
-                .unwrap_or_else(|| "weighted".to_owned()),
+                .unwrap_or_else(|| "least_cost".to_owned()),
         )?,
         fallback_mode: fallback_mode(
             request
@@ -666,13 +666,13 @@ fn routing_strategy(value: String) -> RequestResult<String> {
     let value = required_text(value, "routingStrategy", 32)?;
     if !matches!(
         value.as_str(),
-        "weighted" | "round_robin" | "least_latency" | "least_cost" | "failover"
+        "weighted" | "round_robin" | "least_latency" | "least_cost" | "quality_first" | "failover"
     ) {
         return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
             "validation.admin.upstream.accountGroup.routingStrategy.unsupported",
             serde_json::json!({
-                "allowed": ["weighted", "round_robin", "least_latency", "least_cost", "failover"]
+                "allowed": ["weighted", "round_robin", "least_latency", "least_cost", "quality_first", "failover"]
             }),
             "routingStrategy is not supported",
         ));

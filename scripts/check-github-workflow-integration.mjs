@@ -25,7 +25,7 @@ import process from 'node:process';
 const REPO_ROOT = resolveRoot(process.argv.slice(2));
 const PACKAGE_WORKFLOW = path.join(REPO_ROOT, '.github', 'workflows', 'package.yml');
 const WORKFLOW_CONFIG = path.join(REPO_ROOT, 'sdkwork.workflow.json');
-const APP_CONFIG = path.join(REPO_ROOT, 'sdkwork.app.config.json');
+const APP_CONFIG = path.join(REPO_ROOT, 'agent.app.config.json');
 
 const REUSABLE_WORKFLOW =
   /uses:\s*sdkwork-ai\/sdkwork-github-workflow\/\.github\/workflows\/sdkwork-package\.yml@([^\s]+)/u;
@@ -109,7 +109,7 @@ function resolveExpressions(text, values = {}) {
 
 const packageWorkflow = readText(PACKAGE_WORKFLOW, '.github/workflows/package.yml');
 const workflow = readJson(WORKFLOW_CONFIG, 'sdkwork.workflow.json');
-const appConfig = readJson(APP_CONFIG, 'sdkwork.app.config.json');
+const appConfig = readJson(APP_CONFIG, 'agent.app.config.json');
 
 if (packageWorkflow !== null && workflow !== null && appConfig !== null) {
   const reusableMatch = packageWorkflow.match(REUSABLE_WORKFLOW);
@@ -201,7 +201,7 @@ if (packageWorkflow !== null && workflow !== null && appConfig !== null) {
   const currentVersion = appConfig.release?.currentVersion;
   const defaultVersion = workflow.release?.defaultVersion;
   if (typeof currentVersion === 'string' && typeof defaultVersion === 'string' && currentVersion !== defaultVersion) {
-    fail('sdkwork.app.config.json release.currentVersion (' + currentVersion + ') must match sdkwork.workflow.json release.defaultVersion (' + defaultVersion + ')');
+    fail('agent.app.config.json release.currentVersion (' + currentVersion + ') must match sdkwork.workflow.json release.defaultVersion (' + defaultVersion + ')');
   }
   if (typeof currentVersion === 'string') {
     const tagInput = declaredInputs.get('tag');

@@ -13223,17 +13223,6 @@
             "nullable": true,
             "type": "string"
           },
-          "policyId": {
-            "description": "Policy id field on upstream account group route explanation.",
-            "maxLength": 32,
-            "nullable": true,
-            "type": "string"
-          },
-          "policySnapshotVersion": {
-            "description": "Policy snapshot version field on upstream account group route explanation.",
-            "maxLength": 128,
-            "type": "string"
-          },
           "pricingPlanCode": {
             "description": "Pricing plan code field on upstream account group route explanation.",
             "maxLength": 128,
@@ -13246,12 +13235,6 @@
           "resourceCode": {
             "description": "Resource code field on upstream account group route explanation.",
             "maxLength": 128,
-            "type": "string"
-          },
-          "ruleId": {
-            "description": "Rule id field on upstream account group route explanation.",
-            "maxLength": 32,
-            "nullable": true,
             "type": "string"
           },
           "selectedCandidates": {
@@ -13291,10 +13274,7 @@
           "candidateCount",
           "selectedCandidates",
           "blockedReasons",
-          "warnings",
-          "policyId",
-          "ruleId",
-          "policySnapshotVersion"
+          "warnings"
         ],
         "type": "object"
       },
@@ -14362,12 +14342,6 @@
             "maxLength": 32,
             "type": "string"
           },
-          "policyId": {
-            "description": "Policy id field on upstream route explain candidate.",
-            "maxLength": 32,
-            "nullable": true,
-            "type": "string"
-          },
           "pricingPlanCode": {
             "description": "Pricing plan code field on upstream route explain candidate.",
             "maxLength": 128,
@@ -14390,12 +14364,6 @@
             "nullable": true,
             "type": "string"
           },
-          "ruleId": {
-            "description": "Rule id field on upstream route explain candidate.",
-            "maxLength": 32,
-            "nullable": true,
-            "type": "string"
-          },
           "supplierCode": {
             "description": "Supplier code field on upstream route explain candidate.",
             "maxLength": 128,
@@ -14415,8 +14383,6 @@
           "accountGroupId",
           "accountGroupCode",
           "pricingPlanCode",
-          "policyId",
-          "ruleId",
           "apiCode",
           "catalogKey",
           "requestedModel",
@@ -15711,11 +15677,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccountGroups",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccountGroups.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create upstream account group. Reads ai_upstream_account_group. Writes ai_upstream_account_group, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -15825,11 +15787,7 @@
           "ai_upstream_account_group",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccountGroups.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}": {
@@ -15931,11 +15889,7 @@
           "ai_upstream_account_group",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccountGroups.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       },
       "get": {
         "description": "Get upstream account group. Reads ai_upstream_account_group. Writes none. File targets none.",
@@ -16027,11 +15981,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccountGroups",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccountGroups.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update upstream account group. Reads ai_upstream_account_group. Writes ai_upstream_account_group, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -16149,11 +16099,7 @@
           "ai_upstream_account_group",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccountGroups.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/members": {
@@ -16250,11 +16196,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccountGroups.members",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccountGroups_members.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update upstream account group members. Reads ai_upstream_account_group, ai_upstream_account_group_member, ai_upstream_account. Writes ai_upstream_account_group, ai_upstream_account_group_member, ai_upstream_account, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -16376,11 +16318,7 @@
           "ai_upstream_account",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccountGroups_members.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/resources": {
@@ -16478,11 +16416,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccountGroups.resources",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccountGroups_resources.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update upstream account group resources. Reads ai_upstream_account_group, ai_resource_binding, ai_resource, ai_resource_group. Writes ai_upstream_account_group, ai_resource_binding, ai_resource, ai_resource_group, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -16606,16 +16540,12 @@
           "ai_resource_group",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccountGroups_resources.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/route_explain": {
       "post": {
-        "description": "Explain upstream account group route. Reads ai_upstream_account_group, ai_upstream_account_group_member, ai_upstream_account, ai_resource_binding, ai_resource, ai_resource_group, iam_gateway_api_key, ai_upstream_object_route, ai_routing_policy, ai_routing_rule. Writes none. File targets none.",
+        "description": "Explain upstream account group route. Reads ai_upstream_account_group, ai_upstream_account_group_member, ai_upstream_account, ai_resource_binding, ai_resource, ai_resource_group, iam_gateway_api_key, ai_upstream_object_route. Writes none. File targets none.",
         "operationId": "upstreamAccountGroups.explain",
         "parameters": [
           {
@@ -16711,9 +16641,7 @@
           "ai_resource",
           "ai_resource_group",
           "iam_gateway_api_key",
-          "ai_upstream_object_route",
-          "ai_routing_policy",
-          "ai_routing_rule"
+          "ai_upstream_object_route"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -16724,11 +16652,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccountGroups",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccountGroups.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/ai/upstream_accounts": {
@@ -16849,11 +16773,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccounts",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccounts.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create upstream account. Reads ai_upstream_supplier, ai_upstream_account. Writes ai_upstream_supplier, ai_upstream_account, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -16965,11 +16885,7 @@
           "ai_upstream_account",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccounts.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_accounts/{accountId}": {
@@ -17075,11 +16991,7 @@
           "ai_upstream_account_credential",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccounts.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       },
       "get": {
         "description": "Get upstream account. Reads ai_upstream_supplier, ai_upstream_account. Writes none. File targets none.",
@@ -17172,11 +17084,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccounts",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccounts.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update upstream account. Reads ai_upstream_supplier, ai_upstream_account. Writes ai_upstream_supplier, ai_upstream_account, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -17296,11 +17204,7 @@
           "ai_upstream_account",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccounts.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials": {
@@ -17430,11 +17334,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccounts.credentials",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccounts_credentials.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create upstream account credential. Reads ai_upstream_account, ai_upstream_account_credential. Writes ai_upstream_account, ai_upstream_account_credential, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -17555,11 +17455,7 @@
           "ai_upstream_account_credential",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccounts_credentials.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}": {
@@ -17661,11 +17557,7 @@
           "ai_upstream_account_credential",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccounts_credentials.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}/secret": {
@@ -17770,11 +17662,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccounts.credentials.secrets",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccounts_credentials_secrets.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/ai/upstream_accounts/{accountId}/resources": {
@@ -17872,11 +17760,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamAccounts.resources",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccounts_resources.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update upstream account resources. Reads ai_upstream_account, ai_resource_binding, ai_resource, ai_resource_group. Writes ai_upstream_account, ai_resource_binding, ai_resource, ai_resource_group, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -18000,11 +17884,7 @@
           "ai_resource_group",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccounts_resources.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_accounts/{accountId}/verify": {
@@ -18118,11 +17998,7 @@
           "ai_upstream_supplier_endpoint",
           "ai_upstream_account_credential",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamAccounts.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_resource_catalog": {
@@ -18207,11 +18083,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamResourceCatalog",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamResourceCatalog.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/ai/upstream_suppliers": {
@@ -18331,11 +18203,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamSuppliers",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamSuppliers.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create upstream supplier. Reads ai_upstream_supplier. Writes ai_upstream_supplier, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -18445,11 +18313,7 @@
           "ai_upstream_supplier",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamSuppliers.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_suppliers/{supplierId}": {
@@ -18551,11 +18415,7 @@
           "ai_upstream_supplier",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamSuppliers.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       },
       "get": {
         "description": "Get upstream supplier. Reads ai_upstream_supplier. Writes none. File targets none.",
@@ -18647,11 +18507,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamSuppliers",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamSuppliers.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update upstream supplier. Reads ai_upstream_supplier. Writes ai_upstream_supplier, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -18769,11 +18625,7 @@
           "ai_upstream_supplier",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamSuppliers.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_suppliers/{supplierId}/auth_methods": {
@@ -18869,11 +18721,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamSuppliers.authMethods",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamSuppliers_authMethods.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update upstream supplier auth methods. Reads ai_upstream_supplier, ai_upstream_supplier_auth_method. Writes ai_upstream_supplier, ai_upstream_supplier_auth_method, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -18993,11 +18841,7 @@
           "ai_upstream_supplier_auth_method",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamSuppliers_authMethods.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_suppliers/{supplierId}/endpoints": {
@@ -19093,11 +18937,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamSuppliers.endpoints",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamSuppliers_endpoints.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update upstream supplier endpoints. Reads ai_upstream_supplier, ai_upstream_supplier_endpoint. Writes ai_upstream_supplier, ai_upstream_supplier_endpoint, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -19217,11 +19057,7 @@
           "ai_upstream_supplier_endpoint",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamSuppliers_endpoints.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/ai/upstream_suppliers/{supplierId}/resources": {
@@ -19319,11 +19155,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "upstreamSuppliers.resources",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamSuppliers_resources.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update upstream supplier resources. Reads ai_upstream_supplier, ai_resource_binding, ai_resource, ai_resource_group. Writes ai_upstream_supplier, ai_resource_binding, ai_resource, ai_resource_group, ops_audit_log, ops_config_snapshot. File targets none.",
@@ -19447,11 +19279,7 @@
           "ai_resource_group",
           "ops_audit_log",
           "ops_config_snapshot"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.upstreamSuppliers_resources.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/billing/exchange_rules": {
@@ -19584,11 +19412,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "exchangeRules",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.exchangeRules.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update. Reads commerce_exchange_rule. Writes ops_audit_log. File targets none.",
@@ -19683,11 +19507,7 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.exchangeRules.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/billing/recharges/records": {
@@ -19793,11 +19613,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "rechargeRecords",
         "x-source-file": "sdks/_route-manifests/backend-api/sdkwork-routes-cloudrouter-backend-api.route-manifest.json",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.rechargeRecords.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/billing/recharges/records/{orderNo}": {
@@ -19891,11 +19707,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "rechargeRecords",
         "x-source-file": "sdks/_route-manifests/backend-api/sdkwork-routes-cloudrouter-backend-api.route-manifest.json",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.rechargeRecords.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/billing/referral_strategies": {
@@ -20024,11 +19836,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "referralStrategies",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.referralStrategies.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create referral strategy. Reads ops_referral_strategy. Writes ops_referral_strategy, ops_audit_log. File targets none.",
@@ -20124,11 +19932,7 @@
         "x-write-tables": [
           "ops_referral_strategy",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.referralStrategies.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/billing/referral_strategies/{strategyId}": {
@@ -20218,11 +20022,7 @@
         "x-write-tables": [
           "ops_referral_strategy",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.referralStrategies.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       },
       "get": {
         "description": "Retrieve referral strategy. Reads ops_referral_strategy. Writes none. File targets none.",
@@ -20314,11 +20114,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "referralStrategies",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.referralStrategies.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update referral strategy. Reads ops_referral_strategy. Writes ops_referral_strategy, ops_audit_log. File targets none.",
@@ -20424,11 +20220,7 @@
         "x-write-tables": [
           "ops_referral_strategy",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.referralStrategies.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/billing/referrals/relations": {
@@ -20544,11 +20336,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "referralRelations",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.referralRelations.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/billing/referrals/stats": {
@@ -20654,11 +20442,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "referralStats",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.referralStats.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/payments/providers": {
@@ -20916,11 +20700,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "providers",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.providers.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/payments/providers/{providerId}": {
@@ -21027,11 +20807,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
         "x-write-tables": [
           "commerce_payment_provider"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.providers.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/pricing/default_regions": {
@@ -21151,11 +20927,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "defaultRegions",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.defaultRegions.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create pricing default region. Reads pricing_default_region. Writes pricing_default_region, ops_audit_log. File targets none.",
@@ -21251,11 +21023,7 @@
         "x-write-tables": [
           "pricing_default_region",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.defaultRegions.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/pricing/default_regions/{defaultRegionId}": {
@@ -21345,11 +21113,7 @@
         "x-write-tables": [
           "pricing_default_region",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.defaultRegions.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       },
       "patch": {
         "description": "Update pricing default region. Reads pricing_default_region. Writes pricing_default_region, ops_audit_log. File targets none.",
@@ -21455,11 +21219,7 @@
         "x-write-tables": [
           "pricing_default_region",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.defaultRegions.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/pricing/official_products": {
@@ -21629,11 +21389,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "officialProducts",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.officialProducts.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/pricing/official_rates": {
@@ -21818,11 +21574,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "officialRates",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.officialRates.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/pricing/official_refresh": {
@@ -21915,11 +21667,7 @@
           "pricing_import_run",
           "cloudrouter_pricing_rule",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.officialRates.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/pricing/plans": {
@@ -22069,11 +21817,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "plans",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.plans.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create pricing plan. Reads cloudrouter_pricing_plan. Writes cloudrouter_pricing_plan, ops_audit_log. File targets none.",
@@ -22169,11 +21913,7 @@
         "x-write-tables": [
           "cloudrouter_pricing_plan",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.plans.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/pricing/plans/{planId}": {
@@ -22267,11 +22007,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "plans",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.plans.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update pricing plan. Reads cloudrouter_pricing_plan. Writes cloudrouter_pricing_plan, ops_audit_log. File targets none.",
@@ -22377,11 +22113,7 @@
         "x-write-tables": [
           "cloudrouter_pricing_plan",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.plans.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/pricing/price_settings/resolve": {
@@ -22510,11 +22242,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "priceSettings",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.priceSettings.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/pricing/price_settings/upsert": {
@@ -22613,11 +22341,7 @@
         "x-write-tables": [
           "cloudrouter_pricing_rule",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.priceSettings.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/pricing/rate_cards": {
@@ -22771,11 +22495,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "rateCards",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.rateCards.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create pricing rate card. Reads cloudrouter_account_rate_card, cloudrouter_pricing_plan. Writes cloudrouter_account_rate_card, ops_audit_log. File targets none.",
@@ -22872,11 +22592,7 @@
         "x-write-tables": [
           "cloudrouter_account_rate_card",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.rateCards.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/pricing/rate_cards/{rateCardId}": {
@@ -22967,11 +22683,7 @@
         "x-write-tables": [
           "cloudrouter_account_rate_card",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.rateCards.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       },
       "patch": {
         "description": "Update pricing rate card. Reads cloudrouter_account_rate_card, cloudrouter_pricing_plan. Writes cloudrouter_account_rate_card, ops_audit_log. File targets none.",
@@ -23078,11 +22790,7 @@
         "x-write-tables": [
           "cloudrouter_account_rate_card",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.rateCards.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/pricing/rules": {
@@ -23228,11 +22936,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "rules",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.rules.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create pricing rule. Reads cloudrouter_pricing_rule, cloudrouter_pricing_plan. Writes cloudrouter_pricing_rule, ops_audit_log. File targets none.",
@@ -23329,11 +23033,7 @@
         "x-write-tables": [
           "cloudrouter_pricing_rule",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.rules.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/pricing/rules/{ruleId}": {
@@ -23424,11 +23124,7 @@
         "x-write-tables": [
           "cloudrouter_pricing_rule",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.rules.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       },
       "patch": {
         "description": "Update pricing rule. Reads cloudrouter_pricing_rule, cloudrouter_pricing_plan. Writes cloudrouter_pricing_rule, ops_audit_log. File targets none.",
@@ -23535,11 +23231,7 @@
         "x-write-tables": [
           "cloudrouter_pricing_rule",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.rules.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/recharges/packages": {
@@ -23658,11 +23350,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "packages",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.packages.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create. Reads recharges. Writes ops_audit_log. File targets none.",
@@ -23757,11 +23445,7 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.packages.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/recharges/packages/{packageId}": {
@@ -23850,11 +23534,7 @@
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.packages.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       },
       "patch": {
         "description": "Update membership admin recharge package. Reads recharges. Writes recharges, ops_audit_log. File targets none.",
@@ -23960,11 +23640,7 @@
         "x-write-tables": [
           "recharges",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.packages.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/recharges/settings": {
@@ -24048,11 +23724,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "settings",
         "x-source-file": "tools/bootstrap_frontend_contract_from_route_manifest.py",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.settings.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update membership admin recharge settings. Reads recharges. Writes recharges, ops_audit_log. File targets none.",
@@ -24148,11 +23820,7 @@
         "x-write-tables": [
           "recharges",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.settings.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/storage/default_buckets": {
@@ -24302,11 +23970,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "defaultBuckets",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.defaultBuckets.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/storage/default_buckets/{logicalScope}": {
@@ -24413,11 +24077,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.defaultBuckets.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/storage/gc_jobs": {
@@ -24567,11 +24227,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "gcJobs",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.gcJobs.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Backend storage garbage collection job create. Reads storage. Writes ops_audit_log. File targets none.",
@@ -24679,11 +24335,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.gcJobs.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/storage/quotas": {
@@ -24833,11 +24485,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "oss.quotas",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.oss_quotas.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Backend storage quota create. Reads storage. Writes ops_audit_log. File targets none.",
@@ -24945,11 +24593,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.oss_quotas.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/storage/reconciliation_runs": {
@@ -25099,11 +24743,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "oss.storageReconciliationRuns",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.oss_storageReconciliationRuns.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Backend storage reconciliation run create. Reads storage. Writes ops_audit_log. File targets none.",
@@ -25211,11 +24851,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.oss_storageReconciliationRuns.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/storage/usage": {
@@ -25365,11 +25001,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "oss.usage",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.oss_usage.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/analytics/admin/overview": {
@@ -25507,11 +25139,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "analytics.admin.overview",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-analytics/src/analyticsService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.analytics_admin_overview.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/auth/settings": {
@@ -25595,11 +25223,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "auth.settings",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site/src/AuthSettingsService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.auth_settings.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update cloud router auth settings. Reads ops_config_snapshot. Writes ops_config_snapshot, ops_audit_log. File targets none.",
@@ -25694,11 +25318,7 @@
         "x-write-tables": [
           "ops_config_snapshot",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.auth_settings.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/cache/instances/{instanceName}": {
@@ -25788,11 +25408,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.cache_instances.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/cache/instances/{instanceName}/refresh": {
@@ -25889,11 +25505,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.cache_instances.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/cache/namespaces/{namespace}": {
@@ -25983,11 +25595,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.cache_namespaces.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/cache/namespaces/{namespace}/keys": {
@@ -26105,11 +25713,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "cache.namespaces.keys",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.cache_namespaces_keys.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/cache/namespaces/{namespace}/keys/{key}": {
@@ -26208,11 +25812,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.cache_namespaces_keys.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/cache/namespaces/{namespace}/refresh": {
@@ -26309,11 +25909,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.cache_namespaces.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/cache/overview": {
@@ -26398,11 +25994,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "cache.overview",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.cache_overview.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/cache/refresh": {
@@ -26489,11 +26081,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-cache/src/cacheService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.cache.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/chains/policy": {
@@ -26577,11 +26165,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "chains.policy",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.chains_policy.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update chain policy. Reads iam_gateway_chain_policy. Writes iam_gateway_chain_policy, ops_audit_log. File targets none.",
@@ -26677,11 +26261,7 @@
         "x-write-tables": [
           "iam_gateway_chain_policy",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.chains_policy.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/chains/policy/keys/{apiKeyId}": {
@@ -26775,11 +26355,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "chains.policy.apiKey",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.chains_policy_apiKey.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/dashboard/admin/overview": {
@@ -26867,11 +26443,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "dashboard.admin.overview",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/dashboardService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.dashboard_admin_overview.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/firewalls/rules": {
@@ -26991,11 +26563,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "firewalls.rules",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.gateway.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create firewall. Reads iam_gateway_risk_rule. Writes iam_gateway_risk_rule, ops_audit_log. File targets none.",
@@ -27090,11 +26658,7 @@
         "x-write-tables": [
           "iam_gateway_risk_rule",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.gateway.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/firewalls/rules/{ruleId}": {
@@ -27184,11 +26748,7 @@
         "x-write-tables": [
           "iam_gateway_risk_rule",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.gateway.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/installation/status": {
@@ -27274,11 +26834,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "installation.status",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/dashboardService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.system.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/monitor/alerts": {
@@ -27398,11 +26954,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "monitor.alerts",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor/src/monitorService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.system.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/monitor/nodes": {
@@ -27523,11 +27075,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "monitor.nodes",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor/src/monitorService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.system.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/monitor/performance": {
@@ -27647,11 +27195,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "monitor.performance",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor/src/monitorService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.system.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/rate_limits/api_keys": {
@@ -27772,11 +27316,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "rateLimits.apiKeys",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.gateway.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create token limit. Reads ai_quota_policy, iam_gateway_api_key. Writes ai_quota_policy, ops_audit_log. File targets none.",
@@ -27872,11 +27412,7 @@
         "x-write-tables": [
           "ai_quota_policy",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.gateway.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/rate_limits/ip": {
@@ -27996,11 +27532,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "rateLimits.ip",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.rateLimits_ip.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create IP limit. Reads iam_gateway_risk_rule. Writes iam_gateway_risk_rule, ops_audit_log. File targets none.",
@@ -28095,11 +27627,7 @@
         "x-write-tables": [
           "iam_gateway_risk_rule",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.rateLimits_ip.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/rate_limits/models": {
@@ -28220,11 +27748,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "rateLimits.models",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.rateLimits_models.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create model limit. Reads ai_quota_policy, ai_upstream_account_group. Writes ai_quota_policy, ops_audit_log. File targets none.",
@@ -28320,11 +27844,7 @@
         "x-write-tables": [
           "ai_quota_policy",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.rateLimits_models.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/records": {
@@ -28463,11 +27983,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "records",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-record/src/recordService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.records.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/system/runtime_region/settings": {
@@ -28551,11 +28067,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "runtimeRegion.settings",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-runtime-region/src/runtimeRegionService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.runtimeRegion_settings.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update settings. Reads ops_config_snapshot. Writes ops_config_snapshot, ops_audit_log. File targets none.",
@@ -28650,11 +28162,7 @@
         "x-write-tables": [
           "ops_config_snapshot",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.runtimeRegion_settings.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/service_nodes": {
@@ -28785,11 +28293,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "serviceNodes",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.serviceNodes.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create node. Reads ops_gateway_instance. Writes ops_gateway_instance. File targets none.",
@@ -28883,11 +28387,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
         "x-write-tables": [
           "ops_gateway_instance"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.serviceNodes.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/service_nodes/{nodeId}": {
@@ -28976,11 +28476,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
         "x-write-tables": [
           "ops_gateway_instance"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.serviceNodes.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       },
       "put": {
         "description": "Update node. Reads ops_gateway_instance. Writes ops_gateway_instance. File targets none.",
@@ -29084,11 +28580,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
         "x-write-tables": [
           "ops_gateway_instance"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.serviceNodes.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/service_nodes/{nodeId}/status": {
@@ -29194,11 +28686,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts",
         "x-write-tables": [
           "ops_gateway_instance"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.serviceNodes_status.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/backend/v3/api/system/site/settings": {
@@ -29282,11 +28770,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "site.settings",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site/src/SiteSettingsService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.site_settings.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "patch": {
         "description": "Update settings. Reads ops_config_snapshot. Writes ops_config_snapshot, ops_audit_log. File targets none.",
@@ -29381,11 +28865,7 @@
         "x-write-tables": [
           "ops_config_snapshot",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-permission": "cloudrouter.site_settings.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     }
   },

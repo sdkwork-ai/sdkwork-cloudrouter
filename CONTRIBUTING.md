@@ -17,7 +17,7 @@ documentation changes.
 
 - Workspace root: `<workspace-root>/sdkwork-cloudrouter`
 - Workspace specs: `../sdkwork-specs/`
-- Application manifest: `sdkwork.app.config.json`
+- Application manifest: `agent.app.config.json`
 - Repository agent rules: `AGENTS.md`
 
 Read `AGENTS.md` and `../sdkwork-specs/SOUL.md` before any change. SOUL enforces

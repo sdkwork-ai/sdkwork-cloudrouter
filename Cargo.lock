@@ -5981,6 +5981,7 @@ dependencies = [
  "sdkwork-database-sqlx",
  "serde_json",
  "sqlx",
+ "tracing",
  "uuid",
 ]
 
@@ -7467,6 +7468,7 @@ name = "sdkwork-order-service-host"
 version = "0.1.0"
 dependencies = [
  "dotenvy",
+ "reqwest 0.12.28",
  "sdkwork-database-id",
  "sdkwork-database-spi",
  "sdkwork-database-sqlx",
@@ -7484,6 +7486,7 @@ dependencies = [
  "sdkwork-payment-repository-sqlx",
  "sdkwork-web-bootstrap",
  "sdkwork-web-core",
+ "serde_json",
  "sqlx",
  "tokio",
  "tracing",

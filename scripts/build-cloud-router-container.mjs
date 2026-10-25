@@ -379,11 +379,11 @@ function createBuildPlan(settings, root = workspaceRoot) {
       })),
     ]),
     // Application identity manifest at the install root: IAM tenant-application
-    // provisioning resolves sdkwork.app.config.json under the app root
+    // provisioning resolves agent.app.config.json under the app root
     // (SDKWORK_APP_ROOT / SDKWORK_CLOUDROUTER_APP_ROOT).
     appConfigEntries: [{
-      archivePath: 'sdkwork.app.config.json',
-      sourcePath: path.join(root, 'sdkwork.app.config.json'),
+      archivePath: 'agent.app.config.json',
+      sourcePath: path.join(root, 'agent.app.config.json'),
     }],
     // Models catalog (sdkwork-models.json + models/ + overlays/) installed
     // under <install root>/data/sdkwork-models, the bundled catalog fallback

@@ -32,13 +32,13 @@ Do not copy root standard text into this application root. If these relative pat
 
 ## Application Identity
 
-Read `sdkwork.app.config.json` only when changing shared Cloud Router client family application behavior, runtime config, SDK wiring, release metadata, packaging, or app-owned capabilities.
+Read `agent.app.config.json` only when changing shared Cloud Router client family application behavior, runtime config, SDK wiring, release metadata, packaging, or app-owned capabilities.
 
 ## Local Dictionary Structure
 
 - `AGENTS.md`: local application agent entrypoint and relative SDKWork spec index.
 - `CLAUDE.md`, `GEMINI.md`, `CODEX.md`: compatibility shims that point to `AGENTS.md` and must not duplicate rules.
-- `sdkwork.app.config.json`: shared Cloud Router client family application identity and release metadata.
+- `agent.app.config.json`: shared Cloud Router client family application identity and release metadata.
 - `.sdkwork/`: local application dictionary for skills, plugins, manifests, and AI workspace metadata.
 - `specs/`: local shared Cloud Router client family application/component contracts and narrowing rules.
 - `etc/`: checked-in shared Cloud Router client family source configuration (deployment index and profile sources) governed by `SOURCE_CONFIG_SPEC.md`.
@@ -53,7 +53,7 @@ Read `sdkwork.app.config.json` only when changing shared Cloud Router client fam
 Use dynamic progressive loading for the current task: resolve the selected root and task category before reading broad source context.
 
 1. Read this `AGENTS.md` routing material and classify the owned surface.
-2. Read `sdkwork.app.config.json`, module `specs/`, repository/application `specs/`, and `.sdkwork/` only when the task reaches the contract each item governs.
+2. Read `agent.app.config.json`, module `specs/`, repository/application `specs/`, and `.sdkwork/` only when the task reaches the contract each item governs.
 3. Locate only the relevant task-matrix row or navigation heading in `../../../sdkwork-specs/README.md`; do not load the full catalog.
 4. Read only the task-specific global spec sections selected by that route, then inspect implementation files.
 <!-- /SDKWORK-PROGRESSIVE-LOADING: v1 -->
@@ -61,7 +61,7 @@ Use dynamic progressive loading for the current task: resolve the selected root 
 Use dynamic progressive loading:
 
 1. Read this `AGENTS.md` and any nearer component-level `AGENTS.md`.
-2. Read `sdkwork.app.config.json` only when app behavior, runtime config, SDK wiring, release, or package identity is touched.
+2. Read `agent.app.config.json` only when app behavior, runtime config, SDK wiring, release, or package identity is touched.
 3. Read local `specs/README.md` and `specs/component.spec.json` only when local contracts are relevant.
 4. Read local `.sdkwork/README.md`, `.sdkwork/skills/`, and `.sdkwork/plugins/` only when local agent extensions are relevant.
 5. Read `../../../sdkwork-specs/README.md`, then only the task-specific root specs.

@@ -75,7 +75,7 @@ function withFixture(packageYml, run) {
   try {
     mkdirSync(path.join(root, '.github', 'workflows'), { recursive: true });
     writeFileSync(path.join(root, 'sdkwork.workflow.json'), WORKFLOW_CONFIG);
-    writeFileSync(path.join(root, 'sdkwork.app.config.json'), APP_CONFIG);
+    writeFileSync(path.join(root, 'agent.app.config.json'), APP_CONFIG);
     writeFileSync(path.join(root, '.github', 'workflows', 'package.yml'), packageYml);
     return run(root);
   } finally {

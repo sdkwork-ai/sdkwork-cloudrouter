@@ -5562,7 +5562,7 @@ frontend_operations:
                   maxItems: 100
                   type: array
                 priority: { format: int32, minimum: 0, type: integer }
-                routingStrategy: { enum: [weighted, round_robin, least_latency, least_cost, failover], type: string }
+                routingStrategy: { enum: [weighted, round_robin, least_latency, least_cost, quality_first, failover], type: string }
                 saleMultiplier: { maxLength: 64, type: string }
                 status: { format: int32, type: integer }
                 tags:
@@ -5659,7 +5659,7 @@ frontend_operations:
             nullable: true
             type: array
           priority: { format: int32, minimum: 0, nullable: true, type: integer }
-          routingStrategy: { enum: [weighted, round_robin, least_latency, least_cost, failover], nullable: true, type: string }
+          routingStrategy: { enum: [weighted, round_robin, least_latency, least_cost, quality_first, failover], nullable: true, type: string }
           saleMultiplier: { maxLength: 64, nullable: true, type: string }
           status: { format: int32, nullable: true, type: integer }
           tags:
@@ -5796,7 +5796,7 @@ frontend_operations:
             nullable: true
             type: array
           priority: { format: int32, minimum: 0, nullable: true, type: integer }
-          routingStrategy: { enum: [weighted, round_robin, least_latency, least_cost, failover], nullable: true, type: string }
+          routingStrategy: { enum: [weighted, round_robin, least_latency, least_cost, quality_first, failover], nullable: true, type: string }
           saleMultiplier: { maxLength: 64, nullable: true, type: string }
           status: { format: int32, nullable: true, type: integer }
           tags:
@@ -6040,8 +6040,6 @@ frontend_operations:
       - ai_resource_group
       - iam_gateway_api_key
       - ai_upstream_object_route
-      - ai_routing_policy
-      - ai_routing_rule
     response_schema:
       name: UpstreamAccountGroupRouteExplanationResponse
       schema:
@@ -6073,12 +6071,9 @@ frontend_operations:
               groupCode: { maxLength: 128, type: string }
               id: { maxLength: 32, type: string }
               model: { maxLength: 256, nullable: true, type: string }
-              policyId: { maxLength: 32, nullable: true, type: string }
-              policySnapshotVersion: { maxLength: 128, type: string }
               pricingPlanCode: { maxLength: 128, type: string }
               ready: { type: boolean }
               resourceCode: { maxLength: 128, type: string }
-              ruleId: { maxLength: 32, nullable: true, type: string }
               selectedCandidates:
                 items:
                   additionalProperties: false
@@ -6090,15 +6085,13 @@ frontend_operations:
                     apiCode: { maxLength: 128, type: string }
                     catalogKey: { maxLength: 256, nullable: true, type: string }
                     kind: { maxLength: 32, type: string }
-                    policyId: { maxLength: 32, nullable: true, type: string }
                     pricingPlanCode: { maxLength: 128, type: string }
                     providerModel: { maxLength: 256, nullable: true, type: string }
                     regionCode: { maxLength: 128, type: string }
                     requestedModel: { maxLength: 256, nullable: true, type: string }
-                    ruleId: { maxLength: 32, nullable: true, type: string }
                     supplierCode: { maxLength: 128, type: string }
                     timeoutMs: { maxLength: 32, nullable: true, type: string }
-                  required: [kind, supplierCode, accountId, accountGroupId, accountGroupCode, pricingPlanCode, policyId, ruleId, apiCode, catalogKey, requestedModel, providerModel, regionCode, timeoutMs]
+                  required: [kind, supplierCode, accountId, accountGroupId, accountGroupCode, pricingPlanCode, apiCode, catalogKey, requestedModel, providerModel, regionCode, timeoutMs]
                   type: object
                 type: array
               source: { maxLength: 64, type: string }
@@ -6106,8 +6099,7 @@ frontend_operations:
                 items:
                   $ref: '#/components/schemas/UpstreamRouteExplainIssue'
                 type: array
-            required: [id, source, ready, resourceCode, catalogKey, model, apiCode, capability, billingMeter, apiKeyId, accountGroupId, groupCode, pricingPlanCode, candidateCount, selectedCandidates, blockedReasons, warnings, policyId, ruleId,
-              policySnapshotVersion]
+            required: [id, source, ready, resourceCode, catalogKey, model, apiCode, capability, billingMeter, apiKeyId, accountGroupId, groupCode, pricingPlanCode, candidateCount, selectedCandidates, blockedReasons, warnings]
             type: object
         required: [item]
         type: object
@@ -12914,8 +12906,6 @@ routes:
     required_tables:
       - ai_resource
       - ai_resource_group
-      - ai_routing_policy
-      - ai_routing_rule
       - ai_upstream_account
       - ai_upstream_account_credential
       - ai_upstream_account_group

@@ -3163,7 +3163,7 @@
         "sdkDependencies": [],
         "routeManifest": null,
         "runtimeEntrypoints": [
-          "sdkwork.app.config.json",
+          "agent.app.config.json",
           "package.json#scripts.dev",
           "package.json#scripts.build",
           "package.json#scripts.start",

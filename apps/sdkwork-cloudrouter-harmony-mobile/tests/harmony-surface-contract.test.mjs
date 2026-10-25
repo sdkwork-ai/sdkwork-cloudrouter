@@ -63,7 +63,7 @@ const ALLOWED_LAYER_ROLES = new Set([
 ]);
 
 const rootSpec = readJson('specs/component.spec.json');
-const manifest = readJson('sdkwork.app.config.json');
+const manifest = readJson('agent.app.config.json');
 const deployment = readJson('etc/sdkwork.deployment.config.json');
 const rootDeployment = readJsonAt(path.join(REPO, 'etc/sdkwork.deployment.config.json'));
 

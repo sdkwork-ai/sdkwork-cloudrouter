@@ -49,7 +49,7 @@ mod tests {
     #[test]
     fn default_app_root_contains_application_manifest() {
         assert!(resolve_cloudrouter_app_root()
-            .join("sdkwork.app.config.json")
+            .join("agent.app.config.json")
             .is_file());
     }
 }

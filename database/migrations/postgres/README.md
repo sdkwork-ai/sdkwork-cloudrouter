@@ -24,7 +24,9 @@ development lifecycle history stays readable.
   flag to `ai_upstream_account_group` with a partial unique index enforcing at
   most one default group per tenant and organization, and promotes the seeded
   `standard-group` to the default group. The API transaction clears the previous
-  default when a new one is set.
+  default when a new one is set. The seeded group code is now `default-group`
+  (see `DEFAULT_ACCOUNT_GROUP_CODE`); `0049` repairs existing installs whose
+  default group still carries the old weighted default.
 - `0021_add_runtime_event_artifact_tables.up.sql` creates `ai_runtime_invocation_event`
   and `ai_runtime_artifact` so the app runtime store contract (invocation
   events and artifacts) is backed by real tables, closing the schema drift
@@ -86,6 +88,15 @@ development lifecycle history stays readable.
   prevented re-creating a deleted webhook `endpoint_code` or preference row.
   The registry now declares `soft_delete_policy: active_unique` and the compiler
   emits the same partial predicate for clean installs.
+- `0049_retire_legacy_routing_control_plane.up.sql` completes the routing
+  control-plane retirement: it corrects the seeded default group to the
+  documented price-first strategy, drops the never-written
+  `policy_id`/`profile_id`/`rule_id` decision-log columns, drops the duplicate
+  `routing_strategy_code`/`routing_policy_id` group columns, and removes the
+  `ai_routing_rule` / `ai_routing_profile` / `ai_routing_policy` /
+  `ai_routing_strategy` tables. Runtime strategy selection is the closed
+  `UpstreamAccountRoutingStrategy` enum on the group plus the optional
+  per-API-key binding override; the retired tables had no reader.
 
 ## Historical migrations
 

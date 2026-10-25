@@ -527,14 +527,14 @@ cloud-profile 派发测试；或在 PRD 中正式降级为"未发布内部能力
 ### 9.1 结论：**不具备**
 
 `preLaunch: true`、`publish.status: DRAFT`、`version 0.4.12`
-（`sdkwork.app.config.json`）与现实一致。PRD 的阶段表也把
+（`agent.app.config.json`）与现实一致。PRD 的阶段表也把
 "Production hardening / Commercial beta / GA" 标为 Planned（`PRD.md:229-236`）。
 
 ### 9.2 阻断项（按优先级）
 
 | # | 阻断 | 证据 |
 | --- | --- | --- |
-| 1 | **没有可交付、可验证的制品**：5 个 artifact 的 `sha256` 为空、`signature` 为 null、版本仍是 0.3.0；install package 全部 `enabled:false` | `deployments/artifacts/checksums.json:1-40`；`sdkwork.app.config.json` |
+| 1 | **没有可交付、可验证的制品**：5 个 artifact 的 `sha256` 为空、`signature` 为 null、版本仍是 0.3.0；install package 全部 `enabled:false` | `deployments/artifacts/checksums.json:1-40`；`agent.app.config.json` |
 | 2 | **K8s 镜像 tag 落后**：`0.4.7` vs manifest `0.4.12` | `deployments/kubernetes/cloud-router-standalone.yaml:70` |
 | 3 | **支付不可用**（P0-3）与**管理端列表 400**（P0-1） | 见 §2 |
 | 4 | **许可/版本分层未在服务端生效**：`Edition` 只传给 portal 字符串，无任何功能/租户数门禁 | `crates/sdkwork-cloudrouter-license/src/lib.rs`；`standalone-gateway/src/main.rs:109-111` |

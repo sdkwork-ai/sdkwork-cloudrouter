@@ -7,7 +7,7 @@
 //!   3. 身份分组：API key / auth token → 账号组（`AuthenticatedApiKeyContext`）
 //!   4. supplier 收敛 + 账号加载：由 `UpstreamRouteSelector` 完成
 //!   5. 过滤：模型黑白名单 / 健康 / 可调用性（`RoutingFilterChain`）
-//!   6. 策略选择：`RoutingStrategyRegistry` 从有序候选中选出最终账号
+//!   6. 策略排序：`UpstreamAccountRoutingStrategy` 决定账号顺序与 failover 序列
 //!   7. 计费：账号 billing_mode（prepay/postpay）驱动预扣/后扣
 //!
 //! 本模块是 `RoutePlanningInterceptor` 的统一入口，底层复用

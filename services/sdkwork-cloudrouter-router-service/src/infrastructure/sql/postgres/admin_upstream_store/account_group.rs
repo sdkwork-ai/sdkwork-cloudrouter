@@ -638,7 +638,7 @@ fn validate_command(command: &SaveAdminUpstreamAccountGroupCommand) -> DomainRes
     }
     if !matches!(
         command.routing_strategy.as_str(),
-        "weighted" | "round_robin" | "least_latency" | "least_cost" | "failover"
+        "weighted" | "round_robin" | "least_latency" | "least_cost" | "quality_first" | "failover"
     ) {
         return Err(DomainError::new("routingStrategy is not supported"));
     }

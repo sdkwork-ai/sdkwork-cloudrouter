@@ -13,7 +13,7 @@ SDKWork Cloud Router maintainers and client application root owners.
 ## Primary App Surface
 
 The repository root is the primary runnable app surface.
-The repository root `sdkwork.app.config.json` governs the primary application manifest.
+The repository root `agent.app.config.json` governs the primary application manifest.
 
 ## Directory Index
 

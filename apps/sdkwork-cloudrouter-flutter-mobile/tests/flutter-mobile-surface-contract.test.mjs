@@ -24,7 +24,7 @@ const CAPABILITY_PKGS = ["sdkwork_cloudrouter_flutter_mobile_console_dashboard",
 const PROFILE_IDS = ["standalone.development","standalone.test","standalone.staging","standalone.production","standalone.demo","cloud.development","cloud.test","cloud.staging","cloud.production","cloud.demo"];
 
 const rootSpec = readJson('specs/component.spec.json');
-const manifest = readJson('sdkwork.app.config.json');
+const manifest = readJson('agent.app.config.json');
 const deployment = readJson('etc/sdkwork.deployment.config.json');
 const rootDeployment = readJsonAt(path.join(REPO, 'etc/sdkwork.deployment.config.json'));
 
@@ -32,7 +32,7 @@ describe('cloudrouter flutter mobile application root', () => {
   it('declares the flutter mobile app root contract', () => {
     assert.equal(rootSpec.component.type, 'flutter-mobile-app-root');
     assert.equal(rootSpec.component.root, 'apps/sdkwork-cloudrouter-flutter-mobile');
-    assert.deepEqual(rootSpec.component.manifests, ['pubspec.yaml', 'sdkwork.app.config.json']);
+    assert.deepEqual(rootSpec.component.manifests, ['pubspec.yaml', 'agent.app.config.json']);
     assert.deepEqual(rootSpec.contracts.sdkClients, ['SdkworkAppClient']);
     const dependency = rootSpec.contracts.sdkDependencies[0];
     assert.equal(dependency.workspace, 'cloudrouter-app-sdk');

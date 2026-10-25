@@ -270,7 +270,7 @@ PostgreSQL 完成度约 **85-90%**：设计成熟（schema 契约链、62 表/13
 ## 9. 商业化落地能力评估（结论：**不具备**，差距清单）
 
 ### 直接证据
-1. `sdkwork.app.config.json`：`publish.preLaunch: true`、`status: DRAFT`——官方自认未发布。
+1. `agent.app.config.json`：`publish.preLaunch: true`、`status: DRAFT`——官方自认未发布。
 2. `REQ-2026-0001 Commercial Production Readiness`（status: in-progress）：明确列出未闭合的 P0 阻塞项。
 3. `REVIEW-20260714`：**"The application is not eligible for production deployment, high-availability claims, commercial availability claims, or client-local SQLite claims."**
 4. **官方自审计 `generated/audit/standard-alignment-facts.json` 的 p0Status：11 项 P0 中 4 项 pending**——client-local-sqlite-runtime（isImplemented=false）、redis-ha-manifest（isHa=false，sentinel 声明但不工作）、table-count-consistency（ddl 53/registry 38/schemaYaml 0 漂移）、high-traffic-table-partition（高流量表未分区）。

@@ -256,7 +256,7 @@ modules:
     description: AI routing, upstream supplier, upstream account, account-group, policy,
       quota, and runtime coordination tables.
     compliance_level: L2
-    tables_count: 24
+    tables_count: 20
     tables:
     - ai_upstream_account
     - ai_upstream_account_health_state
@@ -273,13 +273,9 @@ modules:
     - ai_upstream_object_route
     - ai_quota_policy
     - ai_routing_decision_log
-    - ai_routing_policy
-    - ai_routing_profile
-    - ai_routing_rule
     - ai_upstream_supplier_endpoint
     - ai_upstream_supplier_endpoint_health_state
     - ai_upstream_supplier_auth_method
-    - ai_routing_strategy
     - ai_model_access_policy
     - ai_resource_binding
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql

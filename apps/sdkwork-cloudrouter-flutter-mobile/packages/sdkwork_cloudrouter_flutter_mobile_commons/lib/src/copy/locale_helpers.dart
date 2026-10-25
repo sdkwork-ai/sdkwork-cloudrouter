@@ -6,7 +6,7 @@
 /// normalizes a locale or looks a key up in an already-loaded fragment is a
 /// boundary helper, not a locale resource, so it lives outside `lib/src/i18n/`.
 /// The `gen_l10n` projection requires the Flutter toolchain and is declared as a
-/// pending integration in `sdkwork.app.config.json#artifacts.installConfig.metadata`.
+/// pending integration in `agent.app.config.json#artifacts.installConfig.metadata`.
 enum SdkworkCloudRouterLocale { enUs, zhCn }
 
 SdkworkCloudRouterLocale normalizeSdkworkCloudRouterLocale(String value) {

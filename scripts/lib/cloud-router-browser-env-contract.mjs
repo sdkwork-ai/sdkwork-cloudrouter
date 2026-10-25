@@ -213,7 +213,7 @@ export const CLOUD_ROUTER_BROWSER_DEVELOPMENT_ENV_SECTIONS = Object.freeze([
   {
     beforeKey: 'VITE_SDKWORK_APP_ID',
     lines: [
-      '# Browser-visible SDKWork application identity from sdkwork.app.config.json app.key.',
+      '# Browser-visible SDKWork application identity from agent.app.config.json app.key.',
     ],
   },
   {
@@ -238,7 +238,7 @@ export const CLOUD_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_COMMENTS = Object.freeze({
     '# Upstream origin for /backend/v3/api admin SDK routes.',
   [CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.appApi]:
     '# Upstream origin for /app/v3/api product SDK routes.',
-  VITE_SDKWORK_APP_ID: '# SDKWork application key from sdkwork.app.config.json.',
+  VITE_SDKWORK_APP_ID: '# SDKWork application key from agent.app.config.json.',
   VITE_API_BASE_URL: '# Public API reference and generic SDK root path.',
   VITE_CLOUDROUTER_OPEN_API_BASE_URL: '# @sdkwork/cloudrouter-open-sdk base URL.',
   VITE_CLOUDROUTER_APP_API_BASE_URL: '# @sdkwork/cloudrouter-app-sdk base URL.',

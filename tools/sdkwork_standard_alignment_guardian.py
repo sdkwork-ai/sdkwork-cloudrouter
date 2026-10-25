@@ -1450,7 +1450,7 @@ class SdkworkStandardAlignmentGuardian:
 
         legacy_repo_refs = 0
         legacy_stem = "sdkwork-cloudrouter-router"
-        for relative in ("sdkwork.app.config.json", "sdkwork.workflow.json", "specs/component.spec.json"):
+        for relative in ("agent.app.config.json", "sdkwork.workflow.json", "specs/component.spec.json"):
             file_path = self.root / relative
             if file_path.exists() and legacy_stem in file_path.read_text(encoding="utf-8"):
                 legacy_repo_refs += 1

@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.5.0.
--- Registry SHA-256: dcef7bbf2e72953d37bbe4671408dfcc3cb78904c57acb46a37954cd8d12e0f6.
+-- Registry SHA-256: bb58476b0b7f42ea4f34fca12f1a91b2572c64c50a2f6f844c92f4b0a8530c68.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -783,9 +783,6 @@ CREATE TABLE IF NOT EXISTS ai_routing_decision_log (
     legal_hold BOOLEAN NOT NULL DEFAULT FALSE,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     api_key_id BIGINT,
-    policy_id BIGINT,
-    profile_id BIGINT,
-    rule_id BIGINT,
     requested_model VARCHAR(256),
     resolved_model VARCHAR(256),
     capability INTEGER,
@@ -803,133 +800,6 @@ CREATE TABLE IF NOT EXISTS ai_routing_decision_log (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_decision_log_request ON ai_routing_decision_log (tenant_id, organization_id, request_id);
 CREATE INDEX IF NOT EXISTS idx_ai_routing_decision_tenant_model_created ON ai_routing_decision_log (tenant_id, organization_id, requested_model, created_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_routing_decision_log_retention ON ai_routing_decision_log (retention_until, id);
-
-CREATE TABLE IF NOT EXISTS ai_routing_policy (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    policy_code VARCHAR(64) NOT NULL,
-    name VARCHAR(128),
-    policy_scope INTEGER,
-    subject_id BIGINT,
-    capability INTEGER,
-    default_profile_id BIGINT,
-    fallback_mode INTEGER,
-    slo_latency_ms INTEGER,
-    slo_success_rate NUMERIC(38, 12),
-    cost_ceiling NUMERIC(38, 12),
-    currency VARCHAR(10),
-    CONSTRAINT ck_ai_routing_policy_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT ck_ai_routing_policy_non_negative_limits CHECK ((slo_latency_ms IS NULL OR slo_latency_ms >= 0) AND (cost_ceiling IS NULL OR cost_ceiling >= 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_policy_tenant_code ON ai_routing_policy (tenant_id, organization_id, policy_code);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_policy_scope_id ON ai_routing_policy (tenant_id, organization_id, id);
-
-CREATE TABLE IF NOT EXISTS ai_routing_profile (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    policy_id BIGINT NOT NULL,
-    profile_version BIGINT NOT NULL,
-    profile_name VARCHAR(128),
-    release_status INTEGER,
-    traffic_percent NUMERIC(38, 12),
-    config_hash VARCHAR(128),
-    published_at TIMESTAMPTZ,
-    published_by BIGINT,
-    rollback_from_profile_id BIGINT,
-    CONSTRAINT ck_ai_routing_profile_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT fk_ai_routing_profile_policy FOREIGN KEY (tenant_id, organization_id, policy_id) REFERENCES ai_routing_policy (tenant_id, organization_id, id) ON DELETE RESTRICT,
-    CONSTRAINT ck_ai_routing_profile_version CHECK (profile_version > 0)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_profile_policy_version ON ai_routing_profile (policy_id, profile_version) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_profile_scope_id ON ai_routing_profile (tenant_id, organization_id, id);
-
-CREATE TABLE IF NOT EXISTS ai_routing_rule (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    profile_id BIGINT NOT NULL,
-    rule_code VARCHAR(64) NOT NULL,
-    priority INTEGER,
-    match_expression JSONB,
-    target_model VARCHAR(256),
-    candidate_account_groups JSONB,
-    fallback_chain JSONB,
-    constraints JSONB,
-    rate_limit_policy_id BIGINT,
-    effective_from TIMESTAMPTZ,
-    effective_to TIMESTAMPTZ,
-    CONSTRAINT ck_ai_routing_rule_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT fk_ai_routing_rule_profile FOREIGN KEY (tenant_id, organization_id, profile_id) REFERENCES ai_routing_profile (tenant_id, organization_id, id) ON DELETE RESTRICT,
-    CONSTRAINT ck_ai_routing_rule_priority CHECK (priority IS NULL OR priority >= 0),
-    CONSTRAINT ck_ai_routing_rule_effective_interval CHECK (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_rule_profile_code ON ai_routing_rule (profile_id, rule_code) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_ai_routing_rule_tenant_profile_priority ON ai_routing_rule (tenant_id, organization_id, profile_id, priority, status);
-
-CREATE TABLE IF NOT EXISTS ai_routing_strategy (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    strategy_code VARCHAR(64) NOT NULL,
-    strategy_name VARCHAR(128) NOT NULL,
-    strategy_name_i18n JSONB,
-    description VARCHAR(512),
-    strategy_type VARCHAR(32) NOT NULL,
-    params JSONB NOT NULL DEFAULT '{}'::jsonb,
-    priority INTEGER NOT NULL DEFAULT 100,
-    enabled BOOLEAN NOT NULL DEFAULT true,
-    is_default BOOLEAN NOT NULL DEFAULT false,
-    tags JSONB NOT NULL DEFAULT '[]'::jsonb,
-    CONSTRAINT ck_ai_routing_strategy_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT ck_ai_routing_strategy_type CHECK (strategy_type IN ('price_first', 'sticky', 'quality_first', 'latency_first', 'weighted', 'round_robin') AND priority >= 0),
-    CONSTRAINT ck_ai_routing_strategy_params CHECK (jsonb_typeof(params) = 'object')
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_strategy_uuid ON ai_routing_strategy (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_strategy_tenant_code ON ai_routing_strategy (tenant_id, organization_id, strategy_code);
-CREATE INDEX IF NOT EXISTS idx_ai_routing_strategy_tenant_status ON ai_routing_strategy (tenant_id, organization_id, status, strategy_type, priority, id);
-CREATE INDEX IF NOT EXISTS idx_ai_routing_strategy_tenant_default ON ai_routing_strategy (tenant_id, organization_id, is_default, enabled, id);
 
 CREATE TABLE IF NOT EXISTS ai_runtime_artifact (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -1257,11 +1127,9 @@ CREATE TABLE IF NOT EXISTS ai_upstream_account_group (
     group_name_i18n JSONB,
     description VARCHAR(512),
     group_type VARCHAR(32) NOT NULL DEFAULT 'mixed',
-    routing_strategy VARCHAR(32) NOT NULL DEFAULT 'weighted',
-    routing_strategy_code VARCHAR(64) NOT NULL DEFAULT 'price_first',
+    routing_strategy VARCHAR(32) NOT NULL DEFAULT 'least_cost',
     fallback_mode VARCHAR(32) NOT NULL DEFAULT 'sequential',
     priority INTEGER NOT NULL DEFAULT 100,
-    routing_policy_id BIGINT,
     quota_policy_id BIGINT,
     rate_limit_policy_id BIGINT,
     environment INTEGER,
@@ -1275,9 +1143,10 @@ CREATE TABLE IF NOT EXISTS ai_upstream_account_group (
     vendor_code VARCHAR(64),
     modalities JSONB NOT NULL DEFAULT '[]'::jsonb,
     tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT ck_ai_upstream_account_group_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
     CONSTRAINT ck_ai_upstream_account_group_type CHECK (group_type IN ('mixed', 'llm', 'image', 'video', 'audio', 'music', 'other')),
-    CONSTRAINT ck_ai_upstream_account_group_routing_strategy CHECK (routing_strategy IN ('weighted', 'round_robin', 'least_latency', 'least_cost', 'failover')),
+    CONSTRAINT ck_ai_upstream_account_group_routing_strategy CHECK (routing_strategy IN ('weighted', 'round_robin', 'least_latency', 'least_cost', 'quality_first', 'failover')),
     CONSTRAINT ck_ai_upstream_account_group_fallback_mode CHECK (fallback_mode IN ('none', 'sequential', 'same_supplier', 'cross_supplier')),
     CONSTRAINT ck_ai_upstream_account_group_financial_values CHECK (cost_multiplier > 0 AND sale_multiplier > 0 AND priority >= 0 AND (capacity_limit IS NULL OR capacity_limit >= 0))
 );
@@ -1285,6 +1154,7 @@ CREATE TABLE IF NOT EXISTS ai_upstream_account_group (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_uuid ON ai_upstream_account_group (uuid);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_tenant_code ON ai_upstream_account_group (tenant_id, organization_id, group_code);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_tags ON ai_upstream_account_group (tags);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_default_per_tenant ON ai_upstream_account_group (tenant_id, organization_id) WHERE is_default AND deleted_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_scope_id ON ai_upstream_account_group (tenant_id, organization_id, id);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_tenant_status_updated ON ai_upstream_account_group (tenant_id, organization_id, status, updated_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_pricing ON ai_upstream_account_group (tenant_id, organization_id, pricing_plan_id, status, updated_at, id);

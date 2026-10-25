@@ -15,7 +15,7 @@ function readText(relativePath) {
   return fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
 }
 
-const manifest = readJson('sdkwork.app.config.json');
+const manifest = readJson('agent.app.config.json');
 const rootSpec = readJson('specs/component.spec.json');
 const appJson = readJson('src/app.json');
 const deployment = readJson('etc/sdkwork.deployment.config.json');

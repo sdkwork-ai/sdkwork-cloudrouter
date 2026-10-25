@@ -39,6 +39,15 @@
       "lock": "lightweight",
       "lock_timeout": "2s",
       "statement_timeout": "30s"
+    },
+    "0049_retire_legacy_routing_control_plane.up.sql": {
+      "engine": "postgres",
+      "reversible": "false",
+      "rollback": "forward-fix",
+      "transactional": "true",
+      "lock": "exclusive",
+      "lock_timeout": "2s",
+      "statement_timeout": "30s"
     }
   }
 }

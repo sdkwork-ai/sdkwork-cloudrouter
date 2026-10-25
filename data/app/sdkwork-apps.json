@@ -15,7 +15,7 @@
     {
       "appKey": "claw-studio",
       "appRoot": "claw-studio",
-      "configPath": "claw-studio/sdkwork.app.config.json",
+      "configPath": "claw-studio/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -309,14 +309,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "claw-studio/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "claw-studio/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-im-sdkwork-chat-pc",
       "appRoot": "sdkwork-im/apps/sdkwork-chat-pc",
-      "configPath": "sdkwork-im/apps/sdkwork-chat-pc/sdkwork.app.config.json",
+      "configPath": "sdkwork-im/apps/sdkwork-chat-pc/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -610,14 +610,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-im/apps/sdkwork-chat-pc/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-im/apps/sdkwork-chat-pc/agent.app.config.json"
       }
     },
     {
       "appKey": "chat",
       "appRoot": "sdkwork-im",
-      "configPath": "sdkwork-im/sdkwork.app.config.json",
+      "configPath": "sdkwork-im/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -904,14 +904,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-im/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-im/agent.app.config.json"
       }
     },
     {
       "appKey": "hub-installer",
       "appRoot": "hub-installer",
-      "configPath": "hub-installer/sdkwork.app.config.json",
+      "configPath": "hub-installer/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -1198,14 +1198,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "hub-installer/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "hub-installer/agent.app.config.json"
       }
     },
     {
       "appKey": "magic-studio-v2",
       "appRoot": "magic-studio",
-      "configPath": "magic-studio/sdkwork.app.config.json",
+      "configPath": "magic-studio/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -1499,14 +1499,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "magic-studio/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "magic-studio/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-aiot",
       "appRoot": "sdkwork-aiot",
-      "configPath": "sdkwork-aiot/sdkwork.app.config.json",
+      "configPath": "sdkwork-aiot/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -1793,14 +1793,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-aiot/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-aiot/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-backend-react-web",
       "appRoot": "sdkwork-backend-react-web",
-      "configPath": "sdkwork-backend-react-web/sdkwork.app.config.json",
+      "configPath": "sdkwork-backend-react-web/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 30001,
       "platformApp": {
@@ -2094,14 +2094,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-backend-react-web/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-backend-react-web/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-birdcoder",
       "appRoot": "sdkwork-birdcoder",
-      "configPath": "sdkwork-birdcoder/sdkwork.app.config.json",
+      "configPath": "sdkwork-birdcoder/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -2395,14 +2395,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-birdcoder/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-birdcoder/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-cloudrouter-pc",
       "appRoot": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc",
-      "configPath": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/sdkwork.app.config.json",
+      "configPath": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -2689,14 +2689,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-cloudrouter",
       "appRoot": "sdkwork-cloudrouter",
-      "configPath": "sdkwork-cloudrouter/sdkwork.app.config.json",
+      "configPath": "sdkwork-cloudrouter/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -2990,14 +2990,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-cloudrouter/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-cloudrouter/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-cloudrouter-portal",
       "appRoot": "sdkwork-cloudrouter-portal",
-      "configPath": "sdkwork-cloudrouter-portal/sdkwork.app.config.json",
+      "configPath": "sdkwork-cloudrouter-portal/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -3291,14 +3291,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-cloudrouter-portal/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-cloudrouter-portal/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-codebox",
       "appRoot": "sdkwork-codebox",
-      "configPath": "sdkwork-codebox/sdkwork.app.config.json",
+      "configPath": "sdkwork-codebox/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -3592,14 +3592,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-codebox/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-codebox/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-drive-pc",
       "appRoot": "sdkwork-drive/apps/sdkwork-drive-pc",
-      "configPath": "sdkwork-drive/apps/sdkwork-drive-pc/sdkwork.app.config.json",
+      "configPath": "sdkwork-drive/apps/sdkwork-drive-pc/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -3820,14 +3820,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-drive/apps/sdkwork-drive-pc/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-drive/apps/sdkwork-drive-pc/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-drive",
       "appRoot": "sdkwork-drive",
-      "configPath": "sdkwork-drive/sdkwork.app.config.json",
+      "configPath": "sdkwork-drive/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -4121,14 +4121,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-drive/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-drive/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-generations-pc",
       "appRoot": "sdkwork-generations/apps/sdkwork-generations-pc",
-      "configPath": "sdkwork-generations/apps/sdkwork-generations-pc/sdkwork.app.config.json",
+      "configPath": "sdkwork-generations/apps/sdkwork-generations-pc/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -4349,14 +4349,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-generations/apps/sdkwork-generations-pc/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-generations/apps/sdkwork-generations-pc/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-github-workflow",
       "appRoot": "sdkwork-github-workflow",
-      "configPath": "sdkwork-github-workflow/sdkwork.app.config.json",
+      "configPath": "sdkwork-github-workflow/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -4643,14 +4643,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-github-workflow/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-github-workflow/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-knowledgebase",
       "appRoot": "sdkwork-knowledgebase",
-      "configPath": "sdkwork-knowledgebase/sdkwork.app.config.json",
+      "configPath": "sdkwork-knowledgebase/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -4937,14 +4937,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-knowledgebase/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-knowledgebase/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-local-router-sdkwork-modelkit-pc",
       "appRoot": "sdkwork-local-router/apps/sdkwork-modelkit-pc",
-      "configPath": "sdkwork-local-router/apps/sdkwork-modelkit-pc/sdkwork.app.config.json",
+      "configPath": "sdkwork-local-router/apps/sdkwork-modelkit-pc/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -5231,14 +5231,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-local-router/apps/sdkwork-modelkit-pc/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-local-router/apps/sdkwork-modelkit-pc/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-local-router",
       "appRoot": "sdkwork-local-router",
-      "configPath": "sdkwork-local-router/sdkwork.app.config.json",
+      "configPath": "sdkwork-local-router/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -5525,14 +5525,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-local-router/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-local-router/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-models",
       "appRoot": "sdkwork-models",
-      "configPath": "sdkwork-models/sdkwork.app.config.json",
+      "configPath": "sdkwork-models/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -5819,14 +5819,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-models/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-models/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-notes-pc-react",
       "appRoot": "sdkwork-notes/sdkwork-notes-pc-react",
-      "configPath": "sdkwork-notes/sdkwork-notes-pc-react/sdkwork.app.config.json",
+      "configPath": "sdkwork-notes/sdkwork-notes-pc-react/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -6120,14 +6120,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-notes/sdkwork-notes-pc-react/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-notes/sdkwork-notes-pc-react/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-sdk-generator",
       "appRoot": "sdkwork-sdk-generator",
-      "configPath": "sdkwork-sdk-generator/sdkwork.app.config.json",
+      "configPath": "sdkwork-sdk-generator/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -6414,14 +6414,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-sdk-generator/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-sdk-generator/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-skills-ops-admin",
       "appRoot": "sdkwork-skills-private/sdkwork-skills-ops-admin",
-      "configPath": "sdkwork-skills-private/sdkwork-skills-ops-admin/sdkwork.app.config.json",
+      "configPath": "sdkwork-skills-private/sdkwork-skills-ops-admin/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -6708,14 +6708,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-skills-private/sdkwork-skills-ops-admin/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-skills-private/sdkwork-skills-ops-admin/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-terminal-desktop",
       "appRoot": "sdkwork-terminal/apps/desktop",
-      "configPath": "sdkwork-terminal/apps/desktop/sdkwork.app.config.json",
+      "configPath": "sdkwork-terminal/apps/desktop/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -7009,14 +7009,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-terminal/apps/desktop/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-terminal/apps/desktop/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-terminal-web",
       "appRoot": "sdkwork-terminal/apps/web",
-      "configPath": "sdkwork-terminal/apps/web/sdkwork.app.config.json",
+      "configPath": "sdkwork-terminal/apps/web/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -7303,14 +7303,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-terminal/apps/web/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-terminal/apps/web/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-terminal",
       "appRoot": "sdkwork-terminal",
-      "configPath": "sdkwork-terminal/sdkwork.app.config.json",
+      "configPath": "sdkwork-terminal/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -7604,14 +7604,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-terminal/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-terminal/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-tts",
       "appRoot": "sdkwork-tts",
-      "configPath": "sdkwork-tts/sdkwork.app.config.json",
+      "configPath": "sdkwork-tts/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -7898,14 +7898,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-tts/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-tts/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-ui-pc-react",
       "appRoot": "sdkwork-ui/sdkwork-ui-pc-react",
-      "configPath": "sdkwork-ui/sdkwork-ui-pc-react/sdkwork.app.config.json",
+      "configPath": "sdkwork-ui/sdkwork-ui-pc-react/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -8199,14 +8199,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-ui/sdkwork-ui-pc-react/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-ui/sdkwork-ui-pc-react/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-video-cut",
       "appRoot": "sdkwork-video-cut",
-      "configPath": "sdkwork-video-cut/sdkwork.app.config.json",
+      "configPath": "sdkwork-video-cut/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -8692,14 +8692,14 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-video-cut/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-video-cut/agent.app.config.json"
       }
     },
     {
       "appKey": "sdkwork-video",
       "appRoot": "sdkwork-video",
-      "configPath": "sdkwork-video/sdkwork.app.config.json",
+      "configPath": "sdkwork-video/agent.app.config.json",
       "tenantId": 100001,
       "organizationId": 0,
       "platformApp": {
@@ -8986,8 +8986,8 @@
       },
       "source": {
         "schemaVersion": 3,
-        "kind": "sdkwork.app",
-        "file": "sdkwork-video/sdkwork.app.config.json"
+        "kind": "agent.app",
+        "file": "sdkwork-video/agent.app.config.json"
       }
     }
   ]

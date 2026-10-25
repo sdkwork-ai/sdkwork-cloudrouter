@@ -421,6 +421,47 @@ fn least_latency_strategy_prefers_the_fastest_measured_account() {
 }
 
 #[test]
+fn non_route_binding_does_not_override_the_group_routing_strategy() {
+    let group_id = 115;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::LeastLatency,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    // The group's least-latency strategy must win: account 3001 is faster but
+    // more expensive, while 3002 is cheaper but slower.
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 3001, "supplier-a", 1, 100)
+            .with_last_latency_ms(Some(10))
+            .with_contract_cost_multiplier(decimal("1.000000")),
+    );
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 3002, "supplier-b", 1, 100)
+            .with_last_latency_ms(Some(500))
+            .with_contract_cost_multiplier(decimal("0.100000")),
+    );
+    // A settlement binding for the same group must not be treated as the
+    // per-key route override (the unique key includes binding_role).
+    catalog.add_api_key(
+        GatewayApiKey::new(API_KEY_ID, group_id, "sk-test", "hash:sk-test")
+            .with_owner(TENANT_ID, ORGANIZATION_ID, USER_ID)
+            .with_account_group_bindings(vec![GatewayApiKeyAccountGroupBinding::new(
+                group_id,
+                "group-115",
+                "standard",
+                1,
+                100,
+            )
+            .with_binding_role("settlement")
+            .with_routing_strategy("least_cost")]),
+    );
+
+    assert_eq!(3001, select_account(&catalog, group_id));
+}
+
+#[test]
 fn least_cost_strategy_uses_contract_group_and_member_multipliers() {
     let group_id = 16;
     let mut catalog = catalog_for_group(account_group(

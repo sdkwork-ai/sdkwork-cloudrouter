@@ -137,7 +137,7 @@ test('migrateLegacyBrowserDevelopmentEnvRecord maps PORTAL_PUBLIC_* to VITE_* wh
 test('ensureCloudRouterBrowserDevelopmentEnv writes .env.development and preserves overrides', () => {
   const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'cloud-router-browser-env-'));
   const applicationRoot = path.join(tempRoot, 'apps', 'sdkwork-cloudrouter-pc');
-  const manifestPath = path.join(tempRoot, 'sdkwork.app.config.json');
+  const manifestPath = path.join(tempRoot, 'agent.app.config.json');
   const profileFilePath = path.join(applicationRoot, '.env.development');
 
   try {
@@ -247,7 +247,7 @@ test('alignCloudLocalGatewayBrowserDevelopmentEnv rewrites stale domain base URL
 test('ensureCloudRouterBrowserDevelopmentEnv binds cloud dev to the local platform gateway', () => {
   const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'cloud-router-browser-env-'));
   const applicationRoot = path.join(tempRoot, 'apps', 'sdkwork-cloudrouter-pc');
-  const manifestPath = path.join(tempRoot, 'sdkwork.app.config.json');
+  const manifestPath = path.join(tempRoot, 'agent.app.config.json');
   const profileFilePath = path.join(applicationRoot, '.env.development');
 
   try {
@@ -332,7 +332,7 @@ test('ensureCloudRouterReleaseEnv writes a token-free .env.release from example 
 
   try {
     writeFileSync(
-      path.join(tempRoot, 'sdkwork.app.config.json'),
+      path.join(tempRoot, 'agent.app.config.json'),
       JSON.stringify({
         app: { key: 'sdkwork-cloudrouter' },
         backend: { appId: 'sdkwork-cloudrouter', tenantId: '100001', organizationId: '0' },
@@ -383,7 +383,7 @@ test('ensureCloudRouterBrowserProductionEnv omits token state and production boo
 
   try {
     writeFileSync(
-      path.join(tempRoot, 'sdkwork.app.config.json'),
+      path.join(tempRoot, 'agent.app.config.json'),
       JSON.stringify({
         app: { key: 'sdkwork-cloudrouter' },
         backend: { appId: 'sdkwork-cloudrouter', tenantId: '100001', organizationId: '0' },
@@ -442,7 +442,7 @@ test('ensureCloudRouterReleaseEnv migrates legacy private edge keys to canonical
 
   try {
     writeFileSync(
-      path.join(tempRoot, 'sdkwork.app.config.json'),
+      path.join(tempRoot, 'agent.app.config.json'),
       JSON.stringify({
         app: { key: 'sdkwork-cloudrouter' },
         backend: { appId: 'sdkwork-cloudrouter', tenantId: '100001', organizationId: '0' },
@@ -488,7 +488,7 @@ test('ensureCloudRouterReleaseEnv replaces retired lifecycle keys and the releas
 
   try {
     writeFileSync(
-      path.join(tempRoot, 'sdkwork.app.config.json'),
+      path.join(tempRoot, 'agent.app.config.json'),
       JSON.stringify({
         app: { key: 'sdkwork-cloudrouter' },
         backend: { appId: 'sdkwork-cloudrouter', tenantId: '100001', organizationId: '0' },
@@ -576,7 +576,7 @@ test('ensureCloudRouterReleaseEnv writes comment-prefixed edge key documentation
 
   try {
     writeFileSync(
-      path.join(tempRoot, 'sdkwork.app.config.json'),
+      path.join(tempRoot, 'agent.app.config.json'),
       JSON.stringify({
         app: { key: 'sdkwork-cloudrouter' },
         backend: { appId: 'sdkwork-cloudrouter', tenantId: '100001', organizationId: '0' },
@@ -648,7 +648,7 @@ test('direct profile CLI rejects unknown profiles before invoking the local sign
   try {
     mkdirSync(applicationRoot, { recursive: true });
     writeFileSync(
-      path.join(tempRoot, 'sdkwork.app.config.json'),
+      path.join(tempRoot, 'agent.app.config.json'),
       JSON.stringify({
         app: { key: 'sdkwork-cloudrouter' },
         backend: { tenantId: '100001', organizationId: '0' },
@@ -690,7 +690,7 @@ test('ensureCloudRouterBrowserDevelopmentEnv refreshes stale bootstrap access to
   const appRoot = path.join(tempRoot, 'apps', 'sdkwork-cloudrouter-pc');
   mkdirSync(appRoot, { recursive: true });
   writeFileSync(
-    path.join(tempRoot, 'sdkwork.app.config.json'),
+    path.join(tempRoot, 'agent.app.config.json'),
     JSON.stringify({
       app: { key: 'sdkwork-cloudrouter' },
       backend: { appId: 'sdkwork-cloudrouter', tenantId: '100001', organizationId: '0' },

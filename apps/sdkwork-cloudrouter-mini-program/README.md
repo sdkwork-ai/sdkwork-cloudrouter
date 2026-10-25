@@ -43,5 +43,5 @@ node ../../../sdkwork-specs/tools/check-frontend-composition.mjs --root ../../..
 ```
 
 The WeChat DevTools CLI is not available in the current environment, so the
-mini-program bundle is not built or previewed here; `sdkwork.app.config.json`
+mini-program bundle is not built or previewed here; `agent.app.config.json`
 records that gap as `artifacts.installConfig.metadata.deferred`.

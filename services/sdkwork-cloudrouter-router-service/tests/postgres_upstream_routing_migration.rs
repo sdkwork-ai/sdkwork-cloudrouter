@@ -59,11 +59,6 @@ async fn baseline_initializes_canonical_upstream_routing_schema() {
             "selected_supplier_id",
             "selected_provider_id",
         ),
-        (
-            "ai_routing_rule",
-            "candidate_account_groups",
-            "candidate_channels",
-        ),
         ("ai_metering_usage", "supplier_id", "provider_id"),
         ("ai_metering_usage", "account_id", "channel_id"),
         (
@@ -85,6 +80,63 @@ async fn baseline_initializes_canonical_upstream_routing_schema() {
     assert!(table_exists(&context.pool, "iam_gateway_api_key_account_group").await);
     assert!(!table_exists(&context.pool, "iam_gateway_api_key_channel_group").await);
     assert!(!table_exists(&context.pool, "ai_metering_usage_service_provider_edge").await);
+
+    // 0049 retires the legacy routing control plane and corrects the seeded
+    // default group that the old seed wrote as weighted.
+    sqlx::raw_sql(
+        r#"
+        INSERT INTO ai_upstream_account_group
+            (id, uuid, tenant_id, organization_id, group_code, group_name, metadata,
+             routing_strategy)
+        VALUES
+            (910001, 'migration-default-group', 100001, 0, 'default-group',
+             'Default Group',
+             '{"itemType":"default_admin_upstream_account_group"}'::jsonb,
+             'weighted')
+        "#,
+    )
+    .execute(&context.pool)
+    .await
+    .unwrap();
+    sqlx::raw_sql(include_str!(
+        "../../../database/migrations/postgres/0049_retire_legacy_routing_control_plane.up.sql"
+    ))
+    .execute(&context.pool)
+    .await
+    .unwrap();
+    let default_strategy = sqlx::query_scalar::<_, String>(
+        "SELECT routing_strategy FROM ai_upstream_account_group WHERE id = 910001",
+    )
+    .fetch_one(&context.pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        "least_cost", default_strategy,
+        "the seeded default group must route price-first"
+    );
+    for table in [
+        "ai_routing_policy",
+        "ai_routing_profile",
+        "ai_routing_rule",
+        "ai_routing_strategy",
+    ] {
+        assert!(
+            !table_exists(&context.pool, table).await,
+            "{table} must be retired by 0049"
+        );
+    }
+    for column in ["policy_id", "profile_id", "rule_id"] {
+        assert!(
+            !column_exists(&context.pool, "ai_routing_decision_log", column).await,
+            "ai_routing_decision_log.{column} must be retired by 0049"
+        );
+    }
+    for column in ["routing_strategy_code", "routing_policy_id"] {
+        assert!(
+            !column_exists(&context.pool, "ai_upstream_account_group", column).await,
+            "ai_upstream_account_group.{column} must be retired by 0049"
+        );
+    }
 
     let fallback_decoy_id = sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(format!(
         "SELECT id FROM {fallback_binding_table}"

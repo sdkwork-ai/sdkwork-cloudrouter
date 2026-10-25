@@ -5,10 +5,10 @@
 -- each other.
 
 UPDATE ai_upstream_account_group
-SET group_name_i18n = jsonb_set(group_name_i18n, '{en-US}', '"账号默认分组"'::jsonb, true)
+SET group_name_i18n = jsonb_set(group_name_i18n, '{en-US}', '"Default Account Group"'::jsonb, true)
 WHERE tenant_id = 100001
   AND organization_id = 0
-  AND group_code = 'standard-group'
+  AND group_code = 'default-group'
   AND deleted_at IS NULL;
 
 UPDATE ai_upstream_account_group

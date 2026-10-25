@@ -23,7 +23,7 @@ const SKIP_FILE_SUFFIXES = [
 ];
 
 const REPO_IDENTITY_FILES = [
-  'sdkwork.app.config.json',
+  'agent.app.config.json',
   'sdkwork.workflow.json',
   'package.json',
   'specs/component.spec.json',

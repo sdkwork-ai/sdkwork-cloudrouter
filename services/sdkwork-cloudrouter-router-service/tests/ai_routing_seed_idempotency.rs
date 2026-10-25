@@ -61,7 +61,6 @@ const SEEDED_TABLES: &[&str] = &[
     "ai_upstream_account_group",
     "ai_upstream_account_group_member",
     "ai_resource_binding",
-    "ai_routing_strategy",
 ];
 
 struct SeedTestContext {

@@ -331,7 +331,7 @@ class AppSeedCatalogStandardTest(unittest.TestCase):
         self.assertIsNone(
             mismatch,
             "data/app/sdkwork-apps.json must be regenerated from all workspace sibling app repositories "
-            f"sdkwork.app.config.json files; first mismatch: {mismatch}",
+            f"agent.app.config.json files; first mismatch: {mismatch}",
         )
 
     def test_app_seed_importer_validates_app_bundle_manifest_before_import(self):

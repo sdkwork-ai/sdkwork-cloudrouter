@@ -7,7 +7,7 @@
 
 **Goal:** Build the Rust-side SDKWork app system as a first-class, installable platform_app-compatible catalog with seed data, installer import, SDK-backed APIs, and frontend service integration.
 
-**Architecture:** `sdkwork.app.config.json` remains the app source of truth; `data/app/sdkwork-apps.json` is the installable seed projection; Rust installer owns database schema creation and idempotent seed import into `appstore_app` and app catalog projections. Public AppCenter reads remain `/app/v3/api/app/store`; management surfaces are added through schema registry -> OpenAPI -> generated SDKs before frontend services consume them.
+**Architecture:** `agent.app.config.json` remains the app source of truth; `data/app/sdkwork-apps.json` is the installable seed projection; Rust installer owns database schema creation and idempotent seed import into `appstore_app` and app catalog projections. Public AppCenter reads remain `/app/v3/api/app/store`; management surfaces are added through schema registry -> OpenAPI -> generated SDKs before frontend services consume them.
 
 **Tech Stack:** Rust, sqlx, axum, SQLite/Postgres, Python unittest quality gates, Node ESM app-standard scripts, generated TypeScript SDKs.
 

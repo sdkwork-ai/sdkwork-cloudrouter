@@ -11,7 +11,7 @@ function readJson(relativePath) {
   return JSON.parse(fs.readFileSync(path.join(ROOT, relativePath), 'utf8').replace(/^\uFEFF/u, ''));
 }
 
-const manifest = readJson('sdkwork.app.config.json');
+const manifest = readJson('agent.app.config.json');
 const rootSpec = readJson('specs/component.spec.json');
 /**
  * ``capabilities.ts`` is authored TypeScript (bare keys, ``as const``, constant

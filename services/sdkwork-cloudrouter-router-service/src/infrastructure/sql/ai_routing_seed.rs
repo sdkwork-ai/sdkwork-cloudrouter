@@ -1270,7 +1270,6 @@ pub async fn import_postgres_ai_routing_seed(
     disable_removed_postgres_resource_groups(&mut tx, &catalog).await?;
     import_postgres_resource_group_items(&mut tx, &catalog).await?;
     import_postgres_default_admin_upstream_topology(&mut tx, &catalog).await?;
-    import_postgres_default_admin_routing_strategies(&mut tx).await?;
 
     // Runs after the groups exist: it attaches the vendor default accounts to
     // the derived vendor-modality groups.
@@ -1423,11 +1422,6 @@ pub async fn postgres_ai_routing_seed_gap(
     if !postgres_default_admin_upstream_topology_complete(pool).await? {
         return Ok(Some(
             "the default admin upstream topology (supplier/endpoint/auth method/supplier resource binding) is incomplete",
-        ));
-    }
-    if !postgres_default_admin_routing_strategies_complete(pool).await? {
-        return Ok(Some(
-            "a bundled routing strategy is absent, disabled or soft-deleted",
         ));
     }
     if !postgres_default_vendor_upstream_accounts_complete(pool).await? {
@@ -1691,37 +1685,6 @@ async fn postgres_default_relay_upstream_accounts_complete(
         .fetch_one(pool)
         .await?;
         if !enabled_with_credential {
-            return Ok(false);
-        }
-    }
-    Ok(true)
-}
-
-/// The bundled default routing strategies must be present so the account-group
-/// `routing_strategy_code` (price_first) resolves to a real strategy.
-async fn postgres_default_admin_routing_strategies_complete(
-    pool: &PgPool,
-) -> Result<bool, sqlx::Error> {
-    for strategy in default_admin_routing_strategies() {
-        let exists = sqlx::query_scalar::<_, bool>(
-            r#"
-            SELECT EXISTS (
-                SELECT 1
-                FROM ai_routing_strategy strategy
-                WHERE strategy.tenant_id = $1
-                  AND strategy.organization_id = $2
-                  AND strategy.strategy_code = $3
-                  AND strategy.status = 1
-                  AND strategy.deleted_at IS NULL
-            )
-            "#,
-        )
-        .bind(DEFAULT_IAM_TENANT_ID)
-        .bind(DEFAULT_IAM_ORGANIZATION_ID)
-        .bind(strategy.code)
-        .fetch_one(pool)
-        .await?;
-        if !exists {
             return Ok(false);
         }
     }
@@ -2577,14 +2540,16 @@ async fn import_postgres_default_admin_upstream_topology(
             INSERT INTO ai_upstream_account_group (
                 id, uuid, tenant_id, organization_id, data_scope, status, metadata,
                 group_code, group_name, group_name_i18n, description, group_type,
-                routing_strategy, routing_strategy_code, fallback_mode, priority, environment,
+                routing_strategy, fallback_mode, priority, environment,
                 pricing_plan_code, cost_multiplier, sale_multiplier,
                 billing_type, allowed_origin, vendor_code, modalities, tags,
                 is_default
             ) VALUES (
                 $1, $2, $3, $4, $5, 1, $6::jsonb,
                 $7, $8, $9::jsonb, $10, $11,
-                'weighted', 'price_first', 'sequential', $12, 1,
+                -- `routing_strategy` is the closed enum the selector reads;
+                -- price-first is the documented default.
+                'least_cost', 'sequential', $12, 1,
                 'standard', 1.000000000000, 1.000000000000,
                 1, '[]'::jsonb, $13, $14::jsonb, $15::jsonb,
                 $16
@@ -2594,9 +2559,11 @@ async fn import_postgres_default_admin_upstream_topology(
                 group_name_i18n = EXCLUDED.group_name_i18n,
                 description = EXCLUDED.description,
                 group_type = EXCLUDED.group_type,
-                routing_strategy = EXCLUDED.routing_strategy,
-                routing_strategy_code = EXCLUDED.routing_strategy_code,
-                fallback_mode = EXCLUDED.fallback_mode,
+                -- Routing strategy and fallback mode are operator-owned
+                -- configuration. A re-seed (startup repair, upgrade) must not
+                -- silently revert them to the bundled default; only a
+                -- missing/soft-deleted group is re-created with the price-first
+                -- default.
                 priority = EXCLUDED.priority,
                 environment = EXCLUDED.environment,
                 pricing_plan_code = EXCLUDED.pricing_plan_code,
@@ -4605,125 +4572,6 @@ fn seeded_supplier_sort_order(vendor_code: &str) -> i32 {
         .unwrap_or(i32::MAX)
 }
 
-/// Seeds the default routing strategies that the account-group
-/// `routing_strategy_code` references. The price-first strategy is the
-/// default so a fresh install routes to the cheapest callable account without
-/// any admin configuration. Every strategy in `ai_routing_strategy` is
-/// idempotently upserted by `strategy_code`.
-async fn import_postgres_default_admin_routing_strategies(
-    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
-) -> Result<(), sqlx::Error> {
-    let catalog = AiRoutingSeedCatalog::load().map_err(json_decode_error)?;
-    for strategy in default_admin_routing_strategies() {
-        let strategy_id = default_admin_routing_strategy_id(strategy.code);
-        let strategy_uuid = default_admin_routing_strategy_uuid(strategy.code);
-        let metadata = seed_metadata(
-            &catalog,
-            "default_admin_routing_strategy",
-            strategy.code,
-            Value::Null,
-        );
-        sqlx::query(
-            r#"
-            INSERT INTO ai_routing_strategy (
-                id, uuid, tenant_id, organization_id, data_scope, status, metadata,
-                strategy_code, strategy_name, strategy_name_i18n, description,
-                strategy_type, params, priority, enabled, is_default, tags
-            ) VALUES (
-                $1, $2, $3, $4, $5, 1, $6::jsonb,
-                $7, $8, $9::jsonb, $10,
-                $11, $12::jsonb, $13, $14, $15, $16::jsonb
-            )
-            ON CONFLICT (tenant_id, organization_id, strategy_code) DO UPDATE SET
-                strategy_name = EXCLUDED.strategy_name,
-                strategy_name_i18n = EXCLUDED.strategy_name_i18n,
-                description = EXCLUDED.description,
-                strategy_type = EXCLUDED.strategy_type,
-                params = EXCLUDED.params,
-                priority = EXCLUDED.priority,
-                enabled = EXCLUDED.enabled,
-                is_default = EXCLUDED.is_default,
-                tags = EXCLUDED.tags,
-                metadata = EXCLUDED.metadata,
-                status = EXCLUDED.status,
-                deleted_at = NULL,
-                deleted_by = NULL
-            "#,
-        )
-        .bind(strategy_id)
-        .bind(strategy_uuid)
-        .bind(DEFAULT_IAM_TENANT_ID)
-        .bind(DEFAULT_IAM_ORGANIZATION_ID)
-        .bind(DEFAULT_ADMIN_DATA_SCOPE)
-        .bind(&metadata)
-        .bind(strategy.code)
-        .bind(strategy.name)
-        .bind(strategy.name_i18n)
-        .bind(strategy.description)
-        .bind(strategy.strategy_type)
-        .bind(strategy.params)
-        .bind(strategy.priority)
-        .bind(strategy.enabled)
-        .bind(strategy.is_default)
-        .bind(strategy.tags)
-        .execute(&mut **tx)
-        .await?;
-    }
-    Ok(())
-}
-
-/// Built-in default routing strategies (see `route_strategy.rs` for the
-/// strategy-pattern implementations these codes reference).
-struct DefaultAdminRoutingStrategySeed {
-    code: &'static str,
-    name: &'static str,
-    name_i18n: &'static str,
-    description: &'static str,
-    strategy_type: &'static str,
-    params: &'static str,
-    priority: i32,
-    enabled: bool,
-    is_default: bool,
-    tags: &'static str,
-}
-
-fn default_admin_routing_strategies() -> Vec<DefaultAdminRoutingStrategySeed> {
-    vec![DefaultAdminRoutingStrategySeed {
-        code: "price_first",
-        name: "Price First",
-        name_i18n: r#"{"en-US":"Price First","zh-CN":"价格优先"}"#,
-        description: "Prefer the cheapest callable upstream account for the request.",
-        strategy_type: "price_first",
-        params: r#"{}"#,
-        priority: 100,
-        enabled: true,
-        is_default: true,
-        tags: r#"["system"]"#,
-    }]
-}
-
-fn default_admin_routing_strategy_id(code: &str) -> i64 {
-    stable_seed_id(
-        "sdk-ai-routing-strategy-id",
-        &[
-            &DEFAULT_IAM_TENANT_ID.to_string(),
-            &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
-            code,
-        ],
-    )
-}
-
-fn default_admin_routing_strategy_uuid(code: &str) -> String {
-    stable_seed_uuid(
-        "sdk-ai-routing-strategy",
-        &[
-            &DEFAULT_IAM_TENANT_ID.to_string(),
-            &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
-            code,
-        ],
-    )
-}
-
 fn default_admin_upstream_supplier_id(account: &DefaultAdminUpstreamAccountSeed) -> i64 {
     stable_seed_id(
         "sdk-ai-upstream-supplier-id",
@@ -5878,51 +5726,6 @@ mod tests {
                 group.resource_group_code
             );
         }
-    }
-
-    #[test]
-    fn default_routing_strategies_seed_a_single_price_first_default() {
-        let strategies = default_admin_routing_strategies();
-        assert_eq!(1, strategies.len());
-        let price_first = &strategies[0];
-        assert_eq!("price_first", price_first.code);
-        assert_eq!("price_first", price_first.strategy_type);
-        assert!(price_first.is_default);
-        assert!(price_first.enabled);
-        assert_eq!(100, price_first.priority);
-        assert_eq!(r#"{}"#, price_first.params);
-    }
-
-    #[test]
-    fn default_routing_strategy_ids_are_stable_and_unique() {
-        let strategies = default_admin_routing_strategies();
-        let ids: BTreeSet<i64> = strategies
-            .iter()
-            .map(|strategy| default_admin_routing_strategy_id(strategy.code))
-            .collect();
-        let uuids: BTreeSet<String> = strategies
-            .iter()
-            .map(|strategy| default_admin_routing_strategy_uuid(strategy.code))
-            .collect();
-        assert_eq!(strategies.len(), ids.len());
-        assert_eq!(strategies.len(), uuids.len());
-        // Deterministic ids never change across runs.
-        assert_eq!(
-            default_admin_routing_strategy_id("price_first"),
-            default_admin_routing_strategy_id("price_first")
-        );
-    }
-
-    #[test]
-    fn default_account_group_routes_price_first_by_default() {
-        // The seeded default group must carry the strategy code that resolves
-        // to the seeded price_first strategy, keeping install-time routing
-        // behavior aligned with the strategy registry default.
-        let strategy_codes: BTreeSet<&str> = default_admin_routing_strategies()
-            .iter()
-            .map(|strategy| strategy.code)
-            .collect();
-        assert!(strategy_codes.contains("price_first"));
     }
 
     #[test]

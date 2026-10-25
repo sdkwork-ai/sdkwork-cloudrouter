@@ -260,9 +260,9 @@ export function ensureApplicationEnv({
 }
 
 export function readApplicationManifest(workspaceRoot) {
-  const manifestPath = path.join(workspaceRoot, 'sdkwork.app.config.json');
+  const manifestPath = path.join(workspaceRoot, 'agent.app.config.json');
   if (!existsSync(manifestPath)) {
-    throw new Error(`sdkwork.app.config.json not found at ${manifestPath}`);
+    throw new Error(`agent.app.config.json not found at ${manifestPath}`);
   }
   return JSON.parse(readFileSync(manifestPath, 'utf8'));
 }
@@ -270,7 +270,7 @@ export function readApplicationManifest(workspaceRoot) {
 export function resolveDefaultPcApplicationRoot(workspaceRoot, manifest = readApplicationManifest(workspaceRoot)) {
   const appKey = String(manifest?.app?.key ?? '').trim();
   if (!appKey) {
-    throw new Error('sdkwork.app.config.json is missing app.key');
+    throw new Error('agent.app.config.json is missing app.key');
   }
   return path.join(workspaceRoot, 'apps', `${appKey}-pc`);
 }

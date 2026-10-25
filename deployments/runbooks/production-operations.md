@@ -44,4 +44,4 @@ tenant or object authorization; `route_explain` is closed in the worktree
 
 ## Supply chain
 
-Release artifacts should publish SHA-256 checksums. Enable `security.checksumRequired` in `sdkwork.app.config.json` before customer-facing distribution.
+Release artifacts should publish SHA-256 checksums. Enable `security.checksumRequired` in `agent.app.config.json` before customer-facing distribution.

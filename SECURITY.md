@@ -81,8 +81,8 @@ Production deployments MUST keep the following defaults enabled:
 | `X-Forwarded-*` trust | disabled | `SDKWORK_CLOUDROUTER_EDGE_TRUST_FORWARDED_HEADERS` |
 | Local tool API | disabled | `PORTAL_PUBLIC_TOOL_API_ENABLED` |
 | Portal tool API rate limit | 120 req / 60 s per IP | `SDKWORK_CLOUDROUTER_TOOL_API_RATE_LIMIT_*` |
-| Artifact signature | required | `sdkwork.app.config.json` `security.signatureRequired` |
-| SBOM | required | `sdkwork.app.config.json` `security.sbomRequired` |
+| Artifact signature | required | `agent.app.config.json` `security.signatureRequired` |
+| SBOM | required | `agent.app.config.json` `security.sbomRequired` |
 | Forwarded header trust | off | `[server].trust_forwarded_headers` |
 | Provider relay HTTPS | enforced in production | `[provider_relay.openai].base_url` must be HTTPS; `hyper_rustls::HttpsConnectorBuilder::https_only()` rejects plaintext HTTP upstreams (H-1) |
 | Provider relay SSRF protection | on | `UpstreamProviderEndpoint::new` resolves upstream host IPs and blocks loopback/private/link-local/unspecified/CGN `100.64.0.0/10`/IPv6 ULA `fc00::/7` ranges (C-1) |

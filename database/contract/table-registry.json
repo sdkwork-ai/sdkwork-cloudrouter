@@ -147,38 +147,6 @@
       "system_of_record": true
     },
     {
-      "table_name": "ai_routing_policy",
-      "owner": "ai-routing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "tenant_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ai_routing_profile",
-      "owner": "ai-routing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "tenant_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ai_routing_rule",
-      "owner": "ai-routing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "tenant_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ai_routing_strategy",
-      "owner": "ai-routing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "tenant_entity",
-      "system_of_record": true
-    },
-    {
       "table_name": "ai_runtime_artifact",
       "owner": "router-service",
       "compliance_level": "L2",

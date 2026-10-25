@@ -684,6 +684,11 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         api_key
             .effective_account_group_bindings()
             .iter()
+            // Only the route binding carries routing semantics. The binding
+            // table's unique key includes `binding_role`, so a settlement (or
+            // any other) binding for the same group must not override the
+            // per-key routing strategy.
+            .filter(|binding| binding.binding_role.trim().eq_ignore_ascii_case("route"))
             .find(|binding| binding.account_group_id == account_group_id)
             .and_then(|binding| {
                 crate::application::resolve_account_routing_strategy(&binding.routing_strategy)

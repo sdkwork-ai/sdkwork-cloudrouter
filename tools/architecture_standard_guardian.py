@@ -58,7 +58,7 @@ class ArchitectureStandardGuardian:
         'CLAUDE.md',
         'GEMINI.md',
         'CODEX.md',
-        'sdkwork.app.config.json',
+        'agent.app.config.json',
         'package.json',
         '.sdkwork/README.md',
         '.sdkwork/.gitignore',

@@ -18,7 +18,7 @@
     "generated": false,
     "private": true,
     "manifests": [
-      "sdkwork.app.config.json",
+      "agent.app.config.json",
       "package.json"
     ]
   },
@@ -26,7 +26,7 @@
     {
       "file": "APP_MANIFEST_SPEC.md",
       "path": "../../../sdkwork-specs/APP_MANIFEST_SPEC.md",
-      "purpose": "sdkwork.app.config.json application registration rules."
+      "purpose": "agent.app.config.json application registration rules."
     },
     {
       "file": "APPLICATION_SPEC.md",
@@ -152,7 +152,7 @@
   "contracts": {
     "publicExports": [],
     "runtimeEntrypoints": [
-      "sdkwork.app.config.json",
+      "agent.app.config.json",
       "package.json#scripts.dev",
       "package.json#scripts.build",
       "package.json#scripts.start",
@@ -261,7 +261,7 @@
     ],
     "events": [],
     "configKeys": [
-      "sdkwork.app.config.json"
+      "agent.app.config.json"
     ],
     "routeManifest": null,
     "dependencyApiSurfaces": [],

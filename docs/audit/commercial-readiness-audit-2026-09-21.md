@@ -282,7 +282,7 @@ test live_admin_catalog_list_products_and_skus_execute ... FAILED
 
 | # | 文档声明 | 实现事实 | 判定 |
 |---|---|---|---|
-| **D-1** | ~~`PRD.md:239` "The application manifest remains `preLaunch: true`"~~ | **❌ 本项撤回：原判为误报。** `sdkwork.app.config.json` 的 `publish.preLaunch` **确实存在且为 `true`**，`publish.status = "DRAFT"`。我初判时只读了 manifest 的**顶层键**，漏了嵌套的 `publish` 对象。PRD 表述**正确**，无需修改（已回滚我的误改）。 | **撤回：PRD 正确** |
+| **D-1** | ~~`PRD.md:239` "The application manifest remains `preLaunch: true`"~~ | **❌ 本项撤回：原判为误报。** `agent.app.config.json` 的 `publish.preLaunch` **确实存在且为 `true`**，`publish.status = "DRAFT"`。我初判时只读了 manifest 的**顶层键**，漏了嵌套的 `publish` 对象。PRD 表述**正确**，无需修改（已回滚我的误改）。 | **撤回：PRD 正确** |
 | **D-2** | `TECH_ARCHITECTURE.md:175` "Conversation lists use bounded **offset pagination** for their low-volume navigation surface" | `app_chat_store.rs:82-112` 实为 `(updated_at, id)` DESC **keyset cursor**，注释明写 "No OFFSET and no total window"，`LIMIT page_size + 1` | 文档失实（实现更优，**已改文档**） |
 | **D-3** | `TECH_ARCHITECTURE.md:52-56` "**Server startup rejects SQLite before database initialization**" | 拒绝**确实存在**，但位置与措辞不符：由各服务端入口的 `require_postgres_server_database` 在**解析出非 Postgres 引擎时**拒绝（`runtime.rs:2500` 等 5 处），**不是**"在数据库初始化之前"这一独立阶段 | 措辞过度声明（**已改文档**为准确描述） |
 

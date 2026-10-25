@@ -137,8 +137,8 @@ function writeFixtureFile(rootDir, relativePath, contents = '// fixture\n') {
 function seedMinimalCloudRouterWorkspaceFixture(fixtureRoot) {
   writeFixtureFile(
     fixtureRoot,
-    'sdkwork.app.config.json',
-    readFileSync(path.join(workspaceRoot, 'sdkwork.app.config.json'), 'utf8'),
+    'agent.app.config.json',
+    readFileSync(path.join(workspaceRoot, 'agent.app.config.json'), 'utf8'),
   );
   writeFixtureFile(
     fixtureRoot,
