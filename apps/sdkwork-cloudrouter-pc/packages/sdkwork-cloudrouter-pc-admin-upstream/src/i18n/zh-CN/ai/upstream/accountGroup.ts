@@ -65,6 +65,7 @@ export const upstreamAccountGroupZhCnMessages = {
   'admin.upstream.accountGroup.strategy.roundRobin': '轮询',
   'admin.upstream.accountGroup.strategy.leastLatency': '最低延迟',
   'admin.upstream.accountGroup.strategy.leastCost': '最低成本',
+  'admin.upstream.accountGroup.strategy.qualityFirst': '质量优先',
   'admin.upstream.accountGroup.strategy.failover': '故障转移',
   'admin.upstream.accountGroup.fallback.none': '不转移',
   'admin.upstream.accountGroup.fallback.sequential': '顺序转移',

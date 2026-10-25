@@ -150,6 +150,6 @@
     "architectureSpec": "HARMONY_APP_MOBILE_ARCHITECTURE_SPEC.md",
     "runtimeTarget": "harmony-native",
     "deploymentConfig": "etc/sdkwork.deployment.config.json",
-    "releaseAuthority": "../../sdkwork.workflow.json"
+    "releaseAuthority": "../../agent.workflow.json"
   }
 }

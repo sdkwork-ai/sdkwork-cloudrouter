@@ -2,7 +2,7 @@ name: Package Application
 
 # Thin reusable workflow call (GITHUB_WORKFLOW_SPEC.md section 2). All build,
 # package, validate, sign, SBOM, and release-upload behavior lives in
-# sdkwork.workflow.json lifecycle steps and in the sdkwork-github-workflow
+# agent.workflow.json lifecycle steps and in the sdkwork-github-workflow
 # framework. Do not add matrix, upload, changelog, or attestation logic here.
 #
 # DISPATCH INPUT BUDGET - GitHub rejects the whole file above 25
@@ -139,7 +139,7 @@ jobs:
   package:
     uses: sdkwork-ai/sdkwork-github-workflow/.github/workflows/sdkwork-package.yml@2121cc5f1385e8e561171d01fbb71f11adbda187
     with:
-      config_path: sdkwork.workflow.json
+      config_path: agent.workflow.json
       tag: ${{ github.event.inputs.tag || github.event.release.tag_name || github.ref_name }}
       package_version: ${{ github.event.inputs.package_version || '' }}
       deployment_profile: ${{ github.event.inputs.deployment_profile || 'all' }}
@@ -151,7 +151,7 @@ jobs:
       format: ${{ github.event.inputs.format || 'all' }}
       publish_release: true
       upload_artifact: true
-      # Deployment is opt-in only. `sdkwork.workflow.json` declares no
+      # Deployment is opt-in only. `agent.workflow.json` declares no
       # deployment environments, and the framework's plan job aborts the whole
       # package matrix with "Deployment was requested but no deployment matched
       # the selected package matrix" when `deploy` is true and the deployment

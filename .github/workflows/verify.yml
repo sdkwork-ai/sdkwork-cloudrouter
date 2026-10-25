@@ -16,7 +16,7 @@ permissions:
 # `actions/checkout` of this repository alone leaves them missing, so
 # `cargo metadata`, `pnpm install`, and the Playwright e2e webServer all fail
 # with `No such file or directory`. Every job below therefore materializes the
-# dependency set declared by `sdkwork.workflow.json` before it builds.
+# dependency set declared by `agent.workflow.json` before it builds.
 #
 # Materialization mirrors the packaging workflow exactly: check out the
 # workflow framework, ask it for the dependency checkout plan, then run the

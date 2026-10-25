@@ -144,6 +144,6 @@
     "standardOwner": "sdkwork-cloudrouter",
     "initializedAt": "2026-09-17T00:00:00.000Z",
     "deploymentConfig": "etc/sdkwork.deployment.config.json",
-    "releaseAuthority": "../../sdkwork.workflow.json"
+    "releaseAuthority": "../../agent.workflow.json"
   }
 }

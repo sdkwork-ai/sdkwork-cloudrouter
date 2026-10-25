@@ -566,7 +566,7 @@ No task may replace these chains with direct edits to generated output.
       Account acknowledgement or explicit reconciliation result is durable.
 - [ ] Remove existing direct `commerce_account`/ledger mutation from Cloud Router after Account parity
       and migration checks pass; prove the database role cannot write Account-owned tables.
-- [ ] Pin the approved Account commit in `sdkwork.workflow.json`/candidate dependency evidence and
+- [ ] Pin the approved Account commit in `agent.workflow.json`/candidate dependency evidence and
       verify standalone plus cloud composition uses that exact source revision.
 - [ ] Run concurrency, failure-injection, process-kill, outbox replay, statement reconciliation,
       PostgreSQL isolation, and SQLite parity tests.
@@ -697,7 +697,7 @@ No task may replace these chains with direct edits to generated output.
 ## Task 17: Release, Deployment, Egress, And Recovery Must Fail Closed
 
 **Files:**
-- Modify: `.github/workflows/package.yml`, `.github/workflows/verify.yml`, `sdkwork.workflow.json`
+- Modify: `.github/workflows/package.yml`, `.github/workflows/verify.yml`, `agent.workflow.json`
 - Modify: release/SBOM/checksum/signing/provenance scripts
 - Modify: Kubernetes manifests and deployment validator wiring
 - Modify: `deployments/runbooks/disaster-recovery-plan.md`
@@ -712,7 +712,7 @@ No task may replace these chains with direct edits to generated output.
 - [ ] Pin actions, dependencies, base images, and production images by immutable commit/digest. Missing
       tools or credentials fail required targets.
 - [ ] Pin the reviewed `sdkwork-account` and `sdkwork-models` prerequisite commits in
-      `sdkwork.workflow.json`, release checkout evidence, Cargo/package resolution, SBOM, and
+      `agent.workflow.json`, release checkout evidence, Cargo/package resolution, SBOM, and
       provenance; a mutable sibling working directory is not release evidence.
 - [ ] Wire `deploy:validate` into root check/CI and validate rendered NetworkPolicy, least privilege,
       secrets, probes, disruption, rollout, rollback, and resource limits.

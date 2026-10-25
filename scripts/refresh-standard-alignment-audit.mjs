@@ -84,7 +84,7 @@ function lineCount(rel) {
 
 function collectIdentityFacts() {
   const appConfig = readJson(join(REPO_ROOT, "agent.app.config.json"));
-  const workflow = readJson(join(REPO_ROOT, "sdkwork.workflow.json"));
+  const workflow = readJson(join(REPO_ROOT, "agent.workflow.json"));
   return {
     appKey: appConfig.app?.key,
     version: appConfig.release?.currentVersion,
@@ -411,7 +411,7 @@ function collectSbomFacts() {
 }
 
 function collectSignStepFacts() {
-  const workflowPath = "sdkwork.workflow.json";
+  const workflowPath = "agent.workflow.json";
   const workflow = readJson(join(REPO_ROOT, workflowPath));
   const signSteps = (workflow.lifecycle?.sign) || [];
   const isPlaceholder = signSteps.some(

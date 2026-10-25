@@ -299,8 +299,8 @@ CARGO_INCREMENTAL=0 cargo test -j 2 -p sdkwork-cloudrouter-edge-runtime --test e
 ### 未因本次改动引入的既存问题（已核实，不属本议题）
 
 - 工作区 `check:workflow` 报 3 处 `RELEASE_DEPENDENCY_MISSING` / `WORKFLOW_JSON_MISSING`
-  （`sdkwork-sdk-generator` 缺 `sdkwork.workflow.json`；`sdkwork-video-cut` 缺 4 个、
-  `sdkwork-web-framework` 缺 5 个 release 依赖）。三仓 `sdkwork.workflow.json` **均未被本次
+  （`sdkwork-sdk-generator` 缺 `agent.workflow.json`；`sdkwork-video-cut` 缺 4 个、
+  `sdkwork-web-framework` 缺 5 个 release 依赖）。三仓 `agent.workflow.json` **均未被本次
   改动触碰**（`git status` 无该文件），其工作区本身带大量无关 `M`（`Cargo.toml` 族）；
   属跨仓既存门禁债，按任务范围纪律只记录、不擅自处置。
 

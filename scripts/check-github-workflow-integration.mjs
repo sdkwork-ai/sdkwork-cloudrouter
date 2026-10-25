@@ -8,7 +8,7 @@
 //
 //   1. .github/workflows/package.yml stays a thin reusable workflow call.
 //   2. dependency_refs_json is valid JSON after YAML folding.
-//   3. dependency_refs_json covers exactly the sdkwork.workflow.json
+//   3. dependency_refs_json covers exactly the agent.workflow.json
 //      dependencies[].refInput set, and every entry keeps the
 //      github.event.inputs.<input> || vars.<REF> fallback pair.
 //   4. Every github.event.inputs.<name> reference has a matching
@@ -24,7 +24,7 @@ import process from 'node:process';
 
 const REPO_ROOT = resolveRoot(process.argv.slice(2));
 const PACKAGE_WORKFLOW = path.join(REPO_ROOT, '.github', 'workflows', 'package.yml');
-const WORKFLOW_CONFIG = path.join(REPO_ROOT, 'sdkwork.workflow.json');
+const WORKFLOW_CONFIG = path.join(REPO_ROOT, 'agent.workflow.json');
 const APP_CONFIG = path.join(REPO_ROOT, 'agent.app.config.json');
 
 const REUSABLE_WORKFLOW =
@@ -108,7 +108,7 @@ function resolveExpressions(text, values = {}) {
 }
 
 const packageWorkflow = readText(PACKAGE_WORKFLOW, '.github/workflows/package.yml');
-const workflow = readJson(WORKFLOW_CONFIG, 'sdkwork.workflow.json');
+const workflow = readJson(WORKFLOW_CONFIG, 'agent.workflow.json');
 const appConfig = readJson(APP_CONFIG, 'agent.app.config.json');
 
 if (packageWorkflow !== null && workflow !== null && appConfig !== null) {
@@ -119,7 +119,7 @@ if (packageWorkflow !== null && workflow !== null && appConfig !== null) {
     fail('reusable workflow ref must be pinned to a commit or version tag, got ' + reusableMatch[1]);
   }
   if (!/config_path:\s*sdkwork\.workflow\.json\s*$/mu.test(packageWorkflow)) {
-    fail('package.yml must pass config_path: sdkwork.workflow.json');
+    fail('package.yml must pass config_path: agent.workflow.json');
   }
   const jobsIndex = packageWorkflow.search(/^jobs:\s*$/mu);
   const jobsSection = jobsIndex >= 0 ? packageWorkflow.slice(jobsIndex) : '';
@@ -192,7 +192,7 @@ if (packageWorkflow !== null && workflow !== null && appConfig !== null) {
       }
       for (const key of Object.keys(refs)) {
         if (!declared.has(key)) {
-          fail('dependency_refs_json passes ' + key + ', which sdkwork.workflow.json does not declare as a refInput');
+          fail('dependency_refs_json passes ' + key + ', which agent.workflow.json does not declare as a refInput');
         }
       }
     }
@@ -201,7 +201,7 @@ if (packageWorkflow !== null && workflow !== null && appConfig !== null) {
   const currentVersion = appConfig.release?.currentVersion;
   const defaultVersion = workflow.release?.defaultVersion;
   if (typeof currentVersion === 'string' && typeof defaultVersion === 'string' && currentVersion !== defaultVersion) {
-    fail('agent.app.config.json release.currentVersion (' + currentVersion + ') must match sdkwork.workflow.json release.defaultVersion (' + defaultVersion + ')');
+    fail('agent.app.config.json release.currentVersion (' + currentVersion + ') must match agent.workflow.json release.defaultVersion (' + defaultVersion + ')');
   }
   if (typeof currentVersion === 'string') {
     const tagInput = declaredInputs.get('tag');

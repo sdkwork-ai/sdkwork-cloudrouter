@@ -452,7 +452,7 @@ pipeline from the declarative plan. Release gates run the content standard
 checker in CI (`.github/workflows/verify.yml`).
 - The standalone container image is built and pushed once per architecture to
   `registry.sdkwork.com/apps/sdkwork-cloudrouter:<version>` by the packaging
-  workflow: the publication lives in the `sdkwork.workflow.json`
+  workflow: the publication lives in the `agent.workflow.json`
   `lifecycle.package` step, authenticated with the
   `SDKWORK_CONTAINER_REGISTRY_USERNAME` / `SDKWORK_CONTAINER_REGISTRY_PASSWORD`
   reusable-workflow secrets, and `lifecycle.validate` fails the release when
@@ -479,7 +479,7 @@ checker in CI (`.github/workflows/verify.yml`).
   single-container \`standalone\` unit and the \`cloud\` image/orchestration
   bundle. They differ only by build input — the portal dist tree
   (\`dist/<profile>/prod\`) and the \`DEPLOYMENT_PROFILE\` build arg — so the same
-  Dockerfile and the same \`sdkwork.workflow.json\` lifecycle produce both:
+  Dockerfile and the same \`agent.workflow.json\` lifecycle produce both:
 
   | Profile | Image tag | Release assets |
   | --- | --- | --- |

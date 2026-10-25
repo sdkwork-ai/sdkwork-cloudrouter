@@ -24,7 +24,7 @@ const SKIP_FILE_SUFFIXES = [
 
 const REPO_IDENTITY_FILES = [
   'agent.app.config.json',
-  'sdkwork.workflow.json',
+  'agent.workflow.json',
   'package.json',
   'specs/component.spec.json',
   'specs/naming-migration.manifest.json',

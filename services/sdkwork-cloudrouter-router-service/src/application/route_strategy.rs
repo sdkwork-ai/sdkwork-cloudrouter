@@ -4,8 +4,8 @@
 //! ([`crate::domain::UpstreamAccountRoutingStrategy`]). Its two configuration
 //! sources are:
 //!
-//! * `ai_upstream_account_group.routing_strategy` — the group default;
-//! * `iam_gateway_api_key_account_group.routing_strategy` — an optional
+//! * `ai_upstream_account_group.routing_strategy` - the group default;
+//! * `iam_gateway_api_key_account_group.routing_strategy` - an optional
 //!   per-API-key override scoped to one bound group.
 //!
 //! There is deliberately no strategy registry or strategy parameter table: the
@@ -24,9 +24,7 @@ use crate::domain::UpstreamAccountRoutingStrategy;
 /// silently selecting a different strategy. `sticky` and `auto` are not
 /// selection strategies: sticky is resolved by the sticky interceptor before
 /// planning, and `auto` means "follow the group default" at the binding layer.
-pub fn resolve_account_routing_strategy(
-    code: &str,
-) -> Option<UpstreamAccountRoutingStrategy> {
+pub fn resolve_account_routing_strategy(code: &str) -> Option<UpstreamAccountRoutingStrategy> {
     match code.trim().to_ascii_lowercase().as_str() {
         "weighted" => Some(UpstreamAccountRoutingStrategy::Weighted),
         "round_robin" | "roundrobin" => Some(UpstreamAccountRoutingStrategy::RoundRobin),

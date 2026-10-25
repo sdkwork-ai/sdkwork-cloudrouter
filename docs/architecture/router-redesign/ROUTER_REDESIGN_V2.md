@@ -10,18 +10,26 @@
 
 > 本小节随每次实施迭代追加，避免蓝本与实际漂移。
 
-### 2026-10-25 迭代（路由规则与路由数据库设计复核）
-复核确认 `ai_upstream_account_group.routing_strategy` 与
-`iam_gateway_api_key_account_group.routing_strategy` 是运行期真正被 selector /
-planner 消费的两个策略来源；`ai_routing_strategy` 与
-`ai_upstream_account_group.routing_strategy_code` 目前只是旁路标注，没有读路径。
-本轮修复：
-- **默认分组并非价格优先**：种子写入 `routing_strategy='weighted'` +
-  `routing_strategy_code='price_first'`，而 selector 只读 `routing_strategy`，
-  新装默认按权重而不是最低价选号。种子改为 `least_cost`，并停止在
-  `ON CONFLICT` 中覆盖运维已配置的 `routing_strategy` / `fallback_mode`；
-  新增 `0049_align_default_group_price_first` 收敛既有安装，并让管理端
-  create/update 同步维护 `routing_strategy_code` 标注。
+### 2026-10-25 迭代（路由规则与路由数据库设计升级）
+复核确认运行期只有两个策略来源：`ai_upstream_account_group.routing_strategy`
+（组默认）与 `iam_gateway_api_key_account_group.routing_strategy`（Key 级覆盖）。
+`ai_routing_strategy` 表、`ai_upstream_account_group.routing_strategy_code`、
+`routing_policy_id` 以及旧 `ai_routing_policy/profile/rule` 都没有读路径，已按“单一
+策略真源”完成退役。本轮修复：
+- **策略模型收敛**：策略是编译期封闭枚举
+  `UpstreamAccountRoutingStrategy`（weighted / round_robin / least_latency /
+  least_cost / quality_first / failover），组默认值改为 `least_cost`，API 创建
+  默认值同步改为 `least_cost`，组 CHECK 放开 `quality_first`。
+- **默认分组并非价格优先**：旧种子写入 `routing_strategy='weighted'`，新装默认
+  按权重而不是最低价选号。种子改为 `least_cost`，并停止在 `ON CONFLICT` 中覆盖
+  运维已配置的策略；`0049_retire_legacy_routing_control_plane` 收敛既有安装。
+- **删除重复/死策略配置**：移除 `ai_routing_strategy` 表、`routing_strategy_code`
+  与 `routing_policy_id` 列、`ai_routing_policy/profile/rule` 三表，以及
+  `ai_routing_decision_log.policy_id/profile_id/rule_id` 死列。`route_strategy`
+  模块只保留 code → 枚举的单一映射，不再维护并行策略注册表。
+- **契约同步**：`route_explain` 的 `x-read-sources`、响应 DTO 字段
+  `policyId/ruleId/policySnapshotVersion` 从 frontend field contract、OpenAPI、
+  生成 SDK 中全部移除；`quality_first` 进入组策略契约。
 - **sticky 行身份错误**：`ai_upstream_object_route` 的 INSERT 把
   `request_id` 绑定进 `uuid`，同一请求提交多个粘滞对象时会撞
   `uk_ai_upstream_object_route_uuid`；改为用对象键哈希作为稳定的行身份，
@@ -35,16 +43,6 @@ planner 消费的两个策略来源；`ai_routing_strategy` 与
   key 级路由策略。
 - **遗留引用**：locale 种子仍指向已退役的 `standard-group`，已改为
   `default-group`，并修正 en-US 名称。
-
-仍未关闭（需单独评审后执行，不在本轮做破坏性 DDL）：
-- `ai_routing_policy` / `ai_routing_profile` / `ai_routing_rule` 三表、
-  `ai_routing_decision_log.policy_id/profile_id/rule_id`、
-  `ai_upstream_account_group.routing_policy_id` 仍存在，但已无代码读路径；
-  `route_explain` 的 OpenAPI `x-read-sources` 仍错误列出这两张已退役表。
-- `ai_routing_strategy` 仍由种子写入但 selector 不消费；要么接入策略解析，
-  要么按 A4 决策删除，不能继续以“唯一策略配置表”自居。
-- `ck_ai_upstream_account_group_routing_strategy` 仍拒绝 `quality_first`，
-  而领域枚举/planner 已支持该策略，需产品确认后统一契约。
 
 ### 2026-08-23 迭代（第三轮：死字段链清理 + 死契约引用清理）
 审计确认三处安全可清理的历史债务，已完整清理并回归：
@@ -61,6 +59,10 @@ planner 消费的两个策略来源；`ai_routing_strategy` 与
 - **回归**：router-service lib 376 tests 全绿；`sdkwork-models` catalog-service / contract-service / catalog-repository 编译通过。
 
 ### A4 退役完成（2026-08-22 执行）
+> **更正（2026-10-25）**：本节的 DROP 声明当时并未真正进入 baseline；三表一直保留到
+> `0049_retire_legacy_routing_control_plane` 才删除。以下“被 `ai_routing_strategy` +
+> `routing_strategy_code` 取代”的表述也已过时：这两个对象同样没有读路径，已在同一
+> 迁移中退役；现行真源是组 `routing_strategy` + API Key 绑定覆盖。
 审计确认 `ai_routing_policy/profile/rule` 三表在**路由排序层已被 `ai_routing_strategy` + 账户组 `routing_strategy_code` 取代**（软依赖，空表回退可用）。退役已完整执行：
 - **下线 `app_routing_strategy` 遗留 API + store**（无 OpenAPI 契约、无前端调用、无测试覆盖，是唯一活跃写路径）：删除 `api/app_routing_strategy.rs`、`ports/app_routing_strategy_store.rs`、`postgres/app_routing_strategy_store.rs`，清理 `api/mod.rs`/`ports/mod.rs`/`postgres/mod.rs` 导出与 `routes.rs` 三处装配。
 - **移除路由决策对旧表的读取**：snapshot 不再加载 `load_routing_policies`/`load_routing_rules`；rows 移除 `RoutingPolicyRow`/`RoutingRuleRow`；`PricingCatalog` trait 移除 `list_routing_policies`/`list_routing_rules` 及全部实现。
@@ -85,6 +87,10 @@ planner 消费的两个策略来源；`ai_routing_strategy` 与
 ---
 
 ## 一、现状诊断（已核实的代码事实）
+
+> **2026-10-25 更新**：本章是重构前快照。文中并存的两套策略表、`routing_strategy_code`
+> 与旧 policy/profile/rule 表均已通过 `0049_retire_legacy_routing_control_plane`
+> 移除；现行事实以 §0 和 §三 为准。
 
 ### 1. 数据库 schema 冗余与契约漂移
 - `ai_resource` / `ai_resource_group` / `ai_resource_group_item` 三张资源字典表**归属外部 `sdkwork-models` 仓库**，本仓库仅有一张 `ai_resource_binding` 绑定表，资源定义的 `route_kind`（模型类/API类）字段**完全缺失**。
@@ -144,8 +150,8 @@ planner 消费的两个策略来源；`ai_routing_strategy` 与
 
 ### 设计原则
 1. **资源驱动**：新增本仓库权威的 `ai_resource` 注册表，显式 `route_kind ∈ {model, api}`。模型/API 分类由**资源配置**决定，运行时读取该字段分流。
-2. **收敛冗余**：模型黑白名单彻底统一到 `ai_model_access_policy`（supplier 级 + **account 级一并接线**）；退役 `ai_routing_policy/profile/rule` 三表，只保留 `ai_routing_strategy`。
-3. **策略模式落地**：`ai_routing_strategy` 表存策略类型 + JSON 参数，策略由代码注册（trait 模式），DB 只做配置。
+2. **收敛冗余**：模型黑白名单彻底统一到 `ai_model_access_policy`（supplier 级 + **account 级一并接线**）；旧 `ai_routing_policy/profile/rule` 三表已删除，不再保留第二套策略表。
+3. **策略真源唯一**：策略是编译期封闭枚举 `UpstreamAccountRoutingStrategy`，组默认值存于 `ai_upstream_account_group.routing_strategy`，Key 级覆盖存于 `iam_gateway_api_key_account_group.routing_strategy`；不设策略参数表或并行注册表。
 4. **计费模式**：`ai_upstream_account.billing_mode ∈ {prepay, postpay}`（默认 prepay），弱语义额度字段收敛。
 5. **模型→vendor 解析**：模型解析走 sdkwork-models SDK（`find_model_by_vendor_region` / `list_models_by_capability`），supplier 通过"自持资源"（`ai_resource_binding` binding_scope=supplier）与 vendor 列表收敛。
 
@@ -157,9 +163,8 @@ planner 消费的两个策略来源；`ai_routing_strategy` 与
 | `ai_resource_binding`（保留） | 三张旧资源绑定表 | 统一资源授权，`binding_scope ∈ {supplier, account_group, account}` |
 | `ai_upstream_supplier`（保留） | 同 | 供应商，自持资源经 `ai_resource_binding` |
 | `ai_upstream_account`（保留） | 同 | 增加 `billing_mode`，收敛弱语义额度字段 |
-| `ai_upstream_account_group`（保留） | 同 | `routing_strategy_code` 默认 price_first |
+| `ai_upstream_account_group`（保留） | 同 | `routing_strategy` 默认 `least_cost`（价格优先） |
 | `ai_upstream_account_group_member`（保留） | 同 | 账号组成员 |
-| `ai_routing_strategy`（保留） | `ai_routing_policy` / `ai_routing_profile` / `ai_routing_rule` | 唯一策略配置表 |
 | `ai_model_access_policy`（保留） | 散落的黑/白名单列 | `scope_type ∈ {supplier, account, account_group}`，**account 级接线** |
 | `ai_upstream_supplier_endpoint` / `_health_state` / `_auth_method`（保留） | 同 | 端点/健康/认证 |
 | `ai_upstream_account_credential`（保留） | 同 | 凭证 |
@@ -167,7 +172,7 @@ planner 消费的两个策略来源；`ai_routing_strategy` 与
 | `ai_routing_decision_log`（保留改造） | 同 | 决策日志，增加 `route_kind` / `strategy_code` |
 | `ai_upstream_object_route`（保留） | 同 | sticky 粘滞路由 |
 
-> 兼容性：迁移采用**新表 + 数据迁移脚本**，旧表（`ai_routing_policy/profile/rule`）一个发行周期内退役后删除。所有下游代码、SDK、admin 同步更新。
+> 兼容性：旧表（`ai_routing_policy/profile/rule`、`ai_routing_strategy`）已通过 `0049_retire_legacy_routing_control_plane` 删除；所有下游代码、SDK、admin 同步更新。
 
 ---
 
@@ -186,15 +191,16 @@ RouteContext { resource(route_kind), identity, model?, vendor_list?, group_ids }
   → InvocationAndBilling（调用 + 计费 prepay/postpay）
 ```
 
-### 2. 策略模式接口（已落地，`route_strategy.rs`）
+### 2. 策略排序（`upstream_account_route_planner.rs` / `route_strategy.rs`）
 ```rust
-pub trait RoutingStrategy: Send + Sync {
-    fn code(&self) -> &'static str;
-    fn select(&self, candidates: &[RouteCandidate], ctx: &SelectionContext) -> SelectionResult;
+pub enum UpstreamAccountRoutingStrategy {
+    Weighted, RoundRobin, LeastLatency, LeastCost, QualityFirst, Failover,
 }
-// 内置：PriceFirst(默认) / Sticky / QualityFirst / LatencyFirst / Weighted / RoundRobin
-// 注册表：RoutingStrategyRegistry（HashMap<code, Box<dyn RoutingStrategy>>）
-// 新增策略 = 实现 trait + 注册，不改任何调用方
+// 组默认：ai_upstream_account_group.routing_strategy（默认 least_cost）
+// Key 覆盖：iam_gateway_api_key_account_group.routing_strategy（route 角色）
+// code -> enum 的兼容别名只在 route_strategy::resolve_account_routing_strategy 一处维护：
+// price_first -> LeastCost, latency_first -> LeastLatency, sticky/auto -> 回退组默认
+// 新增策略 = 增加枚举分支 + planner 排序分支，不存在第二张策略配置表
 ```
 
 ### 3. 计费模式
@@ -213,8 +219,7 @@ pub enum AccountBillingMode { Prepay, Postpay }  // 默认 Prepay
 2. **供应商管理**：自持资源绑定（复用 `ai_resource_binding`）。
 3. **账号管理**：计费方式（预扣/后扣）、账号级模型黑白名单。
 4. **账号组管理**：路由策略选择（价格优先等）、模型访问策略。
-5. **路由策略管理** `/admin/routing-strategies`：可视化配置策略参数。
-6. **决策日志** `/admin/record`：展示 route_kind + strategy_code + 决策原因。
+5. **决策日志** `/admin/record`：展示 route kind、策略与决策原因。
 
 ### 视觉交互重构
 - 统一设计令牌（Tailwind + 深/浅色主题，lobster 主色）。
@@ -234,7 +239,8 @@ pub enum AccountBillingMode { Prepay, Postpay }  // 默认 Prepay
 | P4 | 后端 API：账号 Create/Update/Response DTO + store 落库 model access；契约三 schema + `UpstreamAccountModelListEntry` | ✅ 2026-08-22 |
 | P4b | 后端 API：资源目录 `routeKind` 透出（依赖 P2b 的 `ai_resource`） | ⏳ 随 P2b |
 | P5 | admin 前端：供应商页模型黑白名单编辑（存量已有）；账号页账号级黑白名单编辑 | ⏳ 需 SDK 再生成（`@sdkwork/cloudrouter-pc-admin-core`）后实施 |
-| P6 | 数据迁移 + 旧表（`ai_routing_policy/profile/rule`）退役 + 全量回归 | ⏳ |
+| P6 | 数据迁移 + 旧表（`ai_routing_policy/profile/rule`、`ai_routing_strategy`）退役 + 全量回归 | ✅ 2026-10-25（`0049_retire_legacy_routing_control_plane`） |
+| P7 | 策略真源统一：组默认 `least_cost` + Key 覆盖 + `quality_first` 契约 + 删除并行策略注册表 | ✅ 2026-10-25 |
 
 ### 验证命令
 - Schema：`python -B -m tools.schema_compiler --dialect postgres --materialize`

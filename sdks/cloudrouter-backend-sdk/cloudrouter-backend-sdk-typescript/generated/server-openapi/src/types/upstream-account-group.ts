@@ -31,7 +31,7 @@ export interface UpstreamAccountGroup {
   /** Priority field on upstream account group. */
   priority: number;
   /** Routing strategy field on upstream account group. */
-  routingStrategy: 'weighted' | 'round_robin' | 'least_latency' | 'least_cost' | 'failover';
+  routingStrategy: 'weighted' | 'round_robin' | 'least_latency' | 'least_cost' | 'quality_first' | 'failover';
   /** Sale multiplier field on upstream account group. */
   saleMultiplier: string;
   /** Status field on upstream account group. */

@@ -108,7 +108,6 @@ AI_UPSTREAM_ROUTE_REQUIRED_TABLES = (
     "ai_upstream_supplier_auth_method",
     "ai_resource_binding",
     "ai_model_access_policy",
-    "ai_routing_strategy",
     "ai_upstream_account",
     "ai_upstream_account_credential",
     "ai_upstream_account_group",
@@ -204,7 +203,6 @@ CANONICAL_TABLES = {
     "ai_upstream_supplier_auth_method",
     "ai_resource_binding",
     "ai_model_access_policy",
-    "ai_routing_strategy",
     "ai_upstream_account",
     "ai_upstream_account_credential",
     "ai_upstream_account_group",
@@ -262,7 +260,6 @@ CANONICAL_TABLE_PROFILES = {
     "ai_upstream_supplier_auth_method": "tenant_entity",
     "ai_resource_binding": "tenant_entity",
     "ai_model_access_policy": "tenant_entity",
-    "ai_routing_strategy": "tenant_entity",
     "ai_upstream_account": "tenant_entity",
     "ai_upstream_account_credential": "secret_entity",
     "ai_upstream_account_group": "tenant_entity",
@@ -1426,7 +1423,6 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
             "group_type",
             "routing_strategy",
             "fallback_mode",
-            "routing_policy_id",
             "pricing_plan_code",
         ):
             self.assertIn(column, account_group.get("columns", {}))

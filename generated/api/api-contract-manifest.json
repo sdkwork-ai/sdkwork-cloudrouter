@@ -18883,6 +18883,7 @@
                 "round_robin",
                 "least_latency",
                 "least_cost",
+                "quality_first",
                 "failover"
               ],
               "nullable": true,
@@ -20525,6 +20526,7 @@
                       "round_robin",
                       "least_latency",
                       "least_cost",
+                      "quality_first",
                       "failover"
                     ],
                     "type": "string"
@@ -22025,6 +22027,7 @@
                 "round_robin",
                 "least_latency",
                 "least_cost",
+                "quality_first",
                 "failover"
               ],
               "nullable": true,

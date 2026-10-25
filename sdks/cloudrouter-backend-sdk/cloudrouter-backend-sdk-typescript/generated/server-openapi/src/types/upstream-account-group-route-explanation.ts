@@ -25,18 +25,12 @@ export interface UpstreamAccountGroupRouteExplanation {
   id: string;
   /** Model field on upstream account group route explanation. */
   model: string | null;
-  /** Policy id field on upstream account group route explanation. */
-  policyId: string | null;
-  /** Policy snapshot version field on upstream account group route explanation. */
-  policySnapshotVersion: string;
   /** Pricing plan code field on upstream account group route explanation. */
   pricingPlanCode: string;
   /** Ready field on upstream account group route explanation. */
   ready: boolean;
   /** Resource code field on upstream account group route explanation. */
   resourceCode: string;
-  /** Rule id field on upstream account group route explanation. */
-  ruleId: string | null;
   /** Selected candidates field on upstream account group route explanation. */
   selectedCandidates: UpstreamRouteExplainCandidate[];
   /** Source field on upstream account group route explanation. */

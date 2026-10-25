@@ -67,7 +67,7 @@
 
 # CI / release governance
 /.github/                                        @sdkwork/cloudrouter-release
-/sdkwork.workflow.json                           @sdkwork/cloudrouter-release
+/agent.workflow.json                           @sdkwork/cloudrouter-release
 /scripts/                                        @sdkwork/cloudrouter-release
 
 # Security and IAM

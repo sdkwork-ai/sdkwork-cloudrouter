@@ -466,7 +466,7 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
                 },
             )
             (root / "Cargo.toml").write_text("[workspace]\n", encoding="utf-8")
-            self.write_json(root, "sdkwork.workflow.json", {"dependencies": []})
+            self.write_json(root, "agent.workflow.json", {"dependencies": []})
             self.write_json(root, "specs/component.spec.json", {"canonicalSpecs": []})
 
             result = SdkworkStandardAlignmentGuardian(root).run()

@@ -133,7 +133,7 @@ python tools/report-unreachable-pricing.py --check
 
 遗留（非本轮计费改动）：`check:agent-workflow-standard` 报
 `.github/workflows/package.yml` 缺少 50 个 `workflow_dispatch` 依赖 ref 输入，
-`dependency_refs_json` 只读了 `vars.*`。`sdkwork.workflow.json` 本身与依赖
+`dependency_refs_json` 只读了 `vars.*`。`agent.workflow.json` 本身与依赖
 对齐工具 dry-run 一致，问题在发布工作流入口的生成/同步层。按 `AGENTS.md`
 的 release governance 要求，不手改 `.github/workflows/package.yml`；需用
 官方 workflow 生成器或人工审核后同步。

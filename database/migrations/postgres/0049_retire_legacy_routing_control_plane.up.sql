@@ -37,6 +37,18 @@ WHERE metadata ->> 'itemType' = 'default_admin_upstream_account_group'
   AND deleted_at IS NULL
   AND routing_strategy = 'weighted';
 
+-- Converge the column default and CHECK with the contract for existing
+-- installations; the regenerated baseline carries the same definition.
+ALTER TABLE ai_upstream_account_group
+    ALTER COLUMN routing_strategy SET DEFAULT 'least_cost';
+
+ALTER TABLE ai_upstream_account_group
+    DROP CONSTRAINT IF EXISTS ck_ai_upstream_account_group_routing_strategy;
+
+ALTER TABLE ai_upstream_account_group
+    ADD CONSTRAINT ck_ai_upstream_account_group_routing_strategy
+        CHECK (routing_strategy IN ('weighted', 'round_robin', 'least_latency', 'least_cost', 'quality_first', 'failover'));
+
 -- Dead routing identity columns: the decision log never persists a policy,
 -- profile, or rule identity after the control-plane retirement.
 ALTER TABLE ai_routing_decision_log

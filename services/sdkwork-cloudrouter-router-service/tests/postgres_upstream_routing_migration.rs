@@ -137,6 +137,45 @@ async fn baseline_initializes_canonical_upstream_routing_schema() {
             "ai_upstream_account_group.{column} must be retired by 0049"
         );
     }
+    sqlx::raw_sql(
+        r#"
+        INSERT INTO ai_upstream_account_group
+            (id, uuid, tenant_id, organization_id, group_code, group_name, metadata)
+        VALUES
+            (910002, 'migration-default-strategy', 100001, 0, 'default-strategy',
+             'Default Strategy', '{"itemType":"operator_group"}'::jsonb);
+        INSERT INTO ai_upstream_account_group
+            (id, uuid, tenant_id, organization_id, group_code, group_name, metadata,
+             routing_strategy)
+        VALUES
+            (910003, 'migration-quality-strategy', 100001, 0, 'quality-strategy',
+             'Quality Strategy', '{"itemType":"operator_group"}'::jsonb,
+             'quality_first')
+        "#,
+    )
+    .execute(&context.pool)
+    .await
+    .unwrap();
+    let implicit_strategy = sqlx::query_scalar::<_, String>(
+        "SELECT routing_strategy FROM ai_upstream_account_group WHERE id = 910002",
+    )
+    .fetch_one(&context.pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        "least_cost", implicit_strategy,
+        "the upgraded column default must be price-first"
+    );
+    let explicit_quality = sqlx::query_scalar::<_, String>(
+        "SELECT routing_strategy FROM ai_upstream_account_group WHERE id = 910003",
+    )
+    .fetch_one(&context.pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        "quality_first", explicit_quality,
+        "the converged CHECK must accept quality_first"
+    );
 
     let fallback_decoy_id = sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(format!(
         "SELECT id FROM {fallback_binding_table}"

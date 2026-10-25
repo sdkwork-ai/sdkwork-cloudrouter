@@ -215,7 +215,7 @@ function writeWorkflowEvidence({ env, paths, root, sourceCommit, binding = { art
     const args = [
       cli,
       'evidence:create',
-      '--config', 'sdkwork.workflow.json',
+      '--config', 'agent.workflow.json',
       '--target-id', required(env.SDKWORK_PACKAGE_TARGET_ID, 'SDKWORK_PACKAGE_TARGET_ID'),
       '--deployment-profile', required(env.SDKWORK_DEPLOYMENT_PROFILE, 'SDKWORK_DEPLOYMENT_PROFILE'),
       '--version', required(env.SDKWORK_PACKAGE_VERSION, 'SDKWORK_PACKAGE_VERSION'),

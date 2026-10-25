@@ -12,8 +12,6 @@ export interface UpstreamRouteExplainCandidate {
   catalogKey: string | null;
   /** Kind field on upstream route explain candidate. */
   kind: string;
-  /** Policy id field on upstream route explain candidate. */
-  policyId: string | null;
   /** Pricing plan code field on upstream route explain candidate. */
   pricingPlanCode: string;
   /** Provider model field on upstream route explain candidate. */
@@ -22,8 +20,6 @@ export interface UpstreamRouteExplainCandidate {
   regionCode: string;
   /** Requested model field on upstream route explain candidate. */
   requestedModel: string | null;
-  /** Rule id field on upstream route explain candidate. */
-  ruleId: string | null;
   /** Supplier code field on upstream route explain candidate. */
   supplierCode: string;
   /** Timeout ms field on upstream route explain candidate. */

@@ -23,7 +23,7 @@ export interface CreateUpstreamAccountGroupRequest {
   /** Priority field on create upstream account group request. */
   priority?: number | null;
   /** Routing strategy field on create upstream account group request. */
-  routingStrategy?: 'weighted' | 'round_robin' | 'least_latency' | 'least_cost' | 'failover' | null;
+  routingStrategy?: 'weighted' | 'round_robin' | 'least_latency' | 'least_cost' | 'quality_first' | 'failover' | null;
   /** Sale multiplier field on create upstream account group request. */
   saleMultiplier?: string | null;
   /** Status field on create upstream account group request. */

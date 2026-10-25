@@ -399,7 +399,7 @@ Error: ENOENT: no such file or directory, stat
 3. **根 checkout 的 `FORBIDDEN_UMBRELLA_WORKSPACE`** —— ✅ 本轮已执行：`<workspace-root>/pnpm-workspace.yaml`
    的 22 条跨仓 `packages:` 路径已改为 `packages: []`（并确认根无 `--filter` 依赖、无 `node_modules`）。
 4. **`check:modes` / `check:workflow`** —— ✅ 本轮已转绿（官方 `align-workflow-dependencies.mjs`
-   新建 1 + 更新 10 个 `sdkwork.workflow.json`）。`UNPUBLISHED_INTERNAL_PACKAGE` /
+   新建 1 + 更新 10 个 `agent.workflow.json`）。`UNPUBLISHED_INTERNAL_PACKAGE` /
    `RELEASE_DEPENDENCY_MISSING` 的**策略问题**（一方包是否上注册表）仍建议确认。
 5. **Tailwind `forbidden-feature-bootstrap` 残余 2 条** —— 已确认 `sdkwork-appstore` 的外壳
    `apps/sdkwork-appstore-pc/src/index.css:2` **已** `@import "tailwindcss"`，故

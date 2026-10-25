@@ -46,7 +46,6 @@ and code term because grouping accounts is its lifecycle and invariant.
 | `ai_upstream_supplier_auth_method` | Supported authentication policy and non-secret schema |
 | `ai_resource_binding` | Unified resource binding for supplier / account-group / account scopes |
 | `ai_model_access_policy` | Unified model access rules (scope supplier/account_group + effect allow/deny) |
-| `ai_routing_strategy` | Routing strategy configuration (strategy_code / params / priority / is_default) |
 | `ai_upstream_account` | Supplier account, preferred endpoint, finance, policy, and lifecycle |
 | `ai_upstream_account_credential` | Versioned encrypted credential authority |
 | `ai_upstream_account_group` | Routing, fallback, capacity, sale, and cost policy |

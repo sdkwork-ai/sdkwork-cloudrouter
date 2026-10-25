@@ -5691,7 +5691,7 @@ test('native installer builder CLI validates cross-platform service and desktop 
 });
 
 test('sdkwork workflow validates native installer payload layouts before upload', () => {
-  const workflow = JSON.parse(readFileSync(path.join(workspaceRoot, 'sdkwork.workflow.json'), 'utf8'));
+  const workflow = JSON.parse(readFileSync(path.join(workspaceRoot, 'agent.workflow.json'), 'utf8'));
   const validateSource = JSON.stringify(workflow.lifecycle?.validate ?? []);
   assert.ok(validateSource.includes('Validate selected install package'));
   assert.ok(validateSource.includes('node scripts/validate-cloud-router-install-artifacts.mjs'));
@@ -5700,7 +5700,7 @@ test('sdkwork workflow validates native installer payload layouts before upload'
 });
 
 test('sdkwork workflow can opt into CDN download links without making CDN mandatory', () => {
-  const workflow = JSON.parse(readFileSync(path.join(workspaceRoot, 'sdkwork.workflow.json'), 'utf8'));
+  const workflow = JSON.parse(readFileSync(path.join(workspaceRoot, 'agent.workflow.json'), 'utf8'));
   const buildSource = JSON.stringify(workflow.lifecycle?.build ?? []);
   assert.ok(buildSource.includes('CLOUDROUTER_DOWNLOAD_CDN_BASE_URL'));
   assert.ok(buildSource.includes('if ($env:CLOUDROUTER_DOWNLOAD_CDN_BASE_URL)'));

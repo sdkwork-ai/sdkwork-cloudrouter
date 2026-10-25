@@ -418,9 +418,9 @@ test('parseWorkspaceArgs rejects retired topology CLI flags', async () => {
   );
 });
 
-test('sdkwork.workflow.json contains no application-owned platform host package target', async () => {
+test('agent.workflow.json contains no application-owned platform host package target', async () => {
   const spec = await readJson('specs/topology.spec.json');
-  const workflow = await readJson('sdkwork.workflow.json');
+  const workflow = await readJson('agent.workflow.json');
   assert.deepEqual(spec.packaging.targets, []);
   assert.equal(workflow.targets.some((target) => target.variant === 'config-bundle'), false);
   assert.equal(workflow.lifecycle.package.some((step) => /cloud gateway/u.test(step.name)), false);

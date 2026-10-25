@@ -1,6 +1,6 @@
 name: Materialize SDKWork dependencies
 description: >-
-  Check out the sibling SDKWork repositories declared by sdkwork.workflow.json
+  Check out the sibling SDKWork repositories declared by agent.workflow.json
   into the workspace parent directory, at the ref each dependency resolves to
   (main unless a repository variable pins it). This repository's Cargo workspace
   and pnpm workspace address those dependencies by relative path, so no build,
@@ -17,7 +17,7 @@ inputs:
     description: GitHub token used for dependency checkout.
   config-path:
     required: false
-    default: sdkwork.workflow.json
+    default: agent.workflow.json
     description: Workflow manifest that declares the dependency set.
 
 runs:
@@ -50,7 +50,7 @@ runs:
         SDKWORK_CONFIG_PATH: ${{ inputs.config-path }}
       run: |
         set -euo pipefail
-        node .sdkwork/github-workflow/scripts/sdkwork-workflow.mjs dependencies \
+        node .sdkwork/github-workflow/scripts/agent-workflow.mjs dependencies \
           --config "${SDKWORK_CONFIG_PATH}" \
           --github-output
 

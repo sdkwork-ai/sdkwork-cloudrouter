@@ -20,7 +20,6 @@ TABLE_DESCRIPTIONS = {
     "ai_upstream_supplier_auth_method": "Authentication methods supported by a supplier, with runtime injection policy.",
     "ai_resource_binding": "Unified upstream resource binding (binding_scope supplier/account_group/account + grant_type).",
     "ai_model_access_policy": "Unified model access rules (scope supplier/account_group + effect allow/deny + vendor_code + model_pattern).",
-    "ai_routing_strategy": "Routing strategy configuration (strategy_code / params / priority / is_default).",
     "ai_upstream_account": "Tenant-scoped upstream account linked to one supplier and authentication method.",
     "ai_upstream_account_credential": "Encrypted, versioned credential material for an upstream account.",
     "ai_upstream_account_health_state": "Current health, usage, and failure state for an upstream account.",

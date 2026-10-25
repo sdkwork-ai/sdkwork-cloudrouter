@@ -18,7 +18,7 @@
       "Cargo.toml",
       "package.json",
       "agent.app.config.json",
-      "sdkwork.workflow.json"
+      "agent.workflow.json"
     ]
   },
   "canonicalSpecs": [
@@ -192,7 +192,7 @@
     "events": [],
     "configKeys": [
       "agent.app.config.json",
-      "sdkwork.workflow.json",
+      "agent.workflow.json",
       "specs/topology.spec.json",
       "etc/topology/*.env"
     ]

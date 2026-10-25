@@ -113,29 +113,26 @@ const accounts = psql(`
   return { accountCode, status, alive: alive === 't', itemType, activeCreds: Number(activeCreds) };
 });
 
-// Routing strategies owned by the seed.
-//
-// NOTE the tenant: `postgres_default_admin_routing_strategies_complete` binds
-// `DEFAULT_IAM_TENANT_ID`, which is `sdkwork-iam`'s
-// `DEFAULT_IAM_TENANT_SQL_ID = 100_001` — *not* the `tenant_id = 0` the
-// resource/group/endpoint subset checks use. Probing with 0 reports "0
-// strategies" and looks like a real miss when the rows are in fact present.
+// Control-plane instances the seed declares.
 const SEED_TENANT_ID = 100001;
 const SEED_ORGANIZATION_ID = 0;
 
-const strategies = psql(`
-  SELECT strategy_code FROM ai_routing_strategy
-  WHERE tenant_id = ${SEED_TENANT_ID} AND organization_id = ${SEED_ORGANIZATION_ID}
-    AND status = 1 AND deleted_at IS NULL
-  ORDER BY strategy_code
-`).split('\n').filter(Boolean);
-
-// Control-plane instances the seed declares.
 const instances = psql(`
   SELECT instance_code FROM ops_gateway_instance
   WHERE tenant_id = ${SEED_TENANT_ID} AND organization_id = ${SEED_ORGANIZATION_ID}
     AND deleted_at IS NULL
   ORDER BY instance_code
+`).split('\n').filter(Boolean);
+
+// Runtime strategy lives on the account group and the optional API-key
+// binding override; there is no separate strategy registry table.
+const groupStrategies = psql(`
+  SELECT routing_strategy || ':' || COUNT(*)
+  FROM ai_upstream_account_group
+  WHERE tenant_id = ${SEED_TENANT_ID} AND organization_id = ${SEED_ORGANIZATION_ID}
+    AND deleted_at IS NULL
+  GROUP BY routing_strategy
+  ORDER BY routing_strategy
 `).split('\n').filter(Boolean);
 
 report.vendorAccounts = {
@@ -145,7 +142,10 @@ report.vendorAccounts = {
   notEnabled: accounts.filter((a) => a.status !== '1' || !a.alive).map((a) => a.accountCode),
   noActiveCredential: accounts.filter((a) => a.activeCreds === 0).map((a) => a.accountCode),
 };
-report.routingStrategies = { count: strategies.length, codes: strategies };
+report.routingStrategies = {
+  source: 'ai_upstream_account_group.routing_strategy',
+  groups: groupStrategies,
+};
 report.gatewayInstances = { count: instances.length, codes: instances };
 
 console.log(JSON.stringify(report, null, 2));

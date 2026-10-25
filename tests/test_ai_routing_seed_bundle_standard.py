@@ -375,12 +375,11 @@ class AiRoutingSeedBundleStandardTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         # `least_cost` is the stored spelling of price-first, and
-        # `routing_strategy` is the column the selector reads. Seeding
-        # `weighted` next to `routing_strategy_code='price_first'` made every
-        # fresh install route by weight instead of the documented cheapest
-        # account.
-        self.assertIn("'least_cost', 'price_first', 'sequential'", ai_seed)
-        self.assertNotIn("'weighted', 'price_first', 'sequential'", ai_seed)
+        # `routing_strategy` is the only strategy column the selector reads.
+        self.assertIn("'least_cost', 'sequential'", ai_seed)
+        self.assertNotIn("'weighted', 'sequential'", ai_seed)
+        self.assertNotIn("routing_strategy_code", ai_seed)
+        self.assertNotIn("ai_routing_strategy", ai_seed)
 
     def test_ai_routing_seed_uuid_generation_fits_database_uuid_column(self) -> None:
         ai_seed = (

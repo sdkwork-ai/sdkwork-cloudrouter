@@ -136,7 +136,7 @@
           "materials": true
         },
         "reproducible": false,
-        "reproducibilityNote": "Build inputs are pinned (Cargo.lock, pnpm-lock.yaml, pinned dependency refs in sdkwork.workflow.json, declared toolchains node/pnpm/rust/wix), but native binaries and installers (MSI/DMG/AppImage/zip) embed build timestamps and exhibit linker/host variance; bit-for-bit reproducibility is not guaranteed. Release integrity is enforced via SHA-256 checksums plus cosign/signtool/codesign signing in sdkwork.workflow.json lifecycle.sign."
+        "reproducibilityNote": "Build inputs are pinned (Cargo.lock, pnpm-lock.yaml, pinned dependency refs in agent.workflow.json, declared toolchains node/pnpm/rust/wix), but native binaries and installers (MSI/DMG/AppImage/zip) embed build timestamps and exhibit linker/host variance; bit-for-bit reproducibility is not guaranteed. Release integrity is enforced via SHA-256 checksums plus cosign/signtool/codesign signing in agent.workflow.json lifecycle.sign."
       },
       "materials": [
         {

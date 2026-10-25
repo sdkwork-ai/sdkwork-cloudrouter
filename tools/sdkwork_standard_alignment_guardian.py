@@ -37,7 +37,7 @@ class SdkworkStandardAlignmentGuardian:
     """Audit sdkwork-cloudrouter against sdkwork-specs framework integration requirements."""
 
     ROOT_COMPONENT_SPEC = "specs/component.spec.json"
-    WORKFLOW_MANIFEST = "sdkwork.workflow.json"
+    WORKFLOW_MANIFEST = "agent.workflow.json"
     CARGO_MANIFEST = "Cargo.toml"
     DATABASE_POSTGRES_STORE_ROOT = (
         "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres"
@@ -427,7 +427,7 @@ class SdkworkStandardAlignmentGuardian:
                     severity="blocking",
                     status="fail",
                     message=f"missing {self.WORKFLOW_MANIFEST}",
-                    remediation="create sdkwork.workflow.json per GITHUB_WORKFLOW_SPEC.md",
+                    remediation="create agent.workflow.json per GITHUB_WORKFLOW_SPEC.md",
                 )
             ]
 
@@ -458,7 +458,7 @@ class SdkworkStandardAlignmentGuardian:
                         severity="blocking",
                         status="fail",
                         message=f"{self.WORKFLOW_MANIFEST} missing dependency checkout for {dependency_id}",
-                        remediation=f"add {dependency_id} to sdkwork.workflow.json dependencies",
+                        remediation=f"add {dependency_id} to agent.workflow.json dependencies",
                     )
                 )
         return checks
@@ -1450,7 +1450,7 @@ class SdkworkStandardAlignmentGuardian:
 
         legacy_repo_refs = 0
         legacy_stem = "sdkwork-cloudrouter-router"
-        for relative in ("agent.app.config.json", "sdkwork.workflow.json", "specs/component.spec.json"):
+        for relative in ("agent.app.config.json", "agent.workflow.json", "specs/component.spec.json"):
             file_path = self.root / relative
             if file_path.exists() and legacy_stem in file_path.read_text(encoding="utf-8"):
                 legacy_repo_refs += 1
@@ -1680,7 +1680,7 @@ class SdkworkStandardAlignmentGuardian:
 
         scan_files = (
             self.root / "Cargo.toml",
-            self.root / "sdkwork.workflow.json",
+            self.root / "agent.workflow.json",
             self.root / "specs" / "component.spec.json",
         )
         has_discovery = any(

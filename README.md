@@ -282,7 +282,7 @@ pnpm install:init:smoke
 Local development consumes SDKWork dependencies through native workspace files,
 including `pnpm-workspace.yaml`, `package.json`, and Cargo manifests. Required
 SDKWork repositories are expected as siblings in the same multi-repository
-workspace, while `sdkwork.workflow.json` records pinned Git refs for CI and
+workspace, while `agent.workflow.json` records pinned Git refs for CI and
 release checkout.
 
 Validate the standalone model catalog before installer or release work:

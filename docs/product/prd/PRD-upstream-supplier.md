@@ -141,14 +141,14 @@ facts.
    health, and circuit state — unhealthy accounts/endpoints and open circuit
    breakers are excluded before selection.
 6. Apply the group routing strategy (weighted / round-robin / least-latency /
-   least-cost / failover) and fallback mode (none / same-supplier / sequential /
-   cross-supplier) from one immutable candidate snapshot; order endpoints and
-   credentials by their own priority/weight.
+   least-cost / quality-first / failover) and fallback mode (none / same-supplier
+   / sequential / cross-supplier) from one immutable candidate snapshot; order
+   endpoints and credentials by their own priority/weight.
 7. Select a compatible endpoint and active credential version, validate egress,
    and dispatch through the adapter; apply model mapping rules (account > group
    > endpoint > supplier > vendor > global) to resolve the supplier-native model.
 8. Record result, usage, cost, sale amount, health feedback, settlement, and an
-   audit-safe route explanation (decision log: request/trace/policy/rule/selected
+   audit-safe route explanation (decision log: request/trace/selected
    supplier/account/credential/candidate snapshot/fallback chain/latency).
 
 Routing behavior notes:

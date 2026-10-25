@@ -10,7 +10,7 @@ const SCRIPT = path.join(path.dirname(fileURLToPath(import.meta.url)), 'check-gi
 
 const WORKFLOW_CONFIG = [
   '{',
-  '  "schemaVersion": "2026-06-06.sdkwork.workflow.v1",',
+  '  "schemaVersion": "2026-06-06.agent.workflow.v1",',
   '  "app": { "id": "demo-app", "repository": "sdkwork-ai/demo-app" },',
   '  "release": { "artifactPrefix": "demo", "defaultVersion": "0.4.1" },',
   '  "dependencies": [',
@@ -57,7 +57,7 @@ function packageWorkflow({ refsJson, extraInputRef = null, tagDefault = 'v0.4.1'
     '  package:',
     '    uses: sdkwork-ai/sdkwork-github-workflow/.github/workflows/sdkwork-package.yml@2121cc5f1385e8e561171d01fbb71f11adbda187',
     '    with:',
-    '      config_path: sdkwork.workflow.json',
+    '      config_path: agent.workflow.json',
     '      tag: ${{ github.event.inputs.tag || github.ref_name }}',
     '      package_version: ${{ github.event.inputs.package_version || \'\' }}',
     ...(extraInputRef ? ['      note: ${{ github.event.inputs.' + extraInputRef + ' }}'] : []),
@@ -71,10 +71,10 @@ function packageWorkflow({ refsJson, extraInputRef = null, tagDefault = 'v0.4.1'
 const VALID_REFS = '{ "SDKWORK_CORE_REF": "${{ github.event.inputs.sdkwork_core_ref || vars.SDKWORK_CORE_REF }}", "SDKWORK_UI_REF": "${{ github.event.inputs.sdkwork_ui_ref || vars.SDKWORK_UI_REF }}" }';
 
 function withFixture(packageYml, run) {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'sdkwork-workflow-guard-'));
+  const root = mkdtempSync(path.join(os.tmpdir(), 'agent-workflow-guard-'));
   try {
     mkdirSync(path.join(root, '.github', 'workflows'), { recursive: true });
-    writeFileSync(path.join(root, 'sdkwork.workflow.json'), WORKFLOW_CONFIG);
+    writeFileSync(path.join(root, 'agent.workflow.json'), WORKFLOW_CONFIG);
     writeFileSync(path.join(root, 'agent.app.config.json'), APP_CONFIG);
     writeFileSync(path.join(root, '.github', 'workflows', 'package.yml'), packageYml);
     return run(root);
@@ -139,7 +139,7 @@ test('rejects a workflow_dispatch tag default that drifts from the release versi
   assert.match(result.output, /tag default v0\.3\.0 must be v0\.4\.1/u);
 });
 
-test('rejects a dependency ref key that sdkwork.workflow.json does not declare', () => {
+test('rejects a dependency ref key that agent.workflow.json does not declare', () => {
   const withExtra = '{ "SDKWORK_CORE_REF": "${{ github.event.inputs.sdkwork_core_ref || vars.SDKWORK_CORE_REF }}", "SDKWORK_UI_REF": "${{ github.event.inputs.sdkwork_ui_ref || vars.SDKWORK_UI_REF }}", "SDKWORK_GHOST_REF": "${{ vars.SDKWORK_GHOST_REF }}" }';
   const result = withFixture(packageWorkflow({ refsJson: withExtra }), runGuard);
   assert.equal(result.status, 1);

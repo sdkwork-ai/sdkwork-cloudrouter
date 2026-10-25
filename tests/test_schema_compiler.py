@@ -35,13 +35,13 @@ class SchemaCompilerTest(unittest.TestCase):
             "ai_upstream_supplier",
             "ai_upstream_account",
             "ai_upstream_account_group",
-            "ai_routing_policy",
             "ai_metering_usage",
             "ai_metering_request_trace",
             "cloudrouter_pricing_plan",
         ]:
             self.assertIn(f"CREATE TABLE IF NOT EXISTS {table} (", sql)
         self.assertNotIn("CREATE TABLE IF NOT EXISTS ai_channel (", sql)
+        self.assertNotIn("CREATE TABLE IF NOT EXISTS ai_routing_policy (", sql)
         self.assertNotIn("CREATE TABLE IF NOT EXISTS ai_usage_service_provider_edge (", sql)
         self.assertNotIn("CREATE TABLE IF NOT EXISTS ai_pricing (", sql)
         self.assertNotIn("CREATE TABLE IF NOT EXISTS ai_usage_trace (", sql)

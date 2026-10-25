@@ -65,6 +65,7 @@ export const upstreamAccountGroupEnUsMessages = {
   'admin.upstream.accountGroup.strategy.roundRobin': 'Round robin',
   'admin.upstream.accountGroup.strategy.leastLatency': 'Least latency',
   'admin.upstream.accountGroup.strategy.leastCost': 'Least cost',
+  'admin.upstream.accountGroup.strategy.qualityFirst': 'Quality first',
   'admin.upstream.accountGroup.strategy.failover': 'Failover',
   'admin.upstream.accountGroup.fallback.none': 'None',
   'admin.upstream.accountGroup.fallback.sequential': 'Sequential',

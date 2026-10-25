@@ -186,8 +186,8 @@ protocol_profile
 capability_family
 requested_model
 resolved_model
-routing_policy_id
-routing_profile_id
+routing_strategy
+account_group_id
 selected_provider
 selected_channel_id
 provider_attempt_id
