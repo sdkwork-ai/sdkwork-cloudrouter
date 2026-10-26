@@ -137,6 +137,15 @@ async fn baseline_initializes_canonical_upstream_routing_schema() {
             "ai_upstream_account_group.{column} must be retired by 0049"
         );
     }
+    // 0050 converges the column default and CHECK with the contract the
+    // regenerated baseline already carries; databases installed before the
+    // baseline regeneration still carry the old `weighted` default.
+    sqlx::raw_sql(include_str!(
+        "../../../database/migrations/postgres/0050_converge_routing_strategy_default_and_check.up.sql"
+    ))
+    .execute(&context.pool)
+    .await
+    .unwrap();
     sqlx::raw_sql(
         r#"
         INSERT INTO ai_upstream_account_group
@@ -164,7 +173,7 @@ async fn baseline_initializes_canonical_upstream_routing_schema() {
     .unwrap();
     assert_eq!(
         "least_cost", implicit_strategy,
-        "the upgraded column default must be price-first"
+        "the 0050 column default must be price-first"
     );
     let explicit_quality = sqlx::query_scalar::<_, String>(
         "SELECT routing_strategy FROM ai_upstream_account_group WHERE id = 910003",

@@ -97,6 +97,13 @@ development lifecycle history stays readable.
   `ai_routing_strategy` tables. Runtime strategy selection is the closed
   `UpstreamAccountRoutingStrategy` enum on the group plus the optional
   per-API-key binding override; the retired tables had no reader.
+- `0050_converge_routing_strategy_default_and_check.up.sql` converges
+  `ai_upstream_account_group.routing_strategy` on existing installations with
+  the contract the regenerated baseline already carries: the column default
+  becomes `least_cost` and the CHECK enumerates the full closed strategy set.
+  Databases installed before the baseline regeneration carry the old
+  `weighted` default, so a row inserted without an explicit strategy stored
+  `weighted` even though the selector documents price-first as the default.
 
 ## Historical migrations
 
