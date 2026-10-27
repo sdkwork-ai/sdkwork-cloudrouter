@@ -118,7 +118,7 @@ if (packageWorkflow !== null && workflow !== null && appConfig !== null) {
   } else if (!PINNED_REF.test(reusableMatch[1])) {
     fail('reusable workflow ref must be pinned to a commit or version tag, got ' + reusableMatch[1]);
   }
-  if (!/config_path:\s*sdkwork\.workflow\.json\s*$/mu.test(packageWorkflow)) {
+  if (!/config_path:\s*agent\.workflow\.json\s*$/mu.test(packageWorkflow)) {
     fail('package.yml must pass config_path: agent.workflow.json');
   }
   const jobsIndex = packageWorkflow.search(/^jobs:\s*$/mu);
