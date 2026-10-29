@@ -415,7 +415,8 @@ test("English and Chinese catalogs use the Compute Credits terminology", () => {
         .replaceAll(/credit card/gi, "")
         .replaceAll("Unified Social Credit Code", "")
         .replaceAll("Credit Limit", "")
-        .replaceAll(/data points/gi, "");
+        .replaceAll(/data points/gi, "")
+        .replaceAll(/entry points/gi, "");
       assert.doesNotMatch(
         displayValue,
         /\b(?:point|points|credit|credits)\b/i,

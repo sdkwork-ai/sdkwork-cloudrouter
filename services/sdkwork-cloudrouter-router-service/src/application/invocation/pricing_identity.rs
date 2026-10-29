@@ -207,6 +207,8 @@ fn requested_model_name(invocation: &Invocation) -> Option<String> {
 
 /// 按模型名解析目录键候选（与 `UpstreamAccountRouteCatalog::model_catalog_keys_by_name`
 /// 同一语义，但只依赖 `PricingCatalog::visit_models`，使计价侧拦截器也能用）。
+/// 精确未命中时同样走 OpenRouter 风格容错解析（relay 前缀剥离 → slug 层级），
+/// 保证延迟计价/批量结算按请求原名回放时与路由期解析到同一个目录键。
 fn catalog_model_keys_by_name<C>(catalog: &C, model_name: &str) -> Vec<String>
 where
     C: PricingCatalog,
@@ -220,7 +222,10 @@ where
         }
         true
     });
-    keys
+    if !keys.is_empty() {
+        return keys;
+    }
+    crate::ports::resolve_model_alias_catalog_keys(catalog, model_name)
 }
 
 /// 按目录模型名解析目录键。

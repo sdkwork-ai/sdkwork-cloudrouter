@@ -745,6 +745,229 @@ async fn invocation_router_dispatches_openai_model_call_through_pipeline() {
     );
 }
 
+/// 目录按厂商原生 id 存连字符形态（`anthropic/claude-opus-4-5`），而
+/// OpenRouter 格式的客户端按点号 wire id 传模型（`anthropic/claude-opus-4.5`）。
+fn catalog_with_openrouter_style_model_and_hashed_api_key(
+    key_hash: &str,
+) -> InMemoryPricingCatalog {
+    let base_url = "http://provider-proxy.internal/openrouter";
+    let mut catalog = InMemoryPricingCatalog::default();
+    catalog.add_vendor(ModelVendorDefinition::new(
+        "anthropic",
+        ModelVendor::Custom,
+        "Anthropic",
+    ));
+    catalog.add_model(AiModel::new(
+        "claude-opus-4-5",
+        "Claude Opus 4.5",
+        "anthropic",
+        vec!["chat", "tools"],
+    ));
+    catalog.add_model_upstream_route(
+        ModelUpstreamRoute::new_for_catalog_key(
+            "anthropic/claude-opus-4-5",
+            "claude-opus-4-5",
+            "openrouter",
+            3001,
+            "anthropic/claude-opus-4.5",
+        )
+        .with_upstream_endpoint(
+            Some(base_url),
+            Some("vault://providers/openrouter/account/main"),
+        )
+        .with_timeout_ms(30_000)
+        .with_retry_policy(ProviderRetryPolicy::new(3, vec![429, 503], 0).unwrap()),
+    );
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_account_group_binding(10, 10, 100)
+            .with_upstream_endpoint(
+                Some(base_url),
+                Some("vault://providers/openrouter/account/main"),
+            )
+            .with_timeout_ms(30_000)
+            .with_retry_policy(ProviderRetryPolicy::new(3, vec![429, 503], 0).unwrap()),
+    );
+    catalog.add_plan(PricingPlan::new(
+        "standard",
+        PriceSide::OfficialReference,
+        DecimalValue::parse("1.200000").unwrap(),
+        Money::usd("0.000000").unwrap(),
+    ));
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
+        10,
+        "standard-group",
+        "standard",
+        DecimalValue::parse("1.000000").unwrap(),
+        DecimalValue::parse("1.100000").unwrap(),
+    ));
+    catalog.add_api_key(GatewayApiKey::new(101, 10, "sk-live", key_hash).with_owner(10, 20, 30));
+    for meter in [BillingMeter::LlmInputToken, BillingMeter::LlmOutputToken] {
+        for side in [PriceSide::OfficialReference, PriceSide::UpstreamCost] {
+            catalog.add_price(ModelPrice::new_for_catalog_key(
+                "anthropic/claude-opus-4-5",
+                "claude-opus-4-5",
+                side,
+                meter.clone(),
+                Money::usd("0.150000").unwrap(),
+            ));
+        }
+    }
+    catalog
+}
+
+#[tokio::test]
+async fn invocation_router_resolves_openrouter_style_model_id_to_catalog_model() {
+    let hasher = hasher();
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let dispatcher = Arc::new(CapturingDispatcher::default());
+    let router =
+        sdkwork_cloudrouter_edge_runtime::invocation_router_with_catalog_api_key_hasher_dispatcher_and_secret_resolver(
+            Arc::new(catalog_with_openrouter_style_model_and_hashed_api_key(&key_hash)),
+            hasher,
+            dispatcher.clone(),
+            secret_resolver(),
+        );
+
+    // OpenRouter wire id（点号）必须路由到连字符形态的目录模型，而不是 503。
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/chat/completions")
+                .header("authorization", "Bearer sk-live-secret")
+                .header("content-type", "application/json")
+                .header("x-request-id", "req-invocation-router-openrouter-style")
+                .body(Body::from(
+                    r#"{"model":"anthropic/claude-opus-4.5","messages":[{"role":"user","content":"ping"}]}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    let status = response.status();
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    assert_eq!(
+        StatusCode::OK,
+        status,
+        "unexpected invocation response: {}",
+        String::from_utf8_lossy(&body)
+    );
+
+    let calls = dispatcher.calls();
+    assert_eq!(1, calls.len());
+    let call = calls.first().unwrap();
+    assert_eq!("openrouter", call.supplier_code);
+    assert_eq!(3001, call.account_id);
+    let provider_request = call.provider_request.as_ref().expect("provider request");
+    let InvocationBody::Json(provider_body) = &provider_request.body else {
+        panic!("expected JSON provider request body");
+    };
+    // 上游拿到的模型是路由声明的 provider model（OpenRouter 上游要求
+    // vendor/model 形态），而非目录内部的连字符原生 id。
+    assert_eq!(
+        Some("anthropic/claude-opus-4.5"),
+        provider_body.get("model").and_then(|value| value.as_str())
+    );
+}
+
+#[tokio::test]
+async fn invocation_router_resolves_relay_prefixed_variant_model_id_to_catalog_model() {
+    let hasher = hasher();
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let dispatcher = Arc::new(CapturingDispatcher::default());
+    let router =
+        sdkwork_cloudrouter_edge_runtime::invocation_router_with_catalog_api_key_hasher_dispatcher_and_secret_resolver(
+            Arc::new(catalog_with_openrouter_style_model_and_hashed_api_key(&key_hash)),
+            hasher,
+            dispatcher.clone(),
+            secret_resolver(),
+        );
+
+    // relay 前缀 + `:free` 变体后缀剥掉后路由到同一个目录模型。
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/chat/completions")
+                .header("authorization", "Bearer sk-live-secret")
+                .header("content-type", "application/json")
+                .header("x-request-id", "req-invocation-router-openrouter-variant")
+                .body(Body::from(
+                    r#"{"model":"openrouter/anthropic/claude-opus-4.5:free","messages":[{"role":"user","content":"ping"}]}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    let status = response.status();
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    assert_eq!(
+        StatusCode::OK,
+        status,
+        "unexpected invocation response: {}",
+        String::from_utf8_lossy(&body)
+    );
+
+    let calls = dispatcher.calls();
+    assert_eq!(1, calls.len());
+    assert_eq!("openrouter", calls.first().unwrap().supplier_code);
+}
+
+#[tokio::test]
+async fn invocation_router_resolves_fullwidth_colon_model_id_to_catalog_model() {
+    let hasher = hasher();
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let dispatcher = Arc::new(CapturingDispatcher::default());
+    let router =
+        sdkwork_cloudrouter_edge_runtime::invocation_router_with_catalog_api_key_hasher_dispatcher_and_secret_resolver(
+            Arc::new(catalog_with_openrouter_style_model_and_hashed_api_key(&key_hash)),
+            hasher,
+            dispatcher.clone(),
+            secret_resolver(),
+        );
+
+    // 全角冒号（中文输入法）分隔的模型名同样路由到同一目录模型。
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/chat/completions")
+                .header("authorization", "Bearer sk-live-secret")
+                .header("content-type", "application/json")
+                .header("x-request-id", "req-invocation-router-fullwidth-colon")
+                .body(Body::from(
+                    // JSON 转义后的全角冒号 `：`（U+FF1A）。
+                    "{\"model\":\"anthropic：claude-opus-4.5\",\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}]}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    let status = response.status();
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    assert_eq!(
+        StatusCode::OK,
+        status,
+        "unexpected invocation response: {}",
+        String::from_utf8_lossy(&body)
+    );
+
+    let calls = dispatcher.calls();
+    assert_eq!(1, calls.len());
+    assert_eq!("openrouter", calls.first().unwrap().supplier_code);
+    assert_eq!(3001, calls.first().unwrap().account_id);
+}
+
 #[tokio::test]
 async fn invocation_router_returns_not_found_for_unknown_openai_prefixed_paths_before_auth() {
     let hasher = hasher();

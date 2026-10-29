@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use crate::domain::{BillingMeter, UpstreamAccountRoute};
+use crate::domain::{
+    model_alias_probes, model_matches_alias_probe, AiModel, BillingMeter, UpstreamAccountRoute,
+};
 use crate::ports::AdminLlmProtocolConfig;
 
 use super::{PricingCatalog, PricingDefaultRegionProvider};
@@ -295,9 +297,13 @@ pub trait UpstreamAccountRouteCatalog: PricingCatalog + PricingDefaultRegionProv
         None
     }
 
-    /// 按模型名（catalog key 或展示名，精确匹配）解析可能的 catalog key 列表。
-    /// 索引实现为 O(1)；默认实现线性扫描回退（兼容非索引实现）。
-    /// 空列表 = 未知模型；多于一个 = 歧义。
+    /// 按模型名（catalog key 或展示名，精确匹配优先）解析可能的 catalog key
+    /// 列表。索引实现为 O(1)；默认实现线性扫描回退（兼容非索引实现）。
+    ///
+    /// 精确未命中时按 OpenRouter 风格 wire 格式做容错解析
+    /// （`domain::model_request_alias`：relay 前缀剥离 → 整键 slug →
+    /// model 段 slug），首个非空层级生效；命中多个 catalog key 仍然返回
+    /// 多值，由调用方按歧义拒绝（路由不猜）。空列表 = 未知模型。
     fn model_catalog_keys_by_name(&self, model_name: &str) -> Vec<String> {
         let mut keys = Vec::new();
         self.visit_models(None, &mut |model| {
@@ -308,7 +314,10 @@ pub trait UpstreamAccountRouteCatalog: PricingCatalog + PricingDefaultRegionProv
             }
             true
         });
-        keys
+        if !keys.is_empty() {
+            return keys;
+        }
+        resolve_model_alias_catalog_keys(self, model_name)
     }
 
     /// 按模型名解析**支持该模型的所有 vendor 代码**（去重、保序）。
@@ -434,6 +443,33 @@ fn normalize_resource_key(value: &str) -> String {
         .replace(['/', ':', '-'], ".")
         .trim_matches('.')
         .to_owned()
+}
+
+/// OpenRouter 风格容错解析的共享扫描实现：逐个 probe 扫描目录模型，
+/// 返回首个非空层级的 catalog key 列表（可能多值，调用方按歧义拒绝）。
+///
+/// 供 trait 默认实现（`UpstreamAccountRouteCatalog`）与只依赖
+/// `PricingCatalog` 的计价侧（`pricing_identity`）/模型查询侧
+/// （`openai_models`）复用，保证三处容错语义同源。
+pub(crate) fn resolve_model_alias_catalog_keys<C>(catalog: &C, requested_model: &str) -> Vec<String>
+where
+    C: PricingCatalog + ?Sized,
+{
+    for probe in model_alias_probes(requested_model) {
+        let mut keys: Vec<String> = Vec::new();
+        catalog.visit_models(None, &mut |model: &AiModel| {
+            if model_matches_alias_probe(&model.catalog_key, &model.model, &probe)
+                && !keys.contains(&model.catalog_key)
+            {
+                keys.push(model.catalog_key.clone());
+            }
+            true
+        });
+        if !keys.is_empty() {
+            return keys;
+        }
+    }
+    Vec::new()
 }
 
 #[cfg(test)]

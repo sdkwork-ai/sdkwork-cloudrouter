@@ -369,6 +369,7 @@ pub use sticky_route_store::{
     StickyObjectRouteBinding, StickyObjectRouteLookup, StickyObjectRouteUpsert, StickyRouteStore,
     StickyRouteStoreFuture,
 };
+pub(crate) use upstream_account_route_catalog::resolve_model_alias_catalog_keys;
 pub use upstream_account_route_catalog::{
     AccountBaseUrlConfig, AccountGroupModelAccess, AccountModelAccess, SupplierModelAccess,
     UpstreamAccountRouteCatalog, UpstreamRouteGateDiagnosis, VendorModelListEntry,

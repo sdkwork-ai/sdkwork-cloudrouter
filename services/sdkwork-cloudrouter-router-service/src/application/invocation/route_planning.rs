@@ -129,11 +129,13 @@ where
         .ok_or_else(|| route_error("model route planning requires requested model"))?
         .to_owned();
     // 模型类路由流程第 2 步：根据请求模型解析 catalog key 与支持该模型的
-    // vendor 列表（对应 sdkwork-models 目录的模型→vendor 解析）。
+    // vendor 列表（对应 sdkwork-models 目录的模型→vendor 解析）。vendor 列表
+    // 按**解析后的 catalog key** 取值：OpenRouter 风格请求名（如
+    // `anthropic/claude-opus-4.5`）与目录键（`anthropic/claude-opus-4-5`）
+    // 存在拼写差，按原始请求名查会得到空 vendor 列表。
     let catalog_key = resolve_catalog_key(catalog, invocation, &requested_model)?;
     invocation.resource.requested_model_catalog_key = Some(catalog_key.clone());
-    invocation.resource.resolved_vendor_codes =
-        catalog.model_vendor_codes_by_name(&requested_model);
+    invocation.resource.resolved_vendor_codes = catalog.model_vendor_codes_by_name(&catalog_key);
     tracing::trace!(
         tenant_id = invocation.subject.tenant_id,
         organization_id = invocation.subject.organization_id,

@@ -1,5 +1,6 @@
 mod async_usage_task;
 mod billing_owner;
+mod model_request_alias;
 mod upstream_account_group_selection;
 mod upstream_auth;
 mod vendor_code_alias;
@@ -8,6 +9,10 @@ pub use async_usage_task::{
     AsyncUsageTask, AsyncUsageTaskKind, AsyncUsageTaskStatus, NewAsyncUsageTask,
 };
 pub use billing_owner::BillingOwnerKind;
+pub(crate) use model_request_alias::{
+    model_alias_probes, model_alias_slug, model_id_segment, model_matches_alias_probe,
+    ModelAliasProbe,
+};
 pub use sdkwork_models_catalog_service::domain::ResourceDefinition;
 pub use sdkwork_models_catalog_service::domain::{
     ensure_canonical_model_catalog_key, is_model_region_segment, model_catalog_scope_matches_key,

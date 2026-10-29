@@ -266,7 +266,7 @@ async function withAppSdkResponses<T>(
 
 function createFailedRuntimeInvocationResponse() {
   return {
-    code: "2000",
+    code: 0,
     data: {
       item: {
         id: "runtime-invocation-1",
@@ -286,7 +286,7 @@ function createFailedRuntimeInvocationResponse() {
 
 function createPlaygroundAgentListResponse() {
   return {
-    code: "2000",
+    code: 0,
     data: {
       items: [
         {
@@ -326,7 +326,7 @@ function createPlaygroundAgentListResponse() {
 
 function createPlaygroundAgentSessionResponse() {
   return {
-    code: "2000",
+    code: 0,
     data: {
       item: {
         id: "agent-session-1",
@@ -350,7 +350,7 @@ function createPlaygroundAgentSessionResponse() {
 
 function createPlaygroundAgentRunResponse() {
   return {
-    code: "2000",
+    code: 0,
     data: {
       item: {
         id: "agent-run-1",
@@ -373,7 +373,7 @@ function createPlaygroundAgentRunResponse() {
 
 function createAgentRuntimeInvocationResponse() {
   return {
-    code: "2000",
+    code: 0,
     data: {
       item: {
         id: "runtime-invocation-1",
@@ -408,7 +408,7 @@ function createAgentRuntimeInvocationResponseFor(model: string, provider?: strin
 
 function createCompletedAgentRuntimeInvocationResponseFor(model: string, provider?: string) {
   return {
-    code: "2000",
+    code: 0,
     data: {
       item: {
         ...createAgentRuntimeInvocationResponseFor(model, provider).data.item,
@@ -421,7 +421,7 @@ function createCompletedAgentRuntimeInvocationResponseFor(model: string, provide
 
 function createAgentRunStepResponse() {
   return {
-    code: "2000",
+    code: 0,
     data: {
       item: {
         id: "agent-run-step-1",
@@ -440,7 +440,7 @@ function createAgentRunStepResponse() {
 
 function createCompletedAgentRunStepResponse() {
   return {
-    code: "2000",
+    code: 0,
     data: {
       item: {
         ...createAgentRunStepResponse().data.item,
@@ -453,7 +453,7 @@ function createCompletedAgentRunStepResponse() {
 
 function createFailedAgentRunStepResponse() {
   return {
-    code: "2000",
+    code: 0,
     data: {
       item: {
         ...createAgentRunStepResponse().data.item,
@@ -466,7 +466,7 @@ function createFailedAgentRunStepResponse() {
 
 function createFailedAgentRunResponse() {
   return {
-    code: "2000",
+    code: 0,
     data: {
       item: {
         id: "agent-run-1",
@@ -490,7 +490,7 @@ function createFailedAgentRunResponse() {
 
 function createCompletedAgentRunResponseFor(inputMessage: string, outputMessage: string, model: string) {
   return {
-    code: "2000",
+    code: 0,
     data: {
       item: {
         id: "agent-run-1",
@@ -520,7 +520,7 @@ function createCompletedAgentRunResponseFor(inputMessage: string, outputMessage:
 test.skip("console account service reads account data returned by the generated app SDK", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         id: "acct-1",
         name: "SDKWork",
@@ -560,7 +560,7 @@ test.skip("console account service reads account data returned by the generated 
 test.skip("console account service fails closed when the generated app SDK returns an empty account id", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         id: "",
         name: "",
@@ -599,7 +599,7 @@ test.skip("console account service fails closed when the generated app SDK retur
 test("console user service reads current user data returned by the generated app SDK", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         displayName: "Ada",
         email: "ada@example.com",
@@ -623,13 +623,14 @@ test("console user service reads current user data returned by the generated app
       assert.equal(result.email, "ada@example.com");
       assert.equal(result.twoFactorEnabled, true);
     },
+    { authenticated: true },
   );
 });
 
 test.skip("console account service fails closed when the generated app SDK omits account id", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         name: "SDKWork",
         email: "ops@example.com",
@@ -666,7 +667,7 @@ test.skip("console account service fails closed when the generated app SDK omits
 test("console user service fails closed when the generated app SDK omits current user email", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         displayName: "Ada",
         phone: "",
@@ -688,6 +689,7 @@ test("console user service fails closed when the generated app SDK omits current
         /User profile response missing data/,
       );
     },
+    { authenticated: true },
   );
 });
 
@@ -699,7 +701,7 @@ test("console user service fails closed when the generated app SDK omits require
   ] as const) {
     await withAppSdkResponse(
       {
-        code: "2000",
+        code: 0,
         data: (() => {
           const profile = {
             displayName: "Ada",
@@ -733,7 +735,7 @@ test("console user service fails closed when the generated app SDK omits require
 test("console user service preserves contract-defined empty current user display strings", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         displayName: "Ada",
         email: "ada@example.com",
@@ -759,13 +761,14 @@ test("console user service preserves contract-defined empty current user display
       assert.equal(result.thirdPartyBound, "");
       assert.equal(result.twoFactorEnabled, false);
     },
+    { authenticated: true },
   );
 });
 
 test("console user service treats omitted optional display strings as empty", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         item: {
           displayName: "Ada",
@@ -788,13 +791,14 @@ test("console user service treats omitted optional display strings as empty", as
       assert.equal(result.passwordLastChanged, "");
       assert.equal(result.thirdPartyBound, "");
     },
+    { authenticated: true },
   );
 });
 
 test("console messages service reads message items returned by the generated app SDK", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         items: [
           {
@@ -820,13 +824,14 @@ test("console messages service reads message items returned by the generated app
       assert.equal(captured[0].url, "/app/v3/api/notification/notifications?include_archived=false&page=1&page_size=50");
       assert.deepEqual(result.map((item) => item.id), ["msg-1"]);
     },
+    { authenticated: true },
   );
 });
 
 test("console messages service acknowledges viewed messages through the generated app SDK", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {},
     },
     async (captured) => {
@@ -837,6 +842,7 @@ test("console messages service acknowledges viewed messages through the generate
         ["POST /app/v3/api/notification/notifications/msg-1/acknowledge"],
       );
     },
+    { authenticated: true },
   );
 });
 
@@ -857,7 +863,7 @@ test("console messages view marks opened unread messages as read and persists ac
 test("shared notification service reads notification items returned by the generated app SDK", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         items: [
           {
@@ -919,6 +925,7 @@ test("shared notification service reads notification items returned by the gener
       assert.equal(result[0].showAsPopup, true);
       assert.equal(result[1].showAsPopup, false);
     },
+    { authenticated: true },
   );
 });
 
@@ -947,7 +954,7 @@ test("app SDK message contract exposes popup display flag", () => {
 test("console messages service fails closed when SDK message items omit required fields", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         items: [
           {
@@ -986,6 +993,7 @@ test("console messages service fails closed when SDK message items omit required
         /Notification description is required/,
       );
     },
+    { authenticated: true },
   );
 });
 
@@ -1053,6 +1061,7 @@ test("console gateway service follows opaque cursor pagination returned by the g
         assert.equal(continuationUrl.searchParams.has(forbiddenAlias), false);
       }
     },
+    { authenticated: true },
   );
 });
 
@@ -1080,6 +1089,7 @@ test("console gateway service fails closed when SDK trace items omit required fi
         /Gateway trace method is required/,
       );
     },
+    { authenticated: true },
   );
 });
 
@@ -1107,6 +1117,7 @@ test("console gateway service fails closed when SDK trace list contains malforme
         /Gateway trace record is required/,
       );
     },
+    { authenticated: true },
   );
 });
 
@@ -1182,6 +1193,7 @@ test("console gateway service rejects duplicate rows and cursors that do not adv
         /duplicate ids/,
       );
     },
+    { authenticated: true },
   );
 
   const cursor = "opaque-cursor-that-must-advance";
@@ -1219,6 +1231,7 @@ test("console gateway service rejects non-numeric HTTP status values", async () 
         /Gateway trace status is required/,
       );
     },
+    { authenticated: true },
   );
 });
 
@@ -1226,13 +1239,13 @@ test("playground service reads generation history returned by the generated app 
   await withAppSdkResponses(
     [
       {
-        code: "2000",
+        code: 0,
         data: {
           items: [generationRecord()],
         },
       },
       {
-        code: "2000",
+        code: 0,
         data: {
           items: [generationResult()],
         },
@@ -1255,7 +1268,7 @@ test("playground service creates agent generation runs through standard Agent an
   await withAppSdkResponses(
     [
       {
-        code: "2000",
+        code: 0,
         data: {
           items: [
             {
@@ -1292,7 +1305,7 @@ test("playground service creates agent generation runs through standard Agent an
         },
       },
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-session-1",
@@ -1313,7 +1326,7 @@ test("playground service creates agent generation runs through standard Agent an
         },
       },
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-1",
@@ -1333,7 +1346,7 @@ test("playground service creates agent generation runs through standard Agent an
         },
       },
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "runtime-invocation-1",
@@ -1351,7 +1364,7 @@ test("playground service creates agent generation runs through standard Agent an
         },
       },
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-step-1",
@@ -1373,7 +1386,7 @@ test("playground service creates agent generation runs through standard Agent an
         "",
       ].join("\n"),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "runtime-invocation-1",
@@ -1393,7 +1406,7 @@ test("playground service creates agent generation runs through standard Agent an
       },
       createCompletedAgentRunStepResponse(),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-1",
@@ -1637,7 +1650,7 @@ test("playground generation agent normalizes media assets from Runtime SSE into 
         "",
       ].join("\n"),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "runtime-invocation-1",
@@ -1657,7 +1670,7 @@ test("playground generation agent normalizes media assets from Runtime SSE into 
       },
       createCompletedAgentRunStepResponse(),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-1",
@@ -1751,7 +1764,7 @@ test("playground generation agent derives broad agent result type from Runtime m
         "",
       ].join("\n"),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "runtime-invocation-1",
@@ -1771,7 +1784,7 @@ test("playground generation agent derives broad agent result type from Runtime m
       },
       createCompletedAgentRunStepResponse(),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-1",
@@ -1835,7 +1848,7 @@ test("playground generation agent completes media-only Runtime SSE streams", asy
         "",
       ].join("\n"),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "runtime-invocation-1",
@@ -1855,7 +1868,7 @@ test("playground generation agent completes media-only Runtime SSE streams", asy
       },
       createCompletedAgentRunStepResponse(),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-1",
@@ -1929,7 +1942,7 @@ test("playground generation agent maps image and audio family assets from Runtim
           "",
         ].join("\n"),
         {
-          code: "2000",
+          code: 0,
           data: {
             item: {
               id: "runtime-invocation-1",
@@ -1949,7 +1962,7 @@ test("playground generation agent maps image and audio family assets from Runtim
         },
         createCompletedAgentRunStepResponse(),
         {
-          code: "2000",
+          code: 0,
           data: {
             item: {
               id: "agent-run-1",
@@ -2015,7 +2028,7 @@ test("playground generation agent infers artifact modality from MIME type when R
           "",
         ].join("\n"),
         {
-          code: "2000",
+          code: 0,
           data: {
             item: {
               id: "runtime-invocation-1",
@@ -2035,7 +2048,7 @@ test("playground generation agent infers artifact modality from MIME type when R
         },
         createCompletedAgentRunStepResponse(),
         {
-          code: "2000",
+          code: 0,
           data: {
             item: {
               id: "agent-run-1",
@@ -2106,7 +2119,7 @@ test("playground generation agent reads nested Runtime SSE artifact envelopes an
         "",
       ].join("\n"),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "runtime-invocation-1",
@@ -2126,7 +2139,7 @@ test("playground generation agent reads nested Runtime SSE artifact envelopes an
       },
       createCompletedAgentRunStepResponse(),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-1",
@@ -2202,7 +2215,7 @@ test("playground generation agent propagates Runtime SSE usage into Agent run an
         "",
       ].join("\n"),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "runtime-invocation-1",
@@ -2221,7 +2234,7 @@ test("playground generation agent propagates Runtime SSE usage into Agent run an
         },
       },
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             ...createAgentRunStepResponse().data.item,
@@ -2235,7 +2248,7 @@ test("playground generation agent propagates Runtime SSE usage into Agent run an
         },
       },
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-1",
@@ -2305,7 +2318,7 @@ test("playground generation agent ignores non-media URLs in Runtime SSE generati
         "",
       ].join("\n"),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "runtime-invocation-1",
@@ -2357,7 +2370,7 @@ test("playground generation agent ignores media-shaped URLs from non-artifact Ru
         "",
       ].join("\n"),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "runtime-invocation-1",
@@ -2377,7 +2390,7 @@ test("playground generation agent ignores media-shaped URLs from non-artifact Ru
       },
       createCompletedAgentRunStepResponse(),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-1",
@@ -2438,7 +2451,7 @@ test("playground generation agent ignores top-level media URLs from non-artifact
         "",
       ].join("\n"),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "runtime-invocation-1",
@@ -2458,7 +2471,7 @@ test("playground generation agent ignores top-level media URLs from non-artifact
       },
       createCompletedAgentRunStepResponse(),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-1",
@@ -2519,7 +2532,7 @@ test("playground generation agent falls back to Runtime artifact list when SSE o
         "",
       ].join("\n"),
       {
-        code: "2000",
+        code: 0,
         data: {
           items: [
             {
@@ -2540,7 +2553,7 @@ test("playground generation agent falls back to Runtime artifact list when SSE o
         },
       },
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "runtime-invocation-1",
@@ -2560,7 +2573,7 @@ test("playground generation agent falls back to Runtime artifact list when SSE o
       },
       createCompletedAgentRunStepResponse(),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-1",
@@ -2639,7 +2652,7 @@ test("playground generation agent does not query Runtime artifacts when SSE alre
         "",
       ].join("\n"),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "runtime-invocation-1",
@@ -2659,7 +2672,7 @@ test("playground generation agent does not query Runtime artifacts when SSE alre
       },
       createCompletedAgentRunStepResponse(),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-1",
@@ -2735,7 +2748,7 @@ test("playground generation agent falls back to Runtime artifact list for nested
         "",
       ].join("\n"),
       {
-        code: "2000",
+        code: 0,
         data: {
           items: [
             {
@@ -2756,7 +2769,7 @@ test("playground generation agent falls back to Runtime artifact list for nested
         },
       },
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "runtime-invocation-1",
@@ -2776,7 +2789,7 @@ test("playground generation agent falls back to Runtime artifact list for nested
       },
       createCompletedAgentRunStepResponse(),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-1",
@@ -2853,7 +2866,7 @@ test("playground generation agent reads MediaResource poster and duration from R
         "",
       ].join("\n"),
       {
-        code: "2000",
+        code: 0,
         data: {
           items: [
             {
@@ -2882,7 +2895,7 @@ test("playground generation agent reads MediaResource poster and duration from R
         },
       },
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "runtime-invocation-1",
@@ -2902,7 +2915,7 @@ test("playground generation agent reads MediaResource poster and duration from R
       },
       createCompletedAgentRunStepResponse(),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-1",
@@ -2968,7 +2981,7 @@ test("playground agent SSE preserves whitespace-only runtime deltas", async () =
   await withAppSdkResponses(
     [
       {
-        code: "2000",
+        code: 0,
         data: {
           items: [
             {
@@ -3005,7 +3018,7 @@ test("playground agent SSE preserves whitespace-only runtime deltas", async () =
         },
       },
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-session-1",
@@ -3026,7 +3039,7 @@ test("playground agent SSE preserves whitespace-only runtime deltas", async () =
         },
       },
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-1",
@@ -3046,7 +3059,7 @@ test("playground agent SSE preserves whitespace-only runtime deltas", async () =
         },
       },
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "runtime-invocation-1",
@@ -3064,7 +3077,7 @@ test("playground agent SSE preserves whitespace-only runtime deltas", async () =
         },
       },
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-step-1",
@@ -3087,7 +3100,7 @@ test("playground agent SSE preserves whitespace-only runtime deltas", async () =
         "",
       ].join("\n"),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "runtime-invocation-1",
@@ -3107,7 +3120,7 @@ test("playground agent SSE preserves whitespace-only runtime deltas", async () =
       },
       createCompletedAgentRunStepResponse(),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-1",
@@ -3170,7 +3183,7 @@ test("playground agent SSE reads provider-compatible payload-only runtime deltas
         "",
       ].join("\n"),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "runtime-invocation-1",
@@ -3190,7 +3203,7 @@ test("playground agent SSE reads provider-compatible payload-only runtime deltas
       },
       createCompletedAgentRunStepResponse(),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-1",
@@ -3249,7 +3262,7 @@ test("playground agent SSE ignores text-shaped payloads on non-text Runtime even
         "",
       ].join("\n"),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "runtime-invocation-1",
@@ -3269,7 +3282,7 @@ test("playground agent SSE ignores text-shaped payloads on non-text Runtime even
       },
       createCompletedAgentRunStepResponse(),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-1",
@@ -3320,7 +3333,7 @@ test("playground agent SSE empty output fails the runtime invocation and run", a
   await withAppSdkResponses(
     [
       {
-        code: "2000",
+        code: 0,
         data: {
           items: [
             {
@@ -3357,7 +3370,7 @@ test("playground agent SSE empty output fails the runtime invocation and run", a
         },
       },
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-session-1",
@@ -3378,7 +3391,7 @@ test("playground agent SSE empty output fails the runtime invocation and run", a
         },
       },
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-1",
@@ -3398,7 +3411,7 @@ test("playground agent SSE empty output fails the runtime invocation and run", a
         },
       },
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "runtime-invocation-1",
@@ -3416,7 +3429,7 @@ test("playground agent SSE empty output fails the runtime invocation and run", a
         },
       },
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-step-1",
@@ -3433,7 +3446,7 @@ test("playground agent SSE empty output fails the runtime invocation and run", a
       },
       ["data: [DONE]", ""].join("\n"),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "runtime-invocation-1",
@@ -3453,7 +3466,7 @@ test("playground agent SSE empty output fails the runtime invocation and run", a
       },
       createFailedAgentRunStepResponse(),
       {
-        code: "2000",
+        code: 0,
         data: {
           item: {
             id: "agent-run-1",
@@ -3552,7 +3565,7 @@ test("playground agent SSE stream errors fail the runtime invocation and run", a
 test("playground service does not create agent generation runs without a portal session", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         agent: {
           id: "default-generation-agent",
@@ -3636,7 +3649,7 @@ test("playground service does not create agent generation runs without a portal 
 test("playground service rejects blank agent generation prompts before calling the SDK", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         agent: {
           id: "default-generation-agent",
@@ -3721,7 +3734,7 @@ test("playground service rejects blank agent generation prompts before calling t
 test("playground service does not read user generation history without a portal session", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         items: [
           {
@@ -3749,7 +3762,7 @@ test("playground service does not read user generation history without a portal 
 test("playground service exposes generation workspace state through the appbase generation service", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         items: [
           generationRecord({
@@ -3780,7 +3793,7 @@ test("playground service exposes generation workspace state through the appbase 
 test("playground service derives vendor grouped models from the standard app model catalog", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         items: [
           {
@@ -3946,7 +3959,7 @@ test("playground service derives vendor grouped models from the standard app mod
 test("playground chat keeps catalog models visible regardless of provider route availability", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         items: [
           {
@@ -4018,7 +4031,7 @@ test("playground chat keeps catalog models visible regardless of provider route 
 test("playground service fails closed when standard model catalog response omits items array", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         items: null,
       },
@@ -4035,7 +4048,7 @@ test("playground service fails closed when standard model catalog response omits
 test("playground service fails closed when standard model catalog item omits required fields", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         items: [
           {
@@ -4058,7 +4071,7 @@ test("playground service fails closed when standard model catalog item omits req
 test("playground service maps unknown generation modalities to text history entries", async () => {
   await withAppSdkResponse(
     {
-      code: "2000",
+      code: 0,
       data: {
         items: [
           generationRecord({

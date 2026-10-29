@@ -133,6 +133,15 @@ where
         found = Some(candidate.clone());
         false
     });
+    if found.is_some() {
+        return found;
+    }
+    // 精确未命中：接受 OpenRouter 风格 id（`anthropic/claude-opus-4.5` →
+    // 目录键 `anthropic/claude-opus-4-5`），与路由期解析同一容错语义。
+    let alias_keys = crate::ports::resolve_model_alias_catalog_keys(catalog, model);
+    if let [catalog_key] = alias_keys.as_slice() {
+        return catalog.find_model(catalog_key);
+    }
     found
 }
 

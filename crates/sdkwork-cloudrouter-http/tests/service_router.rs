@@ -43,6 +43,10 @@ async fn service_router_exposes_standard_health_and_ready_endpoints() {
 
 #[tokio::test]
 async fn service_router_metrics_expose_canonical_bounded_request_contract() {
+    // Metrics endpoints require a bearer token outside dev/test postures
+    // (METRICS_AUTH_DISABLED keeps the scrape contract reachable in this test
+    // process without weakening the production default).
+    std::env::set_var("SDKWORK_CLOUDROUTER_METRICS_AUTH_DISABLED", "1");
     let router = sdkwork_cloudrouter_http::service_router("sdkwork-cloudrouter-edge-runtime");
     let response = router
         .clone()
@@ -136,7 +140,10 @@ async fn service_router_exposes_gateway_openapi_document() {
         .to_ascii_lowercase();
     assert!(!payload_text.contains("passthrough"));
     assert!(!payload_text.contains("x-passthrough"));
-    assert!(!payload_text.contains("native"));
+    // Vendor copy legitimately describes the Gemini native image / Veo video
+    // surfaces; only the retired route/header leakage forms stay forbidden.
+    assert!(!payload_text.contains("/native"));
+    assert!(!payload_text.contains("x-native"));
     assert!(payload["paths"].get("/v1/chat/completions").is_some());
     assert!(payload["paths"].get("/v1/responses").is_some());
     assert!(payload["paths"].get("/v1/embeddings").is_some());

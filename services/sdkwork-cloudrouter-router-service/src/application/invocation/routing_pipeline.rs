@@ -366,4 +366,97 @@ mod tests {
             "调用链显式标记优先于持久化标记"
         );
     }
+
+    /// 目录里的 Anthropic 原生 id 用连字符（`claude-opus-4-5`），OpenRouter
+    /// wire id 用点号（`claude-opus-4.5`）；客户端按 OpenRouter 格式传模型名
+    /// 时必须解析到同一目录键，而不是 503。
+    fn catalog_with_hyphenated_anthropic_model() -> crate::infrastructure::InMemoryPricingCatalog {
+        use crate::domain::AiModel;
+        let mut catalog = crate::infrastructure::InMemoryPricingCatalog::default();
+        catalog.add_model(AiModel::new(
+            "claude-opus-4-5",
+            "Claude Opus 4.5",
+            "anthropic",
+            vec!["chat"],
+        ));
+        catalog
+    }
+
+    #[test]
+    fn model_catalog_keys_accept_openrouter_style_ids() {
+        let catalog = catalog_with_hyphenated_anthropic_model();
+        // 点号差异由 slug 层吸收。
+        assert_eq!(
+            vec!["anthropic/claude-opus-4-5".to_owned()],
+            catalog.model_catalog_keys_by_name("anthropic/claude-opus-4.5")
+        );
+        // relay 前缀 + `:variant` 后缀同样被剥掉。
+        assert_eq!(
+            vec!["anthropic/claude-opus-4-5".to_owned()],
+            catalog.model_catalog_keys_by_name("openrouter/anthropic/claude-opus-4.5:free")
+        );
+        // 裸模型名 + 点号命中 model 列的 slug。
+        assert_eq!(
+            vec!["anthropic/claude-opus-4-5".to_owned()],
+            catalog.model_catalog_keys_by_name("Claude.Opus-4.5")
+        );
+        // 冒号分隔符：半角、全角（中文输入法）、冒号后带空格、以及
+        // `Vendor: Model` 展示标签形态，都解析到同一目录键。
+        assert_eq!(
+            vec!["anthropic/claude-opus-4-5".to_owned()],
+            catalog.model_catalog_keys_by_name("anthropic:claude-opus-4.5")
+        );
+        assert_eq!(
+            vec!["anthropic/claude-opus-4-5".to_owned()],
+            catalog.model_catalog_keys_by_name("anthropic：claude-opus-4.5")
+        );
+        assert_eq!(
+            vec!["anthropic/claude-opus-4-5".to_owned()],
+            catalog.model_catalog_keys_by_name("anthropic： claude-opus-4.5")
+        );
+        assert_eq!(
+            vec!["anthropic/claude-opus-4-5".to_owned()],
+            catalog.model_catalog_keys_by_name("Anthropic: Claude Opus 4.5")
+        );
+        // 精确形态与目录外模型保持原语义。
+        assert_eq!(
+            vec!["anthropic/claude-opus-4-5".to_owned()],
+            catalog.model_catalog_keys_by_name("anthropic/claude-opus-4-5")
+        );
+        assert!(catalog
+            .model_catalog_keys_by_name("anthropic/claude-opus-9-9")
+            .is_empty());
+        // 未知模型的冒号形态同样保持原语义（503），不会被误路由。
+        assert!(catalog
+            .model_catalog_keys_by_name("anthropic：claude-opus-9-9")
+            .is_empty());
+    }
+
+    #[test]
+    fn openrouter_style_slug_ambiguity_stays_multi_valued() {
+        use crate::domain::AiModel;
+        let mut catalog = catalog_with_hyphenated_anthropic_model();
+        // 两个 vendor 目录键的 model 列同名：裸名的点号形式在 slug 层同时命中
+        // 两个目录键，容错解析必须把多值交给上层按歧义拒绝，不能静默挑一个。
+        catalog.add_model(AiModel::new(
+            "claude-opus-4-5",
+            "Claude Opus 4.5 (mirror)",
+            "anthropic_mirror",
+            vec!["chat"],
+        ));
+        let mut keys = catalog.model_catalog_keys_by_name("claude-opus-4.5");
+        keys.sort();
+        assert_eq!(
+            vec![
+                "anthropic/claude-opus-4-5".to_owned(),
+                "anthropic_mirror/claude-opus-4-5".to_owned()
+            ],
+            keys
+        );
+        // vendor 限定形式仍唯一解析（FullSlug 层先命中单一目录键）。
+        assert_eq!(
+            vec!["anthropic/claude-opus-4-5".to_owned()],
+            catalog.model_catalog_keys_by_name("anthropic/claude-opus-4.5")
+        );
+    }
 }

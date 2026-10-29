@@ -4,11 +4,12 @@ use std::sync::Arc;
 use arc_swap::ArcSwap;
 
 use crate::domain::{
-    has_text, AccountRateCard, AiModel, BillingMeter, DecimalValue, DomainError, DomainResult,
-    GatewayAccessPolicy, GatewayApiKey, GatewayRiskRule, ModelMappingRule, ModelPrice,
-    ModelUpstreamRoute, ModelVendorDefinition, Money, PriceSide, PricingPlan, PricingRule,
-    QuotaPolicy, ResolveModelMappingContext, UpstreamAccountGroup,
-    UpstreamAccountGroupMetricSnapshot, UpstreamAccountRoute,
+    has_text, model_alias_probes, model_alias_slug, model_id_segment, AccountRateCard, AiModel,
+    BillingMeter, DecimalValue, DomainError, DomainResult, GatewayAccessPolicy, GatewayApiKey,
+    GatewayRiskRule, ModelAliasProbe, ModelMappingRule, ModelPrice, ModelUpstreamRoute,
+    ModelVendorDefinition, Money, PriceSide, PricingPlan, PricingRule, QuotaPolicy,
+    ResolveModelMappingContext, UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot,
+    UpstreamAccountRoute,
 };
 use crate::infrastructure::in_memory_pricing_catalog::resolve_model_mapping_from_rules;
 use crate::infrastructure::sql::rows::{
@@ -147,6 +148,12 @@ pub struct SqlPricingCatalogSnapshot {
     // --- Indexes for O(1) hot-path lookups ---
     models_by_key: HashMap<String, AiModel>,
     models_by_name: HashMap<String, Vec<String>>,
+    /// OpenRouter 风格容错索引（整键 slug）：`model_alias_slug(catalog_key)` 与
+    /// `model_alias_slug(model)` → catalog key 列表。仅在精确索引未命中时使用。
+    models_by_alias_slug: HashMap<String, Vec<String>>,
+    /// OpenRouter 风格容错索引（model 段 slug）：`model_alias_slug(最后一段)`
+    /// → catalog key 列表，vendor 无关的最后一层兜底。仅在精确索引未命中时使用。
+    models_by_model_id_slug: HashMap<String, Vec<String>>,
     api_keys_by_hash: HashMap<String, GatewayApiKey>,
     api_keys_by_id: HashMap<i64, GatewayApiKey>,
     upstream_account_groups_by_id: HashMap<i64, UpstreamAccountGroup>,
@@ -703,6 +710,8 @@ impl SqlPricingCatalogSnapshot {
             account_billing_modes,
             models_by_key: HashMap::new(),
             models_by_name: HashMap::new(),
+            models_by_alias_slug: HashMap::new(),
+            models_by_model_id_slug: HashMap::new(),
             api_keys_by_hash: HashMap::new(),
             api_keys_by_id: HashMap::new(),
             upstream_account_groups_by_id: HashMap::new(),
@@ -737,6 +746,36 @@ impl SqlPricingCatalogSnapshot {
             }
             index
         });
+        // OpenRouter 风格容错索引：与 `model_catalog_keys_by_name` 的 probe
+        // 层级一一对应（整键 slug → model 段 slug），键统一小写化并把 `.` 折叠
+        // 为 `-`（`anthropic/claude-opus-4.5` ↔ `anthropic/claude-opus-4-5`）。
+        self.models_by_alias_slug = self.models.iter().fold(HashMap::new(), |mut index, model| {
+            for slug_source in [&model.catalog_key, &model.model] {
+                let slug = model_alias_slug(slug_source);
+                if slug.is_empty() {
+                    continue;
+                }
+                let keys = index.entry(slug).or_default();
+                if !keys.contains(&model.catalog_key) {
+                    keys.push(model.catalog_key.clone());
+                }
+            }
+            index
+        });
+        self.models_by_model_id_slug =
+            self.models.iter().fold(HashMap::new(), |mut index, model| {
+                for slug_source in [model_id_segment(&model.catalog_key), model.model.as_str()] {
+                    let slug = model_alias_slug(slug_source);
+                    if slug.is_empty() {
+                        continue;
+                    }
+                    let keys = index.entry(slug).or_default();
+                    if !keys.contains(&model.catalog_key) {
+                        keys.push(model.catalog_key.clone());
+                    }
+                }
+                index
+            });
         self.api_keys_by_hash = self
             .api_keys
             .iter()
@@ -1519,10 +1558,22 @@ impl UpstreamAccountRouteCatalog for SqlPricingCatalogSnapshot {
     }
 
     fn model_catalog_keys_by_name(&self, model_name: &str) -> Vec<String> {
-        self.models_by_name
-            .get(model_name)
-            .cloned()
-            .unwrap_or_default()
+        if let Some(keys) = self.models_by_name.get(model_name) {
+            return keys.clone();
+        }
+        // 精确未命中：按 OpenRouter 风格 probe 走容错索引，首个非空层级生效
+        // （多值仍返回，由调用方按歧义拒绝，与精确路径语义一致）。
+        for probe in model_alias_probes(model_name) {
+            let resolved = match &probe {
+                ModelAliasProbe::Exact(exact) => self.models_by_name.get(exact).cloned(),
+                ModelAliasProbe::FullSlug(slug) => self.models_by_alias_slug.get(slug).cloned(),
+                ModelAliasProbe::PartSlug(slug) => self.models_by_model_id_slug.get(slug).cloned(),
+            };
+            if let Some(keys) = resolved.filter(|keys| !keys.is_empty()) {
+                return keys;
+            }
+        }
+        Vec::new()
     }
 
     fn model_catalog_keys_for_endpoint(&self, endpoint_code: &str) -> Vec<String> {
