@@ -100,6 +100,53 @@ async fn gateway_retrieves_openai_model_by_id() {
     assert_eq!("openai", payload["owned_by"]);
 }
 
+#[tokio::test]
+async fn gateway_retrieves_openai_model_by_wire_format_id_and_exposes_display_names() {
+    let hasher =
+        Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let router = sdkwork_cloudrouter_edge_runtime::router_with_product_catalog_and_api_key_hasher(
+        Arc::new(catalog_with_hashed_api_key(key_hash)),
+        hasher,
+    );
+
+    // 冒号/全角冒号分隔 + 点号拼写的 wire 格式检索到同一模型。（含 `/` 的
+    // 目录键无法作为单段路径参数传输——这是 HTTP 路由的固有限制，冒号
+    // 形态正是它的无斜杠替代。）
+    for model_id in ["openai:gpt-4o-mini", "GPT-4o.Mini"] {
+        let response = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri(format!("/v1/models/{model_id}"))
+                    .header("authorization", "Bearer sk-live-secret")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(StatusCode::OK, response.status(), "model id: {model_id}");
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+        assert_eq!("gpt-4o-mini", payload["id"], "model id: {model_id}");
+        // displayName / vendorDisplayName 扩展字段（契约 additionalProperties
+        // 允许），供模型选择器直接展示。
+        assert_eq!(
+            "GPT-4o mini", payload["displayName"],
+            "model id: {model_id}"
+        );
+        assert_eq!(
+            "OpenAI", payload["vendorDisplayName"],
+            "model id: {model_id}"
+        );
+    }
+}
+
 /// The gateway fixture serves `GET /v1/vendors` through the mounted vendors
 /// router: the key-scoped vendor/model listing used by desktop imports.
 fn catalog_with_callable_account(key_hash: String) -> InMemoryPricingCatalog {

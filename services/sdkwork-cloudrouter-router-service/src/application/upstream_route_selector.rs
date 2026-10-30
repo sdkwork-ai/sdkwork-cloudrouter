@@ -9,10 +9,11 @@ use std::collections::BTreeMap;
 use std::fmt::{Display, Formatter};
 
 use crate::domain::{
-    has_text, parse_model_catalog_identity, provider_native_model_id, BillingMeter, DomainError,
-    DomainResult, GatewayApiKeyAccountGroupBinding, ModelUpstreamRoute, PricingDimensionContext,
-    ResourceDefinition, RouteCandidate, RoutingCapability, UpstreamAccountGroup,
-    UpstreamAccountGroupBinding, UpstreamAccountRoute, UpstreamAccountRoutingStrategy,
+    has_text, normalize_wire_model_id, parse_model_catalog_identity, provider_native_model_id,
+    BillingMeter, DomainError, DomainResult, GatewayApiKeyAccountGroupBinding, ModelUpstreamRoute,
+    PriceSide, PricingDimensionContext, ResourceDefinition, RouteCandidate, RoutingCapability,
+    UpstreamAccountGroup, UpstreamAccountGroupBinding, UpstreamAccountRoute,
+    UpstreamAccountRoutingStrategy,
 };
 use crate::ports::{
     AccountGroupModelAccess, UpstreamAccountRouteCatalog, UpstreamRouteGateDiagnosis,
@@ -58,6 +59,11 @@ pub struct SelectUpstreamModelRouteQuery {
     pub api_code: String,
     pub capability: RoutingCapability,
     pub billing_meter: BillingMeter,
+    /// 该调用是否需要完整定价。免费计费的管理面（`/v1/files`、
+    /// `/v1/assistants` 等）要派发上游但不扣费，定价预门必须放行——
+    /// 把"免费计费"当"缺价"会让所有管理调用 502（计费口径与路由口径分离，
+    /// 见 route_planning 的规划跳过条件）。
+    pub pricing_required: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -90,6 +96,10 @@ pub struct SelectUpstreamAccountRouteQuery {
     pub pricing_meters: Option<Vec<BillingMeter>>,
     /// 请求携带的原始模型名，供费率条件（`model` 维度）匹配。
     pub requested_model: Option<String>,
+    /// 该调用是否需要完整定价。免费计费的管理面要派发上游但不扣费，
+    /// 定价预门必须放行（与 `SelectUpstreamModelRouteQuery::pricing_required`
+    /// 同一口径）。
+    pub pricing_required: bool,
     /// 请求携带的原始分辨率（`/resolution`、`/size`、`/output/size`），供预检
     /// 从目录声明里挑视频计价档位。
     ///
@@ -264,13 +274,20 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             .catalog
             .account_group_model_access(query.context.group_id)
         {
-            let vendor_code = self
-                .catalog
-                .find_model(&query.catalog_key)
-                .map(|model| model.vendor_code);
-            let reason = model_access_forbidden_reason(
-                vendor_code.as_deref(),
+            let catalog_model = self.catalog.find_model(&query.catalog_key);
+            let vendor_code = catalog_model
+                .as_ref()
+                .map(|model| model.vendor_code.clone());
+            // 黑白名单按全部拼写匹配：wire 格式请求名不得绕过黑名单或被
+            // 白名单误拒。
+            let spellings = model_access_spellings(
+                self.catalog,
                 &query.requested_model,
+                Some(&query.catalog_key),
+            );
+            let reason = model_access_forbidden_reason_for_spellings(
+                vendor_code.as_deref(),
+                &spellings,
                 &access,
             );
             if let Some(rule) = reason {
@@ -721,6 +738,11 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                 if !self.route_is_callable(&route) {
                     continue;
                 }
+                if !query.pricing_required {
+                    // 免费计费：不扣费的调用不做定价预门，路由可达即可。
+                    push_unique_model_route(&mut selected_routes, route);
+                    continue;
+                }
                 match self.ensure_route_is_priced(query, &route) {
                     Ok(()) => push_unique_model_route(&mut selected_routes, route),
                     Err(error) => {
@@ -978,6 +1000,22 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             //
             // 因此按 planner 给出的优先级顺序挑第一个能核价的账号；只有**全部**
             // 账号都不可核价时才上报定价缺口（此时才是真的缺价）。
+            if !query.pricing_required {
+                // 免费计费：不扣费的调用不做定价预门，按 planner 优先级取
+                // 首个可调用账号（与模型路由的放行口径一致）。
+                let primary_index = routes
+                    .iter()
+                    .position(|route| self.account_route_is_callable(route));
+                if let Some(index) = primary_index {
+                    let primary = routes[index].clone();
+                    let failover = routes[index + 1..].to_vec();
+                    return CandidateUpstreamAccountRouteEvaluation::Selected(
+                        Box::new(primary),
+                        failover,
+                    );
+                }
+                return CandidateUpstreamAccountRouteEvaluation::NoCallableCandidate;
+            }
             let mut priceable_index = None;
             let mut unpriced_failure = None;
             for (index, route) in routes.iter().enumerate() {
@@ -1338,7 +1376,32 @@ pub(crate) fn ensure_route_is_priced<C>(
 where
     C: UpstreamAccountRouteCatalog,
 {
-    let meters = composite_pricing_meters(probe.billing_meter);
+    // 复合展开后与目录对账：目录未定义的档位不参与核价。嵌入模型目录只发
+    // 布输入档（无输出 token 可量），对 `LlmInputToken` 的复合展开若不裁剪，
+    // 定价门会要求一个目录永远不会有 `llm_output_token` 价——比运行时计价
+    // （declared ∩ catalog 对账）更严，把可计价的嵌入调用判死。对账后一档
+    // 都没定义时回落声明档，保持"目录完全不认"的 fail-closed 语义。
+    let declared_meters = composite_pricing_meters(probe.billing_meter);
+    let defined_meters: Vec<BillingMeter> = declared_meters
+        .iter()
+        .filter(|meter| {
+            catalog
+                .find_model_price(
+                    probe.catalog_key,
+                    PriceSide::OfficialReference,
+                    (*meter).clone(),
+                    None,
+                    None,
+                )
+                .is_some()
+        })
+        .cloned()
+        .collect();
+    let meters = if defined_meters.is_empty() {
+        declared_meters
+    } else {
+        defined_meters
+    };
     let configured_default_region =
         catalog.default_billing_region(probe.tenant_id, probe.organization_id, probe.catalog_key);
     for meter in meters {
@@ -1678,6 +1741,13 @@ where
             if !catalog.model_catalog_keys_by_name(&prefixed).is_empty() {
                 push(prefixed, &mut keys);
             }
+        }
+        // 3.5 通用兼容面（`openai.video`、`suno.music` 等）服务跨厂商模型：
+        //     供应商（openai/suno）与模型真实厂商（minimax/mureka）不同，
+        //     第 3 步的 vendor 翻译全部落空。直接按裸模型名做别名解析
+        //     （OpenRouter/冒号/点号容错同一套），命中目录即为目标键。
+        for key in catalog.model_catalog_keys_by_name(requested) {
+            push(key, &mut keys);
         }
     }
 
@@ -2321,6 +2391,9 @@ fn native_model_from_base_catalog_key(value: &str) -> Option<String> {
 /// entry matches only when the request's model vendor is known and equals the
 /// entry vendor; model names compare case-insensitively against the requested
 /// model.
+///
+/// 请求侧判定请使用 [`model_access_forbidden_reason_for_spellings`]：黑白名单
+/// 按**全部拼写**匹配，防止冒号/OpenRouter wire 格式绕过黑名单或被白名单误拒。
 pub fn model_access_forbidden_reason(
     vendor_code: Option<&str>,
     requested_model: &str,
@@ -2328,17 +2401,35 @@ pub fn model_access_forbidden_reason(
 ) -> Option<&'static str> {
     model_access_forbidden_reason_lists(
         vendor_code,
-        requested_model,
+        &[requested_model.to_owned()],
+        &access.blacklist,
+        &access.whitelist,
+    )
+}
+
+/// 请求侧黑白名单判定：条目模型名与请求的**全部拼写**做不区分大小写比较
+/// （原始请求名、分隔符归一化名、目录键、规范裸模型名）。名单由管理端按
+/// 规范名配置，而客户端可能以任意 wire 格式传同一模型——只按原始名匹配
+/// 会让别名拼写绕过黑名单（访问控制失效）或被白名单误拒。
+pub fn model_access_forbidden_reason_for_spellings(
+    vendor_code: Option<&str>,
+    requested_model_spellings: &[String],
+    access: &AccountGroupModelAccess,
+) -> Option<&'static str> {
+    model_access_forbidden_reason_lists(
+        vendor_code,
+        requested_model_spellings,
         &access.blacklist,
         &access.whitelist,
     )
 }
 
 /// 底层判定：黑名单命中返回 "blacklist"；白名单非空且未覆盖返回 "whitelist"。
-/// 分组级与供应商级黑白名单共用（两者条目结构与语义一致）。
+/// 分组级与供应商级黑白名单共用（两者条目结构与语义一致）。条目命中 =
+/// vendor 相等且（条目 models 为空或与**任一**请求拼写匹配）。
 pub fn model_access_forbidden_reason_lists(
     vendor_code: Option<&str>,
-    requested_model: &str,
+    requested_model_spellings: &[String],
     blacklist: &[crate::ports::VendorModelListEntry],
     whitelist: &[crate::ports::VendorModelListEntry],
 ) -> Option<&'static str> {
@@ -2347,10 +2438,11 @@ pub fn model_access_forbidden_reason_lists(
             .map(|vendor| vendor == entry.vendor_code)
             .unwrap_or(false)
             && (entry.models.is_empty()
-                || entry
-                    .models
-                    .iter()
-                    .any(|model| model.eq_ignore_ascii_case(requested_model)))
+                || entry.models.iter().any(|model| {
+                    requested_model_spellings
+                        .iter()
+                        .any(|requested| model.eq_ignore_ascii_case(requested))
+                }))
     };
     if blacklist.iter().any(entry_matches) {
         return Some("blacklist");
@@ -2359,6 +2451,47 @@ pub fn model_access_forbidden_reason_lists(
         return Some("whitelist");
     }
     None
+}
+
+/// 请求模型名的**全部可匹配拼写**（去重、保序）：原始请求名 → 分隔符归一
+/// 化名 → 目录键（显式传入或按归一化名唯一解析）→ 规范裸模型名。
+///
+/// 黑白名单与映射规则等按模型名匹配的面都应使用全集匹配：管理端按规范
+/// 名配置，客户端却可能以任意 wire 格式传同一模型。
+pub(crate) fn model_access_spellings<C>(
+    catalog: &C,
+    requested_model: &str,
+    catalog_key: Option<&str>,
+) -> Vec<String>
+where
+    C: UpstreamAccountRouteCatalog + ?Sized,
+{
+    let requested_model = requested_model.trim();
+    let mut spellings: Vec<String> = Vec::new();
+    let push = |spellings: &mut Vec<String>, value: &str| {
+        let value = value.trim();
+        if !value.is_empty() && !spellings.iter().any(|existing| existing == value) {
+            spellings.push(value.to_owned());
+        }
+    };
+    push(&mut spellings, requested_model);
+    let normalized = normalize_wire_model_id(requested_model);
+    push(&mut spellings, &normalized);
+    let key = catalog_key
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_owned)
+        .or_else(|| {
+            let keys = catalog.model_catalog_keys_by_name(&normalized);
+            (keys.len() == 1).then(|| keys.into_iter().next().expect("len checked"))
+        });
+    if let Some(key) = key {
+        push(&mut spellings, &key);
+        if let Some(model) = catalog.find_model(&key) {
+            push(&mut spellings, &model.model);
+        }
+    }
+    spellings
 }
 
 pub fn model_access_forbidden_message(
@@ -2449,5 +2582,94 @@ mod pricing_dimension_tests {
         ] {
             assert_eq!(output_type_for_meter(&meter), None, "{}", meter.code());
         }
+    }
+}
+
+#[cfg(test)]
+mod model_access_spellings_tests {
+    use super::{
+        model_access_forbidden_reason_for_spellings, model_access_spellings,
+        AccountGroupModelAccess,
+    };
+    use crate::domain::AiModel;
+    use crate::infrastructure::InMemoryPricingCatalog;
+    use crate::ports::VendorModelListEntry;
+
+    fn access_with_blacklist_entry(entry: VendorModelListEntry) -> AccountGroupModelAccess {
+        AccountGroupModelAccess {
+            group_id: 10,
+            blacklist: vec![entry],
+            whitelist: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn wire_format_spellings_match_access_lists() {
+        let mut catalog = InMemoryPricingCatalog::default();
+        catalog.add_model(AiModel::new(
+            "claude-opus-4-5",
+            "Claude Opus 4.5",
+            "anthropic",
+            vec!["chat"],
+        ));
+        // 名单按规范裸模型名配置（管理端口径）。
+        let access = access_with_blacklist_entry(VendorModelListEntry {
+            vendor_code: "anthropic".to_owned(),
+            models: vec!["claude-opus-4-5".to_owned()],
+        });
+
+        // 冒号/全角冒号/点号 wire 格式与规范拼写同样命中黑名单——别名拼写
+        // 不得绕过访问控制。
+        for requested in [
+            "claude-opus-4-5",
+            "anthropic:claude-opus-4.5",
+            "anthropic：claude-opus-4.5",
+            "anthropic/claude-opus-4.5",
+        ] {
+            let spellings = model_access_spellings(&catalog, requested, None);
+            assert_eq!(
+                Some("blacklist"),
+                model_access_forbidden_reason_for_spellings(Some("anthropic"), &spellings, &access),
+                "requested: {requested}"
+            );
+        }
+        // 目录外模型不误伤。
+        let spellings = model_access_spellings(&catalog, "anthropic:claude-opus-9-9", None);
+        assert_eq!(
+            None,
+            model_access_forbidden_reason_for_spellings(Some("anthropic"), &spellings, &access)
+        );
+    }
+
+    #[test]
+    fn spellings_collect_raw_normalized_key_and_bare_forms() {
+        let mut catalog = InMemoryPricingCatalog::default();
+        catalog.add_model(AiModel::new(
+            "claude-opus-4-5",
+            "Claude Opus 4.5",
+            "anthropic",
+            vec!["chat"],
+        ));
+        // 显式目录键：四段拼写齐全。
+        let spellings = model_access_spellings(
+            &catalog,
+            "anthropic:claude-opus-4.5",
+            Some("anthropic/claude-opus-4-5"),
+        );
+        assert_eq!(
+            vec![
+                "anthropic:claude-opus-4.5".to_owned(),
+                "anthropic/claude-opus-4.5".to_owned(),
+                "anthropic/claude-opus-4-5".to_owned(),
+                "claude-opus-4-5".to_owned(),
+            ],
+            spellings
+        );
+        // 无目录键时按归一化名唯一解析补全。
+        let spellings = model_access_spellings(&catalog, "anthropic：claude-opus-4.5", None);
+        assert!(spellings.contains(&"anthropic/claude-opus-4-5".to_owned()));
+        assert!(spellings.contains(&"claude-opus-4-5".to_owned()));
+        // 空请求名保持空。
+        assert!(model_access_spellings(&catalog, "   ", None).is_empty());
     }
 }

@@ -14,10 +14,7 @@
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::application::{
-    model_access_forbidden_message, model_access_forbidden_reason,
-    model_access_forbidden_reason_lists,
-};
+use crate::application::{model_access_forbidden_message, model_access_forbidden_reason_lists};
 use crate::ports::UpstreamAccountRouteCatalog;
 
 use super::{InvocationRouteCandidate, InvocationRouteCandidateKind};
@@ -90,13 +87,24 @@ impl CandidateFilter for ModelAccessFilter {
             return FilterDecision::Continue(candidates);
         };
         let vendor_code = ctx.requested_model_vendor_code.as_deref();
+        // 黑白名单按全部拼写匹配：管理端按规范名配置，客户端却可能以
+        // 冒号/OpenRouter wire 格式传同一模型——只按原始名匹配会让别名
+        // 拼写绕过黑名单（访问控制失效）或被白名单误拒。目录键未随上下文
+        // 传递，按归一化名唯一解析补全。
+        let spellings = crate::application::upstream_route_selector::model_access_spellings(
+            ctx.catalog,
+            requested_model,
+            None,
+        );
         for candidate in &candidates {
             // 分组级黑白名单
             if let Some(group_id) = candidate.account_group_id {
                 if let Some(access) = ctx.catalog.account_group_model_access(group_id) {
-                    if let Some(rule) =
-                        model_access_forbidden_reason(vendor_code, requested_model, &access)
-                    {
+                    if let Some(rule) = crate::application::upstream_route_selector::model_access_forbidden_reason_for_spellings(
+                        vendor_code,
+                        &spellings,
+                        &access,
+                    ) {
                         let group_code = match candidate.account_group_code.as_deref() {
                             Some(code) => code.to_owned(),
                             None => group_id.to_string(),
@@ -119,7 +127,7 @@ impl CandidateFilter for ModelAccessFilter {
             {
                 if let Some(rule) = model_access_forbidden_reason_lists(
                     vendor_code,
-                    requested_model,
+                    &spellings,
                     &access.blacklist,
                     &access.whitelist,
                 ) {
@@ -144,7 +152,7 @@ impl CandidateFilter for ModelAccessFilter {
             if let Some(access) = ctx.catalog.account_model_access(candidate.account_id) {
                 if let Some(rule) = model_access_forbidden_reason_lists(
                     vendor_code,
-                    requested_model,
+                    &spellings,
                     &access.blacklist,
                     &access.whitelist,
                 ) {

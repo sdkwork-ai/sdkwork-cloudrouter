@@ -131,6 +131,24 @@ where
         Err(RouteExplainRequestError::BadRequest(message)) => return bad_request(message),
         Err(RouteExplainRequestError::NotFound) => return route_target_not_found(),
     };
+    // 诊断输入容忍 wire 格式：管理员手输的 catalog key 可能是
+    // 冒号/OpenRouter 拼写，精确未命中时按别名解析到规范目录键再解释，
+    // 让"这个模型为什么路由不到"的排查不被拼写差挡住。
+    let normalized = {
+        let mut normalized = normalized;
+        if let Some(key) = normalized.catalog_key.as_deref() {
+            if state.catalog.as_ref().find_model(key).is_none() {
+                let keys = state.catalog.as_ref().model_catalog_keys_by_name(key);
+                if let [canonical] = keys.as_slice() {
+                    if normalized.model.as_deref() == Some(key) {
+                        normalized.model = Some(canonical.clone());
+                    }
+                    normalized.catalog_key = Some(canonical.clone());
+                }
+            }
+        }
+        normalized
+    };
 
     let selector = UpstreamRouteSelector::new(state.catalog.as_ref());
     let result = if let Some(catalog_key) = normalized.catalog_key.clone() {
@@ -142,6 +160,7 @@ where
                 api_code: normalized.api_code.clone(),
                 capability: normalized.capability,
                 billing_meter: normalized.billing_meter.clone(),
+                pricing_required: true,
             })
             .map(|plan| {
                 plan.routes
@@ -152,6 +171,7 @@ where
     } else {
         selector
             .select_account_route(SelectUpstreamAccountRouteQuery {
+                pricing_required: true,
                 context: normalized.context.clone(),
                 route_key: normalized.route_key.clone(),
                 api_code: normalized.api_code.clone(),

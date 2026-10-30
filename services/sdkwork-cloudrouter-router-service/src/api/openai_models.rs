@@ -178,15 +178,30 @@ fn to_model_response<C>(catalog: &C, model: AiModel) -> OpenAiModelResponse
 where
     C: PricingCatalog,
 {
-    let owned_by = catalog
-        .find_vendor(&model.vendor_code)
+    let vendor = catalog.find_vendor(&model.vendor_code);
+    let owned_by = vendor
+        .as_ref()
         .map(|vendor| vendor.vendor.code().to_owned())
-        .unwrap_or(model.vendor_code);
+        .unwrap_or_else(|| model.vendor_code.clone());
+    // OpenAI Model 对象的扩展字段：目录声明的展示名与 vendor 展示名，供
+    // 模型选择器等消费方（如 Birdcoder 导入）直接展示，无需再拼装。
+    // `OpenAiModel` 契约的 `additionalProperties` 允许该扩展。
+    let mut extra = serde_json::Map::new();
+    extra.insert(
+        "displayName".to_owned(),
+        serde_json::Value::String(model.display_name.clone()),
+    );
+    if let Some(vendor) = vendor {
+        extra.insert(
+            "vendorDisplayName".to_owned(),
+            serde_json::Value::String(vendor.display_name.clone()),
+        );
+    }
     OpenAiModelResponse {
         id: model.model,
         object: "model".to_owned(),
         created: 0,
         owned_by,
-        extra: Default::default(),
+        extra,
     }
 }

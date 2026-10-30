@@ -5,97 +5,135 @@
     {
       "operation": "GET /anthropic/v1/files",
       "group": "vendor-utility",
-      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
+      "apiCode": "anthropicListFiles",
+      "failClosedScope": "anthropic.files"
     },
     {
       "operation": "POST /anthropic/v1/files",
       "group": "vendor-utility",
-      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
+      "apiCode": "anthropicUploadFile",
+      "failClosedScope": "anthropic.files"
     },
     {
       "operation": "GET /anthropic/v1/files/{file_id}",
       "group": "vendor-utility",
-      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
+      "apiCode": "anthropicRetrieveFile",
+      "failClosedScope": "anthropic.file.probe.001"
     },
     {
       "operation": "DELETE /anthropic/v1/files/{file_id}",
       "group": "vendor-utility",
-      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
+      "apiCode": "anthropicDeleteFile",
+      "failClosedScope": "anthropic.file.probe.001"
     },
     {
       "operation": "GET /anthropic/v1/files/{file_id}/content",
       "group": "vendor-utility",
-      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
+      "apiCode": "anthropicRetrieveFileContent",
+      "failClosedScope": "anthropic.content"
     },
     {
       "operation": "POST /anthropic/v1/messages/batches",
       "group": "vendor-utility",
-      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
+      "apiCode": "anthropicCreateMessageBatch",
+      "failClosedScope": "anthropic.batches"
     },
     {
       "operation": "GET /anthropic/v1/messages/batches",
       "group": "vendor-utility",
-      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
+      "apiCode": "anthropicListMessageBatches",
+      "failClosedScope": "anthropic.batches"
     },
     {
       "operation": "GET /anthropic/v1/messages/batches/{batch_id}",
       "group": "vendor-utility",
-      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
+      "apiCode": "anthropicRetrieveMessageBatch",
+      "failClosedScope": "anthropic.batch.probe.001"
     },
     {
       "operation": "POST /anthropic/v1/messages/batches/{batch_id}/cancel",
       "group": "vendor-utility",
-      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
+      "apiCode": "anthropicCancelMessageBatch",
+      "failClosedScope": "anthropic.cancel"
     },
     {
       "operation": "POST /anthropic/v1/messages/count_tokens",
       "group": "vendor-utility",
-      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
+      "apiCode": "anthropicCountMessageTokens",
+      "failClosedScope": "anthropic.count_tokens"
     },
     {
       "operation": "GET /google/v1beta/cachedContents",
       "group": "vendor-utility",
-      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
+      "apiCode": "googleListCachedContents",
+      "failClosedScope": "google.cachedcontents"
     },
     {
       "operation": "POST /google/v1beta/cachedContents",
       "group": "vendor-utility",
-      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
+      "apiCode": "googleCreateCachedContent",
+      "failClosedScope": "google.cachedcontents"
     },
     {
       "operation": "GET /google/v1beta/cachedContents/{cached_content_id}",
       "group": "vendor-utility",
-      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
+      "apiCode": "googleRetrieveCachedContent",
+      "failClosedScope": "google.cachedcontents.probe.001"
     },
     {
       "operation": "DELETE /google/v1beta/cachedContents/{cached_content_id}",
       "group": "vendor-utility",
-      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
+      "apiCode": "googleDeleteCachedContent",
+      "failClosedScope": "google.cachedcontents.probe.001"
     },
     {
       "operation": "GET /google/v1beta/files",
       "group": "vendor-utility",
-      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
+      "apiCode": "googleListFiles",
+      "failClosedScope": "google.files"
     },
     {
       "operation": "POST /google/v1beta/files",
       "group": "vendor-utility",
-      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
+      "apiCode": "googleUploadFile",
+      "failClosedScope": "google.files"
     },
     {
       "operation": "GET /google/v1beta/files/{file_id}",
       "group": "vendor-utility",
-      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
+      "apiCode": "googleRetrieveFile",
+      "failClosedScope": "google.file.probe.001"
     },
     {
       "operation": "DELETE /google/v1beta/files/{file_id}",
       "group": "vendor-utility",
-      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
+      "apiCode": "googleDeleteFile",
+      "failClosedScope": "google.file.probe.001"
     },
     {
       "operation": "POST /google/v1beta/models/{model}:countTokens",
       "group": "vendor-utility",
-      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
+      "apiCode": "googleCountTokens",
+      "failClosedScope": "google.gemini.3.6.flash.counttokens"
     }
   ]
 }

@@ -11,8 +11,8 @@ use crate::application::{
     UpstreamRouteSelectionErrorKind, UpstreamRouteSelector,
 };
 use crate::domain::{
-    has_text, AiModel, BillingMeter, ModelMappingRule, ProviderAuthProfile, ProviderRetryPolicy,
-    ResolveModelMappingContext, RoutingCapability,
+    has_text, normalize_wire_model_id, AiModel, BillingMeter, ModelMappingRule,
+    ProviderAuthProfile, ProviderRetryPolicy, ResolveModelMappingContext, RoutingCapability,
 };
 use crate::ports::{PricingCatalog, UpstreamAccountRouteCatalog};
 
@@ -187,17 +187,37 @@ where
         false
     });
     match (first_match, second_catalog_key) {
-        (None, _) => Err(model_not_found(model)),
         (Some(model), None) => Ok(model),
         (Some(first), Some(second_catalog_key)) => Err(Box::new(openai_error(
             StatusCode::BAD_REQUEST,
             "ambiguous_model",
             "invalid_request_error",
             format!(
-                "model id is ambiguous: {model}. Use a catalog key such as {} or {}",
-                first.catalog_key, second_catalog_key
+                "model id is ambiguous: {}. Use a catalog key such as {} or {}",
+                model, first.catalog_key, second_catalog_key
             ),
         ))),
+        // 精确未命中：接受 OpenRouter/冒号等 wire 格式（`anthropic:claude-
+        // opus-4.5` → `anthropic/claude-opus-4-5`），与路由期解析同一容错
+        // 语义。多值命中按歧义拒绝，路由不猜。
+        (None, _) => {
+            let alias_keys = crate::ports::resolve_model_alias_catalog_keys(catalog, model);
+            match alias_keys.as_slice() {
+                [catalog_key] => catalog
+                    .find_model(catalog_key)
+                    .ok_or_else(|| model_not_found(model)),
+                [] => Err(model_not_found(model)),
+                keys => Err(Box::new(openai_error(
+                    StatusCode::BAD_REQUEST,
+                    "ambiguous_model",
+                    "invalid_request_error",
+                    format!(
+                        "model id is ambiguous: {model}. Use a catalog key such as {} or {}",
+                        keys[0], keys[1]
+                    ),
+                ))),
+            }
+        }
     }
 }
 
@@ -279,14 +299,19 @@ pub(crate) fn resolve_openai_upstream_route_plan<C>(
 where
     C: UpstreamAccountRouteCatalog,
 {
-    let global_mapping = catalog.resolve_model_mapping(model, &ResolveModelMappingContext::new());
+    // 入口分隔符归一化：全角/半角冒号改写为 `/`（`anthropic:claude-opus-
+    // 4.5` → `anthropic/claude-opus-4.5`）。规范拼写的 id 原样通过，既有
+    // 行为不变；变体后缀（`:free` 等）保留给后续层处理。映射、目录检索、
+    // 路由选择与下游映射统一使用归一化拼写。
+    let model = normalize_wire_model_id(model);
+    let global_mapping = catalog.resolve_model_mapping(&model, &ResolveModelMappingContext::new());
     let global_effective_model = global_mapping
         .as_ref()
         .map(ModelMappingRule::effective_catalog_key)
-        .unwrap_or(model);
+        .unwrap_or(model.as_str());
     let global_catalog_model = find_catalog_model(catalog, global_effective_model)?;
     let vendor_mapping = catalog.resolve_model_mapping(
-        model,
+        &model,
         &ResolveModelMappingContext::new()
             .with_vendor_code(global_catalog_model.vendor_code.as_str()),
     );
@@ -313,6 +338,7 @@ where
             api_code: openai_api_code(capability_label).to_owned(),
             capability,
             billing_meter,
+            pricing_required: true,
         })
         .map_err(upstream_route_selection_error)?;
     let account_routes = catalog.shared_upstream_account_routes();
@@ -323,7 +349,7 @@ where
             resolve_model_route(
                 catalog,
                 context,
-                model,
+                &model,
                 catalog_model.vendor_code.as_str(),
                 routing_catalog_key.as_str(),
                 selection,
@@ -388,8 +414,13 @@ fn resolve_model_route(
         ));
     }
 
-    let account_mapping = catalog.resolve_model_mapping(
+    // 映射源候选：归一化请求名优先，其后补目录键与规范裸模型名，保证
+    // wire 格式请求也能命中按规范名配置的账号级映射规则。
+    let account_mapping = crate::ports::resolve_model_mapping_with_aliases(
+        catalog,
         requested_model,
+        catalog_key,
+        &model_route.model,
         &ResolveModelMappingContext::new()
             .with_vendor_code(vendor_code)
             .with_account_id(model_route.account_id)

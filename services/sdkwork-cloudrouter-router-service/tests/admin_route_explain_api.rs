@@ -122,3 +122,51 @@ async fn route_explain_response_omits_credential_metadata() {
     assert!(!serialized.contains("credentialId"));
     assert!(!serialized.contains("credentialRotation"));
 }
+
+/// 诊断输入容忍 wire 格式：手输的冒号/OpenRouter 拼写 catalog key 归一化到
+/// 规范目录键后再解释，响应回显规范键。
+#[tokio::test]
+async fn route_explain_normalizes_wire_format_catalog_key() {
+    use sdkwork_cloudrouter_router_service::domain::AiModel;
+
+    let mut catalog = catalog();
+    catalog.add_model(AiModel::new(
+        "claude-opus-4-5",
+        "Claude Opus 4.5",
+        "anthropic",
+        vec!["chat"],
+    ));
+    let router =
+        sdkwork_cloudrouter_router_service::api::admin_route_explain_router(Arc::new(catalog));
+
+    for wire_key in [
+        "anthropic:claude-opus-4.5",
+        "anthropic：claude-opus-4.5",
+        "anthropic/claude-opus-4.5",
+    ] {
+        let request_payload = serde_json::json!({
+            "apiKeyId": "100",
+            "resourceCode": "openai.chat_completions",
+            "apiCode": "openai.chat_completions",
+            "capability": "chat",
+            "billingMeter": "llm_input_token",
+            "catalogKey": wire_key,
+        });
+        let request = common::web_framework_backend_request(
+            "POST",
+            "/backend/v3/api/ai/upstream_account_groups/10/route_explain",
+            Body::from(request_payload.to_string()),
+            "100001",
+            Some("7"),
+            "31",
+        );
+        let response = router.clone().oneshot(request).await.unwrap();
+
+        assert_eq!(StatusCode::OK, response.status(), "wire key: {wire_key}");
+        let body = payload(response).await;
+        assert_eq!(
+            "anthropic/claude-opus-4-5", body["data"]["item"]["catalogKey"],
+            "wire key: {wire_key}"
+        );
+    }
+}

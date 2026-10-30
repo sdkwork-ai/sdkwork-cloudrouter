@@ -978,6 +978,18 @@ fn extract_response_body_usage(invocation: &mut Invocation) -> Result<(), Invoca
         .meter
         .clone()
         .ok_or_else(|| usage_error("response body usage extraction requires billing meter"))?;
+    // 内嵌 provider adapter 用 `_gateway_usage.lines` 声明的用量行是权威口径：
+    // 它可能携带多个计量单位（`api_result` + `api_item` 等），而按模式合成的
+    // 单行（`ResultCount` 只产一条结果行）会吞掉其余行。适配器给了行就按行
+    // 结算；没给行则保持原有按模式合成的行为不变。二进制/非 JSON 应答体
+    // （TTS 音频等）解析不了就当无适配器行，走各模式自己的容错路径。
+    let has_adapter_usage_lines = match response_body(invocation) {
+        Ok(body) => adapter_usage_lines_pointer(&body).is_some_and(|lines| !lines.is_empty()),
+        Err(_) => false,
+    };
+    if has_adapter_usage_lines {
+        return extract_adapter_usage_lines(invocation);
+    }
     // Only token metering is allowed to fail on an unparsable provider body:
     // every token-capable vendor answers with JSON, so a missing or malformed
     // body is a real metering fault worth surfacing. Character and media
@@ -1058,17 +1070,24 @@ fn extract_response_body_usage(invocation: &mut Invocation) -> Result<(), Invoca
     Ok(())
 }
 
-fn extract_adapter_usage_lines(invocation: &mut Invocation) -> Result<(), InvocationError> {
-    let body = response_body(invocation)?;
-    let Some(lines) = body
-        .pointer("/usage/usageLines")
+/// 应答体里适配器契约的用量行数组（`_gateway_usage.lines` 及其变体位）。
+///
+/// 内嵌 provider adapter 的应答若携带该结构，它就是权威计费口径：适配器对
+/// 自家厂商 API 的实际计量（可多行、多计量单位），优先于按计费模式合成的
+/// 单行（`ResultCount` 等模式只产一条结果行，会吞掉适配器的其余行）。
+fn adapter_usage_lines_pointer(body: &Value) -> Option<&Vec<Value>> {
+    body.pointer("/usage/usageLines")
         .or_else(|| body.pointer("/usage/usage_lines"))
         .or_else(|| body.pointer("/body/_gateway_usage/lines"))
         .or_else(|| body.pointer("/body/usage/lines"))
         .or_else(|| body.pointer("/_gateway_usage/lines"))
         .or_else(|| body.pointer("/usage/lines"))
         .and_then(Value::as_array)
-    else {
+}
+
+fn extract_adapter_usage_lines(invocation: &mut Invocation) -> Result<(), InvocationError> {
+    let body = response_body(invocation)?;
+    let Some(lines) = adapter_usage_lines_pointer(&body) else {
         return Ok(());
     };
     if lines.is_empty() {

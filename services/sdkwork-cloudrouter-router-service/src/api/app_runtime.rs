@@ -2173,6 +2173,16 @@ where
         found = Some(candidate.clone());
         false
     });
+    if found.is_some() {
+        return found;
+    }
+    // 精确未命中：接受 OpenRouter/冒号等 wire 格式（`anthropic:claude-opus-
+    // 4.5` → `anthropic/claude-opus-4-5`），与路由期解析同一容错语义；多值
+    // 命中不猜（返回 None，由上层按模型不可用处理）。
+    let alias_keys = crate::ports::resolve_model_alias_catalog_keys(catalog, model);
+    if let [catalog_key] = alias_keys.as_slice() {
+        return catalog.find_model(catalog_key);
+    }
     found
 }
 
@@ -4086,6 +4096,7 @@ where
             api_code: runtime_openai_route_probe_api_code(capability_label).to_owned(),
             capability,
             billing_meter,
+            pricing_required: true,
         },
     ) {
         Ok(plan) => {

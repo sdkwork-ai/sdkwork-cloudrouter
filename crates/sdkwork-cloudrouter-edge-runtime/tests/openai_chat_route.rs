@@ -162,3 +162,53 @@ async fn gateway_mounts_stored_chat_completion_passthrough_boundary_without_fake
     );
     assert_eq!("/v1/chat/completions", payload["error"]["path"]);
 }
+
+/// 冒号/全角冒号分隔的 wire 格式模型名必须先通过路由解析（命中目录模型），
+/// 才会到达中转未配置的 501；若别名解析失效会停在 404 model_not_available。
+#[tokio::test]
+async fn gateway_chat_route_resolves_colon_separated_model_ids_before_relay_check() {
+    let hasher =
+        Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let router = sdkwork_cloudrouter_edge_runtime::router_with_product_catalog_and_api_key_hasher(
+        Arc::new(catalog_with_hashed_api_key(key_hash)),
+        hasher,
+    );
+
+    for model_id in [
+        "openai:gpt-4o-mini",
+        "openai：gpt-4o-mini",
+        "openai:GPT-4o.Mini",
+    ] {
+        let request_body =
+            format!(r#"{{"model":"{model_id}","messages":[{{"role":"user","content":"ping"}}]}}"#);
+        let response = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/v1/chat/completions")
+                    .header("authorization", "Bearer sk-live-secret")
+                    .header("content-type", "application/json")
+                    .body(Body::from(request_body))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        let status = response.status();
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(
+            StatusCode::NOT_IMPLEMENTED,
+            status,
+            "model id: {model_id}, body: {payload}"
+        );
+        assert_eq!(
+            "provider_relay_not_configured", payload["error"]["code"],
+            "model id: {model_id}"
+        );
+    }
+}

@@ -765,3 +765,7 @@ node ../sdkwork-specs/tools/check-pagination.mjs --workspace .
 
 Passing static checks is necessary but not sufficient for launch. The active
 commercial-readiness requirement owns production evidence and approval.
+
+## 8. Architecture Decision Index
+
+- [TECH-17-model-request-alias-compatibility.md](TECH-17-model-request-alias-compatibility.md)

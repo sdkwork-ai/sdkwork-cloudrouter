@@ -69,22 +69,28 @@ const CASES: &[(&str, &str, &str)] = &[
         r#"{"model_name":"kling-v3","prompt":"a paper plane gliding over a city","duration":"5"}"#,
     ),
     (
-        // MiniMax, not Suno. The catalog deliberately parks every Suno music
-        // model (`suno-v5`/`suno-v5.5` are `lifecycle=deprecated`,
-        // `routingState=catalog_only`; `suno-v6*` are `lifecycle=catalog_only`,
-        // `shelfState=hidden`), so the Suno route cannot legitimately reach a
-        // vendor and a probe against it would assert the opposite of what the
-        // catalog declares. `minimax/music-cover` is the routable music model:
-        // `active` + `listed` + `routing=enabled`, rated 0.15/result on
-        // `api_result`, and its account is a live member of `minimax.music`.
+        // Mureka, not MiniMax and not Suno. The catalog deliberately parks
+        // every Suno music model (`suno-v5`/`suno-v5.5` are
+        // `lifecycle=deprecated`, `routingState=catalog_only`; `suno-v6*` are
+        // `lifecycle=catalog_only`, `shelfState=hidden`), so the Suno route
+        // cannot legitimately reach a vendor. MiniMax retired its paid music
+        // API (new users blocked from 2026-08-20): `music-cover`,
+        // `music-2.6` and `music-3.0` are all `lifecycle=deprecated` /
+        // `routingState=catalog_only` / `shelfState=hidden` with no published
+        // rate, so a probe against `minimax.music_generation` now asserts the
+        // opposite of what the catalog declares.
         //
-        // The body carries `model` because the MiniMax contract requires it
-        // (`MiniMaxMusicGenerationRequest.required = ["model"]`) and the pricing
-        // key is resolved from it; Suno's schema makes `model` optional, which
-        // is exactly why the route could not resolve a catalog model there.
+        // `mureka` is the live vendor-native music surface: `mureka-v8` is
+        // `active` + `listed` + `routing=enabled`, rated 0.045/result on
+        // `api_result` (`models.mureka.global.official`), the importer binds
+        // every vendor-native mureka model onto `mureka.music_generation`
+        // (`POST /v1/song/generate`), and the `mureka-default` account is
+        // granted by `official.mureka.full`.
+        //
+        // The body carries `model` because the pricing key is resolved from it.
         "音乐 music",
-        "/minimax/v1/music_generation",
-        r#"{"model":"music-cover","prompt":"upbeat synthwave, warm analog pads"}"#,
+        "/mureka/v1/song/generate",
+        r#"{"model":"mureka-v8","prompt":"upbeat synthwave, warm analog pads"}"#,
     ),
     (
         "配音 voice",

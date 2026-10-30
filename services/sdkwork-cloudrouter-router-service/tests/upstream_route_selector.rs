@@ -132,6 +132,7 @@ fn model_query(group_id: i64) -> SelectUpstreamModelRouteQuery {
         api_code: API_CODE.to_owned(),
         capability: RoutingCapability::Chat,
         billing_meter: BillingMeter::LlmInputToken,
+        pricing_required: true,
     }
 }
 
@@ -205,6 +206,7 @@ fn account_route_query(group_id: i64) -> SelectUpstreamAccountRouteQuery {
         pricing_meters: None,
         requested_model: None,
         pricing_resolution: None,
+        pricing_required: true,
     }
 }
 
@@ -1010,6 +1012,7 @@ fn route_key_requests_use_the_same_group_strategy() {
             pricing_meters: None,
             requested_model: None,
             pricing_resolution: None,
+            pricing_required: true,
         })
         .unwrap();
 
@@ -1101,6 +1104,7 @@ fn account_route_api_resource_entitlement_must_match_the_request() {
         pricing_meters: None,
         requested_model: None,
         pricing_resolution: None,
+        pricing_required: true,
     };
     let selected = UpstreamRouteSelector::new(&catalog)
         .select_account_route(query)
@@ -1136,6 +1140,7 @@ fn account_route_denies_api_resource_not_covered_by_entitlements() {
         pricing_meters: None,
         requested_model: None,
         pricing_resolution: None,
+        pricing_required: true,
     };
     let error = UpstreamRouteSelector::new(&catalog)
         .select_account_route(query)
@@ -1177,6 +1182,7 @@ fn account_route_model_scoped_entitlement_fails_closed_on_model_less_request() {
         pricing_meters: None,
         requested_model: None,
         pricing_resolution: None,
+        pricing_required: true,
     };
     let error = UpstreamRouteSelector::new(&catalog)
         .select_account_route(query)
@@ -1311,6 +1317,7 @@ fn account_route_without_any_catalog_rate_reports_pricing_unavailable() {
         pricing_meters: None,
         requested_model: None,
         pricing_resolution: None,
+        pricing_required: true,
     };
     let error = UpstreamRouteSelector::new(&catalog)
         .select_account_route(query)

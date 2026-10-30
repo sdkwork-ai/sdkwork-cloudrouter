@@ -175,13 +175,22 @@ fn load_catalogued_unrouted_scopes() -> std::collections::BTreeMap<String, Strin
             scopes.insert(api_code.to_owned(), scope.to_owned());
         }
     }
-    assert!(
-        !scopes.is_empty(),
-        "the declared-unrouted ledger {} declares no fail-closed api scope; the \
-         catalogued-exemption contract shared with \
-         tools/check-cloudrouter-ai-routing-consistency.mjs is lost",
-        ledger_path.display()
-    );
+    // 金丝雀语义：账本里的 fail-closed 条目必须指向本探针表里真实发布的
+    // api case——条目指向已被移除的命名空间（如 87a9c48c 删除的
+    // midjourney / nano-banana）说明账本在跟着死接口腐烂，必须清理。
+    // 允许为空：最后两个 vendor-absent 命名空间移除后，当前没有"已发布但
+    // 声明无路由"的 api scope；未来再编目豁免时，探针循环（下方的
+    // `catalogued_unrouted_scopes.get(case.api_code)` 分支）会自动逐条
+    // 断言其精确失败关闭行为，契约不会静默丢失。
+    for api_code in scopes.keys() {
+        assert!(
+            API_CASES.iter().any(|case| case.api_code == api_code),
+            "the declared-unrouted ledger {} catalogues fail-closed api scope \
+             {api_code}, but no published API case carries that code; the \
+             entry outlived its operation and must be removed or re-pointed",
+            ledger_path.display()
+        );
+    }
     scopes
 }
 
@@ -241,6 +250,13 @@ struct ApiCase {
 ///   answer 404 (the route is gone) and must NOT answer a routing/pricing gap.
 /// * `Synthetic` — the gateway answers locally with a body it owns
 ///   (`GET /v1/models`, `GET /v1/vendors`), regardless of upstream.
+/// * `RetiredSurface` — the operation is published and its routing chain is
+///   wired, but the catalog has retired the capability it served (OpenAI's
+///   sora line, MiniMax's paid music API) or a design guard refuses it
+///   (batch create without the reconciliation worker). The gateway must fail
+///   closed with a routing/pricing error (`502`/`503` `routing_failed`
+///   naming the price or model) — anything else (404, a misroute, a vendor
+///   dial) is a defect.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ApiExpectation {
     Routable,
@@ -250,6 +266,9 @@ enum ApiExpectation {
     #[allow(dead_code)]
     Unbacked,
     Synthetic,
+    /// Catalog-retired capability or design-guarded operation; see the doc
+    /// comment above.
+    RetiredSurface,
 }
 
 impl ApiCase {
@@ -315,7 +334,7 @@ const API_CASES: &[ApiCase] = &[
         published_path: "",
         method: "POST",
         expectation: ApiExpectation::Routable,
-        body: r#"{"model":"claude-sonnet-4-5","max_tokens":16,"messages":[{"role":"user","content":"hi"}]}"#,
+        body: r#"{"model":"claude-sonnet-5-5","max_tokens":16,"messages":[{"role":"user","content":"hi"}]}"#,
     },
     ApiCase {
         // TypeSafe serves no chat-completions surface at all: the vendor-native
@@ -334,7 +353,7 @@ const API_CASES: &[ApiCase] = &[
         published_path: "",
         method: "POST",
         expectation: ApiExpectation::Routable,
-        body: r#"{"model":"claude-sonnet-4-5","messages":[{"role":"user","content":"hi"}],"max_tokens":16}"#,
+        body: r#"{"model":"claude-sonnet-5-5","messages":[{"role":"user","content":"hi"}],"max_tokens":16}"#,
     },
     ApiCase {
         api_code: "openai.responses",
@@ -354,7 +373,7 @@ const API_CASES: &[ApiCase] = &[
     },
     ApiCase {
         api_code: "google.generate_content",
-        path: "/google/v1beta/models/gemini-3.5-flash:generateContent",
+        path: "/google/v1beta/models/gemini-3.6-flash:generateContent",
         published_path: "/google/v1beta/models/{model}:generateContent",
         method: "POST",
         expectation: ApiExpectation::Routable,
@@ -362,7 +381,7 @@ const API_CASES: &[ApiCase] = &[
     },
     ApiCase {
         api_code: "google.stream_generate_content",
-        path: "/google/v1beta/models/gemini-3.5-flash:streamGenerateContent",
+        path: "/google/v1beta/models/gemini-3.6-flash:streamGenerateContent",
         published_path: "/google/v1beta/models/{model}:streamGenerateContent",
         method: "POST",
         expectation: ApiExpectation::Routable,
@@ -432,8 +451,8 @@ const API_CASES: &[ApiCase] = &[
         path: "/v1/videos",
         published_path: "",
         method: "POST",
-        expectation: ApiExpectation::Routable,
-        body: r#"{"model":"sora-2","prompt":"a paper plane"}"#,
+        expectation: ApiExpectation::RetiredSurface,
+        body: r#"{"model":"hailuo-2.3","prompt":"a paper plane"}"#,
     },
     ApiCase {
         api_code: "kling.text_to_video",
@@ -544,7 +563,7 @@ const API_CASES: &[ApiCase] = &[
         published_path: "",
         method: "POST",
         expectation: ApiExpectation::Routable,
-        body: r#"{"model":"tts-1-hd","input":"hi","voice":"alloy"}"#,
+        body: r#"{"model":"gpt-audio-1.5","input":"hi","voice":"alloy"}"#,
     },
     ApiCase {
         api_code: "openai.realtime",
@@ -580,11 +599,15 @@ const API_CASES: &[ApiCase] = &[
         body: r#"{"model":"mureka-v9","prompt":"upbeat"}"#,
     },
     ApiCase {
+        // MiniMax retired its paid music API (new users blocked from
+        // 2026-08-20): every minimax music model is `routingState=catalog_only`
+        // with no published rate, so this published surface fails closed at
+        // pricing by design — catalogued in the declared-unrouted ledger.
         api_code: "minimax.music_generation",
         path: "/minimax/v1/music_generation",
         published_path: "",
         method: "POST",
-        expectation: ApiExpectation::Routable,
+        expectation: ApiExpectation::RetiredSurface,
         body: r#"{"model":"music-cover","prompt":"upbeat"}"#,
     },
     // --- sfx ---
@@ -649,7 +672,7 @@ const API_CASES: &[ApiCase] = &[
         method: "POST",
         path: "/anthropic/v1/messages/batches",
         published_path: "/anthropic/v1/messages/batches",
-        body: r#"{"requests":[{"custom_id":"probe-1","params":{"model":"claude-sonnet-4-5","max_tokens":16,"messages":[{"role":"user","content":"hi"}]}}]}"#,
+        body: r#"{"requests":[{"custom_id":"probe-1","params":{"model":"claude-sonnet-5-5","max_tokens":16,"messages":[{"role":"user","content":"hi"}]}}]}"#,
         expectation: ApiExpectation::Routable,
     },
     ApiCase {
@@ -673,7 +696,7 @@ const API_CASES: &[ApiCase] = &[
         method: "POST",
         path: "/anthropic/v1/messages/count_tokens",
         published_path: "/anthropic/v1/messages/count_tokens",
-        body: r#"{"model":"claude-sonnet-4-5","messages":[{"role":"user","content":"hi"}]}"#,
+        body: r#"{"model":"claude-sonnet-5-5","messages":[{"role":"user","content":"hi"}]}"#,
         expectation: ApiExpectation::Routable,
     },
     ApiCase {
@@ -689,7 +712,7 @@ const API_CASES: &[ApiCase] = &[
         method: "POST",
         path: "/google/v1beta/cachedContents",
         published_path: "/google/v1beta/cachedContents",
-        body: r#"{"model":"models/gemini-3.5-flash","contents":[{"parts":[{"text":"hi"}]}]}"#,
+        body: r#"{"model":"models/gemini-3.6-flash","contents":[{"parts":[{"text":"hi"}]}]}"#,
         expectation: ApiExpectation::Routable,
     },
     ApiCase {
@@ -743,7 +766,7 @@ const API_CASES: &[ApiCase] = &[
     ApiCase {
         api_code: "googleBatchEmbedContents",
         method: "POST",
-        path: "/google/v1beta/models/gemini-3.5-flash:batchEmbedContents",
+        path: "/google/v1beta/models/gemini-3.6-flash:batchEmbedContents",
         published_path: "/google/v1beta/models/{model}:batchEmbedContents",
         body: r#"{"requests":[{"model":"models/text-embedding-004","content":{"parts":[{"text":"hi"}]}}]}"#,
         expectation: ApiExpectation::Routable,
@@ -751,7 +774,7 @@ const API_CASES: &[ApiCase] = &[
     ApiCase {
         api_code: "googleCountTokens",
         method: "POST",
-        path: "/google/v1beta/models/gemini-3.5-flash:countTokens",
+        path: "/google/v1beta/models/gemini-3.6-flash:countTokens",
         published_path: "/google/v1beta/models/{model}:countTokens",
         body: r#"{"contents":[{"parts":[{"text":"hi"}]}]}"#,
         expectation: ApiExpectation::Routable,
@@ -809,7 +832,7 @@ const API_CASES: &[ApiCase] = &[
         method: "POST",
         path: "/v1/audio/transcriptions",
         published_path: "/v1/audio/transcriptions",
-        body: r#"{"model":"whisper-1"}"#,
+        body: r#"{"model":"gpt-transcribe"}"#,
         expectation: ApiExpectation::Routable,
     },
     ApiCase {
@@ -817,7 +840,7 @@ const API_CASES: &[ApiCase] = &[
         method: "POST",
         path: "/v1/audio/translations",
         published_path: "/v1/audio/translations",
-        body: r#"{"model":"whisper-1"}"#,
+        body: r#"{"model":"gpt-transcribe"}"#,
         expectation: ApiExpectation::Routable,
     },
     ApiCase {
@@ -898,7 +921,7 @@ const API_CASES: &[ApiCase] = &[
         path: "/v1/batches",
         published_path: "/v1/batches",
         body: r#"{"input_file_id":"file-probe-001","endpoint":"/v1/chat/completions","completion_window":"24h"}"#,
-        expectation: ApiExpectation::Routable,
+        expectation: ApiExpectation::RetiredSurface,
     },
     ApiCase {
         api_code: "retrieveBatch",
@@ -1151,7 +1174,7 @@ const API_CASES: &[ApiCase] = &[
     ApiCase {
         api_code: "retrieveModel",
         method: "GET",
-        path: "/v1/models/gemini-3.5-flash",
+        path: "/v1/models/gemini-3.6-flash",
         published_path: "/v1/models/{model}",
         body: r#"{}"#,
         expectation: ApiExpectation::Synthetic,
@@ -1577,7 +1600,7 @@ const API_CASES: &[ApiCase] = &[
         method: "POST",
         path: "/v1/videos/characters",
         published_path: "/v1/videos/characters",
-        body: r#"{"model":"sora-2"}"#,
+        body: r#"{"model":"hailuo-2.3"}"#,
         expectation: ApiExpectation::Routable,
     },
     ApiCase {
@@ -1593,16 +1616,16 @@ const API_CASES: &[ApiCase] = &[
         method: "POST",
         path: "/v1/videos/edits",
         published_path: "/v1/videos/edits",
-        body: r#"{"model":"sora-2","prompt":"a paper plane"}"#,
-        expectation: ApiExpectation::Routable,
+        body: r#"{"model":"hailuo-2.3","prompt":"a paper plane"}"#,
+        expectation: ApiExpectation::RetiredSurface,
     },
     ApiCase {
         api_code: "extendVideo",
         method: "POST",
         path: "/v1/videos/extensions",
         published_path: "/v1/videos/extensions",
-        body: r#"{"model":"sora-2","prompt":"a paper plane"}"#,
-        expectation: ApiExpectation::Routable,
+        body: r#"{"model":"hailuo-2.3","prompt":"a paper plane"}"#,
+        expectation: ApiExpectation::RetiredSurface,
     },
     ApiCase {
         api_code: "deleteVideo",
@@ -1633,8 +1656,8 @@ const API_CASES: &[ApiCase] = &[
         method: "POST",
         path: "/v1/videos/video-probe-001/remix",
         published_path: "/v1/videos/{video_id}/remix",
-        body: r#"{"model":"sora-2","prompt":"a paper plane"}"#,
-        expectation: ApiExpectation::Routable,
+        body: r#"{"model":"hailuo-2.3","prompt":"a paper plane"}"#,
+        expectation: ApiExpectation::RetiredSurface,
     },
     ApiCase {
         api_code: "vidu.video_task_query",
@@ -1893,6 +1916,8 @@ async fn every_published_api_reaches_its_vendor_account_on_the_real_catalog() {
     let mut unreachable: Vec<String> = Vec::new();
     let mut unrouted: Vec<String> = Vec::new();
     let mut catalogued_unrouted: Vec<String> = Vec::new();
+    let mut expected_object_miss: Vec<String> = Vec::new();
+    let mut retired_surface: Vec<String> = Vec::new();
     let catalogued_unrouted_scopes = load_catalogued_unrouted_scopes();
 
     for case in API_CASES {
@@ -1949,6 +1974,24 @@ async fn every_published_api_reaches_its_vendor_account_on_the_real_catalog() {
             continue;
         }
 
+        // 退役面/守卫面（`ApiExpectation::RetiredSurface`）必须**失败关闭**：
+        // 路由/定价错误（`routing_failed` 指名缺价或模型不可用）。404 或
+        // 误路由仍是缺陷——面已发布，不允许静默消失或错误转发。
+        if case.expectation == ApiExpectation::RetiredSurface {
+            let fail_closed = matches!(
+                status,
+                axum::http::StatusCode::BAD_GATEWAY | axum::http::StatusCode::SERVICE_UNAVAILABLE
+            ) && text.contains("routing_failed")
+                && (text.contains("pricing is not available")
+                    || text.contains("model is not available for route planning"));
+            if fail_closed {
+                retired_surface.push(format!(
+                    "{label} => HTTP {status} (retired surface, fails closed at routing/pricing)"
+                ));
+                continue;
+            }
+        }
+
         // A catalogued-unrouted namespace must fail closed with exactly the
         // documented message naming its api scope. Anything else — 404, a
         // misrouted call, a different error — is a defect, not the exemption.
@@ -1962,6 +2005,17 @@ async fn every_published_api_reaches_its_vendor_account_on_the_real_catalog() {
                 ));
                 continue;
             }
+        }
+
+        // 对象查找先于创建（探针只带了占位 id）必须**精确失败关闭**：粘性
+        // 解析在对象绑定缺失时拒绝路由（多节点部署下 miss 意味着对象从未
+        // 经由本网关创建，把查找转发给任意账号只会得到更难排查的跨账号
+        // 404）。该错误是粘性对象路由的设计语义，不是链路缺口。
+        if text.contains("sticky route binding not found for") {
+            expected_object_miss.push(format!(
+                "{label} => HTTP {status} (object lookup before create fails closed)"
+            ));
+            continue;
         }
 
         if GATEWAY_GAP_MARKERS
@@ -1990,6 +2044,14 @@ async fn every_published_api_reaches_its_vendor_account_on_the_real_catalog() {
     eprintln!("=== 已编目豁免：声明无路由且精确失败关闭 ===");
     for line in &catalogued_unrouted {
         eprintln!("  EXEMPT {line}");
+    }
+    eprintln!("=== 对象查找先于创建（粘性设计语义：精确失败关闭）===");
+    for line in &expected_object_miss {
+        eprintln!("  MISS {line}");
+    }
+    eprintln!("=== 退役面/守卫面（目录退役或设计守卫：失败关闭）===");
+    for line in &retired_surface {
+        eprintln!("  RETIRED {line}");
     }
     eprintln!("=== 已拨号但网络不可达（环境，非网关缺口）===");
     for line in &unreachable {

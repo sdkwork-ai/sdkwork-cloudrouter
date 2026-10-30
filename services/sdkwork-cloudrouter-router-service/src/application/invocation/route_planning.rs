@@ -2,16 +2,16 @@ use std::sync::Arc;
 
 use super::routing::STICKY_SCOPE_SESSION;
 use super::{
-    resolve_pricing_identity, AccountBillingMode, BillingMode, DispatchMode, Invocation,
-    InvocationError, InvocationErrorKind, InvocationFuture, InvocationInterceptor,
-    InvocationRouteCandidate, InvocationRouteCandidateKind, InvocationRoutePlan, ResourceType,
-    RoutingPipeline, StickyRouteConstraint,
+    resolve_pricing_identity, AccountBillingMode, DispatchMode, Invocation, InvocationError,
+    InvocationErrorKind, InvocationFuture, InvocationInterceptor, InvocationRouteCandidate,
+    InvocationRouteCandidateKind, InvocationRoutePlan, ResourceType, RoutingPipeline,
+    StickyRouteConstraint,
 };
 use crate::application::upstream_base_url::{
     protocol_code_from_api_code, resolve_upstream_base_url,
 };
 use crate::application::{
-    model_access_forbidden_message, model_access_forbidden_reason,
+    model_access_forbidden_message,
     upstream_route_selector::{ensure_route_is_priced, RoutePricingProbe},
     AuthenticatedApiKeyContext, SelectUpstreamAccountRouteQuery, SelectUpstreamModelRouteQuery,
     SelectedUpstreamAccountRoute, SelectedUpstreamModelRoute, UpstreamRouteSelectionErrorKind,
@@ -53,9 +53,12 @@ where
             if invocation.dispatch.mode == DispatchMode::SyntheticLocalResponse {
                 return Ok(());
             }
-            if invocation.billing.mode == BillingMode::Free
-                || invocation.resource.resource_type == ResourceType::FreeEndpoint
-            {
+            // 只有**本地合成面**（`/v1/models`、`/v1/vendors` 等）跳过规划：
+            // 它们由 dispatch defaults 合成响应，永不派发。免费**计费**的管理面
+            // （`/v1/files`、`/v1/uploads`、provider-native 管理查询等）仍然
+            // 要派发上游，只是不扣费——把 Free 计费当"无需派发"会让 dispatch
+            // 拿不到 route plan 而 502（计费口径与派发口径必须分离）。
+            if invocation.resource.resource_type == ResourceType::FreeEndpoint {
                 return Ok(());
             }
 
@@ -155,6 +158,8 @@ where
         .select_model_route_plan(SelectUpstreamModelRouteQuery {
             context,
             catalog_key,
+            // 免费计费的管理面/免费调用不做定价预门（计费口径与路由口径分离）。
+            pricing_required: invocation.billing.settlement_required,
             requested_model: requested_model.clone(),
             api_code: invocation.resource.api_code.clone(),
             capability: invocation.resource.capability,
@@ -204,6 +209,7 @@ where
     let selection = UpstreamRouteSelector::new(catalog)
         .select_account_route(SelectUpstreamAccountRouteQuery {
             context,
+            pricing_required: invocation.billing.settlement_required,
             route_key: invocation.resource.route_key.clone(),
             api_code: invocation.resource.api_code.clone(),
             capability: invocation.resource.capability,
@@ -358,8 +364,13 @@ where
         .find_model(&route.catalog_key)
         .map(|model| model.vendor_code)
         .unwrap_or_default();
-    let account_mapping = catalog.resolve_model_mapping(
+    // 映射源候选：原始请求名优先（既有行为不变），其后补目录键与规范裸
+    // 模型名，保证冒号/OpenRouter 格式请求也能命中按规范名配置的规则。
+    let account_mapping = crate::ports::resolve_model_mapping_with_aliases(
+        catalog,
         requested_model,
+        &route.catalog_key,
+        &route.model,
         &ResolveModelMappingContext::new()
             .with_vendor_code(vendor_code.as_str())
             .with_account_id(route.account_id)
@@ -727,13 +738,23 @@ where
         // model-forbidden error.
         if let Some(requested_model) = invocation.resource.requested_model.as_deref() {
             if let Some(access) = catalog.account_group_model_access(group_id) {
-                let vendor_code = resolve_catalog_key(catalog, invocation, requested_model)
-                    .ok()
-                    .and_then(|catalog_key| catalog.find_model(&catalog_key))
+                let catalog_key = resolve_catalog_key(catalog, invocation, requested_model).ok();
+                let vendor_code = catalog_key
+                    .as_deref()
+                    .and_then(|catalog_key| catalog.find_model(catalog_key))
                     .map(|model| model.vendor_code);
-                if let Some(rule) =
-                    model_access_forbidden_reason(vendor_code.as_deref(), requested_model, &access)
-                {
+                // 黑白名单按全部拼写匹配：wire 格式请求名不得绕过黑名单或
+                // 被白名单误拒。
+                let spellings = crate::application::upstream_route_selector::model_access_spellings(
+                    catalog,
+                    requested_model,
+                    catalog_key.as_deref(),
+                );
+                if let Some(rule) = crate::application::upstream_route_selector::model_access_forbidden_reason_for_spellings(
+                    vendor_code.as_deref(),
+                    &spellings,
+                    &access,
+                ) {
                     return Some(model_access_forbidden_message(
                         rule,
                         requested_model,

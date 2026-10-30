@@ -2062,10 +2062,23 @@ async fn invocation_http_dispatcher_forwards_streaming_model_call_as_sse_respons
         .unwrap();
     let body_text = std::str::from_utf8(&body).unwrap();
     assert!(body_text.contains("chatcmpl-stream"), "{body_text}");
-    assert!(body_text.contains("\"usage\""), "{body_text}");
+    // 网关为计费强制 `stream_options.include_usage` 后，上游多发的
+    // usage-only chunk（`choices: []`）在转发给客户端前被剔除：客户端未
+    // 主动订阅 usage，流形状保持原样（`suppress_usage_only_chunks` 契约）。
+    // 用量本身仍被结算（见下方 usage recorder 断言），且上游请求确实带上了
+    // `include_usage`。
+    assert!(
+        !body_text.contains("\"usage\""),
+        "usage-only chunk must be stripped from the client-visible stream: {body_text}"
+    );
 
     let requests = upstream.requests.lock().unwrap().clone();
     assert_eq!(1, requests.len());
+    // 网关为计费强制注入了 include_usage。
+    assert_eq!(
+        true, requests[0].body["stream_options"]["include_usage"],
+        "gateway must force stream_options.include_usage for billing"
+    );
     assert_eq!(
         Some("Bearer sk-provider-secret"),
         requests[0].authorization.as_deref()

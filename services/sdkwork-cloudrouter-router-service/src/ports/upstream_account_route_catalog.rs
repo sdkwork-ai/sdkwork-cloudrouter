@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use crate::domain::{
-    model_alias_probes, model_matches_alias_probe, AiModel, BillingMeter, UpstreamAccountRoute,
+    model_alias_probes, model_matches_alias_probe, normalize_wire_model_id, AiModel, BillingMeter,
+    ModelMappingRule, ResolveModelMappingContext, UpstreamAccountRoute,
 };
 use crate::ports::AdminLlmProtocolConfig;
 
@@ -472,9 +473,101 @@ where
     Vec::new()
 }
 
+/// 模型映射规则的容错源候选解析：按 `原始请求名 → 分隔符归一化名 →
+/// 目录键 → 规范裸模型名` 的顺序尝试，首个命中的规则生效。
+///
+/// 管理端按规范名（目录键或裸模型名）配置映射规则；客户端却可能以
+/// OpenRouter/冒号等 wire 格式传模型名。只按原始名查会让这些请求静默
+/// 漏掉映射（provider model 覆盖、账号改道全部失效）。规范名候选只在
+/// 原始名未命中时尝试，规范拼写请求的既有行为不变。
+pub(crate) fn resolve_model_mapping_with_aliases<C>(
+    catalog: &C,
+    requested_model: &str,
+    catalog_key: &str,
+    canonical_model: &str,
+    context: &ResolveModelMappingContext,
+) -> Option<ModelMappingRule>
+where
+    C: PricingCatalog + ?Sized,
+{
+    let normalized = normalize_wire_model_id(requested_model);
+    for source in [
+        requested_model.trim(),
+        normalized.as_str(),
+        catalog_key.trim(),
+        canonical_model.trim(),
+    ] {
+        if source.is_empty() {
+            continue;
+        }
+        if let Some(rule) = catalog.resolve_model_mapping(source, context) {
+            return Some(rule);
+        }
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::UpstreamRouteGateDiagnosis;
+    use super::*;
+
+    #[test]
+    fn model_mapping_resolution_accepts_wire_format_aliases() {
+        use crate::domain::{
+            AiModel, ModelMappingBindingType, ModelMappingRule, ResolveModelMappingContext,
+        };
+        use crate::infrastructure::InMemoryPricingCatalog;
+
+        let mut catalog = InMemoryPricingCatalog::default();
+        catalog.add_model(AiModel::new(
+            "claude-opus-4-5",
+            "Claude Opus 4.5",
+            "anthropic",
+            vec!["chat"],
+        ));
+        // 管理端按规范裸模型名配置映射：请求改道到映射目标模型。
+        catalog.add_model_mapping(ModelMappingRule::new(
+            1,
+            ModelMappingBindingType::Global,
+            "claude-opus-4-5",
+            "anthropic/claude-opus-4-5-mapped",
+            0,
+        ));
+        let context = ResolveModelMappingContext::new();
+        // 规范名请求命中（既有行为）。
+        assert!(catalog
+            .resolve_model_mapping("claude-opus-4-5", &context)
+            .is_some());
+        // 冒号/全角冒号/点号 wire 格式经候选级联同样命中，不再静默漏映射。
+        for source in [
+            "anthropic:claude-opus-4.5",
+            "anthropic：claude-opus-4.5",
+            "claude-opus-4.5",
+        ] {
+            let rule = resolve_model_mapping_with_aliases(
+                &catalog,
+                source,
+                "anthropic/claude-opus-4-5",
+                "claude-opus-4-5",
+                &context,
+            );
+            assert!(rule.is_some(), "mapping source: {source}");
+            assert_eq!(
+                "anthropic/claude-opus-4-5-mapped",
+                rule.unwrap().effective_catalog_key()
+            );
+        }
+        // 无规则的模型保持 None。
+        assert!(resolve_model_mapping_with_aliases(
+            &catalog,
+            "anthropic:claude-opus-9-9",
+            "anthropic/claude-opus-9-9",
+            "claude-opus-9-9",
+            &context,
+        )
+        .is_none());
+    }
 
     #[test]
     fn diagnosis_blocks_at_the_first_zero_after_a_nonzero_prefix() {

@@ -2494,6 +2494,7 @@ async fn openai_chat_completions_fails_over_to_next_account_after_primary_relay_
             api_code: "openai.chat_completions".to_owned(),
             capability: RoutingCapability::Chat,
             billing_meter: BillingMeter::LlmInputToken,
+            pricing_required: true,
         })
         .unwrap();
     assert_eq!(

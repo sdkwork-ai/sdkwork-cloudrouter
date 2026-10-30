@@ -62,6 +62,12 @@ entries:
     status: superseded
     owner: cloudrouter-platform
     title: Superseded frontend contract review redirect
+  - id: TECH-0017
+    path: docs/architecture/tech/TECH-17-model-request-alias-compatibility.md
+    kind: tech
+    status: active
+    owner: cloudrouter-platform
+    title: Model request id alias compatibility
   - id: TECH-USAGE-EN
     path: docs/architecture/tech/TECH-usage.md
     kind: tech
