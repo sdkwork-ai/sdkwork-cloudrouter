@@ -38,10 +38,19 @@ async fn inject_generations_domain_context(
 }
 
 /// Composes the Generations App API contribution on the process-shared pool.
-async fn wire_generations_app_router(database_pool: DatabasePool) -> Result<Router, String> {
-    let contribution =
-        sdkwork_api_generations_assembly::assemble_api_router_with_pool(database_pool)
-            .await
+///
+/// `pricing_port` injects the host's credit-estimation implementation for
+/// `POST /app/v3/api/generations/pricing/estimate`; `None` keeps the
+/// contribution's unconfigured port and the endpoint answers 501.
+async fn wire_generations_app_router(
+    database_pool: DatabasePool,
+    pricing_port: Option<std::sync::Arc<dyn sdkwork_api_generations_assembly::GenerationPricingPort>>,
+) -> Result<Router, String> {
+    let contribution = sdkwork_api_generations_assembly::assemble_api_router_with_pool_and_pricing(
+            database_pool,
+            pricing_port,
+        )
+        .await
             .map_err(|error| {
                 format!("compose sdkwork-generations app-api contribution failed: {error}")
             })?;
@@ -59,6 +68,7 @@ pub async fn merge_federated_generations_app_router(
     router: Router,
     database_pool: &DatabasePool,
     subject_boundary_config: AppSubjectBoundaryConfig,
+    pricing_port: Option<std::sync::Arc<dyn sdkwork_api_generations_assembly::GenerationPricingPort>>,
 ) -> Result<Router, String> {
     if database_pool.as_postgres().is_none() {
         tracing::info!(
@@ -68,7 +78,8 @@ pub async fn merge_federated_generations_app_router(
         );
         return Ok(router);
     }
-    let generations_router = wire_generations_app_router(database_pool.clone()).await?;
+    let generations_router =
+        wire_generations_app_router(database_pool.clone(), pricing_port).await?;
     Ok(merge_federated_app_capability_router_with_optional_auth(
         router,
         generations_router,
@@ -82,7 +93,10 @@ mod tests {
     fn federated_generations_consumes_generations_app_api_contribution() {
         let source = include_str!("generations_runtime.rs");
 
-        assert!(source.contains("sdkwork_api_generations_assembly::assemble_api_router_with_pool("));
+        assert!(source.contains(
+            "sdkwork_api_generations_assembly::assemble_api_router_with_pool_and_pricing(",
+        ));
+        assert!(source.contains("pricing_port"));
         assert!(source.contains("merge_federated_app_capability_router_with_optional_auth("));
         assert!(source.contains("domain_context_injectors"));
         assert!(source.contains("from_fn_with_state("));

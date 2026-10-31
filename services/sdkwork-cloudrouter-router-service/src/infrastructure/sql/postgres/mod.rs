@@ -54,6 +54,7 @@ pub use admin_finance_store::PostgresAdminFinanceStore;
 pub use admin_firewall_rule_store::PostgresAdminFirewallRuleStore;
 pub use admin_ip_rate_limit_store::PostgresAdminIpRateLimitStore;
 pub use admin_marketing_store::PostgresAdminMarketingStore;
+pub(crate) use admin_marketing_store::load_recharge_settings_model;
 pub use admin_model_rate_limit_store::PostgresAdminModelRateLimitStore;
 pub use admin_pricing_store::PostgresAdminPricingStore;
 pub use admin_record_store::PostgresAdminRecordStore;

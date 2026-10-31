@@ -13163,6 +13163,22 @@
           "model": {
             "description": "Volcengine Ark content generation model identifier.",
             "type": "string"
+          },
+          "duration": {
+            "description": "Video duration in seconds for Seedance content generation tasks.",
+            "type": "number"
+          },
+          "ratio": {
+            "description": "Aspect ratio for Seedance content generation tasks (e.g. 16:9).",
+            "type": "string"
+          },
+          "resolution": {
+            "description": "Render resolution for Seedance content generation tasks (480p/720p/1080p).",
+            "type": "string"
+          },
+          "watermark": {
+            "description": "Whether Seedance stamps a watermark on the rendered video.",
+            "type": "boolean"
           }
         },
         "required": [

@@ -9,6 +9,7 @@ mod async_usage_task_worker;
 mod async_usage_worker_config;
 mod billing_subject_cache;
 mod cache_runtime;
+mod generations_pricing_estimate;
 mod gateway_accounting_retry;
 mod gateway_chain_policy;
 mod gateway_invocation_policy;
@@ -101,6 +102,7 @@ pub use gateway_invocation_policy::{
 };
 pub use gateway_invocation_rate_limit::{GatewayInvocationRateLimiter, GatewayRateLimitSpec};
 pub use gateway_pricing_decision::GatewayPricingDecision;
+pub use generations_pricing_estimate::SqlGenerationsPricingEstimator;
 pub use iam_runtime_context::IamRuntimeContext;
 pub(crate) use invocation::is_token_meter;
 pub use invocation::{

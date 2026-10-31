@@ -90,6 +90,11 @@ pub use pricing_identity::{
     apply_pricing_identity, requested_resolution, resolve_pricing_identity,
 };
 pub(crate) use pricing_identity::{context_tier_code, single_catalog_tier_code};
+pub(crate) use pricing::{
+    add_meter_dimensions, billing_region_prefers_china, catalog_vendor_code,
+    deployment_billing_region,
+};
+pub(crate) use pricing_identity::catalog_pricing_meters;
 pub use provider_adapter_dispatch::ProviderAdapterDispatchInterceptor;
 pub use provider_native_classifier::{
     canonical_provider_native_catalog_key, normalize_standard_api_path,

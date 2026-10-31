@@ -606,7 +606,7 @@ where
 /// active REGION_SPEC registry code other than the generic `global` bucket;
 /// `None` otherwise so the billing chain keeps falling back to catalog
 /// defaults and the China-region preference.
-fn deployment_billing_region() -> Option<String> {
+pub(crate) fn deployment_billing_region() -> Option<String> {
     let region = sdkwork_cloudrouter_config::resolve_region_code().ok()?;
     let region = region.trim();
     if region.is_empty() || region.eq_ignore_ascii_case("global") {
@@ -630,7 +630,7 @@ fn deployment_billing_region() -> Option<String> {
 /// no region must prefer `cn` — otherwise it silently falls back to the
 /// `global` price. Skipping `global` from the count would collapse such a
 /// model to a single region and defeat the preference entirely.
-fn billing_region_prefers_china<C>(catalog: &C, catalog_key: &str) -> bool
+pub(crate) fn billing_region_prefers_china<C>(catalog: &C, catalog_key: &str) -> bool
 where
     C: PricingCatalog,
 {
@@ -772,7 +772,7 @@ pub(super) fn quote_from_resolution(
     }
 }
 
-fn catalog_vendor_code(catalog_key: &str) -> &str {
+pub(crate) fn catalog_vendor_code(catalog_key: &str) -> &str {
     catalog_key
         .split_once('/')
         .map(|(vendor_code, _)| vendor_code)
@@ -839,7 +839,7 @@ fn pricing_dimensions(
     dimensions
 }
 
-fn add_meter_dimensions(
+pub(crate) fn add_meter_dimensions(
     dimensions: &mut PricingDimensionContext,
     meter: &BillingMeter,
     usage_line: Option<&InvocationUsageLine>,

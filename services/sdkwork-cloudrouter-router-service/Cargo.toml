@@ -39,6 +39,7 @@ url.workspace = true
 sdkwork-models.workspace = true
 sdkwork_models_contract_service.workspace = true
 sdkwork_models_catalog_service.workspace = true
+sdkwork_intelligence_generations_service.workspace = true
 sdkwork-cloudrouter-contract.workspace = true
 sdkwork-cloudrouter-config.workspace = true
 sdkwork-cloudrouter-health.workspace = true

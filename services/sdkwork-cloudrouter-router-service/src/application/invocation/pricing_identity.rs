@@ -259,7 +259,7 @@ where
 /// 计量。因此按"离产出最近"排序——产出侧（`*_output_*`）优先，其次是结果计
 /// 数（`*_result`），再次是输入侧（`*_input_*`），缓存/推理/存储等辅助口径
 /// 最后；同档按 meter code 排序，保证确定性。
-fn catalog_pricing_meters<C>(
+pub(crate) fn catalog_pricing_meters<C>(
     catalog: &C,
     tenant_id: i64,
     organization_id: i64,

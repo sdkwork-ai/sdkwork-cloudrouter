@@ -118,7 +118,7 @@ const DEFAULT_ADMIN_ROUTING_TOPOLOGY_SEED_SOURCE: &str = "default-admin-routing-
 /// in the *enabled* state. Everywhere else (production and any unrecognised
 /// lifecycle) they are seeded disabled, so an operator must explicitly attach
 /// real credentials before billable vendor traffic can leave the gateway.
-const DEV_LIKE_INSTALL_ENVIRONMENTS: [&str; 3] = ["development", "test", "staging"];
+const DEV_LIKE_INSTALL_ENVIRONMENTS: [&str; 4] = ["development", "test", "staging", "demo"];
 
 /// Placeholder credential value written for a bundled vendor default account.
 ///

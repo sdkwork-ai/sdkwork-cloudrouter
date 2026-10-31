@@ -11,6 +11,8 @@ use sdkwork_cloudrouter_config::{
 };
 use sdkwork_cloudrouter_database_host::connect_cloud_router_database;
 use sdkwork_cloudrouter_http::AppSubjectBoundaryConfig;
+use sdkwork_api_generations_assembly::GenerationPricingPort;
+use sdkwork_cloudrouter_router_service::application::SqlGenerationsPricingEstimator;
 use sdkwork_cloudrouter_router_service::application::{
     bootstrap_payment_provider_registry, cached_site_settings_store, payment_runtime_environment,
     ApiKeySecretHasher, ApiKeySecretStorageConfig, EntityUuidGenerator, InMemoryRuntimeStreamBus,
@@ -303,6 +305,7 @@ async fn finalize_product_router_with_federated_capabilities(
     subject_boundary_config: AppSubjectBoundaryConfig,
     database_config: Option<&DatabaseConfig>,
     database_pool: Option<&sdkwork_database_sqlx::DatabasePool>,
+    generations_pricing_port: Option<Arc<dyn GenerationPricingPort>>,
 ) -> Result<Router, ProductCatalogRouterError> {
     let router = crate::invoice_runtime::merge_federated_invoice_app_router(
         router,
@@ -360,6 +363,7 @@ async fn finalize_product_router_with_federated_capabilities(
                     router,
                     database_pool,
                     subject_boundary_config.clone(),
+                    generations_pricing_port,
                 )
                 .await
                 .map_err(ProductCatalogRouterError::Config)?
@@ -707,6 +711,7 @@ pub async fn router_with_postgres_product_catalog(
         subject_boundary_config,
         Some(&database_config),
         None,
+        None,
     )
     .await
 }
@@ -769,6 +774,12 @@ pub async fn router_with_postgres_shared_runtime(
         Some(Arc::clone(&model_rankings_store)),
     )
     .await?;
+    // The federated Generations surface prices its credit estimates with the
+    // same process-shared pricing catalog the invocation pipeline charges with.
+    let generations_pricing_estimator = Arc::new(SqlGenerationsPricingEstimator::new(
+        Arc::clone(&catalog),
+        pool.clone(),
+    ));
     let model_catalog_router = app_model_catalog_router(Arc::clone(&catalog)).merge(
         app_model_rankings_router_with_subject_boundary(
             model_rankings_store,
@@ -846,6 +857,7 @@ pub async fn router_with_postgres_shared_runtime(
         subject_boundary_config,
         Some(&config),
         Some(&database_pool),
+        Some(generations_pricing_estimator),
     )
     .await
 }
@@ -1017,6 +1029,10 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
         credential_secret_codec.clone(),
         app_runtime_catalog_refresh_interval,
     );
+    let generations_pricing_estimator = Arc::new(SqlGenerationsPricingEstimator::new(
+        Arc::clone(&app_runtime_execution_catalog),
+        pool.clone(),
+    ));
     let model_rankings_store =
         model_rankings_service(Arc::new(PostgresModelRankingsReadStore::new(pool.clone())));
     maybe_spawn_postgres_model_ranking_refresh_worker(
@@ -1101,6 +1117,7 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
         subject_boundary_config,
         Some(&config),
         None,
+        Some(generations_pricing_estimator),
     )
     .await
 }
