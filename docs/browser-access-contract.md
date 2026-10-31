@@ -41,7 +41,7 @@
 
 1. **环境后缀命名**：域名后缀 `-dev` / `-test` / `-staging` / `-demo`；**无后缀 = production**（`router.sdkwork.com` / `api.sdkwork.com`）。命令里的环境别名：`dev`→development、`prod`→production，`test` / `staging` / `demo` 同名（`build:pc:prod` → standalone.production，产物 `dist/standalone/prod`）。
 2. **多基础域族**：以下所有规则对 16 个注册基础域同构——`sdkwork.com/.cn`、`birdcoder.com/.cn`、`dtupay.com/.cn`、`noaper.com/.cn`、`skubc.com/.cn`、`zowalk.com/.cn`、`offer86.com/.cn`、`86offer.com/.cn`；`cloudrouter.<base>` 是 `router.<base>` 的过渡别名。本文表格只列 `sdkwork.com` 代表域。
-3. **dev 命令仅存在于 development**：`pnpm dev` 与 `pnpm dev:cloud` 是仅有的两个公开开发命令（PNPM_SCRIPT_SPEC §3）；test / staging / demo / production 不得增设 dev 入口。这四个环境的 standalone 档案是**本机预演 / 安装部署**档案，cloud 档案是**容器部署**档案。
+3. **dev 命令仅存在于 development**：`pnpm dev` 与 `pnpm dev:cloud` 是仅有的两个 `dev:` 前缀公开开发命令（PNPM_SCRIPT_SPEC §3）；test / staging / demo / production 不得增设 `dev:<环境>` 入口。唯一的具名例外是 `pnpm prod`（PNPM_SCRIPT_SPEC §3.1）：它是**开发表面**命令，把本机自适应入口的风扇出指向已部署生产网关，见 §2.7。这四个环境的 standalone 档案是**本机预演 / 安装部署**档案，cloud 档案是**容器部署**档案。
 4. **loopback 纪律**：loopback / 带端口 URL 只允许出现在 development 的 dev 运行时与 test/staging 的**本机预演档案**中；**任何环境的构建产物若用于真实部署，禁止携带 loopback 或带端口 URL**（部署用的 production 档案天然满足；test/staging 的真实部署走 cloud 容器档案，域名为 `*-test` / `*-staging` 族）。
 5. **每环境的 CORS 允许列表**：`etc/topology/<profile>.env` 的 `SDKWORK_CORS_ALLOWED_ORIGINS` 恰好枚举该环境的页面域族 + （development 额外含 `http://127.0.0.1:4734` / `localhost:4734` 自适应入口）+ 桌面/小程序 scheme。
 6. **环境与档案的映射**：命令环境别名 → `{standalone|cloud}.{environment}` 档案 → `etc/topology/{profile}.{environment}.env`。10 个档案都有对应 env 文件，orchestration 定义谁能启动什么进程。
@@ -59,7 +59,7 @@
 | `standalone.demo` | 独立演示安装 | demo 部署 | `https://router-demo.sdkwork.com` | 同源（同域） | 无 |
 | `cloud.demo` | 容器部署 | demo 部署 | `https://router-demo.sdkwork.com` | `https://api-demo.sdkwork.com` 族 | 无 |
 | `standalone.production` | native/archive 安装 | 生产部署 | `https://router.sdkwork.com` | 同源 `/` | 无 |
-| `cloud.production` | 容器部署 | 生产部署 | `https://router.sdkwork.com` | `https://api.sdkwork.com` 族 | 无 |
+| `cloud.production` | 容器部署 | 生产部署 | `https://router.sdkwork.com` | `https://api.sdkwork.com` 族 | `pnpm prod`（治理例外，§2.7） |
 
 其余 API 面域名族（每环境同构，生产无后缀）：管理面 `router-admin[-<env>]`、开放面 `router-open[-<env>]`、平台网关 `api[-<env>]`、drive 兄弟 `drive[-<env>]`。
 
@@ -97,7 +97,20 @@
 - 两种部署形态（二选一，由 `deploy:plan --profile standalone.production | cloud.production` 校验）：
   1. **standalone.production**：native/archive 安装包；进程绑定 `0.0.0.0:3900`，位于平台 HTTPS 边缘之后；自适应资产根 `SDKWORK_CLOUDROUTER_ROUTER_PC|H5_STATIC_ROOT=/usr/share/sdkwork/router/web/{pc,h5}`，由 nginx `@pc` / `@h5` named locations 按设备分流（与 dev §4 判据共享）；SDK base `https://router.sdkwork.com` 同源 `/`；drive 走同源 `/backend/v3/api`。
   2. **cloud.production**：容器；页面 `https://router.sdkwork.com`；SDK base `https://api.sdkwork.com` 族；drive `https://drive.sdkwork.com`。
-- 规则：生产域名无环境后缀；`SDKWORK_CLOUDROUTER_STARTUP_INSTALL_MODE=skip`；镜像版本钉死且经 `bin/` 入口构建/部署（生产变更需 `--yes`）；禁止任何 dev 表面、loopback、带端口值；生产 CORS 只含生产页面域 + 桌面/小程序 scheme。
+- 规则：生产域名无环境后缀；`SDKWORK_CLOUDROUTER_STARTUP_INSTALL_MODE=skip`；镜像版本钉死且经 `bin/` 入口构建/部署（生产变更需 `--yes`）；部署产物与部署档案禁止 loopback/带端口值（唯一例外是 §2.7.1 声明的三个本机开发 bind）；生产 CORS 只含生产页面域 + 桌面/小程序 scheme。
+
+#### 2.7.1 `pnpm prod` —— 唯一的生产开发表面（治理例外）
+
+`pnpm prod` 是 PNPM_SCRIPT_SPEC §3.1 规定的唯一具名例外：它让本机开发表面（热更新）指向**已部署的生产环境**，用于复现生产专有问题。它不是部署命令，不构建、不打包、不 apply 任何生产变更。
+
+- **启动链**：`pnpm prod` → `sdkwork-app dev --deployment-profile cloud --environment production` → 加载 `cloud.production` 档案（`etc/topology/cloud.production.env`）→ 起两个私有渲染器（Vite mode `cloud.production`，4736/4737）+ 自适应入口（4734）。不启动任何本地网关、边缘、数据库或 worker 进程（拓扑档案 `cloud.production.processes` 只声明 `client`）。
+- **同源纪律（无 CORS 问题的原因）**：浏览器文档仍是同源相对 `/`（`/v1`、`/app/v3/api`、`/backend/v3/api`）；4734 入口把规范 API 路径**服务端**转发到 `platform.api-gateway` 声明的 `https://api.sdkwork.com`。浏览器从不跨域直连生产域，因此生产 CORS（只含生产页面域）不参与，也就不会出现 `net::ERR_FAILED` 预检失败。
+- **档案值仍为纯域名**：`cloud.production.env` 只新增三个本机开发 bind/端口（`..._WEB_DEV_INGRESS_BIND=127.0.0.1:4734`、PC/H5 渲染器端口），所有 `*_URL` 保持域名，构建/部署产物不会继承 loopback。生产 CORS 允许列表不因 `pnpm prod` 改动（禁止把 4734/localhost 加进生产 CORS）。
+- **凭据前置（fail-closed）**：生产生命周期不会生成本地 fixture token。启动前必须在忽略提交的 `.env.cloud.production.bootstrap.local` 中提供私有来源的 `SDKWORK_ACCESS_TOKEN`（该文件被仓库根 `.gitignore` 的 `.env.*` 规则忽略，不得提交）。缺失时 `sdkwork-app` 直接失败并提示 "provision it from a private secret source"，不会静默降级到本机栈。
+- **健康检查**：`cloud.production.healthSurfaces` 的远程面不可达即 fail-closed，不回退 loopback。
+- **退出回收**：与其它档案一致，进程退出时按档案 `bindEnv` 回收监听端口；因此运行 `pnpm prod` 期间不要在本机 3900/18080/18081 上并行跑属于其它仓库的本地边缘进程。`pnpm stop` 只按 development 档案回收（`sdkwork-app stop` 的清理目标只含 development profile），不会触碰生产端口。
+- **不构成发布证据**：`pnpm prod` 与 `release:*` / `deploy:*` / `bin/` 无任何替代关系。
+- **回归**：`scripts/dev/browser-dev-access-contract.test.mjs` 的 `[cloud.production]` 用例断言同源文档 + 生产网关风扇出 + 只起 client 进程；`scripts/verify-cloud-router-topology.test.mjs` 断言档案声明与 `prod` 脚本接线。
 
 ## 3. 为什么 `pnpm dev` 会"看到两个端口"
 

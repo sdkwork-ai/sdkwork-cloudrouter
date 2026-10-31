@@ -228,3 +228,93 @@ for (const profileId of DEV_PROFILES) {
     }
   });
 }
+
+// `pnpm prod` — governed exception (PNPM_SCRIPT_SPEC.md section 3.1, recorded in
+// docs/browser-access-contract.md section 2.7): the local development surface
+// serves the production lifecycle environment while the browser document stays
+// same-origin. The deployed production platform gateway is reached by the
+// ingress server-side fan-out, never by a cross-origin browser call, so the
+// production CORS allow-list (production page domains only) is never involved.
+test('[cloud.production] prod surface keeps the same-origin document and fans out to the deployed gateway', async () => {
+  const profileId = 'cloud.production';
+  const profileEnv = parseEnvFile(profileId);
+  const { runtime } = await import('../lib/cloud-router-topology.mjs');
+  const plan = runtime.resolvePlan(profileId, 'browser');
+
+  assert.equal(plan.activeProfile, profileId);
+  assert.equal(plan.forbiddenProcesses.length, 0);
+  assert.equal(plan.localGateway, null, 'prod must not start a local API gateway');
+  assert.equal(plan.localDataStores.length, 0, 'prod must not start a local data store');
+  assert.deepEqual(
+    plan.localProcesses.map((process) => [process.id, process.role]),
+    [['portal-renderer', 'client']],
+    'prod owns the browser tooling only, never local API processes',
+  );
+
+  const delivery = plan.browserDeliveries
+    .find((candidate) => candidate.id === 'cloudrouter-adaptive-web');
+  assert.ok(delivery, 'prod must declare the adaptive browser delivery');
+  assert.equal(delivery.deliveryMode, 'dev-server-proxy');
+  assert.equal(delivery.apiSurfaceId, 'platform.api-gateway');
+  assert.equal(
+    delivery.apiTargetOrigin,
+    profileEnv.SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL,
+    'prod must fan out to the deployed production platform gateway',
+  );
+  assert.equal(
+    delivery.apiTargetOrigin,
+    'https://api.sdkwork.com',
+    'the production fan-out target is the domain edge, never loopback',
+  );
+  assert.equal(delivery.browserVisibleOrigin, 'http://127.0.0.1:4734');
+  assert.deepEqual(
+    Object.fromEntries(
+      delivery.renderers.map((renderer) => [renderer.architecture, String(renderer.port)]),
+    ),
+    { 'pc-web': '4736', h5: '4737' },
+  );
+  for (const renderer of delivery.renderers) {
+    assert.equal(
+      renderer.invocation.args.at(-1),
+      profileId,
+      `${renderer.architecture} must use the ${profileId} Vite mode`,
+    );
+  }
+
+  // Both browser surfaces publish the same-origin dev document for the profile.
+  const ingressOrigin = delivery.browserVisibleOrigin;
+  const rendererEnv = {
+    ...profileEnv,
+    ...parseAppDotEnv('apps/sdkwork-cloudrouter-pc', profileId),
+    VITE_SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL: ingressOrigin,
+  };
+  const pc = await import('../../apps/sdkwork-cloudrouter-pc/vite.config.ts');
+  const script = pc.buildPortalRuntimeEnvScript(pc.resolvePortalDevBrowserRuntimeEnv(rendererEnv));
+  const freezeMarker = 'Object.freeze(';
+  const freezeStart = script.indexOf(freezeMarker) + freezeMarker.length;
+  const pcDocument = JSON.parse(
+    script.slice(freezeStart, script.indexOf('});', freezeStart) + 1),
+  );
+  assertBrowserDevRuntimeEnvDocument(pcDocument, { profileId });
+  assert.equal(pcDocument.VITE_SDKWORK_CLOUDROUTER_ROUTER_PROFILE_ID, profileId);
+  assert.equal(pcDocument.VITE_SDKWORK_DEPLOYMENT_PROFILE, 'cloud');
+
+  const h5 = await import('../../apps/sdkwork-cloudrouter-h5/vite.config.ts');
+  const config = await h5.default({ mode: profileId, command: 'serve' });
+  const plugin = (config.plugins ?? []).flat()
+    .find((candidate) => candidate?.name === 'cloudrouter-runtime-env-document');
+  assert.ok(plugin, 'h5 dev runtime-env document middleware must be registered');
+  let handler;
+  plugin.configureServer({ middlewares: { use: (registered) => { handler = registered; } } });
+  let response;
+  handler({ url: '/runtime-env.json' }, {
+    statusCode: 0,
+    headers: {},
+    setHeader(name, value) { this.headers[name] = value; },
+    end(body) { response = { statusCode: this.statusCode, body }; },
+  }, () => { throw new Error('runtime-env.json request must not pass through'); });
+  assert.equal(response.statusCode, 200);
+  const h5Document = JSON.parse(response.body);
+  assertBrowserDevRuntimeEnvDocument(h5Document, { profileId });
+  assert.deepEqual(h5Document, { ...buildBrowserDevRuntimeEnvDocument({ profileId }) });
+});

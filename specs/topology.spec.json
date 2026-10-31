@@ -560,10 +560,112 @@
         ]
       },
       "cloud.production": {
-        "processes": [],
+        "processes": [
+          {
+            "id": "portal-renderer",
+            "role": "client",
+            "applicationRoot": "apps/sdkwork-cloudrouter-pc",
+            "bindEnv": "SDKWORK_CLOUDROUTER_ROUTER_WEB_DEV_INGRESS_BIND",
+            "runtimeTargets": [
+              "browser"
+            ],
+            "clientArchitectures": [
+              "pc-web",
+              "h5"
+            ],
+            "required": true
+          }
+        ],
+        "accessEndpoints": [
+          {
+            "id": "application-ui",
+            "kind": "user-interface",
+            "source": {
+              "processId": "portal-renderer"
+            },
+            "path": "/",
+            "primary": true,
+            "runtimeTargets": [
+              "browser"
+            ],
+            "clientArchitectures": [
+              "pc-web",
+              "h5"
+            ]
+          },
+          {
+            "id": "application-api-reference",
+            "kind": "api-reference",
+            "source": {
+              "surfaceId": "platform.api-gateway"
+            },
+            "path": "/openapi.json",
+            "runtimeTargets": [
+              "browser"
+            ]
+          }
+        ],
         "healthSurfaces": [
           "application.public-ingress",
           "platform.api-gateway"
+        ],
+        "browserDeliveries": [
+          {
+            "id": "cloudrouter-adaptive-web",
+            "applicationRoot": "apps/sdkwork-cloudrouter-pc",
+            "clientArchitectures": [
+              "pc-web",
+              "h5"
+            ],
+            "originMode": "same-origin",
+            "deliveryMode": "dev-server-proxy",
+            "apiSurfaceId": "platform.api-gateway",
+            "clientProcessId": "portal-renderer",
+            "preserveCanonicalPaths": true,
+            "tabletArchitecture": "pc-web",
+            "renderers": {
+              "pc-web": {
+                "applicationRoot": "apps/sdkwork-cloudrouter-pc",
+                "command": "node",
+                "args": [
+                  "--import",
+                  "./scripts/register-portal-workspace-resolver.mjs",
+                  "./node_modules/vite/bin/vite.js",
+                  "--configLoader",
+                  "native",
+                  "--host",
+                  "{host}",
+                  "--port",
+                  "{port}",
+                  "--strictPort",
+                  "--mode",
+                  "cloud.production"
+                ],
+                "defaultPort": 4736,
+                "portEnv": "SDKWORK_CLOUDROUTER_ROUTER_PC_INTERNAL_DEV_PORT",
+                "env": {}
+              },
+              "h5": {
+                "applicationRoot": "apps/sdkwork-cloudrouter-h5",
+                "command": "node",
+                "args": [
+                  "./node_modules/vite/bin/vite.js",
+                  "--configLoader",
+                  "native",
+                  "--host",
+                  "{host}",
+                  "--port",
+                  "{port}",
+                  "--strictPort",
+                  "--mode",
+                  "cloud.production"
+                ],
+                "defaultPort": 4737,
+                "portEnv": "SDKWORK_CLOUDROUTER_ROUTER_H5_INTERNAL_DEV_PORT",
+                "env": {}
+              }
+            }
+          }
         ]
       },
       "cloud.test": {
@@ -713,6 +815,12 @@
       "dev:cloud": {
         "script": "dev:cloud",
         "deploymentProfile": "cloud",
+        "runtimeTarget": "browser"
+      },
+      "prod": {
+        "script": "prod",
+        "deploymentProfile": "cloud",
+        "environment": "production",
         "runtimeTarget": "browser"
       },
       "dev:browser:cloud": {

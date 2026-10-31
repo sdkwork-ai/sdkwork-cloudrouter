@@ -119,6 +119,23 @@ test('declares v5 topology spec and profile env files for sdkwork-cloudrouter', 
     adaptiveDelivery.renderers.h5.portEnv,
     'SDKWORK_CLOUDROUTER_ROUTER_H5_INTERNAL_DEV_PORT',
   );
+  // `pnpm prod` (governed exception, PNPM_SCRIPT_SPEC.md section 3.1) serves the
+  // same adaptive delivery for cloud.production: local renderers, deployed
+  // production platform gateway as the server-side fan-out target.
+  const productionProfile = spec.orchestration.profiles['cloud.production'];
+  const productionClient = productionProfile.processes
+    .find((process) => process.id === 'portal-renderer');
+  assert.ok(productionClient, 'cloud.production must declare the local prod client process');
+  assert.equal(productionClient.role, 'client');
+  assert.equal(productionClient.bindEnv, 'SDKWORK_CLOUDROUTER_ROUTER_WEB_DEV_INGRESS_BIND');
+  assert.deepEqual(productionClient.clientArchitectures, ['pc-web', 'h5']);
+  const [productionDelivery] = productionProfile.browserDeliveries;
+  assert.equal(productionDelivery.deliveryMode, 'dev-server-proxy');
+  assert.equal(productionDelivery.apiSurfaceId, 'platform.api-gateway');
+  assert.equal(productionDelivery.clientProcessId, 'portal-renderer');
+  assert.equal(productionDelivery.preserveCanonicalPaths, true);
+  assert.equal(productionDelivery.renderers['pc-web'].args.at(-1), 'cloud.production');
+  assert.equal(productionDelivery.renderers.h5.args.at(-1), 'cloud.production');
   // The production profile must keep one gateway-static lane per architecture
   // the development client process declares, or the mobile client has no
   // deployment target.
@@ -149,6 +166,40 @@ test('declares v5 topology spec and profile env files for sdkwork-cloudrouter', 
       assert.match(profileEnv, /^VITE_SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL=/m);
     }
   }
+
+  // `pnpm prod` (PNPM_SCRIPT_SPEC.md section 3.1) is the only non-development
+  // profile that declares a local development surface: one adaptive browser
+  // ingress plus two private renderer ports. Every deployment value stays
+  // domain-only, so no build or deploy artifact can inherit a loopback origin.
+  const productionEnv = await read('etc/topology/cloud.production.env');
+  assert.equal(
+    envValue(productionEnv, 'SDKWORK_CLOUDROUTER_ROUTER_WEB_DEV_INGRESS_BIND'),
+    '127.0.0.1:4734',
+  );
+  assert.equal(
+    envValue(productionEnv, 'SDKWORK_CLOUDROUTER_ROUTER_PC_INTERNAL_DEV_PORT'),
+    '4736',
+  );
+  assert.equal(
+    envValue(productionEnv, 'SDKWORK_CLOUDROUTER_ROUTER_H5_INTERNAL_DEV_PORT'),
+    '4737',
+  );
+  for (const rawLine of productionEnv.split(/\r?\n/u)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    const separator = line.indexOf('=');
+    assert.ok(separator > 0, `cloud.production.env line must be KEY=VALUE: ${line}`);
+    const key = line.slice(0, separator).trim();
+    // Only the three declared local dev binds may carry a loopback origin; the
+    // CORS allow-list is a page-origin allow-list (it legitimately names the
+    // tauri://localhost desktop scheme), not a service URL.
+    if (!key.endsWith('_URL')) continue;
+    assert.doesNotMatch(
+      line.slice(separator + 1),
+      /127\.0\.0\.1|localhost/u,
+      `${key} must stay domain-only in the production profile`,
+    );
+  }
 });
 
 test('root package.json wires @sdkwork/app-topology and canonical dev scripts', async () => {
@@ -170,6 +221,15 @@ test('root package.json wires @sdkwork/app-topology and canonical dev scripts', 
   assert.match(
     packageJson.scripts['dev:cloud'],
     /^(?:node scripts\/lib\/ensure-cloud-router-node-deps\.mjs && )?pnpm exec sdkwork-app dev --deployment-profile cloud$/u,
+  );
+  // PNPM_SCRIPT_SPEC.md section 3.1 (governed exception): `prod` starts the
+  // local adaptive development surface against the deployed production
+  // platform gateway. It is a development-surface command, never a deployment
+  // command: the lifecycle environment is pinned explicitly and the profile
+  // stays cloud.
+  assert.equal(
+    packageJson.scripts.prod,
+    'node scripts/lib/ensure-cloud-router-node-deps.mjs && pnpm exec sdkwork-app dev --deployment-profile cloud --environment production',
   );
   // APP_RUNTIME_TOPOLOGY_SPEC.md section 8.2: `sdkwork-app dev` consults
   // `_sdkwork:dev:<deploymentProfile>` in the repository root first and returns
