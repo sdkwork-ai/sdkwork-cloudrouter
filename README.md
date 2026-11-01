@@ -113,7 +113,10 @@ sudo systemctl reload nginx
 
 Generated nginx configs proxy to `http://127.0.0.1:3900` and deploy to
 `/etc/nginx/sites-enabled/sdkwork/router.sdkwork.com.conf` for the
-`router.sdkwork.com` domain. The production site binds every registered host
+`router.sdkwork.com` domain — for the platform API host the same flow is
+`sudo pnpm nginx:deploy -- --domain api.sdkwork.com --cert-name sdkwork.com`,
+which publishes `/etc/nginx/sites-enabled/sdkwork/api.sdkwork.com.conf`. The
+production site binds every registered host
 (`router.sdkwork.com`, `router.birdcoder.com`, `router.dtupay.com`, plus the
 transition alias `cloudrouter.sdkwork.com`) through `server_name` aliases per
 `APP_RUNTIME_TOPOLOGY_NAMING.md` section 9 and `deployments/deploy.yaml`;

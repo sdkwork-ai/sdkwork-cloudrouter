@@ -63,6 +63,13 @@ rewritten on every release so it never accumulates prior versions.
   its own `ApiKeySecretStorageConfig` and is wired correctly. The app-api
   composition now passes the credential codec only.
 
+### Verification
+
+Release verification invokes the tooling test runner directly, scoped with
+`--test-name-pattern` so a single run covers the release-critical assertions:
+
+- `node scripts/run-cloud-router-application.test.mjs --test-name-pattern "installation documentation covers release|install package planner covers|install package manifests distinguish|install package builder emits service and container|native installer builder emits apt-installable|native installer builder CLI validates"`
+
 ### Known Issues
 
 - The `container` packaging targets build their install package and then stop

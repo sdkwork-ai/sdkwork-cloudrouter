@@ -1105,14 +1105,16 @@ test('nginx deployment spec documents the sdkwork site-family path convention', 
   assert.equal(existsSync(nginxSpecPath), true, 'specs/NGINX_SPEC.md must exist');
 
   const nginxSpec = readFileSync(nginxSpecPath, 'utf8');
-  assert.ok(nginxSpec.includes('/etc/nginx/sites-enabled/sdkwork/<domain>.conf'));
-  assert.ok(nginxSpec.includes('/etc/nginx/sites-enabled/sdkwork/api.sdkwork.com.conf'));
-  assert.ok(nginxSpec.includes('/etc/nginx/sites-enabled/sdkwork/www.sdkwork.com.conf'));
+  // NGINX_SPEC.md renders the staging tree under target/ and retires the direct
+  // /etc/nginx deploy; the live path remains operator-copied from staging.
+  assert.ok(nginxSpec.includes('target/nginx/sites-enabled/sdkwork/<domain>.conf'));
+  assert.ok(nginxSpec.includes('target/nginx/sites-enabled/sdkwork/api.sdkwork.com.conf'));
+  assert.ok(nginxSpec.includes('target/nginx/sites-enabled/sdkwork/api-dev.sdkwork.com.conf'));
   assert.ok(nginxSpec.includes('/etc/sdkwork/certs/letsencrypt/<cert-name>/fullchain.pem'));
   assert.ok(nginxSpec.includes('/etc/sdkwork/certs/letsencrypt/<cert-name>/privkey.pem'));
   assert.ok(nginxSpec.includes('etc/nginx/NGINX_SAMPLE.conf'));
-  assert.ok(nginxSpec.includes('pnpm nginx:deploy -- --domain api.sdkwork.com'));
-  assert.ok(nginxSpec.includes('http://127.0.0.1:3900'));
+  assert.ok(nginxSpec.includes('pnpm nginx:render -- --domain api.sdkwork.com --output-root target/nginx'));
+  assert.ok(nginxSpec.includes('gateway:3900'));
 });
 
 test('nginx configurator renders full-domain config files with standardized certs', async () => {
@@ -1562,7 +1564,7 @@ test('application scripts keep commercial default ports and reject obsolete alia
 assert.ok(workspaceStarter.includes("const DEFAULT_SERVER_BIND = '0.0.0.0:3905';"));
   assert.ok(workspaceStarter.includes("const DEFAULT_PORTAL_BIND = '127.0.0.1:3901';"));
   assert.ok(productionStarter.includes("'0.0.0.0:3900'"));
-  assert.match(portalViteConfig, /DEFAULT_PORTAL_DEV_PORT\s*=\s*3901/u);
+  assert.match(portalViteConfig, /DEFAULT_PORTAL_DEV_PORT\s*=\s*4736/u);
   assert.ok(!productSurface.includes('3000'));
   assert.ok(!productSurface.includes('39000'));
   assert.ok(!productSurface.includes('unified_server'));
@@ -1629,8 +1631,16 @@ test('portal runtime is served by Rust edge server without Node server entrypoin
   assert.ok(!scriptsSurface.includes('dist/server.mjs'));
   assert.ok(!scriptsSurface.includes('smoke-production-server.mjs'));
   assert.equal(portalPackage.scripts['check:dependencies'], 'node scripts/check-portal-deps.mjs');
-  assert.equal(portalPackage.scripts.dev, 'pnpm dev:standalone');
-  assert.equal(portalPackage.scripts['dev:browser'], 'pnpm dev:browser:postgres:standalone');
+  // `dev` projects the two-dimensional vite mode through the canonical env
+  // ensure step; no composed overlay or one-dimensional mode remains.
+  assert.equal(
+    portalPackage.scripts.dev,
+    'node ../../scripts/ensure-cloud-router-env.mjs --lifecycle dev && vite --configLoader native --mode standalone.development',
+  );
+  assert.equal(
+    portalPackage.scripts['dev:browser'],
+    'node ../../scripts/ensure-cloud-router-env.mjs --lifecycle dev && vite --configLoader native --mode standalone.development',
+  );
   assert.match(portalPackage.scripts['_sdkwork:client:browser'], /vite\.js --configLoader native/u);
   assert.equal(portalPackage.scripts.preview, 'vite preview --configLoader native');
   assert.equal(portalPackage.scripts.build, 'pnpm check:dependencies && node scripts/build-portal.mjs');
@@ -2958,9 +2968,9 @@ test('admin reset wrapper maps postgres dev mode through the configured env file
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'reset-admin-account.mjs')).href
   );
   const fixtureRoot = path.join(workspaceRoot, 'target', 'admin-reset-config-tests', `postgres-dev-${Date.now()}`);
-  const envFile = path.join(fixtureRoot, 'config/host/postgres.env');
+  const envFile = path.join(fixtureRoot, 'config', 'host', 'postgres.env');
   rmSync(fixtureRoot, { recursive: true, force: true });
-  mkdirSync(fixtureRoot, { recursive: true });
+  mkdirSync(path.dirname(envFile), { recursive: true });
   writeFileSync(
     envFile,
     [
@@ -3103,9 +3113,9 @@ test('bootstrap token wrapper maps dev mode through postgres env and installer i
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'reset-bootstrap-access-token.mjs')).href
   );
   const fixtureRoot = path.join(workspaceRoot, 'target', 'admin-token-config-tests', `postgres-dev-${Date.now()}`);
-  const envFile = path.join(fixtureRoot, 'config/host/postgres.env');
+  const envFile = path.join(fixtureRoot, 'config', 'host', 'postgres.env');
   rmSync(fixtureRoot, { recursive: true, force: true });
-  mkdirSync(fixtureRoot, { recursive: true });
+  mkdirSync(path.dirname(envFile), { recursive: true });
   writeFileSync(
     envFile,
     [
@@ -3148,24 +3158,38 @@ test('bootstrap token wrapper maps dev mode through postgres env and installer i
   rmSync(fixtureRoot, { recursive: true, force: true });
 });
 
-test('bootstrap token wrapper writes signed token into bootstrap env files', async () => {
+test('bootstrap token wrapper writes the signed token into the credential store', async () => {
   const module = await import(
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'reset-bootstrap-access-token.mjs')).href
   );
   const fixtureRoot = path.join(workspaceRoot, 'target', 'admin-token-config-tests', `write-${Date.now()}`);
+  const homeDir = path.join(fixtureRoot, 'home');
   rmSync(fixtureRoot, { recursive: true, force: true });
   mkdirSync(path.join(fixtureRoot, 'apps', 'sdkwork-cloudrouter-pc'), { recursive: true });
 
-  const written = module.writeBootstrapAccessTokenEnvFiles({
-    workspaceRoot: fixtureRoot,
+  const written = module.writeBootstrapAccessTokenCredential({
     environment: 'test',
     accessToken: 'signed-bootstrap-token',
+    homeDir,
   });
 
-  assert.equal(written.length, 3);
-  assert.equal(existsSync(path.join(fixtureRoot, '.env.test.bootstrap.local')), true);
-  assert.equal(existsSync(path.join(fixtureRoot, 'apps', 'sdkwork-cloudrouter-pc', '.env.test.bootstrap.local')), true);
-  assert.equal(existsSync(path.join(fixtureRoot, '.sdkwork.local.env')), true);
+  assert.equal(written.length, 1);
+  assert.equal(written[0].changed, true);
+  const bundlePath = path.join(homeDir, '.sdkwork', 'cloudrouter', 'credentials', 'standalone.test.json');
+  assert.equal(written[0].filePath, bundlePath);
+  assert.deepEqual(JSON.parse(readFileSync(bundlePath, 'utf8')), {
+    accessToken: 'signed-bootstrap-token',
+    environment: 'test',
+    deploymentProfile: 'standalone',
+    source: 'signed-iam-access-token',
+    issuedAt: JSON.parse(readFileSync(bundlePath, 'utf8')).issuedAt,
+  });
+  // No repository env file is written.
+  assert.deepEqual(
+    readdirSync(fixtureRoot).filter((name) => name.includes('bootstrap.local')),
+    [],
+  );
+  assert.equal(existsSync(path.join(fixtureRoot, '.sdkwork.local.env')), false);
   rmSync(fixtureRoot, { recursive: true, force: true });
 });
 
@@ -8540,13 +8564,13 @@ test('portal commons package exposes runtime subpath for ESM and SSR tooling', (
   });
 });
 
-test('standalone portal Vite dev server defaults to direct port 3901', () => {
+test('standalone portal Vite dev server defaults to the topology PC renderer port 4736', () => {
   const viteConfig = readFileSync(
     path.join(workspaceRoot, 'apps', 'sdkwork-cloudrouter-pc', 'vite.config.ts'),
     'utf8',
   );
 
-  assert.match(viteConfig, /DEFAULT_PORTAL_DEV_PORT\s*=\s*3901/u);
+  assert.match(viteConfig, /DEFAULT_PORTAL_DEV_PORT\s*=\s*4736/u);
   assert.match(viteConfig, /port:\s*resolvePortalDevPort\(/u);
   assert.match(viteConfig, /strictPort:\s*true/u);
 });
