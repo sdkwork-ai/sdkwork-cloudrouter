@@ -19,17 +19,17 @@ var __copyProps = (to, from, except, desc) => {
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
-// src/bootstrap/runtime.ts
+// apps/sdkwork-cloudrouter-mini-program/src/bootstrap/runtime.ts
 var runtime_exports = {};
 __export(runtime_exports, {
   bootstrapMiniProgramApplication: () => bootstrapMiniProgramApplication
 });
 module.exports = __toCommonJS(runtime_exports);
 
-// ../sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-contracts/src/permissions.ts
+// apps/sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-contracts/src/permissions.ts
 var CLOUDROUTER_CONSOLE_ACCESS_PERMISSION = "cloudrouter.console.access";
 
-// ../sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-contracts/src/routes.ts
+// apps/sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-contracts/src/routes.ts
 var CLOUDROUTER_CONSOLE_ROUTES = {
   signIn: {
     id: "auth.router.session.signIn",
@@ -86,7 +86,7 @@ var CLOUDROUTER_PC_ROUTE_ALIGNMENT = {
   catalog: ["/models", "/pricing", "/rankings"]
 };
 
-// ../sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-contracts/src/capabilities.ts
+// apps/sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-contracts/src/capabilities.ts
 var CLOUDROUTER_CONSOLE_CAPABILITIES = [
   {
     id: "console-dashboard",
@@ -135,7 +135,7 @@ var CLOUDROUTER_CONSOLE_CAPABILITIES = [
 ];
 var CLOUDROUTER_CONSOLE_CAPABILITY_IDS = CLOUDROUTER_CONSOLE_CAPABILITIES.map((capability) => capability.id);
 
-// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/core/types.js
+// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/core/types.js
 var DEFAULT_RETRY_CONFIG = {
   maxRetries: 3,
   retryDelay: 1e3,
@@ -144,7 +144,7 @@ var DEFAULT_RETRY_CONFIG = {
 };
 var DEFAULT_CACHE_CONFIG = {
   enabled: false,
-  ttl: 3e5,
+  ttl: 300 * 1e3,
   maxSize: 100
 };
 var SUCCESS_CODES = [
@@ -181,7 +181,7 @@ var MIME_TYPES = {
   TEXT_HTML: "text/html"
 };
 
-// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/auth/token-manager.js
+// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/auth/token-manager.js
 var DefaultAuthTokenManager = class {
   constructor(initialTokens, events) {
     __publicField(this, "tokens", {});
@@ -276,7 +276,7 @@ function buildAuthHeaders(authMode, apiKey, tokenManager2) {
   return headers;
 }
 
-// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/logger.js
+// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/logger.js
 var LOG_LEVELS = {
   debug: 0,
   info: 1,
@@ -333,6 +333,7 @@ var ConsoleLogger = class {
         break;
       case "error":
         console.error(output, ...args);
+        break;
     }
   }
   debug(message, ...args) {
@@ -370,7 +371,7 @@ function createLogger(config) {
   return new ConsoleLogger(config);
 }
 
-// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/cache.js
+// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/cache.js
 var MemoryCacheStore = class {
   constructor(config = {}) {
     __publicField(this, "cache", /* @__PURE__ */ new Map());
@@ -429,7 +430,7 @@ function createCacheStore(config) {
   return new MemoryCacheStore(config);
 }
 
-// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/errors.js
+// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/errors.js
 var SdkError = class extends Error {
   constructor(message, code = "UNKNOWN", httpStatus, options) {
     var _a, _b;
@@ -649,7 +650,7 @@ function isRetryableError(error) {
   return error instanceof NetworkError || error instanceof TimeoutError || error instanceof ServerError || error instanceof RateLimitError || error instanceof BadGatewayError || error instanceof ServiceUnavailableError || error instanceof GatewayTimeoutError;
 }
 
-// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/retry.js
+// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/retry.js
 function sleep(ms) {
   return new Promise((resolve2) => setTimeout(resolve2, ms));
 }
@@ -693,7 +694,7 @@ async function withRetry(fn, config = {}) {
   throw lastError;
 }
 
-// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/url.js
+// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/url.js
 var DEFAULT_BASE_URL_ENV_KEY = "SDKWORK_API_BASE_URL";
 var DEPLOYMENT_MODE_ENV_KEYS = [
   "SDKWORK_DEPLOY_MODE",
@@ -950,7 +951,7 @@ function removeTrailingSlash(url) {
   }
 }
 
-// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/sdkwork-utils/packages/sdkwork-utils-typescript/src/runtime/random.js
+// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/sdkwork-utils/packages/sdkwork-utils-typescript/src/runtime/random.js
 function getCrypto() {
   const crypto = globalThis.crypto;
   if (!(crypto == null ? void 0 : crypto.getRandomValues)) throw new Error("Web Crypto API is not available in this environment.");
@@ -975,12 +976,12 @@ function randomUuid() {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/sdkwork-utils/packages/sdkwork-utils-typescript/src/id.js
+// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/sdkwork-utils/packages/sdkwork-utils-typescript/src/id.js
 function uuid() {
   return randomUuid();
 }
 
-// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/string.js
+// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/string.js
 var StringUtils;
 (function(_StringUtils) {
   function isEmpty(value) {
@@ -1807,7 +1808,7 @@ var StringUtils;
   _StringUtils.includesAny = includesAny;
 })(StringUtils || (StringUtils = {}));
 
-// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/encoding.js
+// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/encoding.js
 var Encoding;
 (function(_Encoding) {
   function base64Encode2(input) {
@@ -2249,10 +2250,9 @@ var Encoding;
       if (!key) continue;
       const decodedKey = urlDecode(key);
       const decodedValue = value ? urlDecode(value) : "";
-      if (result[decodedKey]) {
-        if (Array.isArray(result[decodedKey])) result[decodedKey].push(decodedValue);
-        else result[decodedKey] = [result[decodedKey], decodedValue];
-      } else result[decodedKey] = decodedValue;
+      if (result[decodedKey]) if (Array.isArray(result[decodedKey])) result[decodedKey].push(decodedValue);
+      else result[decodedKey] = [result[decodedKey], decodedValue];
+      else result[decodedKey] = decodedValue;
     }
     return result;
   }
@@ -2430,7 +2430,7 @@ Encoding.queryStringDecode;
 Encoding.slugify;
 Encoding.unslugify;
 
-// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/date.js
+// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/date.js
 var MILLISECONDS_IN_SECOND = 1e3;
 var MILLISECONDS_IN_MINUTE = 60 * MILLISECONDS_IN_SECOND;
 var MILLISECONDS_IN_HOUR = 60 * MILLISECONDS_IN_MINUTE;
@@ -2448,7 +2448,7 @@ var TIME_UNITS_IN_MS = {
   year: 365 * MILLISECONDS_IN_DAY
 };
 
-// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/http/stream-parser.js
+// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/http/stream-parser.js
 function extractStreamLines(buffer, flush = false) {
   const lines = [];
   let lineStart = 0;
@@ -2512,7 +2512,7 @@ function normalizeLegacyStreamLine(line) {
   return trimmedLine;
 }
 
-// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/http/base-client.js
+// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/http/base-client.js
 var SDKWORK_API_PREFIXES = [
   "/app/v3/api",
   "/backend/v3/api",
@@ -2581,7 +2581,7 @@ var BaseHttpClient = class {
       },
       cache: {
         enabled: false,
-        ttl: 3e5,
+        ttl: 300 * 1e3,
         maxSize: 100,
         ...config.cache
       },
@@ -2804,10 +2804,8 @@ var BaseHttpClient = class {
       controller.abort();
     }, options.timeout);
     const abortHandler = () => controller.abort();
-    if (options.signal) {
-      if (options.signal.aborted) controller.abort();
-      else options.signal.addEventListener("abort", abortHandler, { once: true });
-    }
+    if (options.signal) if (options.signal.aborted) controller.abort();
+    else options.signal.addEventListener("abort", abortHandler, { once: true });
     try {
       this.logger.debug(`${options.method} ${url}`);
       return await fetch(url, {
@@ -2947,7 +2945,7 @@ var BaseHttpClient = class {
   }
 };
 
-// packages/sdkwork-cloudrouter-mp-core/src/environment.ts
+// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-core/src/environment.ts
 var APP_API_SUFFIX = "/app/v3/api";
 var LIFECYCLE_ENVIRONMENTS = /* @__PURE__ */ new Set([
   "development",
@@ -2987,7 +2985,7 @@ function resolveCloudRouterAppApiBaseUrl(candidate) {
   }).url;
 }
 
-// packages/sdkwork-cloudrouter-mp-core/src/session/sessionStore.ts
+// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-core/src/session/sessionStore.ts
 var ACCESS_TOKEN_KEY = "sdkwork.cloudrouter.mp.accessToken";
 var AUTH_TOKEN_KEY = "sdkwork.cloudrouter.mp.authToken";
 var SUBJECT_KEY = "sdkwork.cloudrouter.mp.subject";
@@ -3035,7 +3033,7 @@ function clearCloudRouterSession() {
   store.removeStorageSync(SUBJECT_KEY);
 }
 
-// packages/sdkwork-cloudrouter-mp-core/src/session/tokenManager.ts
+// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-core/src/session/tokenManager.ts
 var tokenManager = null;
 function mirrorTokensToSession(tokens) {
   var _a, _b;
@@ -3062,7 +3060,7 @@ function getCloudRouterTokenManager() {
   return tokenManager;
 }
 
-// ../../../sdkwork-utils/packages/sdkwork-utils-typescript/src/runtime/binary.js
+// ../sdkwork-utils/packages/sdkwork-utils-typescript/src/runtime/binary.js
 var textEncoder = new TextEncoder();
 function toUtf8(value) {
   return textEncoder.encode(value);
@@ -3081,7 +3079,7 @@ function hexEncode(bytes) {
   return result;
 }
 
-// ../../../sdkwork-utils/packages/sdkwork-utils-typescript/src/runtime/sha256.js
+// ../sdkwork-utils/packages/sdkwork-utils-typescript/src/runtime/sha256.js
 var K = new Uint32Array([
   1116352408,
   1899447441,
@@ -3246,12 +3244,12 @@ function sha256Hex(value) {
   return hexEncode(sha256Digest(bytes));
 }
 
-// ../../../sdkwork-utils/packages/sdkwork-utils-typescript/src/crypto.js
+// ../sdkwork-utils/packages/sdkwork-utils-typescript/src/crypto.js
 function sha256Hash(value) {
   return sha256Hex(value);
 }
 
-// ../../../sdkwork-utils/packages/sdkwork-utils-typescript/src/money.js
+// ../sdkwork-utils/packages/sdkwork-utils-typescript/src/money.js
 var LOCALE_RULES = {
   "en-us": {
     prefix: true,
@@ -3508,7 +3506,7 @@ var CURRENCY_NAMES = {
 var DEFAULT_LOCALE_RULES = LOCALE_RULES["en-us"];
 var DEFAULT_CURRENCY_NAMES = CURRENCY_NAMES["en-us"];
 
-// ../../sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/dist/index.js
+// sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/dist/index.js
 var _HttpClient = class _HttpClient extends BaseHttpClient {
   constructor(config) {
     super(config);
@@ -4094,7 +4092,7 @@ var AiPricingRatesApi = class {
       { name: "page", value: params == null ? void 0 : params.page, style: "form", explode: true, allowReserved: false },
       { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false }
     ]);
-    return this.client.request(appendQueryString$4(appApiPath(`/ai/pricing/rates`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+    return this.client.request(appendQueryString$4(appApiPath(`/ai/pricing/rates`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", skipAuth: true, sdkworkUnwrapKind: "page" });
   }
 };
 var AiPricingApi = class {
@@ -5174,7 +5172,7 @@ var SdkworkAppClient = class {
   }
 };
 
-// packages/sdkwork-cloudrouter-mp-core/src/sdk/sdkClients.ts
+// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-core/src/sdk/sdkClients.ts
 var appSdkClient = null;
 var appSdkBaseUrl = null;
 function createCloudRouterMpAppSdkClient(baseUrl) {
@@ -5192,7 +5190,7 @@ function getCloudRouterMpAppSdkClient(baseUrl) {
   return appSdkClient;
 }
 
-// packages/sdkwork-cloudrouter-mp-core/src/sdk/consolePorts.ts
+// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-core/src/sdk/consolePorts.ts
 var DEFAULT_API_KEY_QUOTA = "0.000000";
 var DEFAULT_API_KEY_IP_LIMIT = "unrestricted";
 var DEFAULT_API_KEY_EXPIRATION = "never";
@@ -5260,7 +5258,7 @@ function createCloudRouterMpConsolePorts(appApiBaseUrl) {
   };
 }
 
-// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/zh-CN/cloudrouter/console/shared.ts
+// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/zh-CN/cloudrouter/console/shared.ts
 var sharedMessages = {
   "cloudrouter.console.shared.appTitle": "CloudRouter \u63A7\u5236\u53F0",
   "cloudrouter.console.shared.appSubtitle": "\u5C0F\u7A0B\u5E8F\u6A21\u578B\u8DEF\u7531\u63A7\u5236\u53F0",
@@ -5270,7 +5268,7 @@ var sharedMessages = {
   "cloudrouter.console.shared.loading": "\u52A0\u8F7D\u4E2D\u2026"
 };
 
-// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/zh-CN/cloudrouter/console/dashboard.ts
+// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/zh-CN/cloudrouter/console/dashboard.ts
 var dashboardMessages = {
   "cloudrouter.console.dashboard.title": "\u6982\u89C8",
   "cloudrouter.console.dashboard.summary": "\u7F51\u5173\u8BF7\u6C42\u3001Token \u4E0E\u9519\u8BEF\u7387\u5FEB\u7167",
@@ -5280,7 +5278,7 @@ var dashboardMessages = {
   "cloudrouter.console.dashboard.errorRate": "\u9519\u8BEF\u7387"
 };
 
-// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/zh-CN/cloudrouter/console/usage.ts
+// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/zh-CN/cloudrouter/console/usage.ts
 var usageMessages = {
   "cloudrouter.console.usage.title": "\u7528\u91CF",
   "cloudrouter.console.usage.summary": "\u9010\u6B21\u8BF7\u6C42\u7684\u7528\u91CF\u4E0E\u8BA1\u8D39\u8BB0\u5F55",
@@ -5295,7 +5293,7 @@ var usageMessages = {
   "cloudrouter.console.usage.statusUnknown": "\u672A\u77E5"
 };
 
-// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/zh-CN/cloudrouter/console/apiKeys.ts
+// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/zh-CN/cloudrouter/console/apiKeys.ts
 var apiKeysMessages = {
   "cloudrouter.console.apiKeys.title": "API Key",
   "cloudrouter.console.apiKeys.summary": "\u7BA1\u7406\u8C03\u7528\u7F51\u5173\u4F7F\u7528\u7684\u5BC6\u94A5",
@@ -5310,7 +5308,7 @@ var apiKeysMessages = {
   "cloudrouter.console.apiKeys.statusRevoked": "\u5DF2\u540A\u9500"
 };
 
-// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/zh-CN/cloudrouter/console/catalog.ts
+// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/zh-CN/cloudrouter/console/catalog.ts
 var catalogMessages = {
   "cloudrouter.console.catalog.title": "\u6A21\u578B\u4E0E\u5B9A\u4EF7",
   "cloudrouter.console.catalog.summary": "\u5B98\u65B9\u6A21\u578B\u76EE\u5F55\u4E0E\u6BCF\u767E\u4E07 Token \u4EF7\u683C",
@@ -5320,7 +5318,7 @@ var catalogMessages = {
   "cloudrouter.console.catalog.columnOutput": "\u8F93\u51FA\u4EF7"
 };
 
-// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/en-US/cloudrouter/console/shared.ts
+// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/en-US/cloudrouter/console/shared.ts
 var sharedMessages2 = {
   "cloudrouter.console.shared.appTitle": "CloudRouter Console",
   "cloudrouter.console.shared.appSubtitle": "Mini program model routing console",
@@ -5330,7 +5328,7 @@ var sharedMessages2 = {
   "cloudrouter.console.shared.loading": "Loading\u2026"
 };
 
-// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/en-US/cloudrouter/console/dashboard.ts
+// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/en-US/cloudrouter/console/dashboard.ts
 var dashboardMessages2 = {
   "cloudrouter.console.dashboard.title": "Overview",
   "cloudrouter.console.dashboard.summary": "Gateway requests, tokens, and error-rate snapshot",
@@ -5340,7 +5338,7 @@ var dashboardMessages2 = {
   "cloudrouter.console.dashboard.errorRate": "Error rate"
 };
 
-// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/en-US/cloudrouter/console/usage.ts
+// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/en-US/cloudrouter/console/usage.ts
 var usageMessages2 = {
   "cloudrouter.console.usage.title": "Usage",
   "cloudrouter.console.usage.summary": "Per-request usage and billing records",
@@ -5355,7 +5353,7 @@ var usageMessages2 = {
   "cloudrouter.console.usage.statusUnknown": "Unknown"
 };
 
-// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/en-US/cloudrouter/console/apiKeys.ts
+// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/en-US/cloudrouter/console/apiKeys.ts
 var apiKeysMessages2 = {
   "cloudrouter.console.apiKeys.title": "API Keys",
   "cloudrouter.console.apiKeys.summary": "Manage the keys used to call the gateway",
@@ -5370,7 +5368,7 @@ var apiKeysMessages2 = {
   "cloudrouter.console.apiKeys.statusRevoked": "Revoked"
 };
 
-// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/en-US/cloudrouter/console/catalog.ts
+// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/en-US/cloudrouter/console/catalog.ts
 var catalogMessages2 = {
   "cloudrouter.console.catalog.title": "Models & Pricing",
   "cloudrouter.console.catalog.summary": "Official model catalog and per-million-token prices",
@@ -5380,7 +5378,7 @@ var catalogMessages2 = {
   "cloudrouter.console.catalog.columnOutput": "Output price"
 };
 
-// packages/sdkwork-cloudrouter-mp-i18n/src/locale.ts
+// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/locale.ts
 var SDKWORK_CONSOLE_SUPPORTED_LOCALES = ["zh-CN", "en-US"];
 var SDKWORK_CONSOLE_DEFAULT_LOCALE = "zh-CN";
 function normalizeConsoleLocale(candidate) {
@@ -5403,7 +5401,7 @@ function resolveConsoleLocale() {
   return normalizeConsoleLocale(language);
 }
 
-// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/index.ts
+// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/index.ts
 var SDKWORK_CONSOLE_MESSAGES = {
   "zh-CN": {
     ...sharedMessages,
@@ -5433,7 +5431,7 @@ function createConsoleTranslator(locale) {
   };
 }
 
-// src/bootstrap/runtime.ts
+// apps/sdkwork-cloudrouter-mini-program/src/bootstrap/runtime.ts
 function bootstrapMiniProgramApplication() {
   const environment = resolveRuntimeEnv();
   const locale = resolveConsoleLocale();

@@ -37,6 +37,14 @@ const SdkReference = lazyRoute(() => import('@sdkwork/documents-pc-sdk-reference
 const Playground = lazyRoute(() => import('@sdkwork/cloudrouter-pc-playground'), 'Playground');
 const CloudRouterTokenPlanPage = lazyRoute(() => import('./token-plan/CloudRouterTokenPlanPage'), 'CloudRouterTokenPlanPage');
 const CloudRouterAuthRoutes = lazyRoute(() => import('./auth/CloudRouterAuthRoutes'), 'CloudRouterAuthRoutes');
+// Hosted app sign-in entry: native applications open the platform's
+// `/iam/v3/oauth/authorize` in the system browser and return through the
+// registered deep link. It is a public redirect surface, declared outside the
+// `/auth/*` guard so it never needs (or waits for) a portal session.
+const CloudRouterAppAuthorizeEntry = lazyRoute(
+  () => import('./app-auth/CloudRouterAppAuthorizeEntry'),
+  'CloudRouterAppAuthorizeEntry',
+);
 const PartnerJoinLanding = lazyRoute(() => import('@sdkwork/cloudrouter-pc-partner-join'), 'PartnerJoinLanding');
 const PartnerJoinApply = lazyRoute(() => import('@sdkwork/cloudrouter-pc-partner-join'), 'PartnerJoinApply');
 const PartnerJoinStatus = lazyRoute(() => import('@sdkwork/cloudrouter-pc-partner-join'), 'PartnerJoinStatus');
@@ -190,6 +198,9 @@ export default function App() {
       <div className="min-h-screen flex flex-col selection:bg-lobster-500/30">
         <Suspense fallback={<RouteFallback />}>
           <Routes>
+            <Route path="/iam/v3/oauth/authorize" element={<CloudRouterAppAuthorizeEntry />} />
+            <Route path="/iam/oauth/authorize" element={<CloudRouterAppAuthorizeEntry />} />
+            <Route path="/auth/app" element={<CloudRouterAppAuthorizeEntry />} />
             <Route path="/auth/*" element={<PortalAuthenticatedAuthRouteGuard><CloudRouterAuthRoutes /></PortalAuthenticatedAuthRouteGuard>} />
 
             {/* Agents create/edit renders full-bleed, so it is declared as a

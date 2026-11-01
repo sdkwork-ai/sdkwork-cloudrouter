@@ -7,7 +7,8 @@ use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::admin_marketing_recharge::{
     canonical_decimal_string, parse_recharge_settings_model,
     recharge_package_item as build_recharge_package_item, recharge_package_name,
-    recharge_settings_to_item, RechargePackageRecord, RechargeSettingsModel, RECHARGE_RULE_NO,
+    recharge_settings_to_item, stored_price_amount_to_major, RechargePackageRecord,
+    RechargeSettingsModel, RECHARGE_RULE_NO,
 };
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
@@ -184,6 +185,12 @@ impl AdminMarketingStore for PostgresAdminMarketingStore {
                 command.subject.organization_id,
                 package_sequence,
             );
+            // Audit payloads carry the same major-unit amount the API/UI show,
+            // not the canonical minor-unit storage value.
+            let major_price_amount = stored_price_amount_to_major(
+                &command.price_amount,
+                "recharge package price amount",
+            )?;
             insert_audit_log(
                 &mut tx,
                 MarketingAuditContext::new(
@@ -197,7 +204,7 @@ impl AdminMarketingStore for PostgresAdminMarketingStore {
                 serde_json::json!({
                     "action": "create_recharge_package",
                     "packageId": &package_id,
-                    "priceAmount": &command.price_amount,
+                    "priceAmount": &major_price_amount,
                     "currencyCode": &command.currency_code,
                     "bonusPoints": command.bonus_points,
                     "discount": command.discount,
@@ -235,6 +242,10 @@ impl AdminMarketingStore for PostgresAdminMarketingStore {
             if !updated {
                 return Err(DomainError::not_found("recharge package was not found"));
             }
+            let major_price_amount = stored_price_amount_to_major(
+                &command.price_amount,
+                "recharge package price amount",
+            )?;
             insert_audit_log(
                 &mut tx,
                 MarketingAuditContext::new(
@@ -248,7 +259,7 @@ impl AdminMarketingStore for PostgresAdminMarketingStore {
                 serde_json::json!({
                     "action": "update_recharge_package",
                     "packageId": &command.package_id,
-                    "priceAmount": &command.price_amount,
+                    "priceAmount": &major_price_amount,
                     "currencyCode": &command.currency_code,
                     "bonusPoints": command.bonus_points,
                     "discount": command.discount,
@@ -752,6 +763,8 @@ async fn insert_recharge_package(
         command.subject.organization_id,
         sequence,
     );
+    let major_price_amount =
+        stored_price_amount_to_major(&command.price_amount, "recharge package price amount")?;
     sqlx::query(
         r#"
         INSERT INTO commerce_recharge_package
@@ -766,7 +779,7 @@ async fn insert_recharge_package(
     .bind(sequence)
     .bind(recharge_package_no(sequence))
     .bind(&sku_id)
-    .bind(recharge_package_name(&command.price_amount, &command.currency_code))
+    .bind(recharge_package_name(&major_price_amount, &command.currency_code))
     .bind(&command.price_amount)
     .bind(&command.currency_code)
     .bind(command.bonus_points)
@@ -809,6 +822,8 @@ async fn update_recharge_package_row(
     tx: &mut Transaction<'_, Postgres>,
     command: &UpdateAdminRechargePackageCommand,
 ) -> DomainResult<bool> {
+    let major_price_amount =
+        stored_price_amount_to_major(&command.price_amount, "recharge package price amount")?;
     let result = sqlx::query(
         r#"
         UPDATE commerce_recharge_package
@@ -828,7 +843,7 @@ async fn update_recharge_package_row(
         "#,
     )
     .bind(recharge_package_name(
-        &command.price_amount,
+        &major_price_amount,
         &command.currency_code,
     ))
     .bind(&command.price_amount)
@@ -1365,7 +1380,12 @@ fn recharge_package_from_row(
     row: &sqlx::postgres::PgRow,
     settings: &RechargeSettingsModel,
 ) -> DomainResult<AdminRechargePackageItem> {
-    let price_amount = canonical_money_string(
+    // `commerce_recharge_package.price_amount` is canonical minor units, the
+    // same scale the order app API converts with `minor_units_to_major_decimal`
+    // before it answers `GET /app/v3/api/recharges/packages`. Convert once here
+    // so the admin contract carries major amounts and `compute_grant_amount`
+    // applies the 1 CNY = 10 points ratio to the real price.
+    let price_amount = stored_price_amount_to_major(
         &string_cell(row, "price_amount"),
         "recharge package price amount",
     )?;

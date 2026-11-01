@@ -258,6 +258,34 @@ Extension points are limited to declared public exports, runtime entrypoints, SD
 
 - `pnpm --filter sdkwork-cloudrouter-pc typecheck`
 
+## Hosted App Sign-In
+
+Native SDKWork applications (the BirdCoder desktop shell, for example) never
+render their own login form: they open `<platform>/iam/v3/oauth/authorize` in
+the system browser and redeem the authorization code through their registered
+deep link. The portal hosts the browser half of that flow:
+
+- `/iam/v3/oauth/authorize`, its versionless `/iam/oauth/authorize` alias, and
+  the `/auth/app` alias (`src/app-auth/`) validate the authorization-code
+  request (response type, client id, app callback, state, PKCE S256) and hand
+  the navigation to the IAM authorization server, which owns the pending
+  authorization state.
+- `/auth/login?oauthAuthorizationStateId=…` is the hosted login the IAM server
+  returns to; the SDKWork auth page completes the pending authorization through
+  the signed-in browser session.
+- `/auth/desktop/launch?redirectUrl=…` fires the app's registered deep link. It
+  lives under the auth base path but is exempt from the authenticated auth-route
+  redirect (`isPortalAppHandoffPath`): the visitor is signed in by the time they
+  land there, and bouncing them to the portal home would drop the
+  authorization code.
+
+The entry forwards to the app-api origin's `/iam/v3/api/oauth/authorize` — the
+IAM open-api path the platform gateway classifies as public — so a deployment
+whose gateway does not expose that path publicly renders the entry's failure
+state instead of redirecting in a loop. The IAM authorization server must
+return the browser to this origin's hosted login
+(`SDKWORK_IAM_LOGIN_BASE_URL=<platform>/auth`).
+
 ### Owner And Status
 
 Owner and lifecycle status are tracked in `specs/component.spec.json`.

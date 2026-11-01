@@ -6,12 +6,14 @@ import { usageMessages as ZhCnUsage } from './zh-CN/cloudrouter/console/usage.js
 import { apiKeysMessages as ZhCnApiKeys } from './zh-CN/cloudrouter/console/apiKeys.js';
 import { catalogMessages as ZhCnCatalog } from './zh-CN/cloudrouter/console/catalog.js';
 import { signInMessages as ZhCnSignIn } from './zh-CN/cloudrouter/auth/signIn.js';
+import { appAuthMessages as ZhCnAppAuth } from './zh-CN/cloudrouter/auth/app.js';
 import { sharedMessages as EnUsShared } from './en-US/cloudrouter/console/shared.js';
 import { dashboardMessages as EnUsDashboard } from './en-US/cloudrouter/console/dashboard.js';
 import { usageMessages as EnUsUsage } from './en-US/cloudrouter/console/usage.js';
 import { apiKeysMessages as EnUsApiKeys } from './en-US/cloudrouter/console/apiKeys.js';
 import { catalogMessages as EnUsCatalog } from './en-US/cloudrouter/console/catalog.js';
 import { signInMessages as EnUsSignIn } from './en-US/cloudrouter/auth/signIn.js';
+import { appAuthMessages as EnUsAppAuth } from './en-US/cloudrouter/auth/app.js';
 import { SDKWORK_CONSOLE_DEFAULT_LOCALE, type SdkworkConsoleLocale } from '../locale.js';
 
 export type SdkworkConsoleMessages = Record<string, string>;
@@ -24,6 +26,7 @@ export const SDKWORK_CONSOLE_MESSAGES: Record<SdkworkConsoleLocale, SdkworkConso
     ...ZhCnApiKeys,
     ...ZhCnCatalog,
     ...ZhCnSignIn,
+    ...ZhCnAppAuth,
   },
   'en-US': {
     ...EnUsShared,
@@ -32,6 +35,7 @@ export const SDKWORK_CONSOLE_MESSAGES: Record<SdkworkConsoleLocale, SdkworkConso
     ...EnUsApiKeys,
     ...EnUsCatalog,
     ...EnUsSignIn,
+    ...EnUsAppAuth,
   },
 };
 

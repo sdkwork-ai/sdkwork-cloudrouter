@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
+import { adoptAppAuthHashEntry } from './app-auth/entryRoute.js';
 import { App } from './App.js';
 import { bootstrapH5Application } from './bootstrap/runtime.js';
 import './index.css';
@@ -9,6 +10,14 @@ const container = document.getElementById('root');
 if (!container) {
   throw new Error('CloudRouter H5 requires a #root container.');
 }
+
+/**
+ * A navigation that arrived on a hosted app sign-in pathname is adopted into
+ * the hash router before the first render, so ``#/auth/...`` and
+ * ``/auth/...`` both reach the hosted pages and a deep link that opens the
+ * application never renders the console shell first.
+ */
+adoptAppAuthHashEntry();
 
 /**
  * A bootstrap failure leaves ``#root`` empty, and because the console runtime is a

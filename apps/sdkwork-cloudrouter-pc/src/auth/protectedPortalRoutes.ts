@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Navigate, useLocation } from 'react-router-dom';
 import {
   buildPortalAuthLoginRedirect,
+  isPortalAppHandoffPath,
   isPortalAuthRoute,
   isProtectedPortalPath,
   PROTECTED_PORTAL_ROUTE_PREFIXES,
@@ -13,7 +14,7 @@ import {
 
 import { usePortalIamSession } from './usePortalIamSession.ts';
 
-export { PROTECTED_PORTAL_ROUTE_PREFIXES, isProtectedPortalPath };
+export { PROTECTED_PORTAL_ROUTE_PREFIXES, isPortalAppHandoffPath, isProtectedPortalPath };
 
 export interface ProtectedPortalLocationLike {
   hash?: string;
@@ -51,7 +52,9 @@ export function PortalAuthenticatedAuthRouteGuard({ children }: { children: Reac
   const location = useLocation();
   const isAuthenticated = usePortalIamSession();
 
-  if (isAuthenticated && isPortalAuthRoute(location.pathname)) {
+  // The app hand-off page runs *after* a successful sign-in: it must render so
+  // the authorization code reaches the operating system's deep-link handler.
+  if (isAuthenticated && isPortalAuthRoute(location.pathname) && !isPortalAppHandoffPath(location.pathname)) {
     return createElement(Navigate, {
       replace: true,
       to: resolvePortalAuthenticatedAuthRouteRedirect({ location }),

@@ -38,6 +38,7 @@ const METHOD_MAP = {
 const AUTH_BUILDER = {
   public: "public",
   "dual-token": "dual_token",
+  "dual-token-or-anonymous": "dual_token_or_anonymous",
   "api-key": "api_key",
   "api-key-or-dual-token": "api_key_or_dual_token",
   oauth: "oauth",
@@ -158,15 +159,15 @@ mod tests {
         );
     }
 
-    fn assert_dual_token_route(method: &str, path: &str) {
+    fn assert_dual_token_or_anonymous_route(method: &str, path: &str) {
         let manifest = super::http_route_manifest();
         let route = manifest
             .match_route(method, path)
             .unwrap_or_else(|| panic!("{method} {path} must be registered"));
         assert_eq!(
-            RouteAuth::DualToken,
+            RouteAuth::DualTokenOrAnonymous,
             route.auth,
-            "{method} {path} must require dual-token authentication"
+            "{method} {path} must accept anonymous visitors while still resolving a signed-in principal"
         );
         assert!(
             !resolve_public_path(
@@ -175,18 +176,19 @@ mod tests {
                 &WebRequestContextProfile::default(),
                 Some(&manifest),
             ),
-            "{method} {path} must not resolve as a public path",
+            "{method} {path} must keep resolving credentials when they are present",
         );
     }
 
     #[test]
     fn public_catalog_routes_allow_anonymous_access() {
         assert_public_route("GET", "/app/v3/api/system/site/runtime");
+        assert_public_route("GET", "/app/v3/api/ai/pricing/rates");
     }
 
     #[test]
-    fn pricing_catalog_routes_require_dual_token_authentication() {
-        assert_dual_token_route("GET", "/app/v3/api/ai/pricing/rates");
+    fn routing_account_groups_allow_anonymous_catalog_browsing() {
+        assert_dual_token_or_anonymous_route("GET", "/app/v3/api/ai/routing/account_groups");
     }
 }
 `

@@ -843,16 +843,16 @@ test("development mode uses the shared credential-entry plugin while production 
   }
 });
 
-test("production Vite config never probes a bootstrap token overlay", async () => {
+test("production Vite config never probes a retired bootstrap overlay", async () => {
   const originalExistsSync = fs.existsSync;
-  const productionBootstrapPath = path.resolve(
-    import.meta.dirname,
-    ".env.production.bootstrap.local",
-  );
+  const isRetiredOverlay = (candidate: unknown): boolean => {
+    const base = path.basename(String(candidate));
+    return base.startsWith(".env.") && base.includes("bootstrap");
+  };
   let productionBootstrapProbeDetected = false;
 
   fs.existsSync = (candidate) => {
-    if (path.resolve(String(candidate)) === productionBootstrapPath) {
+    if (isRetiredOverlay(candidate)) {
       productionBootstrapProbeDetected = true;
       return false;
     }

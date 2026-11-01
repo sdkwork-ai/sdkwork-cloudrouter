@@ -92,7 +92,7 @@ async fn admin_recharge_package_crud_writes_scoped_catalog_and_shadows_platform(
         .create_recharge_package(CreateAdminRechargePackageCommand {
             subject,
             audit_log_uuid: "audit-uuid-1".to_owned(),
-            price_amount: "25.00".to_owned(),
+            price_amount: "2500".to_owned(),
             currency_code: "CNY".to_owned(),
             bonus_points: 50,
             discount: 90,
@@ -102,9 +102,13 @@ async fn admin_recharge_package_crud_writes_scoped_catalog_and_shadows_platform(
         })
         .await
         .expect("create recharge package");
+    // Stored canonically in minor units, answered as a major amount, and
+    // credited as whole points under the 1 CNY = 10 points ratio.
     assert_eq!("25.00", created.price_amount);
     assert_eq!(50, created.bonus_points);
     assert_eq!(90, created.discount);
+    assert_eq!(300, created.grant_amount);
+    assert_eq!(300, created.points);
 
     let page = store
         .list_recharge_packages(ListAdminRechargePackagesQuery {
@@ -127,7 +131,7 @@ async fn admin_recharge_package_crud_writes_scoped_catalog_and_shadows_platform(
             subject,
             package_id: created.id.clone(),
             audit_log_uuid: "audit-uuid-2".to_owned(),
-            price_amount: "30.00".to_owned(),
+            price_amount: "3000".to_owned(),
             currency_code: "CNY".to_owned(),
             bonus_points: 60,
             discount: 85,
@@ -140,6 +144,7 @@ async fn admin_recharge_package_crud_writes_scoped_catalog_and_shadows_platform(
     assert_eq!("30.00", updated.price_amount);
     assert_eq!(60, updated.bonus_points);
     assert_eq!(85, updated.discount);
+    assert_eq!(360, updated.grant_amount);
 
     let deleted = store
         .delete_recharge_package(DeleteAdminRechargePackageCommand {

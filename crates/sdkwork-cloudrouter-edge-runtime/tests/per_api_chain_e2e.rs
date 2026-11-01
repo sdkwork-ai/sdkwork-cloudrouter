@@ -56,7 +56,7 @@ use sdkwork_test::{AuthTokenClient, LoginHarness, PgTestContext};
 use sqlx::Row;
 use tower::ServiceExt;
 
-/// Development secrets matching `.env.gateway` / `.sdkwork/secrets` (test-only).
+/// Development secrets matching `.sdkwork/secrets` (test-only).
 const API_KEY_PEPPER: &str = "sdkwork-cloudrouter-local-dev-secret-20260507";
 const TRUSTED_SUBJECT: &str = "sdkwork-cloudrouter-local-dev-secret-20260507";
 const APP_SESSION: &str = "sdkwork-cloudrouter-local-dev-secret-20260507";

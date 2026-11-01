@@ -6765,12 +6765,7 @@
             "description": "Error response."
           }
         },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
+        "security": [],
         "summary": "List official pricing rates",
         "tags": [
           "ai"
@@ -6786,7 +6781,7 @@
         "x-sdk-domain": "intelligence",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter-app-api",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-auth-mode": "anonymous",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "pricing.rates",
@@ -6794,8 +6789,7 @@
         "x-write-tables": [],
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.pricing_rates.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-permission": "cloudrouter.pricing_rates.read"
       }
     },
     "/app/v3/api/ai/routing/account_groups": {
@@ -6914,7 +6908,7 @@
         "x-sdk-domain": "intelligence",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter-app-api",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-auth-mode": "dual-token-or-anonymous",
         "x-sdkwork-domain": "intelligence",
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "routing.accountGroups",
@@ -6922,8 +6916,7 @@
         "x-write-tables": [],
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.routing_accountGroups.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-permission": "cloudrouter.routing_accountGroups.read"
       }
     },
     "/app/v3/api/ai/routing/api_keys": {

@@ -48,6 +48,7 @@ export * from './portal-auth.ts';
 export * from './portal-session.ts';
 export * from './portal-permission-scope.ts';
 export * from './recharge-math.ts';
+export * from './sdk-base-url.ts';
 export * from './idempotency.ts';
 export * from './sdk-request-boundary.ts';
 export * from './sdk-clients.ts';

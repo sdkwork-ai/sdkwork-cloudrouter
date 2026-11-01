@@ -180,4 +180,46 @@ where
     request
 }
 
+/// App-api request in the anonymous context a `dual-token-or-anonymous` route
+/// resolves for signed-out visitors: no principal, no credential transport
+/// facts.
+pub fn web_framework_app_request_without_subject<B>(
+    method: &str,
+    uri: &str,
+    body: B,
+) -> Request<B>
+where
+    B: Send + 'static,
+{
+    let context = WebRequestContext {
+        request_id: ServerRequestId("router-test".to_owned()),
+        trace_id: None,
+        api_surface: WebApiSurface::AppApi,
+        auth_mode: WebAuthMode::Public,
+        transport: WebTransportFacts {
+            path: uri.to_owned(),
+            method: method.to_owned(),
+            auth_token_present: false,
+            access_token_present: false,
+            api_key_present: false,
+            ingress_token_present: false,
+            oauth_bearer_present: false,
+            agent_token_present: false,
+        },
+        principal: None,
+        locale: None,
+        client_kind: None,
+        operation: None,
+        idempotency_key: None,
+    };
+
+    let mut request = Request::builder()
+        .method(method)
+        .uri(uri)
+        .body(body)
+        .expect("request");
+    request.extensions_mut().insert(context);
+    request
+}
+
 pub mod payment_in_memory_stores;

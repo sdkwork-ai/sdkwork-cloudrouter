@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use sdkwork_iam_bootstrap::parse_iam_sql_tenant_id;
+
 use axum::extract::rejection::QueryRejection;
 use axum::extract::{Extension, Query, State};
 use axum::response::{IntoResponse, Response};
@@ -153,6 +155,31 @@ fn app_routing_router_with_state(
         })
 }
 
+/// Default tenant scope for anonymous reads on `routing.accountGroups.list`
+/// (`dual-token-or-anonymous`): the deployment tenant configured through
+/// `SDKWORK_RTC_HYDRATE_TENANT_ID` (canonical deployment tenant `100001`,
+/// organization 0). `user_id = 0` matches no gateway API key, so anonymous
+/// readers see every deployment-tenant group with `authorized = false`.
+const DEFAULT_DEPLOYMENT_TENANT_ID: i64 = 100_001;
+
+fn resolve_deployment_default_tenant_id(env_value: Option<String>) -> i64 {
+    env_value
+        .filter(|value| !value.trim().is_empty())
+        .and_then(|value| parse_iam_sql_tenant_id(&value).ok())
+        .unwrap_or(DEFAULT_DEPLOYMENT_TENANT_ID)
+}
+
+fn deployment_default_routing_subject() -> Option<AppRoutingSubject> {
+    let tenant_id = resolve_deployment_default_tenant_id(
+        std::env::var("SDKWORK_RTC_HYDRATE_TENANT_ID").ok(),
+    );
+    Some(AppRoutingSubject {
+        tenant_id,
+        organization_id: 0,
+        user_id: 0,
+    })
+}
+
 async fn fetch_routing_account_groups(
     State(state): State<AppRoutingState>,
     ResolvedAppSqlScopedSubject(subject): ResolvedAppSqlScopedSubject,
@@ -160,12 +187,18 @@ async fn fetch_routing_account_groups(
     locale_extension: Option<Extension<RequestLocale>>,
     Query(request): Query<AppRoutingListQueryRequest>,
 ) -> Response {
-    let subject = match map_optional_app_sql_subject(subject, state.require_subject, |scoped| {
+    // The route declares `dual-token-or-anonymous` (portal model catalog sale
+    // multipliers render for signed-out visitors), so the subject is optional
+    // here regardless of `require_subject`: signed-in callers keep their
+    // tenant-scoped projection, anonymous readers fall back to the deployment
+    // default tenant scope.
+    let subject = match map_optional_app_sql_subject(subject, false, |scoped| {
         scoped.into()
     }) {
         Ok(subject) => subject,
         Err(error) => return error.into_response(),
     };
+    let subject = subject.or_else(deployment_default_routing_subject);
     let query = match build_routing_list_query(request) {
         Ok(query) => query,
         Err(message) => return bad_request(message),
@@ -407,9 +440,34 @@ fn app_routing_read_model_error(error: impl std::fmt::Display) -> Response {
 mod tests {
     use super::{
         build_routing_trace_query, decode_routing_traces_cursor, encode_routing_traces_cursor,
-        AppRoutingTraceQueryRequest,
+        resolve_deployment_default_tenant_id, AppRoutingTraceQueryRequest,
+        DEFAULT_DEPLOYMENT_TENANT_ID,
     };
     use crate::ports::AppRoutingRequestTraceCursor;
+
+    #[test]
+    fn deployment_default_tenant_resolves_env_then_canonical_fallback() {
+        assert_eq!(
+            DEFAULT_DEPLOYMENT_TENANT_ID,
+            resolve_deployment_default_tenant_id(None)
+        );
+        assert_eq!(
+            DEFAULT_DEPLOYMENT_TENANT_ID,
+            resolve_deployment_default_tenant_id(Some(String::new()))
+        );
+        assert_eq!(
+            DEFAULT_DEPLOYMENT_TENANT_ID,
+            resolve_deployment_default_tenant_id(Some("   ".to_owned()))
+        );
+        assert_eq!(
+            DEFAULT_DEPLOYMENT_TENANT_ID,
+            resolve_deployment_default_tenant_id(Some("not-a-tenant-id".to_owned()))
+        );
+        assert_eq!(
+            200_002,
+            resolve_deployment_default_tenant_id(Some("200002".to_owned()))
+        );
+    }
 
     #[test]
     fn routing_trace_cursor_round_trips_as_opaque_base64url() {

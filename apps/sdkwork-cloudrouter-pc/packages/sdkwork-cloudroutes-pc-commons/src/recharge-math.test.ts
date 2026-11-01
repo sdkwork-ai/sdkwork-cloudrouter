@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  computeGrantAmount,
+  defaultRechargeSettings,
   normalizeDecimalString,
   normalizeRechargeSettings,
   safeComputeGrantAmount,
@@ -73,4 +75,36 @@ test('safeComputeGrantAmount stays non-throwing for mid-typing settings', () => 
     basePointsPerCny: '10',
     currencyToCnyRates: { CNY: '1', USD: '7' },
   }), 700);
+});
+
+test('defaultRechargeSettings initializes the 1 CNY = 10 points ratio', () => {
+  const settings = defaultRechargeSettings();
+  assert.equal(settings.baseCurrencyCode, 'CNY');
+  assert.equal(settings.basePointsPerCny, '10');
+  assert.equal(settings.currencyToCnyRates.CNY, '1');
+  assert.equal(settings.currencyToCnyRates.USD, '7');
+});
+
+test('computeGrantAmount converts every currency to points from the base ratio', () => {
+  const settings = defaultRechargeSettings();
+  // The platform 500-point package is priced at 50.00 CNY: 50 x 1 x 10 = 500.
+  assert.equal(computeGrantAmount('50.00', 'CNY', 0, settings), 500);
+  // A USD package converts through the USD -> CNY rate first: 50 x 7 x 10.
+  assert.equal(computeGrantAmount('50.00', 'USD', 0, settings), 3500);
+  // The bonus is awarded in points, on top of the amount-derived grant.
+  assert.equal(computeGrantAmount('50.00', 'CNY', 20, settings), 520);
+  assert.equal(computeGrantAmount('0.05', 'CNY', 0, settings), 1);
+});
+
+test('computeGrantAmount never borrows the CNY rate for an unconfigured currency', () => {
+  const settings = defaultRechargeSettings();
+  assert.throws(() => computeGrantAmount('50.00', 'JPY', 0, settings), /missing currency-to-CNY/);
+  assert.equal(safeComputeGrantAmount('50.00', 'JPY', 0, settings), 0);
+  // A currency present in the settings map keeps working.
+  const withEuro = normalizeRechargeSettings({
+    baseCurrencyCode: 'CNY',
+    basePointsPerCny: '10',
+    currencyToCnyRates: { CNY: '1', USD: '7', EUR: '8' },
+  });
+  assert.equal(computeGrantAmount('10.00', 'EUR', 0, withEuro), 800);
 });

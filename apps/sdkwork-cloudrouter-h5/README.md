@@ -55,3 +55,27 @@ pnpm build:prod:cloud     # cloud production bundle
 ```
 
 The `build:h5:*` architecture axis is owned by the repository root; run it there.
+
+## Hosted App Sign-In
+
+A phone can receive a native SDKWork application's browser-login link, so this
+root serves the same hosted sign-in surface as the PC renderer. The pages live
+in `src/app-auth/` and are ordinary hash routes:
+
+- `/iam/v3/oauth/authorize`, its versionless `/iam/oauth/authorize` alias, and
+  the `/auth/app` alias validate the authorization-code request and hand the
+  navigation to the IAM authorization server.
+- `/auth/login` signs the visitor in and completes the pending authorization
+  through the generated app SDK client.
+- `/auth/desktop/launch` fires the app's registered deep link.
+
+Both authorize entries forward to the app-api origin's
+`/iam/v3/api/oauth/authorize`, the IAM open-api path the platform gateway
+classifies as public.
+
+`main.tsx` adopts a real navigation pathname (`/auth/login?...`,
+`/iam/v3/oauth/authorize?...`) into the hash router before the first render, so
+the IAM authorization server's return works even though the H5 renderer routes
+with `HashRouter`. These routes are siblings of the console shell: they must
+render without the console authentication gate, which would otherwise capture
+the visitor before the hand-off runs.

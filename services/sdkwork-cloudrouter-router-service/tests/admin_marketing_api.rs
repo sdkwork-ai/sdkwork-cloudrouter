@@ -555,7 +555,9 @@ impl AdminMarketingStore for TestAdminMarketingStore {
                 .lock()
                 .unwrap()
                 .push("create_recharge_package");
-            assert_eq!("12.00", command.price_amount);
+            // The admin request speaks major amounts; the command carries the
+            // canonical minor-unit scale the order-owned column stores.
+            assert_eq!("1200", command.price_amount);
             assert_eq!("CNY", command.currency_code);
             assert_eq!(30, command.bonus_points);
             assert_eq!(90, command.discount);
@@ -564,7 +566,9 @@ impl AdminMarketingStore for TestAdminMarketingStore {
                 package_no: "RECHARGE-PACKAGE-901".to_owned(),
                 name: "Points recharge 12.00 CNY".to_owned(),
                 sku_id: "recharge-sku-10-20-901".to_owned(),
-                price_amount: command.price_amount,
+                // The real store converts the stored minor amount back to a
+                // major amount before it answers the admin contract.
+                price_amount: "12.00".to_owned(),
                 currency_code: command.currency_code,
                 bonus_points: command.bonus_points,
                 discount: command.discount,
@@ -586,7 +590,7 @@ impl AdminMarketingStore for TestAdminMarketingStore {
                 .unwrap()
                 .push("update_recharge_package");
             assert_eq!("recharge-package-10-20-901", command.package_id);
-            assert_eq!("20.00", command.price_amount);
+            assert_eq!("2000", command.price_amount);
             assert_eq!("USD", command.currency_code);
             assert_eq!(50, command.bonus_points);
             assert_eq!(85, command.discount);
@@ -595,7 +599,7 @@ impl AdminMarketingStore for TestAdminMarketingStore {
                 package_no: "RECHARGE-PACKAGE-901".to_owned(),
                 name: "Points recharge 20.00 USD".to_owned(),
                 sku_id: "recharge-sku-10-20-901".to_owned(),
-                price_amount: command.price_amount,
+                price_amount: "20.00".to_owned(),
                 currency_code: command.currency_code,
                 bonus_points: command.bonus_points,
                 discount: command.discount,

@@ -645,7 +645,13 @@ fn normalize_recharge_package_price_amount(
         }
     };
     let cents = decimal_money_to_cents_with_field(&raw, "recharge package priceAmount")?;
-    Ok(cents_to_plain_money_string(cents))
+    // The admin request speaks major amounts ("12.00") because that is what the
+    // operator types, but `commerce_recharge_package.price_amount` is owned by
+    // sdkwork-order and stores canonical minor units. Carrying minor units into
+    // the command keeps the write scale identical to the order app API/seed
+    // (`5000` = `50.00` CNY); binding the major decimal into a NUMERIC(20,0)
+    // column silently rounded `¥12.00` down to `¥0.12`.
+    Ok(cents.to_string())
 }
 
 fn normalize_recharge_package_bonus_points(value: Option<&Value>) -> Result<i64, ApiCommandError> {
@@ -883,10 +889,6 @@ fn decimal_money_to_cents_with_field(
         )));
     }
     Ok(total)
-}
-
-fn cents_to_plain_money_string(cents: i64) -> String {
-    format!("{}.{:02}", cents / 100, cents.rem_euclid(100))
 }
 
 fn normalize_exchange_rule_mutation(

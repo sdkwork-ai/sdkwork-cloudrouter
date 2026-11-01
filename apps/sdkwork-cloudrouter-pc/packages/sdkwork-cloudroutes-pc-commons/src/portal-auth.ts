@@ -19,6 +19,14 @@ const DEFAULT_HOME_PATH = '/';
 const AUTH_BASE_PATH = '/auth';
 const AUTH_LOGIN_PATH = '/auth/login';
 const DEFAULT_AUTHENTICATED_HOME_PATH = '/admin';
+/**
+ * Hosted app hand-off page. It is reached only after the browser completed an
+ * authorization that started in a native application, so the visitor is
+ * always authenticated here and the page must render instead of bouncing the
+ * browser to the portal home — the deep link back into the app never fires
+ * otherwise.
+ */
+const APP_HANDOFF_PATH = '/auth/desktop/launch';
 
 export const PROTECTED_PORTAL_ROUTE_PREFIXES = [
   '/console',
@@ -47,6 +55,21 @@ export function hasStoredPortalSession(): boolean {
 export function isPortalAuthRoute(pathname: string): boolean {
   const normalized = normalizePortalPathname(pathname);
   return normalized === AUTH_BASE_PATH || normalized.startsWith(`${AUTH_BASE_PATH}/`);
+}
+
+/**
+ * Whether a path is the hosted app hand-off page that fires the deep link back
+ * into a native application.
+ *
+ * It lives under the auth base path but is not an anonymous auth route: the
+ * browser has just signed in, and redirecting the authenticated visitor away
+ * would drop the authorization code before the operating system receives it.
+ * @param pathname - browser pathname.
+ * @returns true for the hand-off page.
+ */
+export function isPortalAppHandoffPath(pathname: string): boolean {
+  const normalized = normalizePortalPathname(pathname);
+  return normalized === APP_HANDOFF_PATH || normalized.startsWith(`${APP_HANDOFF_PATH}/`);
 }
 
 export function buildPortalAuthLoginRedirect(location: PortalAuthLocationLike): string {

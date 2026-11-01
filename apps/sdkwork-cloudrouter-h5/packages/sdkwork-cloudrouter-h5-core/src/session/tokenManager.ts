@@ -44,9 +44,20 @@ export function resetCloudRouterTokenManager(): void {
   tokenManager = null;
 }
 
+/**
+ * Install one signed-in session in the shared TokenManager.
+ *
+ * Both dual tokens travel: `authToken` rides as `Authorization: Bearer` and
+ * `accessToken` as `Access-Token`, and a request missing either is rejected by
+ * the platform's dual-token resolver. Putting the auth token in the
+ * refresh-token slot would leave every protected call without an
+ * `Authorization` header.
+ * @param accessToken - session access token (`Access-Token`).
+ * @param authToken - session auth token (`Authorization: Bearer`).
+ */
 export function applyCloudRouterSessionTokens(accessToken: string, authToken: string): void {
   const manager = getCloudRouterTokenManager();
-  manager.setTokens({ accessToken, refreshToken: authToken });
+  manager.setTokens({ accessToken, authToken });
   writeCloudRouterSession({
     ...readCloudRouterSession(),
     authenticated: true,

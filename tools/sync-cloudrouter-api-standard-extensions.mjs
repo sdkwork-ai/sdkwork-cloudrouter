@@ -152,6 +152,13 @@ function inferAuth(operation) {
   if (security.length === 0) {
     return { mode: "public", required: false };
   }
+  // Optional-credential catalog reads (sdkwork-web-contract RouteAuth::
+  // DualTokenOrAnonymous) declare their mode explicitly: the security scheme
+  // pair is identical to `dual-token`, so the auth-mode extension is the only
+  // distinguisher and must survive re-stamping.
+  if (operation["x-sdkwork-auth-mode"] === "dual-token-or-anonymous") {
+    return { mode: "dual-token-or-anonymous", required: false };
+  }
   const names = Object.keys(security[0] ?? {});
   if (names.includes("ApiKeyAuth") || names.includes("X-API-Key")) {
     return { mode: "api-key", required: true };

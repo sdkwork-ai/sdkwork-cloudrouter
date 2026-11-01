@@ -2,6 +2,19 @@
 
 ## 0.6.0
 
+- `routing.accountGroups.list` (`/app/v3/api/ai/routing/account_groups`) no
+  longer gates signed-out visitors: the operation declares the
+  `dual-token-or-anonymous` optional-credential profile so the portal model
+  catalog can read group sale multipliers without a portal session. Signed-in
+  callers keep their tenant-scoped projection (including per-key `authorized`
+  flags); anonymous callers resolve the deployment default tenant
+  (`SDKWORK_RTC_HYDRATE_TENANT_ID`, organization 0, no user) with
+  `authorized = false` on every group.
+- `pricing.rates.list` (`/app/v3/api/ai/pricing/rates`) no longer requires
+  authentication: the official pricing catalog read is declared anonymous
+  (`security: []`, `x-sdkwork-auth-mode: anonymous`) so portal pricing pages
+  render without a portal session. Authenticated callers keep working
+  unchanged; `x-sdkwork-required-surface` is dropped for the operation.
 - `pricing.rates.list` (`/app/v3/api/ai/pricing/rates`) items gain optional
   model capability fields merged from the sdkwork-models catalog (`ai_model`
   by `catalogKey`): `capabilities`, `inputModalities`, `outputModalities`,

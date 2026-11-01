@@ -91,9 +91,15 @@ export function computeGrantAmount(
     currencyCode,
     normalizedSettings.baseCurrencyCode,
   );
-  const currencyRate = normalizedSettings.currencyToCnyRates[normalizedCurrencyCode]
-    || normalizedSettings.currencyToCnyRates[DEFAULT_RECHARGE_BASE_CURRENCY_CODE]
-    || '1';
+  const currencyRate = normalizedSettings.currencyToCnyRates[normalizedCurrencyCode];
+  if (currencyRate === undefined) {
+    // Mirror the backend recharge credit (`currency_to_cny_rate_strict`): an
+    // unconfigured currency must not silently borrow the CNY/1 rate, which
+    // would preview a grant the purchase path then rejects or mis-credits.
+    throw new Error(
+      `missing currency-to-CNY conversion rate for ${normalizedCurrencyCode}`,
+    );
+  }
   const currencyRateScaled = decimalToScaledBigInt(currencyRate, 6);
   const numerator = amountScaled * currencyRateScaled * basePointsScaled;
   const denominator = MONEY_SCALE * RATE_SCALE * RATE_SCALE;

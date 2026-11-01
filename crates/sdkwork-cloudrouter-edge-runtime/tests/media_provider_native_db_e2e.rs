@@ -46,7 +46,7 @@ use sdkwork_test::{AuthTokenClient, LoginHarness, PgTestContext};
 use sqlx::Row;
 use tower::ServiceExt;
 
-/// Development secrets matching `.env.gateway` / `.sdkwork/secrets` (test-only).
+/// Development secrets matching `.sdkwork/secrets` (test-only).
 /// Mirrors `sdkwork_test::router_harness::DevSecrets`; kept local because this
 /// test needs a different router constructor than `RouterHarness` exposes.
 const API_KEY_PEPPER: &str = "sdkwork-cloudrouter-local-dev-secret-20260507";

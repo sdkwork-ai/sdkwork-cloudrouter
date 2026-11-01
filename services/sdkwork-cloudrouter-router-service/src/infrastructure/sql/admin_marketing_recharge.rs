@@ -17,6 +17,9 @@ pub(crate) const DEFAULT_BASE_CURRENCY_CODE: &str = "CNY";
 pub(crate) const DEFAULT_BASE_POINTS_PER_CNY: &str = "10";
 pub(crate) const DEFAULT_USD_TO_CNY_RATE: &str = "7";
 pub(crate) const RECHARGE_RULE_NO: &str = "CASH_TO_POINTS";
+/// One Compute Credit point is carried as 1e6 micro-points, matching the
+/// wallet balance, the usage ledger, and the order app API's `points` field.
+pub(crate) const MICRO_POINTS_PER_POINT: i64 = 1_000_000;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RechargeSettingsModel {
@@ -288,7 +291,9 @@ pub(crate) fn recharge_package_item(
         status,
         updated_at,
     } = record;
-    let grant_amount = compute_grant_amount(&price_amount, &currency_code, bonus_points, settings)?;
+    let credited_micro =
+        compute_grant_amount(&price_amount, &currency_code, bonus_points, settings)?;
+    let credited_points = micro_points_to_points(credited_micro);
     Ok(AdminRechargePackageItem {
         id,
         package_no,
@@ -298,11 +303,75 @@ pub(crate) fn recharge_package_item(
         currency_code,
         bonus_points,
         discount,
-        grant_amount,
-        points: grant_amount,
+        grant_amount: credited_points,
+        points: credited_points,
         status,
         updated_at,
     })
+}
+
+/// Rounds a credited micro-point total to whole points for the admin contract.
+///
+/// The admin API exposes `grantAmount`/`points` as integer points (the order
+/// app API keeps micro-points because the cashier converts them for the
+/// customer); the wallet credit itself is computed from the same recharge
+/// settings, so this only affects admin display. Half-up rounding keeps a
+/// fractional cent-driven credit from being reported as a larger error.
+pub(crate) fn micro_points_to_points(micro: i64) -> i64 {
+    if micro <= 0 {
+        return 0;
+    }
+    let half = MICRO_POINTS_PER_POINT / 2;
+    micro.saturating_add(half) / MICRO_POINTS_PER_POINT
+}
+
+/// Converts a stored `commerce_recharge_package.price_amount` cell into the
+/// major-unit money string the admin API/UI exchanges.
+///
+/// The catalog is owned by sdkwork-order, whose money migration stores
+/// canonical **minor** units (`5000` = `50.00` CNY; the order app API reads the
+/// same column through `minor_units_to_major_decimal`). Treating the stored
+/// value as a major decimal reported `¥5,000.00` for a `¥50.00` package and
+/// credited 100x the points. Rows written before that convergence may still
+/// carry a legacy major decimal in a text column; those contain a decimal
+/// point and are canonicalized instead of divided by 100 a second time.
+pub(crate) fn stored_price_amount_to_major(value: &str, field_name: &str) -> DomainResult<String> {
+    let raw = value.trim().replace(',', "");
+    if raw.is_empty() || raw.starts_with('-') || raw.starts_with('+') {
+        return Err(DomainError::new(format!("invalid {field_name}: {value}")));
+    }
+    if raw.contains('.') {
+        return legacy_major_money(&raw)
+            .ok_or_else(|| DomainError::new(format!("invalid {field_name}: {value}")));
+    }
+    let minor = raw
+        .parse::<i64>()
+        .map_err(|_| DomainError::new(format!("invalid {field_name}: {value}")))?;
+    if minor < 0 || !raw.chars().all(|ch| ch.is_ascii_digit()) {
+        return Err(DomainError::new(format!("invalid {field_name}: {value}")));
+    }
+    Ok(format!("{}.{:02}", minor / 100, minor % 100))
+}
+
+fn legacy_major_money(value: &str) -> Option<String> {
+    let mut parts = value.split('.');
+    let whole = parts.next()?;
+    let fraction = parts.next().unwrap_or_default();
+    if parts.next().is_some()
+        || whole.is_empty()
+        || !whole.chars().all(|ch| ch.is_ascii_digit())
+        || fraction.len() > 2
+        || !fraction.chars().all(|ch| ch.is_ascii_digit())
+    {
+        return None;
+    }
+    let whole = whole.trim_start_matches('0');
+    let whole = if whole.is_empty() { "0" } else { whole };
+    let mut padded = fraction.to_owned();
+    while padded.len() < 2 {
+        padded.push('0');
+    }
+    Some(format!("{whole}.{padded}"))
 }
 
 pub(crate) fn recharge_package_name(price_amount: &str, currency_code: &str) -> String {
@@ -457,5 +526,112 @@ mod tests {
             "70",
             points_per_currency_unit_string("USD", &settings).unwrap()
         );
+    }
+
+    #[test]
+    fn default_recharge_settings_keep_the_one_cny_ten_points_ratio() {
+        // Missing exchange-rule configuration must initialize to the platform
+        // defaults: 1 CNY = 10 points, USD → CNY 7 (70 points per USD).
+        let settings = parse_recharge_settings_model(None, None, None).unwrap();
+        assert_eq!("CNY", settings.base_currency_code);
+        assert_eq!("10", settings.base_points_per_cny);
+        assert_eq!(
+            Some("1"),
+            settings
+                .currency_to_cny_rates
+                .get("CNY")
+                .map(String::as_str)
+        );
+        assert_eq!(
+            Some("7"),
+            settings
+                .currency_to_cny_rates
+                .get("USD")
+                .map(String::as_str)
+        );
+        assert_eq!(
+            "10",
+            points_per_currency_unit_string("CNY", &settings).unwrap()
+        );
+        assert_eq!(
+            "70",
+            points_per_currency_unit_string("USD", &settings).unwrap()
+        );
+
+        // A 500-point platform package is priced at 50.00 CNY under that ratio.
+        let credited = compute_grant_amount("50.00", "CNY", 0, &settings).unwrap();
+        assert_eq!(500, micro_points_to_points(credited));
+        // The same pack priced in USD converts through the USD → CNY rate.
+        let usd_credited = compute_grant_amount("50.00", "USD", 0, &settings).unwrap();
+        assert_eq!(3500, micro_points_to_points(usd_credited));
+    }
+
+    #[test]
+    fn stored_minor_price_amounts_convert_to_major_once() {
+        // Canonical minor units from `commerce_recharge_package.price_amount`.
+        assert_eq!(
+            "50.00",
+            stored_price_amount_to_major("5000", "price amount").unwrap()
+        );
+        assert_eq!(
+            "223.00",
+            stored_price_amount_to_major("22300", "price amount").unwrap()
+        );
+        assert_eq!(
+            "899.00",
+            stored_price_amount_to_major("89900", "price amount").unwrap()
+        );
+        assert_eq!(
+            "0.50",
+            stored_price_amount_to_major("50", "price amount").unwrap()
+        );
+        // Legacy text-column rows already carry a major decimal; they must not
+        // be divided by 100 a second time.
+        assert_eq!(
+            "50.00",
+            stored_price_amount_to_major("50.00", "price amount").unwrap()
+        );
+        assert_eq!(
+            "223.50",
+            stored_price_amount_to_major("223.5", "price amount").unwrap()
+        );
+        assert!(stored_price_amount_to_major("", "price amount").is_err());
+        assert!(stored_price_amount_to_major("-5000", "price amount").is_err());
+        assert!(stored_price_amount_to_major("50.001", "price amount").is_err());
+    }
+
+    #[test]
+    fn admin_grant_amount_reports_whole_points_from_micro_credits() {
+        assert_eq!(0, micro_points_to_points(0));
+        assert_eq!(500, micro_points_to_points(500_000_000));
+        assert_eq!(125, micro_points_to_points(125_000_000));
+        // Half a point rounds up instead of silently truncating the credit.
+        assert_eq!(1, micro_points_to_points(500_000));
+        assert_eq!(1, micro_points_to_points(500_001));
+        assert_eq!(1, micro_points_to_points(999_999));
+    }
+
+    #[test]
+    fn recharge_package_item_exposes_major_price_and_whole_points() {
+        let settings = parse_recharge_settings_model(None, None, None).unwrap();
+        let item = recharge_package_item(
+            RechargePackageRecord {
+                id: "recharge-500".to_owned(),
+                package_no: "points-500".to_owned(),
+                name: "500 compute points".to_owned(),
+                sku_id: "recharge-sku-500".to_owned(),
+                price_amount: stored_price_amount_to_major("5000", "price amount").unwrap(),
+                currency_code: "CNY".to_owned(),
+                bonus_points: 0,
+                discount: 100,
+                status: "active".to_owned(),
+                updated_at: String::new(),
+            },
+            &settings,
+        )
+        .unwrap();
+        assert_eq!("50.00", item.price_amount);
+        assert_eq!(500, item.grant_amount);
+        assert_eq!(500, item.points);
     }
 }
