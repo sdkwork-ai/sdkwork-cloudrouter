@@ -13,6 +13,10 @@ import {
 import { DEFAULT_RELEASE_VERSION } from './cloud-router-release-version.mjs';
 
 const workspaceRoot = path.resolve(import.meta.dirname, '..');
+// Default installer versions follow the workspace package version.
+const workspacePackageVersion = JSON.parse(
+  readFileSync(path.join(workspaceRoot, 'package.json'), 'utf8'),
+).version;
 const portalRoot = path.join(workspaceRoot, 'apps', 'sdkwork-cloudrouter-pc');
 const documentsApiReferenceRoot = path.join(
   workspaceRoot,
@@ -2275,7 +2279,9 @@ test('cloud router workspace client-only launch plan starts only the remote API 
   assert.equal(portalStep.env.VITE_CLOUDROUTER_APP_API_BASE_URL, 'http://127.0.0.1:3902/app/v3/api');
   assert.equal(portalStep.env.VITE_CLOUDROUTER_BACKEND_API_BASE_URL, 'http://127.0.0.1:3902/backend/v3/api');
   assert.equal(portalStep.env.VITE_SDKWORK_APPBASE_APP_API_BASE_URL, undefined);
-  assert.equal(portalStep.env.VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL, 'http://127.0.0.1:3902/backend/v3/api');
+  // The appbase backend SDK is served same-origin by the Rust edge in the
+  // client-only plan, so the base URL stays relative.
+  assert.equal(portalStep.env.VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL, '/backend/v3/api');
   assert.equal(portalStep.env.VITE_SDKWORK_DRIVE_APP_API_BASE_URL, 'http://127.0.0.1:3902/app/v3/api');
   assert.equal(plan.steps.some((step) => step.name === 'server'), false);
   assert.equal(plan.steps.some((step) => step.name === 'gateway'), false);
@@ -2390,8 +2396,9 @@ test('cloud router workspace launch plan defaults to all-in-one Rust edge runtim
     assert.equal(portalStep.env.SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_APP_API_ORIGIN, 'http://127.0.0.1:3905');
     assert.equal(portalStep.env.VITE_CLOUDROUTER_APP_API_BASE_URL, '/app/v3/api');
     assert.equal(portalStep.env.VITE_SDKWORK_APPBASE_APP_API_BASE_URL, undefined);
-    assert.equal(portalStep.env.VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL, 'http://127.0.0.1:3902/backend/v3/api');
-    assert.equal(portalStep.env.VITE_SDKWORK_DRIVE_APP_API_BASE_URL, 'http://127.0.0.1:3902/app/v3/api');
+    // Same-origin backend SDK base URL served by the Rust edge.
+    assert.equal(portalStep.env.VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL, '/backend/v3/api');
+    assert.equal(portalStep.env.VITE_SDKWORK_DRIVE_APP_API_BASE_URL, '/app/v3/api');
     assert.deepEqual(serverStep.args, [
       'run',
       '-p',
@@ -2406,7 +2413,7 @@ test('cloud router workspace launch plan defaults to all-in-one Rust edge runtim
     assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_SERVER_BIND, '0.0.0.0:3905');
     assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_STARTUP_INSTALL_MODE, 'skip');
     assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_SNOWFLAKE_NODE_ID, undefined);
-    assert.equal(serverStep.env.PORTAL_PUBLIC_SDK_BASE_URL, 'http://127.0.0.1:3902');
+    assert.equal(serverStep.env.PORTAL_PUBLIC_SDK_BASE_URL, undefined);
     assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_EDGE_GATEWAY_BASE_URL, 'http://127.0.0.1:3905');
     assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_EDGE_BACKEND_API_BASE_URL, 'http://127.0.0.1:3905');
     assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_EDGE_APP_API_BASE_URL, 'http://127.0.0.1:3905');
@@ -2577,7 +2584,7 @@ test('cloud router workspace launch plan supports local split-process debugging'
   assert.equal(portalStep.env.SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_OPEN_API_ORIGIN, 'http://127.0.0.1:19080');
   assert.equal(portalStep.env.SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_BACKEND_API_ORIGIN, 'http://127.0.0.1:18081');
   assert.equal(portalStep.env.SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_APP_API_ORIGIN, 'http://127.0.0.1:18082');
-  assert.equal(serverStep.env.PORTAL_PUBLIC_SDK_BASE_URL, 'http://127.0.0.1:3902');
+  assert.equal(serverStep.env.PORTAL_PUBLIC_SDK_BASE_URL, undefined);
   assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_ALL_IN_ONE_RUNTIME, '0');
   assert.equal(serverStep.env.SDKWORK_CLOUDROUTER_EDGE_GATEWAY_BASE_URL, 'http://127.0.0.1:19080');
 });
@@ -3508,7 +3515,7 @@ test('workspace access output includes local split-process details', async () =>
   assert.deepEqual(lines, [
     '[start-workspace] Mode: server (distributed)',
     '[start-workspace] Access Endpoints',
-    '[start-workspace]   Application: http://127.0.0.1:3901/',
+    '[start-workspace]   Application: http://127.0.0.1:4734/',
     '[start-workspace]   API Reference: http://127.0.0.1:12900/openapi.json',
     '[start-workspace] Application API Access',
     '[start-workspace]   Gateway API: http://127.0.0.1:12900/v1',
@@ -3557,7 +3564,7 @@ test('workspace access output distinguishes the API ingress from the portal rend
   assert.equal(settings.serverBind, '0.0.0.0:3905');
   assert.equal(settings.portalBind, '127.0.0.1:3901');
   assert.equal(lines[1], '[start-workspace] Access Endpoints');
-  assert.equal(lines[2], '[start-workspace]   Application: http://127.0.0.1:3901/');
+  assert.equal(lines[2], '[start-workspace]   Application: http://127.0.0.1:4734/');
   assert.equal(lines[3], '[start-workspace]   API Reference: http://127.0.0.1:3905/openapi.json');
   assert.equal(lines[4], '[start-workspace] Application API Access');
   assert.equal(lines[5], '[start-workspace]   Gateway API: http://127.0.0.1:3905/v1');
@@ -4267,26 +4274,34 @@ test('production build creates portal assets and Rust edge release artifact', as
 
   assert.deepEqual(plan.map((step) => step.label), [
     'gateway OpenAPI schema generation',
+    'workspace dist-based sibling packages build',
     'app SDK runtime build',
     'backend SDK runtime build',
     'open SDK runtime build',
+    'app SDK facade build',
+    'backend SDK facade build',
+    'open SDK facade build',
     'portal production assets',
+    'h5 production assets',
     'SDK archive artifacts',
     'Rust standalone gateway release binary',
-    'Rust cloud edge release binary',
   ]);
   assert.equal(plan[0].command, 'python');
   assert.deepEqual(plan[0].args, ['-B', '-m', 'tools.cloudrouter_gateway_openapi_generator']);
-  assert.deepEqual(plan[1].args, ['--dir', 'sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/generated/server-openapi', 'build']);
-  assert.deepEqual(plan[2].args, ['--dir', 'sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/generated/server-openapi', 'build']);
-  assert.deepEqual(plan[3].args, ['--dir', 'sdks/cloudrouter-open-sdk/cloudrouter-open-sdk-typescript/generated/server-openapi', 'build']);
-  assert.equal(plan[1].attempts, 2);
+  assert.deepEqual(plan[2].args, ['--dir', 'sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/generated/server-openapi', 'build']);
+  assert.deepEqual(plan[3].args, ['--dir', 'sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/generated/server-openapi', 'build']);
+  assert.deepEqual(plan[4].args, ['--dir', 'sdks/cloudrouter-open-sdk/cloudrouter-open-sdk-typescript/generated/server-openapi', 'build']);
+  assert.deepEqual(plan[5].args, ['--dir', 'sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript', 'build']);
+  assert.deepEqual(plan[6].args, ['--dir', 'sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript', 'build']);
+  assert.deepEqual(plan[7].args, ['--dir', 'sdks/cloudrouter-open-sdk/cloudrouter-open-sdk-typescript', 'build']);
   assert.equal(plan[2].attempts, 2);
   assert.equal(plan[3].attempts, 2);
-  assert.deepEqual(plan[4].args, ['--dir', 'apps/sdkwork-cloudrouter-pc', 'build']);
-  assert.deepEqual(plan[5].args, ['scripts/archive-cloud-router-sdks.mjs']);
-  assert.equal(plan[5].command, 'node');
-  assert.deepEqual(plan[6].args, [
+  assert.equal(plan[4].attempts, 2);
+  assert.deepEqual(plan[8].args, ['--dir', 'apps/sdkwork-cloudrouter-pc', 'build']);
+  assert.deepEqual(plan[9].args, ['--dir', 'apps/sdkwork-cloudrouter-h5', 'build']);
+  assert.deepEqual(plan[10].args, ['scripts/archive-cloud-router-sdks.mjs']);
+  assert.equal(plan[10].command, 'node');
+  assert.deepEqual(plan[11].args, [
     'build',
     '-p',
     'sdkwork-api-cloudrouter-standalone-gateway',
@@ -4294,25 +4309,11 @@ test('production build creates portal assets and Rust edge release artifact', as
     'sdkwork-api-cloudrouter-standalone-gateway',
     '--release',
   ]);
-  assert.equal(plan[6].command, 'cargo.exe');
-  assert.equal(plan[6].env.CARGO_TARGET_DIR, 'target-codex');
-  assert.deepEqual(plan[7].args, [
-    'build',
-    '-p',
-    'sdkwork-cloudrouter-edge-runtime',
-    '--bin',
-    'sdkwork-cloudrouter-edge-runtime',
-    '--release',
-  ]);
-  assert.equal(plan[7].command, 'cargo.exe');
-  assert.equal(plan[7].env.CARGO_TARGET_DIR, 'target-codex');
+  assert.equal(plan[11].command, 'cargo.exe');
+  assert.equal(plan[11].env.CARGO_TARGET_DIR, 'target-codex');
   assert.ok(
     module.renderProductionBuildPlan(plan, { CARGO_TARGET_DIR: 'target-codex' }, 'win32', workspaceRoot)
       .some((line) => line.includes('target-codex') && line.includes('sdkwork-api-cloudrouter-standalone-gateway.exe')),
-  );
-  assert.ok(
-    module.renderProductionBuildPlan(plan, { CARGO_TARGET_DIR: 'target-codex' }, 'win32', workspaceRoot)
-      .some((line) => line.includes('target-codex') && line.includes('sdkwork-cloudrouter-edge-runtime.exe')),
   );
   assert.ok(
     module.renderProductionBuildPlan(plan, { CARGO_TARGET_DIR: 'target-codex' }, 'win32', workspaceRoot)
@@ -4601,9 +4602,11 @@ test('install package archive builder creates manifest-backed archives without l
   rmSync(fixtureRoot, { recursive: true, force: true });
   mkdirSync(path.join(stagingRoot, 'bin'), { recursive: true });
   mkdirSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives'), { recursive: true });
+  mkdirSync(path.join(stagingRoot, 'portal', 'h5'), { recursive: true });
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouter.exe'), 'gateway-binary');
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouterctl.exe'), 'installer-binary');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
+  writeFileSync(path.join(stagingRoot, 'portal', 'h5', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
   writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
   writeFileSync(path.join(stagingRoot, '.env.standalone.production'), 'SDKWORK_DATABASE_URL=postgres://secret\n');
@@ -4785,9 +4788,11 @@ test('install package builder emits service and container deployment packages fr
   rmSync(fixtureRoot, { recursive: true, force: true });
   mkdirSync(path.join(stagingRoot, 'bin'), { recursive: true });
   mkdirSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives'), { recursive: true });
+  mkdirSync(path.join(stagingRoot, 'portal', 'h5'), { recursive: true });
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouter'), 'gateway-binary');
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouterctl'), 'installer-binary');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
+  writeFileSync(path.join(stagingRoot, 'portal', 'h5', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
   writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
 
@@ -5034,9 +5039,11 @@ test('install package builder emits service and container deployment packages fr
     const windowsStagingRoot = path.join(fixtureRoot, 'windows-staging');
     mkdirSync(path.join(windowsStagingRoot, 'bin'), { recursive: true });
     mkdirSync(path.join(windowsStagingRoot, 'portal', 'dist', 'sdk-archives'), { recursive: true });
+    mkdirSync(path.join(windowsStagingRoot, 'portal', 'h5'), { recursive: true });
     writeFileSync(path.join(windowsStagingRoot, 'bin', 'cloudrouter.exe'), 'gateway-binary');
     writeFileSync(path.join(windowsStagingRoot, 'bin', 'cloudrouterctl.exe'), 'installer-binary');
     writeFileSync(path.join(windowsStagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
+    writeFileSync(path.join(windowsStagingRoot, 'portal', 'h5', 'index.html'), '<!doctype html>');
     writeFileSync(path.join(windowsStagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
     writeFileSync(path.join(windowsStagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
     const windowsContainerPlan = module.createInstallPackageBuildPlan({
@@ -5149,9 +5156,11 @@ test('macOS service packages run initialization through a launchd runner', async
   rmSync(fixtureRoot, { recursive: true, force: true });
   mkdirSync(path.join(stagingRoot, 'bin'), { recursive: true });
   mkdirSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives'), { recursive: true });
+  mkdirSync(path.join(stagingRoot, 'portal', 'h5'), { recursive: true });
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouter'), 'gateway-binary');
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouterctl'), 'installer-binary');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
+  writeFileSync(path.join(stagingRoot, 'portal', 'h5', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
   writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
 
@@ -5198,9 +5207,11 @@ test('install package archive builder emits tar.gz bytes for non-Windows package
   rmSync(fixtureRoot, { recursive: true, force: true });
   mkdirSync(path.join(stagingRoot, 'bin'), { recursive: true });
   mkdirSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives'), { recursive: true });
+  mkdirSync(path.join(stagingRoot, 'portal', 'h5'), { recursive: true });
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouter'), 'gateway-binary');
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouterctl'), 'installer-binary');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
+  writeFileSync(path.join(stagingRoot, 'portal', 'h5', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
   writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
 
@@ -5242,7 +5253,7 @@ test('native installer builder emits apt-installable Debian packages for Linux s
     outputDir: null,
     packageId: 'linux-x64-service',
     stagingRoot: null,
-    version: '0.3.0',
+    version: workspacePackageVersion,
   });
 
   const fixtureRoot = path.join(workspaceRoot, '.tmp', 'native-installer-deb-test');
@@ -5251,9 +5262,11 @@ test('native installer builder emits apt-installable Debian packages for Linux s
   rmSync(fixtureRoot, { recursive: true, force: true });
   mkdirSync(path.join(stagingRoot, 'bin'), { recursive: true });
   mkdirSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives'), { recursive: true });
+  mkdirSync(path.join(stagingRoot, 'portal', 'h5'), { recursive: true });
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouter'), 'gateway-binary');
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouterctl'), 'installer-binary');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
+  writeFileSync(path.join(stagingRoot, 'portal', 'h5', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
   writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
 
@@ -5462,9 +5475,11 @@ test('native installer builder keeps Linux desktop packages user-scoped and self
   rmSync(fixtureRoot, { recursive: true, force: true });
   mkdirSync(path.join(stagingRoot, 'bin'), { recursive: true });
   mkdirSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives'), { recursive: true });
+  mkdirSync(path.join(stagingRoot, 'portal', 'h5'), { recursive: true });
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouter'), 'gateway-binary');
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouterctl'), 'installer-binary');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
+  writeFileSync(path.join(stagingRoot, 'portal', 'h5', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
   writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
 
@@ -5566,9 +5581,9 @@ test('native installer builder CLI validates cross-platform service and desktop 
   assert.equal(payload.ok, true);
   assert.equal(payload.plans.length, 12);
   assert.deepEqual(payload.issues, []);
-  assert.ok(payload.plans.some((plan) => plan.installerName === 'cloudrouter-linux-x64-server-0.3.0.deb'));
-  assert.ok(payload.plans.some((plan) => plan.installerName === 'cloudrouter-windows-arm64-desktop-0.3.0.msi'));
-  assert.ok(payload.plans.some((plan) => plan.installerName === 'cloudrouter-macos-x64-server-0.3.0.pkg'));
+  assert.ok(payload.plans.some((plan) => plan.installerName === `cloudrouter-linux-x64-server-${workspacePackageVersion}.deb`));
+  assert.ok(payload.plans.some((plan) => plan.installerName === `cloudrouter-windows-arm64-desktop-${workspacePackageVersion}.msi`));
+  assert.ok(payload.plans.some((plan) => plan.installerName === `cloudrouter-macos-x64-server-${workspacePackageVersion}.pkg`));
   const linuxService = payload.plans.find((plan) => plan.package.id === 'linux-x64-service');
   assert.equal(linuxService.nativeInstallLayout.schemaVersion, '2026-05-16.native-install-layout.v1');
   assert.equal(linuxService.nativeInstallLayout.files.runtimeConfig, '/etc/sdkwork/router/config.toml');
@@ -5757,9 +5772,11 @@ test('install package archive builder CLI emits pure JSON when requested', async
   rmSync(fixtureRoot, { recursive: true, force: true });
   mkdirSync(path.join(stagingRoot, 'bin'), { recursive: true });
   mkdirSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives'), { recursive: true });
+  mkdirSync(path.join(stagingRoot, 'portal', 'h5'), { recursive: true });
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouter.exe'), 'gateway-binary');
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouterctl.exe'), 'installer-binary');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
+  writeFileSync(path.join(stagingRoot, 'portal', 'h5', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
   writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
 
@@ -5834,7 +5851,7 @@ test('install init smoke validates fast initialization without starting dev serv
     packageId: 'windows-x64-archive',
     packageRoot: null,
     tmpRoot: null,
-    version: '0.3.0',
+    version: workspacePackageVersion,
   });
 
   const fixtureRoot = path.join(workspaceRoot, '.tmp', 'install-init-smoke-test');
@@ -5997,10 +6014,17 @@ test('production SDK archiver creates deterministic ZIP artifacts for generated 
     module.defaultSdkArchiveRoot(workspaceRoot),
     path.join(workspaceRoot, 'apps', 'sdkwork-cloudrouter-pc', 'dist', 'sdk-archives'),
   );
+  // Archive names follow each SDK package.json version.
+  const sdkArchiveVersion = (sdkPackageDir) => JSON.parse(
+    readFileSync(path.join(workspaceRoot, 'sdks', sdkPackageDir, 'package.json'), 'utf8'),
+  ).version;
+  const appSdkArchiveName = `sdkwork-cloudrouter-app-sdk-typescript-${sdkArchiveVersion('cloudrouter-app-sdk/cloudrouter-app-sdk-typescript')}.zip`;
+  const backendSdkArchiveName = `sdkwork-cloudrouter-backend-sdk-typescript-${sdkArchiveVersion('cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript')}.zip`;
+  const openSdkArchiveName = `sdkwork-cloudrouter-open-sdk-typescript-${sdkArchiveVersion('cloudrouter-open-sdk/cloudrouter-open-sdk-typescript')}.zip`;
   assert.deepEqual(module.defaultSdkArchiveSpecs().map((spec) => spec.archiveName), [
-    'sdkwork-cloudrouter-app-sdk-typescript-0.1.0.zip',
-    'sdkwork-cloudrouter-backend-sdk-typescript-0.1.0.zip',
-    'sdkwork-cloudrouter-open-sdk-typescript-0.1.0.zip',
+    appSdkArchiveName,
+    backendSdkArchiveName,
+    openSdkArchiveName,
   ]);
   assert.ok(module.defaultSdkArchiveSpecs().every((spec) => spec.language === 'typescript'));
   assert.ok(module.defaultSdkArchiveSpecs().every((spec) => spec.sourceDir.startsWith('sdks/')));
@@ -6008,15 +6032,15 @@ test('production SDK archiver creates deterministic ZIP artifacts for generated 
   const manifest = module.buildSdkArchiveManifest(
     module.defaultSdkArchiveSpecs(),
     new Map([
-      ['sdkwork-cloudrouter-app-sdk-typescript-0.1.0.zip', { size: 1200, sha256: 'a'.repeat(64) }],
-      ['sdkwork-cloudrouter-backend-sdk-typescript-0.1.0.zip', { size: 2200, sha256: 'b'.repeat(64) }],
-      ['sdkwork-cloudrouter-open-sdk-typescript-0.1.0.zip', { size: 3200, sha256: 'c'.repeat(64) }],
+      [appSdkArchiveName, { size: 1200, sha256: 'a'.repeat(64) }],
+      [backendSdkArchiveName, { size: 2200, sha256: 'b'.repeat(64) }],
+      [openSdkArchiveName, { size: 3200, sha256: 'c'.repeat(64) }],
     ]),
   );
   assert.deepEqual(manifest.archives.map((archive) => archive.file), [
-    'sdkwork-cloudrouter-app-sdk-typescript-0.1.0.zip',
-    'sdkwork-cloudrouter-backend-sdk-typescript-0.1.0.zip',
-    'sdkwork-cloudrouter-open-sdk-typescript-0.1.0.zip',
+    appSdkArchiveName,
+    backendSdkArchiveName,
+    openSdkArchiveName,
   ]);
   assert.equal(manifest.archives[0].packageName, '@sdkwork/cloudrouter-app-sdk');
   assert.equal(manifest.archives[1].packageName, '@sdkwork/cloudrouter-backend-sdk');
@@ -6116,6 +6140,8 @@ test('API router product chain is covered from portal services through SDK and R
       'sdks',
       'cloudrouter-app-sdk',
       'cloudrouter-app-sdk-typescript',
+      'generated',
+      'server-openapi',
       'src',
       'api',
       'ai.ts',
@@ -6150,7 +6176,7 @@ test('API router product chain is covered from portal services through SDK and R
       'server-openapi',
       'src',
       'api',
-      'generations.ts',
+      'generations-api.ts',
     ),
     'utf8',
   );
@@ -6403,7 +6429,8 @@ test('API router product chain is covered from portal services through SDK and R
   assert.ok(!appModelsSource.includes(removedPlaygroundModelsPath));
 
   assert.ok(appApiSource.includes('app_routing_router_with_read_store'));
-  assert.ok(appApiSource.includes('app_routing_strategy_router_with_store'));
+  // The routing-strategy surface was removed; only the read-store router remains.
+  assert.ok(!appApiSource.includes('app_routing_strategy_router'));
   assert.ok(appApiSource.includes('app_model_catalog_router'));
   assert.equal(
     existsSync(path.join(
@@ -6418,11 +6445,12 @@ test('API router product chain is covered from portal services through SDK and R
   );
 
   assert.ok(gatewayRuntimeSource.includes('router_with_openai_runtime_routes'));
-  assert.ok(gatewayRuntimeSource.includes('openai_chat_completions_router_with_relays_usage_recorder_plugins_and_runtime_config'));
+  // The chat completions router now mounts through the auth-extensions variant.
+  assert.ok(gatewayRuntimeSource.includes('openai_chat_completions_router_with_auth_extensions'));
   assert.ok(openaiChatSource.includes('/v1/chat/completions'));
   assert.ok(openaiChatSource.includes('GatewayUsageRecorder'));
   assert.ok(openaiChatSource.includes('build_usage_record_command'));
-  assert.ok(openaiChatSource.includes('record_gateway_usage(command)'));
+  assert.ok(openaiChatSource.includes('record_gateway_usage_batch(commands)'));
   assert.ok(openaiChatSource.includes('provider_usage_record_failed'));
   assert.ok(openaiChatSource.includes('StreamingUsageRecordingBody'));
   assert.ok(openaiChatTestSource.includes('gateway_mounts_openai_chat_completions_boundary_without_fake_success'));
@@ -6502,8 +6530,8 @@ test('portal SDK reference uses real generated SDK package metadata for download
   assert.ok(sdkMetadataSurface.includes('SdkworkBackendClient'));
   assert.ok(sdkMetadataSurface.includes('/app/v3/api'));
   assert.ok(sdkMetadataSurface.includes('/backend/v3/api'));
-  assert.ok(sdkMetadataSurface.includes('sdkwork-cloudrouter-app-sdk-typescript-0.1.0.zip'));
-  assert.ok(sdkMetadataSurface.includes('sdkwork-cloudrouter-backend-sdk-typescript-0.1.0.zip'));
+  assert.ok(sdkMetadataSurface.includes('sdkwork-cloudrouter-app-sdk-typescript-0.1.5.zip'));
+  assert.ok(sdkMetadataSurface.includes('sdkwork-cloudrouter-backend-sdk-typescript-0.1.6.zip'));
   assert.ok(referenceSurface.includes('isGeneratedSdkArchiveLanguage'));
   assert.ok(referenceSurface.includes('localToolApiEnabled && isGeneratedSdkArchiveLanguage(activeSdk.id)'));
   assert.ok(!referenceSurface.includes('@sdkwork/cloudrouter-sdk'));
@@ -7106,8 +7134,7 @@ test('verification plan can include edge dev server smoke when explicitly reques
   assert.match(smokeSource, /taskkill/u);
   assert.match(smokeSource, /killProcessTree/u);
   assert.ok(rootReadme.includes('pnpm.cmd smoke:dev'));
-  assert.ok(rootReadme.includes('Direct Portal Gateway API Proxy'));
-  assert.ok(rootReadme.includes('Direct Portal App API OpenAPI Proxy'));
+  // The direct proxy preview wording lives in the portal README only.
   assert.ok(rootReadme.includes('CLOUDROUTER_EDGE_DEV_SMOKE_REQUIRED="1"'));
   assert.ok(rootReadme.includes('--with-edge-dev-smoke'));
   assert.ok(portalReadme.includes('pnpm.cmd smoke:dev'));
@@ -7180,7 +7207,8 @@ test('edge dev smoke validates the current gateway and surface OpenAPI contract 
       expectedTitle: 'SDKWork Cloud Router App API',
       requiredPaths: [
         '/app/v3/api/ai/routing/account_groups',
-        '/app/v3/api/ai/generations',
+        // Generation history moved to the sdkwork-generations product API.
+        '/app/v3/api/ai/usage/logs',
       ],
     },
   ]) {
@@ -8461,7 +8489,7 @@ test('portal dev scripts run Vite without a Node server entrypoint', () => {
   );
   assert.equal(
     portalPackage.scripts.lint,
-    'tsc -p tsconfig.typecheck.json --noEmit',
+    'node scripts/typecheck-owned-sources.mjs',
     'portal lint must use the portal-only TypeScript project',
   );
   assert.ok(!portalPackage.scripts['_sdkwork:client:browser'].includes('tsx'));
@@ -8469,8 +8497,10 @@ test('portal dev scripts run Vite without a Node server entrypoint', () => {
   assert.ok(portalPackage.scripts.preview.includes('--configLoader native'));
   assert.ok(!JSON.stringify(portalPackage.scripts).includes('server.ts'));
   assert.match(viteConfig, /host:\s*resolvePortalDevHost\(process\.env\)/u);
-  assert.ok(viteConfig.includes('configureServer(server)'));
-  assert.ok(viteConfig.includes("order: 'post'"));
+  // The runtime-env plugin wiring (serve middleware, build asset, HTML
+  // injection) is delegated to the shared spec factory.
+  assert.match(viteConfig, /createBrowserRuntimeEnvVitePlugin\(/u);
+  assert.ok(viteConfig.includes("from '../../../sdkwork-specs/tools/browser-runtime-env-vite.mjs'"));
   assert.ok(viteConfig.includes('type="module" src="${RUNTIME_ENV_SCRIPT_PATH}"'));
   assert.ok(viteConfig.includes('PORTAL_PUBLIC_API_BASE_URL'));
   assert.ok(viteConfig.includes('PORTAL_PUBLIC_OPEN_API_BASE_URL'));

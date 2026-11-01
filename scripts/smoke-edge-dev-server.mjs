@@ -41,7 +41,9 @@ const APP_SURFACE_OPENAPI_CONTRACT = {
   expectedTitle: 'SDKWork Cloud Router App API',
   requiredPaths: [
     '/app/v3/api/ai/routing/account_groups',
-    '/app/v3/api/ai/generations',
+    // Generation history moved to the sdkwork-generations product API, so the
+    // app surface no longer exposes /app/v3/api/ai/generations.
+    '/app/v3/api/ai/usage/logs',
   ],
 };
 

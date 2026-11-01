@@ -261,26 +261,26 @@ export interface CloudRouterGeneratedSdkMetadata {
 export const CLOUDROUTER_APP_SDK_REFERENCE_METADATA: CloudRouterGeneratedSdkMetadata = {
   name: 'SdkworkAppClient',
   packageName: '@sdkwork/cloudrouter-app-sdk',
-  version: '0.1.0',
+  version: '0.1.5',
   sdkType: 'app',
   apiPrefix: APP_API_PREFIX,
   runtimeEnvName: 'VITE_CLOUDROUTER_APP_API_BASE_URL',
   sourceDir: 'sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/src/index.ts',
   archiveLanguage: 'typescript',
-  archiveName: 'sdkwork-cloudrouter-app-sdk-typescript-0.1.0.zip',
+  archiveName: 'sdkwork-cloudrouter-app-sdk-typescript-0.1.5.zip',
   description: 'SDKWork Cloud Router app API SDK',
 };
 
 export const CLOUDROUTER_BACKEND_SDK_REFERENCE_METADATA: CloudRouterGeneratedSdkMetadata = {
   name: 'SdkworkBackendClient',
   packageName: '@sdkwork/cloudrouter-backend-sdk',
-  version: '0.1.0',
+  version: '0.1.6',
   sdkType: 'backend',
   apiPrefix: BACKEND_API_PREFIX,
   runtimeEnvName: 'VITE_CLOUDROUTER_BACKEND_API_BASE_URL',
   sourceDir: 'sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/src/index.ts',
   archiveLanguage: 'typescript',
-  archiveName: 'sdkwork-cloudrouter-backend-sdk-typescript-0.1.0.zip',
+  archiveName: 'sdkwork-cloudrouter-backend-sdk-typescript-0.1.6.zip',
   description: 'SDKWork Cloud Router backend API SDK',
 };
 
@@ -300,13 +300,13 @@ export const MODELS_APP_SDK_REFERENCE_METADATA: CloudRouterGeneratedSdkMetadata 
 export const CLOUDROUTER_AI_SDK_REFERENCE_METADATA: CloudRouterGeneratedSdkMetadata = {
   name: 'SdkworkAiClient',
   packageName: '@sdkwork/cloudrouter-open-sdk',
-  version: '0.1.0',
+  version: '0.1.6',
   sdkType: 'ai',
   apiPrefix: OPEN_API_PREFIX,
   runtimeEnvName: 'VITE_CLOUDROUTER_OPEN_API_BASE_URL',
   sourceDir: 'sdks/cloudrouter-open-sdk/cloudrouter-open-sdk-typescript/src/index.ts',
   archiveLanguage: 'typescript',
-  archiveName: 'sdkwork-cloudrouter-open-sdk-typescript-0.1.0.zip',
+  archiveName: 'sdkwork-cloudrouter-open-sdk-typescript-0.1.6.zip',
   description: 'SDKWork OpenAI-compatible AI API SDK',
 };
 
