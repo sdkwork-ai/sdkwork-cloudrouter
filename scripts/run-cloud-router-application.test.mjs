@@ -7759,7 +7759,7 @@ test('global and application environment contracts document Cloud Router runtime
   const desktopArchitectureSpec = readFileSync(path.join(specsRoot, 'DESKTOP_APP_ARCHITECTURE_SPEC.md'), 'utf8');
   assert.ok(desktopArchitectureSpec.includes('Desktop local user data | SQLite'));
   assert.ok(desktopArchitectureSpec.includes('Explicit service/backend runtime started by desktop development commands | PostgreSQL'));
-  assert.ok(desktopArchitectureSpec.includes('Desktop/Tauri development commands that start the product service runtime'));
+  assert.ok(desktopArchitectureSpec.includes('Desktop development commands that start the product service runtime'));
   assert.ok(desktopArchitectureSpec.includes('must keep product server startup on'));
   const observabilitySpec = readFileSync(path.join(specsRoot, 'OBSERVABILITY_SPEC.md'), 'utf8');
   assert.ok(observabilitySpec.includes('Metric naming:'));
@@ -8452,9 +8452,11 @@ test('portal dev scripts run Vite without a Node server entrypoint', () => {
   );
   assert.match(portalPackage.scripts['_sdkwork:client:browser'], /vite\.js --configLoader native/u);
   assert.equal(portalPackage.scripts.preview, 'vite preview --configLoader native');
+  // The portal typecheck runs the owned-sources runner so the portal-only
+  // TypeScript project stays the single compilation surface.
   assert.equal(
     portalPackage.scripts.typecheck,
-    'tsc -p tsconfig.typecheck.json --noEmit',
+    'node scripts/typecheck-owned-sources.mjs',
     'portal typecheck must use the portal-only TypeScript project',
   );
   assert.equal(
@@ -8491,7 +8493,9 @@ test('portal typecheck project does not compile external appbase or UI source', 
   );
   const runtimeTsconfig = readFileSync(path.join(portalRoot, 'tsconfig.json'), 'utf8');
 
-  assert.equal(portalPackage.scripts.typecheck, 'tsc -p tsconfig.typecheck.json --noEmit');
+  // The typecheck script delegates to the owned-sources runner, which invokes
+  // this portal-only project.
+  assert.equal(portalPackage.scripts.typecheck, 'node scripts/typecheck-owned-sources.mjs');
   assert.deepEqual(typecheckConfig.include, [
     'src/**/*.ts',
     'src/**/*.tsx',
