@@ -170,23 +170,34 @@ test('ensureCloudRouterBrowserDevelopmentEnv writes .env.standalone.development 
       'utf8',
     );
 
+    const homeDir = path.join(tempRoot, 'home');
     const result = ensureCloudRouterBrowserDevelopmentEnv({
       workspaceRoot: tempRoot,
       applicationRoot,
       portalRuntimeEnv: {
         [CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.backendApi]: 'http://127.0.0.1:3900',
       },
+      homeDir,
     });
 
     const written = readFileSync(profileFilePath, 'utf8');
 
     assert.equal(result.profileFilePath, profileFilePath);
     assert.equal(result.mergedEnv.SDKWORK_ACCESS_TOKEN, '');
-    const bootstrapLocal = loadEnvFile(path.join(applicationRoot, '.env.development.bootstrap.local'));
+    const bundle = JSON.parse(
+      readFileSync(
+        path.join(homeDir, '.sdkwork', 'cloudrouter', 'credentials', 'standalone.development.json'),
+        'utf8',
+      ),
+    );
     assert.equal(
-      typeof bootstrapLocal.SDKWORK_ACCESS_TOKEN === 'string'
-        && bootstrapLocal.SDKWORK_ACCESS_TOKEN.startsWith('eyJ'),
+      typeof bundle.accessToken === 'string' && bundle.accessToken.startsWith('eyJ'),
       true,
+    );
+    // The repository tree never receives a credential file.
+    assert.deepEqual(
+      fs.readdirSync(applicationRoot).filter((name) => name.includes('bootstrap.local')),
+      [],
     );
     assert.equal(result.mergedEnv[CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.openApi], 'http://127.0.0.1:3999');
     assert.equal(result.mergedEnv[CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.backendApi], 'http://127.0.0.1:3900');
@@ -419,9 +430,9 @@ test('ensureCloudRouterBrowserProductionEnv omits token state and production boo
     );
     assert.equal(result.profileFilePath, profileFilePath);
     assert.equal(Object.hasOwn(result.mergedEnv, 'SDKWORK_ACCESS_TOKEN'), false);
-    assert.equal(
-      existsSync(path.join(applicationRoot, '.env.production.bootstrap.local')),
-      false,
+    assert.deepEqual(
+      fs.readdirSync(applicationRoot).filter((name) => name.includes('bootstrap.local')),
+      [],
     );
     assert.equal(result.mergedEnv.SDKWORK_CLOUDROUTER_ROUTER_CONFIG_PROFILE, 'prod');
     assert.equal(result.mergedEnv.SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT, 'production');
@@ -676,9 +687,9 @@ test('direct profile CLI rejects unknown profiles before invoking the local sign
 
     assert.notEqual(cliResult.status, 0);
     assert.match(cliResult.stderr, /unsupported profile/u);
-    assert.equal(
-      existsSync(path.join(applicationRoot, '.env.development.bootstrap.local')),
-      false,
+    assert.deepEqual(
+      fs.readdirSync(applicationRoot).filter((name) => name.includes('bootstrap.local')),
+      [],
     );
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });
@@ -704,15 +715,23 @@ test('ensureCloudRouterBrowserDevelopmentEnv refreshes stale bootstrap access to
     'utf8',
   );
 
+  const homeDir = path.join(tempRoot, 'home');
+
   try {
     const result = ensureCloudRouterBrowserDevelopmentEnv({
       workspaceRoot: tempRoot,
       applicationRoot: appRoot,
+      homeDir,
     });
-    const bootstrapLocal = loadEnvFile(path.join(appRoot, '.env.development.bootstrap.local'));
-    assert.notEqual(bootstrapLocal.SDKWORK_ACCESS_TOKEN, staleToken);
-    assert.match(bootstrapLocal.SDKWORK_ACCESS_TOKEN, /^eyJ/u);
-    const encodedPayload = bootstrapLocal.SDKWORK_ACCESS_TOKEN.split('.')[1];
+    const bundle = JSON.parse(
+      readFileSync(
+        path.join(homeDir, '.sdkwork', 'cloudrouter', 'credentials', 'standalone.development.json'),
+        'utf8',
+      ),
+    );
+    assert.notEqual(bundle.accessToken, staleToken);
+    assert.match(bundle.accessToken, /^eyJ/u);
+    const encodedPayload = bundle.accessToken.split('.')[1];
     const payload = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf8'));
     assert.equal(payload.token_version, 1);
     assert.equal(payload.environment, 'development');

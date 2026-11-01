@@ -287,5 +287,8 @@
       "import": "./src/index.ts",
       "default": "./src/index.ts"
     }
+  },
+  "devDependencies": {
+    "@sdkwork/iam-credential-entry": "workspace:*"
   }
 }

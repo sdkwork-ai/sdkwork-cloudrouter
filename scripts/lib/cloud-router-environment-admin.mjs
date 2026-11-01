@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { credentialBundlePath } from '@sdkwork/iam-credential-entry/node-bootstrap';
 
 const SUPPORTED_ENVIRONMENTS = Object.freeze([
   'development',
@@ -74,16 +74,23 @@ export function resolveCloudRouterBootstrapAdminEnvOverrides(environment) {
   };
 }
 
-export function resolveCloudRouterBootstrapEnvPaths({
-  workspaceRoot,
+/**
+ * Credential bundle of one Cloud Router lifecycle.
+ *
+ * `IAM_APPLICATION_BOOTSTRAP_SPEC.md` section 5.4.1 keeps the token in the
+ * user-private store, so no repository env file is named here.
+ * @param options - lifecycle, home directory, and deployment profile.
+ * @returns the absolute bundle path.
+ */
+export function resolveCloudRouterBootstrapCredentialPath({
   environment,
-  portalRelativeDir = path.join('apps', 'sdkwork-cloudrouter-pc'),
+  homeDir,
+  deploymentProfile = 'standalone',
 } = {}) {
   const lifecycle = normalizeCloudRouterLifecycleEnvironment(environment);
-  const configProfile = lifecycle === 'development' ? 'development' : lifecycle;
-  return {
-    repositoryBootstrapEnvPath: path.join(workspaceRoot, `.env.${lifecycle}.bootstrap.local`),
-    portalBootstrapEnvPath: path.join(workspaceRoot, portalRelativeDir, `.env.${configProfile}.bootstrap.local`),
-    sdkworkLocalEnvPath: path.join(workspaceRoot, '.sdkwork.local.env'),
-  };
+  return credentialBundlePath({
+    applicationCode: 'cloudrouter',
+    profileId: `${deploymentProfile}.${lifecycle}`,
+    ...(homeDir ? { homeDir } : {}),
+  });
 }
