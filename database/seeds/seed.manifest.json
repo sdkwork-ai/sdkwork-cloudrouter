@@ -23,7 +23,7 @@
       "required": true,
       "checksum": "sha256:40163c6471b54c68b23d59b8217f97bd0a7a65e828250b191e4361081654742c",
       "files": [
-        "001_localized_names.sql"
+        "locales/zh-CN/001_localized_names.sql"
       ]
     },
     "en-US": {
@@ -31,7 +31,7 @@
       "required": true,
       "checksum": "sha256:bb6e1ddc86ee1c8d550a9f29085c1df0d79a419b36122eb7f6e0c29ac5f89673",
       "files": [
-        "001_localized_names.sql"
+        "locales/en-US/001_localized_names.sql"
       ]
     }
   },
