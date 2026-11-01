@@ -3,6 +3,7 @@ import { createBrowserRuntimeEnvVitePlugin } from '../../../sdkwork-specs/tools/
 import { buildBrowserDevRuntimeEnvDocument } from '../../scripts/lib/cloud-router-browser-env-contract.mjs';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import { createSdkworkCredentialEntryBootstrapVitePlugin } from '../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-credential-entry/src/vite.ts';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, type Plugin } from 'vite';
@@ -58,7 +59,19 @@ export default defineConfig(({ mode }) => ({
   // ADAPTIVE_RENDERER_CACHE_LABEL): the adaptive ingress routes
   // `/node_modules/.vite/<label>/...` back to this renderer.
   cacheDir: path.resolve(__dirname, 'node_modules/.vite', ADAPTIVE_RENDERER_CACHE_LABEL),
-  plugins: [react(), tailwindcss(), cloudrouterRuntimeEnvDocumentPlugin(mode)],
+  plugins: [
+    // The app-auth surface consumes IAM SDK routes, so the private bootstrap
+    // token must reach the module graph through the canonical credential-entry
+    // plugin (IAM_CREDENTIAL_ENTRY_SPEC.md section 6) — never through a
+    // public VITE_* key or a Vite define.
+    createSdkworkCredentialEntryBootstrapVitePlugin({
+      accessToken: process.env.SDKWORK_ACCESS_TOKEN,
+      environment: resolveViteEnvironment(mode, process.env),
+    }),
+    react(),
+    tailwindcss(),
+    cloudrouterRuntimeEnvDocumentPlugin(mode),
+  ],
   build: {
     outDir: resolveBrowserDistOutDir(resolveViteEnvironment(mode), process.env.SDKWORK_DEPLOYMENT_PROFILE),
     emptyOutDir: true,
