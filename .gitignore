@@ -22,6 +22,10 @@ _tmp_*
 !.env.*.example
 # Host profile env files (.env.standalone.development, .env.standalone.production, …) are ignored via .env.*
 
+# Host-local PostgreSQL/Redis profile (connection coordinates and passwords);
+# the tracked template is config/host/postgres.env.example.
+config/host/postgres.env
+
 node_modules/
 dist/
 .vite/
