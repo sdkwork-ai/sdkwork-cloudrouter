@@ -1,9 +1,9 @@
 export const RELEASE_ENVIRONMENT_CONTRACT = Object.freeze({
   version: 5,
-  exampleFile: '.env.release.example',
-  profileFile: '.env.release',
+  exampleFile: '.env.standalone.production.example',
+  profileFile: '.env.standalone.production',
   /** @deprecated use profileFile */
-  localFile: '.env.release',
+  localFile: '.env.standalone.production',
   requiredReleaseEnv: Object.freeze([]),
   requiredPortalPublicEnv: Object.freeze([
     'PORTAL_PUBLIC_API_BASE_URL',

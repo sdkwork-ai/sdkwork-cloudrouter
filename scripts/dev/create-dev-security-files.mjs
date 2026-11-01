@@ -3,7 +3,7 @@
 // gateway requires at startup (upstream credential key ring + internal gateway
 // signing secret). The retired start-workspace orchestrator created these
 // automatically on every dev plan; the sdkwork-app lifecycle merges them from
-// `.env.postgres` instead, so fresh machines create the files once with:
+// `config/host/postgres.env` instead, so fresh machines create the files once with:
 //   node scripts/dev/create-dev-security-files.mjs
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';

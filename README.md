@@ -404,7 +404,7 @@ Command intent:
   `apps/sdkwork-cloudrouter-pc/dist` through the single canonical Rust
   standalone gateway process, using the release binary when it exists.
 - `pnpm release` validates the release environment, regenerates
-  `.env.release` from the release host process environment, runs strict
+  `.env.standalone.production` from the release host process environment, runs strict
   `release:preflight`, and then runs the full `verify` gate.
 - `pnpm dev:desktop` is the canonical standalone desktop client entrypoint.
 - `pnpm dev:server` is an alias of `pnpm dev`.
@@ -725,15 +725,15 @@ packaging a commercial release.
 Use strict mode on CI, staging, or release packaging hosts:
 
 ```powershell
-pnpm.cmd release:preflight -- --strict --env-file .env.release --strict-root-clean
+pnpm.cmd release:preflight -- --strict --env-file .env.standalone.production --strict-root-clean
 ```
 
 ## Release Environment Contract
 
 Release and staging hosts must satisfy the executable environment contract in
 `scripts/release-environment-contract.mjs`. The checked-in template is
-`.env.release.example`; use it as a reviewable reference for release variable
-names and example value shapes. Generate `.env.release` on the release
+`.env.standalone.production.example`; use it as a reviewable reference for release variable
+names and example value shapes. Generate `.env.standalone.production` on the release
 host from the host process environment, and never commit the local file.
 
 Required release verification variable:
@@ -764,15 +764,15 @@ Run strict preflight against the local release env file before packaging:
 ```powershell
 pnpm.cmd release:env:write -- --check
 pnpm.cmd release:env:write
-pnpm.cmd release:preflight -- --strict --env-file .env.release --strict-root-clean
+pnpm.cmd release:preflight -- --strict --env-file .env.standalone.production --strict-root-clean
 ```
 
 `PORTAL_PUBLIC_*` values are intentionally visible to the browser through
 `/runtime-env.js`; do not place secrets in them. The Postgres URL is used only
 for release verification and Postgres contract tests.
 `pnpm release:env:write` reads the contract variables from the release
-host process environment, refuses to overwrite `.env.release` unless
-`--force` is passed, refuses to write the checked-in `.env.release.example`
+host process environment, refuses to overwrite `.env.standalone.production` unless
+`--force` is passed, refuses to write the checked-in `.env.standalone.production.example`
 template, and prints only a safe summary without variable values.
 
 `--strict` upgrades missing release environment variables to failures.
@@ -816,7 +816,7 @@ declares:
   `cloudrouterctl.exe`
 - `portal/dist` production assets
 - `portal/dist/sdk-archives` generated SDK ZIP artifacts
-- `.env.release.example` as a reference template only
+- `.env.standalone.production.example` as a reference template only
 - `config/config.toml.example` as the runtime configuration
   template
 - an `install-manifest.json`
@@ -1090,8 +1090,8 @@ platform supports them. Health and readiness checks are always `/healthz` and
 `/readyz`.
 
 Security defaults are part of the matrix: packages must not include secrets,
-must not include `.env.release`, must generate local env files on the
-install or release host, must treat `.env.release.example` as reference-only,
+must not include `.env.standalone.production`, must generate local env files on the
+install or release host, must treat `.env.standalone.production.example` as reference-only,
 and must keep trusted forwarded headers disabled by default. Enable forwarded
 header trust only when a controlled reverse proxy is the sole inbound client.
 
@@ -1119,7 +1119,7 @@ entrypoint (`container/entrypoint` on Linux/macOS,
 `container/entrypoint.ps1` on Windows), and `container/metadata.json` without
 starting services. Desktop packages generate `desktop/metadata.json` with the
 desktop SQLite policy and OS config/data directories. The builder excludes
-`.env.release` even if it exists in the staging directory. Add `--json`
+`.env.standalone.production` even if it exists in the staging directory. Add `--json`
 for pure machine-readable output.
 
 `service` and `desktop` release assets must be final platform installers, not
@@ -1176,7 +1176,7 @@ runtime config and local SQLite data under `~/.sdkwork/router`.
 `scripts/smoke-install-package-init.mjs` validates the fast initialization
 contract separately from service startup. The default root command is a dry-run
 smoke that creates a temporary install root, writes a safe
-`.env.release`, writes a temporary `config.toml`, verifies
+`.env.standalone.production`, writes a temporary `config.toml`, verifies
 that server package dry-runs use PostgreSQL while desktop package dry-runs use
 a file-backed SQLite URL, verifies `cloudrouterctl ensure` plus
 `cloudrouterctl refresh-catalog --force` are the only installer
@@ -1460,7 +1460,7 @@ evidence defined by
 
 1. On CI or a release host, run `pnpm release`. The root release script
    runs `pnpm release:env:write -- --check`, regenerates
-   `.env.release` with `--force`, runs strict release preflight, and then
+   `.env.standalone.production` with `--force`, runs strict release preflight, and then
    runs `pnpm verify`.
 2. For local handoff without real release secrets, run
    `pnpm release:preflight` and `pnpm verify:fast`.

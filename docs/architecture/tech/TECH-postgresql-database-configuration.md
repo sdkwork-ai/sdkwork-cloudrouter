@@ -11,12 +11,12 @@ SDKWork Cloud Router supports two PostgreSQL configuration paths:
 
 - Integrated and explicit product server development: `pnpm dev`
   (aliases `pnpm dev`, `pnpm dev:server`) and `pnpm dev:server:postgres` use the
-  local PostgreSQL profile from `.env.postgres` when present, otherwise
-  `.env.postgres.example` for the Cloud Router backend service runtime. SQLite
+  local PostgreSQL profile from `config/host/postgres.env` when present, otherwise
+  `config/host/postgres.env.example` for the Cloud Router backend service runtime. SQLite
   is not a product server profile. Gateway-backed client commands
   (`pnpm dev:desktop`, `pnpm dev:desktop`, and `pnpm dev:desktop`) do
   not start the product backend service.
-- Production environment: do not use `.env.postgres`. Use the protected runtime TOML file, process override file, and secret files from the OS-specific release layout.
+- Production environment: do not use `config/host/postgres.env`. Use the protected runtime TOML file, process override file, and secret files from the OS-specific release layout.
 
 The development profile intentionally uses split fields instead of a full
 connection URL so every application in the SDKWork app stack has the same
@@ -61,4 +61,4 @@ Configuration precedence in development:
 3. Default local PostgreSQL dev database
 4. Explicit SQLite entrypoints, which pass `--database-url sqlite://target/dev/cloudrouter.sqlite`
 
-Use the default local PostgreSQL profile for normal development, and use split fields for customized `.env.postgres` files. Use `SDKWORK_DATABASE_URL` only as an explicit temporary override.
+Use the default local PostgreSQL profile for normal development, and use split fields for customized `config/host/postgres.env` files. Use `SDKWORK_DATABASE_URL` only as an explicit temporary override.

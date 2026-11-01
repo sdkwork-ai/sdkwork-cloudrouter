@@ -338,7 +338,7 @@ function createBuildPlan(settings, root = workspaceRoot) {
       },
       {
         label: 'release env template',
-        path: path.join(root, '.env.release.example'),
+        path: path.join(root, '.env.standalone.production.example'),
       },
       {
         label: 'cloud router root database module',
@@ -361,7 +361,7 @@ function createBuildPlan(settings, root = workspaceRoot) {
       { archivePath: names.installerArchive, sourcePath: path.join(root, names.installerSource) },
       { archivePath: 'portal/dist', sourcePath: path.join(portalDistRoot, 'prod') },
       { archivePath: 'portal/dist/sdk-archives', sourcePath: path.join(root, 'apps', 'sdkwork-cloudrouter-pc', 'dist', 'sdk-archives') },
-      { archivePath: '.env.release.example', sourcePath: path.join(root, '.env.release.example') },
+      { archivePath: '.env.standalone.production.example', sourcePath: path.join(root, '.env.standalone.production.example') },
     ],
     // Installed alongside the unpacked container package into the docker build
     // context (the install package builder only archives declared artifacts,

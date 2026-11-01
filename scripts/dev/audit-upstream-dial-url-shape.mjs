@@ -312,7 +312,7 @@ for (const f of collectVendorFiles(modelsDir)) {
 // Live DB side (via WSL psql, mirroring audit-model-route-reachability.mjs)
 // ---------------------------------------------------------------------------
 function readDevDsn() {
-  const envFile = path.join(repoRoot, '.env.postgres');
+  const envFile = path.join(repoRoot, 'config/host/postgres.env');
   if (fs.existsSync(envFile)) {
     const env = {};
     for (const line of fs.readFileSync(envFile, 'utf8').split('\n')) {

@@ -1,6 +1,6 @@
 //! One-shot dev repair for pricing migration history after splitting 0002.
 //!
-//! Run from the repository root with `.env.postgres` loaded:
+//! Run from the repository root with `config/host/postgres.env` loaded:
 //! `cargo run -p sdkwork-cloudrouter-database-host --example repair-pricing_migration_history`
 
 use std::path::{Path, PathBuf};
@@ -11,7 +11,7 @@ use sha2::{Digest, Sha256};
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-    let _ = dotenvy::from_filename(".env.postgres");
+    let _ = dotenvy::from_filename("config/host/postgres.env");
     let config = DatabaseConfig::from_env("CLOUD_ROUTER")
         .map_err(|error| format!("read database config failed: {error}"))?;
     if config.engine != DatabaseEngine::Postgres {

@@ -131,14 +131,14 @@ pnpm start -- --init-config-only --deployment-mode server
 pnpm start -- --init-config-only --deployment-mode desktop
 ```
 
-源码或 CI release host 可以从受保护的进程环境生成 `.env.release`：
+源码或 CI release host 可以从受保护的进程环境生成 `.env.standalone.production`：
 
 ```powershell
 pnpm release:env:write -- --check
 pnpm release:env:write -- --force
 ```
 
-该命令只适用于源码工作区。正式 release 包解压到目标机器后，不要求安装 `pnpm` 或源码脚本；目标机器应复制 `.env.release.example`、写入受保护环境变量，或使用运行时 TOML。
+该命令只适用于源码工作区。正式 release 包解压到目标机器后，不要求安装 `pnpm` 或源码脚本；目标机器应复制 `.env.standalone.production.example`、写入受保护环境变量，或使用运行时 TOML。
 
 server 模式指定 PostgreSQL：
 
@@ -169,7 +169,7 @@ pnpm install:packages:check
 pnpm build
 ```
 
-构建安装包需要一个 staging 目录，目录中应包含 release 二进制、portal dist、SDK archives 和 `.env.release.example`。构建命令：
+构建安装包需要一个 staging 目录，目录中应包含 release 二进制、portal dist、SDK archives 和 `.env.standalone.production.example`。构建命令：
 
 ```powershell
 pnpm install:package:build -- --package-id windows-x64-archive --staging-root dist\install-package-staging --output-dir dist\install-packages
@@ -232,7 +232,7 @@ pnpm verify
 release 主机：
 
 ```powershell
-pnpm release:preflight -- --strict --env-file .env.release --strict-root-clean
+pnpm release:preflight -- --strict --env-file .env.standalone.production --strict-root-clean
 ```
 
 Docker PostgreSQL 集成测试：

@@ -34,25 +34,25 @@ CREATE DATABASE sdkwork_ai_dev OWNER sdkwork_ai_dev;
 GRANT ALL PRIVILEGES ON DATABASE sdkwork_ai_dev TO sdkwork_ai_dev;
 ```
 
-For an existing database, make sure the host, port, database name, username, and password match the default local profile or your local `.env.postgres` file.
+For an existing database, make sure the host, port, database name, username, and password match the default local profile or your local `config/host/postgres.env` file.
 
-## 2. Optional .env.postgres Override
+## 2. Optional config/host/postgres.env Override
 
-`pnpm dev:server` reads `.env.postgres` for the local PostgreSQL profile. If
+`pnpm dev:server` reads `config/host/postgres.env` for the local PostgreSQL profile. If
 the file is missing or you need to customize the PostgreSQL fields, copy the
 checked-in template:
 
 ```powershell
-Copy-Item .env.postgres.example .env.postgres
+Copy-Item config/host/postgres.env.example config/host/postgres.env
 ```
 
 On Linux or macOS:
 
 ```bash
-cp .env.postgres.example .env.postgres
+cp config/host/postgres.env.example config/host/postgres.env
 ```
 
-Edit `.env.postgres`:
+Edit `config/host/postgres.env`:
 
 ```env
 SDKWORK_DATABASE_ENGINE=postgresql
@@ -66,7 +66,7 @@ SDKWORK_DATABASE_SSL_MODE=disable
 SDKWORK_DATABASE_MAX_CONNECTIONS=10
 ```
 
-Do not commit `.env.postgres`. The repository only tracks `.env.postgres.example`.
+Do not commit `config/host/postgres.env`. The repository only tracks `config/host/postgres.env.example`.
 
 ## 3. Start With PostgreSQL
 
@@ -113,7 +113,7 @@ SDKWORK_DATABASE_URL=postgresql://sdkwork_ai_dev:sdkworkdev123@127.0.0.1:5432/sd
 and passes the URL plus `SDKWORK_DATABASE_MAX_CONNECTIONS` to the explicit
 product server installer, catalog refresh, gateway, and edge runtime steps.
 
-`pnpm dev:server` loads `.env.postgres`. These PostgreSQL scripts resolve to
+`pnpm dev:server` loads `config/host/postgres.env`. These PostgreSQL scripts resolve to
 the same product server profile:
 
 ```powershell
@@ -148,7 +148,7 @@ Unsupported engines fail startup. A PostgreSQL split-field profile must define `
 If product server startup shows SQLite in the dry-run output, remove the
 SQLite database override; product server development is PostgreSQL-only.
 
-If startup fails with a missing password error, add `SDKWORK_DATABASE_PASSWORD` to `.env.postgres`. Empty passwords are not accepted for the split-field PostgreSQL profile.
+If startup fails with a missing password error, add `SDKWORK_DATABASE_PASSWORD` to `config/host/postgres.env`. Empty passwords are not accepted for the split-field PostgreSQL profile.
 
 If PostgreSQL rejects the connection, verify it manually:
 

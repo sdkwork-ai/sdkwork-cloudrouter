@@ -120,23 +120,23 @@ Production `pnpm.cmd start` supports the same edge bind and upstream controls af
 pnpm.cmd start -- --server-bind 0.0.0.0:12900 --gateway-forward-url http://gateway.internal:18080 --backend-api-forward-url http://admin.internal:18081 --app-api-forward-url http://app.internal:18082
 ```
 
-In server mode, browser SDK bases default to one same-origin public SDK root, so remote browsers never receive local loopback addresses. Configure these on the **release host** (`.env.release`) as `PORTAL_PUBLIC_*`; the edge server maps them to browser `VITE_*` through `/runtime-env.js`:
+In server mode, browser SDK bases default to one same-origin public SDK root, so remote browsers never receive local loopback addresses. Configure these on the **release host** (`.env.standalone.production`) as `PORTAL_PUBLIC_*`; the edge server maps them to browser `VITE_*` through `/runtime-env.js`:
 
 - `PORTAL_PUBLIC_SDK_BASE_URL=/`
 - Derived open/API reference URL: `/v1`
 - Derived app SDK URL: `/app/v3/api`
 - Derived backend SDK URL: `/backend/v3/api`
 
-For **local Vite development**, use `.env.development` instead:
+For **local Vite development**, use `.env.standalone.development` instead:
 
 - `VITE_CLOUDROUTER_*` and `VITE_API_BASE_URL` for browser-visible SDK paths
 - `SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_*_ORIGIN` for private dev-server proxy upstreams
-- Do not put `PORTAL_PUBLIC_*` or legacy `PORTAL_DEV_PROXY_*` in `.env.development`
+- Do not put `PORTAL_PUBLIC_*` or legacy `PORTAL_DEV_PROXY_*` in `.env.standalone.development`
 
 The direct `3901` Vite dev server proxies same-origin API paths to the active topology surface URL, so generated SDK base URLs remain independent of the remote host implementation.
 Per-surface release overrides remain available through `PORTAL_PUBLIC_API_BASE_URL`, `PORTAL_PUBLIC_OPEN_API_BASE_URL`, `PORTAL_PUBLIC_APP_API_BASE_URL`, and `PORTAL_PUBLIC_BACKEND_API_BASE_URL` on the release host for split deployments.
 
-Private edge-server settings (CSP, tool API rate limits, SDK archive fallback) belong in `.env.release` as `SDKWORK_CLOUDROUTER_EDGE_*` and `SDKWORK_CLOUDROUTER_TOOL_API_*`. See `.env.release.example` and `specs/application-env-standard.md`.
+Private edge-server settings (CSP, tool API rate limits, SDK archive fallback) belong in `.env.standalone.production` as `SDKWORK_CLOUDROUTER_EDGE_*` and `SDKWORK_CLOUDROUTER_TOOL_API_*`. See `.env.standalone.production.example` and `specs/application-env-standard.md`.
 
 Bind overrides use separate names for the public edge entrypoint and the direct portal dev server:
 

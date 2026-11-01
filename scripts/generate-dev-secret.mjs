@@ -22,7 +22,7 @@ Options:
 Examples:
   node scripts/generate-dev-secret.mjs
   node scripts/generate-dev-secret.mjs --bytes 48 --encoding hex
-  node scripts/generate-dev-secret.mjs --output .env.postgres.local.secret
+  node scripts/generate-dev-secret.mjs --output config/host/postgres.env.local.secret
 `);
 }
 

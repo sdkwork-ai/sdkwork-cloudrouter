@@ -302,7 +302,7 @@ test('root package exposes pnpm application entrypoints', () => {
   );
   assert.equal(
     rootPackage.scripts.release,
-    'pnpm downloads:check && pnpm release:env:write -- --check && pnpm release:env:write -- --force && pnpm release:preflight -- --strict --env-file .env.release --strict-root-clean && pnpm verify',
+    'pnpm downloads:check && pnpm release:env:write -- --check && pnpm release:env:write -- --force && pnpm release:preflight -- --strict --env-file .env.standalone.production --strict-root-clean && pnpm verify',
   );
   assert.equal(
     rootPackage.scripts['downloads:update'],
@@ -314,7 +314,7 @@ test('root package exposes pnpm application entrypoints', () => {
   );
   assert.equal(
     rootPackage.scripts['admin:reset:dev'],
-    'node scripts/reset-admin-account.mjs --mode dev --environment development --dev-env-file .env.postgres',
+    'node scripts/reset-admin-account.mjs --mode dev --environment development --dev-env-file config/host/postgres.env',
   );
   assert.equal(rootPackage.scripts['admin:reset:dev:sqlite'], undefined);
   assert.equal(rootPackage.scripts['admin:reset:dev:postgres'], undefined);
@@ -332,7 +332,7 @@ test('root package exposes pnpm application entrypoints', () => {
   );
   assert.equal(
     rootPackage.scripts['admin:token:dev'],
-    'node scripts/reset-bootstrap-access-token.mjs --mode dev --environment development --dev-env-file .env.postgres',
+    'node scripts/reset-bootstrap-access-token.mjs --mode dev --environment development --dev-env-file config/host/postgres.env',
   );
   assert.equal(
     rootPackage.scripts['admin:token:test'],
@@ -1351,7 +1351,7 @@ test('installation documentation covers release, source, initialization, usage, 
   assert.ok(postgresqlDevelopment.includes('pnpm dev'));
   assert.ok(postgresqlDevelopment.includes('pnpm dev:server'));
   assert.ok(postgresqlDevelopment.includes('pnpm dev:desktop'));
-  assert.ok(postgresqlDevelopment.includes('Copy-Item .env.postgres.example .env.postgres'));
+  assert.ok(postgresqlDevelopment.includes('Copy-Item config/host/postgres.env.example config/host/postgres.env'));
   assert.ok(postgresqlDevelopment.includes('SDKWORK_DATABASE_ENGINE=postgresql'));
   assert.ok(!postgresqlDevelopment.includes('SDKWORK_DATABASE_PROVIDER=postgresql'));
   assert.ok(postgresqlDevelopment.includes('pnpm dev:server:postgres'));
@@ -1388,15 +1388,15 @@ test('root release entrypoint regenerates the release env before strict prefligh
   const downloadsCheckIndex = releaseScript.indexOf('pnpm downloads:check');
   const envCheckIndex = releaseScript.indexOf('pnpm release:env:write -- --check');
   const envWriteIndex = releaseScript.indexOf('pnpm release:env:write -- --force');
-  const preflightIndex = releaseScript.indexOf('pnpm release:preflight -- --strict --env-file .env.release --strict-root-clean');
+  const preflightIndex = releaseScript.indexOf('pnpm release:preflight -- --strict --env-file .env.standalone.production --strict-root-clean');
   const verifyIndex = releaseScript.indexOf('pnpm verify');
 
   assert.ok(downloadsCheckIndex >= 0, 'release must validate checked-in download JSON before release preflight');
   assert.ok(envCheckIndex > downloadsCheckIndex, 'release must validate download JSON before release env');
-  assert.ok(envWriteIndex > envCheckIndex, 'release must write .env.release after check');
+  assert.ok(envWriteIndex > envCheckIndex, 'release must write .env.standalone.production after check');
   assert.ok(preflightIndex > envWriteIndex, 'release must run strict preflight after env write');
   assert.ok(verifyIndex > preflightIndex, 'release must run verify after strict preflight');
-  assert.ok(!releaseScript.includes('.env.release.example'), 'release must not write or consume the checked-in example template');
+  assert.ok(!releaseScript.includes('.env.standalone.production.example'), 'release must not write or consume the checked-in example template');
 });
 
 test('download catalog generator derives homepage JSON from release version and package matrix', async () => {
@@ -1755,14 +1755,14 @@ test('cloud router application launcher parses dev env file before forwarded wor
   const parsed = module.parseCloudRouterProductArgs([
     'server',
     '--dev-env-file',
-    '.env.postgres',
+    'config/host/postgres.env',
     '--',
     '--gateway-bind',
     '0.0.0.0:19080',
   ]);
 
   assert.equal(parsed.mode, 'server');
-  assert.equal(parsed.devEnvFile, '.env.postgres');
+  assert.equal(parsed.devEnvFile, 'config/host/postgres.env');
   assert.deepEqual(parsed.extraArgs, ['--gateway-bind', '0.0.0.0:19080']);
 });
 
@@ -1964,7 +1964,7 @@ test('cloud router dev database env helper enforces workspace identity and secre
 });
 
 test('cloud router dev postgres env example documents split database fields', () => {
-  const envExamplePath = path.join(workspaceRoot, '.env.postgres.example');
+  const envExamplePath = path.join(workspaceRoot, 'config/host/postgres.env.example');
   const ignored = readFileSync(path.join(workspaceRoot, '.gitignore'), 'utf8');
   const ignoredLines = new Set(ignored.split(/\r?\n/u));
   const envExample = readFileSync(envExamplePath, 'utf8');
@@ -1973,7 +1973,7 @@ test('cloud router dev postgres env example documents split database fields', ()
   assert.ok(ignoredLines.has('.env'));
   assert.ok(ignoredLines.has('.env.*'));
   assert.ok(ignoredLines.has('!.env.*.example'));
-  assert.ok(!ignoredLines.has('!.env.postgres'));
+  assert.ok(!ignoredLines.has('!config/host/postgres.env'));
   for (const requiredName of [
     'SDKWORK_DATABASE_ENGINE=postgresql',
     'SDKWORK_DATABASE_HOST=127.0.0.1',
@@ -1994,7 +1994,7 @@ test('cloud router dev postgres env example documents split database fields', ()
   ]) {
     assert.ok(
       envExample.includes(requiredName),
-      `.env.postgres.example must document ${requiredName}`,
+      `config/host/postgres.env.example must document ${requiredName}`,
     );
   }
   assert.ok(envExample.includes(
@@ -2054,7 +2054,7 @@ test('cloud router application launcher loads default PostgreSQL dev profile fro
   seedMinimalCloudRouterWorkspaceFixture(fixtureRoot);
   writeFixtureFile(
     fixtureRoot,
-    '.env.postgres.example',
+    'config/host/postgres.env.example',
     [
       'SDKWORK_DATABASE_ENGINE=postgresql',
       'SDKWORK_DATABASE_HOST=[::1]',
@@ -2096,7 +2096,7 @@ test('cloud router application launcher loads default PostgreSQL dev profile fro
 
   writeFixtureFile(
     fixtureRoot,
-    '.env.postgres',
+    'config/host/postgres.env',
     [
       'SDKWORK_DATABASE_ENGINE=postgresql',
       'SDKWORK_DATABASE_HOST=[::1]',
@@ -2136,7 +2136,7 @@ test('cloud router application launcher reinstalls portal dependencies when comm
   seedMinimalCloudRouterWorkspaceFixture(fixtureRoot);
   writeFixtureFile(
     fixtureRoot,
-    '.env.postgres.example',
+    'config/host/postgres.env.example',
     [
       'SDKWORK_DATABASE_ENGINE=postgresql',
       'SDKWORK_DATABASE_HOST=[::1]',
@@ -2958,7 +2958,7 @@ test('admin reset wrapper maps postgres dev mode through the configured env file
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'reset-admin-account.mjs')).href
   );
   const fixtureRoot = path.join(workspaceRoot, 'target', 'admin-reset-config-tests', `postgres-dev-${Date.now()}`);
-  const envFile = path.join(fixtureRoot, '.env.postgres');
+  const envFile = path.join(fixtureRoot, 'config/host/postgres.env');
   rmSync(fixtureRoot, { recursive: true, force: true });
   mkdirSync(fixtureRoot, { recursive: true });
   writeFileSync(
@@ -3016,14 +3016,14 @@ test('admin reset wrapper accepts pnpm argument separator before script options'
     '--mode',
     'dev',
     '--dev-env-file',
-    '.env.postgres',
+    'config/host/postgres.env',
     '--',
     '--password',
     'Admin-Separator-Reset-Password-2026!',
   ]);
 
   assert.equal(settings.mode, 'dev');
-  assert.equal(settings.devEnvFile, '.env.postgres');
+  assert.equal(settings.devEnvFile, 'config/host/postgres.env');
   assert.equal(settings.password, 'Admin-Separator-Reset-Password-2026!');
 });
 
@@ -3103,7 +3103,7 @@ test('bootstrap token wrapper maps dev mode through postgres env and installer i
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'reset-bootstrap-access-token.mjs')).href
   );
   const fixtureRoot = path.join(workspaceRoot, 'target', 'admin-token-config-tests', `postgres-dev-${Date.now()}`);
-  const envFile = path.join(fixtureRoot, '.env.postgres');
+  const envFile = path.join(fixtureRoot, 'config/host/postgres.env');
   rmSync(fixtureRoot, { recursive: true, force: true });
   mkdirSync(fixtureRoot, { recursive: true });
   writeFileSync(
@@ -4387,9 +4387,9 @@ test('install package planner covers platforms, architectures, modes, fast init,
     artifact.kind === 'sdk-archives' && artifact.path === 'portal/dist/sdk-archives'
   ));
   assert.ok(windowsService.artifacts.some((artifact) =>
-    artifact.kind === 'env-template' && artifact.path === '.env.release.example'
+    artifact.kind === 'env-template' && artifact.path === '.env.standalone.production.example'
   ));
-  assert.ok(!windowsService.artifacts.some((artifact) => artifact.path === '.env.release'));
+  assert.ok(!windowsService.artifacts.some((artifact) => artifact.path === '.env.standalone.production'));
   assert.equal(windowsService.initCommands.length, 2);
   assert.ok(!windowsService.initCommands.some((command) => command.includes('pnpm')));
   assert.ok(windowsService.initCommands.includes('.\\bin\\cloudrouterctl.exe ensure'));
@@ -4529,7 +4529,7 @@ test('install package planner covers platforms, architectures, modes, fast init,
   assert.ok(rendered.includes('macos-arm64-desktop'));
   assert.ok(rendered.includes('database=sqlite'));
   assert.ok(!rendered.includes('secret'));
-  assert.ok(!rendered.includes('.env.release'));
+  assert.ok(!rendered.includes('.env.standalone.production'));
 });
 
 test('install package archive builder creates manifest-backed archives without local release secrets', async () => {
@@ -4581,8 +4581,8 @@ test('install package archive builder creates manifest-backed archives without l
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouterctl.exe'), 'installer-binary');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
-  writeFileSync(path.join(stagingRoot, '.env.release.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
-  writeFileSync(path.join(stagingRoot, '.env.release'), 'SDKWORK_DATABASE_URL=postgres://secret\n');
+  writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
+  writeFileSync(path.join(stagingRoot, '.env.standalone.production'), 'SDKWORK_DATABASE_URL=postgres://secret\n');
 
   try {
     const buildPlan = module.createInstallPackageBuildPlan({
@@ -4595,11 +4595,11 @@ test('install package archive builder creates manifest-backed archives without l
     assert.equal(buildPlan.archivePath, path.join(outputDir, 'cloudrouter-windows-x64-archive-0.1.0.zip'));
     assert.ok(buildPlan.entries.some((entry) => entry.archivePath === 'bin/cloudrouter.exe'));
     assert.ok(buildPlan.entries.some((entry) => entry.archivePath === 'portal/dist/index.html'));
-    assert.ok(buildPlan.entries.some((entry) => entry.archivePath === '.env.release.example'));
+    assert.ok(buildPlan.entries.some((entry) => entry.archivePath === '.env.standalone.production.example'));
     assert.ok(buildPlan.entries.some((entry) => entry.archivePath === 'config/config.toml.example'));
     assert.ok(buildPlan.entries.some((entry) => entry.archivePath === 'INSTALL.md'));
     assert.ok(buildPlan.entries.some((entry) => entry.archivePath === 'install-manifest.json'));
-    assert.ok(!buildPlan.entries.some((entry) => entry.archivePath === '.env.release'));
+    assert.ok(!buildPlan.entries.some((entry) => entry.archivePath === '.env.standalone.production'));
     assert.deepEqual(module.validateInstallPackageBuildPlan(buildPlan), []);
 
     const result = await module.buildInstallPackageArchive(buildPlan);
@@ -4665,7 +4665,7 @@ test('install package archive builder creates manifest-backed archives without l
       artifact.path === 'INSTALL.md'
     ), true);
     assert.equal(result.manifest.security.noSecretsInPackage, true);
-    assert.equal(result.manifest.artifacts.some((artifact) => artifact.path === '.env.release'), false);
+    assert.equal(result.manifest.artifacts.some((artifact) => artifact.path === '.env.standalone.production'), false);
     assert.ok(result.archive.size > 0);
     assert.match(result.archive.sha256, /^[a-f0-9]{64}$/u);
     assert.ok(existsSync(result.archivePath));
@@ -4765,7 +4765,7 @@ test('install package builder emits service and container deployment packages fr
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouterctl'), 'installer-binary');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
-  writeFileSync(path.join(stagingRoot, '.env.release.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
+  writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
 
   try {
     const servicePlan = module.createInstallPackageBuildPlan({
@@ -4917,7 +4917,7 @@ test('install package builder emits service and container deployment packages fr
     assert.ok(serviceInstallGuide.includes('sudo editor /etc/sdkwork/database/database.secret'));
     assert.ok(serviceInstallGuide.includes('sudo systemctl start cloudrouter'));
     assert.ok(serviceInstallGuide.includes('sudo journalctl -u cloudrouter -f'));
-    assert.ok(!serviceInstallGuide.includes('.env.release must be packaged'));
+    assert.ok(!serviceInstallGuide.includes('.env.standalone.production must be packaged'));
     assert.equal(
       serviceResult.manifest.generatedArtifacts.some((artifact) =>
         artifact.path === 'service/linux/cloudrouter.service'
@@ -5014,7 +5014,7 @@ test('install package builder emits service and container deployment packages fr
     writeFileSync(path.join(windowsStagingRoot, 'bin', 'cloudrouterctl.exe'), 'installer-binary');
     writeFileSync(path.join(windowsStagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
     writeFileSync(path.join(windowsStagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
-    writeFileSync(path.join(windowsStagingRoot, '.env.release.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
+    writeFileSync(path.join(windowsStagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
     const windowsContainerPlan = module.createInstallPackageBuildPlan({
       packageId: 'windows-x64-container',
       stagingRoot: windowsStagingRoot,
@@ -5129,7 +5129,7 @@ test('macOS service packages run initialization through a launchd runner', async
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouterctl'), 'installer-binary');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
-  writeFileSync(path.join(stagingRoot, '.env.release.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
+  writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
 
   try {
     const servicePlan = module.createInstallPackageBuildPlan({
@@ -5178,7 +5178,7 @@ test('install package archive builder emits tar.gz bytes for non-Windows package
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouterctl'), 'installer-binary');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
-  writeFileSync(path.join(stagingRoot, '.env.release.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
+  writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
 
   try {
     const buildPlan = module.createInstallPackageBuildPlan({
@@ -5231,7 +5231,7 @@ test('native installer builder emits apt-installable Debian packages for Linux s
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouterctl'), 'installer-binary');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
-  writeFileSync(path.join(stagingRoot, '.env.release.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
+  writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
 
   try {
     const plan = module.createNativeInstallerBuildPlan({
@@ -5264,7 +5264,7 @@ test('native installer builder emits apt-installable Debian packages for Linux s
     assert.equal(result.manifest.nativeInstall.files.passwordFile, '/etc/sdkwork/database/database.secret');
     assert.equal(result.manifest.nativeInstall.files.redisPasswordFile, '/etc/sdkwork/router/redis.secret');
     assert.equal(result.manifest.nativeInstall.files.installManifest, '/usr/share/sdkwork/router/install-manifest.json');
-    assert.equal(result.manifest.nativeInstall.files.releaseEnvTemplate, '/etc/sdkwork/router/.env.release.example');
+    assert.equal(result.manifest.nativeInstall.files.releaseEnvTemplate, '/etc/sdkwork/router/.env.standalone.production.example');
     assert.equal(result.manifest.nativeInstall.service.manager, 'systemd');
     assert.equal(result.manifest.nativeInstall.service.name, 'cloudrouter.service');
     assert.equal(result.manifest.nativeInstall.service.enabledOnInstall, true);
@@ -5300,7 +5300,7 @@ test('native installer builder emits apt-installable Debian packages for Linux s
       && item.mode === '0640'
     ));
     assert.ok(result.manifest.nativeInstall.permissions.some((item) =>
-      item.path === '/etc/sdkwork/router/.env.release.example'
+      item.path === '/etc/sdkwork/router/.env.standalone.production.example'
       && item.owner === 'root'
       && item.group === 'sdkwork'
       && item.mode === '0640'
@@ -5340,8 +5340,8 @@ test('native installer builder emits apt-installable Debian packages for Linux s
     assert.ok(postinstText.includes('chmod 0750 /etc/sdkwork/router'));
     assert.ok(postinstText.includes('chown root:sdkwork /etc/sdkwork/router/config.toml.example'));
     assert.ok(postinstText.includes('chmod 0640 /etc/sdkwork/router/config.toml.example'));
-    assert.ok(postinstText.includes('chown root:sdkwork /etc/sdkwork/router/.env.release.example'));
-    assert.ok(postinstText.includes('chmod 0640 /etc/sdkwork/router/.env.release.example'));
+    assert.ok(postinstText.includes('chown root:sdkwork /etc/sdkwork/router/.env.standalone.production.example'));
+    assert.ok(postinstText.includes('chmod 0640 /etc/sdkwork/router/.env.standalone.production.example'));
     assert.ok(postinstText.includes('SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE=server'));
     assert.ok(postinstText.includes('CloudRouter installation summary'));
     assert.ok(postinstText.includes('Runtime TOML: /etc/sdkwork/router/config.toml'));
@@ -5364,7 +5364,7 @@ test('native installer builder emits apt-installable Debian packages for Linux s
     assert.equal(dataEntries.get('./usr/lib/sdkwork/router/bin')?.type, 'directory');
     assert.equal(dataEntries.get('./etc/sdkwork/router')?.type, 'directory');
     assert.ok(!dataEntryNames.some((entry) => entry.startsWith('./opt/sdkwork/router')));
-    assertTarParentBeforeChild(dataEntryNames, './etc/sdkwork/router', './etc/sdkwork/router/.env.release.example');
+    assertTarParentBeforeChild(dataEntryNames, './etc/sdkwork/router', './etc/sdkwork/router/.env.standalone.production.example');
     assertTarParentBeforeChild(dataEntryNames, './usr/bin', './usr/bin/cloudrouter');
     assertTarParentBeforeChild(dataEntryNames, './usr/lib/sdkwork/router', './usr/lib/sdkwork/router/bin/cloudrouter');
     assertTarParentBeforeChild(dataEntryNames, './etc/sdkwork/router', './etc/sdkwork/router/config.toml.example');
@@ -5373,9 +5373,9 @@ test('native installer builder emits apt-installable Debian packages for Linux s
     assert.equal(dataEntries.get('./usr/lib/sdkwork/router/bin/cloudrouter')?.mode, 0o755);
     assert.equal(dataEntries.get('./usr/lib/sdkwork/router/bin/cloudrouterctl')?.mode, 0o755);
     assert.ok(dataEntries.has('./usr/lib/sdkwork/router/portal/dist/index.html'));
-    assert.equal(dataEntries.get('./etc/sdkwork/router/.env.release.example')?.mode, 0o640);
+    assert.equal(dataEntries.get('./etc/sdkwork/router/.env.standalone.production.example')?.mode, 0o640);
     assert.equal(dataEntries.get('./etc/sdkwork/router/config.toml.example')?.mode, 0o640);
-    assert.ok(!dataEntries.has('./usr/lib/sdkwork/router/.env.release.example'));
+    assert.ok(!dataEntries.has('./usr/lib/sdkwork/router/.env.standalone.production.example'));
     assert.ok(dataEntries.has('./etc/sdkwork/router/config.toml.example'));
     assert.ok(dataEntries.has('./lib/systemd/system/cloudrouter.service'));
     assert.ok(dataEntries.has('./usr/share/sdkwork/router/install-manifest.json'));
@@ -5442,7 +5442,7 @@ test('native installer builder keeps Linux desktop packages user-scoped and self
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouterctl'), 'installer-binary');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
-  writeFileSync(path.join(stagingRoot, '.env.release.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
+  writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
 
   try {
     const plan = module.createNativeInstallerBuildPlan({
@@ -5463,7 +5463,7 @@ test('native installer builder keeps Linux desktop packages user-scoped and self
     assert.equal(result.manifest.nativeInstall.schemaVersion, '2026-05-16.native-install-layout.v1');
     assert.equal(result.manifest.nativeInstall.format, 'deb');
     assert.equal(result.manifest.nativeInstall.files.runtimeConfigTemplate, '/usr/share/sdkwork/router/config/config.toml.example');
-    assert.equal(result.manifest.nativeInstall.files.releaseEnvTemplate, '~/.sdkwork/router/config/.env.release.example');
+    assert.equal(result.manifest.nativeInstall.files.releaseEnvTemplate, '~/.sdkwork/router/config/.env.standalone.production.example');
     assert.equal(result.manifest.nativeInstall.files.binary, '/usr/bin/cloudrouter');
     assert.equal(result.manifest.nativeInstall.files.privateBinary, '/usr/lib/sdkwork/router/bin/cloudrouter');
     assert.equal(result.manifest.nativeInstall.files.portal, '/usr/lib/sdkwork/router/portal/dist');
@@ -5511,8 +5511,8 @@ test('native installer builder keeps Linux desktop packages user-scoped and self
     assert.equal(dataEntries.get('./usr/share/sdkwork/router/config')?.type, 'directory');
     assert.ok(!dataEntryNames.some((entry) => entry.startsWith('./opt/sdkwork/router')));
     assertTarParentBeforeChild(dataEntryNames, './usr/share/sdkwork/router/config', './usr/share/sdkwork/router/config/config.toml.example');
-    assert.ok(![...dataEntries.keys()].some((entry) => entry.endsWith('/.env.release.example')));
-    assert.ok(!dataEntries.has('./usr/lib/sdkwork/router/.env.release.example'));
+    assert.ok(![...dataEntries.keys()].some((entry) => entry.endsWith('/.env.standalone.production.example')));
+    assert.ok(!dataEntries.has('./usr/lib/sdkwork/router/.env.standalone.production.example'));
     assert.ok(dataEntries.has('./usr/share/sdkwork/router/config/config.toml.example'));
     assert.ok(!dataEntries.has('./etc/sdkwork/router/config.toml.example'));
   } finally {
@@ -5548,7 +5548,7 @@ test('native installer builder CLI validates cross-platform service and desktop 
   const linuxService = payload.plans.find((plan) => plan.package.id === 'linux-x64-service');
   assert.equal(linuxService.nativeInstallLayout.schemaVersion, '2026-05-16.native-install-layout.v1');
   assert.equal(linuxService.nativeInstallLayout.files.runtimeConfig, '/etc/sdkwork/router/config.toml');
-  assert.equal(linuxService.nativeInstallLayout.files.releaseEnvTemplate, '/etc/sdkwork/router/.env.release.example');
+  assert.equal(linuxService.nativeInstallLayout.files.releaseEnvTemplate, '/etc/sdkwork/router/.env.standalone.production.example');
   assert.equal(linuxService.nativeInstallLayout.files.binary, '/usr/bin/cloudrouter');
   assert.equal(linuxService.nativeInstallLayout.files.privateBinary, '/usr/lib/sdkwork/router/bin/cloudrouter');
   assert.equal(linuxService.nativeInstallLayout.service.name, 'cloudrouter.service');
@@ -5558,7 +5558,7 @@ test('native installer builder CLI validates cross-platform service and desktop 
   assert.equal(windowsService.nativeInstallLayout.installRoot, '%ProgramFiles%/sdkwork/router');
   assert.equal(windowsService.nativeInstallLayout.files.binary, '%ProgramFiles%/sdkwork/router/bin/cloudrouter.exe');
   assert.equal(windowsService.nativeInstallLayout.files.runtimeConfigTemplate, '%ProgramData%/sdkwork/router/config.toml.example');
-  assert.equal(windowsService.nativeInstallLayout.files.releaseEnvTemplate, '%ProgramData%/sdkwork/router/.env.release.example');
+  assert.equal(windowsService.nativeInstallLayout.files.releaseEnvTemplate, '%ProgramData%/sdkwork/router/.env.standalone.production.example');
   assert.equal(windowsService.nativeInstallLayout.commands.installService, '%ProgramFiles%/sdkwork/router/bin/cloudrouterctl.exe ensure');
   assertNativePermission(windowsService.nativeInstallLayout.permissions, {
     path: '%ProgramData%/sdkwork/router',
@@ -5567,21 +5567,21 @@ test('native installer builder CLI validates cross-platform service and desktop 
     mode: 'inherited-programdata-acl',
   });
   assertNativePermission(windowsService.nativeInstallLayout.permissions, {
-    path: '%ProgramData%/sdkwork/router/.env.release.example',
+    path: '%ProgramData%/sdkwork/router/.env.standalone.production.example',
     owner: 'SYSTEM',
     group: 'Administrators',
     mode: 'inherited-programdata-acl',
   });
   assert.equal(
-    module.windowsPayloadPathForArchivePath(windowsService, '.env.release.example'),
-    'ProgramData/sdkwork/router/.env.release.example',
+    module.windowsPayloadPathForArchivePath(windowsService, '.env.standalone.production.example'),
+    'ProgramData/sdkwork/router/.env.standalone.production.example',
   );
   assert.equal(
     module.windowsPayloadPathForArchivePath(windowsService, 'config/config.toml.example'),
     'ProgramData/sdkwork/router/config.toml.example',
   );
   const serviceWix = module.createWixSource(windowsService, 'C:/payload', [
-    { relativePath: '.env.release.example', data: Buffer.from('env') },
+    { relativePath: '.env.standalone.production.example', data: Buffer.from('env') },
     { relativePath: 'config/config.toml.example', data: Buffer.from('toml') },
     { relativePath: 'bin/cloudrouter.exe', data: Buffer.from('exe') },
   ]);
@@ -5592,7 +5592,7 @@ test('native installer builder CLI validates cross-platform service and desktop 
   assert.ok(serviceWix.includes('Name="router"'));
   const windowsDesktop = payload.plans.find((plan) => plan.package.id === 'windows-x64-desktop');
   assert.equal(windowsDesktop.nativeInstallLayout.files.runtimeConfigTemplate, '%ProgramData%/sdkwork/router/config.toml.example');
-  assert.equal(windowsDesktop.nativeInstallLayout.files.releaseEnvTemplate, '%ProgramData%/sdkwork/router/.env.release.example');
+  assert.equal(windowsDesktop.nativeInstallLayout.files.releaseEnvTemplate, '%ProgramData%/sdkwork/router/.env.standalone.production.example');
   assertNativePermission(windowsDesktop.nativeInstallLayout.permissions, {
     path: '%ProgramData%/sdkwork/router',
     owner: 'SYSTEM',
@@ -5600,15 +5600,15 @@ test('native installer builder CLI validates cross-platform service and desktop 
     mode: 'inherited-programdata-acl',
   });
   assert.equal(
-    module.windowsPayloadPathForArchivePath(windowsDesktop, '.env.release.example'),
-    'ProgramData/sdkwork/router/.env.release.example',
+    module.windowsPayloadPathForArchivePath(windowsDesktop, '.env.standalone.production.example'),
+    'ProgramData/sdkwork/router/.env.standalone.production.example',
   );
   assert.equal(
     module.windowsPayloadPathForArchivePath(windowsDesktop, 'config/config.toml.example'),
     'ProgramData/sdkwork/router/config.toml.example',
   );
   const desktopWix = module.createWixSource(windowsDesktop, 'C:/payload', [
-    { relativePath: '.env.release.example', data: Buffer.from('env') },
+    { relativePath: '.env.standalone.production.example', data: Buffer.from('env') },
     { relativePath: 'config/config.toml.example', data: Buffer.from('toml') },
     { relativePath: 'bin/cloudrouter.exe', data: Buffer.from('exe') },
   ]);
@@ -5625,7 +5625,7 @@ test('native installer builder CLI validates cross-platform service and desktop 
   );
   assert.equal(
     macosDesktop.nativeInstallLayout.files.releaseEnvTemplate,
-    '~/.sdkwork/router/config/.env.release.example',
+    '~/.sdkwork/router/config/.env.standalone.production.example',
   );
   assert.equal(
     macosDesktop.nativeInstallLayout.files.runtimeConfig,
@@ -5656,7 +5656,7 @@ test('native installer builder CLI validates cross-platform service and desktop 
     mode: '0750',
   });
   assertNativePermission(macosService.nativeInstallLayout.permissions, {
-    path: '/Library/Application Support/sdkwork/router/.env.release.example',
+    path: '/Library/Application Support/sdkwork/router/.env.standalone.production.example',
     owner: 'root',
     group: 'wheel',
     mode: '0640',
@@ -5676,7 +5676,7 @@ test('native installer builder CLI validates cross-platform service and desktop 
   const macosServicePostinstall = module.createMacosPostinstall(macosService);
   assert.ok(macosServicePostinstall.includes('chown root:wheel "/Library/Application Support/sdkwork/router"'));
   assert.ok(macosServicePostinstall.includes('chmod 0750 "/Library/Application Support/sdkwork/router"'));
-  assert.ok(macosServicePostinstall.includes('chmod 0640 "/Library/Application Support/sdkwork/router/.env.release.example"'));
+  assert.ok(macosServicePostinstall.includes('chmod 0640 "/Library/Application Support/sdkwork/router/.env.standalone.production.example"'));
   assert.ok(macosServicePostinstall.includes('chmod 0640 "/Library/Application Support/sdkwork/router/config.toml.example"'));
   assert.ok(macosServicePostinstall.includes('chown root:wheel /var/log/sdkwork/router'));
   assert.ok(macosServicePostinstall.includes('chmod 0750 /var/log/sdkwork/router'));
@@ -5737,7 +5737,7 @@ test('install package archive builder CLI emits pure JSON when requested', async
   writeFileSync(path.join(stagingRoot, 'bin', 'cloudrouterctl.exe'), 'installer-binary');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
-  writeFileSync(path.join(stagingRoot, '.env.release.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
+  writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
 
   try {
     const { stdout, stderr } = await execFileAsync(process.execPath, [
@@ -5829,7 +5829,7 @@ test('install init smoke validates fast initialization without starting dev serv
     assert.equal(smokePlan.databaseUrl, 'postgresql://sdkwork_ai_prod@release-smoke.invalid:5432/sdkwork_ai_prod');
     assert.equal(smokePlan.databasePath, null);
     assert.ok(smokePlan.databasePasswordPath.endsWith('database.secret'));
-    assert.equal(smokePlan.releaseEnvPath, path.join(fixtureRoot, '.env.release'));
+    assert.equal(smokePlan.releaseEnvPath, path.join(fixtureRoot, '.env.standalone.production'));
     assert.equal(smokePlan.runtimeConfigPath, path.join(fixtureRoot, 'config.toml'));
     assert.deepEqual(smokePlan.healthChecks, ['/healthz', '/readyz']);
     assert.ok(smokePlan.steps.some((step) =>
@@ -7293,13 +7293,13 @@ test('release preflight parser supports strict, json, dry-run, and root cleanlin
     '--dry-run',
     '--strict-root-clean',
     '--env-file',
-    '.env.release',
+    '.env.standalone.production',
   ]), {
     strict: true,
     json: true,
     dryRun: true,
     strictRootClean: true,
-    envFile: '.env.release',
+    envFile: '.env.standalone.production',
     help: false,
   });
   assert.deepEqual(module.parseArgs(['--', '--json']), {
@@ -7331,8 +7331,8 @@ test('release preflight publishes a single release environment contract', async 
   assert.ok(module.RELEASE_ENVIRONMENT_CONTRACT.optionalEdgePrivateEnv.includes(
     'SDKWORK_CLOUDROUTER_TOOL_API_RATE_LIMIT_REQUESTS',
   ));
-  assert.equal(module.RELEASE_ENVIRONMENT_CONTRACT.exampleFile, '.env.release.example');
-  assert.equal(module.RELEASE_ENVIRONMENT_CONTRACT.profileFile, '.env.release');
+  assert.equal(module.RELEASE_ENVIRONMENT_CONTRACT.exampleFile, '.env.standalone.production.example');
+  assert.equal(module.RELEASE_ENVIRONMENT_CONTRACT.profileFile, '.env.standalone.production');
 });
 
 test('release preflight env-file values satisfy strict release environment checks', async () => {
@@ -7349,7 +7349,7 @@ test('release preflight env-file values satisfy strict release environment check
   ].join('\n');
 
   const result = module.buildReleasePreflightReport({
-    settings: module.parseArgs(['--strict', '--env-file', '.env.release']),
+    settings: module.parseArgs(['--strict', '--env-file', '.env.standalone.production']),
     platform: 'linux',
     env: module.mergeEnvWithEnvFile({}, envFile),
     probes: {
@@ -7382,7 +7382,7 @@ test('release preflight env-file values satisfy strict release environment check
   assert.equal(byId['env.releaseContract'].status, 'PASS');
   assert.equal(byId['env.postgres'].status, 'PASS');
   assert.equal(byId['env.portalPublic'].status, 'PASS');
-  assert.ok(byId['env.releaseContract'].details.includes('.env.release'));
+  assert.ok(byId['env.releaseContract'].details.includes('.env.standalone.production'));
 });
 
 test('release preflight CLI reads env-file values before building the report', async () => {
@@ -7390,7 +7390,7 @@ test('release preflight CLI reads env-file values before building the report', a
     'scripts/release-preflight.mjs',
     '--dry-run',
     '--env-file',
-    '.env.release.example',
+    '.env.standalone.production.example',
     '--json',
   ], {
     cwd: workspaceRoot,
@@ -7403,10 +7403,10 @@ test('release preflight CLI reads env-file values before building the report', a
   assert.equal(byId['env.releaseContract'].status, 'PASS');
   assert.equal(byId['env.postgres'].status, 'PASS');
   assert.equal(byId['env.portalPublic'].status, 'PASS');
-  assert.ok(byId['env.releaseContract'].details.includes('.env.release.example'));
+  assert.ok(byId['env.releaseContract'].details.includes('.env.standalone.production.example'));
   assert.ok(byId['env.releaseContract'].recommendation.includes('pnpm.cmd release:env:write -- --check'));
   assert.ok(byId['env.releaseContract'].recommendation.includes('pnpm.cmd release:env:write'));
-  assert.ok(!byId['env.releaseContract'].recommendation.includes('Copy .env.release.example'));
+  assert.ok(!byId['env.releaseContract'].recommendation.includes('Copy .env.standalone.production.example'));
 });
 
 test('release env writer creates a dotenv file from the executable contract without leaking values', async () => {
@@ -7416,12 +7416,12 @@ test('release env writer creates a dotenv file from the executable contract with
 
   const plan = module.buildReleaseEnvFilePlan({
     env: validReleaseEnv,
-    outputPath: '.env.release',
+    outputPath: '.env.standalone.production',
     overwrite: false,
     existingFile: false,
   });
 
-  assert.equal(plan.outputPath, '.env.release');
+  assert.equal(plan.outputPath, '.env.standalone.production');
   assert.equal(plan.safeSummary, 'release env file would be written with 17 release profile variables');
   assert.doesNotMatch(plan.content, /SDKWORK_DATABASE_URL=/u);
   assert.ok(plan.content.includes('PORTAL_PUBLIC_OPEN_API_BASE_URL="https://open.tenant.example.com/v1"'));
@@ -7441,7 +7441,7 @@ test('release env writer refuses unsafe overwrite and invalid values', async () 
         ...validReleaseEnv,
         PORTAL_PUBLIC_API_BASE_URL: '/v1',
       },
-      outputPath: '.env.release',
+      outputPath: '.env.standalone.production',
       overwrite: false,
       existingFile: true,
     }),
@@ -7454,7 +7454,7 @@ test('release env writer refuses unsafe overwrite and invalid values', async () 
         ...validReleaseEnv,
         PORTAL_PUBLIC_API_BASE_URL: 'javascript:alert(1)',
       },
-      outputPath: '.env.release',
+      outputPath: '.env.standalone.production',
       overwrite: true,
       existingFile: false,
     }),
@@ -7470,7 +7470,7 @@ test('release env writer refuses to write secrets into the checked-in example te
   assert.throws(
     () => module.buildReleaseEnvFilePlan({
       env: validReleaseEnv,
-      outputPath: '.env.release.example',
+      outputPath: '.env.standalone.production.example',
       overwrite: true,
       existingFile: true,
     }),
@@ -7480,7 +7480,7 @@ test('release env writer refuses to write secrets into the checked-in example te
   assert.throws(
     () => module.buildReleaseEnvFilePlan({
       env: validReleaseEnv,
-      outputPath: path.join(workspaceRoot, '.env.release.example'),
+      outputPath: path.join(workspaceRoot, '.env.standalone.production.example'),
       overwrite: true,
       existingFile: true,
     }),
@@ -7493,7 +7493,7 @@ test('release env writer CLI check prints only a safe summary', async () => {
     'scripts/write-release-env.mjs',
     '--check',
     '--output',
-    '.env.release',
+    '.env.standalone.production',
   ], {
     cwd: workspaceRoot,
     windowsHide: true,
@@ -7503,14 +7503,14 @@ test('release env writer CLI check prints only a safe summary', async () => {
     },
   });
 
-  assert.ok(stdout.includes('[release-env] validated: .env.release'));
+  assert.ok(stdout.includes('[release-env] validated: .env.standalone.production'));
   assert.ok(stdout.includes('release env file would be written with 17 release profile variables'));
   assert.ok(!stdout.includes('secret'));
   assert.ok(!stdout.includes('tenant.example.com'));
 });
 
 test('release env writer CLI writes a local dotenv file without leaking values', async () => {
-  const outputPath = path.join('.tmp', 'release-env-writer-test', '.env.release');
+  const outputPath = path.join('.tmp', 'release-env-writer-test', '.env.standalone.production');
   const absoluteOutputPath = path.join(workspaceRoot, outputPath);
   rmSync(path.dirname(absoluteOutputPath), { recursive: true, force: true });
 
@@ -7565,7 +7565,7 @@ test('release env writer CLI writes a local dotenv file without leaking values',
 });
 
 test('release env writer CLI check is idempotent when the output file already exists', async () => {
-  const outputPath = path.join('.tmp', 'release-env-writer-check-test', '.env.release');
+  const outputPath = path.join('.tmp', 'release-env-writer-check-test', '.env.standalone.production');
   const absoluteOutputPath = path.join(workspaceRoot, outputPath);
   rmSync(path.dirname(absoluteOutputPath), { recursive: true, force: true });
 
@@ -7603,7 +7603,7 @@ test('release preflight rejects malformed release environment values in strict m
   );
 
   const result = module.buildReleasePreflightReport({
-    settings: module.parseArgs(['--strict', '--env-file', '.env.release']),
+    settings: module.parseArgs(['--strict', '--env-file', '.env.standalone.production']),
     platform: 'linux',
     env: {
       SDKWORK_DATABASE_URL: 'not-a-postgres-url',
@@ -7641,7 +7641,7 @@ test('release preflight rejects malformed release environment values in strict m
   assert.ok(byId['env.releaseContract'].details.includes('PORTAL_PUBLIC_TOOL_API_ENABLED'));
   assert.ok(byId['env.releaseContract'].details.includes('run pnpm.cmd release:env:write'));
   assert.ok(byId['env.releaseContract'].recommendation.includes('pnpm.cmd release:env:write -- --check'));
-  assert.ok(!byId['env.releaseContract'].recommendation.includes('Copy .env.release.example'));
+  assert.ok(!byId['env.releaseContract'].recommendation.includes('Copy .env.standalone.production.example'));
 });
 
 test('release environment documentation stays aligned with the executable contract', async () => {
@@ -7649,7 +7649,7 @@ test('release environment documentation stays aligned with the executable contra
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'release-preflight.mjs')).href
   );
   const rootReadme = readFileSync(path.join(workspaceRoot, 'README.md'), 'utf8');
-  const exampleEnv = readFileSync(path.join(workspaceRoot, '.env.release.example'), 'utf8');
+  const exampleEnv = readFileSync(path.join(workspaceRoot, '.env.standalone.production.example'), 'utf8');
   const ignored = readFileSync(path.join(workspaceRoot, '.gitignore'), 'utf8');
   const requiredNames = [
     ...module.RELEASE_ENVIRONMENT_CONTRACT.requiredReleaseEnv,
@@ -7657,12 +7657,12 @@ test('release environment documentation stays aligned with the executable contra
   ];
 
   assert.ok(rootReadme.includes('## Release Environment Contract'));
-  assert.ok(rootReadme.includes('pnpm.cmd release:preflight -- --strict --env-file .env.release'));
-  assert.ok(ignored.includes('.env.release'));
-  assert.ok(!ignored.includes('.env.release.example'));
+  assert.ok(rootReadme.includes('pnpm.cmd release:preflight -- --strict --env-file .env.standalone.production'));
+  assert.ok(ignored.includes('.env.standalone.production'));
+  assert.ok(!ignored.includes('.env.standalone.production.example'));
   for (const name of requiredNames) {
     assert.ok(rootReadme.includes(name), `README.md must document ${name}`);
-    assert.ok(exampleEnv.includes(`${name}=`), `.env.release.example must declare ${name}`);
+    assert.ok(exampleEnv.includes(`${name}=`), `.env.standalone.production.example must declare ${name}`);
   }
 });
 
@@ -7708,7 +7708,7 @@ test('global and application environment contracts document Cloud Router runtime
   assert.ok(environmentSpec.includes('SDKWORK_<APP>_DATABASE_SSL_MODE'));
   assert.ok(environmentSpec.includes('| `standalone` | `server` | PostgreSQL |'));
   assert.ok(environmentSpec.includes('| `standalone` | `container` | PostgreSQL |'));
-  assert.ok(environmentSpec.includes('.env.postgres.example'));
+  assert.ok(environmentSpec.includes('config/host/postgres.env.example'));
   assert.ok(environmentSpec.includes('SDKWORK_DATABASE_ENGINE=postgresql'));
   assert.ok(environmentSpec.includes('SDKWORK_DATABASE_SCHEMA=sdkwork_ai_dev'));
   assert.ok(environmentSpec.includes('SDKWORK_DATABASE_SSL_MODE=disable'));

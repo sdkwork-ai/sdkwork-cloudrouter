@@ -172,7 +172,7 @@ function installerArgs(settings, identity) {
 
 function devResetEnv(settings, env, root) {
   // Match `pnpm dev` behavior: when no explicit dev-env-file is provided, auto-detect
-  // `.env.postgres` (or `.env.postgres.example`) from the workspace root. This keeps
+  // `config/host/postgres.env` (or `config/host/postgres.env.example`) from the workspace root. This keeps
   // reset-admin pointed at the same database the dev server bootstrapped IAM into.
   const devEnvFile = settings.devEnvFile ?? resolveDefaultDevEnvFilePath(root);
   const devEnv = {
@@ -291,14 +291,14 @@ Each lifecycle environment uses an independent bootstrap admin identity:
   production  -> admin@sdkwork.com
 
 Options:
-  --mode <dev|release>          dev uses .env.postgres; release uses PostgreSQL runtime config
+  --mode <dev|release>          dev uses config/host/postgres.env; release uses PostgreSQL runtime config
   --environment <lifecycle>     development, test, staging, or production (default development)
   --username <username>         Admin username override
   --display-name <name>         Admin display name override
   --email <email>               Admin email identity override
   --password <password>         New admin password; may also be set with SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD
   --config-file <path>          Release runtime TOML path
-  --dev-env-file <path>         Dev PostgreSQL dotenv file such as .env.postgres
+  --dev-env-file <path>         Dev PostgreSQL dotenv file such as config/host/postgres.env
   --database-url <url>          PostgreSQL database override
   --database-max-connections <n>
   --dry-run                     Print the command without executing it

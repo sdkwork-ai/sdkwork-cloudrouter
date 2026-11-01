@@ -240,8 +240,8 @@ function buildArtifacts(binaryName, installerBinaryName, deploymentMode, platfor
     },
     {
       kind: 'env-template',
-      path: '.env.release.example',
-      source: '.env.release.example',
+      path: '.env.standalone.production.example',
+      source: '.env.standalone.production.example',
       required: true,
     },
     {
@@ -661,9 +661,9 @@ function validatePackageItem(packageItem, seenIds, issues) {
   if (
     packageItem.artifacts?.some((artifact) => {
       const artifactPath = String(artifact.path);
-      return artifactPath === '.env.release'
-        || artifactPath.endsWith('/.env.release')
-        || artifactPath.endsWith('\\.env.release');
+      return artifactPath === '.env.standalone.production'
+        || artifactPath.endsWith('/.env.standalone.production')
+        || artifactPath.endsWith('\\.env.standalone.production');
     })
   ) {
     issues.push(`${packageItem.id} must not include host-local release env output`);

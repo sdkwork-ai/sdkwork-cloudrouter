@@ -11,11 +11,16 @@ import {
 /**
  * SDKWork application env profile standard (cloud-router implementation).
  *
- * Checked-in templates:  .env.{profile}.example
- * Host profile files:    .env.{profile}
+ * Exactly two shapes exist per scope (ENVIRONMENT_SPEC 5.1.7):
  *
- * Do not use `.local` suffixes. Profile name alone selects the lifecycle file.
- * See specs/application-env-standard.md.
+ *   .env.<deployment-profile>.<environment>            materialized scope file
+ *   .env.<deployment-profile>.<environment>.example    template for one scope
+ *
+ * `<deployment-profile>` is `standalone` or `cloud`; `<environment>` is the
+ * lifecycle. Nothing composes onto either name: no `.local`, no
+ * `.bootstrap.local`, and no one-dimensional `.env.<environment>`.
+ * Host PostgreSQL values are not a Vite env file; they live at
+ * `config/host/postgres.env`.
  */
 
 export const CONFIG_PROFILE_ALIASES = Object.freeze({
@@ -46,9 +51,13 @@ export const FRAMEWORKS = Object.freeze([
   'generic',
 ]);
 
-const SPECIAL_PROFILE_FILE_BASENAMES = Object.freeze({
-  release: 'release',
-  postgres: 'postgres',
+/** Deployment profiles of `ENVIRONMENT_SPEC` section 5.1. */
+export const DEPLOYMENT_PROFILES = Object.freeze(['standalone', 'cloud']);
+
+/** Host configuration profiles that are not Vite env files. */
+const HOST_CONFIG_PROFILES = Object.freeze({
+  postgres: 'config/host/postgres.env',
+  sqlite: 'config/host/sqlite.env',
 });
 
 export function normalizeConfigProfile(configProfile = 'development') {
@@ -56,9 +65,18 @@ export function normalizeConfigProfile(configProfile = 'development') {
   return CONFIG_PROFILE_ALIASES[normalized] ?? normalized;
 }
 
-export function resolveProfileFileBasename(configProfile = 'development') {
+export function normalizeDeploymentProfile(deploymentProfile = 'standalone') {
+  const normalized = String(deploymentProfile ?? 'standalone').trim().toLowerCase();
+  return DEPLOYMENT_PROFILES.includes(normalized) ? normalized : 'standalone';
+}
+
+export function resolveProfileFileBasename(configProfile = 'development', deploymentProfile = 'standalone') {
   const normalized = normalizeConfigProfile(configProfile);
-  return SPECIAL_PROFILE_FILE_BASENAMES[normalized] ?? normalized;
+  const hostConfigPath = HOST_CONFIG_PROFILES[normalized];
+  if (hostConfigPath !== undefined) {
+    throw new Error(`\`${normalized}\` is a host profile, not a Vite env file: use \`${hostConfigPath}\``);
+  }
+  return `${normalizeDeploymentProfile(deploymentProfile)}.${resolveCanonicalEnvironment(normalized)}`;
 }
 
 export function resolveCanonicalEnvironment(configProfile = 'development') {
@@ -69,8 +87,8 @@ export function resolveCanonicalEnvironment(configProfile = 'development') {
   return normalized;
 }
 
-export function resolveApplicationEnvFileNames(configProfile = 'development') {
-  const basename = resolveProfileFileBasename(configProfile);
+export function resolveApplicationEnvFileNames(configProfile = 'development', deploymentProfile = 'standalone') {
+  const basename = resolveProfileFileBasename(configProfile, deploymentProfile);
   return {
     configProfile: normalizeConfigProfile(configProfile),
     profileBasename: basename,

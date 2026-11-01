@@ -11,7 +11,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..', '..');
 
 function readEnv() {
-  const text = fs.readFileSync(path.join(repoRoot, '.env.postgres'), 'utf8');
+  const text = fs.readFileSync(path.join(repoRoot, 'config/host/postgres.env'), 'utf8');
   const env = {};
   for (const line of text.split(/\r?\n/)) {
     const m = /^([A-Z0-9_]+)=(.*)$/.exec(line.trim());

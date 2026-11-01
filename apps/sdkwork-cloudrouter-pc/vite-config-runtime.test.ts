@@ -1364,7 +1364,7 @@ test("portal runtime env keeps appbase backend SDK base URL independent from clo
     PORTAL_PUBLIC_APPBASE_BACKEND_API_BASE_URL: "https://appbase.example.com/backend/v3/api",
   });
   const envExample = readFileSync(new URL("./.env.example", import.meta.url), "utf8");
-  const releaseEnvExample = readFileSync(new URL("../../.env.release.example", import.meta.url), "utf8");
+  const releaseEnvExample = readFileSync(new URL("../../.env.standalone.production.example", import.meta.url), "utf8");
   const startProductionSource = readFileSync(
     new URL("../../scripts/start-cloud-router-production.mjs", import.meta.url),
     "utf8",

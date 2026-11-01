@@ -5840,7 +5840,7 @@ mod tests {
         assert_eq!(
             ENV_INSTALL_ENVIRONMENT, "SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT",
             "the dev scripts (start-workspace.mjs, manage-cloud-router-database.mjs) and \
-             .env.postgres must export this exact name, otherwise the installer falls back to \
+             config/host/postgres.env must export this exact name, otherwise the installer falls back to \
              `DEFAULT_INSTALL_ENVIRONMENT` (production) and seeds every vendor \
              default account disabled"
         );

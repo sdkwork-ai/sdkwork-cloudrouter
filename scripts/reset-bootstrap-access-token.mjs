@@ -322,17 +322,17 @@ function printHelp() {
 
 Issue a signed bootstrap SDKWORK_ACCESS_TOKEN through the installer database layer.
 
-Development mode expects a manually configured PostgreSQL profile (.env.postgres).
+Development mode expects a manually configured PostgreSQL profile (config/host/postgres.env).
 Release mode expects an initialized online deployment database and runtime config.
 
 Options:
-  --mode <dev|release>          dev uses .env.postgres; release uses PostgreSQL runtime config
+  --mode <dev|release>          dev uses config/host/postgres.env; release uses PostgreSQL runtime config
   --environment <lifecycle>     development, test, staging, or production (default development)
   --tenant-id <tenantId>        IAM tenant override (default from agent.app.config.json)
   --app-id <appId>              IAM app override (default from agent.app.config.json)
   --ttl-seconds <seconds>       Optional token TTL override
   --config-file <path>          Release runtime TOML path
-  --dev-env-file <path>         Dev PostgreSQL dotenv file such as .env.postgres
+  --dev-env-file <path>         Dev PostgreSQL dotenv file such as config/host/postgres.env
   --database-url <url>          PostgreSQL database override
   --database-max-connections <n>
   --output-env-file <path>      Write token to a single env file instead of default bootstrap paths

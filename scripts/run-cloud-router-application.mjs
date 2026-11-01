@@ -73,7 +73,7 @@ function resolveProductLaunchEnv({
   workspaceRoot,
   baseLaunchEnv,
 }) {
-  // Client and desktop modes delegate the .env.development write to
+  // Client and desktop modes delegate the .env.standalone.development write to
   // start-workspace.mjs, which resolves the proxy origins from the resolved
   // workspace settings (remote cloud gateway in cloud profile). A pre-ensure
   // here would race that write with loopback fallback values.

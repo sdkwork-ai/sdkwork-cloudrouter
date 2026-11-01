@@ -267,7 +267,7 @@ function readDevDsn() {
       };
     } catch { /* fall through */ }
   }
-  const envFile = path.join(repoRoot, '.env.postgres');
+  const envFile = path.join(repoRoot, 'config/host/postgres.env');
   if (!fs.existsSync(envFile)) return null;
   const env = {};
   for (const line of fs.readFileSync(envFile, 'utf8').split('\n')) {

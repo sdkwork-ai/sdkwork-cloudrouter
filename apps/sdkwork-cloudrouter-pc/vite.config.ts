@@ -1303,7 +1303,7 @@ function mergeDirectBrowserViteEnv(
     }
     const value = readConfiguredPortalPublicEnv(rawValue);
     // Browser development profiles publish authoritative VITE_* values in
-    // .env.development. They must override release-style PORTAL_PUBLIC_*
+    // .env.standalone.development. They must override release-style PORTAL_PUBLIC_*
     // derivations (for example http://127.0.0.1:3902/app/v3/api) so SDK
     // clients stay same-origin and flow through the Vite dev proxy.
     if (value !== undefined) {

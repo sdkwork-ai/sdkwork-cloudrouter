@@ -151,7 +151,7 @@ function createInstallInitSmokePlan({
   const databaseUrl = databaseEngine === 'sqlite'
     ? `sqlite://${toPosixPath(databasePath)}`
     : DEFAULT_RELEASE_POSTGRES_RUNTIME_URL;
-  const releaseEnvPath = path.join(absoluteTmpRoot, '.env.release');
+  const releaseEnvPath = path.join(absoluteTmpRoot, '.env.standalone.production');
   const modelsCatalogRoot = path.join(root, 'data', 'sdkwork-models');
   const env = createSmokeEnvironment({
     databaseUrl,
@@ -274,7 +274,7 @@ function validateInstallInitSmokePlan(plan) {
   if (String(plan.databaseUrl).includes(':memory:')) {
     issues.push('databaseUrl must use a real temporary file, not sqlite::memory:');
   }
-  if (plan.releaseEnvPath.endsWith('.env.release.example')) {
+  if (plan.releaseEnvPath.endsWith('.env.standalone.production.example')) {
     issues.push('release env output must not target the checked-in example template');
   }
   if (plan.packageRootProvided && !existsSync(plan.packageRoot)) {
@@ -419,7 +419,7 @@ function inspectReleaseEnvContent(content, plan) {
       && content.includes(`SDKWORK_DATABASE_URL="${plan.env.SDKWORK_DATABASE_URL}"`),
     containsConfigFile: /^SDKWORK_CLOUDROUTER_CONFIG_FILE=/mu.test(content),
     containsHostSecret: /SDKWORK_SECRET|SECRET_KEY|PRIVATE_KEY|(?<!ACCESS_)TOKEN=/u.test(content),
-    containsExamplePath: content.includes('.env.release.example'),
+    containsExamplePath: content.includes('.env.standalone.production.example'),
     variableCount: content
       .split(/\r?\n/u)
       .filter((line) => /^[A-Za-z_][A-Za-z0-9_]*=/u.test(line))

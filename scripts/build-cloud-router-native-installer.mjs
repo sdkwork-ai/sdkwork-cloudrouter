@@ -470,8 +470,8 @@ function createLinuxNativeInstallLayout(packageItem) {
     documentation: `${LINUX_NATIVE_SHARED_DOC_ROOT}/INSTALL.md`,
     installManifest: `${LINUX_NATIVE_SHARED_ROOT}/install-manifest.json`,
     releaseEnvTemplate: isService
-      ? `${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example`
-      : `${USER_PRIVATE_ROUTER_ROOT}/config/.env.release.example`,
+      ? `${LINUX_SERVICE_CONFIG_ROOT}/.env.standalone.production.example`
+      : `${USER_PRIVATE_ROUTER_ROOT}/config/.env.standalone.production.example`,
     runtimeConfig: isService
       ? `${LINUX_SERVICE_CONFIG_ROOT}/config.toml`
       : packageItem.databasePolicy.configFile.path,
@@ -510,7 +510,7 @@ function createLinuxNativeInstallLayout(packageItem) {
         { path: LINUX_SERVICE_CONFIG_ROOT, owner: 'root', group: 'sdkwork', mode: '0750' },
         { path: `${LINUX_SERVICE_CONFIG_ROOT}/config.toml`, owner: 'root', group: 'sdkwork', mode: '0640' },
         { path: `${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example`, owner: 'root', group: 'sdkwork', mode: '0640' },
-        { path: `${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example`, owner: 'root', group: 'sdkwork', mode: '0640' },
+        { path: `${LINUX_SERVICE_CONFIG_ROOT}/.env.standalone.production.example`, owner: 'root', group: 'sdkwork', mode: '0640' },
         { path: `${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.env`, owner: 'root', group: 'sdkwork', mode: '0640' },
         { path: LINUX_SERVICE_DATABASE_SECRET_ROOT, owner: 'root', group: 'sdkwork', mode: '0750' },
         { path: LINUX_SERVICE_DATABASE_SECRET_FILE, owner: 'root', group: 'sdkwork', mode: '0640' },
@@ -555,8 +555,8 @@ function createMacosNativeInstallLayout(packageItem) {
     documentation: `${MACOS_NATIVE_SHARED_DOC_ROOT}/INSTALL.md`,
     installManifest: `${MACOS_NATIVE_SHARED_ROOT}/install-manifest.json`,
     releaseEnvTemplate: isService
-      ? `${configRoot}/.env.release.example`
-      : `${USER_PRIVATE_ROUTER_ROOT}/config/.env.release.example`,
+      ? `${configRoot}/.env.standalone.production.example`
+      : `${USER_PRIVATE_ROUTER_ROOT}/config/.env.standalone.production.example`,
     runtimeConfig: packageItem.databasePolicy.configFile.path,
     runtimeConfigTemplate: isService ? `${configRoot}/config.toml.example` : sharedTemplatePath,
     dataDirectory: packageItem.databasePolicy.dataDirectory.path,
@@ -591,7 +591,7 @@ function createMacosNativeInstallLayout(packageItem) {
         { path: `${configRoot}/bin`, owner: 'root', group: 'wheel', mode: '0755' },
         { path: `${configRoot}/service`, owner: 'root', group: 'wheel', mode: '0755' },
         { path: `${configRoot}/service/macos`, owner: 'root', group: 'wheel', mode: '0755' },
-        { path: `${configRoot}/.env.release.example`, owner: 'root', group: 'wheel', mode: '0640' },
+        { path: `${configRoot}/.env.standalone.production.example`, owner: 'root', group: 'wheel', mode: '0640' },
         { path: `${configRoot}/config.toml.example`, owner: 'root', group: 'wheel', mode: '0640' },
         { path: `${configRoot}/config.toml`, owner: 'root', group: 'wheel', mode: '0640' },
         { path: LINUX_SERVICE_LOG_ROOT, owner: 'root', group: 'wheel', mode: '0750' },
@@ -627,7 +627,7 @@ function createWindowsNativeInstallLayout(packageItem) {
     portal: `${installRoot}/portal/dist`,
     documentation: `${installRoot}/INSTALL.md`,
     installManifest: `${installRoot}/install-manifest.json`,
-    releaseEnvTemplate: `${WINDOWS_SYSTEM_ROOT}/.env.release.example`,
+    releaseEnvTemplate: `${WINDOWS_SYSTEM_ROOT}/.env.standalone.production.example`,
     runtimeConfig: packageItem.databasePolicy.configFile.path,
     runtimeConfigTemplate: `${WINDOWS_SYSTEM_ROOT}/config.toml.example`,
     dataDirectory: packageItem.databasePolicy.dataDirectory.path,
@@ -658,7 +658,7 @@ function createWindowsNativeInstallLayout(packageItem) {
     permissions: [
       { path: installRoot, owner: 'SYSTEM', group: 'Administrators', mode: 'inherited-programfiles-acl' },
       { path: WINDOWS_SYSTEM_ROOT, owner: 'SYSTEM', group: 'Administrators', mode: 'inherited-programdata-acl' },
-      { path: `${WINDOWS_SYSTEM_ROOT}/.env.release.example`, owner: 'SYSTEM', group: 'Administrators', mode: 'inherited-programdata-acl' },
+      { path: `${WINDOWS_SYSTEM_ROOT}/.env.standalone.production.example`, owner: 'SYSTEM', group: 'Administrators', mode: 'inherited-programdata-acl' },
       { path: `${WINDOWS_SYSTEM_ROOT}/config.toml.example`, owner: 'SYSTEM', group: 'Administrators', mode: 'inherited-programdata-acl' },
       ...(isService
         ? [
@@ -770,9 +770,9 @@ function createDebianPostinst(plan) {
     `chmod 0755 ${LINUX_NATIVE_INSTALL_ROOT} ${LINUX_NATIVE_INSTALL_ROOT}/bin ${LINUX_NATIVE_BIN_DIR}/${plan.package.binaryName} ${LINUX_NATIVE_BIN_DIR}/${plan.package.installerBinaryName}`,
     `chown root:sdkwork ${LINUX_SERVICE_CONFIG_ROOT} ${LINUX_SERVICE_DATABASE_SECRET_ROOT}`,
     `chmod 0750 ${LINUX_SERVICE_CONFIG_ROOT} ${LINUX_SERVICE_DATABASE_SECRET_ROOT}`,
-    `if [ -f ${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example ]; then`,
-    `  chown root:sdkwork ${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example || true`,
-    `  chmod 0640 ${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example || true`,
+    `if [ -f ${LINUX_SERVICE_CONFIG_ROOT}/.env.standalone.production.example ]; then`,
+    `  chown root:sdkwork ${LINUX_SERVICE_CONFIG_ROOT}/.env.standalone.production.example || true`,
+    `  chmod 0640 ${LINUX_SERVICE_CONFIG_ROOT}/.env.standalone.production.example || true`,
     'fi',
     `if [ -f ${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example ]; then`,
     `  chown root:sdkwork ${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example || true`,
@@ -1006,9 +1006,9 @@ function debianInstallPathForArchivePath(plan, archivePath) {
       ? `${LINUX_NATIVE_INSTALL_ROOT}/service/macos/cloudrouter-service-runner`
       : null;
   }
-  if (normalized === '.env.release.example') {
+  if (normalized === '.env.standalone.production.example') {
     return plan.package.deploymentMode === 'service'
-      ? `${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example`
+      ? `${LINUX_SERVICE_CONFIG_ROOT}/.env.standalone.production.example`
       : null;
   }
   if (normalized === RUNTIME_CONFIG_TEMPLATE_PATH) {
@@ -1076,9 +1076,9 @@ function macosInstallPathForArchivePath(plan, archivePath) {
   if (normalized.startsWith('bin/') || normalized.startsWith('portal/')) {
     return `${runtimeRoot}/${normalized}`;
   }
-  if (normalized === '.env.release.example') {
+  if (normalized === '.env.standalone.production.example') {
     return plan.package.deploymentMode === 'service'
-      ? `${MACOS_SERVICE_ROOT}/.env.release.example`
+      ? `${MACOS_SERVICE_ROOT}/.env.standalone.production.example`
       : null;
   }
   if (normalized === RUNTIME_CONFIG_TEMPLATE_PATH) {
@@ -1117,9 +1117,9 @@ function createMacosPostinstall(plan) {
       `chmod 0750 "${MACOS_SERVICE_ROOT}" || true`,
       `chown root:wheel "${MACOS_SERVICE_ROOT}/bin" "${MACOS_SERVICE_ROOT}/service" "${MACOS_SERVICE_ROOT}/service/macos" || true`,
       `chmod 0755 "${MACOS_SERVICE_ROOT}/bin" "${MACOS_SERVICE_ROOT}/service" "${MACOS_SERVICE_ROOT}/service/macos" || true`,
-      `if [ -f "${MACOS_SERVICE_ROOT}/.env.release.example" ]; then`,
-      `  chown root:wheel "${MACOS_SERVICE_ROOT}/.env.release.example" || true`,
-      `  chmod 0640 "${MACOS_SERVICE_ROOT}/.env.release.example" || true`,
+      `if [ -f "${MACOS_SERVICE_ROOT}/.env.standalone.production.example" ]; then`,
+      `  chown root:wheel "${MACOS_SERVICE_ROOT}/.env.standalone.production.example" || true`,
+      `  chmod 0640 "${MACOS_SERVICE_ROOT}/.env.standalone.production.example" || true`,
       'fi',
       `if [ -f "${MACOS_SERVICE_ROOT}/config.toml.example" ]; then`,
       `  chown root:wheel "${MACOS_SERVICE_ROOT}/config.toml.example" || true`,
@@ -1204,8 +1204,8 @@ async function buildWindowsMsi(plan, fileEntries) {
 
 function windowsPayloadPathForArchivePath(plan, archivePath) {
   const normalized = String(archivePath).replaceAll('\\', '/');
-  if (normalized === '.env.release.example') {
-    return 'ProgramData/sdkwork/router/.env.release.example';
+  if (normalized === '.env.standalone.production.example') {
+    return 'ProgramData/sdkwork/router/.env.standalone.production.example';
   }
   if (normalized === RUNTIME_CONFIG_TEMPLATE_PATH) {
     return 'ProgramData/sdkwork/router/config.toml.example';

@@ -16,9 +16,9 @@ function printHelp() {
 Ensures SDKWork-standard env profiles; only dev creates a local bootstrap token overlay.
 
 Lifecycles:
-  dev           apps/sdkwork-cloudrouter-pc/.env.development
-  build         apps/sdkwork-cloudrouter-pc/.env.production
-  start         .env.release and apps/sdkwork-cloudrouter-pc/.env.production
+  dev           apps/sdkwork-cloudrouter-pc/.env.standalone.development
+  build         apps/sdkwork-cloudrouter-pc/.env.standalone.production
+  start         .env.standalone.production and apps/sdkwork-cloudrouter-pc/.env.standalone.production
   all           token-free production and release profiles
 
 Options:

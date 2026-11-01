@@ -206,7 +206,7 @@ function validateDebianArtifact(packageItem, artifactBytes) {
     requireText(postinst, `chown root:root ${LINUX_SERVICE_RUNTIME_ROOT} ${LINUX_SERVICE_RUNTIME_ROOT}/bin /usr/bin/cloudrouter /usr/bin/cloudrouterctl`, 'postinst runtime binary ownership', issues);
     requireText(postinst, `chmod 0755 ${LINUX_SERVICE_RUNTIME_ROOT} ${LINUX_SERVICE_RUNTIME_ROOT}/bin /usr/bin/cloudrouter /usr/bin/cloudrouterctl`, 'postinst runtime binary modes', issues);
     requireText(postinst, `chmod 0750 ${LINUX_SERVICE_CONFIG_ROOT}`, 'postinst config directory mode', issues);
-    requireText(postinst, `chmod 0640 ${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example`, 'postinst release env template mode', issues);
+    requireText(postinst, `chmod 0640 ${LINUX_SERVICE_CONFIG_ROOT}/.env.standalone.production.example`, 'postinst release env template mode', issues);
     requireText(postinst, `chmod 0640 ${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example`, 'postinst config template mode', issues);
     requireText(postinst, `chmod 0750 ${LINUX_SERVICE_DATA_ROOT} ${LINUX_SERVICE_LOG_ROOT}`, 'postinst state/log directory modes', issues);
   } else {
@@ -234,16 +234,16 @@ function validateDebianArtifact(packageItem, artifactBytes) {
   requireTarEntry(dataEntries, `${linuxSharedArchiveRoot}/install-manifest.json`, 'file', 0o644, issues);
   requireParentBeforeChild(dataEntryNames, './usr/bin', './usr/bin/cloudrouter', issues);
   requireParentBeforeChild(dataEntryNames, `.${LINUX_SERVICE_RUNTIME_ROOT}`, `.${LINUX_SERVICE_RUNTIME_ROOT}/bin/cloudrouter`, issues);
-  if (dataEntries.has(`.${POSIX_INSTALL_ROOT}/.env.release.example`) || dataEntries.has(`.${LINUX_SERVICE_RUNTIME_ROOT}/.env.release.example`)) {
+  if (dataEntries.has(`.${POSIX_INSTALL_ROOT}/.env.standalone.production.example`) || dataEntries.has(`.${LINUX_SERVICE_RUNTIME_ROOT}/.env.standalone.production.example`)) {
     issues.push(`release env template must not be installed under ${POSIX_INSTALL_ROOT} or ${LINUX_SERVICE_RUNTIME_ROOT}`);
   }
 
   if (packageItem.deploymentMode === 'service') {
     requireTarEntry(dataEntries, `.${LINUX_SERVICE_CONFIG_ROOT}`, 'directory', 0o750, issues);
-    requireTarEntry(dataEntries, `.${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example`, 'file', 0o640, issues);
+    requireTarEntry(dataEntries, `.${LINUX_SERVICE_CONFIG_ROOT}/.env.standalone.production.example`, 'file', 0o640, issues);
     requireTarEntry(dataEntries, `.${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example`, 'file', 0o640, issues);
     requireTarEntry(dataEntries, './lib/systemd/system/cloudrouter.service', 'file', 0o644, issues);
-    requireParentBeforeChild(dataEntryNames, `.${LINUX_SERVICE_CONFIG_ROOT}`, `.${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example`, issues);
+    requireParentBeforeChild(dataEntryNames, `.${LINUX_SERVICE_CONFIG_ROOT}`, `.${LINUX_SERVICE_CONFIG_ROOT}/.env.standalone.production.example`, issues);
     requireParentBeforeChild(dataEntryNames, `.${LINUX_SERVICE_CONFIG_ROOT}`, `.${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example`, issues);
     const systemdUnit = dataEntries.get('./lib/systemd/system/cloudrouter.service')?.data.toString('utf8') ?? '';
     requireText(systemdUnit, `WorkingDirectory=${LINUX_SERVICE_RUNTIME_ROOT}`, 'systemd working directory', issues);
@@ -259,8 +259,8 @@ function validateDebianArtifact(packageItem, artifactBytes) {
     requireTarEntry(dataEntries, `${linuxSharedArchiveRoot}/config`, 'directory', 0o755, issues);
     requireTarEntry(dataEntries, `${linuxSharedArchiveRoot}/config/config.toml.example`, 'file', 0o644, issues);
     requireParentBeforeChild(dataEntryNames, `${linuxSharedArchiveRoot}/config`, `${linuxSharedArchiveRoot}/config/config.toml.example`, issues);
-    if ([...dataEntries.keys()].some((entry) => entry.endsWith('/.env.release.example'))) {
-      issues.push('Linux desktop native package must not install .env.release.example into system payload');
+    if ([...dataEntries.keys()].some((entry) => entry.endsWith('/.env.standalone.production.example'))) {
+      issues.push('Linux desktop native package must not install .env.standalone.production.example into system payload');
     }
     if (dataEntries.has(`.${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example`)) {
       issues.push(`Linux desktop native package must keep runtime config template under ${LINUX_SHARED_ROOT}/config`);
@@ -296,14 +296,14 @@ function validateNativeManifest(packageItem, manifest) {
   requireManifestPath(nativeInstall, 'files.portal', `${LINUX_SERVICE_RUNTIME_ROOT}/portal/dist`, issues);
   if (packageItem.deploymentMode === 'service') {
     requireManifestPath(nativeInstall, 'installRoot', LINUX_SERVICE_RUNTIME_ROOT, issues);
-    requireManifestPath(nativeInstall, 'files.releaseEnvTemplate', `${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example`, issues);
+    requireManifestPath(nativeInstall, 'files.releaseEnvTemplate', `${LINUX_SERVICE_CONFIG_ROOT}/.env.standalone.production.example`, issues);
     requireManifestPath(nativeInstall, 'files.runtimeConfigTemplate', `${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example`, issues);
     requirePermission(nativeInstall, LINUX_SERVICE_CONFIG_ROOT, 'root', 'sdkwork', '0750', issues);
-    requirePermission(nativeInstall, `${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example`, 'root', 'sdkwork', '0640', issues);
+    requirePermission(nativeInstall, `${LINUX_SERVICE_CONFIG_ROOT}/.env.standalone.production.example`, 'root', 'sdkwork', '0640', issues);
     requirePermission(nativeInstall, LINUX_SERVICE_DATA_ROOT, 'sdkwork', 'sdkwork', '0750', issues);
     requirePermission(nativeInstall, LINUX_SERVICE_LOG_ROOT, 'sdkwork', 'sdkwork', '0750', issues);
   } else {
-    requireManifestPath(nativeInstall, 'files.releaseEnvTemplate', `${USER_PRIVATE_ROUTER_ROOT}/config/.env.release.example`, issues);
+    requireManifestPath(nativeInstall, 'files.releaseEnvTemplate', `${USER_PRIVATE_ROUTER_ROOT}/config/.env.standalone.production.example`, issues);
     requireManifestPath(nativeInstall, 'files.runtimeConfigTemplate', `${LINUX_SHARED_ROOT}/config/config.toml.example`, issues);
     requirePermission(nativeInstall, LINUX_SERVICE_RUNTIME_ROOT, 'root', 'root', '0755', issues);
     requirePermission(nativeInstall, '/usr/bin/cloudrouter', 'root', 'root', '0755', issues);
@@ -344,10 +344,10 @@ function validateWindowsNativeManifest(packageItem, manifest) {
   requireManifestPath(nativeInstall, 'files.portal', `${WINDOWS_INSTALL_ROOT}/portal/dist`, issues);
   requirePermission(nativeInstall, WINDOWS_INSTALL_ROOT, 'SYSTEM', 'Administrators', 'inherited-programfiles-acl', issues);
   requirePermission(nativeInstall, WINDOWS_SYSTEM_ROOT, 'SYSTEM', 'Administrators', 'inherited-programdata-acl', issues);
-  requirePermission(nativeInstall, `${WINDOWS_SYSTEM_ROOT}/.env.release.example`, 'SYSTEM', 'Administrators', 'inherited-programdata-acl', issues);
+  requirePermission(nativeInstall, `${WINDOWS_SYSTEM_ROOT}/.env.standalone.production.example`, 'SYSTEM', 'Administrators', 'inherited-programdata-acl', issues);
   requirePermission(nativeInstall, `${WINDOWS_SYSTEM_ROOT}/config.toml.example`, 'SYSTEM', 'Administrators', 'inherited-programdata-acl', issues);
   if (packageItem.deploymentMode === 'service') {
-    requireManifestPath(nativeInstall, 'files.releaseEnvTemplate', `${WINDOWS_SYSTEM_ROOT}/.env.release.example`, issues);
+    requireManifestPath(nativeInstall, 'files.releaseEnvTemplate', `${WINDOWS_SYSTEM_ROOT}/.env.standalone.production.example`, issues);
     requireManifestPath(nativeInstall, 'files.runtimeConfigTemplate', `${WINDOWS_SYSTEM_ROOT}/config.toml.example`, issues);
     requireManifestPath(nativeInstall, 'files.runtimeConfig', `${WINDOWS_SYSTEM_ROOT}/config.toml`, issues);
     requirePermission(nativeInstall, `${WINDOWS_SYSTEM_ROOT}/config.toml`, 'SYSTEM', 'Administrators', 'inherited-programdata-acl', issues);
@@ -355,7 +355,7 @@ function validateWindowsNativeManifest(packageItem, manifest) {
     requirePermission(nativeInstall, `${WINDOWS_SYSTEM_ROOT}/redis.secret`, 'SYSTEM', 'Administrators', 'inherited-programdata-acl', issues);
     requirePermission(nativeInstall, `${WINDOWS_SYSTEM_ROOT}/Data`, 'SYSTEM', 'Administrators', 'inherited-programdata-acl', issues);
   } else {
-    requireManifestPath(nativeInstall, 'files.releaseEnvTemplate', `${WINDOWS_SYSTEM_ROOT}/.env.release.example`, issues);
+    requireManifestPath(nativeInstall, 'files.releaseEnvTemplate', `${WINDOWS_SYSTEM_ROOT}/.env.standalone.production.example`, issues);
     requireManifestPath(nativeInstall, 'files.runtimeConfigTemplate', `${WINDOWS_SYSTEM_ROOT}/config.toml.example`, issues);
     requireManifestPath(nativeInstall, 'files.runtimeConfig', `${WINDOWS_USER_ROOT}/config/config.toml`, issues);
     requirePermission(nativeInstall, `${WINDOWS_USER_ROOT}/config/config.toml`, 'current-user', 'current-user', 'user-profile-acl', issues);
@@ -375,12 +375,12 @@ function validateMacosNativeManifest(packageItem, manifest) {
     requireManifestPath(nativeInstall, 'installRoot', MACOS_SERVICE_ROOT, issues);
     requireManifestPath(nativeInstall, 'files.binary', `${MACOS_SERVICE_ROOT}/bin/cloudrouter`, issues);
     requireManifestPath(nativeInstall, 'files.installer', `${MACOS_SERVICE_ROOT}/bin/cloudrouterctl`, issues);
-    requireManifestPath(nativeInstall, 'files.releaseEnvTemplate', `${MACOS_SERVICE_ROOT}/.env.release.example`, issues);
+    requireManifestPath(nativeInstall, 'files.releaseEnvTemplate', `${MACOS_SERVICE_ROOT}/.env.standalone.production.example`, issues);
     requireManifestPath(nativeInstall, 'files.runtimeConfigTemplate', `${MACOS_SERVICE_ROOT}/config.toml.example`, issues);
     requireManifestPath(nativeInstall, 'files.serviceRunner', `${MACOS_SERVICE_ROOT}/service/macos/cloudrouter-service-runner`, issues);
     requirePermission(nativeInstall, MACOS_SERVICE_ROOT, 'root', 'wheel', '0750', issues);
     requirePermission(nativeInstall, `${MACOS_SERVICE_ROOT}/bin`, 'root', 'wheel', '0755', issues);
-    requirePermission(nativeInstall, `${MACOS_SERVICE_ROOT}/.env.release.example`, 'root', 'wheel', '0640', issues);
+    requirePermission(nativeInstall, `${MACOS_SERVICE_ROOT}/.env.standalone.production.example`, 'root', 'wheel', '0640', issues);
     requirePermission(nativeInstall, `${MACOS_SERVICE_ROOT}/config.toml.example`, 'root', 'wheel', '0640', issues);
     requirePermission(nativeInstall, `${MACOS_SERVICE_ROOT}/config.toml`, 'root', 'wheel', '0640', issues);
     requirePermission(nativeInstall, LINUX_SERVICE_LOG_ROOT, 'root', 'wheel', '0750', issues);
@@ -389,7 +389,7 @@ function validateMacosNativeManifest(packageItem, manifest) {
     requireManifestPath(nativeInstall, 'installRoot', POSIX_INSTALL_ROOT, issues);
     requireManifestPath(nativeInstall, 'files.binary', `${POSIX_INSTALL_ROOT}/bin/cloudrouter`, issues);
     requireManifestPath(nativeInstall, 'files.installer', `${POSIX_INSTALL_ROOT}/bin/cloudrouterctl`, issues);
-    requireManifestPath(nativeInstall, 'files.releaseEnvTemplate', `${USER_PRIVATE_ROUTER_ROOT}/config/.env.release.example`, issues);
+    requireManifestPath(nativeInstall, 'files.releaseEnvTemplate', `${USER_PRIVATE_ROUTER_ROOT}/config/.env.standalone.production.example`, issues);
     requireManifestPath(nativeInstall, 'files.runtimeConfigTemplate', `${MACOS_SHARED_ROOT}/config/config.toml.example`, issues);
     requirePermission(nativeInstall, POSIX_INSTALL_ROOT, 'root', 'wheel', '0755', issues);
     requirePermission(nativeInstall, `${POSIX_INSTALL_ROOT}/bin`, 'root', 'wheel', '0755', issues);
@@ -408,8 +408,8 @@ function validateTarGzArtifact(packageItem, artifactBytes) {
       issues.push(`${packageItem.id} archive missing ${requiredEntry}`);
     }
   }
-  if (entries.has('.env.release')) {
-    issues.push(`${packageItem.id} archive must not include .env.release`);
+  if (entries.has('.env.standalone.production')) {
+    issues.push(`${packageItem.id} archive must not include .env.standalone.production`);
   }
   return issues;
 }
@@ -424,8 +424,8 @@ function validateZipArtifact(packageItem, artifactBytes) {
       issues.push(`${packageItem.id} zip missing ${requiredEntry}`);
     }
   }
-  if (entries.has('.env.release')) {
-    issues.push(`${packageItem.id} zip must not include .env.release`);
+  if (entries.has('.env.standalone.production')) {
+    issues.push(`${packageItem.id} zip must not include .env.standalone.production`);
   }
   return issues;
 }

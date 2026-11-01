@@ -2,7 +2,7 @@
 //! the Cloud Router standalone gateway.
 //!
 //! Development boots the gateway with `SDKWORK_DATABASE_AUTO_MIGRATE=true` and
-//! `SDKWORK_DATABASE_SEED_ON_BOOT=true` (`.env.postgres`), so every federated
+//! `SDKWORK_DATABASE_SEED_ON_BOOT=true` (`config/host/postgres.env`), so every federated
 //! module is migrated and seeded at gateway boot — that is how the commercial
 //! reference data (subscription plans and plan groups in `membership_plan` /
 //! `membership_package_group`, payment method catalogs, promotion and partner

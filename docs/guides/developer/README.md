@@ -148,7 +148,7 @@ Copy `.env.example` to `.env` and configure:
 - `VITE_CLOUDROUTER_*` for browser-visible SDK paths
 - `SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_*` for private dev-server proxy upstreams
 
-Do not put `PORTAL_PUBLIC_*` or legacy `PORTAL_DEV_PROXY_*` in `.env.development`. See `specs/application-env-standard.md` for the full environment contract.
+Do not put `PORTAL_PUBLIC_*` or legacy `PORTAL_DEV_PROXY_*` in `.env.standalone.development`. See `specs/application-env-standard.md` for the full environment contract.
 
 ## 2. Repository Layout
 
@@ -281,7 +281,7 @@ When error monitoring is added:
 1. **Sourcemap upload**: Configure the build pipeline to upload sourcemaps to the chosen provider during `pnpm build`. Sourcemaps must not be served publicly to avoid exposing source code.
 2. **Error boundary hook**: Extend `PortalErrorBoundary` to forward caught errors (with component stack and route context) to the monitoring provider. Respect user privacy: do not send request bodies, tokens, or PII.
 3. **Release tagging**: Tag events with the release version from `docs/release/VERSION.md` so errors can be correlated to deployments.
-4. **DSN configuration**: Add the provider DSN as a `PORTAL_PUBLIC_*` key on the release host (`.env.release`), mapped to browser `VITE_*` through `/runtime-env.js`.
+4. **DSN configuration**: Add the provider DSN as a `PORTAL_PUBLIC_*` key on the release host (`.env.standalone.production`), mapped to browser `VITE_*` through `/runtime-env.js`.
 5. **Consent**: If the deployment region requires it (e.g., GDPR), gate error reporting behind user consent.
 
 ### What Not to Do

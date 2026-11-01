@@ -50,7 +50,7 @@ coverage/
 # Secrets and local state (templates are exempt via *.example)
 .env
 .env.*
-!.env.release.example
+!.env.standalone.production.example
 secrets/
 *.pem
 *.key

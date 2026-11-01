@@ -20,7 +20,7 @@ _tmp_*
 .env
 .env.*
 !.env.*.example
-# Host profile env files (.env.development, .env.release, …) are ignored via .env.*
+# Host profile env files (.env.standalone.development, .env.standalone.production, …) are ignored via .env.*
 
 node_modules/
 dist/
@@ -75,7 +75,7 @@ data/skills/cloudhub/raw/details/*.json
 !data/skills/cloudhub/raw/details/*-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f].json
 
 # SDKWork profile env files (see specs/application-env-standard.md)
-# Host profiles such as .env.development and .env.release are ignored via .env.*
+# Host profiles such as .env.standalone.development and .env.standalone.production are ignored via .env.*
 # `etc/topology/<profile>.production.env` is authored topology source, not a host
 # profile: SOURCE_CONFIG_SPEC.md section "Profile resolution" registers
 # cloud.production / standalone.production under it. Ignoring it hid the whole
@@ -97,7 +97,7 @@ apps/*/packages/*/pnpm-lock.yaml
 **/node_modules/
 **/target/
 !.env.example
-!.env.postgres.example
+!config/host/postgres.env.example
 **/dist/
 coverage/
 **/.pnpm-store/

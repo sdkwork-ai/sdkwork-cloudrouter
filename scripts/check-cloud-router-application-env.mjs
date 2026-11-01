@@ -67,25 +67,25 @@ const REQUIRED_ENTRYPOINT_MARKERS = Object.freeze([
 
 const REQUIRED_TEMPLATE_FILES = Object.freeze([
   path.join(PORTAL_ROOT, '.env.example'),
-  path.join(PORTAL_ROOT, '.env.development.example'),
-  path.join(PORTAL_ROOT, '.env.production.example'),
-  path.join(WORKSPACE_ROOT, '.env.release.example'),
+  path.join(PORTAL_ROOT, '.env.standalone.development.example'),
+  path.join(PORTAL_ROOT, '.env.standalone.production.example'),
+  path.join(WORKSPACE_ROOT, '.env.standalone.production.example'),
 ]);
 
 const DEVELOPMENT_ACCESS_TOKEN_TEMPLATE = path.join(
   PORTAL_ROOT,
-  '.env.development.example',
+  '.env.standalone.development.example',
 );
 
 const TOKEN_FREE_PRODUCTION_TEMPLATE_FILES = Object.freeze([
   path.join(PORTAL_ROOT, '.env.example'),
-  path.join(PORTAL_ROOT, '.env.production.example'),
-  path.join(WORKSPACE_ROOT, '.env.release.example'),
+  path.join(PORTAL_ROOT, '.env.standalone.production.example'),
+  path.join(WORKSPACE_ROOT, '.env.standalone.production.example'),
 ]);
 
 const BROWSER_PROFILE_TEMPLATE_FILES = Object.freeze([
-  path.join(PORTAL_ROOT, '.env.development.example'),
-  path.join(PORTAL_ROOT, '.env.production.example'),
+  path.join(PORTAL_ROOT, '.env.standalone.development.example'),
+  path.join(PORTAL_ROOT, '.env.standalone.production.example'),
 ]);
 
 const KUBERNETES_RUNTIME_FILES = Object.freeze([
@@ -98,7 +98,7 @@ const KUBERNETES_RUNTIME_FILES = Object.freeze([
 
 const LIFECYCLE_TEMPLATE_EXPECTATIONS = Object.freeze([
   {
-    file: path.join(PORTAL_ROOT, '.env.development.example'),
+    file: path.join(PORTAL_ROOT, '.env.standalone.development.example'),
     expected: {
       [CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.configProfile]: 'dev',
       [CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.environment]: 'development',
@@ -107,7 +107,7 @@ const LIFECYCLE_TEMPLATE_EXPECTATIONS = Object.freeze([
     },
   },
   {
-    file: path.join(PORTAL_ROOT, '.env.production.example'),
+    file: path.join(PORTAL_ROOT, '.env.standalone.production.example'),
     expected: {
       [CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.configProfile]: 'prod',
       [CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.environment]: 'production',
@@ -116,7 +116,7 @@ const LIFECYCLE_TEMPLATE_EXPECTATIONS = Object.freeze([
     },
   },
   {
-    file: path.join(WORKSPACE_ROOT, '.env.release.example'),
+    file: path.join(WORKSPACE_ROOT, '.env.standalone.production.example'),
     expected: {
       [CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.configProfile]: 'prod',
       [CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.environment]: 'production',
@@ -270,41 +270,41 @@ function assertEntrypointMarkers() {
 }
 
 function assertDevelopmentTemplateUsesStandardBrowserEnvKeys() {
-  const templatePath = path.join(PORTAL_ROOT, '.env.development.example');
+  const templatePath = path.join(PORTAL_ROOT, '.env.standalone.development.example');
   const content = readFileSync(templatePath, 'utf8');
   assertEnvTemplateFreeOfForbiddenBrowserProfileKeys(content, {
-    profileLabel: '.env.development.example',
+    profileLabel: '.env.standalone.development.example',
   });
   if (!content.includes('SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_OPEN_API_ORIGIN')) {
-    throw new Error('.env.development.example must document SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_OPEN_API_ORIGIN');
+    throw new Error('.env.standalone.development.example must document SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_OPEN_API_ORIGIN');
   }
   if (!content.includes('VITE_API_BASE_URL')) {
-    throw new Error('.env.development.example must document VITE_API_BASE_URL');
+    throw new Error('.env.standalone.development.example must document VITE_API_BASE_URL');
   }
   if (!content.includes('VITE_TOOL_API_ENABLED')) {
-    throw new Error('.env.development.example must document VITE_TOOL_API_ENABLED');
+    throw new Error('.env.standalone.development.example must document VITE_TOOL_API_ENABLED');
   }
 }
 
 function assertProductionTemplateForbidsLegacyPortalKeys() {
-  const templatePath = path.join(PORTAL_ROOT, '.env.production.example');
+  const templatePath = path.join(PORTAL_ROOT, '.env.standalone.production.example');
   const content = readFileSync(templatePath, 'utf8');
   assertEnvTemplateFreeOfForbiddenBrowserProfileKeys(content, {
-    profileLabel: '.env.production.example',
+    profileLabel: '.env.standalone.production.example',
   });
 }
 
 function assertReleaseTemplateDocumentsPortalPublicKeys() {
-  const templatePath = path.join(WORKSPACE_ROOT, '.env.release.example');
+  const templatePath = path.join(WORKSPACE_ROOT, '.env.standalone.production.example');
   const content = readFileSync(templatePath, 'utf8');
   for (const key of RELEASE_PORTAL_PUBLIC_KEYS) {
     if (!content.includes(key)) {
-      throw new Error(`.env.release.example must document ${key}`);
+      throw new Error(`.env.standalone.production.example must document ${key}`);
     }
   }
   for (const key of CLOUD_ROUTER_RELEASE_EDGE_ENV_KEY_ORDER) {
     if (!content.includes(key)) {
-      throw new Error(`.env.release.example must document private edge key ${key}`);
+      throw new Error(`.env.standalone.production.example must document private edge key ${key}`);
     }
   }
   const forbiddenAssignments = findForbiddenEnvKeysInContent(content, {
@@ -312,7 +312,7 @@ function assertReleaseTemplateDocumentsPortalPublicKeys() {
   });
   if (forbiddenAssignments.length > 0) {
     const sample = forbiddenAssignments.map((entry) => `${entry.key} (line ${entry.line})`).join(', ');
-    throw new Error(`.env.release.example must not assign legacy private edge keys: ${sample}`);
+    throw new Error(`.env.standalone.production.example must not assign legacy private edge keys: ${sample}`);
   }
 }
 
@@ -365,7 +365,7 @@ function assertViteReadsStandardBrowserDevProxyKeys() {
 }
 
 function assertHostReleaseProfileFreeOfLegacyEdgeKeys() {
-  const profileFilePath = path.join(WORKSPACE_ROOT, '.env.release');
+  const profileFilePath = path.join(WORKSPACE_ROOT, '.env.standalone.production');
   if (!existsSync(profileFilePath)) {
     return;
   }
@@ -376,7 +376,7 @@ function assertHostReleaseProfileFreeOfLegacyEdgeKeys() {
   if (forbidden.length > 0) {
     const sample = forbidden.slice(0, 5).map((entry) => `${entry.key} (line ${entry.line})`).join(', ');
     throw new Error(
-      `.env.release contains legacy private edge keys; run `
+      `.env.standalone.production contains legacy private edge keys; run `
       + 'node scripts/ensure-cloud-router-env.mjs --lifecycle start: '
       + sample,
     );
@@ -384,7 +384,7 @@ function assertHostReleaseProfileFreeOfLegacyEdgeKeys() {
 }
 
 function assertHostReleaseProfileHasCanonicalKeyOrder() {
-  const profileFilePath = path.join(WORKSPACE_ROOT, '.env.release');
+  const profileFilePath = path.join(WORKSPACE_ROOT, '.env.standalone.production');
   if (!existsSync(profileFilePath)) {
     return;
   }
@@ -394,7 +394,7 @@ function assertHostReleaseProfileHasCanonicalKeyOrder() {
   );
   if (missing.length > 0) {
     throw new Error(
-      `.env.release is missing canonical keys; run `
+      `.env.standalone.production is missing canonical keys; run `
       + 'node scripts/ensure-cloud-router-env.mjs --lifecycle start: '
       + missing.join(', '),
     );
@@ -403,8 +403,8 @@ function assertHostReleaseProfileHasCanonicalKeyOrder() {
 
 function assertHostProductionProfilesDoNotPersistAccessToken() {
   for (const profileFilePath of [
-    path.join(PORTAL_ROOT, '.env.production'),
-    path.join(WORKSPACE_ROOT, '.env.release'),
+    path.join(PORTAL_ROOT, '.env.standalone.production'),
+    path.join(WORKSPACE_ROOT, '.env.standalone.production'),
   ]) {
     if (!existsSync(profileFilePath)) {
       continue;
@@ -420,7 +420,7 @@ function assertHostProductionProfilesDoNotPersistAccessToken() {
 }
 
 function assertHostBrowserProfilesFreeOfLegacyPortalKeys() {
-  for (const profileFileName of ['.env.development', '.env.production']) {
+  for (const profileFileName of ['.env.standalone.development', '.env.standalone.production']) {
     const profileFilePath = path.join(PORTAL_ROOT, profileFileName);
     if (!existsSync(profileFilePath)) {
       continue;
@@ -431,7 +431,7 @@ function assertHostBrowserProfilesFreeOfLegacyPortalKeys() {
       const sample = forbidden.slice(0, 5).map((entry) => `${entry.key} (line ${entry.line})`).join(', ');
       throw new Error(
         `${profileFileName} contains legacy PORTAL_* keys; run `
-        + `node scripts/ensure-cloud-router-env.mjs --lifecycle ${profileFileName === '.env.development' ? 'dev' : 'build'}: ${sample}`,
+        + `node scripts/ensure-cloud-router-env.mjs --lifecycle ${profileFileName === '.env.standalone.development' ? 'dev' : 'build'}: ${sample}`,
       );
     }
   }

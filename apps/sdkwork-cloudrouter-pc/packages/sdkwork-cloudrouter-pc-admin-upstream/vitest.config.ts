@@ -8,7 +8,7 @@ import { defineConfig } from 'vitest/config';
  * local is what makes `pnpm --filter @sdkwork/cloudrouter-pc-admin-upstream test`
  * self-contained — the app-root `vite.config.ts` resolves the browser dev-proxy
  * targets out of the portal environment and refuses to load at all when
- * `.env.development` has not been materialised, which has nothing to do with
+ * `.env.standalone.development` has not been materialised, which has nothing to do with
  * what this suite asserts.
  *
  * Sibling packages document the same split (`sdkwork-cloudrouter-pc-console-agents`,

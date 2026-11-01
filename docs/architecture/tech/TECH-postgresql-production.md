@@ -1,7 +1,7 @@
 > Migrated from `docs/installation/postgresql-production.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
-This guide documents the production PostgreSQL configuration for SDKWork Cloud Router. Production deployments should use the runtime TOML configuration file and protected secret files. Do not reuse the development `.env.postgres` file in production.
+This guide documents the production PostgreSQL configuration for SDKWork Cloud Router. Production deployments should use the runtime TOML configuration file and protected secret files. Do not reuse the development `config/host/postgres.env` file in production.
 
 ## 1. Standard Linux Service Layout
 
@@ -95,14 +95,14 @@ Development, production, and desktop runtime data must stay separate:
 
 | Concern | Development integration | Production service/container | Desktop local runtime |
 | --- | --- | --- | --- |
-| Database default | PostgreSQL through `.env.postgres.example` or `.env.postgres` | PostgreSQL through protected TOML and secret files | SQLite |
-| Config entrypoint | default dev profile or `.env.postgres` override | `/etc/sdkwork/router/config.toml` | `~/.sdkwork/router/config/config.toml` |
-| Password storage | local untracked `.env.postgres` | `/etc/sdkwork/database/database.secret` | no PostgreSQL password by default |
+| Database default | PostgreSQL through `config/host/postgres.env.example` or `config/host/postgres.env` | PostgreSQL through protected TOML and secret files | SQLite |
+| Config entrypoint | default dev profile or `config/host/postgres.env` override | `/etc/sdkwork/router/config.toml` | `~/.sdkwork/router/config/config.toml` |
+| Password storage | local untracked `config/host/postgres.env` | `/etc/sdkwork/database/database.secret` | no PostgreSQL password by default |
 | Startup command | `pnpm dev:server` | native service, container, or packaged runtime | desktop package or explicit SQLite dev command |
 | Data file | external local PostgreSQL | external managed PostgreSQL | `~/.sdkwork/router/data/cloudrouter.sqlite` |
 | SSL mode | usually `disable` | usually `require` | not applicable by default |
 
-Do not copy `.env.postgres` to a production host as the service configuration. It is only a local developer convenience profile.
+Do not copy `config/host/postgres.env` to a production host as the service configuration. It is only a local developer convenience profile.
 Do not use this production PostgreSQL guide as the desktop default. Desktop
 packages preserve local data in SQLite unless the user explicitly configures an
 external PostgreSQL database.

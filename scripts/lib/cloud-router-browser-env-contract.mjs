@@ -1,15 +1,15 @@
 /**
  * Cloud Router browser env naming contract aligned with ../sdkwork-specs/ENVIRONMENT_SPEC.md.
  *
- * Development profile (.env.development):
+ * Development profile (.env.standalone.development):
  *   - SDKWORK_CLOUDROUTER_ROUTER_* application lifecycle metadata
  *   - SDKWORK_ACCESS_TOKEN blank tracked placeholder; live value is in the
  *     ignored .env.development.bootstrap.local overlay
  *   - SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_* private Vite proxy origins
  *   - VITE_* browser-visible SDK/runtime values
  *
- * Release profile (.env.release):
- *   - PORTAL_PUBLIC_* server inputs for /runtime-env.js (never in .env.development)
+ * Release profile (.env.standalone.production):
+ *   - PORTAL_PUBLIC_* server inputs for /runtime-env.js (never in .env.standalone.development)
  *   - SDKWORK_CLOUDROUTER_EDGE_* / SDKWORK_CLOUDROUTER_TOOL_API_* private edge-server settings
  */
 
@@ -447,7 +447,7 @@ export const CLOUD_ROUTER_LOCAL_PLATFORM_API_GATEWAY_ENV_KEY =
  * proxy, and the proxy upstream origins bind to the local gateway process
  * instead of any api-dev.<base-domain> edge (a cloud-mode build/deploy
  * concern, never a dev:cloud concern). Applied after the existing-value merge
- * so stale absolute domain URLs previously persisted in .env.development are
+ * so stale absolute domain URLs previously persisted in .env.standalone.development are
  * corrected on the next dev:cloud startup.
  */
 export function alignCloudLocalGatewayBrowserDevelopmentEnv(record = {}, {

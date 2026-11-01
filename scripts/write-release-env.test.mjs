@@ -16,7 +16,7 @@ const validReleaseEnv = Object.freeze({
 test('buildReleaseEnvFilePlan writes every canonical release key including empty values', () => {
   const plan = buildReleaseEnvFilePlan({
     env: validReleaseEnv,
-    outputPath: '.env.release',
+    outputPath: '.env.standalone.production',
     overwrite: false,
     existingFile: false,
   });
@@ -39,7 +39,7 @@ test('buildReleaseEnvFilePlan never persists SDKWORK_ACCESS_TOKEN from process e
       ...validReleaseEnv,
       SDKWORK_ACCESS_TOKEN: 'test-only-input-token',
     },
-    outputPath: '.env.release',
+    outputPath: '.env.standalone.production',
     overwrite: false,
     existingFile: false,
   });
@@ -59,7 +59,7 @@ test('buildReleaseEnvFilePlan rejects invalid edge rate limit values', () => {
         ...validReleaseEnv,
         SDKWORK_CLOUDROUTER_TOOL_API_RATE_LIMIT_REQUESTS: '0',
       },
-      outputPath: '.env.release',
+      outputPath: '.env.standalone.production',
       overwrite: true,
       existingFile: false,
     }),
@@ -74,7 +74,7 @@ test('buildReleaseEnvFilePlan rejects invalid SDK generator base URLs', () => {
         ...validReleaseEnv,
         SDKWORK_CLOUDROUTER_TOOL_API_SDK_GENERATOR_BASE_URL: 'javascript:alert(1)',
       },
-      outputPath: '.env.release',
+      outputPath: '.env.standalone.production',
       overwrite: true,
       existingFile: false,
     }),

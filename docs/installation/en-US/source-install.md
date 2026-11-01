@@ -140,14 +140,14 @@ pnpm start -- --init-config-only --deployment-mode server
 pnpm start -- --init-config-only --deployment-mode desktop
 ```
 
-A source checkout or CI release host can generate `.env.release` from protected process environment variables:
+A source checkout or CI release host can generate `.env.standalone.production` from protected process environment variables:
 
 ```bash
 pnpm release:env:write -- --check
 pnpm release:env:write -- --force
 ```
 
-This command is only for source workspaces. After a formal release package is extracted on a target host, the host does not need `pnpm` or source scripts; copy `.env.release.example`, inject protected environment variables, or use the runtime TOML instead.
+This command is only for source workspaces. After a formal release package is extracted on a target host, the host does not need `pnpm` or source scripts; copy `.env.standalone.production.example`, inject protected environment variables, or use the runtime TOML instead.
 
 Server mode with PostgreSQL:
 
@@ -191,7 +191,7 @@ Build production artifacts:
 pnpm build
 ```
 
-Package building requires a staging directory containing release binaries, portal dist, SDK archives, and `.env.release.example`. Build one package:
+Package building requires a staging directory containing release binaries, portal dist, SDK archives, and `.env.standalone.production.example`. Build one package:
 
 ```bash
 pnpm install:package:build -- --package-id linux-x64-archive --staging-root dist/install-package-staging --output-dir dist/install-packages
@@ -254,7 +254,7 @@ pnpm verify
 Release host:
 
 ```bash
-pnpm release:preflight -- --strict --env-file .env.release --strict-root-clean
+pnpm release:preflight -- --strict --env-file .env.standalone.production --strict-root-clean
 ```
 
 Docker PostgreSQL integration tests:

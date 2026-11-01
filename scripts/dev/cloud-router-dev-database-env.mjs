@@ -281,11 +281,11 @@ export function mergeDevEnvWithDatabasePrecedence(baseEnv, fileEnv) {
 }
 
 export function resolveDefaultDevEnvFilePath(workspaceRoot) {
-  const localOverride = path.join(workspaceRoot, '.env.postgres');
+  const localOverride = path.join(workspaceRoot, 'config/host/postgres.env');
   if (existsSync(localOverride)) {
     return localOverride;
   }
-  const example = path.join(workspaceRoot, '.env.postgres.example');
+  const example = path.join(workspaceRoot, 'config/host/postgres.env.example');
   if (existsSync(example)) {
     return example;
   }

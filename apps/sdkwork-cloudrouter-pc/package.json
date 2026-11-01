@@ -97,8 +97,8 @@
   "scripts": {
     "check:dependencies": "node scripts/check-portal-deps.mjs",
     "predev": "node ../../scripts/ensure-cloud-router-env.mjs --lifecycle dev",
-    "dev": "node ../../scripts/ensure-cloud-router-env.mjs --lifecycle dev && vite --configLoader native",
-    "dev:browser": "node ../../scripts/ensure-cloud-router-env.mjs --lifecycle dev && vite --configLoader native",
+    "dev": "node ../../scripts/ensure-cloud-router-env.mjs --lifecycle dev && vite --configLoader native --mode standalone.development",
+    "dev:browser": "node ../../scripts/ensure-cloud-router-env.mjs --lifecycle dev && vite --configLoader native --mode standalone.development",
     "dev:desktop": "pnpm dev:desktop:postgres:standalone",
     "dev:server": "pnpm exec sdkwork-app dev --root ../.. --runtime-target server --deployment-profile standalone",
     "topology:plan:server": "node ../../scripts/run-cloud-router-application.mjs plan",

@@ -30,7 +30,7 @@ process.env.NODE_ENV = "production";
 
 function parseBuildPortalArgs(argv = process.argv.slice(2)) {
   const settings = {
-    mode: 'production',
+    mode: 'standalone.production',
     outDir: undefined,
     help: false,
   };
@@ -64,8 +64,9 @@ function printHelp() {
 Builds the Cloud Router portal production assets.
 
 Options:
-  --mode <mode>        Vite build mode (default production; cloud builds use
-                       cloud.test or cloud.production to load the materialized
+  --mode <mode>        Vite build mode = profile id (default
+                       standalone.production; cloud builds use cloud.test or
+                       cloud.production to load the materialized
                        .env.cloud.<environment> profile)
   --outDir <path>      Vite build output directory (default dist)
   --dry-run            Print the resolved build settings without building.
@@ -80,7 +81,7 @@ if (buildPortalSettings.help) {
 }
 
 // Cloud profile builds consume the materialized .env.cloud.* files only; the
-// standalone/default .env.production lifecycle profile stays untouched.
+// standalone/default .env.standalone.production lifecycle profile stays untouched.
 if (!buildPortalSettings.mode.startsWith('cloud.')) {
   ensureCloudRouterBrowserProductionEnv({ workspaceRoot });
 }

@@ -290,7 +290,7 @@ function readDevDsn() {
       };
     } catch { /* fall through */ }
   }
-  const envFile = path.join(repoRoot, '.env.postgres');
+  const envFile = path.join(repoRoot, 'config/host/postgres.env');
   if (!fs.existsSync(envFile)) return null;
   const env = {};
   for (const line of fs.readFileSync(envFile, 'utf8').split('\n')) {
@@ -483,7 +483,7 @@ if (dsn) {
 if (!live && !hasFlag('--seed-only')) {
   console.error('per-api-chain-audit: FATAL — the dev database could not be read,');
   console.error('so the account and billing links cannot be asserted.');
-  console.error(`  ${liveError ?? 'no DSN resolved from SDKWORK_DATABASE_URL or .env.postgres'}`);
+  console.error(`  ${liveError ?? 'no DSN resolved from SDKWORK_DATABASE_URL or config/host/postgres.env'}`);
   console.error('Pass --seed-only to intentionally audit the declaration side alone.');
   process.exit(2);
 }

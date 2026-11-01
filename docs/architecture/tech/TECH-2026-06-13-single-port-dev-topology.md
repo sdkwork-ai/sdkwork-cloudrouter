@@ -70,7 +70,7 @@
 **Files:**
 - Modify only if verification reveals gaps
 
-- [ ] **Step 1: Run `node scripts/run-cloud-router-application.mjs plan --dev-env-file .env.postgres`**
+- [ ] **Step 1: Run `node scripts/run-cloud-router-application.mjs plan --dev-env-file config/host/postgres.env`**
 
 - [ ] **Step 2: Confirm the rendered default Cloud Router dev topology still exposes one public entry port**
 

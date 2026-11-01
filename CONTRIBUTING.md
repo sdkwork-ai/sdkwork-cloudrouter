@@ -131,7 +131,7 @@ By submitting a pull request you agree that:
 Release candidates must run the full gate:
 
 ```powershell
-pnpm release:preflight -- --strict --env-file .env.release --strict-root-clean
+pnpm release:preflight -- --strict --env-file .env.standalone.production --strict-root-clean
 pnpm verify
 pnpm test:postgres:required
 CLOUDROUTER_BROWSER_SMOKE_REQUIRED=1 pnpm verify

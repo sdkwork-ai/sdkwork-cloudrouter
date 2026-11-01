@@ -201,7 +201,7 @@ function createArchiveEntriesForPackage(packageItem, stagingRoot, { requireStage
   const entries = [];
   const usedArchivePaths = new Set();
   for (const artifact of packageItem.artifacts) {
-    if (artifact.path === '.env.release') {
+    if (artifact.path === '.env.standalone.production') {
       continue;
     }
     if (artifact.kind === 'install-manifest') {
@@ -338,7 +338,7 @@ function createGeneratedContainerEntries(packageItem) {
 
 function artifactEntries({ artifact, stagingRoot, usedArchivePaths, requireStagedFiles }) {
   const relativePath = normalizeArchivePath(artifact.path);
-  if (relativePath === '.env.release') {
+  if (relativePath === '.env.standalone.production') {
     return [];
   }
   const sourcePath = path.join(stagingRoot, relativePath);
@@ -395,7 +395,7 @@ function collectArchivePaths(sourcePath, relativePath) {
   }
   const result = [];
   for (const child of readdirSync(sourcePath).sort()) {
-    if (child === '.env.release' || child === 'node_modules' || child === '.git') {
+    if (child === '.env.standalone.production' || child === 'node_modules' || child === '.git') {
       continue;
     }
     result.push(...collectArchivePaths(
@@ -417,8 +417,8 @@ function validateInstallPackageBuildPlan(buildPlan) {
   if (!buildPlan.archivePath || !buildPlan.archivePath.endsWith(buildPlan.package.archiveName)) {
     issues.push('archivePath must end with package archiveName');
   }
-  if (buildPlan.entries.some((entry) => entry.archivePath === '.env.release')) {
-    issues.push('.env.release must not be packaged');
+  if (buildPlan.entries.some((entry) => entry.archivePath === '.env.standalone.production')) {
+    issues.push('.env.standalone.production must not be packaged');
   }
   if (buildPlan.entries.some((entry) => /secret/u.test(entry.archivePath))) {
     issues.push('archive entry paths must not contain secret material markers');
@@ -1100,7 +1100,7 @@ function createInstallGuide(packageItem) {
     '',
     '## Security',
     '',
-    'Do not package .env.release.',
+    'Do not package .env.standalone.production.',
     'Generate host-local env files on the target machine and keep secret values outside browser-visible PORTAL_PUBLIC_* variables.',
     'Prefer password_file for database secrets. Use [database].password only when the runtime TOML is protected as a secret-bearing file.',
     'Prefer [redis].password_file for Redis secrets. Use [redis].password only when the runtime TOML is protected as a secret-bearing file.',

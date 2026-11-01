@@ -31,9 +31,9 @@ values for the selected lifecycle; it must not preserve alternate aliases.
 
 | Lifecycle artifact | Config profile | Environment | Deployment profile | Runtime target |
 | --- | --- | --- | --- | --- |
-| `apps/sdkwork-cloudrouter-pc/.env.development` | `dev` | `development` | `standalone` | `browser` |
-| `apps/sdkwork-cloudrouter-pc/.env.production` | `prod` | `production` | `standalone` | `browser` |
-| `.env.release` | `prod` | `production` | `standalone` | `server` |
+| `apps/sdkwork-cloudrouter-pc/.env.standalone.development` | `dev` | `development` | `standalone` | `browser` |
+| `apps/sdkwork-cloudrouter-pc/.env.standalone.production` | `prod` | `production` | `standalone` | `browser` |
+| `.env.standalone.production` | `prod` | `production` | `standalone` | `server` |
 | Kubernetes workloads | `prod` | `production` | `cloud` | `container` |
 
 The checked-in `*.example` files are non-secret templates. Host profile files
@@ -90,8 +90,8 @@ pnpm check:application-env
 pnpm topology:validate
 ```
 
-`dev` owns `.env.development`, `build` owns `.env.production`, and `start`
-owns `.env.release`. Each command is idempotent, preserves unrelated non-empty
+`dev` owns `.env.standalone.development`, `build` owns `.env.standalone.production`, and `start`
+owns `.env.standalone.production`. Each command is idempotent, preserves unrelated non-empty
 operator settings, removes non-canonical lifecycle assignments, and writes the
 canonical lifecycle tuple shown above.
 

@@ -55,7 +55,7 @@ function hasPassthroughFlag(passthrough, flag) {
 
 function applyDatabaseSettings(settings) {
   if (settings.database === 'postgres' && !settings.devEnvFile) {
-    settings.devEnvFile = '.env.postgres';
+    settings.devEnvFile = 'config/host/postgres.env';
   }
   if (
     settings.database === 'sqlite'

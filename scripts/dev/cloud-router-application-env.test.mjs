@@ -73,23 +73,23 @@ function captureProfileWrites(profileFilePath, operation) {
   }
 }
 
-test('resolveApplicationEnvFileNames uses profile files without .local suffix', () => {
+test('resolveApplicationEnvFileNames uses two-dimensional profile files without .local suffix', () => {
   assert.deepEqual(resolveApplicationEnvFileNames('development'), {
     configProfile: 'development',
-    profileBasename: 'development',
+    profileBasename: 'standalone.development',
     canonicalEnvironment: 'development',
-    exampleFileName: '.env.development.example',
-    profileFileName: '.env.development',
+    exampleFileName: '.env.standalone.development.example',
+    profileFileName: '.env.standalone.development',
     genericExampleFileName: '.env.example',
   });
-  assert.equal(resolveApplicationEnvFileNames('release').profileFileName, '.env.release');
+  assert.equal(resolveApplicationEnvFileNames('release').profileFileName, '.env.standalone.production');
   assert.equal(resolveApplicationEnvFileNames('release').profileFileName.includes('.local'), false);
 });
 
 test('resolveFrameworkEnvLoadOrder avoids .local layers', () => {
   assert.deepEqual(
     resolveFrameworkEnvLoadOrder({ framework: 'vite', configProfile: 'development' }),
-    ['.env', '.env.development'],
+    ['.env', '.env.standalone.development'],
   );
 });
 
@@ -134,11 +134,11 @@ test('migrateLegacyBrowserDevelopmentEnvRecord maps PORTAL_PUBLIC_* to VITE_* wh
   assert.equal(migrated.PORTAL_PUBLIC_BACKEND_API_BASE_URL, undefined);
 });
 
-test('ensureCloudRouterBrowserDevelopmentEnv writes .env.development and preserves overrides', () => {
+test('ensureCloudRouterBrowserDevelopmentEnv writes .env.standalone.development and preserves overrides', () => {
   const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'cloud-router-browser-env-'));
   const applicationRoot = path.join(tempRoot, 'apps', 'sdkwork-cloudrouter-pc');
   const manifestPath = path.join(tempRoot, 'agent.app.config.json');
-  const profileFilePath = path.join(applicationRoot, '.env.development');
+  const profileFilePath = path.join(applicationRoot, '.env.standalone.development');
 
   try {
     writeFileSync(
@@ -248,7 +248,7 @@ test('ensureCloudRouterBrowserDevelopmentEnv binds cloud dev to the local platfo
   const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'cloud-router-browser-env-'));
   const applicationRoot = path.join(tempRoot, 'apps', 'sdkwork-cloudrouter-pc');
   const manifestPath = path.join(tempRoot, 'agent.app.config.json');
-  const profileFilePath = path.join(applicationRoot, '.env.development');
+  const profileFilePath = path.join(applicationRoot, '.env.standalone.development');
 
   try {
     writeFileSync(
@@ -327,7 +327,7 @@ test('production and release generated env records omit SDKWORK_ACCESS_TOKEN', (
   assert.equal(CLOUD_ROUTER_RELEASE_ENV_KEY_ORDER.includes('SDKWORK_ACCESS_TOKEN'), false);
 });
 
-test('ensureCloudRouterReleaseEnv writes a token-free .env.release from example defaults', () => {
+test('ensureCloudRouterReleaseEnv writes a token-free .env.standalone.production from example defaults', () => {
   const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'cloud-router-release-env-'));
 
   try {
@@ -340,7 +340,7 @@ test('ensureCloudRouterReleaseEnv writes a token-free .env.release from example 
       'utf8',
     );
     writeFileSync(
-      path.join(tempRoot, '.env.release.example'),
+      path.join(tempRoot, '.env.standalone.production.example'),
       [
         'PORTAL_PUBLIC_SDK_BASE_URL="/"',
         'PORTAL_PUBLIC_API_BASE_URL="/v1"',
@@ -354,7 +354,7 @@ test('ensureCloudRouterReleaseEnv writes a token-free .env.release from example 
       workspaceRoot: tempRoot,
     });
 
-    assert.equal(result.profileFilePath, path.join(tempRoot, '.env.release'));
+    assert.equal(result.profileFilePath, path.join(tempRoot, '.env.standalone.production'));
     assert.equal(result.mergedEnv.PORTAL_PUBLIC_SDK_BASE_URL, '/');
     assert.equal(result.mergedEnv.PORTAL_PUBLIC_API_BASE_URL, '/v1');
     assert.equal(result.mergedEnv.SDKWORK_CLOUDROUTER_TOOL_API_RATE_LIMIT_REQUESTS, '120');
@@ -368,7 +368,7 @@ test('ensureCloudRouterReleaseEnv writes a token-free .env.release from example 
     }
     assert.equal(Object.hasOwn(result.mergedEnv, 'SDKWORK_ACCESS_TOKEN'), false);
     assert.doesNotMatch(
-      readFileSync(path.join(tempRoot, '.env.release'), 'utf8'),
+      readFileSync(path.join(tempRoot, '.env.standalone.production'), 'utf8'),
       /^SDKWORK_ACCESS_TOKEN=/mu,
     );
   } finally {
@@ -379,7 +379,7 @@ test('ensureCloudRouterReleaseEnv writes a token-free .env.release from example 
 test('ensureCloudRouterBrowserProductionEnv omits token state and production bootstrap overlay', () => {
   const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'cloud-router-production-env-'));
   const applicationRoot = path.join(tempRoot, 'apps', 'sdkwork-cloudrouter-pc');
-  const profileFilePath = path.join(applicationRoot, '.env.production');
+  const profileFilePath = path.join(applicationRoot, '.env.standalone.production');
 
   try {
     writeFileSync(
@@ -450,7 +450,7 @@ test('ensureCloudRouterReleaseEnv migrates legacy private edge keys to canonical
       'utf8',
     );
     writeFileSync(
-      path.join(tempRoot, '.env.release.example'),
+      path.join(tempRoot, '.env.standalone.production.example'),
       [
         'PORTAL_PUBLIC_SDK_BASE_URL="/"',
         'PORTAL_PUBLIC_API_BASE_URL="/v1"',
@@ -459,7 +459,7 @@ test('ensureCloudRouterReleaseEnv migrates legacy private edge keys to canonical
       'utf8',
     );
     writeFileSync(
-      path.join(tempRoot, '.env.release'),
+      path.join(tempRoot, '.env.standalone.production'),
       [
         'PORTAL_PUBLIC_SDK_BASE_URL="/"',
         'PORTAL_TOOL_API_RATE_LIMIT_REQUESTS=240',
@@ -484,7 +484,7 @@ test('ensureCloudRouterReleaseEnv migrates legacy private edge keys to canonical
 
 test('ensureCloudRouterReleaseEnv replaces retired lifecycle keys and the release profile alias', () => {
   const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'cloud-router-release-backfill-'));
-  const profileFilePath = path.join(tempRoot, '.env.release');
+  const profileFilePath = path.join(tempRoot, '.env.standalone.production');
 
   try {
     writeFileSync(
@@ -496,7 +496,7 @@ test('ensureCloudRouterReleaseEnv replaces retired lifecycle keys and the releas
       'utf8',
     );
     writeFileSync(
-      path.join(tempRoot, '.env.release.example'),
+      path.join(tempRoot, '.env.standalone.production.example'),
       [
         'PORTAL_PUBLIC_SDK_BASE_URL="/"',
         'PORTAL_PUBLIC_API_BASE_URL="/v1"',
@@ -584,7 +584,7 @@ test('ensureCloudRouterReleaseEnv writes comment-prefixed edge key documentation
       'utf8',
     );
     writeFileSync(
-      path.join(tempRoot, '.env.release.example'),
+      path.join(tempRoot, '.env.standalone.production.example'),
       [
         'PORTAL_PUBLIC_SDK_BASE_URL="/"',
         'PORTAL_PUBLIC_API_BASE_URL="/v1"',
@@ -597,7 +597,7 @@ test('ensureCloudRouterReleaseEnv writes comment-prefixed edge key documentation
       workspaceRoot: tempRoot,
     });
 
-    const written = readFileSync(path.join(tempRoot, '.env.release'), 'utf8');
+    const written = readFileSync(path.join(tempRoot, '.env.standalone.production'), 'utf8');
     assert.match(written, /^# Server-side rate limit/m);
     assert.doesNotMatch(written, /^Server-side rate limit/m);
   } finally {
@@ -699,7 +699,7 @@ test('ensureCloudRouterBrowserDevelopmentEnv refreshes stale bootstrap access to
   );
   const staleToken = 'v2.eyJ0b2tlbktpbmQiOiJhY2Nlc3MiLCJ0ZW5hbnRJZCI6MTAwMDAxfQ.stale';
   writeFileSync(
-    path.join(appRoot, '.env.development'),
+    path.join(appRoot, '.env.standalone.development'),
     `SDKWORK_ACCESS_TOKEN=${staleToken}\n`,
     'utf8',
   );
@@ -731,6 +731,6 @@ test('resolveApplicationEnvPaths selects browser app root for Vite profiles', ()
   });
 
   assert.ok(
-    paths.profileFilePath.endsWith(path.join('apps', 'sdkwork-cloudrouter-pc', '.env.development')),
+    paths.profileFilePath.endsWith(path.join('apps', 'sdkwork-cloudrouter-pc', '.env.standalone.development')),
   );
 });

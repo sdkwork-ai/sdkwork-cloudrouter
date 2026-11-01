@@ -58,7 +58,7 @@ The main improvements made in this pass are:
   `sdkwork-cloudrouter-installer refresh-catalog --force`, and `/healthz` plus
   `/readyz` checks are declared for every package mode
 - package security defaults are explicit: no secrets in package artifacts,
-  `.env.release` excluded, `.env.release.example` reference-only, local
+  `.env.standalone.production` excluded, `.env.standalone.production.example` reference-only, local
   env generated on the install host, and trusted forwarded headers disabled by
   default
 - route delivery classification is now executable: every actual portal route is
@@ -3417,7 +3417,7 @@ Issue found:
   Windows, Linux, macOS, x64, arm64, archive, service, container, fast
   initialization, health checks, and secret exclusion
 - without a shared matrix, future package builders could drift by platform,
-  accidentally include `.env.release`, skip catalog refresh, trust
+  accidentally include `.env.standalone.production`, skip catalog refresh, trust
   forwarded headers by default, or run expensive live `pnpm dev` smoke during
   package initialization
 
@@ -3434,7 +3434,7 @@ Solution applied:
 - the planner generates a 24-entry matrix across platforms, architectures, and
   deployment modes
 - every package contract declares the edge binary, installer binary,
-  `portal/dist`, `portal/dist/sdk-archives`, `.env.release.example`,
+  `portal/dist`, `portal/dist/sdk-archives`, `.env.standalone.production.example`,
   `config/cloudrouter.toml.example`, `install-manifest.json`,
   mode-specific service/container/desktop metadata, fast init commands, and
   `/healthz` plus `/readyz`
@@ -3451,13 +3451,13 @@ Solution applied:
   Containerfile, platform-specific entrypoint, and container metadata artifacts,
   preserves executable mode on Linux/macOS binaries and container entrypoints,
   supports ustar prefix paths for long production asset names, supports pure
-  `--json` output, and excludes `.env.release`
+  `--json` output, and excludes `.env.standalone.production`
 - the builder also supports `--all --check --dry-run` so the root
   `pnpm.cmd install:package:check` command validates archive, service,
   container, and desktop package plans across all 24
   platform/architecture/mode combinations without requiring staged production
   artifacts
-- the install init smoke writes a temporary `.env.release` and
+- the install init smoke writes a temporary `.env.standalone.production` and
   `sdkwork-cloudrouter.toml`, validates PostgreSQL for server package dry-runs
   and a file-backed SQLite initialization URL for desktop package dry-runs,
   verifies `sdkwork-cloudrouter-installer ensure` and
@@ -3494,7 +3494,7 @@ Expected install package builder contract:
   and SHA-256 checksums
 - generate service manifests and container metadata from the shared plan instead
   of maintaining separate platform-specific package lists
-- never include `.env.release` or secret values
+- never include `.env.standalone.production` or secret values
 - run fast install initialization through `sdkwork-cloudrouter-installer ensure` and
   `sdkwork-cloudrouter-installer refresh-catalog --force`
 - gate package initialization with `pnpm.cmd install:init:smoke` by default, and
@@ -3560,13 +3560,13 @@ pnpm.cmd verify
 Remaining delivery policy:
 
 - Use `pnpm.cmd release:preflight` before every local release handoff.
-- Use `pnpm.cmd release:preflight -- --strict --env-file .env.release --strict-root-clean`
+- Use `pnpm.cmd release:preflight -- --strict --env-file .env.standalone.production --strict-root-clean`
   on CI or a release packaging host.
 - Keep release environment variables aligned with
-  `scripts/release-environment-contract.mjs` (v4). Treat `.env.release.example` as
-  the checked-in reference template, generate `.env.release` on release
+  `scripts/release-environment-contract.mjs` (v4). Treat `.env.standalone.production.example` as
+  the checked-in reference template, generate `.env.standalone.production` on release
   hosts from the process environment with `pnpm.cmd release:env:write`, and run
-  `pnpm.cmd release:preflight -- --strict --env-file .env.release --strict-root-clean`
+  `pnpm.cmd release:preflight -- --strict --env-file .env.standalone.production --strict-root-clean`
   before packaging. The contract requires
   `SDKWORK_DATABASE_URL`, `PORTAL_PUBLIC_API_BASE_URL`,
   `PORTAL_PUBLIC_APP_API_BASE_URL`, `PORTAL_PUBLIC_BACKEND_API_BASE_URL`, and
@@ -3583,10 +3583,10 @@ Remaining delivery policy:
 - Prefer `pnpm.cmd release:env:write -- --check` followed by
   `pnpm.cmd release:env:write` on CI or release hosts. The writer reads the
   same contract variables from the process environment, refuses accidental
-  overwrite without `--force`, refuses `.env.release.example` as an output
+  overwrite without `--force`, refuses `.env.standalone.production.example` as an output
   target, and prints only a safe summary without secret values.
 - `pnpm.cmd release` is the canonical release host entrypoint: it runs the
-  release env writer in `--check` mode, regenerates `.env.release` with
+  release env writer in `--check` mode, regenerates `.env.standalone.production` with
   `--force`, runs strict release preflight, and then runs the full `pnpm verify`
   gate.
 - Continue to use `pnpm.cmd verify` as the final commercial gate; preflight is

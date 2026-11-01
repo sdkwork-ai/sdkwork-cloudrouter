@@ -208,7 +208,7 @@ No task may replace these chains with direct edits to generated output.
 - [ ] Add RED environment tests for split lifecycle namespaces and invalid `release` config-profile
       aliases. Migrate application lifecycle keys to `SDKWORK_CLOUDROUTER_ROUTER_CONFIG_PROFILE`,
       `_ENVIRONMENT`, `_DEPLOYMENT_PROFILE`, and `_RUNTIME_TARGET` across Rust, scripts, templates,
-      and Kubernetes with no legacy fallback; `.env.release` uses config profile `prod` and runtime
+      and Kubernetes with no legacy fallback; `.env.standalone.production` uses config profile `prod` and runtime
       target `server`. Use the globally mandated `SDKWORK_DATABASE_*` workspace database
       authority and keep Cloud Router-owned `SDKWORK_CLOUDROUTER_REDIS_*` settings unchanged.
 - [ ] Obtain human review of the production manifest/env-key diff, then make

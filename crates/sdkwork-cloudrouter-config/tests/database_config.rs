@@ -649,7 +649,7 @@ fn server_runtime_validation_rejects_placeholder_postgres_host_and_password() {
         "postgresql://sdkwork_cloudrouter_router:secret@db.example.com:5432/sdkwork_cloudrouter_router?sslmode=require",
         "postgresql://sdkwork_cloudrouter_router:change-me@db.internal:5432/sdkwork_cloudrouter_router?sslmode=require",
         "postgresql://sdkwork_cloudrouter_router:change-me@localhost:5432/sdkwork_cloudrouter_router",
-        // <CHANGE_ME> placeholder from .env.postgres.example (percent-encoded in URL).
+        // <CHANGE_ME> placeholder from config/host/postgres.env.example (percent-encoded in URL).
         "postgresql://sdkwork_ai_prod:%3CCHANGE_ME%3E@db.internal:5432/sdkwork_ai_prod?sslmode=require",
         "postgresql://sdkwork_ai_prod:%3Cchange_me%3E@db.internal:5432/sdkwork_ai_prod?sslmode=require",
         "postgresql://sdkwork_ai_prod:%3CCHANGE-ME%3E@db.internal:5432/sdkwork_ai_prod?sslmode=require",

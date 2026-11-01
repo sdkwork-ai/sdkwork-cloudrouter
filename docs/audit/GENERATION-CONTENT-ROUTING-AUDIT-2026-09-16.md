@@ -1055,7 +1055,7 @@ cargo test -p sdkwork-cloudrouter-edge-runtime --test ai_routing_seed_coverage_e
 
 | # | 项 | 说明 |
 | --- | --- | --- |
-| N-15 | `scripts/dev/start-workspace.mjs:816` 写 `SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT`，而 `installer.rs:34` 读 `SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT` | 两个变量名**从不相交**。后果：`pnpm dev` 起的进程里 install environment 落到 default `production`，本轮若不显式导出 `ROUTER_ENVIRONMENT` 就会重现「账号全 disabled」。`.env.release.example` 同时写了两个名字，进一步掩盖了该问题。**这是本轮唯一靠手工导出变量绕过的缺陷。** |
+| N-15 | `scripts/dev/start-workspace.mjs:816` 写 `SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT`，而 `installer.rs:34` 读 `SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT` | 两个变量名**从不相交**。后果：`pnpm dev` 起的进程里 install environment 落到 default `production`，本轮若不显式导出 `ROUTER_ENVIRONMENT` 就会重现「账号全 disabled」。`.env.standalone.production.example` 同时写了两个名字，进一步掩盖了该问题。**这是本轮唯一靠手工导出变量绕过的缺陷。** |
 | N-16 | `pnpm db:seed`（`sdkwork-database-cli seed`）报 `applied 0 seed script(s)` | 该命令与 `ai_routing_seed.rs` **不是同一套机制**，容易误导。AI routing seed 的真实入口是 `pnpm db:refresh-catalog`。建议在文档/命令帮助里点明，或让 `db:seed` 也触发。 |
 
 ---
@@ -3402,7 +3402,7 @@ pub const ENV_INSTALL_SEED_PROFILE: &str = "SDKWORK_DATABASE_SEED_PROFILE";
 
 | 位置 | 写的名字 | 是否被 installer 读取 |
 |---|---|---|
-| `.env.postgres:70` | `SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT` | ❌ |
+| `config/host/postgres.env:70` | `SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT` | ❌ |
 | `scripts/dev/start-workspace.mjs:816` | `SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT` | ❌ |
 | `scripts/manage-cloud-router-database.mjs:249` | `SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT` | ❌ |
 | `scripts/lib/cloud-router-environment-admin.mjs:71-73` | **两个都写** | ✅（但只被 reset-admin / bootstrap-token 用） |
@@ -3496,8 +3496,8 @@ test result: ok. 5 passed; 0 failed
 | `services/.../sql/ai_routing_seed.rs` | 新增 `postgres_default_vendor_upstream_accounts_complete`（约 +70 行）并接入 `postgres_ai_routing_seed_complete`；新增 2 个单测 |
 | `scripts/manage-cloud-router-database.mjs` | `--environment` 同时导出两个变量名；`redactedEnvSummary` 补列 |
 | `scripts/dev/start-workspace.mjs` | 同时导出两个变量名；seed profile `commercial` → `standard` |
-| `.env.postgres` | 补 `SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT` + `SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE=standard`，附说明注释 |
-| `.env.postgres.example` | 同上（模板必须先修，否则每个新人都复现） |
+| `config/host/postgres.env` | 补 `SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT` + `SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE=standard`，附说明注释 |
+| `config/host/postgres.env.example` | 同上（模板必须先修，否则每个新人都复现） |
 | `scripts/run-cloud-router-application.test.mjs` | 4 处补 `ROUTER_ENVIRONMENT` 断言；2 处 `commercial` → `standard` |
 
 **未改动**：`data/ai-routing/**` 一个字节都没动 —— 供应链上游本来就是完备的，
@@ -3548,7 +3548,7 @@ test result: ok. 5 passed; 0 failed
 5. **测试里的错误期望值会把 bug 锁死**。`assert.equal(env.SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT, 'development')`
    只断言别名、`assert.equal(..., 'commercial')` 断言了一个 installer 明确拒绝的值 ——
    这类断言不是在验证契约，是在**固化实现**。回归守卫要断言「被执行方真正读的那个名字」。
-6. **模板文件必须与实际配置同批修**。只修 `.env.postgres`（本机）不修 `.env.postgres.example`（模板），
+6. **模板文件必须与实际配置同批修**。只修 `config/host/postgres.env`（本机）不修 `config/host/postgres.env.example`（模板），
    等于让下一个新人在克隆后原样复现本 bug。
 
 ## 15.21 第 21 轮：逐模型官方账号路由可达性（两个孤儿端点 + 一条分类学缺口）
@@ -4271,7 +4271,7 @@ assert!(!matches!(suppliers.first(), Some(&"unpriced-provider")),
 `SDKWORK_DATABASE_URL`（缺失则干净跳过）。**只给 `SDKWORK_DATABASE_*` 分项不够**，必须显式导出 URL：
 
 ```bash
-set -a && . ./.env.postgres; set +a
+set -a && . ./config/host/postgres.env; set +a
 export SDKWORK_DATABASE_URL="postgresql://$SDKWORK_DATABASE_USERNAME:$SDKWORK_DATABASE_PASSWORD@127.0.0.1:5432/$SDKWORK_DATABASE_NAME?sslmode=disable"
 ```
 
@@ -4691,7 +4691,7 @@ google/gemini-3.1-flash-image-preview   -> openai.images (status 0)
 | 6 | `embedding` | 9 |
 
 还有一个更容易踩的坑：**catalog 表住在命名 schema `sdkwork_ai_dev` 里，不在 `public`。**
-`.env.postgres` 的 `SDKWORK_DATABASE_SCHEMA=sdkwork_ai_dev` 就是依据。不写 schema 限定
+`config/host/postgres.env` 的 `SDKWORK_DATABASE_SCHEMA=sdkwork_ai_dev` 就是依据。不写 schema 限定
 时查询会命中 `public` 下的另一套 `plus_*` 应用表，**既不会报错也不会返回行**，看起来像
 "这张表是空的"。本轮一度据此得出错误结论，记录在此以免复现。
 

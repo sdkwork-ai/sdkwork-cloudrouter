@@ -59,13 +59,13 @@ STILL MISSING: 0
 
 | 文件 | 大小 | 说明 | 恢复后 sha256(前16) |
 | --- | --- | --- | --- |
-| `apps/sdkwork-cloudrouter-pc/.env.development` | 2281 B | 开发 profile（15 个键，含 dev proxy / API base） | `79c7c989c7d2c32f` |
+| `apps/sdkwork-cloudrouter-pc/.env.standalone.development` | 2281 B | 开发 profile（15 个键，含 dev proxy / API base） | `79c7c989c7d2c32f` |
 | `apps/sdkwork-cloudrouter-pc/.env.development.bootstrap.local` | 1487 B | **私有 `SDKWORK_ACCESS_TOKEN`，不可再生** | `5342385be10da418` |
-| `apps/sdkwork-cloudrouter-pc/.env.production` | 396 B | 生产 profile（4 个 router 键） | `0aec947e96792608` |
+| `apps/sdkwork-cloudrouter-pc/.env.standalone.production` | 396 B | 生产 profile（4 个 router 键） | `0aec947e96792608` |
 | `apps/sdkwork-cloudrouter-h5/public/runtime-env.json` | 877 B | h5 运行时 env 物化产物（`standalone.production`） | `c5c3a859f90530fe` |
 
 **为何必须恢复**：`scripts/check-cloud-router-application-env.mjs:428` 强制要求
-`.env.development` 与 `.env.production` 存在（缺失会直接挂 `check:application-env` 门禁）；
+`.env.standalone.development` 与 `.env.standalone.production` 存在（缺失会直接挂 `check:application-env` 门禁）；
 `.env.development.bootstrap.local` 内的私有访问令牌无任何生成器可重建。
 
 生成器（可用于未来重建，但会丢失本地覆盖值）：
