@@ -75,7 +75,7 @@ jobs:
           # other repositories declare as `workspace:*` dependencies.
           token: ${{ secrets.SDKWORK_RELEASE_TOKEN || github.token }}
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 10.33.0
 
@@ -310,7 +310,7 @@ jobs:
         with:
           token: ${{ secrets.SDKWORK_RELEASE_TOKEN || github.token }}
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 10.33.0
 
