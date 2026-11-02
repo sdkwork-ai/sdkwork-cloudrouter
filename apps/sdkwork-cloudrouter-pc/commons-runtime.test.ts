@@ -66,6 +66,7 @@ import {
   toggleReferenceSidebarGroup,
 } from "./packages/sdkwork-cloudroutes-pc-commons/src/reference-sidebar-groups.ts";
 import { readAdminResourceCollectionMeta } from "./packages/sdkwork-cloudroutes-pc-commons/src/components/AdminResourceCenter.tsx";
+import { resolveReferenceSchemaDocumentOrigins } from "./packages/sdkwork-cloudroutes-pc-commons/src/documents-reference-runtime-adapter.ts";
 import { generateCodeSnippets } from "./packages/sdkwork-cloudrouter-pc-core/src/index.ts";
 
 const originalCryptoDescriptor = Object.getOwnPropertyDescriptor(globalThis, "crypto");
@@ -397,6 +398,53 @@ test("declared cloud build documents resolve to the matching deployment family m
   withBrowserRuntimeDocument(document, () => {
     assert.equal(resolveSharedDependencySurfaceBaseUrl("/app/v3/api"), "https://api.sdkwork.com/app/v3/api");
   });
+});
+
+test("reference document origins resolve to the API gateway in cross-origin cloud builds", () => {
+  // The cloud portal is a static bundle: page-relative `/openapi/*` documents
+  // only exist on the API gateway origin, so the reference loaders need that
+  // origin to reach the schema-tabs manifest and the per-surface documents.
+  const cloudProduction = JSON.parse(
+    readPortalSource("./etc/browser/runtime-env.cloud.production.json"),
+  ) as Record<string, string>;
+  withBrowserRuntimeDocument(
+    {
+      VITE_API_BASE_URL: cloudProduction.openApiBaseUrl,
+      VITE_CLOUDROUTER_OPEN_API_BASE_URL: cloudProduction.openApiBaseUrl,
+      VITE_SDKWORK_DEPLOYMENT_PROFILE: "cloud",
+    },
+    () => {
+      assert.deepEqual(
+        resolveReferenceSchemaDocumentOrigins(),
+        ["https://api.sdkwork.com"],
+      );
+    },
+    {
+      hostname: "router.sdkwork.com",
+      protocol: "https:",
+      port: "",
+      origin: "https://router.sdkwork.com",
+    },
+  );
+
+  // Same-origin (standalone) documents keep the page origin and add no extra
+  // document origin.
+  withBrowserRuntimeDocument(
+    {
+      VITE_API_BASE_URL: "/v1",
+      VITE_CLOUDROUTER_OPEN_API_BASE_URL: "/v1",
+      VITE_SDKWORK_DEPLOYMENT_PROFILE: "standalone",
+    },
+    () => {
+      assert.deepEqual(resolveReferenceSchemaDocumentOrigins(), []);
+    },
+    {
+      hostname: "router.sdkwork.com",
+      protocol: "https:",
+      port: "",
+      origin: "https://router.sdkwork.com",
+    },
+  );
 });
 
 test("declared standalone build documents stay same-origin", () => {

@@ -14,6 +14,7 @@ import {
   loadApiReferenceSystems,
   loadApiReferenceSchemaTabs,
   loadApiReferenceSystem,
+  resolveSchemaDocumentUrls,
   sortApiSchemaTabs,
   type ApiSchemaTab,
   type ApiSchemaTabsDocument,
@@ -1711,20 +1712,119 @@ test("api reference expands conversations response objects and parameters", asyn
   assert.equal(createEndpoint.responseProperties?.some((param) => param.name === "id" && param.type === "string"), true);
 });
 
-test("api reference falls back to legacy openapi when schema tabs manifest is unavailable", async () => {
+test("api reference derives every documented group when the schema tabs manifest is unavailable", async () => {
   const requested: string[] = [];
   const systems = await loadApiReferenceSystems(async (url) => {
     requested.push(url);
     if (url === "/openapi/schema-tabs.json") {
       throw new Error("manifest unavailable");
     }
-    return gatewaySpec;
+    if (url === "/openapi.json") {
+      return multimodalGatewaySpec;
+    }
+    throw new Error(`unexpected url ${url}`);
   });
 
-  assert.deepEqual(requested, ["/openapi/schema-tabs.json", "/openapi.json"]);
-  assert.equal(systems.length, 1);
-  assert.equal(systems[0].id, "llm-open-api");
-  assert.equal(systems[0].categories[0].endpoints[0].name, "Create Chat Completion");
+  // The manifest is probed first, then the bundled gateway snapshot, then every
+  // product surface document. A statically hosted portal only ships the
+  // snapshot, so the manifest and the surface documents 404 there.
+  assert.deepEqual(requested, [
+    "/openapi/schema-tabs.json",
+    "/openapi.json",
+    "/payments/v3/openapi.json",
+    "/cloud/v3/openapi.json",
+    "/paas/v3/openapi.json",
+    "/app/v3/api/openapi.json",
+    "/backend/v3/api/openapi.json",
+  ]);
+  assert.deepEqual(systems.map((system) => system.id), [
+    "llm-open-api",
+    "image-open-api",
+    "video-open-api",
+    "drive-open-api",
+  ]);
+  assert.equal(systems.every((system) => system.categories.length > 0), true);
+
+  const pathsBySystem = new Map(systems.map((system) => [
+    system.id,
+    system.categories.flatMap((category) => category.endpoints.map((endpoint) => endpoint.path)).sort(),
+  ]));
+  assert.equal(pathsBySystem.get("drive-open-api")?.includes("/google/v1beta/files"), true);
+  assert.equal(pathsBySystem.get("drive-open-api")?.includes("/anthropic/v1/messages"), false);
+  assert.equal(pathsBySystem.get("llm-open-api")?.includes("/anthropic/v1/messages"), true);
+  assert.equal(pathsBySystem.get("llm-open-api")?.includes("/google/v1beta/files"), false);
+});
+
+test("reference document URLs probe the page origin before each API document origin", () => {
+  assert.deepEqual(
+    resolveSchemaDocumentUrls("/openapi/schema-tabs.json", true, [
+      "https://api.sdkwork.com",
+      "https://api.birdcoder.com/",
+    ]),
+    [
+      "/openapi/schema-tabs.json",
+      "https://api.sdkwork.com/openapi/schema-tabs.json",
+      "https://api.birdcoder.com/openapi/schema-tabs.json",
+    ],
+  );
+  // The bundled gateway snapshot must come from the page origin only: the
+  // platform gateway publishes a different `/openapi.json` on the API origin.
+  assert.deepEqual(
+    resolveSchemaDocumentUrls("/openapi.json", false, ["https://api.sdkwork.com"]),
+    ["/openapi.json"],
+  );
+  assert.deepEqual(
+    resolveSchemaDocumentUrls("/app/v3/api/openapi.json", true, ["not-an-origin"]),
+    ["/app/v3/api/openapi.json"],
+  );
+});
+
+test("api reference keeps the remaining groups when one schema document is unreachable", async () => {
+  const manifest: ApiSchemaTabsDocument = {
+    cacheTtlSeconds: 30,
+    tabs: [
+      { id: "llm-open-api", name: "LLM Open API", order: 10, schemaUrls: ["/openapi.json"], defaultSchemaUrl: "/openapi.json" },
+      { id: "payment-open-api", name: "Payment Open API", order: 90, schemaUrls: ["/payments/v3/openapi.json"], defaultSchemaUrl: "/payments/v3/openapi.json" },
+      { id: "app-api", name: "App API", order: 120, schemaUrls: ["/app/v3/api/openapi.json"], defaultSchemaUrl: "/app/v3/api/openapi.json" },
+    ],
+  };
+
+  const systems = await buildApiReferenceSystemsFromTabs(manifest, async (url) => {
+    if (url === "/openapi.json") return gatewaySpec;
+    if (url === "/app/v3/api/openapi.json") return appSpec;
+    throw new Error(`unexpected url ${url}`);
+  });
+
+  assert.deepEqual(systems.map((system) => system.id), ["llm-open-api", "app-api"]);
+});
+
+test("api reference fails closed when no reference document is reachable", async () => {
+  await assert.rejects(
+    loadApiReferenceSchemaTabs(async () => {
+      throw new Error("offline");
+    }),
+    /offline/,
+  );
+});
+
+test("sdk reference summaries derive the same multi-group roster when the manifest is unavailable", async () => {
+  const summaries = await loadSdkReferenceSystemSummaries(async (url) => {
+    if (url === "/openapi/schema-tabs.json") {
+      throw new Error("manifest unavailable");
+    }
+    if (url === "/openapi.json") {
+      return multimodalGatewaySpec;
+    }
+    throw new Error(`unexpected url ${url}`);
+  });
+
+  assert.deepEqual(summaries.map((system) => system.id), [
+    "llm-open-api",
+    "image-open-api",
+    "video-open-api",
+    "drive-open-api",
+  ]);
+  assert.equal(summaries[0].schemaUrl, "/openapi.json");
 });
 
 test("sdk reference reuses schema tabs and maps tabs to generated SDK metadata", async () => {

@@ -68,10 +68,39 @@ const documentsSdkSystemConfig: DocumentsReferenceRuntime['sdkSystemConfig'] =
     Object.entries(SDK_SYSTEM_CONFIG).filter(isDocumentsSdkMetadata),
   );
 
+/**
+ * Origin that serves the reference OpenAPI documents when the portal itself is
+ * a static bundle (cloud profile).
+ *
+ * The API Reference/SDK Reference loaders address `/openapi/schema-tabs.json`
+ * and the per-surface documents root-relative, which only resolves on the
+ * application gateway. In a cross-origin build the page origin is the static
+ * portal host, so the gateway origin is supplied as a fallback document origin;
+ * without it the loaders degrade to the bundled `/openapi.json` snapshot and
+ * only the LLM group renders.
+ */
+export function resolveReferenceSchemaDocumentOrigins(): string[] {
+  try {
+    const surfaceBase = resolveSharedDependencySurfaceBaseUrl('/v1')?.trim().replace(/\/+$/g, '');
+    if (!surfaceBase) {
+      return [];
+    }
+    const apiPrefix = '/v1';
+    if (!surfaceBase.endsWith(apiPrefix)) {
+      return [];
+    }
+    const origin = surfaceBase.slice(0, -apiPrefix.length).replace(/\/+$/g, '');
+    return origin && !origin.startsWith('/') ? [origin] : [];
+  } catch {
+    return [];
+  }
+}
+
 export const cloudRouterDocumentsReferenceRuntime: DocumentsReferenceRuntime = {
   readRuntimeEnv: readCloudRouterRuntimeEnv,
   resolveRuntimeBoolean: resolveCloudRouterRuntimeBoolean,
   sdkSystemConfig: documentsSdkSystemConfig,
   getDocumentsAppSdkClient,
   playgroundUserAgent: 'CloudRouter/1.0.0',
+  schemaDocumentOrigins: resolveReferenceSchemaDocumentOrigins(),
 };
