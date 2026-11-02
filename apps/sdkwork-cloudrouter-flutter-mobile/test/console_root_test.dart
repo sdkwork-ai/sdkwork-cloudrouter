@@ -9,7 +9,12 @@ import 'package:sdkwork_cloudrouter_flutter_mobile_core/sdkwork_cloudrouter_flut
 import 'package:sdkwork_cloudrouter_flutter_mobile_shell/sdkwork_cloudrouter_flutter_mobile_shell.dart';
 
 import 'package:sdkwork_cloudrouter_flutter_mobile/sdkwork_cloudrouter_flutter_mobile.dart'
-    show CloudRouterFlutterRuntime, CloudRouterRuntimeScope, ConsoleShell, createRoutes, verifyConsoleRouteAlignment;
+    show
+        CloudRouterFlutterRuntime,
+        CloudRouterRuntimeScope,
+        ConsoleShell,
+        createRoutes,
+        verifyConsoleRouteAlignment;
 
 void main() {
   group('console route assembly', () {
@@ -23,7 +28,8 @@ void main() {
     });
 
     test('alignment check passes for the assembled registry', () {
-      expect(() => verifyConsoleRouteAlignment(createRoutes()), returnsNormally);
+      expect(
+          () => verifyConsoleRouteAlignment(createRoutes()), returnsNormally);
     });
 
     test('alignment check fails on a title-key drift', () {
@@ -46,7 +52,8 @@ void main() {
     test('normalizes an app api base url and strips the app api prefix', () {
       const configured = 'http://127.0.0.1:3905/app/v3/api';
       expect(normalizeCloudRouterAppApiBaseUrl(configured), configured);
-      expect(resolveCloudRouterTransportBaseUrl(configured), 'http://127.0.0.1:3905');
+      expect(resolveCloudRouterTransportBaseUrl(configured),
+          'http://127.0.0.1:3905');
     });
 
     test('rejects a base url without the app api prefix', () {
@@ -65,7 +72,8 @@ void main() {
       );
     });
 
-    test('key creation is blocked until the generated transport accepts a body', () {
+    test('key creation is blocked until the generated transport accepts a body',
+        () {
       final ports = createCloudRouterConsolePorts(
         sdkClients: createCloudRouterAppSdkClients(
           appApiBaseUrl: 'http://127.0.0.1:3905/app/v3/api',
@@ -157,7 +165,8 @@ void main() {
   });
 
   group('console shell composition', () {
-    testWidgets('renders the app bar, four tab destinations, and the first tab', (tester) async {
+    testWidgets('renders the app bar, four tab destinations, and the first tab',
+        (tester) async {
       final sdkClients = createCloudRouterAppSdkClients(
         appApiBaseUrl: 'http://127.0.0.1:3905/app/v3/api',
       );
@@ -181,6 +190,17 @@ void main() {
 
       expect(find.byType(NavigationBar), findsOneWidget);
       expect(find.byType(NavigationDestination), findsNWidgets(4));
+
+      final destinations = tester
+          .widgetList<NavigationDestination>(find.byType(NavigationDestination))
+          .toList();
+      for (final destination in destinations) {
+        expect(destination.icon, isA<ConsoleTabGlyphIcon>());
+        expect(destination.selectedIcon, isA<ConsoleTabGlyphIcon>());
+        expect((destination.icon as ConsoleTabGlyphIcon).filled, isFalse);
+        expect(
+            (destination.selectedIcon as ConsoleTabGlyphIcon).filled, isTrue);
+      }
       // The active tab title appears in the app bar and as the tab label.
       expect(find.text('Overview'), findsNWidgets(2));
       expect(find.byType(ConsoleDashboardScreen), findsOneWidget);
