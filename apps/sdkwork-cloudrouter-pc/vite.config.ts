@@ -22,6 +22,7 @@ import {
 import { createPortalOptimizeDepsEsbuildPlugin } from './scripts/lib/portal-optimize-deps-esbuild-resolver.mjs';
 import { readGenerationAssetConfigStubReplacement } from './scripts/lib/portal-generation-asset-config-stub.mjs';
 import { alignStandaloneSameOriginBrowserSdkRuntimeEnv, authorBrowserDevelopmentSdkBaseUrls } from '../../scripts/lib/cloud-router-browser-env-contract.mjs';
+import { WORKSPACE_SOURCE_RESOLVE_EXTENSIONS } from '../../scripts/lib/workspace-source-resolution.mjs';
 
 const TYPESCRIPT_SOURCE_PATTERN = /\.(?:ts|tsx|mts|cts)$/;
 const SOURCE_MAP_PATTERN = /\n?\/\/# sourceMappingURL=.*$/;
@@ -779,6 +780,11 @@ export default defineConfig(({mode, command}) => {
       },
     },
     resolve: {
+      // Authored TypeScript must win over gitignored `tsc` siblings inside the
+      // source-linked workspace packages (see workspace-source-resolution.mjs):
+      // a stale `.js` shadowing a fresh `.ts` produced the runtime
+      // "Cannot read properties of undefined (reading 'demandClaims')" crash.
+      extensions: [...WORKSPACE_SOURCE_RESOLVE_EXTENSIONS],
       dedupe: [
         'react',
         'react/jsx-runtime',

@@ -1,6 +1,7 @@
 import { resolveViteEnvironment, resolveLucideReactEntry } from '../../../sdkwork-specs/tools/vite-runtime-profile.mjs';
 import { createBrowserRuntimeEnvVitePlugin } from '../../../sdkwork-specs/tools/browser-runtime-env-vite.mjs';
 import { buildBrowserDevRuntimeEnvDocument } from '../../scripts/lib/cloud-router-browser-env-contract.mjs';
+import { WORKSPACE_SOURCE_RESOLVE_EXTENSIONS } from '../../scripts/lib/workspace-source-resolution.mjs';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { createSdkworkCredentialEntryBootstrapVitePlugin } from '../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-credential-entry/src/vite.ts';
@@ -59,6 +60,13 @@ export default defineConfig(({ mode }) => ({
   // ADAPTIVE_RENDERER_CACHE_LABEL): the adaptive ingress routes
   // `/node_modules/.vite/<label>/...` back to this renderer.
   cacheDir: path.resolve(__dirname, 'node_modules/.vite', ADAPTIVE_RENDERER_CACHE_LABEL),
+  // Authored TypeScript must win over gitignored `tsc` siblings inside the
+  // source-linked workspace packages (see workspace-source-resolution.mjs):
+  // a stale `.js` shadowing a fresh `.ts` produced the runtime
+  // "Cannot read properties of undefined (reading 'demandClaims')" crash.
+  resolve: {
+    extensions: [...WORKSPACE_SOURCE_RESOLVE_EXTENSIONS],
+  },
   plugins: [
     // The app-auth surface consumes IAM SDK routes, so the private bootstrap
     // token must reach the module graph through the canonical credential-entry

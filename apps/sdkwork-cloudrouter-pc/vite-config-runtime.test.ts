@@ -1393,3 +1393,89 @@ test("portal runtime env keeps appbase backend SDK base URL independent from clo
   assert.match(startWorkspaceSource, /PORTAL_PUBLIC_APPBASE_BACKEND_API_BASE_URL/);
   assert.match(releasePreflightSource, /PORTAL_PUBLIC_APPBASE_BACKEND_API_BASE_URL/);
 });
+
+test("portal resolve extensions prefer authored TypeScript over stale compiled JavaScript", async () => {
+  const config = await resolvePortalViteConfig("development", "build");
+  const extensions = config.resolve?.extensions;
+  assert.ok(Array.isArray(extensions), "portal resolve.extensions must be declared");
+  const tsIndex = extensions.indexOf(".ts");
+  const tsxIndex = extensions.indexOf(".tsx");
+  const jsIndex = extensions.indexOf(".js");
+  assert.ok(tsIndex >= 0 && tsxIndex >= 0 && jsIndex >= 0, `unexpected extension list: ${extensions.join(",")}`);
+  assert.ok(
+    tsIndex < jsIndex && tsxIndex < jsIndex,
+    `authored .ts/.tsx must resolve before a stale compiled .js sibling: ${extensions.join(",")}`,
+  );
+  assert.equal(extensions.at(-1), ".json");
+});
+
+async function resolvePortalModuleId(
+  config: UserConfig,
+  source: string,
+  importer: string,
+): Promise<string | null> {
+  const extensions = config.resolve?.extensions;
+  assert.ok(Array.isArray(extensions) && extensions.length > 0);
+  const { createServer } = await import("vite");
+  const server = await createServer({
+    configFile: false,
+    root: fileURLToPath(new URL(".", import.meta.url)),
+    logLevel: "silent",
+    resolve: { extensions: [...extensions] },
+    server: { middlewareMode: true },
+  });
+  try {
+    const container = (server as unknown as {
+      pluginContainer: { resolveId(source: string, importer: string): Promise<{ id: string } | null> };
+    }).pluginContainer;
+    const resolved = await container.resolveId(source, importer);
+    return resolved?.id ?? null;
+  } finally {
+    await server.close();
+  }
+}
+
+function canonicalPath(filePath: string): string {
+  try {
+    return fs.realpathSync.native(filePath);
+  } catch {
+    return path.resolve(filePath);
+  }
+}
+
+test("workspace SDK facades resolve their internal modules from TypeScript sources", async () => {
+  const config = await resolvePortalViteConfig("development", "build");
+  const repositoryRoot = fileURLToPath(new URL("../..", import.meta.url));
+  const facadeRoots = [
+    // This repository's own composed SDK facade.
+    path.join(repositoryRoot, "sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript"),
+    // Sibling dependency whose stale generated base class produced the
+    // production "Cannot read properties of undefined (reading 'demandClaims')"
+    // crash when the facade and the generated transport came from different
+    // revisions.
+    path.join(repositoryRoot, "../sdkwork-order/sdks/sdkwork-order-app-sdk/sdkwork-order-app-sdk-typescript"),
+  ];
+
+  let checked = 0;
+  for (const facadeRoot of facadeRoots) {
+    const importer = path.join(facadeRoot, "src/index.ts");
+    if (!existsSync(importer)) {
+      continue;
+    }
+
+    const resolved = await resolvePortalModuleId(config, "../generated/server-openapi/src/index", importer);
+    assert.ok(resolved, `failed to resolve the generated transport entry from ${importer}`);
+    // A `tsc` run leaves gitignored `generated/server-openapi/src/index.js`
+    // next to the authored TypeScript. Binding to it mixes revisions: the
+    // facade comes from `src/index.ts` (package exports) while its generated
+    // base class comes from the stale `.js`.
+    assert.equal(
+      canonicalPath(resolved),
+      canonicalPath(path.join(facadeRoot, "generated/server-openapi/src/index.ts")),
+      "an extensionless workspace import must bind to the authored .ts, never a stale compiled .js sibling",
+    );
+    checked += 1;
+  }
+
+  assert.ok(checked > 0, "expected at least one workspace SDK facade to verify");
+});

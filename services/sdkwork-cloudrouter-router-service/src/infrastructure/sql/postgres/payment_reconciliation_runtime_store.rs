@@ -375,10 +375,10 @@ async fn claim_due_reconciliation_runs(
         WHERE run.id IN (
             SELECT run.id
             FROM commerce_payment_reconciliation_run AS run
-            WHERE ($1 = '' OR run.tenant_id = $1)
+            WHERE (run.tenant_id = $1)
               AND run.deleted_at IS NULL
               AND run.status IN ('queued', 'pending')
-              AND ($2::text IS NULL OR run.organization_id = $2::text)
+              AND (run.organization_id = $2::text)
             ORDER BY run.created_at, run.id
             LIMIT $3
             FOR UPDATE OF run SKIP LOCKED
@@ -411,7 +411,7 @@ async fn load_statement_for_reconciliation_run(
                fee_amount, net_amount, downloaded_at, parsed_at, request_no, idempotency_key,
                created_at, updated_at
         FROM commerce_payment_statement
-        WHERE ($1 = '' OR tenant_id = $1)
+        WHERE (tenant_id = $1)
           AND supplier_code = $2
           AND period_start::timestamptz = $3::timestamptz
           AND period_end::timestamptz = $4::timestamptz
@@ -457,10 +457,10 @@ async fn load_reconciliation_ledger_entries(
                NULL::text AS provider_status,
                TO_CHAR(pa.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS occurred_at
         FROM commerce_payment_attempt AS pa
-        WHERE ($1 = '' OR pa.tenant_id = $1)
+        WHERE (pa.tenant_id = $1)
           AND pa.deleted_at IS NULL
           AND pa.status IN ('created', 'pending', 'processing', 'succeeded', 'closed')
-          AND ($2::text IS NULL OR pa.organization_id = $2::text)
+          AND (pa.organization_id = $2::text)
           AND ($3::text IS NULL OR pa.provider_code = $3::text)
           AND pa.created_at >= $4::timestamptz
           AND pa.created_at <= $5::timestamptz
@@ -484,10 +484,10 @@ async fn load_reconciliation_ledger_entries(
         FROM commerce_refund AS r
         JOIN commerce_payment_attempt AS pa2
           ON pa2.id = r.payment_attempt_id AND pa2.deleted_at IS NULL
-        WHERE ($1 = '' OR r.tenant_id = $1)
+        WHERE (r.tenant_id = $1)
           AND r.deleted_at IS NULL
           AND r.status IN ('processing', 'succeeded')
-          AND ($2::text IS NULL OR r.organization_id = $2::text)
+          AND (r.organization_id = $2::text)
           AND ($3::text IS NULL OR pa2.provider_code = $3::text)
           AND r.created_at >= $4::timestamptz
           AND r.created_at <= $5::timestamptz
