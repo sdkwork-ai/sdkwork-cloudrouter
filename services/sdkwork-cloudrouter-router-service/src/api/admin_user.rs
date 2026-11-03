@@ -57,17 +57,40 @@ pub fn admin_user_api_key_command_router_with_store(
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
     secret_generator: Arc<dyn ApiKeySecretGenerator + Send + Sync>,
 ) -> Router {
-    Router::new()
-        .route("/backend/v3/api/iam/api_keys", post(create_backend_api_key))
-        .route(
-            "/backend/v3/api/iam/api_keys/{api_key_id}",
-            delete(delete_backend_api_key),
-        )
-        .with_state(AdminApiKeyCommandState {
-            command_store,
-            api_key_hasher,
-            secret_generator,
-        })
+    admin_user_api_key_command_router_with_store_and_create_route(
+        command_store,
+        api_key_hasher,
+        secret_generator,
+        true,
+    )
+}
+
+/// Builds the Cloud Router admin IAM API-key command surface.
+///
+/// `include_create_route` gates only the legacy
+/// `POST /backend/v3/api/iam/api_keys` handler. The all-in-one platform
+/// gateway merges the sdkwork-iam backend assembly, which owns that IAM route
+/// (and panics axum's `Router::merge` on the duplicate), so it passes `false`
+/// while keeping the Cloud-Router-owned
+/// `DELETE /backend/v3/api/iam/api_keys/{api_key_id}` route mounted.
+pub fn admin_user_api_key_command_router_with_store_and_create_route(
+    command_store: Arc<dyn GatewayApiKeyCommandStore + Send + Sync>,
+    api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
+    secret_generator: Arc<dyn ApiKeySecretGenerator + Send + Sync>,
+    include_create_route: bool,
+) -> Router {
+    let mut router = Router::new().route(
+        "/backend/v3/api/iam/api_keys/{api_key_id}",
+        delete(delete_backend_api_key),
+    );
+    if include_create_route {
+        router = router.route("/backend/v3/api/iam/api_keys", post(create_backend_api_key));
+    }
+    router.with_state(AdminApiKeyCommandState {
+        command_store,
+        api_key_hasher,
+        secret_generator,
+    })
 }
 
 async fn create_backend_api_key(

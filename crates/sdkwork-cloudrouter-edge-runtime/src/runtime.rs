@@ -1895,6 +1895,12 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
                 database_installer: Arc::clone(&context.database_installer),
                 request_limits_config: context.request_limits_config,
                 models_catalog_root: context.models_catalog_root.clone(),
+                // The sdkwork-iam backend assembly below owns
+                // `/backend/v3/api/iam/*`; mounting the Cloud Router legacy
+                // IAM API-key command surface here would duplicate
+                // `POST /backend/v3/api/iam/api_keys` and panic axum's
+                // `Router::merge`.
+                include_legacy_iam_api_key_create: false,
             },
         )
         .await
