@@ -81,7 +81,7 @@ async fn list_service_nodes(
             COALESCE(updated_at::text, created_at::text, '') AS updated_at,
             COUNT(*) OVER() AS total
         FROM ops_gateway_instance
-        WHERE (tenant_id = $1 OR tenant_id = 0 OR tenant_id IS NULL)
+        WHERE (tenant_id = $1 OR tenant_id = 0)
           AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
           AND deleted_at IS NULL
           AND ($3::text IS NULL
@@ -319,7 +319,7 @@ async fn load_service_node(
             health_status,
             COALESCE(updated_at::text, created_at::text, '') AS updated_at
         FROM ops_gateway_instance
-        WHERE (tenant_id = $1 OR tenant_id = 0 OR tenant_id IS NULL)
+        WHERE (tenant_id = $1 OR tenant_id = 0)
           AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
           AND deleted_at IS NULL
           AND (instance_code = $3 OR id::text = $3)
@@ -352,7 +352,7 @@ where
         r#"
         SELECT COALESCE(metadata::text, '{}') AS metadata
         FROM ops_gateway_instance
-        WHERE (tenant_id = $1 OR tenant_id = 0 OR tenant_id IS NULL)
+        WHERE (tenant_id = $1 OR tenant_id = 0)
           AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
           AND deleted_at IS NULL
           AND (instance_code = $3 OR id::text = $3)

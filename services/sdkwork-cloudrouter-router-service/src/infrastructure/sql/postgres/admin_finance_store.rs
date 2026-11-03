@@ -87,7 +87,7 @@ WITH ledger_entries AS (
     FROM acct_ledger_entry e
     LEFT JOIN commerce_payment_attempt pa
       ON pa.tenant_id = CAST(e.tenant_id AS TEXT)
-     AND (pa.organization_id IS NULL OR e.organization_id IS NULL OR pa.organization_id = e.organization_id)
+     AND (pa.organization_id = e.organization_id)
      AND (e.business_type = 'points_recharge' OR e.business_type = 'token_bank_purchase_credit')
      AND pa.out_trade_no = e.business_no
     LEFT JOIN commerce_refund r
@@ -96,7 +96,7 @@ WITH ledger_entries AS (
      AND r.id = e.business_no
     LEFT JOIN commerce_order o
       ON o.tenant_id = CAST(e.tenant_id AS TEXT)
-     AND (o.organization_id IS NULL OR e.organization_id IS NULL OR o.organization_id = e.organization_id)
+     AND (o.organization_id = e.organization_id)
      AND (pa.id IS NOT NULL AND o.id = pa.order_id)
     WHERE e.tenant_id = $1
       AND e.organization_id = $2

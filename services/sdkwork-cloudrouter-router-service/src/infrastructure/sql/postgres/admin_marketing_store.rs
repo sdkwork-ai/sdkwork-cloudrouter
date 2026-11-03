@@ -442,11 +442,11 @@ async fn list_recharge_records(
         JOIN commerce_order o
           ON o.id = pa.order_id
          AND o.tenant_id = pa.tenant_id
-         AND (o.organization_id IS NULL OR pa.organization_id IS NULL OR o.organization_id = pa.organization_id)
+         AND (o.organization_id = pa.organization_id)
          AND o.subject = 'points_recharge'
         LEFT JOIN commerce_payment_method pm
           ON pm.tenant_id = pa.tenant_id
-         AND (pm.organization_id IS NULL OR pa.organization_id IS NULL OR pm.organization_id = pa.organization_id)
+         AND (pm.organization_id = pa.organization_id)
          AND pm.method_key = pa.payment_method
         LEFT JOIN iam_user u
           ON u.id = pa.owner_user_id::text
@@ -498,11 +498,11 @@ async fn load_recharge_record(
         JOIN commerce_order o
           ON o.id = pa.order_id
          AND o.tenant_id = pa.tenant_id
-         AND (o.organization_id IS NULL OR pa.organization_id IS NULL OR o.organization_id = pa.organization_id)
+         AND (o.organization_id = pa.organization_id)
          AND o.subject = 'points_recharge'
         LEFT JOIN commerce_payment_method pm
           ON pm.tenant_id = pa.tenant_id
-         AND (pm.organization_id IS NULL OR pa.organization_id IS NULL OR pm.organization_id = pa.organization_id)
+         AND (pm.organization_id = pa.organization_id)
          AND pm.method_key = pa.payment_method
         LEFT JOIN iam_user u
           ON u.id = pa.owner_user_id::text
@@ -1250,7 +1250,7 @@ async fn list_payment_attempts(
         LEFT JOIN commerce_order o
           ON o.id = pa.order_id
          AND o.tenant_id = pa.tenant_id
-         AND (o.organization_id IS NULL OR pa.organization_id IS NULL OR o.organization_id = pa.organization_id)
+         AND (o.organization_id = pa.organization_id)
         WHERE pa.tenant_id = $1::text
           AND pa.organization_id = $2::text
         ORDER BY COALESCE(pa.paid_at, pa.updated_at, pa.created_at) DESC, pa.id DESC

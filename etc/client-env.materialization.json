@@ -74,6 +74,25 @@
           ],
           "required": false
         }
+      },
+      "excludeProfiles": [
+        "standalone.development",
+        "standalone.production"
+      ],
+      "accessToken": {
+        "appId": "sdkwork-cloudrouter",
+        "tenantId": "100001",
+        "organizationId": "0",
+        "permissionScope": [
+          "cloudrouter.admin.access",
+          "cloudrouter.console.access",
+          "cloudrouter.system.read",
+          "iam.users.read",
+          "iam.organizations.read",
+          "iam.roles.read",
+          "iam.permissions.read",
+          "iam.oauth.read"
+        ]
       }
     },
     {
@@ -93,6 +112,17 @@
           ],
           "required": false
         }
+      },
+      "accessToken": {
+        "appId": "sdkwork-cloudrouter",
+        "tenantId": "100001",
+        "organizationId": "0",
+        "permissionScope": [
+          "iam.users.read",
+          "iam.organizations.read",
+          "iam.roles.read",
+          "iam.permissions.read"
+        ]
       }
     },
     {
@@ -112,6 +142,19 @@
           ],
           "required": false
         }
+      },
+      "accessToken": {
+        "appId": "sdkwork-cloudrouter",
+        "tenantId": "100001",
+        "organizationId": "0",
+        "permissionScope": [
+          "cloudrouter.console.access",
+          "cloudrouter.system.read",
+          "iam.users.read",
+          "iam.organizations.read",
+          "iam.roles.read",
+          "iam.permissions.read"
+        ]
       }
     }
   ]

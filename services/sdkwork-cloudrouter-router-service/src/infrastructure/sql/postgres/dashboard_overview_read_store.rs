@@ -391,7 +391,7 @@ SELECT
     COALESCE(i.metadata::text, '') AS metadata,
     i.health_status AS health_status
 FROM ops_gateway_instance i
-WHERE (i.tenant_id = $1 OR i.tenant_id = 0 OR i.tenant_id IS NULL)
+WHERE (i.tenant_id = $1 OR i.tenant_id = 0)
   AND (i.organization_id = $2 OR i.organization_id = 0 OR i.organization_id = '0')
   AND i.status = 1
   AND i.deleted_at IS NULL
