@@ -156,6 +156,21 @@
           "iam.permissions.read"
         ]
       }
+    },
+    {
+      "id": "sdkwork-cloudrouter-h5",
+      "root": "apps/sdkwork-cloudrouter-h5",
+      "format": "vite",
+      "runtimeTarget": "browser",
+      "bindings": {},
+      "accessToken": {
+        "appId": "sdkwork-cloudrouter",
+        "tenantId": "100001",
+        "organizationId": "0",
+        "permissionScope": [
+          "iam:self"
+        ]
+      }
     }
   ]
 }
