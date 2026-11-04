@@ -224,6 +224,7 @@ packages:
   - "../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-desktop-auth"
   - "../sdkwork-appbase/packages/mobile-react/foundation/sdkwork-appbase-mobile-react"
   - "../sdkwork-appbase/packages/mobile-react/foundation/sdkwork-shell-mobile-react"
+  - "../sdkwork-appbase/packages/common/foundation/sdkwork-appbase-component-core"
 
 catalog:
   "@tailwindcss/vite": ^4.3.3
