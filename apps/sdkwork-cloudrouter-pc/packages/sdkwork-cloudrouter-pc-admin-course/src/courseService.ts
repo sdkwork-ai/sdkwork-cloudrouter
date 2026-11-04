@@ -226,18 +226,6 @@ export interface CourseAdminApplicationReviewInput {
   remark?: string;
 }
 
-export interface CourseAdminCommentItem {
-  id: string;
-  courseId: string;
-  lessonId?: string;
-  authorName: string;
-  body: string;
-  moderationState: string;
-  createdAt: string;
-}
-
-export type CourseAdminCommentModerationState = 'visible' | 'hidden' | 'rejected';
-
 export interface CourseAdminReactionItem {
   id: string;
   targetType: string;
@@ -799,35 +787,6 @@ export async function convertCourseAdminApplication(
   return normalizeApplication(readRequiredApiItem(result, 'Course application could not be converted'));
 }
 
-/* ------------------------------------------------------------------ */
-/* Comments and reactions                                              */
-/* ------------------------------------------------------------------ */
-
-export async function fetchCourseAdminComments(
-  params: CourseAdminListParams = {},
-): Promise<CourseAdminPage<CourseAdminCommentItem>> {
-  const result = await getSdkworkCourseBackendSdkClient().courseComments.list(buildListQuery(params));
-  return {
-    items: readRequiredApiItems(result, 'Course comments could not be loaded').map(normalizeComment),
-    pageInfo: normalizePageInfo(result.pageInfo),
-  };
-}
-
-export async function moderateCourseAdminComment(
-  commentId: string,
-  state: CourseAdminCommentModerationState,
-): Promise<CourseAdminCommentItem> {
-  const result = await getSdkworkCourseBackendSdkClient().courseComments.update(
-    requiredCourseText(commentId, 'commentId'),
-    { moderationState: state },
-  );
-  return normalizeComment(readRequiredApiItem(result, 'Course comment could not be moderated'));
-}
-
-export async function deleteCourseAdminComment(commentId: string): Promise<void> {
-  await getSdkworkCourseBackendSdkClient().courseComments.delete(requiredCourseText(commentId, 'commentId'));
-}
-
 export async function fetchCourseAdminReactions(
   params: CourseAdminListParams = {},
 ): Promise<CourseAdminPage<CourseAdminReactionItem>> {
@@ -1086,19 +1045,6 @@ function normalizeApplication(value: unknown): CourseAdminApplicationItem {
     status: readString(item, 'status') || 'pending',
     remark: optionalText(readString(item, 'remark')),
     submittedAt: readString(item, 'submittedAt') || readString(item, 'createdAt'),
-  };
-}
-
-function normalizeComment(value: unknown): CourseAdminCommentItem {
-  const item = asApiRecord(value);
-  return {
-    id: requireRecordString(item, ['id', 'commentId'], 'Course comment id is required'),
-    courseId: readString(item, 'courseId'),
-    lessonId: optionalText(readString(item, 'lessonId')),
-    authorName: readString(item, 'authorName') || readString(item, 'userName'),
-    body: readString(item, 'body') || readString(item, 'content'),
-    moderationState: readString(item, 'moderationState') || readString(item, 'status') || 'visible',
-    createdAt: readString(item, 'createdAt'),
   };
 }
 
