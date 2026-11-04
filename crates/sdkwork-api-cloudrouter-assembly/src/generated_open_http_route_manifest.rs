@@ -5,6 +5,24 @@ use sdkwork_web_core::HttpRouteManifest;
 
 const HTTP_ROUTES: &[HttpRoute] = &[
     HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/alibaba/api/v1/services/aigc/text2image/image-synthesis",
+        "Images/alibaba",
+        "alibabaCreateImageGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/alibaba/api/v1/services/aigc/video-generation/video-synthesis",
+        "Videos/alibaba",
+        "alibabaCreateVideoGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Get,
+        "/alibaba/api/v1/tasks/{task_id}",
+        "Videos/alibaba",
+        "alibabaRetrieveVideoGenerationTask",
+    ),
+    HttpRoute::api_key_or_dual_token(
         HttpMethod::Get,
         "/anthropic/v1/files",
         "Files/anthropic",
@@ -69,6 +87,36 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/anthropic/v1/messages/count_tokens",
         "Chat/anthropic",
         "anthropicCountMessageTokens",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/black_forest_labs/v1/flux-{model}",
+        "Images/black_forest_labs",
+        "blackForestLabsCreateImage",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Get,
+        "/black_forest_labs/v1/get_result",
+        "Images/black_forest_labs",
+        "blackForestLabsRetrieveImageTask",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/bytedance/api/v3/contents/generations/tasks",
+        "Videos/bytedance",
+        "bytedanceCreateVideoGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Get,
+        "/bytedance/api/v3/contents/generations/tasks/{task_id}",
+        "Videos/bytedance",
+        "bytedanceRetrieveVideoGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/bytedance/api/v3/images/generations",
+        "Images/bytedance",
+        "bytedanceCreateImageGeneration",
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
@@ -179,6 +227,18 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "googleStreamGenerateContent",
     ),
     HttpRoute::api_key_or_dual_token(
+        HttpMethod::Get,
+        "/jimeng/v1/tasks/{task_id}",
+        "Videos/jimeng",
+        "jimengRetrieveVideoGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/jimeng/v1/videos/generations",
+        "Videos/jimeng",
+        "jimengCreateVideoGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
         "/kling/v1/images/generations",
         "Images/kling",
@@ -216,9 +276,51 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
+        "/luma_ai/dream-machine/v1/generations",
+        "Videos/luma_ai",
+        "lumaCreateVideoGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Get,
+        "/luma_ai/dream-machine/v1/generations/{generation_id}",
+        "Videos/luma_ai",
+        "lumaRetrieveVideoGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
         "/minimax/v1/music_generation",
         "Audio/minimax",
         "minimaxCreateMusicGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Get,
+        "/pixverse/openapi/v2/video/result/{video_id}",
+        "Videos/pixverse",
+        "pixverseRetrieveVideoGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/pixverse/openapi/v2/video/text/generate",
+        "Videos/pixverse",
+        "pixverseCreateVideoGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Get,
+        "/runway/v1/tasks/{task_id}",
+        "Images/runway",
+        "runwayRetrieveImageTask",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/runway/v1/text_to_image",
+        "Images/runway",
+        "runwayCreateImage",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/stability_ai/v2beta/stable-image/generate/{mode}",
+        "Images/stability_ai",
+        "stabilityAiCreateImage",
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
@@ -970,6 +1072,24 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/volcengine/api/v3/images/generations",
         "Images/volcengine",
         "volcengineCreateImageGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Get,
+        "/zhipu/api/paas/v4/async-result/{task_id}",
+        "Videos/zhipu",
+        "zhipuRetrieveVideoGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/zhipu/api/paas/v4/images/generations",
+        "Images/zhipu",
+        "zhipuCreateImageGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/zhipu/api/paas/v4/videos/generations",
+        "Videos/zhipu",
+        "zhipuCreateVideoGeneration",
     ),
 ];
 

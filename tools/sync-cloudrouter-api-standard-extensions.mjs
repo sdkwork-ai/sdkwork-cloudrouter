@@ -84,8 +84,17 @@ function inferExternalProtocolId(routePath) {
   if (normalized.startsWith("/v1/")) {
     return "openai-v1";
   }
+  if (normalized.startsWith("/alibaba/")) {
+    return "alibaba-dashscope-v1";
+  }
   if (normalized.startsWith("/anthropic/")) {
     return "anthropic-messages";
+  }
+  if (normalized.startsWith("/black_forest_labs/")) {
+    return "black-forest-labs-v1";
+  }
+  if (normalized.startsWith("/bytedance/")) {
+    return "bytedance-ark-v3";
   }
   if (normalized.startsWith("/elevenlabs/")) {
     return "elevenlabs-v1";
@@ -93,8 +102,14 @@ function inferExternalProtocolId(routePath) {
   if (normalized.startsWith("/google/")) {
     return "google-gemini-v1beta";
   }
+  if (normalized.startsWith("/jimeng/")) {
+    return "jimeng-v1";
+  }
   if (normalized.startsWith("/kling/")) {
     return "kling-v1";
+  }
+  if (normalized.startsWith("/luma_ai/")) {
+    return "luma-dream-machine-v1";
   }
   if (normalized.startsWith("/midjourney/")) {
     return "midjourney-v1";
@@ -105,6 +120,15 @@ function inferExternalProtocolId(routePath) {
   if (normalized.startsWith("/nano-banana/")) {
     return "nano-banana-v1";
   }
+  if (normalized.startsWith("/pixverse/")) {
+    return "pixverse-openapi-v2";
+  }
+  if (normalized.startsWith("/runway/")) {
+    return "runway-v1";
+  }
+  if (normalized.startsWith("/stability_ai/")) {
+    return "stability-ai-v2beta";
+  }
   if (normalized.startsWith("/suno/")) {
     return "suno-v1";
   }
@@ -113,6 +137,9 @@ function inferExternalProtocolId(routePath) {
   }
   if (normalized.startsWith("/volcengine/")) {
     return "volcengine-v1";
+  }
+  if (normalized.startsWith("/zhipu/")) {
+    return "zhipu-v4";
   }
   if (normalized.startsWith("/typesafe/")) {
     return "typesafe-v1";
@@ -131,16 +158,25 @@ function isExternalWireProtocolRoute(routePath) {
     return true;
   }
   return (
+    normalized.startsWith("/alibaba/") ||
     normalized.startsWith("/anthropic/") ||
+    normalized.startsWith("/black_forest_labs/") ||
+    normalized.startsWith("/bytedance/") ||
     normalized.startsWith("/elevenlabs/") ||
     normalized.startsWith("/google/") ||
+    normalized.startsWith("/jimeng/") ||
     normalized.startsWith("/kling/") ||
+    normalized.startsWith("/luma_ai/") ||
     normalized.startsWith("/midjourney/") ||
     normalized.startsWith("/minimax/") ||
     normalized.startsWith("/nano-banana/") ||
+    normalized.startsWith("/pixverse/") ||
+    normalized.startsWith("/runway/") ||
+    normalized.startsWith("/stability_ai/") ||
     normalized.startsWith("/suno/") ||
     normalized.startsWith("/vidu/") ||
     normalized.startsWith("/volcengine/") ||
+    normalized.startsWith("/zhipu/") ||
     normalized.startsWith("/typesafe/")
   );
 }

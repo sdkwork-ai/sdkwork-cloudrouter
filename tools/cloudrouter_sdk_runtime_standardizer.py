@@ -139,20 +139,36 @@ def infer_external_protocol_id(route_path: str) -> str:
     normalized = str(route_path or "").replace("\\", "/")
     if normalized.startswith("/v1/"):
         return "openai-v1"
+    if normalized.startswith("/alibaba/"):
+        return "alibaba-dashscope-v1"
     if normalized.startswith("/anthropic/"):
         return "anthropic-messages"
+    if normalized.startswith("/black_forest_labs/"):
+        return "black-forest-labs-v1"
+    if normalized.startswith("/bytedance/"):
+        return "bytedance-ark-v3"
     if normalized.startswith("/elevenlabs/"):
         return "elevenlabs-v1"
     if normalized.startswith("/google/"):
         return "google-gemini-v1beta"
+    if normalized.startswith("/jimeng/"):
+        return "jimeng-v1"
     if normalized.startswith("/kling/"):
         return "kling-v1"
+    if normalized.startswith("/luma_ai/"):
+        return "luma-dream-machine-v1"
     if normalized.startswith("/midjourney/"):
         return "midjourney-v1"
     if normalized.startswith("/minimax/"):
         return "minimax-v1"
     if normalized.startswith("/nano-banana/"):
         return "nano-banana-v1"
+    if normalized.startswith("/pixverse/"):
+        return "pixverse-openapi-v2"
+    if normalized.startswith("/runway/"):
+        return "runway-v1"
+    if normalized.startswith("/stability_ai/"):
+        return "stability-ai-v2beta"
     if normalized.startswith("/suno/"):
         return "suno-v1"
     if normalized.startswith("/typesafe/"):
@@ -161,6 +177,8 @@ def infer_external_protocol_id(route_path: str) -> str:
         return "vidu-v1"
     if normalized.startswith("/volcengine/"):
         return "volcengine-v1"
+    if normalized.startswith("/zhipu/"):
+        return "zhipu-v4"
     return "cloudrouter-vendor-relay"
 
 
