@@ -1,6 +1,243 @@
 {
   "components": {
     "schemas": {
+      "AlibabaAsyncTask": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional alibaba async task values using the provider json value module."
+        },
+        "description": "DashScope asynchronous task record shared by task submission and task polling.",
+        "properties": {
+          "code": {
+            "description": "DashScope task error code.",
+            "type": "string"
+          },
+          "message": {
+            "description": "DashScope task error message.",
+            "type": "string"
+          },
+          "results": {
+            "description": "Additional outputs produced by the task.",
+            "items": {
+              "$ref": "#/components/schemas/ProviderGeneratedMedia"
+            },
+            "type": "array"
+          },
+          "task_id": {
+            "description": "DashScope asynchronous task identifier.",
+            "type": "string"
+          },
+          "task_status": {
+            "description": "DashScope task status, for example PENDING, RUNNING, SUCCEEDED, or FAILED.",
+            "type": "string"
+          },
+          "video_url": {
+            "description": "Generated video URL once the task succeeded.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AlibabaImageGenerationRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional alibaba image generation request values using the provider json value module."
+        },
+        "description": "Alibaba DashScope Wanx image generation request.",
+        "properties": {
+          "input": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProviderJsonValue"
+                }
+              ],
+              "description": "Additional input values using the provider json value module."
+            },
+            "description": "DashScope input envelope carrying the prompt and optional negative prompt.",
+            "type": "object"
+          },
+          "model": {
+            "description": "Wanx image model id, for example wan2.6-t2i.",
+            "type": "string"
+          },
+          "parameters": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProviderJsonValue"
+                }
+              ],
+              "description": "Additional parameters values using the provider json value module."
+            },
+            "description": "DashScope generation parameters such as size, image count, prompt extension, watermark, and seed.",
+            "type": "object"
+          }
+        },
+        "required": [
+          "model"
+        ],
+        "type": "object"
+      },
+      "AlibabaImageGenerationResponse": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional alibaba image generation response values using the provider json value module."
+        },
+        "description": "Alibaba DashScope Wanx image task submission acknowledgement.",
+        "properties": {
+          "code": {
+            "description": "DashScope business error code when the submission failed.",
+            "type": "string"
+          },
+          "message": {
+            "description": "DashScope business error message when the submission failed.",
+            "type": "string"
+          },
+          "output": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AlibabaAsyncTask"
+              }
+            ],
+            "description": "Output field on the alibaba image generation response, using the alibaba async task module."
+          },
+          "request_id": {
+            "description": "DashScope request identifier.",
+            "type": "string"
+          },
+          "usage": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProviderJsonValue"
+                }
+              ],
+              "description": "Additional usage values using the provider json value module."
+            },
+            "description": "DashScope usage block carrying the generated image count.",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "AlibabaVideoGenerationRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional alibaba video generation request values using the provider json value module."
+        },
+        "description": "Alibaba DashScope Wan video generation request.",
+        "properties": {
+          "input": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProviderJsonValue"
+                }
+              ],
+              "description": "Additional input values using the provider json value module."
+            },
+            "description": "DashScope input envelope carrying the prompt and optional first-frame or reference images.",
+            "type": "object"
+          },
+          "model": {
+            "description": "Wan video model id, for example wan2.6-t2v, wan2.6-i2v, or wan2.6-r2v.",
+            "type": "string"
+          },
+          "parameters": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProviderJsonValue"
+                }
+              ],
+              "description": "Additional parameters values using the provider json value module."
+            },
+            "description": "DashScope generation parameters such as resolution, duration, and watermark.",
+            "type": "object"
+          }
+        },
+        "required": [
+          "model"
+        ],
+        "type": "object"
+      },
+      "AlibabaVideoGenerationResponse": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional alibaba video generation response values using the provider json value module."
+        },
+        "description": "Alibaba DashScope asynchronous task submission acknowledgement.",
+        "properties": {
+          "code": {
+            "description": "DashScope business error code when the submission failed.",
+            "type": "string"
+          },
+          "message": {
+            "description": "DashScope business error message when the submission failed.",
+            "type": "string"
+          },
+          "output": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AlibabaAsyncTask"
+              }
+            ],
+            "description": "Output field on the alibaba video generation response, using the alibaba async task module."
+          },
+          "request_id": {
+            "description": "DashScope request identifier.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AlibabaVideoGenerationTask": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional alibaba video generation task values using the provider json value module."
+        },
+        "description": "Alibaba DashScope asynchronous task status and its generated video.",
+        "properties": {
+          "output": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AlibabaAsyncTask"
+              }
+            ],
+            "description": "Output field on the alibaba video generation task, using the alibaba async task module."
+          },
+          "request_id": {
+            "description": "DashScope request identifier.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "AnthropicContentBlock": {
         "additionalProperties": {
           "allOf": [
@@ -954,6 +1191,324 @@
           "output_tokens": {
             "description": "Output token count.",
             "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "BlackForestLabsImageGenerationRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional black forest labs image generation request values using the provider json value module."
+        },
+        "description": "Black Forest Labs FLUX image generation request.",
+        "properties": {
+          "aspect_ratio": {
+            "description": "Requested aspect ratio such as 16:9; it takes precedence over width and height.",
+            "type": "string"
+          },
+          "height": {
+            "description": "Output height in pixels.",
+            "type": "integer"
+          },
+          "output_format": {
+            "description": "Requested output format: jpeg, png, or webp.",
+            "type": "string"
+          },
+          "prompt": {
+            "description": "Text prompt describing the requested image.",
+            "type": "string"
+          },
+          "prompt_upsampling": {
+            "description": "Whether the provider rewrites the prompt for more detail.",
+            "type": "boolean"
+          },
+          "safety_tolerance": {
+            "description": "Moderation strictness from 0 (strictest) to 6.",
+            "type": "integer"
+          },
+          "seed": {
+            "description": "Optional deterministic seed.",
+            "type": "integer"
+          },
+          "width": {
+            "description": "Output width in pixels.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "type": "object"
+      },
+      "BlackForestLabsImageGenerationTask": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional black forest labs image generation task values using the provider json value module."
+        },
+        "description": "Black Forest Labs asynchronous FLUX generation record.",
+        "properties": {
+          "details": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProviderJsonValue"
+                }
+              ],
+              "description": "Additional details values using the provider json value module."
+            },
+            "description": "Provider diagnostics, including moderation reasons or error text.",
+            "type": "object"
+          },
+          "id": {
+            "description": "Generation identifier used for polling.",
+            "type": "string"
+          },
+          "polling_url": {
+            "description": "Provider polling URL for the generation.",
+            "type": "string"
+          },
+          "progress": {
+            "description": "Completion ratio between 0 and 1.",
+            "type": "number"
+          },
+          "result": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProviderJsonValue"
+                }
+              ],
+              "description": "Additional result values using the provider json value module."
+            },
+            "description": "Generation output envelope carrying the generated sample.",
+            "type": "object"
+          },
+          "status": {
+            "description": "Task status, for example Pending, Ready, or Error.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "BytedanceImageGenerationRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional bytedance image generation request values using the provider json value module."
+        },
+        "description": "ByteDance Ark Seedream image generation request.",
+        "properties": {
+          "image": {
+            "description": "Optional reference image URLs.",
+            "items": {
+              "description": "String variant used as image items.",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "model": {
+            "description": "Seedream model id, for example doubao-seedream-5-0-pro-260628.",
+            "type": "string"
+          },
+          "prompt": {
+            "description": "Image prompt sent to the Ark image endpoint.",
+            "type": "string"
+          },
+          "response_format": {
+            "description": "Response format: url or b64_json.",
+            "type": "string"
+          },
+          "seed": {
+            "description": "Optional deterministic seed.",
+            "type": "integer"
+          },
+          "size": {
+            "description": "Requested output size such as 2048x2048.",
+            "type": "string"
+          },
+          "watermark": {
+            "description": "Whether the vendor watermark is enabled.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "model",
+          "prompt"
+        ],
+        "type": "object"
+      },
+      "BytedanceImageGenerationResponse": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional bytedance image generation response values using the provider json value module."
+        },
+        "description": "ByteDance Ark image generation response.",
+        "properties": {
+          "created": {
+            "description": "Unix timestamp in seconds when the output was created.",
+            "type": "integer"
+          },
+          "data": {
+            "description": "Generated image outputs.",
+            "items": {
+              "$ref": "#/components/schemas/ProviderGeneratedMedia"
+            },
+            "type": "array"
+          },
+          "model": {
+            "description": "Model that served the request.",
+            "type": "string"
+          },
+          "usage": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProviderJsonValue"
+                }
+              ],
+              "description": "Additional usage values using the provider json value module."
+            },
+            "description": "Vendor usage block with the generated image count.",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "BytedanceVideoGenerationRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional bytedance video generation request values using the provider json value module."
+        },
+        "description": "ByteDance Ark Seedance video generation task request.",
+        "properties": {
+          "callback_url": {
+            "description": "Optional callback URL for task completion.",
+            "type": "string"
+          },
+          "content": {
+            "description": "Ordered content parts; text parts carry text and image parts carry image_url.url.",
+            "items": {
+              "additionalProperties": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ProviderJsonValue"
+                  }
+                ],
+                "description": "Additional map values using the provider json value module."
+              },
+              "description": "Object variant used as content items.",
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "duration": {
+            "description": "Requested duration in seconds.",
+            "type": "integer"
+          },
+          "model": {
+            "description": "Seedance model id, for example doubao-seedance-2-0-260128.",
+            "type": "string"
+          },
+          "ratio": {
+            "description": "Requested aspect ratio such as 16:9 or adaptive.",
+            "type": "string"
+          },
+          "seed": {
+            "description": "Optional deterministic seed.",
+            "type": "integer"
+          },
+          "watermark": {
+            "description": "Whether the vendor watermark is enabled.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "model",
+          "content"
+        ],
+        "type": "object"
+      },
+      "BytedanceVideoGenerationTask": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional bytedance video generation task values using the provider json value module."
+        },
+        "description": "ByteDance Ark content generation task and its generated video.",
+        "properties": {
+          "content": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProviderJsonValue"
+                }
+              ],
+              "description": "Additional content values using the provider json value module."
+            },
+            "description": "Task output envelope carrying video_url and poster_url.",
+            "type": "object"
+          },
+          "created_at": {
+            "description": "Task creation timestamp in Unix seconds.",
+            "type": "integer"
+          },
+          "error": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProviderJsonValue"
+                }
+              ],
+              "description": "Additional error values using the provider json value module."
+            },
+            "description": "Task error envelope with code and message.",
+            "type": "object"
+          },
+          "id": {
+            "description": "Content generation task identifier.",
+            "type": "string"
+          },
+          "model": {
+            "description": "Model that served the task.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Task status: queued, running, succeeded, failed, or cancelled.",
+            "type": "string"
+          },
+          "usage": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProviderJsonValue"
+                }
+              ],
+              "description": "Additional usage values using the provider json value module."
+            },
+            "description": "Vendor usage block with generated token counts.",
+            "type": "object"
           }
         },
         "type": "object"
@@ -3006,6 +3561,102 @@
         },
         "type": "object"
       },
+      "JimengVideoGenerationRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional jimeng video generation request values using the provider json value module."
+        },
+        "description": "Jimeng video generation request.",
+        "properties": {
+          "callback_url": {
+            "description": "Optional callback URL for task completion.",
+            "type": "string"
+          },
+          "duration": {
+            "description": "Requested duration in seconds.",
+            "type": "integer"
+          },
+          "fps": {
+            "description": "Requested frame rate.",
+            "type": "integer"
+          },
+          "image": {
+            "description": "Optional first-frame image URL or reference image reference.",
+            "type": "string"
+          },
+          "model": {
+            "description": "Jimeng video model id.",
+            "type": "string"
+          },
+          "prompt": {
+            "description": "Text prompt describing the requested video.",
+            "type": "string"
+          },
+          "ratio": {
+            "description": "Requested aspect ratio such as 16:9.",
+            "type": "string"
+          },
+          "seed": {
+            "description": "Optional deterministic seed.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "model",
+          "prompt"
+        ],
+        "type": "object"
+      },
+      "JimengVideoGenerationTask": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional jimeng video generation task values using the provider json value module."
+        },
+        "description": "Jimeng video generation task and its generated video.",
+        "properties": {
+          "created_at": {
+            "description": "Task creation timestamp in Unix seconds.",
+            "type": "integer"
+          },
+          "error": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProviderJsonValue"
+                }
+              ],
+              "description": "Additional error values using the provider json value module."
+            },
+            "description": "Task error envelope with code and message.",
+            "type": "object"
+          },
+          "id": {
+            "description": "Jimeng task identifier when the provider echoes it under id.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Task status, for example queued, running, or succeeded.",
+            "type": "string"
+          },
+          "task_id": {
+            "description": "Jimeng task identifier.",
+            "type": "string"
+          },
+          "video_url": {
+            "description": "Generated video URL once the task succeeded.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "KlingAvatarCreateRequest": {
         "additionalProperties": {
           "allOf": [
@@ -3325,6 +3976,110 @@
               "$ref": "#/components/schemas/ProviderGeneratedMedia"
             },
             "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "LumaVideoGenerationRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional luma video generation request values using the provider json value module."
+        },
+        "description": "Luma Dream Machine video generation request.",
+        "properties": {
+          "aspect_ratio": {
+            "description": "Requested aspect ratio such as 16:9, 9:16, or 1:1.",
+            "type": "string"
+          },
+          "callback_url": {
+            "description": "Optional callback URL for generation completion.",
+            "type": "string"
+          },
+          "duration": {
+            "description": "Requested duration, for example 5s or 9s.",
+            "type": "string"
+          },
+          "keyframes": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProviderJsonValue"
+                }
+              ],
+              "description": "Additional keyframes values using the provider json value module."
+            },
+            "description": "Keyframes envelope carrying frame0/frame1 image references for image-to-video.",
+            "type": "object"
+          },
+          "loop": {
+            "description": "Whether the generated video loops seamlessly.",
+            "type": "boolean"
+          },
+          "model": {
+            "description": "Luma video model id, for example ray-3 or ray-flash-2.",
+            "type": "string"
+          },
+          "prompt": {
+            "description": "Text prompt describing the requested video.",
+            "type": "string"
+          },
+          "resolution": {
+            "description": "Requested resolution such as 720p or 1080p.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "model",
+          "prompt"
+        ],
+        "type": "object"
+      },
+      "LumaVideoGenerationTask": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional luma video generation task values using the provider json value module."
+        },
+        "description": "Luma Dream Machine generation record and its assets.",
+        "properties": {
+          "assets": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProviderJsonValue"
+                }
+              ],
+              "description": "Additional assets values using the provider json value module."
+            },
+            "description": "Generated assets envelope carrying the video or image URL.",
+            "type": "object"
+          },
+          "created_at": {
+            "description": "Generation creation timestamp.",
+            "type": "string"
+          },
+          "failure_reason": {
+            "description": "Failure reason when the generation did not complete.",
+            "type": "string"
+          },
+          "generation_type": {
+            "description": "Generation type, for example video or image.",
+            "type": "string"
+          },
+          "id": {
+            "description": "Luma generation identifier.",
+            "type": "string"
+          },
+          "state": {
+            "description": "Generation state: queued, dreaming, completed, or failed.",
+            "type": "string"
           }
         },
         "type": "object"
@@ -11864,6 +12619,127 @@
         ],
         "type": "object"
       },
+      "PixverseVideoGenerationRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional pixverse video generation request values using the provider json value module."
+        },
+        "description": "PixVerse text-to-video generation request.",
+        "properties": {
+          "aspect_ratio": {
+            "description": "Requested aspect ratio such as 16:9 or 9:16.",
+            "type": "string"
+          },
+          "duration": {
+            "description": "Requested duration in seconds.",
+            "type": "integer"
+          },
+          "img_id": {
+            "description": "Uploaded image identifier for image-to-video.",
+            "type": "integer"
+          },
+          "model": {
+            "description": "PixVerse model id, for example pixverse-v6.",
+            "type": "string"
+          },
+          "motion_mode": {
+            "description": "Requested motion intensity such as normal or fast.",
+            "type": "string"
+          },
+          "negative_prompt": {
+            "description": "Content the model should avoid.",
+            "type": "string"
+          },
+          "prompt": {
+            "description": "Text prompt describing the requested video.",
+            "type": "string"
+          },
+          "quality": {
+            "description": "Requested quality tier such as 540p, 720p, or 1080p.",
+            "type": "string"
+          },
+          "seed": {
+            "description": "Optional deterministic seed.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "type": "object"
+      },
+      "PixverseVideoGenerationResponse": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional pixverse video generation response values using the provider json value module."
+        },
+        "description": "PixVerse generation submission acknowledgement.",
+        "properties": {
+          "ErrCode": {
+            "description": "PixVerse business error code; 0 means success.",
+            "type": "integer"
+          },
+          "ErrMsg": {
+            "description": "PixVerse business error message.",
+            "type": "string"
+          },
+          "Resp": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProviderJsonValue"
+                }
+              ],
+              "description": "Additional resp values using the provider json value module."
+            },
+            "description": "PixVerse response body carrying video_id.",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "PixverseVideoGenerationTask": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional pixverse video generation task values using the provider json value module."
+        },
+        "description": "PixVerse video generation status and its outputs.",
+        "properties": {
+          "ErrCode": {
+            "description": "PixVerse business error code; 0 means success.",
+            "type": "integer"
+          },
+          "ErrMsg": {
+            "description": "PixVerse business error message.",
+            "type": "string"
+          },
+          "Resp": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProviderJsonValue"
+                }
+              ],
+              "description": "Additional resp values using the provider json value module."
+            },
+            "description": "PixVerse response body carrying status, url, and prompt metadata.",
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
       "ProviderGeneratedMedia": {
         "additionalProperties": {
           "allOf": [
@@ -12179,9 +13055,179 @@
         },
         "type": "object"
       },
+      "RunwayTask": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional runway task values using the provider json value module."
+        },
+        "description": "Runway generation task and its outputs.",
+        "properties": {
+          "createdAt": {
+            "description": "Task creation timestamp.",
+            "type": "string"
+          },
+          "failure": {
+            "description": "Failure reason when the task did not succeed.",
+            "type": "string"
+          },
+          "failureCode": {
+            "description": "Provider failure code when the task did not succeed.",
+            "type": "string"
+          },
+          "id": {
+            "description": "Runway task identifier.",
+            "type": "string"
+          },
+          "output": {
+            "description": "Generated asset URLs.",
+            "items": {
+              "description": "String variant used as output items.",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "progress": {
+            "description": "Completion ratio between 0 and 1.",
+            "type": "number"
+          },
+          "status": {
+            "description": "Task status: PENDING, RUNNING, SUCCEEDED, FAILED, or CANCELLED.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "RunwayTextToImageRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional runway text to image request values using the provider json value module."
+        },
+        "description": "Runway text-to-image task request.",
+        "properties": {
+          "model": {
+            "description": "Runway image model id, for example gen4_image.",
+            "type": "string"
+          },
+          "promptText": {
+            "description": "Text prompt describing the requested image.",
+            "type": "string"
+          },
+          "ratio": {
+            "description": "Requested aspect ratio such as 1920:1080.",
+            "type": "string"
+          },
+          "referenceImages": {
+            "description": "Reference images carrying a uri and an optional tag.",
+            "items": {
+              "additionalProperties": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ProviderJsonValue"
+                  }
+                ],
+                "description": "Additional map values using the provider json value module."
+              },
+              "description": "Object variant used as reference images items.",
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "seed": {
+            "description": "Optional deterministic seed.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "promptText"
+        ],
+        "type": "object"
+      },
       "SdpResponse": {
         "description": "WebRTC SDP answer returned as application/sdp.",
         "type": "string"
+      },
+      "StabilityImageGenerationRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional stability image generation request values using the provider json value module."
+        },
+        "description": "Stability AI Stable Image generation request.",
+        "properties": {
+          "aspect_ratio": {
+            "description": "Requested aspect ratio such as 1:1 or 16:9.",
+            "type": "string"
+          },
+          "image": {
+            "description": "Optional source image for image-to-image modes.",
+            "type": "string"
+          },
+          "model": {
+            "description": "Stable Image model id such as sd3.5-large; the path mode selects the endpoint.",
+            "type": "string"
+          },
+          "negative_prompt": {
+            "description": "Content the model should avoid.",
+            "type": "string"
+          },
+          "output_format": {
+            "description": "Requested output format: png, jpeg, or webp.",
+            "type": "string"
+          },
+          "prompt": {
+            "description": "Text prompt describing the requested image.",
+            "type": "string"
+          },
+          "seed": {
+            "description": "Optional deterministic seed; 0 randomizes.",
+            "type": "integer"
+          },
+          "strength": {
+            "description": "Image-to-image transformation strength between 0 and 1.",
+            "type": "number"
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "type": "object"
+      },
+      "StabilityImageGenerationResponse": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional stability image generation response values using the provider json value module."
+        },
+        "description": "Stability AI image generation response.",
+        "properties": {
+          "finish_reason": {
+            "description": "Why generation stopped, for example SUCCESS or CONTENT_FILTERED.",
+            "type": "string"
+          },
+          "image": {
+            "description": "Base64-encoded generated image bytes.",
+            "type": "string"
+          },
+          "seed": {
+            "description": "Seed the provider actually used.",
+            "type": "integer"
+          }
+        },
+        "type": "object"
       },
       "SunoMusicGenerationRequest": {
         "additionalProperties": {
@@ -13390,6 +14436,176 @@
           }
         },
         "type": "object"
+      },
+      "ZhipuImageGenerationRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional zhipu image generation request values using the provider json value module."
+        },
+        "description": "Zhipu CogView image generation request.",
+        "properties": {
+          "model": {
+            "description": "CogView model id, for example cogview-4-250304 or glm-image.",
+            "type": "string"
+          },
+          "prompt": {
+            "description": "Text prompt describing the requested image.",
+            "type": "string"
+          },
+          "quality": {
+            "description": "Requested quality tier: standard or hd.",
+            "type": "string"
+          },
+          "size": {
+            "description": "Requested output size such as 1024x1024.",
+            "type": "string"
+          },
+          "user_id": {
+            "description": "Stable end-user identifier for abuse attribution.",
+            "type": "string"
+          },
+          "watermark_enabled": {
+            "description": "Whether the vendor watermark is enabled.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "model",
+          "prompt"
+        ],
+        "type": "object"
+      },
+      "ZhipuImageGenerationResponse": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional zhipu image generation response values using the provider json value module."
+        },
+        "description": "Zhipu CogView image generation response.",
+        "properties": {
+          "created": {
+            "description": "Unix timestamp in seconds when the image was generated.",
+            "type": "integer"
+          },
+          "data": {
+            "description": "Generated image outputs.",
+            "items": {
+              "$ref": "#/components/schemas/ProviderGeneratedMedia"
+            },
+            "type": "array"
+          },
+          "request_id": {
+            "description": "Zhipu request identifier.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ZhipuVideoGenerationRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional zhipu video generation request values using the provider json value module."
+        },
+        "description": "Zhipu CogVideoX video generation request.",
+        "properties": {
+          "duration": {
+            "description": "Requested duration in seconds.",
+            "type": "integer"
+          },
+          "fps": {
+            "description": "Requested frame rate.",
+            "type": "integer"
+          },
+          "image_url": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProviderJsonValue"
+                }
+              ],
+              "description": "Additional image url values using the provider json value module."
+            },
+            "description": "First-frame image envelope carrying the image url for image-to-video.",
+            "type": "object"
+          },
+          "model": {
+            "description": "CogVideoX model id, for example cogvideox-3.",
+            "type": "string"
+          },
+          "prompt": {
+            "description": "Text prompt describing the requested video.",
+            "type": "string"
+          },
+          "quality": {
+            "description": "Requested quality tier such as quality or speed.",
+            "type": "string"
+          },
+          "request_id": {
+            "description": "Caller-supplied idempotency identifier.",
+            "type": "string"
+          },
+          "size": {
+            "description": "Requested output size such as 1920x1080.",
+            "type": "string"
+          },
+          "with_audio": {
+            "description": "Whether the generated video carries an audio track.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "model",
+          "prompt"
+        ],
+        "type": "object"
+      },
+      "ZhipuVideoGenerationTask": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional zhipu video generation task values using the provider json value module."
+        },
+        "description": "Zhipu asynchronous video generation task and its outputs.",
+        "properties": {
+          "id": {
+            "description": "Zhipu asynchronous task identifier.",
+            "type": "string"
+          },
+          "model": {
+            "description": "Model that served the task.",
+            "type": "string"
+          },
+          "request_id": {
+            "description": "Caller-supplied idempotency identifier echoed back by the provider.",
+            "type": "string"
+          },
+          "task_status": {
+            "description": "Task status: PROCESSING, SUCCESS, or FAIL.",
+            "type": "string"
+          },
+          "video_result": {
+            "description": "Generated video outputs.",
+            "items": {
+              "$ref": "#/components/schemas/ProviderGeneratedMedia"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -13410,6 +14626,299 @@
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "openapi": "3.1.2",
   "paths": {
+    "/alibaba/api/v1/services/aigc/text2image/image-synthesis": {
+      "post": {
+        "description": "Creates a DashScope Wanx text-to-image task using the configured Alibaba provider account.",
+        "operationId": "alibabaCreateImageGeneration",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlibabaImageGenerationRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for the alibaba create image generation operation.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlibabaImageGenerationResponse"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Alibaba Wanx image generation",
+        "tags": [
+          "Images/alibaba"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "alibaba-dashscope-v1"
+      }
+    },
+    "/alibaba/api/v1/services/aigc/video-generation/video-synthesis": {
+      "post": {
+        "description": "Creates a DashScope Wan text-to-video, image-to-video, or reference-to-video task using the configured Alibaba provider account.",
+        "operationId": "alibabaCreateVideoGeneration",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlibabaVideoGenerationRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for the alibaba create video generation operation.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlibabaVideoGenerationResponse"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Alibaba Wan video generation",
+        "tags": [
+          "Videos/alibaba"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "alibaba-dashscope-v1"
+      }
+    },
+    "/alibaba/api/v1/tasks/{task_id}": {
+      "get": {
+        "description": "Retrieves a DashScope Wan video generation task and its status using the configured Alibaba provider account.",
+        "operationId": "alibabaRetrieveVideoGenerationTask",
+        "parameters": [
+          {
+            "description": "DashScope asynchronous task identifier.",
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlibabaVideoGenerationTask"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Alibaba Wan retrieve video generation task",
+        "tags": [
+          "Videos/alibaba"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "alibaba-dashscope-v1"
+      }
+    },
     "/anthropic/v1/files": {
       "get": {
         "description": "Lists Anthropic files using the configured Anthropic provider account.",
@@ -14514,6 +16023,504 @@
         "x-sdkwork-required-surface": "organizationMember",
         "x-sdkwork-wire-protocol": "external",
         "x-sdkwork-external-protocol-id": "anthropic-messages"
+      }
+    },
+    "/black_forest_labs/v1/flux-{model}": {
+      "post": {
+        "description": "Creates a FLUX image through the Black Forest Labs FLUX API using the configured Black Forest Labs provider account.",
+        "operationId": "blackForestLabsCreateImage",
+        "parameters": [
+          {
+            "description": "FLUX model id, for example flux-2-pro or flux-pro-1.1.",
+            "in": "path",
+            "name": "model",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlackForestLabsImageGenerationRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for the black forest labs create image operation.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlackForestLabsImageGenerationTask"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Black Forest Labs FLUX image generation",
+        "tags": [
+          "Images/black_forest_labs"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "black-forest-labs-v1"
+      }
+    },
+    "/black_forest_labs/v1/get_result": {
+      "get": {
+        "description": "Retrieves a FLUX generation result by polling id using the configured Black Forest Labs provider account.",
+        "operationId": "blackForestLabsRetrieveImageTask",
+        "parameters": [
+          {
+            "description": "Generation id returned by the FLUX submit call.",
+            "in": "query",
+            "name": "id",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlackForestLabsImageGenerationTask"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Black Forest Labs retrieve image generation result",
+        "tags": [
+          "Images/black_forest_labs"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "black-forest-labs-v1"
+      }
+    },
+    "/bytedance/api/v3/contents/generations/tasks": {
+      "post": {
+        "description": "Creates a ByteDance Ark Seedance video generation task using the configured ByteDance provider account.",
+        "operationId": "bytedanceCreateVideoGeneration",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BytedanceVideoGenerationRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for the bytedance create video generation operation.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BytedanceVideoGenerationTask"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "ByteDance Seedance video generation",
+        "tags": [
+          "Videos/bytedance"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "bytedance-ark-v3"
+      }
+    },
+    "/bytedance/api/v3/contents/generations/tasks/{task_id}": {
+      "get": {
+        "description": "Retrieves a ByteDance Ark Seedance video generation task using the configured ByteDance provider account.",
+        "operationId": "bytedanceRetrieveVideoGeneration",
+        "parameters": [
+          {
+            "description": "ByteDance content generation task identifier.",
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BytedanceVideoGenerationTask"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "ByteDance retrieve video generation task",
+        "tags": [
+          "Videos/bytedance"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "bytedance-ark-v3"
+      }
+    },
+    "/bytedance/api/v3/images/generations": {
+      "post": {
+        "description": "Creates a ByteDance Ark Seedream image generation using the configured ByteDance provider account.",
+        "operationId": "bytedanceCreateImageGeneration",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BytedanceImageGenerationRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for the bytedance create image generation operation.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BytedanceImageGenerationResponse"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "ByteDance Seedream image generation",
+        "tags": [
+          "Images/bytedance"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "bytedance-ark-v3"
       }
     },
     "/elevenlabs/v1/sound-generation": {
@@ -16395,6 +18402,201 @@
         "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
       }
     },
+    "/jimeng/v1/tasks/{task_id}": {
+      "get": {
+        "description": "Retrieves a Jimeng video generation task using the configured Jimeng provider account.",
+        "operationId": "jimengRetrieveVideoGeneration",
+        "parameters": [
+          {
+            "description": "Jimeng task identifier.",
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JimengVideoGenerationTask"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Jimeng retrieve video generation task",
+        "tags": [
+          "Videos/jimeng"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "jimeng-v1"
+      }
+    },
+    "/jimeng/v1/videos/generations": {
+      "post": {
+        "description": "Creates a Jimeng video generation task using the configured Jimeng provider account.",
+        "operationId": "jimengCreateVideoGeneration",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JimengVideoGenerationRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for the jimeng create video generation operation.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JimengVideoGenerationTask"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Jimeng video generation",
+        "tags": [
+          "Videos/jimeng"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "jimeng-v1"
+      }
+    },
     "/kling/v1/images/generations": {
       "post": {
         "description": "Creates a Kling-compatible image generation using the configured Kling provider account.",
@@ -16981,6 +19183,201 @@
         "x-sdkwork-external-protocol-id": "kling-v1"
       }
     },
+    "/luma_ai/dream-machine/v1/generations": {
+      "post": {
+        "description": "Creates a Luma Dream Machine video generation using the configured Luma provider account.",
+        "operationId": "lumaCreateVideoGeneration",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LumaVideoGenerationRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for the luma create video generation operation.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LumaVideoGenerationTask"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Luma Dream Machine video generation",
+        "tags": [
+          "Videos/luma_ai"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "luma-dream-machine-v1"
+      }
+    },
+    "/luma_ai/dream-machine/v1/generations/{generation_id}": {
+      "get": {
+        "description": "Retrieves a Luma Dream Machine generation and its assets using the configured Luma provider account.",
+        "operationId": "lumaRetrieveVideoGeneration",
+        "parameters": [
+          {
+            "description": "Luma generation identifier.",
+            "in": "path",
+            "name": "generation_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LumaVideoGenerationTask"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Luma retrieve video generation",
+        "tags": [
+          "Videos/luma_ai"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "luma-dream-machine-v1"
+      }
+    },
     "/minimax/v1/music_generation": {
       "post": {
         "description": "Generates music through the MiniMax-compatible music generation surface using the configured MiniMax provider account.",
@@ -17077,6 +19474,504 @@
         "x-sdkwork-required-surface": "organizationMember",
         "x-sdkwork-wire-protocol": "external",
         "x-sdkwork-external-protocol-id": "minimax-v1"
+      }
+    },
+    "/pixverse/openapi/v2/video/result/{video_id}": {
+      "get": {
+        "description": "Retrieves a PixVerse video generation result using the configured PixVerse provider account.",
+        "operationId": "pixverseRetrieveVideoGeneration",
+        "parameters": [
+          {
+            "description": "PixVerse video generation identifier.",
+            "in": "path",
+            "name": "video_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PixverseVideoGenerationTask"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "PixVerse retrieve video generation",
+        "tags": [
+          "Videos/pixverse"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "pixverse-openapi-v2"
+      }
+    },
+    "/pixverse/openapi/v2/video/text/generate": {
+      "post": {
+        "description": "Creates a PixVerse text-to-video generation using the configured PixVerse provider account.",
+        "operationId": "pixverseCreateVideoGeneration",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PixverseVideoGenerationRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for the pixverse create video generation operation.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PixverseVideoGenerationResponse"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "PixVerse text to video generation",
+        "tags": [
+          "Videos/pixverse"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "pixverse-openapi-v2"
+      }
+    },
+    "/runway/v1/tasks/{task_id}": {
+      "get": {
+        "description": "Retrieves a Runway generation task and its outputs using the configured Runway provider account.",
+        "operationId": "runwayRetrieveImageTask",
+        "parameters": [
+          {
+            "description": "Runway task identifier.",
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunwayTask"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Runway retrieve task",
+        "tags": [
+          "Images/runway"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "runway-v1"
+      }
+    },
+    "/runway/v1/text_to_image": {
+      "post": {
+        "description": "Creates a Runway text-to-image task using the configured Runway provider account.",
+        "operationId": "runwayCreateImage",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunwayTextToImageRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for the runway create image operation.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunwayTask"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Runway image generation",
+        "tags": [
+          "Images/runway"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "runway-v1"
+      }
+    },
+    "/stability_ai/v2beta/stable-image/generate/{mode}": {
+      "post": {
+        "description": "Creates a Stable Image generation through the Stability AI Stable Image API using the configured Stability AI provider account.",
+        "operationId": "stabilityAiCreateImage",
+        "parameters": [
+          {
+            "description": "Stable Image mode: core, sd3, or ultra.",
+            "in": "path",
+            "name": "mode",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StabilityImageGenerationRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for the stability ai create image operation.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StabilityImageGenerationResponse"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Stability AI image generation",
+        "tags": [
+          "Images/stability_ai"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "stability-ai-v2beta"
       }
     },
     "/suno/v1/music/generations": {
@@ -31598,6 +34493,299 @@
         "x-sdkwork-wire-protocol": "external",
         "x-sdkwork-external-protocol-id": "volcengine-v1"
       }
+    },
+    "/zhipu/api/paas/v4/async-result/{task_id}": {
+      "get": {
+        "description": "Retrieves a Zhipu asynchronous video generation result using the configured Zhipu provider account.",
+        "operationId": "zhipuRetrieveVideoGeneration",
+        "parameters": [
+          {
+            "description": "Zhipu asynchronous task identifier.",
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZhipuVideoGenerationTask"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Zhipu retrieve video generation task",
+        "tags": [
+          "Videos/zhipu"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "zhipu-v4"
+      }
+    },
+    "/zhipu/api/paas/v4/images/generations": {
+      "post": {
+        "description": "Creates a Zhipu CogView image generation using the configured Zhipu provider account.",
+        "operationId": "zhipuCreateImageGeneration",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ZhipuImageGenerationRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for the zhipu create image generation operation.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZhipuImageGenerationResponse"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Zhipu CogView image generation",
+        "tags": [
+          "Images/zhipu"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "zhipu-v4"
+      }
+    },
+    "/zhipu/api/paas/v4/videos/generations": {
+      "post": {
+        "description": "Creates a Zhipu CogVideoX video generation task using the configured Zhipu provider account.",
+        "operationId": "zhipuCreateVideoGeneration",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ZhipuVideoGenerationRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for the zhipu create video generation operation.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZhipuVideoGenerationTask"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Zhipu CogVideoX video generation",
+        "tags": [
+          "Videos/zhipu"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "zhipu-v4"
+      }
     }
   },
   "security": [
@@ -31767,6 +34955,54 @@
     {
       "description": "TypeSafe AI System One decision APIs exposed through Cloud Router vendor routing.",
       "name": "Chat/typesafe"
+    },
+    {
+      "description": "Alibaba DashScope Wanx image generation APIs exposed through Cloud Router vendor routing.",
+      "name": "Images/alibaba"
+    },
+    {
+      "description": "Black Forest Labs FLUX image generation APIs exposed through Cloud Router vendor routing.",
+      "name": "Images/black_forest_labs"
+    },
+    {
+      "description": "ByteDance Ark Seedream image generation APIs exposed through Cloud Router vendor routing.",
+      "name": "Images/bytedance"
+    },
+    {
+      "description": "Runway image generation APIs exposed through Cloud Router vendor routing.",
+      "name": "Images/runway"
+    },
+    {
+      "description": "Stability AI Stable Image APIs exposed through Cloud Router vendor routing.",
+      "name": "Images/stability_ai"
+    },
+    {
+      "description": "Zhipu CogView image generation APIs exposed through Cloud Router vendor routing.",
+      "name": "Images/zhipu"
+    },
+    {
+      "description": "Alibaba DashScope Wan video generation APIs exposed through Cloud Router vendor routing.",
+      "name": "Videos/alibaba"
+    },
+    {
+      "description": "ByteDance Ark Seedance video generation APIs exposed through Cloud Router vendor routing.",
+      "name": "Videos/bytedance"
+    },
+    {
+      "description": "Jimeng video generation APIs exposed through Cloud Router vendor routing.",
+      "name": "Videos/jimeng"
+    },
+    {
+      "description": "Luma Dream Machine video generation APIs exposed through Cloud Router vendor routing.",
+      "name": "Videos/luma_ai"
+    },
+    {
+      "description": "PixVerse video generation APIs exposed through Cloud Router vendor routing.",
+      "name": "Videos/pixverse"
+    },
+    {
+      "description": "Zhipu CogVideoX video generation APIs exposed through Cloud Router vendor routing.",
+      "name": "Videos/zhipu"
     }
   ],
   "x-api-prefix": "/v1",
@@ -31774,15 +35010,24 @@
   "x-sdkwork-int64-openai-compat": true,
   "x-sdkwork-query-parameter-vendor-compat": true,
   "x-sdkwork-vendor-path-prefixes": [
+    "alibaba",
     "anthropic",
+    "black_forest_labs",
+    "bytedance",
     "elevenlabs",
     "google",
+    "jimeng",
     "kling",
+    "luma_ai",
     "minimax",
+    "pixverse",
+    "runway",
+    "stability_ai",
     "suno",
     "typesafe",
     "vidu",
-    "volcengine"
+    "volcengine",
+    "zhipu"
   ],
   "x-sdkwork-owner": "sdkwork-cloudrouter",
   "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",

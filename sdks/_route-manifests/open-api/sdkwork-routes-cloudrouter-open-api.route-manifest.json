@@ -16,6 +16,90 @@
   },
   "routes": [
     {
+      "method": "POST",
+      "path": "/alibaba/api/v1/services/aigc/text2image/image-synthesis",
+      "operationId": "alibabaCreateImageGeneration",
+      "tags": [
+        "Images/alibaba"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "alibaba-dashscope-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/alibaba/api/v1/services/aigc/video-generation/video-synthesis",
+      "operationId": "alibabaCreateVideoGeneration",
+      "tags": [
+        "Videos/alibaba"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "alibaba-dashscope-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "GET",
+      "path": "/alibaba/api/v1/tasks/{task_id}",
+      "operationId": "alibabaRetrieveVideoGenerationTask",
+      "tags": [
+        "Videos/alibaba"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "alibaba-dashscope-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
       "method": "GET",
       "path": "/anthropic/v1/files",
       "operationId": "anthropicListFiles",
@@ -304,6 +388,146 @@
       ],
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "anthropic-messages",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/black_forest_labs/v1/flux-{model}",
+      "operationId": "blackForestLabsCreateImage",
+      "tags": [
+        "Images/black_forest_labs"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "black-forest-labs-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "GET",
+      "path": "/black_forest_labs/v1/get_result",
+      "operationId": "blackForestLabsRetrieveImageTask",
+      "tags": [
+        "Images/black_forest_labs"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "black-forest-labs-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/bytedance/api/v3/contents/generations/tasks",
+      "operationId": "bytedanceCreateVideoGeneration",
+      "tags": [
+        "Videos/bytedance"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "bytedance-ark-v3",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "GET",
+      "path": "/bytedance/api/v3/contents/generations/tasks/{task_id}",
+      "operationId": "bytedanceRetrieveVideoGeneration",
+      "tags": [
+        "Videos/bytedance"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "bytedance-ark-v3",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/bytedance/api/v3/images/generations",
+      "operationId": "bytedanceCreateImageGeneration",
+      "tags": [
+        "Images/bytedance"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "bytedance-ark-v3",
       "auth": {
         "mode": "api-key-or-dual-token",
         "required": true
@@ -828,6 +1052,62 @@
       "apiSurface": "open-api"
     },
     {
+      "method": "GET",
+      "path": "/jimeng/v1/tasks/{task_id}",
+      "operationId": "jimengRetrieveVideoGeneration",
+      "tags": [
+        "Videos/jimeng"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "jimeng-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/jimeng/v1/videos/generations",
+      "operationId": "jimengCreateVideoGeneration",
+      "tags": [
+        "Videos/jimeng"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "jimeng-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
       "method": "POST",
       "path": "/kling/v1/images/generations",
       "operationId": "klingCreateImageGeneration",
@@ -997,6 +1277,62 @@
     },
     {
       "method": "POST",
+      "path": "/luma_ai/dream-machine/v1/generations",
+      "operationId": "lumaCreateVideoGeneration",
+      "tags": [
+        "Videos/luma_ai"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "luma-dream-machine-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "GET",
+      "path": "/luma_ai/dream-machine/v1/generations/{generation_id}",
+      "operationId": "lumaRetrieveVideoGeneration",
+      "tags": [
+        "Videos/luma_ai"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "luma-dream-machine-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
       "path": "/minimax/v1/music_generation",
       "operationId": "minimaxCreateMusicGeneration",
       "tags": [
@@ -1004,6 +1340,146 @@
       ],
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "minimax-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "GET",
+      "path": "/pixverse/openapi/v2/video/result/{video_id}",
+      "operationId": "pixverseRetrieveVideoGeneration",
+      "tags": [
+        "Videos/pixverse"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "pixverse-openapi-v2",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/pixverse/openapi/v2/video/text/generate",
+      "operationId": "pixverseCreateVideoGeneration",
+      "tags": [
+        "Videos/pixverse"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "pixverse-openapi-v2",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "GET",
+      "path": "/runway/v1/tasks/{task_id}",
+      "operationId": "runwayRetrieveImageTask",
+      "tags": [
+        "Images/runway"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "runway-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/runway/v1/text_to_image",
+      "operationId": "runwayCreateImage",
+      "tags": [
+        "Images/runway"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "runway-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/stability_ai/v2beta/stable-image/generate/{mode}",
+      "operationId": "stabilityAiCreateImage",
+      "tags": [
+        "Images/stability_ai"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "stability-ai-v2beta",
       "auth": {
         "mode": "api-key-or-dual-token",
         "required": true
@@ -4812,6 +5288,90 @@
       ],
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "volcengine-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "GET",
+      "path": "/zhipu/api/paas/v4/async-result/{task_id}",
+      "operationId": "zhipuRetrieveVideoGeneration",
+      "tags": [
+        "Videos/zhipu"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "zhipu-v4",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/zhipu/api/paas/v4/images/generations",
+      "operationId": "zhipuCreateImageGeneration",
+      "tags": [
+        "Images/zhipu"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "zhipu-v4",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/zhipu/api/paas/v4/videos/generations",
+      "operationId": "zhipuCreateVideoGeneration",
+      "tags": [
+        "Videos/zhipu"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "zhipu-v4",
       "auth": {
         "mode": "api-key-or-dual-token",
         "required": true

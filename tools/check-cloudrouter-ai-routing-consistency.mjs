@@ -844,9 +844,15 @@ const COMPAT_FACE_ENDPOINTS = new Set([
   // `anthropic_messages`): their requests are served by the generic protocol
   // face, so the vendor's own path is advertised for operators and for
   // protocol-coherent callers but is not a classifier entry point.
+  //
+  // `alibaba.image_generation` and `zhipu.image_generation` are deliberately
+  // absent: the open-api contract publishes their native image paths as doors
+  // (`POST /alibaba/api/v1/services/aigc/text2image/image-synthesis` and
+  // `POST /zhipu/api/paas/v4/images/generations`), so both are classifier entry
+  // points now. Their *models* still bind to the OpenAI-compatible face; the
+  // arms only serve callers that dial the published native path.
   "alibaba.chat_completions",
   "alibaba.embeddings",
-  "alibaba.image_generation",
   "deepseek.chat_completions",
   "meituan.chat_completions",
   "moonshot.chat_completions",
@@ -861,7 +867,6 @@ const COMPAT_FACE_ENDPOINTS = new Set([
   "xiaomi.speech",
   "zhipu.chat_completions",
   "zhipu.embeddings",
-  "zhipu.image_generation",
   // The OpenAI-compatible music surface: every music model binds to a
   // vendor-native endpoint of its own, and this is the aliased generic face the
   // classifier never needs to name.

@@ -25,15 +25,24 @@ const APPLICATION_ID: &str = "sdkwork-cloudrouter";
 // `sdkwork-api-cloudrouter-assembly/src/bootstrap.rs` enforces it.
 const OPEN_API_PREFIXES: &[&str] = &[
     "/v1",
+    "/alibaba/api/v1",
     "/anthropic/v1",
+    "/black_forest_labs/v1",
+    "/bytedance/api/v3",
     "/elevenlabs/v1",
     "/google/v1beta",
+    "/jimeng/v1",
     "/kling/v1",
+    "/luma_ai/dream-machine/v1",
     "/minimax/v1",
+    "/pixverse/openapi/v2",
+    "/runway/v1",
+    "/stability_ai/v2beta",
     "/suno/v1",
     "/typesafe/v1",
     "/vidu",
     "/volcengine",
+    "/zhipu/api/paas/v4",
     "/feeds/v3/api",
 ];
 

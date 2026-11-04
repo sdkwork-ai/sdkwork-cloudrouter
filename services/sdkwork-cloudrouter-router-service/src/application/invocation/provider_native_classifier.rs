@@ -257,8 +257,13 @@ pub fn provider_native_api_code_from_normalized_path(
     //
     // Only endpoints a `vendor_native` model actually binds to are listed.
     // Each vendor's `openai_compatible` models keep the generic face, so
-    // `alibaba` chat / embedding / image and `zhipu` chat / embedding /
-    // image deliberately stay out.
+    // `alibaba` chat / embedding and `zhipu` chat / embedding deliberately stay
+    // out. Their *image* endpoints are listed even though the catalog binds
+    // their image models to the OpenAI-compatible face, because the open-api
+    // contract publishes a native image door for each of them
+    // (`POST /alibaba/api/v1/services/aigc/text2image/image-synthesis` and
+    // `POST /zhipu/api/paas/v4/images/generations`); without the arm the door
+    // would answer `50201 no upstream account routes are configured`.
     //
     // The eight `<vendor>.anthropic_messages` arms are the Anthropic Messages
     // protocol as served by vendors other than Anthropic. Each of them publishes
@@ -364,6 +369,9 @@ pub fn provider_native_api_code_from_normalized_path(
         "suno" if path == "/v1/music/generations" => "suno.music_generation",
         "suno" if task_poll_path_matches(path, "v1/music/generations") => "suno.music_task_query",
         "vidu" if path == "/ent/v2/reference2image" => "vidu.reference_to_image",
+        "alibaba" if path == "/api/v1/services/aigc/text2image/image-synthesis" => {
+            "alibaba.image_generation"
+        }
         "alibaba" if path == "/api/v1/services/aigc/video-generation/video-synthesis" => {
             "alibaba.video_generation"
         }
@@ -378,6 +386,7 @@ pub fn provider_native_api_code_from_normalized_path(
         "pixverse" if task_poll_path_matches(path, "openapi/v2/video/result") => {
             "pixverse.video_generation_task_query"
         }
+        "zhipu" if path == "/api/paas/v4/images/generations" => "zhipu.image_generation",
         "zhipu" if path == "/api/paas/v4/videos/generations" => "zhipu.video_generation",
         "zhipu" if task_poll_path_matches(path, "api/paas/v4/async-result") => {
             "zhipu.video_generation_task_query"
@@ -807,9 +816,11 @@ mod tests {
     /// pricing preflight then refuses a request whose account, credential,
     /// group membership and resource grant are all present. `alibaba` and
     /// `zhipu` are the pairs that make the point: their *video* models are
-    /// native while their chat / embedding / image models are
-    /// `openai_compatible`, so only the video path may classify and the others
-    /// must keep falling through to the generic face.
+    /// native while their chat / embedding models are `openai_compatible`, so
+    /// only the video paths may classify for those families and the chat /
+    /// embedding paths must keep falling through to the generic face. Their
+    /// *image* native paths are listed too, because the open-api contract
+    /// publishes them as doors — see the arm-table comment above.
     #[test]
     fn vendor_native_models_classify_onto_their_own_endpoints() {
         let native_video = [
@@ -839,6 +850,33 @@ mod tests {
             assert_eq!(route_key, classification.resource.route_key, "for {vendor}");
             assert_eq!(
                 Some(BillingMeter::VideoResult),
+                classification.billing.meter,
+                "for {vendor}"
+            );
+        }
+
+        // The two vendors whose native image endpoint the open-api contract
+        // publishes as a door even though their catalog image models bind to
+        // the OpenAI-compatible face. A caller that dials the published path
+        // must land on the vendor's own `*.image_generation` route; otherwise
+        // the door answers `50201 no upstream account routes are configured`.
+        let native_image = [
+            (
+                "alibaba",
+                "/api/v1/services/aigc/text2image/image-synthesis",
+                "alibaba.image_generation",
+            ),
+            (
+                "zhipu",
+                "/api/paas/v4/images/generations",
+                "zhipu.image_generation",
+            ),
+        ];
+        for (vendor, path, route_key) in native_image {
+            let classification = classify_post(path, vendor);
+            assert_eq!(route_key, classification.resource.route_key, "for {vendor}");
+            assert_eq!(
+                Some(BillingMeter::ImageResult),
                 classification.billing.meter,
                 "for {vendor}"
             );
