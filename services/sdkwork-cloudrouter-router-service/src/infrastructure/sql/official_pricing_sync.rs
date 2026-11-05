@@ -8,7 +8,9 @@ use sha2::{Digest, Sha256};
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
 use crate::domain::DomainError;
-use crate::infrastructure::sql::account_rate_card::sync_legacy_account_group_rate_cards;
+use crate::infrastructure::sql::account_rate_card::{
+    ensure_default_pricing_plan, sync_legacy_account_group_rate_cards,
+};
 use crate::infrastructure::sql::model_catalog_import::{
     model_catalog_key, sdkwork_model_is_publicly_active, stable_uuid,
 };
@@ -1390,94 +1392,21 @@ async fn activate_price_books(
 ///
 /// Idempotent: an existing effective plan/rule is left untouched (operator
 /// managed); missing rows are created with the neutral default (official
-/// reference base, multiplier 1, no markup, no minimum charge).
+/// reference base, multiplier 1, no markup, no minimum charge). The row shape
+/// is shared with the API-key default-group path
+/// (`account_rate_card::ensure_default_pricing_plan`) so a database seeded by
+/// either entry point converges on the same two rows.
 async fn bootstrap_default_pricing_plans(
     transaction: &mut Transaction<'_, Postgres>,
 ) -> Result<(usize, usize), OfficialPricingSyncError> {
-    const PLAN_CODE: &str = "standard";
-    const RULE_CODE: &str = "plan-default";
-    const SOURCE_MARKER: &str = r#"{"source":"official_pricing_bootstrap"}"#;
     let effective_from = sqlx::query_scalar::<_, String>("SELECT CURRENT_TIMESTAMP::text")
         .fetch_one(&mut **transaction)
         .await?;
-
-    let mut plan_count = 0;
-    let mut rule_count = 0;
-
-    let existing_plan_id = sqlx::query_scalar::<_, i64>(
-        r#"SELECT id FROM cloudrouter_pricing_plan
-           WHERE tenant_id = 0 AND organization_id = 0 AND plan_code = $1
-             AND deleted_at IS NULL"#,
-    )
-    .bind(PLAN_CODE)
-    .fetch_optional(&mut **transaction)
-    .await?;
-    let plan_id = match existing_plan_id {
-        Some(id) => id,
-        None => {
-            let id = next_cloud_runtime_id("cloudrouter_pricing_plan")?;
-            sqlx::query(
-                r#"INSERT INTO cloudrouter_pricing_plan
-                   (id, uuid, tenant_id, organization_id, metadata, plan_code,
-                    plan_name, base_price_side, currency_code, fallback_policy,
-                    rounding_mode, minimum_charge_amount, effective_from, effective_to)
-                   VALUES ($1, $2, 0, 0, $3::jsonb, $4, $5, $6, $7,
-                           'fail_closed', 'half_up', 0, $8::timestamptz, NULL)"#,
-            )
-            .bind(id)
-            .bind(stable_uuid(
-                "cloudrouter-pricing-plan",
-                &["0", "0", PLAN_CODE],
-            ))
-            .bind(SOURCE_MARKER)
-            .bind(PLAN_CODE)
-            .bind("Standard")
-            .bind("official_reference")
-            .bind("USD")
-            .bind(&effective_from)
-            .execute(&mut **transaction)
-            .await?;
-            plan_count += 1;
-            id
-        }
-    };
-
-    let existing_rule_id = sqlx::query_scalar::<_, i64>(
-        r#"SELECT id FROM cloudrouter_pricing_rule
-           WHERE tenant_id = 0 AND organization_id = 0
-             AND pricing_plan_id = $1 AND rule_code = $2
-             AND deleted_at IS NULL"#,
-    )
-    .bind(plan_id)
-    .bind(RULE_CODE)
-    .fetch_optional(&mut **transaction)
-    .await?;
-    if existing_rule_id.is_none() {
-        let rule_id = next_cloud_runtime_id("cloudrouter_pricing_rule")?;
-        sqlx::query(
-            r#"INSERT INTO cloudrouter_pricing_rule
-               (id, uuid, tenant_id, organization_id, metadata, pricing_plan_id,
-                rule_code, formula_mode, multiplier, markup_amount, priority,
-                effective_from, effective_to)
-               VALUES ($1, $2, 0, 0, $3::jsonb, $4, $5,
-                       'multiplier_markup', 1, 0, 10000,
-                       $6::timestamptz, NULL)"#,
-        )
-        .bind(rule_id)
-        .bind(stable_uuid(
-            "cloudrouter-pricing-rule",
-            &[&plan_id.to_string(), RULE_CODE],
-        ))
-        .bind(SOURCE_MARKER)
-        .bind(plan_id)
-        .bind(RULE_CODE)
-        .bind(&effective_from)
-        .execute(&mut **transaction)
-        .await?;
-        rule_count += 1;
-    }
-
-    Ok((plan_count, rule_count))
+    let bootstrap = ensure_default_pricing_plan(transaction, &effective_from).await?;
+    Ok((
+        usize::from(bootstrap.plan_created),
+        usize::from(bootstrap.rule_created),
+    ))
 }
 
 #[cfg(test)]

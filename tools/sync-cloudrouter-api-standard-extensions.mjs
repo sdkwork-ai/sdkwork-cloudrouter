@@ -117,6 +117,9 @@ function inferExternalProtocolId(routePath) {
   if (normalized.startsWith("/minimax/")) {
     return "minimax-v1";
   }
+  if (normalized.startsWith("/mureka/")) {
+    return "mureka-v1";
+  }
   if (normalized.startsWith("/nano-banana/")) {
     return "nano-banana-v1";
   }
@@ -144,6 +147,9 @@ function inferExternalProtocolId(routePath) {
   if (normalized.startsWith("/typesafe/")) {
     return "typesafe-v1";
   }
+  if (normalized.startsWith("/xai/")) {
+    return "xai-v1";
+  }
   return "cloudrouter-vendor-relay";
 }
 
@@ -169,6 +175,7 @@ function isExternalWireProtocolRoute(routePath) {
     normalized.startsWith("/luma_ai/") ||
     normalized.startsWith("/midjourney/") ||
     normalized.startsWith("/minimax/") ||
+    normalized.startsWith("/mureka/") ||
     normalized.startsWith("/nano-banana/") ||
     normalized.startsWith("/pixverse/") ||
     normalized.startsWith("/runway/") ||
@@ -176,6 +183,7 @@ function isExternalWireProtocolRoute(routePath) {
     normalized.startsWith("/suno/") ||
     normalized.startsWith("/vidu/") ||
     normalized.startsWith("/volcengine/") ||
+    normalized.startsWith("/xai/") ||
     normalized.startsWith("/zhipu/") ||
     normalized.startsWith("/typesafe/")
   );

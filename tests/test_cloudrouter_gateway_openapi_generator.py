@@ -2102,6 +2102,55 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
             schemas["OpenAiDeepSeekWebSearchRequest"]["properties"]["query"]["description"],
         )
 
+    def test_vendor_required_headers_and_deferred_status_are_declared(self) -> None:
+        """A vendor that rejects a call without a header must see it declared.
+
+        The relay forwards every non-hop-by-hop header verbatim, so a missing
+        declaration is not a relay bug — it is a contract bug: a generated SDK
+        has no way to send the header, and the upstream rejects the call.
+        `X-Runway-Version` and `anthropic-version` are required by their vendors
+        on every request; Stability AI only answers JSON when asked for it, and
+        the published response schema is the JSON form.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        required_headers = {
+            "anthropic": "anthropic-version",
+            "runway": "X-Runway-Version",
+            "stability_ai": "Accept",
+        }
+        for namespace, header_name in required_headers.items():
+            seen = 0
+            for path, path_item in spec["paths"].items():
+                if not path.startswith(f"/{namespace}/"):
+                    continue
+                for method, operation in path_item.items():
+                    if not isinstance(operation, dict) or not operation.get("operationId"):
+                        continue
+                    declared = {
+                        parameter["name"]: parameter
+                        for parameter in operation.get("parameters", [])
+                        if parameter.get("in") == "header"
+                    }
+                    self.assertIn(
+                        header_name,
+                        declared,
+                        f"{method.upper()} {path} must declare the required {header_name} header",
+                    )
+                    self.assertTrue(
+                        declared[header_name].get("required"),
+                        f"{method.upper()} {path} {header_name} must be required",
+                    )
+                    seen += 1
+            self.assertGreater(seen, 0, f"no operations found for {namespace}")
+
+        # xAI's deferred image poll answers 202 while the image is still being
+        # generated, then 200 with data. Both statuses are part of the wire.
+        poll = spec["paths"]["/xai/v1/images/{request_id}"]["get"]
+        self.assertIn("202", poll["responses"])
+        self.assertIn("200", poll["responses"])
+
     def _provider_prefixes(self) -> set[str]:
         return set(VENDOR_PROVIDER_PREFIXES)
 

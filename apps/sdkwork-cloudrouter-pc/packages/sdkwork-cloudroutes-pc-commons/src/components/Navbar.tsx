@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { PortalAccountMenu } from './PortalAccountMenu.tsx';
 import {
   buildPortalAuthLoginRedirect,
   hasStoredPortalSession,
@@ -145,14 +146,14 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
     { name: t('nav.home'), href: '/' },
     { name: t('nav.models'), href: '/models' },
     { name: t('nav.pricing'), href: '/pricing' },
-    { name: t('nav.rankings'), href: '/rankings', showFrom: 'xl' as const },
-    { name: t('nav.productDocs'), href: '/product-docs', showFrom: 'xl' as const },
+    { name: t('nav.rankings'), href: '/rankings', showFrom: '2xl' as const },
+    { name: t('nav.productDocs'), href: '/product-docs', showFrom: '2xl' as const },
     { name: t('nav.docs'), href: '/docs' },
     { name: t('nav.api'), href: '/api-reference', showFrom: '2xl' as const },
     { name: t('nav.sdk'), href: '/sdk-reference', showFrom: '2xl' as const },
     { name: t('nav.playground', 'Playground'), href: '/playground' },
     { name: t('nav.tokenPlan', 'Token Plan'), href: '/token-plan', showFrom: '2xl' as const },
-    { name: t('nav.partnerJoin', 'Partner Program'), href: '/partner-join' },
+    { name: t('nav.partnerJoin', 'Partner Program'), href: '/partner-join', showFrom: '2xl' as const },
   ];
 
   const navLinkVisibilityClass = (showFrom?: 'xl' | '2xl') => {
@@ -252,7 +253,7 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
         </Link>
 
         <nav
-          className="hidden min-w-0 flex-1 items-center justify-center gap-1 px-1 lg:flex xl:gap-2 2xl:gap-3"
+          className="hidden min-w-0 flex-1 items-center justify-center gap-1 overflow-x-clip px-1 lg:flex xl:gap-2 2xl:gap-3"
           aria-label={t('navbar.menu.label', 'Navigation menu')}
         >
           {navLinks.map((link) => renderNavLink(link))}
@@ -412,19 +413,13 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
           ) : (
             <div className="flex min-w-0 items-center gap-1.5 xl:gap-2">
               {authenticatedActionsStart}
-              {!isConsolePath ? (
-                <Link to="/console"
-                  className="flex shrink-0 items-center gap-1 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200 xl:px-4 xl:py-2 xl:text-sm"
-                >
-                  <span className="whitespace-nowrap">{t('nav.console')}</span>
-                  <ChevronRight className="h-3.5 w-3.5 xl:h-4 xl:w-4" aria-hidden="true" />
-                </Link>
-              ) : null}
+              {isPortalSessionStored ? <PortalAccountMenu variant="portal" /> : null}
             </div>
           )}
         </div>
 
         <div className={`${shouldShowAuthenticatedActions ? '' : 'ml-auto'} flex shrink-0 items-center gap-2 lg:hidden`}>
+          {isPortalSessionStored ? <PortalAccountMenu variant="portal" /> : null}
           <button
             onClick={toggleTheme}
             className={`rounded-md ${NAVBAR_HEADER_ACTION_CLASS}`}
@@ -504,12 +499,21 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
               </Link>
             </>
           ) : (
-            <Link to="/console"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block rounded-lg bg-slate-900 px-4 py-2 text-center text-base font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
-            >
-              {t('nav.console')}
-            </Link>
+            <div className="flex flex-col gap-3">
+              {isPortalSessionStored ? (
+                <PortalAccountMenu
+                  className="flex"
+                  onNavigate={() => setMobileMenuOpen(false)}
+                  variant="portal"
+                />
+              ) : null}
+              <Link to="/console"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block rounded-lg bg-slate-900 px-4 py-2 text-center text-base font-medium text-white transition-colors hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
+              >
+                {t('nav.console')}
+              </Link>
+            </div>
           )}
         </motion.div>
       ) : null}

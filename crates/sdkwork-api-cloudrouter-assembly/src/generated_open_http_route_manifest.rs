@@ -17,6 +17,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "alibabaCreateVideoGeneration",
     ),
     HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/alibaba/api/v1/services/audio/tts/SpeechSynthesizer",
+        "Audio/alibaba",
+        "alibabaCreateSpeech",
+    ),
+    HttpRoute::api_key_or_dual_token(
         HttpMethod::Get,
         "/alibaba/api/v1/tasks/{task_id}",
         "Videos/alibaba",
@@ -117,6 +123,18 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/bytedance/api/v3/images/generations",
         "Images/bytedance",
         "bytedanceCreateImageGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/bytedance/api/v3/tts/unidirectional",
+        "Audio/bytedance",
+        "bytedanceCreateSpeech",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/elevenlabs/v1/music",
+        "Music/elevenlabs",
+        "elevenlabsCreateMusicGeneration",
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
@@ -240,6 +258,24 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
+        "/kling/v1/audio/text-to-audio",
+        "Audio/kling",
+        "klingCreateTextToAudio",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Get,
+        "/kling/v1/audio/text-to-audio/{task_id}",
+        "Audio/kling",
+        "klingRetrieveTextToAudio",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/kling/v1/audio/video-to-audio",
+        "Audio/kling",
+        "klingCreateVideoToAudio",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
         "/kling/v1/images/generations",
         "Images/kling",
         "klingCreateImageGeneration",
@@ -287,10 +323,52 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "lumaRetrieveVideoGeneration",
     ),
     HttpRoute::api_key_or_dual_token(
+        HttpMethod::Get,
+        "/minimax/v1/files/retrieve",
+        "Videos/minimax",
+        "minimaxRetrieveVideoFile",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/minimax/v1/image_generation",
+        "Images/minimax",
+        "minimaxCreateImageGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
         "/minimax/v1/music_generation",
-        "Audio/minimax",
+        "Music/minimax",
         "minimaxCreateMusicGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Get,
+        "/minimax/v1/query/video_generation",
+        "Videos/minimax",
+        "minimaxRetrieveVideoGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/minimax/v1/t2a_v2",
+        "Audio/minimax",
+        "minimaxCreateSpeech",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/minimax/v1/video_generation",
+        "Videos/minimax",
+        "minimaxCreateVideoGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/mureka/v1/song/generate",
+        "Music/mureka",
+        "murekaCreateMusicGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Get,
+        "/mureka/v1/song/query/{task_id}",
+        "Music/mureka",
+        "murekaRetrieveMusicGeneration",
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Get,
@@ -303,6 +381,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/pixverse/openapi/v2/video/text/generate",
         "Videos/pixverse",
         "pixverseCreateVideoGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/runway/v1/image_to_video",
+        "Videos/runway",
+        "runwayCreateImageToVideo",
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Get,
@@ -318,6 +402,18 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
+        "/runway/v1/text_to_video",
+        "Videos/runway",
+        "runwayCreateTextToVideo",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/stability_ai/v2beta/audio/stable-audio-2/text-to-audio",
+        "Audio/stability_ai",
+        "stabilityAiCreateAudio",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
         "/stability_ai/v2beta/stable-image/generate/{mode}",
         "Images/stability_ai",
         "stabilityAiCreateImage",
@@ -325,13 +421,13 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
         "/suno/v1/music/generations",
-        "Audio/suno",
+        "Music/suno",
         "sunoCreateMusicGeneration",
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Get,
         "/suno/v1/music/generations/{task_id}",
-        "Audio/suno",
+        "Music/suno",
         "sunoRetrieveMusicGeneration",
     ),
     HttpRoute::api_key_or_dual_token(
@@ -1045,9 +1141,21 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
+        "/vidu/ent/v2/text2audio",
+        "Audio/vidu",
+        "viduCreateTextToAudio",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
         "/vidu/ent/v2/text2video",
         "Videos/vidu",
         "viduCreateTextToVideo",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/vidu/ent/v2/timing2audio",
+        "Audio/vidu",
+        "viduCreateTimingToAudio",
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
@@ -1072,6 +1180,48 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/volcengine/api/v3/images/generations",
         "Images/volcengine",
         "volcengineCreateImageGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/xai/v1/images/edits",
+        "Images/xai",
+        "xaiCreateImageEdit",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/xai/v1/images/generations",
+        "Images/xai",
+        "xaiCreateImageGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Get,
+        "/xai/v1/images/{request_id}",
+        "Images/xai",
+        "xaiRetrieveImageGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/xai/v1/videos/edits",
+        "Videos/xai",
+        "xaiCreateVideoEdit",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/xai/v1/videos/extensions",
+        "Videos/xai",
+        "xaiCreateVideoExtension",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/xai/v1/videos/generations",
+        "Videos/xai",
+        "xaiCreateVideoGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Get,
+        "/xai/v1/videos/{request_id}",
+        "Videos/xai",
+        "xaiRetrieveVideoGeneration",
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Get,

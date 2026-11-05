@@ -442,6 +442,84 @@
       "sortOrder": 570
     },
     {
+      "resourceCode": "api.minimax.text_to_speech",
+      "resourceType": "api_endpoint",
+      "displayName": "MiniMax Text To Speech",
+      "vendorCode": "minimax",
+      "modalityCode": "audio",
+      "apiCode": "minimax.text_to_speech",
+      "method": "POST",
+      "pathTemplate": "/v1/t2a_v2",
+      "capability": "audio",
+      "capabilities": [
+        "audio",
+        "speech"
+      ],
+      "sortOrder": 571
+    },
+    {
+      "resourceCode": "api.minimax.image_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "MiniMax Image Generation",
+      "vendorCode": "minimax",
+      "modalityCode": "image",
+      "apiCode": "minimax.image_generation",
+      "method": "POST",
+      "pathTemplate": "/v1/image_generation",
+      "capability": "image",
+      "capabilities": [
+        "image"
+      ],
+      "sortOrder": 571
+    },
+    {
+      "resourceCode": "api.minimax.video_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "MiniMax Video Generation",
+      "vendorCode": "minimax",
+      "modalityCode": "video",
+      "apiCode": "minimax.video_generation",
+      "method": "POST",
+      "pathTemplate": "/v1/video_generation",
+      "capability": "video",
+      "capabilities": [
+        "video"
+      ],
+      "sortOrder": 572
+    },
+    {
+      "resourceCode": "api.minimax.video_generation_task_query",
+      "resourceType": "api_endpoint",
+      "displayName": "MiniMax Video Generation Task Query",
+      "vendorCode": "minimax",
+      "modalityCode": "video",
+      "apiCode": "minimax.video_generation_task_query",
+      "method": "GET",
+      "pathTemplate": "/v1/query/video_generation",
+      "capability": "network",
+      "capabilities": [
+        "network",
+        "http"
+      ],
+      "sortOrder": 573
+    },
+    {
+      "resourceCode": "api.minimax.video_file_retrieve",
+      "resourceType": "api_endpoint",
+      "displayName": "MiniMax Video File Retrieve",
+      "vendorCode": "minimax",
+      "modalityCode": "video",
+      "apiCode": "minimax.video_file_retrieve",
+      "method": "GET",
+      "pathTemplate": "/v1/files/retrieve",
+      "capability": "network",
+      "capabilities": [
+        "network",
+        "http"
+      ],
+      "sortOrder": 574
+    },
+    {
       "resourceCode": "api.suno.music_generation",
       "resourceType": "api_endpoint",
       "displayName": "Suno Music Generation",
@@ -504,6 +582,22 @@
         "sound_effect"
       ],
       "sortOrder": 578
+    },
+    {
+      "resourceCode": "api.elevenlabs.music_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "ElevenLabs Music Generation",
+      "vendorCode": "elevenlabs",
+      "modalityCode": "music",
+      "apiCode": "elevenlabs.music_generation",
+      "method": "POST",
+      "pathTemplate": "/v1/music",
+      "capability": "music",
+      "capabilities": [
+        "audio",
+        "music"
+      ],
+      "sortOrder": 579
     },
     {
       "resourceCode": "api.vidu.reference_to_image",
@@ -629,7 +723,7 @@
     {
       "resourceCode": "api.sfx.sound",
       "resourceType": "api_endpoint",
-      "displayName": "Sound Effects",
+      "displayName": "Sound Effects (generic fallback)",
       "vendorCode": "openai_compatible",
       "modalityCode": "sound-effect",
       "apiCode": "sfx.sound",
@@ -641,6 +735,119 @@
         "sfx"
       ],
       "sortOrder": 597
+    },
+    {
+      "resourceCode": "api.kling.text_to_audio",
+      "resourceType": "api_endpoint",
+      "displayName": "Kling Text To Audio",
+      "vendorCode": "kling",
+      "modalityCode": "sound-effect",
+      "apiCode": "kling.text_to_audio",
+      "method": "POST",
+      "pathTemplate": "/v1/audio/text-to-audio",
+      "capability": "audio",
+      "capabilities": [
+        "audio",
+        "sfx"
+      ],
+      "sortOrder": 598
+    },
+    {
+      "resourceCode": "api.kling.video_to_audio",
+      "resourceType": "api_endpoint",
+      "displayName": "Kling Video To Audio",
+      "vendorCode": "kling",
+      "modalityCode": "sound-effect",
+      "apiCode": "kling.video_to_audio",
+      "method": "POST",
+      "pathTemplate": "/v1/audio/video-to-audio",
+      "capability": "audio",
+      "capabilities": [
+        "audio",
+        "sfx"
+      ],
+      "sortOrder": 599
+    },
+    {
+      "resourceCode": "api.kling.audio_task_query",
+      "resourceType": "api_endpoint",
+      "displayName": "Kling Audio Task Query",
+      "vendorCode": "kling",
+      "modalityCode": "network",
+      "apiCode": "kling.audio_task_query",
+      "method": "GET",
+      "pathTemplate": "/v1/audio/text-to-audio/{task_id}",
+      "capability": "network",
+      "capabilities": [
+        "network",
+        "http"
+      ],
+      "sortOrder": 600
+    },
+    {
+      "resourceCode": "api.vidu.text_to_audio",
+      "resourceType": "api_endpoint",
+      "displayName": "Vidu Text To Audio",
+      "vendorCode": "vidu",
+      "modalityCode": "sound-effect",
+      "apiCode": "vidu.text_to_audio",
+      "method": "POST",
+      "pathTemplate": "/ent/v2/text2audio",
+      "capability": "audio",
+      "capabilities": [
+        "audio",
+        "sfx"
+      ],
+      "sortOrder": 601
+    },
+    {
+      "resourceCode": "api.vidu.timing_to_audio",
+      "resourceType": "api_endpoint",
+      "displayName": "Vidu Timing To Audio",
+      "vendorCode": "vidu",
+      "modalityCode": "sound-effect",
+      "apiCode": "vidu.timing_to_audio",
+      "method": "POST",
+      "pathTemplate": "/ent/v2/timing2audio",
+      "capability": "audio",
+      "capabilities": [
+        "audio",
+        "sfx"
+      ],
+      "sortOrder": 602
+    },
+    {
+      "resourceCode": "api.bytedance.speech",
+      "resourceType": "api_endpoint",
+      "displayName": "ByteDance Seed TTS",
+      "vendorCode": "bytedance",
+      "modalityCode": "audio",
+      "apiCode": "bytedance.speech",
+      "method": "POST",
+      "pathTemplate": "/api/v3/tts/unidirectional",
+      "capability": "audio",
+      "capabilities": [
+        "audio",
+        "speech"
+      ],
+      "sortOrder": 603
+    },
+    {
+      "resourceCode": "api.stability_ai.audio",
+      "resourceType": "api_endpoint",
+      "displayName": "Stability AI Audio",
+      "vendorCode": "stability_ai",
+      "modalityCode": "audio",
+      "apiCode": "stability_ai.audio",
+      "method": "POST",
+      "pathTemplate": "/v2beta/audio/stable-audio-2/text-to-audio",
+      "capability": "audio",
+      "capabilities": [
+        "audio",
+        "sfx",
+        "music"
+      ],
+      "sortOrder": 598
     },
     {
       "resourceCode": "api.black_forest_labs.image_generation",
@@ -673,6 +880,21 @@
       "sortOrder": 601
     },
     {
+      "resourceCode": "api.black_forest_labs.video_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "FLUX Video Generation",
+      "vendorCode": "black_forest_labs",
+      "modalityCode": "video",
+      "apiCode": "black_forest_labs.video_generation",
+      "method": "POST",
+      "pathTemplate": "/v1/flux-3-video",
+      "capability": "video",
+      "capabilities": [
+        "video"
+      ],
+      "sortOrder": 602
+    },
+    {
       "resourceCode": "api.runway.image_generation",
       "resourceType": "api_endpoint",
       "displayName": "Runway Text/Image To Image",
@@ -701,6 +923,36 @@
         "image"
       ],
       "sortOrder": 611
+    },
+    {
+      "resourceCode": "api.runway.text_to_video",
+      "resourceType": "api_endpoint",
+      "displayName": "Runway Text To Video",
+      "vendorCode": "runway",
+      "modalityCode": "video",
+      "apiCode": "runway.text_to_video",
+      "method": "POST",
+      "pathTemplate": "/v1/text_to_video",
+      "capability": "video",
+      "capabilities": [
+        "video"
+      ],
+      "sortOrder": 612
+    },
+    {
+      "resourceCode": "api.runway.image_to_video",
+      "resourceType": "api_endpoint",
+      "displayName": "Runway Image To Video",
+      "vendorCode": "runway",
+      "modalityCode": "video",
+      "apiCode": "runway.image_to_video",
+      "method": "POST",
+      "pathTemplate": "/v1/image_to_video",
+      "capability": "video",
+      "capabilities": [
+        "video"
+      ],
+      "sortOrder": 613
     },
     {
       "resourceCode": "api.stability_ai.image_generation",
@@ -940,6 +1192,83 @@
       "sortOrder": 726
     },
     {
+      "resourceCode": "api.xai.video_generation_task_query",
+      "resourceType": "api_endpoint",
+      "displayName": "xAI Video Generation Task Query",
+      "vendorCode": "xai",
+      "modalityCode": "video",
+      "apiCode": "xai.video_generation_task_query",
+      "method": "GET",
+      "pathTemplate": "/v1/videos/{request_id}",
+      "capability": "network",
+      "capabilities": [
+        "network",
+        "http"
+      ],
+      "sortOrder": 727
+    },
+    {
+      "resourceCode": "api.xai.image_edit",
+      "resourceType": "api_endpoint",
+      "displayName": "xAI Image Edit",
+      "vendorCode": "xai",
+      "modalityCode": "image",
+      "apiCode": "xai.image_edit",
+      "method": "POST",
+      "pathTemplate": "/v1/images/edits",
+      "capability": "image",
+      "capabilities": [
+        "image"
+      ],
+      "sortOrder": 728
+    },
+    {
+      "resourceCode": "api.xai.image_generation_task_query",
+      "resourceType": "api_endpoint",
+      "displayName": "xAI Image Generation Task Query",
+      "vendorCode": "xai",
+      "modalityCode": "image",
+      "apiCode": "xai.image_generation_task_query",
+      "method": "GET",
+      "pathTemplate": "/v1/images/{request_id}",
+      "capability": "network",
+      "capabilities": [
+        "network",
+        "http"
+      ],
+      "sortOrder": 729
+    },
+    {
+      "resourceCode": "api.xai.video_edit",
+      "resourceType": "api_endpoint",
+      "displayName": "xAI Video Edit",
+      "vendorCode": "xai",
+      "modalityCode": "video",
+      "apiCode": "xai.video_edit",
+      "method": "POST",
+      "pathTemplate": "/v1/videos/edits",
+      "capability": "video",
+      "capabilities": [
+        "video"
+      ],
+      "sortOrder": 730
+    },
+    {
+      "resourceCode": "api.xai.video_extension",
+      "resourceType": "api_endpoint",
+      "displayName": "xAI Video Extension",
+      "vendorCode": "xai",
+      "modalityCode": "video",
+      "apiCode": "xai.video_extension",
+      "method": "POST",
+      "pathTemplate": "/v1/videos/extensions",
+      "capability": "video",
+      "capabilities": [
+        "video"
+      ],
+      "sortOrder": 731
+    },
+    {
       "resourceCode": "api.tencent.chat_completions",
       "resourceType": "api_endpoint",
       "displayName": "Tencent Hunyuan Chat Completions",
@@ -1112,6 +1441,22 @@
         "http"
       ],
       "sortOrder": 748
+    },
+    {
+      "resourceCode": "api.alibaba.speech",
+      "resourceType": "api_endpoint",
+      "displayName": "Alibaba Qwen TTS Speech Synthesis",
+      "vendorCode": "alibaba",
+      "modalityCode": "audio",
+      "apiCode": "alibaba.speech",
+      "method": "POST",
+      "pathTemplate": "/api/v1/services/audio/tts/speechsynthesizer",
+      "capability": "audio",
+      "capabilities": [
+        "audio",
+        "speech"
+      ],
+      "sortOrder": 749
     },
     {
       "resourceCode": "api.luma_ai.video_generation_task_query",

@@ -196,7 +196,7 @@
       "groupName": "Official Kling Full API",
       "groupType": "api_group",
       "selectionMode": "all",
-      "description": "Kling official account resources including text-to-video, image-to-video, image generation, avatar, motion control, and task query.",
+      "description": "Kling official account resources including text-to-video, image-to-video, image generation, avatar, motion control, task query, and the text-to-audio / video-to-audio sound-effect surface with its poll.",
       "sortOrder": 130,
       "items": [
         {
@@ -229,7 +229,15 @@
         },
         {
           "itemType": "resource",
-          "resourceCode": "api.sfx.sound"
+          "resourceCode": "api.kling.text_to_audio"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.video_to_audio"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.audio_task_query"
         }
       ]
     },
@@ -264,7 +272,7 @@
       "groupName": "Official ByteDance Full API",
       "groupType": "api_group",
       "selectionMode": "all",
-      "description": "ByteDance official account resources served by Volcengine Ark, including the doubao-seedream image and doubao-seedance video families plus their async task query.",
+      "description": "ByteDance official account resources served by Volcengine Ark, including the doubao-seedream image and doubao-seedance video families plus their async task query, and Seed TTS 2.0 on the openspeech surface.",
       "sortOrder": 145,
       "items": [
         {
@@ -282,6 +290,10 @@
         {
           "itemType": "resource",
           "resourceCode": "api.bytedance.task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.bytedance.speech"
         }
       ]
     },
@@ -334,11 +346,49 @@
       ]
     },
     {
+      "groupCode": "official.minimax.full",
+      "groupName": "Official MiniMax Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "MiniMax official account resources including speech synthesis, image generation, video generation with its task query and file retrieve, and music generation.",
+      "sortOrder": 156,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.minimax"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.minimax.text_to_speech"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.minimax.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.minimax.video_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.minimax.video_generation_task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.minimax.video_file_retrieve"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.minimax.music_generation"
+        }
+      ]
+    },
+    {
       "groupCode": "official.vidu.full",
       "groupName": "Official Vidu Full API",
       "groupType": "api_group",
       "selectionMode": "all",
-      "description": "Vidu official account resources including reference image, text/image/reference/start-end video generation, motion sync template, and video task query.",
+      "description": "Vidu official account resources including reference image, text/image/reference/start-end video generation, motion sync template, video task query, and the text2audio / timing2audio sound-effect surface.",
       "sortOrder": 160,
       "items": [
         {
@@ -375,7 +425,11 @@
         },
         {
           "itemType": "resource",
-          "resourceCode": "api.sfx.sound"
+          "resourceCode": "api.vidu.text_to_audio"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.vidu.timing_to_audio"
         }
       ]
     },
@@ -410,7 +464,7 @@
       "groupName": "Official ElevenLabs Full API",
       "groupType": "api_group",
       "selectionMode": "all",
-      "description": "ElevenLabs official account resources including text-to-speech and sound effect generation.",
+      "description": "ElevenLabs official account resources including text-to-speech, sound effect generation, and music generation.",
       "sortOrder": 170,
       "items": [
         {
@@ -424,6 +478,10 @@
         {
           "itemType": "resource",
           "resourceCode": "api.elevenlabs.sound_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.elevenlabs.music_generation"
         }
       ]
     },
@@ -432,7 +490,7 @@
       "groupName": "Official Alibaba Cloud Full API",
       "groupType": "api_group",
       "selectionMode": "all",
-      "description": "Alibaba Cloud official account resources. This group declares only the `vendor.alibaba` resource: the vendor ships no vendor-native api_endpoint in the bundled catalog yet, so its models are served through the protocol-coherent generic surface (openai_compatible / vendor_native) the seed already grants to the default account group. Vendor-native endpoints are added here when they land.",
+      "description": "Alibaba Cloud official account resources: `vendor.alibaba` plus the openai-compatible chat/embedding face, the Wanx image and Wan video endpoints with their task query, Anthropic Messages, and the Qwen-Audio-TTS / CosyVoice speech synthesis endpoint.",
       "sortOrder": 200,
       "items": [
         {
@@ -466,6 +524,11 @@
         },
         {
           "itemType": "resource",
+          "resourceCode": "api.alibaba.speech",
+          "sortOrder": 6
+        },
+        {
+          "itemType": "resource",
           "resourceCode": "api.alibaba.anthropic_messages"
         }
       ]
@@ -494,7 +557,7 @@
       "groupName": "Official Black Forest Labs Full API",
       "groupType": "api_group",
       "selectionMode": "all",
-      "description": "Black Forest Labs official account resources: the `vendor.black_forest_labs` resource plus the FLUX native image surface (`POST /v1/{model}` and the `/v1/get_result` poll route).",
+      "description": "Black Forest Labs official account resources: the `vendor.black_forest_labs` resource plus the FLUX native image surface (`POST /v1/{model}`), the FLUX 3 video surface (`POST /v1/flux-3-video`), and the `/v1/get_result` poll route both families read through.",
       "sortOrder": 210,
       "items": [
         {
@@ -508,6 +571,10 @@
         {
           "itemType": "resource",
           "resourceCode": "api.black_forest_labs.task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.black_forest_labs.video_generation"
         }
       ]
     },
@@ -665,7 +732,7 @@
       "groupName": "Official Runway Full API",
       "groupType": "api_group",
       "selectionMode": "all",
-      "description": "Runway official account resources: the `vendor.runway` resource plus the Runway native image surface (`POST /v1/text_to_image` and the `/v1/tasks/{id}` poll route).",
+      "description": "Runway official account resources: the `vendor.runway` resource plus the Runway native image surface (`POST /v1/text_to_image`), the text-to-video and image-to-video surfaces (`POST /v1/text_to_video`, `POST /v1/image_to_video`), and the `/v1/tasks/{id}` poll route.",
       "sortOrder": 245,
       "items": [
         {
@@ -678,6 +745,14 @@
         },
         {
           "itemType": "resource",
+          "resourceCode": "api.runway.text_to_video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.runway.image_to_video"
+        },
+        {
+          "itemType": "resource",
           "resourceCode": "api.runway.task_query"
         }
       ]
@@ -687,7 +762,7 @@
       "groupName": "Official Stability AI Full API",
       "groupType": "api_group",
       "selectionMode": "all",
-      "description": "Stability AI official account resources: the `vendor.stability_ai` resource, the shared sound-effect surface, and the native image surface (`POST /v2beta/stable-image/generate/{mode}`).",
+      "description": "Stability AI official account resources: the `vendor.stability_ai` resource, the audio surface that serves both sound effects and music (`POST /v2beta/audio/stable-audio-2/text-to-audio`), and the native image surface (`POST /v2beta/stable-image/generate/{mode}`).",
       "sortOrder": 250,
       "items": [
         {
@@ -696,7 +771,7 @@
         },
         {
           "itemType": "resource",
-          "resourceCode": "api.sfx.sound"
+          "resourceCode": "api.stability_ai.audio"
         },
         {
           "itemType": "resource",
@@ -774,7 +849,7 @@
       "groupName": "Official xAI Full API",
       "groupType": "api_group",
       "selectionMode": "all",
-      "description": "xAI official account resources. This group declares only the `vendor.xai` resource: the vendor ships no vendor-native api_endpoint in the bundled catalog yet, so its models are served through the protocol-coherent generic surface (openai_compatible / vendor_native) the seed already grants to the default account group. Vendor-native endpoints are added here when they land.",
+      "description": "xAI official account resources: the `vendor.xai` resource plus the Grok Imagine image surface (`POST /v1/images/generations`), the Grok Imagine video surface (`POST /v1/videos/generations`), and the `/v1/videos/{request_id}` poll route.",
       "sortOrder": 265,
       "items": [
         {
@@ -795,6 +870,31 @@
           "itemType": "resource",
           "resourceCode": "api.xai.video_generation",
           "sortOrder": 3
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.xai.video_generation_task_query",
+          "sortOrder": 4
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.xai.image_edit",
+          "sortOrder": 5
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.xai.image_generation_task_query",
+          "sortOrder": 6
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.xai.video_edit",
+          "sortOrder": 7
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.xai.video_extension",
+          "sortOrder": 8
         }
       ]
     },

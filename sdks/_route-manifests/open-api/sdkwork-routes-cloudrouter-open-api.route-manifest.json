@@ -72,6 +72,34 @@
       "apiSurface": "open-api"
     },
     {
+      "method": "POST",
+      "path": "/alibaba/api/v1/services/audio/tts/SpeechSynthesizer",
+      "operationId": "alibabaCreateSpeech",
+      "tags": [
+        "Audio/alibaba"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "alibaba-dashscope-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
       "method": "GET",
       "path": "/alibaba/api/v1/tasks/{task_id}",
       "operationId": "alibabaRetrieveVideoGenerationTask",
@@ -409,6 +437,34 @@
     },
     {
       "method": "POST",
+      "path": "/black_forest_labs/v1/flux-3-video",
+      "operationId": "blackForestLabsCreateVideo",
+      "tags": [
+        "Videos/black_forest_labs"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "black-forest-labs-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
       "path": "/black_forest_labs/v1/flux-{model}",
       "operationId": "blackForestLabsCreateImage",
       "tags": [
@@ -528,6 +584,62 @@
       ],
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "bytedance-ark-v3",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/bytedance/api/v3/tts/unidirectional",
+      "operationId": "bytedanceCreateSpeech",
+      "tags": [
+        "Audio/bytedance"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "bytedance-ark-v3",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/elevenlabs/v1/music",
+      "operationId": "elevenlabsCreateMusicGeneration",
+      "tags": [
+        "Music/elevenlabs"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "elevenlabs-v1",
       "auth": {
         "mode": "api-key-or-dual-token",
         "required": true
@@ -1109,6 +1221,90 @@
     },
     {
       "method": "POST",
+      "path": "/kling/v1/audio/text-to-audio",
+      "operationId": "klingCreateTextToAudio",
+      "tags": [
+        "Audio/kling"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "kling-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "GET",
+      "path": "/kling/v1/audio/text-to-audio/{task_id}",
+      "operationId": "klingRetrieveTextToAudio",
+      "tags": [
+        "Audio/kling"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "kling-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/kling/v1/audio/video-to-audio",
+      "operationId": "klingCreateVideoToAudio",
+      "tags": [
+        "Audio/kling"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "kling-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
       "path": "/kling/v1/images/generations",
       "operationId": "klingCreateImageGeneration",
       "tags": [
@@ -1332,14 +1528,210 @@
       "apiSurface": "open-api"
     },
     {
+      "method": "GET",
+      "path": "/minimax/v1/files/retrieve",
+      "operationId": "minimaxRetrieveVideoFile",
+      "tags": [
+        "Videos/minimax"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "minimax-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/minimax/v1/image_generation",
+      "operationId": "minimaxCreateImageGeneration",
+      "tags": [
+        "Images/minimax"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "minimax-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
       "method": "POST",
       "path": "/minimax/v1/music_generation",
       "operationId": "minimaxCreateMusicGeneration",
+      "tags": [
+        "Music/minimax"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "minimax-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "GET",
+      "path": "/minimax/v1/query/video_generation",
+      "operationId": "minimaxRetrieveVideoGeneration",
+      "tags": [
+        "Videos/minimax"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "minimax-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/minimax/v1/t2a_v2",
+      "operationId": "minimaxCreateSpeech",
       "tags": [
         "Audio/minimax"
       ],
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "minimax-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/minimax/v1/video_generation",
+      "operationId": "minimaxCreateVideoGeneration",
+      "tags": [
+        "Videos/minimax"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "minimax-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/mureka/v1/song/generate",
+      "operationId": "murekaCreateMusicGeneration",
+      "tags": [
+        "Music/mureka"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "mureka-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "GET",
+      "path": "/mureka/v1/song/query/{task_id}",
+      "operationId": "murekaRetrieveMusicGeneration",
+      "tags": [
+        "Music/mureka"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "mureka-v1",
       "auth": {
         "mode": "api-key-or-dual-token",
         "required": true
@@ -1396,6 +1788,34 @@
       ],
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "pixverse-openapi-v2",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/runway/v1/image_to_video",
+      "operationId": "runwayCreateImageToVideo",
+      "tags": [
+        "Videos/runway"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "runway-v1",
       "auth": {
         "mode": "api-key-or-dual-token",
         "required": true
@@ -1473,6 +1893,62 @@
     },
     {
       "method": "POST",
+      "path": "/runway/v1/text_to_video",
+      "operationId": "runwayCreateTextToVideo",
+      "tags": [
+        "Videos/runway"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "runway-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/stability_ai/v2beta/audio/stable-audio-2/text-to-audio",
+      "operationId": "stabilityAiCreateAudio",
+      "tags": [
+        "Audio/stability_ai"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "stability-ai-v2beta",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
       "path": "/stability_ai/v2beta/stable-image/generate/{mode}",
       "operationId": "stabilityAiCreateImage",
       "tags": [
@@ -1504,7 +1980,7 @@
       "path": "/suno/v1/music/generations",
       "operationId": "sunoCreateMusicGeneration",
       "tags": [
-        "Audio/suno"
+        "Music/suno"
       ],
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "suno-v1",
@@ -1532,7 +2008,7 @@
       "path": "/suno/v1/music/generations/{task_id}",
       "operationId": "sunoRetrieveMusicGeneration",
       "tags": [
-        "Audio/suno"
+        "Music/suno"
       ],
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "suno-v1",
@@ -5169,10 +5645,66 @@
     },
     {
       "method": "POST",
+      "path": "/vidu/ent/v2/text2audio",
+      "operationId": "viduCreateTextToAudio",
+      "tags": [
+        "Audio/vidu"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "vidu-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
       "path": "/vidu/ent/v2/text2video",
       "operationId": "viduCreateTextToVideo",
       "tags": [
         "Videos/vidu"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "vidu-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/vidu/ent/v2/timing2audio",
+      "operationId": "viduCreateTimingToAudio",
+      "tags": [
+        "Audio/vidu"
       ],
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "vidu-v1",
@@ -5288,6 +5820,202 @@
       ],
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "volcengine-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/xai/v1/images/edits",
+      "operationId": "xaiCreateImageEdit",
+      "tags": [
+        "Images/xai"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "xai-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/xai/v1/images/generations",
+      "operationId": "xaiCreateImageGeneration",
+      "tags": [
+        "Images/xai"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "xai-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "GET",
+      "path": "/xai/v1/images/{request_id}",
+      "operationId": "xaiRetrieveImageGeneration",
+      "tags": [
+        "Images/xai"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "xai-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/xai/v1/videos/edits",
+      "operationId": "xaiCreateVideoEdit",
+      "tags": [
+        "Videos/xai"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "xai-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/xai/v1/videos/extensions",
+      "operationId": "xaiCreateVideoExtension",
+      "tags": [
+        "Videos/xai"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "xai-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/xai/v1/videos/generations",
+      "operationId": "xaiCreateVideoGeneration",
+      "tags": [
+        "Videos/xai"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "xai-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "GET",
+      "path": "/xai/v1/videos/{request_id}",
+      "operationId": "xaiRetrieveVideoGeneration",
+      "tags": [
+        "Videos/xai"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "xai-v1",
       "auth": {
         "mode": "api-key-or-dual-token",
         "required": true

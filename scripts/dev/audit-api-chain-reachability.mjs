@@ -525,8 +525,10 @@ function vendorFromApiCode(apiCode) {
  * …). The `openai.` / `suno.` prefixes happen to also name a real upstream
  * account, so the vendor-scoped account check resolves for them by accident.
  * `sfx.sound` does not: `sfx` is a capability, and the accounts that can serve
- * it are the four vendors whose catalog models declare `primaryCapability =
- * "sfx"` (elevenlabs / kuaishou→kling / stability_ai / vidu).
+ * it are the vendors whose catalog models declare `primaryCapability = "sfx"`
+ * (elevenlabs / kling / stability_ai / vidu). Sound effects are now per-vendor
+ * codes (`kling.*`, `vidu.*`, `stability_ai.audio`,
+ * `elevenlabs.sound_generation`); `sfx.sound` remains the generic fallback.
  *
  * Checking the prefix literally would report "no callable account for vendor
  * sfx" — a false negative, since the endpoint *is* reachable through those

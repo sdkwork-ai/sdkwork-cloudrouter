@@ -1080,6 +1080,7 @@ mod tests {
             "/kling/v1",
             "/luma_ai/dream-machine/v1",
             "/minimax/v1",
+            "/mureka/v1",
             "/pixverse/openapi/v2",
             "/runway/v1",
             "/stability_ai/v2beta",
@@ -1087,6 +1088,7 @@ mod tests {
             "/typesafe/v1",
             "/vidu",
             "/volcengine",
+            "/xai/v1",
             "/zhipu/api/paas/v4",
             "/feeds/v3/api",
         ]

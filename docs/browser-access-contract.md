@@ -97,7 +97,7 @@
 - 两种部署形态（二选一，由 `deploy:plan --profile standalone.production | cloud.production` 校验）：
   1. **standalone.production**：native/archive 安装包；进程绑定 `0.0.0.0:3900`，位于平台 HTTPS 边缘之后；自适应资产根 `SDKWORK_CLOUDROUTER_ROUTER_PC|H5_STATIC_ROOT=/usr/share/sdkwork/router/web/{pc,h5}`，由 nginx `@pc` / `@h5` named locations 按设备分流（与 dev §4 判据共享）；SDK base `https://router.sdkwork.com` 同源 `/`；drive 走同源 `/backend/v3/api`。
   2. **cloud.production**：容器；页面 `https://router.sdkwork.com`；SDK base `https://api.sdkwork.com` 族；drive `https://drive.sdkwork.com`。
-- 规则：生产域名无环境后缀；`SDKWORK_CLOUDROUTER_STARTUP_INSTALL_MODE=skip`；镜像版本钉死且经 `bin/` 入口构建/部署（生产变更需 `--yes`）；部署产物与部署档案禁止 loopback/带端口值（唯一例外是 §2.7.1 声明的三个本机开发 bind）；生产 CORS 只含生产页面域 + 桌面/小程序 scheme。
+- 规则：生产域名无环境后缀；`SDKWORK_CLOUDROUTER_STARTUP_INSTALL_MODE=skip`（只关闭启动期产品数据 bootstrap，schema 迁移另有 `SDKWORK_DATABASE_AUTO_MIGRATE=false` 守卫，二者不可混为一谈）；镜像版本钉死且经 `bin/` 入口构建/部署（生产变更需 `--yes`）；部署产物与部署档案禁止 loopback/带端口值（唯一例外是 §2.7.1 声明的三个本机开发 bind）；生产 CORS 只含生产页面域 + 桌面/小程序 scheme。
 
 #### 2.7.1 `pnpm prod` —— 唯一的生产开发表面（治理例外）
 

@@ -6,6 +6,18 @@ use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 
 const DEFAULT_PRICING_PLAN_CODE: &str = "standard";
+/// Rule code and provenance marker of the neutral plan bootstrap. Kept
+/// identical to `official_pricing_sync`'s bootstrap so a database bootstrapped
+/// by either path converges on the same two rows.
+const DEFAULT_PRICING_PLAN_RULE_CODE: &str = "plan-default";
+const DEFAULT_PRICING_PLAN_SOURCE_MARKER: &str = r#"{"source":"official_pricing_bootstrap"}"#;
+
+/// Rows the neutral `standard` pricing-plan bootstrap created in this call.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub(crate) struct DefaultPricingPlanBootstrap {
+    pub plan_created: bool,
+    pub rule_created: bool,
+}
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 struct PricingPlanIdentity {
@@ -35,7 +47,62 @@ pub(crate) async fn ensure_account_group_rate_card(
     effective_at: &str,
 ) -> DomainResult<()> {
     let plan_code = normalized_plan_code(pricing_plan_code);
-    let plan = sqlx::query_as::<_, PricingPlanIdentity>(
+    let mut plan =
+        find_active_pricing_plan(transaction, tenant_id, organization_id, plan_code, effective_at)
+            .await?;
+    if plan.is_none() && plan_code == DEFAULT_PRICING_PLAN_CODE {
+        // A database that has been migrated but never seeded has no `standard`
+        // plan at all — an operator can still boot with
+        // `SDKWORK_CLOUDROUTER_STARTUP_INSTALL_MODE=skip`, and a deployment
+        // upgraded from a release that never ran the product bootstrap starts
+        // that way. Without the plan the very first account group (including
+        // the default group the console creates behind an API key) could never
+        // get a rate card. The neutral plan is what the catalog bootstrap would
+        // have written, so create exactly that and retry instead of failing the
+        // request.
+        ensure_default_pricing_plan(transaction, effective_at).await?;
+        plan = find_active_pricing_plan(
+            transaction,
+            tenant_id,
+            organization_id,
+            plan_code,
+            effective_at,
+        )
+        .await?;
+    }
+    let plan = plan.ok_or_else(|| {
+        DomainError::new(format!(
+            "pricing plan `{plan_code}` is not active for account group {account_group_id}"
+        ))
+    })?;
+
+    persist_account_group_rate_card(
+        transaction,
+        AccountGroupPricingBinding {
+            tenant_id,
+            organization_id,
+            account_group_id,
+            pricing_plan_tenant_id: plan.tenant_id,
+            pricing_plan_organization_id: plan.organization_id,
+            pricing_plan_id: plan.id,
+            pricing_plan_code: plan.plan_code,
+        },
+        effective_at,
+    )
+    .await
+}
+
+/// Resolves the active pricing plan an account group in `tenant_id` /
+/// `organization_id` must bill against: the tenant's own plan first, then the
+/// tenant-wide (`organization_id = 0`) plan, then the global (`0/0`) one.
+async fn find_active_pricing_plan(
+    transaction: &mut Transaction<'_, Postgres>,
+    tenant_id: i64,
+    organization_id: i64,
+    plan_code: &str,
+    effective_at: &str,
+) -> DomainResult<Option<PricingPlanIdentity>> {
+    sqlx::query_as::<_, PricingPlanIdentity>(
         r#"
         SELECT tenant_id, organization_id, id, plan_code
         FROM cloudrouter_pricing_plan
@@ -62,27 +129,133 @@ pub(crate) async fn ensure_account_group_rate_card(
     .bind(effective_at)
     .fetch_optional(&mut **transaction)
     .await
-    .map_err(|error| store_error("failed to resolve account group pricing plan", error))?
-    .ok_or_else(|| {
-        DomainError::new(format!(
-            "pricing plan `{plan_code}` is not active for account group {account_group_id}"
-        ))
-    })?;
+    .map_err(|error| store_error("failed to resolve account group pricing plan", error))
+}
 
-    persist_account_group_rate_card(
-        transaction,
-        AccountGroupPricingBinding {
-            tenant_id,
-            organization_id,
-            account_group_id,
-            pricing_plan_tenant_id: plan.tenant_id,
-            pricing_plan_organization_id: plan.organization_id,
-            pricing_plan_id: plan.id,
-            pricing_plan_code: plan.plan_code,
-        },
-        effective_at,
+/// Ensures the neutral global (`tenant_id = 0`, `organization_id = 0`)
+/// `standard` plan and its default rule exist, returning which rows this call
+/// created.
+///
+/// This is the same pair of rows the official pricing catalog bootstrap writes
+/// (`official_pricing_sync::bootstrap_default_pricing_plans`), extracted so the
+/// API-key path can converge a migrated-but-unseeded database instead of
+/// failing the operator's request. Idempotent: an existing plan or rule is
+/// never modified, and concurrent creators lose the insert to `DO NOTHING` and
+/// then read the winner's row.
+pub(crate) async fn ensure_default_pricing_plan(
+    transaction: &mut Transaction<'_, Postgres>,
+    effective_from: &str,
+) -> DomainResult<DefaultPricingPlanBootstrap> {
+    let mut bootstrap = DefaultPricingPlanBootstrap::default();
+
+    let plan_id = match find_global_default_plan_id(transaction).await? {
+        Some(id) => id,
+        None => {
+            let id = next_cloud_runtime_id("cloudrouter_pricing_plan")?;
+            let inserted = sqlx::query(
+                r#"
+                INSERT INTO cloudrouter_pricing_plan
+                    (id, uuid, tenant_id, organization_id, metadata, plan_code,
+                     plan_name, base_price_side, currency_code, fallback_policy,
+                     rounding_mode, minimum_charge_amount, effective_from, effective_to)
+                VALUES ($1, $2, 0, 0, $3::jsonb, $4, $5, $6, $7,
+                        'fail_closed', 'half_up', 0, $8::timestamptz, NULL)
+                ON CONFLICT (tenant_id, organization_id, plan_code)
+                    WHERE deleted_at IS NULL
+                DO NOTHING
+                "#,
+            )
+            .bind(id)
+            .bind(stable_uuid(
+                "cloudrouter-pricing-plan",
+                &["0", "0", DEFAULT_PRICING_PLAN_CODE],
+            ))
+            .bind(DEFAULT_PRICING_PLAN_SOURCE_MARKER)
+            .bind(DEFAULT_PRICING_PLAN_CODE)
+            .bind("Standard")
+            .bind("official_reference")
+            .bind("USD")
+            .bind(effective_from)
+            .execute(&mut **transaction)
+            .await
+            .map_err(|error| store_error("failed to create the default pricing plan", error))?
+            .rows_affected();
+            bootstrap.plan_created = inserted > 0;
+            if inserted > 0 {
+                id
+            } else {
+                find_global_default_plan_id(transaction).await?.ok_or_else(|| {
+                    DomainError::new("default pricing plan could not be created".to_owned())
+                })?
+            }
+        }
+    };
+
+    let existing_rule_id = sqlx::query_scalar::<_, i64>(
+        r#"
+        SELECT id
+        FROM cloudrouter_pricing_rule
+        WHERE tenant_id = 0 AND organization_id = 0
+          AND pricing_plan_id = $1 AND rule_code = $2
+          AND deleted_at IS NULL
+        "#,
     )
+    .bind(plan_id)
+    .bind(DEFAULT_PRICING_PLAN_RULE_CODE)
+    .fetch_optional(&mut **transaction)
     .await
+    .map_err(|error| store_error("failed to load the default pricing rule", error))?;
+    if existing_rule_id.is_none() {
+        let rule_id = next_cloud_runtime_id("cloudrouter_pricing_rule")?;
+        let inserted = sqlx::query(
+            r#"
+            INSERT INTO cloudrouter_pricing_rule
+                (id, uuid, tenant_id, organization_id, metadata, pricing_plan_id,
+                 rule_code, formula_mode, multiplier, markup_amount, priority,
+                 effective_from, effective_to)
+            VALUES ($1, $2, 0, 0, $3::jsonb, $4, $5,
+                    'multiplier_markup', 1, 0, 10000,
+                    $6::timestamptz, NULL)
+            ON CONFLICT (tenant_id, organization_id, pricing_plan_id, rule_code)
+                WHERE deleted_at IS NULL
+            DO NOTHING
+            "#,
+        )
+        .bind(rule_id)
+        .bind(stable_uuid(
+            "cloudrouter-pricing-rule",
+            &[&plan_id.to_string(), DEFAULT_PRICING_PLAN_RULE_CODE],
+        ))
+        .bind(DEFAULT_PRICING_PLAN_SOURCE_MARKER)
+        .bind(plan_id)
+        .bind(DEFAULT_PRICING_PLAN_RULE_CODE)
+        .bind(effective_from)
+        .execute(&mut **transaction)
+        .await
+        .map_err(|error| store_error("failed to create the default pricing rule", error))?
+        .rows_affected();
+        bootstrap.rule_created = inserted > 0;
+    }
+
+    Ok(bootstrap)
+}
+
+async fn find_global_default_plan_id(
+    transaction: &mut Transaction<'_, Postgres>,
+) -> DomainResult<Option<i64>> {
+    sqlx::query_scalar::<_, i64>(
+        r#"
+        SELECT id
+        FROM cloudrouter_pricing_plan
+        WHERE tenant_id = 0 AND organization_id = 0
+          AND plan_code = $1
+          AND deleted_at IS NULL
+        "#,
+    )
+    .bind(DEFAULT_PRICING_PLAN_CODE)
+    .fetch_optional(&mut **transaction)
+    .await
+    .map_err(|error| store_error("failed to load the default pricing plan", error))
 }
 
 pub(crate) async fn sync_legacy_account_group_rate_cards(

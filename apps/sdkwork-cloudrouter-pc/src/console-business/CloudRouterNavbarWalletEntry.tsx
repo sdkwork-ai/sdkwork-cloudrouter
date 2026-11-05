@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Coins, ShieldCheck } from 'lucide-react';
+import { Coins } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   normalizeSdkworkWalletLocale,
@@ -21,16 +21,14 @@ export interface CloudRouterNavbarWalletEntryProps extends CloudRouterConsoleBus
 export function CloudRouterNavbarWalletEntry({
   routePrefix,
 }: CloudRouterNavbarWalletEntryProps) {
-  const { i18n, t } = useTranslation();
-  const { accountPath, onNavigate, walletPath } = useConsoleBusinessNavigation({ routePrefix });
+  const { i18n } = useTranslation();
+  const { walletPath, onNavigate } = useConsoleBusinessNavigation({ routePrefix });
   const walletLocale = normalizeSdkworkWalletLocale(i18n.resolvedLanguage ?? i18n.language);
 
   return (
     <div className="cloud-router-navbar-wallet-entry flex items-center gap-2">
       <CloudRouterTokenBankIntlProvider locale={walletLocale}>
         <CloudRouterNavbarWalletEntryContent
-          accountLabel={t('console.navbar.account', 'Account')}
-          onOpenAccount={() => onNavigate(accountPath)}
           onOpenWallet={() => onNavigate(walletPath)}
         />
       </CloudRouterTokenBankIntlProvider>
@@ -39,12 +37,8 @@ export function CloudRouterNavbarWalletEntry({
 }
 
 function CloudRouterNavbarWalletEntryContent({
-  accountLabel,
-  onOpenAccount,
   onOpenWallet,
 }: {
-  accountLabel: string;
-  onOpenAccount: () => void;
   onOpenWallet: () => void;
 }) {
   const controller = useSdkworkWalletController();
@@ -92,14 +86,6 @@ function CloudRouterNavbarWalletEntryContent({
 
   return (
     <div className="relative flex items-center gap-2" ref={entryRef}>
-      <button
-        className="inline-flex h-9 items-center gap-2 rounded-[1rem] border border-[var(--sdk-color-border-subtle)] bg-[var(--sdk-color-surface-panel-muted)] px-3 text-sm font-medium text-[var(--sdk-color-text-primary)]"
-        onClick={onOpenAccount}
-        type="button"
-      >
-        <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-        {accountLabel}
-      </button>
       <button
         aria-expanded={isPanelOpen}
         aria-haspopup="dialog"

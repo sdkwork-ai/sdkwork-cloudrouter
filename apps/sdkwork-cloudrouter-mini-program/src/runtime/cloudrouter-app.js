@@ -19,17 +19,17 @@ var __copyProps = (to, from, except, desc) => {
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
-// apps/sdkwork-cloudrouter-mini-program/src/bootstrap/runtime.ts
+// src/bootstrap/runtime.ts
 var runtime_exports = {};
 __export(runtime_exports, {
   bootstrapMiniProgramApplication: () => bootstrapMiniProgramApplication
 });
 module.exports = __toCommonJS(runtime_exports);
 
-// apps/sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-contracts/src/permissions.ts
+// ../sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-contracts/src/permissions.ts
 var CLOUDROUTER_CONSOLE_ACCESS_PERMISSION = "cloudrouter.console.access";
 
-// apps/sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-contracts/src/routes.ts
+// ../sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-contracts/src/routes.ts
 var CLOUDROUTER_CONSOLE_ROUTES = {
   signIn: {
     id: "auth.router.session.signIn",
@@ -86,7 +86,7 @@ var CLOUDROUTER_PC_ROUTE_ALIGNMENT = {
   catalog: ["/models", "/pricing", "/rankings"]
 };
 
-// apps/sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-contracts/src/capabilities.ts
+// ../sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-contracts/src/capabilities.ts
 var CLOUDROUTER_CONSOLE_CAPABILITIES = [
   {
     id: "console-dashboard",
@@ -135,7 +135,7 @@ var CLOUDROUTER_CONSOLE_CAPABILITIES = [
 ];
 var CLOUDROUTER_CONSOLE_CAPABILITY_IDS = CLOUDROUTER_CONSOLE_CAPABILITIES.map((capability) => capability.id);
 
-// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/core/types.js
+// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/core/types.js
 var DEFAULT_RETRY_CONFIG = {
   maxRetries: 3,
   retryDelay: 1e3,
@@ -144,7 +144,7 @@ var DEFAULT_RETRY_CONFIG = {
 };
 var DEFAULT_CACHE_CONFIG = {
   enabled: false,
-  ttl: 300 * 1e3,
+  ttl: 3e5,
   maxSize: 100
 };
 var SUCCESS_CODES = [
@@ -181,7 +181,7 @@ var MIME_TYPES = {
   TEXT_HTML: "text/html"
 };
 
-// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/auth/token-manager.js
+// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/auth/token-manager.js
 var DefaultAuthTokenManager = class {
   constructor(initialTokens, events) {
     __publicField(this, "tokens", {});
@@ -276,7 +276,7 @@ function buildAuthHeaders(authMode, apiKey, tokenManager2) {
   return headers;
 }
 
-// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/logger.js
+// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/logger.js
 var LOG_LEVELS = {
   debug: 0,
   info: 1,
@@ -333,7 +333,6 @@ var ConsoleLogger = class {
         break;
       case "error":
         console.error(output, ...args);
-        break;
     }
   }
   debug(message, ...args) {
@@ -371,7 +370,7 @@ function createLogger(config) {
   return new ConsoleLogger(config);
 }
 
-// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/cache.js
+// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/cache.js
 var MemoryCacheStore = class {
   constructor(config = {}) {
     __publicField(this, "cache", /* @__PURE__ */ new Map());
@@ -430,7 +429,7 @@ function createCacheStore(config) {
   return new MemoryCacheStore(config);
 }
 
-// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/errors.js
+// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/errors.js
 var SdkError = class extends Error {
   constructor(message, code = "UNKNOWN", httpStatus, options) {
     var _a, _b;
@@ -650,7 +649,7 @@ function isRetryableError(error) {
   return error instanceof NetworkError || error instanceof TimeoutError || error instanceof ServerError || error instanceof RateLimitError || error instanceof BadGatewayError || error instanceof ServiceUnavailableError || error instanceof GatewayTimeoutError;
 }
 
-// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/retry.js
+// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/retry.js
 function sleep(ms) {
   return new Promise((resolve2) => setTimeout(resolve2, ms));
 }
@@ -694,264 +693,7 @@ async function withRetry(fn, config = {}) {
   throw lastError;
 }
 
-// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/url.js
-var DEFAULT_BASE_URL_ENV_KEY = "SDKWORK_API_BASE_URL";
-var DEPLOYMENT_MODE_ENV_KEYS = [
-  "SDKWORK_DEPLOY_MODE",
-  "SDKWORK_DEPLOYMENT_PROFILE",
-  "VITE_SDKWORK_DEPLOY_MODE",
-  "VITE_SDKWORK_DEPLOYMENT_PROFILE"
-];
-var ENV_SUFFIXES = [
-  {
-    label: "dev",
-    suffix: "-dev"
-  },
-  {
-    label: "test",
-    suffix: "-test"
-  },
-  {
-    label: "staging",
-    suffix: "-staging"
-  }
-];
-function readRuntimeEnv(key) {
-  var _a, _b, _c, _d, _e;
-  const bridgeValue = (_a = globalThis["SDKWORK_RUNTIME_ENV"]) == null ? void 0 : _a[key];
-  if (typeof bridgeValue === "string" && bridgeValue.length > 0) return bridgeValue;
-  const viteValue = (_c = (_b = globalThis["import.meta"]) == null ? void 0 : _b.env) == null ? void 0 : _c[key];
-  if (typeof viteValue === "string" && viteValue.length > 0) return viteValue;
-  const processValue = (_e = (_d = globalThis["process"]) == null ? void 0 : _d.env) == null ? void 0 : _e[key];
-  if (typeof processValue === "string" && processValue.length > 0) return processValue;
-}
-function splitBaseUrls(value) {
-  return (typeof value === "string" ? value : value.join(",")).split(/[,;]/).map((item) => item.trim()).filter((item) => item.length > 0);
-}
-function getEnvironmentLabel(hostname) {
-  const host = (hostname || "").toLowerCase();
-  if (!host) return "development";
-  if (isLocalhost(host) || isIpAddress(host)) return "development";
-  for (const { label, suffix } of ENV_SUFFIXES) if (host.includes(suffix + ".")) return label;
-  return "production";
-}
-function getBrand(hostname) {
-  const host = (hostname || "").toLowerCase();
-  const parts = host.split(".").filter((p) => p.length > 0);
-  if (parts.length < 2) return host || "";
-  return parts.slice(-2).join(".");
-}
-function getApiHostForEnvironment(environmentLabel, brand) {
-  const env = environmentLabel.toLowerCase();
-  return `${env === "production" ? "api." : `api-${env}.`}${brand.toLowerCase().replace(/^\.+|\.+$/g, "")}`;
-}
-function normalizeDeploymentMode(value) {
-  const normalized = (value != null ? value : "").trim().toLowerCase();
-  if (normalized === "cloud" || normalized === "standalone") return normalized;
-}
-function resolveDeploymentMode(options = {}) {
-  var _a, _b;
-  const explicit = normalizeDeploymentMode(options.mode);
-  if (explicit) return explicit;
-  const readEnv2 = (_a = options.readEnv) != null ? _a : readRuntimeEnv;
-  for (const key of (_b = options.modeEnvKeys) != null ? _b : DEPLOYMENT_MODE_ENV_KEYS) {
-    const fromEnv = normalizeDeploymentMode(readEnv2(key));
-    if (fromEnv) return fromEnv;
-  }
-  return "cloud";
-}
-function resolveApiHost(options) {
-  var _a, _b, _c;
-  const hostname = ((_a = options.hostname) != null ? _a : "").trim().toLowerCase();
-  if (!hostname) return "";
-  const environment = ((_b = options.environment) != null ? _b : getEnvironmentLabel(hostname)).toLowerCase();
-  if (environment === "development") return hostname;
-  if (((_c = options.mode) != null ? _c : "cloud") === "standalone") return hostname;
-  return getApiHostForEnvironment(environment, getBrand(hostname));
-}
-function resolveApiPort(options) {
-  var _a, _b, _c, _d, _e;
-  const hostname = ((_a = options.hostname) != null ? _a : "").trim().toLowerCase();
-  if (!hostname) return "";
-  if (((_b = options.environment) != null ? _b : getEnvironmentLabel(hostname)).toLowerCase() !== "development") return "";
-  if (((_c = options.mode) != null ? _c : "cloud") === "standalone") return ((_d = options.currentPort) != null ? _d : "").trim();
-  return ((_e = options.devPort) != null ? _e : "3910").trim();
-}
-function resolveBaseUrl(options = {}) {
-  var _a, _b, _c, _d, _e, _f, _g, _h, _i;
-  const readEnv2 = (_a = options.readEnv) != null ? _a : readRuntimeEnv;
-  const candidates = options.baseUrls ? splitBaseUrls(options.baseUrls) : splitBaseUrls((_c = readEnv2((_b = options.envKey) != null ? _b : DEFAULT_BASE_URL_ENV_KEY)) != null ? _c : "");
-  const currentHost = ((_d = options.hostname) != null ? _d : getCurrentHostname()).trim().toLowerCase();
-  const currentProtocol = ((_e = options.protocol) != null ? _e : getCurrentProtocol()).trim().toLowerCase() || "https";
-  const currentPort = ((_f = options.port) != null ? _f : getCurrentPort()).trim();
-  const mode = resolveDeploymentMode({
-    mode: options.mode,
-    modeEnvKeys: options.modeEnvKeys,
-    readEnv: readEnv2
-  });
-  const environmentLabel = getEnvironmentLabel(currentHost);
-  const devPort = ((_h = (_g = options.devPort) != null ? _g : readEnv2("SDKWORK_API_DEV_PORT")) != null ? _h : "3910").trim();
-  const normalizeCandidate = options.preservePath ? removeTrailingSlash : toBaseOrigin;
-  const targetHost = resolveApiHost({
-    hostname: currentHost,
-    mode,
-    environment: environmentLabel,
-    devPort
-  });
-  const targetPort = resolveApiPort({
-    hostname: currentHost,
-    mode,
-    environment: environmentLabel,
-    currentPort,
-    devPort
-  });
-  const derivedUrl = targetHost ? `${currentProtocol}://${targetHost}${targetPort ? `:${targetPort}` : ""}` : "";
-  const result = (url, reason) => ({
-    url,
-    reason,
-    mode,
-    environment: environmentLabel,
-    host: targetHost
-  });
-  if (candidates.length === 0) return derivedUrl ? result(derivedUrl, "derived-from-host") : result("", "empty");
-  const parts = candidates.map((candidate) => ({
-    candidate,
-    ...candidateParts(candidate)
-  }));
-  const relativeCandidate = parts.find((item) => item.candidate.startsWith("/") && !item.candidate.startsWith("//"));
-  if (relativeCandidate) return {
-    ...result(relativeCandidate.candidate.replace(/\/+$/u, "") || "/", "same-origin-relative"),
-    host: ""
-  };
-  const exact = parts.find((item) => item.host === targetHost && item.port === targetPort && item.protocol.toLowerCase() === currentProtocol);
-  if (exact) return result(normalizeCandidate(exact.candidate), "current-host-match");
-  const sameHostPort = parts.find((item) => item.host === targetHost && item.port === targetPort);
-  if (sameHostPort) return result(normalizeCandidate(alignCandidateProtocol(sameHostPort.candidate, currentProtocol)), "current-host-match");
-  const sameHost = parts.find((item) => item.host === targetHost && (!item.port || !targetPort));
-  if (sameHost) return result(normalizeCandidate(alignCandidateProtocol(sameHost.candidate, currentProtocol)), "current-host-match");
-  if (environmentLabel === "development") {
-    const localCandidate = parts.find((item) => item.host.length > 0 && (isLocalhost(item.host) || isIpAddress(item.host)));
-    if (localCandidate) return result(normalizeCandidate(localCandidate.candidate), "development-local-candidate");
-  }
-  if (derivedUrl) return result(derivedUrl, "derived-from-host");
-  return result(normalizeCandidate((_i = candidates[0]) != null ? _i : ""), "fallback-first");
-}
-function resolveBaseUrlWithAlignProtocol(options = {}) {
-  const resolution = resolveBaseUrl(options);
-  if (typeof window === "undefined") return resolution;
-  const aligned = alignBaseUrlToPageProtocol(resolution.url);
-  if (aligned === resolution.url) return resolution;
-  return {
-    ...resolution,
-    url: aligned
-  };
-}
-function alignBaseUrlToPageProtocol(url, options = {}) {
-  var _a;
-  const aligned = alignCandidateProtocol(url, ((_a = options.protocol) != null ? _a : getCurrentProtocol()).replace(/:$/u, "").toLowerCase() || "https");
-  if (aligned === url) return url;
-  try {
-    const parsed = new URL(aligned);
-    if (parsed.pathname === "/" && !parsed.search && !parsed.hash) return parsed.origin;
-    return parsed.toString().replace(/\/$/u, "");
-  } catch {
-    return aligned;
-  }
-}
-function alignCandidateProtocol(candidate, currentProtocol) {
-  const parts = candidateParts(candidate);
-  if (!parts.host || !parts.protocol || parts.protocol === currentProtocol) return candidate;
-  const rewritable = (scheme) => scheme === "http" || scheme === "https";
-  if (!rewritable(parts.protocol) || !rewritable(currentProtocol)) return candidate;
-  return setProtocol(candidate, currentProtocol);
-}
-function candidateParts(candidate) {
-  if (!isAbsolute(candidate)) return {
-    protocol: "",
-    host: "",
-    port: ""
-  };
-  try {
-    const parsed = new URL(candidate);
-    return {
-      protocol: parsed.protocol.replace(":", "").toLowerCase(),
-      host: parsed.hostname.toLowerCase(),
-      port: parsed.port
-    };
-  } catch {
-    return {
-      protocol: "",
-      host: "",
-      port: ""
-    };
-  }
-}
-function toBaseOrigin(url) {
-  try {
-    const parsed = new URL(url);
-    parsed.pathname = "";
-    parsed.search = "";
-    parsed.hash = "";
-    return parsed.origin;
-  } catch {
-    return url.replace(/\/+$/, "");
-  }
-}
-function getCurrentHostname() {
-  if (typeof window !== "undefined" && window.location) return window.location.hostname;
-  return "";
-}
-function getCurrentProtocol() {
-  if (typeof window !== "undefined" && window.location) return window.location.protocol.replace(":", "");
-  return "https";
-}
-function getCurrentPort() {
-  var _a;
-  if (typeof window !== "undefined" && window.location) return (_a = window.location.port) != null ? _a : "";
-  return "";
-}
-function isAbsolute(url) {
-  return /^[a-z][a-z\d+\-.]*:\/\//i.test(url);
-}
-function getHostname(url) {
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return "";
-  }
-}
-function setProtocol(url, protocol) {
-  try {
-    const parsed = new URL(url);
-    parsed.protocol = protocol.endsWith(":") ? protocol : `${protocol}:`;
-    return parsed.href;
-  } catch {
-    return url;
-  }
-}
-function isLocalhost(url) {
-  const hostname = hostnameOf(url).toLowerCase();
-  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname.startsWith("192.168.") || hostname.startsWith("10.") || hostname.startsWith("172.");
-}
-function isIpAddress(url) {
-  const hostname = hostnameOf(url);
-  return /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || /^\[?([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\]?$/.test(hostname);
-}
-function hostnameOf(url) {
-  if (isAbsolute(url)) return getHostname(url);
-  return url;
-}
-function removeTrailingSlash(url) {
-  try {
-    const parsed = new URL(url);
-    parsed.pathname = parsed.pathname.replace(/\/+$/, "") || "/";
-    return parsed.href;
-  } catch {
-    return url.replace(/\/+$/, "") || "/";
-  }
-}
-
-// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/sdkwork-utils/packages/sdkwork-utils-typescript/src/runtime/random.js
+// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/node_modules/.pnpm/@sdkwork_utils@0.11.0/node_modules/@sdkwork/utils/dist/runtime/random.js
 function getCrypto() {
   const crypto = globalThis.crypto;
   if (!(crypto == null ? void 0 : crypto.getRandomValues)) throw new Error("Web Crypto API is not available in this environment.");
@@ -963,25 +705,21 @@ function randomBytes(length) {
   return bytes;
 }
 function randomUuid() {
-  var _a, _b;
   const crypto = getCrypto();
-  if (typeof crypto.randomUUID === "function") try {
-    return crypto.randomUUID.call(crypto);
-  } catch {
-  }
+  if (crypto.randomUUID) return crypto.randomUUID();
   const bytes = randomBytes(16);
-  bytes[6] = ((_a = bytes[6]) != null ? _a : 0) & 15 | 64;
-  bytes[8] = ((_b = bytes[8]) != null ? _b : 0) & 63 | 128;
+  bytes[6] = bytes[6] & 15 | 64;
+  bytes[8] = bytes[8] & 63 | 128;
   const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/sdkwork-utils/packages/sdkwork-utils-typescript/src/id.js
+// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/node_modules/.pnpm/@sdkwork_utils@0.11.0/node_modules/@sdkwork/utils/dist/id.js
 function uuid() {
   return randomUuid();
 }
 
-// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/string.js
+// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/string.js
 var StringUtils;
 (function(_StringUtils) {
   function isEmpty(value) {
@@ -1808,7 +1546,7 @@ var StringUtils;
   _StringUtils.includesAny = includesAny;
 })(StringUtils || (StringUtils = {}));
 
-// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/encoding.js
+// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/encoding.js
 var Encoding;
 (function(_Encoding) {
   function base64Encode2(input) {
@@ -2250,9 +1988,10 @@ var Encoding;
       if (!key) continue;
       const decodedKey = urlDecode(key);
       const decodedValue = value ? urlDecode(value) : "";
-      if (result[decodedKey]) if (Array.isArray(result[decodedKey])) result[decodedKey].push(decodedValue);
-      else result[decodedKey] = [result[decodedKey], decodedValue];
-      else result[decodedKey] = decodedValue;
+      if (result[decodedKey]) {
+        if (Array.isArray(result[decodedKey])) result[decodedKey].push(decodedValue);
+        else result[decodedKey] = [result[decodedKey], decodedValue];
+      } else result[decodedKey] = decodedValue;
     }
     return result;
   }
@@ -2430,7 +2169,7 @@ Encoding.queryStringDecode;
 Encoding.slugify;
 Encoding.unslugify;
 
-// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/date.js
+// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/date.js
 var MILLISECONDS_IN_SECOND = 1e3;
 var MILLISECONDS_IN_MINUTE = 60 * MILLISECONDS_IN_SECOND;
 var MILLISECONDS_IN_HOUR = 60 * MILLISECONDS_IN_MINUTE;
@@ -2448,7 +2187,264 @@ var TIME_UNITS_IN_MS = {
   year: 365 * MILLISECONDS_IN_DAY
 };
 
-// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/http/stream-parser.js
+// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/url.js
+var DEFAULT_BASE_URL_ENV_KEY = "SDKWORK_API_BASE_URL";
+var DEPLOYMENT_MODE_ENV_KEYS = [
+  "SDKWORK_DEPLOY_MODE",
+  "SDKWORK_DEPLOYMENT_PROFILE",
+  "VITE_SDKWORK_DEPLOY_MODE",
+  "VITE_SDKWORK_DEPLOYMENT_PROFILE"
+];
+var ENV_SUFFIXES = [
+  {
+    label: "dev",
+    suffix: "-dev"
+  },
+  {
+    label: "test",
+    suffix: "-test"
+  },
+  {
+    label: "staging",
+    suffix: "-staging"
+  }
+];
+function readRuntimeEnv(key) {
+  var _a, _b, _c, _d, _e;
+  const bridgeValue = (_a = globalThis["SDKWORK_RUNTIME_ENV"]) == null ? void 0 : _a[key];
+  if (typeof bridgeValue === "string" && bridgeValue.length > 0) return bridgeValue;
+  const viteValue = (_c = (_b = globalThis["import.meta"]) == null ? void 0 : _b.env) == null ? void 0 : _c[key];
+  if (typeof viteValue === "string" && viteValue.length > 0) return viteValue;
+  const processValue = (_e = (_d = globalThis["process"]) == null ? void 0 : _d.env) == null ? void 0 : _e[key];
+  if (typeof processValue === "string" && processValue.length > 0) return processValue;
+}
+function splitBaseUrls(value) {
+  return (typeof value === "string" ? value : value.join(",")).split(/[,;]/).map((item) => item.trim()).filter((item) => item.length > 0);
+}
+function getEnvironmentLabel(hostname) {
+  const host = (hostname || "").toLowerCase();
+  if (!host) return "development";
+  if (isLocalhost(host) || isIpAddress(host)) return "development";
+  for (const { label, suffix } of ENV_SUFFIXES) if (host.includes(suffix + ".")) return label;
+  return "production";
+}
+function getBrand(hostname) {
+  const host = (hostname || "").toLowerCase();
+  const parts = host.split(".").filter((p) => p.length > 0);
+  if (parts.length < 2) return host || "";
+  return parts.slice(-2).join(".");
+}
+function getApiHostForEnvironment(environmentLabel, brand) {
+  const env = environmentLabel.toLowerCase();
+  return `${env === "production" ? "api." : `api-${env}.`}${brand.toLowerCase().replace(/^\.+|\.+$/g, "")}`;
+}
+function normalizeDeploymentMode(value) {
+  const normalized = (value != null ? value : "").trim().toLowerCase();
+  if (normalized === "cloud" || normalized === "standalone") return normalized;
+}
+function resolveDeploymentMode(options = {}) {
+  var _a, _b;
+  const explicit = normalizeDeploymentMode(options.mode);
+  if (explicit) return explicit;
+  const readEnv2 = (_a = options.readEnv) != null ? _a : readRuntimeEnv;
+  for (const key of (_b = options.modeEnvKeys) != null ? _b : DEPLOYMENT_MODE_ENV_KEYS) {
+    const fromEnv = normalizeDeploymentMode(readEnv2(key));
+    if (fromEnv) return fromEnv;
+  }
+  return "cloud";
+}
+function resolveApiHost(options) {
+  var _a, _b, _c;
+  const hostname = ((_a = options.hostname) != null ? _a : "").trim().toLowerCase();
+  if (!hostname) return "";
+  const environment = ((_b = options.environment) != null ? _b : getEnvironmentLabel(hostname)).toLowerCase();
+  if (environment === "development") return hostname;
+  if (((_c = options.mode) != null ? _c : "cloud") === "standalone") return hostname;
+  return getApiHostForEnvironment(environment, getBrand(hostname));
+}
+function resolveApiPort(options) {
+  var _a, _b, _c, _d, _e;
+  const hostname = ((_a = options.hostname) != null ? _a : "").trim().toLowerCase();
+  if (!hostname) return "";
+  if (((_b = options.environment) != null ? _b : getEnvironmentLabel(hostname)).toLowerCase() !== "development") return "";
+  if (((_c = options.mode) != null ? _c : "cloud") === "standalone") return ((_d = options.currentPort) != null ? _d : "").trim();
+  return ((_e = options.devPort) != null ? _e : "3910").trim();
+}
+function resolveBaseUrl(options = {}) {
+  var _a, _b, _c, _d, _e, _f, _g, _h, _i;
+  const readEnv2 = (_a = options.readEnv) != null ? _a : readRuntimeEnv;
+  const candidates = options.baseUrls ? splitBaseUrls(options.baseUrls) : splitBaseUrls((_c = readEnv2((_b = options.envKey) != null ? _b : DEFAULT_BASE_URL_ENV_KEY)) != null ? _c : "");
+  const currentHost = ((_d = options.hostname) != null ? _d : getCurrentHostname()).trim().toLowerCase();
+  const currentProtocol = ((_e = options.protocol) != null ? _e : getCurrentProtocol()).trim().toLowerCase() || "https";
+  const currentPort = ((_f = options.port) != null ? _f : getCurrentPort()).trim();
+  const mode = resolveDeploymentMode({
+    mode: options.mode,
+    modeEnvKeys: options.modeEnvKeys,
+    readEnv: readEnv2
+  });
+  const environmentLabel = getEnvironmentLabel(currentHost);
+  const devPort = ((_h = (_g = options.devPort) != null ? _g : readEnv2("SDKWORK_API_DEV_PORT")) != null ? _h : "3910").trim();
+  const normalizeCandidate = options.preservePath ? removeTrailingSlash : toBaseOrigin;
+  const targetHost = resolveApiHost({
+    hostname: currentHost,
+    mode,
+    environment: environmentLabel,
+    devPort
+  });
+  const targetPort = resolveApiPort({
+    hostname: currentHost,
+    mode,
+    environment: environmentLabel,
+    currentPort,
+    devPort
+  });
+  const derivedUrl = targetHost ? `${currentProtocol}://${targetHost}${targetPort ? `:${targetPort}` : ""}` : "";
+  const result = (url, reason) => ({
+    url,
+    reason,
+    mode,
+    environment: environmentLabel,
+    host: targetHost
+  });
+  if (candidates.length === 0) return derivedUrl ? result(derivedUrl, "derived-from-host") : result("", "empty");
+  const parts = candidates.map((candidate) => ({
+    candidate,
+    ...candidateParts(candidate)
+  }));
+  const relativeCandidate = parts.find((item) => item.candidate.startsWith("/") && !item.candidate.startsWith("//"));
+  if (relativeCandidate) return {
+    ...result(relativeCandidate.candidate.replace(/\/+$/u, "") || "/", "same-origin-relative"),
+    host: ""
+  };
+  const exact = parts.find((item) => item.host === targetHost && item.port === targetPort && item.protocol.toLowerCase() === currentProtocol);
+  if (exact) return result(normalizeCandidate(exact.candidate), "current-host-match");
+  const sameHostPort = parts.find((item) => item.host === targetHost && item.port === targetPort);
+  if (sameHostPort) return result(normalizeCandidate(alignCandidateProtocol(sameHostPort.candidate, currentProtocol)), "current-host-match");
+  const sameHost = parts.find((item) => item.host === targetHost && (!item.port || !targetPort));
+  if (sameHost) return result(normalizeCandidate(alignCandidateProtocol(sameHost.candidate, currentProtocol)), "current-host-match");
+  if (environmentLabel === "development") {
+    const localCandidate = parts.find((item) => item.host.length > 0 && (isLocalhost(item.host) || isIpAddress(item.host)));
+    if (localCandidate) return result(normalizeCandidate(localCandidate.candidate), "development-local-candidate");
+  }
+  if (derivedUrl) return result(derivedUrl, "derived-from-host");
+  return result(normalizeCandidate((_i = candidates[0]) != null ? _i : ""), "fallback-first");
+}
+function resolveBaseUrlWithAlignProtocol(options = {}) {
+  const resolution = resolveBaseUrl(options);
+  if (typeof window === "undefined") return resolution;
+  const aligned = alignBaseUrlToPageProtocol(resolution.url);
+  if (aligned === resolution.url) return resolution;
+  return {
+    ...resolution,
+    url: aligned
+  };
+}
+function alignBaseUrlToPageProtocol(url, options = {}) {
+  var _a;
+  const aligned = alignCandidateProtocol(url, ((_a = options.protocol) != null ? _a : getCurrentProtocol()).replace(/:$/u, "").toLowerCase() || "https");
+  if (aligned === url) return url;
+  try {
+    const parsed = new URL(aligned);
+    if (parsed.pathname === "/" && !parsed.search && !parsed.hash) return parsed.origin;
+    return parsed.toString().replace(/\/$/u, "");
+  } catch {
+    return aligned;
+  }
+}
+function alignCandidateProtocol(candidate, currentProtocol) {
+  const parts = candidateParts(candidate);
+  if (!parts.host || !parts.protocol || parts.protocol === currentProtocol) return candidate;
+  const rewritable = (scheme) => scheme === "http" || scheme === "https";
+  if (!rewritable(parts.protocol) || !rewritable(currentProtocol)) return candidate;
+  return setProtocol(candidate, currentProtocol);
+}
+function candidateParts(candidate) {
+  if (!isAbsolute(candidate)) return {
+    protocol: "",
+    host: "",
+    port: ""
+  };
+  try {
+    const parsed = new URL(candidate);
+    return {
+      protocol: parsed.protocol.replace(":", "").toLowerCase(),
+      host: parsed.hostname.toLowerCase(),
+      port: parsed.port
+    };
+  } catch {
+    return {
+      protocol: "",
+      host: "",
+      port: ""
+    };
+  }
+}
+function toBaseOrigin(url) {
+  try {
+    const parsed = new URL(url);
+    parsed.pathname = "";
+    parsed.search = "";
+    parsed.hash = "";
+    return parsed.origin;
+  } catch {
+    return url.replace(/\/+$/, "");
+  }
+}
+function getCurrentHostname() {
+  if (typeof window !== "undefined" && window.location) return window.location.hostname;
+  return "";
+}
+function getCurrentProtocol() {
+  if (typeof window !== "undefined" && window.location) return window.location.protocol.replace(":", "");
+  return "https";
+}
+function getCurrentPort() {
+  var _a;
+  if (typeof window !== "undefined" && window.location) return (_a = window.location.port) != null ? _a : "";
+  return "";
+}
+function isAbsolute(url) {
+  return /^[a-z][a-z\d+\-.]*:\/\//i.test(url);
+}
+function getHostname(url) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return "";
+  }
+}
+function setProtocol(url, protocol) {
+  try {
+    const parsed = new URL(url);
+    parsed.protocol = protocol.endsWith(":") ? protocol : `${protocol}:`;
+    return parsed.href;
+  } catch {
+    return url;
+  }
+}
+function isLocalhost(url) {
+  const hostname = hostnameOf(url).toLowerCase();
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname.startsWith("192.168.") || hostname.startsWith("10.") || hostname.startsWith("172.");
+}
+function isIpAddress(url) {
+  const hostname = hostnameOf(url);
+  return /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || /^\[?([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\]?$/.test(hostname);
+}
+function hostnameOf(url) {
+  if (isAbsolute(url)) return getHostname(url);
+  return url;
+}
+function removeTrailingSlash(url) {
+  try {
+    const parsed = new URL(url);
+    parsed.pathname = parsed.pathname.replace(/\/+$/, "") || "/";
+    return parsed.href;
+  } catch {
+    return url.replace(/\/+$/, "") || "/";
+  }
+}
+
+// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/http/stream-parser.js
 function extractStreamLines(buffer, flush = false) {
   const lines = [];
   let lineStart = 0;
@@ -2512,7 +2508,7 @@ function normalizeLegacyStreamLine(line) {
   return trimmedLine;
 }
 
-// ../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/http/base-client.js
+// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/http/base-client.js
 var SDKWORK_API_PREFIXES = [
   "/app/v3/api",
   "/backend/v3/api",
@@ -2581,7 +2577,7 @@ var BaseHttpClient = class {
       },
       cache: {
         enabled: false,
-        ttl: 300 * 1e3,
+        ttl: 3e5,
         maxSize: 100,
         ...config.cache
       },
@@ -2804,8 +2800,10 @@ var BaseHttpClient = class {
       controller.abort();
     }, options.timeout);
     const abortHandler = () => controller.abort();
-    if (options.signal) if (options.signal.aborted) controller.abort();
-    else options.signal.addEventListener("abort", abortHandler, { once: true });
+    if (options.signal) {
+      if (options.signal.aborted) controller.abort();
+      else options.signal.addEventListener("abort", abortHandler, { once: true });
+    }
     try {
       this.logger.debug(`${options.method} ${url}`);
       return await fetch(url, {
@@ -2945,7 +2943,7 @@ var BaseHttpClient = class {
   }
 };
 
-// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-core/src/environment.ts
+// packages/sdkwork-cloudrouter-mp-core/src/environment.ts
 var APP_API_SUFFIX = "/app/v3/api";
 var LIFECYCLE_ENVIRONMENTS = /* @__PURE__ */ new Set([
   "development",
@@ -2985,7 +2983,7 @@ function resolveCloudRouterAppApiBaseUrl(candidate) {
   }).url;
 }
 
-// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-core/src/session/sessionStore.ts
+// packages/sdkwork-cloudrouter-mp-core/src/session/sessionStore.ts
 var ACCESS_TOKEN_KEY = "sdkwork.cloudrouter.mp.accessToken";
 var AUTH_TOKEN_KEY = "sdkwork.cloudrouter.mp.authToken";
 var SUBJECT_KEY = "sdkwork.cloudrouter.mp.subject";
@@ -3033,7 +3031,7 @@ function clearCloudRouterSession() {
   store.removeStorageSync(SUBJECT_KEY);
 }
 
-// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-core/src/session/tokenManager.ts
+// packages/sdkwork-cloudrouter-mp-core/src/session/tokenManager.ts
 var tokenManager = null;
 function mirrorTokensToSession(tokens) {
   var _a, _b;
@@ -3060,7 +3058,7 @@ function getCloudRouterTokenManager() {
   return tokenManager;
 }
 
-// ../sdkwork-utils/packages/sdkwork-utils-typescript/src/runtime/binary.js
+// ../../../sdkwork-utils/packages/sdkwork-utils-typescript/src/runtime/binary.js
 var textEncoder = new TextEncoder();
 function toUtf8(value) {
   return textEncoder.encode(value);
@@ -3079,7 +3077,7 @@ function hexEncode(bytes) {
   return result;
 }
 
-// ../sdkwork-utils/packages/sdkwork-utils-typescript/src/runtime/sha256.js
+// ../../../sdkwork-utils/packages/sdkwork-utils-typescript/src/runtime/sha256.js
 var K = new Uint32Array([
   1116352408,
   1899447441,
@@ -3244,12 +3242,12 @@ function sha256Hex(value) {
   return hexEncode(sha256Digest(bytes));
 }
 
-// ../sdkwork-utils/packages/sdkwork-utils-typescript/src/crypto.js
+// ../../../sdkwork-utils/packages/sdkwork-utils-typescript/src/crypto.js
 function sha256Hash(value) {
   return sha256Hex(value);
 }
 
-// ../sdkwork-utils/packages/sdkwork-utils-typescript/src/money.js
+// ../../../sdkwork-utils/packages/sdkwork-utils-typescript/src/money.js
 var LOCALE_RULES = {
   "en-us": {
     prefix: true,
@@ -3506,7 +3504,7 @@ var CURRENCY_NAMES = {
 var DEFAULT_LOCALE_RULES = LOCALE_RULES["en-us"];
 var DEFAULT_CURRENCY_NAMES = CURRENCY_NAMES["en-us"];
 
-// sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/dist/index.js
+// ../../sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/dist/index.js
 var _HttpClient = class _HttpClient extends BaseHttpClient {
   constructor(config) {
     super(config);
@@ -5172,7 +5170,7 @@ var SdkworkAppClient = class {
   }
 };
 
-// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-core/src/sdk/sdkClients.ts
+// packages/sdkwork-cloudrouter-mp-core/src/sdk/sdkClients.ts
 var appSdkClient = null;
 var appSdkBaseUrl = null;
 function createCloudRouterMpAppSdkClient(baseUrl) {
@@ -5190,7 +5188,7 @@ function getCloudRouterMpAppSdkClient(baseUrl) {
   return appSdkClient;
 }
 
-// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-core/src/sdk/consolePorts.ts
+// packages/sdkwork-cloudrouter-mp-core/src/sdk/consolePorts.ts
 var DEFAULT_API_KEY_QUOTA = "0.000000";
 var DEFAULT_API_KEY_IP_LIMIT = "unrestricted";
 var DEFAULT_API_KEY_EXPIRATION = "never";
@@ -5258,7 +5256,7 @@ function createCloudRouterMpConsolePorts(appApiBaseUrl) {
   };
 }
 
-// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/zh-CN/cloudrouter/console/shared.ts
+// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/zh-CN/cloudrouter/console/shared.ts
 var sharedMessages = {
   "cloudrouter.console.shared.appTitle": "CloudRouter \u63A7\u5236\u53F0",
   "cloudrouter.console.shared.appSubtitle": "\u5C0F\u7A0B\u5E8F\u6A21\u578B\u8DEF\u7531\u63A7\u5236\u53F0",
@@ -5268,7 +5266,7 @@ var sharedMessages = {
   "cloudrouter.console.shared.loading": "\u52A0\u8F7D\u4E2D\u2026"
 };
 
-// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/zh-CN/cloudrouter/console/dashboard.ts
+// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/zh-CN/cloudrouter/console/dashboard.ts
 var dashboardMessages = {
   "cloudrouter.console.dashboard.title": "\u6982\u89C8",
   "cloudrouter.console.dashboard.summary": "\u7F51\u5173\u8BF7\u6C42\u3001Token \u4E0E\u9519\u8BEF\u7387\u5FEB\u7167",
@@ -5278,7 +5276,7 @@ var dashboardMessages = {
   "cloudrouter.console.dashboard.errorRate": "\u9519\u8BEF\u7387"
 };
 
-// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/zh-CN/cloudrouter/console/usage.ts
+// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/zh-CN/cloudrouter/console/usage.ts
 var usageMessages = {
   "cloudrouter.console.usage.title": "\u7528\u91CF",
   "cloudrouter.console.usage.summary": "\u9010\u6B21\u8BF7\u6C42\u7684\u7528\u91CF\u4E0E\u8BA1\u8D39\u8BB0\u5F55",
@@ -5293,7 +5291,7 @@ var usageMessages = {
   "cloudrouter.console.usage.statusUnknown": "\u672A\u77E5"
 };
 
-// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/zh-CN/cloudrouter/console/apiKeys.ts
+// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/zh-CN/cloudrouter/console/apiKeys.ts
 var apiKeysMessages = {
   "cloudrouter.console.apiKeys.title": "API Key",
   "cloudrouter.console.apiKeys.summary": "\u7BA1\u7406\u8C03\u7528\u7F51\u5173\u4F7F\u7528\u7684\u5BC6\u94A5",
@@ -5308,7 +5306,7 @@ var apiKeysMessages = {
   "cloudrouter.console.apiKeys.statusRevoked": "\u5DF2\u540A\u9500"
 };
 
-// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/zh-CN/cloudrouter/console/catalog.ts
+// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/zh-CN/cloudrouter/console/catalog.ts
 var catalogMessages = {
   "cloudrouter.console.catalog.title": "\u6A21\u578B\u4E0E\u5B9A\u4EF7",
   "cloudrouter.console.catalog.summary": "\u5B98\u65B9\u6A21\u578B\u76EE\u5F55\u4E0E\u6BCF\u767E\u4E07 Token \u4EF7\u683C",
@@ -5318,7 +5316,7 @@ var catalogMessages = {
   "cloudrouter.console.catalog.columnOutput": "\u8F93\u51FA\u4EF7"
 };
 
-// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/en-US/cloudrouter/console/shared.ts
+// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/en-US/cloudrouter/console/shared.ts
 var sharedMessages2 = {
   "cloudrouter.console.shared.appTitle": "CloudRouter Console",
   "cloudrouter.console.shared.appSubtitle": "Mini program model routing console",
@@ -5328,7 +5326,7 @@ var sharedMessages2 = {
   "cloudrouter.console.shared.loading": "Loading\u2026"
 };
 
-// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/en-US/cloudrouter/console/dashboard.ts
+// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/en-US/cloudrouter/console/dashboard.ts
 var dashboardMessages2 = {
   "cloudrouter.console.dashboard.title": "Overview",
   "cloudrouter.console.dashboard.summary": "Gateway requests, tokens, and error-rate snapshot",
@@ -5338,7 +5336,7 @@ var dashboardMessages2 = {
   "cloudrouter.console.dashboard.errorRate": "Error rate"
 };
 
-// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/en-US/cloudrouter/console/usage.ts
+// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/en-US/cloudrouter/console/usage.ts
 var usageMessages2 = {
   "cloudrouter.console.usage.title": "Usage",
   "cloudrouter.console.usage.summary": "Per-request usage and billing records",
@@ -5353,7 +5351,7 @@ var usageMessages2 = {
   "cloudrouter.console.usage.statusUnknown": "Unknown"
 };
 
-// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/en-US/cloudrouter/console/apiKeys.ts
+// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/en-US/cloudrouter/console/apiKeys.ts
 var apiKeysMessages2 = {
   "cloudrouter.console.apiKeys.title": "API Keys",
   "cloudrouter.console.apiKeys.summary": "Manage the keys used to call the gateway",
@@ -5368,7 +5366,7 @@ var apiKeysMessages2 = {
   "cloudrouter.console.apiKeys.statusRevoked": "Revoked"
 };
 
-// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/en-US/cloudrouter/console/catalog.ts
+// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/en-US/cloudrouter/console/catalog.ts
 var catalogMessages2 = {
   "cloudrouter.console.catalog.title": "Models & Pricing",
   "cloudrouter.console.catalog.summary": "Official model catalog and per-million-token prices",
@@ -5378,7 +5376,7 @@ var catalogMessages2 = {
   "cloudrouter.console.catalog.columnOutput": "Output price"
 };
 
-// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/locale.ts
+// packages/sdkwork-cloudrouter-mp-i18n/src/locale.ts
 var SDKWORK_CONSOLE_SUPPORTED_LOCALES = ["zh-CN", "en-US"];
 var SDKWORK_CONSOLE_DEFAULT_LOCALE = "zh-CN";
 function normalizeConsoleLocale(candidate) {
@@ -5401,7 +5399,7 @@ function resolveConsoleLocale() {
   return normalizeConsoleLocale(language);
 }
 
-// apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/src/i18n/index.ts
+// packages/sdkwork-cloudrouter-mp-i18n/src/i18n/index.ts
 var SDKWORK_CONSOLE_MESSAGES = {
   "zh-CN": {
     ...sharedMessages,
@@ -5431,7 +5429,7 @@ function createConsoleTranslator(locale) {
   };
 }
 
-// apps/sdkwork-cloudrouter-mini-program/src/bootstrap/runtime.ts
+// src/bootstrap/runtime.ts
 function bootstrapMiniProgramApplication() {
   const environment = resolveRuntimeEnv();
   const locale = resolveConsoleLocale();

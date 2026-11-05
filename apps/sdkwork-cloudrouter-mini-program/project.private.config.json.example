@@ -1,0 +1,8 @@
+{
+  "description": "Host-local WeChat DevTools overrides. Copy to project.private.config.json; never commit that file.",
+  "projectname": "sdkwork-cloudrouter-mini-program-local",
+  "setting": {
+    "compileHotReLoad": true,
+    "urlCheck": false
+  }
+}

@@ -76,8 +76,10 @@ VENDOR_PROVIDER_PREFIXES = {
     "kling",
     "vidu",
     "minimax",
+    "mureka",
     "elevenlabs",
     "typesafe",
+    "xai",
     "zhipu",
 }
 
@@ -3449,12 +3451,21 @@ class CloudRouterGatewayOpenApiGenerator:
             {"name": "Videos/kling", "description": "Kling-compatible video APIs exposed through Cloud Router vendor routing."},
             {"name": "Images/kling", "description": "Kling-compatible image APIs exposed through Cloud Router vendor routing."},
             {"name": "Audio/suno", "description": "Suno-compatible music APIs exposed through Cloud Router vendor routing."},
-            {"name": "Audio/minimax", "description": "MiniMax-compatible music APIs exposed through Cloud Router vendor routing."},
+            {"name": "Music/suno", "description": "Suno music generation APIs exposed through Cloud Router vendor routing."},
+            {"name": "Music/minimax", "description": "MiniMax music generation APIs exposed through Cloud Router vendor routing."},
+            {"name": "Music/mureka", "description": "Mureka song generation APIs exposed through Cloud Router vendor routing."},
+            {"name": "Music/elevenlabs", "description": "ElevenLabs music generation APIs exposed through Cloud Router vendor routing."},
+            {"name": "Audio/minimax", "description": "MiniMax T2A speech synthesis APIs exposed through Cloud Router vendor routing."},
             {"name": "Audio/volcengine", "description": "Volcengine Ark speech APIs exposed through Cloud Router vendor routing."},
+            {"name": "Audio/stability_ai", "description": "Stability AI Stable Audio text-to-audio APIs (music and sound effects) exposed through Cloud Router vendor routing."},
+            {"name": "Audio/bytedance", "description": "ByteDance Seed TTS speech synthesis APIs exposed through Cloud Router vendor routing."},
+            {"name": "Audio/alibaba", "description": "Alibaba DashScope Qwen-Audio-TTS and CosyVoice speech synthesis APIs exposed through Cloud Router vendor routing."},
+            {"name": "Audio/kling", "description": "Kling text-to-audio and video-to-audio sound-effect APIs exposed through Cloud Router vendor routing."},
+            {"name": "Audio/vidu", "description": "Vidu text2audio and timing2audio sound-effect APIs exposed through Cloud Router vendor routing."},
             {"name": "Images/volcengine", "description": "Volcengine Ark image APIs exposed through Cloud Router vendor routing."},
             {"name": "Audio/elevenlabs", "description": "ElevenLabs-compatible audio APIs exposed through Cloud Router vendor routing."},
-            {"name": "Images/google", "description": "Google Gemini native image generation APIs exposed through Cloud Router vendor routing."},
-            {"name": "Videos/google", "description": "Google Gemini native Veo video generation APIs exposed through Cloud Router vendor routing."},
+            {"name": "Images/google", "description": "Google Gemini first-party image generation APIs exposed through Cloud Router vendor routing."},
+            {"name": "Videos/google", "description": "Google Gemini first-party Veo video generation APIs exposed through Cloud Router vendor routing."},
             {"name": "Chat/google", "description": "Google Gemini content generation APIs exposed through Cloud Router vendor routing."},
             {"name": "Responses/google", "description": "Google Gemini cached content APIs exposed through Cloud Router vendor routing."},
             {"name": "Embeddings/google", "description": "Google Gemini embedding APIs exposed through Cloud Router vendor routing."},
@@ -3466,15 +3477,21 @@ class CloudRouterGatewayOpenApiGenerator:
             {"name": "Chat/typesafe", "description": "TypeSafe AI System One decision APIs exposed through Cloud Router vendor routing."},
             {"name": "Images/alibaba", "description": "Alibaba DashScope Wanx image generation APIs exposed through Cloud Router vendor routing."},
             {"name": "Images/black_forest_labs", "description": "Black Forest Labs FLUX image generation APIs exposed through Cloud Router vendor routing."},
+            {"name": "Videos/black_forest_labs", "description": "Black Forest Labs FLUX video generation APIs exposed through Cloud Router vendor routing."},
             {"name": "Images/bytedance", "description": "ByteDance Ark Seedream image generation APIs exposed through Cloud Router vendor routing."},
             {"name": "Images/runway", "description": "Runway image generation APIs exposed through Cloud Router vendor routing."},
+            {"name": "Images/minimax", "description": "MiniMax image generation APIs exposed through Cloud Router vendor routing."},
             {"name": "Images/stability_ai", "description": "Stability AI Stable Image APIs exposed through Cloud Router vendor routing."},
             {"name": "Images/zhipu", "description": "Zhipu CogView image generation APIs exposed through Cloud Router vendor routing."},
+            {"name": "Images/xai", "description": "xAI Grok Imagine image generation APIs exposed through Cloud Router vendor routing."},
+            {"name": "Videos/xai", "description": "xAI Grok Imagine video generation APIs exposed through Cloud Router vendor routing."},
             {"name": "Videos/alibaba", "description": "Alibaba DashScope Wan video generation APIs exposed through Cloud Router vendor routing."},
             {"name": "Videos/bytedance", "description": "ByteDance Ark Seedance video generation APIs exposed through Cloud Router vendor routing."},
             {"name": "Videos/jimeng", "description": "Jimeng video generation APIs exposed through Cloud Router vendor routing."},
             {"name": "Videos/luma_ai", "description": "Luma Dream Machine video generation APIs exposed through Cloud Router vendor routing."},
+            {"name": "Videos/minimax", "description": "MiniMax Hailuo video generation APIs exposed through Cloud Router vendor routing."},
             {"name": "Videos/pixverse", "description": "PixVerse video generation APIs exposed through Cloud Router vendor routing."},
+            {"name": "Videos/runway", "description": "Runway text-to-video and image-to-video APIs exposed through Cloud Router vendor routing."},
             {"name": "Videos/zhipu", "description": "Zhipu CogVideoX video generation APIs exposed through Cloud Router vendor routing."},
         ]
 
@@ -3625,7 +3642,7 @@ class CloudRouterGatewayOpenApiGenerator:
         paths["/v1/realtime/transcription_sessions"] = {"post": self._operation("Realtime", "createRealtimeTranscriptionSession", "Create realtime transcription session", "Creates an ephemeral realtime transcription session.", "JsonObject", "JsonObject")}
         paths["/v1/realtime/translations"] = {"post": self._operation("Realtime", "createRealtimeTranslationSession", "Create realtime translation session", "Creates an ephemeral realtime translation session.", "JsonObject", "JsonObject")}
         paths.update(self._provider_paths())
-        return paths
+        return self._apply_vendor_required_headers(paths)
 
     def _conversation_paths(self) -> dict[str, Any]:
         return {
@@ -3676,8 +3693,8 @@ class CloudRouterGatewayOpenApiGenerator:
             "/google/v1beta/models/{model}:embedContent": {"post": self._operation("Embeddings/google", "googleEmbedContent", "Google Gemini embed content", "Creates a Google Gemini embedding using the configured Google provider account.", "GoogleEmbedContentRequest", "GoogleEmbedContentResponse", parameters=[self._path_param("model", "Gemini model identifier.")], provider="google")},
             "/google/v1beta/models/{model}:batchEmbedContents": {"post": self._operation("Embeddings/google", "googleBatchEmbedContents", "Google Gemini batch embed contents", "Creates Google Gemini batch embeddings using the configured Google provider account.", "GoogleBatchEmbedContentsRequest", "GoogleBatchEmbedContentsResponse", parameters=[self._path_param("model", "Gemini model identifier.")], provider="google")},
             "/google/v1beta/models/{model}:countTokens": {"post": self._operation("Chat/google", "googleCountTokens", "Google Gemini count tokens", "Counts Google Gemini input tokens using the configured Google provider account.", "GoogleCountTokensRequest", "GoogleCountTokensResponse", parameters=[self._path_param("model", "Gemini model identifier.")], provider="google")},
-            "/google/v1beta/models/{model}:generateImages": {"post": self._operation("Images/google", "googleGenerateImages", "Google Gemini image generation", "Generates images through the Gemini native image generation surface (including the nano-banana model branch) using the configured Google provider account.", "GeminiImageGenerationRequest", "GeminiImageGenerationResponse", parameters=[self._path_param("model", "Gemini model identifier, for example gemini-3-pro-image.")], provider="google")},
-            "/google/v1beta/models/{model}:generateVideos": {"post": self._operation("Videos/google", "googleGenerateVideos", "Google Gemini video generation (Veo)", "Generates videos through the Gemini native Veo surface using the configured Google provider account.", "GeminiVideoGenerationRequest", "GeminiVideoOperation", parameters=[self._path_param("model", "Gemini model identifier, for example veo-3.1-generate-preview.")], provider="google")},
+            "/google/v1beta/models/{model}:generateImages": {"post": self._operation("Images/google", "googleGenerateImages", "Google Gemini image generation", "Generates images through the Gemini first-party image generation surface (including the nano-banana model branch) using the configured Google provider account.", "GeminiImageGenerationRequest", "GeminiImageGenerationResponse", parameters=[self._path_param("model", "Gemini model identifier, for example gemini-3-pro-image.")], provider="google")},
+            "/google/v1beta/models/{model}:generateVideos": {"post": self._operation("Videos/google", "googleGenerateVideos", "Google Gemini video generation (Veo)", "Generates videos through the Gemini first-party Veo surface using the configured Google provider account.", "GeminiVideoGenerationRequest", "GeminiVideoOperation", parameters=[self._path_param("model", "Gemini model identifier, for example veo-3.1-generate-preview.")], provider="google")},
             "/google/v1beta/models/{model}/operations/{operation_id}": {"get": self._operation("Videos/google", "googleRetrieveVideoOperation", "Google Gemini retrieve video operation (Veo)", "Retrieves a Veo long-running video generation operation using the configured Google provider account.", None, "GeminiVideoOperation", parameters=[self._path_param("model", "Gemini model identifier."), self._path_param("operation_id", "Veo long-running operation identifier.")], provider="google")},
             "/google/v1beta/files": {
                 "get": self._operation("Files/google", "googleListFiles", "Google Gemini list files", "Lists Google Gemini files using the configured Google provider account.", None, "GoogleFileListResponse", parameters=self._google_list_query_params(), provider="google"),
@@ -3707,11 +3724,31 @@ class CloudRouterGatewayOpenApiGenerator:
             "/volcengine/api/v3/contents/generations/tasks/{task_id}": {"get": self._operation("Videos/volcengine", "volcengineRetrieveContentGenerationTask", "Volcengine Ark retrieve content generation task", "Retrieves a Volcengine Ark task using the configured Volcengine provider account.", None, "VolcengineContentGenerationTask", parameters=[self._path_param("task_id", "Volcengine content generation task identifier.")], provider="volcengine")},
             "/volcengine/api/v3/images/generations": {"post": self._operation("Images/volcengine", "volcengineCreateImageGeneration", "Volcengine Ark image generation", "Creates a Volcengine Ark image generation using the configured Volcengine provider account.", "VolcengineImageGenerationRequest", "VolcengineImageGenerationResponse", provider="volcengine")},
             "/volcengine/api/v3/audio/speech": {"post": self._operation("Audio/volcengine", "volcengineCreateSpeech", "Volcengine create speech", "Synthesizes speech through the Volcengine Ark audio speech surface using the configured Volcengine provider account.", "OpenAiSpeechCreateRequest", "BinaryResponse", provider="volcengine")},
-            "/suno/v1/music/generations": {"post": self._operation("Audio/suno", "sunoCreateMusicGeneration", "Suno music generation", "Creates a Suno-compatible music generation using the configured Suno provider account.", "SunoMusicGenerationRequest", "SunoMusicGenerationResponse", provider="suno")},
-            "/suno/v1/music/generations/{task_id}": {"get": self._operation("Audio/suno", "sunoRetrieveMusicGeneration", "Suno retrieve music generation", "Retrieves a Suno-compatible music generation task using the configured Suno provider account.", None, "SunoMusicGenerationTaskResponse", parameters=[self._path_param("task_id", "Suno task identifier.")], provider="suno")},
+            "/suno/v1/music/generations": {"post": self._operation("Music/suno", "sunoCreateMusicGeneration", "Suno music generation", "Creates a Suno-compatible music generation using the configured Suno provider account.", "SunoMusicGenerationRequest", "SunoMusicGenerationResponse", provider="suno")},
+            "/suno/v1/music/generations/{task_id}": {"get": self._operation("Music/suno", "sunoRetrieveMusicGeneration", "Suno retrieve music generation", "Retrieves a Suno-compatible music generation task using the configured Suno provider account.", None, "SunoMusicGenerationTaskResponse", parameters=[self._path_param("task_id", "Suno task identifier.")], provider="suno")},
+            "/mureka/v1/song/generate": {"post": self._operation("Music/mureka", "murekaCreateMusicGeneration", "Mureka song generation", "Creates a Mureka song generation using the configured Mureka provider account.", "MurekaMusicGenerationRequest", "MurekaMusicGenerationTask", provider="mureka")},
+            "/mureka/v1/song/query/{task_id}": {"get": self._operation("Music/mureka", "murekaRetrieveMusicGeneration", "Mureka retrieve song generation", "Retrieves a Mureka song generation task using the configured Mureka provider account.", None, "MurekaMusicGenerationTask", parameters=[self._path_param("task_id", "Mureka task identifier.")], provider="mureka")},
             "/elevenlabs/v1/sound-generation": {"post": self._operation("Audio/elevenlabs", "elevenlabsCreateSoundGeneration", "Generate sound effect", "Generates a sound effect from a text description through the ElevenLabs-compatible sound generation surface.", "ElevenLabsSoundGenerationRequest", "ElevenLabsSoundGenerationResponse", parameters=[self._query_param("output_format", "Requested output audio format, for example mp3_44100_128.")], provider="elevenlabs")},
             "/elevenlabs/v1/text-to-speech/{voice_id}": {"post": self._operation("Audio/elevenlabs", "elevenlabsCreateTextToSpeech", "Synthesize speech", "Synthesizes speech for the given voice through the ElevenLabs-compatible text-to-speech surface.", "ElevenLabsTextToSpeechRequest", "ElevenLabsTextToSpeechResponse", parameters=[self._path_param("voice_id", "ElevenLabs voice identifier."), self._query_param("output_format", "Requested output audio format, for example mp3_44100_128.")], provider="elevenlabs")},
-            "/minimax/v1/music_generation": {"post": self._operation("Audio/minimax", "minimaxCreateMusicGeneration", "Minimax create music generation", "Generates music through the MiniMax-compatible music generation surface using the configured MiniMax provider account.", "MiniMaxMusicGenerationRequest", "MiniMaxMusicGenerationResponse", provider="minimax")},
+            "/minimax/v1/music_generation": {"post": self._operation("Music/minimax", "minimaxCreateMusicGeneration", "Minimax create music generation", "Generates music through the MiniMax-compatible music generation surface using the configured MiniMax provider account.", "MiniMaxMusicGenerationRequest", "MiniMaxMusicGenerationResponse", provider="minimax")},
+            "/minimax/v1/t2a_v2": {"post": self._operation("Audio/minimax", "minimaxCreateSpeech", "MiniMax speech synthesis", "Synthesizes speech through the MiniMax T2A v2 surface using the configured MiniMax provider account. The vendor returns hex-encoded audio in data.audio; callers that need an account group id append ?GroupId=.", "MinimaxTextToSpeechRequest", "MinimaxTextToSpeechResponse", provider="minimax")},
+            "/elevenlabs/v1/music": {"post": self._operation("Music/elevenlabs", "elevenlabsCreateMusicGeneration", "ElevenLabs music generation", "Generates a music track from a prompt or a composition plan through the ElevenLabs music surface using the configured ElevenLabs provider account.", "ElevenLabsMusicGenerationRequest", "BinaryResponse", parameters=[self._query_param("output_format", "Requested output audio format, for example mp3_44100_128.")], provider="elevenlabs", success_content_type="audio/mpeg")},
+            "/minimax/v1/image_generation": {"post": self._operation("Images/minimax", "minimaxCreateImageGeneration", "MiniMax image generation", "Creates a MiniMax image generation using the configured MiniMax provider account.", "MinimaxImageGenerationRequest", "MinimaxImageGenerationResponse", provider="minimax")},
+            "/minimax/v1/video_generation": {"post": self._operation("Videos/minimax", "minimaxCreateVideoGeneration", "MiniMax video generation", "Creates a MiniMax video generation task using the configured MiniMax provider account.", "MinimaxVideoGenerationRequest", "MinimaxVideoGenerationTask", provider="minimax")},
+            "/minimax/v1/query/video_generation": {"get": self._operation("Videos/minimax", "minimaxRetrieveVideoGeneration", "MiniMax retrieve video generation task", "Retrieves a MiniMax video generation task by task id using the configured MiniMax provider account.", None, "MinimaxVideoGenerationTask", parameters=[self._query_param("task_id", "MiniMax video generation task identifier returned by the submit call.")], provider="minimax")},
+            "/minimax/v1/files/retrieve": {"get": self._operation("Videos/minimax", "minimaxRetrieveVideoFile", "MiniMax retrieve video file", "Resolves the download URL for a generated MiniMax video file from its file id using the configured MiniMax provider account.", None, "MinimaxFileRetrieveResponse", parameters=[self._query_param("file_id", "MiniMax file identifier returned by the task query.")], provider="minimax")},
+            "/xai/v1/images/generations": {"post": self._operation("Images/xai", "xaiCreateImageGeneration", "xAI Grok Imagine image generation", "Generates an image from a prompt through the xAI Grok Imagine image API using the configured xAI provider account.", "XaiImageGenerationRequest", "XaiImageGenerationResponse", provider="xai")},
+            "/xai/v1/images/edits": {"post": self._operation("Images/xai", "xaiCreateImageEdit", "xAI Grok Imagine image edit", "Edits one or more input images from a prompt through the xAI Grok Imagine image API using the configured xAI provider account.", "XaiImageEditRequest", "XaiImageGenerationResponse", provider="xai")},
+            "/xai/v1/images/{request_id}": {"get": self._operation("Images/xai", "xaiRetrieveImageGeneration", "xAI Grok Imagine retrieve deferred image", "Polls a deferred Grok Imagine image generation: the upstream answers 202 while pending, 200 with data when done, and a body error when failed.", None, "XaiDeferredImageResponse", parameters=[self._path_param("request_id", "Deferred image request identifier returned by a deferred: true generation.")], provider="xai", extra_success_statuses=[("202", "Accepted: the deferred image is still being generated; poll again.")])},
+            "/xai/v1/videos/generations": {"post": self._operation("Videos/xai", "xaiCreateVideoGeneration", "xAI Grok Imagine video generation", "Generates a video from a text prompt and optionally an image through the xAI Grok Imagine video API using the configured xAI provider account.", "XaiVideoGenerationRequest", "XaiVideoStartResponse", provider="xai")},
+            "/xai/v1/videos/edits": {"post": self._operation("Videos/xai", "xaiCreateVideoEdit", "xAI Grok Imagine video edit", "Edits an input video from a prompt through the xAI Grok Imagine video API using the configured xAI provider account.", "XaiVideoEditRequest", "XaiVideoStartResponse", provider="xai")},
+            "/xai/v1/videos/extensions": {"post": self._operation("Videos/xai", "xaiCreateVideoExtension", "xAI Grok Imagine video extension", "Extends an input video by generating continuation content through the xAI Grok Imagine video API using the configured xAI provider account.", "XaiVideoExtensionRequest", "XaiVideoStartResponse", provider="xai")},
+            "/xai/v1/videos/{request_id}": {"get": self._operation("Videos/xai", "xaiRetrieveVideoGeneration", "xAI Grok Imagine retrieve video generation", "Retrieves a deferred Grok Imagine video generation by request id using the configured xAI provider account.", None, "XaiVideoGenerationTask", parameters=[self._path_param("request_id", "Grok Imagine video request identifier returned by the generation, edit, or extension call.")], provider="xai")},
+            "/kling/v1/audio/text-to-audio": {"post": self._operation("Audio/kling", "klingCreateTextToAudio", "Kling text to audio", "Creates a Kling text-to-sound-effect task. The vendor requires `prompt` and a `duration` between 3 and 10 seconds.", "KlingSoundGenerationRequest", "KlingAudioTask", provider="kling")},
+            "/kling/v1/audio/text-to-audio/{task_id}": {"get": self._operation("Audio/kling", "klingRetrieveTextToAudio", "Kling retrieve text to audio task", "Retrieves a Kling text-to-audio task by the task id the creation call returned.", None, "KlingAudioTask", parameters=[self._path_param("task_id", "Kling audio task identifier.")], provider="kling")},
+            "/kling/v1/audio/video-to-audio": {"post": self._operation("Audio/kling", "klingCreateVideoToAudio", "Kling video to audio", "Creates a Kling video-to-sound-effect task from a source video.", "KlingVideoToAudioRequest", "KlingAudioTask", provider="kling")},
+            "/vidu/ent/v2/text2audio": {"post": self._operation("Audio/vidu", "viduCreateTextToAudio", "Vidu text to audio", "Creates a Vidu text-to-audio task using the configured Vidu provider account.", "ViduTextToAudioRequest", "ViduAudioGenerationTask", provider="vidu")},
+            "/vidu/ent/v2/timing2audio": {"post": self._operation("Audio/vidu", "viduCreateTimingToAudio", "Vidu timing to audio", "Creates a Vidu timing-to-audio task from timed cues using the configured Vidu provider account.", "ViduTimingToAudioRequest", "ViduAudioGenerationTask", provider="vidu")},
             "/kling/v1/videos/generations": {"post": self._operation("Videos/kling", "klingCreateVideoGeneration", "Kling video generation", "Creates a Kling-compatible video generation using the configured Kling provider account.", "KlingVideoGenerationRequest", "KlingVideoGenerationTask", provider="kling")},
             "/kling/v1/videos/generations/{task_id}": {"get": self._operation("Videos/kling", "klingRetrieveVideoGeneration", "Kling retrieve video generation", "Retrieves a Kling-compatible video generation task using the configured Kling provider account.", None, "KlingVideoGenerationTask", parameters=[self._path_param("task_id", "Kling task identifier.")], provider="kling")},
             "/kling/v1/videos/avatar": {"post": self._operation("Videos/kling", "klingCreateAvatar", "Kling create avatar video", "Creates a Kling avatar video using the configured Kling provider account.", "KlingAvatarCreateRequest", "KlingVideoGenerationTask", provider="kling")},
@@ -3727,11 +3764,14 @@ class CloudRouterGatewayOpenApiGenerator:
             "/vidu/ent/v2/template": {"post": self._operation("Videos/vidu", "viduCreateTemplate", "Vidu create template video", "Creates a Vidu template video using the configured Vidu provider account.", "ViduTemplateRequest", "ViduVideoGenerationTask", provider="vidu")},
             "/typesafe/v1/systemone": {"post": self._operation("Chat/typesafe", "typesafeCreateSystemOneDecision", "TypeSafe AI System One decision", "Evaluates typed questions against one state through the TypeSafe AI System One endpoint using the configured TypeSafe AI provider account.", "TypeSafeSystemOneRequest", "TypeSafeSystemOneResponse", provider="typesafe")},
             "/alibaba/api/v1/services/aigc/text2image/image-synthesis": {"post": self._operation("Images/alibaba", "alibabaCreateImageGeneration", "Alibaba Wanx image generation", "Creates a DashScope Wanx text-to-image task using the configured Alibaba provider account.", "AlibabaImageGenerationRequest", "AlibabaImageGenerationResponse", provider="alibaba")},
+            "/alibaba/api/v1/services/audio/tts/SpeechSynthesizer": {"post": self._operation("Audio/alibaba", "alibabaCreateSpeech", "Alibaba Qwen TTS speech synthesis", "Synthesizes speech from text through the DashScope Qwen-Audio-TTS / CosyVoice surface using the configured Alibaba provider account.", "AlibabaSpeechRequest", "AlibabaSpeechResponse", provider="alibaba")},
             "/alibaba/api/v1/services/aigc/video-generation/video-synthesis": {"post": self._operation("Videos/alibaba", "alibabaCreateVideoGeneration", "Alibaba Wan video generation", "Creates a DashScope Wan text-to-video, image-to-video, or reference-to-video task using the configured Alibaba provider account.", "AlibabaVideoGenerationRequest", "AlibabaVideoGenerationResponse", provider="alibaba")},
             "/alibaba/api/v1/tasks/{task_id}": {"get": self._operation("Videos/alibaba", "alibabaRetrieveVideoGenerationTask", "Alibaba Wan retrieve video generation task", "Retrieves a DashScope Wan video generation task and its status using the configured Alibaba provider account.", None, "AlibabaVideoGenerationTask", parameters=[self._path_param("task_id", "DashScope asynchronous task identifier.")], provider="alibaba")},
-            "/black_forest_labs/v1/flux-{model}": {"post": self._operation("Images/black_forest_labs", "blackForestLabsCreateImage", "Black Forest Labs FLUX image generation", "Creates a FLUX image through the Black Forest Labs FLUX API using the configured Black Forest Labs provider account.", "BlackForestLabsImageGenerationRequest", "BlackForestLabsImageGenerationTask", parameters=[self._path_param("model", "FLUX model id, for example flux-2-pro or flux-pro-1.1.")], provider="black_forest_labs")},
-            "/black_forest_labs/v1/get_result": {"get": self._operation("Images/black_forest_labs", "blackForestLabsRetrieveImageTask", "Black Forest Labs retrieve image generation result", "Retrieves a FLUX generation result by polling id using the configured Black Forest Labs provider account.", None, "BlackForestLabsImageGenerationTask", parameters=[self._query_param("id", "Generation id returned by the FLUX submit call.")], provider="black_forest_labs")},
+            "/black_forest_labs/v1/flux-{model}": {"post": self._operation("Images/black_forest_labs", "blackForestLabsCreateImage", "Black Forest Labs FLUX image generation", "Creates a FLUX image through the Black Forest Labs FLUX API using the configured Black Forest Labs provider account.", "BlackForestLabsImageGenerationRequest", "BlackForestLabsImageGenerationTask", parameters=[self._path_param("model", "FLUX model suffix, exactly as it appears after flux- in the vendor's path: pro-1.1, 2-pro, 2-flex, 3-image, or 3-image-klein. The request path becomes /v1/flux-{model}, matching the vendor's per-model endpoint.")], provider="black_forest_labs")},
+            "/black_forest_labs/v1/flux-3-video": {"post": self._operation("Videos/black_forest_labs", "blackForestLabsCreateVideo", "Black Forest Labs FLUX 3 video generation", "Creates a FLUX 3 video generation through the Black Forest Labs API using the configured Black Forest Labs provider account. The vendor answers an asynchronous record with a polling_url; poll it through GET /black_forest_labs/v1/get_result.", "BlackForestLabsVideoGenerationRequest", "BlackForestLabsVideoGenerationTask", provider="black_forest_labs")},
+            "/black_forest_labs/v1/get_result": {"get": self._operation("Images/black_forest_labs", "blackForestLabsRetrieveImageTask", "Black Forest Labs retrieve generation result", "Retrieves a FLUX image or video generation result by polling id using the configured Black Forest Labs provider account.", None, "BlackForestLabsImageGenerationTask", parameters=[self._query_param("id", "Generation id returned by the FLUX submit call.")], provider="black_forest_labs")},
             "/bytedance/api/v3/images/generations": {"post": self._operation("Images/bytedance", "bytedanceCreateImageGeneration", "ByteDance Seedream image generation", "Creates a ByteDance Ark Seedream image generation using the configured ByteDance provider account.", "BytedanceImageGenerationRequest", "BytedanceImageGenerationResponse", provider="bytedance")},
+            "/bytedance/api/v3/tts/unidirectional": {"post": self._operation("Audio/bytedance", "bytedanceCreateSpeech", "ByteDance Seed TTS speech synthesis", "Synthesizes speech through ByteDance Seed TTS 2.0 on the openspeech surface. The vendor requires the `X-Api-Resource-Id` header and streams audio frames.", "BytedanceSpeechRequest", "BytedanceSpeechChunk", parameters=[self._header_param("X-Api-Resource-Id", "Seed TTS resource id; the vendor rejects the call without it.", {"type": "string", "enum": ["seed-tts-2.0"], "default": "seed-tts-2.0"})], provider="bytedance")},
             "/bytedance/api/v3/contents/generations/tasks": {"post": self._operation("Videos/bytedance", "bytedanceCreateVideoGeneration", "ByteDance Seedance video generation", "Creates a ByteDance Ark Seedance video generation task using the configured ByteDance provider account.", "BytedanceVideoGenerationRequest", "BytedanceVideoGenerationTask", provider="bytedance")},
             "/bytedance/api/v3/contents/generations/tasks/{task_id}": {"get": self._operation("Videos/bytedance", "bytedanceRetrieveVideoGeneration", "ByteDance retrieve video generation task", "Retrieves a ByteDance Ark Seedance video generation task using the configured ByteDance provider account.", None, "BytedanceVideoGenerationTask", parameters=[self._path_param("task_id", "ByteDance content generation task identifier.")], provider="bytedance")},
             "/jimeng/v1/videos/generations": {"post": self._operation("Videos/jimeng", "jimengCreateVideoGeneration", "Jimeng video generation", "Creates a Jimeng video generation task using the configured Jimeng provider account.", "JimengVideoGenerationRequest", "JimengVideoGenerationTask", provider="jimeng")},
@@ -3741,8 +3781,11 @@ class CloudRouterGatewayOpenApiGenerator:
             "/pixverse/openapi/v2/video/text/generate": {"post": self._operation("Videos/pixverse", "pixverseCreateVideoGeneration", "PixVerse text to video generation", "Creates a PixVerse text-to-video generation using the configured PixVerse provider account.", "PixverseVideoGenerationRequest", "PixverseVideoGenerationResponse", provider="pixverse")},
             "/pixverse/openapi/v2/video/result/{video_id}": {"get": self._operation("Videos/pixverse", "pixverseRetrieveVideoGeneration", "PixVerse retrieve video generation", "Retrieves a PixVerse video generation result using the configured PixVerse provider account.", None, "PixverseVideoGenerationTask", parameters=[self._path_param("video_id", "PixVerse video generation identifier.")], provider="pixverse")},
             "/runway/v1/text_to_image": {"post": self._operation("Images/runway", "runwayCreateImage", "Runway image generation", "Creates a Runway text-to-image task using the configured Runway provider account.", "RunwayTextToImageRequest", "RunwayTask", provider="runway")},
-            "/runway/v1/tasks/{task_id}": {"get": self._operation("Images/runway", "runwayRetrieveImageTask", "Runway retrieve task", "Retrieves a Runway generation task and its outputs using the configured Runway provider account.", None, "RunwayTask", parameters=[self._path_param("task_id", "Runway task identifier.")], provider="runway")},
+            "/runway/v1/text_to_video": {"post": self._operation("Videos/runway", "runwayCreateTextToVideo", "Runway text to video", "Creates a Runway text-to-video task using the configured Runway provider account.", "RunwayTextToVideoRequest", "RunwayTaskAccepted", provider="runway")},
+            "/runway/v1/image_to_video": {"post": self._operation("Videos/runway", "runwayCreateImageToVideo", "Runway image to video", "Creates a Runway image-to-video task from a first frame using the configured Runway provider account.", "RunwayImageToVideoRequest", "RunwayTaskAccepted", provider="runway")},
+            "/runway/v1/tasks/{task_id}": {"get": self._operation("Images/runway", "runwayRetrieveImageTask", "Runway retrieve task", "Retrieves a Runway image or video generation task and its outputs using the configured Runway provider account.", None, "RunwayTask", parameters=[self._path_param("task_id", "Runway task identifier.")], provider="runway")},
             "/stability_ai/v2beta/stable-image/generate/{mode}": {"post": self._operation("Images/stability_ai", "stabilityAiCreateImage", "Stability AI image generation", "Creates a Stable Image generation through the Stability AI Stable Image API using the configured Stability AI provider account.", "StabilityImageGenerationRequest", "StabilityImageGenerationResponse", parameters=[self._path_param("mode", "Stable Image mode: core, sd3, or ultra.")], provider="stability_ai")},
+            "/stability_ai/v2beta/audio/stable-audio-2/text-to-audio": {"post": self._operation("Audio/stability_ai", "stabilityAiCreateAudio", "Stability AI text-to-audio (music and sound effects)", "Generates music or a sound effect through Stability AI's Stable Audio endpoint. The multipart `model` field selects the variant (stable-audio-2, stable-audio-2.5, and later), and the vendor returns audio bytes unless `accept: application/json` is sent.", "StabilityAudioRequest", "BinaryResponse", provider="stability_ai", success_content_type="audio/mpeg")},
             "/zhipu/api/paas/v4/images/generations": {"post": self._operation("Images/zhipu", "zhipuCreateImageGeneration", "Zhipu CogView image generation", "Creates a Zhipu CogView image generation using the configured Zhipu provider account.", "ZhipuImageGenerationRequest", "ZhipuImageGenerationResponse", provider="zhipu")},
             "/zhipu/api/paas/v4/videos/generations": {"post": self._operation("Videos/zhipu", "zhipuCreateVideoGeneration", "Zhipu CogVideoX video generation", "Creates a Zhipu CogVideoX video generation task using the configured Zhipu provider account.", "ZhipuVideoGenerationRequest", "ZhipuVideoGenerationTask", provider="zhipu")},
             "/zhipu/api/paas/v4/async-result/{task_id}": {"get": self._operation("Videos/zhipu", "zhipuRetrieveVideoGeneration", "Zhipu retrieve video generation task", "Retrieves a Zhipu asynchronous video generation result using the configured Zhipu provider account.", None, "ZhipuVideoGenerationTask", parameters=[self._path_param("task_id", "Zhipu asynchronous task identifier.")], provider="zhipu")},
@@ -3843,6 +3886,7 @@ class CloudRouterGatewayOpenApiGenerator:
         binary_request: bool = False,
         success_status: str = "200",
         success_content_type: str | None = None,
+        extra_success_statuses: list[tuple[str, str]] | None = None,
     ) -> dict[str, Any]:
         operation: dict[str, Any] = {
             "tags": [tag],
@@ -3850,7 +3894,12 @@ class CloudRouterGatewayOpenApiGenerator:
             "summary": summary,
             "description": description,
             "parameters": parameters or [],
-            "responses": self._responses(response_schema, success_status=success_status, success_content_type=success_content_type),
+            "responses": self._responses(
+                response_schema,
+                success_status=success_status,
+                success_content_type=success_content_type,
+                extra_success_statuses=extra_success_statuses,
+            ),
             "security": [{"bearerAuth": []}],
         }
         request_content: dict[str, Any] = {}
@@ -3875,22 +3924,103 @@ class CloudRouterGatewayOpenApiGenerator:
         success_schema: str,
         success_status: str = "200",
         success_content_type: str | None = None,
+        extra_success_statuses: list[tuple[str, str]] | None = None,
     ) -> dict[str, Any]:
         success_content: dict[str, Any]
         if success_schema == "BinaryResponse":
-            success_content = {"application/octet-stream": {"schema": {"type": "string", "format": "binary"}}}
+            binary_content_type = success_content_type or "application/octet-stream"
+            success_content = {binary_content_type: {"schema": {"type": "string", "format": "binary"}}}
         elif success_content_type is not None:
             success_content = {success_content_type: {"schema": {"$ref": f"#/components/schemas/{success_schema}"}}}
         else:
             success_content = {"application/json": {"schema": {"$ref": f"#/components/schemas/{success_schema}"}}}
-        return {
+        responses: dict[str, Any] = {
             success_status: {"description": "Successful response from Cloud Router or the selected upstream provider.", "content": success_content},
+        }
+        for status, description in extra_success_statuses or []:
+            responses[status] = {"description": description, "content": success_content}
+        responses.update({
             "400": {"description": "Invalid request.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OpenAiErrorEnvelope"}}}},
             "401": {"description": "Authentication failed.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OpenAiErrorEnvelope"}}}},
             "404": {"description": "Resource or route target not found.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OpenAiErrorEnvelope"}}}},
             "501": {"description": "Route is declared but no upstream provider account is configured.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OpenAiErrorEnvelope"}}}},
             "502": {"description": "Upstream provider relay failed.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OpenAiErrorEnvelope"}}}},
+        })
+        return responses
+
+    def _header_param(
+        self,
+        name: str,
+        description: str,
+        schema: dict[str, Any] | None = None,
+        *,
+        required: bool = True,
+    ) -> dict[str, Any]:
+        return {
+            "name": name,
+            "in": "header",
+            "required": required,
+            "description": description,
+            "schema": schema or {"type": "string"},
         }
+
+    def _apply_vendor_required_headers(self, paths: dict[str, Any]) -> dict[str, Any]:
+        """Declare the request headers a vendor rejects a call without.
+
+        The relay forwards every non-hop-by-hop header verbatim
+        (`should_forward_provider_request_header` only strips auth, host,
+        content-length, cookie, compression and forwarded-* headers), so a header
+        the vendor requires is only missing when the *contract* fails to declare
+        it: a generated SDK then has no way to send it, and the call is rejected
+        upstream even though routing, billing and the path are all correct.
+
+        Every parameter below is copied from the vendor's own specification:
+        - Anthropic rejects a Messages request without `anthropic-version`.
+        - Runway rejects every call without `X-Runway-Version` (the spec pins it
+          with a `const`).
+        - Stability AI returns image bytes unless `Accept: application/json` is
+          sent, and the published response schema is the JSON form.
+        """
+
+        def declare(prefix: str, parameter: dict[str, Any]) -> None:
+            for route_path, path_item in paths.items():
+                if not route_path.startswith(prefix):
+                    continue
+                for operation in path_item.values():
+                    if not isinstance(operation, dict) or "operationId" not in operation:
+                        continue
+                    parameters = operation.setdefault("parameters", [])
+                    if not any(
+                        existing.get("in") == "header" and existing.get("name") == parameter["name"]
+                        for existing in parameters
+                    ):
+                        parameters.append(dict(parameter))
+
+        declare(
+            "/anthropic/",
+            self._header_param(
+                "anthropic-version",
+                "Anthropic API version. The vendor rejects a Messages request without this header.",
+                {"type": "string", "default": "2023-06-01"},
+            ),
+        )
+        declare(
+            "/runway/",
+            self._header_param(
+                "X-Runway-Version",
+                "Runway API version. The vendor requires this header on every request and rejects the call without it.",
+                {"type": "string", "enum": ["2024-11-06"], "default": "2024-11-06"},
+            ),
+        )
+        declare(
+            "/stability_ai/",
+            self._header_param(
+                "Accept",
+                "Stability AI returns image bytes by default; this gateway publishes the JSON form of the response, so the call must request it.",
+                {"type": "string", "enum": ["application/json"], "default": "application/json"},
+            ),
+        )
+        return paths
 
     def _path_param(self, name: str, description: str) -> dict[str, Any]:
         return {"name": name, "in": "path", "required": True, "description": description, "schema": {"type": "string"}}
@@ -5516,6 +5646,130 @@ class CloudRouterGatewayOpenApiGenerator:
             "updated_at": {"type": "string", "description": "Task update timestamp."},
         }
         return {
+            "StabilityAudioRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["prompt"],
+                "description": "Stability AI Stable Audio text-to-audio request, sent as multipart/form-data.",
+                "properties": {
+                    "prompt": {"type": "string", "description": "What the output audio should be: instruments, mood, style, and genre."},
+                    "model": {"type": "string", "enum": ["stable-audio-2", "stable-audio-2.5"], "description": "Audio model variant; selects music versus sound-effect quality tiers."},
+                    "duration": {"type": "number", "description": "Output duration in seconds, 1 to 190."},
+                    "seed": {"type": "integer", "description": "Seed for reproducible output; omit or 0 for a random seed."},
+                    "steps": {"type": "integer", "description": "Diffusion steps; higher favors quality over speed."},
+                    "cfg_scale": {"type": "number", "description": "Classifier-free guidance scale."},
+                    "output_format": {"type": "string", "enum": ["mp3", "wav"], "description": "Requested output audio format."},
+                },
+            },
+            "BytedanceSpeechRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["text"],
+                "description": "ByteDance Seed TTS 2.0 request (openspeech `/api/v3/tts/unidirectional`).",
+                "properties": {
+                    "text": {"type": "string", "description": "Text to synthesize."},
+                    "speaker": {"type": "string", "description": "Seed TTS voice id."},
+                    "audio_params": {"type": "object", "additionalProperties": True, "description": "Audio envelope: format, sample_rate, speech_rate, and loudness_rate."},
+                    "req_params": {"type": "object", "additionalProperties": True, "description": "Vendor request parameters such as text_type and operation."},
+                    "namespace": {"type": "string", "description": "Vendor namespace, for example SeedTTS."},
+                },
+            },
+            "BytedanceSpeechChunk": {
+                "type": "object",
+                "additionalProperties": True,
+                "description": "One streamed Seed TTS frame. The vendor answers NDJSON frames carrying base64 `data`; the final frame has `code` 20000000.",
+                "properties": {
+                    "code": {"type": "integer", "description": "Frame status code; 20000000 marks the final frame."},
+                    "message": {"type": "string", "description": "Frame status message."},
+                    "data": {"type": "string", "description": "Base64 audio payload of this frame."},
+                    "sequence": {"type": "integer", "description": "Frame sequence number."},
+                },
+            },
+            "KlingSoundGenerationRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["prompt", "duration"],
+                "description": "Kling text-to-sound-effect request.",
+                "properties": {
+                    "prompt": {"type": "string", "description": "Description of the sound effect to generate."},
+                    "duration": {"type": "number", "description": "Generated duration in seconds, 3.0 to 10.0."},
+                    "external_task_id": {"type": "string", "description": "Caller-supplied task id, unique per account."},
+                    "callback_url": {"type": "string", "description": "Callback URL notified when the task changes state."},
+                },
+            },
+            "KlingVideoToAudioRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "description": "Kling video-to-sound-effect request.",
+                "properties": {
+                    "video_id": {"type": "string", "description": "Kling video id to extract sound from."},
+                    "video_url": {"type": "string", "description": "Source video URL when no Kling video id is used."},
+                    "prompt": {"type": "string", "description": "Optional description that steers the generated sound."},
+                    "external_task_id": {"type": "string", "description": "Caller-supplied task id, unique per account."},
+                    "callback_url": {"type": "string", "description": "Callback URL notified when the task changes state."},
+                },
+            },
+            "ViduTextToAudioRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["model"],
+                "description": "Vidu text-to-audio request.",
+                "properties": {
+                    "model": {"type": "string", "description": "Vidu audio model id, for example audio1.0-text2audio."},
+                    "text": {"type": "string", "description": "Text to turn into audio."},
+                    "callback_url": {"type": "string", "description": "Callback URL notified when the task changes state."},
+                },
+            },
+            "ViduTimingToAudioRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["model"],
+                "description": "Vidu timing-to-audio request.",
+                "properties": {
+                    "model": {"type": "string", "description": "Vidu audio model id, for example audio1.0-timing2audio."},
+                    "timing_data": {"type": "object", "additionalProperties": True, "description": "Timed cue payload the audio is aligned to."},
+                    "callback_url": {"type": "string", "description": "Callback URL notified when the task changes state."},
+                },
+            },
+            "KlingAudioTask": {
+                "type": "object",
+                "additionalProperties": True,
+                "description": "Kling sound-effect task (text-to-audio / video-to-audio) and its status.",
+                "properties": {
+                    "code": {"type": "integer", "description": "Kling business status code; 0 means accepted."},
+                    "message": {"type": "string", "description": "Kling status message."},
+                    "request_id": {"type": "string", "description": "Kling request identifier."},
+                    "data": {
+                        "type": "object",
+                        "additionalProperties": True,
+                        "description": "Task envelope: task_id, task_status, task_status_msg, task_info, created_at, updated_at.",
+                    },
+                },
+            },
+            "ViduAudioGenerationTask": {"type": "object", "additionalProperties": True, "properties": self._vidu_task_properties("audio")},
+            "AlibabaSpeechRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["model", "input"],
+                "description": "Alibaba DashScope Qwen-Audio-TTS / CosyVoice speech synthesis request.",
+                "properties": {
+                    "model": {"type": "string", "description": "TTS model id, for example qwen3-tts-flash or cosyvoice-v2."},
+                    "input": {"type": "object", "additionalProperties": True, "required": ["text"], "description": "DashScope input envelope: text plus the voice to synthesize with."},
+                    "parameters": {"type": "object", "additionalProperties": True, "description": "DashScope synthesis parameters such as rate, pitch, volume, format, and sample_rate."},
+                },
+            },
+            "AlibabaSpeechResponse": {
+                "type": "object",
+                "additionalProperties": True,
+                "description": "Alibaba DashScope speech synthesis response carrying the generated audio URL.",
+                "properties": {
+                    "request_id": {"type": "string", "description": "DashScope request identifier."},
+                    "output": {"type": "object", "additionalProperties": True, "description": "Output envelope carrying audio.url (valid for 24 hours) and finish_reason."},
+                    "usage": {"type": "object", "additionalProperties": True, "description": "DashScope usage block carrying the billed character count."},
+                    "code": {"type": "string", "description": "DashScope business error code when the synthesis failed."},
+                    "message": {"type": "string", "description": "DashScope business error message when the synthesis failed."},
+                },
+            },
             "AlibabaImageGenerationRequest": {
                 "type": "object",
                 "additionalProperties": True,
@@ -5612,6 +5866,33 @@ class CloudRouterGatewayOpenApiGenerator:
                     "details": {"type": "object", "additionalProperties": True, "description": "Provider diagnostics, including moderation reasons or error text."},
                 },
             },
+            "BlackForestLabsVideoGenerationRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["prompt"],
+                "description": "Black Forest Labs FLUX 3 video generation request; the relay forwards the body to POST /v1/flux-3-video verbatim.",
+                "properties": {
+                    "prompt": {"type": "string", "description": "Text prompt describing the requested video."},
+                    "image": {"type": "string", "description": "Optional first-frame image URL or base64 data URL for image-to-video."},
+                    "duration": {"type": "integer", "description": "Requested duration in seconds within the vendor's 5-20 range."},
+                    "aspect_ratio": {"type": "string", "enum": ["16:9", "9:16", "1:1"], "description": "Requested aspect ratio."},
+                    "resolution": {"type": "string", "enum": ["1080p"], "description": "Requested output resolution tier."},
+                    "seed": {"type": "integer", "description": "Optional deterministic seed."},
+                },
+            },
+            "BlackForestLabsVideoGenerationTask": {
+                "type": "object",
+                "additionalProperties": True,
+                "description": "Black Forest Labs asynchronous FLUX video generation record; poll GET /black_forest_labs/v1/get_result until status is Ready.",
+                "properties": {
+                    "id": {"type": "string", "description": "Generation identifier used for polling."},
+                    "status": {"type": "string", "description": "Task status, for example Pending, Ready, or Error."},
+                    "progress": {"type": "number", "description": "Completion ratio between 0 and 1."},
+                    "polling_url": {"type": "string", "description": "Provider polling URL for the generation."},
+                    "result": {"type": "object", "additionalProperties": True, "description": "Generation output envelope carrying the generated video sample."},
+                    "details": {"type": "object", "additionalProperties": True, "description": "Provider diagnostics, including moderation reasons or error text."},
+                },
+            },
             "BytedanceImageGenerationRequest": {
                 "type": "object",
                 "additionalProperties": True,
@@ -5663,6 +5944,43 @@ class CloudRouterGatewayOpenApiGenerator:
                     "failure": {"type": "string", "description": "Failure reason when the task did not succeed."},
                     "failureCode": {"type": "string", "description": "Provider failure code when the task did not succeed."},
                     "createdAt": {"type": "string", "description": "Task creation timestamp."},
+                },
+            },
+            "RunwayTaskAccepted": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["id"],
+                "description": "Runway task submission acknowledgement; poll the task through GET /runway/v1/tasks/{task_id}.",
+                "properties": {
+                    "id": {"type": "string", "description": "Runway task identifier used for polling."},
+                    "estimatedCost": {"type": "object", "additionalProperties": True, "description": "Provider cost estimate for the submitted task, in credits."},
+                },
+            },
+            "RunwayTextToVideoRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["model", "promptText"],
+                "description": "Runway text-to-video task request.",
+                "properties": {
+                    "model": {"type": "string", "description": "Runway video model id, for example gen4.5, veo3.1, or kling3.0_pro."},
+                    "promptText": {"type": "string", "description": "Text prompt describing the requested video."},
+                    "ratio": {"type": "string", "description": "Requested aspect ratio such as 1280:720."},
+                    "duration": {"type": "integer", "description": "Requested duration in seconds."},
+                    "seed": {"type": "integer", "description": "Optional deterministic seed."},
+                },
+            },
+            "RunwayImageToVideoRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["model", "promptImage"],
+                "description": "Runway image-to-video task request.",
+                "properties": {
+                    "model": {"type": "string", "description": "Runway video model id, for example gen4_turbo, kling3.0_pro, or seedance2."},
+                    "promptImage": {"type": "string", "description": "First-frame image URL, Runway upload URI, or data URI."},
+                    "promptText": {"type": "string", "description": "Optional text prompt that steers the motion."},
+                    "ratio": {"type": "string", "description": "Requested aspect ratio such as 1280:720."},
+                    "duration": {"type": "integer", "description": "Requested duration in seconds."},
+                    "seed": {"type": "integer", "description": "Optional deterministic seed."},
                 },
             },
             "StabilityImageGenerationRequest": {
@@ -5866,6 +6184,334 @@ class CloudRouterGatewayOpenApiGenerator:
                     "request_id": {"type": "string", "description": "Caller-supplied idempotency identifier echoed back by the provider."},
                     "task_status": {"type": "string", "description": "Task status: PROCESSING, SUCCESS, or FAIL."},
                     "video_result": {"type": "array", "items": {"$ref": "#/components/schemas/ProviderGeneratedMedia"}, "description": "Generated video outputs."},
+                },
+            },
+            "MinimaxImageGenerationRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["model", "prompt"],
+                "description": "MiniMax image generation request.",
+                "properties": {
+                    "model": {"type": "string", "description": "MiniMax image model id, for example image-01."},
+                    "prompt": {"type": "string", "description": "Text prompt describing the requested image."},
+                    "aspect_ratio": {"type": "string", "description": "Requested aspect ratio such as 1:1, 16:9, or 9:16."},
+                    "width": {"type": "integer", "description": "Output width in pixels when aspect_ratio is omitted."},
+                    "height": {"type": "integer", "description": "Output height in pixels when aspect_ratio is omitted."},
+                    "response_format": {"type": "string", "description": "Response format: url or base64."},
+                    "seed": {"type": "integer", "description": "Optional deterministic seed."},
+                    "n": {"type": "integer", "description": "Number of images to generate."},
+                    "prompt_optimizer": {"type": "boolean", "description": "Whether the provider rewrites the prompt for more detail."},
+                },
+            },
+            "MinimaxImageGenerationResponse": {
+                "type": "object",
+                "additionalProperties": True,
+                "description": "MiniMax image generation response.",
+                "properties": {
+                    "id": {"type": "string", "description": "MiniMax request identifier."},
+                    "data": {"type": "object", "additionalProperties": True, "description": "Generated image envelope carrying image_urls or base64 payloads."},
+                    "metadata": {"type": "object", "additionalProperties": True, "description": "Generation counters such as succeeded_count and failed_count."},
+                    "base_resp": {"$ref": "#/components/schemas/MinimaxBaseResp"},
+                },
+            },
+            "MinimaxVideoGenerationRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["model", "prompt"],
+                "description": "MiniMax Hailuo video generation task request.",
+                "properties": {
+                    "model": {"type": "string", "description": "MiniMax video model id, for example hailuo-02."},
+                    "prompt": {"type": "string", "description": "Text prompt describing the requested video."},
+                    "duration": {"type": "integer", "description": "Requested duration in seconds."},
+                    "resolution": {"type": "string", "description": "Requested resolution such as 768P or 1080P."},
+                    "first_frame_image": {"type": "string", "description": "Optional first-frame image URL or base64 payload for image-to-video."},
+                    "last_frame_image": {"type": "string", "description": "Optional last-frame image URL or base64 payload."},
+                    "callback_url": {"type": "string", "description": "Optional callback URL for task completion."},
+                    "prompt_optimizer": {"type": "boolean", "description": "Whether the provider rewrites the prompt for more detail."},
+                    "fast_pretreatment": {"type": "boolean", "description": "Whether the provider shortens prompt preprocessing time."},
+                },
+            },
+            "MinimaxVideoGenerationTask": {
+                "type": "object",
+                "additionalProperties": True,
+                "description": "MiniMax asynchronous video generation task, its status, and the produced file id.",
+                "properties": {
+                    "task_id": {"type": "string", "description": "MiniMax video generation task identifier."},
+                    "file_id": {"type": "string", "description": "Generated file identifier; resolve it to a URL through the file retrieve endpoint."},
+                    "status": {"type": "string", "description": "Task status: Queueing, Preparing, Processing, Success, or Fail."},
+                    "base_resp": {"$ref": "#/components/schemas/MinimaxBaseResp"},
+                },
+            },
+            "MinimaxFileRetrieveResponse": {
+                "type": "object",
+                "additionalProperties": True,
+                "description": "MiniMax file metadata and its download URL.",
+                "properties": {
+                    "file": {"type": "object", "additionalProperties": True, "description": "File envelope carrying download_url, file_id, bytes, filename, and created_at."},
+                    "base_resp": {"$ref": "#/components/schemas/MinimaxBaseResp"},
+                },
+            },
+            "MinimaxTextToSpeechRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["model", "text"],
+                "description": "MiniMax T2A v2 speech synthesis request.",
+                "properties": {
+                    "model": {"type": "string", "description": "MiniMax speech model id, for example speech-2.6-hd or speech-2.6-turbo."},
+                    "text": {"type": "string", "description": "Text to synthesize."},
+                    "stream": {"type": "boolean", "description": "When true the vendor streams audio frames instead of one JSON body."},
+                    "voice_setting": {"type": "object", "additionalProperties": True, "description": "Voice envelope: voice_id, speed, vol, pitch, and emotion."},
+                    "audio_setting": {"type": "object", "additionalProperties": True, "description": "Audio envelope: sample_rate, bitrate, format, and channel."},
+                    "pronunciation_dict": {"type": "object", "additionalProperties": True, "description": "Optional pronunciation overrides for specific words."},
+                    "language_boost": {"type": "string", "description": "Language hint that improves pronunciation for non-Chinese text."},
+                    "subtitle_enable": {"type": "boolean", "description": "Whether the vendor also returns subtitle timings."},
+                },
+            },
+            "MinimaxTextToSpeechResponse": {
+                "type": "object",
+                "additionalProperties": True,
+                "description": "MiniMax T2A v2 response. data.audio is hex-encoded audio; usage_characters is the billed count.",
+                "properties": {
+                    "data": {"type": "object", "additionalProperties": True, "description": "Audio envelope carrying the hex-encoded audio payload."},
+                    "extra_info": {"type": "object", "additionalProperties": True, "description": "Synthesis metrics: audio_length, audio_size, word_count, and usage_characters."},
+                    "trace_id": {"type": "string", "description": "MiniMax trace id for support."},
+                    "base_resp": {"$ref": "#/components/schemas/MinimaxBaseResp"},
+                },
+            },
+            "MinimaxBaseResp": {
+                "type": "object",
+                "additionalProperties": True,
+                "description": "MiniMax business status envelope returned by every media endpoint.",
+                "properties": {
+                    "status_code": {"type": "integer", "description": "MiniMax business status code; 0 means success."},
+                    "status_msg": {"type": "string", "description": "MiniMax business status message."},
+                },
+            },
+            "XaiImageUrl": {
+                "type": "object",
+                "additionalProperties": True,
+                "description": "An xAI image input: a public URL, a base64 data URL, or an xAI Files API id.",
+                "properties": {
+                    "url": {"type": "string", "description": "Public URL or base64 data URL of the image (JPEG, PNG, or WebP). The vendor also accepts image_url for compatibility."},
+                    "file_id": {"type": "string", "description": "File ID from the xAI Files API; mutually exclusive with url."},
+                },
+            },
+            "XaiVideoUrl": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["url"],
+                "description": "An xAI video input or output reference.",
+                "properties": {
+                    "url": {"type": "string", "description": "Public URL or base64 data URL of the video."},
+                },
+            },
+            "XaiUsage": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["cost_in_usd_ticks"],
+                "description": "xAI usage block. cost_in_usd_ticks is the authoritative charge: divide by 10,000,000 for USD.",
+                "properties": {
+                    "cost_in_usd_ticks": {"type": "integer", "description": "Accurate cost of this request in USD ticks."},
+                    "prompt_tokens": {"type": "integer", "description": "Total prompt tokens used."},
+                    "completion_tokens": {"type": "integer", "description": "Total completion tokens used."},
+                    "total_tokens": {"type": "integer", "description": "Prompt plus completion tokens."},
+                    "num_sources_used": {"type": "integer", "description": "Number of live-search sources used."},
+                },
+            },
+            "XaiGeneratedImage": {
+                "type": "object",
+                "additionalProperties": True,
+                "description": "One generated image, as a URL, a base64 payload, or a Files API output reference.",
+                "properties": {
+                    "url": {"type": "string", "description": "URL of the generated image when response_format is url or omitted."},
+                    "b64_json": {"type": "string", "description": "Base64-encoded image bytes (without the data-URI prefix) when response_format is b64_json."},
+                    "mime_type": {"type": "string", "description": "MIME type of the generated image, for example image/png."},
+                    "file_output": {"type": "object", "additionalProperties": True, "description": "Files API reference returned when storage_options was set."},
+                    "storage_error": {"type": "string", "description": "Human-readable error when storage_options was set but the upload failed."},
+                },
+            },
+            "XaiImageGenerationRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["prompt"],
+                "description": "xAI Grok Imagine image generation request (GenerateImageRequest).",
+                "properties": {
+                    "prompt": {"type": "string", "description": "Prompt for image generation."},
+                    "model": {"type": "string", "description": "Model to be used, for example grok-imagine-image-2.0."},
+                    "n": {"type": "integer", "description": "Number of images to be generated."},
+                    "aspect_ratio": {"type": "string", "enum": ["1:1", "3:4", "4:3", "9:16", "16:9", "2:3", "3:2", "9:19.5", "19.5:9", "9:20", "20:9", "1:2", "2:1", "21:9", "5:2", "auto"], "description": "Aspect ratio of the generated image; auto picks the best ratio for the prompt. Only supported by grok-imagine models."},
+                    "resolution": {"type": "string", "description": "Resolution of the generated image, for example 1k or 2k. Defaults to 1k; only supported by grok-imagine models."},
+                    "response_format": {"type": "string", "enum": ["url", "b64_json"], "description": "Response format to return the image in."},
+                    "deferred": {"type": "boolean", "description": "When set, the request returns immediately with a request_id and the image is generated in the background; poll GET /xai/v1/images/{request_id}."},
+                    "output": {"type": "object", "additionalProperties": True, "description": "Optional output destination: each generated image is uploaded via HTTP PUT to the matching signed URL instead of xAI-hosted storage."},
+                    "storage_options": {"type": "object", "additionalProperties": True, "description": "Optional output storage configuration; generated images are stored in the Files API."},
+                    "user": {"type": "string", "description": "Unique identifier representing the end-user, for abuse monitoring."},
+                },
+            },
+            "XaiImageEditRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["prompt"],
+                "description": "xAI Grok Imagine image edit request (EditImageRequest).",
+                "properties": {
+                    "prompt": {"type": "string", "description": "Prompt for image editing."},
+                    "model": {"type": "string", "description": "Model to be used."},
+                    "image": {"$ref": "#/components/schemas/XaiImageUrl"},
+                    "images": {"type": "array", "items": {"$ref": "#/components/schemas/XaiImageUrl"}, "description": "Input images for multi-reference editing; mutually exclusive with image."},
+                    "n": {"type": "integer", "description": "Number of image edits to be generated."},
+                    "aspect_ratio": {"type": "string", "description": "Aspect ratio of the generated image."},
+                    "resolution": {"type": "string", "description": "Resolution of the generated image."},
+                    "response_format": {"type": "string", "enum": ["url", "b64_json"], "description": "Response format to return the image in."},
+                    "deferred": {"type": "boolean", "description": "When set, the request returns immediately with a request_id and the edit is generated in the background."},
+                    "output": {"type": "object", "additionalProperties": True, "description": "Optional output destination for the generated images."},
+                    "storage_options": {"type": "object", "additionalProperties": True, "description": "Optional output storage configuration."},
+                    "user": {"type": "string", "description": "Unique identifier representing the end-user, for abuse monitoring."},
+                },
+            },
+            "XaiImageGenerationResponse": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["data"],
+                "description": "xAI generated-image response (GeneratedImageResponse).",
+                "properties": {
+                    "data": {"type": "array", "items": {"$ref": "#/components/schemas/XaiGeneratedImage"}, "description": "Generated image objects."},
+                    "usage": {"$ref": "#/components/schemas/XaiUsage"},
+                },
+            },
+            "XaiDeferredImageResponse": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["request_id", "status"],
+                "description": "xAI deferred-image poll result: HTTP 202 while pending, 200 with data when done, or a body error when failed.",
+                "properties": {
+                    "request_id": {"type": "string", "description": "The polled request id."},
+                    "status": {"type": "string", "enum": ["pending", "done", "failed"], "description": "Deferred image status."},
+                    "data": {"type": "array", "items": {"$ref": "#/components/schemas/XaiGeneratedImage"}, "description": "The generated images; present when done."},
+                    "error": {"type": "object", "additionalProperties": True, "description": "Failure body returned when status is failed."},
+                    "usage": {"$ref": "#/components/schemas/XaiUsage"},
+                },
+            },
+            "XaiVideoGenerationRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "description": "xAI Grok Imagine video generation request (GenerateVideoRequest). prompt is required for text-to-video and reference-to-video and optional when image supplies the first frame.",
+                "properties": {
+                    "prompt": {"type": "string", "description": "Prompt for video generation."},
+                    "model": {"type": "string", "description": "Model to be used, for example grok-imagine-video-1.5."},
+                    "duration": {"type": "integer", "minimum": 1, "maximum": 15, "description": "Video duration in seconds; default 8. The vendor also accepts seconds for OpenAI API compatibility."},
+                    "image": {"$ref": "#/components/schemas/XaiImageUrl"},
+                    "keyframes": {"type": "array", "items": {"$ref": "#/components/schemas/XaiImageUrl"}, "description": "Optional mid-video keyframe anchors, strictly between the endpoint pins."},
+                    "reference_images": {"type": "array", "items": {"$ref": "#/components/schemas/XaiImageUrl"}, "description": "Optional reference images for reference-to-video generation."},
+                    "reference_audios": {"type": "array", "items": {"type": "string"}, "description": "Optional reference audio clips (voice identity) for reference-to-video generation."},
+                    "aspect_ratio": {"type": "string", "description": "Aspect ratio of the generated video."},
+                    "resolution": {"type": "string", "description": "Resolution of the generated video."},
+                    "output": {"type": "object", "additionalProperties": True, "description": "Optional output destination for the generated video."},
+                    "storage_options": {"type": "object", "additionalProperties": True, "description": "Optional output storage configuration."},
+                    "user": {"type": "string", "description": "Unique identifier representing the end-user."},
+                },
+            },
+            "XaiVideoEditRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["prompt", "video"],
+                "description": "xAI video edit request (EditVideoRequest).",
+                "properties": {
+                    "prompt": {"type": "string", "description": "Prompt for video editing."},
+                    "video": {"$ref": "#/components/schemas/XaiVideoUrl"},
+                    "model": {"type": "string", "description": "Model to be used."},
+                    "output": {"type": "object", "additionalProperties": True, "description": "Optional output destination for the edited video."},
+                    "storage_options": {"type": "object", "additionalProperties": True, "description": "Optional output storage configuration."},
+                    "user": {"type": "string", "description": "Unique identifier representing the end-user."},
+                },
+            },
+            "XaiVideoExtensionRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["prompt", "video"],
+                "description": "xAI video extension request (ExtendVideoRequest).",
+                "properties": {
+                    "prompt": {"type": "string", "description": "Prompt describing what should happen next in the video."},
+                    "video": {"$ref": "#/components/schemas/XaiVideoUrl"},
+                    "duration": {"type": "integer", "minimum": 2, "maximum": 10, "description": "Duration of the extension segment in seconds; defaults to 6."},
+                    "model": {"type": "string", "description": "Model to be used."},
+                    "output": {"type": "object", "additionalProperties": True, "description": "Optional output destination for the extended video."},
+                    "storage_options": {"type": "object", "additionalProperties": True, "description": "Optional output storage configuration."},
+                },
+            },
+            "XaiVideoStartResponse": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["request_id"],
+                "description": "xAI deferred video start acknowledgement (StartDeferredResponse).",
+                "properties": {
+                    "request_id": {"type": "string", "description": "Unique request ID to poll for the result."},
+                },
+            },
+            "XaiVideoGenerationTask": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["status"],
+                "description": "xAI video task result (VideoResponse): poll GET /xai/v1/videos/{request_id}.",
+                "properties": {
+                    "request_id": {"type": "string", "description": "The polled request id."},
+                    "status": {"type": "string", "description": "Status of the video generation: done when the video is ready."},
+                    "progress": {"type": "integer", "minimum": 0, "maximum": 100, "description": "Approximate completion percentage (0-100)."},
+                    "model": {"type": "string", "description": "The model used to generate the video; omitted when status is failed."},
+                    "video": {"type": "object", "additionalProperties": True, "description": "Generated video envelope carrying url and duration once the task is done."},
+                    "usage": {"$ref": "#/components/schemas/XaiUsage"},
+                    "error": {"type": "object", "additionalProperties": True, "description": "Failure body returned when the task failed."},
+                },
+            },
+            "MurekaMusicGenerationRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["model"],
+                "description": "Mureka song generation request.",
+                "properties": {
+                    "model": {"type": "string", "description": "Mureka music model id, for example mureka-o1."},
+                    "prompt": {"type": "string", "description": "Description of the song to generate."},
+                    "lyrics": {"type": "string", "description": "Lyrics to sing, when the caller supplies them instead of a prompt."},
+                    "title": {"type": "string", "description": "Song title."},
+                    "tags": {"type": "array", "items": {"type": "string"}, "description": "Style or mood tags that steer the generation."},
+                    "duration": {"type": "integer", "description": "Requested duration in seconds."},
+                    "reference_audio_url": {"type": "string", "description": "Optional reference audio URL that steers the style."},
+                    "callback_url": {"type": "string", "description": "Optional callback URL for task completion."},
+                },
+            },
+            "MurekaMusicGenerationTask": {
+                "type": "object",
+                "additionalProperties": True,
+                "description": "Mureka song generation task and its produced audio.",
+                "properties": {
+                    "task_id": {"type": "string", "description": "Mureka task identifier."},
+                    "id": {"type": "string", "description": "Mureka task identifier when the provider echoes it under id."},
+                    "status": {"type": "string", "description": "Task status: preparing, running, succeeded, or failed."},
+                    "audio_url": {"type": "string", "description": "Generated audio URL once the task succeeded."},
+                    "title": {"type": "string", "description": "Generated song title."},
+                    "duration": {"type": "integer", "description": "Generated duration in seconds."},
+                    "error": {"type": "object", "additionalProperties": True, "description": "Task error envelope with code and message."},
+                },
+            },
+            "ElevenLabsMusicGenerationRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "description": "ElevenLabs music generation request. Supply a prompt, or a composition plan, but not both.",
+                "properties": {
+                    "prompt": {"type": "string", "description": "Text prompt to generate a song from; mutually exclusive with composition_plan."},
+                    "generation_mode": {"type": "string", "description": "Generation mode hint for prompt-based music generation."},
+                    "music_prompt": {"type": "string", "description": "Deprecated music prompt; use composition_plan instead."},
+                    "lyrics_text": {"type": "string", "description": "Lyrics to use for the generation."},
+                    "composition_plan": {"type": "object", "additionalProperties": True, "description": "Detailed composition plan; mutually exclusive with prompt."},
+                    "music_length_ms": {"type": "integer", "description": "Length of the song to generate in milliseconds."},
+                    "model_id": {"type": "string", "description": "Music model id to use for the generation."},
+                    "seed": {"type": "integer", "description": "Random seed; the same seed and request reproduce the same track."},
+                    "force_instrumental": {"type": "boolean", "description": "When true, guarantees the generated song is instrumental."},
+                    "finetune_id": {"type": "string", "description": "Finetune id to apply to the generation."},
+                    "finetune_strength": {"type": "number", "description": "How strongly the finetune influences the generation; defaults to 1.0."},
+                    "use_phonetic_names": {"type": "boolean", "description": "When true, proper names are spelled phonetically in the lyrics."},
+                    "respect_sections_durations": {"type": "boolean", "description": "How strictly the composition plan's section durations are enforced."},
+                    "store_for_inpainting": {"type": "boolean", "description": "Whether to store the generated song for inpainting."},
+                    "sign_with_c2pa": {"type": "boolean", "description": "Whether to sign the generated song with C2PA; mp3 only."},
                 },
             },
             "ProviderGeneratedMedia": {
@@ -6193,7 +6839,7 @@ class CloudRouterGatewayOpenApiGenerator:
                                         },
                                         "description": "Generated video samples.",
                                     },
-                                    "videos": {"type": "array", "items": {"type": "object", "additionalProperties": True}, "description": "Alternative generated video samples envelope."},
+                                    "videos": {"type": "array", "items": {"type": "object", "additionalProperties": True}, "description": "Additional generated video samples envelope."},
                                     "raiMediaFilteredReasons": {"type": "array", "items": {"type": "string"}, "description": "Safety-filter failure reasons when no media is returned."},
                                 },
                             },

@@ -215,7 +215,15 @@ fn provider_native_non_streaming_policy(invocation: &Invocation) -> InvocationBi
     // 异步任务的轮询面只是**读状态**：上游不按次收费，目录也没有 `api_request`
     // 价。按次报价会让所有视频/音乐/图片任务的轮询 500，客户拿不到已生成的
     // 结果（而生成面已经计过费）。轮询/读取一律 Free。
-    if invocation.resource.api_code.ends_with("task_query") {
+    //
+    // `*file_retrieve` 同理：它是异步任务流的最后一步读取（把任务查询返回的
+    // file id 换成下载地址），产出的文件在生成面已经计过费，行业口径也是下载
+    // 免费（OpenAI / Anthropic / Google 的 `/files/{id}/content` 都按 Free 处理）。
+    // 没有 `api_request` 官方价时按次报价会让这条读取 fail-closed，客户手里有
+    // file id 却拿不到成片。
+    if invocation.resource.api_code.ends_with("task_query")
+        || invocation.resource.api_code.ends_with("file_retrieve")
+    {
         return InvocationBilling::free();
     }
     match invocation.billing.meter.as_ref() {

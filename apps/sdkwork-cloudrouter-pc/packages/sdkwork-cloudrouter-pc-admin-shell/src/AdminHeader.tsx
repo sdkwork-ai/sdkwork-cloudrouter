@@ -29,6 +29,7 @@ import {
   subscribePortalSessionChange,
   useSiteBranding,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
+import { PortalAccountMenu } from '@sdkwork/cloudroutes-pc-commons';
 import type { AdminModuleDef, AdminModuleId } from './adminModuleRegistry.ts';
 
 export {
@@ -500,9 +501,11 @@ export function AdminHeader({
               {t('admin.header.console', 'Console')}
             </Link>
           )}
+          {isPortalSessionStored ? <PortalAccountMenu variant="admin" /> : null}
         </div>
 
         <div className="flex shrink-0 items-center gap-1 md:hidden">
+          {isPortalSessionStored ? <PortalAccountMenu variant="admin" /> : null}
           <button
             aria-label={themeToggleLabel}
             onClick={toggleTheme}
@@ -633,6 +636,16 @@ export function AdminHeader({
                   })}
                 </div>
               </div>
+
+              {isPortalSessionStored ? (
+                <div className="shrink-0 border-b border-white/10 px-3 py-2.5">
+                  <PortalAccountMenu
+                    className="flex"
+                    onNavigate={onMobileMenuClose}
+                    variant="admin"
+                  />
+                </div>
+              ) : null}
 
               <div className="flex min-h-0 flex-1">{mobileNavigation}</div>
             </motion.aside>

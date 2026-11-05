@@ -766,6 +766,24 @@ if (seededEndpoints.length > 0) {
     const arms = parsePathArms(read(relativePath), relativePath);
     if (!arms) continue;
     parsedArmsByCopy.set(label, arms);
+    // Classification lower-cases the path (`normalize_standard_api_path`, which
+    // Google's `:generateContent` already depends on) before comparing it with
+    // these arms. An arm that carries an upper-case letter therefore can never
+    // match: its door falls through to the next classifier and the endpoint is
+    // unreachable even though every other gate is green. The published door may
+    // keep the vendor's case (the upstream request is built from the original
+    // URI); only the arm must be lower-case.
+    const wronglyCased = arms.filter((arm) => {
+      const armPath = arm.path ?? arm.prefix;
+      return typeof armPath === "string" && armPath !== armPath.toLowerCase();
+    });
+    if (wronglyCased.length > 0) {
+      failures.push(
+        `${relativePath}: ${wronglyCased.length} classifier arm path(s) carry upper-case letters and can never match a normalized path: ${wronglyCased
+          .map((arm) => `${arm.path ?? arm.prefix} => ${arm.apiCode}`)
+          .join(", ")}`,
+      );
+    }
     const byApiCode = new Map();
     for (const arm of arms) {
       for (const apiCode of [arm.apiCode, arm.branch?.apiCode].filter(Boolean)) {
@@ -839,18 +857,33 @@ if (seededEndpoints.length > 0) {
 // generic protocol handlers rather than by this path map, so holding it to the
 // same rule would be a category error.
 const VENDOR_NATIVE_SEED = `${SEED_DIR}/vendor-native-resources.json`;
+
+// Declared fallback codes that no arm classifies and no catalog model binds.
+//
+// `sfx.sound` is the generic sound-effect code `model_sfx_endpoint_descriptor`
+// returns for a vendor without a native arm. Every catalog sfx vendor now has
+// one (`elevenlabs.sound_generation`, `stability_ai.audio`, `kling.*`,
+// `vidu.*`), so nothing reaches this code today; it stays declared so the
+// descriptor has a defined fallback, and this list keeps that dormancy explicit
+// instead of silently dropping the endpoint (the day a vendor relies on it, its
+// arm is missing and the coverage audit reports the vendor).
+const DORMANT_FALLBACK_ENDPOINTS = new Set(["sfx.sound"]);
+
 const COMPAT_FACE_ENDPOINTS = new Set([
   // Vendors whose catalog models all declare `openai_compatible` (or
   // `anthropic_messages`): their requests are served by the generic protocol
   // face, so the vendor's own path is advertised for operators and for
   // protocol-coherent callers but is not a classifier entry point.
   //
-  // `alibaba.image_generation` and `zhipu.image_generation` are deliberately
-  // absent: the open-api contract publishes their native image paths as doors
-  // (`POST /alibaba/api/v1/services/aigc/text2image/image-synthesis` and
-  // `POST /zhipu/api/paas/v4/images/generations`), so both are classifier entry
-  // points now. Their *models* still bind to the OpenAI-compatible face; the
-  // arms only serve callers that dial the published native path.
+  // `alibaba.image_generation`, `zhipu.image_generation`,
+  // `xai.image_generation` and `xai.video_generation` are deliberately absent:
+  // the open-api contract publishes their native paths as doors
+  // (`POST /alibaba/api/v1/services/aigc/text2image/image-synthesis`,
+  // `POST /zhipu/api/paas/v4/images/generations`,
+  // `POST /xai/v1/images/generations`, `POST /xai/v1/videos/generations`), so
+  // all four are classifier entry points now. Their *models* still bind to the
+  // OpenAI-compatible face; the arms only serve callers that dial the published
+  // native path.
   "alibaba.chat_completions",
   "alibaba.embeddings",
   "deepseek.chat_completions",
@@ -859,8 +892,6 @@ const COMPAT_FACE_ENDPOINTS = new Set([
   "stepfun.chat_completions",
   "tencent.chat_completions",
   "xai.chat_completions",
-  "xai.image_generation",
-  "xai.video_generation",
   "xiaomi.chat_completions",
   "xiaomi.image_generation",
   "xiaomi.video_generation",
@@ -890,6 +921,7 @@ if (parsedArmsByCopy.size > 0) {
   const unreachable = vendorNativeEndpoints
     .filter((endpoint) => !reachableApiCodes.has(endpoint.apiCode))
     .filter((endpoint) => !COMPAT_FACE_ENDPOINTS.has(endpoint.apiCode))
+    .filter((endpoint) => !DORMANT_FALLBACK_ENDPOINTS.has(endpoint.apiCode))
     .map((endpoint) => `${endpoint.apiCode} (${endpoint.pathTemplate})`)
     .sort();
   if (unreachable.length > 0) {

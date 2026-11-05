@@ -110,6 +110,7 @@
     "api:http-route-manifest:check": "node tools/generate-cloudrouter-http-route-manifest-rs.mjs --check",
     "api:http-route-manifest:write": "node tools/generate-cloudrouter-http-route-manifest-rs.mjs --apply",
     "api:ai-routing-consistency:check": "node tools/check-cloudrouter-ai-routing-consistency.mjs --root .",
+    "api:vendor-door-coverage:check": "node tools/audit-vendor-door-coverage.mjs --root .",
     "api:chain-reachability:check": "node scripts/dev/audit-api-chain-reachability.mjs",
     "api:chain-reachability:gaps": "node scripts/dev/audit-api-chain-reachability.mjs --list-gaps",
     "api:model-route-reachability:check": "node scripts/dev/audit-model-route-reachability.mjs",

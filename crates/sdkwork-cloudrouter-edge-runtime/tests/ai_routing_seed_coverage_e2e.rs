@@ -226,10 +226,11 @@ const REQUIRED_VENDOR_RESOURCE_GROUPS: &[(&str, &str)] = &[
 /// resource row: the day the catalog emits a rerank model, the resource and its
 /// grant have to be authored together, and this list has to grow by one entry.
 ///
-/// `sfx` is listed even though `model_sfx_endpoint_descriptor` sends
-/// elevenlabs sfx models to `elevenlabs.sound_generation` instead: every other
-/// sfx vendor (`kuaishou`, `stability_ai`, `vidu`) binds the generic
-/// `sfx.sound`, so the resource must stay granted in the default group.
+/// `sfx` is listed because `sfx.sound` remains the generic fallback
+/// `model_sfx_endpoint_descriptor` hands out for a vendor without a native arm;
+/// the real sfx vendors now bind per-vendor codes (`kling.*`, `vidu.*`,
+/// `stability_ai.audio`, `elevenlabs.sound_generation`), which their own
+/// `official.*.full` groups grant.
 const REQUIRED_GENERIC_RESOURCES: &[(&str, &str)] = &[
     ("chat", "api.openai.chat_completions"),
     ("embedding", "api.openai.embeddings"),

@@ -1,0 +1,13 @@
+{
+  "platform": "flutter",
+  "environment": "staging",
+  "bundleId": "com.sdkwork.cloudrouter.mobile",
+  "androidPackageName": "com.sdkwork.cloudrouter.mobile",
+  "displayName": "SDKWork CloudRouter (Staging)",
+  "signingReference": "staging-signing-profile",
+  "permissions": {
+    "camera": "not-requested",
+    "photoLibrary": "not-requested",
+    "notifications": "not-requested"
+  }
+}

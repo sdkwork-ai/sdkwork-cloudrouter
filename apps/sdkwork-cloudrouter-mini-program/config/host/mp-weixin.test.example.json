@@ -1,0 +1,11 @@
+{
+  "platform": "mp-weixin",
+  "environment": "test",
+  "appid": "wx0000000000000000",
+  "description": "Placeholder WeChat host profile for the test environment. The real app id comes from the release profile.",
+  "permissions": {
+    "camera": "not-requested",
+    "location": "not-requested"
+  },
+  "urlCheck": true
+}
