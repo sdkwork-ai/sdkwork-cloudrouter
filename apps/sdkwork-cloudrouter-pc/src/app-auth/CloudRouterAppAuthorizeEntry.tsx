@@ -1,60 +1,90 @@
 /**
- * The hosted app sign-in entry (`/iam/v3/oauth/authorize` and its versionless
- * `/iam/oauth/authorize` alias, plus the `/auth/app` alias).
+ * The hosted OAuth authorization page (`/iam/v3/oauth/authorize` and its
+ * versionless `/iam/oauth/authorize` alias, plus the `/auth/app` alias).
  *
  * A native SDKWork application opens this path on the platform origin in the
- * system browser. The page validates the authorization request and continues
- * the navigation on the IAM authorization server, which owns the pending
- * authorization state and returns the browser to the hosted login on this
- * origin. Once the login completes, the SDKWork auth page lands on
- * `/auth/desktop/launch`, and that page fires the registered deep link back
- * into the application.
+ * system browser. Both routes render this same page and keep the authorization
+ * request parameters untouched: the page creates the pending IAM authorization
+ * state through the app SDK, then renders the IAM login surface in place on the
+ * same route. After sign-in the SDKWork auth page completes the authorization
+ * and lands on `/auth/desktop/launch`, which fires the registered deep link
+ * back into the application.
  *
- * The page renders no product chrome: it is a redirect surface with a visible
- * failure state, so a malformed link never appears to be an ordinary site page.
+ * The page renders no product chrome: it is an authorization surface with a
+ * visible failure state, so a malformed link never appears to be an ordinary
+ * site page.
  */
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { resolveSharedDependencySurfaceBaseUrl } from '@sdkwork/cloudroutes-pc-commons/runtime';
-import {
-  APP_API_PREFIX,
-  buildAppAuthorizeForwardUrl,
-  planAppAuthorizeEntry,
-} from './appAuthorizeEntry.ts';
+import { getSdkworkAppbaseAppSdkClient } from '@sdkwork/cloudroutes-pc-commons/runtime';
+import { buildSdkworkDesktopAuthErrorRedirect } from '@sdkwork/auth-pc-react';
+import { CloudRouterAuthRoutes } from '../auth/CloudRouterAuthRoutes.tsx';
+import { planAppAuthorizeEntry } from './appAuthorizeEntry.ts';
 
 /**
- * Render (and immediately drive) the hosted app sign-in entry.
- * @returns the redirect surface or its failure state.
+ * Render the hosted OAuth authorization page: create the pending state when the
+ * request is complete, otherwise render the IAM login surface in place.
+ * @returns the authorization surface or its failure state.
  */
 export function CloudRouterAppAuthorizeEntry() {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const startedRef = useRef(false);
-  const pageOrigin = typeof window === 'undefined' ? '' : window.location.origin;
-  const plan = useMemo(
-    () => planAppAuthorizeEntry(location.search, {
-      appApiBaseUrl: resolveSharedDependencySurfaceBaseUrl(APP_API_PREFIX) ?? APP_API_PREFIX,
-      pageOrigin,
-    }),
-    [location.search, pageOrigin],
-  );
+  const createStartedRef = useRef(false);
+  const [createError, setCreateError] = useState<string | undefined>(undefined);
+  const plan = useMemo(() => planAppAuthorizeEntry(location.search), [location.search]);
 
   useEffect(() => {
-    if (startedRef.current) return;
-    startedRef.current = true;
-    if (plan.kind === 'forward') {
-      window.location.replace(buildAppAuthorizeForwardUrl(plan));
-      return;
-    }
-    if (plan.kind === 'hosted-login') {
-      navigate(plan.path, { replace: true });
-    }
-  }, [navigate, plan]);
+    if (plan.kind !== 'create' || createStartedRef.current) return;
+    createStartedRef.current = true;
+    void (async () => {
+      try {
+        const created = await getSdkworkAppbaseAppSdkClient().oauth.authorizations.create({
+          clientId: plan.request.clientId,
+          responseType: 'code',
+          redirectUri: plan.request.redirectUri,
+          scope: plan.request.scope,
+          state: plan.request.state,
+          codeChallenge: plan.request.codeChallenge,
+          codeChallengeMethod: 'S256',
+        });
+        const nextSearch = new URLSearchParams(location.search);
+        nextSearch.set('oauthAuthorizationStateId', created.authorizationStateId);
+        navigate(
+          { pathname: location.pathname, search: `?${nextSearch.toString()}` },
+          { replace: true },
+        );
+      } catch (error) {
+        // A native app is waiting on its deep link. Report a state-creation
+        // failure immediately instead of leaving it until the flow deadline;
+        // only the SDKWork callback shape derived from the client id is used.
+        const errorRedirect = buildSdkworkDesktopAuthErrorRedirect({
+          clientId: plan.request.clientId,
+          error: 'server_error',
+          errorDescription:
+            'The hosted authorization could not be started. Start the login again.',
+          redirectUri: plan.request.redirectUri,
+          state: plan.request.state,
+        });
+        if (errorRedirect) {
+          window.location.assign(errorRedirect);
+          return;
+        }
+        setCreateError(error instanceof Error ? error.message : String(error));
+      }
+    })();
+  }, [location.pathname, location.search, navigate, plan]);
 
-  const failed = plan.kind === 'invalid' || plan.kind === 'missing-request';
-  const problem = plan.kind === 'invalid' ? plan.problem : undefined;
+  // The IAM state exists: render the hosted login on this route instead of
+  // handing the browser to another page.
+  if (plan.kind === 'hosted') {
+    return <CloudRouterAuthRoutes />;
+  }
+
+  const failed = plan.kind === 'invalid' || plan.kind === 'missing-request'
+    || (plan.kind === 'create' && createError !== undefined);
+  const problem = plan.kind === 'invalid' ? plan.problem : createError;
 
   return (
     <main

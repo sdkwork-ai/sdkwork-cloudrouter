@@ -3,6 +3,7 @@ import { isSdkworkIamSessionAuthenticated } from '@sdkwork/iam-runtime';
 import {
   loadStoredAppSessionToken,
 } from './app-session-token.ts';
+import { PORTAL_OAUTH_SIGN_IN_STATE_PARAM } from './portal-oauth-params.ts';
 import { PORTAL_SESSION_CHANGE_EVENT } from './portal-session-events.ts';
 
 export interface PortalAuthLocationLike {
@@ -70,6 +71,45 @@ export function isPortalAuthRoute(pathname: string): boolean {
 export function isPortalAppHandoffPath(pathname: string): boolean {
   const normalized = normalizePortalPathname(pathname);
   return normalized === APP_HANDOFF_PATH || normalized.startsWith(`${APP_HANDOFF_PATH}/`);
+}
+
+/**
+ * Whether an auth-area URL carries the sign-in state the IAM server issued to
+ * a browser login a native application started.
+ *
+ * The hosted login page must complete that pending request and only then hand
+ * the deep link back to the app; redirecting the visitor away drops the
+ * one-time code and leaves the desktop app waiting.
+ * @param search - the current location search, with or without a leading `?`.
+ * @returns true when the sign-in state parameter is present and non-blank.
+ */
+export function hasPortalOAuthSignInState(
+  search: string | null | undefined,
+): boolean {
+  const normalized = (search ?? '').replace(/^\?/u, '');
+  if (normalized === '') {
+    return false;
+  }
+  const state = new URLSearchParams(normalized).get(PORTAL_OAUTH_SIGN_IN_STATE_PARAM);
+  return (state ?? '').trim() !== '';
+}
+
+/**
+ * Whether an authenticated visitor must stay on the current auth route to
+ * finish the native-application sign-in hand-off.
+ *
+ * Two routes qualify: the login-success hand-off page itself, and the hosted
+ * login page when it carries the IAM-issued sign-in state (the visitor may
+ * already hold a portal session, and the pending request still has to be
+ * completed before leaving the auth surface).
+ * @param location - browser location inside the auth area.
+ * @returns true when the guard must render the auth surface instead of redirecting.
+ */
+export function isPortalAppSignInHandoff(
+  location: PortalAuthLocationLike,
+): boolean {
+  return isPortalAppHandoffPath(location.pathname)
+    || hasPortalOAuthSignInState(location.search);
 }
 
 export function buildPortalAuthLoginRedirect(location: PortalAuthLocationLike): string {

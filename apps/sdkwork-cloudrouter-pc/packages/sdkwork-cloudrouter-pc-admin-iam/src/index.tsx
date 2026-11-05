@@ -364,6 +364,17 @@ const LazyIamOauthProviderConnectionsAdmin = lazy(async () => {
   };
 });
 
+const LazyIamOauthRelyingPartyAdmin = lazy(async () => {
+  const { createSdkworkIamOauthAdminController, SdkworkIamOauthRelyingPartyPage } = await import('@sdkwork/iam-pc-admin-oauth');
+  return {
+    default: function CloudRouterIamOauthRelyingPartyAdminContent() {
+      const service = useIamAdminService();
+      const controller = useMemo(() => createSdkworkIamOauthAdminController(service), [service]);
+      return <SdkworkIamOauthRelyingPartyPage controller={controller} />;
+    },
+  };
+});
+
 const LazyIamOauthMiniProgramsAdmin = lazy(async () => {
   const { createSdkworkIamOauthAdminController, SdkworkIamOauthMiniProgramAccountsPage } = await import('@sdkwork/iam-pc-admin-oauth');
   return {
@@ -454,6 +465,7 @@ export const CloudRouterIamPoliciesAdmin: ComponentType = createIamAdminRoute(La
 export const CloudRouterIamAuthorizationsAdmin: ComponentType = createIamAdminRoute(LazyIamAuthorizationsAdmin);
 export const CloudRouterIamOauthAdmin: ComponentType = createIamAdminRoute(LazyIamOauthAdmin);
 export const CloudRouterIamOauthProviderConnectionsAdmin: ComponentType = createIamAdminRoute(LazyIamOauthProviderConnectionsAdmin);
+export const CloudRouterIamOauthRelyingPartyAdmin: ComponentType = createIamAdminRoute(LazyIamOauthRelyingPartyAdmin);
 export const CloudRouterIamOauthMiniProgramsAdmin: ComponentType = createIamAdminRoute(LazyIamOauthMiniProgramsAdmin);
 export const CloudRouterIamOauthOfficialAccountsAdmin: ComponentType = createIamAdminRoute(LazyIamOauthOfficialAccountsAdmin);
 export const CloudRouterIamOauthOfficialAccountCustomMenuAdmin: ComponentType = createIamAdminRoute(LazyIamOauthOfficialAccountCustomMenuAdmin);

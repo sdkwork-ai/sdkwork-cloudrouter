@@ -4,6 +4,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import {
   buildPortalAuthLoginRedirect,
   isPortalAppHandoffPath,
+  isPortalAppSignInHandoff,
   isPortalAuthRoute,
   isProtectedPortalPath,
   PROTECTED_PORTAL_ROUTE_PREFIXES,
@@ -52,9 +53,12 @@ export function PortalAuthenticatedAuthRouteGuard({ children }: { children: Reac
   const location = useLocation();
   const isAuthenticated = usePortalIamSession();
 
-  // The app hand-off page runs *after* a successful sign-in: it must render so
-  // the authorization code reaches the operating system's deep-link handler.
-  if (isAuthenticated && isPortalAuthRoute(location.pathname) && !isPortalAppHandoffPath(location.pathname)) {
+  // The app hand-off page, and the hosted login that still carries the
+  // IAM-issued sign-in state, run *after* a successful sign-in: they must
+  // render so the one-time code reaches the operating system's deep-link
+  // handler. An authenticated visitor without either marker is a normal
+  // revisit of the auth surface and goes to the authenticated home.
+  if (isAuthenticated && isPortalAuthRoute(location.pathname) && !isPortalAppSignInHandoff(location)) {
     return createElement(Navigate, {
       replace: true,
       to: resolvePortalAuthenticatedAuthRouteRedirect({ location }),

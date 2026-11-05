@@ -1,15 +1,14 @@
 /**
- * Hosted app sign-in entry for the platform origin.
+ * Hosted OAuth authorization page for native applications.
  *
  * Native SDKWork applications (the BirdCoder desktop shell, for example) open
- * `<platform>/iam/v3/oauth/authorize` in the system browser, complete the web
- * sign-in here, and receive the authorization code back through their
- * registered deep link. The platform is a static browser application, so it
- * cannot mint the authorization state itself: it validates the request and
- * hands the navigation to the IAM authorization server, whose login page then
- * returns to `/auth/login` on this origin. The SDKWork auth page completes the
- * pending authorization and lands on `/auth/desktop/launch`, which fires the
- * deep link back into the application.
+ * `<platform>/iam/v3/oauth/authorize` (or the versionless
+ * `/iam/oauth/authorize`) in the system browser. Both routes render the same
+ * page and keep the request parameters intact. The page creates the pending
+ * authorization state through the IAM app-api, renders the IAM login surface in
+ * place on that same route, completes the authorization after sign-in, and
+ * lands on `/auth/desktop/launch`, which fires the deep link back into the
+ * application.
  *
  * Everything in this module is pure so the request contract can be tested
  * without a browser.
@@ -17,39 +16,23 @@
 
 import {
   SDKWORK_OAUTH_APP_ALIAS_PATH,
-  SDKWORK_OAUTH_APP_AUTHORIZE_ENDPOINT_PATH,
   SDKWORK_OAUTH_APP_AUTHORIZE_PATH,
   SDKWORK_OAUTH_APP_AUTHORIZE_PATHS,
   SDKWORK_OAUTH_APP_AUTHORIZE_VERSIONLESS_PATH,
   SDKWORK_OAUTH_APP_LAUNCH_PATH,
-  SDKWORK_OAUTH_APP_LOGIN_PATH,
   SDKWORK_OAUTH_AUTHORIZATION_STATE_PARAM,
 } from '@sdkwork/auth-pc-react/oauth-app-paths'
 
 /** Authorize path native applications open on the platform origin. */
 export const APP_AUTHORIZE_PATH = SDKWORK_OAUTH_APP_AUTHORIZE_PATH
-/** Versionless alias of the authorize path; both render the same hosted entry. */
+/** Versionless alias of the authorize path; both render the same hosted page. */
 export const APP_AUTHORIZE_VERSIONLESS_PATH = SDKWORK_OAUTH_APP_AUTHORIZE_VERSIONLESS_PATH
-/** Every authorize path the hosted entry answers. */
+/** Every authorize path the hosted page answers. */
 export const APP_AUTHORIZE_PATHS: readonly string[] = SDKWORK_OAUTH_APP_AUTHORIZE_PATHS
-/**
- * IAM open-api authorize endpoint the entry forwards to.
- *
- * The platform gateway classifies the IAM open-api under `/iam/v3/api` (the
- * same prefix as `config.dependency_surfaces`), so this registered path is the
- * one a browser can actually reach; the versionless `/iam/v3/oauth/authorize`
- * is the address the application opens on the platform origin, not a gateway
- * route.
- */
-export const APP_AUTHORIZE_ENDPOINT_PATH = SDKWORK_OAUTH_APP_AUTHORIZE_ENDPOINT_PATH
 /** Alias entry: the same hosted surface under the auth area. */
 export const APP_AUTHORIZE_ALIAS_PATH = SDKWORK_OAUTH_APP_ALIAS_PATH
-/** Hosted login page the IAM authorization server returns to. */
-export const APP_AUTHORIZE_LOGIN_PATH = SDKWORK_OAUTH_APP_LOGIN_PATH
 /** Hand-off page that fires the deep link after authorization completes. */
 export const APP_AUTHORIZE_LAUNCH_PATH = SDKWORK_OAUTH_APP_LAUNCH_PATH
-/** Canonical app-api prefix; its origin also serves the IAM open-api. */
-export const APP_API_PREFIX = '/app/v3/api'
 
 /** Query parameter the IAM authorization server hands to the hosted login. */
 const AUTHORIZATION_STATE_PARAM = SDKWORK_OAUTH_AUTHORIZATION_STATE_PARAM
@@ -86,12 +69,12 @@ export interface AppAuthorizeRequest {
   readonly codeChallenge: string
 }
 
-/** What the hosted entry should do with the current query string. */
+/** What the hosted OAuth page should do with the current query string. */
 export type AppAuthorizeEntryPlan =
-  /** Hand the navigation to the IAM authorization server, keeping every parameter. */
-  | { readonly kind: 'forward'; readonly endpoint: string; readonly search: string }
-  /** The IAM server already created the authorization state; continue on the hosted login. */
-  | { readonly kind: 'hosted-login'; readonly path: string }
+  /** A complete authorization request: create the pending state on the backend. */
+  | { readonly kind: 'create'; readonly request: AppAuthorizeRequest }
+  /** The IAM state already exists; render the hosted login in place on this route. */
+  | { readonly kind: 'hosted'; readonly stateId: string }
   /** The request is not a valid authorization-code request. */
   | { readonly kind: 'invalid'; readonly problem: AppAuthorizeRequestProblem }
   /** No authorization request at all was addressed to the entry. */
@@ -207,53 +190,21 @@ export function parseAppAuthorizeRequest(params: URLSearchParams): AppAuthorizeR
 }
 
 /**
- * Resolve the IAM authorization endpoint the entry forwards to.
+ * Decide what the hosted OAuth page does with one navigation.
  *
- * The IAM open-api lives on the app-api origin (the generated app SDK and the
- * IAM open-api share the gateway), so a deployment that already reaches its
- * app-api can reach the authorize endpoint without extra configuration. A
- * relative app-api base means the page origin fronts the canonical prefixes:
- * the same-origin endpoint is used and the caller decides whether that can
- * serve the authorize request at all.
- * @param appApiBaseUrl - resolved app-api base (`https://api.example.com[/app/v3/api]` or `/app/v3/api`).
- * @param pageOrigin - the browser page origin.
- * @returns the absolute authorize endpoint and whether it leaves the page origin.
- */
-export function resolveAppAuthorizeEndpoint(
-  appApiBaseUrl: string,
-  pageOrigin: string,
-): { readonly endpoint: string; readonly crossOrigin: boolean } {
-  const trimmed = appApiBaseUrl.trim().replace(/\/+$/u, '')
-  const absolute = /^https?:\/\//iu.test(trimmed)
-  const apiOrigin = absolute ? new URL(trimmed).origin : pageOrigin
-  return {
-    endpoint: `${apiOrigin}${APP_AUTHORIZE_ENDPOINT_PATH}`,
-    crossOrigin: apiOrigin !== pageOrigin,
-  }
-}
-
-/**
- * Decide what the hosted entry does with one navigation.
- *
- * A browser already carrying the IAM-created authorization state continues on
- * the hosted login page; a full authorization request is forwarded to the IAM
- * authorization server; anything else is reported instead of being bounced
- * into the product home page.
+ * A browser already carrying the IAM-created authorization state renders the
+ * hosted login in place on this route; a full authorization request still has
+ * to create that state through the IAM app-api; anything else is reported
+ * instead of being bounced into the product home page.
  * @param search - the current location search (with or without a leading `?`).
- * @param options - app-api base and page origin used to resolve the endpoint.
- * @returns the entry plan.
+ * @returns the page plan.
  */
-export function planAppAuthorizeEntry(
-  search: string,
-  options: { readonly appApiBaseUrl: string; readonly pageOrigin: string },
-): AppAuthorizeEntryPlan {
+export function planAppAuthorizeEntry(search: string): AppAuthorizeEntryPlan {
   const normalizedSearch = search.startsWith('?') ? search.slice(1) : search
   const params = new URLSearchParams(normalizedSearch)
   const authorizationStateId = readParameter(params, AUTHORIZATION_STATE_PARAM)
   if (authorizationStateId !== undefined) {
-    const loginSearch = new URLSearchParams(normalizedSearch)
-    loginSearch.set(AUTHORIZATION_STATE_PARAM, authorizationStateId)
-    return { kind: 'hosted-login', path: `${APP_AUTHORIZE_LOGIN_PATH}?${loginSearch.toString()}` }
+    return { kind: 'hosted', stateId: authorizationStateId }
   }
   if (params.toString() === '') {
     return { kind: 'missing-request' }
@@ -262,17 +213,5 @@ export function planAppAuthorizeEntry(
   if (parsed.kind === 'invalid') {
     return { kind: 'invalid', problem: parsed.problem }
   }
-  const { endpoint } = resolveAppAuthorizeEndpoint(options.appApiBaseUrl, options.pageOrigin)
-  return { kind: 'forward', endpoint, search: params.toString() }
-}
-
-/**
- * Build the URL the entry hands the browser to.
- * @param plan - a `forward` plan.
- * @returns the absolute authorize URL with every original parameter intact.
- */
-export function buildAppAuthorizeForwardUrl(
-  plan: Extract<AppAuthorizeEntryPlan, { kind: 'forward' }>,
-): string {
-  return plan.search === '' ? plan.endpoint : `${plan.endpoint}?${plan.search}`
+  return { kind: 'create', request: parsed.request }
 }
