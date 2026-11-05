@@ -259,6 +259,7 @@ pnpm dev:desktop
 pnpm dev:server
 pnpm smoke:dev
 pnpm check
+pnpm test:oauth:browser
 pnpm install:packages:plan
 pnpm install:packages:check
 pnpm install:package:check
@@ -281,6 +282,8 @@ pnpm install:package:build
 pnpm install:package:check
 pnpm install:init:smoke
 ```
+
+`pnpm test:oauth:browser` serves the production web build, stubs the app API, and verifies in Chromium that `/iam/oauth/authorize` renders the IAM login in place instead of navigating to the API origin.
 
 Local development consumes SDKWork dependencies through native workspace files,
 including `pnpm-workspace.yaml`, `package.json`, and Cargo manifests. Required

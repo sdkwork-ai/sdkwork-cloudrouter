@@ -13,6 +13,7 @@ export const zh = {
   "admin.menu.iam.policies": "策略管理",
   "admin.menu.iam.authorizations": "授权管理",
   "admin.menu.iam.oauth": "OAuth",
+  "admin.menu.iam.oauth.relyingParty": "SDKWork OAuth 登录",
   "admin.menu.iam.oauth.providers": "第三方平台登录",
   "admin.menu.iam.oauth.miniPrograms": "小程序账号",
   "admin.menu.iam.oauth.officialAccounts": "公众号账号",

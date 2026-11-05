@@ -13,6 +13,7 @@ export const en = {
   "admin.menu.iam.policies": "Policies",
   "admin.menu.iam.authorizations": "Authorizations",
   "admin.menu.iam.oauth": "OAuth",
+  "admin.menu.iam.oauth.relyingParty": "SDKWork OAuth Login",
   "admin.menu.iam.oauth.providers": "Third-Party Platform Login",
   "admin.menu.iam.oauth.miniPrograms": "Mini Program Accounts",
   "admin.menu.iam.oauth.officialAccounts": "Official Account Management",

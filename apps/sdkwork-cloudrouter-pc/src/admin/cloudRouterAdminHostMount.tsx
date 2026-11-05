@@ -65,6 +65,7 @@ const IamPermissionsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc
 const IamPoliciesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamPoliciesAdmin');
 const IamAuthorizationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamAuthorizationsAdmin');
 const IamOauthAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthAdmin');
+const IamOauthRelyingPartyAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthRelyingPartyAdmin');
 const IamOauthProviderConnectionsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthProviderConnectionsAdmin');
 const IamOauthMiniProgramsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthMiniProgramsAdmin');
 const IamOauthOfficialAccountsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthOfficialAccountsAdmin');
@@ -93,6 +94,7 @@ const IAM_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>> = {
   'iam/policies': <IamPoliciesAdmin />,
   'iam/authorizations': <IamAuthorizationsAdmin />,
   'iam/oauth': <IamOauthAdmin />,
+  'iam/oauth/relying-party': <IamOauthRelyingPartyAdmin />,
   'iam/oauth/providers': <IamOauthProviderConnectionsAdmin />,
   'iam/oauth/mini-programs': <IamOauthMiniProgramsAdmin />,
   'iam/oauth/official-accounts': <IamOauthOfficialAccountsAdmin />,

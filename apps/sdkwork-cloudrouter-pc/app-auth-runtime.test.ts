@@ -6,25 +6,20 @@ import test from 'node:test';
 
 import {
   APP_AUTHORIZE_ALIAS_PATH,
-  APP_AUTHORIZE_ENDPOINT_PATH,
   APP_AUTHORIZE_LAUNCH_PATH,
-  APP_AUTHORIZE_LOGIN_PATH,
   APP_AUTHORIZE_PATH,
   APP_AUTHORIZE_PATHS,
   APP_AUTHORIZE_VERSIONLESS_PATH,
-  buildAppAuthorizeForwardUrl,
   isAppCallbackRedirectUri,
   parseAppAuthorizeRequest,
   planAppAuthorizeEntry,
-  resolveAppAuthorizeEndpoint,
 } from './src/app-auth/appAuthorizeEntry.ts';
 import {
+  hasPortalOAuthSignInState,
   isPortalAppHandoffPath,
+  isPortalAppSignInHandoff,
   isPortalAuthRoute,
 } from './packages/sdkwork-cloudroutes-pc-commons/src/portal-auth.ts';
-
-const APP_ORIGIN = 'https://platform.birdcoder.com';
-const API_ORIGIN = 'https://api.birdcoder.com';
 
 /** A complete authorization-code request from a native application. */
 function authorizeSearch(overrides: Record<string, string | undefined> = {}): string {
@@ -87,78 +82,64 @@ test('redirect URIs admit app schemes and loopback callbacks only', () => {
   assert.equal(isAppCallbackRedirectUri('birdcoder://user:secret@auth/callback'), false);
 });
 
-test('a full request forwards to the IAM authorize endpoint on the app-api origin', () => {
-  const plan = planAppAuthorizeEntry(authorizeSearch(), {
-    appApiBaseUrl: `${API_ORIGIN}/app/v3/api`,
-    pageOrigin: APP_ORIGIN,
+test('a full request creates the pending authorization state on the same page', () => {
+  const plan = planAppAuthorizeEntry(authorizeSearch());
+  if (plan.kind !== 'create') assert.fail(`expected a create plan, got ${plan.kind}`);
+  assert.deepEqual(plan.request, {
+    clientId: 'birdcoder',
+    redirectUri: 'birdcoder://auth/callback',
+    scope: 'openid profile offline_access',
+    state: 'state-token',
+    codeChallenge: 'z'.repeat(43),
   });
-  if (plan.kind !== 'forward') assert.fail(`expected a forward plan, got ${plan.kind}`);
-  assert.equal(
-    buildAppAuthorizeForwardUrl(plan),
-    `${API_ORIGIN}${APP_AUTHORIZE_ENDPOINT_PATH}${authorizeSearch()}`,
-  );
-  // The gateway classifies the IAM open-api under `/iam/v3/api`; forwarding to
-  // the versionless path would be an unclassified surface (401) at the gateway.
-  assert.equal(APP_AUTHORIZE_ENDPOINT_PATH, '/iam/v3/api/oauth/authorize');
 });
 
-test('the authorization state the IAM server issued continues on the hosted login', () => {
+test('the authorization state the IAM issued renders the hosted login in place', () => {
   const search = '?oauthAuthorizationStateId=oauth_state_123&redirect=ignored';
-  const plan = planAppAuthorizeEntry(search, {
-    appApiBaseUrl: `${API_ORIGIN}/app/v3/api`,
-    pageOrigin: APP_ORIGIN,
+  assert.deepEqual(planAppAuthorizeEntry(search), {
+    kind: 'hosted',
+    stateId: 'oauth_state_123',
   });
-  assert.equal(plan.kind, 'hosted-login');
-  assert.equal(
-    plan.kind === 'hosted-login' ? plan.path : '',
-    `${APP_AUTHORIZE_LOGIN_PATH}?oauthAuthorizationStateId=oauth_state_123&redirect=ignored`,
-  );
 });
 
 test('a real application-produced authorize URL from the platform origin is accepted', () => {
   // Captured from a live BirdCoder desktop browser login: the exact request the
-  // app hands the system browser must pass the platform entry unchanged.
+  // app hands the system browser must pass the platform page unchanged.
   const realSearch = '?response_type=code&client_id=birdcoder'
     + '&redirect_uri=birdcoder%3A%2F%2Fauth%2Fcallback'
     + '&scope=openid+profile+offline_access'
     + '&state=LjERtcYSxP1ANSue1nnycFnGyG9NWmqe'
     + '&code_challenge=8GQH2kbJGA6uJWGoAsdZ4aEu4biRXxrtdX3wvHC6ilM'
     + '&code_challenge_method=S256';
-  const plan = planAppAuthorizeEntry(realSearch, {
-    appApiBaseUrl: `${API_ORIGIN}/app/v3/api`,
-    pageOrigin: APP_ORIGIN,
+  const plan = planAppAuthorizeEntry(realSearch);
+  if (plan.kind !== 'create') assert.fail(`expected a create plan, got ${plan.kind}`);
+  assert.deepEqual(plan.request, {
+    clientId: 'birdcoder',
+    redirectUri: 'birdcoder://auth/callback',
+    scope: 'openid profile offline_access',
+    state: 'LjERtcYSxP1ANSue1nnycFnGyG9NWmqe',
+    codeChallenge: '8GQH2kbJGA6uJWGoAsdZ4aEu4biRXxrtdX3wvHC6ilM',
   });
-  if (plan.kind !== 'forward') assert.fail(`expected a forward plan, got ${plan.kind}`);
-  const forward = new URL(buildAppAuthorizeForwardUrl(plan));
-  assert.equal(forward.origin, API_ORIGIN);
-  assert.equal(forward.pathname, APP_AUTHORIZE_ENDPOINT_PATH);
-  // Every request parameter survives the hop, including PKCE and state.
-  assert.deepEqual(
-    Object.fromEntries(forward.searchParams),
-    Object.fromEntries(new URLSearchParams(realSearch.slice(1))),
-  );
 });
 
 test('an empty or invalid navigation is reported instead of bouncing to the storefront', () => {
-  const appApiBaseUrl = `${API_ORIGIN}/app/v3/api`;
-  assert.deepEqual(planAppAuthorizeEntry('', { appApiBaseUrl, pageOrigin: APP_ORIGIN }), {
-    kind: 'missing-request',
-  });
+  assert.deepEqual(planAppAuthorizeEntry(''), { kind: 'missing-request' });
   assert.deepEqual(
-    planAppAuthorizeEntry('?response_type=code&client_id=birdcoder', { appApiBaseUrl, pageOrigin: APP_ORIGIN }),
+    planAppAuthorizeEntry('?response_type=code&client_id=birdcoder'),
     { kind: 'invalid', problem: 'missing-parameter' },
   );
 });
 
-test('the authorize endpoint keeps the page origin when the app-api base is same-origin', () => {
-  assert.deepEqual(resolveAppAuthorizeEndpoint('/app/v3/api', APP_ORIGIN), {
-    endpoint: `${APP_ORIGIN}${APP_AUTHORIZE_ENDPOINT_PATH}`,
-    crossOrigin: false,
-  });
-  assert.deepEqual(resolveAppAuthorizeEndpoint(`${API_ORIGIN}/app/v3/api`, APP_ORIGIN), {
-    endpoint: `${API_ORIGIN}${APP_AUTHORIZE_ENDPOINT_PATH}`,
-    crossOrigin: true,
-  });
+test('the hosted page creates the state through the SDK instead of navigating to the API origin', () => {
+  const entry = readFileSync(new URL('./src/app-auth/CloudRouterAppAuthorizeEntry.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(entry, /window\.location\.replace/u);
+  assert.doesNotMatch(entry, /buildAppAuthorizeForwardUrl/u);
+  assert.match(entry, /oauth\.authorizations\.create/u);
+  assert.match(entry, /oauthAuthorizationStateId/u);
+  // A failed state creation must report through the app's deep link instead
+  // of leaving the desktop waiting for its deadline.
+  assert.match(entry, /buildSdkworkDesktopAuthErrorRedirect/u);
+  assert.match(entry, /window\.location\.assign/u);
 });
 
 test('the portal auth guard keeps the app hand-off page out of the authenticated redirect', () => {
@@ -167,6 +148,32 @@ test('the portal auth guard keeps the app hand-off page out of the authenticated
   for (const path of ['/auth/login', '/auth/register', APP_AUTHORIZE_PATH, APP_AUTHORIZE_ALIAS_PATH]) {
     assert.equal(isPortalAppHandoffPath(path), false, path);
   }
+});
+
+test('an authenticated login page still completes a pending app sign-in', () => {
+  assert.equal(hasPortalOAuthSignInState('?oauthAuthorizationStateId=oauth_state_123'), true);
+  assert.equal(hasPortalOAuthSignInState('oauthAuthorizationStateId=oauth_state_123&redirect=ignored'), true);
+  assert.equal(hasPortalOAuthSignInState('?oauthAuthorizationStateId=%20%20'), false);
+  assert.equal(hasPortalOAuthSignInState('?redirect=%2Fadmin'), false);
+  assert.equal(hasPortalOAuthSignInState(''), false);
+  assert.equal(hasPortalOAuthSignInState(undefined), false);
+
+  // The login page carrying the IAM-issued sign-in state belongs to the app
+  // sign-in flow: the guard must render it instead of redirecting to /admin.
+  assert.equal(
+    isPortalAppSignInHandoff({ pathname: '/auth/login', search: '?oauthAuthorizationStateId=oauth_state_123' }),
+    true,
+  );
+  assert.equal(
+    isPortalAppSignInHandoff({ pathname: APP_AUTHORIZE_LAUNCH_PATH, search: '' }),
+    true,
+  );
+  // A plain auth-route revisit is not part of the flow and may be redirected.
+  assert.equal(isPortalAppSignInHandoff({ pathname: '/auth/login', search: '' }), false);
+  assert.equal(
+    isPortalAppSignInHandoff({ pathname: '/auth/login', search: '?redirect=%2Fadmin' }),
+    false,
+  );
 });
 
 test('the versioned and versionless authorize paths answer the same entry', () => {
@@ -186,5 +193,5 @@ test('the router mounts the authorize entry outside the auth-area guard', () => 
   assert.match(app, /path="\/iam\/v3\/oauth\/authorize"[^>]*CloudRouterAppAuthorizeEntry/u);
   assert.match(app, /path="\/auth\/app"[^>]*CloudRouterAppAuthorizeEntry/u);
   const guarded = readFileSync(new URL('./src/auth/protectedPortalRoutes.ts', import.meta.url), 'utf8');
-  assert.match(guarded, /!isPortalAppHandoffPath\(location\.pathname\)/u);
+  assert.match(guarded, /!isPortalAppSignInHandoff\(location\)/u);
 });

@@ -68,6 +68,7 @@ export const IAM_ADMIN_MENU: CloudRouterIamAdminMenu = {
     {
       groupKey: 'admin.menu.iam.oauth',
       items: [
+        { path: '/admin/iam/oauth/relying-party', labelKey: 'admin.menu.iam.oauth.relyingParty', icon: KeyRound },
         { path: '/admin/iam/oauth/providers', labelKey: 'admin.menu.iam.oauth.providers', icon: KeyRound },
         { path: '/admin/iam/oauth/mini-programs', labelKey: 'admin.menu.iam.oauth.miniPrograms', icon: Smartphone },
         { path: '/admin/iam/oauth/official-accounts', labelKey: 'admin.menu.iam.oauth.officialAccounts', icon: MessageCircle },
@@ -106,7 +107,8 @@ export const IAM_ADMIN_ROUTE_RECORDS: readonly CloudRouterIamAdminRouteRecord[] 
   { path: 'iam/permissions', requiredPermission: 'iam.permissions.read' },
   { path: 'iam/policies', requiredPermission: 'iam.policies.read' },
   { path: 'iam/authorizations', requiredPermission: 'iam.role_bindings.read' },
-  { path: 'iam/oauth', requiredPermission: 'iam.oauth.read', redirectTo: '/admin/iam/oauth/providers' },
+  { path: 'iam/oauth', requiredPermission: 'iam.oauth.read', redirectTo: '/admin/iam/oauth/relying-party' },
+  { path: 'iam/oauth/relying-party', requiredPermission: 'iam.oauth.read' },
   { path: 'iam/oauth/providers', requiredPermission: 'iam.oauth.read' },
   { path: 'iam/oauth/mini-programs', requiredPermission: 'iam.oauth.read' },
   { path: 'iam/oauth/official-accounts', requiredPermission: 'iam.oauth.read' },
