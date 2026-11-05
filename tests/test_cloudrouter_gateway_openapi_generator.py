@@ -1180,14 +1180,14 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
             audit = audit_vendor_schema_quality(spec, provider_prefixes=self._provider_prefixes())
 
             self.assertEqual([], audit.unregistered_vendor_paths)
-            # Bumped 57 -> 59 by the TypeSafe AI vendor-native door: its single
-            # published operation contributes exactly two operation-level payload
-            # components (TypeSafeSystemOneRequest / TypeSafeSystemOneResponse);
-            # the nested TypeSafeQuestion / TypeSafeAnswer / TypeSafeUsage schemas
-            # are not referenced directly from a path, so they are not roots.
-            # 59 = the previous 63 roots minus the four Midjourney/NanoBanana
-            # payload components that belonged to removed vendor-absent routes.
-            self.assertEqual(59, len(audit.root_schema_names))
+            # Bumped 57 -> 59 by the TypeSafe AI vendor-native door, then
+            # 59 -> 124 by the media-door expansion (MiniMax image/video/speech,
+            # xAI Grok Imagine image/video, Kling and Vidu sound effects,
+            # Runway video, ElevenLabs Music, Mureka song, the DashScope and
+            # Seed TTS speech doors, and the FLUX 3 video door): every published
+            # door contributes its request/response payload components as roots,
+            # and the vendor-relay envelopes they reference resolve transitively.
+            self.assertEqual(124, len(audit.root_schema_names))
             self.assertIn("ProviderJsonNull", audit.reachable_schema_names)
             self.assertEqual([], audit.unresolved_refs)
             self.assertEqual([], audit.non_component_payload_schemas)
@@ -1985,7 +1985,10 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
 
     def test_writes_and_checks_gateway_openapi_spec(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            # resolve() so the comparison below survives Windows 8.3 short
+            # names: TemporaryDirectory can hand back CHARLE~1-style paths,
+            # while the generator resolves its root to the long form.
+            root = Path(tmp).resolve()
             generator = CloudRouterGatewayOpenApiGenerator(root=root)
 
             output = generator.write()

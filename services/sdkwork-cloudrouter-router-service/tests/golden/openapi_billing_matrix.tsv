@@ -13,6 +13,7 @@ POST	/anthropic/v1/messages/batches	anthropic.batches	ProviderNativeApi	None	Ext
 GET	/anthropic/v1/messages/batches/{batch_id}	anthropic.{batch_id}	ProviderNativeApi	None	Free	None	None
 POST	/anthropic/v1/messages/batches/{batch_id}/cancel	anthropic.cancel	ProviderNativeApi	None	Free	None	None
 POST	/anthropic/v1/messages/count_tokens	anthropic.count_tokens	ProviderNativeApi	None	Free	None	None
+POST	/black_forest_labs/v1/flux-3-video	black_forest_labs.video_generation	ProviderNativeApi	VideoResult	ResultCount	VideoResult	ResponseBody
 POST	/black_forest_labs/v1/flux-{model}	black_forest_labs.image_generation	ProviderNativeApi	ImageResult	ResultCount	ImageResult	ResponseBody
 GET	/black_forest_labs/v1/get_result	black_forest_labs.task_query	ProviderNativeApi	ApiRequest	Free	None	None
 POST	/bytedance/api/v3/contents/generations/tasks	bytedance.video_generation	ProviderNativeApi	VideoResult	ResultCount	VideoResult	ResponseBody

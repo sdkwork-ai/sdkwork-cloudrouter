@@ -5450,6 +5450,9 @@ mod tests {
             "jimeng.video",
             "bytedance.image",
             "bytedance.video",
+            // Seed TTS 2.0 (`POST /api/v3/tts/unidirectional`) derives an audio
+            // group the same way Volcengine's Ark speech door does.
+            "bytedance.audio",
             "vidu.image",
             "vidu.video",
             "volcengine.image",
@@ -5457,6 +5460,12 @@ mod tests {
             "volcengine.audio",
             "minimax.music",
             "minimax.audio",
+            // The MiniMax media doors (synchronous `image_generation`, the
+            // Hailuo task family) contribute their own modality groups.
+            "minimax.image",
+            "minimax.video",
+            // Eleven Music (`POST /v1/music`) is a music-family door.
+            "elevenlabs.music",
             "suno.music",
             "suno.audio",
             "elevenlabs.audio",
@@ -5470,6 +5479,9 @@ mod tests {
             "alibaba.text",
             "alibaba.image",
             "alibaba.video",
+            // DashScope speech synthesis (`POST /api/v1/services/audio/tts/
+            // SpeechSynthesizer`) derives an audio group.
+            "alibaba.audio",
             "deepseek.text",
             "moonshot.text",
             "zhipu.text",

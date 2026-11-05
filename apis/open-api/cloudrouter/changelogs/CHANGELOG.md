@@ -16,6 +16,11 @@
     both modalities, and the `results` array carries the image outputs.
   - `POST /black_forest_labs/v1/flux-{model}` and
     `GET /black_forest_labs/v1/get_result` (FLUX submit plus id polling).
+  - `POST /black_forest_labs/v1/flux-3-video` (FLUX 3 video; asynchronous like
+    the image surface, polled through the same `get_result` route). This closes
+    the vendor-door audit's `black_forest_labs/video` gap: the catalog's
+    `vendor_native` flux-3 video model had bound to `openai.video`
+    (`POST /v1/videos`), a path BFL does not serve.
   - `POST /bytedance/api/v3/images/generations` (Ark Seedream).
   - `POST /runway/v1/text_to_image` and `GET /runway/v1/tasks/{task_id}`.
   - `POST /stability_ai/v2beta/stable-image/generate/{mode}`.
@@ -283,9 +288,16 @@
     every `(vendor, primary capability)` pair that has no door. That is exactly
     the Mureka defect class — eight models, a taxonomy route, a seed and a
     classifier arm, but no door — and it was invisible to every existing gate,
-    which only looks at published operations. It reports **7 real gaps** today:
-    Black Forest Labs video (flux-3), ByteDance audio + music, Kling sound
-    effects, Stability AI audio (sfx + music), and Vidu sound effects.
+    which only looks at published operations. Its first run reported **7 real
+    gaps**: Black Forest Labs video (flux-3), ByteDance audio + music, Kling
+    sound effects, Stability AI audio (sfx + music), and Vidu sound effects.
+    Six of them are closed by the doors in this change (Kling and Vidu sound
+    effects, Stability AI audio, ByteDance speech, and the FLUX 3 video door
+    below). The last one, `bytedance/music`, is ledgered in the audit with its
+    reason: GenSong V4 is served through Volcengine's Action-style RPC
+    (`open.volcengineapi.com?Action=GenSongV4`), not a REST path the
+    vendor-relay planner can name, so no vendor-native door exists to publish.
+    The audit now reports **0 gaps** and exits non-zero on any unledgered one.
   - The routing gate now rejects a classifier arm whose path carries an
     upper-case letter: classification lower-cases the path
     (`normalize_standard_api_path`) before matching, so such an arm can never

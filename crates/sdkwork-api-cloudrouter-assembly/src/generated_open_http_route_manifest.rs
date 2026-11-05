@@ -96,6 +96,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
+        "/black_forest_labs/v1/flux-3-video",
+        "Videos/black_forest_labs",
+        "blackForestLabsCreateVideo",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
         "/black_forest_labs/v1/flux-{model}",
         "Images/black_forest_labs",
         "blackForestLabsCreateImage",

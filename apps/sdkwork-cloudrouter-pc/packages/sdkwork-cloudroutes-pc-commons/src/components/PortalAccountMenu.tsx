@@ -194,12 +194,38 @@ export function PortalAccountMenu({ variant = 'portal', className, onNavigate }:
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== 'Escape') {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      setOpen(false);
+      triggerRef.current?.focus();
       return;
     }
-    event.stopPropagation();
-    setOpen(false);
-    triggerRef.current?.focus();
+    // The menu carries role="menu", so it owes the arrow-key contract that
+    // comes with the role: ArrowDown/ArrowUp move focus across the items (and
+    // across the trigger at the edges), Home/End jump to the ends.
+    if (!open || (event.key !== 'ArrowDown' && event.key !== 'ArrowUp' && event.key !== 'Home' && event.key !== 'End')) {
+      return;
+    }
+    const items = Array.from(
+      containerRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)') ?? [],
+    );
+    if (items.length === 0) {
+      return;
+    }
+    event.preventDefault();
+    const activeIndex = items.findIndex((item) => item === document.activeElement);
+    const triggerActive = document.activeElement === triggerRef.current;
+    let nextIndex: number;
+    if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = items.length - 1;
+    } else if (event.key === 'ArrowDown') {
+      nextIndex = activeIndex < 0 ? (triggerActive ? 0 : items.length - 1) : Math.min(activeIndex + 1, items.length - 1);
+    } else {
+      nextIndex = activeIndex < 0 ? 0 : Math.max(activeIndex - 1, 0);
+    }
+    items[nextIndex]?.focus();
   };
 
   return (
