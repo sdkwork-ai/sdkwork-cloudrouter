@@ -200,6 +200,11 @@ struct AdminRouterRuntime<'a> {
     admin_access_checker: Option<AdminAccessChecker>,
     request_limits_config: RequestLimitsConfig,
     readiness_check: Option<sdkwork_cloudrouter_http::ReadinessCheckFn>,
+    /// Gates the legacy Cloud Router `POST /backend/v3/api/iam/api_keys`
+    /// command route (see [`PostgresSharedRuntime::include_legacy_iam_api_key_create`]).
+    /// `None` keeps the route mounted; the all-in-one gateway passes
+    /// `Some(false)` because the sdkwork-iam backend assembly owns it.
+    include_legacy_iam_api_key_create: Option<bool>,
 }
 
 pub fn router() -> Router {
@@ -346,7 +351,10 @@ where
         request_limits_config: _request_limits_config,
         readiness_check,
         tenant_signing_key_resolver,
+        include_legacy_iam_api_key_create,
     } = runtime;
+
+    let include_legacy_iam_api_key_create = include_legacy_iam_api_key_create.unwrap_or(true);
 
     let routing_cache_manager = cache_manager.clone();
     // Captured before `database_installer` is consumed by the system router.
@@ -450,14 +458,21 @@ where
         ),
     };
     if let Some(admin_subject_boundary_config) = admin_subject_boundary_config {
+        // The Cloud Router legacy `POST /backend/v3/api/iam/api_keys` command
+        // handler duplicates the sdkwork-iam backend assembly route that the
+        // all-in-one platform gateway merges; axum panics on the overlap. The
+        // create route is therefore gated, while the Cloud-Router-owned
+        // `DELETE /backend/v3/api/iam/api_keys/{api_key_id}` route stays
+        // mounted.
         if let (Some(store), Some(api_key_hasher)) = (api_key_command_store, api_key_hasher.clone())
         {
             router = router.merge(layer_with_admin_subject_boundary(
                 admin_subject_boundary_config.clone(),
-                sdkwork_cloudrouter_router_service::api::admin_user_api_key_command_router_with_store(
+                sdkwork_cloudrouter_router_service::api::admin_user_api_key_command_router_with_store_and_create_route(
                     store,
                     api_key_hasher,
                     Arc::new(OsApiKeySecretGenerator),
+                    include_legacy_iam_api_key_create,
                 ),
             ));
         }
@@ -733,6 +748,14 @@ pub struct PostgresSharedRuntime {
     pub database_installer: Arc<DatabaseInstaller>,
     pub request_limits_config: RequestLimitsConfig,
     pub models_catalog_root: Option<String>,
+    /// When true, mount the Cloud Router legacy
+    /// `POST /backend/v3/api/iam/api_keys` command route. Compositions that
+    /// also merge the sdkwork-iam backend assembly (the all-in-one platform
+    /// gateway) MUST set this false: IAM owns `/backend/v3/api/iam/*`, and
+    /// axum panics on the overlapping POST route (`Router::merge` panics with
+    /// "Handler for `POST /backend/v3/api/iam/api_keys` already exists").
+    /// The Cloud-Router-owned DELETE route is mounted regardless.
+    pub include_legacy_iam_api_key_create: bool,
 }
 
 /// Route tags whose request logs are kept forever (billing/paying surfaces:
@@ -781,6 +804,7 @@ pub async fn router_with_postgres_shared_runtime(
         database_installer,
         request_limits_config,
         models_catalog_root,
+        include_legacy_iam_api_key_create,
     } = runtime;
     let api_key_hasher = build_api_key_hasher(&api_key_security_config)?;
     let credential_secret_codec =
@@ -919,6 +943,7 @@ pub async fn router_with_postgres_shared_runtime(
             announcement_store: Some(announcement_store),
             auth_settings_store: Some(auth_settings_store),
             api_key_command_store: Some(api_key_command_store),
+            include_legacy_iam_api_key_create: Some(include_legacy_iam_api_key_create),
             site_settings_store: Some(site_settings_store),
             runtime_region_settings_store: Some(runtime_region_settings_store),
             ai_resource_store: Some(ai_resource_store),
@@ -1173,6 +1198,7 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
                             announcement_store: Some(announcement_store),
                             auth_settings_store: Some(auth_settings_store),
                     api_key_command_store: Some(api_key_command_store),
+                    include_legacy_iam_api_key_create: None,
                     site_settings_store: Some(site_settings_store),
                     runtime_region_settings_store: Some(runtime_region_settings_store),
                     ai_resource_store: Some(ai_resource_store),

@@ -7,7 +7,6 @@ import {
   createCourseAdminCourse,
   createCourseAdminLesson,
   createCourseAdminResource,
-  deleteCourseAdminComment,
   fetchCourseAdminApplications,
   fetchCourseAdminAuditLogDetail,
   fetchCourseAdminCourses,
@@ -15,7 +14,6 @@ import {
   fetchCourseAdminProgress,
   fetchCourseAdminReportOverview,
   grantCourseAdminEnrollment,
-  moderateCourseAdminComment,
   publishCourseAdminCourse,
   repairCourseAdminLessonProgress,
   reviewCourseAdminApplication,
@@ -102,11 +100,6 @@ function createBackendSdkMock() {
     },
     courseLessonProgress: {
       update: vi.fn(),
-    },
-    courseComments: {
-      list: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
     },
     courseReactions: {
       list: vi.fn(),
@@ -408,25 +401,6 @@ describe('course admin service', () => {
     expect(sdkMock.courseApplications.convert).toHaveBeenCalledWith('a-1', {});
     expect(approved.status).toBe('approved');
     expect(converted.status).toBe('converted');
-  });
-
-  it('moderates and deletes comments', async () => {
-    sdkMock.courseComments.update.mockResolvedValue(envelopeItem({
-      id: 'cm-1',
-      courseId: 'c-1',
-      authorName: 'Bob',
-      body: 'spam',
-      moderationState: 'hidden',
-      createdAt: '2026-03-02T00:00:00Z',
-    }));
-    sdkMock.courseComments.delete.mockResolvedValue(undefined);
-
-    const comment = await moderateCourseAdminComment('cm-1', 'hidden');
-    await deleteCourseAdminComment('cm-1');
-
-    expect(sdkMock.courseComments.update).toHaveBeenCalledWith('cm-1', { moderationState: 'hidden' });
-    expect(comment.moderationState).toBe('hidden');
-    expect(sdkMock.courseComments.delete).toHaveBeenCalledWith('cm-1');
   });
 
   it('reads the report overview payload', async () => {

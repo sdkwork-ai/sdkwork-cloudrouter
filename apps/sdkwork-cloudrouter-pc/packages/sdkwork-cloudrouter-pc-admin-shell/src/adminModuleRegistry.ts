@@ -288,7 +288,6 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
         itemBlock({ path: '/admin/course/applications', labelKey: 'admin.menu.course.applications', icon: FileText }),
       ]),
       groupBlock('admin.menu.course.governance', [
-        itemBlock({ path: '/admin/course/comments', labelKey: 'admin.menu.course.comments', icon: MessagesSquare, iconColor: 'text-lobster-400' }),
         itemBlock({ path: '/admin/course/reports', labelKey: 'admin.menu.course.reports', icon: BarChart3 }),
         itemBlock({ path: '/admin/course/auditLogs', labelKey: 'admin.menu.course.auditLogs', icon: ScrollText }),
       ]),

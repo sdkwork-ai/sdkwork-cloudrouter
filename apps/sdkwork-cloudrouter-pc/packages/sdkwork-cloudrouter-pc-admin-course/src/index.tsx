@@ -2,7 +2,6 @@ import { CourseApplicationsPage } from './pages/CourseApplicationsPage';
 import { CourseAuditLogsPage } from './pages/CourseAuditLogsPage';
 import { CourseCatalogPage } from './pages/CourseCatalogPage';
 import { CourseCategoriesPage } from './pages/CourseCategoriesPage';
-import { CourseCommentsPage } from './pages/CourseCommentsPage';
 import { CourseContentPage } from './pages/CourseContentPage';
 import { CourseEnrollmentsPage } from './pages/CourseEnrollmentsPage';
 import { CourseInstructorsPage } from './pages/CourseInstructorsPage';
@@ -23,7 +22,6 @@ export type CourseAdminSectionId =
   | 'enrollments'
   | 'progress'
   | 'applications'
-  | 'comments'
   | 'reports'
   | 'auditLogs';
 
@@ -40,7 +38,6 @@ function resolveCourseSectionId(sectionId?: string): CourseAdminSectionId {
     || sectionId === 'enrollments'
     || sectionId === 'progress'
     || sectionId === 'applications'
-    || sectionId === 'comments'
     || sectionId === 'reports'
     || sectionId === 'auditLogs'
   ) {
@@ -74,8 +71,6 @@ export function CourseAdmin({ sectionId }: CourseAdminProps = {}) {
         <CourseProgressPage />
       ) : activeSection === 'applications' ? (
         <CourseApplicationsPage />
-      ) : activeSection === 'comments' ? (
-        <CourseCommentsPage />
       ) : activeSection === 'reports' ? (
         <CourseReportsPage />
       ) : (

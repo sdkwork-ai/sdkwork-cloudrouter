@@ -323,7 +323,7 @@ async fn ai_routing_seed_reaches_a_complete_state() {
 
     seed(&context).await.expect("seed import");
 
-    let gap = postgres_ai_routing_seed_gap(&context.pool)
+    let gap = postgres_ai_routing_seed_gap(&context.pool, Some(DEV_ENVIRONMENT))
         .await
         .expect("read seed gap");
     assert_eq!(
@@ -331,10 +331,59 @@ async fn ai_routing_seed_reaches_a_complete_state() {
         "the seed did not reach a complete state; the startup gate would report UpgradeRequired on every boot"
     );
     assert!(
-        postgres_ai_routing_seed_complete(&context.pool)
+        postgres_ai_routing_seed_complete(&context.pool, Some(DEV_ENVIRONMENT))
             .await
             .expect("read seed completeness"),
         "the boolean and gap forms of the completeness predicate disagree"
+    );
+
+    context.cleanup().await;
+}
+
+/// A production install must not be required to carry the seeded vendor
+/// credentials: the seed deliberately leaves the bundled vendor default
+/// accounts disabled for production-like environments, so the completeness
+/// predicate has to be gated the same way or the startup bootstrap can never
+/// reach `Installed`.
+#[tokio::test]
+async fn production_install_ignores_disabled_vendor_accounts() {
+    let Some(context) = SeedTestContext::new("production-gate").await else {
+        return;
+    };
+
+    seed(&context).await.expect("seed import");
+
+    // Reproduce the production database shape: the bundled accounts exist but
+    // are disabled and carry no credential.
+    sqlx::query(
+        r#"
+        UPDATE ai_upstream_account
+        SET status = 0
+        WHERE metadata ->> 'itemType' = 'default_vendor_upstream_account'
+          AND deleted_at IS NULL
+        "#,
+    )
+    .execute(&context.pool)
+    .await
+    .expect("disable the bundled vendor accounts");
+    sqlx::query("DELETE FROM ai_upstream_account_credential")
+        .execute(&context.pool)
+        .await
+        .expect("remove the bundled vendor credentials");
+
+    assert_eq!(
+        postgres_ai_routing_seed_gap(&context.pool, Some("production"))
+            .await
+            .expect("read seed gap"),
+        None,
+        "a production install must not require the dev-only vendor credentials"
+    );
+    assert!(
+        postgres_ai_routing_seed_gap(&context.pool, Some(DEV_ENVIRONMENT))
+            .await
+            .expect("read seed gap")
+            .is_some(),
+        "the dev-like gate must still notice uncredentialed vendor accounts"
     );
 
     context.cleanup().await;
@@ -356,7 +405,7 @@ async fn ai_routing_seed_gate_notices_a_missing_bundled_group() {
 
     seed(&context).await.expect("seed import");
     assert_eq!(
-        postgres_ai_routing_seed_gap(&context.pool)
+        postgres_ai_routing_seed_gap(&context.pool, Some(DEV_ENVIRONMENT))
             .await
             .expect("read seed gap"),
         None,
@@ -376,7 +425,7 @@ async fn ai_routing_seed_gate_notices_a_missing_bundled_group() {
     .await
     .expect("retire bundled media group");
 
-    let gap = postgres_ai_routing_seed_gap(&context.pool)
+    let gap = postgres_ai_routing_seed_gap(&context.pool, Some(DEV_ENVIRONMENT))
         .await
         .expect("read seed gap");
     assert!(
@@ -384,7 +433,7 @@ async fn ai_routing_seed_gate_notices_a_missing_bundled_group() {
         "removing a bundled media group must make the seed incomplete, otherwise startup never re-imports it"
     );
     assert!(
-        !postgres_ai_routing_seed_complete(&context.pool)
+        !postgres_ai_routing_seed_complete(&context.pool, Some(DEV_ENVIRONMENT))
             .await
             .expect("read seed completeness"),
         "the boolean form must agree with the gap form"
@@ -393,7 +442,7 @@ async fn ai_routing_seed_gate_notices_a_missing_bundled_group() {
     // Re-seeding must restore it — the convergence direction of the same gate.
     seed(&context).await.expect("re-seed after retirement");
     assert_eq!(
-        postgres_ai_routing_seed_gap(&context.pool)
+        postgres_ai_routing_seed_gap(&context.pool, Some(DEV_ENVIRONMENT))
             .await
             .expect("read seed gap"),
         None,
@@ -460,7 +509,7 @@ async fn ai_routing_seed_attaches_a_member_created_by_a_later_pass() {
     // The predicate must observe the same thing, otherwise the reconciliation
     // above is invisible to the startup gate.
     assert_eq!(
-        postgres_ai_routing_seed_gap(&context.pool)
+        postgres_ai_routing_seed_gap(&context.pool, Some(DEV_ENVIRONMENT))
             .await
             .expect("read seed gap"),
         None,
@@ -484,7 +533,7 @@ async fn ai_routing_seed_attaches_a_member_created_by_a_later_pass() {
     .expect("detach the default group member");
 
     assert!(
-        postgres_ai_routing_seed_gap(&context.pool)
+        postgres_ai_routing_seed_gap(&context.pool, Some(DEV_ENVIRONMENT))
             .await
             .expect("read seed gap")
             .is_some(),
@@ -495,7 +544,7 @@ async fn ai_routing_seed_attaches_a_member_created_by_a_later_pass() {
         .await
         .expect("re-seed after detaching member");
     assert_eq!(
-        postgres_ai_routing_seed_gap(&context.pool)
+        postgres_ai_routing_seed_gap(&context.pool, Some(DEV_ENVIRONMENT))
             .await
             .expect("read seed gap"),
         None,
