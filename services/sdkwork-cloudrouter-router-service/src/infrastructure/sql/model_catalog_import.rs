@@ -1730,7 +1730,7 @@ fn model_sfx_endpoint_descriptor(model: &ModelInfo) -> EndpointDescriptor {
 ///
 /// The one vendor with a declared native music endpoint is `minimax`
 /// (`minimax.music_generation`, `/v1/music/generations`, granted by
-/// `official.minimax.music`) — and it had **zero** models bound. `suno` itself
+/// `official.minimax.full`) — and it had **zero** models bound. `suno` itself
 /// is deliberately parked in the catalog (`lifecycle = catalog_only` /
 /// `deprecated`, `shelfState = hidden`, `routingState = catalog_only`), so its
 /// models are retired and bind nothing.

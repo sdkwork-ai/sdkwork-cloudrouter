@@ -17,6 +17,7 @@ pub mod shutdown;
 #[cfg(test)]
 pub mod signing_service;
 pub mod tenant_isolation;
+pub mod upstream_url;
 pub mod web_bridge;
 pub mod web_framework_compat;
 pub mod web_security;
@@ -95,6 +96,7 @@ pub use signing_service::{
 pub use tenant_isolation::{
     ensure_row_tenant_matches, record_tenant_isolation_violation, TenantIsolationViolation,
 };
+pub use upstream_url::{path_carries_version_prefix, upstream_path_without_version_duplication};
 pub use web_bridge::{
     authenticated_principal_failed_trusted_subject_projection,
     inject_legacy_handler_context_from_web_context, trusted_request_subject_from_web_context,

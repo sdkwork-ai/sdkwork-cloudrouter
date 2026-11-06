@@ -8,7 +8,9 @@ use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
 use sdkwork_cloudrouter_config::ProviderRelayHttpPoolSectionConfig;
-use sdkwork_cloudrouter_http::{ensure_rustls_crypto_provider, OutboundDnsResolver};
+use sdkwork_cloudrouter_http::{
+    ensure_rustls_crypto_provider, path_carries_version_prefix, OutboundDnsResolver,
+};
 use sdkwork_cloudrouter_security::{redact_url, validate_outbound_base_url, OutboundTargetPolicy};
 use serde_json::Value;
 use std::time::Duration;
@@ -270,8 +272,12 @@ impl UpstreamProviderEndpoint {
                 "upstream provider base URL must be an absolute URL allowed by the outbound target policy",
             ));
         }
-        let uri_path = uri.path().trim_end_matches('/');
-        let includes_openai_v1_prefix = uri_path == "/v1" || uri_path.ends_with("/v1");
+        // Every OpenAI-family base URL ends with its version segment; the
+        // catalog's prefixes are not limited to `/v1` (`/api/v3`, `/v2`,
+        // `/api/paas/v4`, `/v1beta/openai`, `/compatible-mode/v1`), so the
+        // shared helper is the only correct test. See
+        // `sdkwork_cloudrouter_http::path_carries_version_prefix`.
+        let includes_openai_v1_prefix = path_carries_version_prefix(uri.path());
         let bearer_token = bearer_token.into().trim().to_owned();
         if bearer_token.is_empty() {
             return Err(DomainError::new(

@@ -17,7 +17,9 @@ use sdkwork_cloudrouter_config::{
     ProviderPassthroughAuth, ProviderPassthroughAuthType, ProviderPassthroughHeader,
 };
 use sdkwork_cloudrouter_http::ensure_rustls_crypto_provider;
-use sdkwork_cloudrouter_http::{upsert_query_parameter, OutboundDnsResolver};
+use sdkwork_cloudrouter_http::{
+    path_carries_version_prefix, upsert_query_parameter, OutboundDnsResolver,
+};
 use sdkwork_cloudrouter_router_service::infrastructure::provider::ProviderRelayHttpPoolConfig;
 use sdkwork_cloudrouter_security::{validate_outbound_url, OutboundTargetPolicy};
 use std::collections::HashSet;
@@ -69,19 +71,20 @@ impl ProviderPassthroughTarget {
         &self.default_headers
     }
 
-    pub(crate) fn base_url_has_openai_v1_prefix(&self) -> bool {
+    /// Whether the configured base URL already carries the OpenAI-family API
+    /// version segment. Recognises every published prefix, not only `/v1`
+    /// (`/api/v3`, `/v2`, `/api/paas/v4`, `/v1beta/openai`,
+    /// `/compatible-mode/v1`). See
+    /// [`sdkwork_cloudrouter_http::path_carries_version_prefix`].
+    pub(crate) fn base_url_carries_version_prefix(&self) -> bool {
         self.base_url
             .parse::<Uri>()
             .ok()
-            .map(|uri| {
-                let path = uri.path().trim_end_matches('/');
-                path == "/v1" || path.ends_with("/v1")
-            })
-            .unwrap_or(false)
+            .is_some_and(|uri| path_carries_version_prefix(uri.path()))
     }
 
     pub(crate) fn normalize_openai_compatible_path(&self, path: &str) -> String {
-        if self.base_url_has_openai_v1_prefix() {
+        if self.base_url_carries_version_prefix() {
             path.strip_prefix("/v1").unwrap_or(path).to_owned()
         } else {
             path.to_owned()
@@ -541,11 +544,13 @@ mod tests {
     }
 
     /// `normalize_openai_compatible_path` strips a leading `/v1` from the inbound
-    /// path **only when the base_url already ends with `/v1`** (see
-    /// `build_uri_is_base_url_concatenated_with_path` for why the composed URL is a
-    /// plain concatenation). `Uri::path()` keeps the trailing segment, so all of
-    /// `.../v1`, `.../compatible-mode/v1` and `.../v1beta/openai/v1` are recognised.
-    /// A bare-host base_url keeps the inbound `/v1`, which is what the vendor wants.
+    /// path when the base_url already carries the OpenAI-family version segment
+    /// (see `build_uri_is_base_url_concatenated_with_path` for why the composed
+    /// URL is a plain concatenation). Every catalog prefix is recognised, not
+    /// only `/v1`: `/compatible-mode/v1`, `/api/v3`, `/v2`, `/api/paas/v4` and
+    /// `/v1beta/openai` all embed the version, so appending the inbound `/v1`
+    /// would produce a path the vendor does not serve. A bare-host base_url
+    /// keeps the inbound `/v1`, which is what the vendor wants.
     #[test]
     fn normalize_openai_compatible_path_depends_on_base_url_shape() {
         let with_v1 = ProviderPassthroughTarget::new(
@@ -554,7 +559,7 @@ mod tests {
             ProviderPassthroughAuth::bearer("provider-secret").unwrap(),
             Vec::new(),
         );
-        assert!(with_v1.base_url_has_openai_v1_prefix());
+        assert!(with_v1.base_url_carries_version_prefix());
         assert_eq!(
             "/chat/completions",
             with_v1.normalize_openai_compatible_path("/v1/chat/completions")
@@ -566,7 +571,7 @@ mod tests {
             ProviderPassthroughAuth::bearer("provider-secret").unwrap(),
             Vec::new(),
         );
-        assert!(!bare.base_url_has_openai_v1_prefix());
+        assert!(!bare.base_url_carries_version_prefix());
         assert_eq!(
             "/v1/chat/completions",
             bare.normalize_openai_compatible_path("/v1/chat/completions")
@@ -580,10 +585,53 @@ mod tests {
             ProviderPassthroughAuth::bearer("provider-secret").unwrap(),
             Vec::new(),
         );
-        assert!(compatible_mode.base_url_has_openai_v1_prefix());
+        assert!(compatible_mode.base_url_carries_version_prefix());
         assert_eq!(
             "/chat/completions",
             compatible_mode.normalize_openai_compatible_path("/v1/chat/completions")
+        );
+
+        // The remaining published prefixes do not end in `/v1`, but they are
+        // still complete OpenAI base URLs: ByteDance Ark `/api/v3`, Baidu
+        // Qianfan `/v2`, Zhipu `/api/paas/v4`, Gemini `/v1beta/openai`.
+        for (provider, base_url) in [
+            ("bytedance", "https://ark.cn-beijing.volces.com/api/v3"),
+            ("baidu", "https://qianfan.baidubce.com/v2"),
+            ("zhipu", "https://open.bigmodel.cn/api/paas/v4"),
+            (
+                "gemini",
+                "https://generativelanguage.googleapis.com/v1beta/openai",
+            ),
+        ] {
+            let target = ProviderPassthroughTarget::new(
+                provider,
+                base_url,
+                ProviderPassthroughAuth::bearer("provider-secret").unwrap(),
+                Vec::new(),
+            );
+            assert!(
+                target.base_url_carries_version_prefix(),
+                "{base_url} carries its version segment"
+            );
+            assert_eq!(
+                "/chat/completions",
+                target.normalize_openai_compatible_path("/v1/chat/completions"),
+                "{base_url} must not append the inbound /v1 again"
+            );
+        }
+
+        // An Anthropic surface prefix is not a version prefix: the Anthropic
+        // SDK supplies `/v1`, so the inbound segment stays.
+        let anthropic = ProviderPassthroughTarget::new(
+            "deepseek",
+            "https://api.deepseek.com/anthropic",
+            ProviderPassthroughAuth::bearer("provider-secret").unwrap(),
+            Vec::new(),
+        );
+        assert!(!anthropic.base_url_carries_version_prefix());
+        assert_eq!(
+            "/v1/messages",
+            anthropic.normalize_openai_compatible_path("/v1/messages")
         );
     }
 

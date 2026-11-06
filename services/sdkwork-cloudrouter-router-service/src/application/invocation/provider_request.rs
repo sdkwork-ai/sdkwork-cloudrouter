@@ -480,16 +480,11 @@ fn join_provider_path(base_url: &str, path: &str) -> String {
     } else {
         format!("/{path}")
     };
-    if base_url_ends_with_openai_v1(base_url) && (path == "/v1" || path.starts_with("/v1/")) {
-        path.strip_prefix("/v1").unwrap_or(path.as_str()).to_owned()
-    } else {
-        path
-    }
-}
-
-fn base_url_ends_with_openai_v1(base_url: &str) -> bool {
-    let path = url_path(base_url).trim_end_matches('/');
-    path == "/v1" || path.ends_with("/v1")
+    sdkwork_cloudrouter_http::upstream_path_without_version_duplication(
+        url_path(base_url),
+        path.as_str(),
+    )
+    .to_owned()
 }
 
 fn url_path(base_url: &str) -> &str {

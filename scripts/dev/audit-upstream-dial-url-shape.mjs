@@ -13,9 +13,12 @@
  *   account.protocols[P] -> account.default -> supplier.protocols[P]
  *        -> supplier.default -> route_base_url (ai_upstream_supplier_endpoint.base_url)
  *
- * On the live dev DB the first FOUR hops are empty for all 27 suppliers and all
- * 27 accounts (`protocols = '[]'`, `default_base_url` NULL), so resolution
- * always falls through to the endpoint's bare host. Then
+ * The seed projects the catalog's per-protocol Base URL onto
+ * `ai_upstream_supplier.protocols` (see `vendor_protocol_base_urls` in
+ * `ai_routing_seed.rs`), so the audit resolves hop `supplier.protocols[P]`
+ * before falling back to the supplier default and the endpoint row. When the
+ * projection is absent the old bare-host behaviour is reproduced exactly, which
+ * is what keeps this audit able to detect a missing projection. Then
  * `ProviderPassthroughTarget::build_uri` concatenates naively:
  *
  *   format!("{}{}", self.base_url(), path_and_query)
@@ -78,13 +81,13 @@ const LLM_PROTOCOLS = ['openai_compatible', 'openai_responses', 'anthropic_messa
 // Crucially the two families place the version segment DIFFERENTLY, so what
 // the client appends on top of the base is family-dependent:
 //
-//   openai family — the version lives IN the prefix. The OpenAI SDK appends
+//   openai family 鈥?the version lives IN the prefix. The OpenAI SDK appends
 //   `/chat/completions` (`/v1/responses` for the Responses API). Verified:
 //     api.openai.com + /v1                 -> /v1/chat/completions          (OpenAI)
 //     dashscope.aliyuncs.com + /compatible-mode/v1 -> /compatible-mode/v1/chat/completions (Aliyun)
 //     open.bigmodel.cn + /api/paas/v4      -> /api/paas/v4/chat/completions (Zhipu)
 //
-//   anthropic family — the prefix names a SURFACE and the SDK supplies the
+//   anthropic family 鈥?the prefix names a SURFACE and the SDK supplies the
 //   version. The Anthropic SDK hardcodes `https://api.anthropic.com` as its
 //   default base (`anthropic-sdk-python/src/anthropic/_client.py:105-108`) and
 //   appends `/v1/messages`. Verified:
@@ -92,7 +95,7 @@ const LLM_PROTOCOLS = ['openai_compatible', 'openai_responses', 'anthropic_messa
 //     api.deepseek.com + /anthropic        -> /anthropic/v1/messages        (DeepSeek docs)
 //     open.bigmodel.cn + /api/anthropic    -> /api/anthropic/v1/messages    (Zhipu docs cURL)
 //
-// ⇒ one rule, family-aware op path. The `anthropic` vendor row used to be the
+// 鈬?one rule, family-aware op path. The `anthropic` vendor row used to be the
 //   single exception (`pathPrefix "/v1"`, which duplicates the SDK-supplied
 //   version); the catalog now stores `""` for it, and
 //   `tools/generate-cloudrouter-vendor-catalog.mjs` fails when any projected
@@ -111,51 +114,44 @@ const OPERATION_PATH = {
 };
 
 // Protocols whose version segment lives in the base URL prefix (OpenAI family).
-// These get the `/v1` strip when the base already ends with `/v1`.
+// Their inbound `/v1` is dropped when the base already carries the version.
 const OPENAI_FAMILY_PROTOCOLS = new Set(['openai_compatible', 'openai_responses']);
 
-// The provider namespace a client puts in front of the operation path. The
-// edge passthrough router only registers `/{provider}/{*path}` forms
-// (`passthrough.rs:190`), so the inbound path is always namespace + op path.
-const PROVIDER_NAMESPACE = {
-  openai_compatible: 'openai',
-  openai_responses: 'openai',
-  anthropic_messages: 'anthropic',
+
+// The real inbound paths. The OpenAI-compatible surface is mounted on `/v1`
+// (relay), not on a provider namespace, and the vendor-native Anthropic face is
+// `/anthropic/v1/messages`; both arrive at the classifier as the standard path
+// below (`invocation_http::classify_request` strips the provider segment).
+const INBOUND_PATH = {
+  openai_compatible: '/v1/chat/completions',
+  openai_responses: '/v1/responses',
+  anthropic_messages: '/v1/messages',
 };
 
-const INBOUND_PATH = Object.fromEntries(
-  Object.entries(OPERATION_PATH).map(([proto, op]) => [proto, `/${PROVIDER_NAMESPACE[proto]}${op}`]),
-);
 
 /**
- * Mirror `split_provider_passthrough_path` EXACTLY.
+ * Mirror `sdkwork_cloudrouter_http::path_carries_version_prefix`.
  *
- * The real implementation (`passthrough.rs:2231`) splits on the FIRST '/'
- * only and drops that single leading segment. It does NOT consult
- * `is_standard_path_namespace` — that predicate is only used by
- * `standard_path_from_passthrough_uri` for a different purpose.
- *
- *   /anthropic/v1/messages       -> /v1/messages
- *   /openai/v1/chat/completions  -> /v1/chat/completions
- *
- * Getting this wrong (e.g. treating `v1` as a strippable namespace) silently
- * deletes the version segment and makes every comparison meaningless.
+ * The catalog's OpenAI-family prefixes are not limited to `/v1`: Alibaba
+ * `/compatible-mode/v1`, ByteDance `/api/v3`, Baidu `/v2`, Zhipu
+ * `/api/paas/v4`, Gemini `/v1beta/openai`. Each one is a complete OpenAI
+ * `base_url`, so the SDK (and the gateway) appends only the operation path and
+ * the inbound `/v1` must be dropped. Anthropic-family surface prefixes
+ * (`/anthropic`, `/step_plan`) are not version prefixes: the Anthropic SDK
+ * supplies `/v1`, so the inbound segment stays.
  */
-function stripProviderNamespace(p) {
-  const idx = p.indexOf('/', 1);
-  if (idx < 0) return p;
-  const rest = p.slice(idx);
-  return rest.length ? rest : '/';
-}
-
-/** Mirror `base_url_has_openai_v1_prefix()`: path === "/v1" or ends with "/v1". */
-function baseUrlHasV1(baseUrl) {
+function baseUrlCarriesVersionPrefix(baseUrl) {
+  let p;
   try {
-    const p = new URL(baseUrl).pathname.replace(/\/+$/, '');
-    return p === '/v1' || p.endsWith('/v1');
+    p = new URL(baseUrl).pathname.replace(/\/+$/, '');
   } catch {
     return false;
   }
+  if (!p || p === '/') return false;
+  if (p === '/v1' || p.endsWith('/v1')) return true;
+  if (p.endsWith('/v1beta/openai')) return true;
+  const last = p.slice(p.lastIndexOf('/') + 1);
+  return /^v[0-9]+$/.test(last);
 }
 
 /**
@@ -175,7 +171,9 @@ function baseUrlHasV1(baseUrl) {
  * NOT through the edge passthrough, but the composition rule is the same.
  */
 function normalizeOpenAiPath(baseUrl, inboundPath) {
-  if (baseUrlHasV1(baseUrl) && inboundPath.startsWith('/v1/')) return inboundPath.slice(3);
+  if (baseUrlCarriesVersionPrefix(baseUrl) && (inboundPath === '/v1' || inboundPath.startsWith('/v1/'))) {
+    return inboundPath.slice(3);
+  }
   return inboundPath;
 }
 
@@ -198,18 +196,10 @@ function buildUri(baseUrl, dialPath) {
  * Both then apply the shared `/v1` strip (OpenAI family only) + concatenation.
  */
 function dialedUri(liveBaseUrl, protocol) {
-  const opPath = OPERATION_PATH[protocol];
-  const pathAfterNamespace = stripProviderNamespace(INBOUND_PATH[protocol]);
-  // The namespace strip must reproduce the op path exactly; if it does not,
-  // the router is not serving the shape this audit assumes.
-  if (pathAfterNamespace !== opPath) {
-    throw new Error(
-      `namespace strip mismatch for ${protocol}: ${INBOUND_PATH[protocol]} -> ${pathAfterNamespace} != ${opPath}`,
-    );
-  }
+  const standardPath = INBOUND_PATH[protocol];
   const dialPath = OPENAI_FAMILY_PROTOCOLS.has(protocol)
-    ? normalizeOpenAiPath(liveBaseUrl, pathAfterNamespace)
-    : pathAfterNamespace;
+    ? normalizeOpenAiPath(liveBaseUrl, standardPath)
+    : standardPath;
   return buildUri(liveBaseUrl, dialPath);
 }
 
@@ -397,13 +387,27 @@ for (const vendorCode of liveVendors) {
   const ep = eps[0];
   if (!ep.baseUrl) continue;
 
-  // Live resolution: all four higher hops are empty -> endpoint row is used.
-  const resolvedBase = ep.baseUrl;
+  // Live resolution: `supplier.protocols[P]` wins (the seed projects the
+  // catalog's `host + pathPrefix` there), then the supplier default, then the
+  // endpoint row. An empty projection reproduces the old bare-host behaviour.
+  let seededProtocols = [];
+  try {
+    seededProtocols = JSON.parse(ep.protocols || '[]');
+  } catch {
+    seededProtocols = [];
+  }
+  const resolvedBaseFor = (proto) => {
+    const hit = seededProtocols.find(
+      (entry) => entry && entry.protocolCode === proto && entry.baseUrl,
+    );
+    return (hit?.baseUrl || ep.defaultBaseUrl || ep.baseUrl).replace(/\/+$/, '');
+  };
 
   for (const proto of LLM_PROTOCOLS) {
     const pb = pick.protocolBaseUrls[proto];
     if (!pb) continue;
 
+    const resolvedBase = resolvedBaseFor(proto);
     const dialed = dialedUri(resolvedBase, proto);
     const expected = expectedUri(pb.host, pb.pathPrefix, proto);
 
@@ -415,8 +419,6 @@ for (const vendorCode of liveVendors) {
       verdict = liveHosts.has(new URL(expected).host) ? 'PREFIX-MISSING' : 'HOST-WRONG';
     }
 
-    const prefixIsV1 = (pb.pathPrefix ?? '').replace(/\/+$/, '') === '/v1';
-
     rows.push({
       vendor: vendorCode,
       region: pick.regionCode,
@@ -427,10 +429,7 @@ for (const vendorCode of liveVendors) {
       liveBaseUrl: resolvedBase,
       dialed,
       expected,
-      // A mismatch is "destructive" when no lucky `/v1` overlap can save it.
-      destructive: verdict !== 'OK' && !prefixIsV1,
-      // An OK is "coincidence" when it only works because both sides are `/v1`.
-      coincidenceOk: verdict === 'OK' && !prefixIsV1,
+      destructive: verdict !== 'OK',
     });
   }
 }
@@ -439,7 +438,6 @@ const tally = rows.reduce((a, r) => { a[r.verdict] = (a[r.verdict] ?? 0) + 1; re
 const okRows = rows.filter((r) => r.verdict === 'OK');
 const badRows = rows.filter((r) => r.verdict !== 'OK');
 const destructive = badRows.filter((r) => r.destructive);
-const coincidence = okRows.filter((r) => r.coincidenceOk);
 
 // ---------------------------------------------------------------------------
 // Report
@@ -454,18 +452,10 @@ if (unmatchedVendors.length) {
   out.push('');
 }
 out.push(`pairs compared: ${rows.length}`);
-out.push(`  OK              : ${tally.OK ?? 0}  (of which coincidence-only: ${coincidence.length})`);
+out.push(`  OK              : ${tally.OK ?? 0}`);
 out.push(`  PREFIX-MISSING  : ${tally['PREFIX-MISSING'] ?? 0}`);
 out.push(`  HOST-WRONG      : ${tally['HOST-WRONG'] ?? 0}`);
 out.push('');
-
-if (coincidence.length) {
-  out.push('--- OK by coincidence only (dials right solely because both sides are "/v1") ---');
-  for (const r of coincidence) {
-    out.push(`  ${r.vendor.padEnd(14)} ${r.protocol.padEnd(20)} prefix=${r.catalogPathPrefix}`);
-  }
-  out.push('');
-}
 
 const show = flag('--destructive-only') ? destructive : badRows;
 if (show.length) {

@@ -156,6 +156,13 @@ const GENERIC_ENDPOINT_RESOURCE = {
 const PRIMARY_TO_FAMILY = {
   chat: 'chat', llm: 'chat', text: 'chat', reasoning: 'chat', code: 'chat',
   coding: 'chat', responses: 'chat',
+  // `streaming` and `tool` are capability labels, not media families. A model
+  // that carries one is served by the chat face: `model_endpoint_descriptor`
+  // has no dedicated arm for them, so the descriptor falls through to the
+  // vendor-native chat descriptor or `openai.chat_completions`. Omitting them
+  // here reported `vidu/vidu-s1` (primaryCapability = streaming) as
+  // "NO_GENERIC_ENDPOINT_FOR_PRIMARY_CAPABILITY" even though it routes.
+  streaming: 'chat', tool: 'chat',
   embedding: 'embedding', embeddings: 'embedding',
   image: 'image', video: 'video', audio: 'audio', speech: 'audio', sfx: 'audio',
   music: 'music', rerank: 'rerank', reranking: 'rerank',
