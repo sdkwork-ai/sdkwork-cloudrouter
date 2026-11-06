@@ -89,6 +89,14 @@ import {
   type SdkworkBackendConfig as SdkworkPromptsBackendConfig,
 } from '@sdkwork/prompts-backend-sdk';
 import {
+  SdkworkDeployAppClient,
+  type SdkworkAppConfig as SdkworkDeployAppConfig,
+} from '@sdkwork/deployments-app-sdk';
+import {
+  SdkworkAppstoreAppClient,
+  type SdkworkAppConfig as SdkworkAppstoreAppConfig,
+} from '@sdkwork/appstore-app-sdk';
+import {
   SdkworkAppClient as SdkworkAppbaseAppClient,
   type SdkworkAppConfig as SdkworkAppbaseAppConfig,
 } from '@sdkwork/iam-app-sdk';
@@ -679,6 +687,8 @@ let messagingAppClient: MessagingAppClient | null = null;
 let generationsAppClient: SdkworkGenerationsAppClient | null = null;
 let memoryAppClient: SdkworkMemoryAppClient | null = null;
 let communityAppClient: SdkworkCommunityAppClient | null = null;
+let deploymentsAppClient: SdkworkDeployAppClient | null = null;
+let appstoreAppClient: SdkworkAppstoreAppClient | null = null;
 let promptsAppClient: PromptsAppClient | null = null;
 let skillsAppClient: SkillsAppClient | null = null;
 let agentAppClient: SdkworkAgentAppClient | null = null;
@@ -775,6 +785,46 @@ export function createSdkworkAssetsAppSdkClient(
   options: SdkworkAssetsAppSdkClientOptions = {},
 ): SdkworkAssetsAppClient {
   return attachCloudRouterSdkSessionAuthBoundary(new SdkworkAssetsAppClient(buildAssetsAppConfig(options)));
+}
+
+export type SdkworkDeploymentsAppSdkClientOptions = CloudRouterAppSdkClientOptions;
+
+export function createSdkworkDeploymentsAppSdkClient(
+  options: SdkworkDeploymentsAppSdkClientOptions = {},
+): SdkworkDeployAppClient {
+  return attachCloudRouterSdkSessionAuthBoundary(new SdkworkDeployAppClient(buildDeploymentsAppConfig(options)));
+}
+
+export function getSdkworkDeploymentsAppSdkClient(
+  options: SdkworkDeploymentsAppSdkClientOptions = {},
+): SdkworkDeployAppClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkDeploymentsAppSdkClient(options);
+  }
+  if (!deploymentsAppClient) {
+    deploymentsAppClient = createSdkworkDeploymentsAppSdkClient();
+  }
+  return deploymentsAppClient;
+}
+
+export type SdkworkAppstoreAppSdkClientOptions = CloudRouterAppSdkClientOptions;
+
+export function createSdkworkAppstoreAppSdkClient(
+  options: SdkworkAppstoreAppSdkClientOptions = {},
+): SdkworkAppstoreAppClient {
+  return attachCloudRouterSdkSessionAuthBoundary(new SdkworkAppstoreAppClient(buildAppstoreAppConfig(options)));
+}
+
+export function getSdkworkAppstoreAppSdkClient(
+  options: SdkworkAppstoreAppSdkClientOptions = {},
+): SdkworkAppstoreAppClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkAppstoreAppSdkClient(options);
+  }
+  if (!appstoreAppClient) {
+    appstoreAppClient = createSdkworkAppstoreAppSdkClient();
+  }
+  return appstoreAppClient;
 }
 
 export function createSdkworkAgentBackendSdkClient(
@@ -1879,6 +1929,14 @@ function buildMemoryAppConfig(options: SdkworkMemoryAppSdkClientOptions): Sdkwor
 
 function buildCommunityAppConfig(options: SdkworkCommunityAppSdkClientOptions): SdkworkCommunityAppConfig {
   return buildDependencyAppConfig(options, 'VITE_SDKWORK_COMMUNITY_APP_API_BASE_URL') as SdkworkCommunityAppConfig;
+}
+
+function buildDeploymentsAppConfig(options: SdkworkDeploymentsAppSdkClientOptions): SdkworkDeployAppConfig {
+  return buildDependencyAppConfig(options, 'VITE_SDKWORK_DEPLOYMENTS_APP_API_BASE_URL') as SdkworkDeployAppConfig;
+}
+
+function buildAppstoreAppConfig(options: SdkworkAppstoreAppSdkClientOptions): SdkworkAppstoreAppConfig {
+  return buildDependencyAppConfig(options, 'VITE_SDKWORK_APPSTORE_APP_API_BASE_URL') as SdkworkAppstoreAppConfig;
 }
 
 function buildPromptsAppConfig(options: SdkworkPromptsAppSdkClientOptions): SdkworkPromptsAppConfig {

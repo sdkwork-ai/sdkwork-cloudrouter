@@ -237,6 +237,7 @@
     "@sdkwork/order-service": "workspace:*",
     "@sdkwork/promotion-service": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-analytics": "workspace:*",
+    "@sdkwork/cloudrouter-pc-admin-application": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-cache": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-core": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-dashboard": "workspace:*",

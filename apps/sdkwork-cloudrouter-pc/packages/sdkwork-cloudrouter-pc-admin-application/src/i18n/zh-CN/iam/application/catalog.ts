@@ -1,0 +1,47 @@
+import type { ApplicationCatalogMessages } from "../../../../types/application-catalog-messages";
+
+/** Application catalog copy (zh-CN) for the Cloud Router IAM admin surface. */
+export const zh: ApplicationCatalogMessages = {
+  back: "返回",
+  columns: {
+    application: "应用",
+    domain: "访问域名",
+    environment: "环境",
+    platform: "平台",
+    scope: "归属",
+    status: "状态",
+    type: "类型",
+    updatedAt: "更新时间",
+    version: "版本",
+  },
+  countTemplate: "共 {count} 个应用",
+  emptyDescription: "该应用体系下还没有可展示的应用。",
+  emptyTitle: "暂无应用",
+  groups: {
+    appStore: { description: "当前账号在应用商店中已安装的应用。", label: "应用商店" },
+    deploy: { description: "Deploy 应用平台中该租户的应用。", label: "Deploy 应用" },
+    iam: { description: "IAM 应用注册表中该租户已注册的应用实例。", label: "IAM 应用" },
+  },
+  loadError: "应用列表加载失败，请重试。",
+  organizationAppStoreNotice: "应用商店目前只能按租户授权展示；组织维度的授权清单待后端接口接入。",
+  refresh: "刷新",
+  retry: "重试",
+  scopes: { organization: "组织级", tenant: "租户级" },
+  searchPlaceholder: "搜索应用名称、标识或域名",
+  statuses: {
+    active: "正常",
+    archived: "已归档",
+    disabled: "已禁用",
+    draft: "草稿",
+    enabled: "已启用",
+    installed: "已安装",
+    paused: "已暂停",
+    pending_config: "待配置",
+    terminated: "已终止",
+    unknown: "未知",
+  },
+  subtitleOrganizationTemplate: "组织「{name}」下的 IAM、Deploy 与应用商店应用。",
+  subtitleTenantTemplate: "租户「{name}」下的 IAM、Deploy 与应用商店应用。",
+  title: "应用管理",
+  unavailable: "该应用体系在当前部署中未启用，或当前账号没有访问权限。",
+};

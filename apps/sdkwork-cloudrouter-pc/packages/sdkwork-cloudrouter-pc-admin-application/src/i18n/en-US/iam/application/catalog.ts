@@ -1,0 +1,47 @@
+import type { ApplicationCatalogMessages } from "../../../../types/application-catalog-messages";
+
+/** Application catalog copy (en-US) for the Cloud Router IAM admin surface. */
+export const en: ApplicationCatalogMessages = {
+  back: "Back",
+  columns: {
+    application: "Application",
+    domain: "Domain",
+    environment: "Environment",
+    platform: "Platform",
+    scope: "Scope",
+    status: "Status",
+    type: "Type",
+    updatedAt: "Updated",
+    version: "Version",
+  },
+  countTemplate: "{count} applications",
+  emptyDescription: "No applications are available in this application system yet.",
+  emptyTitle: "No applications",
+  groups: {
+    appStore: { description: "Applications installed from the App Store by the current account.", label: "App Store" },
+    deploy: { description: "Applications owned by this tenant in the Deploy application platform.", label: "Deploy apps" },
+    iam: { description: "Application instances registered for this tenant in the IAM application registry.", label: "IAM apps" },
+  },
+  loadError: "The application list could not be loaded. Please retry.",
+  organizationAppStoreNotice: "The App Store can only be listed per tenant today; the organization-level entitlement API is not available yet.",
+  refresh: "Refresh",
+  retry: "Retry",
+  scopes: { organization: "Organization", tenant: "Tenant" },
+  searchPlaceholder: "Search application name, identifier, or domain",
+  statuses: {
+    active: "Active",
+    archived: "Archived",
+    disabled: "Disabled",
+    draft: "Draft",
+    enabled: "Enabled",
+    installed: "Installed",
+    paused: "Paused",
+    pending_config: "Pending configuration",
+    terminated: "Terminated",
+    unknown: "Unknown",
+  },
+  subtitleOrganizationTemplate: "IAM, Deploy, and App Store applications under {name}.",
+  subtitleTenantTemplate: "IAM, Deploy, and App Store applications under {name}.",
+  title: "Application management",
+  unavailable: "This application system is not enabled in this deployment, or the current account has no access.",
+};

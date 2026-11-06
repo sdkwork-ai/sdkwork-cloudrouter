@@ -1,0 +1,43 @@
+{
+  "name": "@sdkwork/cloudrouter-pc-admin-application",
+  "version": "1.0.0",
+  "license": "SEE LICENSE IN ../../../../LICENSE",
+  "type": "module",
+  "main": "./src/index.tsx",
+  "scripts": {
+    "test": "vitest run --config ../../vite.config.ts --configLoader native --pool vmThreads",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sdkwork/cloudroutes-pc-commons": "workspace:*",
+    "@sdkwork/i18n-pc-react": "workspace:*",
+    "@sdkwork/iam-contracts": "workspace:*",
+    "@sdkwork/iam-service": "workspace:*",
+    "@sdkwork/ui-pc-react": "workspace:*"
+  },
+  "peerDependencies": {
+    "lucide-react": ">=0.500.0 <1.0.0",
+    "react": ">=19.0.0 <20.0.0",
+    "react-i18next": ">=17.0.0 <18.0.0",
+    "react-router-dom": ">=7.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "lucide-react": "^1.7.0",
+    "react-router-dom": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./src/index.tsx",
+      "import": "./src/index.tsx",
+      "default": "./src/index.tsx"
+    }
+  }
+}

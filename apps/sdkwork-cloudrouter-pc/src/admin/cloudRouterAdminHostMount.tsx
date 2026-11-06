@@ -60,6 +60,8 @@ const IamTenantsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-adm
 const IamApplicationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamApplicationsAdmin');
 const IamOrganizationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOrganizationsAdmin');
 const IamOrganizationStructureAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOrganizationStructureAdmin');
+const IamTenantApplicationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterTenantApplicationsPage');
+const IamOrganizationApplicationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterOrganizationApplicationsPage');
 const IamRolesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamRolesAdmin');
 const IamPermissionsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamPermissionsAdmin');
 const IamPoliciesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamPoliciesAdmin');
@@ -86,9 +88,11 @@ const MessagingNotifySmsTemplates = lazyAdminRoute(() => import('@sdkwork/messag
 const IAM_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>> = {
   'iam/users': <IamUsersAdmin />,
   'iam/tenants': <IamTenantsAdmin />,
+  'iam/tenants/:tenantId/applications': <IamTenantApplicationsAdmin />,
   'iam/applications': <IamApplicationsAdmin />,
   'iam/organizations': <IamOrganizationsAdmin />,
   'iam/organizations/:organizationId/structure': <IamOrganizationStructureAdmin />,
+  'iam/organizations/:organizationId/applications': <IamOrganizationApplicationsAdmin />,
   'iam/roles': <IamRolesAdmin />,
   'iam/permissions': <IamPermissionsAdmin />,
   'iam/policies': <IamPoliciesAdmin />,

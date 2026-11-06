@@ -110,10 +110,13 @@ const LazyIamTenantsAdmin = lazy(async () => {
         () => getCloudRouterDriveImageService('admin-tenant-logo'),
         [],
       );
+      const navigate = useNavigate();
       return (
         <SdkworkIamTenantAdminWorkspace
           controller={controller}
           driveUploadImageService={driveUploadImageService}
+          onOpenApplications={(tenant) =>
+            navigate(`/admin/iam/tenants/${encodeURIComponent(tenant.tenantId)}/applications`)}
           permissions={{
             members: {
               create: can('iam.tenant_members.create'),
@@ -172,6 +175,8 @@ const LazyIamOrganizationsAdmin = lazy(async () => {
         <SdkworkIamOrganizationAdminWorkspace
           controller={controller}
           driveUploadImageService={driveUploadImageService}
+          onOpenApplications={(organization) =>
+            navigate(`/admin/iam/organizations/${encodeURIComponent(organization.organizationId)}/applications`)}
           onOpenStructure={(organization) =>
             navigate(`/admin/iam/organizations/${encodeURIComponent(organization.organizationId)}/structure`)}
           permissions={{
