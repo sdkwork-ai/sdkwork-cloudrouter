@@ -67,6 +67,42 @@ function hasPluginName(plugin: unknown, name: string): plugin is { name: string;
   );
 }
 
+/**
+ * Committed-public-application-token fixture.
+ *
+ * Production renderers must carry the public application token instead of the
+ * private development bootstrap token (IAM_CREDENTIAL_ENTRY_SPEC.md section 4),
+ * and the canonical Vite plugin rejects any other token shape. Tests that
+ * resolve a non-development config therefore install this fixture first.
+ * @param environment - lifecycle claim carried by the token.
+ * @returns a public application access token JWT.
+ */
+function createPublicApplicationAccessTokenFixture(environment: string): string {
+  const encode = (value: Record<string, unknown>): string =>
+    Buffer.from(JSON.stringify(value)).toString("base64url");
+  return `${encode({ alg: "none", kid: "public-app-token", typ: "JWT" })}.${
+    encode({
+      app_id: "sdkwork-cloudrouter",
+      environment,
+      exp: 4102444800,
+      token_class: "application",
+      token_type: "access",
+    })
+  }.public`;
+}
+
+function withPublicApplicationAccessToken<T>(environment: string, run: () => Promise<T>): Promise<T> {
+  const previousAccessToken = process.env.SDKWORK_ACCESS_TOKEN;
+  process.env.SDKWORK_ACCESS_TOKEN = createPublicApplicationAccessTokenFixture(environment);
+  return run().finally(() => {
+    if (previousAccessToken === undefined) {
+      delete process.env.SDKWORK_ACCESS_TOKEN;
+    } else {
+      process.env.SDKWORK_ACCESS_TOKEN = previousAccessToken;
+    }
+  });
+}
+
 test("dependency optimizer compiles workspace TSX with automatic React runtime", async () => {
   const config = await resolvePortalViteConfig();
 
@@ -91,7 +127,7 @@ test("dependency optimizer compiles workspace TSX with automatic React runtime",
 });
 
 test("production chunks let Rollup keep qrcode with its CommonJS dependencies", async () => {
-  const config = await resolvePortalViteConfig("production", "build");
+  const config = await withPublicApplicationAccessToken("production", () => resolvePortalViteConfig("production", "build"));
   const output = config.build?.rollupOptions?.output;
 
   assert.ok(output && !Array.isArray(output));
@@ -815,9 +851,9 @@ test("portal scripts run dependency preflight before Vite entrypoints", () => {
   assert.equal(portalPackage.scripts.build, "pnpm check:dependencies && node scripts/build-portal.mjs");
 });
 
-test("development mode uses the shared credential-entry plugin while production does not", async () => {
+test("development uses the private bootstrap handoff while production embeds the public application token", async () => {
   const previousAccessToken = process.env.SDKWORK_ACCESS_TOKEN;
-  process.env.SDKWORK_ACCESS_TOKEN = "development-bootstrap-token";
+  process.env.SDKWORK_ACCESS_TOKEN = createPublicApplicationAccessTokenFixture("production");
   try {
     const developmentConfig = await resolvePortalViteConfig("development", "serve");
     const productionConfig = await resolvePortalViteConfig("production", "build");
@@ -830,10 +866,34 @@ test("development mode uses the shared credential-entry plugin while production 
 
     assert.ok(developmentPlugins.some((plugin) => (
       hasPluginName(plugin, "sdkwork-iam-credential-entry-bootstrap")
-    )));
+    )), "development keeps the private bootstrap token handoff");
     assert.equal(productionPlugins.some((plugin) => (
       hasPluginName(plugin, "sdkwork-iam-credential-entry-bootstrap")
-    )), false);
+    )), false, "production must never receive the private bootstrap token");
+
+    const publicApplicationTokenPlugin = productionPlugins.find((plugin) => (
+      hasPluginName(plugin, "sdkwork-iam-public-application-access-token")
+    )) as {
+      generateBundle: (this: { emitFile: (file: { fileName: string; source: string }) => string }) => void;
+      transformIndexHtml: { handler: (html: string) => { tags: Array<{ attrs?: { src?: string } }> } };
+    } | undefined;
+    assert.ok(
+      publicApplicationTokenPlugin,
+      "production must carry the committed public application access token",
+    );
+    const emitted: Array<{ fileName: string; source: string }> = [];
+    publicApplicationTokenPlugin.generateBundle.call({
+      emitFile: (file) => { emitted.push(file); return file.fileName; },
+    });
+    assert.equal(emitted.length, 1);
+    assert.match(emitted[0]?.fileName ?? "", /^credential-entry-bootstrap-[0-9a-f]{12}\.js$/u);
+    assert.match(emitted[0]?.source ?? "", /__SDKWORK_CREDENTIAL_ENTRY_BOOTSTRAP_ACCESS_TOKEN__/u);
+    const injectedTag = publicApplicationTokenPlugin.transformIndexHtml
+      .handler("<html></html>")
+      .tags[0];
+    // The token travels as a same-origin external script: the production CSP is
+    // `script-src 'self'`, so an inline bootstrap script would be refused.
+    assert.equal(injectedTag?.attrs?.src, `/${emitted[0]?.fileName}`);
   } finally {
     if (previousAccessToken === undefined) {
       delete process.env.SDKWORK_ACCESS_TOKEN;
@@ -841,6 +901,18 @@ test("development mode uses the shared credential-entry plugin while production 
       process.env.SDKWORK_ACCESS_TOKEN = previousAccessToken;
     }
   }
+});
+
+test("development builds also carry the public application token as an external script", async () => {
+  const config = await withPublicApplicationAccessToken("development", () => resolvePortalViteConfig("development", "build"));
+  const plugins = Array.isArray(config.plugins) ? config.plugins.flat() : [];
+
+  assert.equal(plugins.some((plugin) => (
+    hasPluginName(plugin, "sdkwork-iam-credential-entry-bootstrap")
+  )), false, "a development build must not embed the private bootstrap token");
+  assert.ok(plugins.some((plugin) => (
+    hasPluginName(plugin, "sdkwork-iam-public-application-access-token")
+  )), "a development build must still carry a credential-entry token");
 });
 
 test("production Vite config never probes a retired bootstrap overlay", async () => {
@@ -860,7 +932,7 @@ test("production Vite config never probes a retired bootstrap overlay", async ()
   };
 
   try {
-    await resolvePortalViteConfig("production", "build");
+    await withPublicApplicationAccessToken("production", () => resolvePortalViteConfig("production", "build"));
   } finally {
     fs.existsSync = originalExistsSync;
   }
@@ -1395,7 +1467,8 @@ test("portal runtime env keeps appbase backend SDK base URL independent from clo
 });
 
 test("portal resolve extensions prefer authored TypeScript over stale compiled JavaScript", async () => {
-  const config = await resolvePortalViteConfig("development", "build");
+  // A build resolves the credential-entry token; supply the profile fixture.
+  const config = await withPublicApplicationAccessToken("development", () => resolvePortalViteConfig("development", "build"));
   const extensions = config.resolve?.extensions;
   assert.ok(Array.isArray(extensions), "portal resolve.extensions must be declared");
   const tsIndex = extensions.indexOf(".ts");
@@ -1444,7 +1517,8 @@ function canonicalPath(filePath: string): string {
 }
 
 test("workspace SDK facades resolve their internal modules from TypeScript sources", async () => {
-  const config = await resolvePortalViteConfig("development", "build");
+  // A build resolves the credential-entry token; supply the profile fixture.
+  const config = await withPublicApplicationAccessToken("development", () => resolvePortalViteConfig("development", "build"));
   const repositoryRoot = fileURLToPath(new URL("../..", import.meta.url));
   const facadeRoots = [
     // This repository's own composed SDK facade.

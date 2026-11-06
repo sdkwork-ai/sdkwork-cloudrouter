@@ -6,7 +6,7 @@ import {
 } from '../../../sdkwork-specs/tools/browser-runtime-env-vite.mjs';
 
 import tailwindcss from '@tailwindcss/vite';
-import { createSdkworkCredentialEntryBootstrapVitePlugin } from '../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-credential-entry/src/vite.ts';
+import { createSdkworkCredentialEntryBootstrapVitePlugin, createSdkworkPublicApplicationAccessTokenVitePlugin } from '../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-credential-entry/src/vite.ts';
 import react from '@vitejs/plugin-react';
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
@@ -21,8 +21,9 @@ import {
 } from './scripts/lib/portal-workspace-package-resolver.mjs';
 import { createPortalOptimizeDepsEsbuildPlugin } from './scripts/lib/portal-optimize-deps-esbuild-resolver.mjs';
 import { readGenerationAssetConfigStubReplacement } from './scripts/lib/portal-generation-asset-config-stub.mjs';
-import { alignStandaloneSameOriginBrowserSdkRuntimeEnv, authorBrowserDevelopmentSdkBaseUrls } from '../../scripts/lib/cloud-router-browser-env-contract.mjs';
+import { alignStandaloneSameOriginBrowserSdkRuntimeEnv, authorBrowserDevelopmentSdkBaseUrls, resolveCredentialEntryLifecycleFromMode } from '../../scripts/lib/cloud-router-browser-env-contract.mjs';
 import { WORKSPACE_SOURCE_RESOLVE_EXTENSIONS } from '../../scripts/lib/workspace-source-resolution.mjs';
+import { loadEnvFile } from '../../scripts/lib/merge-env-file.mjs';
 
 const TYPESCRIPT_SOURCE_PATTERN = /\.(?:ts|tsx|mts|cts)$/;
 const SOURCE_MAP_PATTERN = /\n?\/\/# sourceMappingURL=.*$/;
@@ -697,6 +698,80 @@ function resolvePortalMarkdownOptimizeEntries(
   ];
 }
 
+/**
+ * Read the committed public application access token of one Vite mode profile.
+ *
+ * The profile file (`.env.<deployment-profile>.<environment>`) is the authority
+ * (`APP_ACCESS_TOKEN_SPEC.md` section 2): packaging must bake that exact value
+ * (`IAM_APPLICATION_BOOTSTRAP_SPEC.md` section 5.4.5), so the file is read
+ * directly instead of through `loadEnv`, whose process-env merge could promote a
+ * private operator credential over the committed public token. `process.env`
+ * stays a last resort for CI packaging hosts; the canonical plugin rejects any
+ * value that is not a public application token.
+ */
+function readPortalProfilePublicApplicationAccessToken(
+  configDir: string,
+  mode: string,
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  const profileToken = loadEnvFile(path.join(configDir, `.env.${mode}`)).SDKWORK_ACCESS_TOKEN?.trim();
+  if (profileToken) {
+    return profileToken;
+  }
+  const processToken = env.SDKWORK_ACCESS_TOKEN?.trim();
+  return processToken || undefined;
+}
+
+function readPortalManifestApplicationId(configDir: string): string | undefined {
+  try {
+    const manifest = JSON.parse(fs.readFileSync(path.join(configDir, 'agent.app.config.json'), 'utf8')) as {
+      backend?: { appId?: string };
+    };
+    const appId = manifest.backend?.appId?.trim();
+    return appId || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Credential-entry handoff for one Vite mode.
+ *
+ * The Vite dev server (`serve`) keeps the private bootstrap token handoff for
+ * `development`: it is a local, CSP-free surface. Every other combination —
+ * including `pnpm prod` serve and every build (dev/test/staging/demo/
+ * production, standalone/cloud) — receives the committed public application
+ * token as a same-origin external script, because
+ * `IAM_CREDENTIAL_ENTRY_SPEC.md` section 4 requires test/demo/staging/
+ * production renderers to carry it and the production CSP (`script-src 'self'`)
+ * refuses an inline script. The canonical plugin fails closed when that token is
+ * missing or not public, so a renderer can never reach the runtime error
+ * `access-token-only request requires Access-Token before request dispatch`.
+ */
+function createPortalCredentialEntryPlugins(
+  configDir: string,
+  mode: string,
+  environment: string,
+  command: 'build' | 'serve',
+): Plugin[] {
+  const lifecycle = resolveCredentialEntryLifecycleFromMode(mode, environment);
+  if (command === 'serve' && lifecycle === 'development') {
+    const developmentPlugin = createSdkworkCredentialEntryBootstrapVitePlugin({
+      accessToken: process.env.SDKWORK_ACCESS_TOKEN,
+      environment: lifecycle,
+    });
+    return developmentPlugin ? [developmentPlugin] : [];
+  }
+  return [
+    createSdkworkPublicApplicationAccessTokenVitePlugin({
+      accessToken: readPortalProfilePublicApplicationAccessToken(configDir, mode),
+      applicationId: readPortalManifestApplicationId(configDir),
+      environment: lifecycle,
+      profileId: mode,
+    }),
+  ];
+}
+
 export default defineConfig(({mode, command}) => {
   const configDir = import.meta.dirname;
   const workspaceRoot = path.resolve(configDir, '../..');
@@ -755,10 +830,7 @@ export default defineConfig(({mode, command}) => {
   return {
     cacheDir: path.resolve(configDir, 'node_modules/.vite-portal'),
     plugins: [
-      createSdkworkCredentialEntryBootstrapVitePlugin({
-        accessToken: process.env.SDKWORK_ACCESS_TOKEN,
-        environment: lifecycleEnvironment,
-      }),
+      ...createPortalCredentialEntryPlugins(configDir, mode, lifecycleEnvironment, command),
       cloudrouterMarkdownCjsInteropShim(configDir),
       cloudrouterRuntimeEnvPlugin(() => ({ ...process.env, ...env }), configDir),
       react(),

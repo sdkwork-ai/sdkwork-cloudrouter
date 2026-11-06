@@ -390,13 +390,85 @@ export function migrateLegacyBrowserDevelopmentEnvRecord(record = {}) {
   return migrated;
 }
 
+const CREDENTIAL_ENTRY_PROFILE_PATTERN =
+  /^(?:standalone|cloud)\.(development|test|staging|demo|production)$/u;
+const CREDENTIAL_ENTRY_LIFECYCLES = new Set([
+  'development',
+  'test',
+  'staging',
+  'demo',
+  'production',
+]);
+
+/**
+ * Lifecycle that owns the credential-entry credential class for one Vite mode.
+ *
+ * The Vite mode is the selected profile id and decides whether the renderer runs
+ * on the private development bootstrap token or on the committed public
+ * application token. An ambient `SDKWORK_ENVIRONMENT` (a leftover from another
+ * shell) must not flip a `--mode standalone.development` server into the
+ * production public-token path, so the mode wins; `fallbackEnvironment` only
+ * covers modes that name no lifecycle at all.
+ * @param mode - Vite mode (profile id or bare lifecycle).
+ * @param fallbackEnvironment - resolved environment for a non-lifecycle mode.
+ * @returns the lifecycle that owns the renderer's credential-entry token.
+ */
+export function resolveCredentialEntryLifecycleFromMode(mode, fallbackEnvironment) {
+  const profileMatch = CREDENTIAL_ENTRY_PROFILE_PATTERN.exec(String(mode ?? ''));
+  if (profileMatch?.[1]) {
+    return profileMatch[1];
+  }
+  const normalizedMode = String(mode ?? '').trim().toLowerCase();
+  return CREDENTIAL_ENTRY_LIFECYCLES.has(normalizedMode) ? normalizedMode : fallbackEnvironment;
+}
+
+const PUBLIC_APPLICATION_ACCESS_TOKEN_KID = 'public-app-token';
+
+/**
+ * Whether a value is the committed public application access token.
+ *
+ * `APP_ACCESS_TOKEN_SPEC.md` section 1 classifies this credential as *public
+ * material*: `alg:none`, `kid:public-app-token`, signature segment `public`,
+ * `token_class:application`. Unlike a private operator bootstrap credential or a
+ * session token it is committed in every per-scope env profile and packaged into
+ * the renderer so a login can start before any session exists
+ * (`IAM_CREDENTIAL_ENTRY_SPEC.md` section 4,
+ * `IAM_APPLICATION_BOOTSTRAP_SPEC.md` section 5.4.5). Sanitizers therefore keep
+ * it and keep stripping everything else.
+ * @param value - candidate env value.
+ * @returns true for a well-formed public application access token.
+ */
+export function isPublicApplicationAccessToken(value) {
+  const token = normalizeText(value);
+  if (!token) {
+    return false;
+  }
+  const parts = token.split('.');
+  if (parts.length !== 3 || parts[2] !== 'public') {
+    return false;
+  }
+  try {
+    const header = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+    return header?.alg === 'none'
+      && header?.kid === PUBLIC_APPLICATION_ACCESS_TOKEN_KID
+      && payload?.token_class === 'application'
+      && payload?.token_type === 'access';
+  } catch {
+    return false;
+  }
+}
+
 export function sanitizeBrowserDevelopmentEnvRecord(record = {}) {
   const migrated = migrateLegacyBrowserDevelopmentEnvRecord(record);
   delete migrated.SDKWORK_AUTH_TOKEN;
   if (Object.prototype.hasOwnProperty.call(migrated, 'SDKWORK_ACCESS_TOKEN')
     && `${migrated.SDKWORK_ACCESS_TOKEN ?? ''}`.trim()) {
-    // Tracked profile files must keep bootstrap credentials blank.
-    migrated.SDKWORK_ACCESS_TOKEN = '';
+    // A private bootstrap credential must stay out of the tracked profile; the
+    // committed public application token is public material and is retained.
+    migrated.SDKWORK_ACCESS_TOKEN = isPublicApplicationAccessToken(migrated.SDKWORK_ACCESS_TOKEN)
+      ? normalizeText(migrated.SDKWORK_ACCESS_TOKEN)
+      : '';
   }
   return migrated;
 }
@@ -404,7 +476,11 @@ export function sanitizeBrowserDevelopmentEnvRecord(record = {}) {
 export function sanitizeBrowserProductionEnvRecord(record = {}) {
   const sanitized = normalizeCloudRouterLifecycleEnvRecord(record);
   delete sanitized.SDKWORK_AUTH_TOKEN;
-  delete sanitized.SDKWORK_ACCESS_TOKEN;
+  if (!isPublicApplicationAccessToken(sanitized.SDKWORK_ACCESS_TOKEN)) {
+    delete sanitized.SDKWORK_ACCESS_TOKEN;
+  } else {
+    sanitized.SDKWORK_ACCESS_TOKEN = normalizeText(sanitized.SDKWORK_ACCESS_TOKEN);
+  }
   for (const key of Object.keys(sanitized)) {
     if (isForbiddenBrowserProductionEnvKey(key)) {
       delete sanitized[key];
