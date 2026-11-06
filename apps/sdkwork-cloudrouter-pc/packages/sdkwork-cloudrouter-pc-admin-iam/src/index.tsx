@@ -78,9 +78,16 @@ const LazyIamUsersAdmin = lazy(async () => {
       const locale = useIamAdminLocale();
       const can = useIamAdminPermission();
       const controller = useMemo(() => createSdkworkIamUserAdminController(service), [service]);
+      // Declared upload purpose for the user avatar (DRIVE_SPEC.md section
+      // 18.3); the user drawer renders the shared Drive upload placeholder.
+      const driveUploadImageService = useMemo(
+        () => getCloudRouterDriveImageService('admin-user-avatar'),
+        [],
+      );
       return (
         <SdkworkIamUserAdminWorkspace
           controller={controller}
+          driveUploadImageService={driveUploadImageService}
           locale={locale}
           permissions={{
             create: can('iam.users.create'),

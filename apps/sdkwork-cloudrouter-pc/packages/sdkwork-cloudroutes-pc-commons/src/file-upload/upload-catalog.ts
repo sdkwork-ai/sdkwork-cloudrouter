@@ -126,6 +126,7 @@ export type CloudRouterUploadSlotCode =
   | 'admin-organization-logo'
   | 'admin-provider-logo'
   | 'admin-tenant-logo'
+  | 'admin-user-avatar'
   | 'ai-audio'
   | 'ai-image'
   | 'ai-video'
@@ -369,6 +370,23 @@ const SLOTS: readonly CloudRouterUploadSlot[] = [
     // client-side before the upload starts.
     maxSizeBytes: 2 * 1024 * 1024,
     shareLink: 'reader',
+    mediaKind: 'image',
+  },
+  {
+    code: 'admin-user-avatar',
+    category: 'user_private',
+    label: '用户头像',
+    description: '管理员为用户设置的个人头像。',
+    uploadProfileCode: 'avatar',
+    scene: 'admin-user-avatar',
+    appResourceType: 'iam.user_avatar',
+    appResourceId: 'admin-user-avatar',
+    source: `${SOURCE_PREFIX}-admin-user-avatar-upload`,
+    accept: ['image/'],
+    // Keep aligned with avatarMaxBytes in @sdkwork/iam-pc-admin-user: the
+    // drawer enforces the same ceiling client-side before the upload starts.
+    maxSizeBytes: 5 * 1024 * 1024,
+    shareLink: 'none',
     mediaKind: 'image',
   },
   {

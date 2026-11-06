@@ -129,6 +129,15 @@
       "purpose": "Tenant logo shown in the tenant directory and tenant context views."
     },
     {
+      "appResourceType": "iam.user_avatar",
+      "appResourceIdKind": "entity",
+      "scene": "admin-user-avatar",
+      "source": "cloudrouter-pc-admin-user-avatar-upload",
+      "uploadProfileCode": "avatar",
+      "retention": "long_term",
+      "purpose": "User avatar set by an administrator in user management."
+    },
+    {
       "appResourceType": "generation.artifact",
       "appResourceIdKind": "entity",
       "scene": "ai-generated",
