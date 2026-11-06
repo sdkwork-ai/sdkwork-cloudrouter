@@ -14,12 +14,17 @@ export { CLOUDROUTER_APPLICATION_CATALOG_I18N, useApplicationCatalogMessages } f
 export type { ApplicationCatalogMessages } from "./i18n";
 export {
   isApplicationSourceUnavailable,
+  isApplicationTokenForbidden,
+  isApplicationTokenUnavailable,
+  issueApplicationAccessToken,
   loadAppStoreApplications,
   loadDeployApplications,
   loadIamApplications,
   resolveApplicationCatalogContext,
 } from "./services/application-catalog";
 export type {
+  ApplicationAccessToken,
+  ApplicationAccessTokenIssuer,
   ApplicationCatalogContext,
   ApplicationGroupId,
   ApplicationGroupState,

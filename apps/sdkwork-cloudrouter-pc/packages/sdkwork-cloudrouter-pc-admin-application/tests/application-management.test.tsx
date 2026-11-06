@@ -64,6 +64,7 @@ function createLoaders() {
 function renderPage(props: {
   organizationId?: string;
   tenantId?: string;
+  issueToken?: ReturnType<typeof vi.fn>;
   loaders: ReturnType<typeof createLoaders>;
   resolveContext: (input: { organizationId?: string; tenantId?: string }) => Promise<ApplicationCatalogContext>;
 }) {
@@ -72,6 +73,7 @@ function renderPage(props: {
       <MemoryRouter>
         <ApplicationManagementPage
           backTo="/admin/iam/tenants"
+          issueToken={props.issueToken as never}
           loaders={props.loaders}
           organizationId={props.organizationId}
           resolveContext={props.resolveContext}
@@ -163,5 +165,58 @@ describe("application management page", () => {
 
     await screen.findByText(/该应用体系在当前部署中未启用/);
     expect(screen.getByRole("button", { name: "重试" })).toBeTruthy();
+  });
+
+  it("issues an application access token from the row action and can reveal it", async () => {
+    const loaders = createLoaders();
+    const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
+    const issueToken = vi.fn().mockResolvedValue({
+      accessToken: "header.payload.signature",
+      appId: "app-console",
+      expiresAt: "2026-11-07T10:00:00Z",
+      tenantApplicationId: "iamapp-1",
+    });
+    renderPage({ issueToken, loaders, resolveContext, tenantId: "tenant-1" });
+
+    await screen.findAllByText("Console");
+    fireEvent.click(screen.getByRole("button", { name: "访问令牌" }));
+
+    expect(await screen.findByText("应用访问令牌")).toBeTruthy();
+    expect(issueToken).toHaveBeenCalledWith(
+      expect.objectContaining({ tenantId: "tenant-1" }),
+      expect.objectContaining({ groupId: "iam", id: "iam-1" }),
+    );
+    // The token is masked until the operator reveals it.
+    expect(screen.getByText(/\*{8}/)).toBeTruthy();
+    expect(screen.queryByText("header.payload.signature")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "显示令牌" }));
+    expect(screen.getByText("header.payload.signature")).toBeTruthy();
+  });
+
+  it("explains why a deploy application without an IAM registration cannot issue a token", async () => {
+    const loaders = createLoaders();
+    const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
+    const issueToken = vi.fn().mockRejectedValue(Object.assign(new Error("tenant application was not found"), { status: 404 }));
+    renderPage({ issueToken, loaders, resolveContext, tenantId: "tenant-1" });
+
+    await screen.findAllByText("Console");
+    clickGroup("deploy");
+    await screen.findAllByText("Storefront");
+    fireEvent.click(screen.getByRole("button", { name: "访问令牌" }));
+
+    await screen.findByText(/该应用未在 IAM 注册为已启用的租户应用/);
+  });
+
+  it("reports a missing access-credential permission instead of a generic failure", async () => {
+    const loaders = createLoaders();
+    const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
+    const issueToken = vi.fn().mockRejectedValue(Object.assign(new Error("forbidden"), { status: 403 }));
+    renderPage({ issueToken, loaders, resolveContext, tenantId: "tenant-1" });
+
+    await screen.findAllByText("Console");
+    fireEvent.click(screen.getByRole("button", { name: "访问令牌" }));
+
+    await screen.findByText(/当前账号没有签发应用访问令牌的权限/);
   });
 });

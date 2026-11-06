@@ -17,6 +17,12 @@ An application is owned either by a tenant or by an organization inside that ten
 
 The IAM tenant and organization admin tables expose an "应用管理" action for these routes.
 
+## Access tokens
+
+Every row exposes a `访问令牌` action. It opens a drawer that issues a short-lived delegated access credential for the row through `iam.accessCredentials.create` (permission `iam.access_credentials.create`) and shows the token masked with reveal/copy, expiry, application id, tenant-application id, and session id. Tokens are re-issuable from the drawer and never cached in the page.
+
+IAM rows anchor issuance with their tenant application id. Deploy and App Store rows carry no IAM tenant-application anchor, so issuance uses the row's instance key; when the IAM registry has no enabled tenant application for that key the drawer explains the prerequisite instead of showing a generic failure, and a missing issuance permission gets its own message.
+
 ## Boundaries
 
 - The pages never create HTTP clients. IAM goes through `@sdkwork/iam-service`; Deploy and App Store go through the generated SDK clients composed in `@sdkwork/cloudroutes-pc-commons`.

@@ -1,10 +1,29 @@
 import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Boxes, Layers, RefreshCw, Search, Store, type LucideIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  Boxes,
+  Copy,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Layers,
+  RefreshCw,
+  Search,
+  Store,
+  type LucideIcon,
+} from "lucide-react";
 import {
   Button,
   DataTable,
   type DataTableColumn,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
   Input,
   StatusBadge,
   StatusNotice,
@@ -14,12 +33,17 @@ import {
 import { useApplicationCatalogMessages, type ApplicationCatalogMessages } from "../i18n";
 import {
   isApplicationSourceUnavailable,
+  isApplicationTokenForbidden,
+  isApplicationTokenUnavailable,
+  issueApplicationAccessToken,
   loadAppStoreApplications,
   loadDeployApplications,
   loadIamApplications,
   resolveApplicationCatalogContext,
 } from "../services/application-catalog";
 import type {
+  ApplicationAccessToken,
+  ApplicationAccessTokenIssuer,
   ApplicationCatalogContext,
   ApplicationGroupId,
   ApplicationGroupState,
@@ -57,12 +81,15 @@ function createInitialGroupStates(): Record<ApplicationGroupId, ApplicationGroup
  */
 export function ApplicationManagementPage({
   backTo,
+  issueToken,
   loaders,
   organizationId,
   resolveContext,
   tenantId,
 }: {
   backTo: string;
+  /** Test/extension seam: override access-token issuance. */
+  issueToken?: ApplicationAccessTokenIssuer;
   /** Test/extension seam: override one or more group loaders. */
   loaders?: Partial<Record<ApplicationGroupId, ApplicationGroupDefinition["loader"]>>;
   organizationId?: string;
@@ -78,11 +105,21 @@ export function ApplicationManagementPage({
   loadersRef.current = loaders;
   const resolveContextRef = useRef(resolveContext);
   resolveContextRef.current = resolveContext;
+  const issueTokenRef = useRef(issueToken);
+  issueTokenRef.current = issueToken;
   const [context, setContext] = useState<ApplicationCatalogContext>();
   const [groupStates, setGroupStates] = useState(createInitialGroupStates);
   const [activeGroupId, setActiveGroupId] = useState<ApplicationGroupId>("iam");
   const [query, setQuery] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
+  const [tokenTarget, setTokenTarget] = useState<ApplicationRecord>();
+  const [tokenState, setTokenState] = useState<
+    | { status: "loading" }
+    | { error: unknown; status: "error" }
+    | { status: "ready"; value: ApplicationAccessToken }
+  >({ status: "loading" });
+  const [tokenRevealed, setTokenRevealed] = useState(false);
+  const [tokenCopied, setTokenCopied] = useState(false);
 
   const activeGroup = APPLICATION_GROUPS.find((group) => group.id === activeGroupId) ?? APPLICATION_GROUPS[0];
   const activeState = groupStates[activeGroup.id];
@@ -121,6 +158,41 @@ export function ApplicationManagementPage({
       cancelled = true;
     };
   }, [organizationId, reloadToken, tenantId]);
+
+  const loadAccessToken = async (application: ApplicationRecord) => {
+    if (!context) {
+      return;
+    }
+    setTokenRevealed(false);
+    setTokenCopied(false);
+    setTokenState({ status: "loading" });
+    try {
+      const value = await (issueTokenRef.current ?? issueApplicationAccessToken)(context, application);
+      setTokenState({ status: "ready", value });
+    } catch (error) {
+      setTokenState({ error, status: "error" });
+    }
+  };
+
+  const openAccessToken = (application: ApplicationRecord) => {
+    setTokenTarget(application);
+    void loadAccessToken(application);
+  };
+
+  const copyAccessToken = () => {
+    if (tokenState.status !== "ready") {
+      return;
+    }
+    const value = tokenState.value.accessToken;
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      void navigator.clipboard.writeText(value)
+        .then(() => {
+          setTokenCopied(true);
+          window.setTimeout(() => setTokenCopied(false), 2000);
+        })
+        .catch(() => undefined);
+    }
+  };
 
   const filteredItems = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -317,6 +389,13 @@ export function ApplicationManagementPage({
             emptyTitle={messages.emptyTitle}
             getRowId={(item) => `${item.groupId}:${item.id}`}
             loading={activeState.status === "loading"}
+            rowActions={(item) => (
+              <Button onClick={() => openAccessToken(item)} size="sm" type="button" variant="outline">
+                <KeyRound className="h-3.5 w-3.5" />
+                {messages.accessToken.action}
+              </Button>
+            )}
+            rowActionsLabel={messages.columns.actions}
             rows={[...filteredItems]}
             slotProps={{
               footer: { className: "shrink-0" },
@@ -327,6 +406,124 @@ export function ApplicationManagementPage({
           />
         </section>
       </div>
+
+      <Drawer
+        onOpenChange={(open) => {
+          if (!open) {
+            setTokenTarget(undefined);
+          }
+        }}
+        open={Boolean(tokenTarget)}
+      >
+        <DrawerContent size="md">
+          <DrawerHeader>
+            <DrawerTitle>{messages.accessToken.title}</DrawerTitle>
+            <DrawerDescription>{messages.accessToken.description}</DrawerDescription>
+          </DrawerHeader>
+          <DrawerBody className="space-y-4">
+            {tokenTarget ? (
+              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+                <dt className="text-[var(--sdk-color-text-muted)]">{messages.accessToken.app}</dt>
+                <dd className="min-w-0 truncate font-medium text-[var(--sdk-color-text-primary)]">{tokenTarget.name}</dd>
+                <dt className="text-[var(--sdk-color-text-muted)]">{messages.accessToken.reference}</dt>
+                <dd className="min-w-0 truncate">{tokenTarget.reference || "-"}</dd>
+                <dt className="text-[var(--sdk-color-text-muted)]">{messages.accessToken.group}</dt>
+                <dd>{messages.groups[groupMessageKey(tokenTarget.groupId)].label}</dd>
+                <dt className="text-[var(--sdk-color-text-muted)]">{messages.accessToken.scope}</dt>
+                <dd>{tokenTarget.organizationId ? messages.scopes.organization : messages.scopes.tenant}</dd>
+              </dl>
+            ) : null}
+
+            {tokenState.status === "loading" ? (
+              <p className="text-sm text-[var(--sdk-color-text-muted)]" role="status">
+                {messages.accessToken.loading}
+              </p>
+            ) : null}
+
+            {tokenState.status === "error" ? (
+              <StatusNotice tone="danger">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span>
+                    {isApplicationTokenForbidden(tokenState.error)
+                      ? messages.accessToken.forbidden
+                      : isApplicationTokenUnavailable(tokenState.error)
+                        ? messages.accessToken.unavailable
+                        : messages.accessToken.error}
+                  </span>
+                  <Button
+                    onClick={() => {
+                      if (tokenTarget) void loadAccessToken(tokenTarget);
+                    }}
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                  >
+                    {messages.accessToken.regenerate}
+                  </Button>
+                </div>
+              </StatusNotice>
+            ) : null}
+
+            {tokenState.status === "ready" ? (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium text-[var(--sdk-color-text-primary)]">
+                      {messages.accessToken.tokenLabel}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Button
+                        aria-label={tokenRevealed ? messages.accessToken.hide : messages.accessToken.reveal}
+                        onClick={() => setTokenRevealed((revealed) => !revealed)}
+                        size="sm"
+                        type="button"
+                        variant="ghost"
+                      >
+                        {tokenRevealed ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                      <Button onClick={copyAccessToken} size="sm" type="button" variant="outline">
+                        <Copy className="h-3.5 w-3.5" />
+                        {tokenCopied ? messages.accessToken.copied : messages.accessToken.copy}
+                      </Button>
+                    </span>
+                  </div>
+                  <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-all rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel-muted)] p-3 text-xs text-[var(--sdk-color-text-primary)]">
+                    {tokenRevealed ? tokenState.value.accessToken : maskToken(tokenState.value.accessToken)}
+                  </pre>
+                </div>
+                <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-xs">
+                  <dt className="text-[var(--sdk-color-text-muted)]">{messages.accessToken.expiresAt}</dt>
+                  <dd>{tokenState.value.expiresAt ? formatDateTime(tokenState.value.expiresAt) : "-"}</dd>
+                  <dt className="text-[var(--sdk-color-text-muted)]">{messages.accessToken.appId}</dt>
+                  <dd className="break-all">{tokenState.value.appId || "-"}</dd>
+                  <dt className="text-[var(--sdk-color-text-muted)]">{messages.accessToken.tenantApplicationId}</dt>
+                  <dd className="break-all">{tokenState.value.tenantApplicationId || "-"}</dd>
+                  <dt className="text-[var(--sdk-color-text-muted)]">{messages.accessToken.sessionId}</dt>
+                  <dd className="break-all">{tokenState.value.sessionId || "-"}</dd>
+                </dl>
+                <p className="text-xs leading-5 text-[var(--sdk-color-text-muted)]">
+                  {messages.accessToken.securityNote}
+                </p>
+              </div>
+            ) : null}
+          </DrawerBody>
+          <DrawerFooter>
+            <Button onClick={() => setTokenTarget(undefined)} type="button" variant="secondary">
+              {messages.accessToken.close}
+            </Button>
+            <Button
+              disabled={tokenState.status === "loading"}
+              onClick={() => {
+                if (tokenTarget) void loadAccessToken(tokenTarget);
+              }}
+              type="button"
+              variant="outline"
+            >
+              {messages.accessToken.regenerate}
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }
@@ -346,6 +543,20 @@ export const CloudRouterOrganizationApplicationsPage: ComponentType = function C
   }
   return <ApplicationManagementPage backTo="/admin/iam/organizations" organizationId={organizationId} />;
 };
+
+function groupMessageKey(groupId: ApplicationGroupId): "appStore" | "deploy" | "iam" {
+  if (groupId === "iam") {
+    return "iam";
+  }
+  return groupId === "deploy" ? "deploy" : "appStore";
+}
+
+function maskToken(token: string): string {
+  if (token.length <= 16) {
+    return "*".repeat(16);
+  }
+  return `${token.slice(0, 8)}${"*".repeat(8)}${token.slice(-6)}`;
+}
 
 function normalizeStatus(status: string): string {
   return status.trim().toLowerCase();

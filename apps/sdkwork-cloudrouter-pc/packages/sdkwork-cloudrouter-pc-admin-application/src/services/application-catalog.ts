@@ -5,6 +5,7 @@ import {
 } from "@sdkwork/cloudroutes-pc-commons/runtime";
 
 import type {
+  ApplicationAccessToken,
   ApplicationCatalogContext,
   ApplicationRecord,
 } from "../types/application-catalog";
@@ -107,6 +108,76 @@ export function isApplicationSourceUnavailable(error: unknown): boolean {
   const record = asRecord(error);
   const status = Number(record.status ?? record.statusCode);
   return status === 403 || status === 404 || status === 501;
+}
+
+/**
+ * Issues a delegated access token for one application.
+ *
+ * IAM rows anchor the request with their tenant application id. Deploy and App
+ * Store rows have no direct anchor in the IAM registry, so the request uses
+ * the row's stable instance key; the IAM resolver reconciles it against the
+ * enabled tenant application of the same tenant.
+ */
+export async function issueApplicationAccessToken(
+  context: ApplicationCatalogContext,
+  application: ApplicationRecord,
+): Promise<ApplicationAccessToken> {
+  const service = getApplicationCatalogIamService();
+  const organizationId = context.organizationId ?? application.organizationId ?? "0";
+  const body: Record<string, unknown> = {
+    organizationId,
+    tenantId: context.tenantId,
+  };
+  if (application.groupId === "iam") {
+    body.tenantApplicationId = application.id;
+  } else if (application.groupId === "app-store") {
+    body.instanceKey = application.name;
+  } else {
+    body.instanceKey = application.reference ?? application.id;
+  }
+
+  const payload = await service.iam.accessCredentials.create(body);
+  const record = asRecord(payload);
+  const data = asRecord(record.data);
+  const item = asRecord(data.item ?? record.item ?? record);
+  const accessToken = optionalString(item.accessCredential) ?? optionalString(item.accessToken);
+  if (!accessToken) {
+    throw new Error("IAM access credential response is missing accessCredential");
+  }
+  return {
+    accessToken,
+    appId: optionalString(item.appId),
+    expiresAt: optionalString(item.expiresAt),
+    organizationId: optionalString(item.organizationId) ?? organizationId,
+    sessionId: optionalString(item.sessionId),
+    tenantApplicationId: optionalString(item.tenantApplicationId),
+    tenantId: optionalString(item.tenantId) ?? context.tenantId,
+  };
+}
+
+/** `true` when the IAM registry has no enabled tenant application for the row. */
+export function isApplicationTokenUnavailable(error: unknown): boolean {
+  const record = asRecord(error);
+  const status = Number(record.status ?? record.statusCode);
+  if (status === 400 || status === 404) {
+    return true;
+  }
+  const message = String(record.message ?? record.error ?? "").toLowerCase();
+  return message.includes("not found")
+    || message.includes("must be enabled")
+    || message.includes("was not found")
+    || message.includes("not registered");
+}
+
+/** `true` when the caller lacks the access-credential issuance permission. */
+export function isApplicationTokenForbidden(error: unknown): boolean {
+  const record = asRecord(error);
+  const status = Number(record.status ?? record.statusCode);
+  if (status === 403) {
+    return true;
+  }
+  const message = String(record.message ?? record.error ?? "").toLowerCase();
+  return message.includes("forbidden") || message.includes("permission");
 }
 
 function mapIamApplication(value: unknown): ApplicationRecord | undefined {

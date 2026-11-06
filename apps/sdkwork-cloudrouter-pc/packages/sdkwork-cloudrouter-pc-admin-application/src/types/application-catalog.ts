@@ -48,3 +48,24 @@ export interface ApplicationGroupState {
 export type ApplicationGroupLoader = (
   context: ApplicationCatalogContext,
 ) => Promise<readonly ApplicationRecord[]>;
+
+/**
+ * A short-lived access credential issued for one application by the IAM
+ * delegated-access-credential API. It carries the application identity plus
+ * the issuance metadata the drawer shows to the operator.
+ */
+export interface ApplicationAccessToken {
+  accessToken: string;
+  appId?: string;
+  expiresAt?: string;
+  organizationId?: string;
+  sessionId?: string;
+  tenantApplicationId?: string;
+  tenantId?: string;
+}
+
+/** Issues an application access token for the selected row. */
+export type ApplicationAccessTokenIssuer = (
+  context: ApplicationCatalogContext,
+  application: ApplicationRecord,
+) => Promise<ApplicationAccessToken>;

@@ -1,6 +1,33 @@
 export interface ApplicationCatalogMessages {
+  accessToken: {
+    action: string;
+    app: string;
+    appId: string;
+    close: string;
+    copied: string;
+    copy: string;
+    description: string;
+    error: string;
+    expiresAt: string;
+    forbidden: string;
+    generate: string;
+    group: string;
+    hide: string;
+    loading: string;
+    reference: string;
+    regenerate: string;
+    reveal: string;
+    scope: string;
+    securityNote: string;
+    sessionId: string;
+    tenantApplicationId: string;
+    title: string;
+    tokenLabel: string;
+    unavailable: string;
+  };
   back: string;
   columns: {
+    actions: string;
     application: string;
     domain: string;
     environment: string;
