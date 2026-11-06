@@ -112,9 +112,19 @@ fn account_has_protocol_base_url(
         .is_some()
 }
 
-/// api_code → LLM 协议映射（宽松匹配，覆盖 chat_completions / responses /
-/// completions / anthropic.messages 等取值；embeddings 等无协议资源返回 None，
-/// 走默认 Base URL 链）。
+/// api_code → 解析 Base URL 所用的 LLM 协议（宽松匹配，覆盖
+/// chat_completions / responses / completions / anthropic.messages /
+/// embeddings 等取值）。
+///
+/// 返回 `None` 表示该资源没有「协议专有 Base URL」：厂商原生端点（`<vendor>.*`）
+/// 由自身的 path template 携带前缀，继续走 endpoint Base URL。
+///
+/// `openai.*` 是 OpenAI 兼容面：chat / responses / embeddings / images / audio /
+/// video / files / batches 等全部由同一个 OpenAI 兼容 Base URL 提供服务，SDK 在
+/// `base_url` 之后只追加各自的 op path。返回 `None` 会让带前缀的厂商
+/// （Alibaba `/compatible-mode/v1`、Zhipu `/api/paas/v4`、ByteDance `/api/v3`、
+/// Gemini `/v1beta/openai`）退回裸 endpoint 主机，拼出厂商并不提供的
+/// `<host>/v1/...`。厂商自己的 `*.embeddings` 兼容码同理。
 pub(crate) fn protocol_code_from_api_code(api_code: Option<&str>) -> Option<LlmProtocolCode> {
     let api_code = api_code?.trim().to_ascii_lowercase();
     if api_code.contains("anthropic") {
@@ -122,6 +132,8 @@ pub(crate) fn protocol_code_from_api_code(api_code: Option<&str>) -> Option<LlmP
     } else if api_code.contains("responses") {
         Some(LlmProtocolCode::OpenaiResponses)
     } else if api_code.contains("chat") || api_code.contains("completion") {
+        Some(LlmProtocolCode::OpenaiChatCompletions)
+    } else if api_code.starts_with("openai.") || api_code.ends_with(".embeddings") {
         Some(LlmProtocolCode::OpenaiChatCompletions)
     } else {
         None
@@ -330,7 +342,34 @@ mod tests {
             Some(LlmProtocolCode::OpenaiChatCompletions),
             protocol_code_from_api_code(Some("chat_completions"))
         );
-        assert_eq!(None, protocol_code_from_api_code(Some("openai.embeddings")));
+        // Embeddings share the OpenAI-compatible Base URL with chat, so the
+        // compatible base URL (and its path prefix) applies to them too.
+        assert_eq!(
+            Some(LlmProtocolCode::OpenaiChatCompletions),
+            protocol_code_from_api_code(Some("openai.embeddings"))
+        );
+        assert_eq!(
+            Some(LlmProtocolCode::OpenaiChatCompletions),
+            protocol_code_from_api_code(Some("alibaba.embeddings"))
+        );
+        // Every OpenAI-shaped surface (media included) rides the same
+        // OpenAI-compatible Base URL; only vendor-native endpoints return None.
+        assert_eq!(
+            Some(LlmProtocolCode::OpenaiChatCompletions),
+            protocol_code_from_api_code(Some("openai.images"))
+        );
+        assert_eq!(
+            Some(LlmProtocolCode::OpenaiChatCompletions),
+            protocol_code_from_api_code(Some("openai.files"))
+        );
+        assert_eq!(
+            None,
+            protocol_code_from_api_code(Some("kling.text_to_video"))
+        );
+        assert_eq!(
+            None,
+            protocol_code_from_api_code(Some("bytedance.image_generation"))
+        );
         assert_eq!(None, protocol_code_from_api_code(None));
     }
 

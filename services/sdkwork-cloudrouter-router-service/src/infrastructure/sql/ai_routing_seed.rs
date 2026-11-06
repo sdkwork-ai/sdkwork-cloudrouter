@@ -691,7 +691,11 @@ const DEFAULT_VENDOR_UPSTREAM_ACCOUNTS: [DefaultVendorUpstreamAccountSeed; 29] =
         supplier_display_name_i18n: "{\"en-US\":\"MiniMax\",\"zh-CN\":\"MiniMax\"}",
         adapter_code: "minimax",
         protocol_code: "minimax_native",
-        base_url: "https://api.minimax.chat",
+        // The catalog publishes `api.minimax.cn` as MiniMax's official host
+        // (`models/minimax/cn/vendor.json`). `api.minimax.chat` was the legacy
+        // international host and is not where the published
+        // `/minimax/v1/...` doors are answered.
+        base_url: "https://api.minimax.cn",
         account_code: "minimax-default",
         account_name: "MiniMax Default",
     },
@@ -795,7 +799,10 @@ const DEFAULT_VENDOR_UPSTREAM_ACCOUNTS: [DefaultVendorUpstreamAccountSeed; 29] =
         supplier_display_name_i18n: "{\"en-US\":\"Tencent Cloud\",\"zh-CN\":\"腾讯云\"}",
         adapter_code: "openai_compatible",
         protocol_code: "openai_compatible",
-        base_url: "https://api.hunyuan.cloud.tencent.com",
+        // Tencent's OpenAI/Anthropic-compatible faces live on TokenHub
+        // (`models/tencent/cn/vendor.json`); the legacy Hunyuan host serves a
+        // different API and does not answer the compatible paths.
+        base_url: "https://tokenhub.tencentmaas.com",
         account_code: "tencent-default",
         account_name: "Tencent Cloud Default",
     },
@@ -805,7 +812,8 @@ const DEFAULT_VENDOR_UPSTREAM_ACCOUNTS: [DefaultVendorUpstreamAccountSeed; 29] =
         supplier_display_name_i18n: "{\"en-US\":\"Xiaomi MiMo\",\"zh-CN\":\"小米 MiMo\"}",
         adapter_code: "openai_compatible",
         protocol_code: "openai_compatible",
-        base_url: "https://api.xiaomi.com",
+        // Xiaomi MiMo publishes `api.xiaomimimo.com` (`models/xiaomi/cn/vendor.json`).
+        base_url: "https://api.xiaomimimo.com",
         account_code: "xiaomi-default",
         account_name: "Xiaomi MiMo Default",
     },
@@ -825,7 +833,10 @@ const DEFAULT_VENDOR_UPSTREAM_ACCOUNTS: [DefaultVendorUpstreamAccountSeed; 29] =
         supplier_display_name_i18n: "{\"en-US\":\"Meituan\",\"zh-CN\":\"美团\"}",
         adapter_code: "openai_compatible",
         protocol_code: "openai_compatible",
-        base_url: "https://api.meituan.com",
+        // LongCat is Meituan's published OpenAI/Anthropic-compatible host
+        // (`models/meituan/cn/vendor.json`); `api.meituan.com` serves the
+        // consumer API, not the model surface.
+        base_url: "https://api.longcat.chat",
         account_code: "meituan-default",
         account_name: "Meituan Default",
     },
@@ -927,6 +938,126 @@ const DEFAULT_VENDOR_UPSTREAM_ACCOUNTS: [DefaultVendorUpstreamAccountSeed; 29] =
     },
 ];
 
+/// Per-protocol Base URLs for a bundled official vendor supplier.
+///
+/// The catalog publishes a vendor's address as `<host, pathPrefix>` **per
+/// protocol** (`sdkwork-models/models/<vendor>/<region>/vendor.json ->
+/// protocolBaseUrls`), and the two halves are not interchangeable: the prefix
+/// is part of the vendor's Base URL for that protocol. A single scalar
+/// `endpoint.base_url` can only describe the *native* surface (whose path
+/// template already carries its own prefix), so the LLM-compatible surfaces
+/// need an explicit projection.
+///
+/// Without it every official vendor whose OpenAI-compatible prefix is not
+/// `/v1` — Alibaba `/compatible-mode/v1`, ByteDance Ark `/api/v3`, Baidu
+/// Qianfan `/v2`, Zhipu `/api/paas/v4`, Gemini `/v1beta/openai` — dialled
+/// `<host>/v1/chat/completions`, and every non-Anthropic vendor's Anthropic
+/// face (DeepSeek `/anthropic`, Alibaba `/apps/anthropic`, Zhipu
+/// `/api/anthropic`, StepFun `/step_plan`, …) dialled `<host>/v1/messages`
+/// instead of `<host><prefix>/v1/messages`. Those are 404s at the vendor while
+/// the published contract, the route manifest and every static gate stayed
+/// green.
+///
+/// `resolve_upstream_base_url` already prefers `supplier.protocols[P]` for an
+/// LLM request and falls through to the endpoint base URL for a non-LLM one,
+/// so projecting this table fixes the compatible surfaces without disturbing
+/// the native ones. Keep it in step with the catalog: the values are copied
+/// from `protocolBaseUrls` (`host + pathPrefix`) for the region the bundled
+/// account pins.
+fn vendor_protocol_base_urls(vendor_code: &str) -> &'static [(&'static str, &'static str)] {
+    match vendor_code {
+        "openai" => &[
+            ("openai_chat_completions", "https://api.openai.com/v1"),
+            ("openai_responses", "https://api.openai.com/v1"),
+        ],
+        "anthropic" => &[("anthropic_messages", "https://api.anthropic.com")],
+        // Gemini's OpenAI-compatible face lives under `/v1beta/openai`; the
+        // native `:generateContent` surface keeps the bare host endpoint.
+        "gemini" => &[(
+            "openai_chat_completions",
+            "https://generativelanguage.googleapis.com/v1beta/openai",
+        )],
+        // ByteDance's catalog surface is Volcengine Ark, and `volcengine` is
+        // the Cloud Router alias for the same publisher, so both suppliers
+        // carry Ark's `/api/v3` compatible face.
+        "bytedance" | "volcengine" => &[
+            (
+                "openai_chat_completions",
+                "https://ark.cn-beijing.volces.com/api/v3",
+            ),
+            (
+                "openai_responses",
+                "https://ark.cn-beijing.volces.com/api/v3",
+            ),
+        ],
+        "xai" => &[
+            ("openai_chat_completions", "https://api.x.ai/v1"),
+            ("openai_responses", "https://api.x.ai/v1"),
+        ],
+        "alibaba" => &[
+            (
+                "openai_chat_completions",
+                "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            ),
+            (
+                "openai_responses",
+                "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            ),
+            (
+                "anthropic_messages",
+                "https://dashscope.aliyuncs.com/apps/anthropic",
+            ),
+        ],
+        "deepseek" => &[
+            ("openai_chat_completions", "https://api.deepseek.com/v1"),
+            ("anthropic_messages", "https://api.deepseek.com/anthropic"),
+        ],
+        "moonshot" => &[
+            ("openai_chat_completions", "https://api.moonshot.cn/v1"),
+            ("anthropic_messages", "https://api.moonshot.cn/anthropic"),
+        ],
+        "zhipu" => &[
+            (
+                "openai_chat_completions",
+                "https://open.bigmodel.cn/api/paas/v4",
+            ),
+            (
+                "anthropic_messages",
+                "https://open.bigmodel.cn/api/anthropic",
+            ),
+        ],
+        "tencent" => &[
+            (
+                "openai_chat_completions",
+                "https://tokenhub.tencentmaas.com/v1",
+            ),
+            ("anthropic_messages", "https://tokenhub.tencentmaas.com"),
+        ],
+        "xiaomi" => &[
+            ("openai_chat_completions", "https://api.xiaomimimo.com/v1"),
+            ("anthropic_messages", "https://api.xiaomimimo.com/anthropic"),
+        ],
+        "stepfun" => &[
+            ("openai_chat_completions", "https://api.stepfun.com/v1"),
+            ("openai_responses", "https://api.stepfun.com/v1"),
+            ("anthropic_messages", "https://api.stepfun.com/step_plan"),
+        ],
+        "meituan" => &[
+            (
+                "openai_chat_completions",
+                "https://api.longcat.chat/openai/v1",
+            ),
+            ("anthropic_messages", "https://api.longcat.chat/anthropic"),
+        ],
+        // Baidu's chat models are `vendor_native` and bind
+        // `/v2/chat/completions`; this entry is for the compatible callers the
+        // contract also allows onto `/v1/chat/completions`.
+        "baidu" => &[("openai_chat_completions", "https://qianfan.baidubce.com/v2")],
+        "minimax" => &[("openai_chat_completions", "https://api.minimax.cn/v1")],
+        _ => &[],
+    }
+}
+
 /// Modality whitelist for account groups, mirroring SUPPORTED_MODALITIES in the
 /// admin upstream account group route.
 const ACCOUNT_GROUP_SUPPORTED_MODALITIES: [&str; 5] = ["text", "audio", "image", "video", "music"];
@@ -960,7 +1091,16 @@ const VENDOR_RESOURCE_GROUP_BINDINGS: [(&str, &str); 29] = [
     ("kling", "official.kling.full"),
     ("jimeng", "official.jimeng.full"),
     ("bytedance", "official.bytedance.full"),
-    ("minimax", "official.minimax.music"),
+    // Every MiniMax surface the contract publishes (`POST /minimax/v1/tts`,
+    // `/minimax/v1/image_generation`, `/minimax/v1/video_generation`, the
+    // task-query and file-retrieve doors, and music) is granted, not just the
+    // music family. The old `.music` binding left five published doors
+    // unreachable by signed-in users: the default mixed group is the only group
+    // an app-session request resolves onto, and the loader intersects the
+    // account's apiScope with the resources the group grants, so an ungranted
+    // endpoint fails closed with `50201 no upstream account routes are
+    // configured` even though the account, credential and membership exist.
+    ("minimax", "official.minimax.full"),
     ("vidu", "official.vidu.full"),
     ("volcengine", "official.volcengine.full"),
     ("suno", "official.suno.full"),
@@ -3211,6 +3351,41 @@ async fn import_postgres_default_vendor_upstream_accounts(
         .fetch_one(&mut **tx)
         .await?;
 
+        // Project the catalog's per-protocol Base URLs onto the supplier. See
+        // `vendor_protocol_base_urls` for why a single scalar `base_url` cannot
+        // describe the OpenAI/Anthropic-compatible surfaces.
+        let protocol_base_urls = vendor_protocol_base_urls(seed.vendor_code);
+        if !protocol_base_urls.is_empty() {
+            let protocols_json = serde_json::Value::Array(
+                protocol_base_urls
+                    .iter()
+                    .map(|(protocol_code, base_url)| {
+                        serde_json::json!({
+                            "protocolCode": protocol_code,
+                            "baseUrl": base_url,
+                        })
+                    })
+                    .collect(),
+            )
+            .to_string();
+            sqlx::query(
+                r#"
+                UPDATE ai_upstream_supplier
+                SET protocols = $1::jsonb
+                WHERE tenant_id = $2
+                  AND organization_id = $3
+                  AND supplier_code = $4
+                  AND deleted_at IS NULL
+                "#,
+            )
+            .bind(protocols_json)
+            .bind(DEFAULT_IAM_TENANT_ID)
+            .bind(DEFAULT_IAM_ORGANIZATION_ID)
+            .bind(seed.vendor_code)
+            .execute(&mut **tx)
+            .await?;
+        }
+
         let endpoint_id = stable_seed_id(
             "sdk-ai-upstream-supplier-endpoint-id",
             &[
@@ -5351,6 +5526,146 @@ mod tests {
             .expect("default account groups must derive")
     }
 
+    /// The catalog's `protocolBaseUrls` are `host + pathPrefix`. A vendor whose
+    /// prefix is not `/v1` must still project the full Base URL, or the runtime
+    /// dials a path the vendor does not serve.
+    #[test]
+    fn llm_vendors_project_their_catalog_protocol_base_url() {
+        for (vendor, protocol, expected_base_url) in [
+            (
+                "openai",
+                "openai_chat_completions",
+                "https://api.openai.com/v1",
+            ),
+            (
+                "alibaba",
+                "openai_chat_completions",
+                "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            ),
+            (
+                "alibaba",
+                "anthropic_messages",
+                "https://dashscope.aliyuncs.com/apps/anthropic",
+            ),
+            (
+                "bytedance",
+                "openai_chat_completions",
+                "https://ark.cn-beijing.volces.com/api/v3",
+            ),
+            (
+                "volcengine",
+                "openai_responses",
+                "https://ark.cn-beijing.volces.com/api/v3",
+            ),
+            (
+                "baidu",
+                "openai_chat_completions",
+                "https://qianfan.baidubce.com/v2",
+            ),
+            (
+                "zhipu",
+                "openai_chat_completions",
+                "https://open.bigmodel.cn/api/paas/v4",
+            ),
+            (
+                "gemini",
+                "openai_chat_completions",
+                "https://generativelanguage.googleapis.com/v1beta/openai",
+            ),
+            (
+                "deepseek",
+                "anthropic_messages",
+                "https://api.deepseek.com/anthropic",
+            ),
+            (
+                "stepfun",
+                "anthropic_messages",
+                "https://api.stepfun.com/step_plan",
+            ),
+            (
+                "minimax",
+                "openai_chat_completions",
+                "https://api.minimax.cn/v1",
+            ),
+        ] {
+            let urls = vendor_protocol_base_urls(vendor);
+            let (_, base_url) = urls
+                .iter()
+                .find(|(code, _)| *code == protocol)
+                .unwrap_or_else(|| panic!("{vendor} must declare a {protocol} Base URL"));
+            assert_eq!(expected_base_url, *base_url, "{vendor} / {protocol}");
+        }
+    }
+
+    /// The whole point of the projection: base URL + the runtime's version-dedup
+    /// rule must equal the vendor's documented endpoint. Each pair is the
+    /// catalog's `protocolBaseUrls` URL composed with the operation path, and
+    /// the operation path goes through the same shared helper the transports use.
+    #[test]
+    fn projected_protocol_base_urls_compose_to_the_documented_endpoint() {
+        fn base_path(url: &str) -> &str {
+            url.split_once("://")
+                .and_then(|(_, rest)| rest.find('/').map(|index| &rest[index..]))
+                .unwrap_or("")
+        }
+
+        for (vendor, protocol, inbound_path, expected) in [
+            (
+                "alibaba",
+                "openai_chat_completions",
+                "/v1/chat/completions",
+                "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+            ),
+            (
+                "bytedance",
+                "openai_chat_completions",
+                "/v1/chat/completions",
+                "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
+            ),
+            (
+                "baidu",
+                "openai_chat_completions",
+                "/v1/chat/completions",
+                "https://qianfan.baidubce.com/v2/chat/completions",
+            ),
+            (
+                "zhipu",
+                "openai_chat_completions",
+                "/v1/chat/completions",
+                "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+            ),
+            (
+                "gemini",
+                "openai_chat_completions",
+                "/v1/chat/completions",
+                "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+            ),
+            (
+                "deepseek",
+                "anthropic_messages",
+                "/v1/messages",
+                "https://api.deepseek.com/anthropic/v1/messages",
+            ),
+            (
+                "stepfun",
+                "anthropic_messages",
+                "/v1/messages",
+                "https://api.stepfun.com/step_plan/v1/messages",
+            ),
+        ] {
+            let urls = vendor_protocol_base_urls(vendor);
+            let (_, base_url) = urls
+                .iter()
+                .find(|(code, _)| *code == protocol)
+                .unwrap_or_else(|| panic!("{vendor} must declare a {protocol} Base URL"));
+            let path = sdkwork_cloudrouter_http::upstream_path_without_version_duplication(
+                base_path(base_url),
+                inbound_path,
+            );
+            assert_eq!(expected, format!("{base_url}{path}"), "{vendor}");
+        }
+    }
+
     #[test]
     fn standard_group_is_preserved() {
         let groups = test_groups();
@@ -5718,6 +6033,52 @@ mod tests {
                 "vendor {vendor} binds unknown resource group {group_code}"
             );
         }
+    }
+
+    /// The default mixed account group is the only group an app-session request
+    /// resolves onto, and the loader intersects the account's `apiScope` with
+    /// the resources that group grants. An api endpoint the group does not grant
+    /// therefore fails closed with `50201 no upstream account routes are
+    /// configured` even when the vendor account, credential and membership all
+    /// exist — the exact class of defect the old `minimax` binding (which
+    /// granted only `official.minimax.music`) shipped.
+    #[test]
+    fn default_group_grants_every_seeded_api_endpoint() {
+        let catalog = test_catalog();
+        let default_group = default_admin_upstream_account_groups(&catalog)
+            .expect("default account groups must derive")
+            .into_iter()
+            .find(|group| group.is_default)
+            .expect("a default account group must be seeded");
+
+        let mut granted: BTreeSet<&str> = BTreeSet::new();
+        for group_code in default_group.resource_group_codes() {
+            let group = catalog
+                .resource_groups
+                .iter()
+                .find(|group| group.group_code == group_code)
+                .unwrap_or_else(|| {
+                    panic!("default group grants unknown resource group {group_code}")
+                });
+            for item in &group.items {
+                if let Some(resource_code) = item.resource_code.as_deref() {
+                    granted.insert(resource_code);
+                }
+            }
+        }
+
+        let missing: Vec<&str> = catalog
+            .resources
+            .iter()
+            .filter(|resource| resource.resource_type == "api_endpoint")
+            .map(|resource| resource.resource_code.as_str())
+            .filter(|resource_code| !granted.contains(*resource_code))
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "the default group does not grant these seeded api endpoints, so a signed-in \
+             user cannot reach them (50201): {missing:?}"
+        );
     }
 
     #[test]

@@ -177,7 +177,7 @@ const REQUIRED_VENDOR_RESOURCE_GROUPS: &[(&str, &str)] = &[
     ("gemini", "official.gemini.full"),
     ("kling", "official.kling.full"),
     ("jimeng", "official.jimeng.full"),
-    ("minimax", "official.minimax.music"),
+    ("minimax", "official.minimax.full"),
     ("vidu", "official.vidu.full"),
     ("volcengine", "official.volcengine.full"),
     ("suno", "official.suno.full"),
