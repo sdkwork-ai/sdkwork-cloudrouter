@@ -104,9 +104,16 @@ const LazyIamTenantsAdmin = lazy(async () => {
         () => createSdkworkIamTenantController({ permissionScope, service }),
         [permissionScope, service],
       );
+      // Declared upload purpose for the tenant logo (DRIVE_SPEC.md section
+      // 18.3); the workspace renders the shared Drive upload placeholder.
+      const driveUploadImageService = useMemo(
+        () => getCloudRouterDriveImageService('admin-tenant-logo'),
+        [],
+      );
       return (
         <SdkworkIamTenantAdminWorkspace
           controller={controller}
+          driveUploadImageService={driveUploadImageService}
           permissions={{
             members: {
               create: can('iam.tenant_members.create'),

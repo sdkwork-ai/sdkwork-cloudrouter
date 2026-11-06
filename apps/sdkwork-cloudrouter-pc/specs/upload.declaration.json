@@ -120,6 +120,15 @@
       "purpose": "Organization logo shown in the organization tree, member, and permission views."
     },
     {
+      "appResourceType": "iam.tenant_logo",
+      "appResourceIdKind": "entity",
+      "scene": "tenant-logo",
+      "source": "cloudrouter-pc-admin-tenant-logo-upload",
+      "uploadProfileCode": "image",
+      "retention": "long_term",
+      "purpose": "Tenant logo shown in the tenant directory and tenant context views."
+    },
+    {
       "appResourceType": "generation.artifact",
       "appResourceIdKind": "entity",
       "scene": "ai-generated",

@@ -125,6 +125,7 @@ export type CloudRouterUploadSlotCode =
   | 'admin-membership-icon'
   | 'admin-organization-logo'
   | 'admin-provider-logo'
+  | 'admin-tenant-logo'
   | 'ai-audio'
   | 'ai-image'
   | 'ai-video'
@@ -348,6 +349,24 @@ const SLOTS: readonly CloudRouterUploadSlot[] = [
     // Keep aligned with ORGANIZATION_LOGO_MAX_BYTES in
     // @sdkwork/iam-pc-admin-organization: the drawer enforces the same
     // ceiling client-side before the upload starts.
+    maxSizeBytes: 2 * 1024 * 1024,
+    shareLink: 'reader',
+    mediaKind: 'image',
+  },
+  {
+    code: 'admin-tenant-logo',
+    category: 'team_asset',
+    label: '租户 Logo',
+    description: '租户在管理控制台中展示的品牌标识。',
+    uploadProfileCode: 'image',
+    scene: 'tenant-logo',
+    appResourceType: 'iam.tenant_logo',
+    appResourceId: 'iam-tenant-logo',
+    source: `${SOURCE_PREFIX}-admin-tenant-logo-upload`,
+    accept: ['image/'],
+    // Keep aligned with TENANT_LOGO_MAX_BYTES in
+    // @sdkwork/iam-pc-admin-tenant: the drawer enforces the same ceiling
+    // client-side before the upload starts.
     maxSizeBytes: 2 * 1024 * 1024,
     shareLink: 'reader',
     mediaKind: 'image',
