@@ -20,6 +20,7 @@ import {
   alignCloudLocalGatewayBrowserDevelopmentEnv,
   migrateLegacyBrowserDevelopmentEnvRecord,
   sanitizeBrowserDevelopmentEnvRecord,
+  sanitizeBrowserProductionEnvRecord,
 } from '../lib/cloud-router-browser-env-contract.mjs';
 import {
   CLOUD_ROUTER_RELEASE_ENV_KEY_ORDER,
@@ -42,6 +43,22 @@ const COMPLIANT_BOOTSTRAP_ACCESS_TOKEN = signLocalAppSessionAccessToken({
   environment: 'development',
   nowUnixSeconds: 1_800_000_000,
 });
+
+/** Public application access token fixture (`APP_ACCESS_TOKEN_SPEC.md`). */
+const PUBLIC_APPLICATION_ACCESS_TOKEN = (() => {
+  const encode = (value) => Buffer.from(JSON.stringify(value)).toString('base64url');
+  return [
+    encode({ alg: 'none', kid: 'public-app-token', typ: 'JWT' }),
+    encode({
+      app_id: 'sdkwork-cloudrouter',
+      environment: 'production',
+      exp: 4102444800,
+      token_class: 'application',
+      token_type: 'access',
+    }),
+    'public',
+  ].join('.');
+})();
 
 const RETIRED_CLOUD_LIFECYCLE_ENV_KEYS = Object.freeze([
   'SDKWORK_CLOUDROUTER_CONFIG_PROFILE',
@@ -443,6 +460,71 @@ test('ensureCloudRouterBrowserProductionEnv omits token state and production boo
     }
     assert.equal(result.mergedEnv.PORTAL_PUBLIC_API_BASE_URL, undefined);
     assert.doesNotMatch(written, /^PORTAL_/mu);
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('browser env sanitizers keep the committed public application token and strip private credentials', () => {
+  assert.equal(
+    sanitizeBrowserDevelopmentEnvRecord({ SDKWORK_ACCESS_TOKEN: PUBLIC_APPLICATION_ACCESS_TOKEN })
+      .SDKWORK_ACCESS_TOKEN,
+    PUBLIC_APPLICATION_ACCESS_TOKEN,
+  );
+  assert.equal(
+    sanitizeBrowserDevelopmentEnvRecord({ SDKWORK_ACCESS_TOKEN: COMPLIANT_BOOTSTRAP_ACCESS_TOKEN })
+      .SDKWORK_ACCESS_TOKEN,
+    '',
+  );
+  assert.equal(
+    sanitizeBrowserProductionEnvRecord({ SDKWORK_ACCESS_TOKEN: PUBLIC_APPLICATION_ACCESS_TOKEN })
+      .SDKWORK_ACCESS_TOKEN,
+    PUBLIC_APPLICATION_ACCESS_TOKEN,
+  );
+  assert.equal(
+    Object.hasOwn(
+      sanitizeBrowserProductionEnvRecord({ SDKWORK_ACCESS_TOKEN: COMPLIANT_BOOTSTRAP_ACCESS_TOKEN }),
+      'SDKWORK_ACCESS_TOKEN',
+    ),
+    false,
+  );
+});
+
+test('ensureCloudRouterBrowserProductionEnv keeps the public application token so builds can embed it', () => {
+  const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'cloud-router-production-public-token-'));
+  const applicationRoot = path.join(tempRoot, 'apps', 'sdkwork-cloudrouter-pc');
+  const profileFilePath = path.join(applicationRoot, '.env.standalone.production');
+
+  try {
+    writeFileSync(
+      path.join(tempRoot, 'agent.app.config.json'),
+      JSON.stringify({
+        app: { key: 'sdkwork-cloudrouter' },
+        backend: { appId: 'sdkwork-cloudrouter', tenantId: '100001', organizationId: '0' },
+      }),
+      'utf8',
+    );
+    mkdirSync(applicationRoot, { recursive: true });
+    writeFileSync(
+      profileFilePath,
+      [
+        'SDKWORK_ACCESS_TOKEN=' + PUBLIC_APPLICATION_ACCESS_TOKEN,
+        'PORTAL_PUBLIC_API_BASE_URL=/v1',
+        '',
+      ].join('\n'),
+      'utf8',
+    );
+
+    const result = ensureCloudRouterBrowserProductionEnv({
+      workspaceRoot: tempRoot,
+      applicationRoot,
+    });
+
+    assert.equal(result.mergedEnv.SDKWORK_ACCESS_TOKEN, PUBLIC_APPLICATION_ACCESS_TOKEN);
+    assert.match(
+      readFileSync(profileFilePath, 'utf8'),
+      new RegExp(`^SDKWORK_ACCESS_TOKEN=${PUBLIC_APPLICATION_ACCESS_TOKEN}$`, 'mu'),
+    );
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });
   }

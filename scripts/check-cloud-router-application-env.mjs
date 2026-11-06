@@ -11,6 +11,7 @@ import {
   CLOUD_ROUTER_RETIRED_LIFECYCLE_ENV_KEYS,
   assertEnvTemplateFreeOfForbiddenBrowserProfileKeys,
   findForbiddenEnvKeysInContent,
+  isPublicApplicationAccessToken,
 } from './lib/cloud-router-browser-env-contract.mjs';
 import { CLOUD_ROUTER_RELEASE_ENV_KEY_ORDER } from './dev/cloud-router-application-env.mjs';
 import {
@@ -410,9 +411,14 @@ function assertHostProductionProfilesDoNotPersistAccessToken() {
       continue;
     }
     const record = loadEnvFile(profileFilePath);
-    if (Object.hasOwn(record, 'SDKWORK_ACCESS_TOKEN')) {
+    // A private operator/session credential never belongs in a tracked profile;
+    // the committed public application token does, so packaging can bake it into
+    // the renderer (APP_ACCESS_TOKEN_SPEC.md section 2,
+    // IAM_APPLICATION_BOOTSTRAP_SPEC.md section 5.4.5).
+    if (Object.hasOwn(record, 'SDKWORK_ACCESS_TOKEN')
+      && !isPublicApplicationAccessToken(record.SDKWORK_ACCESS_TOKEN)) {
       throw new Error(
-        `${path.relative(WORKSPACE_ROOT, profileFilePath)} must not persist SDKWORK_ACCESS_TOKEN; `
+        `${path.relative(WORKSPACE_ROOT, profileFilePath)} must not persist a private SDKWORK_ACCESS_TOKEN; `
         + 'run node scripts/ensure-cloud-router-env.mjs --lifecycle start',
       );
     }

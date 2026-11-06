@@ -1,10 +1,11 @@
 import { resolveViteEnvironment, resolveLucideReactEntry } from '../../../sdkwork-specs/tools/vite-runtime-profile.mjs';
 import { createBrowserRuntimeEnvVitePlugin } from '../../../sdkwork-specs/tools/browser-runtime-env-vite.mjs';
-import { buildBrowserDevRuntimeEnvDocument } from '../../scripts/lib/cloud-router-browser-env-contract.mjs';
+import { buildBrowserDevRuntimeEnvDocument, resolveCredentialEntryLifecycleFromMode } from '../../scripts/lib/cloud-router-browser-env-contract.mjs';
 import { WORKSPACE_SOURCE_RESOLVE_EXTENSIONS } from '../../scripts/lib/workspace-source-resolution.mjs';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import { createSdkworkCredentialEntryBootstrapVitePlugin } from '../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-credential-entry/src/vite.ts';
+import { createSdkworkCredentialEntryBootstrapVitePlugin, createSdkworkPublicApplicationAccessTokenVitePlugin } from '../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-credential-entry/src/vite.ts';
+import { loadEnvFile } from '../../scripts/lib/merge-env-file.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, type Plugin } from 'vite';
@@ -52,10 +53,65 @@ function cloudrouterRuntimeEnvDocumentPlugin(mode: string): Plugin {
   });
 }
 
+/**
+ * Read the committed public application access token of one Vite mode profile.
+ *
+ * The per-scope `.env.<profile-id>` file is the authority
+ * (`APP_ACCESS_TOKEN_SPEC.md` section 2) and packaging must bake that exact
+ * value (`IAM_APPLICATION_BOOTSTRAP_SPEC.md` section 5.4.5); reading it directly
+ * keeps a private operator credential in `process.env` from winning.
+ */
+function readProfilePublicApplicationAccessToken(
+  appDir: string,
+  mode: string,
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  const profileToken = loadEnvFile(path.join(appDir, `.env.${mode}`)).SDKWORK_ACCESS_TOKEN?.trim();
+  if (profileToken) {
+    return profileToken;
+  }
+  const processToken = env.SDKWORK_ACCESS_TOKEN?.trim();
+  return processToken || undefined;
+}
+
+/**
+ * Credential-entry handoff for one Vite mode.
+ *
+ * The dev server keeps the private bootstrap handoff for `development`; every
+ * other combination (including builds and `pnpm prod`) gets the committed public
+ * application token as a same-origin external script, which
+ * `IAM_CREDENTIAL_ENTRY_SPEC.md` section 4 requires and the production CSP
+ * (`script-src 'self'`) allows. The canonical plugin fails closed when the token
+ * is missing or not public, instead of surfacing
+ * `access-token-only request requires Access-Token before request dispatch`.
+ */
+function createCredentialEntryPlugins(
+  appDir: string,
+  mode: string,
+  environment: string,
+  command: 'build' | 'serve',
+): Plugin[] {
+  const lifecycle = resolveCredentialEntryLifecycleFromMode(mode, environment);
+  if (command === 'serve' && lifecycle === 'development') {
+    const developmentPlugin = createSdkworkCredentialEntryBootstrapVitePlugin({
+      accessToken: process.env.SDKWORK_ACCESS_TOKEN,
+      environment: lifecycle,
+    });
+    return developmentPlugin ? [developmentPlugin] : [];
+  }
+  return [
+    createSdkworkPublicApplicationAccessTokenVitePlugin({
+      accessToken: readProfilePublicApplicationAccessToken(appDir, mode),
+      environment: lifecycle,
+      profileId: mode,
+    }),
+  ];
+}
+
 // Canonical Adaptive Web H5 production layout:
 //   dist/<deploymentProfile>/<envAlias> — e.g. dist/cloud/dev, dist/cloud/prod
 // (browser-dist-layout.mjs is the authority; FRONTEND_CODE_SPEC.md §7.)
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode, command }) => ({
   // Renderer-owned, label-carrying dependency cache (see
   // ADAPTIVE_RENDERER_CACHE_LABEL): the adaptive ingress routes
   // `/node_modules/.vite/<label>/...` back to this renderer.
@@ -68,14 +124,13 @@ export default defineConfig(({ mode }) => ({
     extensions: [...WORKSPACE_SOURCE_RESOLVE_EXTENSIONS],
   },
   plugins: [
-    // The app-auth surface consumes IAM SDK routes, so the private bootstrap
+    // The app-auth surface consumes IAM SDK routes, so the credential-entry
     // token must reach the module graph through the canonical credential-entry
-    // plugin (IAM_CREDENTIAL_ENTRY_SPEC.md section 6) — never through a
-    // public VITE_* key or a Vite define.
-    createSdkworkCredentialEntryBootstrapVitePlugin({
-      accessToken: process.env.SDKWORK_ACCESS_TOKEN,
-      environment: resolveViteEnvironment(mode, process.env),
-    }),
+    // plugins (IAM_CREDENTIAL_ENTRY_SPEC.md sections 4 and 6) — never through a
+    // public VITE_* key or a Vite define. Development uses the private bootstrap
+    // token; every other lifecycle carries the committed public application
+    // token so a built/deployed renderer can start a login.
+    ...createCredentialEntryPlugins(__dirname, mode, resolveViteEnvironment(mode, process.env), command),
     react(),
     tailwindcss(),
     cloudrouterRuntimeEnvDocumentPlugin(mode),

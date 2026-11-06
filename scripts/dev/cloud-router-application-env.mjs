@@ -195,6 +195,10 @@ export const CLOUD_ROUTER_BROWSER_PRODUCTION_ENV_KEY_ORDER = Object.freeze([
   CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.environment,
   CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.deploymentProfile,
   CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.runtimeTarget,
+  // Committed public application token (APP_ACCESS_TOKEN_SPEC.md section 2):
+  // kept in the profile so packaging can bake it into the renderer
+  // (IAM_APPLICATION_BOOTSTRAP_SPEC.md section 5.4.5) and a built login works.
+  'SDKWORK_ACCESS_TOKEN',
 ]);
 
 const BROWSER_PRODUCTION_ENV_HEADER = Object.freeze([
