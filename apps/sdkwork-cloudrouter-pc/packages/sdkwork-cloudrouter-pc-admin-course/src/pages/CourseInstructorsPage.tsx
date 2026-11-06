@@ -1,6 +1,16 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pencil, Plus } from 'lucide-react';
+import { DriveUploadImage } from 'sdkwork-drive-pc-upload-image';
+import {
+  cloudRouterMediaResourceToDriveUploadImageValue,
+  driveUploadImageValueToCloudRouterMediaResource,
+  getCloudRouterDriveImageService,
+  readDriveMediaReference,
+  toDriveMediaReference,
+  toExternalUrlMediaResource,
+  type CloudRouterMediaResource,
+} from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { CourseAdminPageShell } from '../components/CourseAdminPageShell';
 import { CourseDrawer } from '../components/CourseDrawer';
 import { CourseEmptyState } from '../components/CourseEmptyState';
@@ -250,11 +260,58 @@ function CourseInstructorForm({ error, initialValue, onSubmit }: CourseInstructo
         value={bio}
         onChange={setBio}
       />
-      <CourseTextField
-        label={t('admin.course.instructors.form.avatarUrl', 'Avatar URL')}
-        value={avatarUrl}
+      <CourseInstructorAvatarField
+        label={t('admin.course.instructors.form.avatar', '讲师头像')}
         onChange={setAvatarUrl}
+        value={avatarUrl}
       />
     </CourseFormFrame>
   );
+}
+
+/**
+ * Instructor avatar upload.
+ *
+ * The course API stores a single `avatarUrl` string, so the uploaded Drive
+ * media resource is persisted as its stable `drive://` reference
+ * (`toDriveMediaReference`) — the same reference contract the OAuth account
+ * logo and community group QR rows use. Legacy external URLs stay readable as
+ * an external media value.
+ */
+function CourseInstructorAvatarField({
+  label,
+  onChange,
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  value: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="space-y-2">
+      <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
+      <DriveUploadImage
+        appResourceId="admin-course-instructor-avatar"
+        description={t('admin.course.instructors.form.avatarHint', 'JPG, PNG, or WebP, up to 2MB.')}
+        label={label}
+        maxSizeBytes={2 * 1024 * 1024}
+        onChange={(next) => onChange(toDriveMediaReference(
+          driveUploadImageValueToCloudRouterMediaResource(next, 'image'),
+        ) ?? '')}
+        service={getCloudRouterDriveImageService('admin-course-instructor-avatar')}
+        shape="circle"
+        sizePx={96}
+        value={cloudRouterMediaResourceToDriveUploadImageValue(avatarUrlToMediaResource(value))}
+      />
+    </div>
+  );
+}
+
+function avatarUrlToMediaResource(url: string): CloudRouterMediaResource | undefined {
+  const value = url.trim();
+  if (!value) {
+    return undefined;
+  }
+  return readDriveMediaReference(value, 'image') ?? toExternalUrlMediaResource(value, 'image');
 }

@@ -410,7 +410,16 @@ const LazyIamOauthMiniProgramsAdmin = lazy(async () => {
     default: function CloudRouterIamOauthMiniProgramsAdminContent() {
       const service = useIamAdminService();
       const controller = useMemo(() => createSdkworkIamOauthAdminController(service), [service]);
-      return <SdkworkIamOauthMiniProgramAccountsPage controller={controller} />;
+      const driveUploadImageService = useMemo(
+        () => getCloudRouterDriveImageService('admin-oauth-account-logo'),
+        [],
+      );
+      return (
+        <SdkworkIamOauthMiniProgramAccountsPage
+          controller={controller}
+          driveUploadImageService={driveUploadImageService}
+        />
+      );
     },
   };
 });
@@ -421,9 +430,18 @@ const LazyIamOauthOfficialAccountsAdmin = lazy(async () => {
     default: function CloudRouterIamOauthOfficialAccountsAdminContent() {
       const service = useIamAdminService();
       const controller = useMemo(() => createSdkworkIamOauthAdminController(service), [service]);
+      const driveUploadImageService = useMemo(
+        () => getCloudRouterDriveImageService('admin-oauth-account-logo'),
+        [],
+      );
       // The custom menu manager opens as a full-screen modal inside the page;
       // the dedicated route below remains for deep links.
-      return <SdkworkIamOauthOfficialAccountsPage controller={controller} />;
+      return (
+        <SdkworkIamOauthOfficialAccountsPage
+          controller={controller}
+          driveUploadImageService={driveUploadImageService}
+        />
+      );
     },
   };
 });

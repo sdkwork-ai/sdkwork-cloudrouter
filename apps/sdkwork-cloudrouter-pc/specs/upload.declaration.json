@@ -93,6 +93,15 @@
       "purpose": "Membership plan icon shown in the console."
     },
     {
+      "appResourceType": "course.instructor_avatar",
+      "appResourceIdKind": "entity",
+      "scene": "course-instructor-avatar",
+      "source": "cloudrouter-pc-admin-course-instructor-avatar-upload",
+      "uploadProfileCode": "avatar",
+      "retention": "long_term",
+      "purpose": "Course instructor avatar shown on course pages."
+    },
+    {
       "appResourceType": "admin.category_icon",
       "appResourceIdKind": "entity",
       "scene": "admin-asset",
@@ -109,6 +118,15 @@
       "uploadProfileCode": "image",
       "retention": "long_term",
       "purpose": "Upstream provider logo shown in the console."
+    },
+    {
+      "appResourceType": "iam.oauth_account_logo",
+      "appResourceIdKind": "entity",
+      "scene": "oauth-account-logo",
+      "source": "cloudrouter-pc-admin-oauth-account-logo-upload",
+      "uploadProfileCode": "image",
+      "retention": "long_term",
+      "purpose": "OAuth official-account and mini-program account logo shown in the IAM console."
     },
     {
       "appResourceType": "iam.organization_logo",

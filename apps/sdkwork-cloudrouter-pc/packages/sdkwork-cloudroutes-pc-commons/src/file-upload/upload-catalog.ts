@@ -122,7 +122,9 @@ export const CLOUDROUTER_UPLOAD_CATEGORIES: readonly CloudRouterUploadCategory[]
 /** 上传用途标识。每个用户可达的文件选择入口都必须登记一个 slot。 */
 export type CloudRouterUploadSlotCode =
   | 'admin-category-icon'
+  | 'admin-course-instructor-avatar'
   | 'admin-membership-icon'
+  | 'admin-oauth-account-logo'
   | 'admin-organization-logo'
   | 'admin-provider-logo'
   | 'admin-tenant-logo'
@@ -333,6 +335,38 @@ const SLOTS: readonly CloudRouterUploadSlot[] = [
     source: `${SOURCE_PREFIX}-admin-category-icon-upload`,
     accept: ['image/'],
     maxSizeBytes: 2 * 1024 * 1024,
+    shareLink: 'reader',
+    mediaKind: 'image',
+  },
+  {
+    code: 'admin-course-instructor-avatar',
+    category: 'admin_asset',
+    label: '讲师头像',
+    description: '课程讲师在课程页面展示的头像。',
+    uploadProfileCode: 'avatar',
+    scene: 'course-instructor-avatar',
+    appResourceType: 'course.instructor_avatar',
+    appResourceId: 'admin-course-instructor-avatar',
+    source: `${SOURCE_PREFIX}-admin-course-instructor-avatar-upload`,
+    accept: ['image/'],
+    maxSizeBytes: 2 * 1024 * 1024,
+    shareLink: 'reader',
+    mediaKind: 'image',
+  },
+  {
+    code: 'admin-oauth-account-logo',
+    category: 'admin_asset',
+    label: '公众号图标',
+    description: 'OAuth 公众号 / 小程序账号在管理控制台中展示的图标。',
+    uploadProfileCode: 'image',
+    scene: 'oauth-account-logo',
+    appResourceType: 'iam.oauth_account_logo',
+    appResourceId: 'iam-oauth-account-logo',
+    source: `${SOURCE_PREFIX}-admin-oauth-account-logo-upload`,
+    accept: ['image/'],
+    // Keep aligned with LOGO_MAX_BYTES in @sdkwork/iam-pc-admin-oauth: the
+    // account form enforces the same ceiling client-side before uploading.
+    maxSizeBytes: 512 * 1024,
     shareLink: 'reader',
     mediaKind: 'image',
   },

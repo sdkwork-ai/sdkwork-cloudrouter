@@ -2,6 +2,13 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, X } from 'lucide-react';
 import {
+  readDriveMediaReference,
+  toDriveMediaReference,
+  toExternalUrlMediaResource,
+  type CloudRouterMediaResource,
+} from '@sdkwork/cloudroutes-pc-commons/runtime';
+import { CommunityMediaUploadField } from '../components/CommunityMediaUploadField';
+import {
   CommunityFormFrame,
   CommunitySelectField,
   CommunityTextAreaField,
@@ -23,6 +30,15 @@ function makeQrRowUid(): string {
 type QrCodeFormRow = CommunityAdminGroupQrInput & { rowUid: string };
 function toQrCodeRow(input: CommunityAdminGroupQrInput): QrCodeFormRow {
   return { ...input, rowUid: makeQrRowUid() };
+}
+
+/** Restores a persisted QR reference into the shared media-upload value. */
+function qrUrlToMediaResource(url: string): CloudRouterMediaResource | undefined {
+  const value = url.trim();
+  if (!value) {
+    return undefined;
+  }
+  return readDriveMediaReference(value, 'image') ?? toExternalUrlMediaResource(value, 'image');
 }
 
 interface GroupDrawerFormProps {
@@ -109,15 +125,16 @@ export function GroupDrawerForm({ initialValue, onSubmit }: GroupDrawerFormProps
           {qrCodes.map((entry, index) => (
             <div key={entry.rowUid} className="flex items-start gap-2">
               <div className="flex flex-1 flex-col gap-2">
-                <input
-                  value={entry.url}
-                  onChange={(event) => {
+                <CommunityMediaUploadField
+                  hint={t('admin.community.groups.form.qrImageHint', '建议正方形图片，最大 5MB')}
+                  label={t('admin.community.groups.form.qrImage', '二维码图片')}
+                  onChange={(media) => {
                     const next = [...qrCodes];
-                    next[index] = { ...next[index]!, url: event.target.value };
+                    next[index] = { ...next[index]!, url: toDriveMediaReference(media) ?? '' };
                     setQrCodes(next);
                   }}
-                  placeholder={t('admin.community.groups.form.qrUrlPlaceholder', 'QR code image URL')}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-white/20 dark:bg-white/5 dark:text-white"
+                  slot="community-group-qr-code"
+                  value={qrUrlToMediaResource(entry.url)}
                 />
                 <input
                   value={entry.description ?? ''}
