@@ -269,6 +269,7 @@ class AiRoutingSeedBundleStandardTest(unittest.TestCase):
             "audio": "audio",
             "music": "music",
             "sfx": "sfx",
+            "sound-effect": "sfx",
             "network": "api_resource",
         }
         observed_categories = {
@@ -328,6 +329,11 @@ class AiRoutingSeedBundleStandardTest(unittest.TestCase):
                 ai_seed,
                 f"{modality} resources must default to the standard billing meter {meter_code}",
             )
+        self.assertIn(
+            '"sound-effect" => "sfx_result"',
+            ai_seed,
+            "the catalog sound-effect modality must bill through the sfx meter",
+        )
         self.assertNotIn(
             '"sfx" => "sfx_output_second"',
             ai_seed,

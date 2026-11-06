@@ -5202,7 +5202,10 @@ fn resource_billing_category(item: &ResourceSeed) -> &'static str {
         "video" => "video",
         "audio" => "audio",
         "music" => "music",
+        // The catalog spells the sound-effect modality `sound-effect`; the
+        // pricing taxonomy keeps the historical `sfx` category.
         "sfx" => "sfx",
+        "sound-effect" => "sfx",
         "network" => "api_resource",
         _ => "model",
     }
@@ -5215,6 +5218,7 @@ fn default_billing_meter_code(item: &ResourceSeed) -> &'static str {
         "audio" => "audio_input_second",
         "music" => "music_output_second",
         "sfx" => "sfx_result",
+        "sound-effect" => "sfx_result",
         "network" => "api_request",
         "embedding" => "embedding_input_token",
         _ => "llm_input_token",
