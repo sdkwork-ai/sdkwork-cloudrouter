@@ -12,6 +12,7 @@ use crate::domain::DomainError;
 use crate::infrastructure::sql::ai_routing_seed::{
     import_postgres_ai_routing_seed, postgres_ai_routing_seed_complete,
     postgres_ai_routing_seed_gap, postgres_default_media_gateway_api_key_gap,
+    seed_environment_enables_vendor_accounts,
 };
 use crate::infrastructure::sql::model_catalog_import::{
     catalog_api_endpoint_projections, catalog_authority_keys,
@@ -412,13 +413,15 @@ impl DatabaseInstaller {
                     causes.push(format!("model catalog projection: {gap}"));
                 }
             }
-            if let Ok(Some(gap)) = postgres_ai_routing_seed_gap(&self.pool).await {
+            let environment = Some(self.options.environment.as_str());
+            if let Ok(Some(gap)) = postgres_ai_routing_seed_gap(&self.pool, environment).await {
                 causes.push(format!("ai routing seed: {gap}"));
             }
-            if self
-                .vendor_accounts_lack_credentials()
-                .await
-                .unwrap_or(false)
+            if seed_environment_enables_vendor_accounts(environment)
+                && self
+                    .vendor_accounts_lack_credentials()
+                    .await
+                    .unwrap_or(false)
             {
                 causes.push(
                     "the bundled vendor default accounts exist but carry no active credential — \
@@ -692,7 +695,9 @@ impl DatabaseInstaller {
         if !self.catalog_complete(&catalog).await? {
             return Ok(InstallationStatus::UpgradeRequired);
         }
-        let routing_seed_complete = postgres_ai_routing_seed_complete(&self.pool).await?;
+        let routing_seed_complete =
+            postgres_ai_routing_seed_complete(&self.pool, Some(options.environment.as_str()))
+                .await?;
         if !routing_seed_complete {
             return Ok(InstallationStatus::UpgradeRequired);
         }

@@ -1319,7 +1319,7 @@ pub async fn import_postgres_ai_routing_seed(
 /// accounts in the enabled state. `None` means the environment was not
 /// resolved, which is treated as production-like (disabled) so an unresolved
 /// install never ships live placeholder credentials.
-fn seed_environment_enables_vendor_accounts(environment: Option<&str>) -> bool {
+pub(crate) fn seed_environment_enables_vendor_accounts(environment: Option<&str>) -> bool {
     environment
         .map(|value| value.trim().to_ascii_lowercase())
         .is_some_and(|value| DEV_LIKE_INSTALL_ENVIRONMENTS.contains(&value.as_str()))
@@ -1372,8 +1372,13 @@ pub async fn postgres_default_media_gateway_api_key_gap(
     Ok(!routing_row_live || !auth_row_live)
 }
 
-pub async fn postgres_ai_routing_seed_complete(pool: &PgPool) -> Result<bool, sqlx::Error> {
-    Ok(postgres_ai_routing_seed_gap(pool).await?.is_none())
+pub async fn postgres_ai_routing_seed_complete(
+    pool: &PgPool,
+    environment: Option<&str>,
+) -> Result<bool, sqlx::Error> {
+    Ok(postgres_ai_routing_seed_gap(pool, environment)
+        .await?
+        .is_none())
 }
 
 /// Names the first clause of `postgres_ai_routing_seed_complete` that fails.
@@ -1392,6 +1397,7 @@ pub async fn postgres_ai_routing_seed_complete(pool: &PgPool) -> Result<bool, sq
 /// differs.
 pub async fn postgres_ai_routing_seed_gap(
     pool: &PgPool,
+    environment: Option<&str>,
 ) -> Result<Option<&'static str>, sqlx::Error> {
     let catalog = AiRoutingSeedCatalog::load().map_err(json_decode_error)?;
     let resource_codes = postgres_string_set(
@@ -1424,15 +1430,24 @@ pub async fn postgres_ai_routing_seed_gap(
             "the default admin upstream topology (supplier/endpoint/auth method/supplier resource binding) is incomplete",
         ));
     }
-    if !postgres_default_vendor_upstream_accounts_complete(pool).await? {
-        return Ok(Some(
-            "a bundled vendor default account is absent, disabled or has no active credential",
-        ));
-    }
-    if !postgres_default_relay_upstream_accounts_complete(pool).await? {
-        return Ok(Some(
-            "a bundled relay default account is absent, disabled, missing its relay supplier or has no active credential",
-        ));
+    // Vendor and relay default accounts are seeded only for dev-like install
+    // environments: a production install intentionally leaves them disabled and
+    // uncredentialed until an operator provisions real upstream credentials.
+    // The matching gap clauses are therefore gated the same way, otherwise a
+    // production install can never reach `Installed` and the embedded gateway
+    // fails its startup bootstrap. This mirrors
+    // [`postgres_default_media_gateway_api_key_gap`].
+    if seed_environment_enables_vendor_accounts(environment) {
+        if !postgres_default_vendor_upstream_accounts_complete(pool).await? {
+            return Ok(Some(
+                "a bundled vendor default account is absent, disabled or has no active credential",
+            ));
+        }
+        if !postgres_default_relay_upstream_accounts_complete(pool).await? {
+            return Ok(Some(
+                "a bundled relay default account is absent, disabled, missing its relay supplier or has no active credential",
+            ));
+        }
     }
     if postgres_resource_group_item_count(pool, &catalog).await?
         < expected_resource_group_item_count(&catalog)
