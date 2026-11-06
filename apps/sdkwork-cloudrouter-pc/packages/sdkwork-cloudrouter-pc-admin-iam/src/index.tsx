@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useState, type ComponentType, type 
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
+  getCloudRouterDriveImageService,
   readPortalPermissionScope,
   resolveStoredPortalTenantId,
   subscribePortalSessionChange,
@@ -151,10 +152,19 @@ const LazyIamOrganizationsAdmin = lazy(async () => {
       const service = useIamAdminService();
       const can = useIamAdminPermission();
       const controller = useMemo(() => createSdkworkIamOrganizationController(service), [service]);
+      // The organization logo is a declared upload purpose
+      // (`specs/upload.declaration.json` → `specs`-mirrored catalog slot). The
+      // workspace renders the shared Drive upload placeholder and never
+      // composes upload intent itself (DRIVE_SPEC.md section 18.3).
+      const driveUploadImageService = useMemo(
+        () => getCloudRouterDriveImageService('admin-organization-logo'),
+        [],
+      );
       const navigate = useNavigate();
       return (
         <SdkworkIamOrganizationAdminWorkspace
           controller={controller}
+          driveUploadImageService={driveUploadImageService}
           onOpenStructure={(organization) =>
             navigate(`/admin/iam/organizations/${encodeURIComponent(organization.organizationId)}/structure`)}
           permissions={{

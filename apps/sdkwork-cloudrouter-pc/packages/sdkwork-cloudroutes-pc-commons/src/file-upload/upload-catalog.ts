@@ -123,6 +123,7 @@ export const CLOUDROUTER_UPLOAD_CATEGORIES: readonly CloudRouterUploadCategory[]
 export type CloudRouterUploadSlotCode =
   | 'admin-category-icon'
   | 'admin-membership-icon'
+  | 'admin-organization-logo'
   | 'admin-provider-logo'
   | 'ai-audio'
   | 'ai-image'
@@ -329,6 +330,24 @@ const SLOTS: readonly CloudRouterUploadSlot[] = [
     appResourceId: 'admin-category-icon',
     source: `${SOURCE_PREFIX}-admin-category-icon-upload`,
     accept: ['image/'],
+    maxSizeBytes: 2 * 1024 * 1024,
+    shareLink: 'reader',
+    mediaKind: 'image',
+  },
+  {
+    code: 'admin-organization-logo',
+    category: 'team_asset',
+    label: '组织 Logo',
+    description: '组织在组织树、成员与权限视图中展示的品牌标识。',
+    uploadProfileCode: 'image',
+    scene: 'organization-logo',
+    appResourceType: 'iam.organization_logo',
+    appResourceId: 'iam-organization-logo',
+    source: `${SOURCE_PREFIX}-admin-organization-logo-upload`,
+    accept: ['image/'],
+    // Keep aligned with ORGANIZATION_LOGO_MAX_BYTES in
+    // @sdkwork/iam-pc-admin-organization: the drawer enforces the same
+    // ceiling client-side before the upload starts.
     maxSizeBytes: 2 * 1024 * 1024,
     shareLink: 'reader',
     mediaKind: 'image',

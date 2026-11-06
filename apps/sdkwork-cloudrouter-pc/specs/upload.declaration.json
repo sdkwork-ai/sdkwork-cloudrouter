@@ -111,6 +111,15 @@
       "purpose": "Upstream provider logo shown in the console."
     },
     {
+      "appResourceType": "iam.organization_logo",
+      "appResourceIdKind": "entity",
+      "scene": "organization-logo",
+      "source": "cloudrouter-pc-admin-organization-logo-upload",
+      "uploadProfileCode": "image",
+      "retention": "long_term",
+      "purpose": "Organization logo shown in the organization tree, member, and permission views."
+    },
+    {
       "appResourceType": "generation.artifact",
       "appResourceIdKind": "entity",
       "scene": "ai-generated",
