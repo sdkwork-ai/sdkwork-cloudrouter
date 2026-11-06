@@ -233,6 +233,16 @@ function buildArtifacts(binaryName, installerBinaryName, deploymentMode, platfor
       required: true,
     },
     {
+      // IAM application registry: every application identity the deployment
+      // registers/provisions in the database on startup
+      // (`IAM_APPLICATION_BOOTSTRAP_SPEC.md` section 4). Generated from the
+      // workspace manifests by scripts/materialize-application-registry.mjs.
+      kind: 'iam-application-registry',
+      path: 'etc/iam',
+      source: 'dist/application-registry',
+      required: true,
+    },
+    {
       kind: 'sdk-archives',
       path: 'portal/dist/sdk-archives',
       source: 'apps/sdkwork-cloudrouter-pc/dist/sdk-archives',

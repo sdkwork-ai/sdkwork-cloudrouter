@@ -81,6 +81,68 @@ fn require_postgres_installer_database(config: &DatabaseConfig) -> anyhow::Resul
     .into())
 }
 
+/// Initializes the IAM database during an explicit lifecycle command.
+///
+/// A fresh deployment needs three things before the gateway can serve traffic:
+/// the IAM schema, the default tenant/organization/role seed (tenant `100001`),
+/// and the embedded application registry (application templates + enabled
+/// tenant applications + bootstrap admin users). `cloudrouterctl ensure` owns
+/// this step because production startup must not migrate schemas
+/// (`SDKWORK_DATABASE_AUTO_MIGRATE` is rejected in the long-running gateway).
+///
+/// The migrate/seed switches are enabled only for this call and restored
+/// afterwards, so later commands in the same installer process keep their
+/// configured lifecycle policy.
+async fn bootstrap_iam_application_database(
+    pool: &sdkwork_database_sqlx::DatabasePool,
+) -> anyhow::Result<()> {
+    // Host packages that do not ship the IAM database module keep the previous
+    // operator-managed IAM migration path; the container image stages
+    // `database-modules/sdkwork-iam/database` and sets SDKWORK_IAM_APP_ROOT.
+    let iam_app_root = sdkwork_iam_database_host::resolve_iam_app_root();
+    if !iam_app_root
+        .join("database/database.manifest.json")
+        .is_file()
+    {
+        return Ok(());
+    }
+    let previous_auto_migrate = std::env::var_os("SDKWORK_DATABASE_AUTO_MIGRATE");
+    let previous_seed_on_boot = std::env::var_os("SDKWORK_DATABASE_SEED_ON_BOOT");
+    let previous_lifecycle_command = std::env::var_os("SDKWORK_DATABASE_LIFECYCLE_COMMAND");
+    // SAFETY: cloudrouterctl runs this before any worker thread or connection
+    // pool consumer observes the process-wide lifecycle switches.
+    unsafe {
+        std::env::set_var("SDKWORK_DATABASE_AUTO_MIGRATE", "true");
+        std::env::set_var("SDKWORK_DATABASE_SEED_ON_BOOT", "true");
+        std::env::set_var("SDKWORK_DATABASE_LIFECYCLE_COMMAND", "migrate");
+    }
+    let result = sdkwork_iam_database_host::bootstrap_iam_database(pool.clone()).await;
+    // SAFETY: the same single-threaded installer phase restores the previous
+    // values before control returns to the command dispatcher.
+    unsafe {
+        restore_optional_env("SDKWORK_DATABASE_AUTO_MIGRATE", previous_auto_migrate);
+        restore_optional_env("SDKWORK_DATABASE_SEED_ON_BOOT", previous_seed_on_boot);
+        restore_optional_env(
+            "SDKWORK_DATABASE_LIFECYCLE_COMMAND",
+            previous_lifecycle_command,
+        );
+    }
+    result.map(|_| ()).map_err(|error| {
+        InstallerCliError::DatabaseConnection(format!("IAM database bootstrap failed: {error}"))
+            .into()
+    })
+}
+
+fn restore_optional_env(key: &str, value: Option<std::ffi::OsString>) {
+    // SAFETY: callers run before any concurrent lifecycle reader starts.
+    unsafe {
+        match value {
+            Some(value) => std::env::set_var(key, value),
+            None => std::env::remove_var(key),
+        }
+    }
+}
+
 async fn run_postgres(config: DatabaseConfig, command: InstallerCommand) -> anyhow::Result<()> {
     let database_pool = connect_installer_database_pool(&config).await?;
     apply_explicit_schema_lifecycle_if_required(&database_pool, &command).await?;
@@ -91,6 +153,7 @@ async fn run_postgres(config: DatabaseConfig, command: InstallerCommand) -> anyh
     // bootstrap rows. Production keeps the SDKWORK_DATABASE_* boot switches
     // off, so cloudrouterctl owns this seeding (see federated.rs).
     if command.requires_schema_migration() {
+        bootstrap_iam_application_database(&database_pool).await?;
         let install_options = DatabaseInstallOptions::from_env()?;
         federated::bootstrap_federated_commerce_modules(
             &database_pool,
@@ -578,17 +641,19 @@ fn normalize_bootstrap_token_id(value: String, name: &str) -> anyhow::Result<Str
     Ok(trimmed)
 }
 
+/// Parse the bootstrap-token TTL.
+///
+/// `0` is the explicit "no expiry" value for the application access credential
+/// (`APP_ACCESS_TOKEN_SPEC.md` section 3: the committed token does not expire in
+/// normal operation). Omitting `--ttl-seconds` also means no expiry; a positive
+/// value requests a bounded bootstrap credential.
 fn parse_bootstrap_token_ttl_seconds(value: String) -> anyhow::Result<u64> {
-    let ttl = value.trim().parse::<u64>().map_err(|_| {
-        InstallerCliError::InvalidArgument("--ttl-seconds must be a positive integer".to_owned())
-    })?;
-    if ttl == 0 {
-        return Err(InstallerCliError::InvalidArgument(
-            "--ttl-seconds must be greater than zero".to_owned(),
+    value.trim().parse::<u64>().map_err(|_| {
+        InstallerCliError::InvalidArgument(
+            "--ttl-seconds must be a non-negative integer (0 = no expiry)".to_owned(),
         )
-        .into());
-    }
-    Ok(ttl)
+        .into()
+    })
 }
 
 async fn run_issue_bootstrap_token_postgres(
@@ -1190,6 +1255,22 @@ mod tests {
         assert!(
             !InstallerCommand::RefreshCatalog(CatalogRefreshOptions::default())
                 .requires_schema_migration()
+        );
+    }
+
+    #[test]
+    fn schema_lifecycle_commands_bootstrap_iam_application_database() {
+        let source = include_str!("main.rs");
+
+        let iam_call = source
+            .find("bootstrap_iam_application_database(&database_pool)")
+            .expect("installer must initialize the IAM database");
+        let migration_gate = source
+            .find("if command.requires_schema_migration() {")
+            .expect("IAM bootstrap must follow the explicit migration gate");
+        assert!(
+            iam_call > migration_gate,
+            "IAM database initialization must run only for explicit schema lifecycle commands"
         );
     }
 

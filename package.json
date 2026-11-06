@@ -207,7 +207,9 @@
     "build:h5:demo": "node ../sdkwork-specs/tools/build-browser-client.mjs --root . --architecture h5 --environment demo",
     "build:h5:prod": "node ../sdkwork-specs/tools/build-browser-client.mjs --root . --architecture h5 --environment prod",
     "build:h5:demo:cloud": "node ../sdkwork-specs/tools/build-browser-client.mjs --root . --architecture h5 --environment demo --deployment-profile cloud",
-    "build:h5:prod:cloud": "node ../sdkwork-specs/tools/build-browser-client.mjs --root . --architecture h5 --environment prod --deployment-profile cloud"
+    "build:h5:prod:cloud": "node ../sdkwork-specs/tools/build-browser-client.mjs --root . --architecture h5 --environment prod --deployment-profile cloud",
+    "check:fresh-cluster-init": "node scripts/regression/fresh-cluster-init.mjs",
+    "test:fresh-cluster-init:db": "node scripts/regression/fresh-cluster-init.mjs --db"
   },
   "pnpm": {
     "overrides": {

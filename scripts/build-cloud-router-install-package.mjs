@@ -1468,6 +1468,10 @@ function createServiceManifest(packageItem) {
     `EnvironmentFile=-${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.env`,
     `Environment=SDKWORK_CLOUDROUTER_CONFIG_FILE=${packageItem.databasePolicy.configFile.path}`,
     'Environment=SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE=server',
+    // IAM application registry: the gateway registers/provisions every
+    // application identity in the database before serving
+    // (IAM_APPLICATION_BOOTSTRAP_SPEC.md section 4).
+    `Environment=SDKWORK_APP_ROOT=${linuxRuntimeRoot}/etc/iam`,
     `ExecStartPre=${linuxBinaryRoot}/${packageItem.installerBinaryName} ensure`,
     `ExecStartPre=${linuxBinaryRoot}/${packageItem.installerBinaryName} refresh-catalog --force`,
     `ExecStart=${linuxBinaryRoot}/${packageItem.binaryName}`,

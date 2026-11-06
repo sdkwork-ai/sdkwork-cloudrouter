@@ -19,6 +19,7 @@ serde_json.workspace = true
 sdkwork_api_order_assembly.workspace = true
 sdkwork-cloudrouter-config.workspace = true
 sdkwork-cloudrouter-database-host.workspace = true
+sdkwork-iam-database-host.workspace = true
 sdkwork-cloudrouter-router-service.workspace = true
 sdkwork-database-lifecycle.workspace = true
 sdkwork-database-spi.workspace = true

@@ -167,6 +167,25 @@ function createProductionBuildPlan(
       cwd: root,
     },
     {
+      // IAM application registry shipped as `etc/iam` in the install package and
+      // container image: the gateway registers/provisions every application
+      // identity in the database on startup (idempotent). OEM builds pass
+      // SDKWORK_OEM_PROFILE_FILE to re-brand tenant/domain/name/app-id.
+      label: 'IAM application registry',
+      command: 'node',
+      args: [
+        'scripts/materialize-application-registry.mjs',
+        '--workspace', path.resolve(root, '..'),
+        '--environment', String(env.SDKWORK_ENVIRONMENT ?? 'production').trim() || 'production',
+        '--out', path.join(root, 'dist', 'application-registry'),
+        ...(env.SDKWORK_OEM_PROFILE_FILE
+          ? ['--oem', String(env.SDKWORK_OEM_PROFILE_FILE)]
+          : []),
+      ],
+      env,
+      cwd: root,
+    },
+    {
       label: 'SDK archive artifacts',
       command: 'node',
       args: ['scripts/archive-cloud-router-sdks.mjs'],

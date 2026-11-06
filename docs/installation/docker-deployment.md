@@ -322,6 +322,18 @@ A signed, session-bound Access-Token is **never** distributed to the browser: th
 gateway keeps refusing to inject `SDKWORK_ACCESS_TOKEN` into the portal runtime
 script, and the payload-only development fallback below remains dev-only.
 
+When a deployment lets IAM issue the bootstrap credential instead of configuring
+`SDKWORK_ACCESS_TOKEN` explicitly, that credential **never expires** by default
+(`exp: 0` and the session expiry sentinel `0`); operator-issued delegated
+credentials keep their bounded TTL. A credential issued by an older build
+carried a one-hour TTL and starts returning
+`40103 invalid or expired IAM access token` an hour after deployment, so re-issue
+it after upgrading: restart the portal service, or run
+`cloudrouterctl issue-bootstrap-token --ttl-seconds 0` and redeploy the token
+file. The public application token is also accepted claim-based
+(`APP_ACCESS_TOKEN_SPEC.md` section 5), so a renderer that carries the committed
+token can log in without any session row.
+
 Development containers additionally handle the older private bootstrap flow:
 
 1. **Deployment posture** — `docker-compose.yml` sets `SDKWORK_ENV=development`

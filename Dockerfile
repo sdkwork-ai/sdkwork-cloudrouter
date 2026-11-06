@@ -61,6 +61,11 @@ ENV SDKWORK_CLOUDROUTER_CONFIG_FILE=${CONFIG_FILE}
 ENV SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE=server
 ENV SDKWORK_CLOUDROUTER_DEPLOYMENT_PROFILE=${DEPLOYMENT_PROFILE}
 ENV SDKWORK_CLOUDROUTER_RUNTIME_TARGET=container
+# IAM application registry (etc/iam/apps/<app-id>/agent.app.config.json): the
+# gateway registers/provisions every application identity in the database on
+# startup, so a fresh or OEM deployment initializes its IAM data without a
+# manual per-app step (IAM_APPLICATION_BOOTSTRAP_SPEC.md section 4).
+ENV SDKWORK_APP_ROOT=${INSTALL_ROOT}/etc/iam
 # Operator binaries (cloudrouterctl backup/restore/ensure) must be on PATH so
 # the documented `docker compose exec cloudrouter cloudrouterctl ...` commands
 # work without absolute paths.

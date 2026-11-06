@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.oem.application-overlay",
+  "description": "OEM deployment overlay for scripts/materialize-application-registry.mjs. Copy this file per OEM customer and set the branding/domain fields. The default fast path keeps the application identities (tenant_id + backend.appId) unchanged so the committed public application tokens remain valid and the OEM deployment only re-brands names and domains. Changing tenantId or rewriting an appId also changes the application identity: regenerate the client env profiles for that identity (sdkwork-specs/tools/materialize-client-env.mjs) before building the frontends, otherwise the browser keeps sending tokens for the previous identity.",
+  "domainSuffix": "oem.example.com",
+  "applications": {
+    "sdkwork-cloudrouter": {
+      "name": "Acme Router",
+      "displayName": "Acme Router Console",
+      "primaryDomain": "router.oem.example.com"
+    },
+    "sdkwork-cloudrouter-h5": {
+      "name": "Acme Router Mobile",
+      "displayName": "Acme Router Mobile"
+    }
+  }
+}

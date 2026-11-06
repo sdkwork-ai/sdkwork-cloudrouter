@@ -84,14 +84,7 @@
         "tenantId": "100001",
         "organizationId": "0",
         "permissionScope": [
-          "cloudrouter.admin.access",
-          "cloudrouter.console.access",
-          "cloudrouter.system.read",
-          "iam.users.read",
-          "iam.organizations.read",
-          "iam.roles.read",
-          "iam.permissions.read",
-          "iam.oauth.read"
+          "iam:self"
         ]
       }
     },
@@ -118,10 +111,7 @@
         "tenantId": "100001",
         "organizationId": "0",
         "permissionScope": [
-          "iam.users.read",
-          "iam.organizations.read",
-          "iam.roles.read",
-          "iam.permissions.read"
+          "iam:self"
         ]
       }
     },
@@ -148,12 +138,7 @@
         "tenantId": "100001",
         "organizationId": "0",
         "permissionScope": [
-          "cloudrouter.console.access",
-          "cloudrouter.system.read",
-          "iam.users.read",
-          "iam.organizations.read",
-          "iam.roles.read",
-          "iam.permissions.read"
+          "iam:self"
         ]
       }
     },

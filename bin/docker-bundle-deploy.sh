@@ -190,7 +190,7 @@ set_env_key() {  # $1=key $2=value $3=force
     return 3
   fi
   case "${key}" in
-    *PASSWORD*|*SECRET*|*PEPPER*|*API_KEY*|*_KEY|*DATABASE_URL*|*_URL) secret="1" ;;
+    *PASSWORD*|*SECRET*|*PEPPER*|*API_KEY*|*_KEY|*KEY_RING*|*DATABASE_URL*|*_URL) secret="1" ;;
   esac
   awk -v k="${key}" -v v="${value}" '
     $0 ~ "^[[:space:]]*(export[[:space:]]+)?"k"=" { print k"="v; found=1; next }
@@ -353,6 +353,55 @@ case "${ACTION}" in
       exit 1
     fi
     info "env preflight passed: all required inputs are configured (existing values kept; deploy never rewrites them)"
+    ;;
+esac
+
+# --- first-boot secrets -------------------------------------------------------
+# A fresh database needs three deployment secrets before the gateway can finish
+# its first-boot initialization (DEPLOYMENT_SPEC.md section 6):
+#   * upstream credential key ring -> the installer seeds vendor account credentials;
+#     without it `ensure` cannot reach the installed state;
+#   * IAM signing master secret    -> required by the production IAM assembly;
+#   * IAM bootstrap admin password -> the seeded administrator must be able to log in.
+# Generate missing values once into the env file; configured values are never rewritten.
+write_env_secret() {  # $1=key $2=value
+  local key="$1" value="$2"
+  awk -v k="${key}" -v v="${value}" '
+    $0 ~ "^[[:space:]]*(export[[:space:]]+)?"k"=" { print k"="v; found=1; next }
+    { print }
+    END { if (!found) print k"="v }
+  ' "${ENV_FILE}" > "${ENV_FILE}.tmp" && mv -f "${ENV_FILE}.tmp" "${ENV_FILE}"
+  info "generated ${key} (stored in ${ENV_FILE}, not printed)"
+}
+
+random_secret() {  # $1=length
+  if command -v openssl >/dev/null 2>&1; then
+    openssl rand -base64 64 | tr '+/' '-_' | tr -d '=\n' | cut -c1-"$1"
+  else
+    head -c 64 /dev/urandom | base64 | tr '+/' '-_' | tr -d '=\n' | cut -c1-"$1"
+  fi
+}
+
+ensure_first_boot_secrets() {
+  local ring
+  if is_unconfigured "$(env_key CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING)"; then
+    ring="$(printf '{"activeKeyId":"deploy-%s-v1","activeKey":"%s","fingerprintKey":"%s","decryptionKeys":[]}' \
+      "${ENVIRONMENT}" "$(random_secret 64)" "$(random_secret 64)")"
+    write_env_secret CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING "${ring}"
+  fi
+  if is_unconfigured "$(env_key SDKWORK_IAM_SIGNING_MASTER_SECRET)"; then
+    write_env_secret SDKWORK_IAM_SIGNING_MASTER_SECRET "$(random_secret 64)"
+  fi
+  if is_unconfigured "$(env_key SDKWORK_IAM_SUPER_ADMIN_PASSWORD)"; then
+    write_env_secret SDKWORK_IAM_SUPER_ADMIN_PASSWORD "$(random_secret 32)"
+  fi
+}
+
+case "${ACTION}" in
+  apply|start|restart)
+    if [ "${DRY_RUN}" != "1" ]; then
+      ensure_first_boot_secrets
+    fi
     ;;
 esac
 

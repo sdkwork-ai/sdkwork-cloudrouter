@@ -24,18 +24,26 @@ pub(super) async fn wire_iam_app_router() -> anyhow::Result<Router> {
         .await
         .map_err(anyhow::Error::msg)?;
 
-    ensure_tenant_application_from_app_root(
-        resolve_cloudrouter_app_root().as_path(),
-        &EmbeddedApplicationBootstrapOptions {
-            environment: resolve_bootstrap_environment(),
-            version_override: Some(env!("CARGO_PKG_VERSION").to_owned()),
-            ..EmbeddedApplicationBootstrapOptions::default()
-        },
-        None,
-        &[],
-    )
-    .await
-    .map_err(anyhow::Error::msg)?;
+    // A deployment that ships the generated IAM application registry
+    // (`etc/iam/apps/<app-id>/agent.app.config.json`) registers/provisions every
+    // application identity here, before the API is served. Images without the
+    // registry keep the previous single-manifest behavior; a missing registry
+    // must not fail startup.
+    let app_root = resolve_cloudrouter_app_root();
+    if app_root.join("agent.app.config.json").is_file() || app_root.join("apps").is_dir() {
+        ensure_tenant_application_from_app_root(
+            app_root.as_path(),
+            &EmbeddedApplicationBootstrapOptions {
+                environment: resolve_bootstrap_environment(),
+                version_override: Some(env!("CARGO_PKG_VERSION").to_owned()),
+                ..EmbeddedApplicationBootstrapOptions::default()
+            },
+            None,
+            &[],
+        )
+        .await
+        .map_err(anyhow::Error::msg)?;
+    }
 
     sdkwork_routes_iam_app_api::build_sdkwork_iam_app_api_router()
         .await

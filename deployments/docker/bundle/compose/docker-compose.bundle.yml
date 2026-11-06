@@ -98,6 +98,12 @@ x-cloudrouter-common: &cloudrouter-common
     # outside explicit development IAM deployments. Value lives in the
     # per-environment env file (SDKWORK_IAM_SIGNING_MASTER_SECRET=...).
     SDKWORK_IAM_SIGNING_MASTER_SECRET: ${SDKWORK_IAM_SIGNING_MASTER_SECRET:-}
+    # Upstream credential key ring used by the installer seed (vendor account
+    # credentials) and by runtime credential encryption. deploy.sh generates
+    # one into the env file on first run when unset.
+    SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING: ${CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING:-}
+    # Seeded IAM administrator password (generated on first run when unset).
+    SDKWORK_IAM_SUPER_ADMIN_PASSWORD: ${SDKWORK_IAM_SUPER_ADMIN_PASSWORD:-}
   volumes:
     - cloudrouter-secrets:/etc/sdkwork/router/secrets
     - cloudrouter-data:/var/lib/sdkwork/router

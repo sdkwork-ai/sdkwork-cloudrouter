@@ -337,6 +337,10 @@ function createBuildPlan(settings, root = workspaceRoot) {
         path: path.join(portalDistRoot, 'prod'),
       },
       {
+        label: 'IAM application registry',
+        path: path.join(root, 'dist', 'application-registry', 'application-registry.json'),
+      },
+      {
         label: 'release env template',
         path: path.join(root, '.env.standalone.production.example'),
       },
@@ -360,6 +364,7 @@ function createBuildPlan(settings, root = workspaceRoot) {
       { archivePath: names.gatewayArchive, sourcePath: path.join(root, names.gatewaySource) },
       { archivePath: names.installerArchive, sourcePath: path.join(root, names.installerSource) },
       { archivePath: 'portal/dist', sourcePath: path.join(portalDistRoot, 'prod') },
+      { archivePath: 'etc/iam', sourcePath: path.join(root, 'dist', 'application-registry') },
       { archivePath: 'portal/dist/sdk-archives', sourcePath: path.join(root, 'apps', 'sdkwork-cloudrouter-pc', 'dist', 'sdk-archives') },
       { archivePath: '.env.standalone.production.example', sourcePath: path.join(root, '.env.standalone.production.example') },
     ],
