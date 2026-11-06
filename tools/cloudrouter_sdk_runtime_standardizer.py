@@ -161,6 +161,8 @@ def infer_external_protocol_id(route_path: str) -> str:
         return "midjourney-v1"
     if normalized.startswith("/minimax/"):
         return "minimax-v1"
+    if normalized.startswith("/mureka/"):
+        return "mureka-v1"
     if normalized.startswith("/nano-banana/"):
         return "nano-banana-v1"
     if normalized.startswith("/pixverse/"):
@@ -177,6 +179,8 @@ def infer_external_protocol_id(route_path: str) -> str:
         return "vidu-v1"
     if normalized.startswith("/volcengine/"):
         return "volcengine-v1"
+    if normalized.startswith("/xai/"):
+        return "xai-v1"
     if normalized.startswith("/zhipu/"):
         return "zhipu-v4"
     return "cloudrouter-vendor-relay"

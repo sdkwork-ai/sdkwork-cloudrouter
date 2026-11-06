@@ -598,6 +598,51 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         BillingMeter::MusicOutputSecond,
         "music_task",
     ),
+    // MiniMax speech synthesis (`POST /v1/t2a_v2`, Speech 2.x): a synchronous
+    // call that answers hex-encoded audio plus `usage_characters`, so it bills
+    // per input character like the other TTS routes.
+    account(
+        "minimax.text_to_speech",
+        "minimax.text_to_speech",
+        RoutingCapability::Audio,
+        BillingMeter::TtsInputCharacter,
+    ),
+    // MiniMax's media surface is three different protocols, not one:
+    // image generation is a synchronous `POST /v1/image_generation`, video
+    // generation submits a task (`POST /v1/video_generation`), and the result is
+    // read back through `GET /v1/query/video_generation?task_id=` followed by
+    // `GET /v1/files/retrieve?file_id=` for the download URL. The video family
+    // declares `apiFormat = vendor_native` in the catalog; the image family
+    // declares `openai_compatible`, so `minimax.image_generation` is declared for
+    // the published door and no model binds to it.
+    model(
+        "minimax.image_generation",
+        "minimax.image_generation",
+        RoutingCapability::Image,
+        BillingMeter::ImageResult,
+    ),
+    media_task(
+        "minimax.video_generation",
+        "minimax.video_generation",
+        RoutingCapability::Video,
+        BillingMeter::VideoResult,
+        "video_task",
+    ),
+    account(
+        "minimax.video_generation_task_query",
+        "minimax.video_generation_task_query",
+        RoutingCapability::Network,
+        BillingMeter::ApiRequest,
+    ),
+    // The second half of MiniMax's asynchronous video flow: the query answers a
+    // `file_id`, and only this endpoint turns it into a download URL. Without it
+    // a caller can submit and poll a task but can never fetch the video.
+    account(
+        "minimax.video_file_retrieve",
+        "minimax.video_file_retrieve",
+        RoutingCapability::Network,
+        BillingMeter::ApiRequest,
+    ),
     media_task(
         "vidu.reference_to_image",
         "vidu.reference_to_image",
@@ -615,6 +660,32 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         RoutingCapability::Image,
         BillingMeter::ImageResult,
         "image_task",
+    ),
+    // Runway's video surface is two unified endpoints, not one: every model in
+    // the catalog's Runway family answers `POST /v1/text_to_video` and
+    // `POST /v1/image_to_video` (the model ids the catalog carries —
+    // `gen4.5`, `kling3.0_pro`, `seedance2`, `veo3.1`, `wan3`, ... — appear in
+    // both endpoints' `model` enums), and both return `{id, estimatedCost}` to
+    // be polled through `/v1/tasks/{id}`.
+    //
+    // `text_to_video` is the *bound* one: a text prompt is the minimum viable
+    // request, so binding the generic video surface to it cannot force every
+    // model to require an input image. `image_to_video` is an explicit-entry
+    // surface, the same shape as `kling.image_to_video`, because the binding
+    // carries no generation-mode field.
+    media_task(
+        "runway.text_to_video",
+        "runway.text_to_video",
+        RoutingCapability::Video,
+        BillingMeter::VideoResult,
+        "video_task",
+    ),
+    media_task(
+        "runway.image_to_video",
+        "runway.image_to_video",
+        RoutingCapability::Video,
+        BillingMeter::VideoResult,
+        "video_task",
     ),
     account(
         "runway.task_query",
@@ -639,6 +710,19 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         RoutingCapability::Image,
         BillingMeter::ImageResult,
         "image_task",
+    ),
+    // FLUX 3 video (`POST /v1/flux-3-video` per docs.bfl.ml): the vendor's
+    // first video-capable model, asynchronous like the image surface — the
+    // submit answers a record with a `polling_url` and the shared
+    // `GET /v1/get_result?id=` poll returns the state and the video URL.
+    // Without this route the catalog's `vendor_native` flux-3 video model
+    // bound to `openai.video` (`POST /v1/videos`), a path BFL does not serve.
+    media_task(
+        "black_forest_labs.video_generation",
+        "black_forest_labs.video_generation",
+        RoutingCapability::Video,
+        BillingMeter::VideoResult,
+        "video_task",
     ),
     account(
         "black_forest_labs.task_query",
@@ -717,6 +801,17 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         RoutingCapability::Audio,
         BillingMeter::ApiRequest,
     ),
+    // Eleven Music (`POST /v1/music`) renders a track from a prompt or a
+    // composition plan, so it bills per output second like the other music
+    // vendors. `media_task` keeps the model requirement optional: the endpoint
+    // also accepts a `composition_plan` instead of a `prompt`.
+    media_task(
+        "elevenlabs.music_generation",
+        "elevenlabs.music_generation",
+        RoutingCapability::Music,
+        BillingMeter::MusicOutputSecond,
+        "music_task",
+    ),
     account(
         "volcengine.speech",
         "volcengine.speech",
@@ -757,12 +852,66 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
     // `openai.chat_completions`. This arm gives the capability a real
     // vendor-native endpoint, and this route is what makes it reachable —
     // a route code declared in the seed but absent here answers 50201.
+    // Generic sound-effect fallback. Every catalog audio vendor now has its own
+    // arm, so no model reaches this code today; it stays declared because
+    // `model_sfx_endpoint_descriptor` returns it for a vendor without an arm,
+    // and a seeded endpoint with no taxonomy route would fail closed.
     media_task(
         "sfx.sound",
         "sfx.sound",
         RoutingCapability::Audio,
         BillingMeter::SfxResult,
         "audio_task",
+    ),
+    // Sound effects are per-vendor routes, not one shared code: each vendor
+    // publishes its own audio endpoint, and a single `sfx.sound` code could not
+    // name more than one of them (and could not be granted or priced per
+    // vendor). Kling serves text-to-audio and video-to-audio; Vidu serves
+    // text2audio and timing2audio.
+    media_task(
+        "kling.text_to_audio",
+        "kling.text_to_audio",
+        RoutingCapability::Audio,
+        BillingMeter::SfxResult,
+        "audio_task",
+    ),
+    media_task(
+        "kling.video_to_audio",
+        "kling.video_to_audio",
+        RoutingCapability::Audio,
+        BillingMeter::SfxResult,
+        "audio_task",
+    ),
+    account(
+        "kling.audio_task_query",
+        "kling.audio_task_query",
+        RoutingCapability::Network,
+        BillingMeter::ApiRequest,
+    ),
+    media_task(
+        "vidu.text_to_audio",
+        "vidu.text_to_audio",
+        RoutingCapability::Audio,
+        BillingMeter::SfxResult,
+        "audio_task",
+    ),
+    media_task(
+        "vidu.timing_to_audio",
+        "vidu.timing_to_audio",
+        RoutingCapability::Audio,
+        BillingMeter::SfxResult,
+        "audio_task",
+    ),
+    // Stability AI serves both its sound-effect and its music models from one
+    // synchronous endpoint (`POST /v2beta/audio/stable-audio-2/text-to-audio`,
+    // `model` selects stable-audio-2 / 2.5 / 3.0). One route code therefore
+    // serves both model families and bills per generated result; publishing two
+    // codes on one path would leave one of them unreachable by classification.
+    account(
+        "stability_ai.audio",
+        "stability_ai.audio",
+        RoutingCapability::Audio,
+        BillingMeter::SfxResult,
     ),
     media_task(
         "kling.avatar",
@@ -834,6 +983,25 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         "alibaba.video_generation",
         RoutingCapability::Video,
         BillingMeter::VideoResult,
+    ),
+    // ByteDance Seed TTS 2.0 on the openspeech host (`POST
+    // /api/v3/tts/unidirectional`, `X-Api-Resource-Id: seed-tts-2.0`): a
+    // streaming synthesis that answers NDJSON frames of base64 audio. Billed
+    // per input character like every other TTS route.
+    account(
+        "bytedance.speech",
+        "bytedance.speech",
+        RoutingCapability::Audio,
+        BillingMeter::TtsInputCharacter,
+    ),
+    // Qwen-Audio-TTS / CosyVoice on DashScope: a synchronous REST synthesis
+    // (`POST /api/v1/services/audio/tts/SpeechSynthesizer`) that answers an audio
+    // URL. Billed per input character like every other TTS route.
+    account(
+        "alibaba.speech",
+        "alibaba.speech",
+        RoutingCapability::Audio,
+        BillingMeter::TtsInputCharacter,
     ),
     model(
         "baidu.chat_completions",
@@ -964,6 +1132,48 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         "xai.video_generation",
         RoutingCapability::Video,
         BillingMeter::VideoResult,
+    ),
+    // Grok Imagine video is asynchronous: the generation call answers a
+    // `request_id`, and only `GET /v1/videos/{request_id}` returns the state and
+    // the produced video URL. The poll is its own declared route so a caller
+    // that submitted a task can collect it.
+    account(
+        "xai.video_generation_task_query",
+        "xai.video_generation_task_query",
+        RoutingCapability::Network,
+        BillingMeter::ApiRequest,
+    ),
+    // The rest of xAI's published media surface, mirrored one door per official
+    // endpoint: image edit, the deferred-image poll that `deferred: true` answers
+    // with, and the video edit / extension operations. None of them is bound by a
+    // model (`primaryCapability` cannot name them); each is an explicit entry
+    // point granted by `official.xai.full`.
+    media_task(
+        "xai.image_edit",
+        "xai.image_edit",
+        RoutingCapability::Image,
+        BillingMeter::ImageResult,
+        "image_task",
+    ),
+    account(
+        "xai.image_generation_task_query",
+        "xai.image_generation_task_query",
+        RoutingCapability::Network,
+        BillingMeter::ApiRequest,
+    ),
+    media_task(
+        "xai.video_edit",
+        "xai.video_edit",
+        RoutingCapability::Video,
+        BillingMeter::VideoResult,
+        "video_task",
+    ),
+    media_task(
+        "xai.video_extension",
+        "xai.video_extension",
+        RoutingCapability::Video,
+        BillingMeter::VideoResult,
+        "video_task",
     ),
     model(
         "xiaomi.chat_completions",

@@ -214,11 +214,15 @@ fn external_usage_line_billing(meter: Option<BillingMeter>) -> InvocationBilling
 /// when it meets a shape it cannot evaluate — an arm the gate cannot read is an
 /// arm whose drift nobody notices.
 ///
-/// The `sfx.sound` arms cover sound effects (音效). The four sfx vendors each
-/// answer a different path; all of them resolve onto the one `sfx.sound` route
-/// so the capability has a single reachable endpoint code. `elevenlabs` is
-/// deliberately absent from those arms: it keeps its own vendor-native
-/// `elevenlabs.sound_generation` classification, which is the more specific one
+/// Sound effects (音效) are per-vendor routes, not one shared code. Kling
+/// publishes `POST /v1/audio/text-to-audio` and `POST /v1/audio/video-to-audio`
+/// with a `/v1/audio/text-to-audio/{task_id}` poll, and Vidu publishes
+/// `/ent/v2/text2audio` and `/ent/v2/timing2audio` whose results are read
+/// through the existing `/ent/v2/tasks/{task_id}/creations` door. The earlier
+/// single `sfx.sound` code could only name one path family, and the
+/// `/v1/sound/generate` arm it carried was never a Kling path at all.
+/// `elevenlabs` keeps its own `elevenlabs.sound_generation` classification, and
+/// `stability_ai` keeps `stability_ai.audio`, which are the more specific codes
 /// and must win.
 ///
 /// Router-side adapter: normalises the supplier code and standard path, then
@@ -265,6 +269,31 @@ pub fn provider_native_api_code_from_normalized_path(
     // `POST /zhipu/api/paas/v4/images/generations`); without the arm the door
     // would answer `50201 no upstream account routes are configured`.
     //
+    // MiniMax publishes four media doors and all four are listed.
+    // `POST /v1/image_generation` is synchronous and, like the two image arms
+    // above, has no model binding (every MiniMax image model declares
+    // `openai_compatible`). `POST /v1/video_generation` submits a Hailuo task,
+    // `GET /v1/query/video_generation?task_id=` reads it back, and
+    // `GET /v1/files/retrieve?file_id=` turns the returned file id into a
+    // download URL — the flow is unusable without the last step, so it is a
+    // published door and a classifier entry point of its own.
+    //
+    // Grok Imagine publishes the OpenAI-shaped
+    // `/v1/images/generations` and `/v1/videos/generations`, and its video is
+    // asynchronous: `POST` answers a `request_id` that
+    // `GET /v1/videos/{request_id}` polls. The literal `xai` arms therefore sit
+    // ahead of the two `task_poll_path_matches` arms, which would otherwise also
+    // swallow the generation paths. The full official media surface is listed
+    // one arm per published path: image generation, image edit, the deferred
+    // image poll (`deferred: true`), video generation, video edit, video
+    // extension, and the video poll.
+    //
+    // Every comparison here happens against a lower-cased path
+    // (`normalize_standard_api_path`); the upstream request is built from the
+    // original URI, so a vendor's case-sensitive segment survives the hop. The
+    // Alibaba arm is spelled `speechsynthesizer` for that reason while the
+    // published door keeps DashScope's `SpeechSynthesizer`.
+    //
     // The eight `<vendor>.anthropic_messages` arms are the Anthropic Messages
     // protocol as served by vendors other than Anthropic. Each of them publishes
     // an Anthropic-compatible endpoint under its own base URL
@@ -293,6 +322,13 @@ pub fn provider_native_api_code_from_normalized_path(
     // the catch-all would synthesise `bytedance.tasks`, which names no taxonomy
     // route, so the classification would carry `meter: None` and the
     // fail-closed pricing preflight would reject every seedance request.
+    //
+    // `black_forest_labs` carries one exact-video arm ahead of its `flux-`
+    // prefix arm: FLUX 3 video submits to its own per-model endpoint
+    // (`POST /v1/flux-3-video` per docs.bfl.ml), and the prefix arm would
+    // otherwise classify that video submit as an image generation. The image
+    // surface keeps the prefix arm (`/v1/flux-{model}`) because FLUX ships one
+    // endpoint per image model.
     let api_code = match provider {
         "anthropic" if path == "/v1/claude-code/sessions" => "anthropic.claude_code",
         "anthropic" if path == "/v1/messages" => "anthropic.messages",
@@ -346,6 +382,7 @@ pub fn provider_native_api_code_from_normalized_path(
         }
         "volcengine" if path == "/v1/images/generations" => "volcengine.image_generation",
         "volcengine" if path == "/v1/videos/generations" => "volcengine.video_generation",
+        "bytedance" if path == "/api/v3/tts/unidirectional" => "bytedance.speech",
         "volcengine" if path == "/api/v3/audio/speech" => "volcengine.speech",
         "volcengine" if path == "/api/v3/images/generations" => "volcengine.image_generation",
         "volcengine" if path == "/api/v3/contents/generations/tasks" => {
@@ -355,23 +392,42 @@ pub fn provider_native_api_code_from_normalized_path(
         "volcengine" if task_poll_path_matches(path, "api/v3/contents/generations/tasks") => {
             "volcengine.task_query"
         }
+        "xai" if path == "/v1/images/generations" => "xai.image_generation",
+        "xai" if path == "/v1/images/edits" => "xai.image_edit",
+        "xai" if path == "/v1/videos/generations" => "xai.video_generation",
+        "xai" if path == "/v1/videos/edits" => "xai.video_edit",
+        "xai" if path == "/v1/videos/extensions" => "xai.video_extension",
+        "xai" if task_poll_path_matches(path, "v1/images") => "xai.image_generation_task_query",
+        "xai" if task_poll_path_matches(path, "v1/videos") => "xai.video_generation_task_query",
         "elevenlabs" if path == "/v1/text-to-speech/{voice_id}" => "elevenlabs.text_to_speech",
         "elevenlabs" if path.starts_with("/v1/text-to-speech/") => "elevenlabs.text_to_speech",
         "elevenlabs" if path == "/v1/sound-generation" => "elevenlabs.sound_generation",
-        "kling" if path == "/v1/sound/generate" => "sfx.sound",
-        "stability_ai" if path == "/v1/sound/generate" => "sfx.sound",
-        "stability_ai" if path == "/v2beta/audio/stable-audio-2/text-to-audio" => "sfx.sound",
-        "vidu" if path == "/ent/v2/text2audio" => "sfx.sound",
-        "vidu" if path == "/ent/v2/timing2audio" => "sfx.sound",
+        "elevenlabs" if path == "/v1/music" => "elevenlabs.music_generation",
+        "kling" if path == "/v1/audio/text-to-audio" => "kling.text_to_audio",
+        "kling" if path == "/v1/audio/video-to-audio" => "kling.video_to_audio",
+        "kling" if task_poll_path_matches(path, "v1/audio/text-to-audio") => {
+            "kling.audio_task_query"
+        }
+        "stability_ai" if path == "/v2beta/audio/stable-audio-2/text-to-audio" => {
+            "stability_ai.audio"
+        }
+        "vidu" if path == "/ent/v2/text2audio" => "vidu.text_to_audio",
+        "vidu" if path == "/ent/v2/timing2audio" => "vidu.timing_to_audio",
+        "minimax" if path == "/v1/t2a_v2" => "minimax.text_to_speech",
         "minimax" if path == "/v1/music_generation" => "minimax.music_generation",
         "minimax" if path == "/v1/music/generations" => "minimax.music_generation",
         "minimax" if path == "/v1/music/generation" => "minimax.music_generation",
+        "minimax" if path == "/v1/image_generation" => "minimax.image_generation",
+        "minimax" if path == "/v1/video_generation" => "minimax.video_generation",
+        "minimax" if path == "/v1/query/video_generation" => "minimax.video_generation_task_query",
+        "minimax" if path == "/v1/files/retrieve" => "minimax.video_file_retrieve",
         "suno" if path == "/v1/music/generations" => "suno.music_generation",
         "suno" if task_poll_path_matches(path, "v1/music/generations") => "suno.music_task_query",
         "vidu" if path == "/ent/v2/reference2image" => "vidu.reference_to_image",
         "alibaba" if path == "/api/v1/services/aigc/text2image/image-synthesis" => {
             "alibaba.image_generation"
         }
+        "alibaba" if path == "/api/v1/services/audio/tts/speechsynthesizer" => "alibaba.speech",
         "alibaba" if path == "/api/v1/services/aigc/video-generation/video-synthesis" => {
             "alibaba.video_generation"
         }
@@ -398,11 +454,16 @@ pub fn provider_native_api_code_from_normalized_path(
         "baidu" if path == "/v2/chat/completions" => "baidu.chat_completions",
         "typesafe" if path == "/v1/systemone" => "typesafe.systemone",
         "runway" | "runwayml" if path == "/v1/text_to_image" => "runway.image_generation",
+        "runway" | "runwayml" if path == "/v1/text_to_video" => "runway.text_to_video",
+        "runway" | "runwayml" if path == "/v1/image_to_video" => "runway.image_to_video",
         "runway" | "runwayml" if task_poll_path_matches(path, "v1/tasks") => "runway.task_query",
         "stability_ai" | "stability" if path.starts_with("/v2beta/stable-image/generate/") => {
             "stability_ai.image_generation"
         }
         "black_forest_labs" | "bfl" if path == "/v1/get_result" => "black_forest_labs.task_query",
+        "black_forest_labs" | "bfl" if path == "/v1/flux-3-video" => {
+            "black_forest_labs.video_generation"
+        }
         "black_forest_labs" | "bfl" if path.starts_with("/v1/flux-") => {
             "black_forest_labs.image_generation"
         }
@@ -776,6 +837,22 @@ mod tests {
         assert_eq!(Some(BillingMeter::ApiRequest), task.billing.meter);
     }
 
+    /// Runway's video surface is two unified endpoints behind one `/v1/tasks`
+    /// poll. Both must classify: a caller submitting text uses
+    /// `/v1/text_to_video`, a caller submitting a first frame uses
+    /// `/v1/image_to_video`, and neither may fall through to the catch-all's
+    /// synthesised key (which carries no meter and fails the pricing preflight).
+    #[test]
+    fn runway_video_paths_classify_like_the_native_ones() {
+        let text = classify_post("/v1/text_to_video", "runway");
+        assert_eq!("runway.text_to_video", text.resource.route_key);
+        assert_eq!(Some(BillingMeter::VideoResult), text.billing.meter);
+
+        let image = classify_post("/v1/image_to_video", "runwayml");
+        assert_eq!("runway.image_to_video", image.resource.route_key);
+        assert_eq!(Some(BillingMeter::VideoResult), image.billing.meter);
+    }
+
     #[test]
     fn black_forest_labs_flux_paths_classify_like_the_native_ones() {
         let image = classify_post("/v1/flux-2-pro", "black_forest_labs");
@@ -796,6 +873,32 @@ mod tests {
         assert_eq!(Some(BillingMeter::ApiRequest), task.billing.meter);
     }
 
+    /// FLUX 3 video submits to its own endpoint and shares the `/v1/get_result`
+    /// poll with the image surface. The exact video arm must win over the
+    /// `flux-` prefix arm (which would mis-bill a video submit as an image).
+    #[test]
+    fn black_forest_labs_flux_video_path_classifies_like_the_native_one() {
+        let video = classify_post("/v1/flux-3-video", "black_forest_labs");
+        assert_eq!(
+            "black_forest_labs.video_generation",
+            video.resource.route_key
+        );
+        assert_eq!(Some(BillingMeter::VideoResult), video.billing.meter);
+
+        let video_bfl = classify_post("/v1/flux-3-video", "bfl");
+        assert_eq!(
+            "black_forest_labs.video_generation",
+            video_bfl.resource.route_key
+        );
+
+        // The image surface must still classify after the new arm.
+        let image = classify_post("/v1/flux-3-image", "black_forest_labs");
+        assert_eq!(
+            "black_forest_labs.image_generation",
+            image.resource.route_key
+        );
+    }
+
     #[test]
     fn stability_ai_stable_image_generate_path_classifies_like_the_native_one() {
         let core = classify_post("/v2beta/stable-image/generate/core", "stability_ai");
@@ -805,6 +908,102 @@ mod tests {
         let ultra = classify_post("/v2beta/stable-image/generate/ultra", "stability");
         assert_eq!("stability_ai.image_generation", ultra.resource.route_key);
         assert_eq!(Some(BillingMeter::ImageResult), ultra.billing.meter);
+    }
+
+    /// MiniMax's media surface is four published doors: a synchronous image
+    /// generation, a video task submit, the task query, and the file retrieve
+    /// that turns the query's `file_id` into a download URL. A caller that can
+    /// submit a video but cannot query or fetch it has no working flow, so each
+    /// step must classify onto its own route.
+    #[test]
+    fn minimax_media_paths_classify_onto_their_own_routes() {
+        let image = classify_post("/v1/image_generation", "minimax");
+        assert_eq!("minimax.image_generation", image.resource.route_key);
+        assert_eq!(Some(BillingMeter::ImageResult), image.billing.meter);
+
+        let video = classify_post("/v1/video_generation", "minimax");
+        assert_eq!("minimax.video_generation", video.resource.route_key);
+        assert_eq!(Some(BillingMeter::VideoResult), video.billing.meter);
+
+        let polls = [
+            (
+                "/v1/query/video_generation",
+                "minimax.video_generation_task_query",
+            ),
+            ("/v1/files/retrieve", "minimax.video_file_retrieve"),
+        ];
+        for (path, route_key) in polls {
+            let request = InvocationClassificationRequest::new(Method::GET, path)
+                .with_supplier_code("minimax");
+            let classification = ProviderNativeResourceClassifier
+                .classify(&request)
+                .expect("minimax media retrieval classification");
+            assert_eq!(route_key, classification.resource.route_key, "for {path}");
+            assert_eq!(
+                Some(BillingMeter::ApiRequest),
+                classification.billing.meter,
+                "for {path}"
+            );
+        }
+    }
+
+    /// Grok Imagine publishes seven media doors, one per official path: image
+    /// generation and edit, the deferred-image poll, video generation, edit and
+    /// extension, and the video poll. The literal arms must win over the two
+    /// `task_poll_path_matches` arms, which also match `/v1/images/generations`
+    /// and `/v1/videos/generations`.
+    #[test]
+    fn xai_media_paths_classify_onto_their_own_routes() {
+        let posts = [
+            (
+                "/v1/images/generations",
+                "xai.image_generation",
+                BillingMeter::ImageResult,
+            ),
+            (
+                "/v1/images/edits",
+                "xai.image_edit",
+                BillingMeter::ImageResult,
+            ),
+            (
+                "/v1/videos/generations",
+                "xai.video_generation",
+                BillingMeter::VideoResult,
+            ),
+            (
+                "/v1/videos/edits",
+                "xai.video_edit",
+                BillingMeter::VideoResult,
+            ),
+            (
+                "/v1/videos/extensions",
+                "xai.video_extension",
+                BillingMeter::VideoResult,
+            ),
+        ];
+        for (path, route_key, meter) in posts {
+            let classification = classify_post(path, "xai");
+            assert_eq!(route_key, classification.resource.route_key, "for {path}");
+            assert_eq!(Some(meter), classification.billing.meter, "for {path}");
+        }
+
+        let polls = [
+            ("/v1/images/req_abc123", "xai.image_generation_task_query"),
+            ("/v1/videos/req_abc123", "xai.video_generation_task_query"),
+        ];
+        for (path, route_key) in polls {
+            let request =
+                InvocationClassificationRequest::new(Method::GET, path).with_supplier_code("xai");
+            let classification = ProviderNativeResourceClassifier
+                .classify(&request)
+                .expect("xai deferred poll classification");
+            assert_eq!(route_key, classification.resource.route_key, "for {path}");
+            assert_eq!(
+                Some(BillingMeter::ApiRequest),
+                classification.billing.meter,
+                "for {path}"
+            );
+        }
     }
 
     /// The vendors whose catalog models declare `apiFormat = vendor_native` must
@@ -880,6 +1079,19 @@ mod tests {
                 classification.billing.meter,
                 "for {vendor}"
             );
+        }
+
+        // Classification lower-cases the path, so DashScope's case-sensitive
+        // `SpeechSynthesizer` segment must still classify — in either spelling.
+        // The upstream request is built from the original URI, so the vendor
+        // receives the case it published.
+        for path in [
+            "/api/v1/services/audio/tts/SpeechSynthesizer",
+            "/api/v1/services/audio/tts/speechsynthesizer",
+        ] {
+            let speech = classify_post(path, "alibaba");
+            assert_eq!("alibaba.speech", speech.resource.route_key, "for {path}");
+            assert_eq!(Some(BillingMeter::TtsInputCharacter), speech.billing.meter);
         }
 
         let music = classify_post("/v1/song/generate", "mureka");

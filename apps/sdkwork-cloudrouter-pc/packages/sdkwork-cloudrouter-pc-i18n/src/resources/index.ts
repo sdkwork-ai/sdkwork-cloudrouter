@@ -71,6 +71,7 @@ import { playgroundPreviewMessages } from './playground/preview';
 import { publicModelsMessages } from './public/models';
 import { publicRankingsMessages } from './public/rankings';
 import { pricingMessages } from '@sdkwork/cloudrouter-pc-pricing/i18n';
+import { sharedAccountMessages } from './shared/account';
 import { sharedCommonMessages } from './shared/common';
 import { sharedNavigationMessages } from './shared/navigation';
 
@@ -142,6 +143,7 @@ export const resources = mergeI18nBundles([
   publicRankingsMessages,
   pricingMessages,
   publicSdkReferenceMessages,
+  sharedAccountMessages,
   sharedCommonMessages,
   sharedNavigationMessages,
   sdkworkSubscriptionCheckoutI18nBundle,

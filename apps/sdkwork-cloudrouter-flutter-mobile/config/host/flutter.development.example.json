@@ -1,0 +1,13 @@
+{
+  "platform": "flutter",
+  "environment": "development",
+  "bundleId": "com.sdkwork.cloudrouter.mobile",
+  "androidPackageName": "com.sdkwork.cloudrouter.mobile",
+  "displayName": "SDKWork CloudRouter (Dev)",
+  "signingReference": "local-debug",
+  "permissions": {
+    "camera": "not-requested",
+    "photoLibrary": "not-requested",
+    "notifications": "not-requested"
+  }
+}

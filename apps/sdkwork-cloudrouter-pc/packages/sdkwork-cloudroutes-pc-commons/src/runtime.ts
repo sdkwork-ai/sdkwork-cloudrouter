@@ -45,6 +45,7 @@ export * from './file-upload/index.ts';
 export * from './messaging-verification-service.ts';
 export * from './notificationService.ts';
 export * from './portal-auth.ts';
+export * from './portal-account.ts';
 export * from './portal-session.ts';
 export * from './portal-permission-scope.ts';
 export * from './recharge-math.ts';

@@ -199,11 +199,79 @@
         },
         {
           "itemType": "resource",
+          "resourceCode": "api.minimax.text_to_speech"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.suno.music_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.suno.music_task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.suno.music"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.mureka.music_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.mureka.music_generation_task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.elevenlabs.music_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.minimax.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.minimax.video_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.minimax.video_generation_task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.minimax.video_file_retrieve"
+        },
+        {
+          "itemType": "resource",
           "resourceCode": "api.vidu.reference_to_image"
         },
         {
           "itemType": "resource",
           "resourceCode": "api.vidu.start_end_to_video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.stability_ai.audio"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.text_to_audio"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.video_to_audio"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.audio_task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.vidu.text_to_audio"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.vidu.timing_to_audio"
         }
       ]
     },
@@ -570,6 +638,18 @@
         {
           "itemType": "resource",
           "resourceCode": "api.kling.task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.text_to_audio"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.video_to_audio"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.audio_task_query"
         }
       ]
     },
@@ -614,6 +694,20 @@
       ]
     },
     {
+      "groupCode": "api.minimax.audio",
+      "groupName": "Minimax Audio API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Minimax T2A speech synthesis API resources.",
+      "sortOrder": 14,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.minimax.text_to_speech"
+        }
+      ]
+    },
+    {
       "groupCode": "api.minimax.music",
       "groupName": "Minimax Music API",
       "groupType": "api_group",
@@ -624,6 +718,88 @@
         {
           "itemType": "resource",
           "resourceCode": "api.minimax.music_generation"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.minimax.image",
+      "groupName": "Minimax Image API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Minimax image generation API resources.",
+      "sortOrder": 22,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.minimax.image_generation"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.minimax.video",
+      "groupName": "Minimax Video API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Minimax video generation API resources including the asynchronous task query and the file retrieve that turns its file id into a download URL.",
+      "sortOrder": 23,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.minimax.video_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.minimax.video_generation_task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.minimax.video_file_retrieve"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.suno.music",
+      "groupName": "Suno Music API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Suno music generation API resources, including the Suno-protocol compatibility face and its task query.",
+      "sortOrder": 24,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.suno.music_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.suno.music"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.mureka.music",
+      "groupName": "Mureka Music API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Mureka song generation API resources.",
+      "sortOrder": 25,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.mureka.music_generation"
+        }
+      ]
+    },
+    {
+      "groupCode": "api.elevenlabs.music",
+      "groupName": "ElevenLabs Music API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "ElevenLabs music generation API resources.",
+      "sortOrder": 26,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.elevenlabs.music_generation"
         }
       ]
     },

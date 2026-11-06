@@ -23,6 +23,12 @@ const CAPABILITY_KEYS = ["dashboard","usage","api_keys","catalog"];
 const CAPABILITY_PKGS = ["sdkwork_cloudrouter_flutter_mobile_console_dashboard","sdkwork_cloudrouter_flutter_mobile_console_usage","sdkwork_cloudrouter_flutter_mobile_console_api_keys","sdkwork_cloudrouter_flutter_mobile_console_catalog"];
 const PROFILE_IDS = ["standalone.development","standalone.test","standalone.staging","standalone.production","standalone.demo","cloud.development","cloud.test","cloud.staging","cloud.production","cloud.demo"];
 
+// Dart import/export directives that pull in the generated transport package.
+// Doc comments that explain a generated-SDK gap are not directives and must
+// not fail the boundary check.
+const GENERATED_TRANSPORT_DIRECTIVE =
+  /(?:^|\n)\s*(?:import|export)\s+['"][^'"\n]*cloudrouter_app_sdk[^'"\n]*['"]/u;
+
 const rootSpec = readJson('specs/component.spec.json');
 const manifest = readJson('agent.app.config.json');
 const deployment = readJson('etc/sdkwork.deployment.config.json');
@@ -174,7 +180,13 @@ describe('cloudrouter flutter mobile application root', () => {
           if (entry.isDirectory()) stack.push(full);
           else if (entry.name.endsWith('.dart')) {
             const text = fs.readFileSync(full, 'utf8');
-            assert.ok(!text.includes('cloudrouter_app_sdk'), full + ' must not import the generated transport');
+            // Match directives only: a doc comment may name the generated
+            // transport (the console-usage pagination gap is documented that
+            // way), but a capability package must never import it.
+            assert.ok(
+              !GENERATED_TRANSPORT_DIRECTIVE.test(text),
+              full + ' must not import the generated transport',
+            );
           }
         }
       }

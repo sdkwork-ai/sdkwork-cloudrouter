@@ -829,12 +829,40 @@ fn parses_startup_install_mode_from_optional_environment_part() {
     );
 }
 
+/// The data bootstrap must run in production too: a gateway deployment has no
+/// other step that seeds the catalog, the routing seed, or the default pricing
+/// plan, and a migrated-but-unseeded database fails at the first write.
 #[test]
-fn production_environment_defaults_startup_install_mode_to_skip_without_explicit_override() {
-    let _guard = EnvGuard::set(&[(
-        StartupInstallMode::ENV_ROUTER_ENVIRONMENT,
-        Some("production".to_owned()),
-    )]);
+fn production_environment_defaults_startup_install_mode_to_ensure_without_explicit_override() {
+    let _env_lock = ENV_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let _guard = EnvGuard::set(&[
+        (
+            StartupInstallMode::ENV_ROUTER_ENVIRONMENT,
+            Some("production".to_owned()),
+        ),
+        (StartupInstallMode::ENV_STARTUP_INSTALL_MODE, None),
+    ]);
+    assert_eq!(
+        StartupInstallMode::Ensure,
+        StartupInstallMode::from_env_or_runtime_toml(None).unwrap()
+    );
+}
+
+/// An operator who seeds product data out of band still gets an explicit
+/// opt-out, and it must keep working in production.
+#[test]
+fn production_environment_honors_explicit_startup_install_mode_skip() {
+    let _env_lock = ENV_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let _guard = EnvGuard::set(&[
+        (
+            StartupInstallMode::ENV_ROUTER_ENVIRONMENT,
+            Some("production".to_owned()),
+        ),
+        (
+            StartupInstallMode::ENV_STARTUP_INSTALL_MODE,
+            Some("skip".to_owned()),
+        ),
+    ]);
     assert_eq!(
         StartupInstallMode::Skip,
         StartupInstallMode::from_env_or_runtime_toml(None).unwrap()
@@ -842,7 +870,8 @@ fn production_environment_defaults_startup_install_mode_to_skip_without_explicit
 }
 
 #[test]
-fn production_environment_rejects_explicit_startup_install_mode_ensure() {
+fn production_environment_accepts_data_bootstrap_but_rejects_schema_migration_at_startup() {
+    let _env_lock = ENV_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     let runtime_toml = RuntimeTomlConfig::from_toml_str(
         r#"
 [install]
@@ -850,14 +879,43 @@ environment = "production"
 "#,
     )
     .unwrap();
+    let _guard = EnvGuard::set(&[(StartupInstallMode::ENV_DATABASE_AUTO_MIGRATE, None)]);
+    sdkwork_cloudrouter_config::ensure_production_startup_install_policy(
+        Some(&runtime_toml),
+        StartupInstallMode::Ensure,
+    )
+    .expect("the idempotent data bootstrap is admitted in production");
+
+    let _guard = EnvGuard::set(&[(
+        StartupInstallMode::ENV_DATABASE_AUTO_MIGRATE,
+        Some("true".to_owned()),
+    )]);
     assert!(
         sdkwork_cloudrouter_config::ensure_production_startup_install_policy(
             Some(&runtime_toml),
             StartupInstallMode::Ensure,
         )
         .unwrap_err()
-        .contains("SDKWORK_CLOUDROUTER_STARTUP_INSTALL_MODE")
+        .contains("SDKWORK_DATABASE_AUTO_MIGRATE")
     );
+
+    // The explicit operator lifecycle command is the sanctioned way to migrate
+    // a production database, so it must stay admitted.
+    let _guard = EnvGuard::set(&[
+        (
+            StartupInstallMode::ENV_DATABASE_AUTO_MIGRATE,
+            Some("true".to_owned()),
+        ),
+        (
+            "SDKWORK_DATABASE_LIFECYCLE_COMMAND",
+            Some("migrate".to_owned()),
+        ),
+    ]);
+    sdkwork_cloudrouter_config::ensure_production_startup_install_policy(
+        Some(&runtime_toml),
+        StartupInstallMode::Ensure,
+    )
+    .expect("the explicit lifecycle command is admitted in production");
 }
 
 fn write_temp_config(label: &str, content: &str) -> PathBuf {

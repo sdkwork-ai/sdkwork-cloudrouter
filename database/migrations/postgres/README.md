@@ -191,4 +191,4 @@ Example:
   forward migration while preserving lifecycle history.
 - After GA, **do not** change production schema only by regenerating the baseline; add an incremental migration and update the schema registry contract.
 - Run `pnpm db:plan` and `pnpm db:drift:check` before merge.
-- Production upgrades use controlled jobs (`deployments/kubernetes/cloud-router-migration-job.yaml`) with `SDKWORK_CLOUDROUTER_STARTUP_INSTALL_MODE=skip`.
+- Production schema upgrades use controlled jobs (`deployments/kubernetes/cloud-router-migration-job.yaml`) with `SDKWORK_CLOUDROUTER_STARTUP_INSTALL_MODE=skip` and `SDKWORK_DATABASE_AUTO_MIGRATE=false`; the startup install switch only governs the idempotent product data bootstrap (catalog projection, routing seed, default pricing plan), never schema migration.

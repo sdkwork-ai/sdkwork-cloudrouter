@@ -1180,14 +1180,14 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
             audit = audit_vendor_schema_quality(spec, provider_prefixes=self._provider_prefixes())
 
             self.assertEqual([], audit.unregistered_vendor_paths)
-            # Bumped 57 -> 59 by the TypeSafe AI vendor-native door: its single
-            # published operation contributes exactly two operation-level payload
-            # components (TypeSafeSystemOneRequest / TypeSafeSystemOneResponse);
-            # the nested TypeSafeQuestion / TypeSafeAnswer / TypeSafeUsage schemas
-            # are not referenced directly from a path, so they are not roots.
-            # 59 = the previous 63 roots minus the four Midjourney/NanoBanana
-            # payload components that belonged to removed vendor-absent routes.
-            self.assertEqual(59, len(audit.root_schema_names))
+            # Bumped 57 -> 59 by the TypeSafe AI vendor-native door, then
+            # 59 -> 124 by the media-door expansion (MiniMax image/video/speech,
+            # xAI Grok Imagine image/video, Kling and Vidu sound effects,
+            # Runway video, ElevenLabs Music, Mureka song, the DashScope and
+            # Seed TTS speech doors, and the FLUX 3 video door): every published
+            # door contributes its request/response payload components as roots,
+            # and the vendor-relay envelopes they reference resolve transitively.
+            self.assertEqual(124, len(audit.root_schema_names))
             self.assertIn("ProviderJsonNull", audit.reachable_schema_names)
             self.assertEqual([], audit.unresolved_refs)
             self.assertEqual([], audit.non_component_payload_schemas)
@@ -1985,7 +1985,10 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
 
     def test_writes_and_checks_gateway_openapi_spec(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            # resolve() so the comparison below survives Windows 8.3 short
+            # names: TemporaryDirectory can hand back CHARLE~1-style paths,
+            # while the generator resolves its root to the long form.
+            root = Path(tmp).resolve()
             generator = CloudRouterGatewayOpenApiGenerator(root=root)
 
             output = generator.write()
@@ -2101,6 +2104,55 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
             '-"exact phrase"',
             schemas["OpenAiDeepSeekWebSearchRequest"]["properties"]["query"]["description"],
         )
+
+    def test_vendor_required_headers_and_deferred_status_are_declared(self) -> None:
+        """A vendor that rejects a call without a header must see it declared.
+
+        The relay forwards every non-hop-by-hop header verbatim, so a missing
+        declaration is not a relay bug — it is a contract bug: a generated SDK
+        has no way to send the header, and the upstream rejects the call.
+        `X-Runway-Version` and `anthropic-version` are required by their vendors
+        on every request; Stability AI only answers JSON when asked for it, and
+        the published response schema is the JSON form.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        required_headers = {
+            "anthropic": "anthropic-version",
+            "runway": "X-Runway-Version",
+            "stability_ai": "Accept",
+        }
+        for namespace, header_name in required_headers.items():
+            seen = 0
+            for path, path_item in spec["paths"].items():
+                if not path.startswith(f"/{namespace}/"):
+                    continue
+                for method, operation in path_item.items():
+                    if not isinstance(operation, dict) or not operation.get("operationId"):
+                        continue
+                    declared = {
+                        parameter["name"]: parameter
+                        for parameter in operation.get("parameters", [])
+                        if parameter.get("in") == "header"
+                    }
+                    self.assertIn(
+                        header_name,
+                        declared,
+                        f"{method.upper()} {path} must declare the required {header_name} header",
+                    )
+                    self.assertTrue(
+                        declared[header_name].get("required"),
+                        f"{method.upper()} {path} {header_name} must be required",
+                    )
+                    seen += 1
+            self.assertGreater(seen, 0, f"no operations found for {namespace}")
+
+        # xAI's deferred image poll answers 202 while the image is still being
+        # generated, then 200 with data. Both statuses are part of the wire.
+        poll = spec["paths"]["/xai/v1/images/{request_id}"]["get"]
+        self.assertIn("202", poll["responses"])
+        self.assertIn("200", poll["responses"])
 
     def _provider_prefixes(self) -> set[str]:
         return set(VENDOR_PROVIDER_PREFIXES)

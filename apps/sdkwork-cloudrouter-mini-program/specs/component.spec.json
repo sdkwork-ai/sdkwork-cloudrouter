@@ -68,6 +68,46 @@
       "file": "TEST_SPEC.md",
       "path": "../../../sdkwork-specs/TEST_SPEC.md",
       "purpose": "Contract, frontend, SDK, security, and documentation verification rules."
+    },
+    {
+      "file": "APPLICATION_SPEC.md",
+      "path": "../../../sdkwork-specs/APPLICATION_SPEC.md",
+      "purpose": "Application shell and module composition."
+    },
+    {
+      "file": "APP_MANIFEST_SPEC.md",
+      "path": "../../../sdkwork-specs/APP_MANIFEST_SPEC.md",
+      "purpose": "agent.app.config.json application registration rules."
+    },
+    {
+      "file": "APP_MINI_PROGRAM_UI_SPEC.md",
+      "path": "../../../sdkwork-specs/APP_MINI_PROGRAM_UI_SPEC.md",
+      "purpose": "Mini program package split, route projection, and interaction rules."
+    },
+    {
+      "file": "CONFIG_SPEC.md",
+      "path": "../../../sdkwork-specs/CONFIG_SPEC.md",
+      "purpose": "Runtime config, SDK bootstrap, and environment rules."
+    },
+    {
+      "file": "DEPLOYMENT_SPEC.md",
+      "path": "../../../sdkwork-specs/DEPLOYMENT_SPEC.md",
+      "purpose": "Deployment topology and runtime parity rules."
+    },
+    {
+      "file": "UI_ARCHITECTURE_SPEC.md",
+      "path": "../../../sdkwork-specs/UI_ARCHITECTURE_SPEC.md",
+      "purpose": "Required UI architecture selection."
+    },
+    {
+      "file": "TYPESCRIPT_CODE_SPEC.md",
+      "path": "../../../sdkwork-specs/TYPESCRIPT_CODE_SPEC.md",
+      "purpose": "TypeScript code structure and typing rules."
+    },
+    {
+      "file": "FRONTEND_CODE_SPEC.md",
+      "path": "../../../sdkwork-specs/FRONTEND_CODE_SPEC.md",
+      "purpose": "Frontend code structure and interaction rules."
     }
   ],
   "contracts": {

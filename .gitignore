@@ -202,6 +202,9 @@ sdks/*/*-typescript/src/index.d.ts.map
 .restore-paths-*.txt
 .merge-results.txt
 
+# Local device screenshots from manual UI checks (never commit)
+.screenshots/
+
 # Local runtime env holding access tokens (never commit)
 # Added by repo-commit task 2026-10-07; targeted rule only, compliant with check-gitignore-standard
 .sdkwork.local.env

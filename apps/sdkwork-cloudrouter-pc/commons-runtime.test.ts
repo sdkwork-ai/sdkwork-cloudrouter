@@ -27,6 +27,13 @@ import {
   hasStoredPortalSession,
   resolvePortalLoginRequiredAction,
 } from "./packages/sdkwork-cloudroutes-pc-commons/src/portal-auth.ts";
+import {
+  ANONYMOUS_PORTAL_ACCOUNT,
+  fetchPortalAccountProfile,
+  loadPortalAccountProfile,
+  readPortalAccountProfileFromClaims,
+  resolvePortalAccountInitials,
+} from "./packages/sdkwork-cloudroutes-pc-commons/src/portal-account.ts";
 import { PORTAL_EXTERNAL_TAILWIND_SOURCES } from "./src/portal-external-tailwind-sources.ts";
 import { normalizeGeneratedSdkBaseUrl, resolveSharedDependencySurfaceBaseUrl } from "./packages/sdkwork-cloudroutes-pc-commons/src/sdk-base-url.ts";
 import { formatRechargeCurrencyAmount } from "./packages/sdkwork-cloudroutes-pc-commons/src/recharge-math.ts";
@@ -1413,8 +1420,154 @@ test("portal auth helpers preserve the current route for login-required actions"
   clearStoredAppSessionToken();
 });
 
-test("portal auth login redirect never re-wraps an auth-route URL", () => {
-  assert.equal(
+function portalTestAccessToken(payload: Record<string, unknown>): string {
+  const header = Buffer.from(JSON.stringify({ alg: "none", typ: "JWT" })).toString("base64url");
+  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  return `${header}.${body}.signature`;
+}
+
+test("portal account initials handle latin, CJK, and empty names", () => {
+  assert.equal(resolvePortalAccountInitials("Bird Coder"), "BC");
+  assert.equal(resolvePortalAccountInitials("  sdkwork   cloud "), "SC");
+  assert.equal(resolvePortalAccountInitials("sdkwork"), "S");
+  assert.equal(resolvePortalAccountInitials("张三"), "张");
+  assert.equal(resolvePortalAccountInitials(""), "");
+});
+
+test("portal account profile fills in from token claims and the generic fallback", () => {
+  assert.deepEqual(readPortalAccountProfileFromClaims(undefined), {
+    signedIn: true,
+    displayName: "Account",
+    email: "",
+    initials: "A",
+    userId: "",
+    avatarUrl: "",
+  });
+
+  const emailOnly = readPortalAccountProfileFromClaims({ email: "bird@example.com" });
+  assert.equal(emailOnly.displayName, "bird@example.com");
+  assert.equal(emailOnly.initials, "B");
+
+  assert.deepEqual(
+    readPortalAccountProfileFromClaims({
+      sub: "user-1",
+      display_name: "Bird Coder",
+      email: "bird@example.com",
+      picture: "https://cdn.example.com/bird.png",
+    }),
+    {
+      signedIn: true,
+      displayName: "Bird Coder",
+      email: "bird@example.com",
+      initials: "BC",
+      userId: "user-1",
+      avatarUrl: "https://cdn.example.com/bird.png",
+    },
+  );
+});
+
+test("portal account profile upgrades from the current user endpoint", async () => {
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    enumerable: true,
+    value: {},
+  });
+  globalThis.fetch = (async () => new Response(JSON.stringify({
+    code: 0,
+    data: {
+      item: {
+        id: "user-9",
+        displayName: "Cloud User",
+        email: "cloud@example.com",
+        avatar: {
+          kind: "image",
+          source: "external_url",
+          publicUrl: "https://cdn.example.com/avatar.png",
+        },
+      },
+    },
+    traceId: "trace-account",
+  }), {
+    headers: { "content-type": "application/json" },
+    status: 200,
+  })) as typeof fetch;
+  clearStoredAppSessionToken();
+  resetCloudRouterSdkClients();
+  storeAppSessionFromResult({
+    accessToken: portalTestAccessToken({ sub: "user-42" }),
+    authToken: "auth-token",
+  });
+
+  try {
+    const profile = await fetchPortalAccountProfile();
+
+    assert.deepEqual(profile, {
+      signedIn: true,
+      displayName: "Cloud User",
+      email: "cloud@example.com",
+      initials: "CU",
+      userId: "user-9",
+      avatarUrl: "https://cdn.example.com/avatar.png",
+    });
+  } finally {
+    clearStoredAppSessionToken();
+    resetCloudRouterSdkClients();
+    globalThis.fetch = originalFetch;
+    if (originalWindowDescriptor) {
+      Object.defineProperty(globalThis, "window", originalWindowDescriptor);
+    }
+  }
+});
+
+test("portal account profile follows the stored IAM session", () => {
+  clearStoredAppSessionToken();
+  assert.deepEqual(loadPortalAccountProfile(), ANONYMOUS_PORTAL_ACCOUNT);
+
+  storeAppSessionFromResult({
+    accessToken: portalTestAccessToken({
+      sub: "user-42",
+      display_name: "sdkwork cloud",
+      email: "cloud@example.com",
+    }),
+    authToken: "auth-token",
+  });
+  assert.deepEqual(loadPortalAccountProfile(), {
+    signedIn: true,
+    displayName: "sdkwork cloud",
+    email: "cloud@example.com",
+    initials: "SC",
+    userId: "user-42",
+    avatarUrl: "",
+  });
+
+  clearStoredAppSessionToken();
+  assert.deepEqual(loadPortalAccountProfile(), ANONYMOUS_PORTAL_ACCOUNT);
+});
+
+test("authenticated page shells render the shared account menu", () => {
+  const navbarSource = readFileSync(
+    new URL("./packages/sdkwork-cloudroutes-pc-commons/src/components/Navbar.tsx", import.meta.url),
+    "utf8",
+  );
+  const adminHeaderSource = readFileSync(
+    new URL("./packages/sdkwork-cloudrouter-pc-admin-shell/src/AdminHeader.tsx", import.meta.url),
+    "utf8",
+  );
+  const menuSource = readFileSync(
+    new URL("./packages/sdkwork-cloudroutes-pc-commons/src/components/PortalAccountMenu.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(navbarSource, /<PortalAccountMenu/u);
+  assert.match(adminHeaderSource, /<PortalAccountMenu/u);
+  assert.match(menuSource, /onMouseEnter=\{openMenu\}/u);
+  assert.match(menuSource, /onMouseLeave=\{scheduleClose\}/u);
+  assert.match(menuSource, /addEventListener\('pointerdown'/u);
+  assert.match(menuSource, /signOutPortalAccount/u);
+  assert.match(menuSource, /commons\.account\.signedInAs/u);
+});
+
+test("portal auth login redirect never re-wraps an auth-route URL", () => {  assert.equal(
     buildPortalAuthLoginRedirect({
       hash: "",
       pathname: "/auth/login",

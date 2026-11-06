@@ -162,7 +162,11 @@ fn capability_from_tag(tag: &str) -> OpenApiCapability {
     let family = tag.split('/').next().unwrap_or(tag);
     match family {
         "Assistants" => OpenApiCapability::Agent,
-        "Audio" | "Realtime" => OpenApiCapability::Audio,
+        // `Music` is a documentation-facing family split out of `Audio` (the
+        // reference lists music vendors separately from speech and sound
+        // effects); the capability router has no separate music arm, so music
+        // traffic is claimed by the audio router exactly as before.
+        "Audio" | "Music" | "Realtime" => OpenApiCapability::Audio,
         "Containers" | "Files" | "Uploads" => OpenApiCapability::Drive,
         "Images" => OpenApiCapability::Image,
         "Vector Stores" => OpenApiCapability::Knowledgebase,
@@ -219,6 +223,26 @@ mod tests {
                 Method::POST,
                 "/typesafe/v1/systemone",
                 OpenApiCapability::Llm,
+            ),
+            // `Music/*` is a documentation-facing family split out of `Audio`
+            // (music vendors are listed apart from speech and sound effects).
+            // The capability router has no separate music arm, so a music door
+            // must still be claimed by the audio router — falling through to the
+            // `_ => Llm` arm would route it as an LLM request.
+            (
+                Method::POST,
+                "/suno/v1/music/generations",
+                OpenApiCapability::Audio,
+            ),
+            (
+                Method::POST,
+                "/mureka/v1/song/generate",
+                OpenApiCapability::Audio,
+            ),
+            (
+                Method::POST,
+                "/elevenlabs/v1/music",
+                OpenApiCapability::Audio,
             ),
         ];
 

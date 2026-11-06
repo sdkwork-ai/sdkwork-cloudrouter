@@ -1,0 +1,8 @@
+# Capture raw output and temporary renders stay out of version control.
+capture/raw/
+**/raw/
+*.tmp
+*.tmp.*
+.DS_Store
+Thumbs.db
+desktop.ini
