@@ -59,31 +59,33 @@ test("retired console providers and routing modules are absent from schema gover
 test("retired relay-external admin routes are absent from schema governance", () => {
   const routeClassification = readPortalFile("../../docs/schema-registry/frontend-route-classification.yaml");
 
+  // Prefixes that were retired as relay-external routes and have never been
+  // re-owned by a host admin route. Prefixes the host has since re-created as
+  // first-party admin surfaces (payments, memberships, marketing, storage,
+  // skill) are classified deliberately and are asserted below instead.
   for (const retiredPrefix of [
     "/admin/catalog",
     "/admin/orders",
-    "/admin/payments",
-    "/admin/memberships",
-    "/admin/marketing",
     "/admin/finance",
     "/admin/wallet",
     "/admin/oauth",
     "/admin/service-providers",
     "/admin/agents",
-    "/admin/skill",
     "/admin/prompts",
     "/admin/mcp",
     "/admin/announcement",
     "/admin/user",
     "/admin/organization",
     "/admin/inventory",
-    "/admin/storage",
     "/admin/drive",
     "/admin/messaging",
   ]) {
     assert.doesNotMatch(routeClassification, new RegExp(`route:\\s*${retiredPrefix.replaceAll("/", "\\/")}`));
   }
 
+  // Relay-hosted and first-party admin control-plane routes the host serves
+  // itself, including the four federated capability groups (skills, MCP
+  // connectors, plugins, agents) added to the home module.
   for (const relayRoute of [
     "/admin/dashboard",
     "/admin/model",
@@ -91,6 +93,14 @@ test("retired relay-external admin routes are absent from schema governance", ()
     "/admin/settings",
     "/admin/monitor",
     "/admin/ratelimit",
+    "/admin/skill",
+    "/admin/connector",
+    "/admin/plugin",
+    "/admin/agent",
+    "/admin/payments",
+    "/admin/memberships",
+    "/admin/marketing",
+    "/admin/storage",
   ]) {
     assert.match(routeClassification, new RegExp(`route:\\s*${relayRoute.replaceAll("/", "\\/")}`));
   }

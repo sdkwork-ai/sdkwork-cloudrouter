@@ -1,6 +1,10 @@
 export {
   getCloudRouterBackendSdkClient,
   getModelsBackendSdkClient,
+  getSkillsBackendSdkClient,
+  getMcpBackendSdkClient,
+  getSdkworkAgentBackendSdkClient,
+  getPluginsBackendSdkClient,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 export {
   getCloudRouterPaymentBackendService,

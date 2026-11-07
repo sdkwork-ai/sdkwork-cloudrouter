@@ -910,6 +910,23 @@ routes:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx
 
+- route: /admin/connector/:serverKey
+  package: '@sdkwork/cloudrouter-pc-admin-connector'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-mcp-backend-sdk
+  api_surface: backend
+  operation_routes:
+  # The MCP admin detail surface has no separate retrieve call: it projects
+  # the same `mcpAdmin.listServers` read (plus the connector/tool catalogs)
+  # selected by `serverKey`, so it declares the list route as its operation.
+  - /admin/connector
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx
+
 - route: /admin/plugin/categories
   package: '@sdkwork/cloudrouter-pc-admin-plugin'
   owner: admin-control-plane

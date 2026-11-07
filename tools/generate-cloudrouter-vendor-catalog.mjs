@@ -324,7 +324,10 @@ function renderModule(matrix) {
   lines.push('// Regenerate with: pnpm models:vendor-catalog:write');
   lines.push('// Verify with:     pnpm models:vendor-catalog:check');
   lines.push('');
-  lines.push("import type { VendorCatalogMatrix } from '../vendorProtocolCatalog.types';");
+  // The module is emitted next to the type module inside `src/`, so the import
+  // is sibling-relative. Keeping it correct here is what makes the generated
+  // file compile after the move out of `src/generated/`.
+  lines.push("import type { VendorCatalogMatrix } from './vendorProtocolCatalog.types';");
   lines.push('');
   lines.push('export const VENDOR_CATALOG_MATRIX: VendorCatalogMatrix = {');
   for (const [vendorCode, entry] of Object.entries(matrix)) {

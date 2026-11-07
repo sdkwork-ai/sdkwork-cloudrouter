@@ -220,6 +220,11 @@
       "@sdkwork/utils": "workspace:*"
     },
     "packageExtensions": {
+      "@sdkwork/log-pc-admin-request-log": {
+        "dependencies": {
+          "react-i18next": "catalog:"
+        }
+      },
       "@sdkwork/models-pc-admin-catalog": {
         "dependencies": {
           "@sdkwork/cloudroutes-pc-commons": "workspace:*"

@@ -303,7 +303,10 @@ test('admin host composes owner admin modules through the backend-admin core SDK
 
   assert.match(appSource, /CloudRouterAdminHostRoutes/);
   assert.doesNotMatch(appSource, /const (?:Dashboard|Model|Upstream)Admin = lazyRoute/);
-  assert.equal((hostSource.match(/\broute\('/g) ?? []).length, 31);
+  // 31 first-party/relay records plus the eight federated capability records
+  // for the skills, MCP connector, plugin, and agent admin groups (the MCP
+  // detail record is the extra one: list + categories + detail).
+  assert.equal((hostSource.match(/\broute\('/g) ?? []).length, 39);
   assert.match(hostSource, /'sdkwork-models', '@sdkwork\/models-pc-admin-catalog', \['sdkwork-models-backend-sdk'\]/);
   assert.match(hostSource, /'sdkwork-cloudrouter', '@sdkwork\/cloudrouter-pc-admin-upstream', \['cloudrouter-backend-sdk'\]/);
 
@@ -390,9 +393,19 @@ test('admin host composes owner admin modules through the backend-admin core SDK
     '@sdkwork/models-backend-sdk',
     '@sdkwork/payment-backend-sdk',
   ]);
+  // The admin composition boundary also carries the four federated
+  // intelligence capability SDKs (skills, MCP, agents, plugins) that the new
+  // home-module admin groups load same-origin through the host runtime.
   assert.deepEqual(
     adminCoreComponent.contracts.sdkDependencies.map((dependency) => dependency.workspace),
-    ['cloudrouter-backend-sdk', 'sdkwork-models-backend-sdk'],
+    [
+      'cloudrouter-backend-sdk',
+      'sdkwork-models-backend-sdk',
+      'sdkwork-skills-backend-sdk',
+      'sdkwork-mcp-backend-sdk',
+      'sdkwork-agents-backend-sdk',
+      'sdkwork-plugins-backend-sdk',
+    ],
   );
   const adminCoreInventory = [...adminCoreInventorySource.matchAll(
     /\{\s*workspace:\s*'([^']+)'\s*,\s*surface:\s*'([^']+)'\s*,\s*credentialMode:\s*'([^']+)'\s*\}/g,

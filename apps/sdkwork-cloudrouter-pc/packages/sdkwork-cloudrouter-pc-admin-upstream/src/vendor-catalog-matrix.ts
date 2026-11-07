@@ -7,7 +7,7 @@
 // Regenerate with: pnpm models:vendor-catalog:write
 // Verify with:     pnpm models:vendor-catalog:check
 
-import type { VendorCatalogMatrix } from '../vendorProtocolCatalog.types';
+import type { VendorCatalogMatrix } from './vendorProtocolCatalog.types';
 
 export const VENDOR_CATALOG_MATRIX: VendorCatalogMatrix = {
   "openai": {

@@ -85,7 +85,7 @@ class FrontendContractGuardian:
     PATH_PATTERN = re.compile(r'\bpath\s*=\s*"([^"]+)"')
     IMPORT_PATTERN = re.compile(r'^\s*import\s+(?:[^"\']+\s+from\s+)?["\']([^"\']+)["\']', re.MULTILINE)
     COMMONS_ROOT_NAMED_IMPORT_PATTERN = re.compile(
-        r"^\s*import\s+(?:type\s+)?(?:[^{}\n]+,\s*)?\{(?P<imports>[\s\S]*?)\}\s+from\s+"
+        r"^\s*import\s+(?:type\s+)?(?:[^{}\n]+,\s*)?\{(?P<imports>[^}]*?)\}\s+from\s+"
         r"['\"]@sdkwork/cloudroutes-pc-commons['\"]",
         re.MULTILINE,
     )
@@ -283,6 +283,7 @@ class FrontendContractGuardian:
         "agent": {
             "getSdkworkAgentBackendSdkClient",
             "@sdkwork/agent-backend-sdk",
+            "@sdkwork/agents-backend-sdk",
         },
         "skills": {
             "getSkillsBackendSdkClient",
@@ -1496,6 +1497,8 @@ class FrontendContractGuardian:
             expected_client = "getSdkworkPromptsBackendSdkClient"
         elif dependency_sdk_family == "sdkwork-agent-backend-sdk":
             expected_client = "getSdkworkAgentBackendSdkClient"
+        elif dependency_sdk_family == "sdkwork-agents-backend-sdk":
+            expected_client = "getSdkworkAgentBackendSdkClient"
         elif dependency_sdk_family == "sdkwork-community-backend-sdk":
             expected_client = "getSdkworkCommunityBackendSdkClient"
         elif dependency_sdk_family == "sdkwork-skills-backend-sdk":
@@ -1669,6 +1672,12 @@ class FrontendContractGuardian:
             return "models"
         if normalized in {"agent", "agents"}:
             return "agent"
+        if normalized in {"skills", "skill"}:
+            return "skills"
+        if normalized in {"mcp", "mcpconnectors"}:
+            return "mcp"
+        if normalized in {"plugins", "plugin"}:
+            return "plugins"
         if normalized in {"drive"}:
             return "drive"
         if normalized in {"prompt", "prompts"}:
