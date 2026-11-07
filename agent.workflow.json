@@ -193,6 +193,12 @@
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
+      "id": "sdkwork-mcp",
+      "repository": "sdkwork-ai/sdkwork-mcp",
+      "refInput": "SDKWORK_MCP_REF",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    },
+    {
       "id": "sdkwork-models",
       "repository": "sdkwork-ai/sdkwork-models",
       "refInput": "SDKWORK_MODELS_REF",
@@ -220,6 +226,12 @@
       "id": "sdkwork-payment",
       "repository": "sdkwork-ai/sdkwork-payment",
       "refInput": "SDKWORK_PAYMENT_REF",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    },
+    {
+      "id": "sdkwork-plugins",
+      "repository": "sdkwork-ai/sdkwork-plugins",
+      "refInput": "SDKWORK_PLUGINS_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {

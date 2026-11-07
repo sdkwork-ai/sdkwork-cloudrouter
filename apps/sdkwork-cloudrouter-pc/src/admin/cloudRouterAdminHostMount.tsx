@@ -9,7 +9,7 @@ import { TradeCenterHostElement } from './tradeCenterHostElement.tsx';
 
 export type CloudRouterAdminRouteContribution = {
   path: string;
-  owner: 'sdkwork-cloudrouter' | 'sdkwork-models' | 'sdkwork-log' | 'sdkwork-partner' | 'sdkwork-rtc' | 'sdkwork-order' | 'sdkwork-messaging' | 'sdkwork-course';
+  owner: 'sdkwork-cloudrouter' | 'sdkwork-models' | 'sdkwork-log' | 'sdkwork-partner' | 'sdkwork-rtc' | 'sdkwork-order' | 'sdkwork-messaging' | 'sdkwork-course' | 'sdkwork-skills' | 'sdkwork-mcp' | 'sdkwork-agents' | 'sdkwork-plugins';
   adminPackage: `@sdkwork/${string}`;
   backendSdkFamilies: readonly string[];
   requiredPermission: string;
@@ -35,6 +35,14 @@ const UpstreamAccountGroupAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrou
 const ModelAdmin = lazyAdminRoute(() => import('@sdkwork/models-pc-admin-catalog'), 'ModelAdmin');
 const ModelMappingAdmin = lazyAdminRoute(() => import('@sdkwork/models-pc-admin-catalog'), 'ModelMappingAdmin');
 const ResourceAdmin = lazyAdminRoute(() => import('@sdkwork/models-pc-admin-resource'), 'ResourceAdmin');
+const SkillsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-skill'), 'SkillsAdminPage');
+const SkillCategoriesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-skill'), 'SkillCategoriesAdminPage');
+const McpServersAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-connector'), 'McpServersAdminPage');
+const McpServerDetailAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-connector'), 'McpServerDetailAdminPage');
+const McpCategoriesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-connector'), 'McpCategoriesAdminPage');
+const AgentsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-agent'), 'AgentsAdminPage');
+const PluginsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-plugin'), 'PluginsAdminPage');
+const PluginCategoriesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-plugin'), 'PluginCategoriesAdminPage');
 const RecordAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-record'), 'RecordAdmin');
 const RequestLogAdmin = lazyAdminRoute(() => import('@sdkwork/log-pc-admin-request-log'), 'RequestLogAdmin');
 const MonitorAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-monitor'), 'MonitorAdmin');
@@ -153,6 +161,14 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   route('model', 'sdkwork-models', '@sdkwork/models-pc-admin-catalog', ['sdkwork-models-backend-sdk'], 'cloudrouter.admin.access', <ModelAdmin />),
   route('model/resources', 'sdkwork-models', '@sdkwork/models-pc-admin-resource', ['sdkwork-models-backend-sdk'], 'cloudrouter.admin.access', <ResourceAdmin />),
   route('model/mappings', 'sdkwork-models', '@sdkwork/models-pc-admin-catalog', ['sdkwork-models-backend-sdk'], 'cloudrouter.admin.access', <ModelMappingAdmin />),
+  route('skill/categories', 'sdkwork-skills', '@sdkwork/cloudrouter-pc-admin-skill', ['sdkwork-skills-backend-sdk'], 'cloudrouter.admin.access', <SkillCategoriesAdmin />),
+  route('skill', 'sdkwork-skills', '@sdkwork/cloudrouter-pc-admin-skill', ['sdkwork-skills-backend-sdk'], 'cloudrouter.admin.access', <SkillsAdmin />),
+  route('connector/categories', 'sdkwork-mcp', '@sdkwork/cloudrouter-pc-admin-connector', ['sdkwork-mcp-backend-sdk'], 'cloudrouter.admin.access', <McpCategoriesAdmin />),
+  route('connector/:serverKey', 'sdkwork-mcp', '@sdkwork/cloudrouter-pc-admin-connector', ['sdkwork-mcp-backend-sdk'], 'cloudrouter.admin.access', <McpServerDetailAdmin />),
+  route('connector', 'sdkwork-mcp', '@sdkwork/cloudrouter-pc-admin-connector', ['sdkwork-mcp-backend-sdk'], 'cloudrouter.admin.access', <McpServersAdmin />),
+  route('plugin/categories', 'sdkwork-plugins', '@sdkwork/cloudrouter-pc-admin-plugin', ['sdkwork-plugins-backend-sdk'], 'cloudrouter.admin.access', <PluginCategoriesAdmin />),
+  route('plugin', 'sdkwork-plugins', '@sdkwork/cloudrouter-pc-admin-plugin', ['sdkwork-plugins-backend-sdk'], 'cloudrouter.admin.access', <PluginsAdmin />),
+  route('agent', 'sdkwork-agents', '@sdkwork/cloudrouter-pc-admin-agent', ['sdkwork-agents-backend-sdk'], 'cloudrouter.admin.access', <AgentsAdmin />),
   route('record', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-record', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <RecordAdmin />),
   route('request-log', 'sdkwork-log', '@sdkwork/log-pc-admin-request-log', ['sdkwork-log-backend-sdk'], 'cloudrouter.system.read', <RequestLogAdmin />),
   route('monitor', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-monitor', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <MonitorAdmin />),

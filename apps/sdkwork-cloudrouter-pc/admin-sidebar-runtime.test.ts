@@ -94,3 +94,44 @@ test("admin sidebar exposes only product price settings", () => {
   assert.equal(isSidebarItemActive("/admin/pricing/settings", settingsItem, homeMenu), true);
 });
 
+test("admin sidebar exposes skills, connectors, plugins, and agents groups", () => {
+  const homeMenu = getAdminModuleMenu("home");
+
+  const skillGroup = homeMenu.groups.find((group) => group.groupKey === "admin.menu.home.skillManagement");
+  assert.ok(skillGroup, "skill management group must exist");
+  assert.deepEqual(skillGroup.items.map((item) => item.path), [
+    "/admin/skill/categories",
+    "/admin/skill",
+  ]);
+
+  const connectorGroup = homeMenu.groups.find((group) => group.groupKey === "admin.menu.home.connectorManagement");
+  assert.ok(connectorGroup, "connector management group must exist");
+  assert.deepEqual(connectorGroup.items.map((item) => item.path), [
+    "/admin/connector/categories",
+    "/admin/connector",
+  ]);
+
+  const pluginGroup = homeMenu.groups.find((group) => group.groupKey === "admin.menu.home.pluginManagement");
+  assert.ok(pluginGroup, "plugin management group must exist");
+  assert.deepEqual(pluginGroup.items.map((item) => item.path), [
+    "/admin/plugin/categories",
+    "/admin/plugin",
+  ]);
+
+  const agentGroup = homeMenu.groups.find((group) => group.groupKey === "admin.menu.home.agentManagement");
+  assert.ok(agentGroup, "agent management group must exist");
+  assert.deepEqual(agentGroup.items.map((item) => item.path), [
+    "/admin/agent",
+  ]);
+
+  // The home module must claim every new top-level path prefix so the header
+  // module switcher keeps the four groups inside the same admin module.
+  const homeModule = ADMIN_MODULES.find((module) => module.id === "home");
+  assert.ok(homeModule, "home module must exist");
+  for (const prefix of ["/admin/skill", "/admin/connector", "/admin/plugin", "/admin/agent"]) {
+    assert.ok(
+      homeModule.pathPrefixes.includes(prefix),
+      `home module must claim ${prefix}`,
+    );
+  }
+});

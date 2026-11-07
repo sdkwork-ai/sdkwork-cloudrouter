@@ -1,0 +1,43 @@
+{
+  "name": "@sdkwork/cloudrouter-pc-admin-skill",
+  "version": "0.1.0",
+  "private": true,
+  "license": "SEE LICENSE IN ../../../../LICENSE",
+  "type": "module",
+  "description": "SDKWork Cloud Router PC admin console Skills integration block.",
+  "main": "./src/index.tsx",
+  "module": "./src/index.tsx",
+  "types": "./src/index.tsx",
+  "exports": {
+    ".": {
+      "types": "./src/index.tsx",
+      "import": "./src/index.tsx",
+      "default": "./src/index.tsx"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sdkwork/cloudroutes-pc-commons": "workspace:*",
+    "@sdkwork/skills-pc-admin": "workspace:*",
+    "@sdkwork/skills-pc-admin-skill": "workspace:*",
+    "@sdkwork/skills-pc-core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=19.0.0 <20.0.0",
+    "react-dom": ">=19.0.0 <20.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "typescript": "~5.8.2"
+  },
+  "sdkwork": {
+    "workspace": "sdkwork-cloudrouter",
+    "architecture": "pc-admin-react",
+    "domain": "intelligence",
+    "capability": "skills",
+    "surface": "admin",
+    "status": "ready"
+  }
+}

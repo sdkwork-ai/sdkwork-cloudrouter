@@ -315,6 +315,11 @@ sdkwork_api_agents_assembly = { package = "sdkwork-api-agents-assembly", path = 
 sdkwork_agents_database_host = { package = "sdkwork-agents-database-host", path = "../sdkwork-agents/crates/sdkwork-agents-database-host" }
 sdkwork_api_skills_assembly = { package = "sdkwork-api-skills-assembly", path = "../sdkwork-skills/crates/sdkwork-api-skills-assembly" }
 sdkwork_skills_database_host = { package = "sdkwork-skills-database-host", path = "../sdkwork-skills/crates/sdkwork-skills-database-host" }
+sdkwork_routes_skills_backend_api = { package = "sdkwork-routes-skills-backend-api", path = "../sdkwork-skills/crates/sdkwork-routes-skills-backend-api" }
+sdkwork_api_mcp_assembly = { package = "sdkwork-api-mcp-assembly", path = "../sdkwork-mcp/crates/sdkwork-api-mcp-assembly" }
+sdkwork_routes_mcp_backend_api = { package = "sdkwork-routes-mcp-backend-api", path = "../sdkwork-mcp/crates/sdkwork-routes-mcp-backend-api" }
+sdkwork_api_plugins_assembly = { package = "sdkwork-api-plugins-assembly", path = "../sdkwork-plugins/crates/sdkwork-api-plugins-assembly" }
+sdkwork_routes_plugins_backend_api = { package = "sdkwork-routes-plugins-backend-api", path = "../sdkwork-plugins/crates/sdkwork-routes-plugins-backend-api" }
 sdkwork_api_generations_assembly = { package = "sdkwork-api-generations-assembly", path = "../sdkwork-generations/crates/sdkwork-api-generations-assembly" }
 sdkwork_intelligence_generations_service = { package = "sdkwork-intelligence-generations-service", path = "../sdkwork-generations/crates/sdkwork-intelligence-generations-service" }
 sdkwork_routes_shop_app_api = { package = "sdkwork-routes-shop-app-api", path = "../sdkwork-shop/crates/sdkwork-routes-shop-app-api" }

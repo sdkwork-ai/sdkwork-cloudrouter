@@ -2069,6 +2069,57 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
         .await
         .map_err(anyhow::Error::msg)?;
     let backend_router = backend_router.merge(rtc_backend_contribution.router);
+    // Skills backend surface (`/backend/v3/api/skills`, `/backend/v3/api/skill_*`)
+    // is dependency-owned. It enters through the Skills API assembly backend
+    // contribution on the Skills database host (per-module lifecycle manifest) —
+    // not through a direct `sdkwork-routes-*` import — per API_ASSEMBLY_SPEC
+    // §3/§6.1, and must be merged before the Web Framework layer is installed by
+    // `finalize_all_in_one_route_surfaces`. The contribution's domain context
+    // injectors are chained into the finalize call below so Skills handlers
+    // receive their domain context extension.
+    let skills_backend_contribution = sdkwork_api_skills_assembly::assemble_backend_api_contribution()
+        .await
+        .map_err(anyhow::Error::msg)?;
+    let backend_router = backend_router.merge(skills_backend_contribution.router);
+    // MCP backend surface (`/backend/v3/api/mcp/*`) is dependency-owned. It
+    // enters through the MCP API assembly backend contribution on the MCP
+    // database host (per-module lifecycle manifest) — not through a direct
+    // `sdkwork-routes-*` import — per API_ASSEMBLY_SPEC §3/§6.1, and must be
+    // merged before the Web Framework layer is installed by
+    // `finalize_all_in_one_route_surfaces`. The contribution's domain context
+    // injectors are chained into the finalize call below so MCP handlers
+    // receive their domain context extension.
+    let mcp_backend_contribution = sdkwork_api_mcp_assembly::assemble_backend_api_contribution()
+        .await
+        .map_err(anyhow::Error::msg)?;
+    let backend_router = backend_router.merge(mcp_backend_contribution.router);
+    // Agents backend surface (`/backend/v3/api/ai/agents` and its
+    // sub-resources) is dependency-owned. It enters through the Agents API
+    // assembly backend contribution — not through a direct `sdkwork-routes-*`
+    // import — per API_ASSEMBLY_SPEC §3/§6.1, and must be merged before the
+    // Web Framework layer is installed by `finalize_all_in_one_route_surfaces`.
+    // The contribution boots its own `AgentHttpState` and keeps background
+    // worker ownership on the App API contribution, so no turn reconciliation
+    // worker is double-spawned here.
+    let agents_backend_contribution =
+        sdkwork_api_agents_assembly::assemble_backend_api_contribution()
+            .await
+            .map_err(anyhow::Error::msg)?;
+    let backend_router = backend_router.merge(agents_backend_contribution.router);
+    // Plugins backend surface (`/backend/v3/api/plugins`,
+    // `/backend/v3/api/plugin_categories`) is dependency-owned by the
+    // sdkwork-plugins plugin registry module. It enters through the Plugins
+    // API assembly backend contribution on the Plugins database host
+    // (per-module lifecycle manifest) — not through a direct
+    // `sdkwork-routes-*` import — per API_ASSEMBLY_SPEC §3/§6.1, and must be
+    // merged before the Web Framework layer is installed by
+    // `finalize_all_in_one_route_surfaces`. The contribution's domain context
+    // injectors are chained into the finalize call below.
+    let plugins_backend_contribution =
+        sdkwork_api_plugins_assembly::assemble_backend_api_contribution()
+            .await
+            .map_err(anyhow::Error::msg)?;
+    let backend_router = backend_router.merge(plugins_backend_contribution.router);
     let app_router = sdkwork_routes_cloudrouter_app_api::router_with_postgres_shared_runtime(
         sdkwork_routes_cloudrouter_app_api::PostgresSharedRuntime {
             config: context.database_config.clone(),
@@ -2116,7 +2167,14 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
         &context.database_pool,
         backend_router,
         app_router,
-        rtc_backend_contribution.domain_context_injectors,
+        rtc_backend_contribution
+            .domain_context_injectors
+            .into_iter()
+            .chain(skills_backend_contribution.domain_context_injectors)
+            .chain(mcp_backend_contribution.domain_context_injectors)
+            .chain(agents_backend_contribution.domain_context_injectors)
+            .chain(plugins_backend_contribution.domain_context_injectors)
+            .collect(),
     )
     .await;
     // Open-api surface request logging: every request that reaches the gateway

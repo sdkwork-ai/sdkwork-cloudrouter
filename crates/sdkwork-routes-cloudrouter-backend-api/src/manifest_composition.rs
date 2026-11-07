@@ -108,6 +108,26 @@ const MOUNTED_BACKEND_CAPABILITIES: &[MountedBackendCapability] = &[
         owner: "sdkwork-drive",
         manifest: sdkwork_api_drive_assembly::backend_admin_storage_route_manifest,
     },
+    MountedBackendCapability {
+        workspace: "sdkwork-skills",
+        owner: "sdkwork-skills",
+        manifest: sdkwork_routes_skills_backend_api::backend_route_manifest,
+    },
+    MountedBackendCapability {
+        workspace: "sdkwork-mcp",
+        owner: "sdkwork-mcp",
+        manifest: sdkwork_routes_mcp_backend_api::backend_route_manifest,
+    },
+    MountedBackendCapability {
+        workspace: "sdkwork-agents",
+        owner: "sdkwork-agents",
+        manifest: sdkwork_api_agents_assembly::backend_api_route_manifest,
+    },
+    MountedBackendCapability {
+        workspace: "sdkwork-plugins",
+        owner: "sdkwork-plugins",
+        manifest: sdkwork_routes_plugins_backend_api::backend_route_manifest,
+    },
 ];
 
 fn dependency_mounts() -> Vec<RouteManifestMount> {
@@ -300,6 +320,10 @@ mod tests {
             "sdkwork-course",
             "sdkwork-log",
             "sdkwork-drive",
+            "sdkwork-skills",
+            "sdkwork-mcp",
+            "sdkwork-agents",
+            "sdkwork-plugins",
         ] {
             assert!(
                 workspaces.contains(&required),
@@ -326,6 +350,22 @@ mod tests {
                 "sdkwork_api_course_assembly::assemble_backend_business_router_with_pool",
             ),
             ("sdkwork-rtc", "assemble_backend_api_contribution_with_pool"),
+            (
+                "sdkwork-skills",
+                "sdkwork_api_skills_assembly::assemble_backend_api_contribution",
+            ),
+            (
+                "sdkwork-mcp",
+                "sdkwork_api_mcp_assembly::assemble_backend_api_contribution",
+            ),
+            (
+                "sdkwork-agents",
+                "sdkwork_api_agents_assembly::assemble_backend_api_contribution",
+            ),
+            (
+                "sdkwork-plugins",
+                "sdkwork_api_plugins_assembly::assemble_backend_api_contribution",
+            ),
         ] {
             assert!(
                 MOUNTED_BACKEND_CAPABILITIES
@@ -516,6 +556,251 @@ mod tests {
                 Some(permission),
                 route.required_permission,
                 "{method} {path} must keep its declared course permission"
+            );
+        }
+    }
+
+    #[test]
+    fn composed_manifest_includes_skills_backend_routes() {
+        // Regression guard: the Skills admin module (技能管理) reaches
+        // `/backend/v3/api/skills` and `/backend/v3/api/skill_*` through the
+        // same-origin dependency backend base URL. The capability is
+        // dependency-owned, so every declared path must be registered by the
+        // skills mount and keep its dual-token auth and `skills.*` permission.
+        let manifest = cloud_router_backend_composed_route_manifest();
+        for (method, path, permission) in [
+            ("GET", "/backend/v3/api/skills", "skills.marketplace.read"),
+            (
+                "GET",
+                "/backend/v3/api/skill_packages",
+                "skills.packages.manage",
+            ),
+            (
+                "POST",
+                "/backend/v3/api/skill_packages",
+                "skills.packages.manage",
+            ),
+            (
+                "PATCH",
+                "/backend/v3/api/skill_packages/{packageId}",
+                "skills.packages.manage",
+            ),
+            (
+                "DELETE",
+                "/backend/v3/api/skill_packages/{packageId}",
+                "skills.packages.manage",
+            ),
+            (
+                "GET",
+                "/backend/v3/api/skill_categories",
+                "skills.categories.manage",
+            ),
+            (
+                "POST",
+                "/backend/v3/api/skill_categories",
+                "skills.categories.manage",
+            ),
+            (
+                "PATCH",
+                "/backend/v3/api/skill_categories/{categoryId}",
+                "skills.categories.manage",
+            ),
+            (
+                "GET",
+                "/backend/v3/api/skill_capabilities",
+                "skills.capabilities.manage",
+            ),
+            (
+                "POST",
+                "/backend/v3/api/skill_capabilities",
+                "skills.capabilities.manage",
+            ),
+        ] {
+            let route = manifest.match_route(method, path).unwrap_or_else(|| {
+                panic!("{method} {path} must be registered by the skills mount")
+            });
+            assert_eq!(
+                RouteAuth::DualToken,
+                route.auth,
+                "{method} {path} must inherit dual-token auth from the skills manifest"
+            );
+            assert_eq!(
+                Some(permission),
+                route.required_permission,
+                "{method} {path} must keep its declared skills permission"
+            );
+        }
+    }
+
+    #[test]
+    fn composed_manifest_includes_mcp_backend_routes() {
+        // Regression guard: the Connector admin module (连接器管理) reaches
+        // `/backend/v3/api/mcp/*` through the same-origin dependency backend
+        // base URL. The capability is dependency-owned, so every declared path
+        // must be registered by the mcp mount and keep its dual-token auth and
+        // `mcp.admin.*` permission.
+        let manifest = cloud_router_backend_composed_route_manifest();
+        for (method, path, permission) in [
+            (
+                "GET",
+                "/backend/v3/api/mcp/categories",
+                "mcp.admin.marketplace.read",
+            ),
+            (
+                "POST",
+                "/backend/v3/api/mcp/categories",
+                "mcp.admin.category.manage",
+            ),
+            (
+                "GET",
+                "/backend/v3/api/mcp/servers",
+                "mcp.admin.marketplace.read",
+            ),
+            (
+                "POST",
+                "/backend/v3/api/mcp/servers",
+                "mcp.admin.server.manage",
+            ),
+            (
+                "PUT",
+                "/backend/v3/api/mcp/servers/{serverKey}",
+                "mcp.admin.server.manage",
+            ),
+            (
+                "DELETE",
+                "/backend/v3/api/mcp/servers/{serverKey}",
+                "mcp.admin.server.manage",
+            ),
+            (
+                "GET",
+                "/backend/v3/api/mcp/servers/{serverId}/connectors",
+                "mcp.admin.marketplace.read",
+            ),
+            (
+                "POST",
+                "/backend/v3/api/mcp/servers/{serverId}/connectors",
+                "mcp.admin.server.manage",
+            ),
+        ] {
+            let route = manifest.match_route(method, path).unwrap_or_else(|| {
+                panic!("{method} {path} must be registered by the mcp mount")
+            });
+            assert_eq!(
+                RouteAuth::DualToken,
+                route.auth,
+                "{method} {path} must inherit dual-token auth from the mcp manifest"
+            );
+            assert_eq!(
+                Some(permission),
+                route.required_permission,
+                "{method} {path} must keep its declared mcp permission"
+            );
+        }
+    }
+
+    #[test]
+    fn composed_manifest_includes_agents_backend_routes() {
+        // Regression guard: the Agent admin module (Agent管理) reaches
+        // `/backend/v3/api/ai/agents` through the same-origin dependency
+        // backend base URL. The capability is dependency-owned, so the managed
+        // agents CRUD paths must be registered by the agents mount and keep
+        // their dual-token auth plus the `x-sdkwork-permission` codes declared
+        // by the Agents OpenAPI authority.
+        let manifest = cloud_router_backend_composed_route_manifest();
+        for (method, path, permission) in [
+            ("GET", "/backend/v3/api/ai/agents", "agent.business.list"),
+            ("POST", "/backend/v3/api/ai/agents", "agent.business.create"),
+            (
+                "GET",
+                "/backend/v3/api/ai/agents/{agentId}",
+                "agent.business.retrieve",
+            ),
+            (
+                "PATCH",
+                "/backend/v3/api/ai/agents/{agentId}",
+                "agent.business.update",
+            ),
+            (
+                "POST",
+                "/backend/v3/api/ai/agents/{agentId}/status",
+                "agent.business.status.update",
+            ),
+            (
+                "POST",
+                "/backend/v3/api/ai/agents/{agentId}/restore",
+                "agent.business.restore",
+            ),
+            (
+                "GET",
+                "/backend/v3/api/ai/agents/{agentId}/audit_events",
+                "agent.business.audit.read",
+            ),
+        ] {
+            let route = manifest.match_route(method, path).unwrap_or_else(|| {
+                panic!("{method} {path} must be registered by the agents mount")
+            });
+            assert_eq!(
+                RouteAuth::DualToken,
+                route.auth,
+                "{method} {path} must inherit dual-token auth from the agents manifest"
+            );
+            assert_eq!(
+                Some(permission),
+                route.required_permission,
+                "{method} {path} must keep its declared agents permission"
+            );
+        }
+    }
+
+    #[test]
+    fn composed_manifest_includes_plugins_backend_routes() {
+        // Regression guard: the Plugin admin module (插件管理) reaches
+        // `/backend/v3/api/plugins` and `/backend/v3/api/plugin_categories`
+        // through the same-origin dependency backend base URL. The capability
+        // is dependency-owned (sdkwork-plugins), so every declared path must
+        // be registered by the plugins mount and keep its dual-token auth and
+        // `plugins.admin.*` permission.
+        let manifest = cloud_router_backend_composed_route_manifest();
+        for (method, path, permission) in [
+            (
+                "GET",
+                "/backend/v3/api/plugin_categories",
+                "plugins.admin.category.read",
+            ),
+            (
+                "POST",
+                "/backend/v3/api/plugin_categories",
+                "plugins.admin.category.manage",
+            ),
+            ("GET", "/backend/v3/api/plugins", "plugins.admin.plugin.read"),
+            (
+                "POST",
+                "/backend/v3/api/plugins",
+                "plugins.admin.plugin.manage",
+            ),
+            (
+                "PUT",
+                "/backend/v3/api/plugins/{pluginKey}",
+                "plugins.admin.plugin.manage",
+            ),
+            (
+                "DELETE",
+                "/backend/v3/api/plugins/{pluginKey}",
+                "plugins.admin.plugin.manage",
+            ),
+        ] {
+            let route = manifest.match_route(method, path).unwrap_or_else(|| {
+                panic!("{method} {path} must be registered by the plugins mount")
+            });
+            assert_eq!(
+                RouteAuth::DualToken,
+                route.auth,
+                "{method} {path} must inherit dual-token auth from the plugins manifest"
+            );
+            assert_eq!(
+                Some(permission),
+                route.required_permission,
+                "{method} {path} must keep its declared plugins permission"
             );
         }
     }
