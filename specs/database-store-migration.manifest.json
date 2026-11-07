@@ -241,10 +241,13 @@
       "capability": "ai-metering-async-task",
       "targetCrate": "crates/sdkwork-cloudrouter-ai-metering-async-task-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/async_usage_task_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/async_usage_task_store.rs",
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/runtime_invocation_reaper_store.rs"
       ],
       "tables": [
-        "ai_metering_async_task"
+        "ai_metering_async_task",
+        "ai_runtime_invocation",
+        "ai_runtime_invocation_event"
       ],
       "priority": "HIGH",
       "migrationOrder": 13,
@@ -405,11 +408,13 @@
       "capability": "site-settings",
       "targetCrate": "crates/sdkwork-cloudrouter-site-settings-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/site_settings_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/site_settings_store.rs",
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_module_entry_store.rs"
       ],
       "tables": [
         "ops_audit_log",
-        "ops_config_snapshot"
+        "ops_config_snapshot",
+        "ops_admin_module_entry"
       ],
       "priority": "LOW",
       "migrationOrder": 23
@@ -536,9 +541,9 @@
     }
   ],
   "inventoryStats": {
-    "activeStoreFiles": 34,
-    "coveredStoreFiles": 34,
+    "activeStoreFiles": 36,
+    "coveredStoreFiles": 36,
     "capabilityGroups": 32,
-    "logicalStores": 34
+    "logicalStores": 36
   }
 }
