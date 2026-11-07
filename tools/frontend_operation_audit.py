@@ -146,9 +146,15 @@ class FrontendOperationAudit:
     # sdkwork-plugins): operations dispatched through these clients are owned
     # by their capability contracts, not the Cloud Router app/backend
     # authority.
-    SKILLS_BACKEND_SDK_PATTERN = re.compile(r"\bgetSkillsBackendSdkClient\s*\(")
-    MCP_BACKEND_SDK_PATTERN = re.compile(r"\bgetMcpBackendSdkClient\s*\(")
-    PLUGINS_BACKEND_SDK_PATTERN = re.compile(r"\bgetPluginsBackendSdkClient\s*\(")
+    SKILLS_BACKEND_SDK_PATTERN = re.compile(
+        r"(?:\bgetSkillsBackendSdkClient\s*\(|@sdkwork/skills-backend-sdk)"
+    )
+    MCP_BACKEND_SDK_PATTERN = re.compile(
+        r"(?:\bgetMcpBackendSdkClient\s*\(|@sdkwork/mcp-backend-sdk)"
+    )
+    PLUGINS_BACKEND_SDK_PATTERN = re.compile(
+        r"(?:\bgetPluginsBackendSdkClient\s*\(|@sdkwork/plugins-backend-sdk)"
+    )
     DRIVE_APP_SDK_PATTERN = re.compile(r"\bgetSdkworkDriveAppSdkClient\s*\(")
     MEMORY_CLIENT_PATTERN = re.compile(r"\bclient\s*\.\s*memory\s*\.")
     NOTIFICATION_DEPENDENCY_DOMAINS = frozenset({"notification"})
@@ -214,7 +220,18 @@ class FrontendOperationAudit:
         "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/sessionService.ts",
     )
     AGENT_DEPENDENCY_DOMAINS = frozenset({"agent"})
-    AGENT_BACKEND_SDK_PATTERN = re.compile(r"\bgetSdkworkAgentBackendSdkClient\s*\(")
+    AGENT_BACKEND_SDK_PATTERN = re.compile(
+        r"(?:\b(?:getSdkworkAgentBackendSdkClient|getAgentsAdminBackendSdkClient)\s*\(|@sdkwork/agents-backend-sdk)"
+    )
+    # Capability admin blocks published by sibling modules (skills, MCP,
+    # plugins) import their own generated backend SDK and receive the client
+    # through a host-configured runtime seam, so the generated-SDK package
+    # import is the boundary evidence for those operations.
+    CAPABILITY_ADMIN_BACKEND_SDK_PATTERNS = {
+        "skills": SKILLS_BACKEND_SDK_PATTERN,
+        "mcp": MCP_BACKEND_SDK_PATTERN,
+        "plugins": PLUGINS_BACKEND_SDK_PATTERN,
+    }
     PROMPTS_DEPENDENCY_DOMAINS = frozenset({"prompts"})
     PROMPTS_BACKEND_SDK_PATTERN = re.compile(r"\bgetSdkworkPromptsBackendSdkClient\s*\(")
     DRIVE_DEPENDENCY_DOMAINS = frozenset({"drive"})
@@ -1190,6 +1207,14 @@ class FrontendOperationAudit:
             return self.DRIVE_APP_SDK_PATTERN.search(source_text) is not None
         if self._is_missing_commerce_dependency_operation(source_text=source_text, source_operation=source_operation):
             return True
+
+        capability_admin_pattern = (
+            self.CAPABILITY_ADMIN_BACKEND_SDK_PATTERNS.get(sdk_domain)
+            if isinstance(sdk_domain, str)
+            else None
+        )
+        if capability_admin_pattern is not None:
+            return capability_admin_pattern.search(source_text) is not None
 
         sdk_client = self.SDK_CLIENTS[api_surface]
         if re.search(rf"\b{re.escape(sdk_client)}\s*\(", source_text):

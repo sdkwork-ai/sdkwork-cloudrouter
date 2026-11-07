@@ -1,4 +1,4 @@
-schema:
+﻿schema:
   name: sdkwork-cloudrouter-frontend-field-contracts
   version: 0.2.0
   source: tools/hydrate_frontend_contract_relay_surfaces.py
@@ -5486,7 +5486,7 @@ frontend_operations:
     source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
     operation: upsertResourceGroupMember
     operation_id: resourceGroups.resources.update
-    kind: update
+    kind: action
     api_surface: backend
     api_method: PUT
     api_path: /backend/v3/api/ai/resource_groups/{groupId}/resources/{resourceCode}
@@ -13027,7 +13027,7 @@ frontend_operations:
     source: ../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts
     operation: upsertAdminCategory
     operation_id: mcpAdmin.upsertCategory
-    kind: update
+    kind: action
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/mcp/categories
@@ -13135,7 +13135,7 @@ frontend_operations:
     source: ../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts
     operation: upsertAdminConnector
     operation_id: mcpAdmin.upsertConnector
-    kind: update
+    kind: action
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/mcp/servers/{serverId}/connectors
@@ -13179,7 +13179,7 @@ frontend_operations:
     source: ../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts
     operation: upsertAdminTool
     operation_id: mcpAdmin.upsertTool
-    kind: update
+    kind: action
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/mcp/servers/{serverId}/tools
@@ -13201,7 +13201,7 @@ frontend_operations:
     source: ../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts
     operation: upsertAdminResource
     operation_id: mcpAdmin.upsertResource
-    kind: update
+    kind: action
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/mcp/servers/{serverId}/resources
@@ -13223,7 +13223,7 @@ frontend_operations:
     source: ../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts
     operation: upsertAdminPrompt
     operation_id: mcpAdmin.upsertPrompt
-    kind: update
+    kind: action
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/mcp/servers/{serverId}/prompts
@@ -13287,7 +13287,7 @@ frontend_operations:
     source: ../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts
     operation: upsertPluginCategory
     operation_id: pluginsAdmin.upsertCategory
-    kind: update
+    kind: action
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/plugin_categories
