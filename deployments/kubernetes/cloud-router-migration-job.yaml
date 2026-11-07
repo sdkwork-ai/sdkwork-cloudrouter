@@ -35,9 +35,9 @@ spec:
             # Deployment identity (DEPLOYMENT_SPEC §5.2): the standalone image
             # defaults to profile=standalone, target=container. Explicit here so
             # the Job cannot drift from the runtime workloads.
-            - name: SDKWORK_CLOUDROUTER_DEPLOYMENT_PROFILE
+            - name: SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE
               value: standalone
-            - name: SDKWORK_CLOUDROUTER_RUNTIME_TARGET
+            - name: SDKWORK_CLOUDROUTER_ROUTER_RUNTIME_TARGET
               value: container
             - name: SDKWORK_CLOUDROUTER_CONFIG_FILE
               value: /etc/sdkwork/router/config.toml

@@ -89,11 +89,11 @@ const BROWSER_PROFILE_TEMPLATE_FILES = Object.freeze([
   path.join(PORTAL_ROOT, '.env.standalone.production.example'),
 ]);
 
+// 1ef6c8e3 moved the container packaging to standalone-only: the cloud
+// admin-api/app-api/edge/gateway manifests were removed and the runtime
+// lifecycle lives in cloud-router-standalone.yaml.
 const KUBERNETES_RUNTIME_FILES = Object.freeze([
-  'cloud-router-admin-api.yaml',
-  'cloud-router-app-api.yaml',
-  'cloud-router-edge.yaml',
-  'cloud-router-gateway.yaml',
+  'cloud-router-standalone.yaml',
   'cloud-router-migration-job.yaml',
 ].map((fileName) => path.join(WORKSPACE_ROOT, 'deployments', 'kubernetes', fileName)));
 
@@ -186,12 +186,13 @@ function assertLifecycleTemplatesUseApplicationNamespace() {
   }
 }
 
-function assertKubernetesUsesProductionLifecycleNamespace() {
-  const expected = {
-    [CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.configProfile]: 'prod',
-    [CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.environment]: 'production',
-    [CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.deploymentProfile]: 'cloud',
-    [CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.runtimeTarget]: 'container',
+function assertKubernetesUsesStandaloneLifecycleNamespace() {
+  // Standalone container packaging declares its lifecycle through the
+  // SDKWORK_CLOUDROUTER_* deployment keys (deploymentProfile=standalone,
+  // runtimeTarget=container) rather than the retired cloud four-tuple.
+  const expectedStandalone = {
+    SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE: 'standalone',
+    SDKWORK_CLOUDROUTER_ROUTER_RUNTIME_TARGET: 'container',
   };
   for (const file of KUBERNETES_RUNTIME_FILES) {
     const content = readFileSync(file, 'utf8');
@@ -200,11 +201,15 @@ function assertKubernetesUsesProductionLifecycleNamespace() {
         throw new Error(`${path.basename(file)} must not declare retired lifecycle key ${retiredKey}`);
       }
     }
-    for (const [key, expectedValue] of Object.entries(expected)) {
-      const assignment = new RegExp(`- name: ${key}\\r?\\n\\s+value: ${expectedValue}(?:\\r?\\n|$)`, 'u');
-      if (!assignment.test(content)) {
-        throw new Error(`${path.basename(file)} must set ${key}=${expectedValue}`);
-      }
+  }
+  const standaloneContent = readFileSync(
+    path.join(WORKSPACE_ROOT, 'deployments', 'kubernetes', 'cloud-router-standalone.yaml'),
+    'utf8',
+  );
+  for (const [key, expectedValue] of Object.entries(expectedStandalone)) {
+    const assignment = new RegExp(`- name: ${key}\\r?\\n\\s+value: ${expectedValue}(?:\\r?\\n|$)`, 'u');
+    if (!assignment.test(standaloneContent)) {
+      throw new Error(`cloud-router-standalone.yaml must set ${key}=${expectedValue}`);
     }
   }
 }
@@ -463,7 +468,7 @@ function main() {
   for (const assertion of [
     assertTemplateAccessTokenLifecycleBoundaries,
     assertLifecycleTemplatesUseApplicationNamespace,
-    assertKubernetesUsesProductionLifecycleNamespace,
+    assertKubernetesUsesStandaloneLifecycleNamespace,
     assertApplicationEnvStandardDocumentsOnlyCurrentLifecycleKeys,
     assertViteDevelopmentOnlyBootstrapToken,
     assertRuntimeEnvScriptDoesNotExposeAccessToken,
@@ -515,7 +520,7 @@ export {
   assertHostReleaseProfileHasCanonicalKeyOrder,
   assertHostProductionProfilesDoNotPersistAccessToken,
   assertHostBrowserProfilesFreeOfLegacyPortalKeys,
-  assertKubernetesUsesProductionLifecycleNamespace,
+  assertKubernetesUsesStandaloneLifecycleNamespace,
   assertLifecycleTemplatesUseApplicationNamespace,
   assertProductionTemplateForbidsLegacyPortalKeys,
   assertReleaseTemplateDocumentsPortalPublicKeys,

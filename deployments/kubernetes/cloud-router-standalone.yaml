@@ -80,9 +80,9 @@ spec:
             # Deployment identity (DEPLOYMENT_SPEC §5.2). These are the
             # canonical env keys; the retired SDKWORK_CLOUDROUTER_ROUTER_*
             # aliases are ignored at startup.
-            - name: SDKWORK_CLOUDROUTER_DEPLOYMENT_PROFILE
+            - name: SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE
               value: standalone
-            - name: SDKWORK_CLOUDROUTER_RUNTIME_TARGET
+            - name: SDKWORK_CLOUDROUTER_ROUTER_RUNTIME_TARGET
               value: container
             # Application public ingress bind: container-internal 3900.
             - name: SDKWORK_CLOUDROUTER_APPLICATION_PUBLIC_INGRESS_BIND
