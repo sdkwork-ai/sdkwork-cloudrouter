@@ -9,6 +9,7 @@ import {
   assertTemplateAccessTokenLifecycleBoundaries,
   assertViteDevelopmentOnlyBootstrapToken,
 } from '../check-cloud-router-application-env.mjs';
+import { isPublicApplicationAccessToken } from '../lib/cloud-router-browser-env-contract.mjs';
 import { ensureCloudRouterEnvForLifecycle } from './cloud-router-application-env.mjs';
 
 test('ensureCloudRouterEnvForLifecycle start resolves release and production profiles', () => {
@@ -20,7 +21,17 @@ test('ensureCloudRouterEnvForLifecycle start resolves release and production pro
   assert.ok(results.release);
   assert.ok(results.production);
   assert.equal(Object.hasOwn(results.release.mergedEnv, 'SDKWORK_ACCESS_TOKEN'), false);
-  assert.equal(Object.hasOwn(results.production.mergedEnv, 'SDKWORK_ACCESS_TOKEN'), false);
+  // d53534b4a bakes the committed public application token into production
+  // browser profiles; if one is present it must be public-class (a private
+  // bootstrap credential must never reach a production browser record).
+  const productionToken = results.production.mergedEnv.SDKWORK_ACCESS_TOKEN;
+  if (productionToken !== undefined) {
+    assert.equal(
+      isPublicApplicationAccessToken(productionToken),
+      true,
+      'production profiles may only bake a public application access token',
+    );
+  }
 });
 
 test('ensureCloudRouterEnvForLifecycle all never invokes development token signing', () => {
