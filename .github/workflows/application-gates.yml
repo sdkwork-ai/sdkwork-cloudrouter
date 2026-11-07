@@ -1,0 +1,268 @@
+name: Application Gates
+
+# Database-backed verification lanes plus the security, supply-chain, and E2E
+# gates that need dedicated services or tooling beyond the thin
+# `verify.yml` reusable-workflow call. The `verify` job here owns the
+# PostgreSQL service container the thin CI lane deliberately does not spin.
+#
+# The Cargo workspace and the pnpm workspace both resolve their sibling SDKWork
+# repositories through relative paths (`../sdkwork-log/crates/...`), so every
+# job materializes the dependency set declared by `agent.workflow.json` before
+# it builds. `sdkwork-agents` records its `apps/` tree as a submodule whose URL
+# is SSH, which an HTTPS-only runner cannot init, so `git@github.com:` is
+# rewritten to `https://github.com/` by the composite action setup.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  database-verify:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: sdkwork_ai_test
+          POSTGRES_PASSWORD: sdkwork-ci
+          POSTGRES_DB: sdkwork_ai_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sdkwork_ai_test -d sdkwork_ai_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      SDKWORK_DATABASE_URL: postgres://sdkwork_ai_test:sdkwork-ci@localhost:5432/sdkwork_ai_test
+      CLOUDROUTER_BROWSER_SMOKE_REQUIRED: "1"
+      CLOUDROUTER_EDGE_DEV_SMOKE_REQUIRED: "1"
+    steps:
+      - name: Checkout application source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Materialize SDKWork dependencies
+        uses: ./.github/actions/materialize-dependencies
+        with:
+          # Three of the fifty dependencies are private (sdkwork-appbase,
+          # sdkwork-feeds, sdkwork-test). The workflow GITHUB_TOKEN is scoped to
+          # this repository alone, so cloning one of those with it returns
+          # "repository ... not found" and the workspace then loses the packages
+          # other repositories declare as `workspace:*` dependencies.
+          token: ${{ secrets.SDKWORK_RELEASE_TOKEN || github.token }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      # Not frozen. The root lockfile spans all workspace projects, and most of
+      # them come from the federated sibling repositories this job checks out
+      # at their default branch. Any sibling that adds a dependency makes the
+      # committed lockfile stale and `--frozen-lockfile` aborts with
+      # ERR_PNPM_OUTDATED_LOCKFILE. The packaging lifecycle installs the same
+      # workspace with --no-frozen-lockfile.
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: PostgreSQL integration tests (required)
+        run: pnpm test:postgres:required
+
+      - name: Browser smoke
+        run: pnpm verify
+
+      - name: Edge dev smoke
+        run: pnpm verify -- --with-edge-dev-smoke
+
+  security-scan:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout application source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Materialize SDKWork dependencies
+        uses: ./.github/actions/materialize-dependencies
+        with:
+          token: ${{ secrets.SDKWORK_RELEASE_TOKEN || github.token }}
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo audit/deny
+        run: |
+          cargo install --locked cargo-audit
+          cargo install --locked cargo-deny
+
+      # `--file .cargo/audit.toml` is required, not decorative. cargo-audit
+      # looks for its configuration at `$CARGO_HOME/audit.toml` and at
+      # `./audit.toml` in the working directory; it does not look inside
+      # `.cargo/`. Without this flag the ignore list that documents the seven
+      # advisories this repository cannot fix is silently skipped and every one
+      # of them is reported again.
+      - name: Cargo audit (Rust vulnerabilities)
+        run: cargo audit --deny warnings --file .cargo/audit.toml
+
+      - name: Cargo deny (licenses, advisories, bans)
+        run: cargo deny check advisories bans licenses sources
+
+      - name: Gitleaks (secrets scan)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trivy filesystem scan (high/critical fail)
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: pnpm audit (npm vulnerabilities)
+        run: pnpm audit --audit-level=high
+
+  supply-chain:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # anchore/syft-action was renamed upstream; the repository now 404s, which
+      # failed this job at "Set up job" before any step ran. anchore/sbom-action
+      # is the same action under its current name and takes the same inputs.
+      - name: Generate multi-ecosystem SBOM with syft (cargo + npm + pnpm)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: /tmp/sbom-ci.spdx.json
+          # The SBOM is validated in the next step and released through the
+          # packaging workflow; do not upload a second copy as a run artifact.
+          upload-artifact: "false"
+
+      - name: Verify syft SBOM covers cargo and npm ecosystems
+        run: |
+          node -e "
+          const fs = require('fs');
+          const sbom = JSON.parse(fs.readFileSync('/tmp/sbom-ci.spdx.json', 'utf8'));
+          let cargo = 0, npm = 0;
+          for (const p of sbom.packages || []) {
+            for (const r of p.externalRefs || []) {
+              if (r.referenceCategory === 'PACKAGE-MANAGER') {
+                if (r.referenceLocator.startsWith('pkg:cargo')) cargo++;
+                if (r.referenceLocator.startsWith('pkg:npm')) npm++;
+              }
+            }
+          }
+          console.log('syft SBOM ecosystem coverage: ' + cargo + ' cargo, ' + npm + ' npm packages');
+          if (cargo < 1) { console.error('FAIL: syft SBOM has no cargo packages'); process.exit(1); }
+          if (npm < 1) { console.error('FAIL: syft SBOM has no npm packages; frontend dependencies missing'); process.exit(1); }
+          console.log('syft multi-ecosystem SBOM verification OK');
+          "
+
+      - name: Validate committed sbom.spdx.json (inputHashes + npm coverage)
+        run: |
+          node -e "
+          const sbom = require('./deployments/artifacts/sbom.spdx.json');
+          const h = (sbom.provenance && sbom.provenance.inputHashes) || {};
+          if (!h.cargoLock) throw new Error('sbom.spdx.json: cargoLock hash missing');
+          if (!h.rootPnpmLock) throw new Error('sbom.spdx.json: rootPnpmLock hash missing');
+          if (!h.pcPnpmLock) throw new Error('sbom.spdx.json: pcPnpmLock is null; PC workspace lockfile hash must be populated');
+          const cargo = (sbom.packages || []).filter(p => p.packageType === 'cargo').length;
+          const npm = (sbom.packages || []).filter(p => p.packageType === 'npm').length;
+          console.log('committed SBOM: ' + cargo + ' cargo, ' + npm + ' npm packages');
+          if (npm < 1) throw new Error('committed SBOM has no npm packages; frontend dependencies missing');
+          console.log('sbom.spdx.json validation OK');
+          "
+
+      - name: Validate committed checksums.json (5 install packages)
+        run: |
+          node -e "
+          const cs = require('./deployments/artifacts/checksums.json');
+          const arts = cs.artifacts || [];
+          if (arts.length !== 5) throw new Error('expected 5 install package artifacts, got ' + arts.length);
+          for (const a of arts) {
+            for (const f of ['name', 'path', 'sha256', 'reproducible']) {
+              if (!(f in a)) throw new Error('artifact missing required field \"' + f + '\": ' + JSON.stringify(a));
+            }
+          }
+          console.log('checksums.json validation OK: ' + arts.length + ' artifacts');
+          "
+
+      - name: SBOM generator dry-run check
+        run: node scripts/generate-release-sbom.mjs --check
+
+  e2e:
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    permissions:
+      contents: read
+    env:
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:3901
+    steps:
+      - name: Checkout application source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Materialize SDKWork dependencies
+        uses: ./.github/actions/materialize-dependencies
+        with:
+          token: ${{ secrets.SDKWORK_RELEASE_TOKEN || github.token }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install PC workspace dependencies
+        working-directory: apps/sdkwork-cloudrouter-pc
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Install Playwright chromium
+        working-directory: apps/sdkwork-cloudrouter-pc
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run Playwright E2E suite
+        working-directory: apps/sdkwork-cloudrouter-pc
+        env:
+          CI: "true"
+        run: pnpm test:e2e
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/sdkwork-cloudrouter-pc/playwright-report/
+          retention-days: 7
