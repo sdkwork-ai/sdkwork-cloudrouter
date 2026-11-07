@@ -4283,6 +4283,7 @@ test('production build creates portal assets and Rust edge release artifact', as
     'open SDK facade build',
     'portal production assets',
     'h5 production assets',
+    'IAM application registry',
     'SDK archive artifacts',
     'Rust standalone gateway release binary',
   ]);
@@ -4299,9 +4300,16 @@ test('production build creates portal assets and Rust edge release artifact', as
   assert.equal(plan[4].attempts, 2);
   assert.deepEqual(plan[8].args, ['--dir', 'apps/sdkwork-cloudrouter-pc', 'build']);
   assert.deepEqual(plan[9].args, ['--dir', 'apps/sdkwork-cloudrouter-h5', 'build']);
-  assert.deepEqual(plan[10].args, ['scripts/archive-cloud-router-sdks.mjs']);
+  assert.deepEqual(plan[10].args, [
+    'scripts/materialize-application-registry.mjs',
+    '--workspace', path.resolve(workspaceRoot, '..'),
+    '--environment', 'production',
+    '--out', path.resolve(workspaceRoot, 'dist', 'application-registry'),
+  ]);
   assert.equal(plan[10].command, 'node');
-  assert.deepEqual(plan[11].args, [
+  assert.deepEqual(plan[11].args, ['scripts/archive-cloud-router-sdks.mjs']);
+  assert.equal(plan[11].command, 'node');
+  assert.deepEqual(plan[12].args, [
     'build',
     '-p',
     'sdkwork-api-cloudrouter-standalone-gateway',
@@ -4309,8 +4317,8 @@ test('production build creates portal assets and Rust edge release artifact', as
     'sdkwork-api-cloudrouter-standalone-gateway',
     '--release',
   ]);
-  assert.equal(plan[11].command, 'cargo.exe');
-  assert.equal(plan[11].env.CARGO_TARGET_DIR, 'target-codex');
+  assert.equal(plan[12].command, 'cargo.exe');
+  assert.equal(plan[12].env.CARGO_TARGET_DIR, 'target-codex');
   assert.ok(
     module.renderProductionBuildPlan(plan, { CARGO_TARGET_DIR: 'target-codex' }, 'win32', workspaceRoot)
       .some((line) => line.includes('target-codex') && line.includes('sdkwork-api-cloudrouter-standalone-gateway.exe')),
@@ -4608,6 +4616,11 @@ test('install package archive builder creates manifest-backed archives without l
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'h5', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
+  mkdirSync(path.join(stagingRoot, 'etc', 'iam'), { recursive: true });
+  writeFileSync(
+    path.join(stagingRoot, 'etc', 'iam', 'application-registry.json'),
+    JSON.stringify({ schemaVersion: 1, kind: 'sdkwork.application-registry', applications: [] }),
+  );
   writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
   writeFileSync(path.join(stagingRoot, '.env.standalone.production'), 'SDKWORK_DATABASE_URL=postgres://secret\n');
 
@@ -4794,6 +4807,11 @@ test('install package builder emits service and container deployment packages fr
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'h5', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
+  mkdirSync(path.join(stagingRoot, 'etc', 'iam'), { recursive: true });
+  writeFileSync(
+    path.join(stagingRoot, 'etc', 'iam', 'application-registry.json'),
+    JSON.stringify({ schemaVersion: 1, kind: 'sdkwork.application-registry', applications: [] }),
+  );
   writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
 
   try {
@@ -5044,6 +5062,11 @@ test('install package builder emits service and container deployment packages fr
     writeFileSync(path.join(windowsStagingRoot, 'bin', 'cloudrouterctl.exe'), 'installer-binary');
     writeFileSync(path.join(windowsStagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
     writeFileSync(path.join(windowsStagingRoot, 'portal', 'h5', 'index.html'), '<!doctype html>');
+    mkdirSync(path.join(windowsStagingRoot, 'etc', 'iam'), { recursive: true });
+    writeFileSync(
+      path.join(windowsStagingRoot, 'etc', 'iam', 'application-registry.json'),
+      JSON.stringify({ schemaVersion: 1, kind: 'sdkwork.application-registry', applications: [] }),
+    );
     writeFileSync(path.join(windowsStagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
     writeFileSync(path.join(windowsStagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
     const windowsContainerPlan = module.createInstallPackageBuildPlan({
@@ -5162,6 +5185,11 @@ test('macOS service packages run initialization through a launchd runner', async
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'h5', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
+  mkdirSync(path.join(stagingRoot, 'etc', 'iam'), { recursive: true });
+  writeFileSync(
+    path.join(stagingRoot, 'etc', 'iam', 'application-registry.json'),
+    JSON.stringify({ schemaVersion: 1, kind: 'sdkwork.application-registry', applications: [] }),
+  );
   writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
 
   try {
@@ -5213,6 +5241,11 @@ test('install package archive builder emits tar.gz bytes for non-Windows package
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'h5', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
+  mkdirSync(path.join(stagingRoot, 'etc', 'iam'), { recursive: true });
+  writeFileSync(
+    path.join(stagingRoot, 'etc', 'iam', 'application-registry.json'),
+    JSON.stringify({ schemaVersion: 1, kind: 'sdkwork.application-registry', applications: [] }),
+  );
   writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
 
   try {
@@ -5268,6 +5301,11 @@ test('native installer builder emits apt-installable Debian packages for Linux s
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'h5', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
+  mkdirSync(path.join(stagingRoot, 'etc', 'iam'), { recursive: true });
+  writeFileSync(
+    path.join(stagingRoot, 'etc', 'iam', 'application-registry.json'),
+    JSON.stringify({ schemaVersion: 1, kind: 'sdkwork.application-registry', applications: [] }),
+  );
   writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
 
   try {
@@ -5481,6 +5519,11 @@ test('native installer builder keeps Linux desktop packages user-scoped and self
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'h5', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
+  mkdirSync(path.join(stagingRoot, 'etc', 'iam'), { recursive: true });
+  writeFileSync(
+    path.join(stagingRoot, 'etc', 'iam', 'application-registry.json'),
+    JSON.stringify({ schemaVersion: 1, kind: 'sdkwork.application-registry', applications: [] }),
+  );
   writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
 
   try {
@@ -5778,6 +5821,11 @@ test('install package archive builder CLI emits pure JSON when requested', async
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'h5', 'index.html'), '<!doctype html>');
   writeFileSync(path.join(stagingRoot, 'portal', 'dist', 'sdk-archives', 'sdk.zip'), 'sdk-archive');
+  mkdirSync(path.join(stagingRoot, 'etc', 'iam'), { recursive: true });
+  writeFileSync(
+    path.join(stagingRoot, 'etc', 'iam', 'application-registry.json'),
+    JSON.stringify({ schemaVersion: 1, kind: 'sdkwork.application-registry', applications: [] }),
+  );
   writeFileSync(path.join(stagingRoot, '.env.standalone.production.example'), 'PORTAL_PUBLIC_API_BASE_URL=/v1\n');
 
   try {
@@ -6718,7 +6766,15 @@ test('verification plan treats Rust warnings as compile failures', async () => {
   );
   const rustCheck = plan.find((step) => step.label === 'rust compile warnings gate');
 
-  assert.equal(rustCheck.env.RUSTFLAGS, '-C debuginfo=0 -D warnings');
+  // The gate denies warnings only for this repository's own crates
+  // (primary packages), so the deny flag travels through the clippy `--`
+  // separator rather than RUSTFLAGS, which would apply to the whole
+  // federated dependency closure.
+  assert.equal(rustCheck.command, 'cargo');
+  assert.deepEqual(rustCheck.args.slice(0, 2), ['clippy', '--all-targets']);
+  assert.ok(rustCheck.args.includes('--'), 'warnings gate must pass deny flags after `--`');
+  assert.deepEqual(rustCheck.args.slice(-2), ['-D', 'warnings']);
+  assert.equal(rustCheck.env.RUSTFLAGS, '-C debuginfo=0');
 });
 
 test('verification plan clears inherited single-job Cargo settings by default', async () => {
