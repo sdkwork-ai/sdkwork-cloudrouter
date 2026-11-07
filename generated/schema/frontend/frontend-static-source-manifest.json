@@ -10,7 +10,7 @@
         "ai_model",
         "ai_model_vendor"
       ],
-      "source_hash": "sha256:522c634055cca3850f0046ad17bfa4d043c37f412c8a4dc4c732d68c96863fd5",
+      "source_hash": "sha256:f1aa3f8821fd4bcb73a0a7cd892d2afecc5ed12891b49f3f6c1b503fae5173a6",
       "source_ref": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-home/src/pages/Home.tsx"
     },
     "static-route:/docs": {
@@ -23,7 +23,7 @@
         "content_openapi_snapshot",
         "content_sdk_release"
       ],
-      "source_hash": "sha256:328446c0e38c2ef824e623dca6ce3663052ce8a80764ba712e738ac7265cfc0d",
+      "source_hash": "sha256:b92f21ec1b9587cd7dcd28dc3c38d2583e9d82a04824d8d7ca0b1c2dd55f9a04",
       "source_ref": "apps/sdkwork-cloudrouter-pc/src/App.tsx"
     },
     "static-route:/models": {
@@ -37,7 +37,7 @@
         "ai_model_capability",
         "ai_model_pricing"
       ],
-      "source_hash": "sha256:bfa6a86a3687f9eb42ce629494515612c87f019a3c92846b1b64269e1aa92a81",
+      "source_hash": "sha256:8bf0d03aa34b97b4b1abe9f86917f105fe315497322008f2d567087596c91757",
       "source_ref": "docs/schema-registry/sdkwork-cloudrouter.tables.yaml"
     },
     "static-route:/product-docs": {
@@ -49,7 +49,7 @@
         "content_doc_page",
         "content_openapi_snapshot"
       ],
-      "source_hash": "sha256:328446c0e38c2ef824e623dca6ce3663052ce8a80764ba712e738ac7265cfc0d",
+      "source_hash": "sha256:b92f21ec1b9587cd7dcd28dc3c38d2583e9d82a04824d8d7ca0b1c2dd55f9a04",
       "source_ref": "apps/sdkwork-cloudrouter-pc/src/App.tsx"
     },
     "static-route:/rankings": {
@@ -61,7 +61,7 @@
         "ai_model_rank_snapshot",
         "ai_usage"
       ],
-      "source_hash": "sha256:bfa6a86a3687f9eb42ce629494515612c87f019a3c92846b1b64269e1aa92a81",
+      "source_hash": "sha256:8bf0d03aa34b97b4b1abe9f86917f105fe315497322008f2d567087596c91757",
       "source_ref": "docs/schema-registry/sdkwork-cloudrouter.tables.yaml"
     },
     "static-route:/sdk-reference": {
@@ -74,7 +74,7 @@
         "content_openapi_snapshot",
         "content_sdk_release"
       ],
-      "source_hash": "sha256:328446c0e38c2ef824e623dca6ce3663052ce8a80764ba712e738ac7265cfc0d",
+      "source_hash": "sha256:b92f21ec1b9587cd7dcd28dc3c38d2583e9d82a04824d8d7ca0b1c2dd55f9a04",
       "source_ref": "apps/sdkwork-cloudrouter-pc/src/App.tsx"
     }
   },
