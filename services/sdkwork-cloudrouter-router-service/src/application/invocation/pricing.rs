@@ -984,7 +984,10 @@ fn unmetered_batch_submission(invocation: &Invocation) -> bool {
         return false;
     }
     matches!(
-        (invocation.resource.api_code.as_str(), invocation.request.path.as_str()),
+        (
+            invocation.resource.api_code.as_str(),
+            invocation.request.path.as_str()
+        ),
         ("openai.batches", "/v1/batches") | ("anthropic.batches", "/anthropic/v1/messages/batches")
     ) && !async_usage_reconciliation_enabled()
 }
