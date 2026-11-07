@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
+import path from 'node:path';
 import process from 'node:process';
 
 function printHelp() {
@@ -442,6 +443,30 @@ function buildPrecommitVerificationPlan(env = process.env) {
   ];
 }
 
+/**
+ * `-p name` arguments for every workspace member whose manifest lives inside
+ * this repository. The warnings gate holds crates this repository owns to
+ * `-D warnings`; federated sibling crates (resolved through `../sdkwork-*`
+ * path dependencies) are linted by their own workspaces — mirroring the
+ * packaging workflow's documented split ("RUSTFLAGS -D warnings belongs on
+ * the clippy invocation, which lints the crates this repository owns").
+ */
+function ownedRustPackageArgs(env) {
+  const metadata = JSON.parse(
+    spawnSync('cargo', ['metadata', '--format-version', '1', '--no-deps'], {
+      encoding: 'utf8',
+      env,
+      maxBuffer: 256 * 1024 * 1024,
+    }).stdout,
+  );
+  const repoRoot = path.resolve(env.PWD ?? process.cwd());
+  return metadata.workspace_members
+    .map((id) => metadata.packages.find((pkg) => pkg.id === id))
+    .filter((pkg) => pkg && path.resolve(pkg.manifest_path).startsWith(repoRoot))
+    .map((pkg) => ['-p', pkg.name])
+    .flat();
+}
+
 function buildCiVerificationPlan(env = process.env, settings = {}) {
   const rustEnv = buildCargoVerificationEnv(env, settings);
   const plan = buildPrecommitVerificationPlan(env);
@@ -527,11 +552,15 @@ function buildVerificationPlan(settings, env = process.env) {
     {
       label: 'rust compile warnings gate',
       command: 'cargo',
-      args: ['check', '--all-targets'],
-      env: {
-        ...rustEnv,
-        RUSTFLAGS: mergeRustFlags(env.RUSTFLAGS, '-D warnings'),
-      },
+      args: [
+        'clippy',
+        '--all-targets',
+        ...ownedRustPackageArgs(env),
+        '--',
+        '-D',
+        'warnings',
+      ],
+      env: rustEnv,
     },
     {
       label: 'agent workflow standard check',

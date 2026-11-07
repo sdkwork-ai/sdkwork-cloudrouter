@@ -252,10 +252,13 @@ fn creation_invocation() -> Invocation {
             "/v1/responses",
         ))
         .expect("classification");
-    let (mut resource, mut billing, routing) = classification.into_parts();
+    let (mut resource, _classification_billing, routing) = classification.into_parts();
     resource.requested_model = Some("gpt-4o".to_owned());
     resource.requested_model_catalog_key = Some(CATALOG_KEY.to_owned());
-    billing = InvocationBilling::composite(BillingMeter::LlmInputToken);
+    // The classification's billing plan is intentionally replaced below: the
+    // scenario asserts the composite LLM-input-token meter on top of this
+    // request.
+    let billing = InvocationBilling::composite(BillingMeter::LlmInputToken);
     let mut invocation = Invocation::new(
         InvocationRequest::new(Method::POST, "/v1/responses")
             .with_request_id("req-async-create")

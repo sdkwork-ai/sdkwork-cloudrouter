@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use sqlx::{PgPool, Row};
 
-use crate::domain::{DomainError, DomainResult};
+use crate::domain::DomainError;
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::ports::{RuntimeInvocationReaperFuture, RuntimeInvocationReaperStore};
 

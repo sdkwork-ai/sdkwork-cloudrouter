@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::future::Future;
 use std::pin::Pin;
 
-use serde::{Serialize, Serializer};
+use serde::Serialize;
 
 use crate::domain::DomainResult;
 

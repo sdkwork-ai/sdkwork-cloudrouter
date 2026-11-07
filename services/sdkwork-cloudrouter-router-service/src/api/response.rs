@@ -364,14 +364,6 @@ pub fn not_found_problem(detail: impl Into<String>) -> ProblemResponse {
     platform_problem(SdkWorkResultCode::NotFound, detail)
 }
 
-pub fn internal_problem(detail: impl Into<String>) -> ProblemResponse {
-    platform_problem(SdkWorkResultCode::InternalError, detail)
-}
-
-pub fn service_unavailable_problem(detail: impl Into<String>) -> ProblemResponse {
-    platform_problem(SdkWorkResultCode::ServiceUnavailable, detail)
-}
-
 #[derive(Debug, Clone)]
 pub struct ProblemResponse {
     pub problem: SdkWorkProblemDetail,

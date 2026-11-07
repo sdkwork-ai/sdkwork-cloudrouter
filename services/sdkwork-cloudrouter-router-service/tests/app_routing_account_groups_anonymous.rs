@@ -16,7 +16,7 @@ use sdkwork_cloudrouter_router_service::ports::{
     AppRoutingReadFuture, AppRoutingReadStore, AppRoutingRequestTraceListPage, AppRoutingSubject,
     AppRoutingTraceQuery, AppRoutingUsageSnapshot,
 };
-use sdkwork_cloudrouter_router_service::{api, ports};
+use sdkwork_cloudrouter_router_service::api;
 use serde_json::Value;
 use tower::ServiceExt;
 

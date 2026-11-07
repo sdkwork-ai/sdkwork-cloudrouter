@@ -131,9 +131,11 @@ pub(crate) fn protocol_code_from_api_code(api_code: Option<&str>) -> Option<LlmP
         Some(LlmProtocolCode::AnthropicMessages)
     } else if api_code.contains("responses") {
         Some(LlmProtocolCode::OpenaiResponses)
-    } else if api_code.contains("chat") || api_code.contains("completion") {
-        Some(LlmProtocolCode::OpenaiChatCompletions)
-    } else if api_code.starts_with("openai.") || api_code.ends_with(".embeddings") {
+    } else if api_code.contains("chat")
+        || api_code.contains("completion")
+        || api_code.starts_with("openai.")
+        || api_code.ends_with(".embeddings")
+    {
         Some(LlmProtocolCode::OpenaiChatCompletions)
     } else {
         None

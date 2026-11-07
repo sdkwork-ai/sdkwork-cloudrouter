@@ -3197,7 +3197,10 @@ mod tests {
         // declare `apiFormat = vendor_native`, so keeping them here would have
         // been the assertion defending the bug. They are covered by the native
         // table above instead.
-        for vendor_code in ["openai"] {
+        // Single declared relay video surface ("openai"); expanded from a
+        // one-element for loop (clippy needless_loop_over_single_element).
+        {
+            let vendor_code = "openai";
             assert_eq!(
                 model_endpoint_descriptor(&video_model_of(
                     vendor_code,

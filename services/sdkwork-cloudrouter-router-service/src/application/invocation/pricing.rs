@@ -983,15 +983,10 @@ fn unmetered_batch_submission(invocation: &Invocation) -> bool {
     if invocation.request.method != axum::http::Method::POST {
         return false;
     }
-    let batch = match (
-        invocation.resource.api_code.as_str(),
-        invocation.request.path.as_str(),
-    ) {
-        ("openai.batches", "/v1/batches") => true,
-        ("anthropic.batches", "/anthropic/v1/messages/batches") => true,
-        _ => false,
-    };
-    batch && !async_usage_reconciliation_enabled()
+    matches!(
+        (invocation.resource.api_code.as_str(), invocation.request.path.as_str()),
+        ("openai.batches", "/v1/batches") | ("anthropic.batches", "/anthropic/v1/messages/batches")
+    ) && !async_usage_reconciliation_enabled()
 }
 
 /// `POST /v1/responses` 且请求体 `background: true`。
@@ -1126,9 +1121,7 @@ where
     );
     let mut tiers: Vec<String> = Vec::new();
     for price in prices.iter().filter(|price| &price.billing_meter == meter) {
-        let Some(metadata) = price.rate_metadata.as_ref() else {
-            return None;
-        };
+        let metadata = price.rate_metadata.as_ref()?;
         if metadata.conditions.is_empty() {
             return None;
         }
@@ -1338,9 +1331,7 @@ where
     let mut has_implicit = false;
     for price in prices.iter().filter(|price| &price.billing_meter == meter) {
         saw_rate = true;
-        let Some(metadata) = price.rate_metadata.as_ref() else {
-            return None;
-        };
+        let metadata = price.rate_metadata.as_ref()?;
         if metadata.conditions.is_empty() {
             return None;
         }
@@ -1472,6 +1463,9 @@ mod tests {
     /// 创建才按 Free 放行、完成态再按结果文件逐行扣费；关闭时仍是 ApiRequest，
     /// 由预检守卫拒单，不会出现"接了单没人收钱"。
     #[tokio::test]
+    // current_thread test runtime: the env lock deliberately spans the policy
+    // await so parallel env mutations in this process stay serialized.
+    #[allow(clippy::await_holding_lock)]
     async fn batch_create_is_free_only_while_reconciliation_is_enabled() {
         use crate::application::BillingPolicyInterceptor;
 
@@ -1526,6 +1520,9 @@ mod tests {
     /// 向量库批量摄取同批处理：创建无字节数，只有 worker 启用时按 Free 放行，
     /// 完成态再按批内文件字节计存储费；关闭时创建仍是按次并被守卫拒单。
     #[tokio::test]
+    // current_thread test runtime: the env lock deliberately spans the policy
+    // await so parallel env mutations in this process stay serialized.
+    #[allow(clippy::await_holding_lock)]
     async fn file_batch_create_is_free_only_while_reconciliation_is_enabled() {
         use crate::application::BillingPolicyInterceptor;
 
