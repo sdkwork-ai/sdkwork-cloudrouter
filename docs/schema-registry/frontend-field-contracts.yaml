@@ -12807,6 +12807,678 @@ frontend_operations:
           source: { enum: [rule_override, rule_multiplier_markup, official_reference], type: string }
         required: [official, regionCode, regionFallback, pricingPlanId, pricingPlanCode, resolvedUnitPrice, currencyCode, source]
         type: object
+  - route: /admin/skill
+    source: ../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts
+    operation: createSkillPackage
+    operation_id: skillPackages.create
+    kind: create
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/skill_packages
+    sdk_domain: skills
+    read_sources:
+      - ai_skill_package
+    write_tables:
+      - ai_skill_package
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/skill
+    source: ../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts
+    operation: updateSkillPackage
+    operation_id: skillPackages.update
+    kind: update
+    api_surface: backend
+    api_method: PATCH
+    api_path: /backend/v3/api/skill_packages/{packageId}
+    sdk_domain: skills
+    read_sources:
+      - ai_skill_package
+    write_tables:
+      - ai_skill_package
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/skill
+    source: ../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts
+    operation: deleteSkillPackage
+    operation_id: skillPackages.delete
+    kind: delete
+    api_surface: backend
+    api_method: DELETE
+    api_path: /backend/v3/api/skill_packages/{packageId}
+    sdk_domain: skills
+    read_sources:
+      - ai_skill_package
+    write_tables:
+      - ai_skill_package
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/skill
+    source: ../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts
+    operation: listPackageArtifacts
+    operation_id: skillPackages.artifacts.list
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/skill_packages/{packageId}/artifacts
+    sdk_domain: skills
+    read_sources:
+      - ai_skill_artifact
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/skill
+    source: ../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts
+    operation: createSkillArtifact
+    operation_id: skillPackages.artifacts.create
+    kind: create
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/skill_packages/{packageId}/artifacts
+    sdk_domain: skills
+    read_sources:
+      - ai_skill_artifact
+    write_tables:
+      - ai_skill_artifact
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/skill
+    source: ../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts
+    operation: listSkillCapabilities
+    operation_id: skillCapabilities.list
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/skill_capabilities
+    sdk_domain: skills
+    read_sources:
+      - ai_skill_capability
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/skill
+    source: ../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts
+    operation: createSkillCapability
+    operation_id: skillCapabilities.create
+    kind: create
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/skill_capabilities
+    sdk_domain: skills
+    read_sources:
+      - ai_skill_capability
+    write_tables:
+      - ai_skill_capability
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/skill
+    source: ../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts
+    operation: updateSkillCapability
+    operation_id: skillCapabilities.update
+    kind: update
+    api_surface: backend
+    api_method: PATCH
+    api_path: /backend/v3/api/skill_capabilities/{capabilityId}
+    sdk_domain: skills
+    read_sources:
+      - ai_skill_capability
+    write_tables:
+      - ai_skill_capability
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/skill/categories
+    source: ../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts
+    operation: createSkillCategory
+    operation_id: skillCategories.create
+    kind: create
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/skill_categories
+    sdk_domain: skills
+    read_sources:
+      - ai_skill_category
+    write_tables:
+      - ai_skill_category
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/skill/categories
+    source: ../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts
+    operation: updateSkillCategory
+    operation_id: skillCategories.update
+    kind: update
+    api_surface: backend
+    api_method: PATCH
+    api_path: /backend/v3/api/skill_categories/{categoryId}
+    sdk_domain: skills
+    read_sources:
+      - ai_skill_category
+    write_tables:
+      - ai_skill_category
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/connector/categories
+    source: ../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts
+    operation: upsertAdminCategory
+    operation_id: mcpAdmin.upsertCategory
+    kind: update
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/mcp/categories
+    sdk_domain: mcp
+    read_sources:
+      - ai_mcp_server_category
+    write_tables:
+      - ai_mcp_server_category
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/connector
+    source: ../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts
+    operation: createAdminServer
+    operation_id: mcpAdmin.createServer
+    kind: create
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/mcp/servers
+    sdk_domain: mcp
+    read_sources:
+      - ai_mcp_server
+    write_tables:
+      - ai_mcp_server
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/connector
+    source: ../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts
+    operation: updateAdminServer
+    operation_id: mcpAdmin.updateServer
+    kind: update
+    api_surface: backend
+    api_method: PUT
+    api_path: /backend/v3/api/mcp/servers/{serverKey}
+    sdk_domain: mcp
+    read_sources:
+      - ai_mcp_server
+    write_tables:
+      - ai_mcp_server
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/connector
+    source: ../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts
+    operation: deleteAdminServer
+    operation_id: mcpAdmin.deleteServer
+    kind: delete
+    api_surface: backend
+    api_method: DELETE
+    api_path: /backend/v3/api/mcp/servers/{serverKey}
+    sdk_domain: mcp
+    read_sources:
+      - ai_mcp_server
+    write_tables:
+      - ai_mcp_server
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/connector
+    source: ../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts
+    operation: listAdminConnectors
+    operation_id: mcpAdmin.listConnectors
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/mcp/servers/{serverId}/connectors
+    sdk_domain: mcp
+    read_sources:
+      - ai_mcp_connector
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/connector
+    source: ../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts
+    operation: upsertAdminConnector
+    operation_id: mcpAdmin.upsertConnector
+    kind: update
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/mcp/servers/{serverId}/connectors
+    sdk_domain: mcp
+    read_sources:
+      - ai_mcp_connector
+    write_tables:
+      - ai_mcp_connector
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/connector
+    source: ../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts
+    operation: deleteAdminConnector
+    operation_id: mcpAdmin.deleteConnector
+    kind: delete
+    api_surface: backend
+    api_method: DELETE
+    api_path: /backend/v3/api/mcp/servers/{serverId}/connectors/{connectorKey}
+    sdk_domain: mcp
+    read_sources:
+      - ai_mcp_connector
+    write_tables:
+      - ai_mcp_connector
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/connector
+    source: ../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts
+    operation: upsertAdminTool
+    operation_id: mcpAdmin.upsertTool
+    kind: update
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/mcp/servers/{serverId}/tools
+    sdk_domain: mcp
+    read_sources:
+      - ai_mcp_tool
+    write_tables:
+      - ai_mcp_tool
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/connector
+    source: ../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts
+    operation: upsertAdminResource
+    operation_id: mcpAdmin.upsertResource
+    kind: update
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/mcp/servers/{serverId}/resources
+    sdk_domain: mcp
+    read_sources:
+      - ai_mcp_resource
+    write_tables:
+      - ai_mcp_resource
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/connector
+    source: ../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts
+    operation: upsertAdminPrompt
+    operation_id: mcpAdmin.upsertPrompt
+    kind: update
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/mcp/servers/{serverId}/prompts
+    sdk_domain: mcp
+    read_sources:
+      - ai_mcp_prompt
+    write_tables:
+      - ai_mcp_prompt
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/connector
+    source: ../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts
+    operation: listAdminInvocations
+    operation_id: mcpAdmin.listInvocations
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/mcp/invocations
+    sdk_domain: mcp
+    read_sources:
+      - ai_mcp_invocation
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/connector
+    source: ../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts
+    operation: appendAdminInvocation
+    operation_id: mcpAdmin.appendInvocation
+    kind: create
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/mcp/invocations
+    sdk_domain: mcp
+    read_sources:
+      - ai_mcp_invocation
+    write_tables:
+      - ai_mcp_invocation
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/plugin/categories
+    source: ../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts
+    operation: upsertPluginCategory
+    operation_id: pluginsAdmin.upsertCategory
+    kind: update
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/plugin_categories
+    sdk_domain: plugins
+    read_sources:
+      - ai_plugin_category
+    write_tables:
+      - ai_plugin_category
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/plugin
+    source: ../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts
+    operation: createPlugin
+    operation_id: pluginsAdmin.createPlugin
+    kind: create
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/plugins
+    sdk_domain: plugins
+    read_sources:
+      - ai_plugin
+    write_tables:
+      - ai_plugin
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/plugin
+    source: ../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts
+    operation: updatePlugin
+    operation_id: pluginsAdmin.updatePlugin
+    kind: update
+    api_surface: backend
+    api_method: PUT
+    api_path: /backend/v3/api/plugins/{pluginKey}
+    sdk_domain: plugins
+    read_sources:
+      - ai_plugin
+    write_tables:
+      - ai_plugin
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/plugin
+    source: ../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts
+    operation: deletePlugin
+    operation_id: pluginsAdmin.deletePlugin
+    kind: delete
+    api_surface: backend
+    api_method: DELETE
+    api_path: /backend/v3/api/plugins/{pluginKey}
+    sdk_domain: plugins
+    read_sources:
+      - ai_plugin
+    write_tables:
+      - ai_plugin
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/agent
+    source: ../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts
+    operation: createManagedAgent
+    operation_id: agents.create
+    kind: create
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/ai/agents
+    sdk_domain: agents
+    read_sources:
+      - ai_agent
+    write_tables:
+      - ai_agent
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/agent
+    source: ../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts
+    operation: retrieveManagedAgent
+    operation_id: agents.retrieve
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/ai/agents/{agentId}
+    sdk_domain: agents
+    read_sources:
+      - ai_agent
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/agent
+    source: ../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts
+    operation: updateManagedAgent
+    operation_id: agents.update
+    kind: update
+    api_surface: backend
+    api_method: PATCH
+    api_path: /backend/v3/api/ai/agents/{agentId}
+    sdk_domain: agents
+    read_sources:
+      - ai_agent
+    write_tables:
+      - ai_agent
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/agent
+    source: ../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts
+    operation: updateManagedAgentStatus
+    operation_id: agents.status.create
+    kind: action
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/ai/agents/{agentId}/status
+    sdk_domain: agents
+    read_sources:
+      - ai_agent
+    write_tables:
+      - ai_agent
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/agent
+    source: ../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts
+    operation: restoreManagedAgent
+    operation_id: agents.restore
+    kind: action
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/ai/agents/{agentId}/restore
+    sdk_domain: agents
+    read_sources:
+      - ai_agent
+    write_tables:
+      - ai_agent
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
 routes:
   - route: /admin/skill/categories
     dependency_owned: true

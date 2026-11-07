@@ -528,11 +528,23 @@ class FrontendOperationAudit:
                 messages.append(f"frontend operation {key} multipart upload must declare non-empty file_targets")
 
             if kind in self.WRITE_KINDS:
+                # Dependency-owned routes (for example the Skills, MCP,
+                # Plugins, and Agents admin capability mounts) write through
+                # the dependency's backend API, whose tables live in that
+                # module's schema and are intentionally absent from the host
+                # required_tables catalog. Read sources are exempted the same
+                # way above, so write tables follow the route contract rather
+                # than the host table catalog.
+                is_dependency_owned_route = self._is_dependency_owned_contract_route(
+                    route_contract,
+                    entries,
+                )
                 if (
                     valid_write_tables
                     and not write_tables
                     and not is_multipart_upload
                     and not is_app_shell_operation
+                    and not is_dependency_owned_route
                     and not self._is_appbase_dependency_operation(
                         api_surface=api_surface,
                         sdk_domain=sdk_domain,
@@ -545,6 +557,7 @@ class FrontendOperationAudit:
                     valid_write_tables
                     and write_tables
                     and not is_app_shell_operation
+                    and not is_dependency_owned_route
                     and isinstance(route, str)
                     and route_contract is not None
                 ):
