@@ -231,6 +231,7 @@ class FrontendOperationAudit:
         "skills": SKILLS_BACKEND_SDK_PATTERN,
         "mcp": MCP_BACKEND_SDK_PATTERN,
         "plugins": PLUGINS_BACKEND_SDK_PATTERN,
+        "agents": AGENT_BACKEND_SDK_PATTERN,
     }
     PROMPTS_DEPENDENCY_DOMAINS = frozenset({"prompts"})
     PROMPTS_BACKEND_SDK_PATTERN = re.compile(r"\bgetSdkworkPromptsBackendSdkClient\s*\(")

@@ -1,4 +1,4 @@
-﻿schema:
+schema:
   name: sdkwork-cloudrouter-frontend-field-contracts
   version: 0.2.0
   source: tools/hydrate_frontend_contract_relay_surfaces.py
@@ -5486,7 +5486,7 @@ frontend_operations:
     source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
     operation: upsertResourceGroupMember
     operation_id: resourceGroups.resources.update
-    kind: action
+    kind: update
     api_surface: backend
     api_method: PUT
     api_path: /backend/v3/api/ai/resource_groups/{groupId}/resources/{resourceCode}
