@@ -854,3 +854,139 @@ routes:
   - /console/iam/oauth/official-accounts/:resourceAccountId/custom-menus
   evidence:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
+- route: /admin/skill/categories
+  package: '@sdkwork/cloudrouter-pc-admin-skill'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-skills-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/skill/categories
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx
+
+- route: /admin/skill
+  package: '@sdkwork/cloudrouter-pc-admin-skill'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-skills-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/skill
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx
+
+- route: /admin/connector/categories
+  package: '@sdkwork/cloudrouter-pc-admin-connector'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-mcp-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/connector/categories
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx
+
+- route: /admin/connector
+  package: '@sdkwork/cloudrouter-pc-admin-connector'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-mcp-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/connector
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx
+
+- route: /admin/plugin/categories
+  package: '@sdkwork/cloudrouter-pc-admin-plugin'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-plugins-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/plugin/categories
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx
+
+- route: /admin/plugin
+  package: '@sdkwork/cloudrouter-pc-admin-plugin'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-plugins-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/plugin
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx
+
+- route: /admin/agent
+  package: '@sdkwork/cloudrouter-pc-admin-agent'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-agents-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/agent
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx
+
+- route: /auth/app
+  package: portal-root
+  owner: product-surface
+  route_scope: public
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  api_surface: app
+  operation_routes:
+  - /auth/app
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+
+- route: /iam/oauth/authorize
+  package: portal-root
+  owner: product-surface
+  route_scope: public
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  api_surface: app
+  operation_routes:
+  - /iam/oauth/authorize
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+
+- route: /iam/v3/oauth/authorize
+  package: portal-root
+  owner: product-surface
+  route_scope: public
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  api_surface: app
+  operation_routes:
+  - /iam/v3/oauth/authorize
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx

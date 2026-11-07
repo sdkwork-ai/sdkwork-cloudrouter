@@ -6,6 +6,146 @@ frontend_operation_sdk_authorities:
   sdkwork-models-app-sdk:
     manifest: ../sdkwork-models/sdks/sdkwork-models-app-sdk/sdk-manifest.json
 frontend_operations:
+  - route: /admin/skill
+    source: ../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts
+    operation: listManagedSkillPackages
+    operation_id: skills.skillPackages.list
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/skill_packages
+    sdk_domain: skills
+    read_sources:
+      - ai_skill_package
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/skill/categories
+    source: ../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts
+    operation: listManagedSkillCategories
+    operation_id: skills.skillCategories.list
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/skill_categories
+    sdk_domain: skills
+    read_sources:
+      - ai_skill_category
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/connector
+    source: ../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts
+    operation: listAdminServers
+    operation_id: mcpAdmin.listServers
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/mcp/servers
+    sdk_domain: mcp
+    read_sources:
+      - ai_mcp_server
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/connector/categories
+    source: ../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts
+    operation: listAdminCategories
+    operation_id: mcpAdmin.listCategories
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/mcp/categories
+    sdk_domain: mcp
+    read_sources:
+      - ai_mcp_server_category
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/plugin
+    source: ../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts
+    operation: listPlugins
+    operation_id: pluginsAdmin.listPlugins
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/plugins
+    sdk_domain: plugins
+    read_sources:
+      - ai_plugin
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/plugin/categories
+    source: ../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts
+    operation: listPluginCategories
+    operation_id: pluginsAdmin.listCategories
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/plugin_categories
+    sdk_domain: plugins
+    read_sources:
+      - ai_plugin_category
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/agent
+    source: ../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts
+    operation: listManagedAgents
+    operation_id: agents.list
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/ai/agents
+    sdk_domain: agents
+    read_sources:
+      - ai_agent
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
   - route: /console/settlements
     source: sdks/_route-manifests/app-api/sdkwork-routes-cloudrouter-app-api.route-manifest.json
     operation: fetch_settlements_dashboard
@@ -12668,6 +12808,66 @@ frontend_operations:
         required: [official, regionCode, regionFallback, pricingPlanId, pricingPlanCode, resolvedUnitPrice, currencyCode, source]
         type: object
 routes:
+  - route: /admin/skill/categories
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-skills-backend-sdk
+    required_tables: []
+
+  - route: /admin/skill
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-skills-backend-sdk
+    required_tables: []
+
+  - route: /admin/connector/categories
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-mcp-backend-sdk
+    required_tables: []
+
+  - route: /admin/connector
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-mcp-backend-sdk
+    required_tables: []
+
+  - route: /admin/connector/:serverKey
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-mcp-backend-sdk
+    required_tables: []
+
+  - route: /admin/plugin/categories
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-plugins-backend-sdk
+    required_tables: []
+
+  - route: /admin/plugin
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-plugins-backend-sdk
+    required_tables: []
+
+  - route: /admin/agent
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-agents-backend-sdk
+    required_tables: []
+
+  - route: /auth/app
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+    required_tables:
+      - iam_user
+      - iam_user_identity
+
+  - route: /iam/oauth/authorize
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+    required_tables:
+      - iam_user
+      - iam_user_identity
+
+  - route: /iam/v3/oauth/authorize
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+    required_tables:
+      - iam_user
+      - iam_user_identity
   - route: /
     dependency_owned: true
     dependency_sdk_family: sdkwork-cloudrouter-app-sdk

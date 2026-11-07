@@ -284,6 +284,18 @@ class FrontendContractGuardian:
             "getSdkworkAgentBackendSdkClient",
             "@sdkwork/agent-backend-sdk",
         },
+        "skills": {
+            "getSkillsBackendSdkClient",
+            "@sdkwork/skills-backend-sdk",
+        },
+        "mcp": {
+            "getMcpBackendSdkClient",
+            "@sdkwork/mcp-backend-sdk",
+        },
+        "plugins": {
+            "getPluginsBackendSdkClient",
+            "@sdkwork/plugins-backend-sdk",
+        },
         "drive": {
             "getSdkworkDriveAppSdkClient",
             "getSdkworkDriveBackendSdkClient",
@@ -1486,6 +1498,12 @@ class FrontendContractGuardian:
             expected_client = "getSdkworkAgentBackendSdkClient"
         elif dependency_sdk_family == "sdkwork-community-backend-sdk":
             expected_client = "getSdkworkCommunityBackendSdkClient"
+        elif dependency_sdk_family == "sdkwork-skills-backend-sdk":
+            expected_client = "getSkillsBackendSdkClient"
+        elif dependency_sdk_family == "sdkwork-mcp-backend-sdk":
+            expected_client = "getMcpBackendSdkClient"
+        elif dependency_sdk_family == "sdkwork-plugins-backend-sdk":
+            expected_client = "getPluginsBackendSdkClient"
         if not any(
             self._operation_uses_allowed_sdk_client_boundary(operation, expected_client)
             for operation in matching_operations
