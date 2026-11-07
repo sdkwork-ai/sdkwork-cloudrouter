@@ -1,6 +1,110 @@
 {
   "operations": [
     {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/agents",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "createManagedAgent",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_agent"
+      ],
+      "route": "/admin/agent",
+      "sdk_operations": [],
+      "source": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts",
+      "write_tables": [
+        "ai_agent"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/agents",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "listManagedAgents",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_agent"
+      ],
+      "route": "/admin/agent",
+      "sdk_operations": [],
+      "source": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/agents/{agentId}/restore",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "action",
+      "operation": "restoreManagedAgent",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_agent"
+      ],
+      "route": "/admin/agent",
+      "sdk_operations": [],
+      "source": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts",
+      "write_tables": [
+        "ai_agent"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/agents/{agentId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "retrieveManagedAgent",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_agent"
+      ],
+      "route": "/admin/agent",
+      "sdk_operations": [],
+      "source": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/ai/agents/{agentId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updateManagedAgent",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_agent"
+      ],
+      "route": "/admin/agent",
+      "sdk_operations": [],
+      "source": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts",
+      "write_tables": [
+        "ai_agent"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/agents/{agentId}/status",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "action",
+      "operation": "updateManagedAgentStatus",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_agent"
+      ],
+      "route": "/admin/agent",
+      "sdk_operations": [],
+      "source": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts",
+      "write_tables": [
+        "ai_agent"
+      ]
+    },
+    {
       "api_method": "GET",
       "api_path": "/backend/v3/api/log/request_logs/{id}",
       "api_surface": "backend",
@@ -41,6 +145,250 @@
       ],
       "source": "../sdkwork-log/apps/sdkwork-log-pc/packages/sdkwork-log-pc-request-log/src/requestLogService.ts",
       "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/mcp/invocations",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "appendAdminInvocation",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_mcp_invocation"
+      ],
+      "route": "/admin/connector",
+      "sdk_operations": [],
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "write_tables": [
+        "ai_mcp_invocation"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/mcp/servers",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "createAdminServer",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_mcp_server"
+      ],
+      "route": "/admin/connector",
+      "sdk_operations": [],
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "write_tables": [
+        "ai_mcp_server"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/mcp/servers/{serverId}/connectors/{connectorKey}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "delete",
+      "operation": "deleteAdminConnector",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_mcp_connector"
+      ],
+      "route": "/admin/connector",
+      "sdk_operations": [],
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "write_tables": [
+        "ai_mcp_connector"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/mcp/servers/{serverKey}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "delete",
+      "operation": "deleteAdminServer",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_mcp_server"
+      ],
+      "route": "/admin/connector",
+      "sdk_operations": [],
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "write_tables": [
+        "ai_mcp_server"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/mcp/categories",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "listAdminCategories",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_mcp_server_category"
+      ],
+      "route": "/admin/connector/categories",
+      "sdk_operations": [],
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/mcp/servers/{serverId}/connectors",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "listAdminConnectors",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_mcp_connector"
+      ],
+      "route": "/admin/connector",
+      "sdk_operations": [],
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/mcp/invocations",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "listAdminInvocations",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_mcp_invocation"
+      ],
+      "route": "/admin/connector",
+      "sdk_operations": [],
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/mcp/servers",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "listAdminServers",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_mcp_server"
+      ],
+      "route": "/admin/connector",
+      "sdk_operations": [],
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "PUT",
+      "api_path": "/backend/v3/api/mcp/servers/{serverKey}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updateAdminServer",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_mcp_server"
+      ],
+      "route": "/admin/connector",
+      "sdk_operations": [],
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "write_tables": [
+        "ai_mcp_server"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/mcp/categories",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "action",
+      "operation": "upsertAdminCategory",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_mcp_server_category"
+      ],
+      "route": "/admin/connector/categories",
+      "sdk_operations": [],
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "write_tables": [
+        "ai_mcp_server_category"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/mcp/servers/{serverId}/connectors",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "action",
+      "operation": "upsertAdminConnector",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_mcp_connector"
+      ],
+      "route": "/admin/connector",
+      "sdk_operations": [],
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "write_tables": [
+        "ai_mcp_connector"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/mcp/servers/{serverId}/prompts",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "action",
+      "operation": "upsertAdminPrompt",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_mcp_prompt"
+      ],
+      "route": "/admin/connector",
+      "sdk_operations": [],
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "write_tables": [
+        "ai_mcp_prompt"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/mcp/servers/{serverId}/resources",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "action",
+      "operation": "upsertAdminResource",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_mcp_resource"
+      ],
+      "route": "/admin/connector",
+      "sdk_operations": [],
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "write_tables": [
+        "ai_mcp_resource"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/mcp/servers/{serverId}/tools",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "action",
+      "operation": "upsertAdminTool",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_mcp_tool"
+      ],
+      "route": "/admin/connector",
+      "sdk_operations": [],
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "write_tables": [
+        "ai_mcp_tool"
+      ]
     },
     {
       "api_method": "POST",
@@ -554,6 +902,318 @@
       "write_tables": [
         "ai_resource_group_item",
         "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/plugins",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "createPlugin",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_plugin"
+      ],
+      "route": "/admin/plugin",
+      "sdk_operations": [],
+      "source": "../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts",
+      "write_tables": [
+        "ai_plugin"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/plugins/{pluginKey}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "delete",
+      "operation": "deletePlugin",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_plugin"
+      ],
+      "route": "/admin/plugin",
+      "sdk_operations": [],
+      "source": "../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts",
+      "write_tables": [
+        "ai_plugin"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/plugin_categories",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "listPluginCategories",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_plugin_category"
+      ],
+      "route": "/admin/plugin/categories",
+      "sdk_operations": [],
+      "source": "../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/plugins",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "listPlugins",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_plugin"
+      ],
+      "route": "/admin/plugin",
+      "sdk_operations": [],
+      "source": "../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "PUT",
+      "api_path": "/backend/v3/api/plugins/{pluginKey}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updatePlugin",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_plugin"
+      ],
+      "route": "/admin/plugin",
+      "sdk_operations": [],
+      "source": "../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts",
+      "write_tables": [
+        "ai_plugin"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/plugin_categories",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "action",
+      "operation": "upsertPluginCategory",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_plugin_category"
+      ],
+      "route": "/admin/plugin/categories",
+      "sdk_operations": [],
+      "source": "../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts",
+      "write_tables": [
+        "ai_plugin_category"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/skill_packages/{packageId}/artifacts",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "createSkillArtifact",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_skill_artifact"
+      ],
+      "route": "/admin/skill",
+      "sdk_operations": [],
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "write_tables": [
+        "ai_skill_artifact"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/skill_capabilities",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "createSkillCapability",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_skill_capability"
+      ],
+      "route": "/admin/skill",
+      "sdk_operations": [],
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "write_tables": [
+        "ai_skill_capability"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/skill_categories",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "createSkillCategory",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_skill_category"
+      ],
+      "route": "/admin/skill/categories",
+      "sdk_operations": [],
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "write_tables": [
+        "ai_skill_category"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/skill_packages",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "createSkillPackage",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_skill_package"
+      ],
+      "route": "/admin/skill",
+      "sdk_operations": [],
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "write_tables": [
+        "ai_skill_package"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/skill_packages/{packageId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "delete",
+      "operation": "deleteSkillPackage",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_skill_package"
+      ],
+      "route": "/admin/skill",
+      "sdk_operations": [],
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "write_tables": [
+        "ai_skill_package"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/skill_categories",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "listManagedSkillCategories",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_skill_category"
+      ],
+      "route": "/admin/skill/categories",
+      "sdk_operations": [],
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/skill_packages",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "listManagedSkillPackages",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_skill_package"
+      ],
+      "route": "/admin/skill",
+      "sdk_operations": [],
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/skill_packages/{packageId}/artifacts",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "listPackageArtifacts",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_skill_artifact"
+      ],
+      "route": "/admin/skill",
+      "sdk_operations": [],
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/skill_capabilities",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "listSkillCapabilities",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_skill_capability"
+      ],
+      "route": "/admin/skill",
+      "sdk_operations": [],
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/skill_capabilities/{capabilityId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updateSkillCapability",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_skill_capability"
+      ],
+      "route": "/admin/skill",
+      "sdk_operations": [],
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "write_tables": [
+        "ai_skill_capability"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/skill_categories/{categoryId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updateSkillCategory",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_skill_category"
+      ],
+      "route": "/admin/skill/categories",
+      "sdk_operations": [],
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "write_tables": [
+        "ai_skill_category"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/skill_packages/{packageId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updateSkillPackage",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_skill_package"
+      ],
+      "route": "/admin/skill",
+      "sdk_operations": [],
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "write_tables": [
+        "ai_skill_package"
       ]
     },
     {
@@ -6758,8 +7418,8 @@
     }
   ],
   "summary": {
-    "operation_count": 382,
-    "source_file_count": 45,
-    "write_operation_count": 137
+    "operation_count": 420,
+    "source_file_count": 49,
+    "write_operation_count": 163
   }
 }
