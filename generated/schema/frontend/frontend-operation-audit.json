@@ -20,6 +20,22 @@
     },
     {
       "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/agent_categories",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "listAgentCategories",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_agent_category"
+      ],
+      "route": "/admin/agent/categories",
+      "sdk_operations": [],
+      "source": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
       "api_path": "/backend/v3/api/ai/agents",
       "api_surface": "backend",
       "file_targets": [],
@@ -102,6 +118,24 @@
       "source": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts",
       "write_tables": [
         "ai_agent"
+      ]
+    },
+    {
+      "api_method": "PUT",
+      "api_path": "/backend/v3/api/ai/agent_categories/{categoryCode}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "upsertAgentCategory",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_agent_category"
+      ],
+      "route": "/admin/agent/categories",
+      "sdk_operations": [],
+      "source": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts",
+      "write_tables": [
+        "ai_agent_category"
       ]
     },
     {
@@ -7418,8 +7452,8 @@
     }
   ],
   "summary": {
-    "operation_count": 420,
+    "operation_count": 422,
     "source_file_count": 49,
-    "write_operation_count": 163
+    "write_operation_count": 164
   }
 }

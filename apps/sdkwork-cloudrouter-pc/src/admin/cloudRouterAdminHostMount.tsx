@@ -41,6 +41,7 @@ const McpServersAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-adm
 const McpServerDetailAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-connector'), 'McpServerDetailAdminPage');
 const McpCategoriesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-connector'), 'McpCategoriesAdminPage');
 const AgentsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-agent'), 'AgentsAdminPage');
+const AgentCategoriesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-agent'), 'AgentCategoriesAdminPage');
 const PluginsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-plugin'), 'PluginsAdminPage');
 const PluginCategoriesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-plugin'), 'PluginCategoriesAdminPage');
 const RecordAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-record'), 'RecordAdmin');
@@ -168,6 +169,7 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   route('connector', 'sdkwork-mcp', '@sdkwork/cloudrouter-pc-admin-connector', ['sdkwork-mcp-backend-sdk'], 'cloudrouter.admin.access', <McpServersAdmin />),
   route('plugin/categories', 'sdkwork-plugins', '@sdkwork/cloudrouter-pc-admin-plugin', ['sdkwork-plugins-backend-sdk'], 'cloudrouter.admin.access', <PluginCategoriesAdmin />),
   route('plugin', 'sdkwork-plugins', '@sdkwork/cloudrouter-pc-admin-plugin', ['sdkwork-plugins-backend-sdk'], 'cloudrouter.admin.access', <PluginsAdmin />),
+  route('agent/categories', 'sdkwork-agents', '@sdkwork/cloudrouter-pc-admin-agent', ['sdkwork-agents-backend-sdk'], 'cloudrouter.admin.access', <AgentCategoriesAdmin />),
   route('agent', 'sdkwork-agents', '@sdkwork/cloudrouter-pc-admin-agent', ['sdkwork-agents-backend-sdk'], 'cloudrouter.admin.access', <AgentsAdmin />),
   route('record', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-record', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <RecordAdmin />),
   route('request-log', 'sdkwork-log', '@sdkwork/log-pc-admin-request-log', ['sdkwork-log-backend-sdk'], 'cloudrouter.system.read', <RequestLogAdmin />),

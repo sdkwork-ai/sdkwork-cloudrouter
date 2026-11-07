@@ -13479,6 +13479,48 @@ frontend_operations:
         type: object
     query_parameters: []
 
+  - route: /admin/agent/categories
+    source: ../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts
+    operation: listAgentCategories
+    operation_id: agentCategories.list
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/ai/agent_categories
+    sdk_domain: agents
+    read_sources:
+      - ai_agent_category
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/agent/categories
+    source: ../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts
+    operation: upsertAgentCategory
+    operation_id: agentCategories.update
+    kind: update
+    api_surface: backend
+    api_method: PUT
+    api_path: /backend/v3/api/ai/agent_categories/{categoryCode}
+    sdk_domain: agents
+    read_sources:
+      - ai_agent_category
+    write_tables:
+      - ai_agent_category
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
 routes:
   - route: /admin/skill/categories
     dependency_owned: true
@@ -13513,6 +13555,11 @@ routes:
   - route: /admin/plugin
     dependency_owned: true
     dependency_sdk_family: sdkwork-plugins-backend-sdk
+    required_tables: []
+
+  - route: /admin/agent/categories
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-agents-backend-sdk
     required_tables: []
 
   - route: /admin/agent

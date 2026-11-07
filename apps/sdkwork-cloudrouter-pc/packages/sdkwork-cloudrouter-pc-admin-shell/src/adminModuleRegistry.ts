@@ -92,9 +92,18 @@ export type AdminMenuItem = {
   iconColor?: string;
 };
 
+/**
+ * One collapsible sidebar group.
+ *
+ * `items` are the clickable entries at this group's own level. A group may
+ * also carry `groups`, which render one level deeper: the admin sidebar
+ * supports three navigation levels (domain group → capability group → page),
+ * for example `人工智能基础管理` → `技能管理` → `技能分类管理`.
+ */
 export type AdminMenuGroup = {
   groupKey: string;
   items: AdminMenuItem[];
+  groups?: AdminMenuGroup[];
 };
 
 export type AdminModuleMenu = {
@@ -107,8 +116,12 @@ function moduleBlock(definition: AdminModuleDef): AdminModuleDef {
   return definition;
 }
 
-function groupBlock(groupKey: string, items: AdminMenuItem[]): AdminMenuGroup {
-  return { groupKey, items };
+function groupBlock(
+  groupKey: string,
+  items: AdminMenuItem[],
+  groups?: AdminMenuGroup[],
+): AdminMenuGroup {
+  return groups && groups.length > 0 ? { groupKey, items, groups } : { groupKey, items };
 }
 
 function itemBlock(item: AdminMenuItem): AdminMenuItem {
@@ -237,20 +250,23 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
       groupBlock('admin.menu.home.pricingManagement', [
         itemBlock({ path: '/admin/pricing/settings', labelKey: 'admin.menu.pricing.settings', icon: BadgePercent, iconColor: 'text-lobster-400' }),
       ]),
-      groupBlock('admin.menu.home.skillManagement', [
-        itemBlock({ path: '/admin/skill/categories', labelKey: 'admin.menu.skills.categories', icon: FolderTree, iconColor: 'text-lobster-400' }),
-        itemBlock({ path: '/admin/skill', labelKey: 'admin.menu.skills', icon: Sparkles }),
-      ]),
-      groupBlock('admin.menu.home.connectorManagement', [
-        itemBlock({ path: '/admin/connector/categories', labelKey: 'admin.menu.connectors.categories', icon: FolderTree, iconColor: 'text-lobster-400' }),
-        itemBlock({ path: '/admin/connector', labelKey: 'admin.menu.connectors', icon: Cable }),
-      ]),
-      groupBlock('admin.menu.home.pluginManagement', [
-        itemBlock({ path: '/admin/plugin/categories', labelKey: 'admin.menu.plugins.categories', icon: FolderTree, iconColor: 'text-lobster-400' }),
-        itemBlock({ path: '/admin/plugin', labelKey: 'admin.menu.plugins', icon: Puzzle }),
-      ]),
-      groupBlock('admin.menu.home.agentManagement', [
-        itemBlock({ path: '/admin/agent', labelKey: 'admin.menu.agents', icon: Bot }),
+      groupBlock('admin.menu.home.aiFoundation', [], [
+        groupBlock('admin.menu.home.skillManagement', [
+          itemBlock({ path: '/admin/skill/categories', labelKey: 'admin.menu.skills.categories', icon: FolderTree, iconColor: 'text-lobster-400' }),
+          itemBlock({ path: '/admin/skill', labelKey: 'admin.menu.skills', icon: Sparkles }),
+        ]),
+        groupBlock('admin.menu.home.connectorManagement', [
+          itemBlock({ path: '/admin/connector/categories', labelKey: 'admin.menu.connectors.categories', icon: FolderTree, iconColor: 'text-lobster-400' }),
+          itemBlock({ path: '/admin/connector', labelKey: 'admin.menu.connectors', icon: Cable }),
+        ]),
+        groupBlock('admin.menu.home.pluginManagement', [
+          itemBlock({ path: '/admin/plugin/categories', labelKey: 'admin.menu.plugins.categories', icon: FolderTree, iconColor: 'text-lobster-400' }),
+          itemBlock({ path: '/admin/plugin', labelKey: 'admin.menu.plugins', icon: Puzzle }),
+        ]),
+        groupBlock('admin.menu.home.agentManagement', [
+          itemBlock({ path: '/admin/agent/categories', labelKey: 'admin.menu.agents.categories', icon: FolderTree, iconColor: 'text-lobster-400' }),
+          itemBlock({ path: '/admin/agent', labelKey: 'admin.menu.agents', icon: Bot }),
+        ]),
       ]),
     ],
   },

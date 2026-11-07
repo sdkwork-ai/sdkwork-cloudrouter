@@ -284,6 +284,7 @@ class FrontendContractGuardian:
             "getSdkworkAgentBackendSdkClient",
             "@sdkwork/agent-backend-sdk",
             "@sdkwork/agents-backend-sdk",
+            "@sdkwork/agents-pc-core/sdk/agentsBackendSdkClient",
         },
         "skills": {
             "getSkillsBackendSdkClient",

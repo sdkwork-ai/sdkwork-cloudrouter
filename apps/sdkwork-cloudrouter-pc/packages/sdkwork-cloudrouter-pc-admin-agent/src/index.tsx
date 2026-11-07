@@ -1,4 +1,7 @@
-import { AgentsAdminPage as AgentsAdminBlock } from '@sdkwork/agents-pc-admin';
+import {
+  AgentCategoriesPage as AgentCategoriesBlock,
+  AgentsAdminPage as AgentsAdminBlock,
+} from '@sdkwork/agents-pc-admin';
 import { configureAgentsAdminRuntime } from '@sdkwork/agents-pc-admin/agentsAdminService';
 import { getSdkworkAgentBackendSdkClient } from '@sdkwork/cloudroutes-pc-commons/runtime';
 
@@ -23,5 +26,6 @@ configureAgentsAdminRuntime({
 
 export {
   AgentsAdminBlock as AgentsAdminPage,
+  AgentCategoriesBlock as AgentCategoriesAdminPage,
   AgentsAdminBlock as default,
 };

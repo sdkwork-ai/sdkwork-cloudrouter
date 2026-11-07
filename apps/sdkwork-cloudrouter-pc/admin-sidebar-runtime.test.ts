@@ -5,6 +5,8 @@ import {
   ADMIN_MODULES,
   getActiveSidebarItemPaths,
   getAdminModuleMenu,
+  getFilteredAdminModuleMenu,
+  hasActiveSidebarGroupItem,
   isSidebarItemActive,
 } from "@sdkwork/cloudrouter-pc-admin-shell";
 import { ADMIN_MODULE_CATALOG, ADMIN_MODULE_IDS } from "./packages/sdkwork-cloudroutes-pc-commons/src/admin-modules.ts";
@@ -94,35 +96,79 @@ test("admin sidebar exposes only product price settings", () => {
   assert.equal(isSidebarItemActive("/admin/pricing/settings", settingsItem, homeMenu), true);
 });
 
-test("admin sidebar exposes skills, connectors, plugins, and agents groups", () => {
+test("admin sidebar nests skills, connectors, plugins, and agents under the AI foundation group", () => {
   const homeMenu = getAdminModuleMenu("home");
 
-  const skillGroup = homeMenu.groups.find((group) => group.groupKey === "admin.menu.home.skillManagement");
+  const foundationGroup = homeMenu.groups.find((group) => group.groupKey === "admin.menu.home.aiFoundation");
+  assert.ok(foundationGroup, "AI foundation management group must exist");
+  assert.deepEqual(foundationGroup.items, []);
+  const nestedGroups = foundationGroup.groups ?? [];
+  assert.deepEqual(nestedGroups.map((group) => group.groupKey), [
+    "admin.menu.home.skillManagement",
+    "admin.menu.home.connectorManagement",
+    "admin.menu.home.pluginManagement",
+    "admin.menu.home.agentManagement",
+  ]);
+
+  const skillGroup = nestedGroups.find((group) => group.groupKey === "admin.menu.home.skillManagement");
   assert.ok(skillGroup, "skill management group must exist");
   assert.deepEqual(skillGroup.items.map((item) => item.path), [
     "/admin/skill/categories",
     "/admin/skill",
   ]);
 
-  const connectorGroup = homeMenu.groups.find((group) => group.groupKey === "admin.menu.home.connectorManagement");
+  const connectorGroup = nestedGroups.find((group) => group.groupKey === "admin.menu.home.connectorManagement");
   assert.ok(connectorGroup, "connector management group must exist");
   assert.deepEqual(connectorGroup.items.map((item) => item.path), [
     "/admin/connector/categories",
     "/admin/connector",
   ]);
 
-  const pluginGroup = homeMenu.groups.find((group) => group.groupKey === "admin.menu.home.pluginManagement");
+  const pluginGroup = nestedGroups.find((group) => group.groupKey === "admin.menu.home.pluginManagement");
   assert.ok(pluginGroup, "plugin management group must exist");
   assert.deepEqual(pluginGroup.items.map((item) => item.path), [
     "/admin/plugin/categories",
     "/admin/plugin",
   ]);
 
-  const agentGroup = homeMenu.groups.find((group) => group.groupKey === "admin.menu.home.agentManagement");
+  const agentGroup = nestedGroups.find((group) => group.groupKey === "admin.menu.home.agentManagement");
   assert.ok(agentGroup, "agent management group must exist");
   assert.deepEqual(agentGroup.items.map((item) => item.path), [
+    "/admin/agent/categories",
     "/admin/agent",
   ]);
+
+  // Three navigation levels: foundation group -> capability group -> page.
+  // The active page must highlight only its most specific leaf, while every
+  // ancestor group still reports an active descendant.
+  assert.deepEqual(getActiveSidebarItemPaths("/admin/agent/categories", homeMenu), ["/admin/agent/categories"]);
+  const agentCategoriesItem = agentGroup.items.find((item) => item.path === "/admin/agent/categories");
+  const agentsItem = agentGroup.items.find((item) => item.path === "/admin/agent");
+  assert.ok(agentCategoriesItem, "agent categories menu item must exist");
+  assert.ok(agentsItem, "agent management menu item must exist");
+  assert.equal(isSidebarItemActive("/admin/agent/categories", agentCategoriesItem, homeMenu), true);
+  assert.equal(isSidebarItemActive("/admin/agent/categories", agentsItem, homeMenu), false);
+  assert.equal(hasActiveSidebarGroupItem("/admin/agent/categories", agentGroup, homeMenu), true);
+  assert.equal(hasActiveSidebarGroupItem("/admin/agent/categories", foundationGroup, homeMenu), true);
+  assert.equal(hasActiveSidebarGroupItem("/admin/agent/categories", skillGroup, homeMenu), false);
+
+  // Permission filtering keeps the nested chain intact and drops the whole
+  // parent group only when no descendant entry survives.
+  const filtered = getFilteredAdminModuleMenu("home", ["cloudrouter.admin.access"]);
+  const filteredFoundation = filtered.groups.find((group) => group.groupKey === "admin.menu.home.aiFoundation");
+  assert.ok(filteredFoundation, "permitted AI foundation group must survive filtering");
+  assert.deepEqual(filteredFoundation.groups?.map((group) => group.groupKey), [
+    "admin.menu.home.skillManagement",
+    "admin.menu.home.connectorManagement",
+    "admin.menu.home.pluginManagement",
+    "admin.menu.home.agentManagement",
+  ]);
+  const filteredOut = getFilteredAdminModuleMenu("home", []);
+  assert.equal(
+    filteredOut.groups.some((group) => group.groupKey === "admin.menu.home.aiFoundation"),
+    false,
+    "an unpermitted nested group must not leave an empty parent group behind",
+  );
 
   // The home module must claim every new top-level path prefix so the header
   // module switcher keeps the four groups inside the same admin module.

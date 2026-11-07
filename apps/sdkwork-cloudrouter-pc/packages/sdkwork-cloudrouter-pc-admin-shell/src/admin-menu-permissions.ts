@@ -2,6 +2,7 @@ import { hasPermissionInScope } from '@sdkwork/iam-contracts';
 
 import {
   ADMIN_MODULE_MENUS,
+  type AdminMenuGroup,
   type AdminMenuItem,
   type AdminModuleId,
   type AdminModuleMenu,
@@ -23,17 +24,43 @@ function filterMenuItems(
   return items.filter((item) => isAdminRouteAllowed(item.path, permissionScope));
 }
 
+function filterMenuGroup(
+  group: AdminMenuGroup,
+  permissionScope: readonly string[],
+): AdminMenuGroup | null {
+  const items = filterMenuItems(group.items, permissionScope);
+  const groups = (group.groups ?? [])
+    .map((nestedGroup) => filterMenuGroup(nestedGroup, permissionScope))
+    .filter((nestedGroup): nestedGroup is AdminMenuGroup => nestedGroup !== null);
+
+  if (items.length === 0 && groups.length === 0) {
+    return null;
+  }
+
+  return {
+    ...group,
+    items,
+    ...(groups.length > 0 ? { groups } : {}),
+  };
+}
+
+function countMenuItems(menu: AdminModuleMenu): number {
+  const groupItemCount = (groups: readonly AdminMenuGroup[]): number => groups.reduce(
+    (total, group) => total + group.items.length + groupItemCount(group.groups ?? []),
+    0,
+  );
+
+  return (menu.items?.length ?? 0) + groupItemCount(menu.groups);
+}
+
 export function filterAdminModuleMenu(
   menu: AdminModuleMenu,
   permissionScope: readonly string[],
 ): AdminModuleMenu {
   const filteredItems = menu.items ? filterMenuItems(menu.items, permissionScope) : undefined;
   const filteredGroups = menu.groups
-    .map((group) => ({
-      ...group,
-      items: filterMenuItems(group.items, permissionScope),
-    }))
-    .filter((group) => group.items.length > 0);
+    .map((group) => filterMenuGroup(group, permissionScope))
+    .filter((group): group is AdminMenuGroup => group !== null);
 
   return {
     moduleId: menu.moduleId,
@@ -51,10 +78,7 @@ export function getFilteredAdminModuleMenu(
 }
 
 export function isAdminModuleVisible(moduleId: AdminModuleId, permissionScope: readonly string[]): boolean {
-  const menu = getFilteredAdminModuleMenu(moduleId, permissionScope);
-  const itemCount = (menu.items?.length ?? 0)
-    + menu.groups.reduce((total, group) => total + group.items.length, 0);
-  return itemCount > 0;
+  return countMenuItems(getFilteredAdminModuleMenu(moduleId, permissionScope)) > 0;
 }
 
 export function listVisibleAdminModuleIds(permissionScope: readonly string[]): AdminModuleId[] {

@@ -750,6 +750,16 @@ mod tests {
                 "/backend/v3/api/ai/agents/{agentId}/audit_events",
                 "agent.business.audit.read",
             ),
+            (
+                "GET",
+                "/backend/v3/api/ai/agent_categories",
+                "agent.business.category.read",
+            ),
+            (
+                "PUT",
+                "/backend/v3/api/ai/agent_categories/{categoryCode}",
+                "agent.business.category.manage",
+            ),
         ] {
             let route = manifest.match_route(method, path).unwrap_or_else(|| {
                 panic!("{method} {path} must be registered by the agents mount")

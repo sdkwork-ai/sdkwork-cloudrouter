@@ -345,6 +345,48 @@ html.dark [data-admin-model-table-header] > tr > th {
   color: rgb(244 162 140);
 }
 
+/* Nested sidebar groups: the third navigation level (domain group → capability
+   group → page), e.g. 人工智能基础管理 → 技能管理 → 技能分类管理. */
+.sdkwork-portal-sidebar-nested {
+  margin-inline-start: 0.375rem;
+  padding-inline-start: 0.25rem;
+  border-inline-start: 1px solid rgb(226 232 240 / 0.9);
+}
+
+.dark .sdkwork-portal-sidebar-nested {
+  border-inline-start-color: rgb(255 255 255 / 0.08);
+}
+
+.sdkwork-portal-sidebar-group-label:focus-visible {
+  outline: 2px solid rgb(var(--sdkwork-sidebar-accent-rgb) / 0.45);
+  outline-offset: -2px;
+  border-radius: var(--sdkwork-sidebar-item-radius);
+}
+
+.sdkwork-portal-sidebar-group-label--nested {
+  padding-inline-start: 0.875rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: none;
+  color: rgb(100 116 139 / 0.92);
+}
+
+.dark .sdkwork-portal-sidebar-group-label--nested {
+  color: rgb(148 163 184 / 0.92);
+}
+
+.sdkwork-portal-sidebar-group-label--nested:hover {
+  color: rgb(71 85 105);
+}
+
+.dark .sdkwork-portal-sidebar-group-label--nested:hover {
+  color: rgb(203 213 225);
+}
+
+.sdkwork-portal-sidebar-item--nested {
+  padding-inline-start: 1.75rem;
+}
+
 /* Playground modality rail — icon-only nav with hover tooltips */
 .sdkwork-playground-host {
   background-color: var(--theme-aware-surface, #f8fafc);

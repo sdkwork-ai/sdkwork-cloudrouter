@@ -303,12 +303,23 @@ test('admin host composes owner admin modules through the backend-admin core SDK
 
   assert.match(appSource, /CloudRouterAdminHostRoutes/);
   assert.doesNotMatch(appSource, /const (?:Dashboard|Model|Upstream)Admin = lazyRoute/);
-  // 31 first-party/relay records plus the eight federated capability records
+  // 31 first-party/relay records plus the nine federated capability records
   // for the skills, MCP connector, plugin, and agent admin groups (the MCP
-  // detail record is the extra one: list + categories + detail).
-  assert.equal((hostSource.match(/\broute\('/g) ?? []).length, 39);
+  // detail record is one extra: list + categories + detail, and agent
+  // categories is the other).
+  assert.equal((hostSource.match(/\broute\('/g) ?? []).length, 40);
   assert.match(hostSource, /'sdkwork-models', '@sdkwork\/models-pc-admin-catalog', \['sdkwork-models-backend-sdk'\]/);
   assert.match(hostSource, /'sdkwork-cloudrouter', '@sdkwork\/cloudrouter-pc-admin-upstream', \['cloudrouter-backend-sdk'\]/);
+  assert.match(
+    hostSource,
+    /'agent\/categories', 'sdkwork-agents', '@sdkwork\/cloudrouter-pc-admin-agent', \['sdkwork-agents-backend-sdk'\]/,
+    "the agent category admin route must stay on the agents backend SDK boundary",
+  );
+  const agentAdminAdapterSource = source(
+    'packages/sdkwork-cloudrouter-pc-admin-agent/src/index.tsx',
+  );
+  assert.match(agentAdminAdapterSource, /AgentCategoriesAdminPage/);
+  assert.match(agentAdminAdapterSource, /getSdkworkAgentBackendSdkClient/);
 
   const contributions = [...hostSource.matchAll(
     /\broute\(\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*\[([^\]]*)\]\s*,\s*'([^']+)'\s*,\s*(.+?)\)\s*,?\s*$/gm,

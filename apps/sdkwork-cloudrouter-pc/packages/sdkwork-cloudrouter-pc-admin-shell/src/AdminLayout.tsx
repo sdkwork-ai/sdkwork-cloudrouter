@@ -39,26 +39,30 @@ function SidebarGroup({
   menu,
   defaultOpen,
   onNavigate,
+  depth = 0,
 }: {
   group: AdminMenuGroup;
   menu: AdminModuleMenu;
   defaultOpen: boolean;
   onNavigate?: () => void;
+  depth?: number;
 }) {
   const { t } = useTranslation();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const groupItemsId = useId();
   const hasActiveChild = hasActiveSidebarGroupItem(location.pathname, group, menu);
+  const isNested = depth > 0;
 
   return (
-    <div className="mb-1">
+    <div className={isNested ? 'mt-0.5' : 'mb-1'}>
       <button
         aria-controls={groupItemsId}
         aria-expanded={isOpen}
         onClick={() => setIsOpen((open) => !open)}
         data-active={hasActiveChild ? 'true' : 'false'}
-        className="sdkwork-portal-sidebar-group-label"
+        data-depth={depth}
+        className={`sdkwork-portal-sidebar-group-label${isNested ? ' sdkwork-portal-sidebar-group-label--nested' : ''}`}
         type="button"
       >
         <span>{t(group.groupKey)}</span>
@@ -70,23 +74,29 @@ function SidebarGroup({
       </button>
       {isOpen ? (
         <div id={groupItemsId} className="flex flex-col gap-0.5">
-          {group.items.map((item) => {
-            const isActive = isSidebarItemActive(location.pathname, item, menu);
-
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                data-active={isActive ? 'true' : 'false'}
-                aria-current={isActive ? 'page' : undefined}
-                className={sidebarItemClassName()}
-                onClick={onNavigate}
-              >
-                <item.icon aria-hidden="true" className={`sdkwork-portal-sidebar-item__icon h-4 w-4 ${item.iconColor ?? ''}`} />
-                {t(item.labelKey)}
-              </Link>
-            );
-          })}
+          {group.items.map((item) => (
+            <SidebarItem
+              key={item.path}
+              item={item}
+              menu={menu}
+              onNavigate={onNavigate}
+              nested={isNested}
+            />
+          ))}
+          {(group.groups ?? []).length > 0 ? (
+            <div className="sdkwork-portal-sidebar-nested">
+              {(group.groups ?? []).map((nestedGroup) => (
+                <SidebarGroup
+                  key={nestedGroup.groupKey}
+                  group={nestedGroup}
+                  menu={menu}
+                  defaultOpen={defaultOpen}
+                  onNavigate={onNavigate}
+                  depth={depth + 1}
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -97,10 +107,12 @@ function SidebarItem({
   item,
   menu,
   onNavigate,
+  nested = false,
 }: {
   item: AdminMenuItem;
   menu: AdminModuleMenu;
   onNavigate?: () => void;
+  nested?: boolean;
 }) {
   const { t } = useTranslation();
   const location = useLocation();
@@ -112,7 +124,7 @@ function SidebarItem({
       to={item.path}
       data-active={isActive ? 'true' : 'false'}
       aria-current={isActive ? 'page' : undefined}
-      className={sidebarItemClassName()}
+      className={`${sidebarItemClassName()}${nested ? ' sdkwork-portal-sidebar-item--nested' : ''}`}
       onClick={onNavigate}
     >
       <item.icon aria-hidden="true" className={`sdkwork-portal-sidebar-item__icon h-4 w-4 ${item.iconColor ?? ''}`} />

@@ -955,6 +955,20 @@ routes:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx
 
+- route: /admin/agent/categories
+  package: '@sdkwork/cloudrouter-pc-admin-agent'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-agents-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/agent/categories
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx
+
 - route: /admin/agent
   package: '@sdkwork/cloudrouter-pc-admin-agent'
   owner: admin-control-plane

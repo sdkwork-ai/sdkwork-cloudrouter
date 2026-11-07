@@ -4663,6 +4663,7 @@ dependencies = [
  "sdkwork-agent-kernel",
  "sdkwork-intelligence-agents-service",
  "sdkwork-knowledgebase-app-sdk-generated-rust",
+ "sdkwork-utils-rust",
  "tokio",
  "tracing",
 ]
@@ -4676,6 +4677,7 @@ dependencies = [
  "sdkwork-memory-app-sdk",
  "sdkwork-memory-contract",
  "sdkwork-memory-inprocess",
+ "sdkwork-utils-rust",
  "serde_json",
  "tokio",
  "tracing",
@@ -6559,6 +6561,7 @@ dependencies = [
  "chrono",
  "cloudrouter-open-sdk",
  "sdkwork-intelligence-generations-service",
+ "sdkwork-utils-rust",
  "serde",
  "serde_json",
  "tracing",
