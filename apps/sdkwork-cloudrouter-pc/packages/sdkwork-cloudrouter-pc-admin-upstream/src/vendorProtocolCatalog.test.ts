@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { VENDOR_CATALOG_MATRIX } from './generated/vendorCatalogMatrix.generated';
+import { VENDOR_CATALOG_MATRIX } from './vendor-catalog-matrix';
 import {
   normalizeVendorRegion,
   resolveVendorBaseUrl,

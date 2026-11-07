@@ -142,6 +142,13 @@ class FrontendOperationAudit:
     # Router app/backend OpenAPI authority. The mounted admin module declares
     # the dependency SDK family in its route record.
     COURSE_BACKEND_SDK_PATTERN = re.compile(r"\bgetSdkworkCourseBackendSdkClient\s*\(")
+    # Federated intelligence capability SDKs (sdkwork-skills / sdkwork-mcp /
+    # sdkwork-plugins): operations dispatched through these clients are owned
+    # by their capability contracts, not the Cloud Router app/backend
+    # authority.
+    SKILLS_BACKEND_SDK_PATTERN = re.compile(r"\bgetSkillsBackendSdkClient\s*\(")
+    MCP_BACKEND_SDK_PATTERN = re.compile(r"\bgetMcpBackendSdkClient\s*\(")
+    PLUGINS_BACKEND_SDK_PATTERN = re.compile(r"\bgetPluginsBackendSdkClient\s*\(")
     DRIVE_APP_SDK_PATTERN = re.compile(r"\bgetSdkworkDriveAppSdkClient\s*\(")
     MEMORY_CLIENT_PATTERN = re.compile(r"\bclient\s*\.\s*memory\s*\.")
     NOTIFICATION_DEPENDENCY_DOMAINS = frozenset({"notification"})
@@ -467,7 +474,11 @@ class FrontendOperationAudit:
                 elif not route.startswith("/admin") and api_surface == "backend":
                     messages.append(f"frontend operation {key} route {route} must not use backend api_surface")
             if isinstance(api_surface, str) and api_surface in self.SDK_CLIENTS and not is_app_shell_operation:
-                source_text = self._source_text(source, source_text_cache)
+                source_text = (
+                    None
+                    if self._is_operation_audit_exempt_source(source)
+                    else self._source_text(source, source_text_cache)
+                )
                 if (
                     source_text is not None
                     and not self._source_uses_generated_sdk_boundary(
@@ -573,6 +584,9 @@ class FrontendOperationAudit:
                     or self.MEMORY_APP_SDK_PATTERN.search(source_text) is not None
                     or self.DRIVE_ADMIN_STORAGE_SDK_PATTERN.search(source_text) is not None
                     or self.COURSE_BACKEND_SDK_PATTERN.search(source_text) is not None
+                    or self.SKILLS_BACKEND_SDK_PATTERN.search(source_text) is not None
+                    or self.MCP_BACKEND_SDK_PATTERN.search(source_text) is not None
+                    or self.PLUGINS_BACKEND_SDK_PATTERN.search(source_text) is not None
                     or self.DRIVE_APP_SDK_PATTERN.search(source_text) is not None
                     or self.COMPOSED_COMMERCE_SDK_PATTERN.search(source_text) is not None
                 )

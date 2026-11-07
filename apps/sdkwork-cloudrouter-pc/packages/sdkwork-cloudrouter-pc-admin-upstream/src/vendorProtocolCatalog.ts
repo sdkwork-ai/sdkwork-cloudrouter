@@ -1,5 +1,5 @@
 import type { LlmProtocolConfig } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
-import { VENDOR_CATALOG_MATRIX } from './generated/vendorCatalogMatrix.generated';
+import { VENDOR_CATALOG_MATRIX } from './vendor-catalog-matrix';
 import type { VendorCatalogEntry, VendorCatalogRegionCode, VendorCatalogRegionEntry } from './vendorProtocolCatalog.types';
 
 /**

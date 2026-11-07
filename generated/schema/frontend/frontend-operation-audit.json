@@ -1420,20 +1420,6 @@
       "api_surface": null,
       "file_targets": [],
       "kind": null,
-      "operation": "deleteCourseAdminComment",
-      "operation_scope": null,
-      "read_sources": [],
-      "route": null,
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": null,
-      "api_path": null,
-      "api_surface": null,
-      "file_targets": [],
-      "kind": null,
       "operation": "deleteCourseAdminCourse",
       "operation_scope": null,
       "read_sources": [],
@@ -1561,20 +1547,6 @@
       "file_targets": [],
       "kind": null,
       "operation": "fetchCourseAdminCategories",
-      "operation_scope": null,
-      "read_sources": [],
-      "route": null,
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": null,
-      "api_path": null,
-      "api_surface": null,
-      "file_targets": [],
-      "kind": null,
-      "operation": "fetchCourseAdminComments",
       "operation_scope": null,
       "read_sources": [],
       "route": null,
@@ -1785,20 +1757,6 @@
       "file_targets": [],
       "kind": null,
       "operation": "grantCourseAdminEnrollment",
-      "operation_scope": null,
-      "read_sources": [],
-      "route": null,
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": null,
-      "api_path": null,
-      "api_surface": null,
-      "file_targets": [],
-      "kind": null,
-      "operation": "moderateCourseAdminComment",
       "operation_scope": null,
       "read_sources": [],
       "route": null,
@@ -6800,7 +6758,7 @@
     }
   ],
   "summary": {
-    "operation_count": 385,
+    "operation_count": 382,
     "source_file_count": 45,
     "write_operation_count": 137
   }

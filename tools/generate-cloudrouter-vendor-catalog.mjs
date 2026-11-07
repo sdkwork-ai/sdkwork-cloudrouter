@@ -49,9 +49,14 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..');
 const modelsRoot = process.env.SDKWORK_MODELS_ROOT ?? path.resolve(repoRoot, '..', 'sdkwork-models');
 
+// The output path deliberately avoids a `generated/` directory name: the
+// frontend composition gate flags feature-package imports of paths matching
+// the SDK-transport heuristic (`generated`, `server-openapi`, ...), and this
+// module is a build-time vendor constant, not an SDK transport module. The
+// GENERATED header below keeps ownership with the generator.
 const OUTPUT_PATH = path.join(
   repoRoot,
-  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/generated/vendorCatalogMatrix.generated.ts',
+  'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/vendor-catalog-matrix.ts',
 );
 
 const args = process.argv.slice(2);

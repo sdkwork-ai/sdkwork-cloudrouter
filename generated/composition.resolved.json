@@ -208,7 +208,7 @@
       "envKey": null,
       "forbidApplicationSameOriginFallback": false,
       "sdkOwner": "sdkwork-memory",
-      "apiAuthority": "sdkwork-memory.app",
+      "apiAuthority": "sdkwork-memory-app-api",
       "consumerSdkOwner": "sdkwork-cloudrouter",
       "corePackage": "@sdkwork/cloudrouter-pc-core",
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-core/specs/component.spec.json"
@@ -307,13 +307,73 @@
       "workspace": "sdkwork-models-backend-sdk",
       "surface": "backend-api",
       "apiPrefix": "/backend/v3/api",
+      "connectivityPlane": "application",
+      "runtimeMode": "same-origin-embedded",
+      "mountStatus": "verified",
+      "envKey": null,
+      "forbidApplicationSameOriginFallback": false,
+      "sdkOwner": "sdkwork-models",
+      "apiAuthority": "sdkwork-models-backend-api",
+      "consumerSdkOwner": "sdkwork-cloudrouter",
+      "corePackage": "@sdkwork/cloudrouter-pc-admin-core",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-core/specs/component.spec.json"
+    },
+    {
+      "workspace": "sdkwork-skills-backend-sdk",
+      "surface": "backend-api",
+      "apiPrefix": "/backend/v3/api",
       "connectivityPlane": "platform",
       "runtimeMode": "external-via-platform-surface",
       "mountStatus": null,
-      "envKey": "VITE_SDKWORK_MODELS_BACKEND_API_BASE_URL",
+      "envKey": "VITE_SDKWORK_SKILLS_BACKEND_API_BASE_URL",
       "forbidApplicationSameOriginFallback": true,
-      "sdkOwner": "sdkwork-models",
-      "apiAuthority": "sdkwork-models-backend-api",
+      "sdkOwner": "sdkwork-skills",
+      "apiAuthority": "sdkwork-skills-backend-api",
+      "consumerSdkOwner": "sdkwork-cloudrouter",
+      "corePackage": "@sdkwork/cloudrouter-pc-admin-core",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-core/specs/component.spec.json"
+    },
+    {
+      "workspace": "sdkwork-mcp-backend-sdk",
+      "surface": "backend-api",
+      "apiPrefix": "/backend/v3/api",
+      "connectivityPlane": "platform",
+      "runtimeMode": "external-via-platform-surface",
+      "mountStatus": null,
+      "envKey": "VITE_SDKWORK_MCP_BACKEND_API_BASE_URL",
+      "forbidApplicationSameOriginFallback": true,
+      "sdkOwner": "sdkwork-mcp",
+      "apiAuthority": "sdkwork-mcp.backend",
+      "consumerSdkOwner": "sdkwork-cloudrouter",
+      "corePackage": "@sdkwork/cloudrouter-pc-admin-core",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-core/specs/component.spec.json"
+    },
+    {
+      "workspace": "sdkwork-agents-backend-sdk",
+      "surface": "backend-api",
+      "apiPrefix": "/backend/v3/api",
+      "connectivityPlane": "platform",
+      "runtimeMode": "external-via-platform-surface",
+      "mountStatus": null,
+      "envKey": "VITE_SDKWORK_AGENTS_BACKEND_API_BASE_URL",
+      "forbidApplicationSameOriginFallback": true,
+      "sdkOwner": "sdkwork-agents",
+      "apiAuthority": "sdkwork-agents-backend-api",
+      "consumerSdkOwner": "sdkwork-cloudrouter",
+      "corePackage": "@sdkwork/cloudrouter-pc-admin-core",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-core/specs/component.spec.json"
+    },
+    {
+      "workspace": "sdkwork-plugins-backend-sdk",
+      "surface": "backend-api",
+      "apiPrefix": "/backend/v3/api",
+      "connectivityPlane": "platform",
+      "runtimeMode": "external-via-platform-surface",
+      "mountStatus": null,
+      "envKey": "VITE_SDKWORK_PLUGINS_BACKEND_API_BASE_URL",
+      "forbidApplicationSameOriginFallback": true,
+      "sdkOwner": "sdkwork-plugins",
+      "apiAuthority": "sdkwork-plugins.backend",
       "consumerSdkOwner": "sdkwork-cloudrouter",
       "corePackage": "@sdkwork/cloudrouter-pc-admin-core",
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-core/specs/component.spec.json"
@@ -448,7 +508,7 @@
       "envKey": null,
       "forbidApplicationSameOriginFallback": false,
       "sdkOwner": "sdkwork-memory",
-      "apiAuthority": "sdkwork-memory.app",
+      "apiAuthority": "sdkwork-memory-app-api",
       "consumerSdkOwner": "sdkwork-cloudrouter",
       "corePackage": "@sdkwork/cloudrouter-pc-console-core",
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-core/specs/component.spec.json"
@@ -570,6 +630,21 @@
       {
         "workspace": "sdkwork-models-backend-sdk",
         "manifestRef": "../sdkwork-models/specs/iam.module.manifest.json",
+        "inheritPermissions": true
+      },
+      {
+        "workspace": "sdkwork-skills-backend-sdk",
+        "manifestRef": "../sdkwork-skills/specs/iam.module.manifest.json",
+        "inheritPermissions": true
+      },
+      {
+        "workspace": "sdkwork-mcp-backend-sdk",
+        "manifestRef": "../sdkwork-mcp/specs/iam.module.manifest.json",
+        "inheritPermissions": true
+      },
+      {
+        "workspace": "sdkwork-agents-backend-sdk",
+        "manifestRef": "../sdkwork-iam/iam/modules/ai/iam.module.manifest.json",
         "inheritPermissions": true
       },
       {
@@ -2083,12 +2158,61 @@
             "workspace": "sdkwork-models-backend-sdk",
             "surface": "backend-api",
             "credentialMode": "authenticated-backend-admin"
+          },
+          {
+            "workspace": "sdkwork-skills-backend-sdk",
+            "surface": "backend-api",
+            "credentialMode": "authenticated-backend-admin"
+          },
+          {
+            "workspace": "sdkwork-mcp-backend-sdk",
+            "surface": "backend-api",
+            "credentialMode": "authenticated-backend-admin"
+          },
+          {
+            "workspace": "sdkwork-agents-backend-sdk",
+            "surface": "backend-api",
+            "credentialMode": "authenticated-backend-admin"
+          },
+          {
+            "workspace": "sdkwork-plugins-backend-sdk",
+            "surface": "backend-api",
+            "credentialMode": "authenticated-backend-admin"
           }
         ],
         "routeManifest": null,
         "runtimeEntrypoints": [
           "package.json#scripts.typecheck"
         ],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "sdkwork-cloudrouter-pc-admin-course",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course",
+        "domain": "content",
+        "capability": "course",
+        "surface": "backend-admin",
+        "languages": [
+          "javascript",
+          "typescript"
+        ],
+        "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/specs/component.spec.json",
+        "layerRole": null,
+        "publicExports": [
+          "src/index.tsx"
+        ],
+        "providedPorts": [],
+        "requiredPorts": [],
+        "sdkDependencies": [
+          {
+            "workspace": "sdkwork-course-backend-sdk",
+            "surface": "backend-api",
+            "credentialMode": "authenticated-backend-admin"
+          }
+        ],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
         "dependencyApiSurfaces": []
       },
       {
@@ -2554,6 +2678,35 @@
         "routeManifest": null,
         "runtimeEntrypoints": [
           "package.json#scripts.typecheck"
+        ],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/cloudrouter-pc-console-agents",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-agents",
+        "domain": "intelligence",
+        "capability": "agents",
+        "surface": "console",
+        "languages": [
+          "typescript"
+        ],
+        "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-agents/specs/component.spec.json",
+        "layerRole": "frontend-feature",
+        "publicExports": [
+          "."
+        ],
+        "providedPorts": [
+          "cloudrouter.console.agents"
+        ],
+        "requiredPorts": [
+          "cloudrouter.app-sdk.agents"
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [
+          "package.json#scripts.typecheck",
+          "package.json#scripts.test"
         ],
         "dependencyApiSurfaces": []
       },
@@ -3265,6 +3418,16 @@
             "name": "partnerAppApiRouteManifest",
             "provider": "sdkwork-api-partner-assembly",
             "export": "sdkwork_api_partner_assembly::app_api_route_manifest"
+          },
+          {
+            "name": "modelsBackendApiRouteManifest",
+            "provider": "sdkwork-api-models-assembly",
+            "export": "sdkwork_api_models_assembly::backend_api_route_manifest"
+          },
+          {
+            "name": "partnerBackendApiRouteManifest",
+            "provider": "sdkwork-api-partner-assembly",
+            "export": "sdkwork_api_partner_assembly::backend_api_route_manifest"
           }
         ],
         "sdkDependencies": [
@@ -3350,6 +3513,46 @@
             "coverageEvidence": [
               "src/bootstrap.rs#assemble_api_router_with_in_process_upstreams",
               "../sdkwork-routes-cloudrouter-app-api/src/manifest_composition.rs#capability_manifests_for_platform_gateway"
+            ]
+          },
+          {
+            "workspace": "sdkwork-models",
+            "sdkFamily": "sdkwork-models-backend-sdk",
+            "apiAuthority": "sdkwork-models-backend-api",
+            "surface": "backend-api",
+            "apiPrefixes": [
+              "/backend/v3/api/ai"
+            ],
+            "runtimeMode": "same-origin-mounted",
+            "profileCoverage": [
+              "standalone",
+              "cloud"
+            ],
+            "cargoDependency": "sdkwork-api-models-assembly",
+            "embeddedExecutableExport": "sdkwork_api_models_assembly::backend_api_route_manifest",
+            "coverageEvidence": [
+              "src/bootstrap.rs#assemble_api_router_with_in_process_upstreams",
+              "../sdkwork-routes-cloudrouter-backend-api/src/manifest_composition.rs#cloud_router_backend_composed_route_manifest_for_platform_gateway"
+            ]
+          },
+          {
+            "workspace": "sdkwork-partner",
+            "sdkFamily": "sdkwork-partner-backend-sdk",
+            "apiAuthority": "sdkwork-partner-backend-api",
+            "surface": "backend-api",
+            "apiPrefixes": [
+              "/backend/v3/api/partners"
+            ],
+            "runtimeMode": "same-origin-mounted",
+            "profileCoverage": [
+              "standalone",
+              "cloud"
+            ],
+            "cargoDependency": "sdkwork-api-partner-assembly",
+            "embeddedExecutableExport": "sdkwork_api_partner_assembly::backend_api_route_manifest",
+            "coverageEvidence": [
+              "src/bootstrap.rs#assemble_api_router_with_in_process_upstreams",
+              "../sdkwork-routes-cloudrouter-backend-api/src/manifest_composition.rs#cloud_router_backend_composed_route_manifest_for_platform_gateway"
             ]
           }
         ]
@@ -5049,8 +5252,22 @@
         {
           "appRoot": "apps/sdkwork-cloudrouter-pc",
           "architecture": "pc",
+          "directoryName": "sdkwork-cloudrouter-pc-admin-agent",
+          "name": "@sdkwork/cloudrouter-pc-admin-agent",
+          "role": "capability"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-pc",
+          "architecture": "pc",
           "directoryName": "sdkwork-cloudrouter-pc-admin-analytics",
           "name": "@sdkwork/cloudrouter-pc-admin-analytics",
+          "role": "capability"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-pc",
+          "architecture": "pc",
+          "directoryName": "sdkwork-cloudrouter-pc-admin-application",
+          "name": "@sdkwork/cloudrouter-pc-admin-application",
           "role": "capability"
         },
         {
@@ -5070,9 +5287,23 @@
         {
           "appRoot": "apps/sdkwork-cloudrouter-pc",
           "architecture": "pc",
+          "directoryName": "sdkwork-cloudrouter-pc-admin-connector",
+          "name": "@sdkwork/cloudrouter-pc-admin-connector",
+          "role": "capability"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-pc",
+          "architecture": "pc",
           "directoryName": "sdkwork-cloudrouter-pc-admin-core",
           "name": "@sdkwork/cloudrouter-pc-admin-core",
           "role": "core"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-pc",
+          "architecture": "pc",
+          "directoryName": "sdkwork-cloudrouter-pc-admin-course",
+          "name": "@sdkwork/cloudrouter-pc-admin-course",
+          "role": "capability"
         },
         {
           "appRoot": "apps/sdkwork-cloudrouter-pc",
@@ -5121,6 +5352,13 @@
           "architecture": "pc",
           "directoryName": "sdkwork-cloudrouter-pc-admin-payments",
           "name": "@sdkwork/cloudrouter-pc-admin-payments",
+          "role": "capability"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-pc",
+          "architecture": "pc",
+          "directoryName": "sdkwork-cloudrouter-pc-admin-plugin",
+          "name": "@sdkwork/cloudrouter-pc-admin-plugin",
           "role": "capability"
         },
         {
@@ -5182,6 +5420,13 @@
         {
           "appRoot": "apps/sdkwork-cloudrouter-pc",
           "architecture": "pc",
+          "directoryName": "sdkwork-cloudrouter-pc-admin-skill",
+          "name": "@sdkwork/cloudrouter-pc-admin-skill",
+          "role": "capability"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-pc",
+          "architecture": "pc",
           "directoryName": "sdkwork-cloudrouter-pc-admin-storage",
           "name": "@sdkwork/cloudrouter-pc-admin-storage",
           "role": "capability"
@@ -5191,6 +5436,13 @@
           "architecture": "pc",
           "directoryName": "sdkwork-cloudrouter-pc-admin-upstream",
           "name": "@sdkwork/cloudrouter-pc-admin-upstream",
+          "role": "capability"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-pc",
+          "architecture": "pc",
+          "directoryName": "sdkwork-cloudrouter-pc-console-agents",
+          "name": "@sdkwork/cloudrouter-pc-console-agents",
           "role": "capability"
         },
         {
@@ -5540,7 +5792,12 @@
             "sdkwork-api-partner-assembly",
             "sdkwork-api-log-assembly",
             "sdkwork-api-community-assembly",
+            "sdkwork-api-course-assembly",
             "sdkwork-api-rtc-assembly",
+            "sdkwork-api-skills-assembly",
+            "sdkwork-api-mcp-assembly",
+            "sdkwork-api-agents-assembly",
+            "sdkwork-api-plugins-assembly",
             "sdkwork-api-membership-assembly",
             "sdkwork-api-payment-assembly",
             "sdkwork-api-promotion-assembly",
@@ -5866,7 +6123,12 @@
             "sdkwork-routes-partner-backend-api",
             "sdkwork-routes-promotion-backend-api",
             "sdkwork-routes-community-backend-api",
+            "sdkwork-routes-course-backend-api",
             "sdkwork-routes-rtc-backend-api",
+            "sdkwork-routes-skills-backend-api",
+            "sdkwork-routes-mcp-backend-api",
+            "sdkwork-routes-plugins-backend-api",
+            "sdkwork-api-agents-assembly",
             "serde",
             "serde-json",
             "getrandom",
@@ -5950,6 +6212,75 @@
           ]
         },
         {
+          "packageName": "cc-switch",
+          "manifest": "external/cc-switch/src-tauri/Cargo.toml",
+          "dependencies": [
+            "tauri-build",
+            "serde-json",
+            "serde",
+            "log",
+            "chrono",
+            "tauri",
+            "tauri-plugin-log",
+            "tauri-plugin-opener",
+            "tauri-plugin-process",
+            "tauri-plugin-updater",
+            "tauri-plugin-dialog",
+            "tauri-plugin-store",
+            "tauri-plugin-deep-link",
+            "tauri-plugin-window-state",
+            "dirs",
+            "toml",
+            "toml-edit",
+            "reqwest",
+            "arboard",
+            "flate2",
+            "brotli",
+            "zstd",
+            "tokio",
+            "futures",
+            "async-stream",
+            "bytes",
+            "axum",
+            "tower",
+            "tower-http",
+            "hyper",
+            "hyper-util",
+            "hyper-rustls",
+            "http",
+            "http-body",
+            "http-body-util",
+            "httparse",
+            "tokio-rustls",
+            "rustls",
+            "webpki-roots",
+            "rustls-native-certs",
+            "regex",
+            "rquickjs",
+            "thiserror",
+            "anyhow",
+            "zip",
+            "serde-yaml",
+            "tempfile",
+            "url",
+            "auto-launch",
+            "once-cell",
+            "base64",
+            "png",
+            "rusqlite",
+            "indexmap",
+            "rust-decimal",
+            "uuid",
+            "sha2",
+            "hmac",
+            "json5",
+            "json-five",
+            "sys-locale",
+            "serial-test",
+            "tempfile"
+          ]
+        },
+        {
           "packageName": "cloudrouter-app-sdk",
           "manifest": "sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-rust/generated/server-openapi/Cargo.toml",
           "dependencies": [
@@ -6022,6 +6353,7 @@
             "sdkwork-api-order-assembly",
             "sdkwork-cloudrouter-config",
             "sdkwork-cloudrouter-database-host",
+            "sdkwork-iam-database-host",
             "sdkwork-cloudrouter-router-service",
             "sdkwork-database-lifecycle",
             "sdkwork-database-spi",
@@ -6098,6 +6430,7 @@
             "sdkwork-models",
             "sdkwork-models-contract-service",
             "sdkwork-models-catalog-service",
+            "sdkwork-intelligence-generations-service",
             "sdkwork-cloudrouter-contract",
             "sdkwork-cloudrouter-config",
             "sdkwork-cloudrouter-health",
@@ -6183,7 +6516,7 @@
           "source": "sdks/_route-manifests/open-api/sdkwork-routes-cloudrouter-open-api.route-manifest.json",
           "packageName": "sdkwork-routes-cloudrouter-open-api",
           "surface": "open-api",
-          "routeCount": 167
+          "routeCount": 218
         }
       ]
     },
@@ -6265,6 +6598,50 @@
           "coverageEvidence": [
             "src/bootstrap.rs#assemble_api_router_with_in_process_upstreams",
             "../sdkwork-routes-cloudrouter-app-api/src/manifest_composition.rs#capability_manifests_for_platform_gateway"
+          ]
+        },
+        {
+          "component": "sdkwork-api-cloudrouter-assembly",
+          "source": "crates/sdkwork-api-cloudrouter-assembly/specs/component.spec.json",
+          "workspace": "sdkwork-models",
+          "sdkFamily": "sdkwork-models-backend-sdk",
+          "apiAuthority": "sdkwork-models-backend-api",
+          "surface": "backend-api",
+          "apiPrefixes": [
+            "/backend/v3/api/ai"
+          ],
+          "runtimeMode": "same-origin-mounted",
+          "profileCoverage": [
+            "standalone",
+            "cloud"
+          ],
+          "cargoDependency": "sdkwork-api-models-assembly",
+          "embeddedExecutableExport": "sdkwork_api_models_assembly::backend_api_route_manifest",
+          "coverageEvidence": [
+            "src/bootstrap.rs#assemble_api_router_with_in_process_upstreams",
+            "../sdkwork-routes-cloudrouter-backend-api/src/manifest_composition.rs#cloud_router_backend_composed_route_manifest_for_platform_gateway"
+          ]
+        },
+        {
+          "component": "sdkwork-api-cloudrouter-assembly",
+          "source": "crates/sdkwork-api-cloudrouter-assembly/specs/component.spec.json",
+          "workspace": "sdkwork-partner",
+          "sdkFamily": "sdkwork-partner-backend-sdk",
+          "apiAuthority": "sdkwork-partner-backend-api",
+          "surface": "backend-api",
+          "apiPrefixes": [
+            "/backend/v3/api/partners"
+          ],
+          "runtimeMode": "same-origin-mounted",
+          "profileCoverage": [
+            "standalone",
+            "cloud"
+          ],
+          "cargoDependency": "sdkwork-api-partner-assembly",
+          "embeddedExecutableExport": "sdkwork_api_partner_assembly::backend_api_route_manifest",
+          "coverageEvidence": [
+            "src/bootstrap.rs#assemble_api_router_with_in_process_upstreams",
+            "../sdkwork-routes-cloudrouter-backend-api/src/manifest_composition.rs#cloud_router_backend_composed_route_manifest_for_platform_gateway"
           ]
         },
         {
@@ -6447,6 +6824,10 @@
       "sdkwork-promotion-app-sdk": "authenticated-app-api",
       "cloudrouter-backend-sdk": "authenticated-backend-admin",
       "sdkwork-models-backend-sdk": "authenticated-backend-admin",
+      "sdkwork-skills-backend-sdk": "authenticated-backend-admin",
+      "sdkwork-mcp-backend-sdk": "authenticated-backend-admin",
+      "sdkwork-agents-backend-sdk": "authenticated-backend-admin",
+      "sdkwork-plugins-backend-sdk": "authenticated-backend-admin",
       "sdkwork-cloudrouter-app-sdk": "authenticated-app-api",
       "sdkwork-cloudrouter-open-sdk": "protected-open-api-flexible",
       "sdkwork-iam-backend-sdk": "authenticated-backend-admin"

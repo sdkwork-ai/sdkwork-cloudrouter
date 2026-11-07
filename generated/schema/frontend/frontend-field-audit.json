@@ -1462,22 +1462,6 @@
       "data_sources": [],
       "fields": [
         "id",
-        "courseId",
-        "lessonId",
-        "authorName",
-        "body",
-        "moderationState",
-        "createdAt"
-      ],
-      "file_targets": [],
-      "interface": "CourseAdminCommentItem",
-      "route": null,
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-course/src/courseService.ts"
-    },
-    {
-      "data_sources": [],
-      "fields": [
-        "id",
         "courseCode",
         "title",
         "subtitle",
@@ -4221,7 +4205,7 @@
     }
   ],
   "summary": {
-    "interface_count": 193,
+    "interface_count": 192,
     "source_file_count": 30
   }
 }
