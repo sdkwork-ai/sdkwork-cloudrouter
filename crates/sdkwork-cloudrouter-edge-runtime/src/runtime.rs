@@ -2077,9 +2077,10 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
     // `finalize_all_in_one_route_surfaces`. The contribution's domain context
     // injectors are chained into the finalize call below so Skills handlers
     // receive their domain context extension.
-    let skills_backend_contribution = sdkwork_api_skills_assembly::assemble_backend_api_contribution()
-        .await
-        .map_err(anyhow::Error::msg)?;
+    let skills_backend_contribution =
+        sdkwork_api_skills_assembly::assemble_backend_api_contribution()
+            .await
+            .map_err(anyhow::Error::msg)?;
     let backend_router = backend_router.merge(skills_backend_contribution.router);
     // MCP backend surface (`/backend/v3/api/mcp/*`) is dependency-owned. It
     // enters through the MCP API assembly backend contribution on the MCP
