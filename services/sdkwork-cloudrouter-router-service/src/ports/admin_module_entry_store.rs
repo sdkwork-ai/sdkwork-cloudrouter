@@ -4,8 +4,7 @@ use std::pin::Pin;
 
 use crate::domain::DomainResult;
 
-pub type AdminModuleEntryFuture<'a, T> =
-    Pin<Box<dyn Future<Output = DomainResult<T>> + Send + 'a>>;
+pub type AdminModuleEntryFuture<'a, T> = Pin<Box<dyn Future<Output = DomainResult<T>> + Send + 'a>>;
 
 /// Module that hosts the admin module-entry configuration screen.
 ///

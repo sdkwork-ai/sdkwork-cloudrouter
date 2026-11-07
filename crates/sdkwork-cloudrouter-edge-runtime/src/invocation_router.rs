@@ -578,19 +578,16 @@ where
         // Enqueue is only safe when something will later price and charge the
         // task: with the worker disabled, registering a row would leave an
         // upstream call unbilled. Gate both together.
-        if sdkwork_cloudrouter_router_service::application::async_usage_worker_config_from_env(
-            None,
-        )
-        .map(|config| config.enabled)
-        .unwrap_or(false)
+        if sdkwork_cloudrouter_router_service::application::async_usage_worker_config_from_env(None)
+            .map(|config| config.enabled)
+            .unwrap_or(false)
         {
             // `after` hooks run in reverse registration order, so this stage
             // runs after extraction/finalization/settlement: the response is
             // normalized and the request has been priced before a
             // reconciliation row is enqueued.
-            pipeline = pipeline.with_interceptor(AsyncUsageRegistrationInterceptor::new(
-                async_usage_store,
-            ));
+            pipeline = pipeline
+                .with_interceptor(AsyncUsageRegistrationInterceptor::new(async_usage_store));
         }
     }
 

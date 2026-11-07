@@ -697,9 +697,9 @@ mod tests {
                 "mcp.admin.server.manage",
             ),
         ] {
-            let route = manifest.match_route(method, path).unwrap_or_else(|| {
-                panic!("{method} {path} must be registered by the mcp mount")
-            });
+            let route = manifest
+                .match_route(method, path)
+                .unwrap_or_else(|| panic!("{method} {path} must be registered by the mcp mount"));
             assert_eq!(
                 RouteAuth::DualToken,
                 route.auth,
@@ -787,7 +787,11 @@ mod tests {
                 "/backend/v3/api/plugin_categories",
                 "plugins.admin.category.manage",
             ),
-            ("GET", "/backend/v3/api/plugins", "plugins.admin.plugin.read"),
+            (
+                "GET",
+                "/backend/v3/api/plugins",
+                "plugins.admin.plugin.read",
+            ),
             (
                 "POST",
                 "/backend/v3/api/plugins",

@@ -74,9 +74,7 @@ async fn fetch_admin_module_entries(
         .await
     {
         Ok(entries) => Json(success_envelope(to_response(entries.normalized()))).into_response(),
-        Err(error) => {
-            system_error_response("admin module entry read model is unavailable", error)
-        }
+        Err(error) => system_error_response("admin module entry read model is unavailable", error),
     }
 }
 
@@ -264,8 +262,7 @@ mod tests {
                 },
             ],
         };
-        let command =
-            build_update_command(state.clone(), subject(), entries.clone()).unwrap();
+        let command = build_update_command(state.clone(), subject(), entries.clone()).unwrap();
 
         let saved = state
             .store

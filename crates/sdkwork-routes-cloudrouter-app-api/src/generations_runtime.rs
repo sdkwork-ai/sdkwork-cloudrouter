@@ -44,16 +44,16 @@ async fn inject_generations_domain_context(
 /// contribution's unconfigured port and the endpoint answers 501.
 async fn wire_generations_app_router(
     database_pool: DatabasePool,
-    pricing_port: Option<std::sync::Arc<dyn sdkwork_api_generations_assembly::GenerationPricingPort>>,
+    pricing_port: Option<
+        std::sync::Arc<dyn sdkwork_api_generations_assembly::GenerationPricingPort>,
+    >,
 ) -> Result<Router, String> {
     let contribution = sdkwork_api_generations_assembly::assemble_api_router_with_pool_and_pricing(
-            database_pool,
-            pricing_port,
-        )
-        .await
-            .map_err(|error| {
-                format!("compose sdkwork-generations app-api contribution failed: {error}")
-            })?;
+        database_pool,
+        pricing_port,
+    )
+    .await
+    .map_err(|error| format!("compose sdkwork-generations app-api contribution failed: {error}"))?;
     Ok(contribution.router.layer(from_fn_with_state(
         contribution.domain_context_injectors,
         inject_generations_domain_context,
@@ -68,7 +68,9 @@ pub async fn merge_federated_generations_app_router(
     router: Router,
     database_pool: &DatabasePool,
     subject_boundary_config: AppSubjectBoundaryConfig,
-    pricing_port: Option<std::sync::Arc<dyn sdkwork_api_generations_assembly::GenerationPricingPort>>,
+    pricing_port: Option<
+        std::sync::Arc<dyn sdkwork_api_generations_assembly::GenerationPricingPort>,
+    >,
 ) -> Result<Router, String> {
     if database_pool.as_postgres().is_none() {
         tracing::info!(

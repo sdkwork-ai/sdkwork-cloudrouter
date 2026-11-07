@@ -85,16 +85,16 @@ pub use pricing::{PricingFinalizationInterceptor, PricingPreflightInterceptor};
 // 只再导出调用链真正消费的两个入口：预检/结算用 `resolve_pricing_identity`
 // 取身份，流水线用 `apply_pricing_identity` 回写计量档。身份类型本身留在
 // `pricing_identity` 模块内，避免 `pub use` 未使用告警。
-pub(crate) use pricing_identity::measurement_profile_for_catalog_meter;
-pub use pricing_identity::{
-    apply_pricing_identity, requested_resolution, resolve_pricing_identity,
-};
-pub(crate) use pricing_identity::{context_tier_code, single_catalog_tier_code};
 pub(crate) use pricing::{
     add_meter_dimensions, billing_region_prefers_china, catalog_vendor_code,
     deployment_billing_region,
 };
 pub(crate) use pricing_identity::catalog_pricing_meters;
+pub(crate) use pricing_identity::measurement_profile_for_catalog_meter;
+pub use pricing_identity::{
+    apply_pricing_identity, requested_resolution, resolve_pricing_identity,
+};
+pub(crate) use pricing_identity::{context_tier_code, single_catalog_tier_code};
 pub use provider_adapter_dispatch::ProviderAdapterDispatchInterceptor;
 pub use provider_native_classifier::{
     canonical_provider_native_catalog_key, normalize_standard_api_path,

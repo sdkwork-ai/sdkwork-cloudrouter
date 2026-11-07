@@ -47,9 +47,14 @@ pub(crate) async fn ensure_account_group_rate_card(
     effective_at: &str,
 ) -> DomainResult<()> {
     let plan_code = normalized_plan_code(pricing_plan_code);
-    let mut plan =
-        find_active_pricing_plan(transaction, tenant_id, organization_id, plan_code, effective_at)
-            .await?;
+    let mut plan = find_active_pricing_plan(
+        transaction,
+        tenant_id,
+        organization_id,
+        plan_code,
+        effective_at,
+    )
+    .await?;
     if plan.is_none() && plan_code == DEFAULT_PRICING_PLAN_CODE {
         // A database that has been migrated but never seeded has no `standard`
         // plan at all — an operator can still boot with
@@ -184,9 +189,11 @@ pub(crate) async fn ensure_default_pricing_plan(
             if inserted > 0 {
                 id
             } else {
-                find_global_default_plan_id(transaction).await?.ok_or_else(|| {
-                    DomainError::new("default pricing plan could not be created".to_owned())
-                })?
+                find_global_default_plan_id(transaction)
+                    .await?
+                    .ok_or_else(|| {
+                        DomainError::new("default pricing plan could not be created".to_owned())
+                    })?
             }
         }
     };

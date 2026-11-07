@@ -10,8 +10,8 @@ use crate::infrastructure::sql::sql_admin_module_entry::{
 use crate::infrastructure::sql::sql_hash::digest_hex;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
-    AdminModuleEntries, AdminModuleEntryFuture, AdminModuleEntryStore,
-    GetAdminModuleEntriesQuery, UpdateAdminModuleEntriesCommand,
+    AdminModuleEntries, AdminModuleEntryFuture, AdminModuleEntryStore, GetAdminModuleEntriesQuery,
+    UpdateAdminModuleEntriesCommand,
 };
 
 #[derive(Debug, Clone)]

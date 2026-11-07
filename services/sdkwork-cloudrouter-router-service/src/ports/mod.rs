@@ -163,6 +163,11 @@ pub use admin_model_store::{
     ListAdminModelVendorsQuery, ResolveAdminModelMappingQuery, ResolveAdminModelMappingResult,
     SyncAdminModelCatalogCommand, UpdateAdminAiModelCommand, UpdateAdminModelMappingCommand,
 };
+pub use admin_module_entry_store::{
+    AdminModuleEntries, AdminModuleEntry, AdminModuleEntryFuture, AdminModuleEntryStore,
+    AdminModuleEntrySubject, GetAdminModuleEntriesQuery, UpdateAdminModuleEntriesCommand,
+    ADMIN_MODULE_MANAGEMENT_MODULE_ID, MAX_ADMIN_MODULE_ENTRIES, MAX_ADMIN_MODULE_ID_LEN,
+};
 pub use admin_monitor_read_store::{
     AdminMonitorAlert, AdminMonitorCollection, AdminMonitorNode, AdminMonitorPerformanceDatum,
     AdminMonitorQuery, AdminMonitorReadFuture, AdminMonitorReadStore, AdminMonitorSubject,
@@ -339,11 +344,6 @@ pub use responses_relay::{
 };
 pub use responses_stream_relay::{
     ResponsesStreamRelay, ResponsesStreamRelayFuture, ResponsesStreamRelayResponse,
-};
-pub use admin_module_entry_store::{
-    AdminModuleEntries, AdminModuleEntry, AdminModuleEntryFuture, AdminModuleEntryStore,
-    AdminModuleEntrySubject, GetAdminModuleEntriesQuery, UpdateAdminModuleEntriesCommand,
-    ADMIN_MODULE_MANAGEMENT_MODULE_ID, MAX_ADMIN_MODULE_ENTRIES, MAX_ADMIN_MODULE_ID_LEN,
 };
 pub use routing_decision_log_recorder::{
     RoutingDecisionLogRecorder, RoutingDecisionRecordCommand, RoutingDecisionRecordFuture,

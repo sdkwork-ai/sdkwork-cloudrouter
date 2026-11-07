@@ -139,13 +139,7 @@ impl CommandQuantities {
             resolution: read_string(&["resolution", "size"]),
             pixel_size,
             duration_seconds: read_decimal(&["durationSeconds", "duration_seconds", "duration"]),
-            result_count: read_decimal(&[
-                "imageCount",
-                "result_count",
-                "count",
-                "n",
-                "num_images",
-            ]),
+            result_count: read_decimal(&["imageCount", "result_count", "count", "n", "num_images"]),
             // The gateway's quality pointers are `/quality` and Kling's
             // `/mode` spelling (std/pro); the composer's own videoMode rides
             // `videoMode`, so no collision.
@@ -187,17 +181,13 @@ fn meter_quantity(
         | BillingMeter::VideoInputSecond
         | BillingMeter::MusicOutputSecond
         | BillingMeter::AudioOutputSecond
-        | BillingMeter::AudioInputSecond => {
-            declared(quantities.duration_seconds, "second")
-        }
+        | BillingMeter::AudioInputSecond => declared(quantities.duration_seconds, "second"),
         BillingMeter::AudioOutputMinute
         | BillingMeter::AudioInputMinute
         | BillingMeter::SttAudioMinute => {
-            let minutes = quantities.duration_seconds.and_then(|seconds| {
-                seconds
-                    .checked_divide(DecimalValue::parse("60").ok()?)
-                    .ok()
-            });
+            let minutes = quantities
+                .duration_seconds
+                .and_then(|seconds| seconds.checked_divide(DecimalValue::parse("60").ok()?).ok());
             declared(minutes, "minute")
         }
         BillingMeter::TtsInputCharacter | BillingMeter::SpeechCharacter => {
@@ -220,9 +210,9 @@ fn meter_quantity(
             declared(megapixels, "megapixel")
         }
         BillingMeter::ImagePixel => {
-            let pixels = quantities
-                .pixel_size
-                .and_then(|(width, height)| DecimalValue::parse(&(width * height).to_string()).ok());
+            let pixels = quantities.pixel_size.and_then(|(width, height)| {
+                DecimalValue::parse(&(width * height).to_string()).ok()
+            });
             declared(pixels, "pixel")
         }
         _ => MeterQuantity {
@@ -442,10 +432,11 @@ impl GenerationPricingPort for SqlGenerationsPricingEstimator {
             ));
         }
 
-        let configured_default_region = self
-            .catalog
-            .default_billing_region(tenant_id, organization_id, &catalog_key);
-        let region_code = self.estimate_billing_region(&catalog_key, configured_default_region.clone());
+        let configured_default_region =
+            self.catalog
+                .default_billing_region(tenant_id, organization_id, &catalog_key);
+        let region_code =
+            self.estimate_billing_region(&catalog_key, configured_default_region.clone());
 
         let cash_to_points = load_recharge_settings_model(
             &self.pool,
@@ -486,8 +477,12 @@ impl GenerationPricingPort for SqlGenerationsPricingEstimator {
                 // Token-metered media models cannot be estimated from a
                 // command. Keep scanning: some models carry both a result
                 // meter and token meters, and the result meter prices.
-                unpriced_reason
-                    .get_or_insert_with(|| format!("model {catalog_key} is metered per token ({})", meter.code()));
+                unpriced_reason.get_or_insert_with(|| {
+                    format!(
+                        "model {catalog_key} is metered per token ({})",
+                        meter.code()
+                    )
+                });
                 continue;
             }
             attempted_non_token_meter = true;
@@ -504,13 +499,19 @@ impl GenerationPricingPort for SqlGenerationsPricingEstimator {
                 quantities.resolution.as_deref(),
             );
             let tier_code = tier_decision.tier_code.clone().or_else(|| {
-                single_catalog_tier_code(&*self.catalog, tenant_id, organization_id, &catalog_key, meter)
+                single_catalog_tier_code(
+                    &*self.catalog,
+                    tenant_id,
+                    organization_id,
+                    &catalog_key,
+                    meter,
+                )
             });
 
             let (resolution_visible, duration_visible) =
                 vendor_dimension_visibility(catalog_vendor_code(&catalog_key), &operation);
-            let mut dimensions = PricingDimensionContext::new()
-                .with_value("api_code", serde_json::json!(api_code));
+            let mut dimensions =
+                PricingDimensionContext::new().with_value("api_code", serde_json::json!(api_code));
             if resolution_visible {
                 if let Some(resolution) = quantities.resolution.as_deref() {
                     dimensions.insert("resolution", serde_json::json!(resolution));
@@ -538,14 +539,15 @@ impl GenerationPricingPort for SqlGenerationsPricingEstimator {
             }
             add_meter_dimensions(&mut dimensions, meter, None);
 
-            let resource = ResourceDefinition::new(catalog_key.clone(), meter.clone(), chrono::Utc::now())
-                .with_vendor_code(catalog_vendor_code(&catalog_key))
-                .with_region_code(region_code.clone())
-                .with_default_billing_region(configured_default_region.clone())
-                .with_api_code(api_code.to_owned())
-                .with_dimensions(dimensions)
-                .with_model(model.clone())
-                .with_measured_quantity(quantity.value);
+            let resource =
+                ResourceDefinition::new(catalog_key.clone(), meter.clone(), chrono::Utc::now())
+                    .with_vendor_code(catalog_vendor_code(&catalog_key))
+                    .with_region_code(region_code.clone())
+                    .with_default_billing_region(configured_default_region.clone())
+                    .with_api_code(api_code.to_owned())
+                    .with_dimensions(dimensions)
+                    .with_model(model.clone())
+                    .with_measured_quantity(quantity.value);
 
             let resolution = self
                 .price_service
@@ -572,16 +574,13 @@ impl GenerationPricingPort for SqlGenerationsPricingEstimator {
                         .unwrap_or_else(|| resolved.customer_charge.clone());
                     let amount = customer_charge.to_fixed_string(12);
                     let currency = customer_charge.currency.clone();
-                    let points_micros = crate::ports::token_points_for_charge(
-                        &amount,
-                        &currency,
-                        &cash_to_points,
-                    )
-                    .map_err(|error| {
-                        GenerationPricingError::Backend(format!(
-                            "token-points conversion failed: {error}"
-                        ))
-                    })?;
+                    let points_micros =
+                        crate::ports::token_points_for_charge(&amount, &currency, &cash_to_points)
+                            .map_err(|error| {
+                                GenerationPricingError::Backend(format!(
+                                    "token-points conversion failed: {error}"
+                                ))
+                            })?;
                     lines.push(GenerationPricingEstimateLine {
                         meter_code: meter.code().to_owned(),
                         quantity: decimal_to_canonical_string(quantity.value),
@@ -607,7 +606,9 @@ impl GenerationPricingPort for SqlGenerationsPricingEstimator {
                     let message = resolution
                         .failure
                         .map(|failure| format!("{failure:?}"))
-                        .unwrap_or_else(|| format!("meter {} did not resolve a rate", meter.code()));
+                        .unwrap_or_else(|| {
+                            format!("meter {} did not resolve a rate", meter.code())
+                        });
                     unpriced_reason.get_or_insert(message);
                 }
             }
@@ -764,18 +765,39 @@ mod tests {
     #[test]
     fn dimension_visibility_mirrors_the_vendor_forwarding_tables() {
         // Kling's video body carries duration but no resolution field.
-        assert_eq!(vendor_dimension_visibility("kuaishou", "text_to_video"), (false, true));
+        assert_eq!(
+            vendor_dimension_visibility("kuaishou", "text_to_video"),
+            (false, true)
+        );
         // Seedance forwards both after the adapter fix.
-        assert_eq!(vendor_dimension_visibility("bytedance", "text_to_video"), (true, true));
-        assert_eq!(vendor_dimension_visibility("bytedance", "image_to_video"), (true, true));
+        assert_eq!(
+            vendor_dimension_visibility("bytedance", "text_to_video"),
+            (true, true)
+        );
+        assert_eq!(
+            vendor_dimension_visibility("bytedance", "image_to_video"),
+            (true, true)
+        );
         // The Minimax music face drops duration entirely.
-        assert_eq!(vendor_dimension_visibility("bytedance", "text_to_music"), (false, false));
+        assert_eq!(
+            vendor_dimension_visibility("bytedance", "text_to_music"),
+            (false, false)
+        );
         // Veo nests its knobs under `parameters`, invisible to the pointers.
-        assert_eq!(vendor_dimension_visibility("google", "text_to_video"), (false, false));
+        assert_eq!(
+            vendor_dimension_visibility("google", "text_to_video"),
+            (false, false)
+        );
         // OpenAI video carries seconds but no size from the video flow.
-        assert_eq!(vendor_dimension_visibility("openai", "text_to_video"), (false, true));
+        assert_eq!(
+            vendor_dimension_visibility("openai", "text_to_video"),
+            (false, true)
+        );
         // Unknown vendors fail open with the fuller estimate.
-        assert_eq!(vendor_dimension_visibility("vidu", "text_to_video"), (true, true));
+        assert_eq!(
+            vendor_dimension_visibility("vidu", "text_to_video"),
+            (true, true)
+        );
     }
 
     #[test]

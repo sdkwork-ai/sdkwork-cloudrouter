@@ -83,10 +83,7 @@ pub fn spawn_async_usage_worker(
             match worker.run_once(chrono::Utc::now(), batch_size).await {
                 Ok(0) => {}
                 Ok(processed) => {
-                    tracing::debug!(
-                        processed,
-                        "async usage reconciliation pass claimed tasks"
-                    );
+                    tracing::debug!(processed, "async usage reconciliation pass claimed tasks");
                 }
                 Err(error) => {
                     tracing::warn!(
@@ -103,4 +100,3 @@ pub fn spawn_async_usage_worker(
         tracing::info!("async usage reconciliation worker stopped");
     })
 }
-

@@ -3637,10 +3637,7 @@ mod tests {
             ("anthropic.messages", "/v1/messages"),
             ("black_forest_labs.image_generation", "/v1/flux-{model}"),
             ("black_forest_labs.task_query", "/v1/get_result"),
-            (
-                "black_forest_labs.video_generation",
-                "/v1/flux-3-video",
-            ),
+            ("black_forest_labs.video_generation", "/v1/flux-3-video"),
             // ByteDance's catalog surface is Volcengine Ark, not Jimeng. The two
             // were aliased together until the seedance video models were found
             // bound to jimeng's `/v1/videos/generations` while Ark's own

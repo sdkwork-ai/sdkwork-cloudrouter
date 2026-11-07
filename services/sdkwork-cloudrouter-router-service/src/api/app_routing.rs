@@ -170,9 +170,8 @@ fn resolve_deployment_default_tenant_id(env_value: Option<String>) -> i64 {
 }
 
 fn deployment_default_routing_subject() -> Option<AppRoutingSubject> {
-    let tenant_id = resolve_deployment_default_tenant_id(
-        std::env::var("SDKWORK_RTC_HYDRATE_TENANT_ID").ok(),
-    );
+    let tenant_id =
+        resolve_deployment_default_tenant_id(std::env::var("SDKWORK_RTC_HYDRATE_TENANT_ID").ok());
     Some(AppRoutingSubject {
         tenant_id,
         organization_id: 0,
@@ -192,9 +191,7 @@ async fn fetch_routing_account_groups(
     // here regardless of `require_subject`: signed-in callers keep their
     // tenant-scoped projection, anonymous readers fall back to the deployment
     // default tenant scope.
-    let subject = match map_optional_app_sql_subject(subject, false, |scoped| {
-        scoped.into()
-    }) {
+    let subject = match map_optional_app_sql_subject(subject, false, |scoped| scoped.into()) {
         Ok(subject) => subject,
         Err(error) => return error.into_response(),
     };
