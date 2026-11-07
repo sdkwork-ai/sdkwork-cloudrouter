@@ -183,11 +183,7 @@ where
 /// App-api request in the anonymous context a `dual-token-or-anonymous` route
 /// resolves for signed-out visitors: no principal, no credential transport
 /// facts.
-pub fn web_framework_app_request_without_subject<B>(
-    method: &str,
-    uri: &str,
-    body: B,
-) -> Request<B>
+pub fn web_framework_app_request_without_subject<B>(method: &str, uri: &str, body: B) -> Request<B>
 where
     B: Send + 'static,
 {
