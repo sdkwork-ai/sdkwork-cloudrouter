@@ -2,10 +2,24 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  ADMIN_MODULES,
   getActiveSidebarItemPaths,
   getAdminModuleMenu,
   isSidebarItemActive,
 } from "@sdkwork/cloudrouter-pc-admin-shell";
+import { ADMIN_MODULE_CATALOG, ADMIN_MODULE_IDS } from "./packages/sdkwork-cloudroutes-pc-commons/src/admin-modules.ts";
+
+test("admin module manager catalog mirrors the header registry order", () => {
+  assert.deepEqual(
+    ADMIN_MODULES.map((module) => module.id),
+    [...ADMIN_MODULE_IDS],
+    "the site-settings module manager and the header must list the same modules in the same default order",
+  );
+  assert.deepEqual(
+    ADMIN_MODULE_CATALOG.map((entry) => entry.id),
+    [...ADMIN_MODULE_IDS],
+  );
+});
 
 test("admin sidebar exposes independent upstream supplier, account, and group entries", () => {
   const homeMenu = getAdminModuleMenu("home");
@@ -79,3 +93,4 @@ test("admin sidebar exposes only product price settings", () => {
   assert.deepEqual(getActiveSidebarItemPaths("/admin/pricing/settings", homeMenu), ["/admin/pricing/settings"]);
   assert.equal(isSidebarItemActive("/admin/pricing/settings", settingsItem, homeMenu), true);
 });
+

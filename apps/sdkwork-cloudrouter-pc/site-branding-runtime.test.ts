@@ -142,6 +142,10 @@ test('site branding fetch reads from the app system site runtime sdk surface', a
                 description: 'Branding source test',
                 brandColor: '#112233',
                 accentColor: '#445566',
+                adminModules: {
+                  version: 1,
+                  modules: [{ id: 'operations', enabled: true, visible: true }],
+                },
               },
             };
           },
@@ -157,6 +161,10 @@ test('site branding fetch reads from the app system site runtime sdk surface', a
     assert.equal(branding.shortName, 'CS');
     assert.equal(branding.brandColor, '#112233');
     assert.equal(branding.accentColor, '#445566');
+    assert.deepEqual(branding.adminModules, {
+      version: 1,
+      modules: [{ id: 'operations', enabled: true, visible: true }],
+    });
     assert.notEqual(branding.siteName, DEFAULT_SITE_BRANDING.siteName);
   } finally {
     (host as typeof globalThis & {

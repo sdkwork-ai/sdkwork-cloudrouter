@@ -96,6 +96,9 @@ struct SiteSettingsUpdateRequest {
     homepage: Option<Value>,
     /// Operator-authored download catalog. Same absent / `{}` / reject semantics as `homepage`.
     downloads: Option<Value>,
+    /// Operator-authored admin module navigation document. Same absent / `{}` / reject
+    /// semantics as `homepage`.
+    admin_modules: Option<Value>,
     footer_brand_enabled: Option<bool>,
     footer_newsletter_enabled: Option<bool>,
     footer_product_links_enabled: Option<bool>,
@@ -179,6 +182,8 @@ struct SiteSettingsResponse {
     homepage: Value,
     /// Operator-authored download catalog; `{}` when nothing has been authored.
     downloads: Value,
+    /// Operator-authored admin module navigation document; `{}` when nothing has been authored.
+    admin_modules: Value,
     footer_brand_enabled: bool,
     footer_newsletter_enabled: bool,
     footer_product_links_enabled: bool,
@@ -474,6 +479,9 @@ fn merge_update_request(
     }
     if let Some(value) = request.downloads {
         current.downloads = normalize_content_document("downloads", value)?;
+    }
+    if let Some(value) = request.admin_modules {
+        current.admin_modules = normalize_content_document("adminModules", value)?;
     }
     if let Some(value) = request.footer_brand_enabled {
         current.footer_brand_enabled = value;
@@ -845,6 +853,7 @@ fn to_response(settings: SiteSettings) -> SiteSettingsResponse {
         custom_css: settings.custom_css,
         homepage: settings.homepage,
         downloads: settings.downloads,
+        admin_modules: settings.admin_modules,
         footer_brand_enabled: settings.footer_brand_enabled,
         footer_newsletter_enabled: settings.footer_newsletter_enabled,
         footer_product_links_enabled: settings.footer_product_links_enabled,
@@ -898,6 +907,57 @@ mod tests {
 
     fn request(value: serde_json::Value) -> SiteSettingsUpdateRequest {
         serde_json::from_value(value).expect("test request must deserialize")
+    }
+
+    #[test]
+    fn merge_update_request_accepts_an_admin_module_document() {
+        let merged = merge_update_request(
+            SiteSettings::default(),
+            request(json!({
+                "adminModules": {
+                    "version": 1,
+                    "modules": [
+                        { "id": "home", "enabled": true, "visible": true },
+                        { "id": "operations", "enabled": true, "visible": false }
+                    ]
+                }
+            })),
+        )
+        .expect("an admin module object must merge");
+
+        assert_eq!(Some(1), merged.admin_modules["version"].as_i64());
+        assert_eq!(
+            Some("operations"),
+            merged.admin_modules["modules"][1]["id"].as_str()
+        );
+    }
+
+    #[test]
+    fn merge_update_request_rejects_a_non_object_admin_module_document() {
+        let error = merge_update_request(
+            SiteSettings::default(),
+            request(json!({ "adminModules": ["home"] })),
+        )
+        .expect_err("an array is not an admin module document");
+
+        assert!(error.contains("adminModules"));
+    }
+
+    #[test]
+    fn to_response_echoes_the_admin_module_document() {
+        let settings = SiteSettings {
+            admin_modules: json!({
+                "version": 1,
+                "modules": [{ "id": "home", "enabled": true, "visible": true }]
+            }),
+            ..SiteSettings::default()
+        };
+
+        let payload = serde_json::to_value(to_response(settings)).expect("response must serialize");
+        assert_eq!(
+            Some("home"),
+            payload["adminModules"]["modules"][0]["id"].as_str()
+        );
     }
 
     /// Replacing the map wholesale is what makes "clear one language" possible. A merge could only

@@ -14,6 +14,14 @@ import {
   findUnreachableSiteSettingsFields,
 } from './siteSettingsCategories';
 import { createDefaultHomeContentForm } from './siteContentFields';
+import {
+  ADMIN_MODULE_IDS,
+  createDefaultAdminModuleSettings,
+  getAdminModuleHeaderIds,
+  reorderAdminModuleSetting,
+  updateAdminModuleSetting,
+  validateAdminModuleSettings,
+} from '@sdkwork/cloudroutes-pc-commons/admin-modules';
 
 describe('site settings compliance defaults', () => {
   it('keeps filing fields empty until an operator configures verified values', () => {
@@ -311,7 +319,7 @@ describe('site settings translations', () => {
 });
 
 describe('site settings documents', () => {
-  it('starts both documents empty, which is what an untouched deployment already renders', () => {
+  it('starts the homepage and download documents empty, which is what an untouched deployment already renders', () => {
     // An empty homepage publishes the bundled copy and an empty catalog publishes the one checked
     // into the repository, so a deployment nobody has configured renders exactly what it shipped.
     expect(DEFAULT_SITE_SETTINGS.homepage.productName).toBe('');
@@ -326,6 +334,91 @@ describe('site settings documents', () => {
       modalities: true,
     });
     expect(DEFAULT_SITE_SETTINGS.downloads).toBe('');
+    // Unlike the content documents, the module manager starts in the same fully-populated
+    // state an untouched deployment renders: every module on, in catalog order.
+    expect(DEFAULT_SITE_SETTINGS.adminModules).toEqual(createDefaultAdminModuleSettings());
+    expect(DEFAULT_SITE_SETTINGS.adminModules.modules.map((entry) => entry.id)).toEqual(ADMIN_MODULE_IDS);
+  });
+
+  it('reads a published admin module document and preserves its order and switches', () => {
+    const settings = toSiteSettings({
+      siteName: 'Router Operations',
+      adminModules: {
+        version: 1,
+        modules: [
+          { id: 'operations', enabled: true, visible: true },
+          { id: 'home', enabled: false, visible: true },
+        ],
+      },
+    });
+
+    expect(settings.adminModules.modules[0]).toEqual({ id: 'operations', enabled: true, visible: true });
+    expect(settings.adminModules.modules[1]).toEqual({ id: 'home', enabled: false, visible: true });
+    // Entries the payload did not mention are appended, enabled and visible, so a portal
+    // upgrade that adds a module does not need a second migration.
+    expect(settings.adminModules.modules.map((entry) => entry.id)).toEqual([
+      'operations',
+      'home',
+      ...ADMIN_MODULE_IDS.filter((id) => id !== 'operations' && id !== 'home'),
+    ]);
+  });
+
+  it('round-trips the admin module document through the save payload', () => {
+    const authored = {
+      ...DEFAULT_SITE_SETTINGS,
+      adminModules: {
+        version: 1 as const,
+        modules: [
+          { id: 'notifyCenter' as const, enabled: true, visible: false },
+          { id: 'home' as const, enabled: true, visible: true },
+        ],
+      },
+    };
+    const payload = toSiteSettingsUpdateRequest(authored) as unknown as Record<string, unknown>;
+
+    const sentModules = (payload.adminModules as { modules: Array<Record<string, unknown>> }).modules;
+    expect(sentModules.slice(0, 2)).toEqual([
+      { id: 'notifyCenter', enabled: true, visible: false },
+      { id: 'home', enabled: true, visible: true },
+    ]);
+    // Every catalog module is still present; the payload is a full document, not a partial patch.
+    expect(sentModules).toHaveLength(ADMIN_MODULE_IDS.length);
+    expect(
+      toSiteSettings({ ...payload, siteName: 'Router Operations' }).adminModules.modules[0],
+    ).toEqual({ id: 'notifyCenter', enabled: true, visible: false });
+  });
+
+  it('blocks a document that would remove the only way back to this page', () => {
+    const noVisible = createDefaultAdminModuleSettings();
+    noVisible.modules = noVisible.modules.map((entry) => ({ ...entry, visible: false }));
+    expect(validateAdminModuleSettings(noVisible)).toContain('noVisibleModules');
+
+    const operationsDisabled = createDefaultAdminModuleSettings();
+    operationsDisabled.modules = operationsDisabled.modules.map((entry) => (
+      entry.id === 'operations' ? { ...entry, enabled: false } : entry
+    ));
+    expect(validateAdminModuleSettings(operationsDisabled)).toContain('requiredModuleDisabled');
+  });
+
+  it('reorders a module without mutating the document or dropping disabled entries', () => {
+    const original = createDefaultAdminModuleSettings();
+    const reordered = reorderAdminModuleSetting(original, 'operations', 'home');
+
+    expect(original.modules.map((entry) => entry.id)).toEqual(ADMIN_MODULE_IDS);
+    expect(reordered.modules.map((entry) => entry.id)[0]).toBe('operations');
+    expect(reordered.modules).toHaveLength(ADMIN_MODULE_IDS.length);
+  });
+
+  it('derives the header order from the saved document and leaves disabled modules out', () => {
+    let settings = reorderAdminModuleSetting(createDefaultAdminModuleSettings(), 'operations', 'home');
+    settings = updateAdminModuleSetting(settings, 'home', { enabled: false });
+    settings = updateAdminModuleSetting(settings, 'iam', { visible: false });
+
+    const header = getAdminModuleHeaderIds(settings);
+    expect(header[0]).toBe('operations');
+    expect(header).not.toContain('home');
+    expect(header).not.toContain('iam');
+    expect(header).toHaveLength(ADMIN_MODULE_IDS.length - 2);
   });
 
   it('hands every load its own editor state', () => {
@@ -381,6 +474,7 @@ describe('site settings documents', () => {
 
   it('surfaces each document on exactly one tab', () => {
     expect(CATEGORY_FIELDS.homepage).toEqual(['homepage']);
+    expect(CATEGORY_FIELDS.adminModules).toEqual(['adminModules']);
     expect(CATEGORY_FIELDS.downloads).toEqual(['downloads']);
   });
 });

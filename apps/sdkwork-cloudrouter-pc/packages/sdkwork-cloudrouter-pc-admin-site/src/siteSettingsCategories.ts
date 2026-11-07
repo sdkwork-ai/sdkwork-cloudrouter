@@ -22,6 +22,7 @@ export type SiteSettingsCategoryId =
   | 'assets'
   | 'theme'
   | 'homepage'
+  | 'adminModules'
   | 'downloads'
   | 'social'
   | 'qrCodes'
@@ -33,6 +34,7 @@ export const SITE_SETTINGS_CATEGORY_IDS: readonly SiteSettingsCategoryId[] = [
   'assets',
   'theme',
   'homepage',
+  'adminModules',
   'downloads',
   'social',
   'qrCodes',
@@ -89,6 +91,7 @@ export const CATEGORY_FIELDS: Record<SiteSettingsCategoryId, readonly (keyof Sit
   // edits part of it reports through the field it belongs to. Splitting them across tabs would
   // make "which tab do I save this on?" ambiguous for a single round-tripped document.
   homepage: ['homepage'],
+  adminModules: ['adminModules'],
   downloads: ['downloads'],
   social: [...SOCIAL_ENABLED_FIELDS, ...SOCIAL_URL_FIELDS],
   qrCodes: [

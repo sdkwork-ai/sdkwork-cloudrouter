@@ -71,6 +71,14 @@ import {
   type SdkworkAppConfig as SdkworkSkillsAppConfig,
   type SdkworkSkillsAppClient as SkillsAppClient,
 } from '@sdkwork/skills-app-sdk';
+import { SdkworkBackendClient as SkillsBackendClient } from '@sdkwork/skills-backend-sdk';
+import { SdkworkBackendClient as McpBackendClient } from '@sdkwork/mcp-backend-sdk';
+import { SdkworkBackendClient as PluginsBackendClient } from '@sdkwork/plugins-backend-sdk';
+import {
+  createClient as createMcpAppSdkClient,
+  type SdkworkAppConfig as SdkworkMcpAppConfig,
+  type SdkworkMcpAppClient as McpAppClient,
+} from '@sdkwork/mcp-app-sdk';
 import {
   SdkworkAppClient as SdkworkAgentAppClient,
   type SdkworkAppConfig as SdkworkAgentAppConfig,
@@ -524,6 +532,13 @@ export interface SdkworkSkillsAppSdkClientOptions {
   timeout?: number;
 }
 
+export interface SdkworkMcpAppSdkClientOptions {
+  appBaseUrl?: string;
+  platform?: string;
+  tokenManager?: AuthTokenManager;
+  timeout?: number;
+}
+
 export interface SdkworkAgentAppSdkClientOptions {
   appBaseUrl?: string;
   platform?: string;
@@ -588,6 +603,7 @@ export type SdkworkMemoryAppSdkClient = SdkworkMemoryAppClient;
 export type SdkworkCommunityAppSdkClient = SdkworkCommunityAppClient;
 export type SdkworkPromptsAppSdkClient = PromptsAppClient;
 export type SdkworkSkillsAppSdkClient = SkillsAppClient;
+export type SdkworkMcpAppSdkClient = McpAppClient;
 export type SdkworkAgentAppSdkClient = SdkworkAgentAppClient;
 export type SdkworkAssetsAppSdkClient = SdkworkAssetsAppClient;
 export type SdkworkAgentBackendSdkClient = SdkworkAgentBackendClient;
@@ -691,6 +707,7 @@ let deploymentsAppClient: SdkworkDeployAppClient | null = null;
 let appstoreAppClient: SdkworkAppstoreAppClient | null = null;
 let promptsAppClient: PromptsAppClient | null = null;
 let skillsAppClient: SkillsAppClient | null = null;
+let mcpAppClient: McpAppClient | null = null;
 let agentAppClient: SdkworkAgentAppClient | null = null;
 let assetsAppClient: SdkworkAssetsAppClient | null = null;
 let agentBackendClient: SdkworkAgentBackendClient | null = null;
@@ -773,6 +790,12 @@ export function createSdkworkSkillsAppSdkClient(
   options: SdkworkSkillsAppSdkClientOptions = {},
 ): SkillsAppClient {
   return attachCloudRouterSdkSessionAuthBoundary(createSkillsAppSdkClient(buildSkillsAppConfig(options)));
+}
+
+export function createSdkworkMcpAppSdkClient(
+  options: SdkworkMcpAppSdkClientOptions = {},
+): McpAppClient {
+  return attachCloudRouterSdkSessionAuthBoundary(createMcpAppSdkClient(buildMcpAppConfig(options)));
 }
 
 export function createSdkworkAgentAppSdkClient(
@@ -1061,6 +1084,86 @@ export function getModelsAppSdkClient(
   return modelsAppClient;
 }
 
+export type SkillsBackendSdkClient = SkillsBackendClient;
+export type SkillsBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
+
+let skillsBackendClient: SkillsBackendSdkClient | null = null;
+
+export function createSkillsBackendSdkClient(
+  options: SkillsBackendSdkClientOptions = {},
+): SkillsBackendSdkClient {
+  return attachCloudRouterSdkSessionAuthBoundary(
+    new SkillsBackendClient(
+      buildDependencyBackendConfig(options, 'VITE_SDKWORK_SKILLS_BACKEND_API_BASE_URL'),
+    ),
+  );
+}
+
+export function getSkillsBackendSdkClient(
+  options: SkillsBackendSdkClientOptions = {},
+): SkillsBackendSdkClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSkillsBackendSdkClient(options);
+  }
+  if (!skillsBackendClient) {
+    skillsBackendClient = createSkillsBackendSdkClient();
+  }
+  return skillsBackendClient;
+}
+
+export type McpBackendSdkClient = McpBackendClient;
+export type McpBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
+
+export type PluginsBackendSdkClient = PluginsBackendClient;
+export type PluginsBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
+
+let mcpBackendClient: McpBackendSdkClient | null = null;
+let pluginsBackendClient: PluginsBackendSdkClient | null = null;
+
+export function createMcpBackendSdkClient(
+  options: McpBackendSdkClientOptions = {},
+): McpBackendSdkClient {
+  return attachCloudRouterSdkSessionAuthBoundary(
+    new McpBackendClient(
+      buildDependencyBackendConfig(options, 'VITE_SDKWORK_MCP_BACKEND_API_BASE_URL'),
+    ),
+  );
+}
+
+export function getMcpBackendSdkClient(
+  options: McpBackendSdkClientOptions = {},
+): McpBackendSdkClient {
+  if (hasRuntimeOverrides(options)) {
+    return createMcpBackendSdkClient(options);
+  }
+  if (!mcpBackendClient) {
+    mcpBackendClient = createMcpBackendSdkClient();
+  }
+  return mcpBackendClient;
+}
+
+export function createPluginsBackendSdkClient(
+  options: PluginsBackendSdkClientOptions = {},
+): PluginsBackendSdkClient {
+  return attachCloudRouterSdkSessionAuthBoundary(
+    new PluginsBackendClient(
+      buildDependencyBackendConfig(options, 'VITE_SDKWORK_PLUGINS_BACKEND_API_BASE_URL'),
+    ),
+  );
+}
+
+export function getPluginsBackendSdkClient(
+  options: PluginsBackendSdkClientOptions = {},
+): PluginsBackendSdkClient {
+  if (hasRuntimeOverrides(options)) {
+    return createPluginsBackendSdkClient(options);
+  }
+  if (!pluginsBackendClient) {
+    pluginsBackendClient = createPluginsBackendSdkClient();
+  }
+  return pluginsBackendClient;
+}
+
 export function getSdkworkAppbaseAppSdkClient(
   options: SdkworkAppbaseAppSdkClientOptions = {},
 ): SdkworkAppbaseAppClient {
@@ -1179,6 +1282,18 @@ export function getSdkworkSkillsAppSdkClient(
     skillsAppClient = createSdkworkSkillsAppSdkClient();
   }
   return skillsAppClient;
+}
+
+export function getSdkworkMcpAppSdkClient(
+  options: SdkworkMcpAppSdkClientOptions = {},
+): SdkworkMcpAppSdkClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkMcpAppSdkClient(options);
+  }
+  if (!mcpAppClient) {
+    mcpAppClient = createSdkworkMcpAppSdkClient();
+  }
+  return mcpAppClient;
 }
 
 export function getSdkworkAgentAppSdkClient(
@@ -1603,6 +1718,10 @@ function resetCloudRouterSdkClientCaches(): void {
   agentBackendClient = null;
   promptsBackendClient = null;
   skillsAppClient = null;
+  mcpAppClient = null;
+  skillsBackendClient = null;
+  mcpBackendClient = null;
+  pluginsBackendClient = null;
   driveAppClient = null;
   membershipBackendClient = null;
   courseBackendClient = null;
@@ -1947,6 +2066,10 @@ function buildSkillsAppConfig(options: SdkworkSkillsAppSdkClientOptions): Sdkwor
   return buildDependencyAppConfig(options, 'VITE_SDKWORK_SKILLS_APP_API_BASE_URL') as SdkworkSkillsAppConfig;
 }
 
+function buildMcpAppConfig(options: SdkworkMcpAppSdkClientOptions): SdkworkMcpAppConfig {
+  return buildDependencyAppConfig(options, 'VITE_SDKWORK_MCP_APP_API_BASE_URL') as SdkworkMcpAppConfig;
+}
+
 function buildAgentAppConfig(options: SdkworkAgentAppSdkClientOptions): SdkworkAgentAppConfig {
   return {
   // @sdkwork/agents-app-sdk performs its own transport-base normalization and
@@ -2143,9 +2266,13 @@ function hasRuntimeOverrides(
     | SdkworkCommunityAppSdkClientOptions
     | SdkworkPromptsAppSdkClientOptions
     | SdkworkSkillsAppSdkClientOptions
+    | SdkworkMcpAppSdkClientOptions
     | SdkworkAgentAppSdkClientOptions
     | SdkworkAssetsAppSdkClientOptions
     | SdkworkAgentBackendSdkClientOptions
+    | SkillsBackendSdkClientOptions
+    | McpBackendSdkClientOptions
+    | PluginsBackendSdkClientOptions
     | SdkworkMembershipBackendSdkClientOptions
     | SdkworkPaymentBackendSdkClientOptions
     | SdkworkPromotionBackendSdkClientOptions

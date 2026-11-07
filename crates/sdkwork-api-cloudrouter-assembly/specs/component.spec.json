@@ -100,6 +100,16 @@
         "name": "partnerAppApiRouteManifest",
         "provider": "sdkwork-api-partner-assembly",
         "export": "sdkwork_api_partner_assembly::app_api_route_manifest"
+      },
+      {
+        "name": "modelsBackendApiRouteManifest",
+        "provider": "sdkwork-api-models-assembly",
+        "export": "sdkwork_api_models_assembly::backend_api_route_manifest"
+      },
+      {
+        "name": "partnerBackendApiRouteManifest",
+        "provider": "sdkwork-api-partner-assembly",
+        "export": "sdkwork_api_partner_assembly::backend_api_route_manifest"
       }
     ],
     "runtimeEntrypoints": [
@@ -187,6 +197,46 @@
         "coverageEvidence": [
           "src/bootstrap.rs#assemble_api_router_with_in_process_upstreams",
           "../sdkwork-routes-cloudrouter-app-api/src/manifest_composition.rs#capability_manifests_for_platform_gateway"
+        ]
+      },
+      {
+        "workspace": "sdkwork-models",
+        "sdkFamily": "sdkwork-models-backend-sdk",
+        "apiAuthority": "sdkwork-models-backend-api",
+        "surface": "backend-api",
+        "apiPrefixes": [
+          "/backend/v3/api/ai"
+        ],
+        "runtimeMode": "same-origin-mounted",
+        "profileCoverage": [
+          "standalone",
+          "cloud"
+        ],
+        "cargoDependency": "sdkwork-api-models-assembly",
+        "embeddedExecutableExport": "sdkwork_api_models_assembly::backend_api_route_manifest",
+        "coverageEvidence": [
+          "src/bootstrap.rs#assemble_api_router_with_in_process_upstreams",
+          "../sdkwork-routes-cloudrouter-backend-api/src/manifest_composition.rs#cloud_router_backend_composed_route_manifest_for_platform_gateway"
+        ]
+      },
+      {
+        "workspace": "sdkwork-partner",
+        "sdkFamily": "sdkwork-partner-backend-sdk",
+        "apiAuthority": "sdkwork-partner-backend-api",
+        "surface": "backend-api",
+        "apiPrefixes": [
+          "/backend/v3/api/partners"
+        ],
+        "runtimeMode": "same-origin-mounted",
+        "profileCoverage": [
+          "standalone",
+          "cloud"
+        ],
+        "cargoDependency": "sdkwork-api-partner-assembly",
+        "embeddedExecutableExport": "sdkwork_api_partner_assembly::backend_api_route_manifest",
+        "coverageEvidence": [
+          "src/bootstrap.rs#assemble_api_router_with_in_process_upstreams",
+          "../sdkwork-routes-cloudrouter-backend-api/src/manifest_composition.rs#cloud_router_backend_composed_route_manifest_for_platform_gateway"
         ]
       }
     ],

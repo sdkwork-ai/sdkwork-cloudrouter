@@ -53,6 +53,8 @@ export const adminCoreNavigationMessages = {
     "admin.menu.ops.security": "Security & Risk",
     "admin.menu.ops.infrastructure": "Infrastructure",
     "admin.menu.ops.system": "System Settings",
+    "admin.moduleUnavailable.title": "Module unavailable",
+    "admin.moduleUnavailable.description": "This admin module has been disabled in Site Settings. Open another module from the header, or ask an administrator to re-enable it.",
   },
   zh: {
     "admin.layout.title": "管理后台",
@@ -106,5 +108,7 @@ export const adminCoreNavigationMessages = {
     "admin.menu.ops.security": "安全与风控",
     "admin.menu.ops.infrastructure": "基础设施",
     "admin.menu.ops.system": "系统设置",
+    "admin.moduleUnavailable.title": "模块不可用",
+    "admin.moduleUnavailable.description": "该 Admin 模块已在站点设置中关闭。请从 Header 打开其他模块，或联系管理员重新开通。",
   },
 } satisfies I18nMessageBundle;

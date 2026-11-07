@@ -11,6 +11,7 @@ import {
   SOCIAL_PLATFORMS,
 } from './packages/sdkwork-cloudroutes-pc-commons/src/footer-settings.ts';
 import { HOME_SECTIONS } from './packages/sdkwork-cloudrouter-pc-admin-site/src/siteContentFields.ts';
+import { ADMIN_MODULE_CATALOG } from './packages/sdkwork-cloudroutes-pc-commons/src/admin-modules.ts';
 
 const PORTAL_ROOT = path.dirname(new URL(import.meta.url).pathname).replace(/^\/([A-Za-z]:)/, '$1');
 const ADMIN_SITE_SOURCES = [
@@ -18,6 +19,7 @@ const ADMIN_SITE_SOURCES = [
   // The download catalog editor and the shared controls are separate modules of the same page;
   // their t() calls are page copy and must pass the same existence check.
   path.join(PORTAL_ROOT, 'packages/sdkwork-cloudrouter-pc-admin-site/src/DownloadCatalogEditor.tsx'),
+  path.join(PORTAL_ROOT, 'packages/sdkwork-cloudrouter-pc-admin-site/src/AdminModuleSettingsEditor.tsx'),
   path.join(PORTAL_ROOT, 'packages/sdkwork-cloudrouter-pc-admin-site/src/SiteSettingsControls.tsx'),
 ];
 const ADMIN_SITE_SOURCE = ADMIN_SITE_SOURCES[0];
@@ -141,6 +143,11 @@ test('every category, platform, footer region and homepage region label resolves
   // footer ones: the labels are looked up through the table, so nothing else can check them.
   for (const section of HOME_SECTIONS) {
     wanted.push(section.labelKey, section.descriptionKey);
+  }
+  // The admin module manager is registry-driven too: every catalog entry's name and
+  // description are looked up through `ADMIN_MODULE_CATALOG`, not a literal t() call.
+  for (const module of ADMIN_MODULE_CATALOG) {
+    wanted.push(module.labelKey, module.descriptionKey);
   }
 
   assert.ok(wanted.length > 30, 'expected a substantial set of registry-driven keys');

@@ -16,6 +16,7 @@ pub mod rows;
 pub(crate) mod runtime_id;
 pub(crate) mod service_node_metadata;
 pub(crate) mod sql_admin_auth_settings;
+pub(crate) mod sql_admin_module_entry;
 pub(crate) mod sql_admin_product_center;
 pub(crate) mod sql_admin_storage;
 pub(crate) mod sql_hash;

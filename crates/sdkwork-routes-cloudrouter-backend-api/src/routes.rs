@@ -39,20 +39,20 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
     PostgresAdminAnnouncementStore, PostgresAdminApiKeyRateLimitStore,
     PostgresAdminAuthSettingsStore, PostgresAdminChainPolicyStore, PostgresAdminFinanceStore,
     PostgresAdminFirewallRuleStore, PostgresAdminIpRateLimitStore, PostgresAdminMarketingStore,
-    PostgresAdminModelRateLimitStore, PostgresAdminPricingStore, PostgresAdminRecordStore,
-    PostgresAdminReferralStore, PostgresAdminServiceNodeStore, PostgresAdminStorageStore,
-    PostgresAdminTransactionCenterStore, PostgresAdminUpstreamAccountVerifier,
-    PostgresAdminUpstreamStore, PostgresCatalogLoadError, PostgresGatewayApiKeyCommandStore,
-    PostgresOfficialPricingCatalogReadStore, PostgresPricingCatalogLoader,
-    PostgresRuntimeRegionSettingsStore, PostgresSiteSettingsStore,
+    PostgresAdminModelRateLimitStore, PostgresAdminModuleEntryStore, PostgresAdminPricingStore,
+    PostgresAdminRecordStore, PostgresAdminReferralStore, PostgresAdminServiceNodeStore,
+    PostgresAdminStorageStore, PostgresAdminTransactionCenterStore,
+    PostgresAdminUpstreamAccountVerifier, PostgresAdminUpstreamStore, PostgresCatalogLoadError,
+    PostgresGatewayApiKeyCommandStore, PostgresOfficialPricingCatalogReadStore,
+    PostgresPricingCatalogLoader, PostgresRuntimeRegionSettingsStore, PostgresSiteSettingsStore,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::OsApiKeySecretGenerator;
 use sdkwork_cloudrouter_router_service::ports::{
     AdminAnalyticsReadStore, AdminAnnouncementStore, AdminApiKeyRateLimitStore,
     AdminAuthSettingsStore, AdminChainPolicyStore, AdminDashboardReadStore, AdminFinanceStore,
     AdminFirewallRuleStore, AdminIpRateLimitStore, AdminMarketingStore, AdminModelRateLimitStore,
-    AdminMonitorReadStore, AdminPricingStore, AdminRecordStore, AdminReferralStore,
-    AdminServiceNodeStore, AdminStorageStore, AdminTransactionCenterStore,
+    AdminModuleEntryStore, AdminMonitorReadStore, AdminPricingStore, AdminRecordStore,
+    AdminReferralStore, AdminServiceNodeStore, AdminStorageStore, AdminTransactionCenterStore,
     AdminUpstreamAccountVerifier, AdminUpstreamStore, GatewayApiKeyCommandStore,
     ModelRankingRefreshStore, ModelRankingsReadModelStore, OfficialPricingCatalogReadStore,
     OfficialPricingRefreshStore, RuntimeRegionSettingsStore, SiteSettingsStore,
@@ -91,6 +91,7 @@ type AdminAuthSettingsRuntimeStore = Arc<dyn AdminAuthSettingsStore + Send + Syn
 type ApiKeyCommandRuntimeStore = Arc<dyn GatewayApiKeyCommandStore + Send + Sync>;
 type SiteSettingsRuntimeStore = Arc<dyn SiteSettingsStore + Send + Sync>;
 type RuntimeRegionSettingsRuntimeStore = Arc<dyn RuntimeRegionSettingsStore + Send + Sync>;
+type AdminModuleEntryRuntimeStore = Arc<dyn AdminModuleEntryStore + Send + Sync>;
 type AdminAiResourceRuntimeStore = Arc<dyn AdminAiResourceStore + Send + Sync>;
 type AdminUpstreamRuntimeStore = Arc<dyn AdminUpstreamStore + Send + Sync>;
 type AdminUpstreamRuntimeVerifier = Arc<dyn AdminUpstreamAccountVerifier + Send + Sync>;
@@ -169,6 +170,7 @@ struct AdminRouterRuntime<'a> {
     api_key_command_store: Option<ApiKeyCommandRuntimeStore>,
     site_settings_store: Option<SiteSettingsRuntimeStore>,
     runtime_region_settings_store: Option<RuntimeRegionSettingsRuntimeStore>,
+    admin_module_entry_store: Option<AdminModuleEntryRuntimeStore>,
     ai_resource_store: Option<AdminAiResourceRuntimeStore>,
     upstream_store: Option<AdminUpstreamRuntimeStore>,
     upstream_verifier: Option<AdminUpstreamRuntimeVerifier>,
@@ -320,6 +322,7 @@ where
         api_key_command_store,
         site_settings_store,
         runtime_region_settings_store,
+        admin_module_entry_store,
         ai_resource_store,
         upstream_store,
         upstream_verifier,
@@ -507,6 +510,15 @@ where
             router = router.merge(layer_with_admin_subject_boundary(
                 admin_subject_boundary_config.clone(),
                 sdkwork_cloudrouter_router_service::api::admin_runtime_region_settings_router_with_store(
+                    store,
+                    Arc::new(OsApiKeySecretGenerator),
+                ),
+            ));
+        }
+        if let Some(store) = admin_module_entry_store {
+            router = router.merge(layer_with_admin_subject_boundary(
+                admin_subject_boundary_config.clone(),
+                sdkwork_cloudrouter_router_service::api::admin_module_entry_router_with_store(
                     store,
                     Arc::new(OsApiKeySecretGenerator),
                 ),
@@ -826,6 +838,8 @@ pub async fn router_with_postgres_shared_runtime(
     );
     let runtime_region_settings_store: RuntimeRegionSettingsRuntimeStore =
         Arc::new(PostgresRuntimeRegionSettingsStore::new(pool.clone()));
+    let admin_module_entry_store: AdminModuleEntryRuntimeStore =
+        Arc::new(PostgresAdminModuleEntryStore::new(pool.clone()));
     let ai_resource_store: AdminAiResourceRuntimeStore =
         Arc::new(CatalogPostgresAdminAiResourceStore::new(pool.clone()));
     let upstream_store: AdminUpstreamRuntimeStore = Arc::new(PostgresAdminUpstreamStore::new(
@@ -946,6 +960,7 @@ pub async fn router_with_postgres_shared_runtime(
             include_legacy_iam_api_key_create: Some(include_legacy_iam_api_key_create),
             site_settings_store: Some(site_settings_store),
             runtime_region_settings_store: Some(runtime_region_settings_store),
+            admin_module_entry_store: Some(admin_module_entry_store),
             ai_resource_store: Some(ai_resource_store),
             upstream_store: Some(upstream_store),
             upstream_verifier: Some(upstream_verifier),
@@ -1134,6 +1149,8 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
     );
     let runtime_region_settings_store: RuntimeRegionSettingsRuntimeStore =
         Arc::new(PostgresRuntimeRegionSettingsStore::new(pool.clone()));
+    let admin_module_entry_store: AdminModuleEntryRuntimeStore =
+        Arc::new(PostgresAdminModuleEntryStore::new(pool.clone()));
     let ai_resource_store: AdminAiResourceRuntimeStore =
         Arc::new(CatalogPostgresAdminAiResourceStore::new(pool.clone()));
     let upstream_store: AdminUpstreamRuntimeStore = Arc::new(PostgresAdminUpstreamStore::new(
@@ -1201,6 +1218,7 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
                     include_legacy_iam_api_key_create: None,
                     site_settings_store: Some(site_settings_store),
                     runtime_region_settings_store: Some(runtime_region_settings_store),
+                    admin_module_entry_store: Some(admin_module_entry_store),
                     ai_resource_store: Some(ai_resource_store),
                     upstream_store: Some(upstream_store),
                     upstream_verifier: Some(upstream_verifier),

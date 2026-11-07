@@ -139,6 +139,12 @@
       "require": "./src/domain-service-providers.ts",
       "default": "./src/domain-service-providers.ts"
     },
+    "./admin-modules": {
+      "types": "./src/admin-modules.ts",
+      "import": "./src/admin-modules.ts",
+      "require": "./src/admin-modules.ts",
+      "default": "./src/admin-modules.ts"
+    },
     "./footer-settings": {
       "types": "./src/footer-settings.ts",
       "import": "./src/footer-settings.ts",

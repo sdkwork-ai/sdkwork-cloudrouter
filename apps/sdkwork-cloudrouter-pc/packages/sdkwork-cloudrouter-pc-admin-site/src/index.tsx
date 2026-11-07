@@ -9,6 +9,7 @@ import {
   Image,
   Languages,
   Layout,
+  LayoutGrid,
   Link2,
   Loader2,
   Palette,
@@ -21,10 +22,12 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { DriveUploadImage } from 'sdkwork-drive-pc-upload-image';
+import { AdminModuleSettingsEditor } from './AdminModuleSettingsEditor';
 import { DownloadCatalogEditor } from './DownloadCatalogEditor';
 import { InlineWarning, SectionDivider, TextArea, TextField, ToggleSwitch } from './SiteSettingsControls';
-import { getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons/runtime';
+import { getLoadErrorMessage, refreshSiteBranding } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { BusinessStatePanel } from '@sdkwork/cloudroutes-pc-commons';
+import { validateAdminModuleSettings, type AdminModuleSettings } from '@sdkwork/cloudroutes-pc-commons/admin-modules';
 import {
   cloudRouterMediaResourceToDriveUploadImageValue,
   driveUploadImageValueToCloudRouterMediaResource,
@@ -166,6 +169,12 @@ const SITE_SETTINGS_CATEGORIES: ReadonlyArray<{
     descriptionKey: 'admin.siteSettings.categories.homepage.description',
   },
   {
+    id: 'adminModules',
+    icon: LayoutGrid,
+    labelKey: 'admin.siteSettings.categories.adminModules.label',
+    descriptionKey: 'admin.siteSettings.categories.adminModules.description',
+  },
+  {
     id: 'downloads',
     icon: Download,
     labelKey: 'admin.siteSettings.categories.downloads.label',
@@ -235,6 +244,15 @@ export function CloudRouterSiteSettingsPage({
    * saving one publishes nothing broken, and refusing to save would trap an operator mid-edit.
    */
   const homepageWarnings = useMemo(() => findIncompleteHomeContent(form.homepage), [form.homepage]);
+  /**
+   * Admin-module problems block saving: unlike a half-written homepage row, a document with
+   * every module hidden has no safe runtime interpretation — it would lock the operator out of
+   * this page.
+   */
+  const adminModuleIssues = useMemo(
+    () => validateAdminModuleSettings(form.adminModules),
+    [form.adminModules],
+  );
   /**
    * The download catalog's verdict, derived from the text instead of cached in state.
    *
@@ -308,6 +326,9 @@ export function CloudRouterSiteSettingsPage({
       if (category.id === 'homepage') {
         warnings = homepageWarnings.length;
       }
+      if (category.id === 'adminModules' && adminModuleIssues.length > 0) {
+        errors = adminModuleIssues.length;
+      }
       if (category.id === 'downloads' && !downloadCatalogCheck.ok) {
         // An unparseable catalog cannot be sent at all, so this blocks saving rather than warning.
         errors = 1;
@@ -318,7 +339,7 @@ export function CloudRouterSiteSettingsPage({
       status[category.id] = { changes, errors, warnings };
     }
     return status;
-  }, [dirtyFields, downloadCatalogCheck, form, homepageWarnings, siteNameError]);
+  }, [adminModuleIssues, dirtyFields, downloadCatalogCheck, form, homepageWarnings, siteNameError]);
 
   const dirtyCount = dirtyFields.size;
 
@@ -335,6 +356,11 @@ export function CloudRouterSiteSettingsPage({
       setSaveSuccess(null);
       return;
     }
+    if (adminModuleIssues.length > 0) {
+      setSaveError(t('admin.siteSettings.errors.adminModulesInvalid'));
+      setSaveSuccess(null);
+      return;
+    }
     setSaving(true);
     setSaveError(null);
     setSaveSuccess(null);
@@ -346,6 +372,9 @@ export function CloudRouterSiteSettingsPage({
       setForm(saved);
       setSavedForm(saved);
       setSaveSuccess(t('admin.siteSettings.messages.saved'));
+      // The admin header/sidebar read the public site-runtime document, so revalidate it now
+      // instead of waiting for the next full page load.
+      void refreshSiteBranding();
     } catch (error) {
       setSaveError(errorMessage(error, t('admin.siteSettings.errors.saveFallback'), t));
     } finally {
@@ -411,6 +440,9 @@ export function CloudRouterSiteSettingsPage({
    */
   const updateHomeContent = (next: HomeContentForm) => {
     setForm((current) => ({ ...current, homepage: next }));
+  };
+  const updateAdminModules = (next: AdminModuleSettings) => {
+    setForm((current) => ({ ...current, adminModules: next }));
   };
   const updateDownloadCatalog = (next: string) => {
     setForm((current) => ({ ...current, downloads: next }));
@@ -500,7 +532,7 @@ export function CloudRouterSiteSettingsPage({
           </button>
           <button
             className="inline-flex items-center gap-2 rounded-lg bg-lobster-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-lobster-600 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={saving || Boolean(siteNameError) || !downloadCatalogCheck.ok || dirtyCount === 0}
+            disabled={saving || Boolean(siteNameError) || !downloadCatalogCheck.ok || adminModuleIssues.length > 0 || dirtyCount === 0}
             onClick={() => void saveSettings()}
             type="button"
           >
@@ -612,6 +644,10 @@ export function CloudRouterSiteSettingsPage({
 
             {activeCategory === 'homepage' ? (
               <HomeContentFields onChange={updateHomeContent} value={form.homepage} />
+            ) : null}
+
+            {activeCategory === 'adminModules' ? (
+              <AdminModuleSettingsEditor onChange={updateAdminModules} value={form.adminModules} />
             ) : null}
 
             {activeCategory === 'downloads' ? (

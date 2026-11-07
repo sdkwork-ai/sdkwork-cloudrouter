@@ -62,6 +62,12 @@ export interface SiteBranding {
    * configured, which the download section reads as "keep the catalog checked into the repository".
    */
   downloads: ApiRecord;
+  /**
+   * Admin navigation document (enabled modules, header order, visibility) published from
+   * `/admin/site`. Kept raw here for the same reason as `homepage`: the admin shell owns the
+   * catalog and normalization rules, this layer only carries the payload through the runtime read.
+   */
+  adminModules: ApiRecord;
 }
 
 /**
@@ -109,6 +115,7 @@ export const DEFAULT_SITE_BRANDING: SiteBranding = {
   customCss: '',
   homepage: {},
   downloads: {},
+  adminModules: {},
 };
 
 const SITE_BRANDING_EVENT = 'sdkwork-cloudrouter-site-branding-change';
@@ -214,6 +221,19 @@ export function resetSiteBrandingCache(): void {
   cachedSiteBrandingIsAuthoritative = false;
   pendingSiteBranding = null;
   pendingSiteBrandingLocale = null;
+}
+
+/**
+ * Revalidates the runtime document after a site-settings write.
+ *
+ * Unlike `resetSiteBrandingCache`, the current snapshot stays on screen until the response
+ * lands. That matters for the admin shell: saving a module change must not flash the built-in
+ * site name while the next read is in flight, and a failed read must keep the previous
+ * configuration rather than falling back to defaults.
+ */
+export function refreshSiteBranding(): Promise<SiteBranding> {
+  cachedSiteBrandingIsAuthoritative = false;
+  return fetchSiteBranding();
 }
 
 /** The locale the current payload — or the request fetching it — belongs to. */
@@ -354,6 +374,7 @@ function normalizeSiteBranding(record: ApiRecord): SiteBranding {
     customCss: readConfiguredString(record, 'customCss').trim(),
     homepage: readConfiguredRecord(record, 'homepage'),
     downloads: readConfiguredRecord(record, 'downloads'),
+    adminModules: readConfiguredRecord(record, 'adminModules'),
   };
 }
 

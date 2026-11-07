@@ -6,7 +6,12 @@ import {
   readPortalPermissionScope,
   revokeAppSession,
   subscribePortalSessionChange,
+  useSiteBranding,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
+import {
+  getFirstAvailableAdminModuleId,
+  resolveAdminModuleSettings,
+} from '@sdkwork/cloudroutes-pc-commons/admin-modules';
 import { AdminHeader } from './AdminHeader.tsx';
 import {
   getFilteredAdminModuleMenu,
@@ -175,6 +180,11 @@ export function AdminLayout({ isDark, toggleTheme }: { isDark: boolean; toggleTh
   const [permissionScope, setPermissionScope] = useState(() => readPortalPermissionScope());
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const siteBranding = useSiteBranding();
+  const adminModuleSettings = useMemo(
+    () => resolveAdminModuleSettings(siteBranding.adminModules),
+    [siteBranding.adminModules],
+  );
 
   useEffect(() => {
     const syncPermissionScope = () => setPermissionScope(readPortalPermissionScope());
@@ -193,9 +203,34 @@ export function AdminLayout({ isDark, toggleTheme }: { isDark: boolean; toggleTh
   );
 
   const allowedModules = useMemo(() => {
-    const visibleModuleIds = new Set(listVisibleAdminModuleIds(permissionScope));
-    return ADMIN_MODULES.filter((module) => visibleModuleIds.has(module.id));
-  }, [permissionScope]);
+    const permissionVisibleIds = new Set(listVisibleAdminModuleIds(permissionScope));
+    const order = new Map(adminModuleSettings.modules.map((entry, index) => [entry.id, index]));
+    return ADMIN_MODULES
+      .filter((module) => adminModuleSettings.modules.some(
+        (entry) => entry.id === module.id && entry.enabled && entry.visible,
+      ))
+      .filter((module) => permissionVisibleIds.has(module.id))
+      .sort((left, right) => (order.get(left.id) ?? 0) - (order.get(right.id) ?? 0));
+  }, [adminModuleSettings, permissionScope]);
+
+  /**
+   * A disabled module has no navigation entry by design. If a bookmark or a stale header link
+   * still points at one, move to the first module the operator can actually use instead of
+   * rendering a sidebar for a module that no longer exists.
+   */
+  useEffect(() => {
+    const isActiveModuleEnabled = adminModuleSettings.modules.some(
+      (entry) => entry.id === activeModule && entry.enabled,
+    );
+    if (isActiveModuleEnabled) {
+      return;
+    }
+    const fallbackId = allowedModules[0]?.id ?? getFirstAvailableAdminModuleId(adminModuleSettings);
+    const fallback = ADMIN_MODULES.find((module) => module.id === fallbackId);
+    if (fallback) {
+      navigate(fallback.defaultPath, { replace: true });
+    }
+  }, [activeModule, adminModuleSettings, allowedModules, navigate]);
 
   const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
   const toggleMobileMenu = useCallback(() => setMobileMenuOpen((open) => !open), []);

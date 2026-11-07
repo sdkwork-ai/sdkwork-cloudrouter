@@ -3951,6 +3951,30 @@ frontend_operations:
         name: SiteRuntimeSettingsResponse
         properties:
           accentColor: {pattern: '^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$', type: string}
+          adminModules:
+            additionalProperties: false
+            description: Admin module navigation document authored from site settings.
+            properties:
+              modules:
+                items:
+                  additionalProperties: false
+                  properties:
+                    enabled: { type: boolean }
+                    id:
+                      enum: [home, iam, rtc, tradeCenter, notifyCenter, membershipCenter, communityCenter, courseCenter, rechargeCenter, marketingCenter, partnerCenter, paymentCenter, storageCenter, operations]
+                      maxLength: 64
+                      type: string
+                    visible: { type: boolean }
+                  required: [id, enabled, visible]
+                  type: object
+                maxItems: 64
+                type: array
+              version:
+                maximum: 1
+                minimum: 1
+                type: integer
+            required: [version, modules]
+            type: object
           brandColor: {pattern: '^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$', type: string}
           communityGroupQrCode:
             anyOf:
@@ -4040,7 +4064,7 @@ frontend_operations:
               - { type: 'null' }
           videoChannelQrCodeEnabled: { type: boolean }
         required: [siteName, siteNameI18n, shortName, shortNameI18n, description, descriptionI18n, logo, icon, favicon, brandColor, accentColor, footerCopyright, footerCopyrightI18n, icpRecordNumber, icpRecordUrl, policeRecordNumber, policeRecordUrl, seoTitle, seoTitleI18n, seoDescription, seoDescriptionI18n, supportUrl, docsUrl, privacyUrl,
-          termsUrl, customCss, homepage, downloads]
+          termsUrl, customCss, homepage, downloads, adminModules]
         type: object
     query_parameters:
       - name: tenant_code
@@ -10582,6 +10606,30 @@ frontend_operations:
           accentColor:
             description: accentColor field on AdminSiteSettingsResponse.
             type: string
+          adminModules:
+            additionalProperties: false
+            description: Admin module navigation document authored from site settings.
+            properties:
+              modules:
+                items:
+                  additionalProperties: false
+                  properties:
+                    enabled: { type: boolean }
+                    id:
+                      enum: [home, iam, rtc, tradeCenter, notifyCenter, membershipCenter, communityCenter, courseCenter, rechargeCenter, marketingCenter, partnerCenter, paymentCenter, storageCenter, operations]
+                      maxLength: 64
+                      type: string
+                    visible: { type: boolean }
+                  required: [id, enabled, visible]
+                  type: object
+                maxItems: 64
+                type: array
+              version:
+                maximum: 1
+                minimum: 1
+                type: integer
+            required: [version, modules]
+            type: object
           brandColor:
             description: brandColor field on AdminSiteSettingsResponse.
             type: string
@@ -10782,7 +10830,7 @@ frontend_operations:
           videoChannelQrCodeEnabled:
             type: boolean
         required: [accentColor, brandColor, customCss, description, descriptionI18n, docsUrl, footerCopyright, footerCopyrightI18n, logo, icon, favicon, icpRecordNumber, icpRecordUrl, policeRecordNumber, policeRecordUrl, privacyUrl, seoDescription, seoDescriptionI18n, seoTitle, seoTitleI18n, shortName, shortNameI18n, siteName, siteNameI18n,
-          supportUrl, termsUrl, homepage, downloads]
+          supportUrl, termsUrl, homepage, downloads, adminModules]
         type: object
     query_parameters: []
   - route: /admin/site
@@ -10805,6 +10853,30 @@ frontend_operations:
           accentColor:
             description: accentColor field on AdminSiteSettingsResponse.
             type: string
+          adminModules:
+            additionalProperties: false
+            description: Admin module navigation document authored from site settings.
+            properties:
+              modules:
+                items:
+                  additionalProperties: false
+                  properties:
+                    enabled: { type: boolean }
+                    id:
+                      enum: [home, iam, rtc, tradeCenter, notifyCenter, membershipCenter, communityCenter, courseCenter, rechargeCenter, marketingCenter, partnerCenter, paymentCenter, storageCenter, operations]
+                      maxLength: 64
+                      type: string
+                    visible: { type: boolean }
+                  required: [id, enabled, visible]
+                  type: object
+                maxItems: 64
+                type: array
+              version:
+                maximum: 1
+                minimum: 1
+                type: integer
+            required: [version, modules]
+            type: object
           brandColor:
             description: brandColor field on AdminSiteSettingsResponse.
             type: string
@@ -11005,7 +11077,7 @@ frontend_operations:
           videoChannelQrCodeEnabled:
             type: boolean
         required: [accentColor, brandColor, customCss, description, descriptionI18n, docsUrl, footerCopyright, footerCopyrightI18n, logo, icon, favicon, icpRecordNumber, icpRecordUrl, policeRecordNumber, policeRecordUrl, privacyUrl, seoDescription, seoDescriptionI18n, seoTitle, seoTitleI18n, shortName, shortNameI18n, siteName, siteNameI18n,
-          supportUrl, termsUrl, homepage, downloads]
+          supportUrl, termsUrl, homepage, downloads, adminModules]
         type: object
     request_schema:
       name: AdminSiteSettingsUpdateRequest
@@ -11016,6 +11088,30 @@ frontend_operations:
           accentColor:
             description: accentColor field on AdminSiteSettingsUpdateRequest.
             type: string
+          adminModules:
+            additionalProperties: false
+            description: Admin module navigation document authored from site settings.
+            properties:
+              modules:
+                items:
+                  additionalProperties: false
+                  properties:
+                    enabled: { type: boolean }
+                    id:
+                      enum: [home, iam, rtc, tradeCenter, notifyCenter, membershipCenter, communityCenter, courseCenter, rechargeCenter, marketingCenter, partnerCenter, paymentCenter, storageCenter, operations]
+                      maxLength: 64
+                      type: string
+                    visible: { type: boolean }
+                  required: [id, enabled, visible]
+                  type: object
+                maxItems: 64
+                type: array
+              version:
+                maximum: 1
+                minimum: 1
+                type: integer
+            required: [version, modules]
+            type: object
           brandColor:
             description: brandColor field on AdminSiteSettingsUpdateRequest.
             type: string

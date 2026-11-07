@@ -194,7 +194,11 @@ fn assemble_api_router_with_in_process_upstreams(
     // cloud gateway mode the gateway wires the account/community/invoice
     // app surfaces as separate contributions, so their manifests are excluded
     // here (API_ASSEMBLY_SPEC §6.1) — the composed surface keeps only the
-    // capabilities the platform gateway does not mount itself.
+    // capabilities the platform gateway does not mount itself. The backend
+    // surface follows the same rule with its own scoped composition: the
+    // models-catalog and partner backend routers are still dispatched here,
+    // so their routes must stay in the bound manifest or the Web Framework
+    // rejects live routes with 404 route-not-in-manifest.
     let app_manifest = if context.includes_dependency_apis() {
         sdkwork_routes_cloudrouter_app_api::cloud_router_app_composed_route_manifest()
     } else {
@@ -203,7 +207,13 @@ fn assemble_api_router_with_in_process_upstreams(
     let backend_manifest = if context.includes_dependency_apis() {
         sdkwork_routes_cloudrouter_backend_api::cloud_router_backend_composed_route_manifest()
     } else {
-        sdkwork_routes_cloudrouter_backend_api::http_route_manifest()
+        // The cloud assembly still dispatches the models-catalog and partner
+        // backend routers itself; binding the bare host manifest here makes the
+        // Web Framework answer 404 route-not-in-manifest for those live routes
+        // (notably POST /backend/v3/api/ai/models/sync, used to initialize an
+        // empty model catalog). Gateway-owned capabilities stay excluded so
+        // their separate contributions do not collide during composition.
+        sdkwork_routes_cloudrouter_backend_api::cloud_router_backend_composed_route_manifest_for_platform_gateway()
     };
     let open_manifest = crate::generated_open_http_route_manifest::http_route_manifest();
     validate_no_route_collisions(&[
@@ -858,6 +868,13 @@ mod tests {
         context: ApiAssemblyContext,
         feeds_open: Option<crate::feeds_open_runtime::FederatedFeedsOpenSurface>,
     ) -> Router {
+        test_assembly_contribution_with_feeds(context, feeds_open).router
+    }
+
+    fn test_assembly_contribution_with_feeds(
+        context: ApiAssemblyContext,
+        feeds_open: Option<crate::feeds_open_runtime::FederatedFeedsOpenSurface>,
+    ) -> sdkwork_web_bootstrap::ApiAssemblyContribution {
         let gateway_router = Router::new()
             .route("/openapi.json", route_get(|| async { "open" }))
             .route("/readyz", route_get(|| async { "ready" }));
@@ -915,7 +932,226 @@ mod tests {
             feeds_open,
         )
         .expect("valid Cloudrouter assembly")
-        .router
+    }
+
+    #[test]
+    fn cloud_assembly_contribution_registers_models_catalog_sync_route() {
+        // Regression: the cloud-gateway assembly bound the bare host backend
+        // manifest, so the Web Framework answered 404 route-not-in-manifest
+        // for POST /backend/v3/api/ai/models/sync even though the backend
+        // router dispatches the live models-catalog handler.
+        let contribution =
+            test_assembly_contribution_with_feeds(ApiAssemblyContext::cloud_gateway(), None);
+        let route = contribution
+            .route_manifest
+            .match_route("POST", "/backend/v3/api/ai/models/sync")
+            .expect("cloud assembly must declare the models catalog sync route");
+        assert_eq!("sdkwork-cloudrouter", contribution.owner);
+        assert!(
+            !route.path.is_empty(),
+            "matched sync route must resolve to a registered path"
+        );
+    }
+
+    #[test]
+    fn cloud_assembly_contribution_composes_every_backend_capability_route() {
+        // The platform cloud gateway binds `ApiModuleRegistry::try_compose`'s
+        // combined manifest, not the contribution manifest in isolation.
+        // Compose through the same registry here so both failure modes are
+        // pinned: a route missing from the manifest answers 404
+        // route-not-in-manifest, and a manifest/OpenAPI inventory mismatch
+        // fails gateway startup before any request is served.
+        let contribution =
+            test_assembly_contribution_with_feeds(ApiAssemblyContext::cloud_gateway(), None);
+        let mut registry = sdkwork_web_bootstrap::ApiModuleRegistry::new();
+        registry.add_modules([sdkwork_web_bootstrap::WebModule::from_contribution(
+            contribution,
+        )]);
+        let composed = registry
+            .try_compose("SDKWork Platform API")
+            .expect("cloud assembly contribution must compose without route/OpenAPI drift");
+
+        // Every admin capability surfaced by the Cloud Router console:
+        // model vendors, models/sync, model mappings, resource management and
+        // the partner backend surface dispatched by this same contribution.
+        // Method/path pairs are copied from the owner manifests: the catalog
+        // exposes single-model and single-resgroup mutations (PATCH/PUT/DELETE)
+        // but no GET-by-id detail route, and the resource-group resource member
+        // is PUT/DELETE only. Parameterized paths are exercised with concrete
+        // ids because the Web Framework resolves real request paths here.
+        for (method, path) in [
+            ("GET", "/backend/v3/api/ai/model_vendors"),
+            ("POST", "/backend/v3/api/ai/model_vendors"),
+            ("GET", "/backend/v3/api/ai/models"),
+            ("PATCH", "/backend/v3/api/ai/models/model-3"),
+            ("POST", "/backend/v3/api/ai/models/sync"),
+            ("GET", "/backend/v3/api/ai/model_mappings"),
+            ("POST", "/backend/v3/api/ai/model_mappings/resolve"),
+            ("GET", "/backend/v3/api/ai/model_rankings"),
+            ("GET", "/backend/v3/api/ai/model_rankings/status"),
+            ("GET", "/backend/v3/api/ai/resources"),
+            ("GET", "/backend/v3/api/ai/resource_groups"),
+            (
+                "GET",
+                "/backend/v3/api/ai/resource_groups/api.custom.chat/resources",
+            ),
+            ("PATCH", "/backend/v3/api/ai/resource_groups/101"),
+            (
+                "PUT",
+                "/backend/v3/api/ai/resource_groups/101/resources/api.openai.responses",
+            ),
+            ("GET", "/backend/v3/api/ai/voices"),
+            ("GET", "/backend/v3/api/ai/models/model-3/voices"),
+            ("GET", "/backend/v3/api/ai/video_profiles"),
+            ("GET", "/backend/v3/api/partners"),
+        ] {
+            let route = composed
+                .route_manifest
+                .match_route(method, path)
+                .unwrap_or_else(|| {
+                    panic!("{method} {path} must survive platform gateway composition")
+                });
+            assert_eq!(
+                sdkwork_web_contract::RouteAuth::DualToken,
+                route.auth,
+                "{method} {path} must keep dual-token auth after composition"
+            );
+        }
+    }
+
+    fn gateway_method_label(method: sdkwork_web_contract::HttpMethod) -> &'static str {
+        use sdkwork_web_contract::HttpMethod;
+        match method {
+            HttpMethod::Get => "GET",
+            HttpMethod::Post => "POST",
+            HttpMethod::Put => "PUT",
+            HttpMethod::Patch => "PATCH",
+            HttpMethod::Delete => "DELETE",
+        }
+    }
+
+    /// Path parameter names differ between axum routers and OpenAPI/SDK
+    /// templates (`{model_id}` vs `{modelId}`), so compare the wire shape.
+    fn gateway_route_shape(path: &str) -> String {
+        let mut shape = String::new();
+        let mut rest = path;
+        while let Some(open) = rest.find('{') {
+            shape.push_str(&rest[..open]);
+            shape.push_str("{}");
+            let Some(close_relative) = rest[open..].find('}') else {
+                return shape;
+            };
+            rest = &rest[open + close_relative + 1..];
+        }
+        shape.push_str(rest);
+        shape
+    }
+
+    fn gateway_concrete_path(template: &str) -> String {
+        let mut concrete = String::new();
+        let mut rest = template;
+        while let Some(open) = rest.find('{') {
+            concrete.push_str(&rest[..open]);
+            let Some(close_relative) = rest[open..].find('}') else {
+                concrete.push_str(&rest[open..]);
+                return concrete;
+            };
+            concrete.push_str("gateway-probe");
+            rest = &rest[open + close_relative + 1..];
+        }
+        concrete.push_str(rest);
+        concrete
+    }
+
+    #[test]
+    fn cloud_assembly_contribution_preserves_every_declared_route_through_gateway_composition() {
+        // Data-driven counterpart of the explicit capability inventory above.
+        // A hardcoded list can silently miss a newly mounted capability; this
+        // walks every route the cloud assembly declares (host backend/app/open
+        // surfaces plus both scoped dependency mounts) and proves the platform
+        // gateway's composed framework manifest still carries it with the same
+        // auth profile, permission, rate-limit tier and operation id, and that
+        // the Web Framework can resolve a concrete request path for it.
+        // Losing any of those is exactly what produced `404
+        // route-not-in-manifest` for live model-catalog handlers.
+        let contribution =
+            test_assembly_contribution_with_feeds(ApiAssemblyContext::cloud_gateway(), None);
+        let declared: Vec<_> = contribution
+            .route_manifest
+            .routes()
+            .iter()
+            .map(|route| {
+                (
+                    route.method,
+                    route.path,
+                    route.operation_id,
+                    route.auth,
+                    route.required_permission,
+                    route.rate_limit_tier,
+                )
+            })
+            .collect();
+        assert!(
+            declared.len() > 100,
+            "platform gateway contribution unexpectedly declares only {} routes",
+            declared.len()
+        );
+
+        let mut registry = sdkwork_web_bootstrap::ApiModuleRegistry::new();
+        registry.add_modules([sdkwork_web_bootstrap::WebModule::from_contribution(
+            contribution,
+        )]);
+        let composed = registry
+            .try_compose("SDKWork Platform API")
+            .expect("cloud assembly contribution must compose without route/OpenAPI drift");
+        assert!(
+            composed.route_manifest.routes().len() >= declared.len(),
+            "gateway composition dropped routes: {} declared vs {} composed",
+            declared.len(),
+            composed.route_manifest.routes().len()
+        );
+
+        for (method, template, operation_id, auth, permission, tier) in declared {
+            let label = gateway_method_label(method);
+            let shape = gateway_route_shape(template);
+            let equivalent = composed
+                .route_manifest
+                .routes()
+                .iter()
+                .find(|route| {
+                    gateway_method_label(route.method) == label
+                        && gateway_route_shape(route.path) == shape
+                        && route.operation_id == operation_id
+                })
+                .unwrap_or_else(|| {
+                    panic!("gateway composition dropped {label} {template} ({operation_id})")
+                });
+            assert_eq!(
+                equivalent.auth, auth,
+                "{label} {template} auth profile changed during composition"
+            );
+            assert_eq!(
+                equivalent.required_permission, permission,
+                "{label} {template} permission changed during composition"
+            );
+            assert_eq!(
+                equivalent.rate_limit_tier, tier,
+                "{label} {template} rate-limit tier changed during composition"
+            );
+
+            let concrete = gateway_concrete_path(template);
+            let matched = composed
+                .route_manifest
+                .match_route(label, &concrete)
+                .unwrap_or_else(|| {
+                    panic!("gateway cannot resolve concrete request {label} {concrete}")
+                });
+            assert_eq!(
+                gateway_route_shape(matched.path),
+                shape,
+                "concrete request {label} {concrete} resolved to a different route shape"
+            );
+        }
     }
 
     #[tokio::test]

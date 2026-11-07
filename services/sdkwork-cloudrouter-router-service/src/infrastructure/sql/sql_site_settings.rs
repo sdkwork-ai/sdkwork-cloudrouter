@@ -84,6 +84,9 @@ pub(crate) struct StoredSiteSettings {
     pub homepage: Value,
     /// Operator-authored download catalog. Same verbatim treatment as `homepage`.
     pub downloads: Value,
+    /// Operator-authored admin module navigation document. Same verbatim treatment as
+    /// `homepage`.
+    pub admin_modules: Value,
 }
 
 impl Default for StoredSiteSettings {
@@ -170,6 +173,7 @@ impl From<SiteSettings> for StoredSiteSettings {
             footer_social_email_url: value.footer_social_email_url,
             homepage: value.homepage,
             downloads: value.downloads,
+            admin_modules: value.admin_modules,
         }
     }
 }
@@ -245,6 +249,7 @@ impl From<StoredSiteSettings> for SiteSettings {
             footer_social_email_url: value.footer_social_email_url,
             homepage: normalize_stored_content_document(value.homepage),
             downloads: normalize_stored_content_document(value.downloads),
+            admin_modules: normalize_stored_content_document(value.admin_modules),
         }
     }
 }
@@ -468,6 +473,47 @@ mod tests {
             assert!(decoded.video_channel_qr_code_enabled);
             assert!(!decoded.douyin_qr_code_enabled);
         }
+    }
+
+    #[test]
+    fn settings_payload_round_trips_admin_module_navigation() {
+        let settings = SiteSettings {
+            admin_modules: serde_json::json!({
+                "version": 1,
+                "modules": [
+                    { "id": "home", "enabled": true, "visible": true },
+                    { "id": "operations", "enabled": true, "visible": false }
+                ]
+            }),
+            ..SiteSettings::default()
+        };
+
+        for decoded in [
+            settings_from_payload(&settings_payload(&settings).unwrap()).unwrap(),
+            settings_from_payload(&settings_snapshot_payload(&settings).unwrap()).unwrap(),
+        ] {
+            assert_eq!(Some(1), decoded.admin_modules["version"].as_i64());
+            assert_eq!(
+                Some("home"),
+                decoded.admin_modules["modules"][0]["id"].as_str()
+            );
+            assert_eq!(
+                Some(false),
+                decoded.admin_modules["modules"][1]["visible"].as_bool()
+            );
+        }
+    }
+
+    /// A payload from before the admin module manager existed must read back as "no authored
+    /// document", not as `null` (which would make a JSON-typed consumer branch unnecessarily).
+    #[test]
+    fn settings_from_payload_defaults_admin_modules_to_an_empty_object() {
+        let settings = settings_from_payload(
+            r##"{"action":"update_site_settings","settings":{"siteName":"Tenant Gateway"}}"##,
+        )
+        .unwrap();
+
+        assert_eq!(serde_json::json!({}), settings.admin_modules);
     }
 
     /// A snapshot written before the footer became composable mentions neither the section

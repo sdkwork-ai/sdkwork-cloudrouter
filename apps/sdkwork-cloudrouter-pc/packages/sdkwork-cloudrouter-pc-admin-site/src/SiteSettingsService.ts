@@ -14,6 +14,12 @@ import {
   type SocialPlatformLinks,
 } from '@sdkwork/cloudroutes-pc-commons/footer-settings';
 import {
+  createDefaultAdminModuleSettings,
+  normalizeAdminModuleSettings,
+  toAdminModuleSettingsPayload,
+  type AdminModuleSettings,
+} from '@sdkwork/cloudroutes-pc-commons/admin-modules';
+import {
   ensureSdkworkApiSuccess,
   readApiRecord,
   readMediaResource,
@@ -86,7 +92,7 @@ type QrVisibilityKeys =
  * text of the catalog, so the compiler — not a reviewer — keeps a control from writing the wrong
  * thing into either document.
  */
-type DocumentBackedKeys = 'homepage' | 'downloads';
+type DocumentBackedKeys = 'homepage' | 'downloads' | 'adminModules';
 
 /**
  * The form owns the maps itself rather than inheriting them as opaque objects: each one is keyed by
@@ -116,6 +122,8 @@ export type SiteSettingsForm = Omit<
   homepage: HomeContentForm;
   /** The download catalog as canonical JSON text; blank means "publish the bundled catalog". */
   downloads: string;
+  /** Admin module enablement, header visibility and header order. */
+  adminModules: AdminModuleSettings;
 } & Record<I18nBackedKeys, SiteSettingsI18nMap> & FooterSectionSwitches & SocialFormFields;
 
 const BASE_DEFAULTS = {
@@ -154,6 +162,7 @@ const BASE_DEFAULTS = {
   // repository publishes. An operator who never touches these tabs changes nothing.
   downloads: '',
   homepage: createDefaultHomeContentForm(),
+  adminModules: createDefaultAdminModuleSettings(),
   // No locale starts out translated: an empty map means every language publishes the base copy,
   // which is exactly what a deployment that never opened this page renders.
   siteNameI18n: {},
@@ -216,6 +225,7 @@ export function toSiteSettings(record: Record<string, unknown>): SiteSettingsFor
     customCss: readString(record, 'customCss', DEFAULT_SITE_SETTINGS.customCss),
     homepage: readHomeContentForm(record.homepage),
     downloads: readDownloadCatalogText(record.downloads),
+    adminModules: normalizeAdminModuleSettings(record.adminModules),
     ...readFooterFields(record),
     ...readI18nFields(record),
   };
@@ -354,6 +364,7 @@ export function toSiteSettingsUpdateRequest(form: SiteSettingsForm): AdminSiteSe
   // never authored.
   const homepage = toHomeContentPayload(form.homepage) as unknown as AdminSiteSettingsUpdateRequest['homepage'];
   const downloads = toDownloadCatalogPayload(form.downloads) as unknown as AdminSiteSettingsUpdateRequest['downloads'];
+  const adminModules = toAdminModuleSettingsPayload(form.adminModules) as unknown as AdminSiteSettingsUpdateRequest['adminModules'];
   return {
     siteName: form.siteName,
     shortName: form.shortName,
@@ -385,6 +396,7 @@ export function toSiteSettingsUpdateRequest(form: SiteSettingsForm): AdminSiteSe
     customCss: form.customCss,
     homepage,
     downloads,
+    adminModules,
     ...pickFooterFields(form),
     ...pickI18nFields(form),
   };

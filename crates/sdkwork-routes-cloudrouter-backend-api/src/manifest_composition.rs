@@ -120,6 +120,32 @@ fn dependency_mounts() -> Vec<RouteManifestMount> {
         .collect()
 }
 
+/// Backend capabilities whose routers are dispatched by the Cloud Router cloud
+/// assembly contribution itself (`ApiAssemblyContext::cloud_gateway`).
+///
+/// Every other mounted backend capability is mounted by the platform cloud
+/// gateway as a separate `WebModule` contribution; declaring its routes here as
+/// well produces a cross-owner collision when the gateway composes module
+/// manifests. `sdkwork-models` is not an embedded gateway surface at all, so
+/// its catalog backend routes would otherwise be advertised by nobody and the
+/// Web Framework would answer `404 route-not-in-manifest` even though the
+/// executable backend router still dispatches them.
+///
+/// Keep this list aligned with `included_in_cloud_assembly_manifest` on
+/// `MOUNTED_APP_CAPABILITIES` in `sdkwork-routes-cloudrouter-app-api`.
+const CLOUD_ASSEMBLY_BACKEND_WORKSPACES: &[&str] = &["sdkwork-models-catalog", "sdkwork-partner"];
+
+fn mounts_for_cloud_assembly() -> Vec<RouteManifestMount> {
+    MOUNTED_BACKEND_CAPABILITIES
+        .iter()
+        .filter(|capability| CLOUD_ASSEMBLY_BACKEND_WORKSPACES.contains(&capability.workspace))
+        .map(|capability| RouteManifestMount {
+            owner: capability.owner,
+            manifest: (capability.manifest)(),
+        })
+        .collect()
+}
+
 fn compose_backend_route_manifest() -> HttpRouteManifest {
     compose_backend_route_manifest_from(http_route_manifest())
 }
@@ -146,6 +172,28 @@ pub fn cloud_router_backend_composed_route_manifest() -> HttpRouteManifest {
     compose_backend_route_manifest()
 }
 
+/// Composed backend manifest for the platform cloud gateway
+/// (`ApiAssemblyContext::cloud_gateway`): host-owned routes plus only the
+/// capabilities the Cloud Router cloud assembly contribution dispatches itself.
+/// The gateway owns the remaining same-origin dependency contributions and
+/// contributes their manifests separately.
+pub fn cloud_router_backend_composed_route_manifest_for_platform_gateway() -> HttpRouteManifest {
+    let mounts = mounts_for_cloud_assembly();
+    let composed =
+        HttpRouteManifest::try_merge_mounts("sdkwork-cloudrouter", http_route_manifest(), &mounts)
+            .unwrap_or_else(|error| {
+                panic!(
+                    "cloud router cloud assembly backend-api manifest composition failed: {error}"
+                );
+            });
+    composed
+        .validate_includes_dependency_manifests(&mounts)
+        .unwrap_or_else(|error| {
+            panic!("cloud router cloud assembly backend-api manifest missing dependency auth profiles: {error}");
+        });
+    composed
+}
+
 /// Validates and returns the composed backend manifest for Web Framework binding.
 pub fn cloud_router_backend_prepared_route_manifest(
     base: HttpRouteManifest,
@@ -170,10 +218,72 @@ mod tests {
     use sdkwork_web_contract::RouteAuth;
 
     use super::{
-        cloud_router_backend_composed_route_manifest, cloud_router_backend_prepared_route_manifest,
-        MOUNTED_BACKEND_CAPABILITIES,
+        cloud_router_backend_composed_route_manifest,
+        cloud_router_backend_composed_route_manifest_for_platform_gateway,
+        cloud_router_backend_prepared_route_manifest, mounts_for_cloud_assembly,
+        CLOUD_ASSEMBLY_BACKEND_WORKSPACES, MOUNTED_BACKEND_CAPABILITIES,
     };
     use crate::http_route_manifest::http_route_manifest;
+
+    #[test]
+    fn platform_gateway_backend_manifest_includes_models_catalog_routes() {
+        // Regression: ApiAssemblyContext::cloud_gateway bound the bare host
+        // backend manifest while the executable backend router still merged
+        // sdkwork-routes-models-catalog-backend-api. The Web Framework then
+        // answered 404 route-not-in-manifest for POST
+        // /backend/v3/api/ai/models/sync, which also broke the empty-catalog
+        // initialization sync on the "model vendors" admin page.
+        let manifest = cloud_router_backend_composed_route_manifest_for_platform_gateway();
+        for (method, path) in [
+            ("GET", "/backend/v3/api/ai/model_vendors"),
+            ("POST", "/backend/v3/api/ai/model_vendors"),
+            ("GET", "/backend/v3/api/ai/models"),
+            ("POST", "/backend/v3/api/ai/models"),
+            ("POST", "/backend/v3/api/ai/models/sync"),
+            ("GET", "/backend/v3/api/ai/model_mappings"),
+            ("POST", "/backend/v3/api/ai/model_mappings/resolve"),
+            ("GET", "/backend/v3/api/ai/model_rankings"),
+            ("GET", "/backend/v3/api/ai/voices"),
+            ("GET", "/backend/v3/api/ai/video_profiles"),
+            ("GET", "/backend/v3/api/ai/resources"),
+            ("GET", "/backend/v3/api/ai/resource_groups"),
+        ] {
+            let route = manifest.match_route(method, path).unwrap_or_else(|| {
+                panic!("{method} {path} must be registered by the platform-gateway models-catalog mount")
+            });
+            assert_eq!(
+                RouteAuth::DualToken,
+                route.auth,
+                "{method} {path} must inherit dual-token auth from the models-catalog manifest"
+            );
+        }
+    }
+
+    #[test]
+    fn platform_gateway_backend_manifest_is_scoped_to_cloud_assembly_mounts() {
+        let scoped = cloud_router_backend_composed_route_manifest_for_platform_gateway();
+        let full = cloud_router_backend_composed_route_manifest();
+        assert!(
+            scoped.routes().len() < full.routes().len(),
+            "gateway-owned capabilities must stay out of the cloud assembly manifest"
+        );
+        let mounts = mounts_for_cloud_assembly();
+        let expected = http_route_manifest().routes().len()
+            + mounts
+                .iter()
+                .map(|mount| mount.manifest.routes().len())
+                .sum::<usize>();
+        assert_eq!(
+            scoped.routes().len(),
+            expected,
+            "scoped manifest must be exactly the host manifest plus cloud-assembly mounts"
+        );
+        assert_eq!(
+            CLOUD_ASSEMBLY_BACKEND_WORKSPACES.len(),
+            mounts.len(),
+            "every declared cloud-assembly workspace must resolve to a mounted capability"
+        );
+    }
 
     #[test]
     fn mounted_backend_capability_registry_covers_runtime_modules() {

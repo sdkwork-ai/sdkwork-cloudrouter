@@ -27,6 +27,7 @@ export * from './components/BottomPagination.tsx';
 export * from './components/ConfirmDialog.tsx';
 export * from './components/CopyButton.tsx';
 export * from './admin-category-types.ts';
+export * from './admin-modules.ts';
 export * from './admin-resource-options.ts';
 export * from './clipboard.ts';
 export * from './api-request-url.ts';

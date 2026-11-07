@@ -320,11 +320,11 @@
     },
     {
       "path": "src/types/admin-site-settings-response.ts",
-      "sha256": "de67fe34d9e9844870a9ddce522e16f64271febcfa52610fc009257a15137858"
+      "sha256": "aa43bb0177ab5b67436a242394c80f628f03900b3777e38b623041fe87ffa099"
     },
     {
       "path": "src/types/admin-site-settings-update-request.ts",
-      "sha256": "021ad0ae0738084501f6dfeaf5f3603ac826b9e5a4db75d37f9e82a795359e5a"
+      "sha256": "073d89d6c18458ca950e4c2cd6e7bef7e7511c71f7491e4ba257b46124d8422b"
     },
     {
       "path": "src/types/admin-storage-default-bucket-list-response.ts",

@@ -20,7 +20,9 @@ mod web_bootstrap;
 pub use http_route_manifest::http_route_manifest;
 pub use manifest::{route_manifest, RouterApiRouteManifest};
 pub use manifest_composition::{
-    cloud_router_backend_composed_route_manifest, cloud_router_backend_prepared_route_manifest,
+    cloud_router_backend_composed_route_manifest,
+    cloud_router_backend_composed_route_manifest_for_platform_gateway,
+    cloud_router_backend_prepared_route_manifest,
 };
 pub use routes::*;
 pub use web_bootstrap::{

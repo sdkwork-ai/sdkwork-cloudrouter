@@ -23,6 +23,7 @@ mod admin_ip_rate_limit_store;
 mod admin_marketing_store;
 mod admin_model_rate_limit_store;
 mod admin_model_store;
+mod admin_module_entry_store;
 mod admin_monitor_read_store;
 mod admin_pricing_store;
 mod admin_record_store;
@@ -338,6 +339,11 @@ pub use responses_relay::{
 };
 pub use responses_stream_relay::{
     ResponsesStreamRelay, ResponsesStreamRelayFuture, ResponsesStreamRelayResponse,
+};
+pub use admin_module_entry_store::{
+    AdminModuleEntries, AdminModuleEntry, AdminModuleEntryFuture, AdminModuleEntryStore,
+    AdminModuleEntrySubject, GetAdminModuleEntriesQuery, UpdateAdminModuleEntriesCommand,
+    ADMIN_MODULE_MANAGEMENT_MODULE_ID, MAX_ADMIN_MODULE_ENTRIES, MAX_ADMIN_MODULE_ID_LEN,
 };
 pub use routing_decision_log_recorder::{
     RoutingDecisionLogRecorder, RoutingDecisionRecordCommand, RoutingDecisionRecordFuture,

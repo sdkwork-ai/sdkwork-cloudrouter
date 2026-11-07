@@ -1293,12 +1293,70 @@
         "supportUrl",
         "termsUrl",
         "homepage",
-        "downloads"
+        "downloads",
+        "adminModules"
       ],
       "properties": {
         "accentColor": {
           "type": "string",
           "description": "accentColor field on AdminSiteSettingsResponse."
+        },
+        "adminModules": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Admin module navigation document authored from site settings.",
+          "properties": {
+            "version": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1
+            },
+            "modules": {
+              "type": "array",
+              "maxItems": 64,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "enabled",
+                  "visible"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "enum": [
+                      "home",
+                      "iam",
+                      "rtc",
+                      "tradeCenter",
+                      "notifyCenter",
+                      "membershipCenter",
+                      "communityCenter",
+                      "courseCenter",
+                      "rechargeCenter",
+                      "marketingCenter",
+                      "partnerCenter",
+                      "paymentCenter",
+                      "storageCenter",
+                      "operations"
+                    ]
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "visible": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "version",
+            "modules"
+          ]
         },
         "brandColor": {
           "type": "string",
@@ -1610,6 +1668,63 @@
         "accentColor": {
           "type": "string",
           "description": "accentColor field on AdminSiteSettingsUpdateRequest."
+        },
+        "adminModules": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Admin module navigation document authored from site settings.",
+          "properties": {
+            "version": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1
+            },
+            "modules": {
+              "type": "array",
+              "maxItems": 64,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "enabled",
+                  "visible"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "enum": [
+                      "home",
+                      "iam",
+                      "rtc",
+                      "tradeCenter",
+                      "notifyCenter",
+                      "membershipCenter",
+                      "communityCenter",
+                      "courseCenter",
+                      "rechargeCenter",
+                      "marketingCenter",
+                      "partnerCenter",
+                      "paymentCenter",
+                      "storageCenter",
+                      "operations"
+                    ]
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "visible": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "version",
+            "modules"
+          ]
         },
         "brandColor": {
           "type": "string",

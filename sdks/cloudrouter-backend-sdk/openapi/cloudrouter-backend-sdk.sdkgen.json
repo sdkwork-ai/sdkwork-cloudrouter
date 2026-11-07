@@ -3211,6 +3211,69 @@
             "description": "accentColor field on AdminSiteSettingsResponse.",
             "type": "string"
           },
+          "adminModules": {
+            "additionalProperties": false,
+            "description": "Admin module navigation document authored from site settings.",
+            "properties": {
+              "modules": {
+                "description": "Modules field on admin site settings response.",
+                "items": {
+                  "additionalProperties": false,
+                  "description": "Admin modules field on admin site settings response.",
+                  "properties": {
+                    "enabled": {
+                      "description": "Enabled field on admin site settings response.",
+                      "type": "boolean"
+                    },
+                    "id": {
+                      "description": "Id field on admin site settings response.",
+                      "enum": [
+                        "home",
+                        "iam",
+                        "rtc",
+                        "tradeCenter",
+                        "notifyCenter",
+                        "membershipCenter",
+                        "communityCenter",
+                        "courseCenter",
+                        "rechargeCenter",
+                        "marketingCenter",
+                        "partnerCenter",
+                        "paymentCenter",
+                        "storageCenter",
+                        "operations"
+                      ],
+                      "maxLength": 64,
+                      "type": "string"
+                    },
+                    "visible": {
+                      "description": "Visible field on admin site settings response.",
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "enabled",
+                    "visible"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 64,
+                "type": "array"
+              },
+              "version": {
+                "description": "Version field on admin site settings response.",
+                "maximum": 1,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "version",
+              "modules"
+            ],
+            "type": "object"
+          },
           "brandColor": {
             "description": "brandColor field on AdminSiteSettingsResponse.",
             "type": "string"
@@ -3588,7 +3651,8 @@
           "supportUrl",
           "termsUrl",
           "homepage",
-          "downloads"
+          "downloads",
+          "adminModules"
         ],
         "type": "object"
       },
@@ -3599,6 +3663,69 @@
           "accentColor": {
             "description": "accentColor field on AdminSiteSettingsUpdateRequest.",
             "type": "string"
+          },
+          "adminModules": {
+            "additionalProperties": false,
+            "description": "Admin module navigation document authored from site settings.",
+            "properties": {
+              "modules": {
+                "description": "Modules field on admin site settings update request.",
+                "items": {
+                  "additionalProperties": false,
+                  "description": "Admin modules field on admin site settings update request.",
+                  "properties": {
+                    "enabled": {
+                      "description": "Enabled field on admin site settings update request.",
+                      "type": "boolean"
+                    },
+                    "id": {
+                      "description": "Id field on admin site settings update request.",
+                      "enum": [
+                        "home",
+                        "iam",
+                        "rtc",
+                        "tradeCenter",
+                        "notifyCenter",
+                        "membershipCenter",
+                        "communityCenter",
+                        "courseCenter",
+                        "rechargeCenter",
+                        "marketingCenter",
+                        "partnerCenter",
+                        "paymentCenter",
+                        "storageCenter",
+                        "operations"
+                      ],
+                      "maxLength": 64,
+                      "type": "string"
+                    },
+                    "visible": {
+                      "description": "Visible field on admin site settings update request.",
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "enabled",
+                    "visible"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 64,
+                "type": "array"
+              },
+              "version": {
+                "description": "Version field on admin site settings update request.",
+                "maximum": 1,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "version",
+              "modules"
+            ],
+            "type": "object"
           },
           "brandColor": {
             "description": "brandColor field on AdminSiteSettingsUpdateRequest.",

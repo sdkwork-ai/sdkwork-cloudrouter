@@ -16190,6 +16190,63 @@
               "description": "accentColor field on AdminSiteSettingsResponse.",
               "type": "string"
             },
+            "adminModules": {
+              "additionalProperties": false,
+              "description": "Admin module navigation document authored from site settings.",
+              "properties": {
+                "modules": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "id": {
+                        "enum": [
+                          "home",
+                          "iam",
+                          "rtc",
+                          "tradeCenter",
+                          "notifyCenter",
+                          "membershipCenter",
+                          "communityCenter",
+                          "courseCenter",
+                          "rechargeCenter",
+                          "marketingCenter",
+                          "partnerCenter",
+                          "paymentCenter",
+                          "storageCenter",
+                          "operations"
+                        ],
+                        "maxLength": 64,
+                        "type": "string"
+                      },
+                      "visible": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "enabled",
+                      "visible"
+                    ],
+                    "type": "object"
+                  },
+                  "maxItems": 64,
+                  "type": "array"
+                },
+                "version": {
+                  "maximum": 1,
+                  "minimum": 1,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "version",
+                "modules"
+              ],
+              "type": "object"
+            },
             "brandColor": {
               "description": "brandColor field on AdminSiteSettingsResponse.",
               "type": "string"
@@ -16512,7 +16569,8 @@
             "supportUrl",
             "termsUrl",
             "homepage",
-            "downloads"
+            "downloads",
+            "adminModules"
           ],
           "type": "object"
         }
@@ -16557,6 +16615,63 @@
             "accentColor": {
               "description": "accentColor field on AdminSiteSettingsUpdateRequest.",
               "type": "string"
+            },
+            "adminModules": {
+              "additionalProperties": false,
+              "description": "Admin module navigation document authored from site settings.",
+              "properties": {
+                "modules": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "id": {
+                        "enum": [
+                          "home",
+                          "iam",
+                          "rtc",
+                          "tradeCenter",
+                          "notifyCenter",
+                          "membershipCenter",
+                          "communityCenter",
+                          "courseCenter",
+                          "rechargeCenter",
+                          "marketingCenter",
+                          "partnerCenter",
+                          "paymentCenter",
+                          "storageCenter",
+                          "operations"
+                        ],
+                        "maxLength": 64,
+                        "type": "string"
+                      },
+                      "visible": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "enabled",
+                      "visible"
+                    ],
+                    "type": "object"
+                  },
+                  "maxItems": 64,
+                  "type": "array"
+                },
+                "version": {
+                  "maximum": 1,
+                  "minimum": 1,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "version",
+                "modules"
+              ],
+              "type": "object"
             },
             "brandColor": {
               "description": "brandColor field on AdminSiteSettingsUpdateRequest.",
@@ -16865,6 +16980,63 @@
               "description": "accentColor field on AdminSiteSettingsResponse.",
               "type": "string"
             },
+            "adminModules": {
+              "additionalProperties": false,
+              "description": "Admin module navigation document authored from site settings.",
+              "properties": {
+                "modules": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "id": {
+                        "enum": [
+                          "home",
+                          "iam",
+                          "rtc",
+                          "tradeCenter",
+                          "notifyCenter",
+                          "membershipCenter",
+                          "communityCenter",
+                          "courseCenter",
+                          "rechargeCenter",
+                          "marketingCenter",
+                          "partnerCenter",
+                          "paymentCenter",
+                          "storageCenter",
+                          "operations"
+                        ],
+                        "maxLength": 64,
+                        "type": "string"
+                      },
+                      "visible": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "enabled",
+                      "visible"
+                    ],
+                    "type": "object"
+                  },
+                  "maxItems": 64,
+                  "type": "array"
+                },
+                "version": {
+                  "maximum": 1,
+                  "minimum": 1,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "version",
+                "modules"
+              ],
+              "type": "object"
+            },
             "brandColor": {
               "description": "brandColor field on AdminSiteSettingsResponse.",
               "type": "string"
@@ -17187,7 +17359,8 @@
             "supportUrl",
             "termsUrl",
             "homepage",
-            "downloads"
+            "downloads",
+            "adminModules"
           ],
           "type": "object"
         }
@@ -30864,6 +31037,63 @@
               "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$",
               "type": "string"
             },
+            "adminModules": {
+              "additionalProperties": false,
+              "description": "Admin module navigation document authored from site settings.",
+              "properties": {
+                "modules": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "id": {
+                        "enum": [
+                          "home",
+                          "iam",
+                          "rtc",
+                          "tradeCenter",
+                          "notifyCenter",
+                          "membershipCenter",
+                          "communityCenter",
+                          "courseCenter",
+                          "rechargeCenter",
+                          "marketingCenter",
+                          "partnerCenter",
+                          "paymentCenter",
+                          "storageCenter",
+                          "operations"
+                        ],
+                        "maxLength": 64,
+                        "type": "string"
+                      },
+                      "visible": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "enabled",
+                      "visible"
+                    ],
+                    "type": "object"
+                  },
+                  "maxItems": 64,
+                  "type": "array"
+                },
+                "version": {
+                  "maximum": 1,
+                  "minimum": 1,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "version",
+                "modules"
+              ],
+              "type": "object"
+            },
             "brandColor": {
               "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$",
               "type": "string"
@@ -31192,7 +31422,8 @@
             "termsUrl",
             "customCss",
             "homepage",
-            "downloads"
+            "downloads",
+            "adminModules"
           ],
           "type": "object"
         }

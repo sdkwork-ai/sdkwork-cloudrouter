@@ -1,23 +1,59 @@
-import { createElement, useEffect, useState, type ReactNode } from 'react';
+import { createElement, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   readPortalPermissionScope,
   subscribePortalSessionChange,
+  useSiteBranding,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
+import {
+  isAdminModuleEnabled,
+  resolveAdminModuleSettings,
+} from '@sdkwork/cloudroutes-pc-commons/admin-modules';
 
+import { getActiveModuleFromPath } from './adminModuleRegistry.ts';
 import { isAdminRouteAllowed } from './admin-menu-permissions.ts';
 
 export function AdminRoutePermissionGuard({ children }: { children: ReactNode }) {
   const location = useLocation();
   const { t } = useTranslation();
   const [permissionScope, setPermissionScope] = useState(() => readPortalPermissionScope());
+  const siteBranding = useSiteBranding();
+  const adminModuleSettings = useMemo(
+    () => resolveAdminModuleSettings(siteBranding.adminModules),
+    [siteBranding.adminModules],
+  );
 
   useEffect(() => {
     const syncPermissionScope = () => setPermissionScope(readPortalPermissionScope());
     syncPermissionScope();
     return subscribePortalSessionChange(syncPermissionScope);
   }, []);
+
+  if (!isAdminModuleEnabled(adminModuleSettings, getActiveModuleFromPath(location.pathname))) {
+    return createElement(
+      'div',
+      {
+        className:
+          'flex min-h-full flex-col items-center justify-center gap-3 px-6 py-24 text-center',
+        role: 'alert',
+      },
+      createElement(
+        'h1',
+        {
+          className: 'text-lg font-semibold text-slate-900 dark:text-white',
+        },
+        t('admin.moduleUnavailable.title'),
+      ),
+      createElement(
+        'p',
+        {
+          className: 'max-w-md text-sm text-slate-600 dark:text-slate-300',
+        },
+        t('admin.moduleUnavailable.description'),
+      ),
+    );
+  }
 
   if (!isAdminRouteAllowed(location.pathname, permissionScope)) {
     return createElement(

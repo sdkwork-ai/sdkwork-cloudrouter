@@ -81,10 +81,12 @@ export function TextArea({ label, value, onChange, className = '', maxLength, ro
  */
 export function ToggleSwitch({
   checked,
+  disabled = false,
   label,
   onChange,
 }: {
   checked: boolean;
+  disabled?: boolean;
   label: string;
   onChange: (next: boolean) => void;
 }) {
@@ -92,10 +94,16 @@ export function ToggleSwitch({
   return (
     <button
       aria-checked={checked}
+      aria-disabled={disabled ? 'true' : undefined}
       aria-labelledby={labelId}
-      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-lobster-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-[#1a1a1a] ${checked ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-lobster-500 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-40 dark:focus:ring-offset-[#1a1a1a] ${checked ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`}
       data-admin-site-switch={checked ? 'on' : 'off'}
-      onClick={() => onChange(!checked)}
+      disabled={disabled}
+      onClick={() => {
+        if (!disabled) {
+          onChange(!checked);
+        }
+      }}
       role="switch"
       type="button"
     >

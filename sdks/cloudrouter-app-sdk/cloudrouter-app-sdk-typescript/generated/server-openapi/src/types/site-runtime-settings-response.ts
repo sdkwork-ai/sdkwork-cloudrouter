@@ -5,6 +5,8 @@ import type { MediaResource } from './media-resource';
 export interface SiteRuntimeSettingsResponse {
   /** Accent color field on site runtime settings response. */
   accentColor: string;
+  /** Admin module navigation document authored from site settings. */
+  adminModules: { modules: ({ enabled: boolean; id: 'home' | 'iam' | 'rtc' | 'tradeCenter' | 'notifyCenter' | 'membershipCenter' | 'communityCenter' | 'courseCenter' | 'rechargeCenter' | 'marketingCenter' | 'partnerCenter' | 'paymentCenter' | 'storageCenter' | 'operations'; visible: boolean; })[]; version: number; };
   /** Brand color field on site runtime settings response. */
   brandColor: string;
   /** Community group qr code field on site runtime settings response. */

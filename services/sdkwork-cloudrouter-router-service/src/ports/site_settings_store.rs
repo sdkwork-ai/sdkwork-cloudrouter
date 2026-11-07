@@ -164,6 +164,11 @@ pub struct SiteSettings {
     // the stored payload self-describing for anyone reading the JSONB column directly.
     pub homepage: Value,
     pub downloads: Value,
+
+    /// Operator-authored admin navigation document. Carried as JSON for the same reason as
+    /// `homepage`: the portal owns the module catalog, while the service only guarantees that
+    /// the value is a bounded JSON object. An empty object means "use the shipped defaults".
+    pub admin_modules: Value,
 }
 
 impl Default for SiteSettings {
@@ -239,6 +244,7 @@ impl Default for SiteSettings {
             // to the release catalog checked into the repository.
             homepage: json!({}),
             downloads: json!({}),
+            admin_modules: json!({}),
         }
     }
 }
