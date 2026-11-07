@@ -515,13 +515,28 @@ mod tests {
             ),
             (
                 "GET",
-                "/backend/v3/api/course_comments",
-                "course.comments.read",
+                "/backend/v3/api/course_reactions",
+                "course.reactions.read",
             ),
             (
-                "PATCH",
-                "/backend/v3/api/course_comments/{commentId}/moderation",
-                "course.comments.moderate",
+                "GET",
+                "/backend/v3/api/course_reviews",
+                "course.reviews.read",
+            ),
+            (
+                "GET",
+                "/backend/v3/api/course_reviews/stats",
+                "course.reviews.read",
+            ),
+            (
+                "GET",
+                "/backend/v3/api/course_reviews/{courseId}",
+                "course.reviews.read",
+            ),
+            (
+                "POST",
+                "/backend/v3/api/course_reviews/{courseId}/review",
+                "course.reviews.review",
             ),
             (
                 "GET",
