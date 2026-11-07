@@ -200,7 +200,9 @@ max_connections = 20
 
 #[test]
 fn runtime_config_file_expands_password_file_environment_variables() {
-    let _env_lock = ENV_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let _env_lock = ENV_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let root = temp_root("postgres-password-env-file");
     fs::create_dir_all(&root).unwrap();
     let secret_path = root.join("database.secret");
@@ -237,7 +239,9 @@ max_connections = 20
 
 #[test]
 fn environment_database_parts_override_runtime_config_file() {
-    let _env_lock = ENV_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let _env_lock = ENV_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let _database_env = clear_database_env();
     let config_path = write_temp_config(
         "env-overrides",
@@ -268,7 +272,9 @@ max_connections = 16
 
 #[test]
 fn reads_canonical_structured_postgres_environment() {
-    let _env_lock = ENV_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let _env_lock = ENV_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let _database_env = clear_database_env();
     let _configured = EnvGuard::set(&[
         ("SDKWORK_DATABASE_ENGINE", Some("postgresql".to_owned())),
@@ -305,7 +311,9 @@ fn reads_canonical_structured_postgres_environment() {
 
 #[test]
 fn reads_canonical_structured_postgres_password_file() {
-    let _env_lock = ENV_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let _env_lock = ENV_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let _database_env = clear_database_env();
     let secret_path = write_temp_secret("postgres-env-password-file", "file-secret");
     let _configured = EnvGuard::set(&[
@@ -342,7 +350,9 @@ fn reads_canonical_structured_postgres_password_file() {
 
 #[test]
 fn rejects_partial_canonical_structured_database_environment() {
-    let _env_lock = ENV_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let _env_lock = ENV_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let _database_env = clear_database_env();
     let _configured = EnvGuard::set(&[(
         "SDKWORK_DATABASE_USERNAME",
@@ -356,7 +366,9 @@ fn rejects_partial_canonical_structured_database_environment() {
 
 #[test]
 fn rejects_schema_only_canonical_database_environment() {
-    let _env_lock = ENV_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let _env_lock = ENV_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let _database_env = clear_database_env();
     let _configured =
         EnvGuard::set(&[("SDKWORK_DATABASE_SCHEMA", Some("sdkwork_ai_dev".to_owned()))]);
@@ -368,7 +380,9 @@ fn rejects_schema_only_canonical_database_environment() {
 
 #[test]
 fn canonical_database_environment_uses_workspace_pool_default() {
-    let _env_lock = ENV_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let _env_lock = ENV_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let _database_env = clear_database_env();
     let _configured = EnvGuard::set(&[(
         "SDKWORK_DATABASE_URL",
@@ -387,7 +401,9 @@ fn canonical_database_environment_uses_workspace_pool_default() {
 
 #[test]
 fn explicit_runtime_config_file_is_used_when_database_env_is_absent() {
-    let _env_lock = ENV_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let _env_lock = ENV_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let _database_env = clear_database_env();
     let config_path = write_temp_config(
         "explicit-file",
@@ -512,7 +528,9 @@ fn initializes_default_desktop_runtime_config_at_explicit_location() {
 
 #[test]
 fn from_env_or_initialize_creates_server_postgres_template_and_requires_real_database() {
-    let _env_lock = ENV_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let _env_lock = ENV_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let _database_env = clear_database_env();
     let root = temp_root("server-runtime-init");
     let config_path = root.join("config").join("config.toml");
@@ -561,7 +579,9 @@ fn from_env_or_initialize_creates_server_postgres_template_and_requires_real_dat
 
 #[test]
 fn explicit_runtime_config_file_uses_neighbor_data_directory_for_server_template_paths() {
-    let _env_lock = ENV_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let _env_lock = ENV_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let _database_env = clear_database_env();
     let root = temp_root("explicit-config-neighbor-data");
     let config_path = root.join("custom").join("config.toml");
@@ -783,7 +803,9 @@ fn runtime_config_locations_resolve_to_real_os_paths_for_process_lookup() {
 
 #[test]
 fn runtime_config_profile_reads_runtime_toml_with_env_override() {
-    let _env_lock = ENV_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let _env_lock = ENV_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let _guard = EnvGuard::set(&[("SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE", None)]);
     let runtime_toml = RuntimeTomlConfig::from_toml_str(
         r#"
@@ -834,7 +856,9 @@ fn parses_startup_install_mode_from_optional_environment_part() {
 /// plan, and a migrated-but-unseeded database fails at the first write.
 #[test]
 fn production_environment_defaults_startup_install_mode_to_ensure_without_explicit_override() {
-    let _env_lock = ENV_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let _env_lock = ENV_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let _guard = EnvGuard::set(&[
         (
             StartupInstallMode::ENV_ROUTER_ENVIRONMENT,
@@ -852,7 +876,9 @@ fn production_environment_defaults_startup_install_mode_to_ensure_without_explic
 /// opt-out, and it must keep working in production.
 #[test]
 fn production_environment_honors_explicit_startup_install_mode_skip() {
-    let _env_lock = ENV_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let _env_lock = ENV_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let _guard = EnvGuard::set(&[
         (
             StartupInstallMode::ENV_ROUTER_ENVIRONMENT,
@@ -871,7 +897,9 @@ fn production_environment_honors_explicit_startup_install_mode_skip() {
 
 #[test]
 fn production_environment_accepts_data_bootstrap_but_rejects_schema_migration_at_startup() {
-    let _env_lock = ENV_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let _env_lock = ENV_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let runtime_toml = RuntimeTomlConfig::from_toml_str(
         r#"
 [install]
