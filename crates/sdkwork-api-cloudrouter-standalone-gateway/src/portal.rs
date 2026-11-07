@@ -587,7 +587,7 @@ fn build_portal_runtime_env_script(
     if let Some(edition) = license_edition {
         script.push_str(&format!(
             "window.__SDKWORK_EDITION__ = {};\n",
-            json!(edition).to_string()
+            serde_json::to_string(&json!(edition)).expect("edition json serialize")
         ));
     }
 

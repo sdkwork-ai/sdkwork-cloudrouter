@@ -15,7 +15,7 @@ use sdkwork_cloudrouter_router_service::ports::{
     AdminRecordCursor, AdminRecordStore, AdminRecordSubject, ListAdminRecordLogsQuery,
 };
 use sqlx::postgres::PgPoolOptions;
-use sqlx::{PgPool, Row};
+use sqlx::PgPool;
 
 const POSTGRES_TEST_DATABASE_URL: &str = "SDKWORK_DATABASE_URL";
 const BASELINE: &str =

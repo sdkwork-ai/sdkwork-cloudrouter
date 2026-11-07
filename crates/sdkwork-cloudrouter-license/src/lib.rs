@@ -178,28 +178,6 @@ pub fn resolve_license() -> LicenseStatus {
 mod tests {
     use super::*;
 
-    fn sign_test_license(tier: &str, customer: &str, expires_at: Option<&str>) -> String {
-        let mut payload = serde_json::json!({
-            "tier": tier,
-            "customer": customer,
-            "issued_at": "2026-08-07T00:00:00Z",
-        });
-        if let Some(expires) = expires_at {
-            payload["expires_at"] = serde_json::json!(expires);
-        }
-        let payload_bytes = payload.to_string().into_bytes();
-        let private_key = ed25519_dalek::SigningKey::from_bytes(&[7u8; 32]);
-        use ed25519_dalek::Signer;
-        let signature = private_key.sign(&payload_bytes);
-        use base64::Engine;
-        let encode = base64::engine::general_purpose::URL_SAFE_NO_PAD;
-        format!(
-            "v1.{}.{}",
-            encode.encode(&payload_bytes),
-            encode.encode(signature.to_bytes())
-        )
-    }
-
     #[test]
     fn invalid_key_is_rejected() {
         assert!(verify_license_key("v1.bogus.sig").is_err());

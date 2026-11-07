@@ -117,16 +117,15 @@ async fn bootstrap_iam_application_database(
         std::env::set_var("SDKWORK_DATABASE_LIFECYCLE_COMMAND", "migrate");
     }
     let result = sdkwork_iam_database_host::bootstrap_iam_database(pool.clone()).await;
-    // SAFETY: the same single-threaded installer phase restores the previous
-    // values before control returns to the command dispatcher.
-    unsafe {
-        restore_optional_env("SDKWORK_DATABASE_AUTO_MIGRATE", previous_auto_migrate);
-        restore_optional_env("SDKWORK_DATABASE_SEED_ON_BOOT", previous_seed_on_boot);
-        restore_optional_env(
-            "SDKWORK_DATABASE_LIFECYCLE_COMMAND",
-            previous_lifecycle_command,
-        );
-    }
+    // The same single-threaded installer phase restores the previous values
+    // before control returns to the command dispatcher. The restore helper is
+    // safe (plain std::env removal), so no unsafe block is required here.
+    restore_optional_env("SDKWORK_DATABASE_AUTO_MIGRATE", previous_auto_migrate);
+    restore_optional_env("SDKWORK_DATABASE_SEED_ON_BOOT", previous_seed_on_boot);
+    restore_optional_env(
+        "SDKWORK_DATABASE_LIFECYCLE_COMMAND",
+        previous_lifecycle_command,
+    );
     result.map(|_| ()).map_err(|error| {
         InstallerCliError::DatabaseConnection(format!("IAM database bootstrap failed: {error}"))
             .into()

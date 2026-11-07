@@ -10,7 +10,7 @@ use sdkwork_iam_web_adapter::{
     IamAuditEmitter, IamSecurityEventEmitter,
 };
 use sdkwork_web_bootstrap::{
-    infra_public_path_prefixes, ApiModuleRegistry, ComposedApiAssembly, CompositeReadinessCheck,
+    infra_public_path_prefixes, ApiModuleRegistry, CompositeReadinessCheck,
 };
 use sdkwork_web_core::{WebEnvironment, WebRequestContextProfile};
 

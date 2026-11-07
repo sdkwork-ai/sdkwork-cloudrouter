@@ -137,7 +137,7 @@ const FREE_OPERATIONS: &[(Method, &str, &str)] = &[
 #[tokio::test]
 async fn management_and_free_tool_endpoints_are_free() {
     for (method, path, supplier) in FREE_OPERATIONS {
-        let invocation = invocation(method.clone(), *path, *supplier).await;
+        let invocation = invocation(method.clone(), path, supplier).await;
         assert_eq!(
             BillingMode::Free,
             invocation.billing.mode,
