@@ -448,7 +448,7 @@ async fn insert_pricing_plan_row(
             ($1, $2, $3, $4, 0, $5, $6::jsonb,
              $7, $8, $9, $10, $11,
              $12, $13::numeric, $14::timestamptz, $15::timestamptz,
-             $16, $16)
+             $16::timestamptz, $16::timestamptz)
         "#,
     )
     .bind(plan_id)
@@ -725,7 +725,7 @@ async fn insert_rate_card_row(
         VALUES
             ($1, $2, $3, $4, 0, $5, $6::jsonb,
              $7, $8::bigint, $9, $10, $11, $12,
-             $13, $14::timestamptz, $15::timestamptz, $16, $16)
+             $13, $14::timestamptz, $15::timestamptz, $16::timestamptz, $16::timestamptz)
         "#,
     )
     .bind(rate_card_id)
@@ -1127,7 +1127,7 @@ async fn insert_pricing_rule_row(
             ($1, $2, $3, $4, 0, $5, $6::jsonb,
              $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::numeric,
              $17::numeric, $18::numeric, $19::jsonb, $20::jsonb, $21,
-             $22::timestamptz, $23::timestamptz, $24, $24)
+             $22::timestamptz, $23::timestamptz, $24::timestamptz, $24::timestamptz)
         "#,
     )
     .bind(rule_id)

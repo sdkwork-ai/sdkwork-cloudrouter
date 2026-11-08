@@ -770,7 +770,7 @@ async fn insert_recharge_package(
         INSERT INTO commerce_recharge_package
             (id, tenant_id, organization_id, external_id, package_no, sku_id, name, price_amount, currency_code, bonus_points, discount, status, valid_from, valid_to, sort_weight, request_no, idempotency_key, created_at, updated_at)
         VALUES
-            ($1, $2::text, $3::text, $4, $5, $6, $7, $8, $9, $10, $11, $12, NULL, NULL, $13, $14, $15, $16, $17)
+            ($1, $2::text, $3::text, $4, $5, $6, $7, $8::numeric, $9, $10, $11, $12, NULL, NULL, $13, $14, $15, $16::timestamptz, $17::timestamptz)
         "#,
     )
     .bind(&package_id)
@@ -828,14 +828,14 @@ async fn update_recharge_package_row(
         r#"
         UPDATE commerce_recharge_package
         SET name = $1,
-            price_amount = $2,
+            price_amount = $2::numeric,
             currency_code = $3,
             bonus_points = $4,
             discount = $5,
             status = $6,
             request_no = $7,
             idempotency_key = $8,
-            updated_at = $9
+            updated_at = $9::timestamptz
         WHERE id = $10
           AND tenant_id = $11::text
           AND organization_id = $12::text
@@ -873,7 +873,7 @@ async fn soft_delete_recharge_package(
         SET status = $1,
             request_no = $2,
             idempotency_key = $3,
-            updated_at = $4
+            updated_at = $4::timestamptz
         WHERE id = $5
           AND tenant_id = $6::text
           AND organization_id = $7::text

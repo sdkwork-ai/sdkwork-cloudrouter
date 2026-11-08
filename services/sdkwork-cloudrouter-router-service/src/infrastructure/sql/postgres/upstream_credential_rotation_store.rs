@@ -103,7 +103,7 @@ async fn try_rotate_account(
     let account_state = sqlx::query(
         r#"
         SELECT a.id AS account_id,
-               COALESCE(a.next_rotate_at IS NOT NULL AND a.next_rotate_at <= $3::timestamptz, FALSE) AS due_by_schedule
+               COALESCE(a.next_rotate_at IS NOT NULL AND a.next_rotate_at <= $4::timestamptz, FALSE) AS due_by_schedule
         FROM ai_upstream_account AS a
         WHERE a.tenant_id = $1
           AND a.organization_id = $2
