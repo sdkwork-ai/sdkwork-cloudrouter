@@ -19,7 +19,14 @@ export type PortalLoginRequiredActionDecision =
 const DEFAULT_HOME_PATH = '/';
 const AUTH_BASE_PATH = '/auth';
 const AUTH_LOGIN_PATH = '/auth/login';
-const DEFAULT_AUTHENTICATED_HOME_PATH = '/admin';
+/**
+ * Landing path for a fresh authenticated session whose URL carries no
+ * `redirect` target. It is the public portal home, never the operator
+ * `/admin` console: `/admin` is permission-gated, so a newly registered
+ * account that lands there sees the forbidden page instead of the product.
+ * A `redirect` query parameter always wins over this fallback.
+ */
+const DEFAULT_AUTHENTICATED_HOME_PATH = '/';
 /**
  * Hosted app hand-off page. It is reached only after the browser completed an
  * authorization that started in a native application, so the visitor is

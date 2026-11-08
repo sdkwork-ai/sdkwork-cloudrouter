@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
+import { slotToDriveUploadImageDeclaration } from './drive-image-services.ts';
 import {
   CLOUDROUTER_UPLOAD_CATEGORIES,
   listCloudRouterUploadSlots,
@@ -101,6 +102,22 @@ describe('upload declaration mirror', () => {
         Number(temporaryCategory?.retention.ttlSeconds),
         `目录 TTL 与声明 TTL 不一致（${String(temporaryCategory?.retention.ttlSeconds)} vs ${String(entry.retentionTtlSeconds)}）`,
       ).toBe(entry.retentionTtlSeconds);
+    }
+  });
+
+  it('every image-shaped slot constructs a declaration the Drive validator accepts', () => {
+    // 声明镜像一致还不够：构造出的声明还要过共享 Drive 组件族的运行时校验。
+    // 该校验器由 `@sdkwork/drive-upload-image-core` 提供，一旦收紧（例如只接受
+    // `[a-z0-9-]` 段），这里必须在发布前失败，而不是等 `/admin/site` 渲染时抛错。
+    const imageProfiles = new Set(['image', 'avatar', 'thumbnail']);
+    for (const slot of listCloudRouterUploadSlots()) {
+      if (!imageProfiles.has(slot.uploadProfileCode)) {
+        continue;
+      }
+      expect(
+        () => slotToDriveUploadImageDeclaration(slot),
+        `slot ${slot.code} (${slot.appResourceType}) 被 Drive 声明校验拒绝`,
+      ).not.toThrow();
     }
   });
 

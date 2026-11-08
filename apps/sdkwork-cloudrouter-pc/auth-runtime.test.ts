@@ -439,6 +439,13 @@ test("portal exposes appbase auth routes as standalone React routes", () => {
   assert.match(authRouteSource, /resolveCloudRouterAuthAppearance/);
   assert.match(authRouteSource, /appearance=\{resolveCloudRouterAuthAppearance\(\)\}/);
   assert.match(authRouteSource, /viewportMode="flow"/);
+  // Auth pages carry the operator's `/admin/site` brand instead of the shared
+  // IAM identity the auth package ships with.
+  assert.match(authRouteSource, /useSiteBranding/);
+  assert.match(authRouteSource, /brand=\{brand\}/);
+  assert.match(authRouteSource, /CloudRouterAuthShell brand=\{brand\}/);
+  assert.match(authShellSource, /sdkwork-cloudrouter-auth-header-logo/);
+  assert.match(authShellSource, /brandLogoUrl/);
   assert.match(authShellSource, /sdkwork-cloudrouter-auth-active/);
   assert.match(indexCssSource, /html\.sdkwork-cloudrouter-auth-active/);
   assert.match(indexCssSource, /position: fixed;/);
@@ -460,17 +467,17 @@ test("portal exposes appbase auth routes as standalone React routes", () => {
   assert.match(authRouteSource, /basePath="\/auth"/);
   assert.match(authRouteSource, /locale=\{i18n\.language\}/);
   assert.match(authRouteSource, /getRuntime=\{getCloudRouterAuthRuntime\}/);
-  assert.match(authRouteSource, /homePath="\/admin"/);
+  assert.match(authRouteSource, /homePath="\/"/);
   assert.match(authRouteSource, /AUTH_METHOD_UNAVAILABLE_MESSAGE/);
   assert.match(authRouteSource, /methodUnavailableMessage=\{AUTH_METHOD_UNAVAILABLE_MESSAGE\}/);
 });
 
-test("authenticated auth routes default to admin while preserving an explicit redirect", () => {
+test("authenticated auth routes default to the portal home while preserving an explicit redirect", () => {
   assert.equal(
     resolvePortalAuthenticatedAuthRouteRedirect({
       location: { pathname: "/auth/login" },
     }),
-    "/admin",
+    "/",
   );
   assert.equal(
     resolvePortalAuthenticatedAuthRouteRedirect({
@@ -487,7 +494,7 @@ test("authenticated auth routes default to admin while preserving an explicit re
         search: "?redirect=%2Fauth%2Flogin%3Fredirect%3D%252Fconsole%252Fdashboard",
       },
     }),
-    "/admin",
+    "/",
   );
   assert.equal(
     resolvePortalAuthenticatedAuthRouteRedirect({
@@ -496,7 +503,7 @@ test("authenticated auth routes default to admin while preserving an explicit re
         search: "?redirect=%25252Fauth%25252Flogin%25253Fredirect%25253D%25252Fconsole",
       },
     }),
-    "/admin",
+    "/",
   );
 });
 

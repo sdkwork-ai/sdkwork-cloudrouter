@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Moon, Sun, Terminal, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { SdkworkAuthBrand } from '@sdkwork/auth-pc-react';
 
 type AuthThemeMode = 'dark' | 'light';
 
@@ -12,7 +13,13 @@ function usesNativeDesktopWindowControls(): boolean {
   return isDesktopRuntime();
 }
 
-export function CloudRouterAuthShell({ children }: { children: ReactNode }) {
+export function CloudRouterAuthShell({
+  brand,
+  children,
+}: {
+  brand?: SdkworkAuthBrand;
+  children: ReactNode;
+}) {
   const { t } = useTranslation();
   const [themeMode, setThemeMode] = useState<AuthThemeMode>(() => {
     if (typeof window === 'undefined') {
@@ -24,6 +31,8 @@ export function CloudRouterAuthShell({ children }: { children: ReactNode }) {
   const isLightMode = themeMode === 'light';
   const shouldRenderDesktopHeader = isDesktopRuntime();
   const shouldRenderWindowControls = shouldRenderDesktopHeader && !usesNativeDesktopWindowControls();
+  const brandName = brand?.name?.trim() || 'Cloud Router';
+  const brandLogoUrl = brand?.logoUrl?.trim();
 
   useEffect(() => {
     document.documentElement.classList.toggle('light-mode', isLightMode);
@@ -65,10 +74,19 @@ export function CloudRouterAuthShell({ children }: { children: ReactNode }) {
       {shouldRenderDesktopHeader ? (
         <header className="sdkwork-cloudrouter-auth-header drag-region">
           <div className="sdkwork-cloudrouter-auth-header-brand">
-            <span className="sdkwork-cloudrouter-auth-header-mark">
-              <Terminal size={12} />
-            </span>
-            <span>Cloud Router</span>
+            {brandLogoUrl ? (
+              <img
+                alt=""
+                className="sdkwork-cloudrouter-auth-header-logo"
+                data-testid="cloudrouter-auth-header-logo"
+                src={brandLogoUrl}
+              />
+            ) : (
+              <span className="sdkwork-cloudrouter-auth-header-mark">
+                <Terminal size={12} />
+              </span>
+            )}
+            <span className="truncate">{brandName}</span>
           </div>
           <div className="sdkwork-cloudrouter-auth-header-center" />
           <div className="sdkwork-cloudrouter-auth-header-actions no-drag">

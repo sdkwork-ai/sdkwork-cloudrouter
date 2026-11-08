@@ -663,6 +663,24 @@ function buildVerificationPlan(settings, env = process.env) {
     args: ['--experimental-strip-types', 'apps/sdkwork-cloudrouter-pc/commons-runtime.test.ts'],
     env,
   });
+  // Upload declarations must satisfy the shared Drive component family's runtime
+  // validator, not only the local mirror JSON: a narrowed validator has to fail here
+  // before release instead of throwing while `/admin/site` renders its media fields.
+  plan.push({
+    label: 'portal upload declaration tests',
+    command: pnpmCommand(),
+    args: [
+      '--dir',
+      'apps/sdkwork-cloudrouter-pc',
+      'exec',
+      'vitest',
+      'run',
+      'packages/sdkwork-cloudroutes-pc-commons/src/file-upload/upload-declaration.test.ts',
+      '--config',
+      'vitest.config.ts',
+    ],
+    env,
+  });
   plan.push({
     label: 'portal site branding runtime tests',
     command: pnpmCommand(),

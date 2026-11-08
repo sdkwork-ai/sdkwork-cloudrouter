@@ -5429,8 +5429,16 @@ html.light-mode .sdkwork-cloudrouter-auth-shell {
   font-size: 11px;
   font-weight: 600;
   gap: 9px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  min-width: 0;
+  max-width: min(50vw, 320px);
+}
+
+.sdkwork-cloudrouter-auth-header-logo {
+  display: block;
+  height: 20px;
+  max-width: 80px;
+  object-fit: contain;
+  width: auto;
 }
 
 .sdkwork-cloudrouter-auth-header-mark {
