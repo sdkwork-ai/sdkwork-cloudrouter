@@ -305,10 +305,36 @@ pub struct OpenAiJsonSchemaFormat {
     pub extra: Map<String, Value>,
 }
 
+/// JSON Schema `type` value.
+///
+/// Draft 2020-12 allows a **union** of type names, and every modern schema
+/// generator emits it for nullable fields: schemars 1.x renders `Option<T>` as
+/// `"type": ["string", "null"]`. `tools[].function.parameters` is an arbitrary
+/// JSON Schema, so a single-string model here rejects a legal request body with
+/// `invalid type: sequence, expected a string` before any upstream dispatch.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum OpenAiSchemaType {
+    /// One type name, e.g. `"object"`.
+    Single(String),
+    /// A union of type names, e.g. `["string", "null"]`.
+    Multiple(Vec<String>),
+}
+
+impl OpenAiSchemaType {
+    /// The type names in declaration order.
+    pub fn names(&self) -> Vec<&str> {
+        match self {
+            OpenAiSchemaType::Single(name) => vec![name.as_str()],
+            OpenAiSchemaType::Multiple(names) => names.iter().map(String::as_str).collect(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct OpenAiJsonSchema {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
-    pub schema_type: Option<String>,
+    pub schema_type: Option<OpenAiSchemaType>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -979,4 +1005,121 @@ pub struct OpenAiErrorBody {
     pub code: String,
     #[serde(default, flatten)]
     pub extra: Map<String, Value>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    /// Shaped exactly like schemars 1.x renders a generations MCP tool input
+    /// (`GenerateImageInput`): every `Option<T>` field carries the draft
+    /// 2020-12 union `type` form.
+    fn nullable_tool_parameters() -> Value {
+        json!({
+            "type": "object",
+            "properties": {
+                "prompt": { "type": "string" },
+                "vendor": { "type": ["string", "null"] },
+                "imageCount": { "type": ["integer", "null"] },
+                "referenceImages": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                }
+            },
+            "required": ["prompt"]
+        })
+    }
+
+    #[test]
+    fn tool_parameters_accept_union_schema_type() {
+        let body = json!({
+            "model": "deepseek-flash",
+            "stream": true,
+            "messages": [{ "role": "user", "content": "hi" }],
+            "tools": [{
+                "type": "function",
+                "function": {
+                    "name": "mcp__generations__image.create",
+                    "description": "Generate images.",
+                    "parameters": nullable_tool_parameters()
+                }
+            }],
+            "tool_choice": "auto",
+            "parallel_tool_calls": false
+        });
+
+        // Regression: a single-string `type` model rejected this legal body
+        // with `invalid type: sequence, expected a string`, which failed every
+        // tool-carrying turn before any upstream dispatch.
+        let request: OpenAiChatCompletionRequest =
+            serde_json::from_value(body).expect("a nullable tool schema must deserialize");
+
+        assert_eq!(request.model, "deepseek-flash");
+        assert_eq!(request.stream, Some(true));
+        assert_eq!(
+            request.tool_choice,
+            Some(OpenAiToolChoice::Mode(OpenAiToolChoiceMode::Auto))
+        );
+        let tool = &request.tools.as_ref().expect("tools")[0];
+        let parameters = tool
+            .function
+            .as_ref()
+            .and_then(|function| function.parameters.as_ref())
+            .expect("parameters");
+        assert_eq!(
+            parameters.schema_type.as_ref().map(OpenAiSchemaType::names),
+            Some(vec!["object"])
+        );
+        let properties = parameters.properties.as_ref().expect("properties");
+        assert_eq!(
+            properties["vendor"]
+                .schema_type
+                .as_ref()
+                .map(OpenAiSchemaType::names),
+            Some(vec!["string", "null"])
+        );
+        assert_eq!(
+            properties["imageCount"]
+                .schema_type
+                .as_ref()
+                .map(OpenAiSchemaType::names),
+            Some(vec!["integer", "null"])
+        );
+        assert_eq!(
+            properties["prompt"].schema_type,
+            Some(OpenAiSchemaType::Single("string".to_owned()))
+        );
+    }
+
+    #[test]
+    fn responses_format_schema_accepts_union_schema_type() {
+        let body = json!({
+            "model": "deepseek-flash",
+            "input": "hi",
+            "text": {
+                "format": {
+                    "type": "json_schema",
+                    "name": "answer",
+                    "schema": {
+                        "type": "object",
+                        "properties": { "answer": { "type": ["string", "null"] } }
+                    }
+                }
+            }
+        });
+
+        let request: OpenAiResponsesRequest =
+            serde_json::from_value(body).expect("a nullable format schema must deserialize");
+        assert_eq!(request.model, "deepseek-flash");
+    }
+
+    #[test]
+    fn schema_type_round_trips_both_forms() {
+        for value in [json!("string"), json!(["string", "null"])] {
+            let parsed: OpenAiSchemaType =
+                serde_json::from_value(value.clone()).expect("both forms deserialize");
+            assert_eq!(serde_json::to_value(&parsed).expect("serializes"), value);
+        }
+    }
 }
