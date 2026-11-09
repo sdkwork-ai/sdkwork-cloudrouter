@@ -128,54 +128,6 @@ pub(crate) fn normalize_wire_model_id(value: &str) -> String {
     }
 }
 
-/// Provider-native model id for a **wire** model id.
-///
-/// The dialect punctuation (`:`, `|`, and their full-width forms) is
-/// normalized to the canonical `vendor/model` spelling first, then the catalog
-/// prefix is stripped when its head is a known vendor or relay namespace, so
-/// `deepseek|deepseek-flash`, `deepseek:deepseek-flash` and
-/// `deepseek/deepseek-flash` all call the account with `deepseek-flash`. A spelling change that strips no catalog prefix is
-/// returned verbatim, so fine-tune ids (`ft:gpt-4o-...:org:abc`) and variant
-/// ids (`gpt-4o:free`) are never mangled into a different model.
-pub(crate) fn provider_native_model_id_for_wire(wire_model_id: &str) -> String {
-    let original = wire_model_id.trim();
-    if original.is_empty() {
-        return String::new();
-    }
-    let normalized = normalize_wire_model_id(original);
-    // A region is routing state, not model identity (`deepseek/cn/deepseek-flash`
-    // and `deepseek|cn|deepseek-flash` both mean the catalog model above).
-    let canonical = without_region_segment(&normalized);
-    let native = crate::domain::provider_native_model_id(&canonical);
-    if native == canonical && canonical != original {
-        original.to_owned()
-    } else {
-        native
-    }
-}
-
-/// Drops one `vendor/region/model` middle segment, leaving every other spelling
-/// untouched.
-fn without_region_segment(canonical: &str) -> String {
-    let mut parts = canonical.split('/');
-    let (Some(vendor), Some(first)) = (parts.next(), parts.next()) else {
-        return canonical.to_owned();
-    };
-    if !crate::domain::is_model_region_segment(first) {
-        return canonical.to_owned();
-    }
-    let rest = parts.collect::<Vec<_>>();
-    if rest.is_empty() {
-        return canonical.to_owned();
-    }
-    let mut rebuilt = String::from(vendor);
-    for part in rest {
-        rebuilt.push('/');
-        rebuilt.push_str(part);
-    }
-    rebuilt
-}
-
 /// Normalized comparison form of a model id: trimmed, full-width `：` folded
 /// to `:`, lowercased, whitespace runs folded to `-`, `.` folded to `-`
 /// (OpenRouter `claude-opus-4.5` vs native `claude-opus-4-5`), with at most
@@ -502,49 +454,5 @@ mod tests {
             "deepseek/deepseek-flash:free",
             normalize_wire_model_id("deepseek|deepseek-flash:free")
         );
-    }
-
-    #[test]
-    fn provider_native_model_id_for_wire_strips_every_separator_spelling() {
-        for wire in [
-            "deepseek/deepseek-flash",
-            "deepseek:deepseek-flash",
-            "deepseek|deepseek-flash",
-            "deepseek：deepseek-flash",
-            "deepseek｜deepseek-flash",
-            "deepseek／deepseek-flash",
-            "  deepseek | deepseek-flash  ",
-        ] {
-            assert_eq!(
-                "deepseek-flash",
-                provider_native_model_id_for_wire(wire),
-                "wire id: {wire}"
-            );
-        }
-        // The vendor-qualified catalog key of a multi-segment model keeps its
-        // model-side segments.
-        assert_eq!(
-            "meta-llama/llama-3-70b",
-            provider_native_model_id_for_wire("openrouter|meta-llama|llama-3-70b")
-        );
-        assert_eq!(
-            "deepseek-flash",
-            provider_native_model_id_for_wire("deepseek|cn|deepseek-flash")
-        );
-        // Ids whose head is not a catalog vendor survive verbatim: a fine-tune
-        // id or a variant id must never be rewritten into another model.
-        for passthrough in [
-            "deepseek-flash",
-            "gpt-4o:free",
-            "ft:gpt-4o-2024-08-13:org:abc",
-            "myorg/custom-model",
-        ] {
-            assert_eq!(
-                passthrough,
-                provider_native_model_id_for_wire(passthrough),
-                "id: {passthrough}"
-            );
-        }
-        assert_eq!("", provider_native_model_id_for_wire("   "));
     }
 }

@@ -3314,7 +3314,10 @@ fn provider_native_model_id(requested_model_key: &str, catalog_model: Option<&Ai
 }
 
 fn runtime_provider_native_model_id(model_key: &str) -> String {
-    crate::domain::provider_native_model_id_for_wire(model_key)
+    // One parser for every surface: `vendor/model`, `vendor:model`,
+    // `vendor|model`, full-width forms, and a `region` middle segment all yield
+    // the vendor-native model id (see `provider_native_model_id`).
+    crate::domain::provider_native_model_id(model_key)
 }
 
 fn remove_runtime_only_fields(object: &mut Map<String, Value>) {

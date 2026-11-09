@@ -11,7 +11,7 @@ pub use async_usage_task::{
 pub use billing_owner::BillingOwnerKind;
 pub(crate) use model_request_alias::{
     model_alias_probes, model_alias_slug, model_id_segment, model_matches_alias_probe,
-    normalize_wire_model_id, provider_native_model_id_for_wire, ModelAliasProbe,
+    normalize_wire_model_id, ModelAliasProbe,
 };
 pub use sdkwork_models_catalog_service::domain::ResourceDefinition;
 pub use sdkwork_models_catalog_service::domain::{

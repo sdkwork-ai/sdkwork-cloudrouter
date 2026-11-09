@@ -18,7 +18,7 @@ use crate::application::{
     UpstreamRouteSelector,
 };
 use crate::domain::{
-    has_text, provider_native_model_id_for_wire, BillingMeter, ModelUpstreamRoute,
+    has_text, provider_native_model_id, BillingMeter, ModelUpstreamRoute,
     ResolveModelMappingContext, RoutingCapability, UpstreamAccountRoute,
 };
 use crate::ports::{AccountBaseUrlConfig, UpstreamAccountRouteCatalog};
@@ -444,12 +444,12 @@ fn normalized_resolved_provider_model(
     if provider_model.is_empty() {
         let model = model.trim();
         return if model.is_empty() {
-            provider_native_model_id_for_wire(catalog_key)
+            provider_native_model_id(catalog_key)
         } else {
             model.to_owned()
         };
     }
-    let native_model = provider_native_model_id_for_wire(provider_model);
+    let native_model = provider_native_model_id(provider_model);
     if provider_model == catalog_key.trim()
         || (!native_model.is_empty()
             && native_model == model.trim()

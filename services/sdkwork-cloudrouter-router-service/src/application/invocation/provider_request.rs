@@ -36,9 +36,17 @@ impl ProviderRequestBuilder {
 
         let mut headers = sanitized_inbound_headers(&invocation.request.headers);
         apply_default_headers(&mut headers, &account.auth_profile)?;
+        // One chokepoint for every provider-facing surface (chat, responses,
+        // embeddings, image, video, audio, music, and the vendor-native
+        // passthrough routes): the model written into the query, body, and path
+        // is the catalog-native id, never a request dialect spelling
+        // (`vendor:model`, `vendor|model`, full width, or `vendor/region/model`).
+        // A native id passes through unchanged, so this is idempotent.
+        let provider_model = normalized_provider_model(account.provider_model.as_deref());
+        let provider_model = provider_model.as_deref();
         let mut query = rewrite_query_model(
             sanitize_sensitive_query(invocation.request.query.as_deref()),
-            account.provider_model.as_deref(),
+            provider_model,
         );
         apply_auth(
             &mut headers,
@@ -49,14 +57,14 @@ impl ProviderRequestBuilder {
         let body = rewrite_body_model(
             invocation.request.body.clone(),
             &invocation.request.headers,
-            account.provider_model.as_deref(),
+            provider_model,
         )?;
         let body = ensure_stream_usage_requested(
             &invocation.resource.surface,
             &invocation.resource.api_code,
             body,
         );
-        let path = rewrite_path_model(&invocation.request.path, account.provider_model.as_deref());
+        let path = rewrite_path_model(&invocation.request.path, provider_model);
         Ok(InvocationProviderRequest {
             method: invocation.request.method.clone(),
             url: provider_url(account.base_url.as_deref(), &path, query.as_deref()),
@@ -66,6 +74,16 @@ impl ProviderRequestBuilder {
             body,
         })
     }
+}
+
+/// The provider-facing model id: the route's provider model normalized to the
+/// catalog-native spelling (`provider_native_model_id`). Every outbound
+/// surface's model passes through this one helper — the JSON/multipart body, the
+/// query, and the `models/{model}:action` path — so a request dialect
+/// (`vendor:model`, `vendor|model`, full width, `vendor/region/model`) can never
+/// reach a vendor. A native id is returned unchanged, so it is idempotent.
+fn normalized_provider_model(provider_model: Option<&str>) -> Option<String> {
+    provider_model.map(crate::domain::provider_native_model_id)
 }
 
 fn build_adapter_provider_request(
@@ -238,13 +256,22 @@ fn rewrite_path_model(path: &str, provider_model: Option<&str>) -> String {
     rewrite_models_action_path(path, provider_model).unwrap_or_else(|| path.to_owned())
 }
 
-/// Rewrites `/v1beta/models/{model}:{action}` and `/v1/models/{model}:{action}`
-/// so Gemini-style native calls use the account-mapped provider model.
+/// Rewrites `{prefix}models/{model}:{action}` so Gemini-style native calls use
+/// the account-mapped provider model. The Google media surfaces publish their
+/// images/videos under `/google/v1beta/models/{model}:generateImages` (and
+/// `:generateVideos`), so that prefix must be recognized too — otherwise the
+/// caller's model id reaches the vendor verbatim on the main image/video path.
 fn rewrite_models_action_path(path: &str, provider_model: &str) -> Option<String> {
-    let (prefix, rest) = ["/v1beta/models/", "/v1/models/"]
-        .into_iter()
-        .find_map(|prefix| path.strip_prefix(prefix).map(|rest| (prefix, rest)))?;
-    let (model, action) = rest.split_once(':')?;
+    let (prefix, rest) = [
+        "/v1beta/models/",
+        "/v1/models/",
+        "/google/v1beta/models/",
+    ]
+    .into_iter()
+    .find_map(|prefix| path.strip_prefix(prefix).map(|rest| (prefix, rest)))?;
+    // The action suffix follows the last `:` so a dialect model id in the path
+    // (`models/google:veo-3.0:generateVideos`) is still replaced wholesale.
+    let (model, action) = rest.rsplit_once(':')?;
     if model.trim().is_empty() || action.trim().is_empty() || model == provider_model {
         return None;
     }
@@ -659,6 +686,46 @@ mod tests {
             "messages": []
         })));
         assert!(body.get("stream_options").is_none());
+    }
+
+    #[test]
+    fn provider_model_normalization_covers_every_separator_spelling() {
+        for dialect in [
+            "deepseek|deepseek-flash",
+            "deepseek:deepseek-flash",
+            "deepseek：deepseek-flash",
+            "deepseek|cn|deepseek-flash",
+            "deepseek/deepseek-flash",
+            "deepseek-flash",
+        ] {
+            assert_eq!(
+                Some("deepseek-flash".to_owned()),
+                super::normalized_provider_model(Some(dialect)),
+                "provider model: {dialect}"
+            );
+        }
+        assert_eq!(None, super::normalized_provider_model(None));
+    }
+
+    #[test]
+    fn media_action_paths_are_rewritten_to_the_native_model() {
+        // Image/video generation dials `models/{model}:generateImages` /
+        // `:generateVideos`; a dialect model in the caller's path is replaced by
+        // the route's native model, never forwarded verbatim.
+        assert_eq!(
+            "/google/v1beta/models/gemini-2.5-flash-image:generateImages",
+            super::rewrite_path_model(
+                "/google/v1beta/models/google|gemini-2.5-flash-image:generateImages",
+                Some("gemini-2.5-flash-image"),
+            )
+        );
+        assert_eq!(
+            "/google/v1beta/models/veo-3.0:generateVideos",
+            super::rewrite_path_model(
+                "/google/v1beta/models/google:veo-3.0:generateVideos",
+                Some("veo-3.0"),
+            )
+        );
     }
 
     #[test]
