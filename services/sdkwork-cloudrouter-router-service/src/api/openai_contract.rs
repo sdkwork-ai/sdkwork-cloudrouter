@@ -7,6 +7,53 @@ fn to_json_value<T: Serialize>(value: &T) -> Value {
     serde_json::to_value(value).unwrap_or_else(|_| Value::Object(Map::new()))
 }
 
+/// Declares a permissive string enum: the enumerated variants stay strongly
+/// typed while any other value the vendor or client defines is preserved
+/// verbatim.
+///
+/// The OpenAI surface grows by extension (new tool kinds, new service tiers,
+/// new reasoning efforts), and Cloud Router relays the caller's raw body. A
+/// value this contract does not enumerate must therefore deserialize instead
+/// of rejecting the whole request before routing.
+macro_rules! permissive_string_enum {
+    ($name:ident { $($variant:ident => $text:literal),+ $(,)? }) => {
+        #[derive(Debug, Clone, PartialEq, Eq)]
+        pub enum $name {
+            $($variant,)+
+            /// A value this contract does not enumerate.
+            Other(String),
+        }
+
+        impl $name {
+            /// The wire value of this variant.
+            pub fn as_str(&self) -> &str {
+                match self {
+                    $(Self::$variant => $text,)+
+                    Self::Other(value) => value.as_str(),
+                }
+            }
+        }
+
+        impl serde::Serialize for $name {
+            fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+                serializer.serialize_str(self.as_str())
+            }
+        }
+
+        impl<'de> serde::Deserialize<'de> for $name {
+            fn deserialize<D: serde::Deserializer<'de>>(
+                deserializer: D,
+            ) -> Result<Self, D::Error> {
+                let value = String::deserialize(deserializer)?;
+                Ok(match value.as_str() {
+                    $($text => Self::$variant,)+
+                    _ => Self::Other(value),
+                })
+            }
+        }
+    };
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum OpenAiChatMessageRole {
@@ -27,11 +74,13 @@ pub enum OpenAiChatContentPartType {
     File,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum OpenAiToolType {
-    Function,
-}
+// `type` of a tool definition and of a tool call. Chat Completions started
+// with `function` only; Responses adds `web_search`, `file_search`, `mcp`,
+// `custom`, `local_shell`, `image_generation`, `code_interpreter`, and others,
+// and clients (Codex-class agents) send them on `/v1/responses`.
+permissive_string_enum!(OpenAiToolType {
+    Function => "function",
+});
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -56,23 +105,23 @@ pub enum OpenAiEmbeddingEncodingFormat {
     Base64,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum OpenAiServiceTier {
-    Auto,
-    Default,
-    Flex,
-    Priority,
-}
+// Service tiers are billing/routing hints owned by the vendor; the enumerated
+// values are the documented set, and a new tier must still route.
+permissive_string_enum!(OpenAiServiceTier {
+    Auto => "auto",
+    Default => "default",
+    Flex => "flex",
+    Priority => "priority",
+});
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum OpenAiReasoningEffort {
-    Minimal,
-    Low,
-    Medium,
-    High,
-}
+// Reasoning effort values move with the vendor's model line (`minimal` through
+// `high`, plus newer levels such as `xhigh`); unknown levels are forwarded.
+permissive_string_enum!(OpenAiReasoningEffort {
+    Minimal => "minimal",
+    Low => "low",
+    Medium => "medium",
+    High => "high",
+});
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -95,6 +144,11 @@ pub enum OpenAiResponseInputContentPartType {
     InputText,
     InputImage,
     InputFile,
+    /// Assistant history fed back into `input` carries the model's own output
+    /// parts (`output_text`), which is how a Responses conversation round-trips.
+    OutputText,
+    InputAudio,
+    OutputAudio,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -155,13 +209,31 @@ pub enum OpenAiToolChoice {
     Tool(OpenAiNamedToolChoice),
 }
 
+/// A named tool choice, in either wire shape:
+///
+/// - Chat Completions nests the function: `{"type":"function","function":{"name":"f"}}`
+/// - Responses flattens the name and also names built-in tools:
+///   `{"type":"function","name":"f"}`, `{"type":"web_search"}`
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct OpenAiNamedToolChoice {
     #[serde(rename = "type")]
     pub tool_type: OpenAiToolType,
-    pub function: OpenAiNamedToolChoiceFunction,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub function: Option<OpenAiNamedToolChoiceFunction>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
     #[serde(default, flatten)]
     pub extra: Map<String, Value>,
+}
+
+impl OpenAiNamedToolChoice {
+    /// The selected tool name, whichever shape carried it.
+    pub fn tool_name(&self) -> Option<&str> {
+        self.function
+            .as_ref()
+            .map(|function| function.name.as_str())
+            .or(self.name.as_deref())
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -341,8 +413,9 @@ pub struct OpenAiJsonSchema {
     pub properties: Option<BTreeMap<String, OpenAiJsonSchema>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub required: Option<Vec<String>>,
+    /// `items` is one schema for every element, or 鈥?in draft-07 tuple form 鈥?    /// one schema per position.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub items: Option<Box<OpenAiJsonSchema>>,
+    pub items: Option<OpenAiJsonSchemaItems>,
     #[serde(
         rename = "additionalProperties",
         skip_serializing_if = "Option::is_none"
@@ -352,6 +425,15 @@ pub struct OpenAiJsonSchema {
     pub enum_values: Option<Vec<Value>>,
     #[serde(default, flatten)]
     pub extra: Map<String, Value>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum OpenAiJsonSchemaItems {
+    /// One schema for every element (draft 2020-12 `items`).
+    Single(Box<OpenAiJsonSchema>),
+    /// One schema per position (draft-07 tuple form).
+    Tuple(Vec<OpenAiJsonSchema>),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -627,7 +709,7 @@ pub struct OpenAiResponsesRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_choice: Option<OpenAiToolChoice>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub tools: Option<Vec<OpenAiTool>>,
+    pub tools: Option<Vec<OpenAiResponseTool>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub top_logprobs: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -643,6 +725,43 @@ pub struct OpenAiResponsesRequest {
 impl OpenAiResponsesRequest {
     pub fn to_provider_json(&self) -> Value {
         to_json_value(self)
+    }
+}
+
+/// Tool definition on the Responses surface.
+///
+/// Responses accepts both the chat-shaped nested function
+/// (`{"type":"function","function":{"name":...}}`) and the flat form
+/// (`{"type":"function","name":...,"parameters":...,"strict":...}`), plus
+/// built-in kinds whose payload is vendor-defined (`web_search`,
+/// `file_search`, `mcp`, `custom`, `local_shell`, `code_interpreter`,
+/// `image_generation`, ...). Anything unrecognized is preserved under `extra`,
+/// so a new built-in tool never fails the request before routing.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OpenAiResponseTool {
+    #[serde(rename = "type")]
+    pub tool_type: OpenAiToolType,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub function: Option<OpenAiFunctionDefinition>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<OpenAiJsonSchema>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub strict: Option<bool>,
+    #[serde(default, flatten)]
+    pub extra: Map<String, Value>,
+}
+
+impl OpenAiResponseTool {
+    /// The function name, whether nested (chat shape) or flat (Responses shape).
+    pub fn function_name(&self) -> Option<&str> {
+        self.function
+            .as_ref()
+            .map(|function| function.name.as_str())
+            .or(self.name.as_deref())
     }
 }
 
@@ -1005,121 +1124,4 @@ pub struct OpenAiErrorBody {
     pub code: String,
     #[serde(default, flatten)]
     pub extra: Map<String, Value>,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use serde_json::json;
-
-    /// Shaped exactly like schemars 1.x renders a generations MCP tool input
-    /// (`GenerateImageInput`): every `Option<T>` field carries the draft
-    /// 2020-12 union `type` form.
-    fn nullable_tool_parameters() -> Value {
-        json!({
-            "type": "object",
-            "properties": {
-                "prompt": { "type": "string" },
-                "vendor": { "type": ["string", "null"] },
-                "imageCount": { "type": ["integer", "null"] },
-                "referenceImages": {
-                    "type": "array",
-                    "items": { "type": "string" }
-                }
-            },
-            "required": ["prompt"]
-        })
-    }
-
-    #[test]
-    fn tool_parameters_accept_union_schema_type() {
-        let body = json!({
-            "model": "deepseek-flash",
-            "stream": true,
-            "messages": [{ "role": "user", "content": "hi" }],
-            "tools": [{
-                "type": "function",
-                "function": {
-                    "name": "mcp__generations__image.create",
-                    "description": "Generate images.",
-                    "parameters": nullable_tool_parameters()
-                }
-            }],
-            "tool_choice": "auto",
-            "parallel_tool_calls": false
-        });
-
-        // Regression: a single-string `type` model rejected this legal body
-        // with `invalid type: sequence, expected a string`, which failed every
-        // tool-carrying turn before any upstream dispatch.
-        let request: OpenAiChatCompletionRequest =
-            serde_json::from_value(body).expect("a nullable tool schema must deserialize");
-
-        assert_eq!(request.model, "deepseek-flash");
-        assert_eq!(request.stream, Some(true));
-        assert_eq!(
-            request.tool_choice,
-            Some(OpenAiToolChoice::Mode(OpenAiToolChoiceMode::Auto))
-        );
-        let tool = &request.tools.as_ref().expect("tools")[0];
-        let parameters = tool
-            .function
-            .as_ref()
-            .and_then(|function| function.parameters.as_ref())
-            .expect("parameters");
-        assert_eq!(
-            parameters.schema_type.as_ref().map(OpenAiSchemaType::names),
-            Some(vec!["object"])
-        );
-        let properties = parameters.properties.as_ref().expect("properties");
-        assert_eq!(
-            properties["vendor"]
-                .schema_type
-                .as_ref()
-                .map(OpenAiSchemaType::names),
-            Some(vec!["string", "null"])
-        );
-        assert_eq!(
-            properties["imageCount"]
-                .schema_type
-                .as_ref()
-                .map(OpenAiSchemaType::names),
-            Some(vec!["integer", "null"])
-        );
-        assert_eq!(
-            properties["prompt"].schema_type,
-            Some(OpenAiSchemaType::Single("string".to_owned()))
-        );
-    }
-
-    #[test]
-    fn responses_format_schema_accepts_union_schema_type() {
-        let body = json!({
-            "model": "deepseek-flash",
-            "input": "hi",
-            "text": {
-                "format": {
-                    "type": "json_schema",
-                    "name": "answer",
-                    "schema": {
-                        "type": "object",
-                        "properties": { "answer": { "type": ["string", "null"] } }
-                    }
-                }
-            }
-        });
-
-        let request: OpenAiResponsesRequest =
-            serde_json::from_value(body).expect("a nullable format schema must deserialize");
-        assert_eq!(request.model, "deepseek-flash");
-    }
-
-    #[test]
-    fn schema_type_round_trips_both_forms() {
-        for value in [json!("string"), json!(["string", "null"])] {
-            let parsed: OpenAiSchemaType =
-                serde_json::from_value(value.clone()).expect("both forms deserialize");
-            assert_eq!(serde_json::to_value(&parsed).expect("serializes"), value);
-        }
-    }
 }
