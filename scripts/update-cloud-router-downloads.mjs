@@ -347,6 +347,14 @@ function mobilePackageActions() {
       platform: 'android',
       unavailableLabel: 'Android coming soon',
     },
+    {
+      disabled: true,
+      href: '',
+      id: 'mobile-harmonyos',
+      label: 'HarmonyOS',
+      platform: 'harmonyos',
+      unavailableLabel: 'HarmonyOS coming soon',
+    },
   ];
 }
 
@@ -385,12 +393,12 @@ function stableSortActions(actions) {
     ['helm', 4],
     ['ios', 5],
     ['android', 6],
+    ['harmonyos', 7],
   ]);
   const architectureOrder = new Map([
     ['x64', 0],
     ['arm64', 1],
   ]);
-
   return [...actions].sort((left, right) => {
     const platformDelta = (platformOrder.get(left.platform) ?? 99) - (platformOrder.get(right.platform) ?? 99);
     if (platformDelta !== 0) {

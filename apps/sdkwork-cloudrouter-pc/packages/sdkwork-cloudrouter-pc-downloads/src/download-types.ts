@@ -17,6 +17,19 @@ export type SdkworkDownloadPlatform =
   | "macos"
   | "windows";
 
+/** Architectures a catalog can publish, plus `universal` for installers that run on both. */
+export type SdkworkDownloadArchitecture = "arm64" | "universal" | "x64";
+
+/**
+ * What the browser could prove about the visitor's CPU architecture.
+ *
+ * `unknown` is a first-class result, not a failure: Safari and Firefox expose no architecture
+ * signal on macOS, and guessing wrong is exactly what made an x64 visitor receive an arm64
+ * installer. Selection falls back to the safest installable artifact (x64, which runs under
+ * emulation on arm64) instead of pretending to know.
+ */
+export type SdkworkDetectedDownloadArchitecture = SdkworkDownloadArchitecture | "unknown";
+
 export type SdkworkDownloadCardIcon =
   | "desktop"
   | "download"
@@ -108,6 +121,7 @@ export interface SdkworkProductDownloadSectionProps {
   cards?: readonly SdkworkDownloadCard[];
   className?: string;
   catalog?: SdkworkDownloadCatalog;
+  detectedArchitecture?: SdkworkDetectedDownloadArchitecture;
   detectedPlatform?: SdkworkDownloadPlatform;
   onDownloadSelect?: (
     action: SdkworkDownloadAction,
@@ -121,6 +135,7 @@ export interface SdkworkProductDownloadSectionProps {
 
 export interface SdkworkDownloadCardViewProps {
   card: SdkworkDownloadCard;
+  detectedArchitecture?: SdkworkDetectedDownloadArchitecture;
   detectedPlatform: SdkworkDownloadPlatform;
   onDownloadSelect?: SdkworkProductDownloadSectionProps["onDownloadSelect"];
   variant?: SdkworkDownloadSectionVariant;

@@ -476,6 +476,51 @@ mod tests {
     }
 
     #[test]
+    fn settings_payload_round_trips_the_download_catalog_verbatim() {
+        // Includes the two shapes that used to be lost on the read path: a signed CDN URL with a
+        // query string, and an explicitly disabled action next to an enabled one. The landing page
+        // decides availability from these exact fields, so a dropped `?` or an inverted `disabled`
+        // turns a configured installer back into "coming soon".
+        let downloads = serde_json::json!({
+            "schemaVersion": "2026-05-18.sdkwork-download-catalog.v1",
+            "product": { "id": "sdkwork-cloudrouter", "name": "SdkWork CloudRouter", "version": "1.0.0" },
+            "cards": [{
+                "id": "cloud-router-desktop",
+                "title": "Desktop",
+                "description": "For developers.",
+                "kind": "desktop",
+                "primaryActionStrategy": "detected-platform",
+                "actions": [{
+                    "id": "desktop-windows-x64",
+                    "label": "Windows x64",
+                    "href": "https://cdn.example.test/cloudrouter.msi?X-Amz-Signature=abc#sha256",
+                    "platform": "windows",
+                    "architecture": "x64",
+                    "disabled": false
+                }, {
+                    "id": "desktop-windows-arm64",
+                    "label": "Windows arm64",
+                    "href": "",
+                    "platform": "windows",
+                    "architecture": "arm64",
+                    "disabled": true
+                }]
+            }]
+        });
+        let settings = SiteSettings {
+            downloads: downloads.clone(),
+            ..SiteSettings::default()
+        };
+
+        for decoded in [
+            settings_from_payload(&settings_payload(&settings).unwrap()).unwrap(),
+            settings_from_payload(&settings_snapshot_payload(&settings).unwrap()).unwrap(),
+        ] {
+            assert_eq!(downloads, decoded.downloads);
+        }
+    }
+
+    #[test]
     fn settings_payload_round_trips_admin_module_navigation() {
         let settings = SiteSettings {
             admin_modules: serde_json::json!({

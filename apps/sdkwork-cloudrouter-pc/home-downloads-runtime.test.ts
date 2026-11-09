@@ -17,7 +17,10 @@ import {
 } from "./packages/sdkwork-cloudrouter-pc-home/src/downloads/cloudRouterDownloads.ts";
 import { createHomeContentRuntime } from "./packages/sdkwork-cloudrouter-pc-home/src/content/home-content.ts";
 import {
+  detectSdkworkDownloadArchitecture,
   detectSdkworkDownloadPlatform,
+  detectSdkworkDownloadTarget,
+  normalizeSdkworkDownloadArchitecture,
   resolveSdkworkDownloadCardActions,
 } from "./packages/sdkwork-cloudrouter-pc-downloads/src/platform-detection";
 
@@ -299,12 +302,12 @@ test("checked-in release download JSON is the default homepage data source", () 
 
   assert.equal(catalog.schemaVersion, "2026-05-18.sdkwork-download-catalog.v1");
   assert.equal(catalog.product.id, "sdkwork-cloudrouter");
-  assert.equal(catalog.product.version, "0.3.0");
+  assert.equal(catalog.product.version, "0.4.12");
   assert.equal(catalog.cards.length, 3);
   assert.equal(actions.some((action) => action.href === "#"), false);
   assert.ok(
     actions.some((action) =>
-      action.href.includes("https://github.com/sdkwork-ai/sdkwork-cloudrouter/releases/download/v0.3.0/")
+      action.href.includes("https://github.com/sdkwork-ai/sdkwork-cloudrouter/releases/download/v0.4.12/")
     ),
     "default homepage catalog must include release asset URLs",
   );
@@ -327,7 +330,7 @@ test("checked-in release download JSON is the default homepage data source", () 
     "server-linux-archive-x64",
     "server-linux-archive-arm64",
   ]) {
-    assert.ok(actionIds.has(id), `default homepage catalog must include ${id} from the real v0.3.0 release`);
+    assert.ok(actionIds.has(id), `default homepage catalog must include ${id} from the real v0.4.12 release`);
   }
 });
 
@@ -379,7 +382,7 @@ test("an unconfigured homepage keeps every shipped default", () => {
     models: true,
   });
   assert.equal(home.productName, "Cloud Router");
-  assert.equal(home.version, "0.3.0", "the badge version comes from the checked-in release catalog");
+  assert.equal(home.version, "0.4.12", "the badge version comes from the checked-in release catalog");
   assert.equal(
     home.downloadCatalog,
     undefined,
@@ -402,7 +405,7 @@ test("published copy resolves brand tokens so a re-brand reaches the rendered te
   });
 
   assert.equal(home.productName, "Acme Gateway");
-  assert.equal(home.text(home.content.hero?.badge, "unused"), "Acme Gateway v0.3.0 is live");
+  assert.equal(home.text(home.content.hero?.badge, "unused"), "Acme Gateway v0.4.12 is live");
   assert.equal(home.text(home.content.hero?.titleLead, "unused"), "One API for every model");
   assert.equal(home.sections.models, false, "a section switch from the console hides the section");
   assert.equal(home.sections.hero, true, "sections the console did not mention keep rendering");
@@ -847,6 +850,173 @@ test("a pending drive installer shows its own name, or the operator's authored l
   assert.equal(resolved[0].actions.find((action) => action.id === "desktop-authored")?.href, "https://storage.example.test/signed-2?X-Amz-Expires=3600");
 });
 
+test("download platform and CPU architecture are detected from the visitor", () => {
+  const windowsX64 =
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36";
+  const windowsArm64 =
+    "Mozilla/5.0 (Windows NT 10.0; ARM64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36";
+  const macChrome =
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36";
+  const linuxX64 = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36";
+  const linuxArm64 = "Mozilla/5.0 (X11; Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36";
+
+  assert.equal(detectSdkworkDownloadPlatform(windowsX64), "windows");
+  assert.equal(detectSdkworkDownloadArchitecture(windowsX64), "x64");
+  assert.equal(detectSdkworkDownloadArchitecture(windowsArm64), "arm64");
+  assert.equal(detectSdkworkDownloadArchitecture(linuxX64), "x64");
+  assert.equal(detectSdkworkDownloadArchitecture(linuxArm64), "arm64");
+
+  // macOS Safari/Firefox hide the real CPU behind the always-Intel macOS UA. Claiming x64 from
+  // that string is what handed Apple-silicon visitors the Intel package, so it stays unknown
+  // until User-Agent Client Hints can answer.
+  assert.equal(detectSdkworkDownloadArchitecture(macChrome), "unknown");
+  assert.equal(detectSdkworkDownloadArchitecture(""), "unknown");
+
+  assert.equal(normalizeSdkworkDownloadArchitecture("x86_64"), "x64");
+  assert.equal(normalizeSdkworkDownloadArchitecture("amd64"), "x64");
+  assert.equal(normalizeSdkworkDownloadArchitecture("aarch64"), "arm64");
+  assert.equal(normalizeSdkworkDownloadArchitecture("universal2"), "universal");
+  assert.equal(normalizeSdkworkDownloadArchitecture("riscv64"), undefined);
+});
+
+test("User-Agent Client Hints resolve the architecture the legacy UA cannot state", async () => {
+  const target = await detectSdkworkDownloadTarget(
+    {
+      userAgent:
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36",
+      userAgentData: {
+        getHighEntropyValues: async () => ({ architecture: "arm", bitness: "64" }),
+      },
+    },
+    50,
+  );
+
+  assert.deepEqual(target, { architecture: "arm64", platform: "macos" });
+});
+
+test("the primary installer follows the visitor's platform and CPU architecture", () => {
+  const published = {
+    schemaVersion: "2026-05-18.sdkwork-download-catalog.v1",
+    product: { id: "sdkwork-cloudrouter", name: "SdkWork CloudRouter", version: "1.0.0" },
+    cards: [
+      {
+        id: "card-desktop",
+        title: "Desktop",
+        description: "For developers.",
+        kind: "desktop",
+        primaryActionStrategy: "detected-platform",
+        actions: [
+          {
+            id: "desktop-windows-arm64",
+            label: "Windows arm64",
+            href: "https://example.com/cloudrouter-windows-arm64.msi",
+            platform: "windows",
+            architecture: "arm64",
+          },
+          {
+            id: "desktop-windows-x64",
+            label: "Windows x64",
+            href: "https://example.com/cloudrouter-windows-x64.msi",
+            platform: "windows",
+            architecture: "x64",
+          },
+        ],
+      },
+    ],
+  };
+  const cards = createCloudRouterDownloadCards(t, { catalog: published });
+
+  // arm64 is listed first on purpose: selection must follow the detected CPU, not catalog order.
+  assert.equal(
+    resolveSdkworkDownloadCardActions(cards[0], "windows", "x64").primaryAction.id,
+    "desktop-windows-x64",
+  );
+  assert.equal(
+    resolveSdkworkDownloadCardActions(cards[0], "windows", "arm64").primaryAction.id,
+    "desktop-windows-arm64",
+  );
+  assert.equal(
+    resolveSdkworkDownloadCardActions(cards[0], "windows", "unknown").primaryAction.id,
+    "desktop-windows-x64",
+    "without a CPU signal the x64 build is the installable default (it runs under emulation)",
+  );
+
+  // An x64 row that is deliberately unavailable must not be papered over with the arm64 build:
+  // the card keeps the exact package visible as unavailable so the operator can see which
+  // artifact is missing, and the arm64 row stays a secondary.
+  const unavailableX64 = {
+    ...cards[0],
+    actions: cards[0].actions.map((action) =>
+      action.id === "desktop-windows-x64" ? { ...action, disabled: true } : action),
+  };
+  const x64Unavailable = resolveSdkworkDownloadCardActions(unavailableX64, "windows", "x64");
+  assert.equal(x64Unavailable.primaryAction.id, "desktop-windows-x64");
+  assert.equal(x64Unavailable.primaryAction.disabled, true);
+  assert.deepEqual(x64Unavailable.secondaryActions.map((action) => action.id), ["desktop-windows-arm64"]);
+
+  // With no x64 row at all, the only Windows artifact is the honest fallback for an x64 visitor.
+  const arm64Only = {
+    ...cards[0],
+    actions: cards[0].actions.filter((action) => action.architecture === "arm64"),
+  };
+  assert.equal(
+    resolveSdkworkDownloadCardActions(arm64Only, "windows", "x64").primaryAction.id,
+    "desktop-windows-arm64",
+  );
+});
+
+test("published download targets keep query strings, fragments, and bare hosts", () => {
+  const published = {
+    schemaVersion: "2026-05-18.sdkwork-download-catalog.v1",
+    product: { id: "sdkwork-cloudrouter", name: "SdkWork CloudRouter", version: "1.0.0" },
+    cards: [
+      {
+        id: "card-desktop",
+        title: "Desktop",
+        description: "For developers.",
+        kind: "desktop",
+        actions: [
+          {
+            id: "signed",
+            label: "Signed",
+            href: "https://cdn.example.test/cloudrouter.msi?X-Amz-Signature=abc#sha256",
+            platform: "windows",
+          },
+          {
+            id: "bare-host",
+            label: "Bare host",
+            href: "downloads.example.test/cloudrouter.deb",
+            platform: "linux",
+          },
+          {
+            id: "protocol-relative",
+            label: "Protocol relative",
+            href: "//evil.test/cloudrouter.msi",
+            platform: "windows",
+          },
+          {
+            id: "script",
+            label: "Script",
+            href: "javascript:alert(1)",
+            platform: "windows",
+          },
+        ],
+      },
+    ],
+  };
+  const actions = actionsById(createCloudRouterDownloadCards(t, { catalog: published }).flatMap((card) => card.actions));
+
+  assert.equal(
+    actions.get("signed")?.href,
+    "https://cdn.example.test/cloudrouter.msi?X-Amz-Signature=abc#sha256",
+  );
+  assert.equal(actions.get("signed")?.disabled, false);
+  assert.equal(actions.get("bare-host")?.href, "https://downloads.example.test/cloudrouter.deb");
+  assert.equal(actions.get("bare-host")?.disabled, false);
+  assert.equal(actions.get("protocol-relative")?.disabled, true);
+  assert.equal(actions.get("script")?.disabled, true);
+});
+
 test("HarmonyOS is a first-class platform across detection, the bundled catalog, and published docs", () => {
   // UA detection must see HarmonyOS before Android: NEXT UAs carry "OpenHarmony" alone and
   // HarmonyOS 2-4 UAs carry both tokens, so an Android-first check would swallow every Huawei
@@ -894,6 +1064,19 @@ test("HarmonyOS is a first-class platform across detection, the bundled catalog,
   assert.equal(harmonyAction?.disabled, false);
   const resolved = resolveSdkworkDownloadCardActions(cards[0], "harmonyos");
   assert.equal(resolved.primaryAction.id, "mobile-harmonyos");
+
+  // An iOS row that is explicitly parked must stay primary: replacing it with the HarmonyOS
+  // package would offer an iPhone visitor a binary for a different platform.
   const resolvedForIphone = resolveSdkworkDownloadCardActions(cards[0], "ios");
-  assert.equal(resolvedForIphone.primaryAction.id, "mobile-harmonyos", "a HarmonyOS visitor without an iOS package falls back to the first available installer");
+  assert.equal(resolvedForIphone.primaryAction.id, "mobile-ios");
+  assert.equal(resolvedForIphone.primaryAction.disabled, true);
+
+  // When the catalog carries no iOS row at all, the first available installer is the honest
+  // fallback — the card has nothing platform-specific to show.
+  const withoutIos = {
+    ...cards[0],
+    actions: cards[0].actions.filter((action) => action.id !== "mobile-ios"),
+  };
+  const fallback = resolveSdkworkDownloadCardActions(withoutIos, "ios");
+  assert.equal(fallback.primaryAction.id, "mobile-harmonyos");
 });

@@ -1,10 +1,57 @@
 use std::collections::BTreeMap;
 
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
 fn to_json_value<T: Serialize>(value: &T) -> Value {
     serde_json::to_value(value).unwrap_or_else(|_| Value::Object(Map::new()))
+}
+
+/// Declares a permissive string enum: the enumerated variants stay strongly
+/// typed while any other value the vendor or client defines is preserved
+/// verbatim.
+///
+/// The OpenAI surface grows by extension (new tool kinds, new service tiers,
+/// new reasoning efforts), and Cloud Router relays the caller's raw body. A
+/// value this contract does not enumerate must therefore deserialize instead
+/// of rejecting the whole request before routing.
+macro_rules! permissive_string_enum {
+    ($name:ident { $($variant:ident => $text:literal),+ $(,)? }) => {
+        #[derive(Debug, Clone, PartialEq, Eq)]
+        pub enum $name {
+            $($variant,)+
+            /// A value this contract does not enumerate.
+            Other(String),
+        }
+
+        impl $name {
+            /// The wire value of this variant.
+            pub fn as_str(&self) -> &str {
+                match self {
+                    $(Self::$variant => $text,)+
+                    Self::Other(value) => value.as_str(),
+                }
+            }
+        }
+
+        impl serde::Serialize for $name {
+            fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+                serializer.serialize_str(self.as_str())
+            }
+        }
+
+        impl<'de> serde::Deserialize<'de> for $name {
+            fn deserialize<D: serde::Deserializer<'de>>(
+                deserializer: D,
+            ) -> Result<Self, D::Error> {
+                let value = String::deserialize(deserializer)?;
+                Ok(match value.as_str() {
+                    $($text => Self::$variant,)+
+                    _ => Self::Other(value),
+                })
+            }
+        }
+    };
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -27,36 +74,13 @@ pub enum OpenAiChatContentPartType {
     File,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum OpenAiToolType {
-    Function,
-    Other(String),
-}
-
-impl OpenAiToolType {
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Function => "function",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl Serialize for OpenAiToolType {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(self.as_str())
-    }
-}
-
-impl<'de> Deserialize<'de> for OpenAiToolType {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let value = String::deserialize(deserializer)?;
-        Ok(match value.as_str() {
-            "function" => Self::Function,
-            _ => Self::Other(value),
-        })
-    }
-}
+// `type` of a tool definition and of a tool call. Chat Completions started
+// with `function` only; Responses adds `web_search`, `file_search`, `mcp`,
+// `custom`, `local_shell`, `image_generation`, `code_interpreter`, and others,
+// and clients (Codex-class agents) send them on `/v1/responses`.
+permissive_string_enum!(OpenAiToolType {
+    Function => "function",
+});
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -81,85 +105,23 @@ pub enum OpenAiEmbeddingEncodingFormat {
     Base64,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum OpenAiServiceTier {
-    Auto,
-    Default,
-    Flex,
-    Priority,
-    Other(String),
-}
+// Service tiers are billing/routing hints owned by the vendor; the enumerated
+// values are the documented set, and a new tier must still route.
+permissive_string_enum!(OpenAiServiceTier {
+    Auto => "auto",
+    Default => "default",
+    Flex => "flex",
+    Priority => "priority",
+});
 
-impl OpenAiServiceTier {
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Auto => "auto",
-            Self::Default => "default",
-            Self::Flex => "flex",
-            Self::Priority => "priority",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl Serialize for OpenAiServiceTier {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(self.as_str())
-    }
-}
-
-impl<'de> Deserialize<'de> for OpenAiServiceTier {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let value = String::deserialize(deserializer)?;
-        Ok(match value.as_str() {
-            "auto" => Self::Auto,
-            "default" => Self::Default,
-            "flex" => Self::Flex,
-            "priority" => Self::Priority,
-            _ => Self::Other(value),
-        })
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum OpenAiReasoningEffort {
-    Minimal,
-    Low,
-    Medium,
-    High,
-    Other(String),
-}
-
-impl OpenAiReasoningEffort {
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Minimal => "minimal",
-            Self::Low => "low",
-            Self::Medium => "medium",
-            Self::High => "high",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl Serialize for OpenAiReasoningEffort {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(self.as_str())
-    }
-}
-
-impl<'de> Deserialize<'de> for OpenAiReasoningEffort {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let value = String::deserialize(deserializer)?;
-        Ok(match value.as_str() {
-            "minimal" => Self::Minimal,
-            "low" => Self::Low,
-            "medium" => Self::Medium,
-            "high" => Self::High,
-            _ => Self::Other(value),
-        })
-    }
-}
+// Reasoning effort values move with the vendor's model line (`minimal` through
+// `high`, plus newer levels such as `xhigh`); unknown levels are forwarded.
+permissive_string_enum!(OpenAiReasoningEffort {
+    Minimal => "minimal",
+    Low => "low",
+    Medium => "medium",
+    High => "high",
+});
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -182,8 +144,10 @@ pub enum OpenAiResponseInputContentPartType {
     InputText,
     InputImage,
     InputFile,
-    InputAudio,
+    /// Assistant history fed back into `input` carries the model's own output
+    /// parts (`output_text`), which is how a Responses conversation round-trips.
     OutputText,
+    InputAudio,
     OutputAudio,
 }
 
@@ -245,6 +209,11 @@ pub enum OpenAiToolChoice {
     Tool(OpenAiNamedToolChoice),
 }
 
+/// A named tool choice, in either wire shape:
+///
+/// - Chat Completions nests the function: `{"type":"function","function":{"name":"f"}}`
+/// - Responses flattens the name and also names built-in tools:
+///   `{"type":"function","name":"f"}`, `{"type":"web_search"}`
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct OpenAiNamedToolChoice {
     #[serde(rename = "type")]
@@ -258,6 +227,7 @@ pub struct OpenAiNamedToolChoice {
 }
 
 impl OpenAiNamedToolChoice {
+    /// The selected tool name, whichever shape carried it.
     pub fn tool_name(&self) -> Option<&str> {
         self.function
             .as_ref()
@@ -407,6 +377,32 @@ pub struct OpenAiJsonSchemaFormat {
     pub extra: Map<String, Value>,
 }
 
+/// JSON Schema `type` value.
+///
+/// Draft 2020-12 allows a **union** of type names, and every modern schema
+/// generator emits it for nullable fields: schemars 1.x renders `Option<T>` as
+/// `"type": ["string", "null"]`. `tools[].function.parameters` is an arbitrary
+/// JSON Schema, so a single-string model here rejects a legal request body with
+/// `invalid type: sequence, expected a string` before any upstream dispatch.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum OpenAiSchemaType {
+    /// One type name, e.g. `"object"`.
+    Single(String),
+    /// A union of type names, e.g. `["string", "null"]`.
+    Multiple(Vec<String>),
+}
+
+impl OpenAiSchemaType {
+    /// The type names in declaration order.
+    pub fn names(&self) -> Vec<&str> {
+        match self {
+            OpenAiSchemaType::Single(name) => vec![name.as_str()],
+            OpenAiSchemaType::Multiple(names) => names.iter().map(String::as_str).collect(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct OpenAiJsonSchema {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
@@ -417,8 +413,9 @@ pub struct OpenAiJsonSchema {
     pub properties: Option<BTreeMap<String, OpenAiJsonSchema>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub required: Option<Vec<String>>,
+    /// `items` is one schema for every element, or 鈥?in draft-07 tuple form 鈥?    /// one schema per position.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub items: Option<Box<OpenAiJsonSchemaItems>>,
+    pub items: Option<OpenAiJsonSchemaItems>,
     #[serde(
         rename = "additionalProperties",
         skip_serializing_if = "Option::is_none"
@@ -430,29 +427,12 @@ pub struct OpenAiJsonSchema {
     pub extra: Map<String, Value>,
 }
 
-/// JSON Schema `type`: a single name, or the draft-2020-12 union form that
-/// schemars 1.x emits for every nullable (`Option<T>`) field.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum OpenAiSchemaType {
-    Single(String),
-    Multiple(Vec<String>),
-}
-
-impl OpenAiSchemaType {
-    pub fn names(&self) -> Vec<&str> {
-        match self {
-            Self::Single(name) => vec![name.as_str()],
-            Self::Multiple(names) => names.iter().map(String::as_str).collect(),
-        }
-    }
-}
-
-/// JSON Schema `items`: a single schema, or the draft-07 tuple form.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum OpenAiJsonSchemaItems {
+    /// One schema for every element (draft 2020-12 `items`).
     Single(Box<OpenAiJsonSchema>),
+    /// One schema per position (draft-07 tuple form).
     Tuple(Vec<OpenAiJsonSchema>),
 }
 
@@ -555,36 +535,6 @@ pub struct OpenAiFunctionDefinition {
     pub strict: Option<bool>,
     #[serde(default, flatten)]
     pub extra: Map<String, Value>,
-}
-
-/// Responses API tool: the nested chat form plus the flat function form and
-/// built-in kinds (`web_search`, `custom`, `local_shell`, `mcp`, ...).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct OpenAiResponseTool {
-    #[serde(rename = "type")]
-    pub tool_type: OpenAiToolType,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<OpenAiJsonSchema>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub strict: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub function: Option<OpenAiFunctionDefinition>,
-    #[serde(default, flatten)]
-    pub extra: Map<String, Value>,
-}
-
-impl OpenAiResponseTool {
-    pub fn function_name(&self) -> Option<&str> {
-        self.name.as_deref().or_else(|| {
-            self.function
-                .as_ref()
-                .map(|function| function.name.as_str())
-        })
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -775,6 +725,43 @@ pub struct OpenAiResponsesRequest {
 impl OpenAiResponsesRequest {
     pub fn to_provider_json(&self) -> Value {
         to_json_value(self)
+    }
+}
+
+/// Tool definition on the Responses surface.
+///
+/// Responses accepts both the chat-shaped nested function
+/// (`{"type":"function","function":{"name":...}}`) and the flat form
+/// (`{"type":"function","name":...,"parameters":...,"strict":...}`), plus
+/// built-in kinds whose payload is vendor-defined (`web_search`,
+/// `file_search`, `mcp`, `custom`, `local_shell`, `code_interpreter`,
+/// `image_generation`, ...). Anything unrecognized is preserved under `extra`,
+/// so a new built-in tool never fails the request before routing.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OpenAiResponseTool {
+    #[serde(rename = "type")]
+    pub tool_type: OpenAiToolType,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub function: Option<OpenAiFunctionDefinition>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<OpenAiJsonSchema>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub strict: Option<bool>,
+    #[serde(default, flatten)]
+    pub extra: Map<String, Value>,
+}
+
+impl OpenAiResponseTool {
+    /// The function name, whether nested (chat shape) or flat (Responses shape).
+    pub fn function_name(&self) -> Option<&str> {
+        self.function
+            .as_ref()
+            .map(|function| function.name.as_str())
+            .or(self.name.as_deref())
     }
 }
 

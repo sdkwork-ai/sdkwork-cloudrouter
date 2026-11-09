@@ -249,6 +249,7 @@ function cardClassName(variant: SdkworkDownloadSectionVariant): string {
 
 export function SdkworkDownloadCardView({
   card,
+  detectedArchitecture,
   detectedPlatform,
   onDownloadSelect,
   variant = "section",
@@ -257,6 +258,7 @@ export function SdkworkDownloadCardView({
   const { primaryAction, secondaryActions } = resolveSdkworkDownloadCardActions(
     card,
     detectedPlatform,
+    detectedArchitecture,
   );
   const BackgroundIcon = iconByName[card.icon ?? "download"];
 

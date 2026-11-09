@@ -37,9 +37,10 @@ fn published_downloads() -> Value {
                     {
                         "id": "desktop-windows-x64",
                         "label": "Windows x64",
-                        "href": "https://example.com/cloudrouter-windows-x64-1.0.0.msi",
+                        "href": "https://cdn.example.com/cloudrouter-windows-x64-1.0.0.msi?X-Amz-Signature=abc#sha256",
                         "platform": "windows",
                         "architecture": "x64",
+                        "disabled": false,
                         "fileName": "cloudrouter-windows-x64-1.0.0.msi",
                         "sizeBytes": 184320
                     }

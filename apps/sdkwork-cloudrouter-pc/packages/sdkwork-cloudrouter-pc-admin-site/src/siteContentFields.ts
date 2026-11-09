@@ -829,7 +829,8 @@ export type DownloadCatalogWarningCode =
   | 'card.identity'
   | 'card.actions.missing'
   | 'action.identity'
-  | 'action.target';
+  | 'action.target'
+  | 'action.href';
 
 function randomIdFragment(): string {
   return Math.random().toString(36).slice(2, 8);
@@ -1101,7 +1102,16 @@ function writeCatalogAction(action: DownloadCatalogActionFields): Record<string,
   if (label !== undefined) doc.label = label;
 
   const href = action.href.trim().length > 0
-    ? writeCatalogText(action.href, HOME_TEXT_MAX_LENGTH)
+    ? (
+      isDownloadCatalogDriveHref(action.href)
+        ? writeCatalogText(action.href, HOME_TEXT_MAX_LENGTH)
+        // Canonicalise a URL the runtime can follow (and complete a bare host with https://) so
+        // the document that is stored is the document the landing page actually renders. An
+        // invalid value is preserved verbatim: the editor warns, and discarding the operator's
+        // input is worse than letting the row render as unavailable until they fix it.
+        : normalizeDownloadCatalogHref(action.href)
+          ?? writeCatalogText(action.href, HOME_TEXT_MAX_LENGTH)
+    )
     : writeDriveHref(action.drive);
   if (href !== undefined) doc.href = href;
 
@@ -1262,7 +1272,7 @@ export function findDownloadCatalogCardWarningCodes(
   }
   for (const action of card.actions) {
     for (const code of findDownloadCatalogActionWarningCodes(action)) {
-      if (parked && code === 'action.target') {
+      if (parked && (code === 'action.target' || code === 'action.href')) {
         continue;
       }
       codes.push(code);
@@ -1284,14 +1294,81 @@ export function findDownloadCatalogActionWarningCodes(
   if (!action.id.trim() || !action.label.trim()) {
     codes.push('action.identity');
   }
-  const hasTarget = action.href.trim().length > 0
-    || (Boolean(action.drive.nodeId) && Boolean(action.drive.spaceId));
+  const hasDriveMirror = isDownloadCatalogDriveHref(action.href);
+  const hasDriveRef = Boolean(action.drive.nodeId) && Boolean(action.drive.spaceId);
+  // A `drive://` mirror is only a target when its Drive reference is present; without one the
+  // homepage has nothing to resolve and renders the row as unavailable.
+  const hasTarget = hasDriveRef || (action.href.trim().length > 0 && !hasDriveMirror);
   // A deliberately disabled row needs no target; an enabled row without one would render as
   // "coming soon", which is a legitimate intermediate state and therefore only a warning.
   if (!hasTarget && !action.disabled) {
     codes.push('action.target');
   }
+  // A target the homepage cannot follow is worse than a missing one: the row looks configured,
+  // saves cleanly, and still renders "coming soon". Flag it here so the operator fixes the URL
+  // instead of auditing the frontend.
+  if (!action.disabled && isDownloadCatalogHrefInvalid(action.href)) {
+    codes.push('action.href');
+  }
   return codes;
+}
+
+const DOWNLOAD_CATALOG_HREF_SCHEME = /^[a-z][a-z0-9+.-]*:/iu;
+const DOWNLOAD_CATALOG_HREF_HOST = /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}(?::\d{1,5})?(?:[/?#]|$)/iu;
+
+/**
+ * The console half of the runtime's download-target rules.
+ *
+ * Mirrors `normalizeDownloadHref` in `sdkwork-cloudrouter-pc-home/src/downloads/
+ * cloudRouterDownloads.ts`: the two packages cannot import each other (a console package may not
+ * depend on a landing surface), and `site-content-authoring.test.ts` feeds the console's output
+ * through the real runtime reader so the copies cannot drift. Query strings and fragments are
+ * legitimate on signed download links and are preserved; a bare host is completed with
+ * `https://`; protocol-relative and non-http(s) targets are refused.
+ */
+export function normalizeDownloadCatalogHref(value: string): string | undefined {
+  const href = value.trim();
+  if (!href || href === '#' || /\s/u.test(href) || href.startsWith('//')) {
+    return undefined;
+  }
+
+  if (href.startsWith('/')) {
+    return href;
+  }
+
+  let candidate = href;
+  // Host-like first: `downloads.example.com:8443/file.msi` would otherwise look like a custom
+  // scheme because the scheme grammar also permits dots.
+  if (!DOWNLOAD_CATALOG_HREF_SCHEME.test(candidate) || DOWNLOAD_CATALOG_HREF_HOST.test(candidate)) {
+    if (!DOWNLOAD_CATALOG_HREF_HOST.test(candidate)) {
+      return undefined;
+    }
+    candidate = `https://${candidate}`;
+  }
+
+  try {
+    const parsed = new URL(candidate);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return undefined;
+    }
+    return candidate;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Whether a non-empty download target would be discarded by the homepage.
+ *
+ * A `drive://` mirror is intentional (the landing page resolves it to a fresh presigned URL), so
+ * it is not reported here; a mirror without its Drive reference is caught by `action.target`.
+ */
+export function isDownloadCatalogHrefInvalid(href: string): boolean {
+  const trimmed = href.trim();
+  if (trimmed.length === 0 || isDownloadCatalogDriveHref(trimmed)) {
+    return false;
+  }
+  return normalizeDownloadCatalogHref(trimmed) === undefined;
 }
 
 /**

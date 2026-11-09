@@ -18,6 +18,8 @@ import {
   findDownloadCatalogCardWarningCodes,
   findIncompleteDownloadCatalog,
   findIncompleteHomeContent,
+  isDownloadCatalogHrefInvalid,
+  normalizeDownloadCatalogHref,
   readDownloadCatalogForm,
   readDownloadCatalogText,
   readHomeContentForm,
@@ -491,6 +493,62 @@ test('the runtime reads the same drive references the structured editor publishe
     unresolved[0].actions.find((action) => action.id === 'desktop-macos-uploaded')?.disabled,
     true,
   );
+});
+
+test('a configured download URL survives the console-to-runtime chain with its query string', () => {
+  const form = fullyAuthoredDownloadCatalogForm();
+  form.cards[0].actions[0].href =
+    'cdn.example.com/releases/cloudrouter-windows-x64.msi?token=abc#sha256';
+
+  // The console canonicalises what it can prove (a bare host becomes https://) and keeps the
+  // query string the CDN signed. The runtime reader then has to reach the same verdict, because
+  // the two packages cannot share the implementation.
+  assert.equal(
+    normalizeDownloadCatalogHref(form.cards[0].actions[0].href),
+    'https://cdn.example.com/releases/cloudrouter-windows-x64.msi?token=abc#sha256',
+  );
+
+  const payload = JSON.parse(toDownloadCatalogText(form));
+  const catalog = createCloudRouterDownloadCatalog(readRuntimeDownloadCatalog(payload));
+  const windows = catalog.cards[0].actions.find((action) => action.id === 'desktop-windows-x64');
+  assert.equal(
+    windows?.href,
+    'https://cdn.example.com/releases/cloudrouter-windows-x64.msi?token=abc#sha256',
+  );
+  assert.equal(
+    windows?.disabled,
+    false,
+    'a configured URL must not normalize into the "coming soon" state',
+  );
+});
+
+test('the console warns about a download URL the homepage cannot open', () => {
+  const form = fullyAuthoredDownloadCatalogForm();
+  form.cards[0].actions[0].href = 'javascript:alert(1)';
+
+  for (const rejected of [
+    'javascript:alert(1)',
+    '//evil.test/cloudrouter.msi',
+    'data:text/plain,hello',
+    'not a url',
+  ]) {
+    assert.equal(isDownloadCatalogHrefInvalid(rejected), true, `${rejected} must be reported`);
+    assert.equal(normalizeDownloadCatalogHref(rejected), undefined);
+  }
+  assert.equal(isDownloadCatalogHrefInvalid('https://cdn.example.test/a.msi?token=1'), false);
+  assert.equal(isDownloadCatalogHrefInvalid('/downloads/a.msi?token=1'), false);
+  assert.equal(isDownloadCatalogHrefInvalid('drive://spaces/s/nodes/n'), false);
+
+  assert.ok(
+    findDownloadCatalogActionWarningCodes(form.cards[0].actions[0]).includes('action.href'),
+    'the installer row must carry the href warning',
+  );
+  assert.deepEqual(findDownloadCatalogCardWarningCodes(form.cards[0]), ['action.href']);
+
+  // The value is preserved rather than discarded: the operator sees it in the form and the
+  // warning tells them what to fix.
+  const payload = JSON.parse(toDownloadCatalogText(form));
+  assert.equal(payload.cards[0].actions[0].href, 'javascript:alert(1)');
 });
 
 test('the structured editor keeps a half-written catalog instead of dropping it', () => {
