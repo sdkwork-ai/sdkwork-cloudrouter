@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { CheckCircle2, ChevronRight, Edit3, Eye, EyeOff, Layers3, Plus, Power, PowerOff, RefreshCw, Search, Settings2, SlidersHorizontal, Trash2, X, XCircle } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Edit3, Eye, EyeOff, Layers3, Plus, Power, PowerOff, RefreshCw, RotateCcw, Search, Settings2, SlidersHorizontal, Trash2, X, XCircle } from 'lucide-react';
 import { SdkworkSearchableSelect } from '@sdkwork/appbase-pc-react';
 import { AdminTableShell, BottomPagination, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
 import { formatDecimalDisplay } from '@sdkwork/cloudroutes-pc-commons/runtime';
@@ -950,6 +950,30 @@ function AccountCredentials({ account, supplier, onAccountChanged, onClose }: { 
     }
   };
 
+  const reactivateCredential = async (credential: UpstreamAccountCredential) => {
+    // 后端没有 activate 端点（DELETE 只是停用）；用同一密钥创建一条新凭证
+    // 等价于重新启用，同时保留原凭证行作为审计记录。
+    if (!window.confirm(t('admin.upstream.account.credentials.reactivateConfirm', { name: credential.credentialName }))) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const revealed = await upstreamService.accounts.revealCredentialSecret(account.id, credential.id);
+      await upstreamService.accounts.createCredential(account.id, {
+        credentialName: t('admin.upstream.account.credentials.reactivatedName'),
+        secret: revealed.secret,
+        priority: credential.priority ?? 100,
+      });
+      await load();
+      onAccountChanged(await upstreamService.accounts.retrieve(account.id));
+    } catch (cause) {
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const verify = async () => {
     setBusy(true);
     setError(null);
@@ -1011,7 +1035,7 @@ function AccountCredentials({ account, supplier, onAccountChanged, onClose }: { 
             {credentials.map((credential) => (
               <div key={credential.id} className="flex items-center justify-between gap-3 rounded-md border border-slate-200 px-3 py-2 dark:border-white/10">
                 <div className="min-w-0"><span className="block truncate text-sm font-semibold text-slate-900 dark:text-white">{credential.credentialName}</span><span className="block truncate font-mono text-xs text-slate-500">{credential.maskedLabel ?? credential.credentialVersion}</span></div>
-                <div className="flex items-center gap-2"><StatusBadge status={credential.status} /><button type="button" className={dangerButtonClass} onClick={() => void deleteCredential(credential.id)} disabled={busy}><Trash2 className="h-4 w-4" /></button></div>
+                <div className="flex items-center gap-2"><StatusBadge status={credential.status} />{credential.status !== 1 ? <button type="button" className={secondaryButtonClass} onClick={() => void reactivateCredential(credential)} disabled={busy} title={t('admin.upstream.account.credentials.reactivate')}><RotateCcw className="h-4 w-4" /></button> : null}<button type="button" className={dangerButtonClass} onClick={() => void deleteCredential(credential.id)} disabled={busy}><Trash2 className="h-4 w-4" /></button></div>
               </div>
             ))}
             {!loading && credentials.length === 0 ? <p className="py-6 text-center text-sm text-slate-500">{t('admin.upstream.account.credentials.empty')}</p> : null}
