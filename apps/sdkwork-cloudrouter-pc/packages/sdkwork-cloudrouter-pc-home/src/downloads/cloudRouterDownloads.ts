@@ -91,30 +91,52 @@ function numberValue(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
+const DOWNLOAD_HREF_SCHEME = /^[a-z][a-z0-9+.-]*:/iu;
+const DOWNLOAD_HREF_HOST = /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}(?::\d{1,5})?(?:[/?#]|$)/iu;
+
+/**
+ * Normalizes an operator-authored download target into a URL a browser can follow.
+ *
+ * A download link is not a site base URL: signed CDN links carry `?X-Amz-Signature=…`, version
+ * pickers carry `?version=…`, and a copied link may carry a fragment. Rejecting those turned a
+ * perfectly configured installer into the "coming soon" state on the landing page — the operator
+ * had saved the URL, the backend had persisted it verbatim, and only the renderer silently
+ * dropped it.
+ *
+ * What is still refused is what a visitor must never be navigated to: protocol-relative URLs,
+ * non-http(s) schemes (`javascript:`, `data:`, `drive:`), embedded whitespace, and relative
+ * paths that are ambiguous without a leading slash. A bare host copied from a browser
+ * (`downloads.example.com/file.msi`) is completed with `https://`, matching what the operator
+ * meant rather than discarding it.
+ */
 function normalizeDownloadHref(value: unknown): string {
   const href = stringValue(value)?.trim();
-  if (!href || href === '#') {
-    return '';
+  if (!href || href === "#" || /\s/u.test(href) || href.startsWith("//")) {
+    return "";
   }
 
-  if (href.startsWith('/')) {
-    if (href.startsWith('//') || href.includes('?') || href.includes('#')) {
-      return '';
-    }
+  if (href.startsWith("/")) {
     return href;
+  }
+
+  let candidate = href;
+  // Host-like first: `downloads.example.com:8443/file.msi` would otherwise look like a custom
+  // scheme because the scheme grammar also permits dots.
+  if (!DOWNLOAD_HREF_SCHEME.test(candidate) || DOWNLOAD_HREF_HOST.test(candidate)) {
+    if (!DOWNLOAD_HREF_HOST.test(candidate)) {
+      return "";
+    }
+    candidate = `https://${candidate}`;
   }
 
   try {
-    const parsed = new URL(href);
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-      return '';
+    const parsed = new URL(candidate);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return "";
     }
-    if (parsed.search || parsed.hash) {
-      return '';
-    }
-    return href;
+    return candidate;
   } catch {
-    return '';
+    return "";
   }
 }
 

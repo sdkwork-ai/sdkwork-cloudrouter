@@ -31,6 +31,7 @@ import {
   findDownloadCatalogCardWarningCodes,
   findIncompleteDownloadCatalog,
   isDownloadCatalogDriveHref,
+  isDownloadCatalogHrefInvalid,
   readInitialDownloadCatalogForm,
   toDownloadCatalogText,
   type DownloadCatalogActionFields,
@@ -96,6 +97,7 @@ function installerExtensionOf(fileName: string): string | undefined {
 }
 
 const WARNING_LABEL_KEYS: Record<DownloadCatalogWarningCode, string> = {
+  'action.href': 'admin.siteSettings.downloads.warning.actionHref',
   'action.identity': 'admin.siteSettings.downloads.warning.actionIdentity',
   'action.target': 'admin.siteSettings.downloads.warning.actionTarget',
   'card.actions.missing': 'admin.siteSettings.downloads.warning.cardActionsMissing',
@@ -821,6 +823,7 @@ function DownloadCatalogActionEditor({
   const actionWarnings = findDownloadCatalogActionWarningCodes(action);
   const identityWarning = actionWarnings.includes('action.identity');
   const targetWarning = actionWarnings.includes('action.target');
+  const hrefWarning = actionWarnings.includes('action.href');
 
   return (
     <div
@@ -868,6 +871,7 @@ function DownloadCatalogActionEditor({
             label={t('admin.siteSettings.downloads.action.architecture')}
             maxLength={255}
             onChange={(architecture) => onPatch({ architecture })}
+            placeholder={t('admin.siteSettings.downloads.action.architecturePlaceholder')}
             value={action.architecture}
           />
         </div>
@@ -894,6 +898,11 @@ function DownloadCatalogActionEditor({
       {targetWarning ? (
         <div className="mt-2">
           <InlineWarning>{t(WARNING_LABEL_KEYS['action.target'])}</InlineWarning>
+        </div>
+      ) : null}
+      {hrefWarning ? (
+        <div className="mt-2">
+          <InlineWarning>{t(WARNING_LABEL_KEYS['action.href'])}</InlineWarning>
         </div>
       ) : null}
 
@@ -966,6 +975,7 @@ function InstallerSourceField({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [clientError, setClientError] = useState<string | null>(null);
   const hasDriveFile = action.drive.nodeId.trim().length > 0;
+  const hrefInvalid = isDownloadCatalogHrefInvalid(action.href);
 
   const handleFile = async (file: File) => {
     setClientError(null);
@@ -1043,6 +1053,7 @@ function InstallerSourceField({
       ) : (
         <div className="grid grid-cols-1 gap-2">
           <TextField
+            error={hrefInvalid ? t(WARNING_LABEL_KEYS['action.href']) : null}
             label={t('admin.siteSettings.downloads.action.href')}
             maxLength={4096}
             onChange={(href) => onPatch({ href })}

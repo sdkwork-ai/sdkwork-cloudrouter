@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use axum::body::Bytes;
 use axum::extract::{Extension, Query, State};
-use axum::http::HeaderMap;
+use axum::http::{header, HeaderMap, HeaderValue};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
@@ -266,7 +266,7 @@ async fn fetch_site_settings(
         .get_site_settings(GetSiteSettingsQuery { subject })
         .await
     {
-        Ok(settings) => Json(success_envelope(to_response(settings))).into_response(),
+        Ok(settings) => site_settings_response(settings),
         Err(error) => system_error_response("site settings read model is unavailable", error),
     }
 }
@@ -302,7 +302,7 @@ async fn update_site_settings(
     };
 
     match state.store.update_site_settings(command).await {
-        Ok(settings) => Json(success_envelope(to_response(settings))).into_response(),
+        Ok(settings) => site_settings_response(settings),
         Err(error) => system_error_response("site settings command store is unavailable", error),
     }
 }
@@ -317,10 +317,7 @@ async fn fetch_site_runtime_settings(
     // language without this endpoint gaining a locale parameter.
     let locale = locale.map(|Extension(locale)| locale.effective);
     let Some(store) = state.store.as_ref() else {
-        return Json(success_envelope(to_response(
-            SiteSettings::default().localized_for(locale.as_deref()),
-        )))
-        .into_response();
+        return site_settings_response(SiteSettings::default().localized_for(locale.as_deref()));
     };
     let tenant_code = match normalize_optional_field(
         "tenant_code",
@@ -345,14 +342,10 @@ async fn fetch_site_runtime_settings(
         })
         .await
     {
-        Ok(settings) => Json(success_envelope(to_response(
-            settings.localized_for(locale.as_deref()),
-        )))
-        .into_response(),
-        Err(error) if error.is_not_found() => Json(success_envelope(to_response(
-            SiteSettings::default().localized_for(locale.as_deref()),
-        )))
-        .into_response(),
+        Ok(settings) => site_settings_response(settings.localized_for(locale.as_deref())),
+        Err(error) if error.is_not_found() => {
+            site_settings_response(SiteSettings::default().localized_for(locale.as_deref()))
+        }
         Err(error) => system_error_response("site runtime settings are unavailable", error),
     }
 }
@@ -815,6 +808,20 @@ fn optional_string(value: String) -> Option<String> {
     }
 }
 
+/// Serializes site settings with an explicit `no-store` policy.
+///
+/// Both endpoints expose a document the operator edits from `/admin/site`. A browser or shared
+/// cache that heuristically reuses an older response makes a saved download catalog look like it
+/// never reached the landing page — the exact "configured but still coming soon" report this
+/// policy prevents. The payload is a small JSON read, so disabling storage costs nothing.
+fn site_settings_response(settings: SiteSettings) -> Response {
+    let mut response = Json(success_envelope(to_response(settings))).into_response();
+    response
+        .headers_mut()
+        .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
+    response
+}
+
 fn to_response(settings: SiteSettings) -> SiteSettingsResponse {
     SiteSettingsResponse {
         site_name: settings.site_name,
@@ -957,6 +964,81 @@ mod tests {
         assert_eq!(
             Some("home"),
             payload["adminModules"]["modules"][0]["id"].as_str()
+        );
+    }
+
+    #[test]
+    fn site_settings_response_is_not_stored_by_browsers_or_proxies() {
+        let response = super::site_settings_response(SiteSettings::default());
+
+        assert_eq!(
+            Some("no-store"),
+            response
+                .headers()
+                .get(axum::http::header::CACHE_CONTROL)
+                .and_then(|value| value.to_str().ok()),
+            "a saved download catalog must not be masked by a stored site-settings response"
+        );
+    }
+
+    #[test]
+    fn merge_update_request_accepts_a_download_catalog_document() {
+        let catalog = json!({
+            "product": { "id": "sdkwork-cloudrouter", "name": "SdkWork CloudRouter", "version": "1.0.0" },
+            "cards": [{
+                "id": "desktop",
+                "title": "Desktop",
+                "description": "For developers.",
+                "kind": "desktop",
+                "actions": [{
+                    "id": "desktop-windows-x64",
+                    "label": "Windows x64",
+                    "href": "https://cdn.example.test/app.msi?token=abc",
+                    "platform": "windows",
+                    "architecture": "x64"
+                }]
+            }]
+        });
+
+        let merged = merge_update_request(
+            SiteSettings::default(),
+            request(json!({ "downloads": catalog })),
+        )
+        .expect("a download catalog object must merge");
+
+        assert_eq!(
+            Some("https://cdn.example.test/app.msi?token=abc"),
+            merged.downloads["cards"][0]["actions"][0]["href"].as_str(),
+            "a signed download URL must survive the write path verbatim"
+        );
+    }
+
+    #[test]
+    fn merge_update_request_rejects_a_non_object_download_catalog() {
+        let error = merge_update_request(
+            SiteSettings::default(),
+            request(json!({ "downloads": ["not", "a", "catalog"] })),
+        )
+        .expect_err("an array is not a download catalog document");
+
+        assert!(error.contains("downloads"));
+    }
+
+    #[test]
+    fn to_response_echoes_the_download_catalog() {
+        let settings = SiteSettings {
+            downloads: json!({
+                "product": { "id": "sdkwork-cloudrouter", "name": "SdkWork CloudRouter", "version": "1.0.0" },
+                "cards": [{ "id": "desktop", "title": "Desktop", "description": "d", "kind": "desktop",
+                    "actions": [{ "id": "a", "label": "Windows", "href": "https://example.com/a.msi" }] }]
+            }),
+            ..SiteSettings::default()
+        };
+
+        let payload = serde_json::to_value(to_response(settings)).expect("response must serialize");
+        assert_eq!(
+            Some("https://example.com/a.msi"),
+            payload["downloads"]["cards"][0]["actions"][0]["href"].as_str()
         );
     }
 

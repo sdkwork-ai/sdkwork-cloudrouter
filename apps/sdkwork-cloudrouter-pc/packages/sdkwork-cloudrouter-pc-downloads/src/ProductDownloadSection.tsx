@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import type {
+  SdkworkDetectedDownloadArchitecture,
   SdkworkDownloadPlatform,
   SdkworkProductDownloadSectionProps,
 } from "./download-types";
 import { SdkworkDownloadCardView } from "./DownloadCard";
-import { detectSdkworkDownloadPlatform } from "./platform-detection";
+import { detectSdkworkDownloadTarget } from "./platform-detection";
 
 function sectionClassName(
   className: string | undefined,
@@ -31,6 +32,7 @@ export function SdkworkProductDownloadSection({
   cards,
   className,
   catalog,
+  detectedArchitecture,
   detectedPlatform,
   onDownloadSelect,
   subtitle,
@@ -41,12 +43,34 @@ export function SdkworkProductDownloadSection({
   const [resolvedPlatform, setResolvedPlatform] = useState<SdkworkDownloadPlatform>(
     detectedPlatform ?? "generic",
   );
+  const [resolvedArchitecture, setResolvedArchitecture] =
+    useState<SdkworkDetectedDownloadArchitecture>(detectedArchitecture ?? "unknown");
 
   useEffect(() => {
-    if (!detectedPlatform) {
-      setResolvedPlatform(detectSdkworkDownloadPlatform());
+    if (detectedPlatform && detectedArchitecture) {
+      return;
     }
-  }, [detectedPlatform]);
+
+    let active = true;
+    // Platform and architecture are detected together: UA Client Hints resolves the
+    // architecture asynchronously, and running the two detections separately could pair one
+    // render's platform with another render's architecture.
+    void detectSdkworkDownloadTarget().then((target) => {
+      if (!active) {
+        return;
+      }
+      if (!detectedPlatform) {
+        setResolvedPlatform(target.platform);
+      }
+      if (!detectedArchitecture) {
+        setResolvedArchitecture(target.architecture);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [detectedArchitecture, detectedPlatform]);
 
   if (downloadCards.length === 0) {
     return null;
@@ -74,6 +98,7 @@ export function SdkworkProductDownloadSection({
           {downloadCards.map((card) => (
             <SdkworkDownloadCardView
               card={card}
+              detectedArchitecture={resolvedArchitecture}
               detectedPlatform={resolvedPlatform}
               key={card.id}
               onDownloadSelect={onDownloadSelect}
