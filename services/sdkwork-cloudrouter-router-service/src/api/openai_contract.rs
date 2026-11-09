@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{Map, Value};
 
 fn to_json_value<T: Serialize>(value: &T) -> Value {
@@ -27,10 +27,35 @@ pub enum OpenAiChatContentPartType {
     File,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OpenAiToolType {
     Function,
+    Other(String),
+}
+
+impl OpenAiToolType {
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Function => "function",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl Serialize for OpenAiToolType {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
+impl<'de> Deserialize<'de> for OpenAiToolType {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let value = String::deserialize(deserializer)?;
+        Ok(match value.as_str() {
+            "function" => Self::Function,
+            _ => Self::Other(value),
+        })
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -56,22 +81,84 @@ pub enum OpenAiEmbeddingEncodingFormat {
     Base64,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OpenAiServiceTier {
     Auto,
     Default,
     Flex,
     Priority,
+    Other(String),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+impl OpenAiServiceTier {
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Auto => "auto",
+            Self::Default => "default",
+            Self::Flex => "flex",
+            Self::Priority => "priority",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl Serialize for OpenAiServiceTier {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
+impl<'de> Deserialize<'de> for OpenAiServiceTier {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let value = String::deserialize(deserializer)?;
+        Ok(match value.as_str() {
+            "auto" => Self::Auto,
+            "default" => Self::Default,
+            "flex" => Self::Flex,
+            "priority" => Self::Priority,
+            _ => Self::Other(value),
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OpenAiReasoningEffort {
     Minimal,
     Low,
     Medium,
     High,
+    Other(String),
+}
+
+impl OpenAiReasoningEffort {
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Minimal => "minimal",
+            Self::Low => "low",
+            Self::Medium => "medium",
+            Self::High => "high",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl Serialize for OpenAiReasoningEffort {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
+impl<'de> Deserialize<'de> for OpenAiReasoningEffort {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let value = String::deserialize(deserializer)?;
+        Ok(match value.as_str() {
+            "minimal" => Self::Minimal,
+            "low" => Self::Low,
+            "medium" => Self::Medium,
+            "high" => Self::High,
+            _ => Self::Other(value),
+        })
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -95,6 +182,9 @@ pub enum OpenAiResponseInputContentPartType {
     InputText,
     InputImage,
     InputFile,
+    InputAudio,
+    OutputText,
+    OutputAudio,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -159,9 +249,21 @@ pub enum OpenAiToolChoice {
 pub struct OpenAiNamedToolChoice {
     #[serde(rename = "type")]
     pub tool_type: OpenAiToolType,
-    pub function: OpenAiNamedToolChoiceFunction,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub function: Option<OpenAiNamedToolChoiceFunction>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
     #[serde(default, flatten)]
     pub extra: Map<String, Value>,
+}
+
+impl OpenAiNamedToolChoice {
+    pub fn tool_name(&self) -> Option<&str> {
+        self.function
+            .as_ref()
+            .map(|function| function.name.as_str())
+            .or(self.name.as_deref())
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -308,7 +410,7 @@ pub struct OpenAiJsonSchemaFormat {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct OpenAiJsonSchema {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
-    pub schema_type: Option<String>,
+    pub schema_type: Option<OpenAiSchemaType>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -316,7 +418,7 @@ pub struct OpenAiJsonSchema {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub required: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub items: Option<Box<OpenAiJsonSchema>>,
+    pub items: Option<Box<OpenAiJsonSchemaItems>>,
     #[serde(
         rename = "additionalProperties",
         skip_serializing_if = "Option::is_none"
@@ -326,6 +428,32 @@ pub struct OpenAiJsonSchema {
     pub enum_values: Option<Vec<Value>>,
     #[serde(default, flatten)]
     pub extra: Map<String, Value>,
+}
+
+/// JSON Schema `type`: a single name, or the draft-2020-12 union form that
+/// schemars 1.x emits for every nullable (`Option<T>`) field.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum OpenAiSchemaType {
+    Single(String),
+    Multiple(Vec<String>),
+}
+
+impl OpenAiSchemaType {
+    pub fn names(&self) -> Vec<&str> {
+        match self {
+            Self::Single(name) => vec![name.as_str()],
+            Self::Multiple(names) => names.iter().map(String::as_str).collect(),
+        }
+    }
+}
+
+/// JSON Schema `items`: a single schema, or the draft-07 tuple form.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum OpenAiJsonSchemaItems {
+    Single(Box<OpenAiJsonSchema>),
+    Tuple(Vec<OpenAiJsonSchema>),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -427,6 +555,36 @@ pub struct OpenAiFunctionDefinition {
     pub strict: Option<bool>,
     #[serde(default, flatten)]
     pub extra: Map<String, Value>,
+}
+
+/// Responses API tool: the nested chat form plus the flat function form and
+/// built-in kinds (`web_search`, `custom`, `local_shell`, `mcp`, ...).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OpenAiResponseTool {
+    #[serde(rename = "type")]
+    pub tool_type: OpenAiToolType,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<OpenAiJsonSchema>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub strict: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub function: Option<OpenAiFunctionDefinition>,
+    #[serde(default, flatten)]
+    pub extra: Map<String, Value>,
+}
+
+impl OpenAiResponseTool {
+    pub fn function_name(&self) -> Option<&str> {
+        self.name.as_deref().or_else(|| {
+            self.function
+                .as_ref()
+                .map(|function| function.name.as_str())
+        })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -601,7 +759,7 @@ pub struct OpenAiResponsesRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_choice: Option<OpenAiToolChoice>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub tools: Option<Vec<OpenAiTool>>,
+    pub tools: Option<Vec<OpenAiResponseTool>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub top_logprobs: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]

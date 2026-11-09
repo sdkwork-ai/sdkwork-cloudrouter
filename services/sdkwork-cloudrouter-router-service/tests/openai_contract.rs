@@ -7,8 +7,8 @@ use sdkwork_cloudrouter_router_service::api::openai_contract::{
     OpenAiResponseFormatType, OpenAiResponseInput, OpenAiResponseInputContent,
     OpenAiResponseInputContentPartType, OpenAiResponseOutputContentType,
     OpenAiResponseOutputItemType, OpenAiResponseStatus, OpenAiResponsesRequest,
-    OpenAiResponsesResponse, OpenAiServiceTier, OpenAiToolChoice, OpenAiToolChoiceMode,
-    OpenAiToolType, OpenAiTruncationStrategy,
+    OpenAiResponsesResponse, OpenAiSchemaType, OpenAiServiceTier, OpenAiToolChoice,
+    OpenAiToolChoiceMode, OpenAiToolType, OpenAiTruncationStrategy,
 };
 
 #[test]
@@ -275,8 +275,8 @@ fn responses_contract_strongly_types_input_output_and_text_format() {
     );
     assert_eq!("file_123", parts[2].file_id.as_deref().unwrap());
     assert_eq!(
-        OpenAiReasoningEffort::Medium,
-        request.reasoning.as_ref().unwrap().effort.unwrap()
+        &OpenAiReasoningEffort::Medium,
+        request.reasoning.as_ref().unwrap().effort.as_ref().unwrap()
     );
     assert_eq!(
         Some(OpenAiReasoningSummary::Auto),
@@ -475,4 +475,242 @@ fn error_envelope_contract_matches_official_openai_error_shape() {
         },
         envelope.error
     );
+}
+
+#[test]
+fn chat_request_accepts_nullable_json_schema_union_types_in_tool_parameters() {
+    // schemars 1.x renders every nullable (`Option<T>`) JSON Schema field as
+    // the draft-2020-12 union form `{"type": ["string", "null"]}`. The chat
+    // body must deserialize and preserve it instead of failing the whole
+    // request with `invalid type: sequence, expected a string`.
+    let request: OpenAiChatCompletionRequest = serde_json::from_value(serde_json::json!({
+        "model": "deepseek-flash",
+        "messages": [{"role": "user", "content": "draw a cat"}],
+        "tools": [{
+            "type": "function",
+            "function": {
+                "name": "mcp__generations__image.create",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "vendor": {"type": ["string", "null"]},
+                        "width": {"type": ["integer", "null"]}
+                    }
+                }
+            }
+        }]
+    }))
+    .unwrap();
+
+    let schema = request.tools.as_ref().unwrap()[0]
+        .function
+        .as_ref()
+        .unwrap()
+        .parameters
+        .as_ref()
+        .unwrap();
+    let properties = schema.properties.as_ref().unwrap();
+    assert_eq!(
+        Some(OpenAiSchemaType::Multiple(vec![
+            "string".to_owned(),
+            "null".to_owned()
+        ])),
+        properties["vendor"].schema_type
+    );
+    assert_eq!(
+        Some(OpenAiSchemaType::Multiple(vec![
+            "integer".to_owned(),
+            "null".to_owned()
+        ])),
+        properties["width"].schema_type
+    );
+
+    let provider_json = request.to_provider_json();
+    assert_eq!(
+        serde_json::json!(["string", "null"]),
+        provider_json["tools"][0]["function"]["parameters"]["properties"]["vendor"]["type"],
+        "the union form must round-trip verbatim into the provider request"
+    );
+}
+
+#[test]
+fn json_schema_items_accepts_single_and_tuple_forms() {
+    let request: OpenAiChatCompletionRequest = serde_json::from_value(serde_json::json!({
+        "model": "deepseek-flash",
+        "messages": [{"role": "user", "content": "list"}],
+        "tools": [
+            {
+                "type": "function",
+                "function": {
+                    "name": "single",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "tags": {"type": "array", "items": {"type": "string"}}
+                        }
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "tuple",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "pair": {"type": "array", "items": [{"type": "string"}, {"type": "integer"}]}
+                        }
+                    }
+                }
+            }
+        ]
+    }))
+    .unwrap();
+
+    let tools = request.tools.as_ref().unwrap();
+    let single_items = tools[0]
+        .function
+        .as_ref()
+        .unwrap()
+        .parameters
+        .as_ref()
+        .unwrap()
+        .properties
+        .as_ref()
+        .unwrap()["tags"]
+        .items
+        .as_ref()
+        .unwrap();
+    assert!(matches!(
+        **single_items,
+        sdkwork_cloudrouter_router_service::api::openai_contract::OpenAiJsonSchemaItems::Single(_)
+    ));
+    let tuple_items = tools[1]
+        .function
+        .as_ref()
+        .unwrap()
+        .parameters
+        .as_ref()
+        .unwrap()
+        .properties
+        .as_ref()
+        .unwrap()["pair"]
+        .items
+        .as_ref()
+        .unwrap();
+    assert!(matches!(
+        **tuple_items,
+        sdkwork_cloudrouter_router_service::api::openai_contract::OpenAiJsonSchemaItems::Tuple(_)
+    ));
+}
+
+#[test]
+fn tool_kinds_accept_extensions_and_round_trip() {
+    let request: OpenAiChatCompletionRequest = serde_json::from_value(serde_json::json!({
+        "model": "deepseek-flash",
+        "messages": [{"role": "user", "content": "search"}],
+        "tools": [{"type": "web_search"}]
+    }))
+    .unwrap();
+
+    assert_eq!(
+        OpenAiToolType::Other("web_search".to_owned()),
+        request.tools.as_ref().unwrap()[0].tool_type
+    );
+    assert_eq!(
+        "web_search",
+        request.to_provider_json()["tools"][0]["type"]
+            .as_str()
+            .unwrap()
+    );
+}
+
+#[test]
+fn vendor_enumerated_values_accept_unknown_levels() {
+    let request: OpenAiChatCompletionRequest = serde_json::from_value(serde_json::json!({
+        "model": "deepseek-flash",
+        "messages": [{"role": "user", "content": "hi"}],
+        "service_tier": "scale"
+    }))
+    .unwrap();
+
+    assert!(matches!(
+        request.service_tier,
+        Some(OpenAiServiceTier::Other(ref value)) if value == "scale"
+    ));
+    assert_eq!(
+        "scale",
+        request.to_provider_json()["service_tier"].as_str().unwrap()
+    );
+
+    let responses: OpenAiResponsesRequest = serde_json::from_value(serde_json::json!({
+        "model": "deepseek-flash",
+        "input": "hi",
+        "reasoning": {"effort": "xhigh"}
+    }))
+    .unwrap();
+    assert!(matches!(
+        responses.reasoning.as_ref().unwrap().effort,
+        Some(OpenAiReasoningEffort::Other(ref value)) if value == "xhigh"
+    ));
+}
+
+#[test]
+fn responses_request_accepts_assistant_output_text_history() {
+    let request: OpenAiResponsesRequest = serde_json::from_value(serde_json::json!({
+        "model": "deepseek-flash",
+        "input": [
+            {"role": "user", "content": [{"type": "input_text", "text": "hello"}]},
+            {"role": "assistant", "content": [{"type": "output_text", "text": "hi there"}]}
+        ]
+    }))
+    .unwrap();
+
+    let OpenAiResponseInput::Items(items) = &request.input else {
+        panic!("expected typed response input items");
+    };
+    let OpenAiResponseInputContent::Parts(parts) = items[1].content.as_ref().unwrap() else {
+        panic!("expected typed response input content parts");
+    };
+    assert_eq!(
+        OpenAiResponseInputContentPartType::OutputText,
+        parts[0].part_type
+    );
+    assert_eq!("hi there", parts[0].text.as_deref().unwrap());
+}
+
+#[test]
+fn responses_request_accepts_builtin_tool_kinds_and_flat_function_tools() {
+    let request: OpenAiResponsesRequest = serde_json::from_value(serde_json::json!({
+        "model": "deepseek-flash",
+        "input": "search the web",
+        "tools": [
+            {"type": "function", "name": "lookup", "parameters": {"type": "object"}},
+            {"type": "web_search"}
+        ],
+        "tool_choice": {"type": "function", "name": "lookup"}
+    }))
+    .unwrap();
+
+    let tools = request.tools.as_ref().unwrap();
+    assert_eq!(Some("lookup"), tools[0].function_name());
+    assert_eq!(
+        OpenAiToolType::Other("web_search".to_owned()),
+        tools[1].tool_type
+    );
+    let OpenAiToolChoice::Tool(choice) = request.tool_choice.as_ref().unwrap() else {
+        panic!("expected a named tool choice");
+    };
+    assert_eq!(Some("lookup"), choice.tool_name());
+
+    let builtin_choice: OpenAiResponsesRequest = serde_json::from_value(serde_json::json!({
+        "model": "deepseek-flash",
+        "input": "search",
+        "tool_choice": {"type": "web_search"}
+    }))
+    .unwrap();
+    let OpenAiToolChoice::Tool(choice) = builtin_choice.tool_choice.as_ref().unwrap() else {
+        panic!("expected a built-in tool choice");
+    };
+    assert_eq!(None, choice.tool_name());
 }
