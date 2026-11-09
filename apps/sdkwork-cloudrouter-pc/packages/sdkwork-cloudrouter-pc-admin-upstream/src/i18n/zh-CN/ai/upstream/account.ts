@@ -78,6 +78,8 @@ export const upstreamAccountZhCnMessages = {
   'admin.upstream.account.credentials.showSecret': '显示明文',
   'admin.upstream.account.credentials.hideSecret': '隐藏明文',
   'admin.upstream.account.credentials.expiresAt': '过期时间',
+  'admin.upstream.account.credentials.missingActiveWarning': '该账号已启用，但没有有效凭证，路由不会选中它。请添加一条有效凭证。',
+  'admin.upstream.account.credentials.deactivateConfirm': '停用凭证 {{name}}？停用后该凭证不再参与路由，且当前没有“重新启用”入口。',
   'admin.upstream.account.resources.title': '关联资源',
   'admin.upstream.account.resources.add': '配置资源',
   'admin.upstream.account.resources.empty': '尚未关联任何资源或资源分组',

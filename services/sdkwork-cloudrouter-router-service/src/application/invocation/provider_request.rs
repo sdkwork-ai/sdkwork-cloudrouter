@@ -262,13 +262,9 @@ fn rewrite_path_model(path: &str, provider_model: Option<&str>) -> String {
 /// `:generateVideos`), so that prefix must be recognized too — otherwise the
 /// caller's model id reaches the vendor verbatim on the main image/video path.
 fn rewrite_models_action_path(path: &str, provider_model: &str) -> Option<String> {
-    let (prefix, rest) = [
-        "/v1beta/models/",
-        "/v1/models/",
-        "/google/v1beta/models/",
-    ]
-    .into_iter()
-    .find_map(|prefix| path.strip_prefix(prefix).map(|rest| (prefix, rest)))?;
+    let (prefix, rest) = ["/v1beta/models/", "/v1/models/", "/google/v1beta/models/"]
+        .into_iter()
+        .find_map(|prefix| path.strip_prefix(prefix).map(|rest| (prefix, rest)))?;
     // The action suffix follows the last `:` so a dialect model id in the path
     // (`models/google:veo-3.0:generateVideos`) is still replaced wholesale.
     let (model, action) = rest.rsplit_once(':')?;

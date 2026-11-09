@@ -264,15 +264,17 @@ export function AccountAdminPanel() {
     }
   };
 
-  const submitAccount = async (event: FormEvent<HTMLFormElement>, selection: ResourceSelection, apiKeyMasked: string, groupId: string) => {
+  const submitAccount = async (event: FormEvent<HTMLFormElement>, selection: ResourceSelection, apiKeyMasked: string, apiKeyOriginal: string, groupId: string, resourcesChanged: boolean) => {
     event.preventDefault();
     setBusy(true);
     setError(null);
     try {
       const form = new FormData(event.currentTarget);
       const saveResources = async (account: UpstreamAccount) => {
-        // 仅在选择了资源时替换，避免资源目录加载失败时意外清空既有绑定
-        if (selection.resourceCodes.length === 0 && selection.resourceGroupCodes.length === 0) return;
+        // 只有用户真正改动过资源选择时才替换，避免打开编辑弹窗后直接保存
+        // 把未展示/未加载的资源绑定当空集合清掉；用户清空全部资源时
+        // selection 为空但 resourcesChanged=true，仍然提交空集合。
+        if (!resourcesChanged) return;
         await upstreamService.accounts.replaceResources(account, { items: toEntitlements(selection) });
       };
       const joinGroup = async (account: UpstreamAccount) => {
@@ -286,9 +288,11 @@ export function AccountAdminPanel() {
       };
       if (editing) {
         const updated = await upstreamService.accounts.update(editing, updateAccountInput(form, t));
-        // 编辑模式：输入了新密钥（不同于已录入掩码）时为账号创建新凭据
+        // 编辑模式：只有真正改动了明文密钥才创建新凭证。
+        // 输入框回填的是明文，不能用掩码做“未修改”的比较基准，否则每次保存
+        // 都会把同一把 Key 复制成一条新凭证（credential_version 无限增长）。
         const apiKey = String(form.get('apiKey') ?? '').trim();
-        if (apiKey && apiKey !== apiKeyMasked) {
+        if (apiKey && apiKey !== apiKeyOriginal && apiKey !== apiKeyMasked) {
           await upstreamService.accounts.createCredential(updated.id, {
             credentialName: 'primary',
             secret: apiKey,
@@ -381,6 +385,14 @@ export function AccountAdminPanel() {
       const updated = await upstreamService.accounts.update(account, { status: account.status === 1 ? 0 : 1 });
       setItems((current) => current.map((item) => item.id === account.id ? updated : item));
       setSelected((current) => current?.id === account.id ? updated : current);
+      // 启用一个没有有效凭证的账号会得到“已启用但永远不可路由”的状态：
+      // 列表页不展示凭证，直接在启用后探测一次并给出明确告警。
+      if (updated.status === 1) {
+        const credentials = await upstreamService.accounts.listCredentials(updated.id, { page: 1, pageSize: 200 });
+        if (!credentials.some((credential) => credential.status === 1 && credential.isActive)) {
+          setError(t('admin.upstream.account.credentials.missingActiveWarning'));
+        }
+      }
     } catch (cause) {
       setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
@@ -562,7 +574,7 @@ function RowField({ label, required, children }: { label: string; required?: boo
   );
 }
 
-function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubmit, onClose }: { account: UpstreamAccount | null; suppliers: UpstreamSupplier[]; groups: UpstreamAccountGroup[]; initialGroupId: string | null; busy: boolean; onSubmit: (event: FormEvent<HTMLFormElement>, selection: ResourceSelection, apiKeyMasked: string, groupId: string) => void; onClose: () => void }) {
+function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubmit, onClose }: { account: UpstreamAccount | null; suppliers: UpstreamSupplier[]; groups: UpstreamAccountGroup[]; initialGroupId: string | null; busy: boolean; onSubmit: (event: FormEvent<HTMLFormElement>, selection: ResourceSelection, apiKeyMasked: string, apiKeyOriginal: string, groupId: string, resourcesChanged: boolean) => void; onClose: () => void }) {
   const { t, i18n } = useTranslation();
   const [supplierId, setSupplierId] = useState(account?.supplierId ?? suppliers[0]?.id ?? '');
   const [groupId, setGroupId] = useState(initialGroupId ?? '');
@@ -571,7 +583,9 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
   const [authMethodCode, setAuthMethodCode] = useState(account?.authMethodCode ?? '');
   const [catalog, setCatalog] = useState<UpstreamResourceCatalogResponse | null>(null);
   const [selection, setSelection] = useState<ResourceSelection>(emptyResourceSelection());
+  const [resourcesDirty, setResourcesDirty] = useState(false);
   const [apiKeyMasked, setApiKeyMasked] = useState('');
+  const [apiKeyOriginal, setApiKeyOriginal] = useState('');
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [preferredEndpointId, setPreferredEndpointId] = useState('');
   const [preferredEndpointStale, setPreferredEndpointStale] = useState(false);
@@ -675,11 +689,15 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
         setCatalog(nextCatalog);
         if (!account) return;
         setSelection(toSelection(items.map(({ resourceCode, resourceGroupCode, grantType, priority, status }) => ({ resourceCode, resourceGroupCode, grantType, priority, status }))));
-        const activeCredential = credentials.find((credential) => credential.isActive) ?? credentials[0] ?? null;
+        const activeCredential = credentials.find((credential) => credential.status === 1 && credential.isActive)
+          ?? credentials.find((credential) => credential.isActive)
+          ?? credentials[0]
+          ?? null;
         // 列表接口是只写语义，只返回掩码；编辑面需要可查看/可修改的明文，
-        // 因此按需向凭据明文端点再取一次。掩码仍保留一份作为「未修改」的
-        // 比较基准，避免把回填的明文误当成用户输入而去重建凭据。
+        // 因此按需向凭据明文端点再取一次。明文保存为“未修改”的比较基准：
+        // 输入框回填的是明文，若拿掩码比较会把未修改的明文误当成新密钥。
         setApiKeyMasked(activeCredential?.maskedLabel ?? '');
+        setApiKeyOriginal('');
         if (!activeCredential) {
           setApiKeyInput('');
           return;
@@ -689,11 +707,17 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
             account.id,
             activeCredential.id,
           );
-          if (!cancelled) setApiKeyInput(revealed.secret);
+          if (!cancelled) {
+            setApiKeyInput(revealed.secret);
+            setApiKeyOriginal(revealed.secret);
+          }
         } catch {
           // 明文读取失败（权限/密钥轮换/解码失败）时回退到掩码，
           // 不让弹窗整体失败；用户仍可输入新密钥完成轮换。
-          if (!cancelled) setApiKeyInput(activeCredential.maskedLabel ?? '');
+          if (!cancelled) {
+            setApiKeyInput(activeCredential.maskedLabel ?? '');
+            setApiKeyOriginal('');
+          }
         }
       })
       .catch((cause) => {
@@ -736,7 +760,7 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
       setProtocolUrlError(true);
       return;
     }
-    onSubmit(event, selection, apiKeyMasked, groupId);
+    onSubmit(event, selection, apiKeyMasked, apiKeyOriginal, groupId, catalog !== null && resourcesDirty);
   };
 
   return (
@@ -827,7 +851,7 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
               resources={catalog.resources}
               resourceGroups={catalog.resourceGroups}
               selection={selection}
-              onChange={setSelection}
+              onChange={(next) => { setSelection(next); setResourcesDirty(true); }}
               flat
               className="flex min-h-0 flex-1 flex-col"
               listClassName="min-h-0 max-h-72 flex-1 lg:max-h-none"
@@ -908,6 +932,12 @@ function AccountCredentials({ account, supplier, onAccountChanged, onClose }: { 
   };
 
   const deleteCredential = async (id: string) => {
+    const target = credentials.find((credential) => credential.id === id);
+    // 后端的 DELETE 实际是“停用”（is_active/status 置 0），且当前没有重新启用入口；
+    // 误点会把账号再次变成“无可用凭证”，所以必须先确认。
+    if (!window.confirm(t('admin.upstream.account.credentials.deactivateConfirm', { name: target?.credentialName ?? id }))) {
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -972,6 +1002,10 @@ function AccountCredentials({ account, supplier, onAccountChanged, onClose }: { 
     <SidePanel title={account.accountName} subtitle={`${supplier?.displayName ?? account.supplierCode} / ${account.authMethodCode}`} onClose={onClose}>
       <div className="grid gap-6">
         <InlineError message={error} />
+        {!loading && account.status === 1
+          && !credentials.some((credential) => credential.status === 1 && credential.isActive)
+          ? <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">{t('admin.upstream.account.credentials.missingActiveWarning')}</div>
+          : null}
         <Section title={t('admin.upstream.account.credentials.title')} action={<button type="button" className={secondaryButtonClass} onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" />{t('admin.upstream.account.credentials.add')}</button>}>
           <div className="grid gap-2">
             {credentials.map((credential) => (

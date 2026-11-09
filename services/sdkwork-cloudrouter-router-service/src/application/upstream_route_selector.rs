@@ -256,11 +256,16 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
     ) -> Result<SelectedUpstreamModelRoutePlan, UpstreamRouteSelectionError> {
         let account_routes = self.catalog.shared_upstream_account_routes();
         let account_routes_loaded = account_routes.len();
-        let api_scope_keys = [query.api_code.as_str()];
+        let api_scope_keys =
+            model_route_api_scope_keys(query.api_code.as_str(), query.catalog_key.as_str());
+        let api_scope_key_refs = api_scope_keys
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>();
         let account_group_bindings = upstream_account_group_bindings(
             &account_routes,
             query.context.group_id,
-            &api_scope_keys,
+            &api_scope_key_refs,
             query.capability,
         );
 
@@ -2055,6 +2060,46 @@ fn normalize_api_scope_value(value: &str) -> String {
         .to_owned()
 }
 
+/// Resource-scope keys a model-routed request may match.
+///
+/// The wire surface names the protocol (`openai.chat_completions`), while an
+/// account group binding is authorized with the vendor-native resource code
+/// (`deepseek.chat_completions`). Comparing only the wire code filters every
+/// non-OpenAI vendor account out *before* the credential gate, so a fully
+/// configured account is reported as "not bound for api=..." even though its
+/// credential and membership are valid. Keep the wire code first (OpenAI /
+/// relay accounts) and append the vendor-native equivalent derived from the
+/// catalog key's vendor segment.
+fn model_route_api_scope_keys(api_code: &str, catalog_key: &str) -> Vec<String> {
+    let mut keys = vec![api_code.to_owned()];
+    let Some(identity) = parse_model_catalog_identity(catalog_key) else {
+        return keys;
+    };
+    let Some(suffix) = vendor_native_api_scope_suffix(api_code) else {
+        return keys;
+    };
+    let native = format!("{}.{suffix}", identity.vendor_code.to_ascii_lowercase());
+    if !keys.iter().any(|key| key.eq_ignore_ascii_case(&native)) {
+        keys.push(native);
+    }
+    keys
+}
+
+/// Vendor-native suffix for a protocol-surface API code. Codes outside the
+/// standardized chat/responses/embeddings/messages surfaces have no
+/// vendor-native equivalent and must not be broadened (media routes already
+/// use their own vendor-native api codes and selector).
+fn vendor_native_api_scope_suffix(api_code: &str) -> Option<&'static str> {
+    let normalized = api_code.trim().to_ascii_lowercase();
+    match normalized.as_str() {
+        "openai.chat_completions" | "chat_completions" => Some("chat_completions"),
+        "openai.responses" | "responses" => Some("responses"),
+        "openai.embeddings" | "embeddings" => Some("embeddings"),
+        "anthropic.messages" | "messages" => Some("anthropic_messages"),
+        _ => None,
+    }
+}
+
 fn binding_matches_capability(
     binding: &UpstreamAccountGroupBinding,
     capability: RoutingCapability,
@@ -2671,5 +2716,62 @@ mod model_access_spellings_tests {
         assert!(spellings.contains(&"claude-opus-4-5".to_owned()));
         // 空请求名保持空。
         assert!(model_access_spellings(&catalog, "   ", None).is_empty());
+    }
+}
+
+#[cfg(test)]
+mod model_route_scope_key_tests {
+    use super::model_route_api_scope_keys;
+
+    #[test]
+    fn openai_chat_surface_also_matches_the_vendor_native_chat_scope() {
+        // The regression: a DeepSeek account authorized with
+        // `deepseek.chat_completions` must remain selectable when the
+        // OpenAI-compatible `/v1/chat/completions` surface names
+        // `openai.chat_completions`.
+        assert_eq!(
+            vec![
+                "openai.chat_completions".to_owned(),
+                "deepseek.chat_completions".to_owned(),
+            ],
+            model_route_api_scope_keys("openai.chat_completions", "deepseek/deepseek-flash")
+        );
+    }
+
+    #[test]
+    fn anthropic_surface_also_matches_the_vendor_native_messages_scope() {
+        assert_eq!(
+            vec![
+                "anthropic.messages".to_owned(),
+                "deepseek.anthropic_messages".to_owned(),
+            ],
+            model_route_api_scope_keys("anthropic.messages", "deepseek/deepseek-flash")
+        );
+    }
+
+    #[test]
+    fn openai_vendor_does_not_duplicate_the_wire_code() {
+        assert_eq!(
+            vec!["openai.chat_completions".to_owned()],
+            model_route_api_scope_keys("openai.chat_completions", "openai/gpt-5.5")
+        );
+    }
+
+    #[test]
+    fn non_protocol_api_code_keeps_only_the_wire_key() {
+        // Media / vendor-native surfaces must not be broadened: they already
+        // select with the vendor-native api code.
+        assert_eq!(
+            vec!["deepseek.web_search".to_owned()],
+            model_route_api_scope_keys("deepseek.web_search", "deepseek/deepseek-flash")
+        );
+    }
+
+    #[test]
+    fn non_catalog_key_keeps_only_the_wire_key() {
+        assert_eq!(
+            vec!["openai.chat_completions".to_owned()],
+            model_route_api_scope_keys("openai.chat_completions", "deepseek-flash")
+        );
     }
 }
