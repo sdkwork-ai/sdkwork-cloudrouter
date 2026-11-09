@@ -18,7 +18,7 @@ use crate::application::{
     UpstreamRouteSelector,
 };
 use crate::domain::{
-    has_text, provider_native_model_id, BillingMeter, ModelUpstreamRoute,
+    has_text, provider_native_model_id_for_wire, BillingMeter, ModelUpstreamRoute,
     ResolveModelMappingContext, RoutingCapability, UpstreamAccountRoute,
 };
 use crate::ports::{AccountBaseUrlConfig, UpstreamAccountRouteCatalog};
@@ -444,12 +444,12 @@ fn normalized_resolved_provider_model(
     if provider_model.is_empty() {
         let model = model.trim();
         return if model.is_empty() {
-            provider_native_model_id(catalog_key)
+            provider_native_model_id_for_wire(catalog_key)
         } else {
             model.to_owned()
         };
     }
-    let native_model = provider_native_model_id(provider_model);
+    let native_model = provider_native_model_id_for_wire(provider_model);
     if provider_model == catalog_key.trim()
         || (!native_model.is_empty()
             && native_model == model.trim()
@@ -899,4 +899,62 @@ fn normalize_region(value: &str) -> String {
 
 fn route_error(message: impl Into<String>) -> InvocationError {
     InvocationError::new(InvocationErrorKind::Routing, message)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalized_resolved_provider_model;
+
+    #[test]
+    fn provider_model_derivation_strips_every_separator_spelling() {
+        for provider_model in [
+            "deepseek/deepseek-flash",
+            "deepseek:deepseek-flash",
+            "deepseek|deepseek-flash",
+            "deepseek：deepseek-flash",
+            "deepseek｜deepseek-flash",
+        ] {
+            assert_eq!(
+                "deepseek-flash",
+                normalized_resolved_provider_model(
+                    "deepseek/deepseek-flash",
+                    "deepseek-flash",
+                    provider_model
+                ),
+                "provider model: {provider_model}"
+            );
+        }
+    }
+
+    #[test]
+    fn provider_model_derivation_keeps_deliberate_mappings() {
+        // A provider model that is not a spelling of the catalog model is a
+        // deliberate mapping (or a relay id) and must pass through untouched.
+        assert_eq!(
+            "deepseek-chat",
+            normalized_resolved_provider_model(
+                "deepseek/deepseek-flash",
+                "deepseek-flash",
+                "deepseek-chat"
+            )
+        );
+        assert_eq!(
+            "ft:gpt-4o-2024-08-13:org:abc",
+            normalized_resolved_provider_model(
+                "openai/gpt-4o",
+                "gpt-4o",
+                "ft:gpt-4o-2024-08-13:org:abc"
+            )
+        );
+        // An empty provider model falls back to the catalog model, then to the
+        // catalog key parsed as a wire id.
+        assert_eq!(
+            "deepseek-flash",
+            normalized_resolved_provider_model("deepseek/deepseek-flash", "deepseek-flash", "")
+        );
+        assert_eq!(
+            "deepseek-flash",
+            normalized_resolved_provider_model("deepseek/deepseek-flash", "", "")
+        );
+    }
 }

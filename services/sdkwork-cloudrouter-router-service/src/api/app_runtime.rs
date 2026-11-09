@@ -3273,7 +3273,7 @@ fn openai_chat_gateway_model_id(
         .unwrap_or_default()
         .to_ascii_lowercase();
     if api_format.contains("responses") || api_format.contains("response") {
-        return requested_model_key.trim().to_owned();
+        return dialect_model_id_or_verbatim(requested_model_key, catalog_model);
     }
     let vendor_code = catalog_model
         .map(|model| model.vendor_code.as_str())
@@ -3282,7 +3282,28 @@ fn openai_chat_gateway_model_id(
     if vendor_code.eq_ignore_ascii_case("openai") {
         return provider_native_model_id(requested_model_key, catalog_model);
     }
-    requested_model_key.trim().to_owned()
+    dialect_model_id_or_verbatim(requested_model_key, catalog_model)
+}
+
+/// Resolves a dialect-spelled key (`vendor:model`, `vendor|model`, full-width
+/// punctuation) to the provider-native model, and leaves a canonical
+/// `vendor/model` key verbatim: an OpenRouter-style relay account legitimately
+/// dials with the vendor-qualified id, so stripping it there would be wrong.
+fn dialect_model_id_or_verbatim(
+    requested_model_key: &str,
+    catalog_model: Option<&AiModel>,
+) -> String {
+    if !is_dialect_model_key(requested_model_key) {
+        return requested_model_key.trim().to_owned();
+    }
+    provider_native_model_id(requested_model_key, catalog_model)
+}
+
+fn is_dialect_model_key(value: &str) -> bool {
+    value
+        .trim()
+        .chars()
+        .any(|c| matches!(c, ':' | '|' | '：' | '｜' | '／'))
 }
 
 fn provider_native_model_id(requested_model_key: &str, catalog_model: Option<&AiModel>) -> String {
@@ -3293,7 +3314,7 @@ fn provider_native_model_id(requested_model_key: &str, catalog_model: Option<&Ai
 }
 
 fn runtime_provider_native_model_id(model_key: &str) -> String {
-    crate::domain::provider_native_model_id(model_key.trim())
+    crate::domain::provider_native_model_id_for_wire(model_key)
 }
 
 fn remove_runtime_only_fields(object: &mut Map<String, Value>) {
@@ -5918,6 +5939,35 @@ mod tests {
         assert!(
             RUNTIME_STREAM_TERMINAL_RECHECK_INTERVAL >= Duration::from_secs(10),
             "runtime stream terminal recheck should not poll the database every few seconds"
+        );
+    }
+
+    #[test]
+    fn runtime_provider_model_resolves_dialect_separators() {
+        // Without a catalog row the fallback still parses the dialect spelling,
+        // so `vendor:model` / `vendor|model` never reach the vendor verbatim.
+        for dialect in [
+            "deepseek:deepseek-flash",
+            "deepseek|deepseek-flash",
+            "deepseek：deepseek-flash",
+            "deepseek｜deepseek-flash",
+        ] {
+            assert_eq!(
+                "deepseek-flash",
+                super::openai_chat_gateway_model_id(dialect, None),
+                "dialect key: {dialect}"
+            );
+        }
+        // A canonical vendor/model key stays verbatim on this surface: relay
+        // accounts legitimately dial with the qualified id.
+        assert_eq!(
+            "deepseek/deepseek-flash",
+            super::openai_chat_gateway_model_id("deepseek/deepseek-flash", None)
+        );
+        // Variant ids keep their suffix.
+        assert_eq!(
+            "gpt-4o:free",
+            super::openai_chat_gateway_model_id("gpt-4o:free", None)
         );
     }
 }
