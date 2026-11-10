@@ -1,3 +1,4 @@
+import { useLayoutEffect } from 'react';
 import {
   AgentsPlayground,
   configureAgentsPlaygroundRuntime,
@@ -49,10 +50,50 @@ export interface PlaygroundProps {
 }
 
 const DEFAULT_PLAYGROUND_OVERLAY_TOP_INSET = 'var(--sdkwork-portal-navbar-height, 4rem)';
+const WORKBENCH_THEME_STORAGE_KEY = 'sdkwork-agents-theme';
+
+/**
+ * Keeps the embedded workbench on the portal's color scheme.
+ *
+ * `@sdkwork/agents-pc` wraps the workbench in its own `ThemeProvider`, which
+ * rewrites `<html>`'s `dark`/`light` classes from a workbench-local preference
+ * that defaults to `light`. Embedded in the portal that strips the host's
+ * resolved theme: a dark portal turned light as soon as `/playground` mounted,
+ * and the light palette rendered on top of the dark chrome. Project the host's
+ * current mode into the workbench preference before it initializes, then
+ * reassert it after the child effects so the host stays authoritative.
+ */
+function syncEmbeddedWorkbenchTheme(): void {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const root = document.documentElement;
+  const resolvedTheme = root.classList.contains('dark') ? 'dark' : 'light';
+
+  try {
+    window.localStorage.setItem(WORKBENCH_THEME_STORAGE_KEY, resolvedTheme);
+  } catch {
+    // Storage can be unavailable in private or embedded contexts; the class
+    // projection below still keeps this mount on the host theme.
+  }
+
+  root.classList.toggle('dark', resolvedTheme === 'dark');
+  root.classList.toggle('light', resolvedTheme === 'light');
+}
 
 export function Playground({
   overlayTopInset = DEFAULT_PLAYGROUND_OVERLAY_TOP_INSET,
 }: PlaygroundProps) {
+  // Runs during render, before `ThemeProvider` reads its stored preference.
+  syncEmbeddedWorkbenchTheme();
+
+  // Child effects (the workbench ThemeProvider) run before parent effects, so
+  // this reasserts the host theme in the same commit, before the first paint.
+  useLayoutEffect(() => {
+    syncEmbeddedWorkbenchTheme();
+  }, []);
+
   return (
     <div className="sdkwork-playground-host flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
       {/* The creative (生成) tab renders the dedicated generation page (bottom input,

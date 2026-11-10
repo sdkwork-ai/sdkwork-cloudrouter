@@ -387,13 +387,240 @@ html.dark [data-admin-model-table-header] > tr > th {
   padding-inline-start: 1.75rem;
 }
 
-/* Playground modality rail — icon-only nav with hover tooltips */
+/* Playground host — sdkwork-birdcoder2 design bridge.
+ *
+ * `/playground` embeds the SDKWork Agents workbench, whose legacy palette was
+ * the dark "studio" navy (#0a1b3d rail/sidebar, #165dff accent). That reads as
+ * a dark column inside the light portal, and it had no dark counterpart, so
+ * the surface stayed light while the portal turned dark. The design authority
+ * is sdkwork-birdcoder2 (`packages/client/ui-theme/src/styles/design-platform.css`):
+ * neutral-bluish surfaces, deepseek-blue accents, and a black (light) / white
+ * (dark) primary action. The host owns how embedded surfaces are themed, so
+ * the mapping lives here and is projected onto the workbench's `--ag-*`
+ * contract. Values are the design platform's static ramps, not invented ones.
+ */
 .sdkwork-playground-host {
-  background-color: var(--theme-aware-surface, #f8fafc);
+  --sdkwork-birdcoder-bg-base: #ffffff;
+  --sdkwork-birdcoder-bg-sidebar: #f9fafb;
+  --sdkwork-birdcoder-bg-layer-1: #ffffff;
+  --sdkwork-birdcoder-bg-layer-2: #f5f7fa;
+  --sdkwork-birdcoder-bg-layer-3: #e9ecf2;
+  --sdkwork-birdcoder-bg-bubble: #edf3fe;
+  --sdkwork-birdcoder-label-primary: #0f1115;
+  --sdkwork-birdcoder-label-secondary: #61666b;
+  --sdkwork-birdcoder-label-tertiary: #81858c;
+  --sdkwork-birdcoder-border: rgb(0 0 0 / 0.1);
+  --sdkwork-birdcoder-brand: #4176e6;
+  --sdkwork-birdcoder-brand-fill: #4176e6;
+  --sdkwork-birdcoder-on-brand: #ffffff;
+  --sdkwork-birdcoder-brand-soft: rgb(65 118 230 / 0.12);
+  --sdkwork-birdcoder-primary-fill: #0f1115;
+  --sdkwork-birdcoder-primary-fill-hover: #292929;
+  --sdkwork-birdcoder-primary-foreground: #ffffff;
+  --sdkwork-birdcoder-hover: rgb(15 17 21 / 0.06);
+  --sdkwork-birdcoder-item-active: #ebeef2;
+  --sdkwork-birdcoder-item-strong: #e1e5ee;
+  --sdkwork-birdcoder-segment-active-bg: #ffffff;
+  background-color: var(--sdkwork-birdcoder-bg-base);
+  color: var(--sdkwork-birdcoder-label-primary);
 }
 
-html.dark .theme-aware-dark-surface.sdkwork-playground-host {
-  background-color: var(--sdkwork-playground-page-bg, #0a0a0a);
+html.dark .sdkwork-playground-host {
+  --sdkwork-birdcoder-bg-base: #151517;
+  --sdkwork-birdcoder-bg-sidebar: #1b1b1c;
+  --sdkwork-birdcoder-bg-layer-1: #232324;
+  --sdkwork-birdcoder-bg-layer-2: #2c2c2e;
+  --sdkwork-birdcoder-bg-layer-3: #353638;
+  --sdkwork-birdcoder-bg-bubble: #2c2c2e;
+  --sdkwork-birdcoder-label-primary: #f9fafb;
+  --sdkwork-birdcoder-label-secondary: #cfd3d6;
+  --sdkwork-birdcoder-label-tertiary: #adb2b8;
+  --sdkwork-birdcoder-border: rgb(255 255 255 / 0.12);
+  --sdkwork-birdcoder-brand: #7aaaff;
+  --sdkwork-birdcoder-brand-fill: #4176e6;
+  --sdkwork-birdcoder-on-brand: #ffffff;
+  --sdkwork-birdcoder-brand-soft: rgb(122 170 255 / 0.16);
+  --sdkwork-birdcoder-primary-fill: #f9fafb;
+  --sdkwork-birdcoder-primary-fill-hover: #ebecf0;
+  --sdkwork-birdcoder-primary-foreground: #0f1115;
+  --sdkwork-birdcoder-hover: rgb(255 255 255 / 0.08);
+  --sdkwork-birdcoder-item-active: #2c2c2e;
+  --sdkwork-birdcoder-item-strong: #353638;
+  --sdkwork-birdcoder-segment-active-bg: #353638;
+}
+
+/* The workbench declares `--ag-*` in `@layer base`; these unlayered
+   declarations outrank the layer and therefore reach every token consumer. */
+.sdkwork-playground-host .sdkwork-agents-workbench {
+  --ag-color-background: var(--sdkwork-birdcoder-bg-base);
+  --ag-color-surface: var(--sdkwork-birdcoder-bg-layer-1);
+  --ag-color-surface-muted: var(--sdkwork-birdcoder-bg-layer-2);
+  --ag-color-surface-strong: var(--sdkwork-birdcoder-bg-layer-3);
+  --ag-color-rail: var(--sdkwork-birdcoder-bg-sidebar);
+  --ag-color-rail-active: var(--sdkwork-birdcoder-brand-fill);
+  --ag-color-rail-text: var(--sdkwork-birdcoder-label-primary);
+  --ag-color-rail-text-muted: var(--sdkwork-birdcoder-label-tertiary);
+  --ag-color-text-primary: var(--sdkwork-birdcoder-label-primary);
+  --ag-color-text-secondary: var(--sdkwork-birdcoder-label-secondary);
+  --ag-color-text-tertiary: var(--sdkwork-birdcoder-label-tertiary);
+  --ag-color-border: var(--sdkwork-birdcoder-border);
+  --ag-color-primary: var(--sdkwork-birdcoder-primary-fill);
+  --ag-color-primary-hover: var(--sdkwork-birdcoder-primary-fill-hover);
+  --ag-color-primary-pressed: var(--sdkwork-birdcoder-primary-fill-hover);
+  --ag-color-primary-subtle: var(--sdkwork-birdcoder-bg-layer-3);
+  --ag-color-primary-on: var(--sdkwork-birdcoder-primary-foreground);
+  --ag-color-icon-default: var(--sdkwork-birdcoder-label-secondary);
+  --ag-color-icon-strong: var(--sdkwork-birdcoder-label-primary);
+  --ag-color-icon-active: var(--sdkwork-birdcoder-brand);
+  --ag-color-icon-on-primary: var(--sdkwork-birdcoder-primary-foreground);
+  --ag-color-icon-on-rail: var(--sdkwork-birdcoder-label-secondary);
+  --ag-color-icon-disabled: var(--sdkwork-birdcoder-label-tertiary);
+  --ag-color-scrim: rgb(0 0 0 / 0.48);
+  color-scheme: light;
+  background-color: var(--sdkwork-birdcoder-bg-base);
+  color: var(--sdkwork-birdcoder-label-primary);
+}
+
+html.dark .sdkwork-playground-host .sdkwork-agents-workbench {
+  color-scheme: dark;
+}
+
+/* Accent chips keep white foreground in both schemes (the workbench labels the
+   active rail item `text-white`), and the primary avatar gets the matching
+   foreground when the primary fill inverts in dark mode. */
+.sdkwork-playground-host [class~="bg-[var(--ag-color-rail-active,#165DFF)]"] {
+  color: var(--sdkwork-birdcoder-on-brand);
+}
+
+.sdkwork-playground-host
+  [class~="bg-[var(--ag-color-rail-active,#165DFF)]"]
+  [class~="text-[var(--ag-color-icon-on-rail,#C9D6EA)]"] {
+  color: var(--sdkwork-birdcoder-on-brand);
+}
+
+.sdkwork-playground-host [class~="bg-[var(--ag-color-primary,#165DFF)]"][class~="text-white"] {
+  color: var(--sdkwork-birdcoder-primary-foreground);
+}
+
+/* The chat surface still pins two dark literals per color scheme; route them
+   through the palette so both modes land on the design platform's layers. */
+.sdkwork-playground-host [class~="dark:bg-[#191919]"] {
+  background-color: var(--sdkwork-birdcoder-bg-base);
+}
+
+.sdkwork-playground-host [class~="dark:bg-[#2f2f2f]"],
+.sdkwork-playground-host [class~="dark:bg-[#2f2f2f]/50"] {
+  background-color: var(--sdkwork-birdcoder-bg-layer-2);
+}
+
+/* Chat session sidebar. The workbench hard-codes the navy/dark-zinc session
+   pane; in light mode it must become the design platform's neutral sidebar
+   (birdcoder2 light), and in dark mode its neutral layer stack. */
+.sdkwork-playground-host [class~="bg-[#0A1B3D]"] {
+  background-color: var(--sdkwork-birdcoder-bg-sidebar);
+}
+
+.sdkwork-playground-host [class~="bg-[#27272A]"] {
+  background-color: var(--sdkwork-birdcoder-item-active);
+}
+
+.sdkwork-playground-host [class~="hover:bg-[#27272A]/50"]:hover {
+  background-color: var(--sdkwork-birdcoder-hover);
+}
+
+.sdkwork-playground-host [class~="bg-[#3f3f46]"] {
+  background-color: var(--sdkwork-birdcoder-item-strong);
+}
+
+.sdkwork-playground-host [class~="group-hover:bg-[#3f3f46]"]:is(:where(.group):hover *) {
+  background-color: var(--sdkwork-birdcoder-item-strong);
+}
+
+.sdkwork-playground-host [class~="bg-[#1a1a1c]"] {
+  background-color: var(--sdkwork-birdcoder-bg-layer-1);
+}
+
+/* Text and interaction colors that were written for the dark session pane. */
+.sdkwork-playground-host [class~="text-zinc-100"],
+.sdkwork-playground-host [class~="text-zinc-200"] {
+  color: var(--sdkwork-birdcoder-label-primary);
+}
+
+.sdkwork-playground-host [class~="text-zinc-300"] {
+  color: var(--sdkwork-birdcoder-label-secondary);
+}
+
+.sdkwork-playground-host [class~="text-zinc-400"],
+.sdkwork-playground-host [class~="text-zinc-500"],
+.sdkwork-playground-host [class~="text-zinc-600"] {
+  color: var(--sdkwork-birdcoder-label-tertiary);
+}
+
+.sdkwork-playground-host [class~="bg-[#0A1B3D]"] [class~="text-white"],
+.sdkwork-playground-host [class~="bg-[#232323]"] [class~="text-white"],
+.sdkwork-playground-host [class~="bg-[#2A2A2D]"] [class~="text-white"],
+.sdkwork-playground-host [class~="bg-[#222222]"] [class~="text-white"] {
+  color: var(--sdkwork-birdcoder-label-primary);
+}
+
+.sdkwork-playground-host [class~="hover:text-zinc-100"]:hover,
+.sdkwork-playground-host [class~="hover:text-zinc-200"]:hover,
+.sdkwork-playground-host [class~="hover:text-zinc-300"]:hover,
+.sdkwork-playground-host [class~="hover:text-white"]:hover {
+  color: var(--sdkwork-birdcoder-label-primary);
+}
+
+.sdkwork-playground-host [class~="hover:bg-white/5"]:hover,
+.sdkwork-playground-host [class~="hover:bg-white/10"]:hover,
+.sdkwork-playground-host [class~="hover:bg-white/[0.06]"]:hover,
+.sdkwork-playground-host [class~="hover:bg-zinc-700/50"]:hover {
+  background-color: var(--sdkwork-birdcoder-hover);
+}
+
+/* Project rows and menus still use the indigo accent; the design platform's
+   accent is deepseek blue. */
+.sdkwork-playground-host [class~="bg-indigo-500/10"],
+.sdkwork-playground-host [class~="bg-indigo-500/15"],
+.sdkwork-playground-host [class~="hover:bg-indigo-500/10"]:hover {
+  background-color: var(--sdkwork-birdcoder-brand-soft);
+}
+
+.sdkwork-playground-host [class~="text-indigo-400"],
+.sdkwork-playground-host [class~="hover:text-indigo-400"]:hover,
+.sdkwork-playground-host [class~="group-hover:text-indigo-400"]:is(:where(.group):hover *) {
+  color: var(--sdkwork-birdcoder-brand);
+}
+
+/* Chat bubbles, menus and the accent literals of the chat surface. */
+.sdkwork-playground-host [class~="bg-[#f4f4f4]"],
+.sdkwork-playground-host [class~="dark:bg-[#2a2a2a]"] {
+  background-color: var(--sdkwork-birdcoder-bg-bubble);
+}
+
+.sdkwork-playground-host [class~="bg-[#232323]"],
+.sdkwork-playground-host [class~="bg-[#2A2A2D]"],
+.sdkwork-playground-host [class~="bg-[#222222]"] {
+  background-color: var(--sdkwork-birdcoder-bg-layer-1);
+}
+
+.sdkwork-playground-host [class~="bg-[#165DFF]"] {
+  background-color: var(--sdkwork-birdcoder-brand-fill);
+}
+
+/* The inspiration segmented control pins its active pill to `bg-white` with the
+   primary token as label; in dark mode the inverted primary fill made the label
+   white on white. Give the pill a layer surface and keep the accent label. */
+.sdkwork-playground-host [class~="bg-white"][class~="text-[var(--ag-color-primary,#165DFF)]"] {
+  background-color: var(--sdkwork-birdcoder-segment-active-bg);
+  color: var(--sdkwork-birdcoder-brand);
+}
+
+.sdkwork-playground-host [class~="text-[#165DFF]"] {
+  color: var(--sdkwork-birdcoder-brand);
+}
+
+.sdkwork-playground-host [class~="ring-[#165DFF]/10"] {
+  --tw-ring-color: var(--sdkwork-birdcoder-brand-soft);
 }
 
 .sdkwork-playground-page {
