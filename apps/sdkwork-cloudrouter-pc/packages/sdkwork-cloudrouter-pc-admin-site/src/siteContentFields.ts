@@ -1410,3 +1410,74 @@ export function readInitialDownloadCatalogForm(
 export function isDownloadCatalogDriveHref(href: string): boolean {
   return /^drive:\/\/spaces\/[^/]+\/nodes\/[^/]+$/u.test(href.trim());
 }
+
+/**
+ * The `downloads` site-settings document after the migration.
+ *
+ * Cloud Router no longer authors the download catalog: Deployments owns the
+ * catalog, its cards, its installers and every installer's update configuration.
+ * The site settings keep one pointer (`catalogKey`) so the rendering site can ask
+ * Deployments for its own catalog without copying any installer facts here.
+ *
+ * A stored legacy catalog (an object with `cards`) stays publishable: removing it
+ * in this release would blank a live download section until the operator
+ * reconfigures it, so the console flags it instead and lets the operator clear it
+ * once the Deployments catalog is published.
+ */
+export interface DownloadsPointerCheck {
+  /** Whether the document can be published. */
+  ok: boolean;
+  /** Why it cannot be published, in check order. Empty when `ok`. */
+  problems: string[];
+  /** Pointer value when one is authored. */
+  catalogKey?: string;
+  /** The stored document is still a full catalog authored by the old editor. */
+  legacyCatalog: boolean;
+}
+
+/**
+ * Checks the `downloads` pointer the console now edits.
+ * @param text - Canonical JSON text of the stored document.
+ */
+export function checkDownloadsPointer(text: string): DownloadsPointerCheck {
+  const trimmed = text.trim();
+  if (trimmed.length === 0) {
+    return { ok: true, problems: [], legacyCatalog: false };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(trimmed);
+  } catch (error) {
+    return { ok: false, problems: [`not valid JSON: ${(error as Error).message}`], legacyCatalog: false };
+  }
+  if (!isRecord(parsed)) {
+    return { ok: false, problems: ['the downloads document must be a JSON object'], legacyCatalog: false };
+  }
+  if (Array.isArray(parsed.cards)) {
+    return { ok: true, problems: [], legacyCatalog: true };
+  }
+  const catalogKey = stringValue(parsed.catalogKey)?.trim();
+  if (catalogKey === undefined || catalogKey === '') {
+    // `{}` means "nothing published", which is a valid state.
+    return Object.keys(parsed).length === 0
+      ? { ok: true, problems: [], legacyCatalog: false }
+      : { ok: false, problems: ['catalogKey is required'], legacyCatalog: false };
+  }
+  return { ok: true, problems: [], catalogKey, legacyCatalog: false };
+}
+
+/**
+ * Builds the `downloads` half of the update payload from the pointer text.
+ * @param text - Canonical JSON text of the stored document.
+ */
+export function toDownloadsPayload(text: string): Record<string, unknown> {
+  const trimmed = text.trim();
+  if (trimmed.length === 0) {
+    return {};
+  }
+  const parsed: unknown = JSON.parse(trimmed);
+  if (!isRecord(parsed)) {
+    throw new Error('The downloads document must be a JSON object.');
+  }
+  return parsed;
+}

@@ -23,7 +23,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { DriveUploadImage } from 'sdkwork-drive-pc-upload-image';
 import { AdminModuleSettingsEditor } from './AdminModuleSettingsEditor';
-import { DownloadCatalogEditor } from './DownloadCatalogEditor';
+import { SiteDownloadsPanel } from './SiteDownloadsPanel';
 import { InlineWarning, SectionDivider, TextArea, TextField, ToggleSwitch } from './SiteSettingsControls';
 import { getLoadErrorMessage, refreshSiteBranding } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { BusinessStatePanel } from '@sdkwork/cloudroutes-pc-commons';
@@ -69,8 +69,9 @@ import {
   HOME_SECTIONS,
   HOME_TEXT_MAX_LENGTH,
   checkDownloadCatalog,
+  checkDownloadsPointer,
   findIncompleteHomeContent,
-  type DownloadCatalogCheck,
+  type DownloadsPointerCheck,
   type HomeContentForm,
   type HomeContentWarningCode,
   type HomeFeatureFields,
@@ -92,14 +93,16 @@ export {
   DOWNLOAD_CATALOG_SCHEMA_VERSION,
   HOME_SECTIONS,
   checkDownloadCatalog,
+  checkDownloadsPointer,
   findIncompleteHomeContent,
   readDownloadCatalogText,
   readHomeContentForm,
   toDownloadCatalogPayload,
+  toDownloadsPayload,
   toHomeContentPayload,
 } from './siteContentFields';
 export type {
-  DownloadCatalogCheck,
+  DownloadsPointerCheck,
   HomeContentForm,
   HomeContentWarningCode,
 } from './siteContentFields';
@@ -211,8 +214,12 @@ if (SITE_SETTINGS_CATEGORIES.length !== SITE_SETTINGS_CATEGORY_IDS.length) {
   throw new Error('Every site-settings category needs exactly one tab definition.');
 }
 
+/** Deployments console origin, injected at build time; absent keeps the link hidden. */
+const DEPLOYMENTS_ADMIN_BASE_URL = (import.meta as ImportMeta & {
+  env?: Record<string, string | undefined>;
+}).env?.VITE_DEPLOYMENTS_ADMIN_BASE_URL;
+
 export function CloudRouterSiteSettingsPage({
-  bundledDownloadCatalog,
 }: {
   /**
    * The application's bundled download catalog, handed in by the composition layer so the
@@ -259,7 +266,7 @@ export function CloudRouterSiteSettingsPage({
    * Derived because the tab body, the sidebar badge and the save guard all have to agree about
    * whether the document is publishable; a second copy of the answer is how they stop agreeing.
    */
-  const downloadCatalogCheck = useMemo(() => checkDownloadCatalog(form.downloads), [form.downloads]);
+  const downloadsPointerCheck = useMemo(() => checkDownloadsPointer(form.downloads), [form.downloads]);
 
   const loadSettings = useCallback(async (isActive: () => boolean = () => true) => {
     setLoading(true);
@@ -329,7 +336,7 @@ export function CloudRouterSiteSettingsPage({
       if (category.id === 'adminModules' && adminModuleIssues.length > 0) {
         errors = adminModuleIssues.length;
       }
-      if (category.id === 'downloads' && !downloadCatalogCheck.ok) {
+      if (category.id === 'downloads' && !downloadsPointerCheck.ok) {
         // An unparseable catalog cannot be sent at all, so this blocks saving rather than warning.
         errors = 1;
       }
@@ -339,7 +346,7 @@ export function CloudRouterSiteSettingsPage({
       status[category.id] = { changes, errors, warnings };
     }
     return status;
-  }, [adminModuleIssues, dirtyFields, downloadCatalogCheck, form, homepageWarnings, siteNameError]);
+  }, [adminModuleIssues, dirtyFields, downloadsPointerCheck, form, homepageWarnings, siteNameError]);
 
   const dirtyCount = dirtyFields.size;
 
@@ -349,7 +356,7 @@ export function CloudRouterSiteSettingsPage({
       setSaveSuccess(null);
       return;
     }
-    if (!downloadCatalogCheck.ok) {
+    if (!downloadsPointerCheck.ok) {
       // The button is disabled while the catalog is unparseable, so this is the second half of one
       // rule rather than a second rule: whichever path reaches a save, the document is checked.
       setSaveError(t('admin.siteSettings.errors.downloadsInvalid'));
@@ -532,7 +539,7 @@ export function CloudRouterSiteSettingsPage({
           </button>
           <button
             className="inline-flex items-center gap-2 rounded-lg bg-lobster-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-lobster-600 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={saving || Boolean(siteNameError) || !downloadCatalogCheck.ok || adminModuleIssues.length > 0 || dirtyCount === 0}
+            disabled={saving || Boolean(siteNameError) || !downloadsPointerCheck.ok || adminModuleIssues.length > 0 || dirtyCount === 0}
             onClick={() => void saveSettings()}
             type="button"
           >
@@ -651,9 +658,9 @@ export function CloudRouterSiteSettingsPage({
             ) : null}
 
             {activeCategory === 'downloads' ? (
-              <DownloadCatalogEditor
-                check={downloadCatalogCheck}
-                fallbackCatalog={bundledDownloadCatalog}
+              <SiteDownloadsPanel
+                adminBaseUrl={DEPLOYMENTS_ADMIN_BASE_URL}
+                check={downloadsPointerCheck}
                 onChange={updateDownloadCatalog}
                 value={form.downloads}
               />

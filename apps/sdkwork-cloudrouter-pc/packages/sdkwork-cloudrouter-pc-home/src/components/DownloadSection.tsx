@@ -15,6 +15,7 @@ import {
 } from '../downloads/cloudRouterDownloads';
 import { useDriveDownloadUrls } from '../downloads/useDriveDownloadUrls';
 import { useHomeContent } from '../content/useHomeContent';
+import { useDeploymentsCatalog } from '../downloads/useDeploymentsCatalog.ts';
 
 interface DownloadPanelProps {
   className?: string;
@@ -31,6 +32,9 @@ export function DownloadPanel({
 }: DownloadPanelProps) {
   const { t } = useTranslation();
   const home = useHomeContent();
+  // A pointer document names a catalog Deployments owns; fetching it here keeps
+  // the bundled catalog as the fallback for deployments that never migrated.
+  const deploymentsCatalog = useDeploymentsCatalog(home.downloadCatalog);
   const translateDownloadText = (
     key: string,
     fallback: string | {
@@ -49,7 +53,7 @@ export function DownloadPanel({
 
   // `undefined` means the console published nothing usable, which is the signal to keep rendering
   // the catalog checked into the repository — the same no-op guarantee the footer switches have.
-  const publishedCatalog = resolveUsableDownloadCatalog(home.downloadCatalog);
+  const publishedCatalog = resolveUsableDownloadCatalog(deploymentsCatalog ?? home.downloadCatalog);
 
   // Cards an operator hid on `/admin/site` leave the section entirely. When everything they
   // published is hidden, the section draws nothing at all — resurrecting the bundled catalog

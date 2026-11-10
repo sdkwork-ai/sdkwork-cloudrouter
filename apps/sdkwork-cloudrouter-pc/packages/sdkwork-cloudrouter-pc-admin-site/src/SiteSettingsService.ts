@@ -42,7 +42,7 @@ import {
   createDefaultHomeContentForm,
   readDownloadCatalogText,
   readHomeContentForm,
-  toDownloadCatalogPayload,
+  toDownloadsPayload,
   toHomeContentPayload,
   type HomeContentForm,
 } from './siteContentFields';
@@ -363,7 +363,7 @@ export function toSiteSettingsUpdateRequest(form: SiteSettingsForm): AdminSiteSe
   // catalog checked into the repository" — so saving the form cannot pin content the operator
   // never authored.
   const homepage = toHomeContentPayload(form.homepage) as unknown as AdminSiteSettingsUpdateRequest['homepage'];
-  const downloads = toDownloadCatalogPayload(form.downloads) as unknown as AdminSiteSettingsUpdateRequest['downloads'];
+  const downloads = toDownloadsPayload(form.downloads) as unknown as AdminSiteSettingsUpdateRequest['downloads'];
   const adminModules = toAdminModuleSettingsPayload(form.adminModules) as unknown as AdminSiteSettingsUpdateRequest['adminModules'];
   return {
     siteName: form.siteName,
