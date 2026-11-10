@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use sdkwork_cloudrouter_config::RedisConfig;
 
@@ -166,11 +167,16 @@ pub enum CircuitCallPermit {
     Rejected,
     Closed,
     HalfOpenProbe,
+    /// The distributed coordination store could not answer (connection lost,
+    /// command timed out, Redis unavailable). Distinct from `Rejected`: the
+    /// caller must not report "circuit open" for this candidate, it must apply
+    /// the fail-open/fail-closed policy or its per-node fallback.
+    CoordinationUnavailable,
 }
 
 impl CircuitCallPermit {
     fn is_allowed(self) -> bool {
-        !matches!(self, Self::Rejected)
+        matches!(self, Self::Closed | Self::HalfOpenProbe)
     }
 }
 
@@ -202,10 +208,12 @@ pub struct CircuitBreakerConfig {
     /// Whether to fail-open or fail-closed when the distributed state store is
     /// unavailable.
     ///
-    /// Defaults to `false` (fail-closed): when Redis is unreachable the circuit
-    /// breaker rejects calls rather than allowing them through. Production
-    /// deployments MUST keep this `false` to avoid silently disabling circuit
-    /// protection during a Redis outage.
+    /// Defaults to `false` (fail-closed): when Redis is unreachable the breaker
+    /// falls back to the per-node in-memory circuit map instead of blanket
+    /// rejecting every candidate. That keeps one dead Redis link from taking
+    /// the whole routing pool down while still rejecting accounts whose local
+    /// circuit is genuinely open. `true` allows calls during coordination
+    /// failure (explicit operator policy).
     pub fail_open: bool,
 }
 
@@ -352,10 +360,11 @@ impl CircuitBreakerInterceptor {
                 let url = rc.url();
                 let prefix = rc.key_prefix().unwrap_or("cloudrouter").to_owned();
                 match RedisCircuitBreakerStore::try_new(url, &prefix, &config) {
-                    Ok(store) => (
-                        Some(Arc::new(store) as Arc<dyn CircuitBreakerStateStore>),
-                        true,
-                    ),
+                    Ok(store) => {
+                        let store = Arc::new(store);
+                        start_redis_keepalive(Arc::downgrade(&store));
+                        (Some(store as Arc<dyn CircuitBreakerStateStore>), true)
+                    }
                     Err(error) => {
                         observe_circuit_breaker_degraded("configuration", config.fail_open);
                         tracing::error!(
@@ -490,6 +499,36 @@ impl CircuitBreakerInterceptor {
     #[cfg(test)]
     fn allow_call(&self, account_id: i64) -> bool {
         self.acquire_call_permit(account_id).is_allowed()
+    }
+
+    /// Permit to use when the distributed store cannot answer.
+    ///
+    /// - fail-open: allow the call (explicit operator policy);
+    /// - fail-closed: consult the per-node circuit map. Rejecting every
+    ///   candidate because Redis is unreachable would turn one infrastructure
+    ///   blip into a total routing outage, while the local map still protects
+    ///   the upstream from a persistently failing account.
+    fn permit_when_coordination_unavailable(&self, account_id: i64) -> CircuitCallPermit {
+        if self.config.fail_open {
+            CircuitCallPermit::Closed
+        } else {
+            self.acquire_call_permit(account_id)
+        }
+    }
+
+    /// Fallback permit plus the bookkeeping that binds the account's outcome to
+    /// the local map (the distributed store must not be called again for it).
+    fn coordination_fallback_permit(
+        &self,
+        account_id: i64,
+        fallback_accounts: &mut Vec<i64>,
+    ) -> CircuitCallPermit {
+        let permit = self.permit_when_coordination_unavailable(account_id);
+        if permit != CircuitCallPermit::Rejected && !fallback_accounts.contains(&account_id) {
+            observe_circuit_breaker_degraded("acquire_fallback", self.config.fail_open);
+            fallback_accounts.push(account_id);
+        }
+        permit
     }
 
     fn release_half_open_probe(&self, account_id: i64) {
@@ -629,7 +668,11 @@ impl CircuitBreakerInterceptor {
         }
     }
 
-    async fn record_final_route_attempts(&self, attempts: &[InvocationRouteAttempt]) {
+    async fn record_final_route_attempts(
+        &self,
+        attempts: &[InvocationRouteAttempt],
+        fallback_accounts: &[i64],
+    ) {
         // Treat retries on one channel as a single circuit outcome. This preserves a final
         // success after an in-request retry, while still recording a failed primary channel
         // when a later fallback channel succeeds.
@@ -641,8 +684,11 @@ impl CircuitBreakerInterceptor {
             // cooling window expires. Keep the outcome neutral so the breaker
             // only reacts to transport/5xx/429-style failures.
             let client_rejection = attempt_is_client_rejection(attempt);
+            let local_fallback = fallback_accounts.contains(&attempt.account_id);
             if attempt.success {
-                if let Some(store) = self.distributed.as_ref() {
+                if local_fallback {
+                    self.record_success(attempt.account_id);
+                } else if let Some(store) = self.distributed.as_ref() {
                     store.record_success(attempt.account_id).await;
                 } else if self.distributed_required {
                     observe_circuit_breaker_degraded("record_success", self.config.fail_open);
@@ -651,6 +697,8 @@ impl CircuitBreakerInterceptor {
                 }
             } else if client_rejection {
                 continue;
+            } else if local_fallback {
+                self.record_failure(attempt.account_id);
             } else if let Some(store) = self.distributed.as_ref() {
                 store.record_failure(attempt.account_id).await;
             } else if self.distributed_required {
@@ -666,8 +714,9 @@ impl CircuitBreakerInterceptor {
             return;
         }
         invocation.routing.circuit_breaker_finalized = true;
+        let fallback_accounts = invocation.routing.circuit_local_fallback_accounts.clone();
 
-        self.record_final_route_attempts(&invocation.routing.attempted_routes)
+        self.record_final_route_attempts(&invocation.routing.attempted_routes, &fallback_accounts)
             .await;
         let attempted_channels = invocation
             .routing
@@ -681,7 +730,9 @@ impl CircuitBreakerInterceptor {
             if attempted_channels.contains(&account_id) {
                 continue;
             }
-            if let Some(store) = self.distributed.as_ref() {
+            if fallback_accounts.contains(&account_id) {
+                self.release_half_open_probe(account_id);
+            } else if let Some(store) = self.distributed.as_ref() {
                 store.release_half_open_probe(account_id).await;
             } else if !self.distributed_required {
                 self.release_half_open_probe(account_id);
@@ -731,11 +782,18 @@ impl InvocationInterceptor for CircuitBreakerInterceptor {
     fn before<'a>(&'a self, invocation: &'a mut Invocation) -> InvocationFuture<'a, ()> {
         Box::pin(async move {
             invocation.routing.circuit_half_open_probe_channels.clear();
+            invocation.routing.circuit_local_fallback_accounts.clear();
             invocation.routing.circuit_breaker_finalized = false;
             let Some(plan) = invocation.routing.route_plan.as_mut() else {
                 return Ok(());
             };
             let mut reserved_probes = Vec::new();
+            let mut fallback_accounts = Vec::new();
+            let mut coordination_unavailable = false;
+            // Once the store fails for this invocation, do not pay its timeout
+            // again for every remaining candidate: a single Redis outage would
+            // otherwise multiply the command deadline by the candidate count.
+            let mut store_unavailable = false;
 
             if let Some(store) = self.distributed.as_ref() {
                 let mut allowed = Vec::with_capacity(plan.candidates.len());
@@ -744,7 +802,24 @@ impl InvocationInterceptor for CircuitBreakerInterceptor {
                     let permit = if let Some(permit) = permits.get(&candidate.account_id) {
                         *permit
                     } else {
-                        let permit = store.acquire_call_permit(candidate.account_id).await;
+                        let permit = if store_unavailable {
+                            self.coordination_fallback_permit(
+                                candidate.account_id,
+                                &mut fallback_accounts,
+                            )
+                        } else {
+                            match store.acquire_call_permit(candidate.account_id).await {
+                                CircuitCallPermit::CoordinationUnavailable => {
+                                    coordination_unavailable = true;
+                                    store_unavailable = true;
+                                    self.coordination_fallback_permit(
+                                        candidate.account_id,
+                                        &mut fallback_accounts,
+                                    )
+                                }
+                                other => other,
+                            }
+                        };
                         permits.insert(candidate.account_id, permit);
                         permit
                     };
@@ -799,14 +874,18 @@ impl InvocationInterceptor for CircuitBreakerInterceptor {
             }
 
             if plan.candidates.is_empty() {
-                return Err(InvocationError::new(
-                    InvocationErrorKind::Routing,
-                    "all route candidates have open circuit breakers",
-                ));
+                let message = if coordination_unavailable {
+                    "all route candidates have open circuit breakers \
+                     (distributed coordination unavailable; per-node fallback rejected them)"
+                } else {
+                    "all route candidates have open circuit breakers"
+                };
+                return Err(InvocationError::new(InvocationErrorKind::Routing, message));
             }
 
             plan.selected_index = 0;
             invocation.routing.circuit_half_open_probe_channels = reserved_probes;
+            invocation.routing.circuit_local_fallback_accounts = fallback_accounts;
             Ok(())
         })
     }
@@ -848,7 +927,16 @@ impl InvocationInterceptor for CircuitBreakerInterceptor {
 /// Keys use TTL to automatically clean up rarely-used channel state.
 struct RedisCircuitBreakerStore {
     client: redis::Client,
-    connection_manager: Arc<tokio::sync::OnceCell<redis::aio::ConnectionManager>>,
+    /// Lazily opened shared connection. Held behind a mutex (instead of a
+    /// `OnceCell`) so a connection that the network silently dropped during a
+    /// long idle period can be discarded and re-opened on the next attempt.
+    connection_manager: tokio::sync::Mutex<Option<redis::aio::ConnectionManager>>,
+    /// Unix seconds of the last successful command. A connection idle for
+    /// longer than [`REDIS_IDLE_PROBE_AFTER`] is PINGed before it is used, so a
+    /// stale socket is detected and replaced instead of failing a user call.
+    last_used_at: AtomicU64,
+    /// Number of times the connection was (re)opened. Purely diagnostic.
+    connection_generation: AtomicU64,
     command_timeout: Duration,
     key_prefix: String,
     config: CircuitBreakerConfig,
@@ -858,12 +946,59 @@ struct RedisCircuitBreakerStore {
 /// to the configured fail_open/fail_closed posture instead of parking dispatch.
 const REDIS_COMMAND_TIMEOUT: Duration = Duration::from_secs(2);
 
+/// Idle threshold after which the cached connection is probed with PING before
+/// a coordination command. Long idle gaps are normal for AI traffic; NAT /
+/// conntrack silently drops idle sockets while redis-rs keeps the handle.
+const REDIS_IDLE_PROBE_AFTER: Duration = Duration::from_secs(60);
+
+/// Background keepalive cadence. Keeps the coordination socket warm and turns a
+/// broken link into a reconnect *before* a user request arrives.
+const REDIS_KEEPALIVE_INTERVAL: Duration = Duration::from_secs(30);
+
+fn unix_now_seconds() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_secs())
+        .unwrap_or(0)
+}
+
+/// Keeps the coordination socket warm.
+///
+/// The breaker store is otherwise touched only when AI traffic flows; a
+/// production gateway can legitimately sit idle for many hours, and an idle
+/// TCP link can be dropped by NAT/conntrack without redis-rs noticing. A PING
+/// every [`REDIS_KEEPALIVE_INTERVAL`] both prevents that idle drop and turns a
+/// dead link into a reconnect before a user request depends on it.
+///
+/// The task holds a `Weak` reference, so it exits when the interceptor (the
+/// only owner) is dropped; no runtime handle, no leak.
+fn start_redis_keepalive(store: std::sync::Weak<RedisCircuitBreakerStore>) {
+    let Ok(handle) = tokio::runtime::Handle::try_current() else {
+        // Sync contexts (tests, desktop bootstrap without a runtime) simply
+        // skip the background keepalive; the per-use probe still protects them.
+        return;
+    };
+    handle.spawn(async move {
+        let mut ticker = tokio::time::interval(REDIS_KEEPALIVE_INTERVAL);
+        ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+        loop {
+            ticker.tick().await;
+            let Some(store) = store.upgrade() else {
+                break;
+            };
+            store.keepalive().await;
+        }
+    });
+}
+
 impl RedisCircuitBreakerStore {
     fn try_new(url: &str, prefix: &str, config: &CircuitBreakerConfig) -> Result<Self, String> {
         let client = redis::Client::open(url).map_err(|e| format!("redis connect error: {e}"))?;
         Ok(Self {
             client,
-            connection_manager: Arc::new(tokio::sync::OnceCell::const_new()),
+            connection_manager: tokio::sync::Mutex::new(None),
+            last_used_at: AtomicU64::new(0),
+            connection_generation: AtomicU64::new(0),
             command_timeout: REDIS_COMMAND_TIMEOUT,
             key_prefix: format!("{prefix}:circuit_breaker"),
             config: config.clone(),
@@ -871,11 +1006,152 @@ impl RedisCircuitBreakerStore {
     }
 
     async fn connection(&self) -> Option<redis::aio::ConnectionManager> {
-        self.connection_manager
-            .get_or_try_init(|| async { self.client.get_connection_manager().await })
-            .await
-            .ok()
-            .cloned()
+        let mut slot = self.connection_manager.lock().await;
+        if slot.is_none() {
+            let opened = self
+                .client
+                .get_connection_manager_with_config(
+                    redis::aio::ConnectionManagerConfig::new()
+                        .set_connection_timeout(Some(Duration::from_secs(2)))
+                        .set_response_timeout(Some(self.command_timeout))
+                        .set_number_of_retries(2),
+                )
+                .await
+                .ok();
+            if opened.is_some() {
+                let generation = self.connection_generation.fetch_add(1, Ordering::Relaxed) + 1;
+                self.last_used_at
+                    .store(unix_now_seconds(), Ordering::Relaxed);
+                tracing::info!(
+                    generation,
+                    key_prefix = %self.key_prefix,
+                    "circuit breaker Redis connection opened"
+                );
+            }
+            *slot = opened;
+        }
+        slot.clone()
+    }
+
+    /// Drops the cached connection so the next call re-opens it. Called after a
+    /// coordination error: a Redis socket that sat idle for hours can be closed
+    /// by the network without redis-rs noticing, and the first AI request after
+    /// that idle gap would otherwise fail closed as "all route candidates have
+    /// open circuit breakers".
+    async fn discard_connection(&self) {
+        let had_connection = self.connection_manager.lock().await.take().is_some();
+        if had_connection {
+            tracing::warn!(
+                generation = self.connection_generation.load(Ordering::Relaxed),
+                key_prefix = %self.key_prefix,
+                "circuit breaker Redis connection discarded after coordination failure"
+            );
+        }
+    }
+
+    fn mark_used(&self) {
+        self.last_used_at
+            .store(unix_now_seconds(), Ordering::Relaxed);
+    }
+
+    fn idle_for(&self) -> Duration {
+        let last = self.last_used_at.load(Ordering::Relaxed);
+        if last == 0 {
+            return Duration::ZERO;
+        }
+        Duration::from_secs(unix_now_seconds().saturating_sub(last))
+    }
+
+    /// PING the cached connection, dropping it on failure. Used before a
+    /// coordination command after an idle gap and by the background keepalive.
+    async fn probe_connection(&self) -> Result<(), String> {
+        let Some(mut conn) = self.connection().await else {
+            return Err("redis connection unavailable".to_owned());
+        };
+        let result = tokio::time::timeout(
+            self.command_timeout,
+            redis::cmd("PING").query_async::<String>(&mut conn),
+        )
+        .await;
+        match result {
+            Ok(Ok(_)) => {
+                self.mark_used();
+                Ok(())
+            }
+            Ok(Err(error)) => Err(error.to_string()),
+            Err(_) => Err("redis PING timed out".to_owned()),
+        }
+    }
+
+    /// Background keepalive: probe every [`REDIS_KEEPALIVE_INTERVAL`] so the
+    /// socket never sits idle long enough to be silently dropped, and a broken
+    /// link is repaired before it can fail a user request.
+    async fn keepalive(&self) {
+        if let Err(error) = self.probe_connection().await {
+            self.observe_coordination_error("keepalive", error);
+            self.discard_connection().await;
+        }
+    }
+
+    /// One coordination attempt. Resolves the permit state or returns a
+    /// transport/deadline error so the caller can reconnect and retry.
+    async fn acquire_call_permit_once(&self, account_id: i64) -> Result<CircuitCallPermit, String> {
+        if self.idle_for() >= REDIS_IDLE_PROBE_AFTER {
+            if let Err(error) = self.probe_connection().await {
+                return Err(format!("redis idle probe failed: {error}"));
+            }
+        }
+        let Some(mut conn) = self.connection().await else {
+            return Err("redis connection unavailable".to_owned());
+        };
+        let key = self.redis_key(account_id);
+        let result = tokio::time::timeout(
+            self.command_timeout,
+            redis::cmd("EVAL")
+                .arg(Self::lua_allow_call())
+                .arg(1)
+                .arg(&key)
+                .arg(self.config.open_duration.as_secs() as i64)
+                .arg(self.config.half_open_max_probes as i64)
+                .arg(self.key_ttl_seconds() as i64)
+                .query_async::<i64>(&mut conn),
+        )
+        .await;
+
+        let outcome = match result {
+            Ok(Ok(1)) => Ok(CircuitCallPermit::Closed),
+            Ok(Ok(2)) => Ok(CircuitCallPermit::HalfOpenProbe),
+            Ok(Ok(3)) => {
+                observe_circuit_breaker_transition(
+                    "redis",
+                    CircuitState::Open,
+                    CircuitState::HalfOpen,
+                );
+                Ok(CircuitCallPermit::HalfOpenProbe)
+            }
+            Ok(Ok(-1)) => {
+                observe_circuit_breaker_rejection("redis", "open", 1);
+                Ok(CircuitCallPermit::Rejected)
+            }
+            Ok(Ok(-2)) => {
+                observe_circuit_breaker_rejection("redis", "probe_limit", 1);
+                Ok(CircuitCallPermit::Rejected)
+            }
+            Ok(Ok(-3)) => {
+                observe_circuit_breaker_rejection("redis", "probes_disabled", 1);
+                Ok(CircuitCallPermit::Rejected)
+            }
+            Ok(Ok(_)) => {
+                observe_circuit_breaker_rejection("redis", "invalid_state", 1);
+                Ok(CircuitCallPermit::Rejected)
+            }
+            Ok(Err(error)) => Err(error.to_string()),
+            Err(_) => Err("redis command timed out".to_owned()),
+        };
+        if outcome.is_ok() {
+            self.mark_used();
+        }
+        outcome
     }
 
     fn redis_key(&self, account_id: i64) -> String {
@@ -1056,14 +1332,6 @@ impl RedisCircuitBreakerStore {
         "#
     }
 
-    fn degraded_permit(&self) -> CircuitCallPermit {
-        if self.config.fail_open {
-            CircuitCallPermit::Closed
-        } else {
-            CircuitCallPermit::Rejected
-        }
-    }
-
     fn observe_coordination_error(&self, operation: &'static str, error: impl std::fmt::Display) {
         observe_circuit_breaker_degraded(operation, self.config.fail_open);
         tracing::warn!(
@@ -1078,68 +1346,29 @@ impl RedisCircuitBreakerStore {
 #[async_trait::async_trait]
 impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
     async fn acquire_call_permit(&self, account_id: i64) -> CircuitCallPermit {
-        let Some(mut conn) = self.connection().await else {
-            self.observe_coordination_error("acquire", "redis connection unavailable");
-            if !self.config.fail_open {
-                observe_circuit_breaker_rejection("redis", "coordination_unavailable", 1);
-            }
-            return self.degraded_permit();
-        };
-        let key = self.redis_key(account_id);
-
-        let result = tokio::time::timeout(
-            self.command_timeout,
-            redis::cmd("EVAL")
-                .arg(Self::lua_allow_call())
-                .arg(1)
-                .arg(&key)
-                .arg(self.config.open_duration.as_secs() as i64)
-                .arg(self.config.half_open_max_probes as i64)
-                .arg(self.key_ttl_seconds() as i64)
-                .query_async::<i64>(&mut conn),
-        )
-        .await;
-
-        match result {
-            Ok(Ok(1)) => CircuitCallPermit::Closed,
-            Ok(Ok(2)) => CircuitCallPermit::HalfOpenProbe,
-            Ok(Ok(3)) => {
-                observe_circuit_breaker_transition(
-                    "redis",
-                    CircuitState::Open,
-                    CircuitState::HalfOpen,
-                );
-                CircuitCallPermit::HalfOpenProbe
-            }
-            Ok(Ok(-1)) => {
-                observe_circuit_breaker_rejection("redis", "open", 1);
-                CircuitCallPermit::Rejected
-            }
-            Ok(Ok(-2)) => {
-                observe_circuit_breaker_rejection("redis", "probe_limit", 1);
-                CircuitCallPermit::Rejected
-            }
-            Ok(Ok(-3)) => {
-                observe_circuit_breaker_rejection("redis", "probes_disabled", 1);
-                CircuitCallPermit::Rejected
-            }
-            Ok(Ok(_)) => {
-                observe_circuit_breaker_rejection("redis", "invalid_state", 1);
-                CircuitCallPermit::Rejected
-            }
-            Ok(Err(error)) => {
+        match self.acquire_call_permit_once(account_id).await {
+            Ok(permit) => permit,
+            Err(error) => {
                 self.observe_coordination_error("acquire", error);
-                if !self.config.fail_open {
-                    observe_circuit_breaker_rejection("redis", "coordination_unavailable", 1);
+                // A connection that went stale while idle surfaces here as
+                // `broken pipe`. Drop it and retry once on a fresh socket
+                // before applying the fail-open/fail-closed posture; otherwise
+                // the first request after an idle gap fails closed as
+                // "all route candidates have open circuit breakers".
+                self.discard_connection().await;
+                match self.acquire_call_permit_once(account_id).await {
+                    Ok(permit) => permit,
+                    Err(error) => {
+                        self.observe_coordination_error("acquire_retry", error);
+                        observe_circuit_breaker_rejection("redis", "coordination_unavailable", 1);
+                        // Do not decide the policy here: the interceptor knows
+                        // whether fail-open applies and can fall back to the
+                        // per-node circuit map instead of rejecting every
+                        // candidate. Reporting `CoordinationUnavailable` keeps
+                        // the outage from masquerading as "circuit open".
+                        CircuitCallPermit::CoordinationUnavailable
+                    }
                 }
-                self.degraded_permit()
-            }
-            Err(_) => {
-                self.observe_coordination_error("acquire", "redis command timed out");
-                if !self.config.fail_open {
-                    observe_circuit_breaker_rejection("redis", "coordination_unavailable", 1);
-                }
-                self.degraded_permit()
             }
         }
     }
@@ -1425,17 +1654,20 @@ mod tests {
         // Simulate final route attempts: an upstream 401 (invalid credential)
         // must be neutral for the breaker — repeated 401s must not open it.
         for _ in 0..5 {
-            cb.record_final_route_attempts(&[InvocationRouteAttempt {
-                supplier_code: "deepseek".to_owned(),
-                account_id: 42,
-                candidate_index: 0,
-                status_code: Some(401),
-                success: false,
-                retryable: false,
-                error_code: Some("provider_status".to_owned()),
-                error_message: Some("Authentication Fails".to_owned()),
-                latency_ms: Some(70),
-            }])
+            cb.record_final_route_attempts(
+                &[InvocationRouteAttempt {
+                    supplier_code: "deepseek".to_owned(),
+                    account_id: 42,
+                    candidate_index: 0,
+                    status_code: Some(401),
+                    success: false,
+                    retryable: false,
+                    error_code: Some("provider_status".to_owned()),
+                    error_message: Some("Authentication Fails".to_owned()),
+                    latency_ms: Some(70),
+                }],
+                &[],
+            )
             .await;
         }
 
@@ -1444,17 +1676,20 @@ mod tests {
 
         // 429 (rate limiting) remains a transient upstream signal and trips.
         for _ in 0..3 {
-            cb.record_final_route_attempts(&[InvocationRouteAttempt {
-                supplier_code: "deepseek".to_owned(),
-                account_id: 43,
-                candidate_index: 0,
-                status_code: Some(429),
-                success: false,
-                retryable: true,
-                error_code: Some("provider_status".to_owned()),
-                error_message: Some("rate limited".to_owned()),
-                latency_ms: Some(30),
-            }])
+            cb.record_final_route_attempts(
+                &[InvocationRouteAttempt {
+                    supplier_code: "deepseek".to_owned(),
+                    account_id: 43,
+                    candidate_index: 0,
+                    status_code: Some(429),
+                    success: false,
+                    retryable: true,
+                    error_code: Some("provider_status".to_owned()),
+                    error_message: Some("rate limited".to_owned()),
+                    latency_ms: Some(30),
+                }],
+                &[],
+            )
             .await;
         }
         assert_eq!(CircuitState::Open, cb.get_state(43));
@@ -1547,8 +1782,11 @@ mod tests {
         assert!(cb.allow_call(3001));
         assert!(cb.allow_call(3002));
 
-        cb.record_final_route_attempts(&[route_attempt(3001, false), route_attempt(3002, true)])
-            .await;
+        cb.record_final_route_attempts(
+            &[route_attempt(3001, false), route_attempt(3002, true)],
+            &[],
+        )
+        .await;
 
         assert_eq!(CircuitState::Open, cb.get_state(3001));
         assert_eq!(CircuitState::Closed, cb.get_state(3002));
@@ -1567,8 +1805,11 @@ mod tests {
         });
         assert!(cb.allow_call(3001));
 
-        cb.record_final_route_attempts(&[route_attempt(3001, false), route_attempt(3001, true)])
-            .await;
+        cb.record_final_route_attempts(
+            &[route_attempt(3001, false), route_attempt(3001, true)],
+            &[],
+        )
+        .await;
 
         assert_eq!(CircuitState::Closed, cb.get_state(3001));
         let stats = cb.get_stats(3001).unwrap();
@@ -1603,6 +1844,98 @@ mod tests {
         assert_eq!(CircuitState::from_str("open"), CircuitState::Open);
         assert_eq!(CircuitState::from_str("half_open"), CircuitState::HalfOpen);
         assert_eq!(CircuitState::from_str("unknown"), CircuitState::Closed);
+    }
+
+    #[test]
+    fn coordination_failure_falls_back_to_the_per_node_circuit() {
+        // Redis coordination unavailable must not mean "reject every
+        // candidate": the local circuit decides, so a removed Redis link
+        // cannot take the whole routing pool down.
+        let breaker = CircuitBreakerInterceptor::new(CircuitBreakerConfig::default());
+        assert_eq!(
+            CircuitCallPermit::Closed,
+            breaker.permit_when_coordination_unavailable(7)
+        );
+        for _ in 0..5 {
+            breaker.record_failure(7);
+        }
+        assert_eq!(
+            CircuitCallPermit::Rejected,
+            breaker.permit_when_coordination_unavailable(7)
+        );
+    }
+
+    #[test]
+    fn fail_open_coordination_failure_keeps_calls_allowed() {
+        let breaker = CircuitBreakerInterceptor::new(CircuitBreakerConfig {
+            fail_open: true,
+            ..CircuitBreakerConfig::default()
+        });
+        for _ in 0..5 {
+            breaker.record_failure(7);
+        }
+        assert_eq!(
+            CircuitCallPermit::Closed,
+            breaker.permit_when_coordination_unavailable(7)
+        );
+    }
+
+    /// Regression for the production incident: the cached Redis socket was
+    /// killed while the breaker still held its handle, and the first AI request
+    /// afterwards failed every candidate closed. The store must discard the
+    /// dead handle, reconnect, and retry instead of returning
+    /// `CoordinationUnavailable`.
+    ///
+    /// Runs only when `SDKWORK_TEST_REDIS_URL` points at a disposable Redis
+    /// instance (the key namespace is `regression:circuit_breaker`).
+    #[tokio::test]
+    async fn redis_store_reconnects_when_the_cached_connection_is_killed() {
+        let Ok(url) = std::env::var("SDKWORK_TEST_REDIS_URL") else {
+            eprintln!("skipping: SDKWORK_TEST_REDIS_URL is not set");
+            return;
+        };
+        let store =
+            RedisCircuitBreakerStore::try_new(&url, "regression", &CircuitBreakerConfig::default())
+                .expect("create breaker store");
+        // Prime the lazily opened connection.
+        assert_eq!(
+            CircuitCallPermit::Closed,
+            store.acquire_call_permit(1).await
+        );
+
+        let client = redis::Client::open(url.as_str()).expect("open admin client");
+        let mut admin = client
+            .get_multiplexed_async_connection()
+            .await
+            .expect("admin connection");
+        let mut cached = store.connection().await.expect("cached connection");
+        let connection_id: i64 = redis::cmd("CLIENT")
+            .arg("ID")
+            .query_async(&mut cached)
+            .await
+            .expect("read client id");
+        drop(cached);
+        let killed: i64 = redis::cmd("CLIENT")
+            .arg("KILL")
+            .arg("ID")
+            .arg(connection_id)
+            .query_async(&mut admin)
+            .await
+            .expect("kill cached connection");
+        assert_eq!(1, killed, "cached connection must have been killed");
+
+        assert_eq!(
+            CircuitCallPermit::Closed,
+            store.acquire_call_permit(1).await,
+            "a killed connection must be replaced, not reported as coordination unavailable"
+        );
+
+        let key = store.redis_key(1);
+        let _: i64 = redis::cmd("DEL")
+            .arg(key)
+            .query_async(&mut admin)
+            .await
+            .unwrap_or(0);
     }
 
     fn route_attempt(account_id: i64, success: bool) -> InvocationRouteAttempt {

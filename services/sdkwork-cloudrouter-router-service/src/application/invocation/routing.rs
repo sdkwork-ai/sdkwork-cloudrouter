@@ -171,6 +171,10 @@ pub struct InvocationRouting {
     pub route_plan: Option<InvocationRoutePlan>,
     pub attempted_routes: Vec<InvocationRouteAttempt>,
     pub(crate) circuit_half_open_probe_channels: Vec<i64>,
+    /// Accounts whose permit was decided by the per-node fallback because the
+    /// distributed coordination store was unavailable for this invocation.
+    /// Their outcomes must be recorded locally, not into the unavailable store.
+    pub(crate) circuit_local_fallback_accounts: Vec<i64>,
     pub(crate) circuit_breaker_finalized: bool,
 }
 
@@ -184,6 +188,7 @@ impl InvocationRouting {
             route_plan: None,
             attempted_routes: Vec::new(),
             circuit_half_open_probe_channels: Vec::new(),
+            circuit_local_fallback_accounts: Vec::new(),
             circuit_breaker_finalized: false,
         }
     }
