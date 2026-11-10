@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 @plugin "tailwindcss-animate";
 @source "../packages";
 @source "../src";
@@ -62,7 +62,7 @@
   --color-lobster-600: #1d4ed8;
   --color-lobster-700: #1e40af;
   --color-lobster-900: #1e3a8a;
-  /* 主题强调色别名：组件统一引用 primary-*，换主题只改此处 */
+  /* 娑撳顣藉楦跨殶閼规彃鍩嗛崥宥忕窗缂佸嫪娆㈢紒鐔剁瀵洜鏁?primary-*閿涘本宕叉稉濠氼暯閸欘亝鏁煎銈咁槱 */
   --color-primary-50: var(--color-lobster-50);
   --color-primary-100: var(--color-lobster-100);
   --color-primary-200: var(--color-lobster-200);
@@ -345,8 +345,8 @@ html.dark [data-admin-model-table-header] > tr > th {
   color: rgb(244 162 140);
 }
 
-/* Nested sidebar groups: the third navigation level (domain group → capability
-   group → page), e.g. 人工智能基础管理 → 技能管理 → 技能分类管理. */
+/* Nested sidebar groups: the third navigation level (domain group 閳?capability
+   group 閳?page), e.g. 娴滃搫浼愰弲楦垮厴閸╄櫣顢呯粻锛勬倞 閳?閹垛偓閼崇晫顓搁悶?閳?閹垛偓閼宠棄鍨庣猾鑽ゎ吀閻? */
 .sdkwork-portal-sidebar-nested {
   margin-inline-start: 0.375rem;
   padding-inline-start: 0.25rem;
@@ -387,7 +387,7 @@ html.dark [data-admin-model-table-header] > tr > th {
   padding-inline-start: 1.75rem;
 }
 
-/* Playground host — sdkwork-birdcoder2 design bridge.
+/* Playground host 閳?sdkwork-birdcoder2 design bridge.
  *
  * `/playground` embeds the SDKWork Agents workbench, whose legacy palette was
  * the dark "studio" navy (#0a1b3d rail/sidebar, #165dff accent). That reads as
@@ -668,7 +668,7 @@ html:not(.dark) .sdkwork-playground-host [class~="text-rose-200"] {
 }
 
 /* ---------------------------------------------------------------------------
-   Canvas (画布) light surface.
+   Canvas (閻㈣绔? light surface.
    The canvas ships as a dark-only editor: `#0d0d0e` board, translucent dark
    cards, zinc text and tech-blue accents, with no `dark:` variants at all. In
    the light portal that is a dark island, and once the host re-tints the text
@@ -877,6 +877,412 @@ html.dark .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#0A1B3D]
 
 html.dark .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#0A1B3D]/95"] {
   background-color: var(--sdkwork-birdcoder-bg-layer-3);
+}
+
+/* ---------------------------------------------------------------------------
+   Dependent components, dialogs and menus.
+   The workbench's own popups, menus and secondary pages were written later
+   than the page shell and each carries its own literals (tech-blue accents,
+   grey panels, dark-first agent pages). Normalize them onto the same palette
+   so the theme holds when a dialog or menu opens.
+--------------------------------------------------------------------------- */
+
+/* Accent literals: legacy tech blues collapse onto the design platform's
+   deepseek blue; semantic green stays green. */
+.sdkwork-playground-host [class~="bg-[#0E42D2]"],
+.sdkwork-playground-host [class~="hover:bg-[#0E42D2]"]:hover {
+  background-color: var(--sdkwork-birdcoder-brand-fill-hover);
+}
+
+.sdkwork-playground-host [class~="text-[#0E42D2]"],
+.sdkwork-playground-host [class~="hover:text-[#0E42D2]"]:hover {
+  color: var(--sdkwork-birdcoder-brand);
+}
+
+.sdkwork-playground-host [class~="bg-[#165DFF]/5"],
+.sdkwork-playground-host [class~="bg-[#165DFF]/10"],
+.sdkwork-playground-host [class~="bg-[#165DFF]/20"],
+.sdkwork-playground-host [class~="bg-[#4080FF]/[0.08]"],
+.sdkwork-playground-host [class~="bg-[#4080FF]/[0.09]"],
+.sdkwork-playground-host [class~="bg-[#4080FF]/25"] {
+  background-color: var(--sdkwork-birdcoder-brand-soft);
+}
+
+.sdkwork-playground-host [class~="bg-[#165DFF]/40"],
+.sdkwork-playground-host [class~="bg-[#165DFF]/50"],
+.sdkwork-playground-host [class~="bg-[#165DFF]/70"],
+.sdkwork-playground-host [class~="bg-[#4080FF]/50"] {
+  background-color: rgb(65 118 230 / 0.4);
+}
+
+.sdkwork-playground-host [class~="bg-[#4080FF]/0"] {
+  background-color: transparent;
+}
+
+.sdkwork-playground-host [class~="border-[#165DFF]"] {
+  border-color: var(--sdkwork-birdcoder-brand-fill);
+}
+
+.sdkwork-playground-host [class~="focus:ring-[#165DFF]"]:focus,
+.sdkwork-playground-host [class~="dark:focus:ring-[#165DFF]"]:focus {
+  --tw-ring-color: var(--sdkwork-birdcoder-brand-fill);
+}
+
+.sdkwork-playground-host [class~="ring-[#4080FF]/20"],
+.sdkwork-playground-host [class~="ring-[#4080FF]/30"],
+.sdkwork-playground-host [class~="ring-[#4080FF]/40"],
+.sdkwork-playground-host [class~="ring-[#4080FF]/50"] {
+  --tw-ring-color: rgb(65 118 230 / 0.35);
+}
+
+.sdkwork-playground-host [class~="fill-[#4080FF]"] {
+  fill: var(--sdkwork-birdcoder-brand);
+}
+
+.sdkwork-playground-host [class~="dark:text-[#4080FF]"] {
+  color: var(--sdkwork-birdcoder-brand);
+}
+
+.sdkwork-playground-host [class~="dark:hover:text-[#4080FF]"]:hover {
+  color: var(--sdkwork-birdcoder-brand);
+}
+
+.sdkwork-playground-host [class~="bg-[#00b42a]"] {
+  background-color: #22c55e;
+}
+
+.sdkwork-playground-host [class~="bg-[#00b42a]/10"],
+.sdkwork-playground-host [class~="hover:bg-[#00b42a]/20"]:hover {
+  background-color: rgb(34 197 94 / 0.14);
+}
+
+.sdkwork-playground-host [class~="text-[#00b42a]"] {
+  color: #16a34a;
+}
+
+/* Legacy light tints (tech-blue chips, grey tracks) 閳?platform layers. */
+.sdkwork-playground-host [class~="bg-[#E8F0FF]"],
+.sdkwork-playground-host [class~="bg-[#EAF1FB]"],
+.sdkwork-playground-host [class~="bg-[#eaf1fb]"],
+.sdkwork-playground-host [class~="bg-[#e6f4ff]"],
+.sdkwork-playground-host [class~="bg-[#e6f4ff]/60"] {
+  background-color: #e4edfd;
+}
+
+.sdkwork-playground-host [class~="bg-[#f4f7fc]"] {
+  background-color: var(--sdkwork-birdcoder-bg-layer-2);
+}
+
+.sdkwork-playground-host [class~="bg-[#f7f7f7]"],
+.sdkwork-playground-host [class~="bg-[#fafafa]"] {
+  background-color: #f9fafb;
+}
+
+.sdkwork-playground-host [class~="bg-[#ebebeb]"],
+.sdkwork-playground-host [class~="bg-[#d9d9d9]"],
+.sdkwork-playground-host [class~="hover:bg-[#e5e5e5]"]:hover {
+  background-color: #e9ecf2;
+}
+
+/* Dark-first panels, dialogs and secondary pages in the light scheme. They are
+   painted with fixed dark literals and no `dark:` variant, so light mode has to
+   translate them explicitly. Code blocks and the full-screen media viewers keep
+   their dark chrome (reasserted below). */
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#1e1e1e]"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#181818]"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#18181a]"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#101012]"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#111113]"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#1e1e22]"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#1b1b1e]"] {
+  background-color: #ffffff;
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#202020]"] {
+  background-color: #f9fafb;
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#141414]"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#242426]"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#252528]"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#2f2f33]"] {
+  background-color: #f5f7fa;
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#2d2d2d]"],
+html:not(.dark) .sdkwork-playground-host [class~="hover:bg-[#2a2a2a]"]:hover {
+  background-color: #e9ecf2;
+}
+
+/* Code blocks stay dark editors in both schemes. */
+html:not(.dark) .sdkwork-playground-host .chat-md-code-block [class~="bg-[#1e1e1e]"] {
+  background-color: #1e1e1e;
+}
+
+html:not(.dark) .sdkwork-playground-host .chat-md-code-block [class~="text-gray-100"] {
+  color: #f3f4f6;
+}
+
+html:not(.dark) .sdkwork-playground-host .chat-md-code-block [class~="text-gray-300"] {
+  color: #d1d5db;
+}
+
+/* Media viewers (image/video detail + lightboxes) are dark islands. */
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0a0a0a]"] [class~="bg-[#1e1e1e]"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0a0a0a]/95"] [class~="bg-[#1e1e1e]"] {
+  background-color: #1e1e1e;
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0a0a0a]"] [class~="bg-[#141414]"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0a0a0a]/95"] [class~="bg-[#141414]"] {
+  background-color: #141414;
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0a0a0a]"] [class~="text-zinc-100"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0a0a0a]/95"] [class~="text-zinc-100"] {
+  color: #f4f4f5;
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0a0a0a]"] [class~="text-zinc-200"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0a0a0a]/95"] [class~="text-zinc-200"] {
+  color: #e4e4e7;
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0a0a0a]"] [class~="text-zinc-300"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0a0a0a]/95"] [class~="text-zinc-300"] {
+  color: #d4d4d8;
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0a0a0a]"] [class~="text-zinc-400"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0a0a0a]/95"] [class~="text-zinc-400"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0a0a0a]"] [class~="text-zinc-500"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0a0a0a]/95"] [class~="text-zinc-500"] {
+  color: #a1a1aa;
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0a0a0a]"] [class~="text-gray-200"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0a0a0a]/95"] [class~="text-gray-200"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0a0a0a]"] [class~="text-gray-300"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0a0a0a]/95"] [class~="text-gray-300"] {
+  color: #d4d4d8;
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0a0a0a]"] [class~="hover:text-white"]:hover,
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0a0a0a]/95"] [class~="hover:text-white"]:hover {
+  color: #ffffff;
+}
+
+/* Light-scheme grey text used by the dark-first agent pages. */
+html:not(.dark) .sdkwork-playground-host [class~="text-gray-100"],
+html:not(.dark) .sdkwork-playground-host [class~="text-gray-200"] {
+  color: var(--sdkwork-birdcoder-label-primary);
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="text-gray-300"] {
+  color: var(--sdkwork-birdcoder-label-secondary);
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="text-gray-400"] {
+  color: var(--sdkwork-birdcoder-label-tertiary);
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="text-gray-500"] {
+  color: var(--sdkwork-birdcoder-label-secondary);
+}
+
+/* Dark-scheme continuation of the grey normalization (dialogs and menus). */
+html.dark .sdkwork-playground-host [class~="dark:bg-[#0a0a0c]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#0d0d0d]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#0f0f0f]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#101012]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#111112]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#111113]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#121214]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#151515]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#161618]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#17191f]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#181818]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#18181A]"] {
+  background-color: var(--sdkwork-birdcoder-bg-base);
+}
+
+html.dark .sdkwork-playground-host [class~="dark:bg-[#1b1b1e]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#1e1e22]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#1f1f1f]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#222]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#222222]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#242426]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#252528]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#282828]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#2A2A2D]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#2a2a2d]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#2b2b2d]"] {
+  background-color: var(--sdkwork-birdcoder-bg-layer-1);
+}
+
+html.dark .sdkwork-playground-host [class~="dark:bg-[#333]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#3a3a3a]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#3a3a3a]/50"] {
+  background-color: var(--sdkwork-birdcoder-bg-layer-3);
+}
+
+html.dark .sdkwork-playground-host [class~="dark:hover:bg-[#2a2a2a]"]:hover,
+html.dark .sdkwork-playground-host [class~="dark:hover:bg-[#2a2a2d]"]:hover,
+html.dark .sdkwork-playground-host [class~="dark:hover:bg-[#2f2f2f]"]:hover,
+html.dark .sdkwork-playground-host [class~="dark:hover:bg-[#333]"]:hover,
+html.dark .sdkwork-playground-host [class~="dark:hover:bg-[#333333]"]:hover,
+html.dark .sdkwork-playground-host [class~="dark:hover:bg-[#3a3a3a]"]:hover,
+html.dark .sdkwork-playground-host [class~="dark:hover:bg-[#1C1C1E]"]:hover,
+html.dark .sdkwork-playground-host [class~="dark:hover:bg-[#1d1d20]"]:hover {
+  background-color: var(--sdkwork-birdcoder-bg-layer-2);
+}
+
+/* Dark-first dialogs/pages also carry non-`dark:` literals (#1e1e1e panels,
+   #141414 fields, #2d2d2d rows). Normalize them in dark mode too, then
+   reassert the dark code-block/media-viewer islands below. */
+html.dark .sdkwork-playground-host [class~="bg-[#1e1e1e]"],
+html.dark .sdkwork-playground-host [class~="bg-[#1b1b1e]"],
+html.dark .sdkwork-playground-host [class~="bg-[#1e1e22]"],
+html.dark .sdkwork-playground-host [class~="bg-[#18181a]"],
+html.dark .sdkwork-playground-host [class~="bg-[#101012]"],
+html.dark .sdkwork-playground-host [class~="bg-[#111113]"],
+html.dark .sdkwork-playground-host [class~="bg-[#181818]"] {
+  background-color: var(--sdkwork-birdcoder-bg-layer-1);
+}
+
+html.dark .sdkwork-playground-host [class~="bg-[#202020]"] {
+  background-color: var(--sdkwork-birdcoder-bg-sidebar);
+}
+
+html.dark .sdkwork-playground-host [class~="bg-[#141414]"],
+html.dark .sdkwork-playground-host [class~="bg-[#242426]"],
+html.dark .sdkwork-playground-host [class~="bg-[#252528]"],
+html.dark .sdkwork-playground-host [class~="bg-[#2f2f33]"],
+html.dark .sdkwork-playground-host [class~="bg-[#2d2d2d]"] {
+  background-color: var(--sdkwork-birdcoder-bg-layer-2);
+}
+
+html.dark .sdkwork-playground-host .chat-md-code-block [class~="bg-[#1e1e1e]"] {
+  background-color: #0f0f0f;
+}
+
+html.dark .sdkwork-playground-host [class~="bg-[#0a0a0a]"] [class~="bg-[#1e1e1e]"],
+html.dark .sdkwork-playground-host [class~="bg-[#0a0a0a]/95"] [class~="bg-[#1e1e1e]"] {
+  background-color: #1e1e1e;
+}
+
+html.dark .sdkwork-playground-host [class~="bg-[#0a0a0a]"] [class~="bg-[#141414]"],
+html.dark .sdkwork-playground-host [class~="bg-[#0a0a0a]/95"] [class~="bg-[#141414]"] {
+  background-color: #141414;
+}
+
+/* Dark-scheme grey text across dialogs (dark-first pages have no dark:
+   variants for their body copy). */
+html.dark .sdkwork-playground-host [class~="text-gray-100"],
+html.dark .sdkwork-playground-host [class~="text-gray-200"] {
+  color: var(--sdkwork-birdcoder-label-primary);
+}
+
+html.dark .sdkwork-playground-host [class~="text-gray-300"] {
+  color: var(--sdkwork-birdcoder-label-secondary);
+}
+
+html.dark .sdkwork-playground-host [class~="text-gray-400"],
+html.dark .sdkwork-playground-host [class~="text-gray-500"] {
+  color: var(--sdkwork-birdcoder-label-tertiary);
+}
+
+/* The model picker menu is portaled to <body>, outside this host scope; its
+   palette is retinted through its design variables at the end of this sheet.
+   Only the trigger lives inside the host. */
+.sdkwork-playground-host .sdkwork-model-picker-trigger__label {
+  color: var(--sdkwork-birdcoder-label-secondary);
+}
+
+.sdkwork-playground-host .sdkwork-model-picker-trigger:hover .sdkwork-model-picker-trigger__label,
+.sdkwork-playground-host .sdkwork-model-picker-trigger[aria-expanded='true'] .sdkwork-model-picker-trigger__label {
+  color: var(--sdkwork-birdcoder-label-primary);
+}
+
+/* The BirdCoder promo card floats on the primary-subtle band; its white
+   translucent glass must invert in dark mode. */
+html.dark .sdkwork-playground-host [class~="bg-white/60"] {
+  background-color: rgb(44 44 46 / 0.6);
+}
+
+html.dark .sdkwork-playground-host [class~="bg-white/60"] [class~="bg-white/80"] {
+  background-color: rgb(53 54 56 / 0.8);
+}
+
+/* BirdCoder promo: the illustration copy and close control were written for
+   the light glass card only. */
+html.dark .sdkwork-playground-host [class~="bg-[#222222]"] [class~="text-[#333]"] {
+  color: var(--sdkwork-birdcoder-label-primary);
+}
+
+html.dark .sdkwork-playground-host [class~="bg-[#222222]"] [class~="text-zinc-800"] {
+  color: var(--sdkwork-birdcoder-label-primary);
+}
+
+html.dark .sdkwork-playground-host [class~="bg-[#222222]"] [class~="text-black/50"] {
+  color: var(--sdkwork-birdcoder-label-tertiary);
+}
+
+html.dark .sdkwork-playground-host [class~="bg-[#222222]"] [class~="hover:text-black"]:hover {
+  color: var(--sdkwork-birdcoder-label-primary);
+}
+
+html.dark .sdkwork-playground-host [class~="bg-[#222222]"] [class~="text-indigo-600"] {
+  color: #a5b4fc;
+}
+
+html.dark .sdkwork-playground-host [class~="bg-[#222222]"] [class~="text-blue-600"] {
+  color: #93c5fd;
+}
+
+html.dark .sdkwork-playground-host [class~="bg-[#222222]"] [class~="text-purple-600"] {
+  color: #d8b4fe;
+}
+
+/* Tailwind's default blue is still used as the primary action in the agent
+   dialogs and secondary pages; collapse it onto the deepseek accent. */
+.sdkwork-playground-host [class~="bg-blue-600"] {
+  background-color: var(--sdkwork-birdcoder-brand-fill);
+  color: #ffffff;
+}
+
+.sdkwork-playground-host [class~="hover:bg-blue-500"]:hover,
+.sdkwork-playground-host [class~="hover:bg-blue-700"]:hover {
+  background-color: var(--sdkwork-birdcoder-brand-fill-hover);
+}
+
+.sdkwork-playground-host [class~="text-blue-400"],
+.sdkwork-playground-host [class~="text-blue-500"],
+.sdkwork-playground-host [class~="text-blue-600"] {
+  color: var(--sdkwork-birdcoder-brand);
+}
+
+.sdkwork-playground-host [class~="border-blue-500"] {
+  border-color: var(--sdkwork-birdcoder-brand-fill);
+}
+
+/* Dialog text fields: `bg-white` inside a white dialog is invisible in light
+   mode, and the dark variants land on one-off greys. Give them a control
+   surface and a hairline border per scheme. */
+.sdkwork-playground-host [class~="dark:bg-[#282828]"] input[class~="bg-white"],
+.sdkwork-playground-host [class~="dark:bg-[#282828]"] select[class~="bg-white"],
+.sdkwork-playground-host [class~="dark:bg-[#1e1e1e]"] input[class~="bg-white"],
+.sdkwork-playground-host [class~="dark:bg-[#1e1e1e]"] select[class~="bg-white"] {
+  background-color: #f5f7fa;
+  border: 1px solid rgb(0 0 0 / 0.1);
+}
+
+html.dark .sdkwork-playground-host [class~="dark:bg-[#282828]"] input[class~="bg-white"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#282828]"] select[class~="bg-white"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#1e1e1e]"] input[class~="bg-white"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#1e1e1e]"] select[class~="bg-white"] {
+  background-color: #2c2c2e;
+  border-color: rgb(255 255 255 / 0.1);
 }
 
 .sdkwork-playground-page {
@@ -2695,7 +3101,7 @@ html.dark .theme-aware-dark-surface.sdkwork-playground-page {
   background: var(--sdkwork-image-generation-sidebar-bg, var(--sdkwork-image-generation-bg)) !important;
 }
 
-/* ── Shared studio panel (video / music / audio / sfx) ── */
+/* 閳光偓閳光偓 Shared studio panel (video / music / audio / sfx) 閳光偓閳光偓 */
 .sdkwork-studio-panel {
   position: relative;
   background: var(--sdkwork-studio-bg, var(--sdkwork-image-generation-bg));
@@ -3217,7 +3623,7 @@ html.dark .theme-aware-dark-surface.sdkwork-playground-page {
   background: var(--sdkwork-generation-history-video-hover-overlay) !important;
 }
 
-/* ── Image generation: borderless flat (theme-aware) ── */
+/* 閳光偓閳光偓 Image generation: borderless flat (theme-aware) 閳光偓閳光偓 */
 .sdkwork-image-generation-panel {
   position: relative;
   background: var(--sdkwork-image-generation-bg);
@@ -6027,4 +6433,109 @@ html.light-mode .sdkwork-cloudrouter-auth-window-button:hover {
 
 .sdkwork-cloudrouter-auth-aside-panel {
   border-color: var(--sdkwork-cloudrouter-auth-aside-border);
+}
+
+/* ---------------------------------------------------------------------------
+   Model picker menu (portaled to <body>).
+   The picker mounts its menu outside `.sdkwork-playground-host`, so the scoped
+   bridge cannot reach it. It reads the `--sdkwork-model-picker-*` design
+   variables, which the shared `.theme-aware-dark-surface` block still carries
+   in the legacy slate/tech-blue palette. Restate them here 閳?the playground
+   chat header is the only consumer in this app 閳?so the open picker matches the
+   sdkwork-birdcoder2 palette in both schemes.
+--------------------------------------------------------------------------- */
+.sdkwork-model-picker-menu {
+  --sdkwork-model-picker-menu-bg: #ffffff;
+  --sdkwork-model-picker-menu-bg-flat: #ffffff;
+  --sdkwork-model-picker-vendors-bg: #f9fafb;
+  --sdkwork-model-picker-models-bg: #ffffff;
+  --sdkwork-model-picker-head-bg: #ffffff;
+  --sdkwork-model-picker-head-bg-flat: #ffffff;
+  --sdkwork-model-picker-border: rgb(0 0 0 / 0.1);
+  --sdkwork-model-picker-border-subtle: rgb(0 0 0 / 0.08);
+  --sdkwork-model-picker-border-head: rgb(0 0 0 / 0.06);
+  --sdkwork-model-picker-text: #0f1115;
+  --sdkwork-model-picker-text-muted: #61666b;
+  --sdkwork-model-picker-text-subtle: #81858c;
+  --sdkwork-model-picker-vendor-hover-bg: rgb(15 17 21 / 0.06);
+  --sdkwork-model-picker-vendor-hover-text: #0f1115;
+  --sdkwork-model-picker-vendor-active-bg: rgb(65 118 230 / 0.12);
+  --sdkwork-model-picker-vendor-active-text: #4176e6;
+  --sdkwork-model-picker-vendor-active-accent: #4176e6;
+  --sdkwork-model-picker-vendor-count-bg: #e9ecf2;
+  --sdkwork-model-picker-vendor-count-active-bg: rgb(65 118 230 / 0.16);
+  --sdkwork-model-picker-model-hover-bg: rgb(15 17 21 / 0.06);
+  --sdkwork-model-picker-model-active-bg: #e9ecf2;
+  --sdkwork-model-picker-model-name: #61666b;
+  --sdkwork-model-picker-model-name-active: #4176e6;
+  --sdkwork-model-picker-check: #4176e6;
+  --sdkwork-model-picker-shadow: 0 24px 64px rgb(15 23 42 / 0.12);
+}
+
+html.dark .sdkwork-model-picker-menu {
+  --sdkwork-model-picker-menu-bg: #232324;
+  --sdkwork-model-picker-menu-bg-flat: #232324;
+  --sdkwork-model-picker-vendors-bg: #1b1b1c;
+  --sdkwork-model-picker-models-bg: #232324;
+  --sdkwork-model-picker-head-bg: #232324;
+  --sdkwork-model-picker-head-bg-flat: #232324;
+  --sdkwork-model-picker-border: rgb(255 255 255 / 0.12);
+  --sdkwork-model-picker-border-subtle: rgb(255 255 255 / 0.08);
+  --sdkwork-model-picker-border-head: rgb(255 255 255 / 0.06);
+  --sdkwork-model-picker-text: #f9fafb;
+  --sdkwork-model-picker-text-muted: #cfd3d6;
+  --sdkwork-model-picker-text-subtle: #adb2b8;
+  --sdkwork-model-picker-vendor-hover-bg: rgb(255 255 255 / 0.08);
+  --sdkwork-model-picker-vendor-hover-text: #f9fafb;
+  --sdkwork-model-picker-vendor-active-bg: rgb(65 118 230 / 0.18);
+  --sdkwork-model-picker-vendor-active-text: #7aaaff;
+  --sdkwork-model-picker-vendor-active-accent: #7aaaff;
+  --sdkwork-model-picker-vendor-count-bg: #353638;
+  --sdkwork-model-picker-vendor-count-active-bg: rgb(65 118 230 / 0.24);
+  --sdkwork-model-picker-model-hover-bg: rgb(255 255 255 / 0.08);
+  --sdkwork-model-picker-model-active-bg: #353638;
+  --sdkwork-model-picker-model-name: #cfd3d6;
+  --sdkwork-model-picker-model-name-active: #7aaaff;
+  --sdkwork-model-picker-check: #7aaaff;
+  --sdkwork-model-picker-shadow: 0 24px 64px rgb(0 0 0 / 0.58);
+}
+
+/* The chat package's own picker sheet loads after this one, so these
+   high-specificity rules keep the portaled menu on the variables above. */
+.sdkwork-model-picker-menu .sdkwork-model-picker-vendor-button[data-active='true'] {
+  color: var(--sdkwork-model-picker-vendor-active-text) !important;
+}
+
+.sdkwork-model-picker-menu .sdkwork-model-picker-vendor-button[data-active='true']::before {
+  background-color: var(--sdkwork-model-picker-vendor-active-accent) !important;
+}
+
+.sdkwork-model-picker-menu .sdkwork-model-picker-vendor-button:hover {
+  color: var(--sdkwork-model-picker-vendor-hover-text) !important;
+}
+
+.sdkwork-model-picker-menu .sdkwork-model-picker-model-name {
+  color: var(--sdkwork-model-picker-model-name) !important;
+}
+
+.sdkwork-model-picker-menu .sdkwork-model-picker-model-name.is-active {
+  color: var(--sdkwork-model-picker-model-name-active) !important;
+}
+
+.sdkwork-model-picker-menu .sdkwork-model-picker-model-desc,
+.sdkwork-model-picker-menu .sdkwork-model-picker-panel-title {
+  color: var(--sdkwork-model-picker-text-subtle) !important;
+}
+
+.sdkwork-model-picker-menu .sdkwork-model-picker-model-check {
+  color: var(--sdkwork-model-picker-check) !important;
+}
+
+.sdkwork-model-picker-menu .sdkwork-model-picker-vendor-count {
+  background-color: var(--sdkwork-model-picker-vendor-count-bg);
+  color: var(--sdkwork-model-picker-text-subtle);
+}
+
+.sdkwork-model-picker-menu .sdkwork-model-picker-vendor-button[data-active='true'] .sdkwork-model-picker-vendor-count {
+  background-color: var(--sdkwork-model-picker-vendor-count-active-bg);
 }

@@ -53,6 +53,22 @@ test('themes every playground tab, including the dark-only canvas and agents pag
   assert.match(portalStyles, /\[class~="text-\[#4080FF\]"\]/);
 });
 
+test('themes dialogs, menus and the portaled model picker', () => {
+  // Dark-first dialogs are translated in light mode.
+  assert.match(portalStyles, /html:not\(\.dark\) \.sdkwork-playground-host \[class~="bg-\[#1e1e1e\]"\]/);
+  // Dialog text fields get a control surface instead of white-on-white.
+  assert.match(portalStyles, /\[class~="dark:bg-\[#282828\]"\] input\[class~="bg-white"\]/);
+  // The model picker menu is portaled to <body>; its palette is restated through
+  // its design variables outside the host scope.
+  assert.match(portalStyles, /\.sdkwork-model-picker-menu \{\s*--sdkwork-model-picker-menu-bg:/);
+  assert.match(portalStyles, /html\.dark \.sdkwork-model-picker-menu \{/);
+  // The BirdCoder promo's light glass card inverts in dark mode.
+  assert.match(portalStyles, /html\.dark \.sdkwork-playground-host \[class~="bg-white\/60"\]/);
+  // Media viewers and code blocks stay dark islands.
+  assert.match(portalStyles, /\.chat-md-code-block \[class~="bg-\[#1e1e1e\]"\]/);
+  assert.match(portalStyles, /\[class~="bg-\[#0a0a0a\]"\] \[class~="bg-\[#1e1e1e\]"\]/);
+});
+
 test('keeps the creative (生成) tab visible so inspiration submit opens the dedicated generation page', () => {
   // creative must NOT be hidden: inspiration submit dispatches switch-tab -> creative, and
   // hiding it makes the workbench fall back to the unified chat agent interface.
