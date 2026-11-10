@@ -121,8 +121,7 @@ fn deserialize_and_validate_envelope(value: &str) -> DomainResult<GatewayAccount
 
 #[derive(Clone)]
 pub struct RedisGatewayAccountingRetryQueue {
-    client: redis::Client,
-    connection_manager: Arc<tokio::sync::OnceCell<ConnectionManager>>,
+    connection: Arc<crate::redis_connection::RedisConnectionSlot>,
     reclaim_cursor: Arc<tokio::sync::Mutex<String>>,
     stream: String,
     group: String,
@@ -144,8 +143,10 @@ impl RedisGatewayAccountingRetryQueue {
         };
         let key_prefix = redis_queue_key_prefix(prefix);
         Ok(Self {
-            client,
-            connection_manager: Arc::new(tokio::sync::OnceCell::const_new()),
+            connection: crate::redis_connection::RedisConnectionSlot::new(
+                client,
+                REDIS_COMMAND_TIMEOUT,
+            ),
             reclaim_cursor: Arc::new(tokio::sync::Mutex::new("0-0".to_owned())),
             stream: format!("{key_prefix}:{STREAM_SUFFIX}"),
             group: format!("{prefix}:{GROUP_SUFFIX}"),
@@ -157,14 +158,12 @@ impl RedisGatewayAccountingRetryQueue {
     }
 
     async fn connection(&self) -> DomainResult<ConnectionManager> {
-        self.connection_manager
-            .get_or_try_init(|| async {
-                self.client.get_connection_manager().await.map_err(|error| {
-                    queue_error("gateway accounting retry Redis connection failed", error)
-                })
-            })
-            .await
-            .cloned()
+        self.connection.get().await.ok_or_else(|| {
+            queue_error(
+                "gateway accounting retry Redis connection failed",
+                "connection unavailable",
+            )
+        })
     }
 
     /// Runs one Redis command under [`REDIS_COMMAND_TIMEOUT`].

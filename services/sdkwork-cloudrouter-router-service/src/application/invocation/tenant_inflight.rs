@@ -157,8 +157,7 @@ impl TenantInflightCounter for LocalTenantInflightCounter {
 /// and conditional renewal/release. A process crash therefore loses only its
 /// own expiring leases and can never decrement another request's slot.
 pub struct RedisTenantInflightCounter {
-    client: redis::Client,
-    connection_manager: Arc<tokio::sync::OnceCell<ConnectionManager>>,
+    connection: Arc<crate::redis_connection::RedisConnectionSlot>,
     key_prefix: String,
     max_inflight: u32,
     lease_ttl: Duration,
@@ -182,8 +181,10 @@ impl RedisTenantInflightCounter {
             .unwrap_or("cloudrouter")
             .to_owned();
         Ok(Self {
-            client,
-            connection_manager: Arc::new(tokio::sync::OnceCell::const_new()),
+            connection: crate::redis_connection::RedisConnectionSlot::new(
+                client,
+                REDIS_COMMAND_TIMEOUT,
+            ),
             key_prefix: format!("{prefix}:tenant_inflight"),
             max_inflight: config.max_inflight,
             lease_ttl: REDIS_LEASE_TTL,
@@ -192,11 +193,7 @@ impl RedisTenantInflightCounter {
     }
 
     async fn connection(&self) -> Option<ConnectionManager> {
-        self.connection_manager
-            .get_or_try_init(|| async { self.client.get_connection_manager().await })
-            .await
-            .ok()
-            .cloned()
+        self.connection.get().await
     }
 
     fn redis_key(&self, tenant_id: i64) -> String {

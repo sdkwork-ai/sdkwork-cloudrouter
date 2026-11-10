@@ -25,6 +25,7 @@ pub mod identity;
 pub mod infrastructure;
 pub mod ports;
 pub mod redaction;
+pub(crate) mod redis_connection;
 
 pub use identity::product_name;
 

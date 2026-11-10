@@ -850,8 +850,7 @@ impl IdempotencyStore for UnavailableIdempotencyStore {
 }
 
 struct RedisIdempotencyStore {
-    client: redis::Client,
-    connection_manager: Arc<tokio::sync::OnceCell<redis::aio::ConnectionManager>>,
+    connection: Arc<crate::redis_connection::RedisConnectionSlot>,
     key_prefix: String,
 }
 
@@ -863,18 +862,16 @@ impl RedisIdempotencyStore {
     fn try_new(url: &str, prefix: &str) -> Result<Self, IdempotencyStoreError> {
         let client = redis::Client::open(url).map_err(|_| IdempotencyStoreError)?;
         Ok(Self {
-            client,
-            connection_manager: Arc::new(tokio::sync::OnceCell::const_new()),
+            connection: crate::redis_connection::RedisConnectionSlot::new(
+                client,
+                REDIS_COMMAND_TIMEOUT,
+            ),
             key_prefix: format!("{prefix}:idempotency:v2"),
         })
     }
 
     async fn connection(&self) -> Option<redis::aio::ConnectionManager> {
-        self.connection_manager
-            .get_or_try_init(|| async { self.client.get_connection_manager().await })
-            .await
-            .ok()
-            .cloned()
+        self.connection.get().await
     }
 
     fn redis_key(&self, storage_key: &str) -> String {
