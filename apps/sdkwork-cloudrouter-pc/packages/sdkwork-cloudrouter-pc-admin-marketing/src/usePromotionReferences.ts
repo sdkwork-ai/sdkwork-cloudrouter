@@ -5,10 +5,13 @@ import { backendPromotionCouponStocksList, backendPromotionOffersList } from './
 /**
  * 列表页引用名称映射：offer id → 展示名称、stock id → 库存编号，
  * 以及 offer id → 库存列表（用于运营指标列与发放设置展示）。
+ * 另提供 offer id → 币种，供库存预算等「只有最小单位金额」的记录格式化金额时使用
+ * （`CouponStock` 契约本身没有币种字段）。
  * 加载失败时保持空映射，各列渲染回退展示原始 id。
  */
 export function usePromotionReferences() {
   const [offerNames, setOfferNames] = useState<Record<string, string>>({});
+  const [offerCurrencies, setOfferCurrencies] = useState<Record<string, string>>({});
   const [stockNames, setStockNames] = useState<Record<string, string>>({});
   const [stockByOffer, setStockByOffer] = useState<Record<string, ApiRecord[]>>({});
 
@@ -23,8 +26,11 @@ export function usePromotionReferences() {
           return;
         }
         const offerMapping: Record<string, string> = {};
+        const offerCurrencyMapping: Record<string, string> = {};
         for (const item of offers.items) {
-          offerMapping[String(item['id'])] = String(item['displayName'] ?? '');
+          const offerId = String(item['id']);
+          offerMapping[offerId] = String(item['displayName'] ?? '');
+          offerCurrencyMapping[offerId] = String(item['currencyCode'] ?? '').trim();
         }
         const stockMapping: Record<string, string> = {};
         const stockByOfferMapping: Record<string, ApiRecord[]> = {};
@@ -36,6 +42,7 @@ export function usePromotionReferences() {
           }
         }
         setOfferNames(offerMapping);
+        setOfferCurrencies(offerCurrencyMapping);
         setStockNames(stockMapping);
         setStockByOffer(stockByOfferMapping);
       })
@@ -47,5 +54,5 @@ export function usePromotionReferences() {
     };
   }, []);
 
-  return { offerNames, stockNames, stockByOffer };
+  return { offerNames, offerCurrencies, stockNames, stockByOffer };
 }

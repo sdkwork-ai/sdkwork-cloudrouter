@@ -7,9 +7,11 @@ import { DistributionTasksPage } from './pages/DistributionTasksPage';
 import { CouponStocksPage } from './pages/CouponStocksPage';
 import { DiscountApplicationsPage } from './pages/DiscountApplicationsPage';
 import { OffersPage } from './pages/OffersPage';
+import { RedemptionAttemptsPage } from './pages/RedemptionAttemptsPage';
 import { ReferralRelationsPage } from './pages/ReferralRelationsPage';
 import { ReferralStrategiesPage } from './pages/ReferralStrategiesPage';
 import { ReferralsPage } from './pages/ReferralsPage';
+import { ReportsPage } from './pages/ReportsPage';
 import { UserCouponsPage } from './pages/UserCouponsPage';
 
 type MarketingAdminTab =
@@ -22,6 +24,8 @@ type MarketingAdminTab =
   | 'discountApplications'
   | 'distributionTasks'
   | 'promotionCouponLedger'
+  | 'redemptionAttempts'
+  | 'reports'
   | 'referrals'
   | 'referralRelations'
   | 'referralStrategies';
@@ -39,6 +43,8 @@ function resolveMarketingSectionId(sectionId: string | undefined): MarketingAdmi
     || sectionId === 'discountApplications'
     || sectionId === 'distributionTasks'
     || sectionId === 'promotionCouponLedger'
+    || sectionId === 'redemptionAttempts'
+    || sectionId === 'reports'
     || sectionId === 'referrals'
     || sectionId === 'referralRelations'
     || sectionId === 'referralStrategies'
@@ -76,6 +82,10 @@ export function MarketingAdmin({ sectionId, batchId }: MarketingAdminProps = {})
       return <DistributionTasksPage />;
     case 'promotionCouponLedger':
       return <CouponLedgerPage />;
+    case 'redemptionAttempts':
+      return <RedemptionAttemptsPage />;
+    case 'reports':
+      return <ReportsPage />;
     case 'referrals':
       return <ReferralsPage />;
     case 'referralRelations':

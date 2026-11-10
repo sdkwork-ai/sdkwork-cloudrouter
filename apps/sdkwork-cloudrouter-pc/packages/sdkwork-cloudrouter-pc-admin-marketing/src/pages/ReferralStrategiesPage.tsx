@@ -1,11 +1,14 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ConfirmDialog, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import { MarketingDrawer, MarketingStatusBadge } from '../components/MarketingDrawer';
+import { MarketingInlineAlert } from '../components/MarketingInlineAlert';
 import { MarketingListView, type MarketingColumn } from '../components/MarketingListView';
-import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
+import { marketingEnumLabel } from '../components/MarketingValueBadge';
 import {
   MarketingService,
+  readMarketingProblemTraceId,
   type ReferralStrategy,
   type ReferralStrategyMutation,
   type ReferralStrategyRewardTarget,
@@ -13,16 +16,9 @@ import {
   type ReferralStrategyStatus,
 } from '../marketingService';
 
-const REWARD_TYPE_OPTIONS: Array<{ value: ReferralStrategyRewardType, labelKey: string }> = [
-  { value: 'POINTS', labelKey: 'admin.marketing.referralStrategies.rewardType.points' },
-  { value: 'CASH', labelKey: 'admin.marketing.referralStrategies.rewardType.cash' },
-  { value: 'COUPON', labelKey: 'admin.marketing.referralStrategies.rewardType.coupon' },
-];
+const REWARD_TYPE_OPTIONS: ReferralStrategyRewardType[] = ['POINTS', 'CASH', 'COUPON'];
 
-const REWARD_TARGET_OPTIONS: Array<{ value: ReferralStrategyRewardTarget, labelKey: string }> = [
-  { value: 'INVITER', labelKey: 'admin.marketing.referralStrategies.rewardTarget.inviter' },
-  { value: 'INVITEE', labelKey: 'admin.marketing.referralStrategies.rewardTarget.invitee' },
-];
+const REWARD_TARGET_OPTIONS: ReferralStrategyRewardTarget[] = ['INVITER', 'INVITEE'];
 
 interface ReferralStrategyFormValues {
   name: string;
@@ -108,6 +104,9 @@ export function ReferralStrategiesPage() {
   const [form, setForm] = useState<ReferralStrategyFormValues>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<{ message: string; traceId: string | null } | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<ReferralStrategy | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const refresh = useCallback(() => setRefreshKey((current) => current + 1), []);
 
@@ -153,42 +152,72 @@ export function ReferralStrategiesPage() {
 
   const toggleStatus = async (record: ReferralStrategy) => {
     const nextStatus: ReferralStrategyStatus = record.status === 'active' ? 'disabled' : 'active';
+    setActionError(null);
     try {
       await MarketingService.updateReferralStrategyStatus(record.id, nextStatus);
       refresh();
     } catch (error) {
-      window.alert(error instanceof Error
-        ? error.message
-        : t('admin.marketing.referralStrategies.errors.saveFallback', 'Failed to save referral strategy'));
+      setActionError({
+        message: resolveProblemMessage(
+          error,
+          t,
+          t('admin.marketing.referralStrategies.errors.saveFallback', 'Failed to save referral strategy'),
+        ),
+        traceId: readMarketingProblemTraceId(error),
+      });
     }
   };
 
-  const deleteStrategy = async (record: ReferralStrategy) => {
-    if (!window.confirm(t('admin.marketing.referralStrategies.confirmDelete', 'Delete this referral strategy?'))) {
+  const confirmDelete = async () => {
+    const record = pendingDelete;
+    if (!record) {
       return;
     }
+    setPendingDelete(null);
+    setActionError(null);
+    setIsDeleting(true);
     try {
       await MarketingService.deleteReferralStrategy(record.id);
       refresh();
     } catch (error) {
-      window.alert(error instanceof Error
-        ? error.message
-        : t('admin.marketing.referralStrategies.errors.deleteFallback', 'Failed to delete referral strategy'));
+      setActionError({
+        message: resolveProblemMessage(
+          error,
+          t,
+          t('admin.marketing.referralStrategies.errors.deleteFallback', 'Failed to delete referral strategy'),
+        ),
+        traceId: readMarketingProblemTraceId(error),
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   const columns: MarketingColumn<ReferralStrategy>[] = [
     { key: 'name', label: t('admin.marketing.referralStrategies.col.name', 'Name') },
-    { key: 'rewardType', label: t('admin.marketing.referralStrategies.col.rewardType', 'Reward Type') },
+    {
+      key: 'rewardType',
+      label: t('admin.marketing.referralStrategies.col.rewardType', 'Reward Type'),
+      render: (value) => marketingEnumLabel(value, 'admin.marketing.referralStrategies.rewardType', t),
+    },
     { key: 'rewardValue', label: t('admin.marketing.referralStrategies.col.rewardValue', 'Reward Value') },
-    { key: 'rewardTarget', label: t('admin.marketing.referralStrategies.col.rewardTarget', 'Reward Target') },
-    { key: 'triggerEvent', label: t('admin.marketing.referralStrategies.col.triggerEvent', 'Trigger') },
+    {
+      key: 'rewardTarget',
+      label: t('admin.marketing.referralStrategies.col.rewardTarget', 'Reward Target'),
+      render: (value) => marketingEnumLabel(value, 'admin.marketing.referralStrategies.rewardTarget', t),
+    },
+    {
+      key: 'triggerEvent',
+      label: t('admin.marketing.referralStrategies.col.triggerEvent', 'Trigger'),
+      render: (value) => marketingEnumLabel(value, 'admin.marketing.referralStrategies.triggerEvent', t),
+    },
     {
       key: 'status',
       label: t('admin.marketing.referralStrategies.col.status', 'Status'),
       render: (value) => (
         <MarketingStatusBadge
           status={value}
+          domain="referral"
           activeLabel={t('admin.marketing.referralStrategies.status.active', 'Active')}
           inactiveLabel={t('admin.marketing.referralStrategies.status.disabled', 'Disabled')}
         />
@@ -199,6 +228,13 @@ export function ReferralStrategiesPage() {
 
   return (
     <>
+      {actionError ? (
+        <MarketingInlineAlert
+          message={actionError.message}
+          traceId={actionError.traceId}
+          onDismiss={() => setActionError(null)}
+        />
+      ) : null}
       <MarketingListView
         title={t('admin.marketing.referralStrategies.title', 'Invitation Marketing Strategies')}
         description={t('admin.marketing.referralStrategies.desc', 'Configure rewards granted to inviters or invitees when a referral registration happens. Reward granting is a follow-up phase; strategies are recorded with a reward status marker.')}
@@ -243,8 +279,12 @@ export function ReferralStrategiesPage() {
             </button>
             <button
               type="button"
-              onClick={() => void deleteStrategy(record)}
-              className="inline-flex items-center rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-500/20 dark:text-red-300 dark:hover:bg-red-500/10"
+              onClick={() => {
+                setActionError(null);
+                setPendingDelete(record);
+              }}
+              disabled={isDeleting}
+              className="inline-flex items-center rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-500/20 dark:text-red-300 dark:hover:bg-red-500/10"
             >
               <Trash2 className="h-3 w-3" />
               {t('common.actions.delete', 'Delete')}
@@ -282,7 +322,10 @@ export function ReferralStrategiesPage() {
               label={t('admin.marketing.referralStrategies.fields.rewardType', 'Reward Type')}
               value={form.rewardType}
               onChange={(rewardType) => setForm((current) => ({ ...current, rewardType: rewardType as ReferralStrategyRewardType }))}
-              options={REWARD_TYPE_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelKey) }))}
+              options={REWARD_TYPE_OPTIONS.map((value) => ({
+                value,
+                label: marketingEnumLabel(value, 'admin.marketing.referralStrategies.rewardType', t),
+              }))}
             />
             <TextField
               label={t('admin.marketing.referralStrategies.fields.rewardValue', 'Reward Value')}
@@ -294,13 +337,16 @@ export function ReferralStrategiesPage() {
               label={t('admin.marketing.referralStrategies.fields.rewardTarget', 'Reward Target')}
               value={form.rewardTarget}
               onChange={(rewardTarget) => setForm((current) => ({ ...current, rewardTarget: rewardTarget as ReferralStrategyRewardTarget }))}
-              options={REWARD_TARGET_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelKey) }))}
+              options={REWARD_TARGET_OPTIONS.map((value) => ({
+                value,
+                label: marketingEnumLabel(value, 'admin.marketing.referralStrategies.rewardTarget', t),
+              }))}
             />
             <TextField
               label={t('admin.marketing.referralStrategies.fields.maxRewardsPerInviter', 'Max Rewards per Inviter')}
               value={form.maxRewardsPerInviter}
               onChange={(maxRewardsPerInviter) => setForm((current) => ({ ...current, maxRewardsPerInviter }))}
-              placeholder="0 = unlimited"
+              placeholder={t('admin.marketing.referralStrategies.placeholders.maxRewardsPerInviter', '0 = unlimited')}
             />
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -354,6 +400,22 @@ export function ReferralStrategiesPage() {
           </div>
         </div>
       </MarketingDrawer>
+
+      {pendingDelete ? (
+        <ConfirmDialog
+          tone="danger"
+          title={t('admin.marketing.referralStrategies.deleteDialog.title', 'Delete referral strategy?')}
+          description={t(
+            'admin.marketing.referralStrategies.deleteDialog.body',
+            'Delete referral strategy "{{name}}"? This cannot be undone.',
+            { name: pendingDelete.name },
+          )}
+          confirmLabel={t('admin.marketing.referralStrategies.deleteDialog.confirm', 'Delete strategy')}
+          cancelLabel={t('common.actions.cancel', 'Cancel')}
+          onConfirm={() => void confirmDelete()}
+          onCancel={() => setPendingDelete(null)}
+        />
+      ) : null}
     </>
   );
 }

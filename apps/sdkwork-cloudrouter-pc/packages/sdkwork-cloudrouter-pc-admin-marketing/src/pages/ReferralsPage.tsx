@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { MarketingListView, type MarketingColumn } from '../components/MarketingListView';
-import { MarketingService, type ReferralStat } from '../marketingService';
+import { formatMarketingInteger, MarketingService, type ReferralStat } from '../marketingService';
 
 export function ReferralsPage() {
   const { t } = useTranslation();
@@ -8,9 +8,16 @@ export function ReferralsPage() {
   const columns: MarketingColumn<ReferralStat>[] = [
     { key: 'inviter', label: t('admin.commerce.marketing.referralStats.col.inviter', 'Inviter') },
     { key: 'link', label: t('admin.commerce.marketing.referralStats.col.link', 'Referral Link') },
-    { key: 'totalInvited', label: t('admin.commerce.marketing.referralStats.col.invited', 'Invited'), align: 'right' },
-    { key: 'totalRevenue', label: t('admin.commerce.marketing.referralStats.col.revenue', 'Revenue'), align: 'right' },
-    { key: 'bonusAwarded', label: t('admin.commerce.marketing.referralStats.col.bonus', 'Bonus'), align: 'right' },
+    {
+      key: 'totalInvited',
+      label: t('admin.commerce.marketing.referralStats.col.invited', 'Invited'),
+      numeric: true,
+      render: (value) => formatMarketingInteger(
+        typeof value === 'string' || typeof value === 'number' ? value : null,
+      ),
+    },
+    { key: 'totalRevenue', label: t('admin.commerce.marketing.referralStats.col.revenue', 'Revenue'), numeric: true },
+    { key: 'bonusAwarded', label: t('admin.commerce.marketing.referralStats.col.bonus', 'Bonus'), numeric: true },
   ];
 
   return (
@@ -22,7 +29,9 @@ export function ReferralsPage() {
         pageSize: params.pageSize,
       })}
       columns={columns}
-      searchPlaceholder={t('admin.commerce.marketing.referralStats.search', 'Search by inviter')}
+      // `billing.referralStats.list` 生成 SDK 只接受 page/pageSize；没有 q 参数，
+      // 因此这里不渲染搜索框（传 q 也不会被发送），避免留下失效控件。
+      searchable={false}
     />
   );
 }

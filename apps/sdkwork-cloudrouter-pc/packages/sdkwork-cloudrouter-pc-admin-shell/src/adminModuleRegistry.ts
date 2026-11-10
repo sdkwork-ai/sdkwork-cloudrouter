@@ -382,10 +382,12 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
       groupBlock('admin.menu.marketing.lifecycle', [
         itemBlock({ path: '/admin/marketing/userCoupons', labelKey: 'admin.menu.marketing.userCoupons', icon: WalletCards }),
         itemBlock({ path: '/admin/marketing/discountApplications', labelKey: 'admin.menu.marketing.discountApplications', icon: ReceiptText }),
+        itemBlock({ path: '/admin/marketing/redemptionAttempts', labelKey: 'admin.menu.marketing.redemptionAttempts', icon: ScrollText }),
         itemBlock({ path: '/admin/marketing/distributionTasks', labelKey: 'admin.menu.marketing.distributionTasks', icon: Send }),
       ]),
       groupBlock('admin.menu.marketing.growth', [
         itemBlock({ path: '/admin/marketing/promotionCouponLedger', labelKey: 'admin.menu.marketing.couponLedger', icon: Database }),
+        itemBlock({ path: '/admin/marketing/reports', labelKey: 'admin.menu.marketing.reports', icon: BarChart3 }),
         itemBlock({ path: '/admin/marketing/referralStrategies', labelKey: 'admin.menu.marketing.referralStrategies', icon: Megaphone }),
         itemBlock({ path: '/admin/marketing/referrals', labelKey: 'admin.menu.marketing.referrals', icon: Users }),
         itemBlock({ path: '/admin/marketing/referralRelations', labelKey: 'admin.menu.marketing.referralRelations', icon: Network }),

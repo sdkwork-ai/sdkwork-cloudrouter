@@ -1,6 +1,15 @@
 import type { ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
+
+/**
+ * 状态徽章由 `MarketingValueBadge` 统一定义（域 + 值决定颜色），这里保持既有
+ * 导出路径，页面无需改 import。
+ */
+export {
+  MarketingBatchStatusBadge,
+  MarketingStatusBadge,
+  type MarketingStatusBadgeProps,
+} from './MarketingValueBadge';
 
 interface MarketingDrawerProps {
   title: string;
@@ -70,57 +79,5 @@ export function MarketingDrawer({
         ) : null}
       </aside>
     </div>
-  );
-}
-
-interface MarketingStatusBadgeProps {
-  status: unknown;
-  activeLabel: string;
-  inactiveLabel: string;
-}
-
-export function MarketingStatusBadge({
-  status,
-  activeLabel,
-  inactiveLabel,
-}: MarketingStatusBadgeProps) {
-  const active = status === 'active' || status === 'ready';
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-        active
-          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
-          : 'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300'
-      }`}
-    >
-      {active ? activeLabel : inactiveLabel}
-    </span>
-  );
-}
-
-export function MarketingBatchStatusBadge({ status }: { status: unknown }) {
-  const { t } = useTranslation();
-  const value = String(status ?? '').toLowerCase();
-  const tone = value === 'ready' || value === 'succeeded' || value === 'completed'
-    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
-    : value === 'generating' || value === 'processing' || value === 'running' || value === 'pending'
-      ? 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'
-      : value === 'failed'
-        ? 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400'
-        : 'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300';
-  const labelMap: Record<string, string> = {
-    ready: t('admin.marketing.status.ready', 'Ready'),
-    generating: t('admin.marketing.status.generating', 'Generating'),
-    pending: t('admin.marketing.status.pending', 'Pending'),
-    processing: t('admin.marketing.status.processing', 'Processing'),
-    running: t('admin.marketing.status.processing', 'Processing'),
-    completed: t('admin.marketing.status.completed', 'Completed'),
-    succeeded: t('admin.marketing.status.completed', 'Completed'),
-    failed: t('admin.marketing.status.failed', 'Failed'),
-  };
-  return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${tone}`}>
-      {labelMap[value] ?? value}
-    </span>
   );
 }

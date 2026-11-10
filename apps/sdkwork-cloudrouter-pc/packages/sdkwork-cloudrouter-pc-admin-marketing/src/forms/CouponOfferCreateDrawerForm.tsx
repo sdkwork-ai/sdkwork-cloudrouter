@@ -4,6 +4,10 @@ import { ChevronDown } from 'lucide-react';
 import { SdkworkBaseDataCurrencySelect } from '@sdkwork/appbase-pc-react';
 import {
   backendPromotionCampaignsList,
+  normalizeCouponDiscountType,
+  validateCouponDiscountTerms,
+  type CouponDiscountField,
+  type CouponDiscountValidationCode,
   type CouponOfferCreateFormValues,
   type CouponOfferBenefitKind,
   type CouponCodeIssueMode,
@@ -22,8 +26,21 @@ import {
 
 export interface CouponOfferCreateDrawerFormProps {
   error: string | null;
-  initialValue?: Partial<CouponOfferCreateFormValues>;
-  onSubmit: (values: CouponOfferCreateFormValues) => void;
+  /**
+   * `create`：新建/复制优惠券；`edit`：编辑既有优惠券。
+   *
+   * 编辑模式隐藏发放设置（库存类型、总量、发码模式、初始券码批次），提交时
+   * 不创建任何库存或批次；同时展示“保存会生成新规则版本、已发券码仍按原版本
+   * 核销”的提示。
+   */
+  mode?: 'create' | 'edit';
+  initialValues?: Partial<CouponOfferCreateFormValues>;
+  /**
+   * 编辑模式的乐观锁版本：后端 `offer.version`，int64 十进制字符串。
+   * 原样通过 `onSubmit` 的第二个参数交回，绝不转成 number。
+   */
+  initialVersion?: string;
+  onSubmit: (values: CouponOfferCreateFormValues, version?: string) => void;
 }
 
 const INITIAL_VALUES: CouponOfferCreateFormValues = {
@@ -40,6 +57,10 @@ const INITIAL_VALUES: CouponOfferCreateFormValues = {
   status: 'active',
   benefitKind: 'token_bank_credit',
   currencyCode: 'CNY',
+  discountType: 'NONE',
+  discountValue: '',
+  minimumAmount: '',
+  maximumDiscountAmount: '',
   grantAmount: '',
   bonusAmount: '',
   grantPoints: '',
@@ -47,8 +68,12 @@ const INITIAL_VALUES: CouponOfferCreateFormValues = {
   durationDays: '30',
   dailyQuota: '',
   totalQuota: '',
+  productId: '',
+  skuId: '',
+  packageId: '',
   stockType: 'limited',
   codeIssueMode: 'realtime',
+  budgetAmount: '',
   totalQuantity: '',
   perUserLimit: 1,
   claimStartsAt: '',
@@ -67,24 +92,63 @@ const nonNegativeIntegerPattern = /^(0|[1-9][0-9]*)$/;
 /** 正金额（最多两位小数，现金券以元输入）。 */
 const positiveMoneyPattern = /^(0|[1-9][0-9]*)(\.[0-9]{1,2})?$/;
 
+/**
+ * 抵扣条款校验失败码 → i18n 文案。文案镜像后端 `validate_discount_terms`，
+ * 让运营在字段下方直接看到被拒绝的原因，而不是提交后才收到 400。
+ */
+const COUPON_DISCOUNT_ISSUE_MESSAGES: Record<
+  CouponDiscountValidationCode,
+  { key: string; fallback: string }
+> = {
+  fixedDiscountRequired: {
+    key: 'admin.marketing.coupon.form.fixedDiscountRequired',
+    fallback: 'Fixed discount amount must be greater than 0',
+  },
+  percentageOutOfRange: {
+    key: 'admin.marketing.coupon.form.percentageDiscountInvalid',
+    fallback: 'Percentage discount must be greater than 0 and at most 100',
+  },
+  decimalInvalid: {
+    key: 'admin.marketing.coupon.form.discountDecimalInvalid',
+    fallback: 'Enter a plain decimal amount with at most 2 fraction digits (no signs, exponents or commas)',
+  },
+  minimumAmountInvalid: {
+    key: 'admin.marketing.coupon.form.minimumAmountInvalid',
+    fallback: 'Minimum order amount must be 0 or greater, with at most 2 fraction digits',
+  },
+  maximumDiscountNotAllowed: {
+    key: 'admin.marketing.coupon.form.maximumDiscountNotAllowed',
+    fallback: 'Maximum discount amount is only allowed for a percentage discount',
+  },
+  maximumDiscountInvalid: {
+    key: 'admin.marketing.coupon.form.maximumDiscountInvalid',
+    fallback: 'Maximum discount amount must be greater than 0, with at most 2 fraction digits',
+  },
+};
+
 export function CouponOfferCreateDrawerForm({
   error,
-  initialValue,
+  mode = 'create',
+  initialValues,
+  initialVersion,
   onSubmit,
 }: CouponOfferCreateDrawerFormProps) {
   const { t } = useTranslation();
   const [values, setValues] = useState<CouponOfferCreateFormValues>({
     ...INITIAL_VALUES,
-    ...initialValue,
+    ...initialValues,
   });
   // 兑换券（EXCHANGE）：通过兑换码发放的权益券，权益子类型单独选择
   const [cardKind, setCardKind] = useState<CouponOfferCardKind>(
-    initialValue?.offerType === 'EXCHANGE' ? 'exchange' : (initialValue?.benefitKind ?? 'token_bank_credit'),
+    initialValues?.offerType === 'EXCHANGE' ? 'exchange' : (initialValues?.benefitKind ?? 'token_bank_credit'),
   );
   const [exchangeBenefitKind, setExchangeBenefitKind] = useState<CouponOfferBenefitKind>(
-    initialValue?.benefitKind ?? 'token_bank_credit',
+    initialValues?.benefitKind ?? 'token_bank_credit',
   );
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [discountErrors, setDiscountErrors] = useState<
+    Partial<Record<CouponDiscountField, string>>
+  >({});
   const [campaignOptions, setCampaignOptions] = useState<{ id: string; label: string }[]>([]);
 
   useEffect(() => {
@@ -112,12 +176,29 @@ export function CouponOfferCreateDrawerForm({
   ) => {
     setValues((current) => ({ ...current, [key]: value }));
     setValidationError(null);
+    setDiscountErrors({});
+  };
+
+  /**
+   * 切换抵扣方式：离开 `PERCENTAGE` 时清掉封顶金额（后端只允许百分比折扣带
+   * 封顶），避免隐藏字段被原样提交后收到 400。
+   */
+  const changeDiscountType = (next: string) => {
+    const discountType = normalizeCouponDiscountType(next);
+    setValues((current) => ({
+      ...current,
+      discountType,
+      ...(discountType === 'PERCENTAGE' ? {} : { maximumDiscountAmount: '' }),
+    }));
+    setValidationError(null);
+    setDiscountErrors({});
   };
 
   const benefitKind: CouponOfferBenefitKind = cardKind === 'exchange' ? exchangeBenefitKind : cardKind;
   const isExchange = cardKind === 'exchange';
   const codeIssueMode: CouponCodeIssueMode = isExchange ? 'batch' : values.codeIssueMode;
   const stockType: CouponStockType = values.stockType;
+  const discountType = normalizeCouponDiscountType(values.discountType);
 
   const requirePositiveInteger = (value: string, message: string): boolean => {
     if (!positiveIntegerPattern.test(value.trim())) {
@@ -137,6 +218,23 @@ export function CouponOfferCreateDrawerForm({
       setValidationError(t('admin.marketing.coupon.form.endsBeforeStarts', 'End time must not be earlier than start time'));
       return;
     }
+    // 满减/折扣条款：镜像后端校验（含金额格式、区间、封顶金额的适用方式），
+    // 失败时把每条原因贴到对应字段下方并阻止提交。
+    const discountIssues = validateCouponDiscountTerms(values);
+    if (discountIssues.length > 0) {
+      const nextErrors: Partial<Record<CouponDiscountField, string>> = {};
+      for (const issue of discountIssues) {
+        if (nextErrors[issue.field]) {
+          continue;
+        }
+        const message = COUPON_DISCOUNT_ISSUE_MESSAGES[issue.code];
+        nextErrors[issue.field] = t(message.key, message.fallback);
+      }
+      setDiscountErrors(nextErrors);
+      setValidationError(null);
+      return;
+    }
+    setDiscountErrors({});
     if (benefitKind === 'token_bank_credit') {
       if (!requirePositiveInteger(values.grantAmount ?? '', t('admin.marketing.coupon.form.requiredGrant', 'Grant amount is required for token bank credit coupons'))) {
         return;
@@ -167,25 +265,57 @@ export function CouponOfferCreateDrawerForm({
         setValidationError(t('admin.marketing.coupon.form.totalBelowDaily', 'Total quota must not be less than daily quota'));
         return;
       }
+      // 会员套餐三元组必须同时填写或同时留空：缺项会在订单侧核销前被驳回。
+      const membershipTargets = [
+        values.productId?.trim() ?? '',
+        values.skuId?.trim() ?? '',
+        values.packageId?.trim() ?? '',
+      ];
+      const filledMembershipTargets = membershipTargets.filter((value) => value.length > 0).length;
+      if (filledMembershipTargets > 0 && filledMembershipTargets < membershipTargets.length) {
+        setValidationError(t('admin.marketing.coupon.form.membershipTargetIncomplete'));
+        return;
+      }
+      if (filledMembershipTargets === membershipTargets.length && !positiveIntegerPattern.test(values.packageId?.trim() ?? '')) {
+        setValidationError(t('admin.marketing.coupon.form.invalidPackageId'));
+        return;
+      }
     }
-    if (stockType === 'limited' && !requirePositiveInteger(values.totalQuantity, t('admin.marketing.coupon.form.requiredQuantity', 'Total quantity is required for limited stock'))) {
-      return;
-    }
-    if (codeIssueMode === 'batch' && !requirePositiveInteger(values.batchQuantity ?? '', t('admin.marketing.coupon.form.requiredBatch', 'Batch quantity is required for exchange/batch code coupons'))) {
-      return;
+    // 发放设置只在创建时生效：编辑不会创建新库存/新批次，因此也不校验这些字段。
+    if (mode === 'create') {
+      if (stockType === 'limited' && !requirePositiveInteger(values.totalQuantity, t('admin.marketing.coupon.form.requiredQuantity', 'Total quantity is required for limited stock'))) {
+        return;
+      }
+      // 库存预算上限可选：留空 = 不设上限；填写时必须是大于 0 的金额。
+      const budgetAmount = values.budgetAmount?.trim() ?? '';
+      if (budgetAmount && (!positiveMoneyPattern.test(budgetAmount) || Number(budgetAmount) <= 0)) {
+        setValidationError(t(
+          'admin.marketing.coupon.form.invalidBudget',
+          'Stock budget cap must be a positive amount, or left blank for no cap',
+        ));
+        return;
+      }
+      if (codeIssueMode === 'batch' && !requirePositiveInteger(values.batchQuantity ?? '', t('admin.marketing.coupon.form.requiredBatch', 'Batch quantity is required for exchange/batch code coupons'))) {
+        return;
+      }
     }
     onSubmit({
       ...values,
+      ...(mode === 'edit' && initialVersion ? { version: initialVersion } : {}),
       benefitKind,
       offerType: isExchange ? 'EXCHANGE' : values.offerType,
       codeIssueMode,
       stockType,
+      // `NONE` 只发权益：金额固定为 0；`FIXED` 不携带封顶金额。
+      discountType,
+      ...(discountType === 'NONE' ? { discountValue: '0', minimumAmount: '0' } : {}),
+      ...(discountType === 'PERCENTAGE' ? {} : { maximumDiscountAmount: null }),
       endsAt: values.endsAt || undefined,
       claimStartsAt: values.claimStartsAt || undefined,
       claimEndsAt: values.claimEndsAt || undefined,
       batchStartsAt: values.batchStartsAt || undefined,
       batchExpiresAt: values.batchExpiresAt || undefined,
-    });
+    }, mode === 'edit' ? initialVersion : undefined);
   };
 
   const renderBenefitFields = () => {
@@ -239,7 +369,12 @@ export function CouponOfferCreateDrawerForm({
     if (benefitKind === 'cash_credit') {
       return (
         <>
-          <MarketingField label={t('admin.marketing.coupon.form.cashGrantAmount', 'Grant Amount (CNY)')} required>
+          <MarketingField
+            label={t('admin.marketing.coupon.form.cashGrantAmount', 'Grant Amount ({{currency}})', {
+              currency: values.currencyCode || 'CNY',
+            })}
+            required
+          >
             <input
               type="text"
               value={values.grantAmount ?? ''}
@@ -267,13 +402,15 @@ export function CouponOfferCreateDrawerForm({
         <MarketingField label={t('admin.marketing.coupon.form.period', 'Period')} required>
           <select
             value={values.period ?? 'month'}
-            onChange={(event) => update('period', event.target.value as 'day' | 'week' | 'month' | 'quarter' | 'year')}
+            onChange={(event) => update('period', event.target.value as 'day' | 'week' | 'month' | 'year')}
             className={marketingSelectClassName}
           >
             <option value="day">{t('admin.marketing.enums.period.day', 'Day')}</option>
             <option value="week">{t('admin.marketing.enums.period.week', 'Week')}</option>
             <option value="month">{t('admin.marketing.enums.period.month', 'Month')}</option>
-            <option value="quarter">{t('admin.marketing.enums.period.quarter', 'Quarter')}</option>
+            {/* Quarter is not offered: membership fulfilment only accepts
+                day/week/month/year, so a quarter coupon would be rejected
+                before redemption. Use month with 90-92 days instead. */}
             <option value="year">{t('admin.marketing.enums.period.year', 'Year')}</option>
           </select>
         </MarketingField>
@@ -299,6 +436,37 @@ export function CouponOfferCreateDrawerForm({
             value={values.totalQuota ?? ''}
             onChange={(event) => update('totalQuota', event.target.value)}
             className={marketingInputClassName}
+          />
+        </MarketingField>
+        <MarketingField
+          label={t('admin.marketing.coupon.form.productId')}
+          hint={t('admin.marketing.coupon.form.membershipTargetHint')}
+        >
+          <input
+            type="text"
+            value={values.productId ?? ''}
+            onChange={(event) => update('productId', event.target.value)}
+            className={marketingInputClassName}
+            placeholder={t('admin.marketing.coupon.form.membershipProductPlaceholder')}
+          />
+        </MarketingField>
+        <MarketingField label={t('admin.marketing.coupon.form.skuId')}>
+          <input
+            type="text"
+            value={values.skuId ?? ''}
+            onChange={(event) => update('skuId', event.target.value)}
+            className={marketingInputClassName}
+            placeholder={t('admin.marketing.coupon.form.membershipSkuPlaceholder')}
+          />
+        </MarketingField>
+        <MarketingField label={t('admin.marketing.coupon.form.packageId')}>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={values.packageId ?? ''}
+            onChange={(event) => update('packageId', event.target.value.replace(/[^0-9]/gu, ''))}
+            className={marketingInputClassName}
+            placeholder={t('admin.marketing.coupon.form.membershipPackagePlaceholder')}
           />
         </MarketingField>
       </>
@@ -375,6 +543,22 @@ export function CouponOfferCreateDrawerForm({
 
   return (
     <form id="couponOfferCreateForm" onSubmit={handleSubmit} className="flex h-full flex-col">
+      {mode === 'edit' ? (
+        <div
+          role="status"
+          className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300"
+        >
+          <p className="font-medium">
+            {t('admin.marketing.coupon.form.editWarningTitle', 'Saving creates a new coupon rule version')}
+          </p>
+          <p className="mt-1">
+            {t(
+              'admin.marketing.coupon.form.editWarning',
+              'Coupons and codes already issued stay pinned to the rule version they were created with, so this edit does not change how existing codes redeem.',
+            )}
+          </p>
+        </div>
+      ) : null}
       <MarketingFormSection title={t('admin.marketing.coupon.form.basic', 'Basic Information')}>
         <MarketingField label={t('admin.marketing.coupon.form.name', 'Coupon Name')} required>
           <input
@@ -419,6 +603,124 @@ export function CouponOfferCreateDrawerForm({
       <MarketingFormSection title={t('admin.marketing.coupon.form.benefit', 'Benefit')}>
         {isExchange ? renderExchangeBenefitSelector() : null}
         {renderBenefitFields()}
+      </MarketingFormSection>
+
+      <MarketingFormSection title={t('admin.marketing.coupon.form.discountTerms', 'Discount terms')}>
+        <MarketingField
+          label={t('admin.marketing.coupon.form.discountType', 'Discount Type')}
+          required
+          className="sm:col-span-2"
+          hint={t(
+            'admin.marketing.coupon.form.discountTypeHint',
+            'Benefit-only coupons do not discount an order; amount-off and percentage-off coupons do.',
+          )}
+          // 封顶金额只在百分比折扣下渲染，此处的错误用于提示“残留封顶金额不适用”。
+          error={discountType === 'PERCENTAGE' ? undefined : discountErrors.maximumDiscountAmount}
+        >
+          <select
+            name="discountType"
+            value={discountType}
+            onChange={(event) => changeDiscountType(event.target.value)}
+            className={marketingSelectClassName}
+          >
+            <option value="NONE">
+              {t('admin.marketing.coupon.form.discountType.NONE', 'Benefit only (no order discount)')}
+            </option>
+            <option value="FIXED">
+              {t('admin.marketing.coupon.form.discountType.FIXED', 'Amount off (FIXED)')}
+            </option>
+            <option value="PERCENTAGE">
+              {t('admin.marketing.coupon.form.discountType.PERCENTAGE', 'Percentage off (PERCENTAGE)')}
+            </option>
+          </select>
+        </MarketingField>
+
+        {discountType === 'FIXED' ? (
+          <MarketingField
+            label={t('admin.marketing.coupon.form.fixedDiscountAmount', 'Discount amount ({{currency}})', {
+              currency: values.currencyCode || 'CNY',
+            })}
+            required
+            hint={t(
+              'admin.marketing.coupon.form.discountAmountHint',
+              'Amount taken off the order total; must be greater than 0.',
+            )}
+            error={discountErrors.discountValue}
+          >
+            <input
+              type="text"
+              inputMode="decimal"
+              name="discountValue"
+              value={values.discountValue ?? ''}
+              onChange={(event) => update('discountValue', event.target.value)}
+              className={marketingInputClassName}
+              placeholder={t('admin.marketing.coupon.form.fixedDiscountAmountPlaceholder', 'e.g. 12.50')}
+            />
+          </MarketingField>
+        ) : null}
+
+        {discountType === 'PERCENTAGE' ? (
+          <>
+            <MarketingField
+              label={t('admin.marketing.coupon.form.percentageDiscountValue', 'Discount percentage (%)')}
+              required
+              hint={t(
+                'admin.marketing.coupon.form.discountPercentageHint',
+                'Percentage taken off the order total; greater than 0 and at most 100, with up to 2 decimals. 12.5 means 12.5%.',
+              )}
+              error={discountErrors.discountValue}
+            >
+              <input
+                type="text"
+                inputMode="decimal"
+                name="discountValue"
+                value={values.discountValue ?? ''}
+                onChange={(event) => update('discountValue', event.target.value)}
+                className={marketingInputClassName}
+                placeholder={t('admin.marketing.coupon.form.percentageDiscountValuePlaceholder', 'e.g. 12.5')}
+              />
+            </MarketingField>
+            <MarketingField
+              label={t('admin.marketing.coupon.form.maximumDiscountAmount', 'Maximum Discount Amount')}
+              hint={t(
+                'admin.marketing.coupon.form.maximumDiscountAmountHint',
+                'Optional cap on the percentage discount; must be greater than 0.',
+              )}
+              error={discountErrors.maximumDiscountAmount}
+            >
+              <input
+                type="text"
+                inputMode="decimal"
+                name="maximumDiscountAmount"
+                value={values.maximumDiscountAmount ?? ''}
+                onChange={(event) => update('maximumDiscountAmount', event.target.value)}
+                className={marketingInputClassName}
+                placeholder={t('admin.marketing.coupon.form.maximumDiscountAmountPlaceholder', 'e.g. 20')}
+              />
+            </MarketingField>
+          </>
+        ) : null}
+
+        {discountType !== 'NONE' ? (
+          <MarketingField
+            label={t('admin.marketing.coupon.form.minimumOrderAmount', 'Minimum order amount')}
+            hint={t(
+              'admin.marketing.coupon.form.minimumAmountHint',
+              'Optional; leave blank or 0 for no minimum order amount.',
+            )}
+            error={discountErrors.minimumAmount}
+          >
+            <input
+              type="text"
+              inputMode="decimal"
+              name="minimumAmount"
+              value={values.minimumAmount ?? ''}
+              onChange={(event) => update('minimumAmount', event.target.value)}
+              className={marketingInputClassName}
+              placeholder={t('admin.marketing.coupon.form.minimumOrderAmountPlaceholder', '0')}
+            />
+          </MarketingField>
+        ) : null}
       </MarketingFormSection>
 
       <MarketingFormSection title={t('admin.marketing.coupon.form.usage', 'Validity & Rules')}>
@@ -493,73 +795,92 @@ export function CouponOfferCreateDrawerForm({
         </MarketingField>
       </MarketingFormSection>
 
-      <details className="group mb-6 rounded-md border border-slate-200 dark:border-white/10">
-        <summary className="flex cursor-pointer select-none items-center justify-between px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-200">
-          <span>{t('admin.marketing.coupon.form.advanced', 'Advanced Settings')}</span>
-          <ChevronDown className="h-4 w-4 text-slate-400 transition-transform group-open:rotate-180" />
-        </summary>
-        <div className="border-t border-slate-100 px-4 py-4 dark:border-white/5">
-          <MarketingFormSection title={t('admin.marketing.coupon.form.issuance', 'Issuance Settings')}>
-            <MarketingField label={t('admin.marketing.coupon.form.stockType', 'Stock Type')} required>
-              <select
-                value={stockType}
-                onChange={(event) => update('stockType', event.target.value as CouponStockType)}
-                className={marketingSelectClassName}
+      {mode === 'create' ? (
+        <details className="group mb-6 rounded-md border border-slate-200 dark:border-white/10">
+          <summary className="flex cursor-pointer select-none items-center justify-between px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-200">
+            <span>{t('admin.marketing.coupon.form.advanced', 'Advanced Settings')}</span>
+            <ChevronDown className="h-4 w-4 text-slate-400 transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="border-t border-slate-100 px-4 py-4 dark:border-white/5">
+            <MarketingFormSection title={t('admin.marketing.coupon.form.issuance', 'Issuance Settings')}>
+              <MarketingField label={t('admin.marketing.coupon.form.stockType', 'Stock Type')} required>
+                <select
+                  value={stockType}
+                  onChange={(event) => update('stockType', event.target.value as CouponStockType)}
+                  className={marketingSelectClassName}
+                >
+                  <option value="limited">{t('admin.marketing.enums.stockType.LIMITED', 'Limited')}</option>
+                  <option value="unlimited">{t('admin.marketing.enums.stockType.UNLIMITED', 'Unlimited')}</option>
+                </select>
+              </MarketingField>
+              <MarketingField label={t('admin.marketing.coupon.form.codeIssueMode', 'Code Issuance Mode')} required>
+                <select
+                  value={codeIssueMode}
+                  onChange={(event) => update('codeIssueMode', event.target.value as CouponCodeIssueMode)}
+                  className={marketingSelectClassName}
+                  disabled={isExchange}
+                >
+                  <option value="realtime">{t('admin.marketing.coupon.form.codeIssue.realtime', 'Generate at claim time')}</option>
+                  <option value="batch">{t('admin.marketing.coupon.form.codeIssue.batch', 'Pre-generated batch pool')}</option>
+                </select>
+              </MarketingField>
+              {stockType === 'limited' ? (
+                <MarketingField label={t('admin.marketing.coupon.form.totalQuantity', 'Total Quantity')} required>
+                  <input
+                    type="text"
+                    value={values.totalQuantity}
+                    onChange={(event) => update('totalQuantity', event.target.value)}
+                    className={marketingInputClassName}
+                  />
+                </MarketingField>
+              ) : null}
+              <MarketingField
+                label={t('admin.marketing.coupon.form.budgetAmount', 'Stock Budget Cap')}
+                hint={t(
+                  'admin.marketing.coupon.form.budgetAmountHint',
+                  'Optional cap in {{currency}}, enforced at discount-application time (reserve → settle/release); it only affects monetary discounts. Leave blank for no cap.',
+                  { currency: values.currencyCode || 'CNY' },
+                )}
               >
-                <option value="limited">{t('admin.marketing.enums.stockType.LIMITED', 'Limited')}</option>
-                <option value="unlimited">{t('admin.marketing.enums.stockType.UNLIMITED', 'Unlimited')}</option>
-              </select>
-            </MarketingField>
-            <MarketingField label={t('admin.marketing.coupon.form.codeIssueMode', 'Code Issuance Mode')} required>
-              <select
-                value={codeIssueMode}
-                onChange={(event) => update('codeIssueMode', event.target.value as CouponCodeIssueMode)}
-                className={marketingSelectClassName}
-                disabled={isExchange}
-              >
-                <option value="realtime">{t('admin.marketing.coupon.form.codeIssue.realtime', 'Generate at claim time')}</option>
-                <option value="batch">{t('admin.marketing.coupon.form.codeIssue.batch', 'Pre-generated batch pool')}</option>
-              </select>
-            </MarketingField>
-            {stockType === 'limited' ? (
-              <MarketingField label={t('admin.marketing.coupon.form.totalQuantity', 'Total Quantity')} required>
                 <input
                   type="text"
-                  value={values.totalQuantity}
-                  onChange={(event) => update('totalQuantity', event.target.value)}
+                  inputMode="decimal"
+                  value={values.budgetAmount ?? ''}
+                  onChange={(event) => update('budgetAmount', event.target.value)}
+                  className={marketingInputClassName}
+                  placeholder={t('admin.marketing.coupon.form.budgetAmountPlaceholder', 'e.g. 5000')}
+                />
+              </MarketingField>
+              <MarketingField label={t('admin.marketing.coupon.form.perUserLimit', 'Per User Limit')} required>
+                <input
+                  type="number"
+                  min={1}
+                  value={values.perUserLimit}
+                  onChange={(event) => update('perUserLimit', Number(event.target.value))}
                   className={marketingInputClassName}
                 />
               </MarketingField>
-            ) : null}
-            <MarketingField label={t('admin.marketing.coupon.form.perUserLimit', 'Per User Limit')} required>
-              <input
-                type="number"
-                min={1}
-                value={values.perUserLimit}
-                onChange={(event) => update('perUserLimit', Number(event.target.value))}
-                className={marketingInputClassName}
-              />
-            </MarketingField>
-            <MarketingField label={t('admin.marketing.coupon.form.claimStartsAt', 'Claim Starts At')}>
-              <input
-                type="datetime-local"
-                value={values.claimStartsAt ?? ''}
-                onChange={(event) => update('claimStartsAt', event.target.value)}
-                className={marketingInputClassName}
-              />
-            </MarketingField>
-            <MarketingField label={t('admin.marketing.coupon.form.claimEndsAt', 'Claim Ends At')}>
-              <input
-                type="datetime-local"
-                value={values.claimEndsAt ?? ''}
-                onChange={(event) => update('claimEndsAt', event.target.value)}
-                className={marketingInputClassName}
-              />
-            </MarketingField>
-          </MarketingFormSection>
-          {codeIssueMode === 'batch' ? renderCodeBatchFields() : null}
-        </div>
-      </details>
+              <MarketingField label={t('admin.marketing.coupon.form.claimStartsAt', 'Claim Starts At')}>
+                <input
+                  type="datetime-local"
+                  value={values.claimStartsAt ?? ''}
+                  onChange={(event) => update('claimStartsAt', event.target.value)}
+                  className={marketingInputClassName}
+                />
+              </MarketingField>
+              <MarketingField label={t('admin.marketing.coupon.form.claimEndsAt', 'Claim Ends At')}>
+                <input
+                  type="datetime-local"
+                  value={values.claimEndsAt ?? ''}
+                  onChange={(event) => update('claimEndsAt', event.target.value)}
+                  className={marketingInputClassName}
+                />
+              </MarketingField>
+            </MarketingFormSection>
+            {codeIssueMode === 'batch' ? renderCodeBatchFields() : null}
+          </div>
+        </details>
+      ) : null}
 
       {validationError || error ? (
         <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-500/10 dark:text-red-400">

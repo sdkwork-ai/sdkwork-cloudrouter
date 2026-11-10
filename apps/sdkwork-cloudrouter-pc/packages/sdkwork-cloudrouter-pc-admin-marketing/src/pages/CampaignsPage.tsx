@@ -1,34 +1,35 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
+import { ConfirmDialog, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import type { ApiRecord } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { MarketingDrawer } from '../components/MarketingDrawer';
+import { MarketingInlineAlert } from '../components/MarketingInlineAlert';
 import { MarketingListView, type MarketingColumn } from '../components/MarketingListView';
-import { MarketingValueBadge, marketingEnumLabel, type MarketingBadgeTone } from '../components/MarketingValueBadge';
+import { MarketingStatusBadge, marketingEnumLabel } from '../components/MarketingValueBadge';
 import { MarketingField, MarketingFormSection, marketingInputClassName, marketingSelectClassName } from '../components/MarketingFormControls';
-import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import {
   backendPromotionCampaignsList,
   buildCampaignRequest,
   campaignRecordToFormValues,
   createPromotionCampaign,
   deletePromotionCampaign,
+  readMarketingProblemTraceId,
   updatePromotionCampaign,
   type CampaignFormValues,
 } from '../marketingService';
 
-/** 活动生命周期状态 → 徽章色调；状态值已统一小写。 */
-const campaignStatusTone: Record<string, MarketingBadgeTone> = {
-  draft: 'default',
-  scheduled: 'info',
-  active: 'success',
-  paused: 'warning',
-  ended: 'default',
-  cancelled: 'danger',
-  archived: 'default',
-};
-
 const CAMPAIGN_STATUSES = ['draft', 'scheduled', 'active', 'paused', 'ended', 'cancelled', 'archived'];
+
+/** 成功反馈停留时长（设计规范 §2.5：约 3 秒后自动消失，可手动关闭）。 */
+const SUCCESS_FEEDBACK_MS = 3000;
+
+/** 交互对象的可读名称：优先展示名称，缺失时回退 id。 */
+function readCampaignName(record: ApiRecord): string {
+  const name = record['displayName'];
+  const text = name === null || name === undefined ? '' : String(name).trim();
+  return text || String(record['id']);
+}
 
 export function CampaignsPage() {
   const { t } = useTranslation();
@@ -38,11 +39,24 @@ export function CampaignsPage() {
   const [initialValue, setInitialValue] = useState<Partial<CampaignFormValues> | undefined>(undefined);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [pendingDelete, setPendingDelete] = useState<ApiRecord | null>(null);
+  const [actionError, setActionError] = useState<{ message: string; traceId: string | null } | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    if (!successMessage) {
+      return;
+    }
+    const timer = window.setTimeout(() => setSuccessMessage(null), SUCCESS_FEEDBACK_MS);
+    return () => window.clearTimeout(timer);
+  }, [successMessage]);
 
   const refresh = () => setRefreshKey((current) => current + 1);
 
   const openCreateDrawer = (initial?: Partial<CampaignFormValues>, campaignId?: string) => {
     setSaveError(null);
+    setSuccessMessage(null);
     setInitialValue(initial);
     setEditingId(campaignId ?? null);
     setIsDrawerOpen(true);
@@ -51,6 +65,7 @@ export function CampaignsPage() {
   const handleCreate = async (values: CampaignFormValues) => {
     setIsSaving(true);
     setSaveError(null);
+    setSuccessMessage(null);
     try {
       if (editingId) {
         await updatePromotionCampaign(editingId, buildCampaignRequest(values));
@@ -68,22 +83,39 @@ export function CampaignsPage() {
     }
   };
 
-  const handleDelete = async (record: ApiRecord) => {
-    const campaignId = String(record['id']);
-    const name = String(record['displayName'] ?? campaignId);
-    const status = String(record['status'] ?? '');
-    if (status !== 'draft') {
-      window.alert(t('admin.marketing.campaigns.deleteDraftOnly', 'Only draft campaigns can be deleted.'));
+  const requestDelete = (record: ApiRecord) => {
+    setActionError(null);
+    setSuccessMessage(null);
+    if (String(record['status'] ?? '') !== 'draft') {
+      setActionError({
+        message: t('admin.marketing.campaigns.deleteDraftOnly', 'Only draft campaigns can be deleted.'),
+        traceId: null,
+      });
       return;
     }
-    if (!window.confirm(t('admin.marketing.campaigns.deleteConfirm', 'Delete campaign {{name}}? This cannot be undone.', { name }))) {
+    setPendingDelete(record);
+  };
+
+  const confirmDelete = async () => {
+    const record = pendingDelete;
+    if (!record) {
       return;
     }
+    setPendingDelete(null);
+    setActionError(null);
+    setSuccessMessage(null);
+    setIsDeleting(true);
     try {
-      await deletePromotionCampaign(campaignId);
+      await deletePromotionCampaign(String(record['id']));
+      setSuccessMessage(t('admin.marketing.campaigns.deleteSuccess', 'Campaign "{{name}}" deleted.', { name: readCampaignName(record) }));
       refresh();
     } catch (deleteError) {
-      window.alert(resolveProblemMessage(deleteError, t, t('admin.marketing.campaigns.deleteError', 'Failed to delete campaign')));
+      setActionError({
+        message: resolveProblemMessage(deleteError, t, t('admin.marketing.campaigns.deleteError', 'Failed to delete campaign')),
+        traceId: readMarketingProblemTraceId(deleteError),
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -95,12 +127,7 @@ export function CampaignsPage() {
     {
       key: 'status',
       label: t('admin.col.status', 'Status'),
-      render: (value) => (
-        <MarketingValueBadge
-          label={marketingEnumLabel(value, 'admin.marketing.enums.campaignStatus', t)}
-          tone={campaignStatusTone[String(value ?? '').toLowerCase()] ?? 'default'}
-        />
-      ),
+      render: (value) => <MarketingStatusBadge status={value} domain="campaign" />,
     },
     { key: 'startsAt', label: t('admin.col.starts', 'Starts') },
     { key: 'endsAt', label: t('admin.col.ends', 'Ends') },
@@ -109,6 +136,19 @@ export function CampaignsPage() {
 
   return (
     <>
+      {actionError ? (
+        <MarketingInlineAlert
+          message={actionError.message}
+          traceId={actionError.traceId}
+          onDismiss={() => setActionError(null)}
+        />
+      ) : successMessage ? (
+        <MarketingInlineAlert
+          tone="success"
+          message={successMessage}
+          onDismiss={() => setSuccessMessage(null)}
+        />
+      ) : null}
       <MarketingListView
         title={t('admin.marketing.campaigns.title', 'Campaigns')}
         description={t('admin.marketing.campaigns.desc', 'Marketing campaigns group coupon offers with scheduling and audience targeting.')}
@@ -138,8 +178,9 @@ export function CampaignsPage() {
             </button>
             <button
               type="button"
-              onClick={() => void handleDelete(record)}
-              className="rounded-md border border-red-200 bg-white px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:border-red-500/20 dark:bg-white/5 dark:text-red-400"
+              onClick={() => requestDelete(record)}
+              disabled={isDeleting}
+              className="rounded-md border border-red-200 bg-white px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-500/20 dark:bg-white/5 dark:text-red-400"
             >
               {t('common.actions.delete', 'Delete')}
             </button>
@@ -183,6 +224,22 @@ export function CampaignsPage() {
           onSubmit={(values) => void handleCreate(values)}
         />
       </MarketingDrawer>
+
+      {pendingDelete ? (
+        <ConfirmDialog
+          tone="danger"
+          title={t('admin.marketing.campaigns.deleteDialog.title', 'Delete campaign?')}
+          description={t(
+            'admin.marketing.campaigns.deleteConfirm',
+            'Delete campaign {{name}}? This cannot be undone.',
+            { name: String(pendingDelete['displayName'] ?? pendingDelete['id']) },
+          )}
+          confirmLabel={t('admin.marketing.campaigns.deleteDialog.confirm', 'Delete campaign')}
+          cancelLabel={t('common.actions.cancel', 'Cancel')}
+          onConfirm={() => void confirmDelete()}
+          onCancel={() => setPendingDelete(null)}
+        />
+      ) : null}
     </>
   );
 }

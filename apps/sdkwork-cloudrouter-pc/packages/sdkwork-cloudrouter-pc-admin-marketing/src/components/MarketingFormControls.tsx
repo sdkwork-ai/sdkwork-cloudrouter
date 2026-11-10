@@ -6,12 +6,15 @@ export function MarketingField({
   required = false,
   children,
   hint,
+  error,
   className = '',
 }: {
   label: string;
   required?: boolean;
   children: ReactNode;
   hint?: string;
+  /** 字段级校验错误：贴在控件下方，红色小字（设计规范 §2.4）。 */
+  error?: string;
   className?: string;
 }) {
   return (
@@ -21,7 +24,13 @@ export function MarketingField({
         {required ? <span className="ml-0.5 text-red-500">*</span> : null}
       </span>
       {children}
-      {hint ? <span className="mt-1 block text-xs text-slate-400 dark:text-slate-500">{hint}</span> : null}
+      {error ? (
+        <span role="alert" className="mt-1 block text-xs text-red-600 dark:text-red-400">
+          {error}
+        </span>
+      ) : hint ? (
+        <span className="mt-1 block text-xs text-slate-400 dark:text-slate-500">{hint}</span>
+      ) : null}
     </label>
   );
 }

@@ -2,6 +2,8 @@ import { useTranslation } from 'react-i18next';
 import type { ApiRecord } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import {
   formatMarketingAmountMinor,
+  formatMarketingInteger,
+  MARKETING_EMPTY_VALUE,
   readCouponBenefit,
   type CouponBenefitDisplay,
 } from '../marketingService';
@@ -16,14 +18,16 @@ function benefitValueText(
   switch (benefit.kind) {
     case 'token_bank_credit':
       return benefit.bonusAmount
-        ? t('admin.marketing.coupon.summary.tokenBankWithBonus', '{{grant}} + {{bonus}} bonus', {
-            grant: benefit.grantAmount ?? '-',
-            bonus: benefit.bonusAmount,
+        ? t('admin.marketing.coupon.summary.tokenBankWithBonus', '{{grant}} + {{bonus}} bonus (Token Bank credits)', {
+            grant: formatMarketingInteger(benefit.grantAmount, { locale }),
+            bonus: formatMarketingInteger(benefit.bonusAmount, { locale }),
           })
-        : (benefit.grantAmount ?? '-');
+        : t('admin.marketing.coupon.summary.tokenBank', '{{grant}} (Token Bank credits)', {
+            grant: formatMarketingInteger(benefit.grantAmount, { locale }),
+          });
     case 'points_credit':
       return t('admin.marketing.coupon.summary.points', '{{points}} pts', {
-        points: benefit.grantPoints ?? '-',
+        points: benefit.grantPoints ?? MARKETING_EMPTY_VALUE,
       });
     case 'cash_credit':
       return t('admin.marketing.coupon.summary.cash', '{{amount}}', {
@@ -32,7 +36,7 @@ function benefitValueText(
     case 'subscription':
       return t('admin.marketing.coupon.summary.subscription', '{{period}} x {{days}}d', {
         period: marketingEnumLabel(benefit.period, 'admin.marketing.enums.period', t),
-        days: benefit.durationDays ?? '-',
+        days: benefit.durationDays ?? MARKETING_EMPTY_VALUE,
       });
   }
 }
@@ -45,7 +49,7 @@ export function CouponBenefitSummary({ record }: { record: ApiRecord }) {
   const { t, i18n } = useTranslation();
   const benefit = readCouponBenefit(record);
   if (!benefit) {
-    return <span className="text-slate-400 dark:text-slate-500">-</span>;
+    return <span className="text-slate-400 dark:text-slate-500">{MARKETING_EMPTY_VALUE}</span>;
   }
   const kindLabel = t(`admin.marketing.coupon.form.benefit.${benefit.kind}`);
   // 响应契约为 camelCase（currencyCode）；兼容历史 snake_case 数据
