@@ -40,6 +40,19 @@ test('maps the playground onto the sdkwork-birdcoder2 design palette', () => {
   assert.match(portalStyles, /\[class~="bg-\[#0A1B3D\]"\]/);
 });
 
+test('themes every playground tab, including the dark-only canvas and agents pages', () => {
+  // Canvas ships with no `dark:` variants: light mode must translate the
+  // `#0d0d0e` board and its inline white dot grid.
+  assert.match(portalStyles, /html:not\(\.dark\) \.sdkwork-playground-host \[class~="bg-\[#0d0d0e\]"\]/);
+  assert.match(portalStyles, /html:not\(\.dark\) \.sdkwork-playground-host \.canvas-background/);
+  // Dark mode collapses the workbench's one-off greys onto the platform stack.
+  assert.match(portalStyles, /html\.dark \.sdkwork-playground-host \[class~="dark:bg-\[#1e1e1e\]"\]/);
+  assert.match(portalStyles, /html\.dark \.sdkwork-playground-host \[class~="dark:bg-\[#141414\]"\]/);
+  // Agents page: tech-blue radial wash and accent literals are neutralized.
+  assert.match(portalStyles, /bg-\[radial-gradient\(circle_at_20%_0%/);
+  assert.match(portalStyles, /\[class~="text-\[#4080FF\]"\]/);
+});
+
 test('keeps the creative (生成) tab visible so inspiration submit opens the dedicated generation page', () => {
   // creative must NOT be hidden: inspiration submit dispatches switch-tab -> creative, and
   // hiding it makes the workbench fall back to the unified chat agent interface.

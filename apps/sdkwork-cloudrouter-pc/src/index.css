@@ -412,6 +412,7 @@ html.dark [data-admin-model-table-header] > tr > th {
   --sdkwork-birdcoder-border: rgb(0 0 0 / 0.1);
   --sdkwork-birdcoder-brand: #4176e6;
   --sdkwork-birdcoder-brand-fill: #4176e6;
+  --sdkwork-birdcoder-brand-fill-hover: #3563cc;
   --sdkwork-birdcoder-on-brand: #ffffff;
   --sdkwork-birdcoder-brand-soft: rgb(65 118 230 / 0.12);
   --sdkwork-birdcoder-primary-fill: #0f1115;
@@ -438,6 +439,7 @@ html.dark .sdkwork-playground-host {
   --sdkwork-birdcoder-border: rgb(255 255 255 / 0.12);
   --sdkwork-birdcoder-brand: #7aaaff;
   --sdkwork-birdcoder-brand-fill: #4176e6;
+  --sdkwork-birdcoder-brand-fill-hover: #5686fe;
   --sdkwork-birdcoder-on-brand: #ffffff;
   --sdkwork-birdcoder-brand-soft: rgb(122 170 255 / 0.16);
   --sdkwork-birdcoder-primary-fill: #f9fafb;
@@ -607,6 +609,48 @@ html.dark .sdkwork-playground-host .sdkwork-agents-workbench {
   background-color: var(--sdkwork-birdcoder-brand-fill);
 }
 
+.sdkwork-playground-host [class~="bg-[#4080FF]"] {
+  background-color: var(--sdkwork-birdcoder-brand-fill);
+}
+
+.sdkwork-playground-host [class~="bg-[#4080FF]/[0.09]"] {
+  background-color: var(--sdkwork-birdcoder-brand-soft);
+}
+
+.sdkwork-playground-host [class~="text-[#4080FF]"],
+.sdkwork-playground-host [class~="hover:text-[#4080FF]"]:hover {
+  color: var(--sdkwork-birdcoder-brand);
+}
+
+.sdkwork-playground-host [class~="hover:bg-[#4080FF]"]:hover {
+  background-color: var(--sdkwork-birdcoder-brand-fill-hover);
+}
+
+/* The Agents home page paints a tech-blue radial wash behind its header. The
+   design platform keeps content surfaces neutral, so drop the wash (both
+   schemes) and let the layered surfaces carry the page. */
+.sdkwork-playground-host [class*="bg-[radial-gradient(circle_at_20%_0%"] {
+  background-image: none;
+}
+
+/* Agents home sidebar uses a black/10 scrim over the page; in the light scheme
+   that reads as a heavy grey band instead of the platform's sidebar fill. */
+.sdkwork-playground-host [class~="dark:bg-[#111113]"] [class~="bg-black/10"] {
+  background-color: var(--sdkwork-birdcoder-bg-sidebar);
+}
+
+.sdkwork-playground-host [class~="dark:bg-[#111113]"] {
+  background-color: var(--sdkwork-birdcoder-bg-base);
+}
+
+/* The Agents home error banner is written for the dark scheme only
+   (`bg-rose-500/10` + `text-rose-200`); in light mode the label disappeared
+   into the pale pink. Keep the dark-scheme pairing and darken the label in
+   light mode. */
+html:not(.dark) .sdkwork-playground-host [class~="text-rose-200"] {
+  color: #b91c1c;
+}
+
 /* The inspiration segmented control pins its active pill to `bg-white` with the
    primary token as label; in dark mode the inverted primary fill made the label
    white on white. Give the pill a layer surface and keep the accent label. */
@@ -621,6 +665,218 @@ html.dark .sdkwork-playground-host .sdkwork-agents-workbench {
 
 .sdkwork-playground-host [class~="ring-[#165DFF]/10"] {
   --tw-ring-color: var(--sdkwork-birdcoder-brand-soft);
+}
+
+/* ---------------------------------------------------------------------------
+   Canvas (画布) light surface.
+   The canvas ships as a dark-only editor: `#0d0d0e` board, translucent dark
+   cards, zinc text and tech-blue accents, with no `dark:` variants at all. In
+   the light portal that is a dark island, and once the host re-tints the text
+   tokens it becomes unreadable (dark text on dark cards). Translate the dark
+   literals to the design platform's light layers; dark mode is untouched.
+--------------------------------------------------------------------------- */
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] {
+  background-color: #f5f7fa;
+  color: var(--sdkwork-birdcoder-label-primary);
+}
+
+/* The dot grid is an inline radial-gradient made of white dots. */
+html:not(.dark) .sdkwork-playground-host .canvas-background {
+  background-image: radial-gradient(circle at 1px 1px, rgb(15 17 21 / 0.16) 1.5px, transparent 0) !important;
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#121214]"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#121214]/90"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#121214]/95"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#141416]/95"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#111113]/95"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#151516]"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#161618]/95"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#1b1b1d]/95"] {
+  background-color: #ffffff;
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#1e1e20]"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#1e1e20]/90"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#101920]/95"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-zinc-800"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-zinc-900"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-zinc-900/50"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-zinc-900/60"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-zinc-950"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-zinc-950/95"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="hover:bg-[#20282d]"]:hover,
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="hover:bg-[#252528]"]:hover,
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="hover:bg-[#2e2620]"]:hover {
+  background-color: #e9ecf2;
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-black/30"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-black/40"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-white/5"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-white/10"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-white/20"] {
+  background-color: rgb(15 17 21 / 0.06);
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#0A1B3D]"] {
+  background-color: #eef1f5;
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#0A1B3D]/20"] {
+  background-color: rgb(15 17 21 / 0.05);
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#0A1B3D]/40"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#0A1B3D]/95"] {
+  background-color: rgb(15 17 21 / 0.08);
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#165DFF]/5"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#165DFF]/[0.02]"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#4080FF]/[0.015]"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#4080FF]/[0.04]"] {
+  background-color: rgb(65 118 230 / 0.06);
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#165DFF]/10"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#165DFF]/20"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#4080FF]/25"] {
+  background-color: rgb(65 118 230 / 0.12);
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#165DFF]/40"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#4080FF]/50"] {
+  background-color: rgb(65 118 230 / 0.35);
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#165DFF]"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#4080FF]"] {
+  background-color: var(--sdkwork-birdcoder-brand-fill);
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="text-white"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="hover:text-white"]:hover {
+  color: var(--sdkwork-birdcoder-label-primary);
+}
+
+/* Accent buttons keep a white label on the accent fill. */
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#165DFF]"][class~="text-white"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#4080FF]"][class~="text-white"] {
+  color: #ffffff;
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="text-[#4080FF]"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="hover:text-[#4080FF]"]:hover,
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="text-[#0E42D2]"] {
+  color: var(--sdkwork-birdcoder-brand);
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="text-[#4080FF]/70"] {
+  color: rgb(65 118 230 / 0.75);
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="text-[#4080FF]/90"] {
+  color: rgb(65 118 230 / 0.9);
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="text-[#0A1B3D]/80"] {
+  color: var(--sdkwork-birdcoder-label-primary);
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="border-white/5"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="border-white/10"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="border-white/20"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="border-zinc-700"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="border-zinc-800"] {
+  border-color: rgb(15 17 21 / 0.1);
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="border-[#165DFF]"] {
+  border-color: var(--sdkwork-birdcoder-brand);
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="fill-[#4080FF]"] {
+  fill: var(--sdkwork-birdcoder-brand);
+}
+
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="ring-[#4080FF]/30"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="ring-[#4080FF]/40"],
+html:not(.dark) .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="ring-[#4080FF]/50"] {
+  --tw-ring-color: rgb(65 118 230 / 0.4);
+}
+
+/* ---------------------------------------------------------------------------
+   Dark-scheme normalization.
+   The workbench's dark variants use one-off greys (`#1e1e1e`, `#141414`,
+   `#333333`, the canvas `#0d0d0e` stack). Collapse them onto the design
+   platform's dark layer stack so every tab sits on the same surfaces.
+--------------------------------------------------------------------------- */
+html.dark .sdkwork-playground-host [class~="dark:bg-[#1e1e1e]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#202020]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#1d1d1d]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#1a1a1c]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#161616]"] {
+  background-color: var(--sdkwork-birdcoder-bg-layer-1);
+}
+
+html.dark .sdkwork-playground-host [class~="dark:bg-[#141414]"] {
+  background-color: var(--sdkwork-birdcoder-bg-sidebar);
+}
+
+html.dark .sdkwork-playground-host [class~="dark:bg-[#252525]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#262626]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#2a2a2a]"],
+html.dark .sdkwork-playground-host [class~="dark:bg-[#2f2f2f]"] {
+  background-color: var(--sdkwork-birdcoder-bg-layer-2);
+}
+
+html.dark .sdkwork-playground-host [class~="dark:bg-[#333333]"] {
+  background-color: var(--sdkwork-birdcoder-bg-layer-3);
+}
+
+/* The creative workspace paints its whole content pane on the surface layer,
+   which reads one step lighter than every other tab's page base. Keep the page
+   base consistent across tabs; cards inside keep their own surface. */
+html.dark .sdkwork-playground-host [class~="bg-[var(--ag-color-surface,#FFFFFF)]"][class~="min-w-0"] {
+  background-color: var(--sdkwork-birdcoder-bg-base);
+}
+
+html.dark .sdkwork-playground-host [class~="bg-[#0d0d0e]"] {
+  background-color: var(--sdkwork-birdcoder-bg-base);
+}
+
+html.dark .sdkwork-playground-host [class~="bg-[#121214]"],
+html.dark .sdkwork-playground-host [class~="bg-[#121214]/90"],
+html.dark .sdkwork-playground-host [class~="bg-[#121214]/95"],
+html.dark .sdkwork-playground-host [class~="bg-[#141416]/95"],
+html.dark .sdkwork-playground-host [class~="bg-[#111113]/95"],
+html.dark .sdkwork-playground-host [class~="bg-[#151516]"],
+html.dark .sdkwork-playground-host [class~="bg-[#161618]/95"],
+html.dark .sdkwork-playground-host [class~="bg-[#1b1b1d]/95"],
+html.dark .sdkwork-playground-host [class~="bg-[#1e1e20]/90"] {
+  background-color: var(--sdkwork-birdcoder-bg-layer-1);
+}
+
+html.dark .sdkwork-playground-host [class~="bg-[#1e1e20]"],
+html.dark .sdkwork-playground-host [class~="bg-[#101920]/95"] {
+  background-color: var(--sdkwork-birdcoder-bg-layer-3);
+}
+
+html.dark .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#0A1B3D]"] {
+  background-color: var(--sdkwork-birdcoder-bg-layer-2);
+}
+
+html.dark .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#0A1B3D]/20"] {
+  background-color: rgb(255 255 255 / 0.04);
+}
+
+html.dark .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#0A1B3D]/40"] {
+  background-color: rgb(255 255 255 / 0.06);
+}
+
+html.dark .sdkwork-playground-host [class~="bg-[#0d0d0e]"] [class~="bg-[#0A1B3D]/95"] {
+  background-color: var(--sdkwork-birdcoder-bg-layer-3);
 }
 
 .sdkwork-playground-page {
