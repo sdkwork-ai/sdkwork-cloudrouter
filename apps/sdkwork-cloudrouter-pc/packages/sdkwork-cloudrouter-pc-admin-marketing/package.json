@@ -6,7 +6,8 @@
   "type": "module",
   "main": "src/index.tsx",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node ../../node_modules/vitest/vitest.mjs run --config vitest.config.ts"
   },
   "dependencies": {
     "@sdkwork/appbase-pc-react": "workspace:*",

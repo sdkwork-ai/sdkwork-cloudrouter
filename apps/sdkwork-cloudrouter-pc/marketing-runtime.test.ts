@@ -467,7 +467,9 @@ test("backendPromotionCodesList passes codeBatchId as code_batch_id query", asyn
     return {
       code: 0,
       data: {
-        items: [{ id: "code-1", codeNo: "code-1", promotionCode: "WELC****0001", status: 1 }],
+        // The admin backend returns the full code; the console masks it for
+        // display and copies the full value.
+        items: [{ id: "code-1", codeNo: "code-1", promotionCode: "WELCOME2026VIP0001", status: 1 }],
         pageInfo: { page: 1, pageSize: 20, total: 1 },
       },
       traceId: "t-4",
@@ -476,5 +478,6 @@ test("backendPromotionCodesList passes codeBatchId as code_batch_id query", asyn
     const page = await backendPromotionCodesList({ page: 1, pageSize: 20, codeBatchId: "7" });
     assert.equal(page.items.length, 1);
     assert.equal(page.items[0]["codeNo"], "code-1");
+    assert.equal(page.items[0]["promotionCode"], "WELCOME2026VIP0001");
   });
 });
