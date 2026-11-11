@@ -248,6 +248,56 @@ fn assemble_api_router_with_in_process_upstreams(
         augment_openapi_with_missing_routes(&mut openapi, feeds_open.manifest.routes())?;
     }
 
+    // The API/SDK reference documents are published as public contract assets by
+    // the host (`ComposedApiAssembly::into_hosted`), not as API routes: a
+    // reference document must stay readable without credentials, and the
+    // platform gateway route registry only accepts routes owned by a declared
+    // dependency API surface (`/openapi/schema-tabs.json` and the aggregate
+    // `/payments`, `/paas`, and `/cloud` documents are owned by no surface).
+    // The served handlers and these documents share one authority per file, so a
+    // published document can never drift from the HTTP response.
+    let reference_documents: Vec<(&'static str, Arc<Value>)> = vec![
+        (
+            sdkwork_cloudrouter_http::OPENAPI_SCHEMA_TABS_PATH,
+            Arc::new(
+                sdkwork_cloudrouter_http::openapi_schema_tabs_document(None).map_err(|error| {
+                    anyhow::Error::msg(format!(
+                        "CloudRouter OpenAPI schema tabs manifest serialization failed: {error}"
+                    ))
+                })?,
+            ),
+        ),
+        (
+            sdkwork_cloudrouter_http::PAYMENT_AGGREGATE_OPENAPI_PATH,
+            parse_reference_document(
+                "payment aggregate OpenAPI",
+                sdkwork_cloudrouter_http::PAYMENT_AGGREGATE_OPENAPI_DOCUMENT_JSON,
+            )?,
+        ),
+        (
+            sdkwork_cloudrouter_http::PAAS_OPENAPI_PATH,
+            parse_reference_document(
+                "PaaS OpenAPI",
+                sdkwork_cloudrouter_http::PAAS_OPENAPI_DOCUMENT_JSON,
+            )?,
+        ),
+        (
+            sdkwork_cloudrouter_http::CLOUD_SERVICES_OPENAPI_PATH,
+            parse_reference_document(
+                "cloud services OpenAPI",
+                sdkwork_cloudrouter_http::CLOUD_SERVICES_OPENAPI_DOCUMENT_JSON,
+            )?,
+        ),
+        (
+            sdkwork_cloudrouter_http::APP_OPENAPI_PATH,
+            Arc::new(app_openapi),
+        ),
+        (
+            sdkwork_cloudrouter_http::BACKEND_OPENAPI_PATH,
+            Arc::new(backend_openapi),
+        ),
+    ];
+
     let readiness_checks: Vec<Arc<dyn ReadinessCheck>> = vec![
         Arc::new(RouterReadinessCheck::new(
             "cloudrouter-open-api",
@@ -313,7 +363,7 @@ fn assemble_api_router_with_in_process_upstreams(
     let route_manifest = HttpRouteManifest::from_owned_routes(routes);
     let permission_catalog = permission_catalog(route_manifest.routes());
 
-    ApiAssemblyContribution::try_new(
+    let mut contribution = ApiAssemblyContribution::try_new(
         "sdkwork-cloudrouter",
         router,
         route_manifest,
@@ -325,7 +375,17 @@ fn assemble_api_router_with_in_process_upstreams(
         ],
         readiness_check,
     )
-    .map_err(anyhow::Error::msg)
+    .map_err(anyhow::Error::msg)?;
+    for (path, document) in reference_documents {
+        contribution = contribution.with_public_document(path, document);
+    }
+    Ok(contribution)
+}
+
+fn parse_reference_document(owner: &str, source: &str) -> Result<Arc<Value>, ApiAssemblyError> {
+    let document = serde_json::from_str(source)
+        .with_context(|| format!("invalid embedded {owner} reference document"))?;
+    Ok(Arc::new(document))
 }
 
 fn parse_openapi(owner: &str, source: &str) -> Result<Value, ApiAssemblyError> {
@@ -729,6 +789,7 @@ pub async fn web_module_with_context(context: ApiAssemblyContext) -> Result<WebM
         router: assembly.router,
         route_manifest: assembly.route_manifest,
         openapi,
+        public_documents: assembly.public_documents,
         permission_catalog: assembly.permission_catalog,
         domain_context_injectors: assembly.domain_context_injectors,
         readiness_check: assembly.readiness_check,
@@ -1015,6 +1076,121 @@ mod tests {
                 sdkwork_web_contract::RouteAuth::DualToken,
                 route.auth,
                 "{method} {path} must keep dual-token auth after composition"
+            );
+        }
+    }
+
+    #[test]
+    fn cloud_assembly_composition_carries_every_reference_document_to_the_host() {
+        // The platform gateway composes the module registry and lets the host
+        // mount the contributed public documents next to `/openapi.json`; the
+        // documents must survive composition unchanged and never become routes.
+        let contribution =
+            test_assembly_contribution_with_feeds(ApiAssemblyContext::cloud_gateway(), None);
+        let composed = sdkwork_web_bootstrap::ApiModuleRegistry::new()
+            .with_module(sdkwork_web_bootstrap::WebModule::from_contribution(
+                contribution,
+            ))
+            .try_compose("SDKWork Platform API")
+            .expect("cloud assembly must compose without route/OpenAPI drift");
+
+        let paths = composed
+            .public_documents
+            .iter()
+            .map(|document| document.path)
+            .collect::<Vec<_>>();
+        assert_eq!(
+            paths,
+            vec![
+                "/openapi/schema-tabs.json",
+                "/payments/v3/openapi.json",
+                "/paas/v3/openapi.json",
+                "/cloud/v3/openapi.json",
+                "/app/v3/api/openapi.json",
+                "/backend/v3/api/openapi.json",
+            ]
+        );
+        assert!(
+            composed.public_documents.iter().all(|document| {
+                !composed
+                    .route_manifest
+                    .routes()
+                    .iter()
+                    .any(|route| route.path == document.path)
+            }),
+            "public documents must never become API routes"
+        );
+    }
+
+    #[test]
+    fn cloud_assembly_contribution_publishes_every_reference_document() {
+        // The API/SDK reference pages address these documents at their canonical
+        // paths. They are contributed as public contract documents (mounted by
+        // the host next to `/openapi.json`) instead of API routes, so they stay
+        // reachable without credentials and never enter the route registry.
+        let contribution =
+            test_assembly_contribution_with_feeds(ApiAssemblyContext::cloud_gateway(), None);
+        let paths = contribution
+            .public_documents
+            .iter()
+            .map(|document| document.path)
+            .collect::<Vec<_>>();
+        assert_eq!(
+            paths,
+            vec![
+                "/openapi/schema-tabs.json",
+                "/payments/v3/openapi.json",
+                "/paas/v3/openapi.json",
+                "/cloud/v3/openapi.json",
+                "/app/v3/api/openapi.json",
+                "/backend/v3/api/openapi.json",
+            ]
+        );
+        for document in &contribution.public_documents {
+            assert!(
+                contribution
+                    .route_manifest
+                    .match_route("GET", document.path)
+                    .is_none(),
+                "{} must stay a public document, not an API route",
+                document.path
+            );
+        }
+
+        let document_at = |path: &str| {
+            contribution
+                .public_documents
+                .iter()
+                .find(|document| document.path == path)
+                .map(|document| document.document.as_ref())
+                .unwrap_or_else(|| panic!("missing reference document {path}"))
+        };
+
+        let schema_tabs = document_at("/openapi/schema-tabs.json");
+        assert_eq!(
+            schema_tabs["tabs"].as_array().map(Vec::len),
+            Some(13),
+            "the schema tabs manifest must list every documented group"
+        );
+        assert_eq!(schema_tabs["tabs"][0]["schemaUrls"][0], "/openapi.json");
+
+        for (path, documented_path) in [
+            ("/payments/v3/openapi.json", "/payments/v3/payment_intents"),
+            ("/paas/v3/openapi.json", "/paas/v3/ocr/recognitions"),
+            ("/cloud/v3/openapi.json", "/cloud/v3/storage/sdk-config"),
+            (
+                "/app/v3/api/openapi.json",
+                "/app/v3/api/ai/dashboard/overview",
+            ),
+            (
+                "/backend/v3/api/openapi.json",
+                "/backend/v3/api/ai/model_vendors",
+            ),
+        ] {
+            let document = document_at(path);
+            assert!(
+                document["paths"].get(documented_path).is_some(),
+                "{path} must document {documented_path}"
             );
         }
     }

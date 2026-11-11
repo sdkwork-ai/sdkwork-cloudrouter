@@ -5,6 +5,7 @@ use axum::Json;
 use sdkwork_cloudrouter_contract::{matches_path_pattern, ApiSurface};
 use sdkwork_cloudrouter_paas_plugin::standard_paas_service_groups;
 use serde::Serialize;
+use serde_json::Value;
 
 use crate::error::not_implemented_response;
 use crate::router::ServiceState;
@@ -30,6 +31,16 @@ const BACKEND_OPENAPI_JSON: &str = include_str!(concat!(
     env!("OUT_DIR"),
     "/cloudrouter-backend-openapi.json"
 ));
+
+/// Embedded document sources for the aggregate reference surfaces.
+///
+/// Hosts that publish the reference documents as static contract assets parse
+/// these authorities directly instead of routing through an HTTP handler, so the
+/// embedded JSON stays the single authority for both the served response and the
+/// published document.
+pub const PAYMENT_AGGREGATE_OPENAPI_DOCUMENT_JSON: &str = PAYMENT_AGGREGATE_OPENAPI_JSON;
+pub const PAAS_OPENAPI_DOCUMENT_JSON: &str = PAAS_OPENAPI_JSON;
+pub const CLOUD_SERVICES_OPENAPI_DOCUMENT_JSON: &str = CLOUD_SERVICES_OPENAPI_JSON;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -131,12 +142,26 @@ pub fn backend_openapi_response() -> Response {
 pub fn openapi_schema_tabs_response_for_surface(surface: Option<ApiSurface>) -> Response {
     (
         openapi_json_headers(),
-        Json(OpenApiSchemaTabsDocument {
-            cache_ttl_seconds: OPENAPI_SCHEMA_CACHE_TTL_SECONDS,
-            tabs: schema_tabs_for_surface(surface),
-        }),
+        Json(openapi_schema_tabs_manifest(surface)),
     )
         .into_response()
+}
+
+/// The `/openapi/schema-tabs.json` manifest as a JSON value.
+///
+/// Hosts that publish the reference manifest as a static contract asset use this
+/// instead of the HTTP response so the manifest has one construction site.
+pub fn openapi_schema_tabs_document(
+    surface: Option<ApiSurface>,
+) -> Result<Value, serde_json::Error> {
+    serde_json::to_value(openapi_schema_tabs_manifest(surface))
+}
+
+fn openapi_schema_tabs_manifest(surface: Option<ApiSurface>) -> OpenApiSchemaTabsDocument {
+    OpenApiSchemaTabsDocument {
+        cache_ttl_seconds: OPENAPI_SCHEMA_CACHE_TTL_SECONDS,
+        tabs: schema_tabs_for_surface(surface),
+    }
 }
 
 pub async fn openapi_document(State(state): State<ServiceState>) -> Response {

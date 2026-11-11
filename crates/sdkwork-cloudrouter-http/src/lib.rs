@@ -43,10 +43,12 @@ pub use background_tasks::{
 };
 pub use contract_routes::{
     app_openapi_response, backend_openapi_response, cloud_services_openapi_response,
-    contract_fallback, gateway_openapi_response, openapi_schema_tabs_response_for_surface,
-    paas_openapi_response, payment_aggregate_openapi_response, APP_OPENAPI_PATH,
-    BACKEND_OPENAPI_PATH, CLOUD_SERVICES_OPENAPI_PATH, GATEWAY_OPENAPI_PATH,
-    OPENAPI_SCHEMA_TABS_PATH, PAAS_OPENAPI_PATH, PAYMENT_AGGREGATE_OPENAPI_PATH,
+    contract_fallback, gateway_openapi_response, openapi_schema_tabs_document,
+    openapi_schema_tabs_response_for_surface, paas_openapi_response,
+    payment_aggregate_openapi_response, APP_OPENAPI_PATH, BACKEND_OPENAPI_PATH,
+    CLOUD_SERVICES_OPENAPI_DOCUMENT_JSON, CLOUD_SERVICES_OPENAPI_PATH, GATEWAY_OPENAPI_PATH,
+    OPENAPI_SCHEMA_TABS_PATH, PAAS_OPENAPI_DOCUMENT_JSON, PAAS_OPENAPI_PATH,
+    PAYMENT_AGGREGATE_OPENAPI_DOCUMENT_JSON, PAYMENT_AGGREGATE_OPENAPI_PATH,
 };
 pub use error::{not_implemented_response, NotImplementedData};
 pub use federated_database_env::{
