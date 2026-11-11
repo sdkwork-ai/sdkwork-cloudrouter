@@ -11,6 +11,7 @@ class OpenAiAssistantUpdateRequest:
     metadata: Optional[Dict[str, str]] = None
     model: Optional[str] = None
     name: Optional[str] = None
+    reasoning_effort: Optional[str] = None
     response_format: Optional[str] = None
     temperature: Optional[float] = None
     tool_resources: Optional[str] = None

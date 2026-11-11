@@ -14,6 +14,7 @@ data class OpenAiCompletionCreateRequest(
     val seed: Int? = null,
     val stop: String? = null,
     val stream: Boolean? = null,
+    val streamOptions: OpenAiStreamOptions? = null,
     val suffix: String? = null,
     val temperature: Double? = null,
     val topP: Double? = null,

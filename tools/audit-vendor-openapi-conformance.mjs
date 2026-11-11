@@ -32,6 +32,13 @@
  * Usage:
  *   node tools/audit-vendor-openapi-conformance.mjs [--spec-dir <dir>] [--json]
  *
+ * The audit compares the top-level request field set (names + required), then
+ * recurses into object-typed properties up to three levels so a nested member a
+ * generated SDK cannot carry is reported too. Unions and free-form maps are
+ * skipped to avoid noise; output-only members that a vendor's discovery
+ * document reuses in the request schema are listed in NESTED_FIELD_EXEMPTIONS
+ * with a reason.
+ *
  * Exit code 1 means an operation is published by the contract but neither
  * matches the vendor's spec nor appears in WIRE_EQUIVALENT with a reason.
  */
@@ -81,6 +88,17 @@ const WIRE_EQUIVALENT = new Map([
   ["google DELETE /google/v1beta/files/{file_id}", "official file delete uses v1beta/{+name} with name=files/<id>"],
   ["google GET /google/v1beta/cachedContents/{cached_content_id}", "official cachedContent get uses v1beta/{+name} with name=cachedContents/<id>"],
   ["google DELETE /google/v1beta/cachedContents/{cached_content_id}", "official cachedContent delete uses v1beta/{+name} with name=cachedContents/<id>"],
+]);
+
+const NESTED_FIELD_EXEMPTIONS = new Map([
+  [
+    "google POST /google/v1beta/cachedContents",
+    {
+      reason:
+        "the discovery document reuses CachedContent for request and response; these fields are output-only",
+      fields: ["name", "createTime", "updateTime", "usageMetadata"],
+    },
+  ],
 ]);
 
 const collapse = (routePath) =>
@@ -134,9 +152,9 @@ function officialOperations(spec) {
 
 function resolveRef(spec, schema) {
   let current = schema;
-  for (let depth = 0; depth < 4 && current?.$ref; depth += 1) {
+  for (let depth = 0; depth < 6 && current?.$ref; depth += 1) {
     const name = current.$ref.split("/").pop();
-    current = spec.components?.schemas?.[name];
+    current = spec.components?.schemas?.[name] ?? spec.schemas?.[name];
   }
   return current;
 }
@@ -148,7 +166,46 @@ function requestFieldSets(spec, operation) {
   return {
     names: new Set(Object.keys(schema.properties ?? {})),
     required: new Set(schema.required ?? []),
+    schema,
   };
+}
+
+/// Compares the object shape nested under a request body field. Only object
+/// schemas with declared properties are compared, so `anyOf`/`allOf` unions and
+/// free-form maps do not produce noise. A mismatch means a generated SDK type
+/// cannot carry a member the vendor accepts.
+function nestedFieldDrift(contract, ours, spec, theirs, location, notes, depth = 0, ignored = null) {
+  if (depth > 3 || !ours || !theirs) return;
+  const oursSchema = resolveRef(contract, ours);
+  const theirsSchema = resolveRef(spec, theirs);
+  if (!oursSchema || !theirsSchema || oursSchema.type !== "object" || theirsSchema.type !== "object") {
+    return;
+  }
+  const oursProperties = oursSchema.properties ?? {};
+  const theirsProperties = theirsSchema.properties ?? {};
+  const oursNames = Object.keys(oursProperties);
+  const theirsNames = Object.keys(theirsProperties);
+  if (oursNames.length === 0 || theirsNames.length === 0) return;
+
+  const missing = theirsNames
+    .filter((name) => !(name in oursProperties))
+    .filter((name) => !(depth === 0 && ignored?.has(name)));
+  const invented = oursNames.filter((name) => !(name in theirsProperties));
+  if (missing.length) notes.push(`${location} missing: ${missing.join(",")}`);
+  if (invented.length) notes.push(`${location} not in official: ${invented.join(",")}`);
+
+  for (const name of oursNames.filter((candidate) => candidate in theirsProperties)) {
+    nestedFieldDrift(
+      contract,
+      oursProperties[name],
+      spec,
+      theirsProperties[name],
+      `${location}.${name}`,
+      notes,
+      depth + 1,
+      ignored,
+    );
+  }
 }
 
 function main() {
@@ -204,6 +261,19 @@ function main() {
         );
         if (missingRequired.length) notes.push(`missing official required: ${missingRequired.join(",")}`);
         if (invented.length) notes.push(`not in official: ${invented.join(",")}`);
+        const exemption = NESTED_FIELD_EXEMPTIONS.get(
+          `${namespace} ${method.toUpperCase()} ${routePath}`,
+        );
+        nestedFieldDrift(
+          contract,
+          ours.schema,
+          spec,
+          theirs.schema,
+          "request",
+          notes,
+          0,
+          exemption ? new Set(exemption.fields) : null,
+        );
       }
       rows.push({
         vendor: namespace,

@@ -6,4 +6,5 @@ type OpenAiBatchCreateRequest struct {
 	Endpoint string `json:"endpoint"`
 	InputFileId string `json:"input_file_id"`
 	Metadata map[string]ProviderJsonValue `json:"metadata"`
+	OutputExpiresAfter map[string]ProviderJsonValue `json:"output_expires_after"`
 }

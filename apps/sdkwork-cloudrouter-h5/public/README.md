@@ -15,6 +15,12 @@ Secrets, backend-only config, runtime user data, private service endpoints, gene
 ## Note
 `runtime-env.json` is generated output owned by the materializer. Edit the `etc/browser/runtime-env.*.json` profile sources and re-run the materializer; do not hand-edit the public copy.
 
+`favicon.ico`, `favicon-16.png`, `favicon-32.png` and `apple-touch-icon.png` are the shipped brand
+mark for this renderer's own document root. They are generated from the same master artwork as the
+PC copies under `../../sdkwork-cloudrouter-pc/public/`; regenerate both sets together so the tab
+icon never disagrees between the PC and H5 surfaces, and follow the derivation rules documented in
+that README.
+
 ## Related Specs
 - `../../../../sdkwork-specs/APP_H5_ARCHITECTURE_SPEC.md`
 - `../../../../sdkwork-specs/BROWSER_RUNTIME_ENV_SPEC.md`

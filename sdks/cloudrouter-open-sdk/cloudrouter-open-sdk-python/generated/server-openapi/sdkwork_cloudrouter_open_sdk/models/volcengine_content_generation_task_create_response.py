@@ -5,8 +5,5 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
 @dataclass
 class VolcengineContentGenerationTaskCreateResponse:
-    """Volcengine Ark volcengine content generation task create response schema exposed by Cloud Router vendor routing."""
-    created_at: Optional[str] = None
+    """Volcengine Ark video generation task creation response."""
     id: Optional[str] = None
-    status: Optional[str] = None
-    task_id: Optional[str] = None

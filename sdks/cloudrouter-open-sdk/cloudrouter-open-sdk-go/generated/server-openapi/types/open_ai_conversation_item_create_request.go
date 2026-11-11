@@ -1,9 +1,6 @@
 package types
 
-// OpenAI-compatible open ai conversation item create request schema exposed by Cloud Router.
+// OpenAI-compatible request to add items to a conversation (`POST /v1/conversations/{conversation_id}/items`).
 type OpenAiConversationItemCreateRequest struct {
-	Content []OpenAiConversationContentPart `json:"content"`
-	Metadata map[string]string `json:"metadata"`
-	Role string `json:"role"`
-	Type string `json:"type"`
+	Items []map[string]ProviderJsonValue `json:"items"`
 }

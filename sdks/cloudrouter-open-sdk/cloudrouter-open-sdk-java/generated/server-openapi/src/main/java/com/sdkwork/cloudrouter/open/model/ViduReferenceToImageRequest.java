@@ -4,13 +4,15 @@ import java.util.List;
 
 public class ViduReferenceToImageRequest {
     private String aspectRatio;
+    private Boolean bgm;
     private String callbackUrl;
     private List<String> images;
     private String model;
+    private Boolean offPeak;
     private String payload;
     private String prompt;
+    private String resolution;
     private Integer seed;
-    private String style;
 
     public String getAspectRatio() {
         return this.aspectRatio;
@@ -18,6 +20,14 @@ public class ViduReferenceToImageRequest {
 
     public void setAspectRatio(String aspectRatio) {
         this.aspectRatio = aspectRatio;
+    }
+
+    public Boolean getBgm() {
+        return this.bgm;
+    }
+
+    public void setBgm(Boolean bgm) {
+        this.bgm = bgm;
     }
 
     public String getCallbackUrl() {
@@ -44,6 +54,14 @@ public class ViduReferenceToImageRequest {
         this.model = model;
     }
 
+    public Boolean getOffPeak() {
+        return this.offPeak;
+    }
+
+    public void setOffPeak(Boolean offPeak) {
+        this.offPeak = offPeak;
+    }
+
     public String getPayload() {
         return this.payload;
     }
@@ -60,19 +78,19 @@ public class ViduReferenceToImageRequest {
         this.prompt = prompt;
     }
 
+    public String getResolution() {
+        return this.resolution;
+    }
+
+    public void setResolution(String resolution) {
+        this.resolution = resolution;
+    }
+
     public Integer getSeed() {
         return this.seed;
     }
 
     public void setSeed(Integer seed) {
         this.seed = seed;
-    }
-
-    public String getStyle() {
-        return this.style;
-    }
-
-    public void setStyle(String style) {
-        this.style = style;
     }
 }

@@ -2,19 +2,42 @@ import Foundation
 
 /// API modules for cloudrouter-open-sdk
 public struct API {
+    public static let imagesAlibaba = ImagesAlibabaApi.self
+    public static let videosAlibaba = VideosAlibabaApi.self
+    public static let audioAlibaba = AudioAlibabaApi.self
     public static let filesAnthropic = FilesAnthropicApi.self
     public static let chatAnthropic = ChatAnthropicApi.self
     public static let batchesAnthropic = BatchesAnthropicApi.self
+    public static let videosBlackForestLabs = VideosBlackForestLabsApi.self
+    public static let imagesBlackForestLabs = ImagesBlackForestLabsApi.self
+    public static let videosBytedance = VideosBytedanceApi.self
+    public static let imagesBytedance = ImagesBytedanceApi.self
+    public static let audioBytedance = AudioBytedanceApi.self
+    public static let musicElevenlabs = MusicElevenlabsApi.self
     public static let audioElevenlabs = AudioElevenlabsApi.self
     public static let responsesGoogle = ResponsesGoogleApi.self
     public static let filesGoogle = FilesGoogleApi.self
+    public static let videosGoogle = VideosGoogleApi.self
     public static let embeddingsGoogle = EmbeddingsGoogleApi.self
     public static let chatGoogle = ChatGoogleApi.self
+    public static let imagesGoogle = ImagesGoogleApi.self
+    public static let videosJimeng = VideosJimengApi.self
+    public static let audioKling = AudioKlingApi.self
+    public static let imagesKling = ImagesKlingApi.self
     public static let videosKling = VideosKlingApi.self
-    public static let imagesMidjourney = ImagesMidjourneyApi.self
+    public static let videosLumaAi = VideosLumaAiApi.self
+    public static let videosMinimax = VideosMinimaxApi.self
+    public static let imagesMinimax = ImagesMinimaxApi.self
+    public static let musicMinimax = MusicMinimaxApi.self
     public static let audioMinimax = AudioMinimaxApi.self
-    public static let imagesNanoBanana = ImagesNanoBananaApi.self
-    public static let audioSuno = AudioSunoApi.self
+    public static let musicMureka = MusicMurekaApi.self
+    public static let videosPixverse = VideosPixverseApi.self
+    public static let videosRunway = VideosRunwayApi.self
+    public static let imagesRunway = ImagesRunwayApi.self
+    public static let audioStabilityAi = AudioStabilityAiApi.self
+    public static let imagesStabilityAi = ImagesStabilityAiApi.self
+    public static let musicSuno = MusicSunoApi.self
+    public static let chatTypesafe = ChatTypesafeApi.self
     public static let assistants = AssistantsApi.self
     public static let audio = AudioApi.self
     public static let batches = BatchesApi.self
@@ -30,11 +53,18 @@ public struct API {
     public static let realtime = RealtimeApi.self
     public static let responses = ResponsesApi.self
     public static let threads = ThreadsApi.self
+    public static let tool = ToolApi.self
     public static let uploads = UploadsApi.self
     public static let vectorStores = VectorStoresApi.self
     public static let video = VideoApi.self
     public static let videosVidu = VideosViduApi.self
     public static let imagesVidu = ImagesViduApi.self
+    public static let audioVidu = AudioViduApi.self
     public static let audioVolcengine = AudioVolcengineApi.self
     public static let videosVolcengine = VideosVolcengineApi.self
+    public static let imagesVolcengine = ImagesVolcengineApi.self
+    public static let imagesXai = ImagesXaiApi.self
+    public static let videosXai = VideosXaiApi.self
+    public static let videosZhipu = VideosZhipuApi.self
+    public static let imagesZhipu = ImagesZhipuApi.self
 }

@@ -18,7 +18,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// <summary>
         /// Anthropic list files
         /// </summary>
-        public async Task<Sdkwork.CloudRouter.Open.Models.AnthropicFileListResponse?> ListV1FilesAsync(string? beforeId = null, string? afterId = null, int? limit = null)
+        public async Task<Sdkwork.CloudRouter.Open.Models.AnthropicFileListResponse?> ListV1FilesAsync(string anthropicVersion, string? beforeId = null, string? afterId = null, int? limit = null)
         {
             var queryString = BuildQueryString(new[]
             {
@@ -26,31 +26,59 @@ namespace Sdkwork.CloudRouter.Open.Api
                 new QueryParameterSpec("after_id", afterId, "form", true, false, null),
                 new QueryParameterSpec("limit", limit, "form", true, false, null),
             });
-            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.AnthropicFileListResponse>(ApiPaths.AppendQueryString("/anthropic/v1/files", queryString));
+            var requestHeaders = BuildRequestHeaders(
+                new Dictionary<string, HeaderParameterSpec>
+                {
+                    ["anthropic-version"] = new HeaderParameterSpec(anthropicVersion, "simple", false, null),
+                },
+                new Dictionary<string, HeaderParameterSpec>()
+            );
+            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.AnthropicFileListResponse>(ApiPaths.AppendQueryString("/anthropic/v1/files", queryString), null, requestHeaders);
         }
 
         /// <summary>
         /// Anthropic upload file
         /// </summary>
-        public async Task<Sdkwork.CloudRouter.Open.Models.AnthropicFile?> CreateV1FileAsync(Sdkwork.CloudRouter.Open.Models.AnthropicFileUploadMultipartRequest body)
+        public async Task<Sdkwork.CloudRouter.Open.Models.AnthropicFile?> CreateV1FileAsync(Sdkwork.CloudRouter.Open.Models.AnthropicFileUploadMultipartRequest body, string anthropicVersion)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.AnthropicFile>("/anthropic/v1/files", body, null, null, "multipart/form-data");
+            var requestHeaders = BuildRequestHeaders(
+                new Dictionary<string, HeaderParameterSpec>
+                {
+                    ["anthropic-version"] = new HeaderParameterSpec(anthropicVersion, "simple", false, null),
+                },
+                new Dictionary<string, HeaderParameterSpec>()
+            );
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.AnthropicFile>("/anthropic/v1/files", body, null, requestHeaders, "multipart/form-data");
         }
 
         /// <summary>
         /// Anthropic delete file
         /// </summary>
-        public async Task<Sdkwork.CloudRouter.Open.Models.AnthropicDeleteResponse?> DeleteV1FilesAsync(string fileId)
+        public async Task<Sdkwork.CloudRouter.Open.Models.AnthropicDeleteResponse?> DeleteV1FilesAsync(string fileId, string anthropicVersion)
         {
-            return await _client.DeleteAsync<Sdkwork.CloudRouter.Open.Models.AnthropicDeleteResponse>($"/anthropic/v1/files/{SerializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false))}");
+            var requestHeaders = BuildRequestHeaders(
+                new Dictionary<string, HeaderParameterSpec>
+                {
+                    ["anthropic-version"] = new HeaderParameterSpec(anthropicVersion, "simple", false, null),
+                },
+                new Dictionary<string, HeaderParameterSpec>()
+            );
+            return await _client.DeleteAsync<Sdkwork.CloudRouter.Open.Models.AnthropicDeleteResponse>($"/anthropic/v1/files/{SerializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false))}", null, requestHeaders);
         }
 
         /// <summary>
         /// Anthropic retrieve file content
         /// </summary>
-        public async Task<string?> ListV1FilesContentAsync(string fileId)
+        public async Task<string?> ListV1FilesContentAsync(string fileId, string anthropicVersion)
         {
-            return await _client.GetAsync<string>($"/anthropic/v1/files/{SerializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false))}/content");
+            var requestHeaders = BuildRequestHeaders(
+                new Dictionary<string, HeaderParameterSpec>
+                {
+                    ["anthropic-version"] = new HeaderParameterSpec(anthropicVersion, "simple", false, null),
+                },
+                new Dictionary<string, HeaderParameterSpec>()
+            );
+            return await _client.GetAsync<string>($"/anthropic/v1/files/{SerializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false))}/content", null, requestHeaders);
         }
 
         private sealed record PathParameterSpec(string Name, string Style, bool Explode);
@@ -280,5 +308,92 @@ namespace Sdkwork.CloudRouter.Open.Api
                 .Replace("%3B", ";").Replace("%3D", "=");
         }
 
+        private sealed record HeaderParameterSpec(object? Value, string Style, bool Explode, string? ContentType);
+
+        private static Dictionary<string, string>? BuildRequestHeaders(
+            Dictionary<string, HeaderParameterSpec> headers,
+            Dictionary<string, HeaderParameterSpec> cookies)
+        {
+            var requestHeaders = new Dictionary<string, string>();
+            foreach (var item in headers)
+            {
+                var serialized = SerializeParameterValue(item.Value);
+                if (serialized is not null)
+                {
+                    requestHeaders[item.Key] = serialized;
+                }
+            }
+
+            var cookieHeader = BuildCookieHeader(cookies);
+            if (!string.IsNullOrEmpty(cookieHeader))
+            {
+                requestHeaders["Cookie"] = requestHeaders.TryGetValue("Cookie", out var existing) && !string.IsNullOrEmpty(existing)
+                    ? existing + "; " + cookieHeader
+                    : cookieHeader;
+            }
+
+            return requestHeaders.Count == 0 ? null : requestHeaders;
+        }
+
+        private static string BuildCookieHeader(Dictionary<string, HeaderParameterSpec> cookies)
+        {
+            var pairs = new List<string>();
+            foreach (var item in cookies)
+            {
+                var serialized = SerializeParameterValue(item.Value);
+                if (serialized is not null)
+                {
+                    pairs.Add(Uri.EscapeDataString(item.Key) + "=" + Uri.EscapeDataString(serialized));
+                }
+            }
+            return string.Join("; ", pairs);
+        }
+
+        private static string? SerializeParameterValue(HeaderParameterSpec? parameter)
+        {
+            var value = parameter?.Value;
+            if (value is null)
+            {
+                return null;
+            }
+            if (!string.IsNullOrWhiteSpace(parameter!.ContentType))
+            {
+                return System.Text.Json.JsonSerializer.Serialize(value);
+            }
+            if (value is System.Collections.IEnumerable enumerable && value is not string)
+            {
+                var values = new List<string>();
+                foreach (var item in enumerable)
+                {
+                    if (item is not null)
+                    {
+                        values.Add(item.ToString() ?? string.Empty);
+                    }
+                }
+                return string.Join(",", values);
+            }
+            if (value is System.Collections.IDictionary dictionary)
+            {
+                var values = new List<string>();
+                foreach (System.Collections.DictionaryEntry item in dictionary)
+                {
+                    if (item.Value is null)
+                    {
+                        continue;
+                    }
+                    if (parameter.Explode)
+                    {
+                        values.Add((item.Key.ToString() ?? string.Empty) + "=" + (item.Value.ToString() ?? string.Empty));
+                    }
+                    else
+                    {
+                        values.Add(item.Key.ToString() ?? string.Empty);
+                        values.Add(item.Value.ToString() ?? string.Empty);
+                    }
+                }
+                return string.Join(",", values);
+            }
+            return value.ToString();
+        }
     }
 }

@@ -16,6 +16,7 @@ public class OpenAiCompletionCreateRequest {
     private Integer seed;
     private String stop;
     private Boolean stream;
+    private OpenAiStreamOptions streamOptions;
     private String suffix;
     private Double temperature;
     private Double topP;
@@ -123,6 +124,14 @@ public class OpenAiCompletionCreateRequest {
 
     public void setStream(Boolean stream) {
         this.stream = stream;
+    }
+
+    public OpenAiStreamOptions getStreamOptions() {
+        return this.streamOptions;
+    }
+
+    public void setStreamOptions(OpenAiStreamOptions streamOptions) {
+        this.streamOptions = streamOptions;
     }
 
     public String getSuffix() {

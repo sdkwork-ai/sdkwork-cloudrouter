@@ -24,7 +24,7 @@
     },
     {
       "path": "Cargo.toml",
-      "sha256": "5c7d3d69438777371520acbd78c0a665be01fec7fd21438fad1c46135ae5f969"
+      "sha256": "ccbf1ca099fb84efaab50d7f7ad9996cee41507bc72e45b87c1240e8410843a2"
     },
     {
       "path": "CHANGELOG.md",
@@ -36,7 +36,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "1dd3d56e1016fdfc2a3841d71edf0fc77228c4886174dc6cf5fbb55c1b6da713"
+      "sha256": "3d058a15487ca82079ebe55665f81d37a10b399b4827027f7e5731213b9e4176"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -47,16 +47,32 @@
       "sha256": "ff0b12858428a45657f7a3cee1f92b79a7705c714bb27e72d5e9beedff6a518d"
     },
     {
+      "path": "src/api/audio_alibaba.rs",
+      "sha256": "2f33d6e5be9127dbbcdb89956e529c3e0dd5ff208a89e093f827538c4d8c1da9"
+    },
+    {
+      "path": "src/api/audio_bytedance.rs",
+      "sha256": "cfb5e0811b8fb89a2b3fbecb00e9ce4c27b5ed8293c8250cd425488d2444f1ae"
+    },
+    {
       "path": "src/api/audio_elevenlabs.rs",
       "sha256": "939bd326efb54ebcb7c1ab3f621e03114a2cb3b9e6b04a5aea3e9a921367fcd8"
     },
     {
-      "path": "src/api/audio_minimax.rs",
-      "sha256": "6f3a5ab4c9d4893f31069586d1897587b63e2453a3007bb7ce110169c31f8a1a"
+      "path": "src/api/audio_kling.rs",
+      "sha256": "7c71ea47bf9b37fb70b1cea090c016ecd03460ad3b3e0207943b8a5120c0897a"
     },
     {
-      "path": "src/api/audio_suno.rs",
-      "sha256": "c425d6f4e6ae5a049b6c8c512c97f97be5909f92376bfa4a598e372c066e9f7a"
+      "path": "src/api/audio_minimax.rs",
+      "sha256": "b3d0e23f504ac151f5be8b90a74d0eb31163c8db67aaf30f2df066e5656034c6"
+    },
+    {
+      "path": "src/api/audio_stability_ai.rs",
+      "sha256": "b18ff46b392fac28d9bfbd15b11f4e86a0e8f9b943ea0e3abebe6daba079ffca"
+    },
+    {
+      "path": "src/api/audio_vidu.rs",
+      "sha256": "16e961f3963dd0063d4ffdc23ca46685080a842163955e491a09d478726d2d6f"
     },
     {
       "path": "src/api/audio_volcengine.rs",
@@ -72,7 +88,7 @@
     },
     {
       "path": "src/api/batches_anthropic.rs",
-      "sha256": "b97fc2edfa1bf74258950e5cfddb1a219179f15d60330cbbad10700b394e2391"
+      "sha256": "e0a08c73e5b836182f2afcdd0caab21fd884489a9e2f82fb225be9c280cf54a0"
     },
     {
       "path": "src/api/batches.rs",
@@ -80,11 +96,15 @@
     },
     {
       "path": "src/api/chat_anthropic.rs",
-      "sha256": "f0a9f2fc884aea56d2dda356865f440986b8e7b7897283d9453ce178f37db14b"
+      "sha256": "fbf8631ea2542f6ee195f072e68da8d40a9c0b4d563f773050e7d4bd4f79a73a"
     },
     {
       "path": "src/api/chat_google.rs",
       "sha256": "e5d9108e65b8bb41d83b2c4c84b835cc2c7f008651354a69893af255003a313c"
+    },
+    {
+      "path": "src/api/chat_typesafe.rs",
+      "sha256": "840db8e41bc205d2a0e7346d972025e600aa023fce2cba2977d08dceeefb08a6"
     },
     {
       "path": "src/api/chat.rs",
@@ -112,7 +132,7 @@
     },
     {
       "path": "src/api/files_anthropic.rs",
-      "sha256": "fe9e4710a5372b67df4c1b300707877ce0f401a1bd7bfe11a75f604cc06a9b4b"
+      "sha256": "66758349aafe32d0f950790c26a1d8387c2768b3a679aca09edfa3ab88743f2d"
     },
     {
       "path": "src/api/files_google.rs",
@@ -123,16 +143,52 @@
       "sha256": "34ba9c8c8d66d811cbbdfd7646fc5c1fa4041317c2d766a2b4843ad3621bbe26"
     },
     {
-      "path": "src/api/images_midjourney.rs",
-      "sha256": "83b14fbcd42f6347924cceba816543f2935325a0ecf16dc3ede72ecfb428625b"
+      "path": "src/api/images_alibaba.rs",
+      "sha256": "07a9e9d6032a97fa37ddf19bc0bb7bf305f07054f9738a2dff81bf4ac6566e30"
     },
     {
-      "path": "src/api/images_nano_banana.rs",
-      "sha256": "65ea1251b3a2d2e33d020467fddc3aef0dcb7335844141de2d94d7b00b2b14ff"
+      "path": "src/api/images_black_forest_labs.rs",
+      "sha256": "dabe6768fa93c6deb719e35cbb2f0628c2760120f8bc0257b737b289c0a3aa21"
+    },
+    {
+      "path": "src/api/images_bytedance.rs",
+      "sha256": "f03df43141989bac9c46913c0a9d5fefb02c351b76b0cee506145afecd31d54c"
+    },
+    {
+      "path": "src/api/images_google.rs",
+      "sha256": "3256f57cdfffc2c414bcb9b604a8ede5e4262bfbafed8062c292e47a80468259"
+    },
+    {
+      "path": "src/api/images_kling.rs",
+      "sha256": "c1076fdc7a81ecfeaab53671d26a7e349c712e32af5fe8b677802b7a807d2234"
+    },
+    {
+      "path": "src/api/images_minimax.rs",
+      "sha256": "f647777e150000c596a2cf094b5434433c80f8024ef7efe021634fdb36b43728"
+    },
+    {
+      "path": "src/api/images_runway.rs",
+      "sha256": "e0edcf6a9eefb7082142c370dfd018d92eab5adab8ae4e7d06d1c4dbc0fbba52"
+    },
+    {
+      "path": "src/api/images_stability_ai.rs",
+      "sha256": "8e0e0b2e7c95f525e993a3b2d8327c3444e76b64b9a0bd2b6f614a31b30c29ff"
     },
     {
       "path": "src/api/images_vidu.rs",
       "sha256": "5fbaa5e59dc7992f59ef549d8cba33fae799c6224e1c7112a43a7cba3505df96"
+    },
+    {
+      "path": "src/api/images_volcengine.rs",
+      "sha256": "5b70dc443e6189de592541fceb7f5905dd424a073d1824b6f3377533bfd5372a"
+    },
+    {
+      "path": "src/api/images_xai.rs",
+      "sha256": "44ac9fc3ea79213c7e2e60035d16161739b3d96f795f13a57f4278bdd96c2a83"
+    },
+    {
+      "path": "src/api/images_zhipu.rs",
+      "sha256": "b7e99c543a396e9d3914f963911ef4d008dabfa44237ba8628cd27784a3a20db"
     },
     {
       "path": "src/api/images.rs",
@@ -140,7 +196,7 @@
     },
     {
       "path": "src/api/mod.rs",
-      "sha256": "afbda1aac5ec865f0fe7f8392c28ccba057abd751a6d5c5a4b65cafd2ee43583"
+      "sha256": "fe577dc213770ca9771adde764bffee596a09fea4f3352d63d719ea729f97772"
     },
     {
       "path": "src/api/models.rs",
@@ -151,12 +207,28 @@
       "sha256": "f77b0459fe18171d63935110a25d4a92f11671f9e67413c39639c05d26c8d60a"
     },
     {
+      "path": "src/api/music_elevenlabs.rs",
+      "sha256": "e0d1ee91999af31e601e2e39cd6d0fecd86bd525838873c4220c8060f1493dad"
+    },
+    {
+      "path": "src/api/music_minimax.rs",
+      "sha256": "62837e50b19dd9327dd709d98d2134f2cbeee7d986f61d2c83361385a38ed57d"
+    },
+    {
+      "path": "src/api/music_mureka.rs",
+      "sha256": "164efcaca479e0e7aabdfb2905cc0d8ec2b43932ab8922b96e838b86c5c6d663"
+    },
+    {
+      "path": "src/api/music_suno.rs",
+      "sha256": "5cebdb9beb2340f60f94098da4db4d1a1b07d00bfa3c1da42bb803a4bebc42da"
+    },
+    {
       "path": "src/api/paths.rs",
       "sha256": "279f694b9083ca4aeff72491a753fc3e27e2022b7fbd8894176d72338bc5c293"
     },
     {
       "path": "src/api/realtime.rs",
-      "sha256": "078810746cf3810031a3c0ec204fe4b61dc3a7f9f8a2b6cbfaa3d3d5533b8b61"
+      "sha256": "383a5d1f9963b2ad40f2479b4c26c5ab1666be5163814751fe45cd520a9ba95e"
     },
     {
       "path": "src/api/responses_google.rs",
@@ -171,6 +243,10 @@
       "sha256": "cd6b631676ddfdaa595bb1e49396e0d93250f69b5df726f2d2845813b9afb891"
     },
     {
+      "path": "src/api/tool.rs",
+      "sha256": "804e7cdf1b4f64c8778728e2bfeea493593bf08e05cbd1e811f0e3a147eec157"
+    },
+    {
       "path": "src/api/uploads.rs",
       "sha256": "023d3fea7720b10db46bc5999058cb498b17bf5af10492c2b8aee122a1b7f769"
     },
@@ -183,20 +259,64 @@
       "sha256": "260d979cfd4f9a751c54c8a3fbf3ce405eefc611d1f21536d50bd937d5085e93"
     },
     {
+      "path": "src/api/videos_alibaba.rs",
+      "sha256": "69c3be114e58e239868f5dc72737e1bbadb16a1733c03797f9d133bfb77cecc2"
+    },
+    {
+      "path": "src/api/videos_black_forest_labs.rs",
+      "sha256": "1bac8fa41181b973dced62feafbb43e50adbcc18d18e929406006cd2155bf32d"
+    },
+    {
+      "path": "src/api/videos_bytedance.rs",
+      "sha256": "3fb7d95c2afed9f4d638d67f73d941309afeb784640782e7be36ed5e3483c691"
+    },
+    {
+      "path": "src/api/videos_google.rs",
+      "sha256": "9788a9d49289102f4426bf07ccf125d0f2951415ab66fc0276b69d74e6f546bb"
+    },
+    {
+      "path": "src/api/videos_jimeng.rs",
+      "sha256": "2bd95674c1215d6e88530c51228e81d2a534aa7d214c0ebfb44a9aadfa6c6ca3"
+    },
+    {
       "path": "src/api/videos_kling.rs",
       "sha256": "80854b58437fce2c590459fa051dc719c814be69905a6cf378059eb64920ac67"
     },
     {
+      "path": "src/api/videos_luma_ai.rs",
+      "sha256": "30cb34e13f19a5711379312b55129f6ddd7f730029c10585e6be5e56f01b72f5"
+    },
+    {
+      "path": "src/api/videos_minimax.rs",
+      "sha256": "a8f9152fe6adf268198b70145b69c29c99f95f427f53da4bb4f22c3811e40648"
+    },
+    {
+      "path": "src/api/videos_pixverse.rs",
+      "sha256": "35a5b09ed6d4f7c1920ea64a1f46e3732ffb3ffad4c02dcbd0932e31e618577a"
+    },
+    {
+      "path": "src/api/videos_runway.rs",
+      "sha256": "b1cd62303f174e782ef68cc5f836aaf3e80b6c5fec9fd7af2f6c78eefb6a45c1"
+    },
+    {
       "path": "src/api/videos_vidu.rs",
-      "sha256": "1ca93677a8d8dccd71ab4cf97946d7d0a24ef8ee2c813a01bfb0e50d7a0c083f"
+      "sha256": "526ae53943bd9cdc9cf6a4ed05f84e4375e001f5868063e5de48d094a1b7466c"
     },
     {
       "path": "src/api/videos_volcengine.rs",
       "sha256": "8f594f10b018bfad18c15d9c7aae4afbf70f07900daab6916b658ffaa52f4dd4"
     },
     {
+      "path": "src/api/videos_xai.rs",
+      "sha256": "ccf41db4a047ec0687813e7a5865e835c49e2c021514a68d5a304e52c288c806"
+    },
+    {
+      "path": "src/api/videos_zhipu.rs",
+      "sha256": "625cc7063e8ada91995144acc13d21f4ae3adef050e80cff1499fe30cb072b47"
+    },
+    {
       "path": "src/client.rs",
-      "sha256": "ae97a9344b06f61932ed0a39595f892e8793f67a5a96d9373ecd5ab7181f4087"
+      "sha256": "6181f1c8bec06d9f4cde9e67b25907b4e667afa3cbe9c77cec7f8598c88c0eff"
     },
     {
       "path": "src/http/client.rs",
@@ -211,8 +331,56 @@
       "sha256": "b119ac27283cf200e19394510c2a05f376a8bb58910e6becc79fa931157aba0d"
     },
     {
+      "path": "src/models/alibaba_async_task.rs",
+      "sha256": "aab64e6a9ae696ef43f828b4528f55f48de09b2637a6129689e9b76ea1501b15"
+    },
+    {
+      "path": "src/models/alibaba_image_generation_request.rs",
+      "sha256": "6d257374bff9145d6e08b72b5c53fb51459ba73f50e461e4b258a33e91faac34"
+    },
+    {
+      "path": "src/models/alibaba_image_generation_response.rs",
+      "sha256": "94e8bc99925dcfada134cc9875fa096bd4d267d5f66e98a8c91df113249c125d"
+    },
+    {
+      "path": "src/models/alibaba_speech_input.rs",
+      "sha256": "8e53de3bde26339db6d2b954fa203e48a9d1999665ca5a5761be6c1bcad50315"
+    },
+    {
+      "path": "src/models/alibaba_speech_request.rs",
+      "sha256": "2739099f65fbe719cf2e41fc32905f2fa521700fcca6a2a344dbbf8311004ce3"
+    },
+    {
+      "path": "src/models/alibaba_speech_response.rs",
+      "sha256": "7007637bf684d322f1f3c179cfdf7d973cab7ad3414313f7b9ea63a01b9f59b2"
+    },
+    {
+      "path": "src/models/alibaba_task_usage.rs",
+      "sha256": "b56f1e7f9feac2254753d2587fe2dc1dd1a259103e1a54ea01cc84800985f746"
+    },
+    {
+      "path": "src/models/alibaba_video_generation_request.rs",
+      "sha256": "a7f259efc311a7d046ab787f34187e2babfa8af14c5dc10b47485b9695080dba"
+    },
+    {
+      "path": "src/models/alibaba_video_generation_response.rs",
+      "sha256": "2d403fae76af69a4b32d490ac5f0a6b7bf1b0c35b73eefa4315f503fc07449d9"
+    },
+    {
+      "path": "src/models/alibaba_video_generation_task.rs",
+      "sha256": "c5e86938feeb0043c0ae81cdabbbfa6f6b106f99ad62ae3c7010cc79c8e1d986"
+    },
+    {
+      "path": "src/models/anthropic_cache_control.rs",
+      "sha256": "e125cb4f16349e1a88fbf3c0ef74d3999e168d00f2dca5feb7ef9b3e1f42c627"
+    },
+    {
+      "path": "src/models/anthropic_container.rs",
+      "sha256": "ee54466b4250dc60eecd482905477016d7b9a4a6c313187a2b7fb706a82cae6a"
+    },
+    {
       "path": "src/models/anthropic_content_block_param.rs",
-      "sha256": "083238860e37aa674c02f87af9fbddee0809fcdeb4ab3fd3a7145ebb21c67fc0"
+      "sha256": "e03c20a35e12f06aadcb3c9c88a8d4056c7e2a1de55fb05cec54693f2e8ae984"
     },
     {
       "path": "src/models/anthropic_content_block.rs",
@@ -224,7 +392,7 @@
     },
     {
       "path": "src/models/anthropic_count_message_tokens_request.rs",
-      "sha256": "ddda45d20a95bceedc7e9b636c183c6c961764be83602041e8e0f62f6a92f997"
+      "sha256": "52772b35d22b934f2063813732043e00d756514e222a80f1f20f4fc9271ebdd6"
     },
     {
       "path": "src/models/anthropic_count_message_tokens_response.rs",
@@ -233,6 +401,10 @@
     {
       "path": "src/models/anthropic_delete_response.rs",
       "sha256": "0ff8209ab643113272d0e5e9a8bb911846b29e1b514c4926aa354c302c24398d"
+    },
+    {
+      "path": "src/models/anthropic_diagnostics.rs",
+      "sha256": "a45a1f385c11c5ff61636df517ac78a3b8f76eb19f46c085ac079f2a7da66a62"
     },
     {
       "path": "src/models/anthropic_file_list_response.rs",
@@ -268,7 +440,7 @@
     },
     {
       "path": "src/models/anthropic_message_create_request.rs",
-      "sha256": "a1ab0c0a9009e318de8d15560d5279951a4a853473bc591fd1e41f3a12a1f49c"
+      "sha256": "8083c07775295915a00efc50f8a22a55eea8b518dc98e0fb875860841fe54a25"
     },
     {
       "path": "src/models/anthropic_message_param.rs",
@@ -279,20 +451,132 @@
       "sha256": "62bf2bde0843ffec0072536b46216b35ef76f1c0a78b54548028fa3d65c15286"
     },
     {
+      "path": "src/models/anthropic_metadata.rs",
+      "sha256": "d0b9a132cf9aa4158af1d706b6c88b86f0e47f798b1777c97ff52fd2a4a3cec8"
+    },
+    {
+      "path": "src/models/anthropic_output_config.rs",
+      "sha256": "faf56c9ce998f6324c47077bc610d5a34c79b3c8d0f9d0e3d59a5a7276cc1465"
+    },
+    {
+      "path": "src/models/anthropic_output_format.rs",
+      "sha256": "d1cfae6ecdad3346ffecc9e5487320d13fc22d9ed49cc2b6a2b17811a4987bb6"
+    },
+    {
+      "path": "src/models/anthropic_server_tool.rs",
+      "sha256": "91d208ed3e31f4f574a3e60b4c21755f2eb815a23adc8038dadbbe848dc91fea"
+    },
+    {
+      "path": "src/models/anthropic_skill.rs",
+      "sha256": "3874526761f17bc3966980d49a3de1a7cc7394779d545065e1ee2fe6580a1439"
+    },
+    {
       "path": "src/models/anthropic_thinking_config.rs",
-      "sha256": "44d259b12be36b81f298c8f22b5782dea2b0cb2a7c8ec431539e2d1ecc2aeb55"
+      "sha256": "9ff0c91cf2feb16dfef723c07376530ba0519a0e2b2a057c4b40247c5e1fbdc3"
     },
     {
       "path": "src/models/anthropic_tool_choice.rs",
-      "sha256": "d6570fb849a86d0ca3dbee15d2acbee184da29c8ed549186e2766f99fdfb4f64"
+      "sha256": "c2d7271e93905eaaed5845b35a2b8475712fa2ffcb2ae945916be2b4e8796664"
     },
     {
       "path": "src/models/anthropic_tool.rs",
-      "sha256": "516f611afa77b2a1db50c41b0485d2664ce0b1ed67a60f1f93d1a2110cd812a5"
+      "sha256": "380d9d9cce0c17b667976405e8d44d52ae6bc5895da26b3aa0b681967956a733"
     },
     {
       "path": "src/models/anthropic_usage.rs",
       "sha256": "0dfe9954f0cdbe0f43a1e2d4c2674bd857b22bf5677195c608083efbd2f88195"
+    },
+    {
+      "path": "src/models/ark_audio_source.rs",
+      "sha256": "7623561c3418fe3bc504591bcd04674a33ccc43ef989dda5369422c7fbeec6cf"
+    },
+    {
+      "path": "src/models/ark_content_part.rs",
+      "sha256": "f1401578745f3167baf2c07774d73e52137a8e19425364db33cf12d80e69de18"
+    },
+    {
+      "path": "src/models/ark_draft_task.rs",
+      "sha256": "4128a66400105ab4f3b7c0ff4afcc82216c177a32744dce2b6899f8c06d56523"
+    },
+    {
+      "path": "src/models/ark_image_generation_data.rs",
+      "sha256": "2a405788793a08af238c503c5214f8d7b36a9447fa8e6cd7f7ecbe08ea51d829"
+    },
+    {
+      "path": "src/models/ark_image_source.rs",
+      "sha256": "e1fcd81f8cea4987aaf453c5d1bff1514160b75105a8d6c232232c208dbc12a4"
+    },
+    {
+      "path": "src/models/ark_image_usage.rs",
+      "sha256": "a13a637fd8a9c86b5c1d529c8d34b1a2182e4870cd14811306fb516a60d6062a"
+    },
+    {
+      "path": "src/models/ark_video_source.rs",
+      "sha256": "0ef03ab3ed936d468ebe2e050adcbdcbbc00077c9af705492844d94aab349544"
+    },
+    {
+      "path": "src/models/ark_video_task_content.rs",
+      "sha256": "512ddf27620657bb7af4e071f8525d95710cf6b893423a6a1f1a15292e913597"
+    },
+    {
+      "path": "src/models/ark_video_tool_usage.rs",
+      "sha256": "9435dd073ad002e2ad7a643b3dea9d8e68770cda761c3635af85af82eee4942d"
+    },
+    {
+      "path": "src/models/ark_video_usage.rs",
+      "sha256": "7c43b8529c9a0b9c6f493d77ebdb17df30ae65d97c052f66e62e9d2d1fba8d40"
+    },
+    {
+      "path": "src/models/ark_web_search_tool.rs",
+      "sha256": "6af3c181d4ecac8e0b70b8a774783b3bd793cc94fcf47b33ecbffef5ce0a4ff0"
+    },
+    {
+      "path": "src/models/black_forest_labs_image_generation_request.rs",
+      "sha256": "e5e7271f06e10dcf8da9eae67a7b561a8b468932d78aa0d2b9864bd40a5c9aec"
+    },
+    {
+      "path": "src/models/black_forest_labs_image_generation_task.rs",
+      "sha256": "4a4edb61a8cb9d1ba2d54b1ddc31bb51c47fe7a729e2fba78971bf423bb2f586"
+    },
+    {
+      "path": "src/models/black_forest_labs_video_generation_request.rs",
+      "sha256": "0599c1294317de7c6205b55e3c652c4a70d5f4c0235f2298b1f888e70cdae562"
+    },
+    {
+      "path": "src/models/black_forest_labs_video_generation_task.rs",
+      "sha256": "e2634be5d71a6f36c891ccd3a0da7dd90ee850af40f18c14a491b0f0ab320437"
+    },
+    {
+      "path": "src/models/bytedance_image_generation_request.rs",
+      "sha256": "3a331496afadeb5f9ecf347449233078b8d5a5c11a717ff900a63b1c14fe230f"
+    },
+    {
+      "path": "src/models/bytedance_image_generation_response.rs",
+      "sha256": "bdae0167a2bc078313fa4ae8b7350d06b96decda68c01183985b6491e3666f44"
+    },
+    {
+      "path": "src/models/bytedance_speech_chunk.rs",
+      "sha256": "2f1523ce7f866d7131889ab04e8618c52e938b1df04faf5d6fb7d0ff0ab0786c"
+    },
+    {
+      "path": "src/models/bytedance_speech_request.rs",
+      "sha256": "ed4b92592b8c745620f7aeae20887feb9bfe47eff44110e7060a53075237518a"
+    },
+    {
+      "path": "src/models/bytedance_tts_audio_params.rs",
+      "sha256": "cdd1a16e958a4e1e4d17069384b21f5436467088931d38b7b2de3a5b2cabbc44"
+    },
+    {
+      "path": "src/models/bytedance_tts_request_params.rs",
+      "sha256": "56a92289388480176a426fa0317f41fe85eb604567c5b547a73a14833820946b"
+    },
+    {
+      "path": "src/models/bytedance_video_generation_request.rs",
+      "sha256": "89ab20d5bcb44b12483ac07d115b8d529d791394e5e1b22ac20d33a1e9dc390a"
+    },
+    {
+      "path": "src/models/bytedance_video_generation_task.rs",
+      "sha256": "553a2a8ace215566dfdd0af14de479dc48b3f974f34a7ef8a6b99bc4ee6caf67"
     },
     {
       "path": "src/models/common.rs",
@@ -311,8 +595,28 @@
       "sha256": "97c3ab3d403dfd9ef87236ddeb369ba3e0f12c4408887cda94e028215e776c8b"
     },
     {
+      "path": "src/models/eleven_labs_audio_effects.rs",
+      "sha256": "01fa3a46bc232325846ee780fc43ff07b3c66ad5170266a075716af963f4e50e"
+    },
+    {
+      "path": "src/models/eleven_labs_composition_plan.rs",
+      "sha256": "ab666a37c91060c72c5c66579556fd79861f4e64309b1e1a9a06c8af94863ea4"
+    },
+    {
+      "path": "src/models/eleven_labs_music_generation_request.rs",
+      "sha256": "49b997ce5542e454b2054d1318418ec6a9550c2c160a8df9ee9e4a22af203095"
+    },
+    {
+      "path": "src/models/eleven_labs_music_prompt.rs",
+      "sha256": "8a7491afb0edf9ab4d681595da74e2426128a92d87ecca7696ad4a1a5b31ae2b"
+    },
+    {
+      "path": "src/models/eleven_labs_pronunciation_dictionary_locator.rs",
+      "sha256": "6e555a133f9d391aa9df878b81a325b7fce90c819c683d176fd1da6d39bc32dc"
+    },
+    {
       "path": "src/models/eleven_labs_sound_generation_request.rs",
-      "sha256": "a8d8edf26c605fe0aa2fd99477f251d99ad475ab0bdeb33a48eee332fef5a56b"
+      "sha256": "400252fedd3db08474b14cdc2768eeaad5c4b2aad74e0c57c83f2d54007b4ca0"
     },
     {
       "path": "src/models/eleven_labs_sound_generation_response.rs",
@@ -320,11 +624,31 @@
     },
     {
       "path": "src/models/eleven_labs_text_to_speech_request.rs",
-      "sha256": "b56ca5636b81a12b4285761398a594527d387069ea0f000f85a5ea3456bc1192"
+      "sha256": "e99462fd62dffbcdcd3e59cb9886fc0397c2b90e5963bfd503ce43794d992154"
     },
     {
       "path": "src/models/eleven_labs_text_to_speech_response.rs",
       "sha256": "41fe5be0b47396984ae577584dd73f857b3db371af8f37ae526929bc4f4eb9cb"
+    },
+    {
+      "path": "src/models/eleven_labs_voice_settings.rs",
+      "sha256": "2a76ea3d9c62a32ea4059c94e4b9f899250f855180a273c500c75de086c7b7cd"
+    },
+    {
+      "path": "src/models/gemini_image_generation_request.rs",
+      "sha256": "1087247d2c701e56aadba479a9d7077a42647d3471b6d4f0789150f1bd71ae11"
+    },
+    {
+      "path": "src/models/gemini_image_generation_response.rs",
+      "sha256": "bf1b2868bfd5182041654ad76ca31ac8a056995f5328b399ef1071a4185b8cb4"
+    },
+    {
+      "path": "src/models/gemini_video_generation_request.rs",
+      "sha256": "0100bb13f499e4c67e96a823538d23d4b603008738f4bb81024b9b7dc7e9d897"
+    },
+    {
+      "path": "src/models/gemini_video_operation.rs",
+      "sha256": "0c0945c18041b91a922954f20e4642a8f3761dc54cf65359c7cc773585eb1ba5"
     },
     {
       "path": "src/models/google_batch_embed_contents_request.rs",
@@ -340,7 +664,7 @@
     },
     {
       "path": "src/models/google_cached_content_create_request.rs",
-      "sha256": "b265dfd673031e133380bacf63e4939b17affde6460cd220263952c2986209de"
+      "sha256": "a4d71b29012ee5f828bb6841411c9bd7125d4bd7bc646f6d41dd20586400fe23"
     },
     {
       "path": "src/models/google_cached_content_list_response.rs",
@@ -396,7 +720,7 @@
     },
     {
       "path": "src/models/google_embed_content_request.rs",
-      "sha256": "ab64c26ff0372a00b0ce4be59ac39e85cbbccbdf9da0a5cbd1c576b910f8bae5"
+      "sha256": "6b7e961ee40b776e8643d48d3858b75889b4ad9e8892f3974c2acac4d3bbab16"
     },
     {
       "path": "src/models/google_embed_content_response.rs",
@@ -444,7 +768,7 @@
     },
     {
       "path": "src/models/google_generate_content_request.rs",
-      "sha256": "ff8f716142828f82270be11fc4487c061cee2342b67832cc4b87bdc433fc4ce6"
+      "sha256": "3a7d7e2d4efb6d771800e66989d89dbddd1693ca6a60bf1f5dfc03e6c59adb4a"
     },
     {
       "path": "src/models/google_generate_content_response.rs",
@@ -452,11 +776,11 @@
     },
     {
       "path": "src/models/google_generation_config.rs",
-      "sha256": "f78778e95e0dc22f47e32bbb62a5c8dd49e4b8420a15644fe89e8bc1654db4d2"
+      "sha256": "8e26ccd6af46b8263dc04f56c2c6f33a10853a4ec314722ca7145b1160a18d69"
     },
     {
       "path": "src/models/google_part.rs",
-      "sha256": "1947753723d62b5bdcbd25551b55f1903d875cbd89cdd8ae535ddca8ffdc0f76"
+      "sha256": "8339804643b2c673b8c42fa722f008c58b2a0d297364aeb3a87403b066dd6db9"
     },
     {
       "path": "src/models/google_prompt_feedback.rs",
@@ -488,7 +812,7 @@
     },
     {
       "path": "src/models/google_tool.rs",
-      "sha256": "60b321482257b44535042f438d4d4648c1a1d39ed2e1cb4a86f94ea0afe7de0b"
+      "sha256": "8ab653ca997f385b27e88dfdb34457337e55727ba0ba13f2f824e188df94762e"
     },
     {
       "path": "src/models/google_url_context_tool.rs",
@@ -499,12 +823,52 @@
       "sha256": "0abfb4c965735088534c2e1c81193bd8524523524dc91ea4ce63be6ebef8d704"
     },
     {
+      "path": "src/models/jimeng_video_generation_request.rs",
+      "sha256": "f7c26449b5fde931f99e4db9c438e6c95a446318626ed6331b6c4a62accfdb4d"
+    },
+    {
+      "path": "src/models/jimeng_video_generation_task.rs",
+      "sha256": "41212fab720ac4572f501b69ad785b3e98d37140ec9bcb73ec3cec6c3d3ab1c5"
+    },
+    {
+      "path": "src/models/kling_audio_task.rs",
+      "sha256": "45dfd3fb50193d2cbe3e0bc7490bd1ac86aca37da8573236200afb16c085ad07"
+    },
+    {
       "path": "src/models/kling_avatar_create_request.rs",
       "sha256": "0dd43eba53a222985a4a41b0c04cf537077f5c15521d34ec22a13ba36c852cdd"
     },
     {
+      "path": "src/models/kling_element_reference.rs",
+      "sha256": "74e05f97e2a6763b4a6c95555b02c87299a7f25b56532c9b9319e31104d2ca84"
+    },
+    {
+      "path": "src/models/kling_image_generation_request.rs",
+      "sha256": "e0943100cbfe75c1039bb5ee279510d9e0a7d912aaddf0be41de5c1c05e6578e"
+    },
+    {
+      "path": "src/models/kling_image_generation_task.rs",
+      "sha256": "543eb07e4dec15159399abba11447d6fabbe2eb680d90482ad33615fa5885078"
+    },
+    {
+      "path": "src/models/kling_image_result.rs",
+      "sha256": "c3d18f4e50096f5ce6b9967dfd87fdf7e31b561117e17e602dff935cd63f41d3"
+    },
+    {
+      "path": "src/models/kling_image_task_data.rs",
+      "sha256": "bdcd5220f2fedf75cb1c166c321325be92c0d065c5a343f6df956d223e32bca0"
+    },
+    {
+      "path": "src/models/kling_image_task_result.rs",
+      "sha256": "536a4b624fea1305a5428c0f595d6daffc19ea68882c8bee33eff5dfbf504989"
+    },
+    {
       "path": "src/models/kling_motion_control_request.rs",
       "sha256": "e782c314f4d78c46c21eb766c1d170d956493b03e8e2c52a02a64637a573e92f"
+    },
+    {
+      "path": "src/models/kling_sound_generation_request.rs",
+      "sha256": "45727f4ce8487b87858567d5b1f009730439b85162e95b8272187ddf96d15ed9"
     },
     {
       "path": "src/models/kling_video_generation_request.rs",
@@ -515,16 +879,40 @@
       "sha256": "2f9aad0b618d23566a4676a64571f5b34e6672d627d688c75aa8794c3f176ddb"
     },
     {
-      "path": "src/models/midjourney_image_generation_request.rs",
-      "sha256": "22c670315d2a2e96b67356049a43406484e1220c1b964319c1a1a9e1c5321e59"
+      "path": "src/models/kling_video_to_audio_request.rs",
+      "sha256": "6c55129234920bcdb7a05b486479a6675da6bedcb73f65146030f0aac30bc1a7"
     },
     {
-      "path": "src/models/midjourney_image_generation_task.rs",
-      "sha256": "29b46d27d6e6e6b9ec4dedfe68af517d7c9209b744135760b30a818c4cb6e073"
+      "path": "src/models/kling_watermark_info.rs",
+      "sha256": "90394c2619af0307899f365aae9c4d6c974bff9d7ef679d97715fd59c0e3fdd9"
+    },
+    {
+      "path": "src/models/luma_concept.rs",
+      "sha256": "c10c1039cec39b6a33b3928a9672b876a1230124d09a0a9f7b76e50abc2d9128"
+    },
+    {
+      "path": "src/models/luma_generation_assets.rs",
+      "sha256": "1eae0dce2ad0c0631e1a4140bb71d3e78ca93f1f4e0eea0496d67b7139d0327b"
+    },
+    {
+      "path": "src/models/luma_keyframe.rs",
+      "sha256": "0caf0f26d23e6f956979ee1aa44ba24814da084d7b2c94f68af8ac0e468d38ca"
+    },
+    {
+      "path": "src/models/luma_keyframes.rs",
+      "sha256": "653dad9891e4759daa6ee42b0fb6e616a36e87089c6dbeb104793c204a1d9a61"
+    },
+    {
+      "path": "src/models/luma_video_generation_request.rs",
+      "sha256": "83bf0662cd8b2443c4996aab1675515386cd0a186dc036a8c149f5c89b9b5387"
+    },
+    {
+      "path": "src/models/luma_video_generation_task.rs",
+      "sha256": "d720a1806327ffb4488532eb262225516c06074b42fd1a1bb2492e974edd2610"
     },
     {
       "path": "src/models/mini_max_music_audio_setting.rs",
-      "sha256": "155748f1fc6b8d46685e05df1499b64b42260825b7f8e5a040a7feefc533a446"
+      "sha256": "b2dca64d705745abe1600faacc90874871b7d51a336ab9521927b5839f32ef66"
     },
     {
       "path": "src/models/mini_max_music_base_resp.rs",
@@ -540,23 +928,71 @@
     },
     {
       "path": "src/models/mini_max_music_generation_request.rs",
-      "sha256": "044f9807498bb34d346f23634695631443774e7168729ddc7708dd614318b61b"
+      "sha256": "78f882bda51ec7d5a4888678be99554fea5755b14bab468f27696a5221b535e9"
     },
     {
       "path": "src/models/mini_max_music_generation_response.rs",
       "sha256": "7b42d229ee395e4949e45c07f1c89a6cf8625f32923b88917a01124754a32c1d"
     },
     {
+      "path": "src/models/minimax_base_resp.rs",
+      "sha256": "3099482319b5cdab412c389e9b823dcbfdab215e19c4aec21b3707c786fe8918"
+    },
+    {
+      "path": "src/models/minimax_file_retrieve_response.rs",
+      "sha256": "7a495fea9071d51f4c549d37d58098f01513c0d2ac56cbd392ee1c644a6a49e2"
+    },
+    {
+      "path": "src/models/minimax_image_data.rs",
+      "sha256": "8b088f5de800feb580ffbbc7fa5373bb79c79150748f397b956e5e7d4fc69d8a"
+    },
+    {
+      "path": "src/models/minimax_image_generation_request.rs",
+      "sha256": "964e306bd851832e17f79bbe5ee69799bd8dab4dbc8ded12412c626596f8c514"
+    },
+    {
+      "path": "src/models/minimax_image_generation_response.rs",
+      "sha256": "4fb7070f6a7b1535b5922208bd983dd608020275dc87486697fad8de78976e4f"
+    },
+    {
+      "path": "src/models/minimax_stream_options.rs",
+      "sha256": "32273bf863469cc2a929818862b049d91be9c96a1c535382fb338b0040a0986e"
+    },
+    {
+      "path": "src/models/minimax_text_to_speech_request.rs",
+      "sha256": "d8f1333bb1dfa32c6406629800e5fbaaac064d3f250a3b70f3d915beeaa392a6"
+    },
+    {
+      "path": "src/models/minimax_text_to_speech_response.rs",
+      "sha256": "71a2f73ff91dfe6d2a0deed6e3cde99d86fca8444dbed2cacdb804e217635cd2"
+    },
+    {
+      "path": "src/models/minimax_timbre_weight.rs",
+      "sha256": "eef6059e65e12858ae9ee79395589663e6816309d117a26c629b6f3001e1b1b0"
+    },
+    {
+      "path": "src/models/minimax_video_generation_request.rs",
+      "sha256": "5bd9a1a7d758086cc67f43f05a3e1fc1a0599c3f9054a8dde0151c138b637afc"
+    },
+    {
+      "path": "src/models/minimax_video_generation_task.rs",
+      "sha256": "19ed9f2ffe326cfadcd2543e64d2de8153ceba9ce47a7cf997f383ef9375d651"
+    },
+    {
+      "path": "src/models/minimax_voice_modify.rs",
+      "sha256": "fb4de47001f2d6ab507bcd5175635fea09f14386de854a90fa909eac1dfd59a4"
+    },
+    {
       "path": "src/models/mod.rs",
-      "sha256": "c187db83ff7ab43d7debd1e615c31972ab88699d9bac1f69d96937ee4a7b4808"
+      "sha256": "0e98e8890442545d2c7a956c1afdd7b0bfc8e53d00a4d1f64187c738ddf421c7"
     },
     {
-      "path": "src/models/nano_banana_image_generation_request.rs",
-      "sha256": "0dd54dfbfdad75c20bbee0cf66265706246eb8864a914c17924434b8511a5510"
+      "path": "src/models/mureka_music_generation_request.rs",
+      "sha256": "d7e2f830d6b8854033621a73260ed023265e9f492dab9da9ce622e8a7316bd25"
     },
     {
-      "path": "src/models/nano_banana_image_generation_task.rs",
-      "sha256": "f8b31fa2352735b03ca92d39c5fc000e6a1f4ebd1e4f70bdf51340263eea060c"
+      "path": "src/models/mureka_music_generation_task.rs",
+      "sha256": "1fbf91aaf233a3d272a9585ed8bfc656fa6cd35b19812e69628e87342bda12f8"
     },
     {
       "path": "src/models/open_ai_annotation.rs",
@@ -564,7 +1000,7 @@
     },
     {
       "path": "src/models/open_ai_assistant_create_request.rs",
-      "sha256": "bfb7597ea2ffde649ecced3c9d256d8a9f55d9840d6192c34d217076e7490b99"
+      "sha256": "4d5a5653f38be2ce5120931e0d3e68ce2466e6017327ca05fa3fbdbd12759ad5"
     },
     {
       "path": "src/models/open_ai_assistant_list.rs",
@@ -572,7 +1008,7 @@
     },
     {
       "path": "src/models/open_ai_assistant_update_request.rs",
-      "sha256": "edf76fce42d1ef0f8d542435d7793b5c10eb17bee879be1eedb5a912fa4483cf"
+      "sha256": "5a2bfb18e64314213071ffa9b16b6005fe9817c62e420d8830ebe3d07614198a"
     },
     {
       "path": "src/models/open_ai_assistant.rs",
@@ -604,7 +1040,7 @@
     },
     {
       "path": "src/models/open_ai_batch_create_request.rs",
-      "sha256": "53329cc869c4070310c3242bc53e28debc0813ce0eb4aac77b741317f99b3a84"
+      "sha256": "db7325aa0499395f5af07de467b5360766e18cae51d21aaa67d2a12cf5ad61c1"
     },
     {
       "path": "src/models/open_ai_batch_list.rs",
@@ -672,7 +1108,7 @@
     },
     {
       "path": "src/models/open_ai_completion_create_request.rs",
-      "sha256": "ec78804c09464bdf36a1f1be93b20158925f51722612599069e2019f0a3bf90a"
+      "sha256": "5d75101652bb126fc88904cad65d7e772b5df143200bb9c4db484bfafc8efbad"
     },
     {
       "path": "src/models/open_ai_completion_tokens_details.rs",
@@ -684,7 +1120,7 @@
     },
     {
       "path": "src/models/open_ai_container_create_request.rs",
-      "sha256": "97e6bdb07f01fb0849df35d4151cad6e07cc9c912488796c06a96362ecc664db"
+      "sha256": "e5d833e3a249a0b21177d689441b7cc00d41da66e03b199ca6edcb804d8dd2a5"
     },
     {
       "path": "src/models/open_ai_container_file_create_multipart_request.rs",
@@ -716,7 +1152,7 @@
     },
     {
       "path": "src/models/open_ai_conversation_item_create_request.rs",
-      "sha256": "9cd33d99da904e7c960857ae7517246414f1dbde6582e006a26ff541a1de2703"
+      "sha256": "6ed7056f8aa1e71490484682f6e3c9fa5f339463ae9f46626062715e5e8d980c"
     },
     {
       "path": "src/models/open_ai_conversation_item_list.rs",
@@ -741,6 +1177,26 @@
     {
       "path": "src/models/open_ai_conversation.rs",
       "sha256": "fdb26c8fc836d0c297a9f6e61b2d69fdd9cab9808fd758640a743b851691b543"
+    },
+    {
+      "path": "src/models/open_ai_deep_seek_web_fetch_request.rs",
+      "sha256": "e83812f8c1c3dc326eb4347c2e2e9cb5bddd15443ba9cd7a8ee49fb07faba8c4"
+    },
+    {
+      "path": "src/models/open_ai_deep_seek_web_fetch_response.rs",
+      "sha256": "6d955c7f2571e3ac545fded38f32fa6c58e1e391e77a401955d4d18b65138389"
+    },
+    {
+      "path": "src/models/open_ai_deep_seek_web_search_request.rs",
+      "sha256": "e559a43bb3286386586677ed2f8bae2c50b38758486830613f4bceb15ffaed5a"
+    },
+    {
+      "path": "src/models/open_ai_deep_seek_web_search_response.rs",
+      "sha256": "8b3c4d3b9da2a0f0d587ea906552854a4999d4b688c6ddf2210daa6fe7645a0a"
+    },
+    {
+      "path": "src/models/open_ai_deep_seek_web_search_result.rs",
+      "sha256": "d257629a0ad094894d56faafed3abf6c3be1d33e31178065ac3f0fe8b795ffdc"
     },
     {
       "path": "src/models/open_ai_embedding_list.rs",
@@ -800,23 +1256,19 @@
     },
     {
       "path": "src/models/open_ai_image_edit_multipart_request.rs",
-      "sha256": "2561522e5140f7ea6d32e266e55372496edff79767b46b2cd6ae4141c7568272"
+      "sha256": "4b97dda8641f494d1b74d5dfc4af1733212b034ecb8d917949da5a3a32153922"
     },
     {
       "path": "src/models/open_ai_image_edit_request.rs",
-      "sha256": "828b2d9c34a3cd4438105cf3bdcc758b5ec1b520422002238782d5dc90cf3efe"
+      "sha256": "5b15089eab22c745ff4c80a4ab899c2995b60ed8b9bc57411c22c0109adbcaad"
     },
     {
       "path": "src/models/open_ai_image_generation_request.rs",
-      "sha256": "f05d80bcf507efb60fb2ddeddecd444fc02a8803a566fb561c0a04792b6bcb2d"
+      "sha256": "80d83c4c67835bb4e57fd4dffa76ca72f938b978defe93880821060d83b31077"
     },
     {
       "path": "src/models/open_ai_image_list.rs",
       "sha256": "18532abc0383d29040281648739273972e5f2662aa1a243be8b4df03d4fbff38"
-    },
-    {
-      "path": "src/models/open_ai_image_reference_input_list.rs",
-      "sha256": "782706046c9ff0eb4a381178e961c45b3e48ca9940c2c2a2f25490d8a03a3c79"
     },
     {
       "path": "src/models/open_ai_image_reference_input.rs",
@@ -896,7 +1348,7 @@
     },
     {
       "path": "src/models/open_ai_realtime_call_action_request.rs",
-      "sha256": "c2bb0896d32601ee599503c97ede4bd6bf0dbb6171ebc1b7df7b23de9142de3e"
+      "sha256": "257dfa47b89a9200fbcb12d83e001b6e45f9507be526215485b334096676c426"
     },
     {
       "path": "src/models/open_ai_realtime_call_create_request.rs",
@@ -908,7 +1360,11 @@
     },
     {
       "path": "src/models/open_ai_realtime_call_refer_request.rs",
-      "sha256": "d6f86d604e3a41f53f9454d63225e5af5eb6e5f57a524fdfdfefa551dae93d7c"
+      "sha256": "c6f878405051b8a68a1b61a64acce41e3d6b0511a8f41f9a69fd1bc214333584"
+    },
+    {
+      "path": "src/models/open_ai_realtime_call_reject_request.rs",
+      "sha256": "e8800b7ee3f60cd337b4dda130b36a9cfc600f578ab7f3f86acf17d2802af1f1"
     },
     {
       "path": "src/models/open_ai_realtime_call.rs",
@@ -916,7 +1372,7 @@
     },
     {
       "path": "src/models/open_ai_realtime_client_secret_create_request.rs",
-      "sha256": "6c03c8454e4f133d5de46241168eea86e95d161c8bca3cf98ceb24b59f2841d4"
+      "sha256": "717fddb511aa968ecd7aaab73145ec5d0c397cd2893146f31c94b182eb668167"
     },
     {
       "path": "src/models/open_ai_realtime_client_secret_value.rs",
@@ -928,7 +1384,7 @@
     },
     {
       "path": "src/models/open_ai_realtime_session_create_request.rs",
-      "sha256": "b82b5b68342cd16db123d37808727d3318819838b4306ac7eb72bb3d0cb786b7"
+      "sha256": "f931c6a89a28a417e13223b391ca5a03a998428c2be8c36272dc96be71d35abe"
     },
     {
       "path": "src/models/open_ai_realtime_session.rs",
@@ -936,7 +1392,7 @@
     },
     {
       "path": "src/models/open_ai_realtime_transcription_session_create_request.rs",
-      "sha256": "c9f89c707d7f872ba84e076a0036b00c551fc4ae9962c25e1adf3632d24327e9"
+      "sha256": "b5179ed98b9659b5cf7caa56ebe7425fa248cd6563d56af3636b88dc629ed5b8"
     },
     {
       "path": "src/models/open_ai_realtime_transcription_session.rs",
@@ -956,7 +1412,7 @@
     },
     {
       "path": "src/models/open_ai_response_compact_request.rs",
-      "sha256": "db65479b6d05eb5b497b5adaf4a3d86ed455ea9178a6dae07e5935168e64e379"
+      "sha256": "0f374fa3465ac44cc76886afb1c120dfb99d160e8724285836b4e29848039588"
     },
     {
       "path": "src/models/open_ai_response_error.rs",
@@ -980,7 +1436,7 @@
     },
     {
       "path": "src/models/open_ai_response_input_token_count_request.rs",
-      "sha256": "0d4145fc17a95de277a794a6dab34418dcf0825601c576d26cd716d97e087fc7"
+      "sha256": "ff215cae4d8e474929cb3e06c93d2b9c6d60449efa58838d2474e850759cc2d0"
     },
     {
       "path": "src/models/open_ai_response_input_token_count.rs",
@@ -1016,7 +1472,7 @@
     },
     {
       "path": "src/models/open_ai_run_create_request.rs",
-      "sha256": "63373e5ea04feff9efde44677a0eaf4aa296dd591e14c2c8c2ef620c083e9817"
+      "sha256": "c7a6a657bcc1105f189eda7cdfcf29ce56a10408cf7046d487a6a80fd6f43bbc"
     },
     {
       "path": "src/models/open_ai_run_list.rs",
@@ -1044,7 +1500,7 @@
     },
     {
       "path": "src/models/open_ai_speech_create_request.rs",
-      "sha256": "c16fb5fbcec2e12c9d743a988b1de06cb61667f4aac93c554f5732d0a57774e9"
+      "sha256": "a651664d8df61c4879932e5bb1d393a7070c40eceb95afec2c077f25291f5e13"
     },
     {
       "path": "src/models/open_ai_stream_options.rs",
@@ -1056,7 +1512,7 @@
     },
     {
       "path": "src/models/open_ai_thread_and_run_create_request.rs",
-      "sha256": "4324b1f1401f4980448007bdd00e1906c156e5944747f8d7616476dc56fc2af1"
+      "sha256": "0695ece77de0c6a4838bef923d8582e95575d5cddfa57f2dd9d577f5bc6cabd6"
     },
     {
       "path": "src/models/open_ai_thread_create_request.rs",
@@ -1116,7 +1572,7 @@
     },
     {
       "path": "src/models/open_ai_upload_create_request.rs",
-      "sha256": "b0f9f8d9d7523e5d4f2eb678013297c8f7792ea26862900b527d14b343785f1c"
+      "sha256": "9a11519c3127c889802fe3f689cd6ff9f4368bc36555fd5763da4f6f5421f834"
     },
     {
       "path": "src/models/open_ai_upload_part_multipart_request.rs",
@@ -1132,11 +1588,11 @@
     },
     {
       "path": "src/models/open_ai_vector_store_create_request.rs",
-      "sha256": "833ac43bfa08088059ffad68cb30d44b4b1532f964fd5af891ed119d55bb2678"
+      "sha256": "2c2a1ad6704b762d7f519bd567880c5d4bab1d9112fa60cc5454f4c24be115c1"
     },
     {
       "path": "src/models/open_ai_vector_store_file_batch_create_request.rs",
-      "sha256": "e369869a0b8c217ffa7f9d43e39458e11b857310338eed0ac7606e312157ff3b"
+      "sha256": "f94c562d4b56db04c63ac1698e0b844f5c633228ad0b253ed7a1646f8a8da380"
     },
     {
       "path": "src/models/open_ai_vector_store_file_batch.rs",
@@ -1200,15 +1656,15 @@
     },
     {
       "path": "src/models/open_ai_video_create_request.rs",
-      "sha256": "b9b1afbda086865c8374f6f333ef3a510481af213664bc1fee87fe7bf8c6af63"
+      "sha256": "00ac2d6ca9a56fd667a4a3a42be15e2064bc7a0f25d9312ccfe37c8c4d633a10"
     },
     {
       "path": "src/models/open_ai_video_edit_request.rs",
-      "sha256": "4e0dee79f03b89f4aa2b809bd516b5dac79b1aef4fd486b72dcc33b9893a078e"
+      "sha256": "dcef5517274adcee12a8c22d7a71d2174b596fe462f780414fa5db5e5da8be25"
     },
     {
       "path": "src/models/open_ai_video_extend_request.rs",
-      "sha256": "ce6d04f2845cf74189be2e8c302c976525ce83c3be0396f961049eb1a6cd01bb"
+      "sha256": "4a55553030a4579c6d771f45e6d2932d0e0e60daabb2f75a839b881c88f2c2a9"
     },
     {
       "path": "src/models/open_ai_video_list.rs",
@@ -1216,7 +1672,7 @@
     },
     {
       "path": "src/models/open_ai_video_remix_request.rs",
-      "sha256": "dacced8146e4abf8d953cf34b8a5ebd13537bf6d44e8699a3537683af2891404"
+      "sha256": "4ec737f4e341002c399bfe70fff293a7862f754dc26bdb1ded83ae634731fb1d"
     },
     {
       "path": "src/models/open_ai_video.rs",
@@ -1236,7 +1692,7 @@
     },
     {
       "path": "src/models/open_ai_voice_consent_update_request.rs",
-      "sha256": "89350699f1ce4fe8e5bd106c603cf78490cb060d9774ef5ca6619ed7dc3cbe8f"
+      "sha256": "a1817175009e299eb811a614d311165930bcb9c6bb39145c690973a585449705"
     },
     {
       "path": "src/models/open_ai_voice_consent.rs",
@@ -1244,11 +1700,11 @@
     },
     {
       "path": "src/models/open_ai_voice_create_multipart_request.rs",
-      "sha256": "6a2627624303e53ec021b0cafe5ecc5dbb38a838dcc5e36c91261986ee288740"
+      "sha256": "4f93b15a97a871e51f6765f005df7947bc021763291f99068950559a4ee11345"
     },
     {
       "path": "src/models/open_ai_voice_create_request.rs",
-      "sha256": "170fe7ab7b46747f641c6a0c92f3e5b646429575032d7b30c16cc2c367ab318b"
+      "sha256": "bb151d18169ec02057a3446e6c62908c158a35e96113bde830b877d637ac3b75"
     },
     {
       "path": "src/models/open_ai_voice_list.rs",
@@ -1257,6 +1713,26 @@
     {
       "path": "src/models/open_ai_voice.rs",
       "sha256": "cba4bea485fdf6783cd275dbb46d2223ade2f54761421002d1e3548e799efaa1"
+    },
+    {
+      "path": "src/models/pixverse_error_detail.rs",
+      "sha256": "17196cdddacbe9cc1321c4b6ab587a808e05fa409333802f79924f33a2cb1f70"
+    },
+    {
+      "path": "src/models/pixverse_task_resp.rs",
+      "sha256": "8cf23dfee0db01831bf0b9d8e80d5282537a0d6844cf860042bc132bacc2e23f"
+    },
+    {
+      "path": "src/models/pixverse_video_generation_request.rs",
+      "sha256": "01ef7ffe4700e6d99351dd6bd6c1aa37e01ba88b1e010d551af9936dd56d96fc"
+    },
+    {
+      "path": "src/models/pixverse_video_generation_response.rs",
+      "sha256": "922336a3efc5e2f8f390214fb358b59c749b77456dc2052fa9658c1017dd249e"
+    },
+    {
+      "path": "src/models/pixverse_video_generation_task.rs",
+      "sha256": "e7d05e1bd0c71a76aed5614516b1dcf1a90cb92612cfe49a078304b7b8920f39"
     },
     {
       "path": "src/models/provider_generated_media.rs",
@@ -1271,8 +1747,36 @@
       "sha256": "bd611d2561d4d75903252ac9b69c59333b8f296e27b7327c0b22aebf5ef3a3a0"
     },
     {
-      "path": "src/models/provider_task_result.rs",
-      "sha256": "50aa60c65d81a898b6d3197d9518f14281801485584070e4b667b1d15505630f"
+      "path": "src/models/runway_image_to_video_request.rs",
+      "sha256": "a1b00f3f606c077adc4e0033a9a9e41e698c1cea5f1bac3ab43e71c9655369db"
+    },
+    {
+      "path": "src/models/runway_task_accepted.rs",
+      "sha256": "d240ad2ce7a792f61b7f700ebce0014de78b27031a1ec5b86eef19de4d35d663"
+    },
+    {
+      "path": "src/models/runway_task.rs",
+      "sha256": "38450cdfbc37688a5aa02c428f1c94051c8e4a17c98f733ef5550f0b03396d00"
+    },
+    {
+      "path": "src/models/runway_text_to_image_request.rs",
+      "sha256": "e8d8b8b081758a50975857550285ebda832f6cb4862bc6b2a90ce8a5dde051af"
+    },
+    {
+      "path": "src/models/runway_text_to_video_request.rs",
+      "sha256": "6612432030af59e8bb0e9963447b3315ec73376056edce9924eec16d790bb396"
+    },
+    {
+      "path": "src/models/stability_audio_request.rs",
+      "sha256": "7218e26b834467a5c401145b8277b3819387edc66e47bd3790f636957b2fdb65"
+    },
+    {
+      "path": "src/models/stability_image_generation_request.rs",
+      "sha256": "be2f4db526436bd8a5455fe360260b3a19c117bed3d00f894f3ab28959b63e05"
+    },
+    {
+      "path": "src/models/stability_image_generation_response.rs",
+      "sha256": "2bfe8d91fb31ffabe5a346d8bacf2a91ac6fde101ac8f033b56d948495ece961"
     },
     {
       "path": "src/models/suno_music_generation_request.rs",
@@ -1291,60 +1795,188 @@
       "sha256": "e711b9eeed0195aa8c084f9290d48da1ea32513825d7081b93845e01b0372d0e"
     },
     {
+      "path": "src/models/type_safe_answer.rs",
+      "sha256": "21361e450679e864ed6898bf36eb8e3fc3425138cd19724e2a46b78cdfccfeda"
+    },
+    {
+      "path": "src/models/type_safe_question.rs",
+      "sha256": "3badf498a66ac74649754bc1eb1be9d8f1fd06b6664a897a6b8bfe0f895359fa"
+    },
+    {
+      "path": "src/models/type_safe_system_one_request.rs",
+      "sha256": "f3731a2adf08707eacdc42fb90dbb027274c20a43b14796922491c8d3843d0dd"
+    },
+    {
+      "path": "src/models/type_safe_system_one_response.rs",
+      "sha256": "18b2190fb62c90587649d6b403dffaf5bda3a7c3a4570380d09ffced91edb98e"
+    },
+    {
+      "path": "src/models/type_safe_usage.rs",
+      "sha256": "3011b903c58accadf391f4ea9ca1bd9b4c31ae822bd77d01d760a1ba64f190b0"
+    },
+    {
+      "path": "src/models/vidu_audio_generation_task.rs",
+      "sha256": "83418fda7bae4a99c3cfb7d3eff3849e821756db0c6e6a852b0b438d1d43b037"
+    },
+    {
       "path": "src/models/vidu_creation.rs",
-      "sha256": "5c09cb9f200bb1055e6b21aaa281ecfffca6ec4f11a6704b766a672d13f677c5"
+      "sha256": "e352ed34c7542701632031a6be2ce5f7fc7323193fd8461fc44affd3d66251a4"
     },
     {
       "path": "src/models/vidu_image_generation_task.rs",
-      "sha256": "04d6eea3631d53c63faf83e6980e8890c6171cc0a5a653488dfc6c19f5b6568d"
+      "sha256": "7f03ab187e850829293f1874333cad3199d84bc959859c079071a85f936d0534"
     },
     {
       "path": "src/models/vidu_image_to_video_request.rs",
-      "sha256": "6b0e575d23a5ce17f942f28561cd9c16313c6c530f67624e5a6ca606ad54d2db"
+      "sha256": "131a3745817cfabc7a6da20a1feecdd3f3095ae0eb2cc45a71f9d3469e56d18b"
     },
     {
       "path": "src/models/vidu_reference_to_image_request.rs",
-      "sha256": "2f0d1f1506fdbeb278a8c21f08d42600f8693250de5bf161023ec5f3095bcbe0"
+      "sha256": "1e6f32169f2716cceff41ae84351e84f92fa663266ddd0ea69da26d7d72f485a"
     },
     {
       "path": "src/models/vidu_reference_to_video_request.rs",
-      "sha256": "ac4b6998394dfdaad1689cdd94bc251f2dda098f52cea538002cedade538f9da"
+      "sha256": "cc796ae923e76ae391c1ad5265f6d93e4f7aad12e981629e3a441fc4a5687e09"
     },
     {
       "path": "src/models/vidu_start_end_to_video_request.rs",
-      "sha256": "d1d2bb629946ece07ac64a298c69c598c275093faeca76947814d0eeabc84f0b"
+      "sha256": "d5f5be3319609d5c85956787941efb5a801d4a94ab65ec169b73674e82c17753"
     },
     {
       "path": "src/models/vidu_task_creations_response.rs",
-      "sha256": "4bd287c3d10a527ba04bd01b8725c074de6bbf4e874c9cddfe46461c9bfc7335"
+      "sha256": "1b257a564e5379e54050dfffcf48366a1b1bdc4f76932f8132d61fdeca12e332"
     },
     {
       "path": "src/models/vidu_template_request.rs",
-      "sha256": "097a04f7be55d72ccd1b0234a277a6345c47b617ef06a6b1698699eed987f687"
+      "sha256": "c7a53d2931db999752bb830d76621c7a5b18ac98f35b08c130f59a83e5cc1f47"
+    },
+    {
+      "path": "src/models/vidu_template_task.rs",
+      "sha256": "2230b595a2039d3e76f1b80f8369deb4c8c99630b3f8689a94ca84e361683523"
+    },
+    {
+      "path": "src/models/vidu_text_to_audio_request.rs",
+      "sha256": "45ce841d08f7f2526369602b654563720d55f4ccf8c8d6adef0980ae5cd9ccfd"
     },
     {
       "path": "src/models/vidu_text_to_video_request.rs",
-      "sha256": "879703d0b36a44bc2e7ac9a03bf3828baa434eab048c6b11c1b0d24365d8ce16"
+      "sha256": "58767977931ff116eb94ab17d8ad3aa67334439d778d734d146bd61424d80d91"
+    },
+    {
+      "path": "src/models/vidu_timing_to_audio_request.rs",
+      "sha256": "55a150a025c1cc2a45925739bf8c84fa9144d2b0515f2633697a93cd76bc4f0f"
     },
     {
       "path": "src/models/vidu_video_generation_task.rs",
-      "sha256": "f76277839ca7f4ca668e944a1757bf8821922d5bb8263d8dcdfcad31c4c947a1"
+      "sha256": "354de8489e540e754b6ef94afa146139dca45724329f4567e074bd91b8ea0abc"
     },
     {
       "path": "src/models/volcengine_content_generation_task_create_request.rs",
-      "sha256": "03b66eab1a34e18955b1d40c1e5a2a2fd305c75b6e03610ac6290eb036ee196c"
+      "sha256": "e8e371dc75176d39759544762f37ba33dd1196f5adff14d30fbc974c6afd3d89"
     },
     {
       "path": "src/models/volcengine_content_generation_task_create_response.rs",
-      "sha256": "ac08e1f3f23ec36a411c73da0a5b5b94c48be6afde53271e3dfe0f57fd93d289"
+      "sha256": "1b384d410ac6e2a32f3e5dbfd2545ade1bb967670be2543b86470f585dae3932"
     },
     {
       "path": "src/models/volcengine_content_generation_task.rs",
-      "sha256": "743be2f5d2945e8d81c1857503da80ef60cbb9d4a33dff65abd104feba8e1e6d"
+      "sha256": "c55180e3eba76f2ac2b4cbafa9f4d52e221e1fe9e0fa45f4f5340468a1c3685c"
     },
     {
       "path": "src/models/volcengine_content_part.rs",
-      "sha256": "d5f61b2897731272698d248e4a770595dd8b70298fa0cdcedecfb66967bfb063"
+      "sha256": "a27afbcb6c9027c55fd12f01afe2ce9c936de6b727364c57a34d80e79990488c"
+    },
+    {
+      "path": "src/models/volcengine_image_generation_request.rs",
+      "sha256": "d4047d4f3a384505ba571f8e46556a0465e06987cbe4e247e268938b4d14912e"
+    },
+    {
+      "path": "src/models/volcengine_image_generation_response.rs",
+      "sha256": "33a895d5f5782a821b5b27ecb423e28e75ea15ec47b54b1adb89e05f21a58037"
+    },
+    {
+      "path": "src/models/xai_deferred_image_response.rs",
+      "sha256": "7a63d861b3f1170157a1ee853725c44097467816bae6da6d1328796eb74e1fba"
+    },
+    {
+      "path": "src/models/xai_generated_image.rs",
+      "sha256": "2b0a97cccd580e8220d8055d34e1417c73b8c676f8376b7a0c1e071c5a1defac"
+    },
+    {
+      "path": "src/models/xai_image_edit_request.rs",
+      "sha256": "6a659315c3a71122f2c7733d2418cca7575568ab1b88872dc03b8c70289ac14a"
+    },
+    {
+      "path": "src/models/xai_image_generation_request.rs",
+      "sha256": "3704f21f5be71779fd8c926999bfafd5657c1eaeaed259ce9f162a308318faed"
+    },
+    {
+      "path": "src/models/xai_image_generation_response.rs",
+      "sha256": "31274dea0769a9a302a49b78b25e20ec9241492f46d902249609ac35e186aa1e"
+    },
+    {
+      "path": "src/models/xai_image_url.rs",
+      "sha256": "310101d9a507433b13fbd50d98d3fc9a6806ba62a630155a5eea566107d9271c"
+    },
+    {
+      "path": "src/models/xai_usage.rs",
+      "sha256": "1c6cbef1b4549c498ee0c2448420fd07105f4376387f02161912112b960c7eeb"
+    },
+    {
+      "path": "src/models/xai_video_edit_request.rs",
+      "sha256": "6e9d75096497bcb72cb45b5c180e9f58c1ae3e13275b5e7581d9a20a641c980b"
+    },
+    {
+      "path": "src/models/xai_video_extension_request.rs",
+      "sha256": "8d42c47d6548f35f88cfb9b3b8af9e97c3c77adcf311ce62943c5c046fd53e86"
+    },
+    {
+      "path": "src/models/xai_video_generation_request.rs",
+      "sha256": "f7d53d456e99d693195439fb6d55002f4121fb489efa2540e3c0df193812a68c"
+    },
+    {
+      "path": "src/models/xai_video_generation_task.rs",
+      "sha256": "1e1a5e2d7b2bd3ad6f5feccf953eeffd9ff494fc96c317ea2bcf663529dc54f9"
+    },
+    {
+      "path": "src/models/xai_video_input.rs",
+      "sha256": "9b15a82bab82ac842158064e77237ee2f2e591241ee505e54c9706a52f054d8b"
+    },
+    {
+      "path": "src/models/xai_video_start_response.rs",
+      "sha256": "e1efa1c791f95cd0d15b099511949af5aea2fcb633edba37ff4e6c6409d98276"
+    },
+    {
+      "path": "src/models/xai_video_url.rs",
+      "sha256": "baa1acde9d6d7bb456bc73308c2c7a760b3fa6c5d4275fc00b2e17f0822b47d5"
+    },
+    {
+      "path": "src/models/zhipu_content_filter.rs",
+      "sha256": "a94b3b8d77ed50e868141b85f7cc403cddeebb49745b787e2a93a7ade24d9f83"
+    },
+    {
+      "path": "src/models/zhipu_image_generation_request.rs",
+      "sha256": "8ced8c6ec26f753c220641cd70192abd0d5125ed45e0caa8258f01bf98903d93"
+    },
+    {
+      "path": "src/models/zhipu_image_generation_response.rs",
+      "sha256": "1b688968f9bf7fe5239bfd5b7ce9b483c96e507c4924b00561a728eba8c2b0cb"
+    },
+    {
+      "path": "src/models/zhipu_image_result.rs",
+      "sha256": "c9795317d1224c85645bf20c8ce3002923c7a83591040699e2ec483569dcc61e"
+    },
+    {
+      "path": "src/models/zhipu_video_generation_request.rs",
+      "sha256": "3242398f80d4db83f8ef56799880144a8a0a64def3b80b511fffc80c3c696d73"
+    },
+    {
+      "path": "src/models/zhipu_video_generation_task.rs",
+      "sha256": "6d26208146974a895fc29c1d70f5b3d99b503ef64c543c0ef963c1998d9384e5"
+    },
+    {
+      "path": "src/models/zhipu_video_result.rs",
+      "sha256": "f13bd143d14ad035a7b6b10f6ebc6167c0f0742ae50e82d1f535789ace840119"
     }
   ],
   "scaffoldFiles": [

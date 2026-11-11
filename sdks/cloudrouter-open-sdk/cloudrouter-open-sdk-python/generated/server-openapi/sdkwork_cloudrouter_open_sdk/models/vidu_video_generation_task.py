@@ -9,8 +9,18 @@ if TYPE_CHECKING:
 @dataclass
 class ViduVideoGenerationTask:
     """Vidu vidu video generation task schema exposed by Cloud Router vendor routing."""
+    aspect_ratio: Optional[str] = None
     created_at: Optional[str] = None
     creations: Optional[List[ViduCreation]] = None
+    credits: Optional[int] = None
+    duration: Optional[int] = None
+    err_code: Optional[str] = None
     model: Optional[str] = None
+    off_peak: Optional[bool] = None
+    payload: Optional[str] = None
+    prompt: Optional[str] = None
+    resolution: Optional[str] = None
+    seed: Optional[int] = None
     state: Optional[str] = None
     task_id: Optional[str] = None
+    watermark: Optional[bool] = None

@@ -1,17 +1,27 @@
 package types
 
-// Volcengine Ark volcengine content generation task schema exposed by Cloud Router vendor routing.
+// Volcengine Ark video generation task state returned by the query endpoint.
 type VolcengineContentGenerationTask struct {
-	Content []VolcengineContentPart `json:"content"`
-	CreatedAt string `json:"created_at"`
+	Content ArkVideoTaskContent `json:"content"`
+	CreatedAt int `json:"created_at"`
+	Draft bool `json:"draft"`
+	Duration int `json:"duration"`
 	Error ProviderTaskError `json:"error"`
+	ExecutionExpiresAfter int `json:"execution_expires_after"`
+	Frames int `json:"frames"`
+	Framespersecond int `json:"framespersecond"`
+	GenerateAudio bool `json:"generate_audio"`
 	Id string `json:"id"`
 	Model string `json:"model"`
-	Prompt string `json:"prompt"`
-	Result ProviderTaskResult `json:"result"`
-	State string `json:"state"`
+	OutputFormat string `json:"output_format"`
+	Priority int `json:"priority"`
+	Ratio string `json:"ratio"`
+	Resolution string `json:"resolution"`
+	SafetyIdentifier string `json:"safety_identifier"`
+	Seed int `json:"seed"`
+	ServiceTier string `json:"service_tier"`
 	Status string `json:"status"`
-	TaskId string `json:"task_id"`
-	UpdatedAt string `json:"updated_at"`
-	Videos []ProviderGeneratedMedia `json:"videos"`
+	Tools []ArkWebSearchTool `json:"tools"`
+	UpdatedAt int `json:"updated_at"`
+	Usage ArkVideoUsage `json:"usage"`
 }

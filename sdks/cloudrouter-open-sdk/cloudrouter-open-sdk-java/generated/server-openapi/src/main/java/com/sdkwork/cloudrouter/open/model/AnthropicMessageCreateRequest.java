@@ -1,13 +1,19 @@
 package com.sdkwork.cloudrouter.open.model;
 
 import java.util.List;
-import java.util.Map;
 
 public class AnthropicMessageCreateRequest {
+    private AnthropicCacheControl cacheControl;
+    private AnthropicContainer container;
+    private AnthropicDiagnostics diagnostics;
+    private String inferenceGeo;
     private Integer maxTokens;
     private List<AnthropicMessageParam> messages;
-    private Map<String, String> metadata;
+    private AnthropicMetadata metadata;
     private String model;
+    private AnthropicOutputConfig outputConfig;
+    private String serviceTier;
+    private String speed;
     private List<String> stopSequences;
     private Boolean stream;
     private String system;
@@ -17,6 +23,38 @@ public class AnthropicMessageCreateRequest {
     private List<AnthropicTool> tools;
     private Integer topK;
     private Double topP;
+
+    public AnthropicCacheControl getCacheControl() {
+        return this.cacheControl;
+    }
+
+    public void setCacheControl(AnthropicCacheControl cacheControl) {
+        this.cacheControl = cacheControl;
+    }
+
+    public AnthropicContainer getContainer() {
+        return this.container;
+    }
+
+    public void setContainer(AnthropicContainer container) {
+        this.container = container;
+    }
+
+    public AnthropicDiagnostics getDiagnostics() {
+        return this.diagnostics;
+    }
+
+    public void setDiagnostics(AnthropicDiagnostics diagnostics) {
+        this.diagnostics = diagnostics;
+    }
+
+    public String getInferenceGeo() {
+        return this.inferenceGeo;
+    }
+
+    public void setInferenceGeo(String inferenceGeo) {
+        this.inferenceGeo = inferenceGeo;
+    }
 
     public Integer getMaxTokens() {
         return this.maxTokens;
@@ -34,11 +72,11 @@ public class AnthropicMessageCreateRequest {
         this.messages = messages;
     }
 
-    public Map<String, String> getMetadata() {
+    public AnthropicMetadata getMetadata() {
         return this.metadata;
     }
 
-    public void setMetadata(Map<String, String> metadata) {
+    public void setMetadata(AnthropicMetadata metadata) {
         this.metadata = metadata;
     }
 
@@ -48,6 +86,30 @@ public class AnthropicMessageCreateRequest {
 
     public void setModel(String model) {
         this.model = model;
+    }
+
+    public AnthropicOutputConfig getOutputConfig() {
+        return this.outputConfig;
+    }
+
+    public void setOutputConfig(AnthropicOutputConfig outputConfig) {
+        this.outputConfig = outputConfig;
+    }
+
+    public String getServiceTier() {
+        return this.serviceTier;
+    }
+
+    public void setServiceTier(String serviceTier) {
+        this.serviceTier = serviceTier;
+    }
+
+    public String getSpeed() {
+        return this.speed;
+    }
+
+    public void setSpeed(String speed) {
+        this.speed = speed;
     }
 
     public List<String> getStopSequences() {

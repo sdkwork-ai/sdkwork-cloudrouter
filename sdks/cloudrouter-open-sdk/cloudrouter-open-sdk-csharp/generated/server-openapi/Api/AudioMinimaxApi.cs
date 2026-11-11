@@ -16,11 +16,11 @@ namespace Sdkwork.CloudRouter.Open.Api
         }
 
         /// <summary>
-        /// Minimax create music generation
+        /// MiniMax speech synthesis
         /// </summary>
-        public async Task<Sdkwork.CloudRouter.Open.Models.MiniMaxMusicGenerationResponse?> CreateV1MusicGenerationAsync(Sdkwork.CloudRouter.Open.Models.MiniMaxMusicGenerationRequest body)
+        public async Task<Sdkwork.CloudRouter.Open.Models.MinimaxTextToSpeechResponse?> CreateV1T2aVAsync(Sdkwork.CloudRouter.Open.Models.MinimaxTextToSpeechRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.MiniMaxMusicGenerationResponse>("/minimax/v1/music_generation", body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.MinimaxTextToSpeechResponse>("/minimax/v1/t2a_v2", body, null, null, "application/json");
         }
 
 

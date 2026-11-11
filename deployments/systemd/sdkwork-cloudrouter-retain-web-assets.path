@@ -1,0 +1,9 @@
+[Unit]
+Description=Watch Cloud Router rollback releases for newly retired Adaptive Web chunks
+
+[Path]
+PathModified=/opt/deploy/sdkwork-cloudrouter/rollback
+Unit=sdkwork-cloudrouter-retain-web-assets.service
+
+[Install]
+WantedBy=paths.target

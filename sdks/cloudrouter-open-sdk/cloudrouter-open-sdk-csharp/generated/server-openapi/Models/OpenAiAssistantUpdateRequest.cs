@@ -11,6 +11,7 @@ namespace Sdkwork.CloudRouter.Open.Models
         public Dictionary<string, string>? Metadata { get; set; }
         public string? Model { get; set; }
         public string? Name { get; set; }
+        public string? ReasoningEffort { get; set; }
         public string? ResponseFormat { get; set; }
         public double? Temperature { get; set; }
         public string? ToolResources { get; set; }

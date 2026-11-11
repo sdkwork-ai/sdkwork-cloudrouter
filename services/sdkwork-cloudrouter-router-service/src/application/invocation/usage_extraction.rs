@@ -1740,13 +1740,37 @@ fn provider_reported_business_failure(invocation: &Invocation) -> bool {
     if body.get("error").is_some_and(non_empty_error_value) {
         return true;
     }
-    if let Some(status) = body.get("status").and_then(Value::as_str) {
-        if matches!(
-            status.trim().to_ascii_lowercase().as_str(),
-            "failed" | "error" | "cancelled" | "canceled" | "expired"
-        ) {
-            return true;
-        }
+    if body
+        .get("status")
+        .and_then(Value::as_str)
+        .is_some_and(is_failure_word)
+    {
+        return true;
+    }
+    // Luma 用 `state`，DashScope 把状态放在 `output.task_status`。
+    if body
+        .get("state")
+        .and_then(Value::as_str)
+        .is_some_and(is_failure_word)
+        || body
+            .get("task_status")
+            .and_then(Value::as_str)
+            .is_some_and(is_failure_word)
+        || body
+            .get("output")
+            .and_then(|output| output.get("task_status"))
+            .and_then(Value::as_str)
+            .is_some_and(is_failure_word)
+    {
+        return true;
+    }
+    // PixVerse 的业务码是 `ErrCode`（HTTP 仍可能是 200）。
+    if body
+        .get("ErrCode")
+        .and_then(integer_like)
+        .is_some_and(|code| code != 0)
+    {
+        return true;
     }
     if body
         .get("base_resp")
@@ -1777,6 +1801,14 @@ fn provider_reported_business_failure(invocation: &Invocation) -> bool {
         }
     }
     false
+}
+
+/// 厂商任务状态里的失败词汇（大小写不敏感）。
+fn is_failure_word(value: &str) -> bool {
+    matches!(
+        value.trim().to_ascii_lowercase().as_str(),
+        "failed" | "fail" | "error" | "cancelled" | "canceled" | "expired"
+    )
 }
 
 /// `error` 值是否真的携带失败信息。

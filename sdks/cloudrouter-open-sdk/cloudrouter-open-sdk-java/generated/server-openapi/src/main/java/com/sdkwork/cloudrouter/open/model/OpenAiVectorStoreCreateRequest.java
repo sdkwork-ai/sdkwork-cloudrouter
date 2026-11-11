@@ -5,6 +5,7 @@ import java.util.Map;
 
 public class OpenAiVectorStoreCreateRequest {
     private String chunkingStrategy;
+    private String description;
     private String expiresAfter;
     private List<String> fileIds;
     private Map<String, String> metadata;
@@ -16,6 +17,14 @@ public class OpenAiVectorStoreCreateRequest {
 
     public void setChunkingStrategy(String chunkingStrategy) {
         this.chunkingStrategy = chunkingStrategy;
+    }
+
+    public String getDescription() {
+        return this.description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getExpiresAfter() {

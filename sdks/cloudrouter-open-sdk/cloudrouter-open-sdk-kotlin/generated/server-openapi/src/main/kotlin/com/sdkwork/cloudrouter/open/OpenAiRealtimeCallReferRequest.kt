@@ -1,6 +1,5 @@
 package com.sdkwork.cloudrouter.open
 
 data class OpenAiRealtimeCallReferRequest(
-    val metadata: Map<String, String>? = null,
-    val target: String? = null
+    val targetUri: String? = null
 )

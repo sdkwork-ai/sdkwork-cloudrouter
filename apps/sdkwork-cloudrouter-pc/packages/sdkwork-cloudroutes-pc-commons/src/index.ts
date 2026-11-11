@@ -10,6 +10,7 @@
 // against 45 bare ones, and the barrelled subpath entries in package.json already point
 // straight at `.ts`/`.tsx`.
 export * from './components/Navbar.tsx';
+export * from './components/BrandMark.tsx';
 export * from './components/PortalAccountMenu.tsx';
 export * from './components/Footer.tsx';
 export * from './components/QrCodePlaceholder.tsx';

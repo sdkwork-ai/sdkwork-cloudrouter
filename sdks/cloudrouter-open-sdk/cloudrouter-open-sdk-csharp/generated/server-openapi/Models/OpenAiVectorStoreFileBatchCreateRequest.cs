@@ -8,6 +8,7 @@ namespace Sdkwork.CloudRouter.Open.Models
     {
         public Dictionary<string, string>? Attributes { get; set; }
         public string? ChunkingStrategy { get; set; }
-        public List<string> FileIds { get; set; }
+        public List<string>? FileIds { get; set; }
+        public List<Dictionary<string, string>>? Files { get; set; }
     }
 }

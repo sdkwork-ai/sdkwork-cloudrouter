@@ -26,8 +26,8 @@ public class RealtimeApi {
     }
 
     /** Hang up realtime call */
-    public OpenAiRealtimeCall createCallsHangup(String callId, OpenAiRealtimeCallActionRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/realtime/calls/" + serializePathParameter(callId, new PathParameterSpec("call_id", "simple", false)) + "/hangup"), body, null, null, "application/json");
+    public OpenAiRealtimeCall createCallsHangup(String callId) throws Exception {
+        Object raw = client.post(ApiPaths.aiPath("/realtime/calls/" + serializePathParameter(callId, new PathParameterSpec("call_id", "simple", false)) + "/hangup"), null);
         return client.convertValue(raw, new TypeReference<OpenAiRealtimeCall>() {});
     }
 
@@ -38,7 +38,7 @@ public class RealtimeApi {
     }
 
     /** Reject realtime call */
-    public OpenAiRealtimeCall createCallsReject(String callId, OpenAiRealtimeCallActionRequest body) throws Exception {
+    public OpenAiRealtimeCall createCallsReject(String callId, OpenAiRealtimeCallRejectRequest body) throws Exception {
         Object raw = client.post(ApiPaths.aiPath("/realtime/calls/" + serializePathParameter(callId, new PathParameterSpec("call_id", "simple", false)) + "/reject"), body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<OpenAiRealtimeCall>() {});
     }

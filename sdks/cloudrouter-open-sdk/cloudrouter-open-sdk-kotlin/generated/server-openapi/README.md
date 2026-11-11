@@ -71,19 +71,42 @@ val client = SdkworkAiClient(config)
 
 ## API Modules
 
+- `client.imagesAlibaba` - images_alibaba API
+- `client.videosAlibaba` - videos_alibaba API
+- `client.audioAlibaba` - audio_alibaba API
 - `client.filesAnthropic` - files_anthropic API
 - `client.chatAnthropic` - chat_anthropic API
 - `client.batchesAnthropic` - batches_anthropic API
+- `client.videosBlackForestLabs` - videos_black_forest_labs API
+- `client.imagesBlackForestLabs` - images_black_forest_labs API
+- `client.videosBytedance` - videos_bytedance API
+- `client.imagesBytedance` - images_bytedance API
+- `client.audioBytedance` - audio_bytedance API
+- `client.musicElevenlabs` - music_elevenlabs API
 - `client.audioElevenlabs` - audio_elevenlabs API
 - `client.responsesGoogle` - responses_google API
 - `client.filesGoogle` - files_google API
+- `client.videosGoogle` - videos_google API
 - `client.embeddingsGoogle` - embeddings_google API
 - `client.chatGoogle` - chat_google API
+- `client.imagesGoogle` - images_google API
+- `client.videosJimeng` - videos_jimeng API
+- `client.audioKling` - audio_kling API
+- `client.imagesKling` - images_kling API
 - `client.videosKling` - videos_kling API
-- `client.imagesMidjourney` - images_midjourney API
+- `client.videosLumaAi` - videos_luma_ai API
+- `client.videosMinimax` - videos_minimax API
+- `client.imagesMinimax` - images_minimax API
+- `client.musicMinimax` - music_minimax API
 - `client.audioMinimax` - audio_minimax API
-- `client.imagesNanoBanana` - images_nano_banana API
-- `client.audioSuno` - audio_suno API
+- `client.musicMureka` - music_mureka API
+- `client.videosPixverse` - videos_pixverse API
+- `client.videosRunway` - videos_runway API
+- `client.imagesRunway` - images_runway API
+- `client.audioStabilityAi` - audio_stability_ai API
+- `client.imagesStabilityAi` - images_stability_ai API
+- `client.musicSuno` - music_suno API
+- `client.chatTypesafe` - chat_typesafe API
 - `client.assistants` - assistant API
 - `client.audio` - audio API
 - `client.batches` - batch API
@@ -99,15 +122,75 @@ val client = SdkworkAiClient(config)
 - `client.realtime` - realtime API
 - `client.responses` - response API
 - `client.threads` - thread API
+- `client.tool` - tool API
 - `client.uploads` - upload API
 - `client.vectorStores` - vector_store API
 - `client.video` - video API
 - `client.videosVidu` - videos_vidu API
 - `client.imagesVidu` - images_vidu API
+- `client.audioVidu` - audio_vidu API
 - `client.audioVolcengine` - audio_volcengine API
 - `client.videosVolcengine` - videos_volcengine API
+- `client.imagesVolcengine` - images_volcengine API
+- `client.imagesXai` - images_xai API
+- `client.videosXai` - videos_xai API
+- `client.videosZhipu` - videos_zhipu API
+- `client.imagesZhipu` - images_zhipu API
 
 ## Usage Examples
+
+### images_alibaba
+
+```kotlin
+// Alibaba Wanx image generation
+val body = AlibabaImageGenerationRequest(
+    input = linkedMapOf<String, Any>(
+    "negative_prompt" to "negative-prompt",
+    "prompt" to "prompt"
+),
+    model = "model",
+    parameters = linkedMapOf<String, Any>(
+    "n" to 1,
+    "prompt_extend" to false,
+    "seed" to 3,
+    "size" to "size",
+    "watermark" to true
+)
+)
+val xDashScopeAsync = "enable"
+val result = client.imagesAlibaba.createApiV1ServicesAigcText2imageImageSynthesi(body, xDashScopeAsync)
+println(result)
+```
+
+### videos_alibaba
+
+```kotlin
+// Alibaba Wan retrieve video generation task
+val taskId = "1"
+val result = client.videosAlibaba.listApiV1Tasks(taskId)
+println(result)
+```
+
+### audio_alibaba
+
+```kotlin
+// Alibaba Qwen TTS speech synthesis
+val body = AlibabaSpeechRequest(
+    input = linkedMapOf<String, Any>(
+    "instructions" to "instructions",
+    "language_type" to "Auto",
+    "optimize_instructions" to true,
+    "text" to "text",
+    "voice" to "voice"
+),
+    model = "model",
+    parameters = linkedMapOf<String, Any>(
+    "value" to "value"
+)
+)
+val result = client.audioAlibaba.createApiV1ServicesAudioTtsSpeechSynthesizer(body)
+println(result)
+```
 
 ### files_anthropic
 
@@ -118,7 +201,8 @@ val params = linkedMapOf<String, Any>(
     "after_id" to "1",
     "limit" to 3
 )
-val result = client.filesAnthropic.getListV1Files(params)
+val anthropicVersion = "anthropic-version"
+val result = client.filesAnthropic.getListV1Files(params, anthropicVersion)
 println(result)
 ```
 
@@ -127,29 +211,89 @@ println(result)
 ```kotlin
 // Anthropic Claude message
 val body = AnthropicMessageCreateRequest(
-    maxTokens = 1,
+    cacheControl = linkedMapOf<String, Any>(
+    "ttl" to "5m",
+    "type" to "ephemeral"
+),
+    container = linkedMapOf<String, Any>(
+    "id" to "1",
+    "skills" to listOf(AnthropicSkill())
+),
+    diagnostics = linkedMapOf<String, Any>(
+    "previous_message_id" to "1"
+),
+    inferenceGeo = "inference-geo",
+    maxTokens = 5,
     messages = listOf(AnthropicMessageParam()),
     metadata = linkedMapOf<String, Any>(
-    "value" to "value"
+    "user_id" to "1"
 ),
     model = "model",
+    outputConfig = linkedMapOf<String, Any>(
+    "effort" to "low",
+    "format" to linkedMapOf<String, Any>(
+    "schema" to linkedMapOf<String, Any>(
+    "additionalProperties" to true,
+    "description" to "description",
+    "enum" to listOf("enum"),
+    "items" to "items",
+    "properties" to linkedMapOf<String, Any>(
+    "value" to "value"
+),
+    "required" to listOf("required"),
+    "type" to "type"
+),
+    "type" to "json_schema"
+)
+),
+    serviceTier = "auto",
+    speed = "standard",
     stopSequences = listOf("stop-sequences"),
-    stream = false,
+    stream = true,
     system = "system",
-    temperature = 8,
+    temperature = 15,
     thinking = linkedMapOf<String, Any>(
     "budget_tokens" to 1,
-    "type" to "type"
+    "display" to "summarized",
+    "type" to "enabled"
 ),
     toolChoice = linkedMapOf<String, Any>(
+    "disable_parallel_tool_use" to true,
     "name" to "name",
+    "type" to "auto"
+),
+    tools = listOf(linkedMapOf<String, Any>(
+    "allowed_callers" to listOf("direct"),
+    "cache_control" to linkedMapOf<String, Any>(
+    "ttl" to "5m",
+    "type" to "ephemeral"
+),
+    "defer_loading" to true,
+    "description" to "description",
+    "eager_input_streaming" to true,
+    "input_examples" to listOf(linkedMapOf<String, Any>(
+    "value" to "value"
+)),
+    "input_schema" to linkedMapOf<String, Any>(
+    "additionalProperties" to true,
+    "description" to "description",
+    "enum" to listOf("enum"),
+    "items" to "items",
+    "properties" to linkedMapOf<String, Any>(
+    "value" to "value"
+),
+    "required" to listOf("required"),
     "type" to "type"
 ),
-    tools = listOf(AnthropicTool()),
-    topK = 12,
-    topP = 13
+    "name" to "name",
+    "strict" to true,
+    "type" to "custom"
+)),
+    topK = 19,
+    topP = 20
 )
-val result = client.chatAnthropic.createV1Message(body)
+val anthropicVersion = "anthropic-version"
+val result = client.chatAnthropic.createV1Message(body, anthropicVersion)
 println(result)
 ```
 
@@ -162,7 +306,169 @@ val params = linkedMapOf<String, Any>(
     "after_id" to "1",
     "limit" to 3
 )
-val result = client.batchesAnthropic.getListV1MessagesBatches(params)
+val anthropicVersion = "anthropic-version"
+val result = client.batchesAnthropic.getListV1MessagesBatches(params, anthropicVersion)
+println(result)
+```
+
+### videos_black_forest_labs
+
+```kotlin
+// Black Forest Labs FLUX 3 video generation
+val body = BlackForestLabsVideoGenerationRequest(
+    aspectRatio = "21:9",
+    draft = false,
+    draftCache = "draft-cache",
+    duration = 4,
+    generateAudio = true,
+    keyframes = "keyframes",
+    mode = "t2v",
+    prompt = "prompt",
+    resolution = "hd",
+    safetyTolerance = 10,
+    startVideo = "start-video",
+    user = "user",
+    version = "version"
+)
+val result = client.videosBlackForestLabs.createFlux3Video(body)
+println(result)
+```
+
+### images_black_forest_labs
+
+```kotlin
+// Black Forest Labs retrieve generation result
+val params = linkedMapOf<String, Any>(
+    "id" to "1"
+)
+val result = client.imagesBlackForestLabs.listGetResult(params)
+println(result)
+```
+
+### videos_bytedance
+
+```kotlin
+// ByteDance Seedance video generation
+val body = BytedanceVideoGenerationRequest(
+    callbackUrl = "https://example.com",
+    cameraFixed = false,
+    content = listOf(ArkContentPart()),
+    draft = false,
+    duration = 5,
+    executionExpiresAfter = 6,
+    frames = 7,
+    generateAudio = false,
+    model = "model",
+    omniReferenceTaskType = "auto",
+    outputFormat = "mp4",
+    priority = 12,
+    ratio = "16:9",
+    resolution = "480p",
+    returnLastFrame = true,
+    safetyIdentifier = "safety-identifier",
+    seed = 17,
+    serviceTier = "default",
+    tools = listOf(ArkWebSearchTool()),
+    watermark = false
+)
+val result = client.videosBytedance.createApiV3ContentsGenerationsTask(body)
+println(result)
+```
+
+### images_bytedance
+
+```kotlin
+// ByteDance Seedream image generation
+val body = BytedanceImageGenerationRequest(
+    background = "transparent",
+    image = "image",
+    layerDecomposition = true,
+    model = "model",
+    optimizePromptOptions = linkedMapOf<String, Any>(
+    "mode" to "standard"
+),
+    outputFormat = "png",
+    prompt = "prompt",
+    responseFormat = "url",
+    sequentialImageGeneration = "auto",
+    sequentialImageGenerationOptions = linkedMapOf<String, Any>(
+    "max_images" to 1
+),
+    size = "size",
+    stream = false,
+    tools = listOf(ArkWebSearchTool()),
+    watermark = false
+)
+val result = client.imagesBytedance.createApiV3ImagesGeneration(body)
+println(result)
+```
+
+### audio_bytedance
+
+```kotlin
+// ByteDance Seed TTS speech synthesis
+val body = BytedanceSpeechRequest(
+    reqParams = linkedMapOf<String, Any>(
+    "additions" to "additions",
+    "audio_params" to linkedMapOf<String, Any>(
+    "format" to "mp3",
+    "loudness_rate" to 2,
+    "sample_rate" to 3,
+    "speech_rate" to 4
+),
+    "model" to "model",
+    "pronunciation_dict" to linkedMapOf<String, Any>(
+    "value" to "value"
+),
+    "speaker" to "speaker",
+    "ssml" to "ssml",
+    "text" to "text",
+    "tone" to listOf("tone")
+)
+)
+val xApiResourceId = "seed-tts-2.0"
+val xApiRequestId = "X-Api-Request-Id"
+val result = client.audioBytedance.createApiV3TtsUnidirectional(body, xApiResourceId, xApiRequestId)
+println(result)
+```
+
+### music_elevenlabs
+
+```kotlin
+// ElevenLabs music generation
+val body = ElevenLabsMusicGenerationRequest(
+    compositionPlan = linkedMapOf<String, Any>(
+    "negative_global_styles" to listOf("negative-global-styles"),
+    "positive_global_styles" to listOf("positive-global-styles"),
+    "sections" to listOf(linkedMapOf<String, Any>(
+    "value" to "value"
+))
+),
+    finetuneId = "1",
+    finetuneStrength = 3,
+    forceInstrumental = false,
+    generationMode = "track",
+    lyricsText = "lyrics-text",
+    modelId = "music_v1",
+    musicLengthMs = 8,
+    musicPrompt = linkedMapOf<String, Any>(
+    "negative_global_styles" to listOf("negative-global-styles"),
+    "positive_global_styles" to listOf("positive-global-styles"),
+    "sections" to listOf(linkedMapOf<String, Any>(
+    "value" to "value"
+))
+),
+    prompt = "prompt",
+    respectSectionsDurations = true,
+    seed = 12,
+    signWithC2pa = true,
+    storeForInpainting = false,
+    usePhoneticNames = true
+)
+val params = linkedMapOf<String, Any>(
+    "output_format" to "output-format"
+)
+val result = client.musicElevenlabs.createV1Music(body, params)
 println(result)
 ```
 
@@ -173,7 +479,7 @@ println(result)
 val body = ElevenLabsSoundGenerationRequest(
     durationSeconds = 1,
     loop = false,
-    modelId = "1",
+    modelId = "eleven_text_to_sound_v2",
     promptInfluence = 4,
     text = "text"
 )
@@ -208,6 +514,16 @@ val result = client.filesGoogle.getListV1betaFiles(params)
 println(result)
 ```
 
+### videos_google
+
+```kotlin
+// Google Gemini retrieve video operation (Veo)
+val model = "model"
+val operationId = "1"
+val result = client.videosGoogle.listV1betaModelsOperations(model, operationId)
+println(result)
+```
+
 ### embeddings_google
 
 ```kotlin
@@ -230,10 +546,29 @@ val body = GoogleCountTokensRequest(
     generateContentRequest = linkedMapOf<String, Any>(
     "cachedContent" to "cachedcontent",
     "contents" to listOf(GoogleContent()),
+    "continuationToken" to "token",
     "generationConfig" to linkedMapOf<String, Any>(
-    "candidateCount" to 1,
-    "maxOutputTokens" to 2,
+    "audioTranscriptionConfig" to linkedMapOf<String, Any>(
+    "value" to "value"
+),
+    "candidateCount" to 2,
+    "enableAffectiveDialog" to true,
+    "enableEnhancedCivicAnswers" to false,
+    "frequencyPenalty" to 5,
+    "imageConfig" to linkedMapOf<String, Any>(
+    "value" to "value"
+),
+    "logprobs" to 7,
+    "maxOutputTokens" to 8,
+    "mediaResolution" to "MEDIA_RESOLUTION_UNSPECIFIED",
+    "presencePenalty" to 10,
+    "responseFormat" to linkedMapOf<String, Any>(
+    "value" to "value"
+),
+    "responseJsonSchema" to "responsejsonschema",
+    "responseLogprobs" to true,
     "responseMimeType" to "responsemimetype",
+    "responseModalities" to listOf("responsemodalities"),
     "responseSchema" to linkedMapOf<String, Any>(
     "description" to "description",
     "enum" to listOf("enum"),
@@ -246,16 +581,29 @@ val body = GoogleCountTokensRequest(
     "required" to listOf("required"),
     "type" to "type"
 ),
+    "seed" to 17,
+    "speechConfig" to linkedMapOf<String, Any>(
+    "value" to "value"
+),
     "stopSequences" to listOf("stopsequences"),
-    "temperature" to 6,
+    "temperature" to 20,
     "thinkingConfig" to linkedMapOf<String, Any>(
     "includeThoughts" to true,
     "thinkingBudget" to 2
 ),
-    "topK" to 8,
-    "topP" to 9
+    "topK" to 22,
+    "topP" to 23,
+    "translationConfig" to linkedMapOf<String, Any>(
+    "value" to "value"
+)
 ),
+    "labels" to linkedMapOf<String, Any>(
+    "value" to "value"
+),
+    "model" to "model",
     "safetySettings" to listOf(GoogleSafetySetting()),
+    "serviceTier" to "unspecified",
+    "store" to true,
     "systemInstruction" to linkedMapOf<String, Any>(
     "parts" to listOf(GooglePart()),
     "role" to "role"
@@ -270,6 +618,77 @@ val body = GoogleCountTokensRequest(
 )
 )
 val result = client.chatGoogle.createV1betaModelsModelCountToken(model, body)
+println(result)
+```
+
+### images_google
+
+```kotlin
+// Google Gemini image generation
+val model = "model"
+val body = GeminiImageGenerationRequest(
+    instances = listOf(linkedMapOf<String, Any>(
+    "image" to linkedMapOf<String, Any>(
+    "value" to "value"
+),
+    "prompt" to "prompt"
+)),
+    parameters = linkedMapOf<String, Any>(
+    "aspectRatio" to "aspectratio",
+    "personGeneration" to "persongeneration",
+    "sampleCount" to 3
+)
+)
+val result = client.imagesGoogle.createV1betaModelsModelGenerateImage(model, body)
+println(result)
+```
+
+### videos_jimeng
+
+```kotlin
+// Jimeng retrieve video generation task
+val taskId = "1"
+val result = client.videosJimeng.listV1Tasks(taskId)
+println(result)
+```
+
+### audio_kling
+
+```kotlin
+// Kling text to audio
+val body = KlingSoundGenerationRequest(
+    callbackUrl = "callback-url",
+    duration = 2,
+    externalTaskId = "1",
+    prompt = "prompt"
+)
+val result = client.audioKling.createV1AudioTextToAudio(body)
+println(result)
+```
+
+### images_kling
+
+```kotlin
+// Kling image generation
+val body = KlingImageGenerationRequest(
+    aspectRatio = "16:9",
+    callbackUrl = "callback-url",
+    elementList = listOf(KlingElementReference()),
+    externalTaskId = "1",
+    humanFidelity = 5,
+    image = "image",
+    imageFidelity = 7,
+    imageReference = "subject",
+    modelName = "kling-v2-1",
+    n = 10,
+    negativePrompt = "negative-prompt",
+    prompt = "prompt",
+    resolution = "1k",
+    watermarkInfo = linkedMapOf<String, Any>(
+    "enabled" to true
+)
+)
+val result = client.imagesKling.createV1ImagesGeneration(body)
 println(result)
 ```
 
@@ -292,62 +711,252 @@ val result = client.videosKling.createV1VideosAvatar(body)
 println(result)
 ```
 
-### images_midjourney
+### videos_luma_ai
 
 ```kotlin
-// Midjourney image generation
-val body = MidjourneyImageGenerationRequest(
-    aspectRatio = "aspect-ratio",
-    callbackUrl = "callback-url",
-    model = "model",
-    prompt = "prompt",
-    seed = 5,
-    style = "style"
+// Luma Dream Machine video generation
+val body = LumaVideoGenerationRequest(
+    aspectRatio = "1:1",
+    callbackUrl = "https://example.com",
+    concepts = listOf(LumaConcept()),
+    duration = "duration",
+    generationType = "video",
+    keyframes = linkedMapOf<String, Any>(
+    "frame0" to linkedMapOf<String, Any>(
+    "id" to "00000000-0000-0000-0000-000000000001",
+    "type" to "image",
+    "url" to "https://example.com"
+),
+    "frame1" to linkedMapOf<String, Any>(
+    "id" to "00000000-0000-0000-0000-000000000001",
+    "type" to "image",
+    "url" to "https://example.com"
 )
-val result = client.imagesMidjourney.createV1ImagesGeneration(body)
+),
+    loop = true,
+    model = "ray-2",
+    prompt = "prompt",
+    resolution = "resolution"
+)
+val result = client.videosLumaAi.createGeneration(body)
+println(result)
+```
+
+### videos_minimax
+
+```kotlin
+// MiniMax retrieve video file
+val params = linkedMapOf<String, Any>(
+    "file_id" to "1"
+)
+val result = client.videosMinimax.listV1FilesRetrieve(params)
+println(result)
+```
+
+### images_minimax
+
+```kotlin
+// MiniMax image generation
+val body = MinimaxImageGenerationRequest(
+    aspectRatio = "1:1",
+    height = 2,
+    model = "image-01",
+    n = 4,
+    prompt = "prompt",
+    promptOptimizer = false,
+    responseFormat = "url",
+    seed = 8,
+    subjectReference = listOf(linkedMapOf<String, Any>(
+    "value" to "value"
+)),
+    width = 10
+)
+val result = client.imagesMinimax.createV1ImageGeneration(body)
+println(result)
+```
+
+### music_minimax
+
+```kotlin
+// Minimax create music generation
+val body = MiniMaxMusicGenerationRequest(
+    audioBase64 = "audio-base64",
+    audioSetting = linkedMapOf<String, Any>(
+    "bitrate" to 32000,
+    "format" to "mp3",
+    "sample_rate" to 16000
+),
+    audioUrl = "audio-url",
+    coverFeatureId = "1",
+    isInstrumental = true,
+    lyrics = "lyrics",
+    lyricsOptimizer = true,
+    model = "music-3.0",
+    outputFormat = "url",
+    prompt = "prompt",
+    stream = true
+)
+val result = client.musicMinimax.createV1MusicGeneration(body)
 println(result)
 ```
 
 ### audio_minimax
 
 ```kotlin
-// Minimax create music generation
-val body = MiniMaxMusicGenerationRequest(
+// MiniMax speech synthesis
+val body = MinimaxTextToSpeechRequest(
     audioSetting = linkedMapOf<String, Any>(
-    "bitrate" to 1,
-    "format" to "format",
-    "sample_rate" to 3
+    "value" to "value"
 ),
-    isInstrumental = false,
-    lyrics = "lyrics",
-    lyricsOptimizer = false,
-    model = "model",
-    outputFormat = "output-format",
-    prompt = "prompt",
-    stream = false
+    languageBoost = "language-boost",
+    model = "speech-2.8-hd",
+    outputFormat = "url",
+    pronunciationDict = linkedMapOf<String, Any>(
+    "value" to "value"
+),
+    stream = false,
+    streamOptions = linkedMapOf<String, Any>(
+    "exclude_aggregated_audio" to true
+),
+    subtitleEnable = false,
+    subtitleType = "sentence",
+    text = "text",
+    textNormalizationMode = "basic",
+    timbreWeights = listOf(MinimaxTimbreWeight()),
+    voiceModify = linkedMapOf<String, Any>(
+    "intensity" to 1,
+    "pitch" to 2,
+    "sound_effects" to "spacious_echo",
+    "timbre" to 4
+),
+    voiceSetting = linkedMapOf<String, Any>(
+    "value" to "value"
 )
-val result = client.audioMinimax.createV1MusicGeneration(body)
+)
+val result = client.audioMinimax.createV1T2aV(body)
 println(result)
 ```
 
-### images_nano_banana
+### music_mureka
 
 ```kotlin
-// Nano Banana image generation
-val body = NanoBananaImageGenerationRequest(
-    aspectRatio = "aspect-ratio",
+// Mureka song generation
+val body = MurekaMusicGenerationRequest(
     callbackUrl = "callback-url",
-    images = listOf("images"),
+    duration = 2,
+    lyrics = "lyrics",
     model = "model",
     prompt = "prompt",
-    seed = 6,
-    size = "size"
+    referenceAudioUrl = "reference-audio-url",
+    tags = listOf("tags"),
+    title = "title"
 )
-val result = client.imagesNanoBanana.createGeneration(body)
+val result = client.musicMureka.createV1SongGenerate(body)
 println(result)
 ```
 
-### audio_suno
+### videos_pixverse
+
+```kotlin
+// PixVerse retrieve video generation
+val videoId = "1"
+val aiTraceId = "Ai-trace-id"
+val result = client.videosPixverse.listOpenapiV2VideoResult(videoId, aiTraceId)
+println(result)
+```
+
+### videos_runway
+
+```kotlin
+// Runway image to video
+val body = RunwayImageToVideoRequest(
+    audio = true,
+    bitrate = "standard",
+    cfgScale = 3,
+    contentModeration = linkedMapOf<String, Any>(
+    "value" to "value"
+),
+    draft = true,
+    duration = 6,
+    model = "model",
+    negativePrompt = "negativeprompt",
+    outputFormat = "mp4",
+    promptExpansionMode = "disabled",
+    promptImage = "promptimage",
+    promptText = "prompttext",
+    proresProfile = "422",
+    providerSettings = linkedMapOf<String, Any>(
+    "value" to "value"
+),
+    ratio = "ratio",
+    referenceAudio = listOf(linkedMapOf<String, Any>(
+    "value" to "value"
+)),
+    referenceVideos = listOf(linkedMapOf<String, Any>(
+    "value" to "value"
+)),
+    references = listOf(linkedMapOf<String, Any>(
+    "value" to "value"
+)),
+    resolution = "480p",
+    seed = 20
+)
+val xRunwayVersion = "2024-11-06"
+val result = client.videosRunway.createV1ImageToVideo(body, xRunwayVersion)
+println(result)
+```
+
+### images_runway
+
+```kotlin
+// Runway retrieve task
+val taskId = "1"
+val xRunwayVersion = "2024-11-06"
+val result = client.imagesRunway.listV1Tasks(taskId, xRunwayVersion)
+println(result)
+```
+
+### audio_stability_ai
+
+```kotlin
+// Stability AI text-to-audio (music and sound effects)
+val body = StabilityAudioRequest(
+    cfgScale = 1,
+    duration = 2,
+    model = "stable-audio-2",
+    outputFormat = "mp3",
+    prompt = "prompt",
+    seed = 6,
+    steps = 7
+)
+val result = client.audioStabilityAi.createTextToAudio(body)
+println(result)
+```
+
+### images_stability_ai
+
+```kotlin
+// Stability AI image generation
+val mode = "mode"
+val body = StabilityImageGenerationRequest(
+    aspectRatio = "21:9",
+    cfgScale = 2,
+    image = "image",
+    mode = "text-to-image",
+    model = "sd3.5-large",
+    negativePrompt = "negative-prompt",
+    outputFormat = "png",
+    prompt = "prompt",
+    seed = 9,
+    strength = 10,
+    stylePreset = "style-preset"
+)
+val accept = "application/json"
+val result = client.imagesStabilityAi.createGenerate(mode, body, accept)
+println(result)
+```
+
+### music_suno
 
 ```kotlin
 // Suno music generation
@@ -360,7 +969,26 @@ val body = SunoMusicGenerationRequest(
     tags = "tags",
     title = "title"
 )
-val result = client.audioSuno.createV1MusicGeneration(body)
+val result = client.musicSuno.createV1MusicGeneration(body)
+println(result)
+```
+
+### chat_typesafe
+
+```kotlin
+// TypeSafe AI System One decision
+val body = TypeSafeSystemOneRequest(
+    model = "model",
+    questions = linkedMapOf<String, Any>(
+    "value" to linkedMapOf<String, Any>(
+    "criteria" to "criteria",
+    "instructions" to "instructions",
+    "type" to "choice"
+)
+),
+    state = "state"
+)
+val result = client.chatTypesafe.createV1Systemone(body)
 println(result)
 ```
 
@@ -442,9 +1070,12 @@ val body = OpenAiCompletionCreateRequest(
     seed = 11,
     stop = "stop",
     stream = true,
+    streamOptions = linkedMapOf<String, Any>(
+    "include_usage" to true
+),
     suffix = "suffix",
-    temperature = 15,
-    topP = 16,
+    temperature = 16,
+    topP = 17,
     user = "user"
 )
 val result = client.completion.create(body)
@@ -513,10 +1144,33 @@ println(result)
 ```kotlin
 // Create image edit
 val body = OpenAiImageEditRequest(
-    image = "image",
-    mask = "mask",
+    background = "transparent",
+    complexity = "low",
+    frameCount = 3,
+    frameDurationMs = 4,
+    images = listOf(OpenAiImageReferenceInput()),
+    inputFidelity = "high",
+    markup = linkedMapOf<String, Any>(
+    "value" to "value"
+),
+    mask = linkedMapOf<String, Any>(
+    "value" to "value"
+),
     model = "model",
-    prompt = "prompt"
+    moderation = "low",
+    n = 11,
+    outputCompression = 12,
+    outputFormat = "png",
+    partialImages = 14,
+    prompt = "prompt",
+    quality = "low",
+    safetyIdentifier = "safety-identifier",
+    size = "size",
+    stream = true,
+    svg = linkedMapOf<String, Any>(
+    "value" to "value"
+),
+    user = "user"
 )
 val result = client.images.createEdit(body)
 println(result)
@@ -638,12 +1292,26 @@ val result = client.threads.create(body)
 println(result)
 ```
 
+### tool
+
+```kotlin
+// Fetch a web page
+val body = OpenAiDeepSeekWebFetchRequest(
+    url = "https://example.com"
+)
+val result = client.tool.createFetch(body)
+println(result)
+```
+
 ### upload
 
 ```kotlin
 // Create upload
 val body = OpenAiUploadCreateRequest(
     bytes = 1,
+    expiresAfter = linkedMapOf<String, Any>(
+    "value" to "value"
+),
     filename = "name",
     mimeType = "mime-type",
     purpose = "purpose"
@@ -685,16 +1353,21 @@ println(result)
 ```kotlin
 // Vidu image to video
 val body = ViduImageToVideoRequest(
-    aspectRatio = "aspect-ratio",
+    audio = true,
     callbackUrl = "callback-url",
     duration = 3,
     images = listOf("images"),
+    isRec = true,
+    metaData = "meta-data",
     model = "model",
-    movementAmplitude = "movement-amplitude",
+    offPeak = false,
     payload = "payload",
     prompt = "prompt",
     resolution = "resolution",
-    seed = 10
+    seed = 12,
+    watermark = true,
+    wmPosition = 14,
+    wmUrl = "wm-url"
 )
 val result = client.videosVidu.createEntV2Img2video(body)
 println(result)
@@ -706,15 +1379,35 @@ println(result)
 // Vidu reference to image
 val body = ViduReferenceToImageRequest(
     aspectRatio = "aspect-ratio",
+    bgm = false,
     callbackUrl = "callback-url",
     images = listOf("images"),
     model = "model",
+    offPeak = false,
     payload = "payload",
     prompt = "prompt",
-    seed = 7,
-    style = "style"
+    resolution = "resolution",
+    seed = 10
 )
 val result = client.imagesVidu.createEntV2Reference2image(body)
+println(result)
+```
+
+### audio_vidu
+
+```kotlin
+// Vidu text to audio
+val body = ViduTextToAudioRequest(
+    bgm = true,
+    callbackUrl = "callback-url",
+    duration = 3,
+    model = "model",
+    offPeak = true,
+    payload = "payload",
+    prompt = "prompt",
+    seed = 8
+)
+val result = client.audioVidu.createEntV2Text2audio(body)
 println(result)
 ```
 
@@ -724,12 +1417,11 @@ println(result)
 // Volcengine create speech
 val body = OpenAiSpeechCreateRequest(
     input = "input",
-    metadata = linkedMapOf<String, Any>(
-    "value" to "value"
-),
+    instructions = "instructions",
     model = "model",
-    responseFormat = "response-format",
+    responseFormat = "mp3",
     speed = 5,
+    streamFormat = "sse",
     voice = "voice"
 )
 val result = client.audioVolcengine.createApiV3AudioSpeech(body)
@@ -741,14 +1433,133 @@ println(result)
 ```kotlin
 // Volcengine Ark content generation task
 val body = VolcengineContentGenerationTaskCreateRequest(
-    callbackUrl = "callback-url",
+    callbackUrl = "https://example.com",
+    cameraFixed = false,
     content = listOf(VolcengineContentPart()),
-    metadata = linkedMapOf<String, Any>(
-    "value" to "value"
-),
-    model = "model"
+    draft = false,
+    duration = 5,
+    executionExpiresAfter = 6,
+    frames = 7,
+    generateAudio = false,
+    model = "model",
+    omniReferenceTaskType = "auto",
+    outputFormat = "mp4",
+    priority = 12,
+    ratio = "16:9",
+    resolution = "480p",
+    returnLastFrame = true,
+    safetyIdentifier = "safety-identifier",
+    seed = 17,
+    serviceTier = "default",
+    tools = listOf(ArkWebSearchTool()),
+    watermark = false
 )
 val result = client.videosVolcengine.createApiV3ContentsGenerationsTask(body)
+println(result)
+```
+
+### images_volcengine
+
+```kotlin
+// Volcengine Ark image generation
+val body = VolcengineImageGenerationRequest(
+    background = "transparent",
+    image = "image",
+    layerDecomposition = true,
+    model = "model",
+    optimizePromptOptions = linkedMapOf<String, Any>(
+    "mode" to "standard"
+),
+    outputFormat = "png",
+    prompt = "prompt",
+    responseFormat = "url",
+    sequentialImageGeneration = "auto",
+    sequentialImageGenerationOptions = linkedMapOf<String, Any>(
+    "max_images" to 1
+),
+    size = "size",
+    stream = false,
+    tools = listOf(ArkWebSearchTool()),
+    watermark = false
+)
+val result = client.imagesVolcengine.createApiV3ImagesGeneration(body)
+println(result)
+```
+
+### images_xai
+
+```kotlin
+// xAI Grok Imagine image edit
+val body = XaiImageEditRequest(
+    aspectRatio = "1:1",
+    deferred = false,
+    image = linkedMapOf<String, Any>(
+    "file_id" to "1",
+    "url" to "url"
+),
+    images = listOf(XaiImageUrl()),
+    model = "model",
+    n = 6,
+    output = linkedMapOf<String, Any>(
+    "value" to "value"
+),
+    prompt = "prompt",
+    resolution = "1k",
+    responseFormat = "url",
+    storageOptions = linkedMapOf<String, Any>(
+    "value" to "value"
+),
+    user = "user"
+)
+val result = client.imagesXai.createV1ImagesEdit(body)
+println(result)
+```
+
+### videos_xai
+
+```kotlin
+// xAI Grok Imagine video edit
+val body = XaiVideoEditRequest(
+    model = "model",
+    output = linkedMapOf<String, Any>(
+    "value" to "value"
+),
+    prompt = "prompt",
+    storageOptions = linkedMapOf<String, Any>(
+    "value" to "value"
+),
+    user = "user",
+    video = linkedMapOf<String, Any>(
+    "file_id" to "1",
+    "url" to "url"
+)
+)
+val result = client.videosXai.createV1VideosEdit(body)
+println(result)
+```
+
+### videos_zhipu
+
+```kotlin
+// Zhipu retrieve video generation task
+val taskId = "1"
+val result = client.videosZhipu.listApiPaasV4AsyncResult(taskId)
+println(result)
+```
+
+### images_zhipu
+
+```kotlin
+// Zhipu CogView image generation
+val body = ZhipuImageGenerationRequest(
+    model = "glm-image",
+    prompt = "prompt",
+    quality = "hd",
+    size = "size",
+    userId = "1",
+    watermarkEnabled = false
+)
+val result = client.imagesZhipu.createApiPaasV4ImagesGeneration(body)
 println(result)
 ```
 

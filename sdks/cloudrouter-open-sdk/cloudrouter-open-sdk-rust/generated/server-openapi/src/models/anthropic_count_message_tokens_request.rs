@@ -1,57 +1,41 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{AnthropicMessageParam, AnthropicThinkingConfig, AnthropicTool, AnthropicToolChoice};
+use crate::models::{AnthropicCacheControl, AnthropicMessageParam, AnthropicOutputConfig, AnthropicThinkingConfig, AnthropicTool, AnthropicToolChoice};
 
-/// Anthropic Claude anthropic count message tokens request schema exposed by Cloud Router vendor routing.
+/// Anthropic token-counting request (`POST /v1/messages/count_tokens`). The vendor accepts the conversation, system prompt, tools, and thinking configuration, but not the generation controls.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct AnthropicCountMessageTokensRequest {
-    /// Maximum number of tokens to generate.
+    /// Top-level cache control marker applied to the last cacheable block.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub max_tokens: Option<i64>,
+    pub cache_control: Option<AnthropicCacheControl>,
 
     /// Input conversation messages.
     pub messages: Vec<AnthropicMessageParam>,
 
-    /// Metadata field on the anthropic message create request, using the provider metadata module.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<std::collections::HashMap<String, String>>,
-
     /// Claude model identifier.
     pub model: String,
 
-    /// Custom stop sequences.
+    /// Output configuration such as effort and JSON output format.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub stop_sequences: Option<Vec<String>>,
+    pub output_config: Option<AnthropicOutputConfig>,
 
-    /// Whether to stream server-sent events.
+    /// Inference speed mode; `fast` raises output tokens per second.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub stream: Option<bool>,
+    pub speed: Option<String>,
 
     /// System prompt content.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub system: Option<String>,
 
-    /// Sampling temperature.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub temperature: Option<f64>,
-
-    /// Thinking field on the anthropic message create request, using the anthropic thinking config module.
+    /// Thinking field on the anthropic count message tokens request, using the anthropic thinking config module.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thinking: Option<AnthropicThinkingConfig>,
 
-    /// Tool choice field on the anthropic message create request, using the anthropic tool choice module.
+    /// Tool choice field on the anthropic count message tokens request, using the anthropic tool choice module.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tool_choice: Option<AnthropicToolChoice>,
 
-    /// Tool definitions available to Claude.
+    /// Tool definitions available to Claude: custom client tools or server tools.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tools: Option<Vec<AnthropicTool>>,
-
-    /// Top-k sampling value.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub top_k: Option<i64>,
-
-    /// Nucleus sampling value.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub top_p: Option<f64>,
 }

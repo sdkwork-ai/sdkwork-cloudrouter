@@ -1,8 +1,10 @@
 package com.sdkwork.cloudrouter.open
 
 data class OpenAiVoiceCreateMultipartRequest(
-    val description: String? = null,
     val file_: String? = null,
-    val metadata: String? = null,
-    val name: String? = null
+    val model: String? = null,
+    val name: String? = null,
+    val prompt: String? = null,
+    val scriptHint: String? = null,
+    val type: String? = null
 )

@@ -103,4 +103,47 @@ describe('drive media mapping', () => {
     const media = uploadResultToDriveMediaResource(uploadResult);
     await expect(resolveDriveMediaUrl(media)).resolves.toBe('');
   });
+
+  it('exchanges a persisted reader share token for a download url', async () => {
+    // The site logo is stored as a `drive://` reference plus a reader share token: the browser
+    // cannot render either one, so every brand surface depends on this exchange. Stubbing the
+    // open client is what lets the assertion see the URL the <img> would receive.
+    const host = globalThis as typeof globalThis & {
+      __SDKWORK_CLOUDROUTER_ROUTER_DRIVE_OPEN_SDK_CLIENT__?: unknown;
+    };
+    const original = host.__SDKWORK_CLOUDROUTER_ROUTER_DRIVE_OPEN_SDK_CLIENT__;
+
+    // Both shapes matter: the generated open client unwraps `{ code, data }` before returning,
+    // while its declared response type keeps the envelope. Reading only the envelope is exactly
+    // what made an uploaded logo fall back to the placeholder.
+    for (const [label, envelope] of [
+      ['unwrapped', false],
+      ['enveloped', true],
+    ] as const) {
+      const token = `logo-share-token-${label}`;
+      host.__SDKWORK_CLOUDROUTER_ROUTER_DRIVE_OPEN_SDK_CLIENT__ = {
+        drive: {
+          async openShareLinksDownloadUrlsCreate(requestedToken: string) {
+            const item = {
+              downloadUrl: `https://cdn.example.com/${requestedToken}.png`,
+              expiresAtEpochMs: String(Date.now() + 3_600_000),
+            };
+            return envelope ? { code: 0, data: { item } } : { item };
+          },
+        },
+      };
+
+      try {
+        const media = attachDriveShareToken(
+          uploadResultToDriveMediaResource(uploadResult),
+          token,
+        );
+        await expect(resolveDriveMediaUrl(media)).resolves.toBe(
+          `https://cdn.example.com/${token}.png`,
+        );
+      } finally {
+        host.__SDKWORK_CLOUDROUTER_ROUTER_DRIVE_OPEN_SDK_CLIENT__ = original;
+      }
+    }
+  });
 });

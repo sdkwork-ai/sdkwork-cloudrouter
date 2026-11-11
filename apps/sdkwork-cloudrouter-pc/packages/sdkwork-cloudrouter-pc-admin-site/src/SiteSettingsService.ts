@@ -23,8 +23,10 @@ import {
   ensureSdkworkApiSuccess,
   readApiRecord,
   readMediaResource,
+  readMediaResourceUrl,
   toSdkMediaResource,
   type CloudRouterMediaResource,
+  type CloudRouterSdkMediaResource,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import {
   SITE_SETTINGS_LOCALES,
@@ -186,8 +188,10 @@ export const SiteSettingsService = {
     return toSiteSettings(readApiRecord(result));
   },
 
-  async updateSettings(input: SiteSettingsForm): Promise<SiteSettingsForm> {
-    const result = await getCloudRouterBackendSdkClient().system.site.settings.update(toSiteSettingsUpdateRequest(input));
+  async updateSettings(input: SiteSettingsForm, previous: SiteSettingsForm = input): Promise<SiteSettingsForm> {
+    const result = await getCloudRouterBackendSdkClient().system.site.settings.update(
+      toSiteSettingsUpdateRequest(input, previous),
+    );
     ensureSdkworkApiSuccess(result, 'Unable to update site settings');
     return toSiteSettings(readApiRecord(result));
   },
@@ -354,10 +358,57 @@ function pickFooterFields(form: SiteSettingsForm): FooterSectionSwitches & Socia
 }
 
 /**
+ * The only "clear" spelling the update contract has for a media field.
+ *
+ * `AdminSiteSettingsUpdateRequest` types every brand asset as a non-nullable `MediaResource`, a
+ * JSON `null` deserializes to "absent" on the service, and an absent key means "leave the stored
+ * value alone". So omitting the field can never express removal — which is exactly what the
+ * operator's Clear button looked like it did until the next reload put the old logo back.
+ *
+ * A resource with no reference at all is the one value that survives normalization (the service
+ * requires `kind` and `source`) and resolves to `''` on every read path, so the navbar, footer,
+ * admin header, auth chrome and favicon fall back to the shipped brand mark. That is the state
+ * the operator asked for; the stored record is inert rather than a second logo.
+ */
+const CLEARED_MEDIA_RESOURCE: CloudRouterSdkMediaResource = {
+  kind: 'image',
+  source: 'external_url',
+  publicUrl: '',
+};
+
+/**
+ * Builds the PATCH payload for one media field.
+ *
+ * `previous` is what the field held when the page loaded (or after the last save): a field that
+ * never had a reference is simply omitted, so an untouched form keeps the stored document saying
+ * "nothing configured" instead of accumulating empty records. A field that *did* have one and was
+ * cleared travels as {@link CLEARED_MEDIA_RESOURCE}, because dropping the key would mean "keep the
+ * stored logo" and the artwork would come back on the next load.
+ */
+function toMediaPayload(
+  value: CloudRouterMediaResource | undefined,
+  previous: CloudRouterMediaResource | undefined,
+  fieldName: string,
+): CloudRouterSdkMediaResource | undefined {
+  const payload = toSdkMediaResource(value, fieldName);
+  if (payload) {
+    return payload;
+  }
+  return readMediaResourceUrl(previous) === '' ? undefined : CLEARED_MEDIA_RESOURCE;
+}
+
+/**
  * Builds the PATCH payload. Exported so the payload's shape — in particular "every footer field
  * is always present" — can be asserted without standing up an SDK client.
+ *
+ * `previous` defaults to the submitted form, which means "nothing changed about the media fields";
+ * the page passes the last loaded/saved form so a cleared asset is distinguishable from one that
+ * was never configured.
  */
-export function toSiteSettingsUpdateRequest(form: SiteSettingsForm): AdminSiteSettingsUpdateRequest {
+export function toSiteSettingsUpdateRequest(
+  form: SiteSettingsForm,
+  previous: SiteSettingsForm = form,
+): AdminSiteSettingsUpdateRequest {
   // Both documents are normalised here rather than by each control: an untouched homepage goes out
   // as `{}` — "publish the bundled copy" — and an empty downloads box as `{}` — "publish the
   // catalog checked into the repository" — so saving the form cannot pin content the operator
@@ -369,13 +420,13 @@ export function toSiteSettingsUpdateRequest(form: SiteSettingsForm): AdminSiteSe
     siteName: form.siteName,
     shortName: form.shortName,
     description: form.description,
-    logo: toSdkMediaResource(form.logo, 'siteSettings.logo'),
-    icon: toSdkMediaResource(form.icon, 'siteSettings.icon'),
-    favicon: toSdkMediaResource(form.favicon, 'siteSettings.favicon'),
-    officialAccountQrCode: toSdkMediaResource(form.officialAccountQrCode, 'siteSettings.officialAccountQrCode'),
-    communityGroupQrCode: toSdkMediaResource(form.communityGroupQrCode, 'siteSettings.communityGroupQrCode'),
-    videoChannelQrCode: toSdkMediaResource(form.videoChannelQrCode, 'siteSettings.videoChannelQrCode'),
-    douyinQrCode: toSdkMediaResource(form.douyinQrCode, 'siteSettings.douyinQrCode'),
+    logo: toMediaPayload(form.logo, previous.logo, 'siteSettings.logo'),
+    icon: toMediaPayload(form.icon, previous.icon, 'siteSettings.icon'),
+    favicon: toMediaPayload(form.favicon, previous.favicon, 'siteSettings.favicon'),
+    officialAccountQrCode: toMediaPayload(form.officialAccountQrCode, previous.officialAccountQrCode, 'siteSettings.officialAccountQrCode'),
+    communityGroupQrCode: toMediaPayload(form.communityGroupQrCode, previous.communityGroupQrCode, 'siteSettings.communityGroupQrCode'),
+    videoChannelQrCode: toMediaPayload(form.videoChannelQrCode, previous.videoChannelQrCode, 'siteSettings.videoChannelQrCode'),
+    douyinQrCode: toMediaPayload(form.douyinQrCode, previous.douyinQrCode, 'siteSettings.douyinQrCode'),
     officialAccountQrCodeEnabled: form.officialAccountQrCodeEnabled,
     communityGroupQrCodeEnabled: form.communityGroupQrCodeEnabled,
     videoChannelQrCodeEnabled: form.videoChannelQrCodeEnabled,

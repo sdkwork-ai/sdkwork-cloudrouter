@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
 import { ensureSdkworkApiSuccess, readApiRecord, readString, type ApiRecord } from './api-result.ts';
+import {
+  isDriveMediaResource,
+  resolveDriveMediaUrl,
+  useResolvedMediaResourceUrl,
+} from './drive-media.ts';
 import { FOOTER_SECTIONS, type FooterSectionVisibility } from './footer-sections.ts';
 import { readMediaResource, readMediaResourceUrl, type CloudRouterMediaResource } from './media-resource.ts';
 import { getCloudRouterAppSdkClient } from './sdk-clients.ts';
@@ -80,6 +85,52 @@ export function createDefaultSocialLinks(): SocialPlatformLinks {
 
 function createDefaultFooterSections(): FooterSectionVisibility {
   return Object.fromEntries(FOOTER_SECTIONS.map((section) => [section.code, true])) as FooterSectionVisibility;
+}
+
+/**
+ * The brand mark shipped with the app.
+ *
+ * Served from the renderer's `public/brand/` directory rather than imported from a package: the
+ * same-origin URL works in the PC portal, the H5 renderer, the favicon links in `index.html` and
+ * any document that needs the mark before React mounts. See `apps/sdkwork-cloudrouter-pc/public/README.md`
+ * for how the files are derived from the master artwork.
+ *
+ * This is a *default*, not a replacement: the moment an operator publishes a logo in `/admin/site`
+ * the configured resource wins on every surface (`resolveBrandLogoUrl`).
+ */
+export const DEFAULT_BRAND_LOGO_URL = '/brand/logo.png';
+
+/**
+ * The logo URL a surface must render: the operator's resource when one is configured, the shipped
+ * mark otherwise.
+ *
+ * Every brand surface goes through this function so "no logo configured" and "branding read
+ * failed" both end up with a real mark instead of an icon placeholder — the failure mode where a
+ * half-loaded site shows a generic terminal glyph is the one this exists to prevent.
+ *
+ * A logo uploaded from `/admin/site` is persisted as a **Drive reference** (`drive://spaces/...`
+ * plus a reader share token), never as an HTTP URL. Returning that reference here would hand the
+ * browser an `<img src>` it cannot fetch — the upload would look like it never took effect. Drive
+ * references therefore resolve through {@link useResolvedBrandLogoUrl}; this synchronous reader
+ * answers with the shipped mark until that resolution lands.
+ */
+export function resolveBrandLogoUrl(branding: Pick<SiteBranding, 'logo'>): string {
+  const { logo } = branding;
+  if (!logo || isDriveMediaResource(logo)) {
+    return DEFAULT_BRAND_LOGO_URL;
+  }
+  return readMediaResourceUrl(logo) || DEFAULT_BRAND_LOGO_URL;
+}
+
+/**
+ * The brand mark for a React surface: the configured logo once its Drive share link has been
+ * exchanged for a download URL, the shipped mark in the meantime.
+ *
+ * Exists as a hook because the exchange is asynchronous and the download URL is short-lived; the
+ * shared media hook already refreshes it ahead of expiry, so a long-lived tab keeps the mark.
+ */
+export function useResolvedBrandLogoUrl(branding: Pick<SiteBranding, 'logo'>): string {
+  return useResolvedMediaResourceUrl(branding.logo) || resolveBrandLogoUrl(branding);
 }
 
 export const DEFAULT_SITE_BRANDING: SiteBranding = {
@@ -304,7 +355,20 @@ export function applySiteBrandingToDocument(siteBranding: SiteBranding): void {
     documentRef.title = title;
   }
   setMetaContent(documentRef, 'description', siteBranding.seoDescription || siteBranding.description);
-  setFavicon(documentRef, readMediaResourceUrl(siteBranding.favicon) || readMediaResourceUrl(siteBranding.icon) || readMediaResourceUrl(siteBranding.logo));
+  // The tab icon falls back across the three brand assets, and any of them can be an uploaded
+  // (Drive) resource. Resolution is asynchronous, so the static `index.html` icon stays in place
+  // until the download URL lands instead of being swapped for a `drive://` href the browser
+  // cannot fetch.
+  const faviconSource = siteBranding.favicon ?? siteBranding.icon ?? siteBranding.logo;
+  void resolveDriveMediaUrl(faviconSource)
+    .then((href) => {
+      if (href) {
+        setFavicon(documentRef, href);
+      }
+    })
+    .catch(() => {
+      // An unpublished or rotated share link must not take the document metadata down with it.
+    });
   documentRef.documentElement.style.setProperty('--cloud-router-brand-color', siteBranding.brandColor);
   documentRef.documentElement.style.setProperty('--cloud-router-accent-color', siteBranding.accentColor);
   applyCustomCss(documentRef, siteBranding.customCss);

@@ -1,17 +1,22 @@
 use serde::{Deserialize, Serialize};
 
-/// OpenAI-compatible request to create a voice.
+/// OpenAI-compatible request to create a voice from a prompt.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct OpenAiVoiceCreateRequest {
-    /// Human-readable voice description.
+    /// Voice model id.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-
-    /// Developer-defined voice metadata.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<std::collections::HashMap<String, String>>,
+    pub model: Option<String>,
 
     /// Human-readable voice name.
+    pub name: String,
+
+    /// Description of the desired voice.
+    pub prompt: String,
+
+    /// Optional text the voice speaks during creation.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    pub script_hint: Option<String>,
+
+    /// Creation mode; only `prompt` is supported.
+    pub r#type: String,
 }

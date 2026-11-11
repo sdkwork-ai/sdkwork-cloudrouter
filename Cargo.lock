@@ -4993,6 +4993,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -5995,6 +5996,8 @@ name = "sdkwork-community-service-host"
 version = "0.1.0"
 dependencies = [
  "dotenvy",
+ "sdkwork-community-commerce-membership-embedded",
+ "sdkwork-community-commerce-order-embedded",
  "sdkwork-community-database-host",
  "sdkwork-community-service",
  "sdkwork-community-storage-sqlx-rust",
@@ -6114,10 +6117,12 @@ dependencies = [
  "sdkwork-course-database-host",
  "sdkwork-database-sqlx",
  "sdkwork-drive-app-sdk-generated-rust",
+ "sdkwork-drive-workspace-service",
  "sdkwork-routes-course-app-api",
  "sdkwork-routes-course-backend-api",
  "sdkwork-utils-rust",
  "serde_json",
+ "sqlx",
  "tokio",
  "tracing",
  "ureq",
@@ -6315,6 +6320,7 @@ dependencies = [
 name = "sdkwork-drive-object-runtime"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "sdkwork-drive-storage-contract",
  "sdkwork-drive-storage-local",
  "sdkwork-drive-storage-s3",
@@ -6510,9 +6516,12 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "reqwest 0.12.28",
+ "sdkwork-community-storage-sqlx-rust",
  "sdkwork-content-feeds-service",
+ "sdkwork-database-sqlx",
  "serde",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -7463,12 +7472,10 @@ name = "sdkwork-order-integration-account"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "dotenvy",
  "reqwest 0.12.28",
  "sdkwork-account-repository-sqlx",
  "sdkwork-account-service",
  "sdkwork-contract-service",
- "sdkwork-database-config",
  "sdkwork-database-sqlx",
  "sdkwork-order-service",
  "sdkwork-utils-rust",
@@ -7476,6 +7483,16 @@ dependencies = [
  "serde_json",
  "sqlx",
  "tracing",
+]
+
+[[package]]
+name = "sdkwork-order-integration-course"
+version = "0.1.0"
+dependencies = [
+ "sdkwork-content-course-repository-sqlx",
+ "sdkwork-content-course-service",
+ "sdkwork-database-sqlx",
+ "sqlx",
 ]
 
 [[package]]
@@ -7593,13 +7610,14 @@ dependencies = [
 name = "sdkwork-order-service-host"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "dotenvy",
- "reqwest 0.12.28",
  "sdkwork-database-id",
  "sdkwork-database-spi",
  "sdkwork-database-sqlx",
  "sdkwork-order-database-host",
  "sdkwork-order-integration-account",
+ "sdkwork-order-integration-course",
  "sdkwork-order-integration-deployments",
  "sdkwork-order-integration-membership",
  "sdkwork-order-integration-partner",
@@ -7612,7 +7630,6 @@ dependencies = [
  "sdkwork-payment-repository-sqlx",
  "sdkwork-web-bootstrap",
  "sdkwork-web-core",
- "serde_json",
  "sqlx",
  "tokio",
  "tracing",

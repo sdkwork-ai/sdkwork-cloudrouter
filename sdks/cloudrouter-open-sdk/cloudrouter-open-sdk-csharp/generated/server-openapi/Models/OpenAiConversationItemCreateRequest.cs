@@ -6,9 +6,6 @@ namespace Sdkwork.CloudRouter.Open.Models
 {
     public class OpenAiConversationItemCreateRequest
     {
-        public List<OpenAiConversationContentPart>? Content { get; set; }
-        public Dictionary<string, string>? Metadata { get; set; }
-        public string? Role { get; set; }
-        public string Type { get; set; }
+        public List<Dictionary<string, string>> Items { get; set; }
     }
 }

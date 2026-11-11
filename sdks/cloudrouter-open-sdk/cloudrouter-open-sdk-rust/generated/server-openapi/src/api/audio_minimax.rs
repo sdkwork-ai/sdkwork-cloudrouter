@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{MiniMaxMusicGenerationRequest, MiniMaxMusicGenerationResponse};
+use crate::models::{MinimaxTextToSpeechRequest, MinimaxTextToSpeechResponse};
 
 #[derive(Clone)]
 pub struct AudioMinimaxApi {
@@ -13,9 +13,9 @@ impl AudioMinimaxApi {
         Self { client }
     }
 
-    /// Minimax create music generation
-    pub async fn create_v1_music_generation(&self, body: &MiniMaxMusicGenerationRequest) -> Result<MiniMaxMusicGenerationResponse, SdkworkError> {
-        let path = "/minimax/v1/music_generation".to_string();
+    /// MiniMax speech synthesis
+    pub async fn create_v1_t2a_v(&self, body: &MinimaxTextToSpeechRequest) -> Result<MinimaxTextToSpeechResponse, SdkworkError> {
+        let path = "/minimax/v1/t2a_v2".to_string();
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 

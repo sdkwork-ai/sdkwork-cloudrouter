@@ -10,11 +10,11 @@ if TYPE_CHECKING:
 
 @dataclass
 class GoogleCachedContentCreateRequest:
-    """Google Gemini google cached content create request schema exposed by Cloud Router vendor routing."""
+    """Google Gemini cached-content creation request (`POST /v1beta/cachedContents`)."""
+    model: str
     contents: Optional[List[GoogleContent]] = None
     display_name: Optional[str] = None
     expire_time: Optional[str] = None
-    model: Optional[str] = None
     system_instruction: Optional[GoogleContent] = None
     tool_config: Optional[GoogleToolConfig] = None
     tools: Optional[List[GoogleTool]] = None

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{ViduImageToVideoRequest, ViduReferenceToVideoRequest, ViduStartEndToVideoRequest, ViduTaskCreationsResponse, ViduTemplateRequest, ViduTextToVideoRequest, ViduVideoGenerationTask};
+use crate::models::{ViduImageToVideoRequest, ViduReferenceToVideoRequest, ViduStartEndToVideoRequest, ViduTaskCreationsResponse, ViduTemplateRequest, ViduTemplateTask, ViduTextToVideoRequest, ViduVideoGenerationTask};
 
 #[derive(Clone)]
 pub struct VideosViduApi {
@@ -38,7 +38,7 @@ impl VideosViduApi {
     }
 
     /// Vidu create template video
-    pub async fn create_ent_v2_template(&self, body: &ViduTemplateRequest) -> Result<ViduVideoGenerationTask, SdkworkError> {
+    pub async fn create_ent_v2_template(&self, body: &ViduTemplateRequest) -> Result<ViduTemplateTask, SdkworkError> {
         let path = "/vidu/ent/v2/template".to_string();
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }

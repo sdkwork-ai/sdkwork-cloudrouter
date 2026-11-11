@@ -8,23 +8,41 @@ public class BatchesAnthropicApi {
     }
 
     /// Anthropic list message batches
-    public func listV1MessagesBatches(beforeId: String? = nil, afterId: String? = nil, limit: Int? = nil) async throws -> AnthropicMessageBatchListResponse? {
+    public func listV1MessagesBatches(anthropicVersion: String, beforeId: String? = nil, afterId: String? = nil, limit: Int? = nil) async throws -> AnthropicMessageBatchListResponse? {
         let query = buildQueryString([
             QueryParameterSpec(name: "before_id", value: beforeId, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "after_id", value: afterId, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
-        return try await client.get(ApiPaths.appendQueryString("/anthropic/v1/messages/batches", query), responseType: AnthropicMessageBatchListResponse.self)
+        let requestHeaders = buildRequestHeaders(
+            [
+                "anthropic-version": HeaderParameterSpec(value: anthropicVersion, style: "simple", explode: false, contentType: nil),
+            ],
+            [:]
+        )
+        return try await client.get(ApiPaths.appendQueryString("/anthropic/v1/messages/batches", query), params: nil, headers: requestHeaders, responseType: AnthropicMessageBatchListResponse.self)
     }
 
     /// Anthropic create message batch
-    public func createV1MessagesBatch(body: AnthropicMessageBatchCreateRequest) async throws -> AnthropicMessageBatch? {
-        return try await client.post("/anthropic/v1/messages/batches", body: body, params: nil, headers: nil, contentType: "application/json", responseType: AnthropicMessageBatch.self)
+    public func createV1MessagesBatch(body: AnthropicMessageBatchCreateRequest, anthropicVersion: String) async throws -> AnthropicMessageBatch? {
+        let requestHeaders = buildRequestHeaders(
+            [
+                "anthropic-version": HeaderParameterSpec(value: anthropicVersion, style: "simple", explode: false, contentType: nil),
+            ],
+            [:]
+        )
+        return try await client.post("/anthropic/v1/messages/batches", body: body, params: nil, headers: requestHeaders, contentType: "application/json", responseType: AnthropicMessageBatch.self)
     }
 
     /// Anthropic cancel message batch
-    public func createV1MessagesBatchesCancel(batchId: String) async throws -> AnthropicMessageBatch? {
-        return try await client.post("/anthropic/v1/messages/batches/\(serializePathParameter(batchId, PathParameterSpec(name: "batch_id", style: "simple", explode: false)))/cancel", body: nil, responseType: AnthropicMessageBatch.self)
+    public func createV1MessagesBatchesCancel(batchId: String, anthropicVersion: String) async throws -> AnthropicMessageBatch? {
+        let requestHeaders = buildRequestHeaders(
+            [
+                "anthropic-version": HeaderParameterSpec(value: anthropicVersion, style: "simple", explode: false, contentType: nil),
+            ],
+            [:]
+        )
+        return try await client.post("/anthropic/v1/messages/batches/\(serializePathParameter(batchId, PathParameterSpec(name: "batch_id", style: "simple", explode: false)))/cancel", body: nil, params: nil, headers: requestHeaders, responseType: AnthropicMessageBatch.self)
     }
 
     private struct PathParameterSpec {
@@ -204,4 +222,68 @@ public class BatchesAnthropicApi {
         value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? value
     }
 
+    private struct HeaderParameterSpec {
+        let value: Any?
+        let style: String
+        let explode: Bool
+        let contentType: String?
+    }
+
+    private func buildRequestHeaders(_ headers: [String: HeaderParameterSpec], _ cookies: [String: HeaderParameterSpec]) -> [String: String]? {
+        var requestHeaders: [String: String] = [:]
+        for (name, parameter) in headers {
+            if let serialized = serializeParameterValue(parameter) {
+                requestHeaders[name] = serialized
+            }
+        }
+
+        if let cookieHeader = buildCookieHeader(cookies), !cookieHeader.isEmpty {
+            requestHeaders["Cookie"] = requestHeaders["Cookie"].map { "\($0); \(cookieHeader)" } ?? cookieHeader
+        }
+
+        return requestHeaders.isEmpty ? nil : requestHeaders
+    }
+
+    private func buildCookieHeader(_ cookies: [String: HeaderParameterSpec]) -> String? {
+        let pairs = cookies.compactMap { name, parameter -> String? in
+            guard let serialized = serializeParameterValue(parameter) else { return nil }
+            return "\(urlEncode(name))=\(urlEncode(serialized))"
+        }
+        return pairs.isEmpty ? nil : pairs.joined(separator: "; ")
+    }
+
+    private func serializeParameterValue(_ parameter: HeaderParameterSpec?) -> String? {
+        guard let parameter, let value = parameter.value else { return nil }
+        if let contentType = parameter.contentType, !contentType.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            if JSONSerialization.isValidJSONObject(value),
+               let data = try? JSONSerialization.data(withJSONObject: value, options: []),
+               let json = String(data: data, encoding: .utf8) {
+                return json
+            }
+            return String(describing: value)
+        }
+        if let array = value as? [Any?] {
+            return array.compactMap { $0.map { String(describing: $0) } }.joined(separator: ",")
+        }
+        if let object = value as? [String: Any] {
+            var values: [String] = []
+            for (key, item) in object {
+                if parameter.explode {
+                    values.append("\(key)=\(item)")
+                } else {
+                    values.append(key)
+                    values.append(String(describing: item))
+                }
+            }
+            return values.joined(separator: ",")
+        }
+        if let date = value as? Date {
+            return ISO8601DateFormatter().string(from: date)
+        }
+        return String(describing: value)
+    }
+
+    private func urlEncode(_ value: String) -> String {
+        value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? value
+    }
 }

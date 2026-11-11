@@ -3,13 +3,30 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
 if TYPE_CHECKING:
+    from .ark_web_search_tool import ArkWebSearchTool
     from .volcengine_content_part import VolcengineContentPart
 
 
 @dataclass
 class VolcengineContentGenerationTaskCreateRequest:
-    """Volcengine Ark volcengine content generation task create request schema exposed by Cloud Router vendor routing."""
+    """Volcengine Ark video generation task creation request (`POST /api/v3/contents/generations/tasks`)."""
     content: List[VolcengineContentPart]
     model: str
     callback_url: Optional[str] = None
-    metadata: Optional[Dict[str, str]] = None
+    camera_fixed: Optional[bool] = None
+    draft: Optional[bool] = None
+    duration: Optional[int] = None
+    execution_expires_after: Optional[int] = None
+    frames: Optional[int] = None
+    generate_audio: Optional[bool] = None
+    omni_reference_task_type: Optional[str] = None
+    output_format: Optional[str] = None
+    priority: Optional[int] = None
+    ratio: Optional[str] = None
+    resolution: Optional[str] = None
+    return_last_frame: Optional[bool] = None
+    safety_identifier: Optional[str] = None
+    seed: Optional[int] = None
+    service_tier: Optional[str] = None
+    tools: Optional[List[ArkWebSearchTool]] = None
+    watermark: Optional[bool] = None

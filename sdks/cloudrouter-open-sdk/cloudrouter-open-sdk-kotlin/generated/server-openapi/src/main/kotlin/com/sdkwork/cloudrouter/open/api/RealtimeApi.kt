@@ -21,8 +21,8 @@ class RealtimeApi(private val client: HttpClient) {
     }
 
     /** Hang up realtime call */
-    suspend fun createCallsHangup(callId: String, body: OpenAiRealtimeCallActionRequest): OpenAiRealtimeCall? {
-        val raw = client.post(ApiPaths.aiPath("/realtime/calls/${serializePathParameter(callId, PathParameterSpec("call_id", "simple", false))}/hangup"), body, null, null, "application/json")
+    suspend fun createCallsHangup(callId: String): OpenAiRealtimeCall? {
+        val raw = client.post(ApiPaths.aiPath("/realtime/calls/${serializePathParameter(callId, PathParameterSpec("call_id", "simple", false))}/hangup"), null)
         return client.convertValue(raw, object : TypeReference<OpenAiRealtimeCall>() {})
     }
 
@@ -33,7 +33,7 @@ class RealtimeApi(private val client: HttpClient) {
     }
 
     /** Reject realtime call */
-    suspend fun createCallsReject(callId: String, body: OpenAiRealtimeCallActionRequest): OpenAiRealtimeCall? {
+    suspend fun createCallsReject(callId: String, body: OpenAiRealtimeCallRejectRequest): OpenAiRealtimeCall? {
         val raw = client.post(ApiPaths.aiPath("/realtime/calls/${serializePathParameter(callId, PathParameterSpec("call_id", "simple", false))}/reject"), body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<OpenAiRealtimeCall>() {})
     }

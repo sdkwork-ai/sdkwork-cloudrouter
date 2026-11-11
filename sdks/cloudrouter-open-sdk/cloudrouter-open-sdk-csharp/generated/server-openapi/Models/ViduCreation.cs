@@ -18,6 +18,7 @@ namespace Sdkwork.CloudRouter.Open.Models
         public string? Uri { get; set; }
         public string? Url { get; set; }
         public string? VideoUrl { get; set; }
+        public string? WatermarkedUrl { get; set; }
         public int? Width { get; set; }
     }
 }

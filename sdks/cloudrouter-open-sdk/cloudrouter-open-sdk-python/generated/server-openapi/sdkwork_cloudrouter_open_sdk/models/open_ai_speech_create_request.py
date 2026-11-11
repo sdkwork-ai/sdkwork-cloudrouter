@@ -9,6 +9,7 @@ class OpenAiSpeechCreateRequest:
     input: str
     model: str
     voice: str
-    metadata: Optional[Dict[str, str]] = None
+    instructions: Optional[str] = None
     response_format: Optional[str] = None
     speed: Optional[float] = None
+    stream_format: Optional[str] = None

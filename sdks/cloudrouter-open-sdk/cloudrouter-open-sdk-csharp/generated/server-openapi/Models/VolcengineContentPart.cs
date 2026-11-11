@@ -6,10 +6,12 @@ namespace Sdkwork.CloudRouter.Open.Models
 {
     public class VolcengineContentPart
     {
-        public string? FileId { get; set; }
-        public string? ImageUrl { get; set; }
+        public ArkAudioSource? AudioUrl { get; set; }
+        public ArkDraftTask? DraftTask { get; set; }
+        public ArkImageSource? ImageUrl { get; set; }
+        public string? Role { get; set; }
         public string? Text { get; set; }
         public string Type { get; set; }
-        public string? VideoUrl { get; set; }
+        public ArkVideoSource? VideoUrl { get; set; }
     }
 }

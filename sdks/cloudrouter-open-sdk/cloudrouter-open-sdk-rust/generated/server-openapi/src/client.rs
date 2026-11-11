@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::api::{FilesAnthropicApi, ChatAnthropicApi, BatchesAnthropicApi, AudioElevenlabsApi, ResponsesGoogleApi, FilesGoogleApi, EmbeddingsGoogleApi, ChatGoogleApi, VideosKlingApi, ImagesMidjourneyApi, AudioMinimaxApi, ImagesNanoBananaApi, AudioSunoApi, AssistantsApi, AudioApi, BatchesApi, ChatApi, CompletionApi, ContainerApi, ConversationApi, EmbeddingsApi, FilesApi, ImagesApi, ModelsApi, ModerationsApi, RealtimeApi, ResponsesApi, ThreadsApi, UploadsApi, VectorStoresApi, VideoApi, VideosViduApi, ImagesViduApi, AudioVolcengineApi, VideosVolcengineApi};
+use crate::api::{ImagesAlibabaApi, VideosAlibabaApi, AudioAlibabaApi, FilesAnthropicApi, ChatAnthropicApi, BatchesAnthropicApi, VideosBlackForestLabsApi, ImagesBlackForestLabsApi, VideosBytedanceApi, ImagesBytedanceApi, AudioBytedanceApi, MusicElevenlabsApi, AudioElevenlabsApi, ResponsesGoogleApi, FilesGoogleApi, VideosGoogleApi, EmbeddingsGoogleApi, ChatGoogleApi, ImagesGoogleApi, VideosJimengApi, AudioKlingApi, ImagesKlingApi, VideosKlingApi, VideosLumaAiApi, VideosMinimaxApi, ImagesMinimaxApi, MusicMinimaxApi, AudioMinimaxApi, MusicMurekaApi, VideosPixverseApi, VideosRunwayApi, ImagesRunwayApi, AudioStabilityAiApi, ImagesStabilityAiApi, MusicSunoApi, ChatTypesafeApi, AssistantsApi, AudioApi, BatchesApi, ChatApi, CompletionApi, ContainerApi, ConversationApi, EmbeddingsApi, FilesApi, ImagesApi, ModelsApi, ModerationsApi, RealtimeApi, ResponsesApi, ThreadsApi, ToolApi, UploadsApi, VectorStoresApi, VideoApi, VideosViduApi, ImagesViduApi, AudioViduApi, AudioVolcengineApi, VideosVolcengineApi, ImagesVolcengineApi, ImagesXaiApi, VideosXaiApi, VideosZhipuApi, ImagesZhipuApi};
 use crate::http::{SdkworkConfig, SdkworkError, SdkworkHttpClient};
 
 #[derive(Clone)]
@@ -44,6 +44,18 @@ impl SdkworkAiClient {
         Arc::clone(&self.http)
     }
 
+    pub fn images_alibaba(&self) -> ImagesAlibabaApi {
+            ImagesAlibabaApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn videos_alibaba(&self) -> VideosAlibabaApi {
+            VideosAlibabaApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn audio_alibaba(&self) -> AudioAlibabaApi {
+            AudioAlibabaApi::new(Arc::clone(&self.http))
+        }
+
     pub fn files_anthropic(&self) -> FilesAnthropicApi {
             FilesAnthropicApi::new(Arc::clone(&self.http))
         }
@@ -54,6 +66,30 @@ impl SdkworkAiClient {
 
     pub fn batches_anthropic(&self) -> BatchesAnthropicApi {
             BatchesAnthropicApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn videos_black_forest_labs(&self) -> VideosBlackForestLabsApi {
+            VideosBlackForestLabsApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn images_black_forest_labs(&self) -> ImagesBlackForestLabsApi {
+            ImagesBlackForestLabsApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn videos_bytedance(&self) -> VideosBytedanceApi {
+            VideosBytedanceApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn images_bytedance(&self) -> ImagesBytedanceApi {
+            ImagesBytedanceApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn audio_bytedance(&self) -> AudioBytedanceApi {
+            AudioBytedanceApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn music_elevenlabs(&self) -> MusicElevenlabsApi {
+            MusicElevenlabsApi::new(Arc::clone(&self.http))
         }
 
     pub fn audio_elevenlabs(&self) -> AudioElevenlabsApi {
@@ -68,6 +104,10 @@ impl SdkworkAiClient {
             FilesGoogleApi::new(Arc::clone(&self.http))
         }
 
+    pub fn videos_google(&self) -> VideosGoogleApi {
+            VideosGoogleApi::new(Arc::clone(&self.http))
+        }
+
     pub fn embeddings_google(&self) -> EmbeddingsGoogleApi {
             EmbeddingsGoogleApi::new(Arc::clone(&self.http))
         }
@@ -76,24 +116,76 @@ impl SdkworkAiClient {
             ChatGoogleApi::new(Arc::clone(&self.http))
         }
 
+    pub fn images_google(&self) -> ImagesGoogleApi {
+            ImagesGoogleApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn videos_jimeng(&self) -> VideosJimengApi {
+            VideosJimengApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn audio_kling(&self) -> AudioKlingApi {
+            AudioKlingApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn images_kling(&self) -> ImagesKlingApi {
+            ImagesKlingApi::new(Arc::clone(&self.http))
+        }
+
     pub fn videos_kling(&self) -> VideosKlingApi {
             VideosKlingApi::new(Arc::clone(&self.http))
         }
 
-    pub fn images_midjourney(&self) -> ImagesMidjourneyApi {
-            ImagesMidjourneyApi::new(Arc::clone(&self.http))
+    pub fn videos_luma_ai(&self) -> VideosLumaAiApi {
+            VideosLumaAiApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn videos_minimax(&self) -> VideosMinimaxApi {
+            VideosMinimaxApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn images_minimax(&self) -> ImagesMinimaxApi {
+            ImagesMinimaxApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn music_minimax(&self) -> MusicMinimaxApi {
+            MusicMinimaxApi::new(Arc::clone(&self.http))
         }
 
     pub fn audio_minimax(&self) -> AudioMinimaxApi {
             AudioMinimaxApi::new(Arc::clone(&self.http))
         }
 
-    pub fn images_nano_banana(&self) -> ImagesNanoBananaApi {
-            ImagesNanoBananaApi::new(Arc::clone(&self.http))
+    pub fn music_mureka(&self) -> MusicMurekaApi {
+            MusicMurekaApi::new(Arc::clone(&self.http))
         }
 
-    pub fn audio_suno(&self) -> AudioSunoApi {
-            AudioSunoApi::new(Arc::clone(&self.http))
+    pub fn videos_pixverse(&self) -> VideosPixverseApi {
+            VideosPixverseApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn videos_runway(&self) -> VideosRunwayApi {
+            VideosRunwayApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn images_runway(&self) -> ImagesRunwayApi {
+            ImagesRunwayApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn audio_stability_ai(&self) -> AudioStabilityAiApi {
+            AudioStabilityAiApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn images_stability_ai(&self) -> ImagesStabilityAiApi {
+            ImagesStabilityAiApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn music_suno(&self) -> MusicSunoApi {
+            MusicSunoApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn chat_typesafe(&self) -> ChatTypesafeApi {
+            ChatTypesafeApi::new(Arc::clone(&self.http))
         }
 
     pub fn assistants(&self) -> AssistantsApi {
@@ -156,6 +248,10 @@ impl SdkworkAiClient {
             ThreadsApi::new(Arc::clone(&self.http))
         }
 
+    pub fn tool(&self) -> ToolApi {
+            ToolApi::new(Arc::clone(&self.http))
+        }
+
     pub fn uploads(&self) -> UploadsApi {
             UploadsApi::new(Arc::clone(&self.http))
         }
@@ -176,11 +272,35 @@ impl SdkworkAiClient {
             ImagesViduApi::new(Arc::clone(&self.http))
         }
 
+    pub fn audio_vidu(&self) -> AudioViduApi {
+            AudioViduApi::new(Arc::clone(&self.http))
+        }
+
     pub fn audio_volcengine(&self) -> AudioVolcengineApi {
             AudioVolcengineApi::new(Arc::clone(&self.http))
         }
 
     pub fn videos_volcengine(&self) -> VideosVolcengineApi {
             VideosVolcengineApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn images_volcengine(&self) -> ImagesVolcengineApi {
+            ImagesVolcengineApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn images_xai(&self) -> ImagesXaiApi {
+            ImagesXaiApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn videos_xai(&self) -> VideosXaiApi {
+            VideosXaiApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn videos_zhipu(&self) -> VideosZhipuApi {
+            VideosZhipuApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn images_zhipu(&self) -> ImagesZhipuApi {
+            ImagesZhipuApi::new(Arc::clone(&self.http))
         }
 }

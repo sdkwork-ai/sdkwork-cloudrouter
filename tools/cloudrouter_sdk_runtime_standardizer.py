@@ -969,6 +969,7 @@ class SdkRuntimeStandardizer:
         schemas = self._openapi_component_schemas(derived)
         if schemas:
             self._break_component_schema_ref_cycles(schemas)
+        self._strip_external_protocol_markers(derived)
         derived.setdefault("x-sdkwork-derived-contract", {})
         if isinstance(derived["x-sdkwork-derived-contract"], dict):
             derived["x-sdkwork-derived-contract"].update(
@@ -979,6 +980,39 @@ class SdkRuntimeStandardizer:
                 }
             )
         return derived
+
+    def _strip_external_protocol_markers(self, payload: dict[str, Any]) -> None:
+        """Drop the external-wire marker pair from the generator input.
+
+        `@sdkwork/sdk-generator` excludes any operation carrying
+        `x-sdkwork-wire-protocol: external`, which is every published operation
+        in this vendor-compatibility family. The authority OpenAPI keeps the
+        markers for contract/conformance tooling; the derived generator input
+        omits them so the SDK surface mirrors the published operations instead
+        of being generated empty.
+        """
+        paths = payload.get("paths")
+        if not isinstance(paths, dict):
+            return
+        for path_item in paths.values():
+            if not isinstance(path_item, dict):
+                continue
+            for method, operation in path_item.items():
+                if method.lower() not in {
+                    "get",
+                    "post",
+                    "put",
+                    "patch",
+                    "delete",
+                    "head",
+                    "options",
+                    "trace",
+                }:
+                    continue
+                if not isinstance(operation, dict):
+                    continue
+                operation.pop("x-sdkwork-wire-protocol", None)
+                operation.pop("x-sdkwork-external-protocol-id", None)
 
     def _openapi_component_schemas(self, payload: dict[str, Any]) -> dict[str, Any]:
         components = payload.get("components")

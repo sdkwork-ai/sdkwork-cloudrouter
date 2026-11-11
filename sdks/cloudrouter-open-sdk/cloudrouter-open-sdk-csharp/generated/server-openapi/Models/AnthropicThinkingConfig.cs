@@ -7,6 +7,7 @@ namespace Sdkwork.CloudRouter.Open.Models
     public class AnthropicThinkingConfig
     {
         public int? BudgetTokens { get; set; }
+        public string? Display { get; set; }
         public string Type { get; set; }
     }
 }

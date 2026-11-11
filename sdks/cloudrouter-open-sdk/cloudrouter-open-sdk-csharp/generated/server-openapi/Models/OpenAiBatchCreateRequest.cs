@@ -10,5 +10,6 @@ namespace Sdkwork.CloudRouter.Open.Models
         public string Endpoint { get; set; }
         public string InputFileId { get; set; }
         public Dictionary<string, string>? Metadata { get; set; }
+        public Dictionary<string, string>? OutputExpiresAfter { get; set; }
     }
 }

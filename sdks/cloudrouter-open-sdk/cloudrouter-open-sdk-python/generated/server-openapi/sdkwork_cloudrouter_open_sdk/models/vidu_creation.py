@@ -18,4 +18,5 @@ class ViduCreation:
     uri: Optional[str] = None
     url: Optional[str] = None
     video_url: Optional[str] = None
+    watermarked_url: Optional[str] = None
     width: Optional[int] = None

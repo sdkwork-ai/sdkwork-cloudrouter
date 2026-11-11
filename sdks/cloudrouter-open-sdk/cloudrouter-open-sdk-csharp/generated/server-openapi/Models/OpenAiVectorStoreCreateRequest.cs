@@ -7,6 +7,7 @@ namespace Sdkwork.CloudRouter.Open.Models
     public class OpenAiVectorStoreCreateRequest
     {
         public string? ChunkingStrategy { get; set; }
+        public string? Description { get; set; }
         public string? ExpiresAfter { get; set; }
         public List<string>? FileIds { get; set; }
         public Dictionary<string, string>? Metadata { get; set; }

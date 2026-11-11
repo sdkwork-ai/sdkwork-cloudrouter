@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::{GoogleContent, GoogleTool, GoogleToolConfig};
 
-/// Google Gemini google cached content create request schema exposed by Cloud Router vendor routing.
+/// Google Gemini cached-content creation request (`POST /v1beta/cachedContents`).
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct GoogleCachedContentCreateRequest {
     /// Content to cache.
@@ -19,9 +19,8 @@ pub struct GoogleCachedContentCreateRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expire_time: Option<String>,
 
-    /// Model resource name for the cache.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub model: Option<String>,
+    /// Model resource name for the cache, for example `models/gemini-2.5-flash`.
+    pub model: String,
 
     /// System instruction field on the google cached content create request, using the google content module.
     #[serde(rename = "systemInstruction")]

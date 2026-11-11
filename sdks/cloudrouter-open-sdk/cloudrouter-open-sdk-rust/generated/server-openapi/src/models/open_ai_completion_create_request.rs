@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::models::{OpenAiStreamOptions};
+
 /// OpenAI-compatible request to create a legacy text completion.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct OpenAiCompletionCreateRequest {
@@ -52,6 +54,10 @@ pub struct OpenAiCompletionCreateRequest {
     /// Whether to stream completion chunks.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stream: Option<bool>,
+
+    /// Stream options field on the open ai completion create request, using the open ai stream options module.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stream_options: Option<OpenAiStreamOptions>,
 
     /// Suffix inserted after the generated completion when supported.
     #[serde(default, skip_serializing_if = "Option::is_none")]

@@ -182,6 +182,59 @@ def encode_query_value(value: str, allow_reserved: bool) -> str:
 
     return quote(value, safe=':/?#[]@!$&\'()*+,;=' if allow_reserved else '')
 
+def build_request_headers(headers: Dict[str, Dict[str, Any]], cookies: Optional[Dict[str, Dict[str, Any]]] = None) -> Optional[Dict[str, str]]:
+    request_headers: Dict[str, str] = {}
+    for name, parameter in headers.items():
+        serialized = serialize_parameter_value(parameter)
+        if serialized is not None:
+            request_headers[name] = serialized
+
+    cookie_header = build_cookie_header(cookies or {})
+    if cookie_header:
+        request_headers['Cookie'] = (
+            f"{request_headers['Cookie']}; {cookie_header}"
+            if 'Cookie' in request_headers
+            else cookie_header
+        )
+
+    return request_headers or None
+
+
+def build_cookie_header(cookies: Dict[str, Dict[str, Any]]) -> Optional[str]:
+    from urllib.parse import quote
+
+    pairs: List[str] = []
+    for name, parameter in cookies.items():
+        serialized = serialize_parameter_value(parameter)
+        if serialized is not None:
+            pairs.append(f"{quote(str(name), safe='')}={quote(serialized, safe='')}")
+    return '; '.join(pairs) if pairs else None
+
+
+def serialize_parameter_value(parameter: Optional[Dict[str, Any]]) -> Optional[str]:
+    value = None if parameter is None else parameter.get('value')
+    if value is None:
+        return None
+    if parameter and parameter.get('content_type'):
+        import json
+
+        return json.dumps(value, separators=(',', ':'))
+    if isinstance(value, (list, tuple)):
+        return ','.join(serialize_header_primitive(item) for item in value if item is not None)
+    if isinstance(value, dict):
+        return serialize_header_object(value, bool(parameter and parameter.get('explode')))
+    return serialize_header_primitive(value)
+
+
+def serialize_header_object(value: Dict[str, Any], explode: bool) -> str:
+    entries = [(key, entry_value) for key, entry_value in value.items() if entry_value is not None]
+    if explode:
+        return ','.join(f"{key}={serialize_header_primitive(entry_value)}" for key, entry_value in entries)
+    return ','.join(item for key, entry_value in entries for item in (str(key), serialize_header_primitive(entry_value)))
+
+
+def serialize_header_primitive(value: Any) -> str:
+    return str(value)
 
 
 
@@ -191,23 +244,47 @@ class FilesAnthropicApi:
     def __init__(self, client: HttpClient):
         self._client = client
 
-    def list_v1_files(self, before_id: Optional[str] = None, after_id: Optional[str] = None, limit: Optional[int] = None) -> AnthropicFileListResponse:
+    def list_v1_files(self, anthropic_version: str, before_id: Optional[str] = None, after_id: Optional[str] = None, limit: Optional[int] = None) -> AnthropicFileListResponse:
         """Anthropic list files"""
         query = build_query_string([
             {'name': 'before_id', 'value': before_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'after_id', 'value': after_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
-        return self._client.get(_append_query_string(f"/anthropic/v1/files", query))
+        request_headers = build_request_headers(
+            {
+                'anthropic-version': {'value': anthropic_version, 'style': 'simple', 'explode': False},
+            },
+            {}
+        )
+        return self._client.get(_append_query_string(f"/anthropic/v1/files", query), headers=request_headers)
 
-    def create_v1_file(self, body: AnthropicFileUploadMultipartRequest) -> AnthropicFile:
+    def create_v1_file(self, body: AnthropicFileUploadMultipartRequest, anthropic_version: str) -> AnthropicFile:
         """Anthropic upload file"""
-        return self._client.post(f"/anthropic/v1/files", data=body)
+        request_headers = build_request_headers(
+            {
+                'anthropic-version': {'value': anthropic_version, 'style': 'simple', 'explode': False},
+            },
+            {}
+        )
+        return self._client.post(f"/anthropic/v1/files", data=body, headers=request_headers)
 
-    def delete_v1_files(self, file_id: str) -> AnthropicDeleteResponse:
+    def delete_v1_files(self, file_id: str, anthropic_version: str) -> AnthropicDeleteResponse:
         """Anthropic delete file"""
-        return self._client.delete(f"/anthropic/v1/files/{serialize_path_parameter(file_id, {'name': 'file_id', 'style': 'simple', 'explode': False})}")
+        request_headers = build_request_headers(
+            {
+                'anthropic-version': {'value': anthropic_version, 'style': 'simple', 'explode': False},
+            },
+            {}
+        )
+        return self._client.delete(f"/anthropic/v1/files/{serialize_path_parameter(file_id, {'name': 'file_id', 'style': 'simple', 'explode': False})}", headers=request_headers)
 
-    def list_v1_files_content(self, file_id: str) -> bytes:
+    def list_v1_files_content(self, file_id: str, anthropic_version: str) -> bytes:
         """Anthropic retrieve file content"""
-        return self._client.request_bytes('GET', f"/anthropic/v1/files/{serialize_path_parameter(file_id, {'name': 'file_id', 'style': 'simple', 'explode': False})}/content")
+        request_headers = build_request_headers(
+            {
+                'anthropic-version': {'value': anthropic_version, 'style': 'simple', 'explode': False},
+            },
+            {}
+        )
+        return self._client.request_bytes('GET', f"/anthropic/v1/files/{serialize_path_parameter(file_id, {'name': 'file_id', 'style': 'simple', 'explode': False})}/content", headers=request_headers)

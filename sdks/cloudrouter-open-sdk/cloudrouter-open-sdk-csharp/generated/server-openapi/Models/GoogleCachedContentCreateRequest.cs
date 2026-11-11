@@ -9,7 +9,7 @@ namespace Sdkwork.CloudRouter.Open.Models
         public List<GoogleContent>? Contents { get; set; }
         public string? DisplayName { get; set; }
         public string? ExpireTime { get; set; }
-        public string? Model { get; set; }
+        public string Model { get; set; }
         public GoogleContent? SystemInstruction { get; set; }
         public GoogleToolConfig? ToolConfig { get; set; }
         public List<GoogleTool>? Tools { get; set; }

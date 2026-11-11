@@ -1,10 +1,12 @@
 package types
 
-// Volcengine Ark volcengine content part schema exposed by Cloud Router vendor routing.
+// One Volcengine Ark content part. `type` selects the required member: `text` requires `text`; `image_url`, `video_url`, and `audio_url` require the matching source object; `draft_task` requires `draft_task`.
 type VolcengineContentPart struct {
-	FileId string `json:"file_id"`
-	ImageUrl string `json:"image_url"`
+	AudioUrl ArkAudioSource `json:"audio_url"`
+	DraftTask ArkDraftTask `json:"draft_task"`
+	ImageUrl ArkImageSource `json:"image_url"`
+	Role string `json:"role"`
 	Text string `json:"text"`
 	Type string `json:"type"`
-	VideoUrl string `json:"video_url"`
+	VideoUrl ArkVideoSource `json:"video_url"`
 }

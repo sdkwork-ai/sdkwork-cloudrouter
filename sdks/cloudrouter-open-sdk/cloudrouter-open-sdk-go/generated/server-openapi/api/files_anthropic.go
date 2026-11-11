@@ -18,13 +18,17 @@ func NewFilesAnthropicApi(client *sdkhttp.Client) *FilesAnthropicApi {
 }
 
 // Anthropic list files
-func (a *FilesAnthropicApi) ListV1Files(beforeId *string, afterId *string, limit *int) (sdktypes.AnthropicFileListResponse, error) {
+func (a *FilesAnthropicApi) ListV1Files(anthropicVersion string, beforeId *string, afterId *string, limit *int) (sdktypes.AnthropicFileListResponse, error) {
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "before_id", Value: func() interface{} { if beforeId == nil { return nil }; return *beforeId }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "after_id", Value: func() interface{} { if afterId == nil { return nil }; return *afterId }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
     })
-    raw, err := a.client.Get(AppendQueryString("/anthropic/v1/files", query), nil, nil)
+    headers := BuildRequestHeaders(
+        map[string]ParameterSpec{"anthropic-version": ParameterSpec{Value: anthropicVersion, Style: "simple", Explode: false},},
+        map[string]ParameterSpec{},
+    )
+    raw, err := a.client.Get(AppendQueryString("/anthropic/v1/files", query), nil, headers)
     if err != nil {
         var zero sdktypes.AnthropicFileListResponse
         return zero, err
@@ -33,8 +37,12 @@ func (a *FilesAnthropicApi) ListV1Files(beforeId *string, afterId *string, limit
 }
 
 // Anthropic upload file
-func (a *FilesAnthropicApi) CreateV1File(body sdktypes.AnthropicFileUploadMultipartRequest) (sdktypes.AnthropicFile, error) {
-    raw, err := a.client.Post("/anthropic/v1/files", body, nil, nil, "multipart/form-data")
+func (a *FilesAnthropicApi) CreateV1File(body sdktypes.AnthropicFileUploadMultipartRequest, anthropicVersion string) (sdktypes.AnthropicFile, error) {
+    headers := BuildRequestHeaders(
+        map[string]ParameterSpec{"anthropic-version": ParameterSpec{Value: anthropicVersion, Style: "simple", Explode: false},},
+        map[string]ParameterSpec{},
+    )
+    raw, err := a.client.Post("/anthropic/v1/files", body, nil, headers, "multipart/form-data")
     if err != nil {
         var zero sdktypes.AnthropicFile
         return zero, err
@@ -43,8 +51,12 @@ func (a *FilesAnthropicApi) CreateV1File(body sdktypes.AnthropicFileUploadMultip
 }
 
 // Anthropic delete file
-func (a *FilesAnthropicApi) DeleteV1Files(fileId string) (sdktypes.AnthropicDeleteResponse, error) {
-    raw, err := a.client.Delete(fmt.Sprintf("/anthropic/v1/files/%s", SerializePathParameter(fileId, PathParameterSpec{Name: "file_id", Style: "simple", Explode: false})), nil, nil)
+func (a *FilesAnthropicApi) DeleteV1Files(fileId string, anthropicVersion string) (sdktypes.AnthropicDeleteResponse, error) {
+    headers := BuildRequestHeaders(
+        map[string]ParameterSpec{"anthropic-version": ParameterSpec{Value: anthropicVersion, Style: "simple", Explode: false},},
+        map[string]ParameterSpec{},
+    )
+    raw, err := a.client.Delete(fmt.Sprintf("/anthropic/v1/files/%s", SerializePathParameter(fileId, PathParameterSpec{Name: "file_id", Style: "simple", Explode: false})), nil, headers)
     if err != nil {
         var zero sdktypes.AnthropicDeleteResponse
         return zero, err
@@ -53,8 +65,12 @@ func (a *FilesAnthropicApi) DeleteV1Files(fileId string) (sdktypes.AnthropicDele
 }
 
 // Anthropic retrieve file content
-func (a *FilesAnthropicApi) ListV1FilesContent(fileId string) ([]byte, error) {
-    return a.client.RequestBytes("GET", fmt.Sprintf("/anthropic/v1/files/%s/content", SerializePathParameter(fileId, PathParameterSpec{Name: "file_id", Style: "simple", Explode: false})), nil, nil, nil, "", false, false)
+func (a *FilesAnthropicApi) ListV1FilesContent(fileId string, anthropicVersion string) ([]byte, error) {
+    headers := BuildRequestHeaders(
+        map[string]ParameterSpec{"anthropic-version": ParameterSpec{Value: anthropicVersion, Style: "simple", Explode: false},},
+        map[string]ParameterSpec{},
+    )
+    return a.client.RequestBytes("GET", fmt.Sprintf("/anthropic/v1/files/%s/content", SerializePathParameter(fileId, PathParameterSpec{Name: "file_id", Style: "simple", Explode: false})), nil, nil, headers, "", false, false)
 }
 
 type PathParameterSpec struct {
@@ -283,7 +299,92 @@ func EncodeQueryValue(value string, allowReserved bool) string {
 }
 
 
+type ParameterSpec struct {
+    Value       interface{}
+    Style       string
+    Explode     bool
+    ContentType string
+}
 
+func BuildRequestHeaders(headers map[string]ParameterSpec, cookies map[string]ParameterSpec) map[string]string {
+    requestHeaders := map[string]string{}
+    for name, parameter := range headers {
+        if serialized, ok := SerializeParameterValue(parameter); ok {
+            requestHeaders[name] = serialized
+        }
+    }
+
+    if cookieHeader := BuildCookieHeader(cookies); cookieHeader != "" {
+        if existing, ok := requestHeaders["Cookie"]; ok && existing != "" {
+            requestHeaders["Cookie"] = existing + "; " + cookieHeader
+        } else {
+            requestHeaders["Cookie"] = cookieHeader
+        }
+    }
+
+    if len(requestHeaders) == 0 {
+        return nil
+    }
+    return requestHeaders
+}
+
+func BuildCookieHeader(cookies map[string]ParameterSpec) string {
+    pairs := make([]string, 0, len(cookies))
+    for name, parameter := range cookies {
+        if serialized, ok := SerializeParameterValue(parameter); ok {
+            pairs = append(pairs, url.QueryEscape(name)+"="+url.QueryEscape(serialized))
+        }
+    }
+    return strings.Join(pairs, "; ")
+}
+
+func SerializeParameterValue(parameter ParameterSpec) (string, bool) {
+    value := parameter.Value
+    if value == nil {
+        return "", false
+    }
+    if parameter.ContentType != "" {
+        encoded, _ := json.Marshal(value)
+        return string(encoded), true
+    }
+    switch typed := value.(type) {
+    case string:
+        return typed, true
+    case fmt.Stringer:
+        return typed.String(), true
+    case []string:
+        return strings.Join(typed, ","), true
+    case []int:
+        values := make([]string, 0, len(typed))
+        for _, item := range typed {
+            values = append(values, fmt.Sprint(item))
+        }
+        return strings.Join(values, ","), true
+    case map[string]string:
+        return SerializeHeaderObject(stringMapToInterface(typed), parameter.Explode), true
+    case map[string]int:
+        return SerializeHeaderObject(intMapToInterface(typed), parameter.Explode), true
+    case map[string]interface{}:
+        return SerializeHeaderObject(typed, parameter.Explode), true
+    default:
+        return fmt.Sprint(value), true
+    }
+}
+
+func SerializeHeaderObject(values map[string]interface{}, explode bool) string {
+    serialized := make([]string, 0, len(values)*2)
+    for key, value := range values {
+        if value == nil {
+            continue
+        }
+        if explode {
+            serialized = append(serialized, key+"="+fmt.Sprint(value))
+        } else {
+            serialized = append(serialized, key, fmt.Sprint(value))
+        }
+    }
+    return strings.Join(serialized, ",")
+}
 func stringSliceToInterface(values []string) []interface{} {
     result := make([]interface{}, 0, len(values))
     for _, value := range values {

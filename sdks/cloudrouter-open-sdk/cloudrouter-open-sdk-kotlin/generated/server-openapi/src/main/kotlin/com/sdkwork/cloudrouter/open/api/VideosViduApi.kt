@@ -33,9 +33,9 @@ class VideosViduApi(private val client: HttpClient) {
     }
 
     /** Vidu create template video */
-    suspend fun createEntV2Template(body: ViduTemplateRequest): ViduVideoGenerationTask? {
+    suspend fun createEntV2Template(body: ViduTemplateRequest): ViduTemplateTask? {
         val raw = client.post("/vidu/ent/v2/template", body, null, null, "application/json")
-        return client.convertValue(raw, object : TypeReference<ViduVideoGenerationTask>() {})
+        return client.convertValue(raw, object : TypeReference<ViduTemplateTask>() {})
     }
 
     /** Vidu text to video */

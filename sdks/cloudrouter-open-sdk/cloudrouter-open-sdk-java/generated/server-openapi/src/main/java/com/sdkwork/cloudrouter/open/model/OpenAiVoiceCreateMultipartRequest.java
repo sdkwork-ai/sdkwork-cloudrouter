@@ -2,18 +2,12 @@ package com.sdkwork.cloudrouter.open.model;
 
 
 public class OpenAiVoiceCreateMultipartRequest {
-    private String description;
     private byte[] file;
-    private String metadata;
+    private String model;
     private String name;
-
-    public String getDescription() {
-        return this.description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    private String prompt;
+    private String scriptHint;
+    private String type;
 
     public byte[] getFile() {
         return this.file;
@@ -23,12 +17,12 @@ public class OpenAiVoiceCreateMultipartRequest {
         this.file = file;
     }
 
-    public String getMetadata() {
-        return this.metadata;
+    public String getModel() {
+        return this.model;
     }
 
-    public void setMetadata(String metadata) {
-        this.metadata = metadata;
+    public void setModel(String model) {
+        this.model = model;
     }
 
     public String getName() {
@@ -37,5 +31,29 @@ public class OpenAiVoiceCreateMultipartRequest {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getPrompt() {
+        return this.prompt;
+    }
+
+    public void setPrompt(String prompt) {
+        this.prompt = prompt;
+    }
+
+    public String getScriptHint() {
+        return this.scriptHint;
+    }
+
+    public void setScriptHint(String scriptHint) {
+        this.scriptHint = scriptHint;
+    }
+
+    public String getType() {
+        return this.type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }

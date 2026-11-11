@@ -6,12 +6,10 @@ namespace Sdkwork.CloudRouter.Open.Models
 {
     public class OpenAiVideoCreateRequest
     {
-        public string? Image { get; set; }
-        public Dictionary<string, string>? Metadata { get; set; }
-        public string Model { get; set; }
+        public Dictionary<string, string>? InputReference { get; set; }
+        public string? Model { get; set; }
         public string Prompt { get; set; }
-        public int? Seconds { get; set; }
+        public string? Seconds { get; set; }
         public string? Size { get; set; }
-        public string? Video { get; set; }
     }
 }

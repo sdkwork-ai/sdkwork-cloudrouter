@@ -1,9 +1,26 @@
 package types
 
-// OpenAI-compatible open ai image edit request schema exposed by Cloud Router.
+// OpenAI-compatible image edit request (JSON form, `POST /v1/images/edits`).
 type OpenAiImageEditRequest struct {
-	Image OpenAiImageReferenceInputList `json:"image"`
-	Mask OpenAiImageReferenceInput `json:"mask"`
+	Background string `json:"background"`
+	Complexity string `json:"complexity"`
+	FrameCount int `json:"frame_count"`
+	FrameDurationMs int `json:"frame_duration_ms"`
+	Images []OpenAiImageReferenceInput `json:"images"`
+	InputFidelity string `json:"input_fidelity"`
+	Markup map[string]ProviderJsonValue `json:"markup"`
+	Mask map[string]ProviderJsonValue `json:"mask"`
 	Model string `json:"model"`
+	Moderation string `json:"moderation"`
+	N int `json:"n"`
+	OutputCompression int `json:"output_compression"`
+	OutputFormat string `json:"output_format"`
+	PartialImages int `json:"partial_images"`
 	Prompt string `json:"prompt"`
+	Quality string `json:"quality"`
+	SafetyIdentifier string `json:"safety_identifier"`
+	Size string `json:"size"`
+	Stream bool `json:"stream"`
+	Svg map[string]ProviderJsonValue `json:"svg"`
+	User string `json:"user"`
 }

@@ -1,0 +1,10 @@
+[Unit]
+Description=Retain content-hashed Cloud Router Adaptive Web chunks from recent releases
+Documentation=file:///usr/share/sdkwork/router/web
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/sdkwork-cloudrouter-retain-web-assets
+Nice=10
+IOSchedulingClass=idle

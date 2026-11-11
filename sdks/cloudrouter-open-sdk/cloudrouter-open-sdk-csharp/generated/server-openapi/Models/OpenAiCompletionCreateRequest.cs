@@ -19,6 +19,7 @@ namespace Sdkwork.CloudRouter.Open.Models
         public int? Seed { get; set; }
         public string? Stop { get; set; }
         public bool? Stream { get; set; }
+        public OpenAiStreamOptions? StreamOptions { get; set; }
         public string? Suffix { get; set; }
         public double? Temperature { get; set; }
         public double? TopP { get; set; }

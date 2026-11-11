@@ -37,8 +37,8 @@ func (a *RealtimeApi) CreateCallsAccept(callId string, body sdktypes.OpenAiRealt
 }
 
 // Hang up realtime call
-func (a *RealtimeApi) CreateCallsHangup(callId string, body sdktypes.OpenAiRealtimeCallActionRequest) (sdktypes.OpenAiRealtimeCall, error) {
-    raw, err := a.client.Post(AiApiPath(fmt.Sprintf("/realtime/calls/%s/hangup", SerializePathParameter(callId, PathParameterSpec{Name: "call_id", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+func (a *RealtimeApi) CreateCallsHangup(callId string) (sdktypes.OpenAiRealtimeCall, error) {
+    raw, err := a.client.Post(AiApiPath(fmt.Sprintf("/realtime/calls/%s/hangup", SerializePathParameter(callId, PathParameterSpec{Name: "call_id", Style: "simple", Explode: false}))), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.OpenAiRealtimeCall
         return zero, err
@@ -57,7 +57,7 @@ func (a *RealtimeApi) CreateCallsRefer(callId string, body sdktypes.OpenAiRealti
 }
 
 // Reject realtime call
-func (a *RealtimeApi) CreateCallsReject(callId string, body sdktypes.OpenAiRealtimeCallActionRequest) (sdktypes.OpenAiRealtimeCall, error) {
+func (a *RealtimeApi) CreateCallsReject(callId string, body sdktypes.OpenAiRealtimeCallRejectRequest) (sdktypes.OpenAiRealtimeCall, error) {
     raw, err := a.client.Post(AiApiPath(fmt.Sprintf("/realtime/calls/%s/reject", SerializePathParameter(callId, PathParameterSpec{Name: "call_id", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.OpenAiRealtimeCall

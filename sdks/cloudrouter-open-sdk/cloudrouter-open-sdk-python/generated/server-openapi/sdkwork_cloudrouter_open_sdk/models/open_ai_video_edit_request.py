@@ -5,11 +5,6 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
 @dataclass
 class OpenAiVideoEditRequest:
-    """OpenAI-compatible request to edit a video."""
-    image: Optional[str] = None
-    metadata: Optional[Dict[str, str]] = None
-    model: Optional[str] = None
-    prompt: Optional[str] = None
-    seconds: Optional[int] = None
-    size: Optional[str] = None
-    video: Optional[str] = None
+    """OpenAI-compatible request to edit a video (`POST /v1/videos/edits`)."""
+    prompt: str
+    video: str

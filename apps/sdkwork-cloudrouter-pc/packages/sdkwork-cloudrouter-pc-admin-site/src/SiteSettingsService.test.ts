@@ -1,4 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import {
+  DEFAULT_BRAND_LOGO_URL,
+  driveUploadImageValueToCloudRouterMediaResource,
+  readDriveShareToken,
+  readMediaResourceUrl,
+  resolveBrandLogoUrl,
+} from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { FOOTER_SECTIONS, SOCIAL_PLATFORMS } from '@sdkwork/cloudroutes-pc-commons/footer-settings';
 import {
   DEFAULT_SITE_SETTINGS,
@@ -466,10 +473,124 @@ describe('site settings documents', () => {
     expect(toSiteSettings({ ...payload, siteName: 'Router Operations' }).homepage.tagline).toBe('One gateway');
   });
 
+  /**
+   * The exact seam between the upload control and the save payload: the shared Drive uploader hands
+   * back `{ uri, source: 'drive', metadata }`, and that value has to become the media resource the
+   * service stores — carrying the reader share token that makes it resolvable for visitors.
+   */
+  it('converts a Drive upload value into the media resource the save payload carries', () => {
+    const uploadValue = {
+      uri: 'drive://spaces/space-1/nodes/node-1',
+      source: 'drive' as const,
+      metadata: {
+        drive: {
+          spaceId: 'space-1',
+          nodeId: 'node-1',
+          shareToken: 'share-token-abc',
+          originalFileName: 'brand-logo.png',
+          contentType: 'image/png',
+          contentLength: '8421',
+        },
+      },
+    };
+
+    const media = driveUploadImageValueToCloudRouterMediaResource(uploadValue, 'image');
+    expect(media).toMatchObject({
+      id: 'node-1',
+      kind: 'image',
+      source: 'drive',
+      uri: 'drive://spaces/space-1/nodes/node-1',
+      fileName: 'brand-logo.png',
+      mimeType: 'image/png',
+      sizeBytes: '8421',
+    });
+    expect(readDriveShareToken(media)).toBe('share-token-abc');
+
+    const payload = toSiteSettingsUpdateRequest({ ...DEFAULT_SITE_SETTINGS, logo: media });
+    expect(payload.logo).toMatchObject({
+      source: 'drive',
+      uri: 'drive://spaces/space-1/nodes/node-1',
+      metadata: { drive: { shareToken: 'share-token-abc' } },
+    });
+  });
+
   it('refuses to build a payload from an unparseable catalog', () => {
     // The page disables saving while the document is broken; reaching this means a caller bypassed
     // the page, and sending an empty catalog would clear one the operator was still editing.
     expect(() => toSiteSettingsUpdateRequest({ ...DEFAULT_SITE_SETTINGS, downloads: '{' })).toThrow();
+  });
+
+  /**
+   * The logo is uploaded from `/admin/site` through the Drive upload component, which hands back a
+   * `drive://` reference plus a reader share token — not an HTTP URL. The save payload and the
+   * read model both have to carry that shape untouched, or the public surfaces receive a resource
+   * they cannot resolve.
+   */
+  it('round-trips an uploaded drive logo through the save payload', () => {
+    const uploadedLogo = {
+      id: 'node-1',
+      kind: 'image' as const,
+      source: 'drive' as const,
+      uri: 'drive://spaces/space-1/nodes/node-1',
+      fileName: 'brand-logo.png',
+      mimeType: 'image/png',
+      sizeBytes: '8421',
+      metadata: {
+        drive: { spaceId: 'space-1', nodeId: 'node-1', shareToken: 'share-token-abc' },
+        uploadCategory: 'public_asset',
+        uploadSlot: 'site-logo',
+      },
+    };
+
+    const payload = toSiteSettingsUpdateRequest({ ...DEFAULT_SITE_SETTINGS, logo: uploadedLogo });
+
+    expect(payload.logo).toMatchObject({
+      kind: 'image',
+      source: 'drive',
+      uri: 'drive://spaces/space-1/nodes/node-1',
+      metadata: { drive: { shareToken: 'share-token-abc' }, uploadSlot: 'site-logo' },
+    });
+    // A page reload reads the stored resource back: the share token is what makes the logo
+    // resolvable for anonymous visitors, so losing it here would break it silently.
+    expect(toSiteSettings(payload as unknown as Record<string, unknown>).logo).toMatchObject({
+      kind: 'image',
+      source: 'drive',
+      uri: 'drive://spaces/space-1/nodes/node-1',
+      metadata: { drive: { shareToken: 'share-token-abc' } },
+    });
+  });
+
+  /**
+   * Removing the logo is the mirror image of uploading one. The update contract has no nullable
+   * media field and an absent key means "leave the stored value alone", so a cleared field has to
+   * travel as an explicit empty resource — omitting it made Clear a no-op after a reload.
+   */
+  it('sends an explicit empty reference when the operator clears the logo', () => {
+    const configured = {
+      ...DEFAULT_SITE_SETTINGS,
+      logo: { kind: 'image' as const, source: 'external_url' as const, publicUrl: 'https://cdn.example.com/logo.png' },
+    };
+    const payload = toSiteSettingsUpdateRequest({ ...configured, logo: undefined }, configured);
+
+    expect(payload.logo).toEqual({ kind: 'image', source: 'external_url', publicUrl: '' });
+    const stored = toSiteSettings(payload as unknown as Record<string, unknown>).logo;
+    expect(readMediaResourceUrl(stored)).toBe('');
+    // Every brand surface resolves the cleared record to the shipped mark rather than to an image
+    // it cannot load.
+    expect(resolveBrandLogoUrl({ logo: stored })).toBe(DEFAULT_BRAND_LOGO_URL);
+  });
+
+  /**
+   * The complement: a field that never had an asset must stay out of the payload, so saving an
+   * unrelated change does not litter the stored document with empty media records.
+   */
+  it('leaves media fields that were never configured out of the payload', () => {
+    const payload = toSiteSettingsUpdateRequest(DEFAULT_SITE_SETTINGS) as unknown as Record<string, unknown>;
+
+    expect(payload.logo).toBeUndefined();
+    expect(payload.icon).toBeUndefined();
+    expect(payload.favicon).toBeUndefined();
+    expect(payload.officialAccountQrCode).toBeUndefined();
   });
 
   it('surfaces each document on exactly one tab', () => {

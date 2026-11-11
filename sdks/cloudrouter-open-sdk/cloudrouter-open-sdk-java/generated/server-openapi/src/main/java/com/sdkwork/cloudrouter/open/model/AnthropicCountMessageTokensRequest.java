@@ -1,29 +1,24 @@
 package com.sdkwork.cloudrouter.open.model;
 
 import java.util.List;
-import java.util.Map;
 
 public class AnthropicCountMessageTokensRequest {
-    private Integer maxTokens;
+    private AnthropicCacheControl cacheControl;
     private List<AnthropicMessageParam> messages;
-    private Map<String, String> metadata;
     private String model;
-    private List<String> stopSequences;
-    private Boolean stream;
+    private AnthropicOutputConfig outputConfig;
+    private String speed;
     private String system;
-    private Double temperature;
     private AnthropicThinkingConfig thinking;
     private AnthropicToolChoice toolChoice;
     private List<AnthropicTool> tools;
-    private Integer topK;
-    private Double topP;
 
-    public Integer getMaxTokens() {
-        return this.maxTokens;
+    public AnthropicCacheControl getCacheControl() {
+        return this.cacheControl;
     }
 
-    public void setMaxTokens(Integer maxTokens) {
-        this.maxTokens = maxTokens;
+    public void setCacheControl(AnthropicCacheControl cacheControl) {
+        this.cacheControl = cacheControl;
     }
 
     public List<AnthropicMessageParam> getMessages() {
@@ -34,14 +29,6 @@ public class AnthropicCountMessageTokensRequest {
         this.messages = messages;
     }
 
-    public Map<String, String> getMetadata() {
-        return this.metadata;
-    }
-
-    public void setMetadata(Map<String, String> metadata) {
-        this.metadata = metadata;
-    }
-
     public String getModel() {
         return this.model;
     }
@@ -50,20 +37,20 @@ public class AnthropicCountMessageTokensRequest {
         this.model = model;
     }
 
-    public List<String> getStopSequences() {
-        return this.stopSequences;
+    public AnthropicOutputConfig getOutputConfig() {
+        return this.outputConfig;
     }
 
-    public void setStopSequences(List<String> stopSequences) {
-        this.stopSequences = stopSequences;
+    public void setOutputConfig(AnthropicOutputConfig outputConfig) {
+        this.outputConfig = outputConfig;
     }
 
-    public Boolean getStream() {
-        return this.stream;
+    public String getSpeed() {
+        return this.speed;
     }
 
-    public void setStream(Boolean stream) {
-        this.stream = stream;
+    public void setSpeed(String speed) {
+        this.speed = speed;
     }
 
     public String getSystem() {
@@ -72,14 +59,6 @@ public class AnthropicCountMessageTokensRequest {
 
     public void setSystem(String system) {
         this.system = system;
-    }
-
-    public Double getTemperature() {
-        return this.temperature;
-    }
-
-    public void setTemperature(Double temperature) {
-        this.temperature = temperature;
     }
 
     public AnthropicThinkingConfig getThinking() {
@@ -104,21 +83,5 @@ public class AnthropicCountMessageTokensRequest {
 
     public void setTools(List<AnthropicTool> tools) {
         this.tools = tools;
-    }
-
-    public Integer getTopK() {
-        return this.topK;
-    }
-
-    public void setTopK(Integer topK) {
-        this.topK = topK;
-    }
-
-    public Double getTopP() {
-        return this.topP;
-    }
-
-    public void setTopP(Double topP) {
-        this.topP = topP;
     }
 }

@@ -1,7 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Moon, Sun, Terminal, X } from 'lucide-react';
+import { Moon, Sun, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { SdkworkAuthBrand } from '@sdkwork/auth-pc-react';
+import { DEFAULT_BRAND_LOGO_URL } from '@sdkwork/cloudroutes-pc-commons/runtime';
 
 type AuthThemeMode = 'dark' | 'light';
 
@@ -32,7 +33,9 @@ export function CloudRouterAuthShell({
   const shouldRenderDesktopHeader = isDesktopRuntime();
   const shouldRenderWindowControls = shouldRenderDesktopHeader && !usesNativeDesktopWindowControls();
   const brandName = brand?.name?.trim() || 'Cloud Router';
-  const brandLogoUrl = brand?.logoUrl?.trim();
+  // The window chrome always shows a mark: the shell is the last place that can
+  // substitute the shipped logo for a brand object that arrived without one.
+  const brandLogoUrl = brand?.logoUrl?.trim() || DEFAULT_BRAND_LOGO_URL;
 
   useEffect(() => {
     document.documentElement.classList.toggle('light-mode', isLightMode);
@@ -74,18 +77,12 @@ export function CloudRouterAuthShell({
       {shouldRenderDesktopHeader ? (
         <header className="sdkwork-cloudrouter-auth-header drag-region">
           <div className="sdkwork-cloudrouter-auth-header-brand">
-            {brandLogoUrl ? (
-              <img
-                alt=""
-                className="sdkwork-cloudrouter-auth-header-logo"
-                data-testid="cloudrouter-auth-header-logo"
-                src={brandLogoUrl}
-              />
-            ) : (
-              <span className="sdkwork-cloudrouter-auth-header-mark">
-                <Terminal size={12} />
-              </span>
-            )}
+            <img
+              alt=""
+              className="sdkwork-cloudrouter-auth-header-logo"
+              data-testid="cloudrouter-auth-header-logo"
+              src={brandLogoUrl}
+            />
             <span className="truncate">{brandName}</span>
           </div>
           <div className="sdkwork-cloudrouter-auth-header-center" />

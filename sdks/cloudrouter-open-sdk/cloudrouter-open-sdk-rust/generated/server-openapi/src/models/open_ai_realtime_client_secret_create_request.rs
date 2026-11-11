@@ -1,25 +1,13 @@
 use serde::{Deserialize, Serialize};
 
-/// OpenAI-compatible request to create a realtime client secret.
+/// OpenAI-compatible request to create an ephemeral realtime client secret (`POST /v1/realtime/client_secrets`).
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct OpenAiRealtimeClientSecretCreateRequest {
-    /// Realtime session instructions.
+    /// Secret expiration policy.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub instructions: Option<String>,
+    pub expires_after: Option<std::collections::HashMap<String, String>>,
 
-    /// Developer-defined realtime metadata.
+    /// Realtime session configuration accepted by the official client-secrets endpoint.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<std::collections::HashMap<String, String>>,
-
-    /// Realtime modalities requested by the session.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub modalities: Option<Vec<String>>,
-
-    /// Realtime model id or Cloud Router catalog key.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub model: Option<String>,
-
-    /// Voice identifier for realtime audio output.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub voice: Option<String>,
+    pub session: Option<std::collections::HashMap<String, String>>,
 }

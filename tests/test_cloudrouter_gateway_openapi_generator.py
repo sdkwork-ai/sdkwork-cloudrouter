@@ -573,6 +573,1631 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
             creations_response = spec["components"]["schemas"]["ViduTaskCreationsResponse"]
             self.assertIn("creations", creations_response["properties"])
 
+    def test_documents_volcengine_ark_media_official_fields(self) -> None:
+        """Ark video/image bodies mirror the official reference pages field by field.
+
+        Sources: docs.volcengine.com create-video-generation-task-api,
+        get-video-generation-task-api, and image-generation-api. The same wire is
+        served by the ByteDance Ark doors, so both families are pinned here.
+        """
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        expected_video_create_fields = {
+            "model",
+            "content",
+            "omni_reference_task_type",
+            "resolution",
+            "ratio",
+            "duration",
+            "frames",
+            "generate_audio",
+            "watermark",
+            "output_format",
+            "seed",
+            "camera_fixed",
+            "return_last_frame",
+            "draft",
+            "service_tier",
+            "callback_url",
+            "execution_expires_after",
+            "priority",
+            "safety_identifier",
+            "tools",
+        }
+        for schema_name in (
+            "VolcengineContentGenerationTaskCreateRequest",
+            "BytedanceVideoGenerationRequest",
+        ):
+            request = schemas[schema_name]
+            self.assertEqual(["model", "content"], request["required"], schema_name)
+            self.assertEqual(expected_video_create_fields, set(request["properties"]), schema_name)
+            self.assertNotIn("metadata", request["properties"], schema_name)
+            self.assertEqual(
+                ["auto", "reference", "edit", "extend"],
+                request["properties"]["omni_reference_task_type"]["enum"],
+            )
+            self.assertEqual("auto", request["properties"]["omni_reference_task_type"]["default"])
+            self.assertEqual(
+                ["480p", "720p", "1080p", "4k"],
+                request["properties"]["resolution"]["enum"],
+            )
+            self.assertEqual(
+                ["16:9", "4:3", "1:1", "3:4", "9:16", "21:9", "adaptive"],
+                request["properties"]["ratio"]["enum"],
+            )
+            self.assertEqual(-1, request["properties"]["duration"]["minimum"])
+            self.assertEqual(29, request["properties"]["frames"]["minimum"])
+            self.assertEqual(289, request["properties"]["frames"]["maximum"])
+            self.assertTrue(request["properties"]["generate_audio"]["default"])
+            self.assertFalse(request["properties"]["watermark"]["default"])
+            self.assertEqual(
+                ["mp4", "mov"], request["properties"]["output_format"]["enum"]
+            )
+            self.assertEqual(-1, request["properties"]["seed"]["minimum"])
+            self.assertEqual(2147483647, request["properties"]["seed"]["maximum"])
+            self.assertFalse(request["properties"]["camera_fixed"]["default"])
+            self.assertFalse(request["properties"]["return_last_frame"]["default"])
+            self.assertFalse(request["properties"]["draft"]["default"])
+            self.assertEqual(
+                ["default", "flex"], request["properties"]["service_tier"]["enum"]
+            )
+            self.assertEqual(
+                172800, request["properties"]["execution_expires_after"]["default"]
+            )
+            self.assertEqual(3600, request["properties"]["execution_expires_after"]["minimum"])
+            self.assertEqual(259200, request["properties"]["execution_expires_after"]["maximum"])
+            self.assertEqual(0, request["properties"]["priority"]["minimum"])
+            self.assertEqual(9, request["properties"]["priority"]["maximum"])
+            self.assertEqual(64, request["properties"]["safety_identifier"]["maxLength"])
+            self.assertEqual(
+                {"$ref": "#/components/schemas/ArkWebSearchTool"},
+                request["properties"]["tools"]["items"],
+            )
+
+        content_part = schemas["VolcengineContentPart"]
+        self.assertEqual(["type"], content_part["required"])
+        self.assertEqual(
+            {"type", "text", "image_url", "video_url", "audio_url", "draft_task", "role"},
+            set(content_part["properties"]),
+        )
+        self.assertNotIn("file_id", content_part["properties"])
+        self.assertEqual(
+            ["text", "image_url", "video_url", "audio_url", "draft_task"],
+            content_part["properties"]["type"]["enum"],
+        )
+        for media_field in ("image_url", "video_url", "audio_url"):
+            self.assertEqual(
+                [{"$ref": f"#/components/schemas/Ark{media_field.split('_')[0].capitalize()}Source"}],
+                content_part["properties"][media_field]["allOf"],
+            )
+            self.assertEqual(
+                ["url"],
+                schemas[f"Ark{media_field.split('_')[0].capitalize()}Source"]["required"],
+            )
+        self.assertEqual(
+            [{"$ref": "#/components/schemas/ArkDraftTask"}],
+            content_part["properties"]["draft_task"]["allOf"],
+        )
+        self.assertEqual(
+            [
+                "first_frame",
+                "last_frame",
+                "reference_image",
+                "reference_video",
+                "reference_audio",
+            ],
+            content_part["properties"]["role"]["enum"],
+        )
+
+        create_response = schemas["VolcengineContentGenerationTaskCreateResponse"]
+        self.assertEqual({"id"}, set(create_response["properties"]))
+
+        for schema_name in (
+            "VolcengineContentGenerationTask",
+            "BytedanceVideoGenerationTask",
+        ):
+            task = schemas[schema_name]
+            self.assertEqual(
+                [
+                    "queued",
+                    "running",
+                    "cancelled",
+                    "succeeded",
+                    "failed",
+                    "expired",
+                ],
+                task["properties"]["status"]["enum"],
+                schema_name,
+            )
+            self.assertEqual(
+                [{"$ref": "#/components/schemas/ArkVideoTaskContent"}],
+                task["properties"]["content"]["allOf"],
+                schema_name,
+            )
+            self.assertEqual(
+                [{"$ref": "#/components/schemas/ArkVideoUsage"}],
+                task["properties"]["usage"]["allOf"],
+                schema_name,
+            )
+            self.assertIn("framespersecond", task["properties"], schema_name)
+            self.assertIn("execution_expires_after", task["properties"], schema_name)
+            self.assertNotIn("result", task["properties"], schema_name)
+        self.assertEqual(
+            {"video_url", "last_frame_url"},
+            set(schemas["ArkVideoTaskContent"]["properties"]),
+        )
+
+        expected_image_fields = {
+            "model",
+            "prompt",
+            "image",
+            "layer_decomposition",
+            "size",
+            "optimize_prompt_options",
+            "output_format",
+            "background",
+            "response_format",
+            "sequential_image_generation",
+            "sequential_image_generation_options",
+            "stream",
+            "tools",
+            "watermark",
+        }
+        for schema_name in (
+            "VolcengineImageGenerationRequest",
+            "BytedanceImageGenerationRequest",
+        ):
+            request = schemas[schema_name]
+            self.assertEqual(["model"], request["required"], schema_name)
+            self.assertEqual(expected_image_fields, set(request["properties"]), schema_name)
+            self.assertNotIn("seed", request["properties"], schema_name)
+            self.assertEqual(2, len(request["properties"]["image"]["oneOf"]))
+            self.assertEqual(
+                ["png", "jpeg"], request["properties"]["output_format"]["enum"]
+            )
+            self.assertEqual(
+                ["transparent", "opaque"], request["properties"]["background"]["enum"]
+            )
+            self.assertEqual(
+                ["auto", "disabled"],
+                request["properties"]["sequential_image_generation"]["enum"],
+            )
+            self.assertEqual(15, request["properties"]["sequential_image_generation_options"]["properties"]["max_images"]["maximum"])
+            self.assertTrue(request["properties"]["watermark"]["default"])
+
+        image_response = schemas["VolcengineImageGenerationResponse"]
+        self.assertEqual(
+            {"created", "model", "data", "usage", "tools", "error"},
+            set(image_response["properties"]),
+        )
+        self.assertEqual(
+            {"url", "b64_json", "size", "output_format", "z_index", "name", "description", "bounding_box", "error"},
+            set(schemas["ArkImageGenerationData"]["properties"]),
+        )
+        self.assertEqual(
+            {"generated_images", "input_images", "output_tokens", "total_tokens", "tool_usage"},
+            set(schemas["ArkImageUsage"]["properties"]),
+        )
+
+    def test_documents_alibaba_dashscope_media_contract(self) -> None:
+        """DashScope image/video bodies and the mandatory async header.
+
+        Sources: help.aliyun.com text-to-video-api-reference,
+        image-to-video-api-reference, and text-to-image-v2-api-reference
+        (the `text2image/image-synthesis` legacy section).
+        """
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        for path in (
+            "/alibaba/api/v1/services/aigc/text2image/image-synthesis",
+            "/alibaba/api/v1/services/aigc/video-generation/video-synthesis",
+        ):
+            operation = spec["paths"][path]["post"]
+            headers = [item for item in operation["parameters"] if item.get("in") == "header"]
+            self.assertEqual(["X-DashScope-Async"], [item["name"] for item in headers], path)
+            self.assertTrue(headers[0]["required"], path)
+            self.assertEqual("enable", headers[0]["schema"]["default"], path)
+
+        image = schemas["AlibabaImageGenerationRequest"]
+        self.assertEqual(["model", "input"], image["required"])
+        self.assertEqual({"prompt", "negative_prompt"}, set(image["properties"]["input"]["properties"]))
+        self.assertEqual(["prompt"], image["properties"]["input"]["required"])
+        self.assertEqual(
+            {"size", "n", "prompt_extend", "watermark", "seed"},
+            set(image["properties"]["parameters"]["properties"]),
+        )
+        self.assertEqual(1, image["properties"]["parameters"]["properties"]["n"]["minimum"])
+        self.assertEqual(4, image["properties"]["parameters"]["properties"]["n"]["maximum"])
+        self.assertTrue(image["properties"]["parameters"]["properties"]["prompt_extend"]["default"])
+
+        video = schemas["AlibabaVideoGenerationRequest"]
+        self.assertEqual(["model", "input"], video["required"])
+        self.assertEqual(
+            {"prompt", "negative_prompt", "img_url", "audio_url", "template"},
+            set(video["properties"]["input"]["properties"]),
+        )
+        parameters = video["properties"]["parameters"]
+        self.assertEqual(
+            {"resolution", "ratio", "duration", "prompt_extend", "watermark", "seed"},
+            set(parameters["properties"]),
+        )
+        self.assertEqual(
+            ["480P", "720P", "1080P"], parameters["properties"]["resolution"]["enum"]
+        )
+        self.assertEqual(
+            ["16:9", "9:16", "1:1", "4:3", "3:4"], parameters["properties"]["ratio"]["enum"]
+        )
+        self.assertEqual(2, parameters["properties"]["duration"]["minimum"])
+        self.assertEqual(15, parameters["properties"]["duration"]["maximum"])
+
+        task = schemas["AlibabaAsyncTask"]
+        self.assertEqual(
+            ["PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELED", "UNKNOWN"],
+            task["properties"]["task_status"]["enum"],
+        )
+        for field in ("submit_time", "scheduled_time", "end_time", "orig_prompt", "video_url"):
+            self.assertIn(field, task["properties"])
+        usage = schemas["AlibabaTaskUsage"]
+        self.assertEqual(
+            {"duration", "input_video_duration", "output_video_duration", "SR", "ratio", "image_count"},
+            set(usage["properties"]),
+        )
+
+    def test_documents_elevenlabs_text_to_speech_official_fields(self) -> None:
+        """ElevenLabs TTS body mirrors `Body_text_to_speech_full`.
+
+        Source: the vendor's published OpenAPI document
+        (`https://api.elevenlabs.io/openapi.json`), cached under
+        `.tmp-vendor-specs/elevenlabs.json`.
+        """
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        request = schemas["ElevenLabsTextToSpeechRequest"]
+        self.assertEqual(["text"], request["required"])
+        self.assertEqual(
+            {
+                "text",
+                "model_id",
+                "language_code",
+                "voice_settings",
+                "pronunciation_dictionary_locators",
+                "seed",
+                "previous_text",
+                "next_text",
+                "previous_request_ids",
+                "next_request_ids",
+                "use_pvc_as_ivc",
+                "apply_text_normalization",
+                "apply_language_text_normalization",
+                "audio_effects",
+            },
+            set(request["properties"]),
+        )
+        self.assertEqual("eleven_multilingual_v2", request["properties"]["model_id"]["default"])
+        self.assertEqual(
+            ["auto", "on", "off"], request["properties"]["apply_text_normalization"]["enum"]
+        )
+        self.assertEqual("auto", request["properties"]["apply_text_normalization"]["default"])
+        self.assertFalse(
+            request["properties"]["apply_language_text_normalization"]["default"]
+        )
+        self.assertEqual(4294967295, request["properties"]["seed"]["maximum"])
+        self.assertEqual(3, request["properties"]["pronunciation_dictionary_locators"]["maxItems"])
+        self.assertEqual(
+            {"$ref": "#/components/schemas/ElevenLabsPronunciationDictionaryLocator"},
+            request["properties"]["pronunciation_dictionary_locators"]["items"],
+        )
+        self.assertEqual(
+            [{"$ref": "#/components/schemas/ElevenLabsVoiceSettings"}],
+            request["properties"]["voice_settings"]["allOf"],
+        )
+        self.assertEqual(
+            [{"$ref": "#/components/schemas/ElevenLabsAudioEffects"}],
+            request["properties"]["audio_effects"]["allOf"],
+        )
+        self.assertEqual(
+            {
+                "stability",
+                "similarity_boost",
+                "style",
+                "use_speaker_boost",
+                "speed",
+                "clone_strength",
+            },
+            set(schemas["ElevenLabsVoiceSettings"]["properties"]),
+        )
+        self.assertEqual(
+            {
+                "filter_preset_id",
+                "distance",
+                "environment_id",
+                "background_noise_id",
+                "send_level",
+                "pan",
+            },
+            set(schemas["ElevenLabsAudioEffects"]["properties"]),
+        )
+        self.assertEqual(
+            ["pronunciation_dictionary_id"],
+            schemas["ElevenLabsPronunciationDictionaryLocator"]["required"],
+        )
+
+    def test_documents_kling_image_and_video_to_audio_official_fields(self) -> None:
+        """Kling image + video-to-audio bodies match the vendor's markdown API docs.
+
+        Sources: klingai.com document-api image 3.0-omni image-generation and
+        video audio-generation video-to-audio.
+        """
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        image = schemas["KlingImageGenerationRequest"]
+        self.assertEqual(["prompt"], image["required"])
+        self.assertEqual(
+            {
+                "model_name",
+                "prompt",
+                "negative_prompt",
+                "image",
+                "image_reference",
+                "image_fidelity",
+                "human_fidelity",
+                "element_list",
+                "resolution",
+                "n",
+                "aspect_ratio",
+                "watermark_info",
+                "callback_url",
+                "external_task_id",
+            },
+            set(image["properties"]),
+        )
+        self.assertNotIn("image_reference_list", image["properties"])
+        self.assertEqual(["kling-v2-1", "kling-v3"], image["properties"]["model_name"]["enum"])
+        self.assertEqual("kling-v3", image["properties"]["model_name"]["default"])
+        self.assertEqual(["subject", "face"], image["properties"]["image_reference"]["enum"])
+        self.assertEqual(["1k", "2k"], image["properties"]["resolution"]["enum"])
+        self.assertEqual(
+            ["16:9", "9:16", "1:1", "4:3", "3:4", "3:2", "2:3", "21:9"],
+            image["properties"]["aspect_ratio"]["enum"],
+        )
+        self.assertEqual(0.5, image["properties"]["image_fidelity"]["default"])
+        self.assertEqual(0.45, image["properties"]["human_fidelity"]["default"])
+        self.assertEqual(
+            {"$ref": "#/components/schemas/KlingElementReference"},
+            image["properties"]["element_list"]["items"],
+        )
+        self.assertEqual(
+            ["element_id"], schemas["KlingElementReference"]["required"]
+        )
+
+        task = schemas["KlingImageGenerationTask"]
+        self.assertEqual({"code", "message", "request_id", "data"}, set(task["properties"]))
+        data = schemas["KlingImageTaskData"]
+        self.assertEqual(
+            {
+                "task_id",
+                "task_status",
+                "task_status_msg",
+                "task_info",
+                "created_at",
+                "updated_at",
+                "task_result",
+            },
+            set(data["properties"]),
+        )
+        self.assertEqual(
+            ["submitted", "processing", "succeed", "failed"],
+            data["properties"]["task_status"]["enum"],
+        )
+        self.assertEqual(
+            {"index", "url"},
+            set(schemas["KlingImageResult"]["properties"]),
+        )
+
+        video_to_audio = schemas["KlingVideoToAudioRequest"]
+        self.assertEqual(
+            {
+                "video_id",
+                "video_url",
+                "sound_effect_prompt",
+                "bgm_prompt",
+                "asmr_mode",
+                "external_task_id",
+                "callback_url",
+            },
+            set(video_to_audio["properties"]),
+        )
+        self.assertNotIn("prompt", video_to_audio["properties"])
+        self.assertFalse(video_to_audio["properties"]["asmr_mode"]["default"])
+
+    def test_documents_anthropic_messages_official_fields(self) -> None:
+        """Anthropic Messages body carries the fields the vendor documents.
+
+        Source: docs.anthropic.com/en/api/messages Markdown, `Create a Message`
+        body parameters.
+        """
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        request = schemas["AnthropicMessageCreateRequest"]
+        self.assertEqual(["model", "messages", "max_tokens"], request["required"])
+        for field in (
+            "cache_control",
+            "container",
+            "diagnostics",
+            "inference_geo",
+            "output_config",
+            "service_tier",
+            "speed",
+        ):
+            self.assertIn(field, request["properties"])
+        self.assertEqual(0, request["properties"]["max_tokens"]["minimum"])
+        self.assertEqual(
+            ["auto", "standard_only"], request["properties"]["service_tier"]["enum"]
+        )
+        self.assertEqual(["standard", "fast"], request["properties"]["speed"]["enum"])
+        self.assertEqual(
+            [{"$ref": "#/components/schemas/AnthropicOutputConfig"}],
+            request["properties"]["output_config"]["allOf"],
+        )
+        self.assertEqual(
+            ["low", "medium", "high", "xhigh", "max"],
+            schemas["AnthropicOutputConfig"]["properties"]["effort"]["enum"],
+        )
+        self.assertEqual(
+            ["json_schema"],
+            schemas["AnthropicOutputFormat"]["properties"]["type"]["enum"],
+        )
+        self.assertEqual(
+            ["5m", "1h"], schemas["AnthropicCacheControl"]["properties"]["ttl"]["enum"]
+        )
+        self.assertEqual("5m", schemas["AnthropicCacheControl"]["properties"]["ttl"]["default"])
+        self.assertEqual(20, schemas["AnthropicContainer"]["properties"]["skills"]["maxItems"])
+        self.assertEqual(
+            ["anthropic", "custom"], schemas["AnthropicSkill"]["properties"]["type"]["enum"]
+        )
+        self.assertEqual(256, schemas["AnthropicDiagnostics"]["properties"]["previous_message_id"]["maxLength"])
+        self.assertEqual(
+            {"user_id"}, set(schemas["AnthropicMetadata"]["properties"])
+        )
+
+    def test_documents_zhipu_image_and_video_official_fields(self) -> None:
+        """Zhipu image/video bodies mirror the vendor OpenAPI embedded in its docs.
+
+        Sources: docs.bigmodel.cn 图像生成、视频生成(异步)、查询异步结果.
+        """
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        image = schemas["ZhipuImageGenerationRequest"]
+        self.assertEqual(["model", "prompt"], image["required"])
+        self.assertEqual(
+            ["glm-image", "cogview-4-250304", "cogview-4", "cogview-3-flash"],
+            image["properties"]["model"]["enum"],
+        )
+        self.assertEqual(["hd", "standard"], image["properties"]["quality"]["enum"])
+        self.assertEqual("hd", image["properties"]["quality"]["default"])
+        self.assertEqual("1280x1280", image["properties"]["size"]["default"])
+        self.assertEqual(6, image["properties"]["user_id"]["minLength"])
+        self.assertEqual(128, image["properties"]["user_id"]["maxLength"])
+
+        image_response = schemas["ZhipuImageGenerationResponse"]
+        self.assertEqual(
+            {"created", "data", "content_filter"}, set(image_response["properties"])
+        )
+        self.assertEqual(
+            {"$ref": "#/components/schemas/ZhipuImageResult"},
+            image_response["properties"]["data"]["items"],
+        )
+        self.assertEqual({"url"}, set(schemas["ZhipuImageResult"]["properties"]))
+        self.assertEqual(
+            ["assistant", "user", "history"],
+            schemas["ZhipuContentFilter"]["properties"]["role"]["enum"],
+        )
+        self.assertEqual(3, schemas["ZhipuContentFilter"]["properties"]["level"]["maximum"])
+
+        video = schemas["ZhipuVideoGenerationRequest"]
+        self.assertEqual(["model"], video["required"])
+        self.assertEqual(3, len(video["properties"]["image_url"]["oneOf"]))
+        self.assertEqual(2, video["properties"]["image_url"]["oneOf"][2]["minItems"])
+        self.assertEqual([30, 60], video["properties"]["fps"]["enum"])
+        self.assertEqual(30, video["properties"]["fps"]["default"])
+        self.assertEqual([5, 10], video["properties"]["duration"]["enum"])
+        self.assertEqual(5, video["properties"]["duration"]["default"])
+        self.assertEqual(["speed", "quality"], video["properties"]["quality"]["enum"])
+        self.assertFalse(video["properties"]["with_audio"]["default"])
+        self.assertEqual(6, video["properties"]["user_id"]["minLength"])
+
+        task = schemas["ZhipuVideoGenerationTask"]
+        self.assertEqual(
+            ["PROCESSING", "SUCCESS", "FAIL"], task["properties"]["task_status"]["enum"]
+        )
+        self.assertEqual(
+            {"$ref": "#/components/schemas/ZhipuVideoResult"},
+            task["properties"]["video_result"]["items"],
+        )
+        self.assertEqual(
+            {"$ref": "#/components/schemas/ZhipuImageResult"},
+            task["properties"]["image_result"]["items"],
+        )
+        self.assertEqual(
+            {"url", "cover_image_url"}, set(schemas["ZhipuVideoResult"]["properties"])
+        )
+
+    def test_documents_minimax_music_and_tts_official_fields(self) -> None:
+        """MiniMax music/TTS bodies mirror the OpenAPI embedded in the vendor docs.
+
+        Sources: platform.minimax.io music-generation and speech-t2a-http.
+        """
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        music = schemas["MiniMaxMusicGenerationRequest"]
+        self.assertEqual(["model"], music["required"])
+        self.assertEqual(
+            [
+                "music-3.0",
+                "music-2.6",
+                "music-cover",
+                "music-3.0-free",
+                "music-2.6-free",
+                "music-cover-free",
+            ],
+            music["properties"]["model"]["enum"],
+        )
+        self.assertEqual(2000, music["properties"]["prompt"]["maxLength"])
+        self.assertEqual(1, music["properties"]["lyrics"]["minLength"])
+        self.assertEqual(3500, music["properties"]["lyrics"]["maxLength"])
+        self.assertEqual(["url", "hex"], music["properties"]["output_format"]["enum"])
+        self.assertEqual("hex", music["properties"]["output_format"]["default"])
+        self.assertFalse(music["properties"]["stream"]["default"])
+        self.assertFalse(music["properties"]["is_instrumental"]["default"])
+        for field in ("audio_url", "audio_base64", "cover_feature_id"):
+            self.assertIn(field, music["properties"])
+        audio_setting = schemas["MiniMaxMusicAudioSetting"]
+        self.assertEqual([16000, 24000, 32000, 44100], audio_setting["properties"]["sample_rate"]["enum"])
+        self.assertEqual([32000, 64000, 128000, 256000], audio_setting["properties"]["bitrate"]["enum"])
+        self.assertEqual(["mp3", "wav", "pcm"], audio_setting["properties"]["format"]["enum"])
+
+        tts = schemas["MinimaxTextToSpeechRequest"]
+        self.assertEqual(["model", "text"], tts["required"])
+        self.assertEqual(
+            [
+                "speech-2.8-hd",
+                "speech-2.8-turbo",
+                "speech-2.6-hd",
+                "speech-2.6-turbo",
+                "speech-02-hd",
+                "speech-02-turbo",
+                "speech-01-hd",
+                "speech-01-turbo",
+            ],
+            tts["properties"]["model"]["enum"],
+        )
+        self.assertEqual(10000, tts["properties"]["text"]["maxLength"])
+        for field in (
+            "stream_options",
+            "timbre_weights",
+            "text_normalization_mode",
+            "voice_modify",
+            "subtitle_type",
+            "output_format",
+        ):
+            self.assertIn(field, tts["properties"])
+        self.assertEqual(
+            ["sentence", "word", "word_streaming"],
+            tts["properties"]["subtitle_type"]["enum"],
+        )
+        self.assertEqual("sentence", tts["properties"]["subtitle_type"]["default"])
+        self.assertEqual(["url", "hex"], tts["properties"]["output_format"]["enum"])
+        self.assertEqual(
+            ["basic", "quality"], tts["properties"]["text_normalization_mode"]["enum"]
+        )
+        self.assertEqual(
+            ["voice_id", "weight"], schemas["MinimaxTimbreWeight"]["required"]
+        )
+        self.assertEqual(
+            ["spacious_echo", "auditorium_echo", "lofi_telephone", "robotic"],
+            schemas["MinimaxVoiceModify"]["properties"]["sound_effects"]["enum"],
+        )
+        self.assertEqual(-100, schemas["MinimaxVoiceModify"]["properties"]["pitch"]["minimum"])
+        self.assertEqual(100, schemas["MinimaxVoiceModify"]["properties"]["pitch"]["maximum"])
+
+    def test_documents_stability_multipart_transport(self) -> None:
+        """Stability serves multipart/form-data, not JSON bodies.
+
+        Source: https://platform.stability.ai/llms.txt ("Multipart form POST").
+        The image door publishes the JSON response and therefore requires
+        `Accept: application/json`; the audio door publishes audio bytes and
+        must not require it.
+        """
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        image = spec["paths"]["/stability_ai/v2beta/stable-image/generate/{mode}"]["post"]
+        audio = spec["paths"]["/stability_ai/v2beta/audio/stable-audio-2/text-to-audio"]["post"]
+        for operation, label in ((image, "image"), (audio, "audio")):
+            content = operation["requestBody"]["content"]
+            self.assertIn("multipart/form-data", content, label)
+            self.assertNotIn("application/json", content, label)
+            schema_ref = content["multipart/form-data"]["schema"]["$ref"]
+            self.assertTrue(schema_ref.startswith("#/components/schemas/Stability"), label)
+
+        image_headers = {
+            parameter["name"] for parameter in image["parameters"] if parameter.get("in") == "header"
+        }
+        audio_headers = {
+            parameter["name"] for parameter in audio["parameters"] if parameter.get("in") == "header"
+        }
+        self.assertIn("Accept", image_headers)
+        self.assertNotIn("Accept", audio_headers)
+        self.assertIn("audio/mpeg", audio["responses"]["200"]["content"])
+
+    def test_documents_luma_generation_official_fields(self) -> None:
+        """Luma `GenerationRequest` mirrors the Dream Machine OpenAPI.
+
+        Source: docs.lumalabs.ai/reference/creategeneration.md (embedded
+        OpenAPI 3.1 definition, `GenerationRequest`).
+        """
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        request = schemas["LumaVideoGenerationRequest"]
+        self.assertEqual(["model"], request["required"])
+        self.assertEqual(
+            {
+                "generation_type",
+                "prompt",
+                "aspect_ratio",
+                "loop",
+                "keyframes",
+                "callback_url",
+                "model",
+                "resolution",
+                "duration",
+                "concepts",
+            },
+            set(request["properties"]),
+        )
+        self.assertEqual(["video"], request["properties"]["generation_type"]["enum"])
+        self.assertEqual("video", request["properties"]["generation_type"]["default"])
+        self.assertEqual(
+            ["1:1", "16:9", "9:16", "4:3", "3:4", "21:9", "9:21"],
+            request["properties"]["aspect_ratio"]["enum"],
+        )
+        self.assertEqual("16:9", request["properties"]["aspect_ratio"]["default"])
+        self.assertEqual(["ray-2", "ray-flash-2"], request["properties"]["model"]["enum"])
+        self.assertEqual("ray-2", request["properties"]["model"]["default"])
+        self.assertEqual(
+            [{"$ref": "#/components/schemas/LumaKeyframes"}],
+            request["properties"]["keyframes"]["allOf"],
+        )
+        self.assertEqual(
+            {"frame0", "frame1"}, set(schemas["LumaKeyframes"]["properties"])
+        )
+        self.assertEqual(
+            ["image", "generation"],
+            schemas["LumaKeyframe"]["properties"]["type"]["enum"],
+        )
+        self.assertEqual(["key"], schemas["LumaConcept"]["required"])
+        task = schemas["LumaVideoGenerationTask"]
+        self.assertEqual(
+            ["queued", "dreaming", "completed", "failed"],
+            task["properties"]["state"]["enum"],
+        )
+        self.assertEqual(
+            [{"$ref": "#/components/schemas/LumaGenerationAssets"}],
+            task["properties"]["assets"]["allOf"],
+        )
+        self.assertEqual(
+            {"video", "image"}, set(schemas["LumaGenerationAssets"]["properties"])
+        )
+        self.assertIn("model", task["properties"])
+        self.assertIn("request", task["properties"])
+
+    def test_documents_openai_media_official_fields(self) -> None:
+        """OpenAI /v1 image, speech, and video bodies mirror the vendor spec.
+
+        Source: github.com/openai/openai-openapi openapi.yaml.
+        """
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        image = schemas["OpenAiImageGenerationRequest"]
+        self.assertEqual(["model", "prompt"], image["required"])
+        for field in (
+            "frame_count",
+            "frame_duration_ms",
+            "complexity",
+            "svg",
+            "output_format",
+            "output_compression",
+            "stream",
+            "partial_images",
+            "moderation",
+            "background",
+            "style",
+            "safety_identifier",
+            "user",
+        ):
+            self.assertIn(field, image["properties"], field)
+        self.assertEqual(10, image["properties"]["n"]["maximum"])
+        self.assertEqual(
+            ["png", "webp", "jpeg", "gif", "svg"], image["properties"]["output_format"]["enum"]
+        )
+        self.assertEqual(3, image["properties"]["partial_images"]["maximum"])
+
+        edit = schemas["OpenAiImageEditRequest"]
+        self.assertEqual(["images", "prompt"], edit["required"])
+        self.assertNotIn("image", edit["properties"])
+        self.assertEqual(16, edit["properties"]["images"]["maxItems"])
+        self.assertEqual(
+            ["high", "low"], edit["properties"]["input_fidelity"]["enum"]
+        )
+        multipart = schemas["OpenAiImageEditMultipartRequest"]
+        self.assertIn("image", multipart["properties"])
+
+        speech = schemas["OpenAiSpeechCreateRequest"]
+        self.assertEqual(
+            {"model", "input", "instructions", "voice", "response_format", "speed", "stream_format"},
+            set(speech["properties"]),
+        )
+        self.assertNotIn("metadata", speech["properties"])
+        self.assertEqual(4096, speech["properties"]["input"]["maxLength"])
+        self.assertEqual(0.25, speech["properties"]["speed"]["minimum"])
+        self.assertEqual(4, speech["properties"]["speed"]["maximum"])
+        self.assertEqual(
+            ["sse", "audio"], speech["properties"]["stream_format"]["enum"]
+        )
+        self.assertEqual(
+            ["mp3", "opus", "aac", "flac", "wav", "pcm"],
+            speech["properties"]["response_format"]["enum"],
+        )
+
+        video = schemas["OpenAiVideoCreateRequest"]
+        self.assertEqual(["prompt"], video["required"])
+        self.assertEqual(
+            {"model", "prompt", "input_reference", "seconds", "size"},
+            set(video["properties"]),
+        )
+        self.assertEqual(
+            ["4", "8", "12"], video["properties"]["seconds"]["enum"]
+        )
+        self.assertEqual(
+            ["720x1280", "1280x720", "1024x1792", "1792x1024"],
+            video["properties"]["size"]["enum"],
+        )
+        self.assertEqual(
+            ["video", "prompt"], schemas["OpenAiVideoEditRequest"]["required"]
+        )
+        self.assertEqual(
+            ["video", "prompt", "seconds"],
+            schemas["OpenAiVideoExtendRequest"]["required"],
+        )
+        self.assertEqual(["prompt"], schemas["OpenAiVideoRemixRequest"]["required"])
+        self.assertIn(
+            "output_expires_after", schemas["OpenAiBatchCreateRequest"]["properties"]
+        )
+        self.assertIn(
+            "stream_options", schemas["OpenAiCompletionCreateRequest"]["properties"]
+        )
+
+    def test_documents_openai_platform_operation_fields(self) -> None:
+        """OpenAI assistants, conversations, Responses helpers, runs, uploads,
+        vector stores, and voices match the vendor OpenAPI."""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        effort = ["none", "minimal", "low", "medium", "high", "xhigh", "max"]
+        for name in ("OpenAiAssistantCreateRequest", "OpenAiAssistantUpdateRequest"):
+            self.assertEqual(effort, schemas[name]["properties"]["reasoning_effort"]["enum"], name)
+
+        conversation = schemas["OpenAiConversationItemCreateRequest"]
+        self.assertEqual(["items"], conversation["required"])
+        self.assertEqual(1, conversation["properties"]["items"]["minItems"])
+
+        token_count = schemas["OpenAiResponseInputTokenCountRequest"]
+        self.assertIsNone(token_count.get("required"))
+        for field in ("previous_response_id", "personality", "conversation", "parallel_tool_calls"):
+            self.assertIn(field, token_count["properties"])
+
+        compact = schemas["OpenAiResponseCompactRequest"]
+        self.assertEqual(["model"], compact["required"])
+        self.assertEqual(
+            ["in_memory", "24h"], compact["properties"]["prompt_cache_retention"]["enum"]
+        )
+        self.assertEqual(
+            ["auto", "default", "fast", "flex", "priority"],
+            compact["properties"]["service_tier"]["enum"],
+        )
+        self.assertNotIn("metadata", compact["properties"])
+
+        run = schemas["OpenAiRunCreateRequest"]
+        for field in (
+            "additional_messages",
+            "max_completion_tokens",
+            "truncation_strategy",
+            "parallel_tool_calls",
+        ):
+            self.assertIn(field, run["properties"])
+        self.assertEqual(
+            effort, run["properties"]["reasoning_effort"]["enum"]
+        )
+
+        thread_and_run = schemas["OpenAiThreadAndRunCreateRequest"]
+        for field in ("tool_resources", "parallel_tool_calls", "max_prompt_tokens"):
+            self.assertIn(field, thread_and_run["properties"])
+
+        self.assertIn("expires_after", schemas["OpenAiUploadCreateRequest"]["properties"])
+        self.assertIn("description", schemas["OpenAiVectorStoreCreateRequest"]["properties"])
+        self.assertIn(
+            "files", schemas["OpenAiVectorStoreFileBatchCreateRequest"]["properties"]
+        )
+        self.assertIsNone(schemas["OpenAiVectorStoreFileBatchCreateRequest"].get("required"))
+
+        voice = schemas["OpenAiVoiceCreateRequest"]
+        self.assertEqual(["type", "name", "prompt"], voice["required"])
+        self.assertEqual(["prompt"], voice["properties"]["type"]["enum"])
+        self.assertEqual(2000, voice["properties"]["prompt"]["maxLength"])
+        self.assertNotIn("metadata", voice["properties"])
+
+    def test_documents_openai_realtime_official_fields(self) -> None:
+        """Realtime client-secret, session, transcription, and call actions.
+
+        Source: github.com/openai/openai-openapi openapi.yaml.
+        """
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        client_secret = schemas["OpenAiRealtimeClientSecretCreateRequest"]
+        self.assertEqual({"expires_after", "session"}, set(client_secret["properties"]))
+        self.assertNotIn("required", client_secret)
+
+        session = schemas["OpenAiRealtimeSessionCreateRequest"]
+        self.assertEqual(["client_secret"], session["required"])
+        for field in (
+            "input_audio_format",
+            "output_audio_format",
+            "input_audio_transcription",
+            "speed",
+            "tracing",
+            "turn_detection",
+            "tools",
+            "tool_choice",
+            "temperature",
+            "max_response_output_tokens",
+            "truncation",
+            "prompt",
+        ):
+            self.assertIn(field, session["properties"], field)
+        self.assertNotIn("model", session["properties"])
+        self.assertNotIn("metadata", session["properties"])
+        self.assertEqual(0.25, session["properties"]["speed"]["minimum"])
+        self.assertEqual(1.5, session["properties"]["speed"]["maximum"])
+
+        transcription = schemas["OpenAiRealtimeTranscriptionSessionCreateRequest"]
+        self.assertEqual(
+            ["pcm16", "g711_ulaw", "g711_alaw"],
+            transcription["properties"]["input_audio_format"]["enum"],
+        )
+        self.assertIn("input_audio_noise_reduction", transcription["properties"])
+        self.assertIn("include", transcription["properties"])
+
+        accept = schemas["OpenAiRealtimeCallActionRequest"]
+        self.assertEqual(["type"], accept["required"])
+        for field in ("output_modalities", "max_output_tokens", "truncation", "prompt"):
+            self.assertIn(field, accept["properties"], field)
+        refer = schemas["OpenAiRealtimeCallReferRequest"]
+        self.assertEqual(["target_uri"], refer["required"])
+        self.assertNotIn("target", refer["properties"])
+        reject = schemas["OpenAiRealtimeCallRejectRequest"]
+        self.assertEqual({"status_code"}, set(reject["properties"]))
+        self.assertNotIn(
+            "requestBody",
+            spec["paths"]["/v1/realtime/calls/{call_id}/hangup"]["post"],
+        )
+
+    def test_documents_vidu_official_request_fields(self) -> None:
+        """Vidu request bodies mirror the vendor API-reference markdown pages."""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        t2v = schemas["ViduTextToVideoRequest"]
+        self.assertEqual(["model", "prompt"], t2v["required"])
+        self.assertEqual(
+            {
+                "model",
+                "prompt",
+                "duration",
+                "seed",
+                "aspect_ratio",
+                "resolution",
+                "audio",
+                "payload",
+                "off_peak",
+                "watermark",
+                "wm_position",
+                "wm_url",
+                "meta_data",
+                "callback_url",
+            },
+            set(t2v["properties"]),
+        )
+        self.assertNotIn("movement_amplitude", t2v["properties"])
+
+        i2v = schemas["ViduImageToVideoRequest"]
+        self.assertIn("is_rec", i2v["properties"])
+        self.assertIn("images", i2v["properties"])
+        self.assertNotIn("aspect_ratio", i2v["properties"])
+
+        r2v = schemas["ViduReferenceToVideoRequest"]
+        for field in ("subjects", "auto_subjects", "bgm", "sounds", "movement_amplitude"):
+            self.assertIn(field, r2v["properties"])
+
+        se2v = schemas["ViduStartEndToVideoRequest"]
+        self.assertNotIn("aspect_ratio", se2v["properties"])
+
+        image = schemas["ViduReferenceToImageRequest"]
+        self.assertEqual(["model", "prompt"], image["required"])
+        self.assertNotIn("style", image["properties"])
+        for field in ("bgm", "resolution", "off_peak"):
+            self.assertIn(field, image["properties"])
+
+        text_audio = schemas["ViduTextToAudioRequest"]
+        self.assertEqual(["model", "prompt"], text_audio["required"])
+        self.assertNotIn("text", text_audio["properties"])
+        self.assertEqual(2, text_audio["properties"]["duration"]["minimum"])
+        self.assertEqual(10, text_audio["properties"]["duration"]["maximum"])
+
+        timing = schemas["ViduTimingToAudioRequest"]
+        self.assertEqual(["model", "timing_prompts"], timing["required"])
+        self.assertNotIn("timing_data", timing["properties"])
+
+        template = schemas["ViduTemplateRequest"]
+        self.assertEqual(["template", "images"], template["required"])
+        self.assertIn("video_urls", template["properties"])
+        for field in ("area", "beast", "bgm", "meta_data"):
+            self.assertIn(field, template["properties"])
+
+        task = schemas["ViduVideoGenerationTask"]
+        self.assertEqual(
+            ["created", "queueing", "processing", "success", "failed"],
+            task["properties"]["state"]["enum"],
+        )
+        for field in ("prompt", "duration", "seed", "credits", "err_code", "off_peak"):
+            self.assertIn(field, task["properties"])
+        self.assertIn("watermarked_url", schemas["ViduCreation"]["properties"])
+        self.assertIn("images", schemas["ViduImageGenerationTask"]["properties"])
+        template_task = schemas["ViduTemplateTask"]
+        self.assertIn("template", template_task["properties"])
+        self.assertIn("bgm", template_task["properties"])
+        audio_task = schemas["ViduAudioGenerationTask"]
+        self.assertEqual(
+            ["created", "queueing", "processing", "success", "failed"],
+            audio_task["properties"]["state"]["enum"],
+        )
+        self.assertNotIn("aspect_ratio", audio_task["properties"])
+
+    def test_documents_pixverse_official_fields(self) -> None:
+        """PixVerse text-to-video and task polling match the vendor docs."""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        request = schemas["PixverseVideoGenerationRequest"]
+        self.assertEqual(
+            ["model", "prompt", "duration", "quality", "aspect_ratio"],
+            request["required"],
+        )
+        self.assertEqual(
+            ["v6-max", "c1", "v6", "v3.5", "v4", "v4.5", "v5", "v5-fast", "v5.5", "v5.6"],
+            request["properties"]["model"]["enum"],
+        )
+        self.assertEqual(
+            ["360p", "540p", "720p", "1080p"],
+            request["properties"]["quality"]["enum"],
+        )
+        self.assertEqual(
+            ["16:9", "9:16", "4:3", "3:4", "1:1", "2:3", "3:2", "21:9"],
+            request["properties"]["aspect_ratio"]["enum"],
+        )
+        self.assertEqual(15, request["properties"]["duration"]["maximum"])
+        self.assertEqual(2147483647, request["properties"]["seed"]["maximum"])
+        for field in ("webhook_id", "generate_audio_switch", "generate_multi_clip_switch"):
+            self.assertIn(field, request["properties"])
+        for field in ("img_id", "motion_mode", "negative_prompt"):
+            self.assertNotIn(field, request["properties"])
+
+        for name in ("PixverseVideoGenerationResponse", "PixverseVideoGenerationTask"):
+            envelope = schemas[name]
+            self.assertEqual(
+                {"ErrCode", "ErrMsg", "Resp", "Error"}, set(envelope["properties"]), name
+            )
+        resp = schemas["PixverseTaskResp"]
+        self.assertEqual([1, 5, 7, 8], resp["properties"]["status"]["enum"])
+        self.assertIn("video_id", resp["properties"])
+        self.assertIn("id", resp["properties"])
+
+        for path in (
+            "/pixverse/openapi/v2/video/text/generate",
+            "/pixverse/openapi/v2/video/result/{video_id}",
+        ):
+            operation = spec["paths"][path]["post" if path.endswith("generate") else "get"]
+            headers = {
+                parameter["name"]: parameter
+                for parameter in operation["parameters"]
+                if parameter.get("in") == "header"
+            }
+            self.assertIn("Ai-trace-id", headers, path)
+            self.assertTrue(headers["Ai-trace-id"]["required"], path)
+
+    def test_documents_runway_and_bfl_official_fields(self) -> None:
+        """Runway per-model request unions and BFL flux-3-video modes."""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        text_to_video = schemas["RunwayTextToVideoRequest"]
+        for field in (
+            "contentModeration",
+            "outputFormat",
+            "proresProfile",
+            "audio",
+            "negativePrompt",
+            "providerSettings",
+            "references",
+            "resolution",
+            "referenceAudio",
+            "referenceVideos",
+            "cfgScale",
+            "bitrate",
+            "promptExpansionMode",
+            "draft",
+            "draftTaskId",
+        ):
+            self.assertIn(field, text_to_video["properties"], field)
+        self.assertEqual(30, text_to_video["properties"]["duration"]["maximum"])
+        self.assertIn("hdr_pq_12bit_master", text_to_video["properties"]["outputFormat"]["enum"])
+        self.assertEqual(0.0, text_to_video["properties"]["cfgScale"]["minimum"])
+        self.assertEqual(4294967295, text_to_video["properties"]["seed"]["maximum"])
+
+        image_to_video = schemas["RunwayImageToVideoRequest"]
+        for field in ("promptImage", "referenceVideos", "draft"):
+            self.assertIn(field, image_to_video["properties"], field)
+        self.assertNotIn("draftTaskId", image_to_video["properties"])
+
+        text_to_image = schemas["RunwayTextToImageRequest"]
+        for field in (
+            "quality",
+            "background",
+            "outputCount",
+            "grounding",
+            "edit",
+            "preciseEdit",
+            "maskUri",
+            "thinkingLevel",
+            "colors",
+            "backgroundColor",
+        ):
+            self.assertIn(field, text_to_image["properties"], field)
+        self.assertEqual(10, text_to_image["properties"]["outputCount"]["maximum"])
+
+        bfl = schemas["BlackForestLabsVideoGenerationRequest"]
+        self.assertEqual(["mode"], bfl["required"])
+        self.assertEqual(
+            ["t2v", "i2v", "v2v", "draft_enhance"],
+            bfl["properties"]["mode"]["enum"],
+        )
+        self.assertEqual(["integer", "string"], bfl["properties"]["duration"]["type"])
+        self.assertEqual(["hd", "fhd", "qhd", "uhd"], bfl["properties"]["resolution"]["enum"])
+        self.assertEqual(7, bfl["properties"]["safety_tolerance"]["maximum"])
+        for field in ("keyframes", "start_video", "draft_cache", "generate_audio", "version"):
+            self.assertIn(field, bfl["properties"], field)
+        for field in ("image", "seed"):
+            self.assertNotIn(field, bfl["properties"])
+        self.assertEqual("fhd", bfl["properties"]["resolution"]["default"])
+        self.assertIs(True, bfl["properties"]["generate_audio"]["default"])
+        self.assertEqual(2, bfl["properties"]["safety_tolerance"]["default"])
+        self.assertEqual(5, bfl["properties"]["duration"]["minimum"])
+        self.assertEqual(20, bfl["properties"]["duration"]["maximum"])
+        self.assertEqual(
+            ["21:9", "2:1", "16:9", "4:3", "1:1", "3:4", "9:16", "9:21", "auto"],
+            bfl["properties"]["aspect_ratio"]["enum"],
+        )
+
+    def test_documents_google_generate_content_nested_fields(self) -> None:
+        """Gemini request, generationConfig, part, tool, and embed fields."""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        request = schemas["GoogleGenerateContentRequest"]
+        for field in ("contents", "tools", "toolConfig", "safetySettings", "generationConfig", "cachedContent"):
+            self.assertIn(field, request["properties"], field)
+        for field in ("store", "continuationToken", "serviceTier", "labels", "model", "systemInstruction"):
+            self.assertIn(field, request["properties"], field)
+        self.assertEqual(
+            ["unspecified", "standard", "flex", "priority"],
+            request["properties"]["serviceTier"]["enum"],
+        )
+
+        config = schemas["GoogleGenerationConfig"]
+        for field in (
+            "responseModalities",
+            "responseLogprobs",
+            "logprobs",
+            "frequencyPenalty",
+            "presencePenalty",
+            "seed",
+            "mediaResolution",
+            "imageConfig",
+            "speechConfig",
+            "audioTranscriptionConfig",
+            "translationConfig",
+            "responseFormat",
+            "responseJsonSchema",
+            "enableEnhancedCivicAnswers",
+            "enableAffectiveDialog",
+        ):
+            self.assertIn(field, config["properties"], field)
+        self.assertEqual(
+            [
+                "MEDIA_RESOLUTION_UNSPECIFIED",
+                "MEDIA_RESOLUTION_LOW",
+                "MEDIA_RESOLUTION_MEDIUM",
+                "MEDIA_RESOLUTION_HIGH",
+            ],
+            config["properties"]["mediaResolution"]["enum"],
+        )
+
+        part = schemas["GooglePart"]
+        for field in (
+            "thought",
+            "thoughtSignature",
+            "mediaProcessing",
+            "mediaResolution",
+            "partMetadata",
+            "speechMetadata",
+            "videoMetadata",
+            "toolCall",
+            "toolResponse",
+            "audioTranscription",
+        ):
+            self.assertIn(field, part["properties"], field)
+        self.assertEqual(
+            ["MEDIA_PROCESSING_UNSPECIFIED", "STATIC", "AGENTIC"],
+            part["properties"]["mediaProcessing"]["enum"],
+        )
+
+        tool = schemas["GoogleTool"]
+        for field in (
+            "functionDeclarations",
+            "codeExecution",
+            "googleSearch",
+            "googleSearchRetrieval",
+            "urlContext",
+            "fileSearch",
+            "googleMaps",
+            "computerUse",
+            "mcpServers",
+        ):
+            self.assertIn(field, tool["properties"], field)
+
+        embed = schemas["GoogleEmbedContentRequest"]
+        self.assertIn("model", embed["properties"])
+        self.assertIn("embedContentConfig", embed["properties"])
+        self.assertIn("CODE_RETRIEVAL_QUERY", embed["properties"]["taskType"]["enum"])
+
+    def test_documents_anthropic_tool_and_thinking_choices(self) -> None:
+        """Anthropic tool_choice/thinking unions match the Messages API docs."""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        tool_choice = schemas["AnthropicToolChoice"]
+        self.assertEqual(["auto", "any", "tool", "none"], tool_choice["properties"]["type"]["enum"])
+        self.assertIn("disable_parallel_tool_use", tool_choice["properties"])
+
+        thinking = schemas["AnthropicThinkingConfig"]
+        self.assertEqual(
+            ["enabled", "disabled", "between_tools", "adaptive"],
+            thinking["properties"]["type"]["enum"],
+        )
+        self.assertEqual(1024, thinking["properties"]["budget_tokens"]["minimum"])
+        self.assertEqual(["summarized", "omitted"], thinking["properties"]["display"]["enum"])
+
+        tool = schemas["AnthropicTool"]
+        for field in (
+            "type",
+            "cache_control",
+            "allowed_callers",
+            "defer_loading",
+            "eager_input_streaming",
+            "input_examples",
+            "strict",
+        ):
+            self.assertIn(field, tool["properties"], field)
+        self.assertEqual(["custom"], tool["properties"]["type"]["enum"])
+        self.assertEqual(128, tool["properties"]["name"]["maxLength"])
+        self.assertEqual(
+            [
+                "direct",
+                "code_execution_20250825",
+                "code_execution_20260120",
+                "code_execution_20260521",
+            ],
+            tool["properties"]["allowed_callers"]["items"]["enum"],
+        )
+
+        server = schemas["AnthropicServerTool"]
+        self.assertEqual(
+            [
+                "bash_20250124",
+                "text_editor_20250124",
+                "text_editor_20250429",
+                "text_editor_20250728",
+                "web_search_20250305",
+                "tool_search_tool_regex",
+            ],
+            server["properties"]["type"]["enum"],
+        )
+        self.assertEqual(
+            [
+                "bash",
+                "str_replace_editor",
+                "str_replace_based_edit_tool",
+                "web_search",
+                "tool_search_tool_regex",
+            ],
+            server["properties"]["name"]["enum"],
+        )
+        for field in (
+            "max_uses",
+            "allowed_domains",
+            "blocked_domains",
+            "user_location",
+            "max_characters",
+            "display_width_px",
+            "display_height_px",
+            "display_number",
+        ):
+            self.assertIn(field, server["properties"], field)
+        tools = schemas["AnthropicMessageCreateRequest"]["properties"]["tools"]
+        self.assertEqual(2, len(tools["items"]["oneOf"]))
+
+        block = schemas["AnthropicContentBlockParam"]
+        self.assertEqual(16, len(block["properties"]["type"]["enum"]))
+        for field in (
+            "cache_control",
+            "citations",
+            "thinking",
+            "signature",
+            "data",
+            "is_error",
+            "caller",
+            "toolset_name",
+            "title",
+            "context",
+        ):
+            self.assertIn(field, block["properties"], field)
+
+        count = schemas["AnthropicCountMessageTokensRequest"]
+        self.assertEqual(
+            {
+                "model",
+                "messages",
+                "cache_control",
+                "output_config",
+                "speed",
+                "system",
+                "thinking",
+                "tool_choice",
+                "tools",
+            },
+            set(count["properties"]),
+        )
+        for field in ("max_tokens", "temperature", "top_p", "top_k", "stream", "metadata"):
+            self.assertNotIn(field, count["properties"], field)
+
+    def test_documents_xai_video_input_file_id(self) -> None:
+        """xAI edit/extension video inputs accept a Files API id next to a URL."""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        video_input = schemas["XaiVideoInput"]
+        self.assertEqual({"url", "file_id"}, set(video_input["properties"]))
+        self.assertNotIn("required", video_input)
+        for name in ("XaiVideoEditRequest", "XaiVideoExtensionRequest"):
+            video = schemas[name]["properties"]["video"]
+            reference = video.get("$ref") or video["allOf"][0]["$ref"]
+            self.assertEqual("#/components/schemas/XaiVideoInput", reference, name)
+        self.assertIn("duration", schemas["XaiVideoUrl"]["properties"])
+
+    def test_documents_elevenlabs_music_and_sound_constraints(self) -> None:
+        """ElevenLabs music/sound requests mirror the vendor OpenAPI constraints."""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        music = schemas["ElevenLabsMusicGenerationRequest"]
+        self.assertEqual(4100, music["properties"]["prompt"]["maxLength"])
+        self.assertEqual(
+            ["track", "loop", "ambience", "video_to_music"],
+            music["properties"]["generation_mode"]["enum"],
+        )
+        self.assertEqual(4000, music["properties"]["lyrics_text"]["maxLength"])
+        self.assertEqual(3000, music["properties"]["music_length_ms"]["minimum"])
+        self.assertEqual(600000, music["properties"]["music_length_ms"]["maximum"])
+        self.assertEqual(
+            ["music_v1", "music_v2", "music_v2_5"],
+            music["properties"]["model_id"]["enum"],
+        )
+        self.assertEqual("music_v1", music["properties"]["model_id"]["default"])
+        self.assertEqual(2147483647, music["properties"]["seed"]["maximum"])
+        self.assertEqual(100, music["properties"]["finetune_id"]["maxLength"])
+        self.assertEqual(2.0, music["properties"]["finetune_strength"]["maximum"])
+        self.assertEqual(1.0, music["properties"]["finetune_strength"]["default"])
+        self.assertIs(True, music["properties"]["respect_sections_durations"]["default"])
+        self.assertIn("ElevenLabsMusicPrompt", schemas)
+        self.assertIn("ElevenLabsCompositionPlan", schemas)
+
+        sound = schemas["ElevenLabsSoundGenerationRequest"]
+        self.assertEqual(["text"], sound["required"])
+        self.assertEqual(
+            ["eleven_text_to_sound_v2", "eleven_text_to_sound_v3"],
+            sound["properties"]["model_id"]["enum"],
+        )
+        self.assertEqual("eleven_text_to_sound_v2", sound["properties"]["model_id"]["default"])
+        self.assertIs(False, sound["properties"]["loop"]["default"])
+        self.assertEqual(0.5, sound["properties"]["duration_seconds"]["minimum"])
+        self.assertEqual(30, sound["properties"]["duration_seconds"]["maximum"])
+
+    def test_documents_bfl_image_model_union(self) -> None:
+        """BFL's parameterized flux-{model} image door publishes the vendor union."""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        image = spec["components"]["schemas"]["BlackForestLabsImageGenerationRequest"]
+        properties = image["properties"]
+        self.assertGreaterEqual(len(properties), 45)
+        self.assertEqual(
+            ["768sq", "1k", "1.5k", "2k", "4k", "match_input"],
+            properties["resolution"]["enum"],
+        )
+        self.assertEqual(["high", "fast"], properties["mode"]["enum"])
+        self.assertEqual(["jpeg", "png", "webp"], properties["output_format"]["enum"])
+        self.assertEqual(1, properties["steps"]["minimum"])
+        self.assertEqual(50, properties["steps"]["maximum"])
+        self.assertEqual(1.5, properties["guidance"]["minimum"])
+        self.assertEqual(5, properties["guidance"]["maximum"])
+        self.assertEqual(2048, properties["top"]["maximum"])
+        self.assertEqual("uri", properties["webhook_url"]["format"])
+        self.assertEqual(2083, properties["webhook_url"]["maxLength"])
+        for field in (
+            "images",
+            "input_image",
+            "input_image_8",
+            "mask",
+            "auto_crop",
+            "grounding",
+            "dilate_pixels",
+            "finetune_id",
+            "garment",
+            "person",
+            "user",
+            "version",
+        ):
+            self.assertIn(field, properties, field)
+
+    def test_documents_xai_image_constraints(self) -> None:
+        """xAI image generation/edit constraints from the vendor OpenAPI."""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        generation = schemas["XaiImageGenerationRequest"]["properties"]
+        self.assertEqual(1, generation["n"]["minimum"])
+        self.assertEqual(10, generation["n"]["maximum"])
+        self.assertEqual(1, generation["n"]["default"])
+        self.assertEqual(["1k", "1.5k", "2k"], generation["resolution"]["enum"])
+        self.assertEqual("url", generation["response_format"]["default"])
+        self.assertEqual(16, len(generation["aspect_ratio"]["enum"]))
+
+        edit = schemas["XaiImageEditRequest"]["properties"]
+        self.assertEqual(16, len(edit["aspect_ratio"]["enum"]))
+        self.assertEqual(["1k", "1.5k", "2k"], edit["resolution"]["enum"])
+        self.assertEqual("url", edit["response_format"]["default"])
+
+    def test_documents_stability_union_constraints(self) -> None:
+        """Stability image/audio multipart constraints from the vendor OpenAPI."""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        image = schemas["StabilityImageGenerationRequest"]["properties"]
+        self.assertEqual(["text-to-image", "image-to-image"], image["mode"]["enum"])
+        self.assertEqual("text-to-image", image["mode"]["default"])
+        self.assertEqual(
+            ["sd3.5-large", "sd3.5-large-turbo", "sd3.5-medium"], image["model"]["enum"]
+        )
+        self.assertEqual("sd3.5-large", image["model"]["default"])
+        self.assertEqual(9, len(image["aspect_ratio"]["enum"]))
+        self.assertEqual("1:1", image["aspect_ratio"]["default"])
+        self.assertEqual(["png", "jpeg", "webp"], image["output_format"]["enum"])
+        self.assertEqual("png", image["output_format"]["default"])
+        self.assertEqual(0, image["strength"]["minimum"])
+        self.assertEqual(1, image["strength"]["maximum"])
+        for field in ("style_preset", "cfg_scale"):
+            self.assertIn(field, image, field)
+
+        audio = schemas["StabilityAudioRequest"]["properties"]
+        self.assertEqual("stable-audio-2", audio["model"]["default"])
+        self.assertEqual("mp3", audio["output_format"]["default"])
+        self.assertEqual(1, audio["duration"]["minimum"])
+        self.assertEqual(190, audio["duration"]["maximum"])
+        self.assertEqual(190, audio["duration"]["default"])
+
+    def test_documents_alibaba_speech_input(self) -> None:
+        """DashScope Qwen-TTS input envelope fields."""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        request = schemas["AlibabaSpeechRequest"]
+        self.assertEqual(["model", "input"], request["required"])
+        payload = request["properties"]["input"]
+        reference = payload.get("$ref") or payload["allOf"][0]["$ref"]
+        self.assertEqual("#/components/schemas/AlibabaSpeechInput", reference)
+
+        data = schemas["AlibabaSpeechInput"]
+        self.assertEqual(["text", "voice"], data["required"])
+        self.assertEqual(
+            [
+                "Auto",
+                "Chinese",
+                "English",
+                "German",
+                "Italian",
+                "Portuguese",
+                "Spanish",
+                "Japanese",
+                "Korean",
+                "French",
+                "Russian",
+            ],
+            data["properties"]["language_type"]["enum"],
+        )
+        self.assertIs(False, data["properties"]["optimize_instructions"]["default"])
+        self.assertIn("instructions", data["properties"])
+
+    def test_documents_bytedance_tts_nesting(self) -> None:
+        """ByteDance Seed TTS nests synthesis fields under req_params."""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        request = schemas["BytedanceSpeechRequest"]
+        self.assertEqual(["req_params"], request["required"])
+        reference = request["properties"]["req_params"].get("$ref") or request["properties"][
+            "req_params"
+        ]["allOf"][0]["$ref"]
+        self.assertEqual("#/components/schemas/BytedanceTtsRequestParams", reference)
+
+        params = schemas["BytedanceTtsRequestParams"]
+        self.assertEqual(["text", "speaker", "audio_params"], params["required"])
+        for field in ("model", "ssml", "additions", "pronunciation_dict", "tone"):
+            self.assertIn(field, params["properties"], field)
+
+        audio = schemas["BytedanceTtsAudioParams"]
+        self.assertEqual(["mp3", "pcm", "ogg_opus", "wav"], audio["properties"]["format"]["enum"])
+        self.assertEqual("mp3", audio["properties"]["format"]["default"])
+        self.assertIn("sample_rate", audio["properties"])
+
+        operation = spec["paths"]["/bytedance/api/v3/tts/unidirectional"]["post"]
+        headers = {
+            parameter["name"]: parameter
+            for parameter in operation["parameters"]
+            if parameter.get("in") == "header"
+        }
+        self.assertIn("X-Api-Request-Id", headers)
+        self.assertTrue(headers["X-Api-Request-Id"]["required"])
+
+    def test_documents_runway_create_responses(self) -> None:
+        """Runway create calls acknowledge {id, estimatedCost}, not the task body."""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        accepted = spec["components"]["schemas"]["RunwayTaskAccepted"]
+        self.assertEqual({"id", "estimatedCost"}, set(accepted["properties"]))
+        for path in (
+            "/runway/v1/text_to_image",
+            "/runway/v1/text_to_video",
+            "/runway/v1/image_to_video",
+        ):
+            response = spec["paths"][path]["post"]["responses"]["200"]["content"][
+                "application/json"
+            ]["schema"]
+            reference = response.get("$ref") or response["allOf"][0]["$ref"]
+            self.assertEqual("#/components/schemas/RunwayTaskAccepted", reference, path)
+
+    def test_documents_minimax_legacy_enums(self) -> None:
+        """MiniMax legacy video/image doors publish the documented enums."""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
+
+        schemas = spec["components"]["schemas"]
+        video = schemas["MinimaxVideoGenerationRequest"]["properties"]
+        self.assertEqual(
+            ["MiniMax-Hailuo-2.3", "MiniMax-Hailuo-02", "T2V-01-Director", "T2V-01"],
+            video["model"]["enum"],
+        )
+        self.assertEqual(["720P", "768P", "1080P"], video["resolution"]["enum"])
+
+        task = schemas["MinimaxVideoGenerationTask"]["properties"]
+        self.assertEqual(
+            ["Preparing", "Queueing", "Processing", "Success", "Fail"],
+            task["status"]["enum"],
+        )
+        self.assertIn("video_width", task)
+        self.assertIn("video_height", task)
+
+        image = schemas["MinimaxImageGenerationRequest"]["properties"]
+        self.assertEqual(["image-01", "image-01-live"], image["model"]["enum"])
+        self.assertEqual(8, len(image["aspect_ratio"]["enum"]))
+        self.assertEqual(["url", "base64"], image["response_format"]["enum"])
+        self.assertEqual("url", image["response_format"]["default"])
+        self.assertEqual(1, image["n"]["default"])
+        self.assertIs(False, image["prompt_optimizer"]["default"])
+        self.assertIn("subject_reference", image)
+
+        response = schemas["MinimaxImageGenerationResponse"]["properties"]["data"]
+        reference = response.get("$ref") or response["allOf"][0]["$ref"]
+        self.assertEqual("#/components/schemas/MinimaxImageData", reference)
+        self.assertIn("image_urls", schemas["MinimaxImageData"]["properties"])
+
     def test_public_vendor_operations_do_not_expose_passthrough_contracts(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             spec = CloudRouterGatewayOpenApiGenerator(root=Path(tmp)).generate()
@@ -786,19 +2411,18 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
                 "OpenAiFileReferenceObject",
                 "OpenAiImageReferenceInput",
                 "OpenAiImageReferenceObject",
-                "OpenAiImageReferenceInputList",
                 "OpenAiBinaryFilePart",
             ]:
                 self.assertIn(schema_name, schemas)
                 self.assertIsInstance(schemas[schema_name].get("description"), str)
 
-            self.assertDescribedSchemaRef(
-                schemas["OpenAiImageEditRequest"]["properties"]["image"],
-                "#/components/schemas/OpenAiImageReferenceInputList",
+            self.assertEqual(
+                {"$ref": "#/components/schemas/OpenAiImageReferenceInput"},
+                schemas["OpenAiImageEditRequest"]["properties"]["images"]["items"],
             )
-            self.assertDescribedSchemaRef(
-                schemas["OpenAiImageEditRequest"]["properties"]["mask"],
-                "#/components/schemas/OpenAiImageReferenceInput",
+            self.assertEqual(
+                "object",
+                schemas["OpenAiImageEditRequest"]["properties"]["mask"]["type"],
             )
             self.assertDescribedSchemaRef(
                 schemas["OpenAiImageVariationRequest"]["properties"]["image"],
@@ -1187,7 +2811,8 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
             # Seed TTS speech doors, and the FLUX 3 video door): every published
             # door contributes its request/response payload components as roots,
             # and the vendor-relay envelopes they reference resolve transitively.
-            self.assertEqual(124, len(audit.root_schema_names))
+            # 124 -> 125 by the Vidu scene-template response schema.
+            self.assertEqual(125, len(audit.root_schema_names))
             self.assertIn("ProviderJsonNull", audit.reachable_schema_names)
             self.assertEqual([], audit.unresolved_refs)
             self.assertEqual([], audit.non_component_payload_schemas)
@@ -1346,7 +2971,7 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
             generator = CloudRouterGatewayOpenApiGenerator(root=root)
             output = generator.write()
             spec = json.loads(output.read_text(encoding="utf-8"))
-            spec["components"]["schemas"]["ProviderMetadata"]["additionalProperties"] = {
+            spec["components"]["schemas"]["ProviderJsonObject"]["additionalProperties"] = {
                 "$ref": "#/components/schemas/ProviderJsonValue"
             }
             output.write_text(json.dumps(spec, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -1864,7 +3489,7 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
                 image_generation_request["properties"]["n"]["type"],
             )
             self.assertEqual(1, image_generation_request["properties"]["n"]["minimum"])
-            self.assertEqual(16, image_generation_request["properties"]["n"]["maximum"])
+            self.assertEqual(10, image_generation_request["properties"]["n"]["maximum"])
             self.assertDescribedSchemaRef(
                 schemas["OpenAiChatContentPart"]["properties"]["image_url"],
                 "#/components/schemas/OpenAiChatImageUrl",
@@ -2127,6 +3752,17 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
             seen = 0
             for path, path_item in spec["paths"].items():
                 if not path.startswith(f"/{namespace}/"):
+                    continue
+                if namespace == "stability_ai" and path.endswith("/text-to-audio"):
+                    # The audio door publishes audio bytes, not the JSON form,
+                    # so it must not require the JSON Accept header.
+                    audio = path_item["post"]
+                    declared = {
+                        parameter["name"]
+                        for parameter in audio.get("parameters", [])
+                        if parameter.get("in") == "header"
+                    }
+                    self.assertNotIn("Accept", declared)
                     continue
                 for method, operation in path_item.items():
                     if not isinstance(operation, dict) or not operation.get("operationId"):

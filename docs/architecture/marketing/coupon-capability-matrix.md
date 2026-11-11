@@ -182,7 +182,32 @@
 - 金额口径：历史 `discount_value`/`minimum_amount` 为十进制主单位，新列一律 `*_minor`；两者边界已显式转换，但"是否统一到 minor"仍待拍板；
 - 券码明文加密的 KEK 归属（运维决策）。
 
-### 5.2 契约检查遗留（requires a naming decision）
+### 5.2 生产事故与修复：订单→账户账本的调用方式（2026-11-11）
+
+**现象**：`POST /app/v3/api/orders/coupon_redemptions` 返回 500（`code=50001`），traceId `0722c0da-…`。
+
+**根因**（与券码逻辑无关）：订单履约需要把权益写入账户账本，而 `sdkwork-order-integration-account` 的适配器默认走 **HTTP**（`SDKWORK_ORDER_ACCOUNT_LEDGER_ADAPTER` 未设置 → `http`），HTTP 适配器要求 `SDKWORK_ACCESS_TOKEN`；生产既没有该 token，也**没有独立的账户 HTTP 服务**（只有 gateway / knowledgebase-rpc / redis / postgres 四个容器），因此在发请求前就 hard-fail：
+
+```
+error_code="storage"
+error=SDKWORK_ACCESS_TOKEN is required for account value ledger commands; …
+```
+
+**影响**：2 张券被消耗（`083A1A1230A04AF6`、`3C763DB9F5C64E21`，`claimed_quantity` 已达 `max_claims`），2 张订单 `fulfillment_status=failed`（失败原因已落库），`acct_ledger_entry` **0 行**（说明该链路从未在线上成功跑通过）。
+
+**修复（架构层）**：既然 account 模块与 order 模块在同一进程、同一 PostgreSQL，直接调用 Rust 仓储即可，不该绕一圈 HTTP：
+
+| 变更 | 内容 |
+|---|---|
+| 默认值 | `store`（进程内，走同一 `acct_*` 仓储）；仅当数据库引擎非 PostgreSQL（客户端 SQLite）时保留 `http` |
+| `http` | 降级为**显式**开启，并要求 `SDKWORK_ACCESS_TOKEN` + `SDKWORK_ACCOUNT_BACKEND_API_ORIGIN` |
+| 失败时机 | `http` 适配器缺 token 时在**启动**即失败（不再等到首次核销、券已消耗后才 500） |
+| 库内 panic | 两处 `panic!`（非 PostgreSQL 池）改为返回明确错误，符合 RUST_CODE_SPEC |
+| 单一决策点 | 两个端口构建器共用 `account_ledger_adapter_mode()`，并有 6 条单测覆盖默认/显式/非法值 |
+
+**遗留**：订单路径 `redeem_promotion_code_for_order` 不写 `promotion_code_redemption_attempt`（只有独立的 `/promotion/codes/redeem` 写），因此最常用的核销路径缺少失败证据——应补。
+
+### 5.3 契约检查遗留（requires a naming decision）
 
 `check-api-operation-patterns.mjs` 仍以退出码 1 结束，原因是两个**历史**字段（各在权威契约与派生镜像中出现一次，共 4 条）：
 

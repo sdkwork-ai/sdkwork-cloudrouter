@@ -3,6 +3,7 @@ package types
 // OpenAI-compatible request to create a vector store.
 type OpenAiVectorStoreCreateRequest struct {
 	ChunkingStrategy ProviderJsonValue `json:"chunking_strategy"`
+	Description string `json:"description"`
 	ExpiresAfter ProviderJsonValue `json:"expires_after"`
 	FileIds []string `json:"file_ids"`
 	Metadata map[string]ProviderJsonValue `json:"metadata"`

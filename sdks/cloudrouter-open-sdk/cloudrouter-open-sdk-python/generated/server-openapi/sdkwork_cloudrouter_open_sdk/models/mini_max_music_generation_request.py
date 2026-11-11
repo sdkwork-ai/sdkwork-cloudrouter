@@ -8,9 +8,12 @@ if TYPE_CHECKING:
 
 @dataclass
 class MiniMaxMusicGenerationRequest:
-    """Mini max music generation request schema exposed by Cloud Router."""
+    """MiniMax music generation request (`POST /v1/music_generation`)."""
     model: str
+    audio_base64: Optional[str] = None
     audio_setting: Optional[MiniMaxMusicAudioSetting] = None
+    audio_url: Optional[str] = None
+    cover_feature_id: Optional[str] = None
     is_instrumental: Optional[bool] = None
     lyrics: Optional[str] = None
     lyrics_optimizer: Optional[bool] = None

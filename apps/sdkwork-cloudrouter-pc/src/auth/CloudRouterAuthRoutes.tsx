@@ -4,7 +4,7 @@ import {
 } from '@sdkwork/auth-pc-react';
 import { useTranslation } from 'react-i18next';
 import {
-  useResolvedMediaResourceUrl,
+  useResolvedBrandLogoUrl,
   useSiteBranding,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { resolveCloudRouterAuthAppearance } from './cloudRouterAuthAppearance';
@@ -25,10 +25,14 @@ export function CloudRouterAuthRoutes() {
   // Auth is the first surface a user sees, so it must carry the brand the
   // operator published in `/admin/site` instead of the shared IAM identity the
   // auth package ships with.
-  const brandLogoUrl = useResolvedMediaResourceUrl(siteBranding.logo);
+  //
+  // The resolved URL follows Drive share links, so an uploaded logo keeps working after its
+  // reader link rotates; the shipped mark is the fallback rather than an absent `logoUrl`,
+  // because both the shell here and the IAM pages render the brand from this one object.
+  const brandLogoUrl = useResolvedBrandLogoUrl(siteBranding);
   const brand: SdkworkAuthBrand = {
     name: siteBranding.siteName,
-    ...(brandLogoUrl ? { logoUrl: brandLogoUrl } : {}),
+    logoUrl: brandLogoUrl,
   };
 
   return (

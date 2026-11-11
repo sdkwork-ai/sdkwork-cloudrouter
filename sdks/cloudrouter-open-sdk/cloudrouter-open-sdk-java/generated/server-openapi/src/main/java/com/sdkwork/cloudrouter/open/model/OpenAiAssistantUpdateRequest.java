@@ -9,6 +9,7 @@ public class OpenAiAssistantUpdateRequest {
     private Map<String, String> metadata;
     private String model;
     private String name;
+    private String reasoningEffort;
     private String responseFormat;
     private Double temperature;
     private String toolResources;
@@ -53,6 +54,14 @@ public class OpenAiAssistantUpdateRequest {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getReasoningEffort() {
+        return this.reasoningEffort;
+    }
+
+    public void setReasoningEffort(String reasoningEffort) {
+        this.reasoningEffort = reasoningEffort;
     }
 
     public String getResponseFormat() {

@@ -15,6 +15,7 @@ public class ViduCreation {
     private String uri;
     private String url;
     private String videoUrl;
+    private String watermarkedUrl;
     private Integer width;
 
     public String getAudioUrl() {
@@ -111,6 +112,14 @@ public class ViduCreation {
 
     public void setVideoUrl(String videoUrl) {
         this.videoUrl = videoUrl;
+    }
+
+    public String getWatermarkedUrl() {
+        return this.watermarkedUrl;
+    }
+
+    public void setWatermarkedUrl(String watermarkedUrl) {
+        this.watermarkedUrl = watermarkedUrl;
     }
 
     public Integer getWidth() {

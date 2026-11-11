@@ -9,31 +9,55 @@ import com.sdkwork.cloudrouter.open.http.HttpClient
 class FilesAnthropicApi(private val client: HttpClient) {
 
     /** Anthropic list files */
-    suspend fun listV1Files(beforeId: String? = null, afterId: String? = null, limit: Int? = null): AnthropicFileListResponse? {
+    suspend fun listV1Files(anthropicVersion: String, beforeId: String? = null, afterId: String? = null, limit: Int? = null): AnthropicFileListResponse? {
         val query = buildQueryString(listOf(
             QueryParameterSpec("before_id", beforeId, "form", true, false, null),
             QueryParameterSpec("after_id", afterId, "form", true, false, null),
             QueryParameterSpec("limit", limit, "form", true, false, null)
         ))
-        val raw = client.get(ApiPaths.appendQueryString("/anthropic/v1/files", query))
+        val requestHeaders = buildRequestHeaders(
+            mapOf(
+                "anthropic-version" to HeaderParameterSpec(anthropicVersion, "simple", false, null),
+            ),
+            emptyMap()
+        )
+        val raw = client.get(ApiPaths.appendQueryString("/anthropic/v1/files", query), null, requestHeaders)
         return client.convertValue(raw, object : TypeReference<AnthropicFileListResponse>() {})
     }
 
     /** Anthropic upload file */
-    suspend fun createV1File(body: AnthropicFileUploadMultipartRequest): AnthropicFile? {
-        val raw = client.post("/anthropic/v1/files", body, null, null, "multipart/form-data")
+    suspend fun createV1File(body: AnthropicFileUploadMultipartRequest, anthropicVersion: String): AnthropicFile? {
+        val requestHeaders = buildRequestHeaders(
+            mapOf(
+                "anthropic-version" to HeaderParameterSpec(anthropicVersion, "simple", false, null),
+            ),
+            emptyMap()
+        )
+        val raw = client.post("/anthropic/v1/files", body, null, requestHeaders, "multipart/form-data")
         return client.convertValue(raw, object : TypeReference<AnthropicFile>() {})
     }
 
     /** Anthropic delete file */
-    suspend fun deleteV1Files(fileId: String): AnthropicDeleteResponse? {
-        val raw = client.delete("/anthropic/v1/files/${serializePathParameter(fileId, PathParameterSpec("file_id", "simple", false))}")
+    suspend fun deleteV1Files(fileId: String, anthropicVersion: String): AnthropicDeleteResponse? {
+        val requestHeaders = buildRequestHeaders(
+            mapOf(
+                "anthropic-version" to HeaderParameterSpec(anthropicVersion, "simple", false, null),
+            ),
+            emptyMap()
+        )
+        val raw = client.delete("/anthropic/v1/files/${serializePathParameter(fileId, PathParameterSpec("file_id", "simple", false))}", null, requestHeaders)
         return client.convertValue(raw, object : TypeReference<AnthropicDeleteResponse>() {})
     }
 
     /** Anthropic retrieve file content */
-    suspend fun listV1FilesContent(fileId: String): String? {
-        val raw = client.get("/anthropic/v1/files/${serializePathParameter(fileId, PathParameterSpec("file_id", "simple", false))}/content")
+    suspend fun listV1FilesContent(fileId: String, anthropicVersion: String): String? {
+        val requestHeaders = buildRequestHeaders(
+            mapOf(
+                "anthropic-version" to HeaderParameterSpec(anthropicVersion, "simple", false, null),
+            ),
+            emptyMap()
+        )
+        val raw = client.get("/anthropic/v1/files/${serializePathParameter(fileId, PathParameterSpec("file_id", "simple", false))}/content", null, requestHeaders)
         return client.convertValue(raw, object : TypeReference<String>() {})
     }
 
@@ -209,4 +233,50 @@ class FilesAnthropicApi(private val client: HttpClient) {
         return java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8)
     }
 
+    private data class HeaderParameterSpec(val value: Any?, val style: String, val explode: Boolean, val contentType: String?)
+
+    private val headerObjectMapper = ObjectMapper().registerKotlinModule()
+
+    private fun buildRequestHeaders(headers: Map<String, HeaderParameterSpec>, cookies: Map<String, HeaderParameterSpec>): Map<String, String>? {
+        val requestHeaders = linkedMapOf<String, String>()
+        headers.forEach { (name, parameter) ->
+            serializeParameterValue(parameter)?.let { requestHeaders[name] = it }
+        }
+
+        val cookieHeader = buildCookieHeader(cookies)
+        if (cookieHeader.isNotEmpty()) {
+            requestHeaders["Cookie"] = requestHeaders["Cookie"]?.let { "$it; $cookieHeader" } ?: cookieHeader
+        }
+
+        return requestHeaders.takeIf { it.isNotEmpty() }
+    }
+
+    private fun buildCookieHeader(cookies: Map<String, HeaderParameterSpec>): String {
+        return cookies.mapNotNull { (name, parameter) ->
+            serializeParameterValue(parameter)?.let {
+                java.net.URLEncoder.encode(name, java.nio.charset.StandardCharsets.UTF_8) + "=" +
+                    java.net.URLEncoder.encode(it, java.nio.charset.StandardCharsets.UTF_8)
+            }
+        }.joinToString("; ")
+    }
+
+    private fun serializeParameterValue(parameter: HeaderParameterSpec?): String? {
+        val value = parameter?.value ?: return null
+        if (!parameter.contentType.isNullOrBlank()) {
+            return headerObjectMapper.writeValueAsString(value)
+        }
+        return when (value) {
+            is Iterable<*> -> value.mapNotNull { it?.toString() }.joinToString(",")
+            is Map<*, *> -> value.mapNotNull { (key, item) ->
+                if (item == null) {
+                    null
+                } else if (parameter.explode) {
+                    "$key=$item"
+                } else {
+                    listOf(key.toString(), item.toString()).joinToString(",")
+                }
+            }.joinToString(",")
+            else -> value.toString()
+        }
+    }
 }

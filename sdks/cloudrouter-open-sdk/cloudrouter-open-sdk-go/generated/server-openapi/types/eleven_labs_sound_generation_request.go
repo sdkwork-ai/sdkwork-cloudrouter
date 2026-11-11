@@ -1,6 +1,6 @@
 package types
 
-// Eleven labs sound generation request schema exposed by Cloud Router.
+// ElevenLabs sound-effect generation request (`POST /v1/sound-generation`).
 type ElevenLabsSoundGenerationRequest struct {
 	DurationSeconds float64 `json:"duration_seconds"`
 	Loop bool `json:"loop"`

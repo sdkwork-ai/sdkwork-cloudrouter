@@ -51,6 +51,10 @@ pub struct ViduCreation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub video_url: Option<String>,
 
+    /// Watermarked creation URL.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub watermarked_url: Option<String>,
+
     /// Media width in pixels.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub width: Option<i64>,

@@ -232,3 +232,6 @@ temp/
 !.env.cloud.staging
 !.env.cloud.demo
 !.env.cloud.production
+
+# Derived SDK generation input (marker-stripped copy of *.sdkgen.json)
+sdks/*/openapi/*.sdkgen.generated.json

@@ -28,9 +28,8 @@ class RealtimeApi {
   }
 
   /// Hang up realtime call
-  Future<OpenAiRealtimeCall?> createCallsHangup(String callId, OpenAiRealtimeCallActionRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/realtime/calls/${serializePathParameter(callId, const PathParameterSpec('call_id', 'simple', false))}/hangup'), body: payload, contentType: 'application/json');
+  Future<OpenAiRealtimeCall?> createCallsHangup(String callId) async {
+    final response = await _client.post(ApiPaths.aiPath('/realtime/calls/${serializePathParameter(callId, const PathParameterSpec('call_id', 'simple', false))}/hangup'));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : OpenAiRealtimeCall.fromJson(map);
@@ -48,7 +47,7 @@ class RealtimeApi {
   }
 
   /// Reject realtime call
-  Future<OpenAiRealtimeCall?> createCallsReject(String callId, OpenAiRealtimeCallActionRequest body) async {
+  Future<OpenAiRealtimeCall?> createCallsReject(String callId, OpenAiRealtimeCallRejectRequest body) async {
     final payload = body.toJson();
     final response = await _client.post(ApiPaths.aiPath('/realtime/calls/${serializePathParameter(callId, const PathParameterSpec('call_id', 'simple', false))}/reject'), body: payload, contentType: 'application/json');
     return (() {

@@ -8,8 +8,5 @@ if TYPE_CHECKING:
 
 @dataclass
 class OpenAiConversationItemCreateRequest:
-    """OpenAI-compatible open ai conversation item create request schema exposed by Cloud Router."""
-    type: str
-    content: Optional[List[OpenAiConversationContentPart]] = None
-    metadata: Optional[Dict[str, str]] = None
-    role: Optional[str] = None
+    """OpenAI-compatible request to add items to a conversation (`POST /v1/conversations/{conversation_id}/items`)."""
+    items: List[Dict[str, str]]

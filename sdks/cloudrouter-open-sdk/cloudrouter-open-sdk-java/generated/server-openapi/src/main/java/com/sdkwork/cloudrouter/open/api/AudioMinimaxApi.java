@@ -13,10 +13,10 @@ public class AudioMinimaxApi {
         this.client = client;
     }
 
-    /** Minimax create music generation */
-    public MiniMaxMusicGenerationResponse createV1MusicGeneration(MiniMaxMusicGenerationRequest body) throws Exception {
-        Object raw = client.post("/minimax/v1/music_generation", body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<MiniMaxMusicGenerationResponse>() {});
+    /** MiniMax speech synthesis */
+    public MinimaxTextToSpeechResponse createV1T2aV(MinimaxTextToSpeechRequest body) throws Exception {
+        Object raw = client.post("/minimax/v1/t2a_v2", body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<MinimaxTextToSpeechResponse>() {});
     }
 
 

@@ -1,5 +1,228 @@
 # Cloud Router Open API Changelog
 
+## Unreleased
+
+- Volcengine Ark and ByteDance Ark media doors now publish the vendor's official
+  request bodies instead of a reduced local subset:
+  - `POST /volcengine/api/v3/contents/generations/tasks` and
+    `POST /bytedance/api/v3/contents/generations/tasks` accept all 20 documented
+    fields (`model`, `content`, `omni_reference_task_type`, `resolution`,
+    `ratio`, `duration`, `frames`, `generate_audio`, `watermark`,
+    `output_format`, `seed`, `camera_fixed`, `return_last_frame`, `draft`,
+    `service_tier`, `callback_url`, `execution_expires_after`, `priority`,
+    `safety_identifier`, `tools`) with the documented enums, bounds, and
+    defaults. `metadata` was not part of the official body and is removed.
+  - `content[]` items now carry `type`, `text`, `image_url`, `video_url`,
+    `audio_url`, `draft_task`, and `role`. `image_url` / `video_url` /
+    `audio_url` are objects with a required `url`, matching Ark; the previous
+    string shape was wrong.
+  - `GET /volcengine/api/v3/contents/generations/tasks/{task_id}` and
+    `GET /bytedance/api/v3/contents/generations/tasks/{task_id}` now describe the
+    official task state: `id`, `model`, `status`, `content.video_url`,
+    `content.last_frame_url`, `usage`, `created_at`, `updated_at`, `seed`,
+    `resolution`, `ratio`, `duration`, `frames`, `framespersecond`,
+    `generate_audio`, `draft`, `output_format`, `priority`,
+    `safety_identifier`, `service_tier`, `tools`, and `error`.
+  - `POST /volcengine/api/v3/images/generations` and
+    `POST /bytedance/api/v3/images/generations` now follow the Seedream docs:
+    `prompt`, `image` (string or string array), `layer_decomposition`, `size`,
+    `optimize_prompt_options.mode`, `output_format`, `background`,
+    `response_format`, `sequential_image_generation`,
+    `sequential_image_generation_options.max_images`, `stream`, `tools`, and
+    `watermark`. The local-only `seed` field is removed.
+- Breaking for generated SDK consumers: `VolcengineContentPart.image_url` and
+  `.video_url` change from strings to objects, `VolcengineContentGenerationTask.content`
+  changes from an array of parts to the output object, and `metadata` is gone.
+  These types now mirror the wire the vendor actually accepts.
+- Alibaba DashScope image and video doors now publish the official contract:
+  - `POST /alibaba/api/v1/services/aigc/text2image/image-synthesis` requires
+    `X-DashScope-Async: enable` (DashScope serves only asynchronous HTTP) and a
+    typed body: `input.prompt` / `input.negative_prompt` and
+    `parameters.size` / `parameters.n` (1-4) / `parameters.prompt_extend` /
+    `parameters.watermark` / `parameters.seed`.
+  - `POST /alibaba/api/v1/services/aigc/video-generation/video-synthesis` also
+    requires the async header and types `input.prompt`, `input.negative_prompt`,
+    `input.img_url`, `input.audio_url`, `input.template` plus
+    `parameters.resolution` (`480P/720P/1080P`), `parameters.ratio`,
+    `parameters.duration` (2-15), `parameters.prompt_extend`,
+    `parameters.watermark`, and `parameters.seed`.
+  - Polling now documents `task_status` (`PENDING/RUNNING/SUCCEEDED/FAILED/CANCELED/UNKNOWN`),
+    `submit_time`, `scheduled_time`, `end_time`, `orig_prompt`, `video_url`, and
+    the `usage` counters (`duration`, `input_video_duration`,
+    `output_video_duration`, `SR`, `ratio`, `image_count`).
+- ElevenLabs `POST /elevenlabs/v1/text-to-speech/{voice_id}` now publishes the
+  vendor's full `Body_text_to_speech_full`: `text` is the only required field
+  (`model_id` is optional with the vendor default `eleven_multilingual_v2`), and
+  `language_code`, `voice_settings`, `pronunciation_dictionary_locators`, `seed`,
+  `previous_text`, `next_text`, `previous_request_ids`, `next_request_ids`,
+  `use_pvc_as_ivc`, `apply_text_normalization`,
+  `apply_language_text_normalization`, and `audio_effects` are typed.
+- Kling image generation and video-to-audio now publish the vendor's official
+  fields:
+  - `POST /kling/v1/images/generations` gains `negative_prompt`,
+    `image_reference` (`subject/face`), `image_fidelity`, `human_fidelity`,
+    `element_list`, `resolution` (`1k/2k`), `n`, the eight-value
+    `aspect_ratio` enum, `watermark_info`, and `external_task_id`; the invented
+    `image_reference_list` is removed. The response is the official envelope
+    `{code, message, request_id, data{task_id, task_status, task_status_msg,
+    task_info, created_at, updated_at, task_result{images[]}}}`.
+  - `POST /kling/v1/audio/video-to-audio` replaces the invented `prompt` with
+    `sound_effect_prompt`, `bgm_prompt`, and `asmr_mode`.
+- Anthropic Messages now publishes the current official body:
+  `cache_control`, `container` (+`skills`), `diagnostics`, `inference_geo`,
+  `output_config` (`effort` / JSON output format), `service_tier`
+  (`auto/standard_only`), and `speed` (`standard/fast`) are added;
+  `metadata` is typed as `{user_id}` and `max_tokens` accepts the documented
+  `0` (cache pre-warm). `temperature` / `top_p` / `top_k` stay as compatibility
+  fields.
+- Zhipu image and video doors now match the vendor's embedded OpenAPI:
+  image gains model/quality enums, the `1280x1280` size default, and
+  `user_id` 6-128 bounds; its response becomes
+  `{created, data[{url}], content_filter[{role, level}]}`.
+  Video `image_url` becomes `string | Base64 | [first, last]`,
+  `prompt` is optional (prompt or image_url required), and `fps` (30/60),
+  `duration` (5/10), `quality` (speed/quality), `with_audio`, `watermark_enabled`,
+  and `user_id` are typed. The async result publishes
+  `PROCESSING/SUCCESS/FAIL`, `video_result[{url, cover_image_url}]`, and
+  `image_result[{url}]`.
+- MiniMax music and TTS now publish the vendor's full request bodies:
+  music adds `audio_url`, `audio_base64`, `cover_feature_id`, model enums,
+  output-format and audio-setting enums/defaults; TTS adds `stream_options`,
+  `timbre_weights`, `text_normalization_mode`, `voice_modify`,
+  `subtitle_type`, and `output_format`, with the speech model enum and
+  `text` length bound.
+- Stability AI doors now publish the vendor's multipart transport:
+  `POST /stability_ai/v2beta/stable-image/generate/{mode}` and
+  `POST /stability_ai/v2beta/audio/stable-audio-2/text-to-audio` accept
+  `multipart/form-data` instead of JSON. The image door still requires
+  `Accept: application/json` (it publishes the JSON form); the audio door
+  returns `audio/mpeg` bytes and no longer requires that header.
+- Luma Dream Machine now publishes the official `GenerationRequest`: `model`
+  is the only required field (enum `ray-2/ray-flash-2`, default `ray-2`),
+  `generation_type`, the seven-value `aspect_ratio`, typed
+  `keyframes.frame0/frame1` (`image{url}` or `generation{id}`), and `concepts`
+  are added; the response publishes `state`
+  (`queued/dreaming/completed/failed`), `assets{video,image}`, `model`, and
+  `request`.
+- OpenAI-compatible `/v1` media operations now follow the official OpenAPI:
+  - `POST /v1/images/generations` publishes all 19 documented fields (GIF
+    frame controls, `svg`, `output_format`, `output_compression`, `stream`,
+    `partial_images`, `moderation`, `background`, `style`,
+    `safety_identifier`, `user`) and `n` is bounded to 1-10.
+  - `POST /v1/images/edits` uses the documented `images` array (1-16) in the
+    JSON carrier and types the multipart carrier; `model` is no longer required
+    in JSON.
+  - `POST /v1/audio/speech` adds `instructions` and `stream_format`, bounds
+    `speed` to 0.25-4, and drops the invented `metadata`.
+  - `POST /v1/videos` now publishes `model/prompt/input_reference/seconds/size`
+    with `prompt` as the only required field; edits, extensions, and remix
+    publish their documented required sets.
+  - `POST /v1/batches` adds `output_expires_after`; `POST /v1/completions` adds
+    `stream_options`.
+- OpenAI-compatible platform operations now follow the vendor OpenAPI:
+  assistants gain `reasoning_effort`; conversation items use the documented
+  `{items: [...]}` body; `responses/input_tokens` and `responses/compact` add
+  their documented fields; thread runs add the truncation/sampling/tool fields;
+  uploads add `expires_after`; vector stores add `description` and file batches
+  add `files`; voice creation uses `{type, name, prompt, script_hint, model}`;
+  containers add `expires_after`/`skills`/`network_policy` and drop the invented
+  `metadata`; voice consent updates drop `metadata`.
+- OpenAI-compatible realtime operations now match the vendor OpenAPI:
+  client-secret creation takes `{expires_after, session}`; session creation
+  publishes `client_secret` plus the audio/tracing/turn-detection/truncation
+  fields; transcription sessions add `input_audio_noise_reduction` and `include`;
+  call accept publishes the documented session fields, refer takes `target_uri`,
+  reject takes `status_code`, and hangup is published without a request body.
+- Vidu request bodies now follow the vendor API reference: video doors add
+  `audio`/`off_peak`/`watermark`/`wm_position`/`wm_url`/`meta_data`, image-to-video
+  adds `is_rec` and drops the unsupported `aspect_ratio`, reference-to-video adds
+  `subjects`/`auto_subjects`/`bgm`/`sounds`, image generation adds
+  `bgm`/`resolution`/`off_peak` and makes `images` optional, audio doors rename
+  `text`/`timing_data` to `prompt`/`timing_prompts` and add duration/seed/BGM
+  fields, and scene templates add the prompt/seed/area/beast/watermark fields
+  while dropping the invented `video_urls`. Vidu task responses publish the
+  documented `state` enum plus `prompt`/`duration`/`seed`/`credits`/`err_code`
+  echoes and `creations[].watermarked_url`.
+- PixVerse text-to-video now publishes the official request
+  (`model`/`prompt`/`duration`/`quality`/`aspect_ratio` required, plus
+  `seed`/`webhook_id`/`generate_audio_switch`/`generate_multi_clip_switch`),
+  drops the invented `img_id`/`motion_mode`/`negative_prompt`, requires the
+  `Ai-trace-id` header on create and poll, and types the
+  `{ErrCode, ErrMsg, Resp, Error}` envelope with `status` 1/5/7/8.
+- Media billing now waives the per-result charge for three additional 2xx
+  business-failure shapes: PixVerse `ErrCode != 0`, DashScope
+  `output.task_status: FAILED`, and Luma `state: failed`.
+- Runway text/image-to-video publish the per-model union (`contentModeration`,
+  `outputFormat` incl. HDR, `proresProfile`, `audio`, `negativePrompt`,
+  `providerSettings`, `references`, `resolution`, `referenceAudio`,
+  `referenceVideos`, `cfgScale`, `bitrate`, `promptExpansionMode`, `draft`,
+  `draftTaskId`), and text-to-image adds `quality`/`background`/`backgroundColor`/
+  `outputCount`/`grounding`/`edit`/`preciseEdit`/`maskUri`/`thinkingLevel`/`colors`.
+- Black Forest Labs `flux-3-video` is now the vendor's discriminated union on
+  `mode` (`t2v`/`i2v`/`v2v`/`draft_enhance`) with `keyframes`/`start_video`/
+  `draft_cache`/`safety_tolerance`/`generate_audio`, and drops the invented
+  `image`/`seed`.
+- Gemini requests now publish the documented `store`/`continuationToken`/
+  `serviceTier`/`labels`/`model` fields, `embedContent` gains
+  `model`/`embedContentConfig`, and the nested `generationConfig`/`Part`/`Tool`
+  schemas add the response-modality, media-resolution, thought, tool-call,
+  file-search, maps, computer-use, and MCP-server fields. Cached-content
+  creation now requires `model`.
+- Anthropic `tool_choice` publishes the `auto`/`any`/`tool`/`none` enum plus
+  `disable_parallel_tool_use`; `thinking` publishes
+  `enabled`/`disabled`/`between_tools`/`adaptive`, a 1024-token budget floor, and
+  the `display` mode; tools accept `type`/`cache_control` plus
+  `allowed_callers`/`defer_loading`/`eager_input_streaming`/`input_examples`/
+  `strict` and a length/pattern-constrained name; `tools` now accepts the
+  documented server tools (`bash_20250124`, `text_editor_2025*`,
+  `web_search_20250305`, `tool_search_tool_regex`) with `max_uses`,
+  domain filters, `user_location`, and text-editor/computer-use fields; and the
+  `count_tokens` request now carries only the nine documented fields instead of
+  the full Messages generation surface.
+- xAI video edit/extension inputs accept either `url` or a Files API `file_id`,
+  and generated video results publish `duration` alongside `url`/`file_id`.
+- ElevenLabs music publishes the documented `music_prompt`/`composition_plan`
+  structures, prompt/lyrics/seed/length bounds, model enum and defaults;
+  sound-generation now requires only `text` and publishes the SFX model enum,
+  loop default, and duration/influence bounds.
+- Black Forest Labs' parameterized `flux-{model}` image door publishes the union
+  of the vendor's per-model fields (resolution, mode, steps, guidance, image
+  references, mask, expand offsets, finetune, webhooks, user/version).
+
+- xAI image generation/edits publish the `n` 1–10 bound, the `1k/1.5k/2k`
+  resolution enum, the full aspect-ratio enum on edits, and the `url` default
+  response format.
+- Runway prompt length/duration/negative-prompt bounds, and the BFL
+  `flux-3-video` aspect-ratio enum, duration range, keyframe shapes, and model
+  defaults now follow the vendor OpenAPI.
+- Stability image generation publishes the core/ultra/sd3 union (`mode`,
+  `model` enum, `aspect_ratio` enum, `style_preset`, `cfg_scale`, `strength`
+  bounds, output format default), and audio publishes its model/format/duration
+  defaults.
+- Alibaba Qwen-TTS publishes a typed `input` envelope
+  (`text`/`voice`/`language_type`/`instructions`/`optimize_instructions`)
+  instead of a free object.
+- ByteDance Seed TTS now publishes the vendor's `{req_params: {text, speaker,
+  audio_params, ...}}` body, the `mp3/pcm/ogg_opus/wav` format enum, and the
+  required `X-Api-Request-Id` header.
+- Runway text-to-image now returns the vendor's `{id, estimatedCost}`
+  acknowledgement like the video create endpoints, instead of the task body.
+- MiniMax legacy video/image doors publish their model/resolution/status/
+  aspect-ratio enums, image response-format default, `n`/`prompt_optimizer`
+  defaults, `subject_reference`, and a typed `image_urls`/`image_base64` data
+  envelope.
+- Anthropic content blocks publish the documented 16 block types plus
+  `cache_control`, `citations`, `thinking`, `signature`, `data`, `is_error`,
+  `caller`, `toolset_name`, `title`, and `context`.
+- Vidu scene templates publish `video_urls` again for motion-control templates
+  such as `motion_control_2`.
+- The vendor-compatibility SDK family now regenerates end to end: the SDK
+  runtime standardizer strips the external-wire marker pair only from the
+  derived `*.sdkgen.json` generator input (the authority OpenAPI keeps them), so
+  `generate-sdk.mjs --all` emits all 218 published operations for Rust,
+  TypeScript, Go, Python, Java, Kotlin, C#, Swift, and Flutter instead of the
+  empty surface the canonical generator produced for external operations.
+
 ## 0.4.12
 
 - Published vendor-native image and video generation doors for every media

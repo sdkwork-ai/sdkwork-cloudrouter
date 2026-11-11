@@ -2,8 +2,10 @@ package types
 
 // OpenAI-compatible multipart request to create a voice.
 type OpenAiVoiceCreateMultipartRequest struct {
-	Description string `json:"description"`
 	File []byte `json:"file"`
-	Metadata string `json:"metadata"`
+	Model string `json:"model"`
 	Name string `json:"name"`
+	Prompt string `json:"prompt"`
+	ScriptHint string `json:"script_hint"`
+	Type string `json:"type"`
 }

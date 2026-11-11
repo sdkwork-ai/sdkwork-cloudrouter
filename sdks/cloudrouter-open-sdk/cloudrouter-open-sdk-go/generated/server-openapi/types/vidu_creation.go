@@ -14,5 +14,6 @@ type ViduCreation struct {
 	Uri string `json:"uri"`
 	Url string `json:"url"`
 	VideoUrl string `json:"video_url"`
+	WatermarkedUrl string `json:"watermarked_url"`
 	Width int `json:"width"`
 }

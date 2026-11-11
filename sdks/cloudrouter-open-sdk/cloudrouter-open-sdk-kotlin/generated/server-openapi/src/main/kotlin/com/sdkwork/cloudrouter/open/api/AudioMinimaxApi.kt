@@ -8,10 +8,10 @@ import com.sdkwork.cloudrouter.open.http.HttpClient
 
 class AudioMinimaxApi(private val client: HttpClient) {
 
-    /** Minimax create music generation */
-    suspend fun createV1MusicGeneration(body: MiniMaxMusicGenerationRequest): MiniMaxMusicGenerationResponse? {
-        val raw = client.post("/minimax/v1/music_generation", body, null, null, "application/json")
-        return client.convertValue(raw, object : TypeReference<MiniMaxMusicGenerationResponse>() {})
+    /** MiniMax speech synthesis */
+    suspend fun createV1T2aV(body: MinimaxTextToSpeechRequest): MinimaxTextToSpeechResponse? {
+        val raw = client.post("/minimax/v1/t2a_v2", body, null, null, "application/json")
+        return client.convertValue(raw, object : TypeReference<MinimaxTextToSpeechResponse>() {})
     }
 
 

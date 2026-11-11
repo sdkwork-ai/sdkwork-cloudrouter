@@ -7,6 +7,10 @@ pub struct OpenAiVectorStoreCreateRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub chunking_strategy: Option<String>,
 
+    /// Human-readable vector store description.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+
     /// Vector store expiration policy.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expires_after: Option<String>,

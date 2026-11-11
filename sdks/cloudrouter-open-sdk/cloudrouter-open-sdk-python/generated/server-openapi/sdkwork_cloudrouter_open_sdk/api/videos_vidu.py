@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import ViduImageToVideoRequest, ViduReferenceToVideoRequest, ViduStartEndToVideoRequest, ViduTaskCreationsResponse, ViduTemplateRequest, ViduTextToVideoRequest, ViduVideoGenerationTask
+from ..models import ViduImageToVideoRequest, ViduReferenceToVideoRequest, ViduStartEndToVideoRequest, ViduTaskCreationsResponse, ViduTemplateRequest, ViduTemplateTask, ViduTextToVideoRequest, ViduVideoGenerationTask
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -97,7 +97,7 @@ class VideosViduApi:
         """Vidu get task creations"""
         return self._client.get(f"/vidu/ent/v2/tasks/{serialize_path_parameter(task_id, {'name': 'task_id', 'style': 'simple', 'explode': False})}/creations")
 
-    def create_ent_v2_template(self, body: ViduTemplateRequest) -> ViduVideoGenerationTask:
+    def create_ent_v2_template(self, body: ViduTemplateRequest) -> ViduTemplateTask:
         """Vidu create template video"""
         return self._client.post(f"/vidu/ent/v2/template", json=body)
 

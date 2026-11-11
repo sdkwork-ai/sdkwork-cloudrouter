@@ -5,6 +5,7 @@ import type { DriveUploaderBlobLike, DriveUploaderUploadResult } from '@sdkwork/
 export type { DriveUploaderBlobLike };
 import type { CloudRouterMediaKind, CloudRouterMediaResource } from './media-resource.ts';
 import { readMediaResourceUrl, toExternalUrlMediaResource } from './media-resource.ts';
+import { readApiRecord } from './api-result.ts';
 import { getSdkworkDriveAppSdkClient, getSdkworkDriveOpenSdkClient } from './sdk-clients.ts';
 
 const DRIVE_MEDIA_URL_TTL_SECONDS = 3600;
@@ -250,7 +251,11 @@ export async function resolveDriveMediaUrl(
   if (!isDriveMediaResource(media)) {
     return readMediaResourceUrl(media);
   }
-  const token = await ensureDriveShareToken(media);
+  // A Drive upload normally persists its reader share token, so this only runs for media that
+  // arrived without one. Minting a link needs an authenticated app session, which an anonymous
+  // visitor does not have: that is "no displayable URL", not an exception to surface, because
+  // every caller already treats an empty answer as "fall back to the shipped asset".
+  const token = await ensureDriveShareToken(media).catch(() => '');
   if (!token) {
     return '';
   }
@@ -262,12 +267,20 @@ export async function resolveDriveMediaUrl(
   const result = await client.drive.openShareLinksDownloadUrlsCreate(token, {
     requestedTtlSeconds: DRIVE_MEDIA_URL_TTL_SECONDS,
   });
-  const download = result.data.item;
-  const expiresAtEpochMs = download.expiresAtEpochMs
+  // The generated open client unwraps the `{ code, data }` envelope before it returns, while its
+  // response type still spells the envelope — so `result.data.item` dereferences `undefined` on
+  // the real client and every uploaded brand asset silently fell back to its placeholder. Reading
+  // through `readApiRecord` accepts both shapes.
+  const download = readApiRecord(readApiRecord(result).item);
+  const downloadUrl = typeof download.downloadUrl === 'string' ? download.downloadUrl.trim() : '';
+  if (!downloadUrl) {
+    return '';
+  }
+  const expiresAtEpochMs = Number(download.expiresAtEpochMs) > 0
     ? Number(download.expiresAtEpochMs)
     : Date.now() + DRIVE_MEDIA_URL_TTL_SECONDS * 1000;
-  driveMediaUrlCache.set(token, { url: download.downloadUrl, expiresAtEpochMs });
-  return download.downloadUrl;
+  driveMediaUrlCache.set(token, { url: downloadUrl, expiresAtEpochMs });
+  return downloadUrl;
 }
 
 export function useResolvedMediaResourceUrl(

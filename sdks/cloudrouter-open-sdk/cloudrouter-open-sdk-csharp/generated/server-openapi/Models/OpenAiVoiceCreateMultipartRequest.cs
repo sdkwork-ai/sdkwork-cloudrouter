@@ -6,9 +6,11 @@ namespace Sdkwork.CloudRouter.Open.Models
 {
     public class OpenAiVoiceCreateMultipartRequest
     {
-        public string? Description { get; set; }
         public string? File { get; set; }
-        public string? Metadata { get; set; }
+        public string? Model { get; set; }
         public string? Name { get; set; }
+        public string? Prompt { get; set; }
+        public string? ScriptHint { get; set; }
+        public string? Type { get; set; }
     }
 }

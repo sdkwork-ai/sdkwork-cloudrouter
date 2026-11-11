@@ -12,6 +12,581 @@ List<dynamic>? _sdkworkAsList(dynamic value) {
   return value is List ? value : null;
 }
 
+class AlibabaAsyncTask {
+  final String? code;
+  final String? endTime;
+  final String? message;
+  final String? origPrompt;
+  final List<ProviderGeneratedMedia>? results;
+  final String? scheduledTime;
+  final String? submitTime;
+  final String? taskId;
+  final String? taskStatus;
+  final String? videoUrl;
+
+  AlibabaAsyncTask({
+    this.code,
+    this.endTime,
+    this.message,
+    this.origPrompt,
+    this.results,
+    this.scheduledTime,
+    this.submitTime,
+    this.taskId,
+    this.taskStatus,
+    this.videoUrl
+  });
+
+  factory AlibabaAsyncTask.fromJson(Map<String, dynamic> json) {
+    return AlibabaAsyncTask(
+      code: json['code']?.toString(),
+      endTime: json['end_time']?.toString(),
+      message: json['message']?.toString(),
+      origPrompt: json['orig_prompt']?.toString(),
+      results: (() {
+        final list = _sdkworkAsList(json['results']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : ProviderGeneratedMedia.fromJson(map);
+      })())
+            .whereType<ProviderGeneratedMedia>()
+            .toList();
+      })(),
+      scheduledTime: json['scheduled_time']?.toString(),
+      submitTime: json['submit_time']?.toString(),
+      taskId: json['task_id']?.toString(),
+      taskStatus: json['task_status']?.toString(),
+      videoUrl: json['video_url']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'code': code,
+      'end_time': endTime,
+      'message': message,
+      'orig_prompt': origPrompt,
+      'results': results?.map((item) => item.toJson()).toList(),
+      'scheduled_time': scheduledTime,
+      'submit_time': submitTime,
+      'task_id': taskId,
+      'task_status': taskStatus,
+      'video_url': videoUrl,
+    };
+  }
+}
+
+class AlibabaImageGenerationRequest {
+  final Map<String, dynamic> input;
+  final String model;
+  final Map<String, dynamic>? parameters;
+
+  AlibabaImageGenerationRequest({
+    required this.input,
+    required this.model,
+    this.parameters
+  });
+
+  factory AlibabaImageGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return AlibabaImageGenerationRequest(
+      input: (() {
+        final map = _sdkworkAsMap(json['input']);
+        if (map == null) {
+          throw FormatException('AlibabaImageGenerationRequest.input is required');
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('AlibabaImageGenerationRequest.model is required');
+        }
+        return value;
+      })(),
+      parameters: (() {
+        final map = _sdkworkAsMap(json['parameters']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'input': input.map((key, item) => MapEntry(key, item)),
+      'model': model,
+      'parameters': parameters?.map((key, item) => MapEntry(key, item)),
+    };
+  }
+}
+
+class AlibabaImageGenerationResponse {
+  final String? code;
+  final String? message;
+  final AlibabaAsyncTask? output;
+  final String? requestId;
+  final AlibabaTaskUsage? usage;
+
+  AlibabaImageGenerationResponse({
+    this.code,
+    this.message,
+    this.output,
+    this.requestId,
+    this.usage
+  });
+
+  factory AlibabaImageGenerationResponse.fromJson(Map<String, dynamic> json) {
+    return AlibabaImageGenerationResponse(
+      code: json['code']?.toString(),
+      message: json['message']?.toString(),
+      output: (() {
+        final map = _sdkworkAsMap(json['output']);
+        return map == null ? null : AlibabaAsyncTask.fromJson(map);
+      })(),
+      requestId: json['request_id']?.toString(),
+      usage: (() {
+        final map = _sdkworkAsMap(json['usage']);
+        return map == null ? null : AlibabaTaskUsage.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'code': code,
+      'message': message,
+      'output': output?.toJson(),
+      'request_id': requestId,
+      'usage': usage?.toJson(),
+    };
+  }
+}
+
+class AlibabaSpeechInput {
+  final String? instructions;
+  final String? languageType;
+  final bool? optimizeInstructions;
+  final String text;
+  final String voice;
+
+  AlibabaSpeechInput({
+    this.instructions,
+    this.languageType,
+    this.optimizeInstructions,
+    required this.text,
+    required this.voice
+  });
+
+  factory AlibabaSpeechInput.fromJson(Map<String, dynamic> json) {
+    return AlibabaSpeechInput(
+      instructions: json['instructions']?.toString(),
+      languageType: json['language_type']?.toString(),
+      optimizeInstructions: json['optimize_instructions'] is bool ? json['optimize_instructions'] : null,
+      text: (() {
+        final value = json['text']?.toString();
+        if (value == null) {
+          throw FormatException('AlibabaSpeechInput.text is required');
+        }
+        return value;
+      })(),
+      voice: (() {
+        final value = json['voice']?.toString();
+        if (value == null) {
+          throw FormatException('AlibabaSpeechInput.voice is required');
+        }
+        return value;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'instructions': instructions,
+      'language_type': languageType,
+      'optimize_instructions': optimizeInstructions,
+      'text': text,
+      'voice': voice,
+    };
+  }
+}
+
+class AlibabaSpeechRequest {
+  final AlibabaSpeechInput input;
+  final String model;
+  final Map<String, dynamic>? parameters;
+
+  AlibabaSpeechRequest({
+    required this.input,
+    required this.model,
+    this.parameters
+  });
+
+  factory AlibabaSpeechRequest.fromJson(Map<String, dynamic> json) {
+    return AlibabaSpeechRequest(
+      input: (() {
+        final map = _sdkworkAsMap(json['input']);
+        if (map == null) {
+          throw FormatException('AlibabaSpeechRequest.input is required');
+        }
+        return AlibabaSpeechInput.fromJson(map);
+      })(),
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('AlibabaSpeechRequest.model is required');
+        }
+        return value;
+      })(),
+      parameters: (() {
+        final map = _sdkworkAsMap(json['parameters']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'input': input.toJson(),
+      'model': model,
+      'parameters': parameters?.map((key, item) => MapEntry(key, item)),
+    };
+  }
+}
+
+class AlibabaSpeechResponse {
+  final String? code;
+  final String? message;
+  final Map<String, dynamic>? output;
+  final String? requestId;
+  final Map<String, dynamic>? usage;
+
+  AlibabaSpeechResponse({
+    this.code,
+    this.message,
+    this.output,
+    this.requestId,
+    this.usage
+  });
+
+  factory AlibabaSpeechResponse.fromJson(Map<String, dynamic> json) {
+    return AlibabaSpeechResponse(
+      code: json['code']?.toString(),
+      message: json['message']?.toString(),
+      output: (() {
+        final map = _sdkworkAsMap(json['output']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      requestId: json['request_id']?.toString(),
+      usage: (() {
+        final map = _sdkworkAsMap(json['usage']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'code': code,
+      'message': message,
+      'output': output?.map((key, item) => MapEntry(key, item)),
+      'request_id': requestId,
+      'usage': usage?.map((key, item) => MapEntry(key, item)),
+    };
+  }
+}
+
+class AlibabaTaskUsage {
+  final int? sr;
+  final double? duration;
+  final int? imageCount;
+  final int? inputVideoDuration;
+  final int? outputVideoDuration;
+  final String? ratio;
+
+  AlibabaTaskUsage({
+    this.sr,
+    this.duration,
+    this.imageCount,
+    this.inputVideoDuration,
+    this.outputVideoDuration,
+    this.ratio
+  });
+
+  factory AlibabaTaskUsage.fromJson(Map<String, dynamic> json) {
+    return AlibabaTaskUsage(
+      sr: json['SR'] is int ? json['SR'] : null,
+      duration: json['duration'] is num ? json['duration'].toDouble() : null,
+      imageCount: json['image_count'] is int ? json['image_count'] : null,
+      inputVideoDuration: json['input_video_duration'] is int ? json['input_video_duration'] : null,
+      outputVideoDuration: json['output_video_duration'] is int ? json['output_video_duration'] : null,
+      ratio: json['ratio']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'SR': sr,
+      'duration': duration,
+      'image_count': imageCount,
+      'input_video_duration': inputVideoDuration,
+      'output_video_duration': outputVideoDuration,
+      'ratio': ratio,
+    };
+  }
+}
+
+class AlibabaVideoGenerationRequest {
+  final Map<String, dynamic> input;
+  final String model;
+  final Map<String, dynamic>? parameters;
+
+  AlibabaVideoGenerationRequest({
+    required this.input,
+    required this.model,
+    this.parameters
+  });
+
+  factory AlibabaVideoGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return AlibabaVideoGenerationRequest(
+      input: (() {
+        final map = _sdkworkAsMap(json['input']);
+        if (map == null) {
+          throw FormatException('AlibabaVideoGenerationRequest.input is required');
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('AlibabaVideoGenerationRequest.model is required');
+        }
+        return value;
+      })(),
+      parameters: (() {
+        final map = _sdkworkAsMap(json['parameters']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'input': input.map((key, item) => MapEntry(key, item)),
+      'model': model,
+      'parameters': parameters?.map((key, item) => MapEntry(key, item)),
+    };
+  }
+}
+
+class AlibabaVideoGenerationResponse {
+  final String? code;
+  final String? message;
+  final AlibabaAsyncTask? output;
+  final String? requestId;
+  final AlibabaTaskUsage? usage;
+
+  AlibabaVideoGenerationResponse({
+    this.code,
+    this.message,
+    this.output,
+    this.requestId,
+    this.usage
+  });
+
+  factory AlibabaVideoGenerationResponse.fromJson(Map<String, dynamic> json) {
+    return AlibabaVideoGenerationResponse(
+      code: json['code']?.toString(),
+      message: json['message']?.toString(),
+      output: (() {
+        final map = _sdkworkAsMap(json['output']);
+        return map == null ? null : AlibabaAsyncTask.fromJson(map);
+      })(),
+      requestId: json['request_id']?.toString(),
+      usage: (() {
+        final map = _sdkworkAsMap(json['usage']);
+        return map == null ? null : AlibabaTaskUsage.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'code': code,
+      'message': message,
+      'output': output?.toJson(),
+      'request_id': requestId,
+      'usage': usage?.toJson(),
+    };
+  }
+}
+
+class AlibabaVideoGenerationTask {
+  final AlibabaAsyncTask? output;
+  final String? requestId;
+  final AlibabaTaskUsage? usage;
+
+  AlibabaVideoGenerationTask({
+    this.output,
+    this.requestId,
+    this.usage
+  });
+
+  factory AlibabaVideoGenerationTask.fromJson(Map<String, dynamic> json) {
+    return AlibabaVideoGenerationTask(
+      output: (() {
+        final map = _sdkworkAsMap(json['output']);
+        return map == null ? null : AlibabaAsyncTask.fromJson(map);
+      })(),
+      requestId: json['request_id']?.toString(),
+      usage: (() {
+        final map = _sdkworkAsMap(json['usage']);
+        return map == null ? null : AlibabaTaskUsage.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'output': output?.toJson(),
+      'request_id': requestId,
+      'usage': usage?.toJson(),
+    };
+  }
+}
+
+class AnthropicCacheControl {
+  final String? ttl;
+  final String type;
+
+  AnthropicCacheControl({
+    this.ttl,
+    required this.type
+  });
+
+  factory AnthropicCacheControl.fromJson(Map<String, dynamic> json) {
+    return AnthropicCacheControl(
+      ttl: json['ttl']?.toString(),
+      type: (() {
+        final value = json['type']?.toString();
+        if (value == null) {
+          throw FormatException('AnthropicCacheControl.type is required');
+        }
+        return value;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'ttl': ttl,
+      'type': type,
+    };
+  }
+}
+
+class AnthropicContainer {
+  final String? id;
+  final List<AnthropicSkill>? skills;
+
+  AnthropicContainer({
+    this.id,
+    this.skills
+  });
+
+  factory AnthropicContainer.fromJson(Map<String, dynamic> json) {
+    return AnthropicContainer(
+      id: json['id']?.toString(),
+      skills: (() {
+        final list = _sdkworkAsList(json['skills']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : AnthropicSkill.fromJson(map);
+      })())
+            .whereType<AnthropicSkill>()
+            .toList();
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'id': id,
+      'skills': skills?.map((item) => item.toJson()).toList(),
+    };
+  }
+}
+
 class AnthropicContentBlock {
   final String? id;
   final Map<String, dynamic>? input;
@@ -68,29 +643,92 @@ class AnthropicContentBlock {
 }
 
 class AnthropicContentBlockParam {
+  final AnthropicCacheControl? cacheControl;
+  final Map<String, dynamic>? caller;
+  final List<Map<String, dynamic>>? citations;
   final dynamic content;
+  final String? context;
+  final String? data;
   final String? id;
   final Map<String, dynamic>? input;
+  final bool? isError;
   final String? name;
+  final String? signature;
   final AnthropicContentSource? source;
   final String? text;
+  final String? thinking;
+  final String? title;
   final String? toolUseId;
+  final String? toolsetName;
   final String type;
 
   AnthropicContentBlockParam({
+    this.cacheControl,
+    this.caller,
+    this.citations,
     this.content,
+    this.context,
+    this.data,
     this.id,
     this.input,
+    this.isError,
     this.name,
+    this.signature,
     this.source,
     this.text,
+    this.thinking,
+    this.title,
     this.toolUseId,
+    this.toolsetName,
     required this.type
   });
 
   factory AnthropicContentBlockParam.fromJson(Map<String, dynamic> json) {
     return AnthropicContentBlockParam(
+      cacheControl: (() {
+        final map = _sdkworkAsMap(json['cache_control']);
+        return map == null ? null : AnthropicCacheControl.fromJson(map);
+      })(),
+      caller: (() {
+        final map = _sdkworkAsMap(json['caller']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      citations: (() {
+        final list = _sdkworkAsList(json['citations']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })())
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      })(),
       content: json['content']?.toString(),
+      context: json['context']?.toString(),
+      data: json['data']?.toString(),
       id: json['id']?.toString(),
       input: (() {
         final map = _sdkworkAsMap(json['input']);
@@ -106,13 +744,18 @@ class AnthropicContentBlockParam {
         });
         return result;
       })(),
+      isError: json['is_error'] is bool ? json['is_error'] : null,
       name: json['name']?.toString(),
+      signature: json['signature']?.toString(),
       source: (() {
         final map = _sdkworkAsMap(json['source']);
         return map == null ? null : AnthropicContentSource.fromJson(map);
       })(),
       text: json['text']?.toString(),
+      thinking: json['thinking']?.toString(),
+      title: json['title']?.toString(),
       toolUseId: json['tool_use_id']?.toString(),
+      toolsetName: json['toolset_name']?.toString(),
       type: (() {
         final value = json['type']?.toString();
         if (value == null) {
@@ -125,13 +768,23 @@ class AnthropicContentBlockParam {
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'cache_control': cacheControl?.toJson(),
+      'caller': caller?.map((key, item) => MapEntry(key, item)),
+      'citations': citations?.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
       'content': content,
+      'context': context,
+      'data': data,
       'id': id,
       'input': input?.map((key, item) => MapEntry(key, item)),
+      'is_error': isError,
       'name': name,
+      'signature': signature,
       'source': source?.toJson(),
       'text': text,
+      'thinking': thinking,
+      'title': title,
       'tool_use_id': toolUseId,
+      'toolset_name': toolsetName,
       'type': type,
     };
   }
@@ -180,39 +833,34 @@ class AnthropicContentSource {
 }
 
 class AnthropicCountMessageTokensRequest {
-  final int? maxTokens;
+  final AnthropicCacheControl? cacheControl;
   final List<AnthropicMessageParam> messages;
-  final Map<String, dynamic>? metadata;
   final String model;
-  final List<String>? stopSequences;
-  final bool? stream;
+  final AnthropicOutputConfig? outputConfig;
+  final String? speed;
   final dynamic system;
-  final double? temperature;
   final AnthropicThinkingConfig? thinking;
   final AnthropicToolChoice? toolChoice;
-  final List<AnthropicTool>? tools;
-  final int? topK;
-  final double? topP;
+  final List<dynamic>? tools;
 
   AnthropicCountMessageTokensRequest({
-    this.maxTokens,
+    this.cacheControl,
     required this.messages,
-    this.metadata,
     required this.model,
-    this.stopSequences,
-    this.stream,
+    this.outputConfig,
+    this.speed,
     this.system,
-    this.temperature,
     this.thinking,
     this.toolChoice,
-    this.tools,
-    this.topK,
-    this.topP
+    this.tools
   });
 
   factory AnthropicCountMessageTokensRequest.fromJson(Map<String, dynamic> json) {
     return AnthropicCountMessageTokensRequest(
-      maxTokens: json['max_tokens'] is int ? json['max_tokens'] : null,
+      cacheControl: (() {
+        final map = _sdkworkAsMap(json['cache_control']);
+        return map == null ? null : AnthropicCacheControl.fromJson(map);
+      })(),
       messages: (() {
         final list = _sdkworkAsList(json['messages']);
         if (list == null) {
@@ -226,20 +874,6 @@ class AnthropicCountMessageTokensRequest {
             .whereType<AnthropicMessageParam>()
             .toList();
       })(),
-      metadata: (() {
-        final map = _sdkworkAsMap(json['metadata']);
-        if (map == null) {
-          return null;
-        }
-        final result = <String, String>{};
-        map.forEach((key, item) {
-          final deserialized = item?.toString();
-          if (deserialized is String) {
-            result[key] = deserialized;
-          }
-        });
-        return result;
-      })(),
       model: (() {
         final value = json['model']?.toString();
         if (value == null) {
@@ -247,19 +881,12 @@ class AnthropicCountMessageTokensRequest {
         }
         return value;
       })(),
-      stopSequences: (() {
-        final list = _sdkworkAsList(json['stop_sequences']);
-        if (list == null) {
-          return null;
-        }
-        return list
-            .map((item) => item?.toString())
-            .whereType<String>()
-            .toList();
+      outputConfig: (() {
+        final map = _sdkworkAsMap(json['output_config']);
+        return map == null ? null : AnthropicOutputConfig.fromJson(map);
       })(),
-      stream: json['stream'] is bool ? json['stream'] : null,
+      speed: json['speed']?.toString(),
       system: json['system']?.toString(),
-      temperature: json['temperature'] is num ? json['temperature'].toDouble() : null,
       thinking: (() {
         final map = _sdkworkAsMap(json['thinking']);
         return map == null ? null : AnthropicThinkingConfig.fromJson(map);
@@ -278,29 +905,23 @@ class AnthropicCountMessageTokensRequest {
         final map = _sdkworkAsMap(item);
         return map == null ? null : AnthropicTool.fromJson(map);
       })())
-            .whereType<AnthropicTool>()
+            .whereType<dynamic>()
             .toList();
-      })(),
-      topK: json['top_k'] is int ? json['top_k'] : null,
-      topP: json['top_p'] is num ? json['top_p'].toDouble() : null
+      })()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'max_tokens': maxTokens,
+      'cache_control': cacheControl?.toJson(),
       'messages': messages.map((item) => item.toJson()).toList(),
-      'metadata': metadata?.map((key, item) => MapEntry(key, item)),
       'model': model,
-      'stop_sequences': stopSequences?.map((item) => item).toList(),
-      'stream': stream,
+      'output_config': outputConfig?.toJson(),
+      'speed': speed,
       'system': system,
-      'temperature': temperature,
       'thinking': thinking?.toJson(),
       'tool_choice': toolChoice?.toJson(),
       'tools': tools?.map((item) => item.toJson()).toList(),
-      'top_k': topK,
-      'top_p': topP,
     };
   }
 }
@@ -355,6 +976,26 @@ class AnthropicDeleteResponse {
       'deleted': deleted,
       'id': id,
       'type': type,
+    };
+  }
+}
+
+class AnthropicDiagnostics {
+  final String? previousMessageId;
+
+  AnthropicDiagnostics({
+    this.previousMessageId
+  });
+
+  factory AnthropicDiagnostics.fromJson(Map<String, dynamic> json) {
+    return AnthropicDiagnostics(
+      previousMessageId: json['previous_message_id']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'previous_message_id': previousMessageId,
     };
   }
 }
@@ -839,25 +1480,39 @@ class AnthropicMessageBatchRequestCounts {
 }
 
 class AnthropicMessageCreateRequest {
+  final AnthropicCacheControl? cacheControl;
+  final AnthropicContainer? container;
+  final AnthropicDiagnostics? diagnostics;
+  final String? inferenceGeo;
   final int maxTokens;
   final List<AnthropicMessageParam> messages;
-  final Map<String, dynamic>? metadata;
+  final AnthropicMetadata? metadata;
   final String model;
+  final AnthropicOutputConfig? outputConfig;
+  final String? serviceTier;
+  final String? speed;
   final List<String>? stopSequences;
   final bool? stream;
   final dynamic system;
   final double? temperature;
   final AnthropicThinkingConfig? thinking;
   final AnthropicToolChoice? toolChoice;
-  final List<AnthropicTool>? tools;
+  final List<dynamic>? tools;
   final int? topK;
   final double? topP;
 
   AnthropicMessageCreateRequest({
+    this.cacheControl,
+    this.container,
+    this.diagnostics,
+    this.inferenceGeo,
     required this.maxTokens,
     required this.messages,
     this.metadata,
     required this.model,
+    this.outputConfig,
+    this.serviceTier,
+    this.speed,
     this.stopSequences,
     this.stream,
     this.system,
@@ -871,6 +1526,19 @@ class AnthropicMessageCreateRequest {
 
   factory AnthropicMessageCreateRequest.fromJson(Map<String, dynamic> json) {
     return AnthropicMessageCreateRequest(
+      cacheControl: (() {
+        final map = _sdkworkAsMap(json['cache_control']);
+        return map == null ? null : AnthropicCacheControl.fromJson(map);
+      })(),
+      container: (() {
+        final map = _sdkworkAsMap(json['container']);
+        return map == null ? null : AnthropicContainer.fromJson(map);
+      })(),
+      diagnostics: (() {
+        final map = _sdkworkAsMap(json['diagnostics']);
+        return map == null ? null : AnthropicDiagnostics.fromJson(map);
+      })(),
+      inferenceGeo: json['inference_geo']?.toString(),
       maxTokens: (() {
         final value = json['max_tokens'];
         if (value is! int) {
@@ -893,17 +1561,7 @@ class AnthropicMessageCreateRequest {
       })(),
       metadata: (() {
         final map = _sdkworkAsMap(json['metadata']);
-        if (map == null) {
-          return null;
-        }
-        final result = <String, String>{};
-        map.forEach((key, item) {
-          final deserialized = item?.toString();
-          if (deserialized is String) {
-            result[key] = deserialized;
-          }
-        });
-        return result;
+        return map == null ? null : AnthropicMetadata.fromJson(map);
       })(),
       model: (() {
         final value = json['model']?.toString();
@@ -912,6 +1570,12 @@ class AnthropicMessageCreateRequest {
         }
         return value;
       })(),
+      outputConfig: (() {
+        final map = _sdkworkAsMap(json['output_config']);
+        return map == null ? null : AnthropicOutputConfig.fromJson(map);
+      })(),
+      serviceTier: json['service_tier']?.toString(),
+      speed: json['speed']?.toString(),
       stopSequences: (() {
         final list = _sdkworkAsList(json['stop_sequences']);
         if (list == null) {
@@ -943,7 +1607,7 @@ class AnthropicMessageCreateRequest {
         final map = _sdkworkAsMap(item);
         return map == null ? null : AnthropicTool.fromJson(map);
       })())
-            .whereType<AnthropicTool>()
+            .whereType<dynamic>()
             .toList();
       })(),
       topK: json['top_k'] is int ? json['top_k'] : null,
@@ -953,10 +1617,17 @@ class AnthropicMessageCreateRequest {
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'cache_control': cacheControl?.toJson(),
+      'container': container?.toJson(),
+      'diagnostics': diagnostics?.toJson(),
+      'inference_geo': inferenceGeo,
       'max_tokens': maxTokens,
       'messages': messages.map((item) => item.toJson()).toList(),
-      'metadata': metadata?.map((key, item) => MapEntry(key, item)),
+      'metadata': metadata?.toJson(),
       'model': model,
+      'output_config': outputConfig?.toJson(),
+      'service_tier': serviceTier,
+      'speed': speed,
       'stop_sequences': stopSequences?.map((item) => item).toList(),
       'stream': stream,
       'system': system,
@@ -1006,18 +1677,271 @@ class AnthropicMessageParam {
   }
 }
 
+class AnthropicMetadata {
+  final String? userId;
+
+  AnthropicMetadata({
+    this.userId
+  });
+
+  factory AnthropicMetadata.fromJson(Map<String, dynamic> json) {
+    return AnthropicMetadata(
+      userId: json['user_id']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'user_id': userId,
+    };
+  }
+}
+
+class AnthropicOutputConfig {
+  final String? effort;
+  final AnthropicOutputFormat? format;
+
+  AnthropicOutputConfig({
+    this.effort,
+    this.format
+  });
+
+  factory AnthropicOutputConfig.fromJson(Map<String, dynamic> json) {
+    return AnthropicOutputConfig(
+      effort: json['effort']?.toString(),
+      format: (() {
+        final map = _sdkworkAsMap(json['format']);
+        return map == null ? null : AnthropicOutputFormat.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'effort': effort,
+      'format': format?.toJson(),
+    };
+  }
+}
+
+class AnthropicOutputFormat {
+  final ProviderJsonSchema schema;
+  final String type;
+
+  AnthropicOutputFormat({
+    required this.schema,
+    required this.type
+  });
+
+  factory AnthropicOutputFormat.fromJson(Map<String, dynamic> json) {
+    return AnthropicOutputFormat(
+      schema: (() {
+        final map = _sdkworkAsMap(json['schema']);
+        if (map == null) {
+          throw FormatException('AnthropicOutputFormat.schema is required');
+        }
+        return ProviderJsonSchema.fromJson(map);
+      })(),
+      type: (() {
+        final value = json['type']?.toString();
+        if (value == null) {
+          throw FormatException('AnthropicOutputFormat.type is required');
+        }
+        return value;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'schema': schema.toJson(),
+      'type': type,
+    };
+  }
+}
+
+class AnthropicServerTool {
+  final List<String>? allowedCallers;
+  final List<String>? allowedDomains;
+  final List<String>? blockedDomains;
+  final AnthropicCacheControl? cacheControl;
+  final bool? deferLoading;
+  final int? displayHeightPx;
+  final int? displayNumber;
+  final int? displayWidthPx;
+  final int? maxCharacters;
+  final int? maxUses;
+  final String name;
+  final bool? strict;
+  final String type;
+  final Map<String, dynamic>? userLocation;
+
+  AnthropicServerTool({
+    this.allowedCallers,
+    this.allowedDomains,
+    this.blockedDomains,
+    this.cacheControl,
+    this.deferLoading,
+    this.displayHeightPx,
+    this.displayNumber,
+    this.displayWidthPx,
+    this.maxCharacters,
+    this.maxUses,
+    required this.name,
+    this.strict,
+    required this.type,
+    this.userLocation
+  });
+
+  factory AnthropicServerTool.fromJson(Map<String, dynamic> json) {
+    return AnthropicServerTool(
+      allowedCallers: (() {
+        final list = _sdkworkAsList(json['allowed_callers']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
+      allowedDomains: (() {
+        final list = _sdkworkAsList(json['allowed_domains']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
+      blockedDomains: (() {
+        final list = _sdkworkAsList(json['blocked_domains']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
+      cacheControl: (() {
+        final map = _sdkworkAsMap(json['cache_control']);
+        return map == null ? null : AnthropicCacheControl.fromJson(map);
+      })(),
+      deferLoading: json['defer_loading'] is bool ? json['defer_loading'] : null,
+      displayHeightPx: json['display_height_px'] is int ? json['display_height_px'] : null,
+      displayNumber: json['display_number'] is int ? json['display_number'] : null,
+      displayWidthPx: json['display_width_px'] is int ? json['display_width_px'] : null,
+      maxCharacters: json['max_characters'] is int ? json['max_characters'] : null,
+      maxUses: json['max_uses'] is int ? json['max_uses'] : null,
+      name: (() {
+        final value = json['name']?.toString();
+        if (value == null) {
+          throw FormatException('AnthropicServerTool.name is required');
+        }
+        return value;
+      })(),
+      strict: json['strict'] is bool ? json['strict'] : null,
+      type: (() {
+        final value = json['type']?.toString();
+        if (value == null) {
+          throw FormatException('AnthropicServerTool.type is required');
+        }
+        return value;
+      })(),
+      userLocation: (() {
+        final map = _sdkworkAsMap(json['user_location']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'allowed_callers': allowedCallers?.map((item) => item).toList(),
+      'allowed_domains': allowedDomains?.map((item) => item).toList(),
+      'blocked_domains': blockedDomains?.map((item) => item).toList(),
+      'cache_control': cacheControl?.toJson(),
+      'defer_loading': deferLoading,
+      'display_height_px': displayHeightPx,
+      'display_number': displayNumber,
+      'display_width_px': displayWidthPx,
+      'max_characters': maxCharacters,
+      'max_uses': maxUses,
+      'name': name,
+      'strict': strict,
+      'type': type,
+      'user_location': userLocation?.map((key, item) => MapEntry(key, item)),
+    };
+  }
+}
+
+class AnthropicSkill {
+  final String skillId;
+  final String type;
+  final String? version;
+
+  AnthropicSkill({
+    required this.skillId,
+    required this.type,
+    this.version
+  });
+
+  factory AnthropicSkill.fromJson(Map<String, dynamic> json) {
+    return AnthropicSkill(
+      skillId: (() {
+        final value = json['skill_id']?.toString();
+        if (value == null) {
+          throw FormatException('AnthropicSkill.skill_id is required');
+        }
+        return value;
+      })(),
+      type: (() {
+        final value = json['type']?.toString();
+        if (value == null) {
+          throw FormatException('AnthropicSkill.type is required');
+        }
+        return value;
+      })(),
+      version: json['version']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'skill_id': skillId,
+      'type': type,
+      'version': version,
+    };
+  }
+}
+
 class AnthropicThinkingConfig {
   final int? budgetTokens;
+  final String? display;
   final String type;
 
   AnthropicThinkingConfig({
     this.budgetTokens,
+    this.display,
     required this.type
   });
 
   factory AnthropicThinkingConfig.fromJson(Map<String, dynamic> json) {
     return AnthropicThinkingConfig(
       budgetTokens: json['budget_tokens'] is int ? json['budget_tokens'] : null,
+      display: json['display']?.toString(),
       type: (() {
         final value = json['type']?.toString();
         if (value == null) {
@@ -1031,25 +1955,79 @@ class AnthropicThinkingConfig {
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'budget_tokens': budgetTokens,
+      'display': display,
       'type': type,
     };
   }
 }
 
 class AnthropicTool {
+  final List<String>? allowedCallers;
+  final AnthropicCacheControl? cacheControl;
+  final bool? deferLoading;
   final String? description;
+  final bool? eagerInputStreaming;
+  final List<Map<String, dynamic>>? inputExamples;
   final ProviderJsonSchema inputSchema;
   final String name;
+  final bool? strict;
+  final String? type;
 
   AnthropicTool({
+    this.allowedCallers,
+    this.cacheControl,
+    this.deferLoading,
     this.description,
+    this.eagerInputStreaming,
+    this.inputExamples,
     required this.inputSchema,
-    required this.name
+    required this.name,
+    this.strict,
+    this.type
   });
 
   factory AnthropicTool.fromJson(Map<String, dynamic> json) {
     return AnthropicTool(
+      allowedCallers: (() {
+        final list = _sdkworkAsList(json['allowed_callers']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
+      cacheControl: (() {
+        final map = _sdkworkAsMap(json['cache_control']);
+        return map == null ? null : AnthropicCacheControl.fromJson(map);
+      })(),
+      deferLoading: json['defer_loading'] is bool ? json['defer_loading'] : null,
       description: json['description']?.toString(),
+      eagerInputStreaming: json['eager_input_streaming'] is bool ? json['eager_input_streaming'] : null,
+      inputExamples: (() {
+        final list = _sdkworkAsList(json['input_examples']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })())
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      })(),
       inputSchema: (() {
         final map = _sdkworkAsMap(json['input_schema']);
         if (map == null) {
@@ -1063,30 +2041,42 @@ class AnthropicTool {
           throw FormatException('AnthropicTool.name is required');
         }
         return value;
-      })()
+      })(),
+      strict: json['strict'] is bool ? json['strict'] : null,
+      type: json['type']?.toString()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'allowed_callers': allowedCallers?.map((item) => item).toList(),
+      'cache_control': cacheControl?.toJson(),
+      'defer_loading': deferLoading,
       'description': description,
+      'eager_input_streaming': eagerInputStreaming,
+      'input_examples': inputExamples?.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
       'input_schema': inputSchema.toJson(),
       'name': name,
+      'strict': strict,
+      'type': type,
     };
   }
 }
 
 class AnthropicToolChoice {
+  final bool? disableParallelToolUse;
   final String? name;
   final String type;
 
   AnthropicToolChoice({
+    this.disableParallelToolUse,
     this.name,
     required this.type
   });
 
   factory AnthropicToolChoice.fromJson(Map<String, dynamic> json) {
     return AnthropicToolChoice(
+      disableParallelToolUse: json['disable_parallel_tool_use'] is bool ? json['disable_parallel_tool_use'] : null,
       name: json['name']?.toString(),
       type: (() {
         final value = json['type']?.toString();
@@ -1100,6 +2090,7 @@ class AnthropicToolChoice {
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'disable_parallel_tool_use': disableParallelToolUse,
       'name': name,
       'type': type,
     };
@@ -1134,6 +2125,1415 @@ class AnthropicUsage {
       'cache_read_input_tokens': cacheReadInputTokens,
       'input_tokens': inputTokens,
       'output_tokens': outputTokens,
+    };
+  }
+}
+
+class ArkAudioSource {
+  final String url;
+
+  ArkAudioSource({
+    required this.url
+  });
+
+  factory ArkAudioSource.fromJson(Map<String, dynamic> json) {
+    return ArkAudioSource(
+      url: (() {
+        final value = json['url']?.toString();
+        if (value == null) {
+          throw FormatException('ArkAudioSource.url is required');
+        }
+        return value;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'url': url,
+    };
+  }
+}
+
+class ArkContentPart {
+  final ArkAudioSource? audioUrl;
+  final ArkDraftTask? draftTask;
+  final ArkImageSource? imageUrl;
+  final String? role;
+  final String? text;
+  final String type;
+  final ArkVideoSource? videoUrl;
+
+  ArkContentPart({
+    this.audioUrl,
+    this.draftTask,
+    this.imageUrl,
+    this.role,
+    this.text,
+    required this.type,
+    this.videoUrl
+  });
+
+  factory ArkContentPart.fromJson(Map<String, dynamic> json) {
+    return ArkContentPart(
+      audioUrl: (() {
+        final map = _sdkworkAsMap(json['audio_url']);
+        return map == null ? null : ArkAudioSource.fromJson(map);
+      })(),
+      draftTask: (() {
+        final map = _sdkworkAsMap(json['draft_task']);
+        return map == null ? null : ArkDraftTask.fromJson(map);
+      })(),
+      imageUrl: (() {
+        final map = _sdkworkAsMap(json['image_url']);
+        return map == null ? null : ArkImageSource.fromJson(map);
+      })(),
+      role: json['role']?.toString(),
+      text: json['text']?.toString(),
+      type: (() {
+        final value = json['type']?.toString();
+        if (value == null) {
+          throw FormatException('ArkContentPart.type is required');
+        }
+        return value;
+      })(),
+      videoUrl: (() {
+        final map = _sdkworkAsMap(json['video_url']);
+        return map == null ? null : ArkVideoSource.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'audio_url': audioUrl?.toJson(),
+      'draft_task': draftTask?.toJson(),
+      'image_url': imageUrl?.toJson(),
+      'role': role,
+      'text': text,
+      'type': type,
+      'video_url': videoUrl?.toJson(),
+    };
+  }
+}
+
+class ArkDraftTask {
+  final String id;
+
+  ArkDraftTask({
+    required this.id
+  });
+
+  factory ArkDraftTask.fromJson(Map<String, dynamic> json) {
+    return ArkDraftTask(
+      id: (() {
+        final value = json['id']?.toString();
+        if (value == null) {
+          throw FormatException('ArkDraftTask.id is required');
+        }
+        return value;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'id': id,
+    };
+  }
+}
+
+class ArkImageGenerationData {
+  final String? b64Json;
+  final Map<String, dynamic>? boundingBox;
+  final String? description;
+  final ProviderTaskError? error;
+  final String? name;
+  final String? outputFormat;
+  final String? size;
+  final String? url;
+  final int? zIndex;
+
+  ArkImageGenerationData({
+    this.b64Json,
+    this.boundingBox,
+    this.description,
+    this.error,
+    this.name,
+    this.outputFormat,
+    this.size,
+    this.url,
+    this.zIndex
+  });
+
+  factory ArkImageGenerationData.fromJson(Map<String, dynamic> json) {
+    return ArkImageGenerationData(
+      b64Json: json['b64_json']?.toString(),
+      boundingBox: (() {
+        final map = _sdkworkAsMap(json['bounding_box']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      description: json['description']?.toString(),
+      error: (() {
+        final map = _sdkworkAsMap(json['error']);
+        return map == null ? null : ProviderTaskError.fromJson(map);
+      })(),
+      name: json['name']?.toString(),
+      outputFormat: json['output_format']?.toString(),
+      size: json['size']?.toString(),
+      url: json['url']?.toString(),
+      zIndex: json['z_index'] is int ? json['z_index'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'b64_json': b64Json,
+      'bounding_box': boundingBox?.map((key, item) => MapEntry(key, item)),
+      'description': description,
+      'error': error?.toJson(),
+      'name': name,
+      'output_format': outputFormat,
+      'size': size,
+      'url': url,
+      'z_index': zIndex,
+    };
+  }
+}
+
+class ArkImageSource {
+  final String url;
+
+  ArkImageSource({
+    required this.url
+  });
+
+  factory ArkImageSource.fromJson(Map<String, dynamic> json) {
+    return ArkImageSource(
+      url: (() {
+        final value = json['url']?.toString();
+        if (value == null) {
+          throw FormatException('ArkImageSource.url is required');
+        }
+        return value;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'url': url,
+    };
+  }
+}
+
+class ArkImageUsage {
+  final int? generatedImages;
+  final int? inputImages;
+  final int? outputTokens;
+  final ArkVideoToolUsage? toolUsage;
+  final int? totalTokens;
+
+  ArkImageUsage({
+    this.generatedImages,
+    this.inputImages,
+    this.outputTokens,
+    this.toolUsage,
+    this.totalTokens
+  });
+
+  factory ArkImageUsage.fromJson(Map<String, dynamic> json) {
+    return ArkImageUsage(
+      generatedImages: json['generated_images'] is int ? json['generated_images'] : null,
+      inputImages: json['input_images'] is int ? json['input_images'] : null,
+      outputTokens: json['output_tokens'] is int ? json['output_tokens'] : null,
+      toolUsage: (() {
+        final map = _sdkworkAsMap(json['tool_usage']);
+        return map == null ? null : ArkVideoToolUsage.fromJson(map);
+      })(),
+      totalTokens: json['total_tokens'] is int ? json['total_tokens'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'generated_images': generatedImages,
+      'input_images': inputImages,
+      'output_tokens': outputTokens,
+      'tool_usage': toolUsage?.toJson(),
+      'total_tokens': totalTokens,
+    };
+  }
+}
+
+class ArkVideoSource {
+  final String url;
+
+  ArkVideoSource({
+    required this.url
+  });
+
+  factory ArkVideoSource.fromJson(Map<String, dynamic> json) {
+    return ArkVideoSource(
+      url: (() {
+        final value = json['url']?.toString();
+        if (value == null) {
+          throw FormatException('ArkVideoSource.url is required');
+        }
+        return value;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'url': url,
+    };
+  }
+}
+
+class ArkVideoTaskContent {
+  final String? lastFrameUrl;
+  final String? videoUrl;
+
+  ArkVideoTaskContent({
+    this.lastFrameUrl,
+    this.videoUrl
+  });
+
+  factory ArkVideoTaskContent.fromJson(Map<String, dynamic> json) {
+    return ArkVideoTaskContent(
+      lastFrameUrl: json['last_frame_url']?.toString(),
+      videoUrl: json['video_url']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'last_frame_url': lastFrameUrl,
+      'video_url': videoUrl,
+    };
+  }
+}
+
+class ArkVideoToolUsage {
+  final int? webSearch;
+
+  ArkVideoToolUsage({
+    this.webSearch
+  });
+
+  factory ArkVideoToolUsage.fromJson(Map<String, dynamic> json) {
+    return ArkVideoToolUsage(
+      webSearch: json['web_search'] is int ? json['web_search'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'web_search': webSearch,
+    };
+  }
+}
+
+class ArkVideoUsage {
+  final int? completionTokens;
+  final ArkVideoToolUsage? toolUsage;
+  final int? totalTokens;
+
+  ArkVideoUsage({
+    this.completionTokens,
+    this.toolUsage,
+    this.totalTokens
+  });
+
+  factory ArkVideoUsage.fromJson(Map<String, dynamic> json) {
+    return ArkVideoUsage(
+      completionTokens: json['completion_tokens'] is int ? json['completion_tokens'] : null,
+      toolUsage: (() {
+        final map = _sdkworkAsMap(json['tool_usage']);
+        return map == null ? null : ArkVideoToolUsage.fromJson(map);
+      })(),
+      totalTokens: json['total_tokens'] is int ? json['total_tokens'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'completion_tokens': completionTokens,
+      'tool_usage': toolUsage?.toJson(),
+      'total_tokens': totalTokens,
+    };
+  }
+}
+
+class ArkWebSearchTool {
+  final String type;
+
+  ArkWebSearchTool({
+    required this.type
+  });
+
+  factory ArkWebSearchTool.fromJson(Map<String, dynamic> json) {
+    return ArkWebSearchTool(
+      type: (() {
+        final value = json['type']?.toString();
+        if (value == null) {
+          throw FormatException('ArkWebSearchTool.type is required');
+        }
+        return value;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'type': type,
+    };
+  }
+}
+
+class BlackForestLabsImageGenerationRequest {
+  final String? aspectRatio;
+  final bool? autoCrop;
+  final int? bottom;
+  final int? dilatePixels;
+  final bool? disablePup;
+  final String? finetuneId;
+  final double? finetuneStrength;
+  final String? garment;
+  final bool? grounding;
+  final double? guidance;
+  final int? height;
+  final String? image;
+  final String? imagePrompt;
+  final double? imagePromptStrength;
+  final dynamic images;
+  final String? inputImage;
+  final String? inputImage2;
+  final String? inputImage3;
+  final String? inputImage4;
+  final String? inputImage5;
+  final String? inputImage6;
+  final String? inputImage7;
+  final String? inputImage8;
+  final String? inputImageBlobPath;
+  final int? left;
+  final String? mask;
+  final String? mode;
+  final String? outputFormat;
+  final String? person;
+  final String prompt;
+  final bool? promptUpsampling;
+  final bool? raw;
+  final int? referenceOffsetX;
+  final int? referenceOffsetY;
+  final String? resolution;
+  final int? right;
+  final int? safetyTolerance;
+  final int? seed;
+  final int? steps;
+  final int? top;
+  final String? user;
+  final String? version;
+  final String? webhookSecret;
+  final String? webhookUrl;
+  final int? width;
+
+  BlackForestLabsImageGenerationRequest({
+    this.aspectRatio,
+    this.autoCrop,
+    this.bottom,
+    this.dilatePixels,
+    this.disablePup,
+    this.finetuneId,
+    this.finetuneStrength,
+    this.garment,
+    this.grounding,
+    this.guidance,
+    this.height,
+    this.image,
+    this.imagePrompt,
+    this.imagePromptStrength,
+    this.images,
+    this.inputImage,
+    this.inputImage2,
+    this.inputImage3,
+    this.inputImage4,
+    this.inputImage5,
+    this.inputImage6,
+    this.inputImage7,
+    this.inputImage8,
+    this.inputImageBlobPath,
+    this.left,
+    this.mask,
+    this.mode,
+    this.outputFormat,
+    this.person,
+    required this.prompt,
+    this.promptUpsampling,
+    this.raw,
+    this.referenceOffsetX,
+    this.referenceOffsetY,
+    this.resolution,
+    this.right,
+    this.safetyTolerance,
+    this.seed,
+    this.steps,
+    this.top,
+    this.user,
+    this.version,
+    this.webhookSecret,
+    this.webhookUrl,
+    this.width
+  });
+
+  factory BlackForestLabsImageGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return BlackForestLabsImageGenerationRequest(
+      aspectRatio: json['aspect_ratio']?.toString(),
+      autoCrop: json['auto_crop'] is bool ? json['auto_crop'] : null,
+      bottom: json['bottom'] is int ? json['bottom'] : null,
+      dilatePixels: json['dilate_pixels'] is int ? json['dilate_pixels'] : null,
+      disablePup: json['disable_pup'] is bool ? json['disable_pup'] : null,
+      finetuneId: json['finetune_id']?.toString(),
+      finetuneStrength: json['finetune_strength'] is num ? json['finetune_strength'].toDouble() : null,
+      garment: json['garment']?.toString(),
+      grounding: json['grounding'] is bool ? json['grounding'] : null,
+      guidance: json['guidance'] is num ? json['guidance'].toDouble() : null,
+      height: json['height'] is int ? json['height'] : null,
+      image: json['image']?.toString(),
+      imagePrompt: json['image_prompt']?.toString(),
+      imagePromptStrength: json['image_prompt_strength'] is num ? json['image_prompt_strength'].toDouble() : null,
+      images: json['images']?.toString(),
+      inputImage: json['input_image']?.toString(),
+      inputImage2: json['input_image_2']?.toString(),
+      inputImage3: json['input_image_3']?.toString(),
+      inputImage4: json['input_image_4']?.toString(),
+      inputImage5: json['input_image_5']?.toString(),
+      inputImage6: json['input_image_6']?.toString(),
+      inputImage7: json['input_image_7']?.toString(),
+      inputImage8: json['input_image_8']?.toString(),
+      inputImageBlobPath: json['input_image_blob_path']?.toString(),
+      left: json['left'] is int ? json['left'] : null,
+      mask: json['mask']?.toString(),
+      mode: json['mode']?.toString(),
+      outputFormat: json['output_format']?.toString(),
+      person: json['person']?.toString(),
+      prompt: (() {
+        final value = json['prompt']?.toString();
+        if (value == null) {
+          throw FormatException('BlackForestLabsImageGenerationRequest.prompt is required');
+        }
+        return value;
+      })(),
+      promptUpsampling: json['prompt_upsampling'] is bool ? json['prompt_upsampling'] : null,
+      raw: json['raw'] is bool ? json['raw'] : null,
+      referenceOffsetX: json['reference_offset_x'] is int ? json['reference_offset_x'] : null,
+      referenceOffsetY: json['reference_offset_y'] is int ? json['reference_offset_y'] : null,
+      resolution: json['resolution']?.toString(),
+      right: json['right'] is int ? json['right'] : null,
+      safetyTolerance: json['safety_tolerance'] is int ? json['safety_tolerance'] : null,
+      seed: json['seed'] is int ? json['seed'] : null,
+      steps: json['steps'] is int ? json['steps'] : null,
+      top: json['top'] is int ? json['top'] : null,
+      user: json['user']?.toString(),
+      version: json['version']?.toString(),
+      webhookSecret: json['webhook_secret']?.toString(),
+      webhookUrl: json['webhook_url']?.toString(),
+      width: json['width'] is int ? json['width'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'aspect_ratio': aspectRatio,
+      'auto_crop': autoCrop,
+      'bottom': bottom,
+      'dilate_pixels': dilatePixels,
+      'disable_pup': disablePup,
+      'finetune_id': finetuneId,
+      'finetune_strength': finetuneStrength,
+      'garment': garment,
+      'grounding': grounding,
+      'guidance': guidance,
+      'height': height,
+      'image': image,
+      'image_prompt': imagePrompt,
+      'image_prompt_strength': imagePromptStrength,
+      'images': images,
+      'input_image': inputImage,
+      'input_image_2': inputImage2,
+      'input_image_3': inputImage3,
+      'input_image_4': inputImage4,
+      'input_image_5': inputImage5,
+      'input_image_6': inputImage6,
+      'input_image_7': inputImage7,
+      'input_image_8': inputImage8,
+      'input_image_blob_path': inputImageBlobPath,
+      'left': left,
+      'mask': mask,
+      'mode': mode,
+      'output_format': outputFormat,
+      'person': person,
+      'prompt': prompt,
+      'prompt_upsampling': promptUpsampling,
+      'raw': raw,
+      'reference_offset_x': referenceOffsetX,
+      'reference_offset_y': referenceOffsetY,
+      'resolution': resolution,
+      'right': right,
+      'safety_tolerance': safetyTolerance,
+      'seed': seed,
+      'steps': steps,
+      'top': top,
+      'user': user,
+      'version': version,
+      'webhook_secret': webhookSecret,
+      'webhook_url': webhookUrl,
+      'width': width,
+    };
+  }
+}
+
+class BlackForestLabsImageGenerationTask {
+  final Map<String, dynamic>? details;
+  final String? id;
+  final String? pollingUrl;
+  final double? progress;
+  final Map<String, dynamic>? result;
+  final String? status;
+
+  BlackForestLabsImageGenerationTask({
+    this.details,
+    this.id,
+    this.pollingUrl,
+    this.progress,
+    this.result,
+    this.status
+  });
+
+  factory BlackForestLabsImageGenerationTask.fromJson(Map<String, dynamic> json) {
+    return BlackForestLabsImageGenerationTask(
+      details: (() {
+        final map = _sdkworkAsMap(json['details']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      id: json['id']?.toString(),
+      pollingUrl: json['polling_url']?.toString(),
+      progress: json['progress'] is num ? json['progress'].toDouble() : null,
+      result: (() {
+        final map = _sdkworkAsMap(json['result']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      status: json['status']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'details': details?.map((key, item) => MapEntry(key, item)),
+      'id': id,
+      'polling_url': pollingUrl,
+      'progress': progress,
+      'result': result?.map((key, item) => MapEntry(key, item)),
+      'status': status,
+    };
+  }
+}
+
+class BlackForestLabsVideoGenerationRequest {
+  final String? aspectRatio;
+  final bool? draft;
+  final String? draftCache;
+  final int? duration;
+  final bool? generateAudio;
+  final dynamic keyframes;
+  final String mode;
+  final String? prompt;
+  final String? resolution;
+  final int? safetyTolerance;
+  final String? startVideo;
+  final String? user;
+  final String? version;
+
+  BlackForestLabsVideoGenerationRequest({
+    this.aspectRatio,
+    this.draft,
+    this.draftCache,
+    this.duration,
+    this.generateAudio,
+    this.keyframes,
+    required this.mode,
+    this.prompt,
+    this.resolution,
+    this.safetyTolerance,
+    this.startVideo,
+    this.user,
+    this.version
+  });
+
+  factory BlackForestLabsVideoGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return BlackForestLabsVideoGenerationRequest(
+      aspectRatio: json['aspect_ratio']?.toString(),
+      draft: json['draft'] is bool ? json['draft'] : null,
+      draftCache: json['draft_cache']?.toString(),
+      duration: json['duration'] is int ? json['duration'] : null,
+      generateAudio: json['generate_audio'] is bool ? json['generate_audio'] : null,
+      keyframes: json['keyframes']?.toString(),
+      mode: (() {
+        final value = json['mode']?.toString();
+        if (value == null) {
+          throw FormatException('BlackForestLabsVideoGenerationRequest.mode is required');
+        }
+        return value;
+      })(),
+      prompt: json['prompt']?.toString(),
+      resolution: json['resolution']?.toString(),
+      safetyTolerance: json['safety_tolerance'] is int ? json['safety_tolerance'] : null,
+      startVideo: json['start_video']?.toString(),
+      user: json['user']?.toString(),
+      version: json['version']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'aspect_ratio': aspectRatio,
+      'draft': draft,
+      'draft_cache': draftCache,
+      'duration': duration,
+      'generate_audio': generateAudio,
+      'keyframes': keyframes,
+      'mode': mode,
+      'prompt': prompt,
+      'resolution': resolution,
+      'safety_tolerance': safetyTolerance,
+      'start_video': startVideo,
+      'user': user,
+      'version': version,
+    };
+  }
+}
+
+class BlackForestLabsVideoGenerationTask {
+  final Map<String, dynamic>? details;
+  final String? id;
+  final String? pollingUrl;
+  final double? progress;
+  final Map<String, dynamic>? result;
+  final String? status;
+
+  BlackForestLabsVideoGenerationTask({
+    this.details,
+    this.id,
+    this.pollingUrl,
+    this.progress,
+    this.result,
+    this.status
+  });
+
+  factory BlackForestLabsVideoGenerationTask.fromJson(Map<String, dynamic> json) {
+    return BlackForestLabsVideoGenerationTask(
+      details: (() {
+        final map = _sdkworkAsMap(json['details']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      id: json['id']?.toString(),
+      pollingUrl: json['polling_url']?.toString(),
+      progress: json['progress'] is num ? json['progress'].toDouble() : null,
+      result: (() {
+        final map = _sdkworkAsMap(json['result']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      status: json['status']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'details': details?.map((key, item) => MapEntry(key, item)),
+      'id': id,
+      'polling_url': pollingUrl,
+      'progress': progress,
+      'result': result?.map((key, item) => MapEntry(key, item)),
+      'status': status,
+    };
+  }
+}
+
+class BytedanceImageGenerationRequest {
+  final String? background;
+  final dynamic image;
+  final bool? layerDecomposition;
+  final String model;
+  final Map<String, dynamic>? optimizePromptOptions;
+  final String? outputFormat;
+  final String? prompt;
+  final String? responseFormat;
+  final String? sequentialImageGeneration;
+  final Map<String, dynamic>? sequentialImageGenerationOptions;
+  final String? size;
+  final bool? stream;
+  final List<ArkWebSearchTool>? tools;
+  final bool? watermark;
+
+  BytedanceImageGenerationRequest({
+    this.background,
+    this.image,
+    this.layerDecomposition,
+    required this.model,
+    this.optimizePromptOptions,
+    this.outputFormat,
+    this.prompt,
+    this.responseFormat,
+    this.sequentialImageGeneration,
+    this.sequentialImageGenerationOptions,
+    this.size,
+    this.stream,
+    this.tools,
+    this.watermark
+  });
+
+  factory BytedanceImageGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return BytedanceImageGenerationRequest(
+      background: json['background']?.toString(),
+      image: json['image']?.toString(),
+      layerDecomposition: json['layer_decomposition'] is bool ? json['layer_decomposition'] : null,
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('BytedanceImageGenerationRequest.model is required');
+        }
+        return value;
+      })(),
+      optimizePromptOptions: (() {
+        final map = _sdkworkAsMap(json['optimize_prompt_options']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      outputFormat: json['output_format']?.toString(),
+      prompt: json['prompt']?.toString(),
+      responseFormat: json['response_format']?.toString(),
+      sequentialImageGeneration: json['sequential_image_generation']?.toString(),
+      sequentialImageGenerationOptions: (() {
+        final map = _sdkworkAsMap(json['sequential_image_generation_options']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      size: json['size']?.toString(),
+      stream: json['stream'] is bool ? json['stream'] : null,
+      tools: (() {
+        final list = _sdkworkAsList(json['tools']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : ArkWebSearchTool.fromJson(map);
+      })())
+            .whereType<ArkWebSearchTool>()
+            .toList();
+      })(),
+      watermark: json['watermark'] is bool ? json['watermark'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'background': background,
+      'image': image,
+      'layer_decomposition': layerDecomposition,
+      'model': model,
+      'optimize_prompt_options': optimizePromptOptions?.map((key, item) => MapEntry(key, item)),
+      'output_format': outputFormat,
+      'prompt': prompt,
+      'response_format': responseFormat,
+      'sequential_image_generation': sequentialImageGeneration,
+      'sequential_image_generation_options': sequentialImageGenerationOptions?.map((key, item) => MapEntry(key, item)),
+      'size': size,
+      'stream': stream,
+      'tools': tools?.map((item) => item.toJson()).toList(),
+      'watermark': watermark,
+    };
+  }
+}
+
+class BytedanceImageGenerationResponse {
+  final int? created;
+  final List<ArkImageGenerationData>? data;
+  final ProviderTaskError? error;
+  final String? model;
+  final List<ArkWebSearchTool>? tools;
+  final ArkImageUsage? usage;
+
+  BytedanceImageGenerationResponse({
+    this.created,
+    this.data,
+    this.error,
+    this.model,
+    this.tools,
+    this.usage
+  });
+
+  factory BytedanceImageGenerationResponse.fromJson(Map<String, dynamic> json) {
+    return BytedanceImageGenerationResponse(
+      created: json['created'] is int ? json['created'] : null,
+      data: (() {
+        final list = _sdkworkAsList(json['data']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : ArkImageGenerationData.fromJson(map);
+      })())
+            .whereType<ArkImageGenerationData>()
+            .toList();
+      })(),
+      error: (() {
+        final map = _sdkworkAsMap(json['error']);
+        return map == null ? null : ProviderTaskError.fromJson(map);
+      })(),
+      model: json['model']?.toString(),
+      tools: (() {
+        final list = _sdkworkAsList(json['tools']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : ArkWebSearchTool.fromJson(map);
+      })())
+            .whereType<ArkWebSearchTool>()
+            .toList();
+      })(),
+      usage: (() {
+        final map = _sdkworkAsMap(json['usage']);
+        return map == null ? null : ArkImageUsage.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'created': created,
+      'data': data?.map((item) => item.toJson()).toList(),
+      'error': error?.toJson(),
+      'model': model,
+      'tools': tools?.map((item) => item.toJson()).toList(),
+      'usage': usage?.toJson(),
+    };
+  }
+}
+
+class BytedanceSpeechChunk {
+  final int? code;
+  final String? data;
+  final String? message;
+  final int? sequence;
+
+  BytedanceSpeechChunk({
+    this.code,
+    this.data,
+    this.message,
+    this.sequence
+  });
+
+  factory BytedanceSpeechChunk.fromJson(Map<String, dynamic> json) {
+    return BytedanceSpeechChunk(
+      code: json['code'] is int ? json['code'] : null,
+      data: json['data']?.toString(),
+      message: json['message']?.toString(),
+      sequence: json['sequence'] is int ? json['sequence'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'code': code,
+      'data': data,
+      'message': message,
+      'sequence': sequence,
+    };
+  }
+}
+
+class BytedanceSpeechRequest {
+  final BytedanceTtsRequestParams reqParams;
+
+  BytedanceSpeechRequest({
+    required this.reqParams
+  });
+
+  factory BytedanceSpeechRequest.fromJson(Map<String, dynamic> json) {
+    return BytedanceSpeechRequest(
+      reqParams: (() {
+        final map = _sdkworkAsMap(json['req_params']);
+        if (map == null) {
+          throw FormatException('BytedanceSpeechRequest.req_params is required');
+        }
+        return BytedanceTtsRequestParams.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'req_params': reqParams.toJson(),
+    };
+  }
+}
+
+class BytedanceTtsAudioParams {
+  final String format;
+  final int? loudnessRate;
+  final int sampleRate;
+  final int? speechRate;
+
+  BytedanceTtsAudioParams({
+    required this.format,
+    this.loudnessRate,
+    required this.sampleRate,
+    this.speechRate
+  });
+
+  factory BytedanceTtsAudioParams.fromJson(Map<String, dynamic> json) {
+    return BytedanceTtsAudioParams(
+      format: (() {
+        final value = json['format']?.toString();
+        if (value == null) {
+          throw FormatException('BytedanceTtsAudioParams.format is required');
+        }
+        return value;
+      })(),
+      loudnessRate: json['loudness_rate'] is int ? json['loudness_rate'] : null,
+      sampleRate: (() {
+        final value = json['sample_rate'];
+        if (value is! int) {
+          throw FormatException('BytedanceTtsAudioParams.sample_rate is required');
+        }
+        return value;
+      })(),
+      speechRate: json['speech_rate'] is int ? json['speech_rate'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'format': format,
+      'loudness_rate': loudnessRate,
+      'sample_rate': sampleRate,
+      'speech_rate': speechRate,
+    };
+  }
+}
+
+class BytedanceTtsRequestParams {
+  final String? additions;
+  final BytedanceTtsAudioParams audioParams;
+  final String? model;
+  final Map<String, dynamic>? pronunciationDict;
+  final String speaker;
+  final String? ssml;
+  final String text;
+  final List<String>? tone;
+
+  BytedanceTtsRequestParams({
+    this.additions,
+    required this.audioParams,
+    this.model,
+    this.pronunciationDict,
+    required this.speaker,
+    this.ssml,
+    required this.text,
+    this.tone
+  });
+
+  factory BytedanceTtsRequestParams.fromJson(Map<String, dynamic> json) {
+    return BytedanceTtsRequestParams(
+      additions: json['additions']?.toString(),
+      audioParams: (() {
+        final map = _sdkworkAsMap(json['audio_params']);
+        if (map == null) {
+          throw FormatException('BytedanceTtsRequestParams.audio_params is required');
+        }
+        return BytedanceTtsAudioParams.fromJson(map);
+      })(),
+      model: json['model']?.toString(),
+      pronunciationDict: (() {
+        final map = _sdkworkAsMap(json['pronunciation_dict']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      speaker: (() {
+        final value = json['speaker']?.toString();
+        if (value == null) {
+          throw FormatException('BytedanceTtsRequestParams.speaker is required');
+        }
+        return value;
+      })(),
+      ssml: json['ssml']?.toString(),
+      text: (() {
+        final value = json['text']?.toString();
+        if (value == null) {
+          throw FormatException('BytedanceTtsRequestParams.text is required');
+        }
+        return value;
+      })(),
+      tone: (() {
+        final list = _sdkworkAsList(json['tone']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'additions': additions,
+      'audio_params': audioParams.toJson(),
+      'model': model,
+      'pronunciation_dict': pronunciationDict?.map((key, item) => MapEntry(key, item)),
+      'speaker': speaker,
+      'ssml': ssml,
+      'text': text,
+      'tone': tone?.map((item) => item).toList(),
+    };
+  }
+}
+
+class BytedanceVideoGenerationRequest {
+  final String? callbackUrl;
+  final bool? cameraFixed;
+  final List<ArkContentPart> content;
+  final bool? draft;
+  final int? duration;
+  final int? executionExpiresAfter;
+  final int? frames;
+  final bool? generateAudio;
+  final String model;
+  final String? omniReferenceTaskType;
+  final String? outputFormat;
+  final int? priority;
+  final String? ratio;
+  final String? resolution;
+  final bool? returnLastFrame;
+  final String? safetyIdentifier;
+  final int? seed;
+  final String? serviceTier;
+  final List<ArkWebSearchTool>? tools;
+  final bool? watermark;
+
+  BytedanceVideoGenerationRequest({
+    this.callbackUrl,
+    this.cameraFixed,
+    required this.content,
+    this.draft,
+    this.duration,
+    this.executionExpiresAfter,
+    this.frames,
+    this.generateAudio,
+    required this.model,
+    this.omniReferenceTaskType,
+    this.outputFormat,
+    this.priority,
+    this.ratio,
+    this.resolution,
+    this.returnLastFrame,
+    this.safetyIdentifier,
+    this.seed,
+    this.serviceTier,
+    this.tools,
+    this.watermark
+  });
+
+  factory BytedanceVideoGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return BytedanceVideoGenerationRequest(
+      callbackUrl: json['callback_url']?.toString(),
+      cameraFixed: json['camera_fixed'] is bool ? json['camera_fixed'] : null,
+      content: (() {
+        final list = _sdkworkAsList(json['content']);
+        if (list == null) {
+          throw FormatException('BytedanceVideoGenerationRequest.content is required');
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : ArkContentPart.fromJson(map);
+      })())
+            .whereType<ArkContentPart>()
+            .toList();
+      })(),
+      draft: json['draft'] is bool ? json['draft'] : null,
+      duration: json['duration'] is int ? json['duration'] : null,
+      executionExpiresAfter: json['execution_expires_after'] is int ? json['execution_expires_after'] : null,
+      frames: json['frames'] is int ? json['frames'] : null,
+      generateAudio: json['generate_audio'] is bool ? json['generate_audio'] : null,
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('BytedanceVideoGenerationRequest.model is required');
+        }
+        return value;
+      })(),
+      omniReferenceTaskType: json['omni_reference_task_type']?.toString(),
+      outputFormat: json['output_format']?.toString(),
+      priority: json['priority'] is int ? json['priority'] : null,
+      ratio: json['ratio']?.toString(),
+      resolution: json['resolution']?.toString(),
+      returnLastFrame: json['return_last_frame'] is bool ? json['return_last_frame'] : null,
+      safetyIdentifier: json['safety_identifier']?.toString(),
+      seed: json['seed'] is int ? json['seed'] : null,
+      serviceTier: json['service_tier']?.toString(),
+      tools: (() {
+        final list = _sdkworkAsList(json['tools']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : ArkWebSearchTool.fromJson(map);
+      })())
+            .whereType<ArkWebSearchTool>()
+            .toList();
+      })(),
+      watermark: json['watermark'] is bool ? json['watermark'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'callback_url': callbackUrl,
+      'camera_fixed': cameraFixed,
+      'content': content.map((item) => item.toJson()).toList(),
+      'draft': draft,
+      'duration': duration,
+      'execution_expires_after': executionExpiresAfter,
+      'frames': frames,
+      'generate_audio': generateAudio,
+      'model': model,
+      'omni_reference_task_type': omniReferenceTaskType,
+      'output_format': outputFormat,
+      'priority': priority,
+      'ratio': ratio,
+      'resolution': resolution,
+      'return_last_frame': returnLastFrame,
+      'safety_identifier': safetyIdentifier,
+      'seed': seed,
+      'service_tier': serviceTier,
+      'tools': tools?.map((item) => item.toJson()).toList(),
+      'watermark': watermark,
+    };
+  }
+}
+
+class BytedanceVideoGenerationTask {
+  final ArkVideoTaskContent? content;
+  final int? createdAt;
+  final bool? draft;
+  final int? duration;
+  final ProviderTaskError? error;
+  final int? executionExpiresAfter;
+  final int? frames;
+  final int? framespersecond;
+  final bool? generateAudio;
+  final String? id;
+  final String? model;
+  final String? outputFormat;
+  final int? priority;
+  final String? ratio;
+  final String? resolution;
+  final String? safetyIdentifier;
+  final int? seed;
+  final String? serviceTier;
+  final String? status;
+  final List<ArkWebSearchTool>? tools;
+  final int? updatedAt;
+  final ArkVideoUsage? usage;
+
+  BytedanceVideoGenerationTask({
+    this.content,
+    this.createdAt,
+    this.draft,
+    this.duration,
+    this.error,
+    this.executionExpiresAfter,
+    this.frames,
+    this.framespersecond,
+    this.generateAudio,
+    this.id,
+    this.model,
+    this.outputFormat,
+    this.priority,
+    this.ratio,
+    this.resolution,
+    this.safetyIdentifier,
+    this.seed,
+    this.serviceTier,
+    this.status,
+    this.tools,
+    this.updatedAt,
+    this.usage
+  });
+
+  factory BytedanceVideoGenerationTask.fromJson(Map<String, dynamic> json) {
+    return BytedanceVideoGenerationTask(
+      content: (() {
+        final map = _sdkworkAsMap(json['content']);
+        return map == null ? null : ArkVideoTaskContent.fromJson(map);
+      })(),
+      createdAt: json['created_at'] is int ? json['created_at'] : null,
+      draft: json['draft'] is bool ? json['draft'] : null,
+      duration: json['duration'] is int ? json['duration'] : null,
+      error: (() {
+        final map = _sdkworkAsMap(json['error']);
+        return map == null ? null : ProviderTaskError.fromJson(map);
+      })(),
+      executionExpiresAfter: json['execution_expires_after'] is int ? json['execution_expires_after'] : null,
+      frames: json['frames'] is int ? json['frames'] : null,
+      framespersecond: json['framespersecond'] is int ? json['framespersecond'] : null,
+      generateAudio: json['generate_audio'] is bool ? json['generate_audio'] : null,
+      id: json['id']?.toString(),
+      model: json['model']?.toString(),
+      outputFormat: json['output_format']?.toString(),
+      priority: json['priority'] is int ? json['priority'] : null,
+      ratio: json['ratio']?.toString(),
+      resolution: json['resolution']?.toString(),
+      safetyIdentifier: json['safety_identifier']?.toString(),
+      seed: json['seed'] is int ? json['seed'] : null,
+      serviceTier: json['service_tier']?.toString(),
+      status: json['status']?.toString(),
+      tools: (() {
+        final list = _sdkworkAsList(json['tools']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : ArkWebSearchTool.fromJson(map);
+      })())
+            .whereType<ArkWebSearchTool>()
+            .toList();
+      })(),
+      updatedAt: json['updated_at'] is int ? json['updated_at'] : null,
+      usage: (() {
+        final map = _sdkworkAsMap(json['usage']);
+        return map == null ? null : ArkVideoUsage.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'content': content?.toJson(),
+      'created_at': createdAt,
+      'draft': draft,
+      'duration': duration,
+      'error': error?.toJson(),
+      'execution_expires_after': executionExpiresAfter,
+      'frames': frames,
+      'framespersecond': framespersecond,
+      'generate_audio': generateAudio,
+      'id': id,
+      'model': model,
+      'output_format': outputFormat,
+      'priority': priority,
+      'ratio': ratio,
+      'resolution': resolution,
+      'safety_identifier': safetyIdentifier,
+      'seed': seed,
+      'service_tier': serviceTier,
+      'status': status,
+      'tools': tools?.map((item) => item.toJson()).toList(),
+      'updated_at': updatedAt,
+      'usage': usage?.toJson(),
     };
   }
 }
@@ -1298,17 +3698,279 @@ class DeleteResult {
   }
 }
 
+class ElevenLabsAudioEffects {
+  final String? backgroundNoiseId;
+  final double? distance;
+  final String? environmentId;
+  final String? filterPresetId;
+  final double? pan;
+  final double? sendLevel;
+
+  ElevenLabsAudioEffects({
+    this.backgroundNoiseId,
+    this.distance,
+    this.environmentId,
+    this.filterPresetId,
+    this.pan,
+    this.sendLevel
+  });
+
+  factory ElevenLabsAudioEffects.fromJson(Map<String, dynamic> json) {
+    return ElevenLabsAudioEffects(
+      backgroundNoiseId: json['background_noise_id']?.toString(),
+      distance: json['distance'] is num ? json['distance'].toDouble() : null,
+      environmentId: json['environment_id']?.toString(),
+      filterPresetId: json['filter_preset_id']?.toString(),
+      pan: json['pan'] is num ? json['pan'].toDouble() : null,
+      sendLevel: json['send_level'] is num ? json['send_level'].toDouble() : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'background_noise_id': backgroundNoiseId,
+      'distance': distance,
+      'environment_id': environmentId,
+      'filter_preset_id': filterPresetId,
+      'pan': pan,
+      'send_level': sendLevel,
+    };
+  }
+}
+
+class ElevenLabsCompositionPlan {
+  final List<Map<String, dynamic>> chunks;
+
+  ElevenLabsCompositionPlan({
+    required this.chunks
+  });
+
+  factory ElevenLabsCompositionPlan.fromJson(Map<String, dynamic> json) {
+    return ElevenLabsCompositionPlan(
+      chunks: (() {
+        final list = _sdkworkAsList(json['chunks']);
+        if (list == null) {
+          throw FormatException('ElevenLabsCompositionPlan.chunks is required');
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })())
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'chunks': chunks.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
+    };
+  }
+}
+
+class ElevenLabsMusicGenerationRequest {
+  final dynamic compositionPlan;
+  final String? finetuneId;
+  final double? finetuneStrength;
+  final bool? forceInstrumental;
+  final String? generationMode;
+  final String? lyricsText;
+  final String? modelId;
+  final int? musicLengthMs;
+  final ElevenLabsMusicPrompt? musicPrompt;
+  final String? prompt;
+  final bool? respectSectionsDurations;
+  final int? seed;
+  final bool? signWithC2pa;
+  final bool? storeForInpainting;
+  final bool? usePhoneticNames;
+
+  ElevenLabsMusicGenerationRequest({
+    this.compositionPlan,
+    this.finetuneId,
+    this.finetuneStrength,
+    this.forceInstrumental,
+    this.generationMode,
+    this.lyricsText,
+    this.modelId,
+    this.musicLengthMs,
+    this.musicPrompt,
+    this.prompt,
+    this.respectSectionsDurations,
+    this.seed,
+    this.signWithC2pa,
+    this.storeForInpainting,
+    this.usePhoneticNames
+  });
+
+  factory ElevenLabsMusicGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return ElevenLabsMusicGenerationRequest(
+      compositionPlan: (() {
+        final map = _sdkworkAsMap(json['composition_plan']);
+        return map == null ? null : ElevenLabsMusicPrompt.fromJson(map);
+      })(),
+      finetuneId: json['finetune_id']?.toString(),
+      finetuneStrength: json['finetune_strength'] is num ? json['finetune_strength'].toDouble() : null,
+      forceInstrumental: json['force_instrumental'] is bool ? json['force_instrumental'] : null,
+      generationMode: json['generation_mode']?.toString(),
+      lyricsText: json['lyrics_text']?.toString(),
+      modelId: json['model_id']?.toString(),
+      musicLengthMs: json['music_length_ms'] is int ? json['music_length_ms'] : null,
+      musicPrompt: (() {
+        final map = _sdkworkAsMap(json['music_prompt']);
+        return map == null ? null : ElevenLabsMusicPrompt.fromJson(map);
+      })(),
+      prompt: json['prompt']?.toString(),
+      respectSectionsDurations: json['respect_sections_durations'] is bool ? json['respect_sections_durations'] : null,
+      seed: json['seed'] is int ? json['seed'] : null,
+      signWithC2pa: json['sign_with_c2pa'] is bool ? json['sign_with_c2pa'] : null,
+      storeForInpainting: json['store_for_inpainting'] is bool ? json['store_for_inpainting'] : null,
+      usePhoneticNames: json['use_phonetic_names'] is bool ? json['use_phonetic_names'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'composition_plan': compositionPlan?.toJson(),
+      'finetune_id': finetuneId,
+      'finetune_strength': finetuneStrength,
+      'force_instrumental': forceInstrumental,
+      'generation_mode': generationMode,
+      'lyrics_text': lyricsText,
+      'model_id': modelId,
+      'music_length_ms': musicLengthMs,
+      'music_prompt': musicPrompt?.toJson(),
+      'prompt': prompt,
+      'respect_sections_durations': respectSectionsDurations,
+      'seed': seed,
+      'sign_with_c2pa': signWithC2pa,
+      'store_for_inpainting': storeForInpainting,
+      'use_phonetic_names': usePhoneticNames,
+    };
+  }
+}
+
+class ElevenLabsMusicPrompt {
+  final List<String> negativeGlobalStyles;
+  final List<String> positiveGlobalStyles;
+  final List<Map<String, dynamic>> sections;
+
+  ElevenLabsMusicPrompt({
+    required this.negativeGlobalStyles,
+    required this.positiveGlobalStyles,
+    required this.sections
+  });
+
+  factory ElevenLabsMusicPrompt.fromJson(Map<String, dynamic> json) {
+    return ElevenLabsMusicPrompt(
+      negativeGlobalStyles: (() {
+        final list = _sdkworkAsList(json['negative_global_styles']);
+        if (list == null) {
+          throw FormatException('ElevenLabsMusicPrompt.negative_global_styles is required');
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
+      positiveGlobalStyles: (() {
+        final list = _sdkworkAsList(json['positive_global_styles']);
+        if (list == null) {
+          throw FormatException('ElevenLabsMusicPrompt.positive_global_styles is required');
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
+      sections: (() {
+        final list = _sdkworkAsList(json['sections']);
+        if (list == null) {
+          throw FormatException('ElevenLabsMusicPrompt.sections is required');
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })())
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'negative_global_styles': negativeGlobalStyles.map((item) => item).toList(),
+      'positive_global_styles': positiveGlobalStyles.map((item) => item).toList(),
+      'sections': sections.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
+    };
+  }
+}
+
+class ElevenLabsPronunciationDictionaryLocator {
+  final String pronunciationDictionaryId;
+  final String? versionId;
+
+  ElevenLabsPronunciationDictionaryLocator({
+    required this.pronunciationDictionaryId,
+    this.versionId
+  });
+
+  factory ElevenLabsPronunciationDictionaryLocator.fromJson(Map<String, dynamic> json) {
+    return ElevenLabsPronunciationDictionaryLocator(
+      pronunciationDictionaryId: (() {
+        final value = json['pronunciation_dictionary_id']?.toString();
+        if (value == null) {
+          throw FormatException('ElevenLabsPronunciationDictionaryLocator.pronunciation_dictionary_id is required');
+        }
+        return value;
+      })(),
+      versionId: json['version_id']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'pronunciation_dictionary_id': pronunciationDictionaryId,
+      'version_id': versionId,
+    };
+  }
+}
+
 class ElevenLabsSoundGenerationRequest {
   final double? durationSeconds;
   final bool? loop;
-  final String modelId;
+  final String? modelId;
   final double? promptInfluence;
   final String text;
 
   ElevenLabsSoundGenerationRequest({
     this.durationSeconds,
     this.loop,
-    required this.modelId,
+    this.modelId,
     this.promptInfluence,
     required this.text
   });
@@ -1317,13 +3979,7 @@ class ElevenLabsSoundGenerationRequest {
     return ElevenLabsSoundGenerationRequest(
       durationSeconds: json['duration_seconds'] is num ? json['duration_seconds'].toDouble() : null,
       loop: json['loop'] is bool ? json['loop'] : null,
-      modelId: (() {
-        final value = json['model_id']?.toString();
-        if (value == null) {
-          throw FormatException('ElevenLabsSoundGenerationRequest.model_id is required');
-        }
-        return value;
-      })(),
+      modelId: json['model_id']?.toString(),
       promptInfluence: json['prompt_influence'] is num ? json['prompt_influence'].toDouble() : null,
       text: (() {
         final value = json['text']?.toString();
@@ -1383,25 +4039,84 @@ class ElevenLabsSoundGenerationResponse {
 }
 
 class ElevenLabsTextToSpeechRequest {
-  final String modelId;
+  final bool? applyLanguageTextNormalization;
+  final String? applyTextNormalization;
+  final ElevenLabsAudioEffects? audioEffects;
+  final String? languageCode;
+  final String? modelId;
+  final List<String>? nextRequestIds;
+  final String? nextText;
+  final List<String>? previousRequestIds;
+  final String? previousText;
+  final List<ElevenLabsPronunciationDictionaryLocator>? pronunciationDictionaryLocators;
+  final int? seed;
   final String text;
-  final Map<String, dynamic>? voiceSettings;
+  final bool? usePvcAsIvc;
+  final ElevenLabsVoiceSettings? voiceSettings;
 
   ElevenLabsTextToSpeechRequest({
-    required this.modelId,
+    this.applyLanguageTextNormalization,
+    this.applyTextNormalization,
+    this.audioEffects,
+    this.languageCode,
+    this.modelId,
+    this.nextRequestIds,
+    this.nextText,
+    this.previousRequestIds,
+    this.previousText,
+    this.pronunciationDictionaryLocators,
+    this.seed,
     required this.text,
+    this.usePvcAsIvc,
     this.voiceSettings
   });
 
   factory ElevenLabsTextToSpeechRequest.fromJson(Map<String, dynamic> json) {
     return ElevenLabsTextToSpeechRequest(
-      modelId: (() {
-        final value = json['model_id']?.toString();
-        if (value == null) {
-          throw FormatException('ElevenLabsTextToSpeechRequest.model_id is required');
-        }
-        return value;
+      applyLanguageTextNormalization: json['apply_language_text_normalization'] is bool ? json['apply_language_text_normalization'] : null,
+      applyTextNormalization: json['apply_text_normalization']?.toString(),
+      audioEffects: (() {
+        final map = _sdkworkAsMap(json['audio_effects']);
+        return map == null ? null : ElevenLabsAudioEffects.fromJson(map);
       })(),
+      languageCode: json['language_code']?.toString(),
+      modelId: json['model_id']?.toString(),
+      nextRequestIds: (() {
+        final list = _sdkworkAsList(json['next_request_ids']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
+      nextText: json['next_text']?.toString(),
+      previousRequestIds: (() {
+        final list = _sdkworkAsList(json['previous_request_ids']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
+      previousText: json['previous_text']?.toString(),
+      pronunciationDictionaryLocators: (() {
+        final list = _sdkworkAsList(json['pronunciation_dictionary_locators']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : ElevenLabsPronunciationDictionaryLocator.fromJson(map);
+      })())
+            .whereType<ElevenLabsPronunciationDictionaryLocator>()
+            .toList();
+      })(),
+      seed: json['seed'] is int ? json['seed'] : null,
       text: (() {
         final value = json['text']?.toString();
         if (value == null) {
@@ -1409,15 +4124,30 @@ class ElevenLabsTextToSpeechRequest {
         }
         return value;
       })(),
-      voiceSettings: _sdkworkAsMap(json['voice_settings'])
+      usePvcAsIvc: json['use_pvc_as_ivc'] is bool ? json['use_pvc_as_ivc'] : null,
+      voiceSettings: (() {
+        final map = _sdkworkAsMap(json['voice_settings']);
+        return map == null ? null : ElevenLabsVoiceSettings.fromJson(map);
+      })()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'apply_language_text_normalization': applyLanguageTextNormalization,
+      'apply_text_normalization': applyTextNormalization,
+      'audio_effects': audioEffects?.toJson(),
+      'language_code': languageCode,
       'model_id': modelId,
+      'next_request_ids': nextRequestIds?.map((item) => item).toList(),
+      'next_text': nextText,
+      'previous_request_ids': previousRequestIds?.map((item) => item).toList(),
+      'previous_text': previousText,
+      'pronunciation_dictionary_locators': pronunciationDictionaryLocators?.map((item) => item.toJson()).toList(),
+      'seed': seed,
       'text': text,
-      'voice_settings': voiceSettings,
+      'use_pvc_as_ivc': usePvcAsIvc,
+      'voice_settings': voiceSettings?.toJson(),
     };
   }
 }
@@ -1450,6 +4180,281 @@ class ElevenLabsTextToSpeechResponse {
       'id': id,
       'status': status,
       'url': url,
+    };
+  }
+}
+
+class ElevenLabsVoiceSettings {
+  final double? cloneStrength;
+  final double? similarityBoost;
+  final double? speed;
+  final double? stability;
+  final double? style;
+  final bool? useSpeakerBoost;
+
+  ElevenLabsVoiceSettings({
+    this.cloneStrength,
+    this.similarityBoost,
+    this.speed,
+    this.stability,
+    this.style,
+    this.useSpeakerBoost
+  });
+
+  factory ElevenLabsVoiceSettings.fromJson(Map<String, dynamic> json) {
+    return ElevenLabsVoiceSettings(
+      cloneStrength: json['clone_strength'] is num ? json['clone_strength'].toDouble() : null,
+      similarityBoost: json['similarity_boost'] is num ? json['similarity_boost'].toDouble() : null,
+      speed: json['speed'] is num ? json['speed'].toDouble() : null,
+      stability: json['stability'] is num ? json['stability'].toDouble() : null,
+      style: json['style'] is num ? json['style'].toDouble() : null,
+      useSpeakerBoost: json['use_speaker_boost'] is bool ? json['use_speaker_boost'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'clone_strength': cloneStrength,
+      'similarity_boost': similarityBoost,
+      'speed': speed,
+      'stability': stability,
+      'style': style,
+      'use_speaker_boost': useSpeakerBoost,
+    };
+  }
+}
+
+class GeminiImageGenerationRequest {
+  final List<Map<String, dynamic>> instances;
+  final Map<String, dynamic>? parameters;
+
+  GeminiImageGenerationRequest({
+    required this.instances,
+    this.parameters
+  });
+
+  factory GeminiImageGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return GeminiImageGenerationRequest(
+      instances: (() {
+        final list = _sdkworkAsList(json['instances']);
+        if (list == null) {
+          throw FormatException('GeminiImageGenerationRequest.instances is required');
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })())
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      })(),
+      parameters: (() {
+        final map = _sdkworkAsMap(json['parameters']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'instances': instances.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
+      'parameters': parameters?.map((key, item) => MapEntry(key, item)),
+    };
+  }
+}
+
+class GeminiImageGenerationResponse {
+  final Map<String, dynamic>? error;
+  final List<Map<String, dynamic>>? predictions;
+
+  GeminiImageGenerationResponse({
+    this.error,
+    this.predictions
+  });
+
+  factory GeminiImageGenerationResponse.fromJson(Map<String, dynamic> json) {
+    return GeminiImageGenerationResponse(
+      error: (() {
+        final map = _sdkworkAsMap(json['error']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      predictions: (() {
+        final list = _sdkworkAsList(json['predictions']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })())
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'error': error?.map((key, item) => MapEntry(key, item)),
+      'predictions': predictions?.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
+    };
+  }
+}
+
+class GeminiVideoGenerationRequest {
+  final List<Map<String, dynamic>> instances;
+  final Map<String, dynamic>? parameters;
+
+  GeminiVideoGenerationRequest({
+    required this.instances,
+    this.parameters
+  });
+
+  factory GeminiVideoGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return GeminiVideoGenerationRequest(
+      instances: (() {
+        final list = _sdkworkAsList(json['instances']);
+        if (list == null) {
+          throw FormatException('GeminiVideoGenerationRequest.instances is required');
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })())
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      })(),
+      parameters: (() {
+        final map = _sdkworkAsMap(json['parameters']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'instances': instances.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
+      'parameters': parameters?.map((key, item) => MapEntry(key, item)),
+    };
+  }
+}
+
+class GeminiVideoOperation {
+  final bool? done;
+  final Map<String, dynamic>? error;
+  final String? name;
+  final Map<String, dynamic>? response;
+
+  GeminiVideoOperation({
+    this.done,
+    this.error,
+    this.name,
+    this.response
+  });
+
+  factory GeminiVideoOperation.fromJson(Map<String, dynamic> json) {
+    return GeminiVideoOperation(
+      done: json['done'] is bool ? json['done'] : null,
+      error: (() {
+        final map = _sdkworkAsMap(json['error']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      name: json['name']?.toString(),
+      response: (() {
+        final map = _sdkworkAsMap(json['response']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'done': done,
+      'error': error?.map((key, item) => MapEntry(key, item)),
+      'name': name,
+      'response': response?.map((key, item) => MapEntry(key, item)),
     };
   }
 }
@@ -1639,7 +4644,7 @@ class GoogleCachedContentCreateRequest {
   final List<GoogleContent>? contents;
   final String? displayName;
   final String? expireTime;
-  final String? model;
+  final String model;
   final GoogleContent? systemInstruction;
   final GoogleToolConfig? toolConfig;
   final List<GoogleTool>? tools;
@@ -1649,7 +4654,7 @@ class GoogleCachedContentCreateRequest {
     this.contents,
     this.displayName,
     this.expireTime,
-    this.model,
+    required this.model,
     this.systemInstruction,
     this.toolConfig,
     this.tools,
@@ -1673,7 +4678,13 @@ class GoogleCachedContentCreateRequest {
       })(),
       displayName: json['displayName']?.toString(),
       expireTime: json['expireTime']?.toString(),
-      model: json['model']?.toString(),
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('GoogleCachedContentCreateRequest.model is required');
+        }
+        return value;
+      })(),
       systemInstruction: (() {
         final map = _sdkworkAsMap(json['systemInstruction']);
         return map == null ? null : GoogleContent.fromJson(map);
@@ -2089,12 +5100,16 @@ class GoogleDynamicRetrievalConfig {
 
 class GoogleEmbedContentRequest {
   final GoogleContent content;
+  final Map<String, dynamic>? embedContentConfig;
+  final String? model;
   final int? outputDimensionality;
   final String? taskType;
   final String? title;
 
   GoogleEmbedContentRequest({
     required this.content,
+    this.embedContentConfig,
+    this.model,
     this.outputDimensionality,
     this.taskType,
     this.title
@@ -2109,6 +5124,21 @@ class GoogleEmbedContentRequest {
         }
         return GoogleContent.fromJson(map);
       })(),
+      embedContentConfig: (() {
+        final map = _sdkworkAsMap(json['embedContentConfig']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      model: json['model']?.toString(),
       outputDimensionality: json['outputDimensionality'] is int ? json['outputDimensionality'] : null,
       taskType: json['taskType']?.toString(),
       title: json['title']?.toString()
@@ -2118,6 +5148,8 @@ class GoogleEmbedContentRequest {
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'content': content.toJson(),
+      'embedContentConfig': embedContentConfig?.map((key, item) => MapEntry(key, item)),
+      'model': model,
       'outputDimensionality': outputDimensionality,
       'taskType': taskType,
       'title': title,
@@ -2501,8 +5533,13 @@ class GoogleFunctionResponse {
 class GoogleGenerateContentRequest {
   final String? cachedContent;
   final List<GoogleContent> contents;
+  final String? continuationToken;
   final GoogleGenerationConfig? generationConfig;
+  final Map<String, String>? labels;
+  final String? model;
   final List<GoogleSafetySetting>? safetySettings;
+  final String? serviceTier;
+  final bool? store;
   final GoogleContent? systemInstruction;
   final GoogleToolConfig? toolConfig;
   final List<GoogleTool>? tools;
@@ -2510,8 +5547,13 @@ class GoogleGenerateContentRequest {
   GoogleGenerateContentRequest({
     this.cachedContent,
     required this.contents,
+    this.continuationToken,
     this.generationConfig,
+    this.labels,
+    this.model,
     this.safetySettings,
+    this.serviceTier,
+    this.store,
     this.systemInstruction,
     this.toolConfig,
     this.tools
@@ -2533,10 +5575,26 @@ class GoogleGenerateContentRequest {
             .whereType<GoogleContent>()
             .toList();
       })(),
+      continuationToken: json['continuationToken']?.toString(),
       generationConfig: (() {
         final map = _sdkworkAsMap(json['generationConfig']);
         return map == null ? null : GoogleGenerationConfig.fromJson(map);
       })(),
+      labels: (() {
+        final map = _sdkworkAsMap(json['labels']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      model: json['model']?.toString(),
       safetySettings: (() {
         final list = _sdkworkAsList(json['safetySettings']);
         if (list == null) {
@@ -2550,6 +5608,8 @@ class GoogleGenerateContentRequest {
             .whereType<GoogleSafetySetting>()
             .toList();
       })(),
+      serviceTier: json['serviceTier']?.toString(),
+      store: json['store'] is bool ? json['store'] : null,
       systemInstruction: (() {
         final map = _sdkworkAsMap(json['systemInstruction']);
         return map == null ? null : GoogleContent.fromJson(map);
@@ -2578,8 +5638,13 @@ class GoogleGenerateContentRequest {
     return <String, dynamic>{
       'cachedContent': cachedContent,
       'contents': contents.map((item) => item.toJson()).toList(),
+      'continuationToken': continuationToken,
       'generationConfig': generationConfig?.toJson(),
+      'labels': labels?.map((key, item) => MapEntry(key, item)),
+      'model': model,
       'safetySettings': safetySettings?.map((item) => item.toJson()).toList(),
+      'serviceTier': serviceTier,
+      'store': store,
       'systemInstruction': systemInstruction?.toJson(),
       'toolConfig': toolConfig?.toJson(),
       'tools': tools?.map((item) => item.toJson()).toList(),
@@ -2642,36 +5707,141 @@ class GoogleGenerateContentResponse {
 }
 
 class GoogleGenerationConfig {
+  final Map<String, dynamic>? audioTranscriptionConfig;
   final int? candidateCount;
+  final bool? enableAffectiveDialog;
+  final bool? enableEnhancedCivicAnswers;
+  final double? frequencyPenalty;
+  final Map<String, dynamic>? imageConfig;
+  final int? logprobs;
   final int? maxOutputTokens;
+  final String? mediaResolution;
+  final double? presencePenalty;
+  final Map<String, dynamic>? responseFormat;
+  final dynamic responseJsonSchema;
+  final bool? responseLogprobs;
   final String? responseMimeType;
+  final List<String>? responseModalities;
   final GoogleSchema? responseSchema;
+  final int? seed;
+  final Map<String, dynamic>? speechConfig;
   final List<String>? stopSequences;
   final double? temperature;
   final GoogleThinkingConfig? thinkingConfig;
   final int? topK;
   final double? topP;
+  final Map<String, dynamic>? translationConfig;
 
   GoogleGenerationConfig({
+    this.audioTranscriptionConfig,
     this.candidateCount,
+    this.enableAffectiveDialog,
+    this.enableEnhancedCivicAnswers,
+    this.frequencyPenalty,
+    this.imageConfig,
+    this.logprobs,
     this.maxOutputTokens,
+    this.mediaResolution,
+    this.presencePenalty,
+    this.responseFormat,
+    this.responseJsonSchema,
+    this.responseLogprobs,
     this.responseMimeType,
+    this.responseModalities,
     this.responseSchema,
+    this.seed,
+    this.speechConfig,
     this.stopSequences,
     this.temperature,
     this.thinkingConfig,
     this.topK,
-    this.topP
+    this.topP,
+    this.translationConfig
   });
 
   factory GoogleGenerationConfig.fromJson(Map<String, dynamic> json) {
     return GoogleGenerationConfig(
+      audioTranscriptionConfig: (() {
+        final map = _sdkworkAsMap(json['audioTranscriptionConfig']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
       candidateCount: json['candidateCount'] is int ? json['candidateCount'] : null,
+      enableAffectiveDialog: json['enableAffectiveDialog'] is bool ? json['enableAffectiveDialog'] : null,
+      enableEnhancedCivicAnswers: json['enableEnhancedCivicAnswers'] is bool ? json['enableEnhancedCivicAnswers'] : null,
+      frequencyPenalty: json['frequencyPenalty'] is num ? json['frequencyPenalty'].toDouble() : null,
+      imageConfig: (() {
+        final map = _sdkworkAsMap(json['imageConfig']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      logprobs: json['logprobs'] is int ? json['logprobs'] : null,
       maxOutputTokens: json['maxOutputTokens'] is int ? json['maxOutputTokens'] : null,
+      mediaResolution: json['mediaResolution']?.toString(),
+      presencePenalty: json['presencePenalty'] is num ? json['presencePenalty'].toDouble() : null,
+      responseFormat: (() {
+        final map = _sdkworkAsMap(json['responseFormat']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      responseJsonSchema: json['responseJsonSchema']?.toString(),
+      responseLogprobs: json['responseLogprobs'] is bool ? json['responseLogprobs'] : null,
       responseMimeType: json['responseMimeType']?.toString(),
+      responseModalities: (() {
+        final list = _sdkworkAsList(json['responseModalities']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
       responseSchema: (() {
         final map = _sdkworkAsMap(json['responseSchema']);
         return map == null ? null : GoogleSchema.fromJson(map);
+      })(),
+      seed: json['seed'] is int ? json['seed'] : null,
+      speechConfig: (() {
+        final map = _sdkworkAsMap(json['speechConfig']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
       })(),
       stopSequences: (() {
         final list = _sdkworkAsList(json['stopSequences']);
@@ -2689,46 +5859,109 @@ class GoogleGenerationConfig {
         return map == null ? null : GoogleThinkingConfig.fromJson(map);
       })(),
       topK: json['topK'] is int ? json['topK'] : null,
-      topP: json['topP'] is num ? json['topP'].toDouble() : null
+      topP: json['topP'] is num ? json['topP'].toDouble() : null,
+      translationConfig: (() {
+        final map = _sdkworkAsMap(json['translationConfig']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'audioTranscriptionConfig': audioTranscriptionConfig?.map((key, item) => MapEntry(key, item)),
       'candidateCount': candidateCount,
+      'enableAffectiveDialog': enableAffectiveDialog,
+      'enableEnhancedCivicAnswers': enableEnhancedCivicAnswers,
+      'frequencyPenalty': frequencyPenalty,
+      'imageConfig': imageConfig?.map((key, item) => MapEntry(key, item)),
+      'logprobs': logprobs,
       'maxOutputTokens': maxOutputTokens,
+      'mediaResolution': mediaResolution,
+      'presencePenalty': presencePenalty,
+      'responseFormat': responseFormat?.map((key, item) => MapEntry(key, item)),
+      'responseJsonSchema': responseJsonSchema,
+      'responseLogprobs': responseLogprobs,
       'responseMimeType': responseMimeType,
+      'responseModalities': responseModalities?.map((item) => item).toList(),
       'responseSchema': responseSchema?.toJson(),
+      'seed': seed,
+      'speechConfig': speechConfig?.map((key, item) => MapEntry(key, item)),
       'stopSequences': stopSequences?.map((item) => item).toList(),
       'temperature': temperature,
       'thinkingConfig': thinkingConfig?.toJson(),
       'topK': topK,
       'topP': topP,
+      'translationConfig': translationConfig?.map((key, item) => MapEntry(key, item)),
     };
   }
 }
 
 class GooglePart {
+  final Map<String, dynamic>? audioTranscription;
   final GoogleCodeExecutionResult? codeExecutionResult;
   final GoogleExecutableCode? executableCode;
   final GoogleFileData? fileData;
   final GoogleFunctionCall? functionCall;
   final GoogleFunctionResponse? functionResponse;
   final GoogleBlob? inlineData;
+  final String? mediaProcessing;
+  final Map<String, dynamic>? mediaResolution;
+  final Map<String, dynamic>? partMetadata;
+  final Map<String, dynamic>? speechMetadata;
   final String? text;
+  final bool? thought;
+  final String? thoughtSignature;
+  final Map<String, dynamic>? toolCall;
+  final Map<String, dynamic>? toolResponse;
+  final Map<String, dynamic>? videoMetadata;
 
   GooglePart({
+    this.audioTranscription,
     this.codeExecutionResult,
     this.executableCode,
     this.fileData,
     this.functionCall,
     this.functionResponse,
     this.inlineData,
-    this.text
+    this.mediaProcessing,
+    this.mediaResolution,
+    this.partMetadata,
+    this.speechMetadata,
+    this.text,
+    this.thought,
+    this.thoughtSignature,
+    this.toolCall,
+    this.toolResponse,
+    this.videoMetadata
   });
 
   factory GooglePart.fromJson(Map<String, dynamic> json) {
     return GooglePart(
+      audioTranscription: (() {
+        final map = _sdkworkAsMap(json['audioTranscription']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
       codeExecutionResult: (() {
         final map = _sdkworkAsMap(json['codeExecutionResult']);
         return map == null ? null : GoogleCodeExecutionResult.fromJson(map);
@@ -2753,19 +5986,116 @@ class GooglePart {
         final map = _sdkworkAsMap(json['inlineData']);
         return map == null ? null : GoogleBlob.fromJson(map);
       })(),
-      text: json['text']?.toString()
+      mediaProcessing: json['mediaProcessing']?.toString(),
+      mediaResolution: (() {
+        final map = _sdkworkAsMap(json['mediaResolution']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      partMetadata: (() {
+        final map = _sdkworkAsMap(json['partMetadata']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      speechMetadata: (() {
+        final map = _sdkworkAsMap(json['speechMetadata']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      text: json['text']?.toString(),
+      thought: json['thought'] is bool ? json['thought'] : null,
+      thoughtSignature: json['thoughtSignature']?.toString(),
+      toolCall: (() {
+        final map = _sdkworkAsMap(json['toolCall']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      toolResponse: (() {
+        final map = _sdkworkAsMap(json['toolResponse']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      videoMetadata: (() {
+        final map = _sdkworkAsMap(json['videoMetadata']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'audioTranscription': audioTranscription?.map((key, item) => MapEntry(key, item)),
       'codeExecutionResult': codeExecutionResult?.toJson(),
       'executableCode': executableCode?.toJson(),
       'fileData': fileData?.toJson(),
       'functionCall': functionCall?.toJson(),
       'functionResponse': functionResponse?.toJson(),
       'inlineData': inlineData?.toJson(),
+      'mediaProcessing': mediaProcessing,
+      'mediaResolution': mediaResolution?.map((key, item) => MapEntry(key, item)),
+      'partMetadata': partMetadata?.map((key, item) => MapEntry(key, item)),
+      'speechMetadata': speechMetadata?.map((key, item) => MapEntry(key, item)),
       'text': text,
+      'thought': thought,
+      'thoughtSignature': thoughtSignature,
+      'toolCall': toolCall?.map((key, item) => MapEntry(key, item)),
+      'toolResponse': toolResponse?.map((key, item) => MapEntry(key, item)),
+      'videoMetadata': videoMetadata?.map((key, item) => MapEntry(key, item)),
     };
   }
 }
@@ -2984,14 +6314,24 @@ class GoogleThinkingConfig {
 
 class GoogleTool {
   final GoogleCodeExecutionTool? codeExecution;
+  final Map<String, dynamic>? computerUse;
+  final Map<String, dynamic>? fileSearch;
   final List<GoogleFunctionDeclaration>? functionDeclarations;
+  final Map<String, dynamic>? googleMaps;
   final GoogleSearchTool? googleSearch;
+  final Map<String, dynamic>? googleSearchRetrieval;
+  final List<Map<String, dynamic>>? mcpServers;
   final GoogleUrlContextTool? urlContext;
 
   GoogleTool({
     this.codeExecution,
+    this.computerUse,
+    this.fileSearch,
     this.functionDeclarations,
+    this.googleMaps,
     this.googleSearch,
+    this.googleSearchRetrieval,
+    this.mcpServers,
     this.urlContext
   });
 
@@ -3000,6 +6340,34 @@ class GoogleTool {
       codeExecution: (() {
         final map = _sdkworkAsMap(json['codeExecution']);
         return map == null ? null : GoogleCodeExecutionTool.fromJson(map);
+      })(),
+      computerUse: (() {
+        final map = _sdkworkAsMap(json['computerUse']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      fileSearch: (() {
+        final map = _sdkworkAsMap(json['fileSearch']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
       })(),
       functionDeclarations: (() {
         final list = _sdkworkAsList(json['functionDeclarations']);
@@ -3014,9 +6382,60 @@ class GoogleTool {
             .whereType<GoogleFunctionDeclaration>()
             .toList();
       })(),
+      googleMaps: (() {
+        final map = _sdkworkAsMap(json['googleMaps']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
       googleSearch: (() {
         final map = _sdkworkAsMap(json['googleSearch']);
         return map == null ? null : GoogleSearchTool.fromJson(map);
+      })(),
+      googleSearchRetrieval: (() {
+        final map = _sdkworkAsMap(json['googleSearchRetrieval']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      mcpServers: (() {
+        final list = _sdkworkAsList(json['mcpServers']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })())
+            .whereType<Map<String, dynamic>>()
+            .toList();
       })(),
       urlContext: (() {
         final map = _sdkworkAsMap(json['urlContext']);
@@ -3028,8 +6447,13 @@ class GoogleTool {
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'codeExecution': codeExecution?.toJson(),
+      'computerUse': computerUse?.map((key, item) => MapEntry(key, item)),
+      'fileSearch': fileSearch?.map((key, item) => MapEntry(key, item)),
       'functionDeclarations': functionDeclarations?.map((item) => item.toJson()).toList(),
+      'googleMaps': googleMaps?.map((key, item) => MapEntry(key, item)),
       'googleSearch': googleSearch?.toJson(),
+      'googleSearchRetrieval': googleSearchRetrieval?.map((key, item) => MapEntry(key, item)),
+      'mcpServers': mcpServers?.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
       'urlContext': urlContext?.toJson(),
     };
   }
@@ -3123,6 +6547,164 @@ class GoogleUsageMetadata {
   }
 }
 
+class JimengVideoGenerationRequest {
+  final String? callbackUrl;
+  final int? duration;
+  final int? fps;
+  final String? image;
+  final String model;
+  final String prompt;
+  final String? ratio;
+  final int? seed;
+
+  JimengVideoGenerationRequest({
+    this.callbackUrl,
+    this.duration,
+    this.fps,
+    this.image,
+    required this.model,
+    required this.prompt,
+    this.ratio,
+    this.seed
+  });
+
+  factory JimengVideoGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return JimengVideoGenerationRequest(
+      callbackUrl: json['callback_url']?.toString(),
+      duration: json['duration'] is int ? json['duration'] : null,
+      fps: json['fps'] is int ? json['fps'] : null,
+      image: json['image']?.toString(),
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('JimengVideoGenerationRequest.model is required');
+        }
+        return value;
+      })(),
+      prompt: (() {
+        final value = json['prompt']?.toString();
+        if (value == null) {
+          throw FormatException('JimengVideoGenerationRequest.prompt is required');
+        }
+        return value;
+      })(),
+      ratio: json['ratio']?.toString(),
+      seed: json['seed'] is int ? json['seed'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'callback_url': callbackUrl,
+      'duration': duration,
+      'fps': fps,
+      'image': image,
+      'model': model,
+      'prompt': prompt,
+      'ratio': ratio,
+      'seed': seed,
+    };
+  }
+}
+
+class JimengVideoGenerationTask {
+  final int? createdAt;
+  final Map<String, dynamic>? error;
+  final String? id;
+  final String? status;
+  final String? taskId;
+  final String? videoUrl;
+
+  JimengVideoGenerationTask({
+    this.createdAt,
+    this.error,
+    this.id,
+    this.status,
+    this.taskId,
+    this.videoUrl
+  });
+
+  factory JimengVideoGenerationTask.fromJson(Map<String, dynamic> json) {
+    return JimengVideoGenerationTask(
+      createdAt: json['created_at'] is int ? json['created_at'] : null,
+      error: (() {
+        final map = _sdkworkAsMap(json['error']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      id: json['id']?.toString(),
+      status: json['status']?.toString(),
+      taskId: json['task_id']?.toString(),
+      videoUrl: json['video_url']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'created_at': createdAt,
+      'error': error?.map((key, item) => MapEntry(key, item)),
+      'id': id,
+      'status': status,
+      'task_id': taskId,
+      'video_url': videoUrl,
+    };
+  }
+}
+
+class KlingAudioTask {
+  final int? code;
+  final Map<String, dynamic>? data;
+  final String? message;
+  final String? requestId;
+
+  KlingAudioTask({
+    this.code,
+    this.data,
+    this.message,
+    this.requestId
+  });
+
+  factory KlingAudioTask.fromJson(Map<String, dynamic> json) {
+    return KlingAudioTask(
+      code: json['code'] is int ? json['code'] : null,
+      data: (() {
+        final map = _sdkworkAsMap(json['data']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      message: json['message']?.toString(),
+      requestId: json['request_id']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'code': code,
+      'data': data?.map((key, item) => MapEntry(key, item)),
+      'message': message,
+      'request_id': requestId,
+    };
+  }
+}
+
 class KlingAvatarCreateRequest {
   final String? audioUrl;
   final String? callbackUrl;
@@ -3181,6 +6763,276 @@ class KlingAvatarCreateRequest {
   }
 }
 
+class KlingElementReference {
+  final int elementId;
+
+  KlingElementReference({
+    required this.elementId
+  });
+
+  factory KlingElementReference.fromJson(Map<String, dynamic> json) {
+    return KlingElementReference(
+      elementId: (() {
+        final value = json['element_id'];
+        if (value is! int) {
+          throw FormatException('KlingElementReference.element_id is required');
+        }
+        return value;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'element_id': elementId,
+    };
+  }
+}
+
+class KlingImageGenerationRequest {
+  final String? aspectRatio;
+  final String? callbackUrl;
+  final List<KlingElementReference>? elementList;
+  final String? externalTaskId;
+  final double? humanFidelity;
+  final String? image;
+  final double? imageFidelity;
+  final String? imageReference;
+  final String? modelName;
+  final int? n;
+  final String? negativePrompt;
+  final String prompt;
+  final String? resolution;
+  final KlingWatermarkInfo? watermarkInfo;
+
+  KlingImageGenerationRequest({
+    this.aspectRatio,
+    this.callbackUrl,
+    this.elementList,
+    this.externalTaskId,
+    this.humanFidelity,
+    this.image,
+    this.imageFidelity,
+    this.imageReference,
+    this.modelName,
+    this.n,
+    this.negativePrompt,
+    required this.prompt,
+    this.resolution,
+    this.watermarkInfo
+  });
+
+  factory KlingImageGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return KlingImageGenerationRequest(
+      aspectRatio: json['aspect_ratio']?.toString(),
+      callbackUrl: json['callback_url']?.toString(),
+      elementList: (() {
+        final list = _sdkworkAsList(json['element_list']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : KlingElementReference.fromJson(map);
+      })())
+            .whereType<KlingElementReference>()
+            .toList();
+      })(),
+      externalTaskId: json['external_task_id']?.toString(),
+      humanFidelity: json['human_fidelity'] is num ? json['human_fidelity'].toDouble() : null,
+      image: json['image']?.toString(),
+      imageFidelity: json['image_fidelity'] is num ? json['image_fidelity'].toDouble() : null,
+      imageReference: json['image_reference']?.toString(),
+      modelName: json['model_name']?.toString(),
+      n: json['n'] is int ? json['n'] : null,
+      negativePrompt: json['negative_prompt']?.toString(),
+      prompt: (() {
+        final value = json['prompt']?.toString();
+        if (value == null) {
+          throw FormatException('KlingImageGenerationRequest.prompt is required');
+        }
+        return value;
+      })(),
+      resolution: json['resolution']?.toString(),
+      watermarkInfo: (() {
+        final map = _sdkworkAsMap(json['watermark_info']);
+        return map == null ? null : KlingWatermarkInfo.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'aspect_ratio': aspectRatio,
+      'callback_url': callbackUrl,
+      'element_list': elementList?.map((item) => item.toJson()).toList(),
+      'external_task_id': externalTaskId,
+      'human_fidelity': humanFidelity,
+      'image': image,
+      'image_fidelity': imageFidelity,
+      'image_reference': imageReference,
+      'model_name': modelName,
+      'n': n,
+      'negative_prompt': negativePrompt,
+      'prompt': prompt,
+      'resolution': resolution,
+      'watermark_info': watermarkInfo?.toJson(),
+    };
+  }
+}
+
+class KlingImageGenerationTask {
+  final int? code;
+  final KlingImageTaskData? data;
+  final String? message;
+  final String? requestId;
+
+  KlingImageGenerationTask({
+    this.code,
+    this.data,
+    this.message,
+    this.requestId
+  });
+
+  factory KlingImageGenerationTask.fromJson(Map<String, dynamic> json) {
+    return KlingImageGenerationTask(
+      code: json['code'] is int ? json['code'] : null,
+      data: (() {
+        final map = _sdkworkAsMap(json['data']);
+        return map == null ? null : KlingImageTaskData.fromJson(map);
+      })(),
+      message: json['message']?.toString(),
+      requestId: json['request_id']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'code': code,
+      'data': data?.toJson(),
+      'message': message,
+      'request_id': requestId,
+    };
+  }
+}
+
+class KlingImageResult {
+  final int? index;
+  final String? url;
+
+  KlingImageResult({
+    this.index,
+    this.url
+  });
+
+  factory KlingImageResult.fromJson(Map<String, dynamic> json) {
+    return KlingImageResult(
+      index: json['index'] is int ? json['index'] : null,
+      url: json['url']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'index': index,
+      'url': url,
+    };
+  }
+}
+
+class KlingImageTaskData {
+  final int? createdAt;
+  final String? taskId;
+  final Map<String, dynamic>? taskInfo;
+  final KlingImageTaskResult? taskResult;
+  final String? taskStatus;
+  final String? taskStatusMsg;
+  final int? updatedAt;
+
+  KlingImageTaskData({
+    this.createdAt,
+    this.taskId,
+    this.taskInfo,
+    this.taskResult,
+    this.taskStatus,
+    this.taskStatusMsg,
+    this.updatedAt
+  });
+
+  factory KlingImageTaskData.fromJson(Map<String, dynamic> json) {
+    return KlingImageTaskData(
+      createdAt: json['created_at'] is int ? json['created_at'] : null,
+      taskId: json['task_id']?.toString(),
+      taskInfo: (() {
+        final map = _sdkworkAsMap(json['task_info']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      taskResult: (() {
+        final map = _sdkworkAsMap(json['task_result']);
+        return map == null ? null : KlingImageTaskResult.fromJson(map);
+      })(),
+      taskStatus: json['task_status']?.toString(),
+      taskStatusMsg: json['task_status_msg']?.toString(),
+      updatedAt: json['updated_at'] is int ? json['updated_at'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'created_at': createdAt,
+      'task_id': taskId,
+      'task_info': taskInfo?.map((key, item) => MapEntry(key, item)),
+      'task_result': taskResult?.toJson(),
+      'task_status': taskStatus,
+      'task_status_msg': taskStatusMsg,
+      'updated_at': updatedAt,
+    };
+  }
+}
+
+class KlingImageTaskResult {
+  final List<KlingImageResult>? images;
+
+  KlingImageTaskResult({
+    this.images
+  });
+
+  factory KlingImageTaskResult.fromJson(Map<String, dynamic> json) {
+    return KlingImageTaskResult(
+      images: (() {
+        final list = _sdkworkAsList(json['images']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : KlingImageResult.fromJson(map);
+      })())
+            .whereType<KlingImageResult>()
+            .toList();
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'images': images?.map((item) => item.toJson()).toList(),
+    };
+  }
+}
+
 class KlingMotionControlRequest {
   final String? callbackUrl;
   final String image;
@@ -3225,6 +7077,50 @@ class KlingMotionControlRequest {
       'model_name': modelName,
       'prompt': prompt,
       'video': video,
+    };
+  }
+}
+
+class KlingSoundGenerationRequest {
+  final String? callbackUrl;
+  final double duration;
+  final String? externalTaskId;
+  final String prompt;
+
+  KlingSoundGenerationRequest({
+    this.callbackUrl,
+    required this.duration,
+    this.externalTaskId,
+    required this.prompt
+  });
+
+  factory KlingSoundGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return KlingSoundGenerationRequest(
+      callbackUrl: json['callback_url']?.toString(),
+      duration: (() {
+        final value = json['duration'];
+        if (value is! num) {
+          throw FormatException('KlingSoundGenerationRequest.duration is required');
+        }
+        return value.toDouble();
+      })(),
+      externalTaskId: json['external_task_id']?.toString(),
+      prompt: (() {
+        final value = json['prompt']?.toString();
+        if (value == null) {
+          throw FormatException('KlingSoundGenerationRequest.prompt is required');
+        }
+        return value;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'callback_url': callbackUrl,
+      'duration': duration,
+      'external_task_id': externalTaskId,
+      'prompt': prompt,
     };
   }
 }
@@ -3362,37 +7258,242 @@ class KlingVideoGenerationTask {
   }
 }
 
-class MidjourneyImageGenerationRequest {
-  final String? aspectRatio;
+class KlingVideoToAudioRequest {
+  final bool? asmrMode;
+  final String? bgmPrompt;
   final String? callbackUrl;
-  final String? model;
-  final String prompt;
-  final int? seed;
-  final String? style;
+  final String? externalTaskId;
+  final String? soundEffectPrompt;
+  final String? videoId;
+  final String? videoUrl;
 
-  MidjourneyImageGenerationRequest({
-    this.aspectRatio,
+  KlingVideoToAudioRequest({
+    this.asmrMode,
+    this.bgmPrompt,
     this.callbackUrl,
-    this.model,
-    required this.prompt,
-    this.seed,
-    this.style
+    this.externalTaskId,
+    this.soundEffectPrompt,
+    this.videoId,
+    this.videoUrl
   });
 
-  factory MidjourneyImageGenerationRequest.fromJson(Map<String, dynamic> json) {
-    return MidjourneyImageGenerationRequest(
-      aspectRatio: json['aspect_ratio']?.toString(),
+  factory KlingVideoToAudioRequest.fromJson(Map<String, dynamic> json) {
+    return KlingVideoToAudioRequest(
+      asmrMode: json['asmr_mode'] is bool ? json['asmr_mode'] : null,
+      bgmPrompt: json['bgm_prompt']?.toString(),
       callbackUrl: json['callback_url']?.toString(),
-      model: json['model']?.toString(),
-      prompt: (() {
-        final value = json['prompt']?.toString();
+      externalTaskId: json['external_task_id']?.toString(),
+      soundEffectPrompt: json['sound_effect_prompt']?.toString(),
+      videoId: json['video_id']?.toString(),
+      videoUrl: json['video_url']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'asmr_mode': asmrMode,
+      'bgm_prompt': bgmPrompt,
+      'callback_url': callbackUrl,
+      'external_task_id': externalTaskId,
+      'sound_effect_prompt': soundEffectPrompt,
+      'video_id': videoId,
+      'video_url': videoUrl,
+    };
+  }
+}
+
+class KlingWatermarkInfo {
+  final bool? enabled;
+
+  KlingWatermarkInfo({
+    this.enabled
+  });
+
+  factory KlingWatermarkInfo.fromJson(Map<String, dynamic> json) {
+    return KlingWatermarkInfo(
+      enabled: json['enabled'] is bool ? json['enabled'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'enabled': enabled,
+    };
+  }
+}
+
+class LumaConcept {
+  final String key;
+
+  LumaConcept({
+    required this.key
+  });
+
+  factory LumaConcept.fromJson(Map<String, dynamic> json) {
+    return LumaConcept(
+      key: (() {
+        final value = json['key']?.toString();
         if (value == null) {
-          throw FormatException('MidjourneyImageGenerationRequest.prompt is required');
+          throw FormatException('LumaConcept.key is required');
+        }
+        return value;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'key': key,
+    };
+  }
+}
+
+class LumaGenerationAssets {
+  final String? image;
+  final String? video;
+
+  LumaGenerationAssets({
+    this.image,
+    this.video
+  });
+
+  factory LumaGenerationAssets.fromJson(Map<String, dynamic> json) {
+    return LumaGenerationAssets(
+      image: json['image']?.toString(),
+      video: json['video']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'image': image,
+      'video': video,
+    };
+  }
+}
+
+class LumaKeyframe {
+  final String? id;
+  final String type;
+  final String? url;
+
+  LumaKeyframe({
+    this.id,
+    required this.type,
+    this.url
+  });
+
+  factory LumaKeyframe.fromJson(Map<String, dynamic> json) {
+    return LumaKeyframe(
+      id: json['id']?.toString(),
+      type: (() {
+        final value = json['type']?.toString();
+        if (value == null) {
+          throw FormatException('LumaKeyframe.type is required');
         }
         return value;
       })(),
-      seed: json['seed'] is int ? json['seed'] : null,
-      style: json['style']?.toString()
+      url: json['url']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'id': id,
+      'type': type,
+      'url': url,
+    };
+  }
+}
+
+class LumaKeyframes {
+  final LumaKeyframe? frame0;
+  final LumaKeyframe? frame1;
+
+  LumaKeyframes({
+    this.frame0,
+    this.frame1
+  });
+
+  factory LumaKeyframes.fromJson(Map<String, dynamic> json) {
+    return LumaKeyframes(
+      frame0: (() {
+        final map = _sdkworkAsMap(json['frame0']);
+        return map == null ? null : LumaKeyframe.fromJson(map);
+      })(),
+      frame1: (() {
+        final map = _sdkworkAsMap(json['frame1']);
+        return map == null ? null : LumaKeyframe.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'frame0': frame0?.toJson(),
+      'frame1': frame1?.toJson(),
+    };
+  }
+}
+
+class LumaVideoGenerationRequest {
+  final String? aspectRatio;
+  final String? callbackUrl;
+  final List<LumaConcept>? concepts;
+  final String? duration;
+  final String? generationType;
+  final LumaKeyframes? keyframes;
+  final bool? loop;
+  final String model;
+  final String? prompt;
+  final String? resolution;
+
+  LumaVideoGenerationRequest({
+    this.aspectRatio,
+    this.callbackUrl,
+    this.concepts,
+    this.duration,
+    this.generationType,
+    this.keyframes,
+    this.loop,
+    required this.model,
+    this.prompt,
+    this.resolution
+  });
+
+  factory LumaVideoGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return LumaVideoGenerationRequest(
+      aspectRatio: json['aspect_ratio']?.toString(),
+      callbackUrl: json['callback_url']?.toString(),
+      concepts: (() {
+        final list = _sdkworkAsList(json['concepts']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : LumaConcept.fromJson(map);
+      })())
+            .whereType<LumaConcept>()
+            .toList();
+      })(),
+      duration: json['duration']?.toString(),
+      generationType: json['generation_type']?.toString(),
+      keyframes: (() {
+        final map = _sdkworkAsMap(json['keyframes']);
+        return map == null ? null : LumaKeyframes.fromJson(map);
+      })(),
+      loop: json['loop'] is bool ? json['loop'] : null,
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('LumaVideoGenerationRequest.model is required');
+        }
+        return value;
+      })(),
+      prompt: json['prompt']?.toString(),
+      resolution: json['resolution']?.toString()
     );
   }
 
@@ -3400,81 +7501,78 @@ class MidjourneyImageGenerationRequest {
     return <String, dynamic>{
       'aspect_ratio': aspectRatio,
       'callback_url': callbackUrl,
+      'concepts': concepts?.map((item) => item.toJson()).toList(),
+      'duration': duration,
+      'generation_type': generationType,
+      'keyframes': keyframes?.toJson(),
+      'loop': loop,
       'model': model,
       'prompt': prompt,
-      'seed': seed,
-      'style': style,
+      'resolution': resolution,
     };
   }
 }
 
-class MidjourneyImageGenerationTask {
+class LumaVideoGenerationTask {
+  final LumaGenerationAssets? assets;
   final String? createdAt;
-  final ProviderTaskError? error;
+  final String? failureReason;
+  final String? generationType;
   final String? id;
-  final List<ProviderGeneratedMedia>? images;
   final String? model;
-  final String? prompt;
+  final Map<String, dynamic>? request;
   final String? state;
-  final String? status;
-  final String? taskId;
-  final String? updatedAt;
 
-  MidjourneyImageGenerationTask({
+  LumaVideoGenerationTask({
+    this.assets,
     this.createdAt,
-    this.error,
+    this.failureReason,
+    this.generationType,
     this.id,
-    this.images,
     this.model,
-    this.prompt,
-    this.state,
-    this.status,
-    this.taskId,
-    this.updatedAt
+    this.request,
+    this.state
   });
 
-  factory MidjourneyImageGenerationTask.fromJson(Map<String, dynamic> json) {
-    return MidjourneyImageGenerationTask(
-      createdAt: json['created_at']?.toString(),
-      error: (() {
-        final map = _sdkworkAsMap(json['error']);
-        return map == null ? null : ProviderTaskError.fromJson(map);
+  factory LumaVideoGenerationTask.fromJson(Map<String, dynamic> json) {
+    return LumaVideoGenerationTask(
+      assets: (() {
+        final map = _sdkworkAsMap(json['assets']);
+        return map == null ? null : LumaGenerationAssets.fromJson(map);
       })(),
+      createdAt: json['created_at']?.toString(),
+      failureReason: json['failure_reason']?.toString(),
+      generationType: json['generation_type']?.toString(),
       id: json['id']?.toString(),
-      images: (() {
-        final list = _sdkworkAsList(json['images']);
-        if (list == null) {
+      model: json['model']?.toString(),
+      request: (() {
+        final map = _sdkworkAsMap(json['request']);
+        if (map == null) {
           return null;
         }
-        return list
-            .map((item) => (() {
-        final map = _sdkworkAsMap(item);
-        return map == null ? null : ProviderGeneratedMedia.fromJson(map);
-      })())
-            .whereType<ProviderGeneratedMedia>()
-            .toList();
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
       })(),
-      model: json['model']?.toString(),
-      prompt: json['prompt']?.toString(),
-      state: json['state']?.toString(),
-      status: json['status']?.toString(),
-      taskId: json['task_id']?.toString(),
-      updatedAt: json['updated_at']?.toString()
+      state: json['state']?.toString()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'assets': assets?.toJson(),
       'created_at': createdAt,
-      'error': error?.toJson(),
+      'failure_reason': failureReason,
+      'generation_type': generationType,
       'id': id,
-      'images': images?.map((item) => item.toJson()).toList(),
       'model': model,
-      'prompt': prompt,
+      'request': request?.map((key, item) => MapEntry(key, item)),
       'state': state,
-      'status': status,
-      'task_id': taskId,
-      'updated_at': updatedAt,
     };
   }
 }
@@ -3599,7 +7697,10 @@ class MiniMaxMusicExtraInfo {
 }
 
 class MiniMaxMusicGenerationRequest {
+  final String? audioBase64;
   final MiniMaxMusicAudioSetting? audioSetting;
+  final String? audioUrl;
+  final String? coverFeatureId;
   final bool? isInstrumental;
   final String? lyrics;
   final bool? lyricsOptimizer;
@@ -3609,7 +7710,10 @@ class MiniMaxMusicGenerationRequest {
   final bool? stream;
 
   MiniMaxMusicGenerationRequest({
+    this.audioBase64,
     this.audioSetting,
+    this.audioUrl,
+    this.coverFeatureId,
     this.isInstrumental,
     this.lyrics,
     this.lyricsOptimizer,
@@ -3621,10 +7725,13 @@ class MiniMaxMusicGenerationRequest {
 
   factory MiniMaxMusicGenerationRequest.fromJson(Map<String, dynamic> json) {
     return MiniMaxMusicGenerationRequest(
+      audioBase64: json['audio_base64']?.toString(),
       audioSetting: (() {
         final map = _sdkworkAsMap(json['audio_setting']);
         return map == null ? null : MiniMaxMusicAudioSetting.fromJson(map);
       })(),
+      audioUrl: json['audio_url']?.toString(),
+      coverFeatureId: json['cover_feature_id']?.toString(),
       isInstrumental: json['is_instrumental'] is bool ? json['is_instrumental'] : null,
       lyrics: json['lyrics']?.toString(),
       lyricsOptimizer: json['lyrics_optimizer'] is bool ? json['lyrics_optimizer'] : null,
@@ -3643,7 +7750,10 @@ class MiniMaxMusicGenerationRequest {
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'audio_base64': audioBase64,
       'audio_setting': audioSetting?.toJson(),
+      'audio_url': audioUrl,
+      'cover_feature_id': coverFeatureId,
       'is_instrumental': isInstrumental,
       'lyrics': lyrics,
       'lyrics_optimizer': lyricsOptimizer,
@@ -3689,31 +7799,83 @@ class MiniMaxMusicGenerationResponse {
   }
 }
 
-class NanoBananaImageGenerationRequest {
-  final String? aspectRatio;
-  final String? callbackUrl;
-  final List<String>? images;
-  final String? model;
-  final String prompt;
-  final int? seed;
-  final String? size;
+class MinimaxBaseResp {
+  final int? statusCode;
+  final String? statusMsg;
 
-  NanoBananaImageGenerationRequest({
-    this.aspectRatio,
-    this.callbackUrl,
-    this.images,
-    this.model,
-    required this.prompt,
-    this.seed,
-    this.size
+  MinimaxBaseResp({
+    this.statusCode,
+    this.statusMsg
   });
 
-  factory NanoBananaImageGenerationRequest.fromJson(Map<String, dynamic> json) {
-    return NanoBananaImageGenerationRequest(
-      aspectRatio: json['aspect_ratio']?.toString(),
-      callbackUrl: json['callback_url']?.toString(),
-      images: (() {
-        final list = _sdkworkAsList(json['images']);
+  factory MinimaxBaseResp.fromJson(Map<String, dynamic> json) {
+    return MinimaxBaseResp(
+      statusCode: json['status_code'] is int ? json['status_code'] : null,
+      statusMsg: json['status_msg']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'status_code': statusCode,
+      'status_msg': statusMsg,
+    };
+  }
+}
+
+class MinimaxFileRetrieveResponse {
+  final MinimaxBaseResp? baseResp;
+  final Map<String, dynamic>? file;
+
+  MinimaxFileRetrieveResponse({
+    this.baseResp,
+    this.file
+  });
+
+  factory MinimaxFileRetrieveResponse.fromJson(Map<String, dynamic> json) {
+    return MinimaxFileRetrieveResponse(
+      baseResp: (() {
+        final map = _sdkworkAsMap(json['base_resp']);
+        return map == null ? null : MinimaxBaseResp.fromJson(map);
+      })(),
+      file: (() {
+        final map = _sdkworkAsMap(json['file']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'base_resp': baseResp?.toJson(),
+      'file': file?.map((key, item) => MapEntry(key, item)),
+    };
+  }
+}
+
+class MinimaxImageData {
+  final List<String>? imageBase64;
+  final List<String>? imageUrls;
+
+  MinimaxImageData({
+    this.imageBase64,
+    this.imageUrls
+  });
+
+  factory MinimaxImageData.fromJson(Map<String, dynamic> json) {
+    return MinimaxImageData(
+      imageBase64: (() {
+        final list = _sdkworkAsList(json['image_base64']);
         if (list == null) {
           return null;
         }
@@ -3722,99 +7884,681 @@ class NanoBananaImageGenerationRequest {
             .whereType<String>()
             .toList();
       })(),
-      model: json['model']?.toString(),
-      prompt: (() {
-        final value = json['prompt']?.toString();
-        if (value == null) {
-          throw FormatException('NanoBananaImageGenerationRequest.prompt is required');
+      imageUrls: (() {
+        final list = _sdkworkAsList(json['image_urls']);
+        if (list == null) {
+          return null;
         }
-        return value;
-      })(),
-      seed: json['seed'] is int ? json['seed'] : null,
-      size: json['size']?.toString()
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'aspect_ratio': aspectRatio,
-      'callback_url': callbackUrl,
-      'images': images?.map((item) => item).toList(),
-      'model': model,
-      'prompt': prompt,
-      'seed': seed,
-      'size': size,
+      'image_base64': imageBase64?.map((item) => item).toList(),
+      'image_urls': imageUrls?.map((item) => item).toList(),
     };
   }
 }
 
-class NanoBananaImageGenerationTask {
-  final String? createdAt;
-  final ProviderTaskError? error;
-  final String? id;
-  final List<ProviderGeneratedMedia>? images;
-  final String? model;
-  final String? prompt;
-  final String? state;
-  final String? status;
-  final String? taskId;
-  final String? updatedAt;
+class MinimaxImageGenerationRequest {
+  final String? aspectRatio;
+  final int? height;
+  final String model;
+  final int? n;
+  final String prompt;
+  final bool? promptOptimizer;
+  final String? responseFormat;
+  final int? seed;
+  final List<Map<String, dynamic>>? subjectReference;
+  final int? width;
 
-  NanoBananaImageGenerationTask({
-    this.createdAt,
-    this.error,
-    this.id,
-    this.images,
-    this.model,
-    this.prompt,
-    this.state,
-    this.status,
-    this.taskId,
-    this.updatedAt
+  MinimaxImageGenerationRequest({
+    this.aspectRatio,
+    this.height,
+    required this.model,
+    this.n,
+    required this.prompt,
+    this.promptOptimizer,
+    this.responseFormat,
+    this.seed,
+    this.subjectReference,
+    this.width
   });
 
-  factory NanoBananaImageGenerationTask.fromJson(Map<String, dynamic> json) {
-    return NanoBananaImageGenerationTask(
-      createdAt: json['created_at']?.toString(),
-      error: (() {
-        final map = _sdkworkAsMap(json['error']);
-        return map == null ? null : ProviderTaskError.fromJson(map);
+  factory MinimaxImageGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return MinimaxImageGenerationRequest(
+      aspectRatio: json['aspect_ratio']?.toString(),
+      height: json['height'] is int ? json['height'] : null,
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('MinimaxImageGenerationRequest.model is required');
+        }
+        return value;
       })(),
-      id: json['id']?.toString(),
-      images: (() {
-        final list = _sdkworkAsList(json['images']);
+      n: json['n'] is int ? json['n'] : null,
+      prompt: (() {
+        final value = json['prompt']?.toString();
+        if (value == null) {
+          throw FormatException('MinimaxImageGenerationRequest.prompt is required');
+        }
+        return value;
+      })(),
+      promptOptimizer: json['prompt_optimizer'] is bool ? json['prompt_optimizer'] : null,
+      responseFormat: json['response_format']?.toString(),
+      seed: json['seed'] is int ? json['seed'] : null,
+      subjectReference: (() {
+        final list = _sdkworkAsList(json['subject_reference']);
         if (list == null) {
           return null;
         }
         return list
             .map((item) => (() {
         final map = _sdkworkAsMap(item);
-        return map == null ? null : ProviderGeneratedMedia.fromJson(map);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
       })())
-            .whereType<ProviderGeneratedMedia>()
+            .whereType<Map<String, dynamic>>()
             .toList();
       })(),
-      model: json['model']?.toString(),
-      prompt: json['prompt']?.toString(),
-      state: json['state']?.toString(),
-      status: json['status']?.toString(),
-      taskId: json['task_id']?.toString(),
-      updatedAt: json['updated_at']?.toString()
+      width: json['width'] is int ? json['width'] : null
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'created_at': createdAt,
-      'error': error?.toJson(),
+      'aspect_ratio': aspectRatio,
+      'height': height,
+      'model': model,
+      'n': n,
+      'prompt': prompt,
+      'prompt_optimizer': promptOptimizer,
+      'response_format': responseFormat,
+      'seed': seed,
+      'subject_reference': subjectReference?.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
+      'width': width,
+    };
+  }
+}
+
+class MinimaxImageGenerationResponse {
+  final MinimaxBaseResp? baseResp;
+  final MinimaxImageData? data;
+  final String? id;
+  final Map<String, dynamic>? metadata;
+
+  MinimaxImageGenerationResponse({
+    this.baseResp,
+    this.data,
+    this.id,
+    this.metadata
+  });
+
+  factory MinimaxImageGenerationResponse.fromJson(Map<String, dynamic> json) {
+    return MinimaxImageGenerationResponse(
+      baseResp: (() {
+        final map = _sdkworkAsMap(json['base_resp']);
+        return map == null ? null : MinimaxBaseResp.fromJson(map);
+      })(),
+      data: (() {
+        final map = _sdkworkAsMap(json['data']);
+        return map == null ? null : MinimaxImageData.fromJson(map);
+      })(),
+      id: json['id']?.toString(),
+      metadata: (() {
+        final map = _sdkworkAsMap(json['metadata']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'base_resp': baseResp?.toJson(),
+      'data': data?.toJson(),
       'id': id,
-      'images': images?.map((item) => item.toJson()).toList(),
+      'metadata': metadata?.map((key, item) => MapEntry(key, item)),
+    };
+  }
+}
+
+class MinimaxStreamOptions {
+  final bool? excludeAggregatedAudio;
+
+  MinimaxStreamOptions({
+    this.excludeAggregatedAudio
+  });
+
+  factory MinimaxStreamOptions.fromJson(Map<String, dynamic> json) {
+    return MinimaxStreamOptions(
+      excludeAggregatedAudio: json['exclude_aggregated_audio'] is bool ? json['exclude_aggregated_audio'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'exclude_aggregated_audio': excludeAggregatedAudio,
+    };
+  }
+}
+
+class MinimaxTextToSpeechRequest {
+  final Map<String, dynamic>? audioSetting;
+  final String? languageBoost;
+  final String model;
+  final String? outputFormat;
+  final Map<String, dynamic>? pronunciationDict;
+  final bool? stream;
+  final MinimaxStreamOptions? streamOptions;
+  final bool? subtitleEnable;
+  final String? subtitleType;
+  final String text;
+  final String? textNormalizationMode;
+  final List<MinimaxTimbreWeight>? timbreWeights;
+  final MinimaxVoiceModify? voiceModify;
+  final Map<String, dynamic>? voiceSetting;
+
+  MinimaxTextToSpeechRequest({
+    this.audioSetting,
+    this.languageBoost,
+    required this.model,
+    this.outputFormat,
+    this.pronunciationDict,
+    this.stream,
+    this.streamOptions,
+    this.subtitleEnable,
+    this.subtitleType,
+    required this.text,
+    this.textNormalizationMode,
+    this.timbreWeights,
+    this.voiceModify,
+    this.voiceSetting
+  });
+
+  factory MinimaxTextToSpeechRequest.fromJson(Map<String, dynamic> json) {
+    return MinimaxTextToSpeechRequest(
+      audioSetting: (() {
+        final map = _sdkworkAsMap(json['audio_setting']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      languageBoost: json['language_boost']?.toString(),
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('MinimaxTextToSpeechRequest.model is required');
+        }
+        return value;
+      })(),
+      outputFormat: json['output_format']?.toString(),
+      pronunciationDict: (() {
+        final map = _sdkworkAsMap(json['pronunciation_dict']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      stream: json['stream'] is bool ? json['stream'] : null,
+      streamOptions: (() {
+        final map = _sdkworkAsMap(json['stream_options']);
+        return map == null ? null : MinimaxStreamOptions.fromJson(map);
+      })(),
+      subtitleEnable: json['subtitle_enable'] is bool ? json['subtitle_enable'] : null,
+      subtitleType: json['subtitle_type']?.toString(),
+      text: (() {
+        final value = json['text']?.toString();
+        if (value == null) {
+          throw FormatException('MinimaxTextToSpeechRequest.text is required');
+        }
+        return value;
+      })(),
+      textNormalizationMode: json['text_normalization_mode']?.toString(),
+      timbreWeights: (() {
+        final list = _sdkworkAsList(json['timbre_weights']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : MinimaxTimbreWeight.fromJson(map);
+      })())
+            .whereType<MinimaxTimbreWeight>()
+            .toList();
+      })(),
+      voiceModify: (() {
+        final map = _sdkworkAsMap(json['voice_modify']);
+        return map == null ? null : MinimaxVoiceModify.fromJson(map);
+      })(),
+      voiceSetting: (() {
+        final map = _sdkworkAsMap(json['voice_setting']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'audio_setting': audioSetting?.map((key, item) => MapEntry(key, item)),
+      'language_boost': languageBoost,
+      'model': model,
+      'output_format': outputFormat,
+      'pronunciation_dict': pronunciationDict?.map((key, item) => MapEntry(key, item)),
+      'stream': stream,
+      'stream_options': streamOptions?.toJson(),
+      'subtitle_enable': subtitleEnable,
+      'subtitle_type': subtitleType,
+      'text': text,
+      'text_normalization_mode': textNormalizationMode,
+      'timbre_weights': timbreWeights?.map((item) => item.toJson()).toList(),
+      'voice_modify': voiceModify?.toJson(),
+      'voice_setting': voiceSetting?.map((key, item) => MapEntry(key, item)),
+    };
+  }
+}
+
+class MinimaxTextToSpeechResponse {
+  final MinimaxBaseResp? baseResp;
+  final Map<String, dynamic>? data;
+  final Map<String, dynamic>? extraInfo;
+  final String? traceId;
+
+  MinimaxTextToSpeechResponse({
+    this.baseResp,
+    this.data,
+    this.extraInfo,
+    this.traceId
+  });
+
+  factory MinimaxTextToSpeechResponse.fromJson(Map<String, dynamic> json) {
+    return MinimaxTextToSpeechResponse(
+      baseResp: (() {
+        final map = _sdkworkAsMap(json['base_resp']);
+        return map == null ? null : MinimaxBaseResp.fromJson(map);
+      })(),
+      data: (() {
+        final map = _sdkworkAsMap(json['data']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      extraInfo: (() {
+        final map = _sdkworkAsMap(json['extra_info']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      traceId: json['trace_id']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'base_resp': baseResp?.toJson(),
+      'data': data?.map((key, item) => MapEntry(key, item)),
+      'extra_info': extraInfo?.map((key, item) => MapEntry(key, item)),
+      'trace_id': traceId,
+    };
+  }
+}
+
+class MinimaxTimbreWeight {
+  final String voiceId;
+  final int weight;
+
+  MinimaxTimbreWeight({
+    required this.voiceId,
+    required this.weight
+  });
+
+  factory MinimaxTimbreWeight.fromJson(Map<String, dynamic> json) {
+    return MinimaxTimbreWeight(
+      voiceId: (() {
+        final value = json['voice_id']?.toString();
+        if (value == null) {
+          throw FormatException('MinimaxTimbreWeight.voice_id is required');
+        }
+        return value;
+      })(),
+      weight: (() {
+        final value = json['weight'];
+        if (value is! int) {
+          throw FormatException('MinimaxTimbreWeight.weight is required');
+        }
+        return value;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'voice_id': voiceId,
+      'weight': weight,
+    };
+  }
+}
+
+class MinimaxVideoGenerationRequest {
+  final String? callbackUrl;
+  final int? duration;
+  final bool? fastPretreatment;
+  final String? firstFrameImage;
+  final String? lastFrameImage;
+  final String model;
+  final String prompt;
+  final bool? promptOptimizer;
+  final String? resolution;
+
+  MinimaxVideoGenerationRequest({
+    this.callbackUrl,
+    this.duration,
+    this.fastPretreatment,
+    this.firstFrameImage,
+    this.lastFrameImage,
+    required this.model,
+    required this.prompt,
+    this.promptOptimizer,
+    this.resolution
+  });
+
+  factory MinimaxVideoGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return MinimaxVideoGenerationRequest(
+      callbackUrl: json['callback_url']?.toString(),
+      duration: json['duration'] is int ? json['duration'] : null,
+      fastPretreatment: json['fast_pretreatment'] is bool ? json['fast_pretreatment'] : null,
+      firstFrameImage: json['first_frame_image']?.toString(),
+      lastFrameImage: json['last_frame_image']?.toString(),
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('MinimaxVideoGenerationRequest.model is required');
+        }
+        return value;
+      })(),
+      prompt: (() {
+        final value = json['prompt']?.toString();
+        if (value == null) {
+          throw FormatException('MinimaxVideoGenerationRequest.prompt is required');
+        }
+        return value;
+      })(),
+      promptOptimizer: json['prompt_optimizer'] is bool ? json['prompt_optimizer'] : null,
+      resolution: json['resolution']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'callback_url': callbackUrl,
+      'duration': duration,
+      'fast_pretreatment': fastPretreatment,
+      'first_frame_image': firstFrameImage,
+      'last_frame_image': lastFrameImage,
       'model': model,
       'prompt': prompt,
-      'state': state,
+      'prompt_optimizer': promptOptimizer,
+      'resolution': resolution,
+    };
+  }
+}
+
+class MinimaxVideoGenerationTask {
+  final MinimaxBaseResp? baseResp;
+  final String? fileId;
+  final String? status;
+  final String? taskId;
+  final int? videoHeight;
+  final int? videoWidth;
+
+  MinimaxVideoGenerationTask({
+    this.baseResp,
+    this.fileId,
+    this.status,
+    this.taskId,
+    this.videoHeight,
+    this.videoWidth
+  });
+
+  factory MinimaxVideoGenerationTask.fromJson(Map<String, dynamic> json) {
+    return MinimaxVideoGenerationTask(
+      baseResp: (() {
+        final map = _sdkworkAsMap(json['base_resp']);
+        return map == null ? null : MinimaxBaseResp.fromJson(map);
+      })(),
+      fileId: json['file_id']?.toString(),
+      status: json['status']?.toString(),
+      taskId: json['task_id']?.toString(),
+      videoHeight: json['video_height'] is int ? json['video_height'] : null,
+      videoWidth: json['video_width'] is int ? json['video_width'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'base_resp': baseResp?.toJson(),
+      'file_id': fileId,
       'status': status,
       'task_id': taskId,
-      'updated_at': updatedAt,
+      'video_height': videoHeight,
+      'video_width': videoWidth,
+    };
+  }
+}
+
+class MinimaxVoiceModify {
+  final int? intensity;
+  final int? pitch;
+  final String? soundEffects;
+  final int? timbre;
+
+  MinimaxVoiceModify({
+    this.intensity,
+    this.pitch,
+    this.soundEffects,
+    this.timbre
+  });
+
+  factory MinimaxVoiceModify.fromJson(Map<String, dynamic> json) {
+    return MinimaxVoiceModify(
+      intensity: json['intensity'] is int ? json['intensity'] : null,
+      pitch: json['pitch'] is int ? json['pitch'] : null,
+      soundEffects: json['sound_effects']?.toString(),
+      timbre: json['timbre'] is int ? json['timbre'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'intensity': intensity,
+      'pitch': pitch,
+      'sound_effects': soundEffects,
+      'timbre': timbre,
+    };
+  }
+}
+
+class MurekaMusicGenerationRequest {
+  final String? callbackUrl;
+  final int? duration;
+  final String? lyrics;
+  final String model;
+  final String? prompt;
+  final String? referenceAudioUrl;
+  final List<String>? tags;
+  final String? title;
+
+  MurekaMusicGenerationRequest({
+    this.callbackUrl,
+    this.duration,
+    this.lyrics,
+    required this.model,
+    this.prompt,
+    this.referenceAudioUrl,
+    this.tags,
+    this.title
+  });
+
+  factory MurekaMusicGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return MurekaMusicGenerationRequest(
+      callbackUrl: json['callback_url']?.toString(),
+      duration: json['duration'] is int ? json['duration'] : null,
+      lyrics: json['lyrics']?.toString(),
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('MurekaMusicGenerationRequest.model is required');
+        }
+        return value;
+      })(),
+      prompt: json['prompt']?.toString(),
+      referenceAudioUrl: json['reference_audio_url']?.toString(),
+      tags: (() {
+        final list = _sdkworkAsList(json['tags']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
+      title: json['title']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'callback_url': callbackUrl,
+      'duration': duration,
+      'lyrics': lyrics,
+      'model': model,
+      'prompt': prompt,
+      'reference_audio_url': referenceAudioUrl,
+      'tags': tags?.map((item) => item).toList(),
+      'title': title,
+    };
+  }
+}
+
+class MurekaMusicGenerationTask {
+  final String? audioUrl;
+  final int? duration;
+  final Map<String, dynamic>? error;
+  final String? id;
+  final String? status;
+  final String? taskId;
+  final String? title;
+
+  MurekaMusicGenerationTask({
+    this.audioUrl,
+    this.duration,
+    this.error,
+    this.id,
+    this.status,
+    this.taskId,
+    this.title
+  });
+
+  factory MurekaMusicGenerationTask.fromJson(Map<String, dynamic> json) {
+    return MurekaMusicGenerationTask(
+      audioUrl: json['audio_url']?.toString(),
+      duration: json['duration'] is int ? json['duration'] : null,
+      error: (() {
+        final map = _sdkworkAsMap(json['error']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      id: json['id']?.toString(),
+      status: json['status']?.toString(),
+      taskId: json['task_id']?.toString(),
+      title: json['title']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'audio_url': audioUrl,
+      'duration': duration,
+      'error': error?.map((key, item) => MapEntry(key, item)),
+      'id': id,
+      'status': status,
+      'task_id': taskId,
+      'title': title,
     };
   }
 }
@@ -3993,6 +8737,7 @@ class OpenAiAssistantCreateRequest {
   final Map<String, dynamic>? metadata;
   final String model;
   final String? name;
+  final String? reasoningEffort;
   final dynamic responseFormat;
   final double? temperature;
   final dynamic toolResources;
@@ -4005,6 +8750,7 @@ class OpenAiAssistantCreateRequest {
     this.metadata,
     required this.model,
     this.name,
+    this.reasoningEffort,
     this.responseFormat,
     this.temperature,
     this.toolResources,
@@ -4038,6 +8784,7 @@ class OpenAiAssistantCreateRequest {
         return value;
       })(),
       name: json['name']?.toString(),
+      reasoningEffort: json['reasoning_effort']?.toString(),
       responseFormat: json['response_format']?.toString(),
       temperature: json['temperature'] is num ? json['temperature'].toDouble() : null,
       toolResources: json['tool_resources']?.toString(),
@@ -4062,6 +8809,7 @@ class OpenAiAssistantCreateRequest {
       'metadata': metadata?.map((key, item) => MapEntry(key, item)),
       'model': model,
       'name': name,
+      'reasoning_effort': reasoningEffort,
       'response_format': responseFormat,
       'temperature': temperature,
       'tool_resources': toolResources,
@@ -4131,6 +8879,7 @@ class OpenAiAssistantUpdateRequest {
   final Map<String, dynamic>? metadata;
   final String? model;
   final String? name;
+  final String? reasoningEffort;
   final dynamic responseFormat;
   final double? temperature;
   final dynamic toolResources;
@@ -4143,6 +8892,7 @@ class OpenAiAssistantUpdateRequest {
     this.metadata,
     this.model,
     this.name,
+    this.reasoningEffort,
     this.responseFormat,
     this.temperature,
     this.toolResources,
@@ -4170,6 +8920,7 @@ class OpenAiAssistantUpdateRequest {
       })(),
       model: json['model']?.toString(),
       name: json['name']?.toString(),
+      reasoningEffort: json['reasoning_effort']?.toString(),
       responseFormat: json['response_format']?.toString(),
       temperature: json['temperature'] is num ? json['temperature'].toDouble() : null,
       toolResources: json['tool_resources']?.toString(),
@@ -4194,6 +8945,7 @@ class OpenAiAssistantUpdateRequest {
       'metadata': metadata?.map((key, item) => MapEntry(key, item)),
       'model': model,
       'name': name,
+      'reasoning_effort': reasoningEffort,
       'response_format': responseFormat,
       'temperature': temperature,
       'tool_resources': toolResources,
@@ -4643,12 +9395,14 @@ class OpenAiBatchCreateRequest {
   final String endpoint;
   final String inputFileId;
   final Map<String, dynamic>? metadata;
+  final Map<String, dynamic>? outputExpiresAfter;
 
   OpenAiBatchCreateRequest({
     required this.completionWindow,
     required this.endpoint,
     required this.inputFileId,
-    this.metadata
+    this.metadata,
+    this.outputExpiresAfter
   });
 
   factory OpenAiBatchCreateRequest.fromJson(Map<String, dynamic> json) {
@@ -4687,6 +9441,20 @@ class OpenAiBatchCreateRequest {
           }
         });
         return result;
+      })(),
+      outputExpiresAfter: (() {
+        final map = _sdkworkAsMap(json['output_expires_after']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
       })()
     );
   }
@@ -4697,6 +9465,7 @@ class OpenAiBatchCreateRequest {
       'endpoint': endpoint,
       'input_file_id': inputFileId,
       'metadata': metadata?.map((key, item) => MapEntry(key, item)),
+      'output_expires_after': outputExpiresAfter?.map((key, item) => MapEntry(key, item)),
     };
   }
 }
@@ -5672,6 +10441,7 @@ class OpenAiCompletionCreateRequest {
   final int? seed;
   final dynamic stop;
   final bool? stream;
+  final OpenAiStreamOptions? streamOptions;
   final String? suffix;
   final double? temperature;
   final double? topP;
@@ -5691,6 +10461,7 @@ class OpenAiCompletionCreateRequest {
     this.seed,
     this.stop,
     this.stream,
+    this.streamOptions,
     this.suffix,
     this.temperature,
     this.topP,
@@ -5737,6 +10508,10 @@ class OpenAiCompletionCreateRequest {
       seed: json['seed'] is int ? json['seed'] : null,
       stop: json['stop']?.toString(),
       stream: json['stream'] is bool ? json['stream'] : null,
+      streamOptions: (() {
+        final map = _sdkworkAsMap(json['stream_options']);
+        return map == null ? null : OpenAiStreamOptions.fromJson(map);
+      })(),
       suffix: json['suffix']?.toString(),
       temperature: json['temperature'] is num ? json['temperature'].toDouble() : null,
       topP: json['top_p'] is num ? json['top_p'].toDouble() : null,
@@ -5759,6 +10534,7 @@ class OpenAiCompletionCreateRequest {
       'seed': seed,
       'stop': stop,
       'stream': stream,
+      'stream_options': streamOptions?.toJson(),
       'suffix': suffix,
       'temperature': temperature,
       'top_p': topP,
@@ -5889,33 +10665,26 @@ class OpenAiContainer {
 }
 
 class OpenAiContainerCreateRequest {
+  final Map<String, dynamic>? expiresAfter;
   final List<String>? fileIds;
   final String? memoryLimit;
-  final Map<String, dynamic>? metadata;
   final String? name;
+  final Map<String, dynamic>? networkPolicy;
+  final List<Map<String, dynamic>>? skills;
 
   OpenAiContainerCreateRequest({
+    this.expiresAfter,
     this.fileIds,
     this.memoryLimit,
-    this.metadata,
-    this.name
+    this.name,
+    this.networkPolicy,
+    this.skills
   });
 
   factory OpenAiContainerCreateRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiContainerCreateRequest(
-      fileIds: (() {
-        final list = _sdkworkAsList(json['file_ids']);
-        if (list == null) {
-          return null;
-        }
-        return list
-            .map((item) => item?.toString())
-            .whereType<String>()
-            .toList();
-      })(),
-      memoryLimit: json['memory_limit']?.toString(),
-      metadata: (() {
-        final map = _sdkworkAsMap(json['metadata']);
+      expiresAfter: (() {
+        final map = _sdkworkAsMap(json['expires_after']);
         if (map == null) {
           return null;
         }
@@ -5928,16 +10697,66 @@ class OpenAiContainerCreateRequest {
         });
         return result;
       })(),
-      name: json['name']?.toString()
+      fileIds: (() {
+        final list = _sdkworkAsList(json['file_ids']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
+      memoryLimit: json['memory_limit']?.toString(),
+      name: json['name']?.toString(),
+      networkPolicy: (() {
+        final map = _sdkworkAsMap(json['network_policy']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      skills: (() {
+        final list = _sdkworkAsList(json['skills']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })())
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      })()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'expires_after': expiresAfter?.map((key, item) => MapEntry(key, item)),
       'file_ids': fileIds?.map((item) => item).toList(),
       'memory_limit': memoryLimit,
-      'metadata': metadata?.map((key, item) => MapEntry(key, item)),
       'name': name,
+      'network_policy': networkPolicy?.map((key, item) => MapEntry(key, item)),
+      'skills': skills?.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
     };
   }
 }
@@ -6409,64 +11228,43 @@ class OpenAiConversationItem {
 }
 
 class OpenAiConversationItemCreateRequest {
-  final List<OpenAiConversationContentPart>? content;
-  final Map<String, String>? metadata;
-  final String? role;
-  final String type;
+  final List<Map<String, dynamic>> items;
 
   OpenAiConversationItemCreateRequest({
-    this.content,
-    this.metadata,
-    this.role,
-    required this.type
+    required this.items
   });
 
   factory OpenAiConversationItemCreateRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiConversationItemCreateRequest(
-      content: (() {
-        final list = _sdkworkAsList(json['content']);
+      items: (() {
+        final list = _sdkworkAsList(json['items']);
         if (list == null) {
-          return null;
+          throw FormatException('OpenAiConversationItemCreateRequest.items is required');
         }
         return list
             .map((item) => (() {
         final map = _sdkworkAsMap(item);
-        return map == null ? null : OpenAiConversationContentPart.fromJson(map);
-      })())
-            .whereType<OpenAiConversationContentPart>()
-            .toList();
-      })(),
-      metadata: (() {
-        final map = _sdkworkAsMap(json['metadata']);
         if (map == null) {
           return null;
         }
         final result = <String, String>{};
-        map.forEach((key, item) {
-          final deserialized = item?.toString();
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
           if (deserialized is String) {
             result[key] = deserialized;
           }
         });
         return result;
-      })(),
-      role: json['role']?.toString(),
-      type: (() {
-        final value = json['type']?.toString();
-        if (value == null) {
-          throw FormatException('OpenAiConversationItemCreateRequest.type is required');
-        }
-        return value;
+      })())
+            .whereType<Map<String, dynamic>>()
+            .toList();
       })()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'content': content?.map((item) => item.toJson()).toList(),
-      'metadata': metadata?.map((key, item) => MapEntry(key, item)),
-      'role': role,
-      'type': type,
+      'items': items.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
     };
   }
 }
@@ -6628,6 +11426,285 @@ class OpenAiConversationUpdateRequest {
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'metadata': metadata?.map((key, item) => MapEntry(key, item)),
+    };
+  }
+}
+
+class OpenAiDeepSeekWebFetchRequest {
+  final String url;
+
+  OpenAiDeepSeekWebFetchRequest({
+    required this.url
+  });
+
+  factory OpenAiDeepSeekWebFetchRequest.fromJson(Map<String, dynamic> json) {
+    return OpenAiDeepSeekWebFetchRequest(
+      url: (() {
+        final value = json['url']?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiDeepSeekWebFetchRequest.url is required');
+        }
+        return value;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'url': url,
+    };
+  }
+}
+
+class OpenAiDeepSeekWebFetchResponse {
+  final String content;
+  final String title;
+
+  OpenAiDeepSeekWebFetchResponse({
+    required this.content,
+    required this.title
+  });
+
+  factory OpenAiDeepSeekWebFetchResponse.fromJson(Map<String, dynamic> json) {
+    return OpenAiDeepSeekWebFetchResponse(
+      content: (() {
+        final value = json['content']?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiDeepSeekWebFetchResponse.content is required');
+        }
+        return value;
+      })(),
+      title: (() {
+        final value = json['title']?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiDeepSeekWebFetchResponse.title is required');
+        }
+        return value;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'content': content,
+      'title': title,
+    };
+  }
+}
+
+class OpenAiDeepSeekWebSearchRequest {
+  final int? count;
+  final String? localization;
+  final bool? needContent;
+  final String? oriQuestion;
+  final String query;
+
+  OpenAiDeepSeekWebSearchRequest({
+    this.count,
+    this.localization,
+    this.needContent,
+    this.oriQuestion,
+    required this.query
+  });
+
+  factory OpenAiDeepSeekWebSearchRequest.fromJson(Map<String, dynamic> json) {
+    return OpenAiDeepSeekWebSearchRequest(
+      count: json['count'] is int ? json['count'] : null,
+      localization: json['localization']?.toString(),
+      needContent: json['need_content'] is bool ? json['need_content'] : null,
+      oriQuestion: json['ori_question']?.toString(),
+      query: (() {
+        final value = json['query']?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiDeepSeekWebSearchRequest.query is required');
+        }
+        return value;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'count': count,
+      'localization': localization,
+      'need_content': needContent,
+      'ori_question': oriQuestion,
+      'query': query,
+    };
+  }
+}
+
+class OpenAiDeepSeekWebSearchResponse {
+  final List<OpenAiDeepSeekWebSearchResult> results;
+
+  OpenAiDeepSeekWebSearchResponse({
+    required this.results
+  });
+
+  factory OpenAiDeepSeekWebSearchResponse.fromJson(Map<String, dynamic> json) {
+    return OpenAiDeepSeekWebSearchResponse(
+      results: (() {
+        final list = _sdkworkAsList(json['results']);
+        if (list == null) {
+          throw FormatException('OpenAiDeepSeekWebSearchResponse.results is required');
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : OpenAiDeepSeekWebSearchResult.fromJson(map);
+      })())
+            .whereType<OpenAiDeepSeekWebSearchResult>()
+            .toList();
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'results': results.map((item) => item.toJson()).toList(),
+    };
+  }
+}
+
+class OpenAiDeepSeekWebSearchResult {
+  final int authority;
+  final String content;
+  final String? date;
+  final double rerankScore;
+  final String? siteIcon;
+  final String? siteName;
+  final String snippet;
+  final String summary;
+  final String title;
+  final String url;
+
+  OpenAiDeepSeekWebSearchResult({
+    required this.authority,
+    required this.content,
+    required this.date,
+    required this.rerankScore,
+    required this.siteIcon,
+    required this.siteName,
+    required this.snippet,
+    required this.summary,
+    required this.title,
+    required this.url
+  });
+
+  factory OpenAiDeepSeekWebSearchResult.fromJson(Map<String, dynamic> json) {
+    return OpenAiDeepSeekWebSearchResult(
+      authority: (() {
+        final value = json['authority'];
+        if (value is! int) {
+          throw FormatException('OpenAiDeepSeekWebSearchResult.authority is required');
+        }
+        return value;
+      })(),
+      content: (() {
+        final value = json['content']?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiDeepSeekWebSearchResult.content is required');
+        }
+        return value;
+      })(),
+      date: (() {
+        if (!json.containsKey('date')) {
+          throw FormatException('OpenAiDeepSeekWebSearchResult.date is required');
+        }
+        final _sdkworkRequiredValue = json['date'];
+        if (_sdkworkRequiredValue == null) {
+          return null;
+        }
+        return (() {
+        final value = _sdkworkRequiredValue?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiDeepSeekWebSearchResult.date is required');
+        }
+        return value;
+      })();
+      })(),
+      rerankScore: (() {
+        final value = json['rerank_score'];
+        if (value is! num) {
+          throw FormatException('OpenAiDeepSeekWebSearchResult.rerank_score is required');
+        }
+        return value.toDouble();
+      })(),
+      siteIcon: (() {
+        if (!json.containsKey('site_icon')) {
+          throw FormatException('OpenAiDeepSeekWebSearchResult.site_icon is required');
+        }
+        final _sdkworkRequiredValue = json['site_icon'];
+        if (_sdkworkRequiredValue == null) {
+          return null;
+        }
+        return (() {
+        final value = _sdkworkRequiredValue?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiDeepSeekWebSearchResult.site_icon is required');
+        }
+        return value;
+      })();
+      })(),
+      siteName: (() {
+        if (!json.containsKey('site_name')) {
+          throw FormatException('OpenAiDeepSeekWebSearchResult.site_name is required');
+        }
+        final _sdkworkRequiredValue = json['site_name'];
+        if (_sdkworkRequiredValue == null) {
+          return null;
+        }
+        return (() {
+        final value = _sdkworkRequiredValue?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiDeepSeekWebSearchResult.site_name is required');
+        }
+        return value;
+      })();
+      })(),
+      snippet: (() {
+        final value = json['snippet']?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiDeepSeekWebSearchResult.snippet is required');
+        }
+        return value;
+      })(),
+      summary: (() {
+        final value = json['summary']?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiDeepSeekWebSearchResult.summary is required');
+        }
+        return value;
+      })(),
+      title: (() {
+        final value = json['title']?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiDeepSeekWebSearchResult.title is required');
+        }
+        return value;
+      })(),
+      url: (() {
+        final value = json['url']?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiDeepSeekWebSearchResult.url is required');
+        }
+        return value;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'authority': authority,
+      'content': content,
+      'date': date,
+      'rerank_score': rerankScore,
+      'site_icon': siteIcon,
+      'site_name': siteName,
+      'snippet': snippet,
+      'summary': summary,
+      'title': title,
+      'url': url,
     };
   }
 }
@@ -7249,20 +12326,60 @@ class OpenAiImage {
 }
 
 class OpenAiImageEditMultipartRequest {
+  final String? background;
+  final String? complexity;
+  final int? frameCount;
+  final int? frameDurationMs;
   final String image;
+  final String? inputFidelity;
+  final String? markup;
   final String? mask;
   final String model;
+  final String? moderation;
+  final int? n;
+  final int? outputCompression;
+  final String? outputFormat;
+  final int? partialImages;
   final String prompt;
+  final String? quality;
+  final String? responseFormat;
+  final String? safetyIdentifier;
+  final String? size;
+  final bool? stream;
+  final Map<String, dynamic>? svg;
+  final String? user;
 
   OpenAiImageEditMultipartRequest({
+    this.background,
+    this.complexity,
+    this.frameCount,
+    this.frameDurationMs,
     required this.image,
+    this.inputFidelity,
+    this.markup,
     this.mask,
     required this.model,
-    required this.prompt
+    this.moderation,
+    this.n,
+    this.outputCompression,
+    this.outputFormat,
+    this.partialImages,
+    required this.prompt,
+    this.quality,
+    this.responseFormat,
+    this.safetyIdentifier,
+    this.size,
+    this.stream,
+    this.svg,
+    this.user
   });
 
   factory OpenAiImageEditMultipartRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiImageEditMultipartRequest(
+      background: json['background']?.toString(),
+      complexity: json['complexity']?.toString(),
+      frameCount: json['frame_count'] is int ? json['frame_count'] : null,
+      frameDurationMs: json['frame_duration_ms'] is int ? json['frame_duration_ms'] : null,
       image: (() {
         final value = json['image']?.toString();
         if (value == null) {
@@ -7270,6 +12387,8 @@ class OpenAiImageEditMultipartRequest {
         }
         return value;
       })(),
+      inputFidelity: json['input_fidelity']?.toString(),
+      markup: json['markup']?.toString(),
       mask: json['mask']?.toString(),
       model: (() {
         final value = json['model']?.toString();
@@ -7278,95 +12397,275 @@ class OpenAiImageEditMultipartRequest {
         }
         return value;
       })(),
+      moderation: json['moderation']?.toString(),
+      n: json['n'] is int ? json['n'] : null,
+      outputCompression: json['output_compression'] is int ? json['output_compression'] : null,
+      outputFormat: json['output_format']?.toString(),
+      partialImages: json['partial_images'] is int ? json['partial_images'] : null,
       prompt: (() {
         final value = json['prompt']?.toString();
         if (value == null) {
           throw FormatException('OpenAiImageEditMultipartRequest.prompt is required');
         }
         return value;
-      })()
+      })(),
+      quality: json['quality']?.toString(),
+      responseFormat: json['response_format']?.toString(),
+      safetyIdentifier: json['safety_identifier']?.toString(),
+      size: json['size']?.toString(),
+      stream: json['stream'] is bool ? json['stream'] : null,
+      svg: (() {
+        final map = _sdkworkAsMap(json['svg']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      user: json['user']?.toString()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'background': background,
+      'complexity': complexity,
+      'frame_count': frameCount,
+      'frame_duration_ms': frameDurationMs,
       'image': image,
+      'input_fidelity': inputFidelity,
+      'markup': markup,
       'mask': mask,
       'model': model,
+      'moderation': moderation,
+      'n': n,
+      'output_compression': outputCompression,
+      'output_format': outputFormat,
+      'partial_images': partialImages,
       'prompt': prompt,
+      'quality': quality,
+      'response_format': responseFormat,
+      'safety_identifier': safetyIdentifier,
+      'size': size,
+      'stream': stream,
+      'svg': svg?.map((key, item) => MapEntry(key, item)),
+      'user': user,
     };
   }
 }
 
 class OpenAiImageEditRequest {
-  final OpenAiImageReferenceInputList? image;
-  final OpenAiImageReferenceInput? mask;
-  final String model;
+  final String? background;
+  final String? complexity;
+  final int? frameCount;
+  final int? frameDurationMs;
+  final List<OpenAiImageReferenceInput> images;
+  final String? inputFidelity;
+  final Map<String, dynamic>? markup;
+  final Map<String, dynamic>? mask;
+  final String? model;
+  final String? moderation;
+  final int? n;
+  final int? outputCompression;
+  final String? outputFormat;
+  final int? partialImages;
   final String prompt;
+  final String? quality;
+  final String? safetyIdentifier;
+  final String? size;
+  final bool? stream;
+  final Map<String, dynamic>? svg;
+  final String? user;
 
   OpenAiImageEditRequest({
-    this.image,
+    this.background,
+    this.complexity,
+    this.frameCount,
+    this.frameDurationMs,
+    required this.images,
+    this.inputFidelity,
+    this.markup,
     this.mask,
-    required this.model,
-    required this.prompt
+    this.model,
+    this.moderation,
+    this.n,
+    this.outputCompression,
+    this.outputFormat,
+    this.partialImages,
+    required this.prompt,
+    this.quality,
+    this.safetyIdentifier,
+    this.size,
+    this.stream,
+    this.svg,
+    this.user
   });
 
   factory OpenAiImageEditRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiImageEditRequest(
-      image: (() {
-        final map = _sdkworkAsMap(json['image']);
-        return map == null ? null : OpenAiImageReferenceInputList.fromJson(map);
+      background: json['background']?.toString(),
+      complexity: json['complexity']?.toString(),
+      frameCount: json['frame_count'] is int ? json['frame_count'] : null,
+      frameDurationMs: json['frame_duration_ms'] is int ? json['frame_duration_ms'] : null,
+      images: (() {
+        final list = _sdkworkAsList(json['images']);
+        if (list == null) {
+          throw FormatException('OpenAiImageEditRequest.images is required');
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : OpenAiImageReferenceInput.fromJson(map);
+      })())
+            .whereType<OpenAiImageReferenceInput>()
+            .toList();
+      })(),
+      inputFidelity: json['input_fidelity']?.toString(),
+      markup: (() {
+        final map = _sdkworkAsMap(json['markup']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
       })(),
       mask: (() {
         final map = _sdkworkAsMap(json['mask']);
-        return map == null ? null : OpenAiImageReferenceInput.fromJson(map);
-      })(),
-      model: (() {
-        final value = json['model']?.toString();
-        if (value == null) {
-          throw FormatException('OpenAiImageEditRequest.model is required');
+        if (map == null) {
+          return null;
         }
-        return value;
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
       })(),
+      model: json['model']?.toString(),
+      moderation: json['moderation']?.toString(),
+      n: json['n'] is int ? json['n'] : null,
+      outputCompression: json['output_compression'] is int ? json['output_compression'] : null,
+      outputFormat: json['output_format']?.toString(),
+      partialImages: json['partial_images'] is int ? json['partial_images'] : null,
       prompt: (() {
         final value = json['prompt']?.toString();
         if (value == null) {
           throw FormatException('OpenAiImageEditRequest.prompt is required');
         }
         return value;
-      })()
+      })(),
+      quality: json['quality']?.toString(),
+      safetyIdentifier: json['safety_identifier']?.toString(),
+      size: json['size']?.toString(),
+      stream: json['stream'] is bool ? json['stream'] : null,
+      svg: (() {
+        final map = _sdkworkAsMap(json['svg']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      user: json['user']?.toString()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'image': image?.toJson(),
-      'mask': mask?.toJson(),
+      'background': background,
+      'complexity': complexity,
+      'frame_count': frameCount,
+      'frame_duration_ms': frameDurationMs,
+      'images': images.map((item) => item.toJson()).toList(),
+      'input_fidelity': inputFidelity,
+      'markup': markup?.map((key, item) => MapEntry(key, item)),
+      'mask': mask?.map((key, item) => MapEntry(key, item)),
       'model': model,
+      'moderation': moderation,
+      'n': n,
+      'output_compression': outputCompression,
+      'output_format': outputFormat,
+      'partial_images': partialImages,
       'prompt': prompt,
+      'quality': quality,
+      'safety_identifier': safetyIdentifier,
+      'size': size,
+      'stream': stream,
+      'svg': svg?.map((key, item) => MapEntry(key, item)),
+      'user': user,
     };
   }
 }
 
 class OpenAiImageGenerationRequest {
+  final String? background;
+  final String? complexity;
+  final int? frameCount;
+  final int? frameDurationMs;
   final String model;
+  final String? moderation;
   final int? n;
+  final int? outputCompression;
+  final String? outputFormat;
+  final int? partialImages;
   final String prompt;
   final String? quality;
   final String? responseFormat;
+  final String? safetyIdentifier;
   final String? size;
+  final bool? stream;
+  final String? style;
+  final Map<String, dynamic>? svg;
+  final String? user;
 
   OpenAiImageGenerationRequest({
+    this.background,
+    this.complexity,
+    this.frameCount,
+    this.frameDurationMs,
     required this.model,
+    this.moderation,
     this.n,
+    this.outputCompression,
+    this.outputFormat,
+    this.partialImages,
     required this.prompt,
     this.quality,
     this.responseFormat,
-    this.size
+    this.safetyIdentifier,
+    this.size,
+    this.stream,
+    this.style,
+    this.svg,
+    this.user
   });
 
   factory OpenAiImageGenerationRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiImageGenerationRequest(
+      background: json['background']?.toString(),
+      complexity: json['complexity']?.toString(),
+      frameCount: json['frame_count'] is int ? json['frame_count'] : null,
+      frameDurationMs: json['frame_duration_ms'] is int ? json['frame_duration_ms'] : null,
       model: (() {
         final value = json['model']?.toString();
         if (value == null) {
@@ -7374,7 +12673,11 @@ class OpenAiImageGenerationRequest {
         }
         return value;
       })(),
+      moderation: json['moderation']?.toString(),
       n: json['n'] is int ? json['n'] : null,
+      outputCompression: json['output_compression'] is int ? json['output_compression'] : null,
+      outputFormat: json['output_format']?.toString(),
+      partialImages: json['partial_images'] is int ? json['partial_images'] : null,
       prompt: (() {
         final value = json['prompt']?.toString();
         if (value == null) {
@@ -7384,18 +12687,49 @@ class OpenAiImageGenerationRequest {
       })(),
       quality: json['quality']?.toString(),
       responseFormat: json['response_format']?.toString(),
-      size: json['size']?.toString()
+      safetyIdentifier: json['safety_identifier']?.toString(),
+      size: json['size']?.toString(),
+      stream: json['stream'] is bool ? json['stream'] : null,
+      style: json['style']?.toString(),
+      svg: (() {
+        final map = _sdkworkAsMap(json['svg']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      user: json['user']?.toString()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'background': background,
+      'complexity': complexity,
+      'frame_count': frameCount,
+      'frame_duration_ms': frameDurationMs,
       'model': model,
+      'moderation': moderation,
       'n': n,
+      'output_compression': outputCompression,
+      'output_format': outputFormat,
+      'partial_images': partialImages,
       'prompt': prompt,
       'quality': quality,
       'response_format': responseFormat,
+      'safety_identifier': safetyIdentifier,
       'size': size,
+      'stream': stream,
+      'style': style,
+      'svg': svg?.map((key, item) => MapEntry(key, item)),
+      'user': user,
     };
   }
 }
@@ -7456,20 +12790,6 @@ class OpenAiImageReferenceInput {
 
   factory OpenAiImageReferenceInput.fromJson(Map<String, dynamic> json) {
     return OpenAiImageReferenceInput();
-  }
-
-  Map<String, dynamic> toJson() {
-    return <String, dynamic>{};
-  }
-}
-
-class OpenAiImageReferenceInputList {
-
-
-  OpenAiImageReferenceInputList();
-
-  factory OpenAiImageReferenceInputList.fromJson(Map<String, dynamic> json) {
-    return OpenAiImageReferenceInputList();
   }
 
   Map<String, dynamic> toJson() {
@@ -8226,16 +13546,42 @@ class OpenAiRealtimeCall {
 }
 
 class OpenAiRealtimeCallActionRequest {
-  final Map<String, dynamic>? metadata;
+  final Map<String, dynamic>? audio;
+  final List<String>? include;
+  final String? instructions;
+  final int? maxOutputTokens;
+  final String? model;
+  final List<String>? outputModalities;
+  final bool? parallelToolCalls;
+  final Map<String, dynamic>? prompt;
+  final Map<String, dynamic>? reasoning;
+  final String? toolChoice;
+  final List<Map<String, dynamic>>? tools;
+  final Map<String, dynamic>? tracing;
+  final Map<String, dynamic>? truncation;
+  final String type;
 
   OpenAiRealtimeCallActionRequest({
-    this.metadata
+    this.audio,
+    this.include,
+    this.instructions,
+    this.maxOutputTokens,
+    this.model,
+    this.outputModalities,
+    this.parallelToolCalls,
+    this.prompt,
+    this.reasoning,
+    this.toolChoice,
+    this.tools,
+    this.tracing,
+    this.truncation,
+    required this.type
   });
 
   factory OpenAiRealtimeCallActionRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiRealtimeCallActionRequest(
-      metadata: (() {
-        final map = _sdkworkAsMap(json['metadata']);
+      audio: (() {
+        final map = _sdkworkAsMap(json['audio']);
         if (map == null) {
           return null;
         }
@@ -8247,13 +13593,137 @@ class OpenAiRealtimeCallActionRequest {
           }
         });
         return result;
+      })(),
+      include: (() {
+        final list = _sdkworkAsList(json['include']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
+      instructions: json['instructions']?.toString(),
+      maxOutputTokens: json['max_output_tokens'] is int ? json['max_output_tokens'] : null,
+      model: json['model']?.toString(),
+      outputModalities: (() {
+        final list = _sdkworkAsList(json['output_modalities']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
+      parallelToolCalls: json['parallel_tool_calls'] is bool ? json['parallel_tool_calls'] : null,
+      prompt: (() {
+        final map = _sdkworkAsMap(json['prompt']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      reasoning: (() {
+        final map = _sdkworkAsMap(json['reasoning']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      toolChoice: json['tool_choice']?.toString(),
+      tools: (() {
+        final list = _sdkworkAsList(json['tools']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })())
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      })(),
+      tracing: (() {
+        final map = _sdkworkAsMap(json['tracing']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      truncation: (() {
+        final map = _sdkworkAsMap(json['truncation']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      type: (() {
+        final value = json['type']?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiRealtimeCallActionRequest.type is required');
+        }
+        return value;
       })()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'metadata': metadata?.map((key, item) => MapEntry(key, item)),
+      'audio': audio?.map((key, item) => MapEntry(key, item)),
+      'include': include?.map((item) => item).toList(),
+      'instructions': instructions,
+      'max_output_tokens': maxOutputTokens,
+      'model': model,
+      'output_modalities': outputModalities?.map((item) => item).toList(),
+      'parallel_tool_calls': parallelToolCalls,
+      'prompt': prompt?.map((key, item) => MapEntry(key, item)),
+      'reasoning': reasoning?.map((key, item) => MapEntry(key, item)),
+      'tool_choice': toolChoice,
+      'tools': tools?.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
+      'tracing': tracing?.map((key, item) => MapEntry(key, item)),
+      'truncation': truncation?.map((key, item) => MapEntry(key, item)),
+      'type': type,
     };
   }
 }
@@ -8330,38 +13800,47 @@ class OpenAiRealtimeCallMultipartRequest {
 }
 
 class OpenAiRealtimeCallReferRequest {
-  final Map<String, dynamic>? metadata;
-  final String? target;
+  final String targetUri;
 
   OpenAiRealtimeCallReferRequest({
-    this.metadata,
-    this.target
+    required this.targetUri
   });
 
   factory OpenAiRealtimeCallReferRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiRealtimeCallReferRequest(
-      metadata: (() {
-        final map = _sdkworkAsMap(json['metadata']);
-        if (map == null) {
-          return null;
+      targetUri: (() {
+        final value = json['target_uri']?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiRealtimeCallReferRequest.target_uri is required');
         }
-        final result = <String, String>{};
-        map.forEach((key, item) {
-          final deserialized = item?.toString();
-          if (deserialized is String) {
-            result[key] = deserialized;
-          }
-        });
-        return result;
-      })(),
-      target: json['target']?.toString()
+        return value;
+      })()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'metadata': metadata?.map((key, item) => MapEntry(key, item)),
-      'target': target,
+      'target_uri': targetUri,
+    };
+  }
+}
+
+class OpenAiRealtimeCallRejectRequest {
+  final int? statusCode;
+
+  OpenAiRealtimeCallRejectRequest({
+    this.statusCode
+  });
+
+  factory OpenAiRealtimeCallRejectRequest.fromJson(Map<String, dynamic> json) {
+    return OpenAiRealtimeCallRejectRequest(
+      statusCode: json['status_code'] is int ? json['status_code'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'status_code': statusCode,
     };
   }
 }
@@ -8397,25 +13876,18 @@ class OpenAiRealtimeClientSecret {
 }
 
 class OpenAiRealtimeClientSecretCreateRequest {
-  final String? instructions;
-  final Map<String, dynamic>? metadata;
-  final List<String>? modalities;
-  final String? model;
-  final String? voice;
+  final Map<String, dynamic>? expiresAfter;
+  final Map<String, dynamic>? session;
 
   OpenAiRealtimeClientSecretCreateRequest({
-    this.instructions,
-    this.metadata,
-    this.modalities,
-    this.model,
-    this.voice
+    this.expiresAfter,
+    this.session
   });
 
   factory OpenAiRealtimeClientSecretCreateRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiRealtimeClientSecretCreateRequest(
-      instructions: json['instructions']?.toString(),
-      metadata: (() {
-        final map = _sdkworkAsMap(json['metadata']);
+      expiresAfter: (() {
+        final map = _sdkworkAsMap(json['expires_after']);
         if (map == null) {
           return null;
         }
@@ -8428,28 +13900,27 @@ class OpenAiRealtimeClientSecretCreateRequest {
         });
         return result;
       })(),
-      modalities: (() {
-        final list = _sdkworkAsList(json['modalities']);
-        if (list == null) {
+      session: (() {
+        final map = _sdkworkAsMap(json['session']);
+        if (map == null) {
           return null;
         }
-        return list
-            .map((item) => item?.toString())
-            .whereType<String>()
-            .toList();
-      })(),
-      model: json['model']?.toString(),
-      voice: json['voice']?.toString()
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'instructions': instructions,
-      'metadata': metadata?.map((key, item) => MapEntry(key, item)),
-      'modalities': modalities?.map((item) => item).toList(),
-      'model': model,
-      'voice': voice,
+      'expires_after': expiresAfter?.map((key, item) => MapEntry(key, item)),
+      'session': session?.map((key, item) => MapEntry(key, item)),
     };
   }
 }
@@ -8553,25 +14024,61 @@ class OpenAiRealtimeSession {
 }
 
 class OpenAiRealtimeSessionCreateRequest {
+  final Map<String, dynamic> clientSecret;
+  final String? inputAudioFormat;
+  final Map<String, dynamic>? inputAudioTranscription;
   final String? instructions;
-  final Map<String, dynamic>? metadata;
+  final int? maxResponseOutputTokens;
   final List<String>? modalities;
-  final String? model;
+  final String? outputAudioFormat;
+  final Map<String, dynamic>? prompt;
+  final double? speed;
+  final double? temperature;
+  final String? toolChoice;
+  final List<Map<String, dynamic>>? tools;
+  final Map<String, dynamic>? tracing;
+  final Map<String, dynamic>? truncation;
+  final Map<String, dynamic>? turnDetection;
   final String? voice;
 
   OpenAiRealtimeSessionCreateRequest({
+    required this.clientSecret,
+    this.inputAudioFormat,
+    this.inputAudioTranscription,
     this.instructions,
-    this.metadata,
+    this.maxResponseOutputTokens,
     this.modalities,
-    this.model,
+    this.outputAudioFormat,
+    this.prompt,
+    this.speed,
+    this.temperature,
+    this.toolChoice,
+    this.tools,
+    this.tracing,
+    this.truncation,
+    this.turnDetection,
     this.voice
   });
 
   factory OpenAiRealtimeSessionCreateRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiRealtimeSessionCreateRequest(
-      instructions: json['instructions']?.toString(),
-      metadata: (() {
-        final map = _sdkworkAsMap(json['metadata']);
+      clientSecret: (() {
+        final map = _sdkworkAsMap(json['client_secret']);
+        if (map == null) {
+          throw FormatException('OpenAiRealtimeSessionCreateRequest.client_secret is required');
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      inputAudioFormat: json['input_audio_format']?.toString(),
+      inputAudioTranscription: (() {
+        final map = _sdkworkAsMap(json['input_audio_transcription']);
         if (map == null) {
           return null;
         }
@@ -8584,6 +14091,8 @@ class OpenAiRealtimeSessionCreateRequest {
         });
         return result;
       })(),
+      instructions: json['instructions']?.toString(),
+      maxResponseOutputTokens: json['max_response_output_tokens'] is int ? json['max_response_output_tokens'] : null,
       modalities: (() {
         final list = _sdkworkAsList(json['modalities']);
         if (list == null) {
@@ -8594,17 +14103,110 @@ class OpenAiRealtimeSessionCreateRequest {
             .whereType<String>()
             .toList();
       })(),
-      model: json['model']?.toString(),
+      outputAudioFormat: json['output_audio_format']?.toString(),
+      prompt: (() {
+        final map = _sdkworkAsMap(json['prompt']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      speed: json['speed'] is num ? json['speed'].toDouble() : null,
+      temperature: json['temperature'] is num ? json['temperature'].toDouble() : null,
+      toolChoice: json['tool_choice']?.toString(),
+      tools: (() {
+        final list = _sdkworkAsList(json['tools']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })())
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      })(),
+      tracing: (() {
+        final map = _sdkworkAsMap(json['tracing']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      truncation: (() {
+        final map = _sdkworkAsMap(json['truncation']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      turnDetection: (() {
+        final map = _sdkworkAsMap(json['turn_detection']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
       voice: json['voice']?.toString()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'client_secret': clientSecret.map((key, item) => MapEntry(key, item)),
+      'input_audio_format': inputAudioFormat,
+      'input_audio_transcription': inputAudioTranscription?.map((key, item) => MapEntry(key, item)),
       'instructions': instructions,
-      'metadata': metadata?.map((key, item) => MapEntry(key, item)),
+      'max_response_output_tokens': maxResponseOutputTokens,
       'modalities': modalities?.map((item) => item).toList(),
-      'model': model,
+      'output_audio_format': outputAudioFormat,
+      'prompt': prompt?.map((key, item) => MapEntry(key, item)),
+      'speed': speed,
+      'temperature': temperature,
+      'tool_choice': toolChoice,
+      'tools': tools?.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
+      'tracing': tracing?.map((key, item) => MapEntry(key, item)),
+      'truncation': truncation?.map((key, item) => MapEntry(key, item)),
+      'turn_detection': turnDetection?.map((key, item) => MapEntry(key, item)),
       'voice': voice,
     };
   }
@@ -8662,26 +14264,35 @@ class OpenAiRealtimeTranscriptionSession {
 }
 
 class OpenAiRealtimeTranscriptionSessionCreateRequest {
+  final List<String>? include;
   final String? inputAudioFormat;
-  final dynamic inputAudioTranscription;
-  final Map<String, dynamic>? metadata;
-  final String? model;
-  final dynamic turnDetection;
+  final Map<String, dynamic>? inputAudioNoiseReduction;
+  final Map<String, dynamic>? inputAudioTranscription;
+  final Map<String, dynamic>? turnDetection;
 
   OpenAiRealtimeTranscriptionSessionCreateRequest({
+    this.include,
     this.inputAudioFormat,
+    this.inputAudioNoiseReduction,
     this.inputAudioTranscription,
-    this.metadata,
-    this.model,
     this.turnDetection
   });
 
   factory OpenAiRealtimeTranscriptionSessionCreateRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiRealtimeTranscriptionSessionCreateRequest(
+      include: (() {
+        final list = _sdkworkAsList(json['include']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
       inputAudioFormat: json['input_audio_format']?.toString(),
-      inputAudioTranscription: json['input_audio_transcription']?.toString(),
-      metadata: (() {
-        final map = _sdkworkAsMap(json['metadata']);
+      inputAudioNoiseReduction: (() {
+        final map = _sdkworkAsMap(json['input_audio_noise_reduction']);
         if (map == null) {
           return null;
         }
@@ -8694,18 +14305,44 @@ class OpenAiRealtimeTranscriptionSessionCreateRequest {
         });
         return result;
       })(),
-      model: json['model']?.toString(),
-      turnDetection: json['turn_detection']?.toString()
+      inputAudioTranscription: (() {
+        final map = _sdkworkAsMap(json['input_audio_transcription']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      turnDetection: (() {
+        final map = _sdkworkAsMap(json['turn_detection']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'include': include?.map((item) => item).toList(),
       'input_audio_format': inputAudioFormat,
-      'input_audio_transcription': inputAudioTranscription,
-      'metadata': metadata?.map((key, item) => MapEntry(key, item)),
-      'model': model,
-      'turn_detection': turnDetection,
+      'input_audio_noise_reduction': inputAudioNoiseReduction?.map((key, item) => MapEntry(key, item)),
+      'input_audio_transcription': inputAudioTranscription?.map((key, item) => MapEntry(key, item)),
+      'turn_detection': turnDetection?.map((key, item) => MapEntry(key, item)),
     };
   }
 }
@@ -8926,23 +14563,32 @@ class OpenAiResponse {
 }
 
 class OpenAiResponseCompactRequest {
+  final Map<String, dynamic>? image;
   final dynamic input;
-  final Map<String, dynamic>? metadata;
-  final String? model;
+  final String? instructions;
+  final String model;
   final String? previousResponseId;
+  final String? promptCacheKey;
+  final Map<String, dynamic>? promptCacheOptions;
+  final String? promptCacheRetention;
+  final String? serviceTier;
 
   OpenAiResponseCompactRequest({
+    this.image,
     this.input,
-    this.metadata,
-    this.model,
-    this.previousResponseId
+    this.instructions,
+    required this.model,
+    this.previousResponseId,
+    this.promptCacheKey,
+    this.promptCacheOptions,
+    this.promptCacheRetention,
+    this.serviceTier
   });
 
   factory OpenAiResponseCompactRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiResponseCompactRequest(
-      input: json['input']?.toString(),
-      metadata: (() {
-        final map = _sdkworkAsMap(json['metadata']);
+      image: (() {
+        final map = _sdkworkAsMap(json['image']);
         if (map == null) {
           return null;
         }
@@ -8955,17 +14601,47 @@ class OpenAiResponseCompactRequest {
         });
         return result;
       })(),
-      model: json['model']?.toString(),
-      previousResponseId: json['previous_response_id']?.toString()
+      input: json['input']?.toString(),
+      instructions: json['instructions']?.toString(),
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiResponseCompactRequest.model is required');
+        }
+        return value;
+      })(),
+      previousResponseId: json['previous_response_id']?.toString(),
+      promptCacheKey: json['prompt_cache_key']?.toString(),
+      promptCacheOptions: (() {
+        final map = _sdkworkAsMap(json['prompt_cache_options']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      promptCacheRetention: json['prompt_cache_retention']?.toString(),
+      serviceTier: json['service_tier']?.toString()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'image': image?.map((key, item) => MapEntry(key, item)),
       'input': input,
-      'metadata': metadata?.map((key, item) => MapEntry(key, item)),
+      'instructions': instructions,
       'model': model,
       'previous_response_id': previousResponseId,
+      'prompt_cache_key': promptCacheKey,
+      'prompt_cache_options': promptCacheOptions?.map((key, item) => MapEntry(key, item)),
+      'prompt_cache_retention': promptCacheRetention,
+      'service_tier': serviceTier,
     };
   }
 }
@@ -9217,35 +14893,46 @@ class OpenAiResponseInputTokenCount {
 }
 
 class OpenAiResponseInputTokenCountRequest {
+  final dynamic conversation;
   final dynamic input;
   final String? instructions;
-  final String model;
+  final String? model;
+  final bool? parallelToolCalls;
+  final dynamic personality;
+  final String? previousResponseId;
+  final dynamic reasoning;
+  final dynamic text;
+  final dynamic toolChoice;
   final List<dynamic>? tools;
+  final String? truncation;
 
   OpenAiResponseInputTokenCountRequest({
-    required this.input,
+    this.conversation,
+    this.input,
     this.instructions,
-    required this.model,
-    this.tools
+    this.model,
+    this.parallelToolCalls,
+    this.personality,
+    this.previousResponseId,
+    this.reasoning,
+    this.text,
+    this.toolChoice,
+    this.tools,
+    this.truncation
   });
 
   factory OpenAiResponseInputTokenCountRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiResponseInputTokenCountRequest(
-      input: (() {
-        final value = json['input']?.toString();
-        if (value == null) {
-          throw FormatException('OpenAiResponseInputTokenCountRequest.input is required');
-        }
-        return value;
-      })(),
+      conversation: json['conversation']?.toString(),
+      input: json['input']?.toString(),
       instructions: json['instructions']?.toString(),
-      model: (() {
-        final value = json['model']?.toString();
-        if (value == null) {
-          throw FormatException('OpenAiResponseInputTokenCountRequest.model is required');
-        }
-        return value;
-      })(),
+      model: json['model']?.toString(),
+      parallelToolCalls: json['parallel_tool_calls'] is bool ? json['parallel_tool_calls'] : null,
+      personality: json['personality']?.toString(),
+      previousResponseId: json['previous_response_id']?.toString(),
+      reasoning: json['reasoning']?.toString(),
+      text: json['text']?.toString(),
+      toolChoice: json['tool_choice']?.toString(),
       tools: (() {
         final list = _sdkworkAsList(json['tools']);
         if (list == null) {
@@ -9255,16 +14942,25 @@ class OpenAiResponseInputTokenCountRequest {
             .map((item) => item?.toString())
             .whereType<dynamic>()
             .toList();
-      })()
+      })(),
+      truncation: json['truncation']?.toString()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'conversation': conversation,
       'input': input,
       'instructions': instructions,
       'model': model,
+      'parallel_tool_calls': parallelToolCalls,
+      'personality': personality,
+      'previous_response_id': previousResponseId,
+      'reasoning': reasoning,
+      'text': text,
+      'tool_choice': toolChoice,
       'tools': tools?.map((item) => item).toList(),
+      'truncation': truncation,
     };
   }
 }
@@ -9798,26 +15494,59 @@ class OpenAiRun {
 
 class OpenAiRunCreateRequest {
   final String? additionalInstructions;
+  final List<OpenAiThreadMessageCreateRequest>? additionalMessages;
   final String assistantId;
   final String? instructions;
+  final int? maxCompletionTokens;
+  final int? maxPromptTokens;
   final Map<String, dynamic>? metadata;
   final String? model;
+  final bool? parallelToolCalls;
+  final String? reasoningEffort;
+  final dynamic responseFormat;
   final bool? stream;
+  final double? temperature;
+  final dynamic toolChoice;
   final List<dynamic>? tools;
+  final double? topP;
+  final dynamic truncationStrategy;
 
   OpenAiRunCreateRequest({
     this.additionalInstructions,
+    this.additionalMessages,
     required this.assistantId,
     this.instructions,
+    this.maxCompletionTokens,
+    this.maxPromptTokens,
     this.metadata,
     this.model,
+    this.parallelToolCalls,
+    this.reasoningEffort,
+    this.responseFormat,
     this.stream,
-    this.tools
+    this.temperature,
+    this.toolChoice,
+    this.tools,
+    this.topP,
+    this.truncationStrategy
   });
 
   factory OpenAiRunCreateRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiRunCreateRequest(
       additionalInstructions: json['additional_instructions']?.toString(),
+      additionalMessages: (() {
+        final list = _sdkworkAsList(json['additional_messages']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : OpenAiThreadMessageCreateRequest.fromJson(map);
+      })())
+            .whereType<OpenAiThreadMessageCreateRequest>()
+            .toList();
+      })(),
       assistantId: (() {
         final value = json['assistant_id']?.toString();
         if (value == null) {
@@ -9826,6 +15555,8 @@ class OpenAiRunCreateRequest {
         return value;
       })(),
       instructions: json['instructions']?.toString(),
+      maxCompletionTokens: json['max_completion_tokens'] is int ? json['max_completion_tokens'] : null,
+      maxPromptTokens: json['max_prompt_tokens'] is int ? json['max_prompt_tokens'] : null,
       metadata: (() {
         final map = _sdkworkAsMap(json['metadata']);
         if (map == null) {
@@ -9841,7 +15572,12 @@ class OpenAiRunCreateRequest {
         return result;
       })(),
       model: json['model']?.toString(),
+      parallelToolCalls: json['parallel_tool_calls'] is bool ? json['parallel_tool_calls'] : null,
+      reasoningEffort: json['reasoning_effort']?.toString(),
+      responseFormat: json['response_format']?.toString(),
       stream: json['stream'] is bool ? json['stream'] : null,
+      temperature: json['temperature'] is num ? json['temperature'].toDouble() : null,
+      toolChoice: json['tool_choice']?.toString(),
       tools: (() {
         final list = _sdkworkAsList(json['tools']);
         if (list == null) {
@@ -9851,19 +15587,31 @@ class OpenAiRunCreateRequest {
             .map((item) => item?.toString())
             .whereType<dynamic>()
             .toList();
-      })()
+      })(),
+      topP: json['top_p'] is num ? json['top_p'].toDouble() : null,
+      truncationStrategy: json['truncation_strategy']?.toString()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'additional_instructions': additionalInstructions,
+      'additional_messages': additionalMessages?.map((item) => item.toJson()).toList(),
       'assistant_id': assistantId,
       'instructions': instructions,
+      'max_completion_tokens': maxCompletionTokens,
+      'max_prompt_tokens': maxPromptTokens,
       'metadata': metadata?.map((key, item) => MapEntry(key, item)),
       'model': model,
+      'parallel_tool_calls': parallelToolCalls,
+      'reasoning_effort': reasoningEffort,
+      'response_format': responseFormat,
       'stream': stream,
+      'temperature': temperature,
+      'tool_choice': toolChoice,
       'tools': tools?.map((item) => item).toList(),
+      'top_p': topP,
+      'truncation_strategy': truncationStrategy,
     };
   }
 }
@@ -10187,19 +15935,21 @@ class OpenAiRunUpdateRequest {
 }
 
 class OpenAiSpeechCreateRequest {
-  final dynamic input;
-  final Map<String, dynamic>? metadata;
+  final String input;
+  final String? instructions;
   final String model;
   final String? responseFormat;
   final double? speed;
+  final String? streamFormat;
   final String voice;
 
   OpenAiSpeechCreateRequest({
     required this.input,
-    this.metadata,
+    this.instructions,
     required this.model,
     this.responseFormat,
     this.speed,
+    this.streamFormat,
     required this.voice
   });
 
@@ -10212,20 +15962,7 @@ class OpenAiSpeechCreateRequest {
         }
         return value;
       })(),
-      metadata: (() {
-        final map = _sdkworkAsMap(json['metadata']);
-        if (map == null) {
-          return null;
-        }
-        final result = <String, String>{};
-        map.forEach((key, item) {
-          final deserialized = item?.toString();
-          if (deserialized is String) {
-            result[key] = deserialized;
-          }
-        });
-        return result;
-      })(),
+      instructions: json['instructions']?.toString(),
       model: (() {
         final value = json['model']?.toString();
         if (value == null) {
@@ -10235,6 +15972,7 @@ class OpenAiSpeechCreateRequest {
       })(),
       responseFormat: json['response_format']?.toString(),
       speed: json['speed'] is num ? json['speed'].toDouble() : null,
+      streamFormat: json['stream_format']?.toString(),
       voice: (() {
         final value = json['voice']?.toString();
         if (value == null) {
@@ -10248,10 +15986,11 @@ class OpenAiSpeechCreateRequest {
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'input': input,
-      'metadata': metadata?.map((key, item) => MapEntry(key, item)),
+      'instructions': instructions,
       'model': model,
       'response_format': responseFormat,
       'speed': speed,
+      'stream_format': streamFormat,
       'voice': voice,
     };
   }
@@ -10370,20 +16109,38 @@ class OpenAiThread {
 class OpenAiThreadAndRunCreateRequest {
   final String assistantId;
   final String? instructions;
+  final int? maxCompletionTokens;
+  final int? maxPromptTokens;
   final Map<String, dynamic>? metadata;
   final String? model;
+  final bool? parallelToolCalls;
+  final dynamic responseFormat;
   final bool? stream;
+  final double? temperature;
   final OpenAiThreadCreateRequest? thread;
+  final dynamic toolChoice;
+  final dynamic toolResources;
   final List<dynamic>? tools;
+  final double? topP;
+  final dynamic truncationStrategy;
 
   OpenAiThreadAndRunCreateRequest({
     required this.assistantId,
     this.instructions,
+    this.maxCompletionTokens,
+    this.maxPromptTokens,
     this.metadata,
     this.model,
+    this.parallelToolCalls,
+    this.responseFormat,
     this.stream,
+    this.temperature,
     this.thread,
-    this.tools
+    this.toolChoice,
+    this.toolResources,
+    this.tools,
+    this.topP,
+    this.truncationStrategy
   });
 
   factory OpenAiThreadAndRunCreateRequest.fromJson(Map<String, dynamic> json) {
@@ -10396,6 +16153,8 @@ class OpenAiThreadAndRunCreateRequest {
         return value;
       })(),
       instructions: json['instructions']?.toString(),
+      maxCompletionTokens: json['max_completion_tokens'] is int ? json['max_completion_tokens'] : null,
+      maxPromptTokens: json['max_prompt_tokens'] is int ? json['max_prompt_tokens'] : null,
       metadata: (() {
         final map = _sdkworkAsMap(json['metadata']);
         if (map == null) {
@@ -10411,11 +16170,16 @@ class OpenAiThreadAndRunCreateRequest {
         return result;
       })(),
       model: json['model']?.toString(),
+      parallelToolCalls: json['parallel_tool_calls'] is bool ? json['parallel_tool_calls'] : null,
+      responseFormat: json['response_format']?.toString(),
       stream: json['stream'] is bool ? json['stream'] : null,
+      temperature: json['temperature'] is num ? json['temperature'].toDouble() : null,
       thread: (() {
         final map = _sdkworkAsMap(json['thread']);
         return map == null ? null : OpenAiThreadCreateRequest.fromJson(map);
       })(),
+      toolChoice: json['tool_choice']?.toString(),
+      toolResources: json['tool_resources']?.toString(),
       tools: (() {
         final list = _sdkworkAsList(json['tools']);
         if (list == null) {
@@ -10425,7 +16189,9 @@ class OpenAiThreadAndRunCreateRequest {
             .map((item) => item?.toString())
             .whereType<dynamic>()
             .toList();
-      })()
+      })(),
+      topP: json['top_p'] is num ? json['top_p'].toDouble() : null,
+      truncationStrategy: json['truncation_strategy']?.toString()
     );
   }
 
@@ -10433,11 +16199,20 @@ class OpenAiThreadAndRunCreateRequest {
     return <String, dynamic>{
       'assistant_id': assistantId,
       'instructions': instructions,
+      'max_completion_tokens': maxCompletionTokens,
+      'max_prompt_tokens': maxPromptTokens,
       'metadata': metadata?.map((key, item) => MapEntry(key, item)),
       'model': model,
+      'parallel_tool_calls': parallelToolCalls,
+      'response_format': responseFormat,
       'stream': stream,
+      'temperature': temperature,
       'thread': thread?.toJson(),
+      'tool_choice': toolChoice,
+      'tool_resources': toolResources,
       'tools': tools?.map((item) => item).toList(),
+      'top_p': topP,
+      'truncation_strategy': truncationStrategy,
     };
   }
 }
@@ -11223,12 +16998,14 @@ class OpenAiUploadCompleteRequest {
 
 class OpenAiUploadCreateRequest {
   final int bytes;
+  final Map<String, dynamic>? expiresAfter;
   final String filename;
   final String mimeType;
   final String purpose;
 
   OpenAiUploadCreateRequest({
     required this.bytes,
+    this.expiresAfter,
     required this.filename,
     required this.mimeType,
     required this.purpose
@@ -11242,6 +17019,20 @@ class OpenAiUploadCreateRequest {
           throw FormatException('OpenAiUploadCreateRequest.bytes is required');
         }
         return value;
+      })(),
+      expiresAfter: (() {
+        final map = _sdkworkAsMap(json['expires_after']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
       })(),
       filename: (() {
         final value = json['filename']?.toString();
@@ -11270,6 +17061,7 @@ class OpenAiUploadCreateRequest {
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'bytes': bytes,
+      'expires_after': expiresAfter?.map((key, item) => MapEntry(key, item)),
       'filename': filename,
       'mime_type': mimeType,
       'purpose': purpose,
@@ -11465,6 +17257,7 @@ class OpenAiVectorStore {
 
 class OpenAiVectorStoreCreateRequest {
   final dynamic chunkingStrategy;
+  final String? description;
   final dynamic expiresAfter;
   final List<String>? fileIds;
   final Map<String, dynamic>? metadata;
@@ -11472,6 +17265,7 @@ class OpenAiVectorStoreCreateRequest {
 
   OpenAiVectorStoreCreateRequest({
     this.chunkingStrategy,
+    this.description,
     this.expiresAfter,
     this.fileIds,
     this.metadata,
@@ -11481,6 +17275,7 @@ class OpenAiVectorStoreCreateRequest {
   factory OpenAiVectorStoreCreateRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiVectorStoreCreateRequest(
       chunkingStrategy: json['chunking_strategy']?.toString(),
+      description: json['description']?.toString(),
       expiresAfter: json['expires_after']?.toString(),
       fileIds: (() {
         final list = _sdkworkAsList(json['file_ids']);
@@ -11513,6 +17308,7 @@ class OpenAiVectorStoreCreateRequest {
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'chunking_strategy': chunkingStrategy,
+      'description': description,
       'expires_after': expiresAfter,
       'file_ids': fileIds?.map((item) => item).toList(),
       'metadata': metadata?.map((key, item) => MapEntry(key, item)),
@@ -11692,12 +17488,14 @@ class OpenAiVectorStoreFileBatch {
 class OpenAiVectorStoreFileBatchCreateRequest {
   final Map<String, dynamic>? attributes;
   final dynamic chunkingStrategy;
-  final List<String> fileIds;
+  final List<String>? fileIds;
+  final List<Map<String, dynamic>>? files;
 
   OpenAiVectorStoreFileBatchCreateRequest({
     this.attributes,
     this.chunkingStrategy,
-    required this.fileIds
+    this.fileIds,
+    this.files
   });
 
   factory OpenAiVectorStoreFileBatchCreateRequest.fromJson(Map<String, dynamic> json) {
@@ -11720,11 +17518,34 @@ class OpenAiVectorStoreFileBatchCreateRequest {
       fileIds: (() {
         final list = _sdkworkAsList(json['file_ids']);
         if (list == null) {
-          throw FormatException('OpenAiVectorStoreFileBatchCreateRequest.file_ids is required');
+          return null;
         }
         return list
             .map((item) => item?.toString())
             .whereType<String>()
+            .toList();
+      })(),
+      files: (() {
+        final list = _sdkworkAsList(json['files']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })())
+            .whereType<Map<String, dynamic>>()
             .toList();
       })()
     );
@@ -11734,7 +17555,8 @@ class OpenAiVectorStoreFileBatchCreateRequest {
     return <String, dynamic>{
       'attributes': attributes?.map((key, item) => MapEntry(key, item)),
       'chunking_strategy': chunkingStrategy,
-      'file_ids': fileIds.map((item) => item).toList(),
+      'file_ids': fileIds?.map((item) => item).toList(),
+      'files': files?.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
     };
   }
 }
@@ -12399,29 +18221,24 @@ class OpenAiVideoCharacterMultipartRequest {
 }
 
 class OpenAiVideoCreateRequest {
-  final dynamic image;
-  final Map<String, dynamic>? metadata;
-  final String model;
+  final Map<String, dynamic>? inputReference;
+  final String? model;
   final String prompt;
-  final int? seconds;
+  final String? seconds;
   final String? size;
-  final dynamic video;
 
   OpenAiVideoCreateRequest({
-    this.image,
-    this.metadata,
-    required this.model,
+    this.inputReference,
+    this.model,
     required this.prompt,
     this.seconds,
-    this.size,
-    this.video
+    this.size
   });
 
   factory OpenAiVideoCreateRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiVideoCreateRequest(
-      image: json['image']?.toString(),
-      metadata: (() {
-        final map = _sdkworkAsMap(json['metadata']);
+      inputReference: (() {
+        final map = _sdkworkAsMap(json['input_reference']);
         if (map == null) {
           return null;
         }
@@ -12434,13 +18251,7 @@ class OpenAiVideoCreateRequest {
         });
         return result;
       })(),
-      model: (() {
-        final value = json['model']?.toString();
-        if (value == null) {
-          throw FormatException('OpenAiVideoCreateRequest.model is required');
-        }
-        return value;
-      })(),
+      model: json['model']?.toString(),
       prompt: (() {
         final value = json['prompt']?.toString();
         if (value == null) {
@@ -12448,134 +18259,117 @@ class OpenAiVideoCreateRequest {
         }
         return value;
       })(),
-      seconds: json['seconds'] is int ? json['seconds'] : null,
-      size: json['size']?.toString(),
-      video: json['video']?.toString()
+      seconds: json['seconds']?.toString(),
+      size: json['size']?.toString()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'image': image,
-      'metadata': metadata?.map((key, item) => MapEntry(key, item)),
+      'input_reference': inputReference?.map((key, item) => MapEntry(key, item)),
       'model': model,
       'prompt': prompt,
       'seconds': seconds,
       'size': size,
-      'video': video,
     };
   }
 }
 
 class OpenAiVideoEditRequest {
-  final dynamic image;
-  final Map<String, dynamic>? metadata;
-  final String? model;
-  final String? prompt;
-  final int? seconds;
-  final String? size;
+  final String prompt;
   final dynamic video;
 
   OpenAiVideoEditRequest({
-    this.image,
-    this.metadata,
-    this.model,
-    this.prompt,
-    this.seconds,
-    this.size,
-    this.video
+    required this.prompt,
+    required this.video
   });
 
   factory OpenAiVideoEditRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiVideoEditRequest(
-      image: json['image']?.toString(),
-      metadata: (() {
-        final map = _sdkworkAsMap(json['metadata']);
-        if (map == null) {
+      prompt: (() {
+        final value = json['prompt']?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiVideoEditRequest.prompt is required');
+        }
+        return value;
+      })(),
+      video: (() {
+        if (!json.containsKey('video')) {
+          throw FormatException('OpenAiVideoEditRequest.video is required');
+        }
+        final _sdkworkRequiredValue = json['video'];
+        if (_sdkworkRequiredValue == null) {
           return null;
         }
-        final result = <String, String>{};
-        map.forEach((key, item) {
-          final deserialized = item?.toString();
-          if (deserialized is String) {
-            result[key] = deserialized;
-          }
-        });
-        return result;
-      })(),
-      model: json['model']?.toString(),
-      prompt: json['prompt']?.toString(),
-      seconds: json['seconds'] is int ? json['seconds'] : null,
-      size: json['size']?.toString(),
-      video: json['video']?.toString()
+        return (() {
+        final value = _sdkworkRequiredValue?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiVideoEditRequest.video is required');
+        }
+        return value;
+      })();
+      })()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'image': image,
-      'metadata': metadata?.map((key, item) => MapEntry(key, item)),
-      'model': model,
       'prompt': prompt,
-      'seconds': seconds,
-      'size': size,
       'video': video,
     };
   }
 }
 
 class OpenAiVideoExtendRequest {
-  final dynamic image;
-  final Map<String, dynamic>? metadata;
-  final String? model;
-  final String? prompt;
-  final int? seconds;
-  final String? size;
+  final String prompt;
+  final String seconds;
   final dynamic video;
 
   OpenAiVideoExtendRequest({
-    this.image,
-    this.metadata,
-    this.model,
-    this.prompt,
-    this.seconds,
-    this.size,
-    this.video
+    required this.prompt,
+    required this.seconds,
+    required this.video
   });
 
   factory OpenAiVideoExtendRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiVideoExtendRequest(
-      image: json['image']?.toString(),
-      metadata: (() {
-        final map = _sdkworkAsMap(json['metadata']);
-        if (map == null) {
+      prompt: (() {
+        final value = json['prompt']?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiVideoExtendRequest.prompt is required');
+        }
+        return value;
+      })(),
+      seconds: (() {
+        final value = json['seconds']?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiVideoExtendRequest.seconds is required');
+        }
+        return value;
+      })(),
+      video: (() {
+        if (!json.containsKey('video')) {
+          throw FormatException('OpenAiVideoExtendRequest.video is required');
+        }
+        final _sdkworkRequiredValue = json['video'];
+        if (_sdkworkRequiredValue == null) {
           return null;
         }
-        final result = <String, String>{};
-        map.forEach((key, item) {
-          final deserialized = item?.toString();
-          if (deserialized is String) {
-            result[key] = deserialized;
-          }
-        });
-        return result;
-      })(),
-      model: json['model']?.toString(),
-      prompt: json['prompt']?.toString(),
-      seconds: json['seconds'] is int ? json['seconds'] : null,
-      size: json['size']?.toString(),
-      video: json['video']?.toString()
+        return (() {
+        final value = _sdkworkRequiredValue?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiVideoExtendRequest.video is required');
+        }
+        return value;
+      })();
+      })()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'image': image,
-      'metadata': metadata?.map((key, item) => MapEntry(key, item)),
-      'model': model,
       'prompt': prompt,
       'seconds': seconds,
-      'size': size,
       'video': video,
     };
   }
@@ -12636,58 +18430,27 @@ class OpenAiVideoList {
 }
 
 class OpenAiVideoRemixRequest {
-  final dynamic image;
-  final Map<String, dynamic>? metadata;
-  final String? model;
-  final String? prompt;
-  final int? seconds;
-  final String? size;
-  final dynamic video;
+  final String prompt;
 
   OpenAiVideoRemixRequest({
-    this.image,
-    this.metadata,
-    this.model,
-    this.prompt,
-    this.seconds,
-    this.size,
-    this.video
+    required this.prompt
   });
 
   factory OpenAiVideoRemixRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiVideoRemixRequest(
-      image: json['image']?.toString(),
-      metadata: (() {
-        final map = _sdkworkAsMap(json['metadata']);
-        if (map == null) {
-          return null;
+      prompt: (() {
+        final value = json['prompt']?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiVideoRemixRequest.prompt is required');
         }
-        final result = <String, String>{};
-        map.forEach((key, item) {
-          final deserialized = item?.toString();
-          if (deserialized is String) {
-            result[key] = deserialized;
-          }
-        });
-        return result;
-      })(),
-      model: json['model']?.toString(),
-      prompt: json['prompt']?.toString(),
-      seconds: json['seconds'] is int ? json['seconds'] : null,
-      size: json['size']?.toString(),
-      video: json['video']?.toString()
+        return value;
+      })()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'image': image,
-      'metadata': metadata?.map((key, item) => MapEntry(key, item)),
-      'model': model,
       'prompt': prompt,
-      'seconds': seconds,
-      'size': size,
-      'video': video,
     };
   }
 }
@@ -12973,111 +18736,115 @@ class OpenAiVoiceConsentMultipartRequest {
 }
 
 class OpenAiVoiceConsentUpdateRequest {
-  final Map<String, dynamic>? metadata;
   final String? name;
 
   OpenAiVoiceConsentUpdateRequest({
-    this.metadata,
     this.name
   });
 
   factory OpenAiVoiceConsentUpdateRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiVoiceConsentUpdateRequest(
-      metadata: (() {
-        final map = _sdkworkAsMap(json['metadata']);
-        if (map == null) {
-          return null;
-        }
-        final result = <String, String>{};
-        map.forEach((key, item) {
-          final deserialized = item?.toString();
-          if (deserialized is String) {
-            result[key] = deserialized;
-          }
-        });
-        return result;
-      })(),
       name: json['name']?.toString()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'metadata': metadata?.map((key, item) => MapEntry(key, item)),
       'name': name,
     };
   }
 }
 
 class OpenAiVoiceCreateMultipartRequest {
-  final String? description;
   final String? file;
-  final String? metadata;
+  final String? model;
   final String? name;
+  final String? prompt;
+  final String? scriptHint;
+  final String? type;
 
   OpenAiVoiceCreateMultipartRequest({
-    this.description,
     this.file,
-    this.metadata,
-    this.name
+    this.model,
+    this.name,
+    this.prompt,
+    this.scriptHint,
+    this.type
   });
 
   factory OpenAiVoiceCreateMultipartRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiVoiceCreateMultipartRequest(
-      description: json['description']?.toString(),
       file: json['file']?.toString(),
-      metadata: json['metadata']?.toString(),
-      name: json['name']?.toString()
+      model: json['model']?.toString(),
+      name: json['name']?.toString(),
+      prompt: json['prompt']?.toString(),
+      scriptHint: json['script_hint']?.toString(),
+      type: json['type']?.toString()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'description': description,
       'file': file,
-      'metadata': metadata,
+      'model': model,
       'name': name,
+      'prompt': prompt,
+      'script_hint': scriptHint,
+      'type': type,
     };
   }
 }
 
 class OpenAiVoiceCreateRequest {
-  final String? description;
-  final Map<String, dynamic>? metadata;
-  final String? name;
+  final String? model;
+  final String name;
+  final String prompt;
+  final String? scriptHint;
+  final String type;
 
   OpenAiVoiceCreateRequest({
-    this.description,
-    this.metadata,
-    this.name
+    this.model,
+    required this.name,
+    required this.prompt,
+    this.scriptHint,
+    required this.type
   });
 
   factory OpenAiVoiceCreateRequest.fromJson(Map<String, dynamic> json) {
     return OpenAiVoiceCreateRequest(
-      description: json['description']?.toString(),
-      metadata: (() {
-        final map = _sdkworkAsMap(json['metadata']);
-        if (map == null) {
-          return null;
+      model: json['model']?.toString(),
+      name: (() {
+        final value = json['name']?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiVoiceCreateRequest.name is required');
         }
-        final result = <String, String>{};
-        map.forEach((key, item) {
-          final deserialized = item?.toString();
-          if (deserialized is String) {
-            result[key] = deserialized;
-          }
-        });
-        return result;
+        return value;
       })(),
-      name: json['name']?.toString()
+      prompt: (() {
+        final value = json['prompt']?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiVoiceCreateRequest.prompt is required');
+        }
+        return value;
+      })(),
+      scriptHint: json['script_hint']?.toString(),
+      type: (() {
+        final value = json['type']?.toString();
+        if (value == null) {
+          throw FormatException('OpenAiVoiceCreateRequest.type is required');
+        }
+        return value;
+      })()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'description': description,
-      'metadata': metadata?.map((key, item) => MapEntry(key, item)),
+      'model': model,
       'name': name,
+      'prompt': prompt,
+      'script_hint': scriptHint,
+      'type': type,
     };
   }
 }
@@ -13132,6 +18899,318 @@ class OpenAiVoiceList {
       'has_more': hasMore,
       'last_id': lastId,
       'object': object,
+    };
+  }
+}
+
+class PixverseErrorDetail {
+  final String? message;
+  final Map<String, dynamic>? param;
+  final String? type;
+
+  PixverseErrorDetail({
+    this.message,
+    this.param,
+    this.type
+  });
+
+  factory PixverseErrorDetail.fromJson(Map<String, dynamic> json) {
+    return PixverseErrorDetail(
+      message: json['Message']?.toString(),
+      param: (() {
+        final map = _sdkworkAsMap(json['Param']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      type: json['Type']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'Message': message,
+      'Param': param?.map((key, item) => MapEntry(key, item)),
+      'Type': type,
+    };
+  }
+}
+
+class PixverseTaskResp {
+  final String? aspectRatio;
+  final String? createTime;
+  final int? credits;
+  final Map<String, dynamic>? customerPaths;
+  final int? duration;
+  final bool? hasAudio;
+  final int? id;
+  final String? modifyTime;
+  final String? negativePrompt;
+  final int? outputHeight;
+  final int? outputWidth;
+  final String? path;
+  final String? prompt;
+  final String? quality;
+  final int? resolutionRatio;
+  final int? seed;
+  final int? size;
+  final int? status;
+  final String? style;
+  final String? url;
+  final int? videoId;
+
+  PixverseTaskResp({
+    this.aspectRatio,
+    this.createTime,
+    this.credits,
+    this.customerPaths,
+    this.duration,
+    this.hasAudio,
+    this.id,
+    this.modifyTime,
+    this.negativePrompt,
+    this.outputHeight,
+    this.outputWidth,
+    this.path,
+    this.prompt,
+    this.quality,
+    this.resolutionRatio,
+    this.seed,
+    this.size,
+    this.status,
+    this.style,
+    this.url,
+    this.videoId
+  });
+
+  factory PixverseTaskResp.fromJson(Map<String, dynamic> json) {
+    return PixverseTaskResp(
+      aspectRatio: json['aspect_ratio']?.toString(),
+      createTime: json['create_time']?.toString(),
+      credits: json['credits'] is int ? json['credits'] : null,
+      customerPaths: (() {
+        final map = _sdkworkAsMap(json['customer_paths']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      duration: json['duration'] is int ? json['duration'] : null,
+      hasAudio: json['has_audio'] is bool ? json['has_audio'] : null,
+      id: json['id'] is int ? json['id'] : null,
+      modifyTime: json['modify_time']?.toString(),
+      negativePrompt: json['negative_prompt']?.toString(),
+      outputHeight: json['outputHeight'] is int ? json['outputHeight'] : null,
+      outputWidth: json['outputWidth'] is int ? json['outputWidth'] : null,
+      path: json['path']?.toString(),
+      prompt: json['prompt']?.toString(),
+      quality: json['quality']?.toString(),
+      resolutionRatio: json['resolution_ratio'] is int ? json['resolution_ratio'] : null,
+      seed: json['seed'] is int ? json['seed'] : null,
+      size: json['size'] is int ? json['size'] : null,
+      status: json['status'] is int ? json['status'] : null,
+      style: json['style']?.toString(),
+      url: json['url']?.toString(),
+      videoId: json['video_id'] is int ? json['video_id'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'aspect_ratio': aspectRatio,
+      'create_time': createTime,
+      'credits': credits,
+      'customer_paths': customerPaths?.map((key, item) => MapEntry(key, item)),
+      'duration': duration,
+      'has_audio': hasAudio,
+      'id': id,
+      'modify_time': modifyTime,
+      'negative_prompt': negativePrompt,
+      'outputHeight': outputHeight,
+      'outputWidth': outputWidth,
+      'path': path,
+      'prompt': prompt,
+      'quality': quality,
+      'resolution_ratio': resolutionRatio,
+      'seed': seed,
+      'size': size,
+      'status': status,
+      'style': style,
+      'url': url,
+      'video_id': videoId,
+    };
+  }
+}
+
+class PixverseVideoGenerationRequest {
+  final String aspectRatio;
+  final int duration;
+  final bool? generateAudioSwitch;
+  final bool? generateMultiClipSwitch;
+  final String model;
+  final String prompt;
+  final String quality;
+  final int? seed;
+  final String? webhookId;
+
+  PixverseVideoGenerationRequest({
+    required this.aspectRatio,
+    required this.duration,
+    this.generateAudioSwitch,
+    this.generateMultiClipSwitch,
+    required this.model,
+    required this.prompt,
+    required this.quality,
+    this.seed,
+    this.webhookId
+  });
+
+  factory PixverseVideoGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return PixverseVideoGenerationRequest(
+      aspectRatio: (() {
+        final value = json['aspect_ratio']?.toString();
+        if (value == null) {
+          throw FormatException('PixverseVideoGenerationRequest.aspect_ratio is required');
+        }
+        return value;
+      })(),
+      duration: (() {
+        final value = json['duration'];
+        if (value is! int) {
+          throw FormatException('PixverseVideoGenerationRequest.duration is required');
+        }
+        return value;
+      })(),
+      generateAudioSwitch: json['generate_audio_switch'] is bool ? json['generate_audio_switch'] : null,
+      generateMultiClipSwitch: json['generate_multi_clip_switch'] is bool ? json['generate_multi_clip_switch'] : null,
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('PixverseVideoGenerationRequest.model is required');
+        }
+        return value;
+      })(),
+      prompt: (() {
+        final value = json['prompt']?.toString();
+        if (value == null) {
+          throw FormatException('PixverseVideoGenerationRequest.prompt is required');
+        }
+        return value;
+      })(),
+      quality: (() {
+        final value = json['quality']?.toString();
+        if (value == null) {
+          throw FormatException('PixverseVideoGenerationRequest.quality is required');
+        }
+        return value;
+      })(),
+      seed: json['seed'] is int ? json['seed'] : null,
+      webhookId: json['webhook_id']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'aspect_ratio': aspectRatio,
+      'duration': duration,
+      'generate_audio_switch': generateAudioSwitch,
+      'generate_multi_clip_switch': generateMultiClipSwitch,
+      'model': model,
+      'prompt': prompt,
+      'quality': quality,
+      'seed': seed,
+      'webhook_id': webhookId,
+    };
+  }
+}
+
+class PixverseVideoGenerationResponse {
+  final int? errCode;
+  final String? errMsg;
+  final PixverseErrorDetail? error;
+  final PixverseTaskResp? resp;
+
+  PixverseVideoGenerationResponse({
+    this.errCode,
+    this.errMsg,
+    this.error,
+    this.resp
+  });
+
+  factory PixverseVideoGenerationResponse.fromJson(Map<String, dynamic> json) {
+    return PixverseVideoGenerationResponse(
+      errCode: json['ErrCode'] is int ? json['ErrCode'] : null,
+      errMsg: json['ErrMsg']?.toString(),
+      error: (() {
+        final map = _sdkworkAsMap(json['Error']);
+        return map == null ? null : PixverseErrorDetail.fromJson(map);
+      })(),
+      resp: (() {
+        final map = _sdkworkAsMap(json['Resp']);
+        return map == null ? null : PixverseTaskResp.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'ErrCode': errCode,
+      'ErrMsg': errMsg,
+      'Error': error?.toJson(),
+      'Resp': resp?.toJson(),
+    };
+  }
+}
+
+class PixverseVideoGenerationTask {
+  final int? errCode;
+  final String? errMsg;
+  final PixverseErrorDetail? error;
+  final PixverseTaskResp? resp;
+
+  PixverseVideoGenerationTask({
+    this.errCode,
+    this.errMsg,
+    this.error,
+    this.resp
+  });
+
+  factory PixverseVideoGenerationTask.fromJson(Map<String, dynamic> json) {
+    return PixverseVideoGenerationTask(
+      errCode: json['ErrCode'] is int ? json['ErrCode'] : null,
+      errMsg: json['ErrMsg']?.toString(),
+      error: (() {
+        final map = _sdkworkAsMap(json['Error']);
+        return map == null ? null : PixverseErrorDetail.fromJson(map);
+      })(),
+      resp: (() {
+        final map = _sdkworkAsMap(json['Resp']);
+        return map == null ? null : PixverseTaskResp.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'ErrCode': errCode,
+      'ErrMsg': errMsg,
+      'Error': error?.toJson(),
+      'Resp': resp?.toJson(),
     };
   }
 }
@@ -13298,71 +19377,58 @@ class ProviderTaskError {
   }
 }
 
-class ProviderTaskResult {
-  final List<ProviderGeneratedMedia>? audios;
-  final List<VolcengineContentPart>? content;
-  final String? id;
-  final List<ProviderGeneratedMedia>? images;
-  final Map<String, dynamic>? metadata;
-  final String? status;
-  final String? text;
-  final List<ProviderGeneratedMedia>? videos;
+class RunwayImageToVideoRequest {
+  final bool? audio;
+  final String? bitrate;
+  final double? cfgScale;
+  final Map<String, dynamic>? contentModeration;
+  final bool? draft;
+  final int? duration;
+  final String model;
+  final String? negativePrompt;
+  final String? outputFormat;
+  final String? promptExpansionMode;
+  final String promptImage;
+  final String? promptText;
+  final String? proresProfile;
+  final Map<String, dynamic>? providerSettings;
+  final String? ratio;
+  final List<Map<String, dynamic>>? referenceAudio;
+  final List<Map<String, dynamic>>? referenceVideos;
+  final List<Map<String, dynamic>>? references;
+  final String? resolution;
+  final int? seed;
 
-  ProviderTaskResult({
-    this.audios,
-    this.content,
-    this.id,
-    this.images,
-    this.metadata,
-    this.status,
-    this.text,
-    this.videos
+  RunwayImageToVideoRequest({
+    this.audio,
+    this.bitrate,
+    this.cfgScale,
+    this.contentModeration,
+    this.draft,
+    this.duration,
+    required this.model,
+    this.negativePrompt,
+    this.outputFormat,
+    this.promptExpansionMode,
+    required this.promptImage,
+    this.promptText,
+    this.proresProfile,
+    this.providerSettings,
+    this.ratio,
+    this.referenceAudio,
+    this.referenceVideos,
+    this.references,
+    this.resolution,
+    this.seed
   });
 
-  factory ProviderTaskResult.fromJson(Map<String, dynamic> json) {
-    return ProviderTaskResult(
-      audios: (() {
-        final list = _sdkworkAsList(json['audios']);
-        if (list == null) {
-          return null;
-        }
-        return list
-            .map((item) => (() {
-        final map = _sdkworkAsMap(item);
-        return map == null ? null : ProviderGeneratedMedia.fromJson(map);
-      })())
-            .whereType<ProviderGeneratedMedia>()
-            .toList();
-      })(),
-      content: (() {
-        final list = _sdkworkAsList(json['content']);
-        if (list == null) {
-          return null;
-        }
-        return list
-            .map((item) => (() {
-        final map = _sdkworkAsMap(item);
-        return map == null ? null : VolcengineContentPart.fromJson(map);
-      })())
-            .whereType<VolcengineContentPart>()
-            .toList();
-      })(),
-      id: json['id']?.toString(),
-      images: (() {
-        final list = _sdkworkAsList(json['images']);
-        if (list == null) {
-          return null;
-        }
-        return list
-            .map((item) => (() {
-        final map = _sdkworkAsMap(item);
-        return map == null ? null : ProviderGeneratedMedia.fromJson(map);
-      })())
-            .whereType<ProviderGeneratedMedia>()
-            .toList();
-      })(),
-      metadata: (() {
-        final map = _sdkworkAsMap(json['metadata']);
+  factory RunwayImageToVideoRequest.fromJson(Map<String, dynamic> json) {
+    return RunwayImageToVideoRequest(
+      audio: json['audio'] is bool ? json['audio'] : null,
+      bitrate: json['bitrate']?.toString(),
+      cfgScale: json['cfgScale'] is num ? json['cfgScale'].toDouble() : null,
+      contentModeration: (() {
+        final map = _sdkworkAsMap(json['contentModeration']);
         if (map == null) {
           return null;
         }
@@ -13375,34 +19441,712 @@ class ProviderTaskResult {
         });
         return result;
       })(),
-      status: json['status']?.toString(),
-      text: json['text']?.toString(),
-      videos: (() {
-        final list = _sdkworkAsList(json['videos']);
+      draft: json['draft'] is bool ? json['draft'] : null,
+      duration: json['duration'] is int ? json['duration'] : null,
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('RunwayImageToVideoRequest.model is required');
+        }
+        return value;
+      })(),
+      negativePrompt: json['negativePrompt']?.toString(),
+      outputFormat: json['outputFormat']?.toString(),
+      promptExpansionMode: json['promptExpansionMode']?.toString(),
+      promptImage: (() {
+        final value = json['promptImage']?.toString();
+        if (value == null) {
+          throw FormatException('RunwayImageToVideoRequest.promptImage is required');
+        }
+        return value;
+      })(),
+      promptText: json['promptText']?.toString(),
+      proresProfile: json['proresProfile']?.toString(),
+      providerSettings: (() {
+        final map = _sdkworkAsMap(json['providerSettings']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      ratio: json['ratio']?.toString(),
+      referenceAudio: (() {
+        final list = _sdkworkAsList(json['referenceAudio']);
         if (list == null) {
           return null;
         }
         return list
             .map((item) => (() {
         final map = _sdkworkAsMap(item);
-        return map == null ? null : ProviderGeneratedMedia.fromJson(map);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
       })())
-            .whereType<ProviderGeneratedMedia>()
+            .whereType<Map<String, dynamic>>()
             .toList();
+      })(),
+      referenceVideos: (() {
+        final list = _sdkworkAsList(json['referenceVideos']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })())
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      })(),
+      references: (() {
+        final list = _sdkworkAsList(json['references']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })())
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      })(),
+      resolution: json['resolution']?.toString(),
+      seed: json['seed'] is int ? json['seed'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'audio': audio,
+      'bitrate': bitrate,
+      'cfgScale': cfgScale,
+      'contentModeration': contentModeration?.map((key, item) => MapEntry(key, item)),
+      'draft': draft,
+      'duration': duration,
+      'model': model,
+      'negativePrompt': negativePrompt,
+      'outputFormat': outputFormat,
+      'promptExpansionMode': promptExpansionMode,
+      'promptImage': promptImage,
+      'promptText': promptText,
+      'proresProfile': proresProfile,
+      'providerSettings': providerSettings?.map((key, item) => MapEntry(key, item)),
+      'ratio': ratio,
+      'referenceAudio': referenceAudio?.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
+      'referenceVideos': referenceVideos?.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
+      'references': references?.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
+      'resolution': resolution,
+      'seed': seed,
+    };
+  }
+}
+
+class RunwayTask {
+  final String? createdAt;
+  final String? failure;
+  final String? failureCode;
+  final String? id;
+  final List<String>? output;
+  final double? progress;
+  final String? status;
+
+  RunwayTask({
+    this.createdAt,
+    this.failure,
+    this.failureCode,
+    this.id,
+    this.output,
+    this.progress,
+    this.status
+  });
+
+  factory RunwayTask.fromJson(Map<String, dynamic> json) {
+    return RunwayTask(
+      createdAt: json['createdAt']?.toString(),
+      failure: json['failure']?.toString(),
+      failureCode: json['failureCode']?.toString(),
+      id: json['id']?.toString(),
+      output: (() {
+        final list = _sdkworkAsList(json['output']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
+      progress: json['progress'] is num ? json['progress'].toDouble() : null,
+      status: json['status']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'createdAt': createdAt,
+      'failure': failure,
+      'failureCode': failureCode,
+      'id': id,
+      'output': output?.map((item) => item).toList(),
+      'progress': progress,
+      'status': status,
+    };
+  }
+}
+
+class RunwayTaskAccepted {
+  final Map<String, dynamic>? estimatedCost;
+  final String id;
+
+  RunwayTaskAccepted({
+    this.estimatedCost,
+    required this.id
+  });
+
+  factory RunwayTaskAccepted.fromJson(Map<String, dynamic> json) {
+    return RunwayTaskAccepted(
+      estimatedCost: (() {
+        final map = _sdkworkAsMap(json['estimatedCost']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      id: (() {
+        final value = json['id']?.toString();
+        if (value == null) {
+          throw FormatException('RunwayTaskAccepted.id is required');
+        }
+        return value;
       })()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'audios': audios?.map((item) => item.toJson()).toList(),
-      'content': content?.map((item) => item.toJson()).toList(),
+      'estimatedCost': estimatedCost?.map((key, item) => MapEntry(key, item)),
       'id': id,
-      'images': images?.map((item) => item.toJson()).toList(),
-      'metadata': metadata?.map((key, item) => MapEntry(key, item)),
-      'status': status,
-      'text': text,
-      'videos': videos?.map((item) => item.toJson()).toList(),
+    };
+  }
+}
+
+class RunwayTextToImageRequest {
+  final String? background;
+  final String? backgroundColor;
+  final List<String>? colors;
+  final Map<String, dynamic>? contentModeration;
+  final bool? edit;
+  final bool? grounding;
+  final String? maskUri;
+  final String? model;
+  final int? outputCount;
+  final String? outputFormat;
+  final bool? preciseEdit;
+  final String promptText;
+  final String? quality;
+  final String? ratio;
+  final List<Map<String, dynamic>>? referenceImages;
+  final int? seed;
+  final String? thinkingLevel;
+
+  RunwayTextToImageRequest({
+    this.background,
+    this.backgroundColor,
+    this.colors,
+    this.contentModeration,
+    this.edit,
+    this.grounding,
+    this.maskUri,
+    this.model,
+    this.outputCount,
+    this.outputFormat,
+    this.preciseEdit,
+    required this.promptText,
+    this.quality,
+    this.ratio,
+    this.referenceImages,
+    this.seed,
+    this.thinkingLevel
+  });
+
+  factory RunwayTextToImageRequest.fromJson(Map<String, dynamic> json) {
+    return RunwayTextToImageRequest(
+      background: json['background']?.toString(),
+      backgroundColor: json['backgroundColor']?.toString(),
+      colors: (() {
+        final list = _sdkworkAsList(json['colors']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
+      contentModeration: (() {
+        final map = _sdkworkAsMap(json['contentModeration']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      edit: json['edit'] is bool ? json['edit'] : null,
+      grounding: json['grounding'] is bool ? json['grounding'] : null,
+      maskUri: json['maskUri']?.toString(),
+      model: json['model']?.toString(),
+      outputCount: json['outputCount'] is int ? json['outputCount'] : null,
+      outputFormat: json['outputFormat']?.toString(),
+      preciseEdit: json['preciseEdit'] is bool ? json['preciseEdit'] : null,
+      promptText: (() {
+        final value = json['promptText']?.toString();
+        if (value == null) {
+          throw FormatException('RunwayTextToImageRequest.promptText is required');
+        }
+        return value;
+      })(),
+      quality: json['quality']?.toString(),
+      ratio: json['ratio']?.toString(),
+      referenceImages: (() {
+        final list = _sdkworkAsList(json['referenceImages']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })())
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      })(),
+      seed: json['seed'] is int ? json['seed'] : null,
+      thinkingLevel: json['thinkingLevel']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'background': background,
+      'backgroundColor': backgroundColor,
+      'colors': colors?.map((item) => item).toList(),
+      'contentModeration': contentModeration?.map((key, item) => MapEntry(key, item)),
+      'edit': edit,
+      'grounding': grounding,
+      'maskUri': maskUri,
+      'model': model,
+      'outputCount': outputCount,
+      'outputFormat': outputFormat,
+      'preciseEdit': preciseEdit,
+      'promptText': promptText,
+      'quality': quality,
+      'ratio': ratio,
+      'referenceImages': referenceImages?.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
+      'seed': seed,
+      'thinkingLevel': thinkingLevel,
+    };
+  }
+}
+
+class RunwayTextToVideoRequest {
+  final bool? audio;
+  final String? bitrate;
+  final double? cfgScale;
+  final Map<String, dynamic>? contentModeration;
+  final bool? draft;
+  final String? draftTaskId;
+  final int? duration;
+  final String model;
+  final String? negativePrompt;
+  final String? outputFormat;
+  final String? promptExpansionMode;
+  final String promptText;
+  final String? proresProfile;
+  final Map<String, dynamic>? providerSettings;
+  final String? ratio;
+  final List<Map<String, dynamic>>? referenceAudio;
+  final List<Map<String, dynamic>>? referenceVideos;
+  final List<Map<String, dynamic>>? references;
+  final String? resolution;
+  final int? seed;
+
+  RunwayTextToVideoRequest({
+    this.audio,
+    this.bitrate,
+    this.cfgScale,
+    this.contentModeration,
+    this.draft,
+    this.draftTaskId,
+    this.duration,
+    required this.model,
+    this.negativePrompt,
+    this.outputFormat,
+    this.promptExpansionMode,
+    required this.promptText,
+    this.proresProfile,
+    this.providerSettings,
+    this.ratio,
+    this.referenceAudio,
+    this.referenceVideos,
+    this.references,
+    this.resolution,
+    this.seed
+  });
+
+  factory RunwayTextToVideoRequest.fromJson(Map<String, dynamic> json) {
+    return RunwayTextToVideoRequest(
+      audio: json['audio'] is bool ? json['audio'] : null,
+      bitrate: json['bitrate']?.toString(),
+      cfgScale: json['cfgScale'] is num ? json['cfgScale'].toDouble() : null,
+      contentModeration: (() {
+        final map = _sdkworkAsMap(json['contentModeration']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      draft: json['draft'] is bool ? json['draft'] : null,
+      draftTaskId: json['draftTaskId']?.toString(),
+      duration: json['duration'] is int ? json['duration'] : null,
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('RunwayTextToVideoRequest.model is required');
+        }
+        return value;
+      })(),
+      negativePrompt: json['negativePrompt']?.toString(),
+      outputFormat: json['outputFormat']?.toString(),
+      promptExpansionMode: json['promptExpansionMode']?.toString(),
+      promptText: (() {
+        final value = json['promptText']?.toString();
+        if (value == null) {
+          throw FormatException('RunwayTextToVideoRequest.promptText is required');
+        }
+        return value;
+      })(),
+      proresProfile: json['proresProfile']?.toString(),
+      providerSettings: (() {
+        final map = _sdkworkAsMap(json['providerSettings']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      ratio: json['ratio']?.toString(),
+      referenceAudio: (() {
+        final list = _sdkworkAsList(json['referenceAudio']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })())
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      })(),
+      referenceVideos: (() {
+        final list = _sdkworkAsList(json['referenceVideos']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })())
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      })(),
+      references: (() {
+        final list = _sdkworkAsList(json['references']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })())
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      })(),
+      resolution: json['resolution']?.toString(),
+      seed: json['seed'] is int ? json['seed'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'audio': audio,
+      'bitrate': bitrate,
+      'cfgScale': cfgScale,
+      'contentModeration': contentModeration?.map((key, item) => MapEntry(key, item)),
+      'draft': draft,
+      'draftTaskId': draftTaskId,
+      'duration': duration,
+      'model': model,
+      'negativePrompt': negativePrompt,
+      'outputFormat': outputFormat,
+      'promptExpansionMode': promptExpansionMode,
+      'promptText': promptText,
+      'proresProfile': proresProfile,
+      'providerSettings': providerSettings?.map((key, item) => MapEntry(key, item)),
+      'ratio': ratio,
+      'referenceAudio': referenceAudio?.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
+      'referenceVideos': referenceVideos?.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
+      'references': references?.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
+      'resolution': resolution,
+      'seed': seed,
+    };
+  }
+}
+
+class StabilityAudioRequest {
+  final double? cfgScale;
+  final double? duration;
+  final String? model;
+  final String? outputFormat;
+  final String prompt;
+  final int? seed;
+  final int? steps;
+
+  StabilityAudioRequest({
+    this.cfgScale,
+    this.duration,
+    this.model,
+    this.outputFormat,
+    required this.prompt,
+    this.seed,
+    this.steps
+  });
+
+  factory StabilityAudioRequest.fromJson(Map<String, dynamic> json) {
+    return StabilityAudioRequest(
+      cfgScale: json['cfg_scale'] is num ? json['cfg_scale'].toDouble() : null,
+      duration: json['duration'] is num ? json['duration'].toDouble() : null,
+      model: json['model']?.toString(),
+      outputFormat: json['output_format']?.toString(),
+      prompt: (() {
+        final value = json['prompt']?.toString();
+        if (value == null) {
+          throw FormatException('StabilityAudioRequest.prompt is required');
+        }
+        return value;
+      })(),
+      seed: json['seed'] is int ? json['seed'] : null,
+      steps: json['steps'] is int ? json['steps'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'cfg_scale': cfgScale,
+      'duration': duration,
+      'model': model,
+      'output_format': outputFormat,
+      'prompt': prompt,
+      'seed': seed,
+      'steps': steps,
+    };
+  }
+}
+
+class StabilityImageGenerationRequest {
+  final String? aspectRatio;
+  final double? cfgScale;
+  final String? image;
+  final String? mode;
+  final String? model;
+  final String? negativePrompt;
+  final String? outputFormat;
+  final String prompt;
+  final int? seed;
+  final double? strength;
+  final String? stylePreset;
+
+  StabilityImageGenerationRequest({
+    this.aspectRatio,
+    this.cfgScale,
+    this.image,
+    this.mode,
+    this.model,
+    this.negativePrompt,
+    this.outputFormat,
+    required this.prompt,
+    this.seed,
+    this.strength,
+    this.stylePreset
+  });
+
+  factory StabilityImageGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return StabilityImageGenerationRequest(
+      aspectRatio: json['aspect_ratio']?.toString(),
+      cfgScale: json['cfg_scale'] is num ? json['cfg_scale'].toDouble() : null,
+      image: json['image']?.toString(),
+      mode: json['mode']?.toString(),
+      model: json['model']?.toString(),
+      negativePrompt: json['negative_prompt']?.toString(),
+      outputFormat: json['output_format']?.toString(),
+      prompt: (() {
+        final value = json['prompt']?.toString();
+        if (value == null) {
+          throw FormatException('StabilityImageGenerationRequest.prompt is required');
+        }
+        return value;
+      })(),
+      seed: json['seed'] is int ? json['seed'] : null,
+      strength: json['strength'] is num ? json['strength'].toDouble() : null,
+      stylePreset: json['style_preset']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'aspect_ratio': aspectRatio,
+      'cfg_scale': cfgScale,
+      'image': image,
+      'mode': mode,
+      'model': model,
+      'negative_prompt': negativePrompt,
+      'output_format': outputFormat,
+      'prompt': prompt,
+      'seed': seed,
+      'strength': strength,
+      'style_preset': stylePreset,
+    };
+  }
+}
+
+class StabilityImageGenerationResponse {
+  final String? finishReason;
+  final String? image;
+  final int? seed;
+
+  StabilityImageGenerationResponse({
+    this.finishReason,
+    this.image,
+    this.seed
+  });
+
+  factory StabilityImageGenerationResponse.fromJson(Map<String, dynamic> json) {
+    return StabilityImageGenerationResponse(
+      finishReason: json['finish_reason']?.toString(),
+      image: json['image']?.toString(),
+      seed: json['seed'] is int ? json['seed'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'finish_reason': finishReason,
+      'image': image,
+      'seed': seed,
     };
   }
 }
@@ -13596,6 +20340,320 @@ class SunoMusicTrack {
   }
 }
 
+class TypeSafeAnswer {
+  final String? choice;
+  final double? confidence;
+  final Map<String, String>? legend;
+  final double? noul;
+  final Map<String, double>? probabilities;
+  final double? score;
+  final String type;
+
+  TypeSafeAnswer({
+    this.choice,
+    this.confidence,
+    this.legend,
+    this.noul,
+    this.probabilities,
+    this.score,
+    required this.type
+  });
+
+  factory TypeSafeAnswer.fromJson(Map<String, dynamic> json) {
+    return TypeSafeAnswer(
+      choice: json['choice']?.toString(),
+      confidence: json['confidence'] is num ? json['confidence'].toDouble() : null,
+      legend: (() {
+        final map = _sdkworkAsMap(json['legend']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      noul: json['noul'] is num ? json['noul'].toDouble() : null,
+      probabilities: (() {
+        final map = _sdkworkAsMap(json['probabilities']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, double>{};
+        map.forEach((key, item) {
+          final deserialized = item is num ? item.toDouble() : null;
+          if (deserialized is double) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      score: json['score'] is num ? json['score'].toDouble() : null,
+      type: (() {
+        final value = json['type']?.toString();
+        if (value == null) {
+          throw FormatException('TypeSafeAnswer.type is required');
+        }
+        return value;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'choice': choice,
+      'confidence': confidence,
+      'legend': legend?.map((key, item) => MapEntry(key, item)),
+      'noul': noul,
+      'probabilities': probabilities?.map((key, item) => MapEntry(key, item)),
+      'score': score,
+      'type': type,
+    };
+  }
+}
+
+class TypeSafeQuestion {
+  final dynamic criteria;
+  final String instructions;
+  final String type;
+
+  TypeSafeQuestion({
+    this.criteria,
+    required this.instructions,
+    required this.type
+  });
+
+  factory TypeSafeQuestion.fromJson(Map<String, dynamic> json) {
+    return TypeSafeQuestion(
+      criteria: json['criteria']?.toString(),
+      instructions: (() {
+        final value = json['instructions']?.toString();
+        if (value == null) {
+          throw FormatException('TypeSafeQuestion.instructions is required');
+        }
+        return value;
+      })(),
+      type: (() {
+        final value = json['type']?.toString();
+        if (value == null) {
+          throw FormatException('TypeSafeQuestion.type is required');
+        }
+        return value;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'criteria': criteria,
+      'instructions': instructions,
+      'type': type,
+    };
+  }
+}
+
+class TypeSafeSystemOneRequest {
+  final String? model;
+  final Map<String, TypeSafeQuestion> questions;
+  final dynamic state;
+
+  TypeSafeSystemOneRequest({
+    this.model,
+    required this.questions,
+    required this.state
+  });
+
+  factory TypeSafeSystemOneRequest.fromJson(Map<String, dynamic> json) {
+    return TypeSafeSystemOneRequest(
+      model: json['model']?.toString(),
+      questions: (() {
+        final map = _sdkworkAsMap(json['questions']);
+        if (map == null) {
+          throw FormatException('TypeSafeSystemOneRequest.questions is required');
+        }
+        final result = <String, TypeSafeQuestion>{};
+        map.forEach((key, item) {
+          final deserialized = (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : TypeSafeQuestion.fromJson(map);
+      })();
+          if (deserialized is TypeSafeQuestion) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      state: (() {
+        if (!json.containsKey('state')) {
+          throw FormatException('TypeSafeSystemOneRequest.state is required');
+        }
+        final _sdkworkRequiredValue = json['state'];
+        if (_sdkworkRequiredValue == null) {
+          return null;
+        }
+        return (() {
+        final value = _sdkworkRequiredValue?.toString();
+        if (value == null) {
+          throw FormatException('TypeSafeSystemOneRequest.state is required');
+        }
+        return value;
+      })();
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'model': model,
+      'questions': questions.map((key, item) => MapEntry(key, item.toJson())),
+      'state': state,
+    };
+  }
+}
+
+class TypeSafeSystemOneResponse {
+  final Map<String, TypeSafeAnswer> answers;
+  final String? model;
+  final TypeSafeUsage? usage;
+
+  TypeSafeSystemOneResponse({
+    required this.answers,
+    this.model,
+    this.usage
+  });
+
+  factory TypeSafeSystemOneResponse.fromJson(Map<String, dynamic> json) {
+    return TypeSafeSystemOneResponse(
+      answers: (() {
+        final map = _sdkworkAsMap(json['answers']);
+        if (map == null) {
+          throw FormatException('TypeSafeSystemOneResponse.answers is required');
+        }
+        final result = <String, TypeSafeAnswer>{};
+        map.forEach((key, item) {
+          final deserialized = (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : TypeSafeAnswer.fromJson(map);
+      })();
+          if (deserialized is TypeSafeAnswer) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      model: json['model']?.toString(),
+      usage: (() {
+        final map = _sdkworkAsMap(json['usage']);
+        return map == null ? null : TypeSafeUsage.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'answers': answers.map((key, item) => MapEntry(key, item.toJson())),
+      'model': model,
+      'usage': usage?.toJson(),
+    };
+  }
+}
+
+class TypeSafeUsage {
+  final int? inputTokens;
+  final int? outputTokens;
+
+  TypeSafeUsage({
+    this.inputTokens,
+    this.outputTokens
+  });
+
+  factory TypeSafeUsage.fromJson(Map<String, dynamic> json) {
+    return TypeSafeUsage(
+      inputTokens: json['input_tokens'] is int ? json['input_tokens'] : null,
+      outputTokens: json['output_tokens'] is int ? json['output_tokens'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'input_tokens': inputTokens,
+      'output_tokens': outputTokens,
+    };
+  }
+}
+
+class ViduAudioGenerationTask {
+  final String? createdAt;
+  final List<ViduCreation>? creations;
+  final int? credits;
+  final int? duration;
+  final String? errCode;
+  final String? model;
+  final String? prompt;
+  final int? seed;
+  final String? state;
+  final String? taskId;
+
+  ViduAudioGenerationTask({
+    this.createdAt,
+    this.creations,
+    this.credits,
+    this.duration,
+    this.errCode,
+    this.model,
+    this.prompt,
+    this.seed,
+    this.state,
+    this.taskId
+  });
+
+  factory ViduAudioGenerationTask.fromJson(Map<String, dynamic> json) {
+    return ViduAudioGenerationTask(
+      createdAt: json['created_at']?.toString(),
+      creations: (() {
+        final list = _sdkworkAsList(json['creations']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : ViduCreation.fromJson(map);
+      })())
+            .whereType<ViduCreation>()
+            .toList();
+      })(),
+      credits: json['credits'] is int ? json['credits'] : null,
+      duration: json['duration'] is int ? json['duration'] : null,
+      errCode: json['err_code']?.toString(),
+      model: json['model']?.toString(),
+      prompt: json['prompt']?.toString(),
+      seed: json['seed'] is int ? json['seed'] : null,
+      state: json['state']?.toString(),
+      taskId: json['task_id']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'created_at': createdAt,
+      'creations': creations?.map((item) => item.toJson()).toList(),
+      'credits': credits,
+      'duration': duration,
+      'err_code': errCode,
+      'model': model,
+      'prompt': prompt,
+      'seed': seed,
+      'state': state,
+      'task_id': taskId,
+    };
+  }
+}
+
 class ViduCreation {
   final String? audioUrl;
   final String? coverUrl;
@@ -13609,6 +20667,7 @@ class ViduCreation {
   final String? uri;
   final String? url;
   final String? videoUrl;
+  final String? watermarkedUrl;
   final int? width;
 
   ViduCreation({
@@ -13624,6 +20683,7 @@ class ViduCreation {
     this.uri,
     this.url,
     this.videoUrl,
+    this.watermarkedUrl,
     this.width
   });
 
@@ -13654,6 +20714,7 @@ class ViduCreation {
       uri: json['uri']?.toString(),
       url: json['url']?.toString(),
       videoUrl: json['video_url']?.toString(),
+      watermarkedUrl: json['watermarked_url']?.toString(),
       width: json['width'] is int ? json['width'] : null
     );
   }
@@ -13672,28 +20733,55 @@ class ViduCreation {
       'uri': uri,
       'url': url,
       'video_url': videoUrl,
+      'watermarked_url': watermarkedUrl,
       'width': width,
     };
   }
 }
 
 class ViduImageGenerationTask {
+  final String? aspectRatio;
+  final String? callbackUrl;
   final String? createdAt;
   final List<ViduCreation>? creations;
+  final int? credits;
+  final int? duration;
+  final String? errCode;
+  final List<String>? images;
   final String? model;
+  final bool? offPeak;
+  final String? payload;
+  final String? prompt;
+  final String? resolution;
+  final int? seed;
   final String? state;
   final String? taskId;
+  final bool? watermark;
 
   ViduImageGenerationTask({
+    this.aspectRatio,
+    this.callbackUrl,
     this.createdAt,
     this.creations,
+    this.credits,
+    this.duration,
+    this.errCode,
+    this.images,
     this.model,
+    this.offPeak,
+    this.payload,
+    this.prompt,
+    this.resolution,
+    this.seed,
     this.state,
-    this.taskId
+    this.taskId,
+    this.watermark
   });
 
   factory ViduImageGenerationTask.fromJson(Map<String, dynamic> json) {
     return ViduImageGenerationTask(
+      aspectRatio: json['aspect_ratio']?.toString(),
+      callbackUrl: json['callback_url']?.toString(),
       createdAt: json['created_at']?.toString(),
       creations: (() {
         final list = _sdkworkAsList(json['creations']);
@@ -13708,51 +20796,92 @@ class ViduImageGenerationTask {
             .whereType<ViduCreation>()
             .toList();
       })(),
+      credits: json['credits'] is int ? json['credits'] : null,
+      duration: json['duration'] is int ? json['duration'] : null,
+      errCode: json['err_code']?.toString(),
+      images: (() {
+        final list = _sdkworkAsList(json['images']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
       model: json['model']?.toString(),
+      offPeak: json['off_peak'] is bool ? json['off_peak'] : null,
+      payload: json['payload']?.toString(),
+      prompt: json['prompt']?.toString(),
+      resolution: json['resolution']?.toString(),
+      seed: json['seed'] is int ? json['seed'] : null,
       state: json['state']?.toString(),
-      taskId: json['task_id']?.toString()
+      taskId: json['task_id']?.toString(),
+      watermark: json['watermark'] is bool ? json['watermark'] : null
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'aspect_ratio': aspectRatio,
+      'callback_url': callbackUrl,
       'created_at': createdAt,
       'creations': creations?.map((item) => item.toJson()).toList(),
+      'credits': credits,
+      'duration': duration,
+      'err_code': errCode,
+      'images': images?.map((item) => item).toList(),
       'model': model,
+      'off_peak': offPeak,
+      'payload': payload,
+      'prompt': prompt,
+      'resolution': resolution,
+      'seed': seed,
       'state': state,
       'task_id': taskId,
+      'watermark': watermark,
     };
   }
 }
 
 class ViduImageToVideoRequest {
-  final String? aspectRatio;
+  final bool? audio;
   final String? callbackUrl;
   final int? duration;
   final List<String> images;
+  final bool? isRec;
+  final String? metaData;
   final String model;
-  final String? movementAmplitude;
+  final bool? offPeak;
   final String? payload;
   final String? prompt;
   final String? resolution;
   final int? seed;
+  final bool? watermark;
+  final int? wmPosition;
+  final String? wmUrl;
 
   ViduImageToVideoRequest({
-    this.aspectRatio,
+    this.audio,
     this.callbackUrl,
     this.duration,
     required this.images,
+    this.isRec,
+    this.metaData,
     required this.model,
-    this.movementAmplitude,
+    this.offPeak,
     this.payload,
     this.prompt,
     this.resolution,
-    this.seed
+    this.seed,
+    this.watermark,
+    this.wmPosition,
+    this.wmUrl
   });
 
   factory ViduImageToVideoRequest.fromJson(Map<String, dynamic> json) {
     return ViduImageToVideoRequest(
-      aspectRatio: json['aspect_ratio']?.toString(),
+      audio: json['audio'] is bool ? json['audio'] : null,
       callbackUrl: json['callback_url']?.toString(),
       duration: json['duration'] is int ? json['duration'] : null,
       images: (() {
@@ -13765,6 +20894,8 @@ class ViduImageToVideoRequest {
             .whereType<String>()
             .toList();
       })(),
+      isRec: json['is_rec'] is bool ? json['is_rec'] : null,
+      metaData: json['meta_data']?.toString(),
       model: (() {
         final value = json['model']?.toString();
         if (value == null) {
@@ -13772,59 +20903,72 @@ class ViduImageToVideoRequest {
         }
         return value;
       })(),
-      movementAmplitude: json['movement_amplitude']?.toString(),
+      offPeak: json['off_peak'] is bool ? json['off_peak'] : null,
       payload: json['payload']?.toString(),
       prompt: json['prompt']?.toString(),
       resolution: json['resolution']?.toString(),
-      seed: json['seed'] is int ? json['seed'] : null
+      seed: json['seed'] is int ? json['seed'] : null,
+      watermark: json['watermark'] is bool ? json['watermark'] : null,
+      wmPosition: json['wm_position'] is int ? json['wm_position'] : null,
+      wmUrl: json['wm_url']?.toString()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'aspect_ratio': aspectRatio,
+      'audio': audio,
       'callback_url': callbackUrl,
       'duration': duration,
       'images': images.map((item) => item).toList(),
+      'is_rec': isRec,
+      'meta_data': metaData,
       'model': model,
-      'movement_amplitude': movementAmplitude,
+      'off_peak': offPeak,
       'payload': payload,
       'prompt': prompt,
       'resolution': resolution,
       'seed': seed,
+      'watermark': watermark,
+      'wm_position': wmPosition,
+      'wm_url': wmUrl,
     };
   }
 }
 
 class ViduReferenceToImageRequest {
   final String? aspectRatio;
+  final bool? bgm;
   final String? callbackUrl;
-  final List<String> images;
+  final List<String>? images;
   final String model;
+  final bool? offPeak;
   final String? payload;
   final String prompt;
+  final String? resolution;
   final int? seed;
-  final String? style;
 
   ViduReferenceToImageRequest({
     this.aspectRatio,
+    this.bgm,
     this.callbackUrl,
-    required this.images,
+    this.images,
     required this.model,
+    this.offPeak,
     this.payload,
     required this.prompt,
-    this.seed,
-    this.style
+    this.resolution,
+    this.seed
   });
 
   factory ViduReferenceToImageRequest.fromJson(Map<String, dynamic> json) {
     return ViduReferenceToImageRequest(
       aspectRatio: json['aspect_ratio']?.toString(),
+      bgm: json['bgm'] is bool ? json['bgm'] : null,
       callbackUrl: json['callback_url']?.toString(),
       images: (() {
         final list = _sdkworkAsList(json['images']);
         if (list == null) {
-          throw FormatException('ViduReferenceToImageRequest.images is required');
+          return null;
         }
         return list
             .map((item) => item?.toString())
@@ -13838,6 +20982,7 @@ class ViduReferenceToImageRequest {
         }
         return value;
       })(),
+      offPeak: json['off_peak'] is bool ? json['off_peak'] : null,
       payload: json['payload']?.toString(),
       prompt: (() {
         final value = json['prompt']?.toString();
@@ -13846,53 +20991,78 @@ class ViduReferenceToImageRequest {
         }
         return value;
       })(),
-      seed: json['seed'] is int ? json['seed'] : null,
-      style: json['style']?.toString()
+      resolution: json['resolution']?.toString(),
+      seed: json['seed'] is int ? json['seed'] : null
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'aspect_ratio': aspectRatio,
+      'bgm': bgm,
       'callback_url': callbackUrl,
-      'images': images.map((item) => item).toList(),
+      'images': images?.map((item) => item).toList(),
       'model': model,
+      'off_peak': offPeak,
       'payload': payload,
       'prompt': prompt,
+      'resolution': resolution,
       'seed': seed,
-      'style': style,
     };
   }
 }
 
 class ViduReferenceToVideoRequest {
   final String? aspectRatio;
+  final bool? audio;
+  final bool? autoSubjects;
+  final bool? bgm;
   final String? callbackUrl;
   final int? duration;
   final List<String> images;
+  final String? metaData;
   final String model;
   final String? movementAmplitude;
+  final bool? offPeak;
   final String? payload;
   final String? prompt;
   final String? resolution;
   final int? seed;
+  final List<Map<String, dynamic>>? sounds;
+  final List<Map<String, dynamic>>? subjects;
+  final bool? watermark;
+  final int? wmPosition;
+  final String? wmUrl;
 
   ViduReferenceToVideoRequest({
     this.aspectRatio,
+    this.audio,
+    this.autoSubjects,
+    this.bgm,
     this.callbackUrl,
     this.duration,
     required this.images,
+    this.metaData,
     required this.model,
     this.movementAmplitude,
+    this.offPeak,
     this.payload,
     this.prompt,
     this.resolution,
-    this.seed
+    this.seed,
+    this.sounds,
+    this.subjects,
+    this.watermark,
+    this.wmPosition,
+    this.wmUrl
   });
 
   factory ViduReferenceToVideoRequest.fromJson(Map<String, dynamic> json) {
     return ViduReferenceToVideoRequest(
       aspectRatio: json['aspect_ratio']?.toString(),
+      audio: json['audio'] is bool ? json['audio'] : null,
+      autoSubjects: json['auto_subjects'] is bool ? json['auto_subjects'] : null,
+      bgm: json['bgm'] is bool ? json['bgm'] : null,
       callbackUrl: json['callback_url']?.toString(),
       duration: json['duration'] is int ? json['duration'] : null,
       images: (() {
@@ -13905,6 +21075,7 @@ class ViduReferenceToVideoRequest {
             .whereType<String>()
             .toList();
       })(),
+      metaData: json['meta_data']?.toString(),
       model: (() {
         final value = json['model']?.toString();
         if (value == null) {
@@ -13913,57 +21084,125 @@ class ViduReferenceToVideoRequest {
         return value;
       })(),
       movementAmplitude: json['movement_amplitude']?.toString(),
+      offPeak: json['off_peak'] is bool ? json['off_peak'] : null,
       payload: json['payload']?.toString(),
       prompt: json['prompt']?.toString(),
       resolution: json['resolution']?.toString(),
-      seed: json['seed'] is int ? json['seed'] : null
+      seed: json['seed'] is int ? json['seed'] : null,
+      sounds: (() {
+        final list = _sdkworkAsList(json['sounds']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })())
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      })(),
+      subjects: (() {
+        final list = _sdkworkAsList(json['subjects']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })())
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      })(),
+      watermark: json['watermark'] is bool ? json['watermark'] : null,
+      wmPosition: json['wm_position'] is int ? json['wm_position'] : null,
+      wmUrl: json['wm_url']?.toString()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'aspect_ratio': aspectRatio,
+      'audio': audio,
+      'auto_subjects': autoSubjects,
+      'bgm': bgm,
       'callback_url': callbackUrl,
       'duration': duration,
       'images': images.map((item) => item).toList(),
+      'meta_data': metaData,
       'model': model,
       'movement_amplitude': movementAmplitude,
+      'off_peak': offPeak,
       'payload': payload,
       'prompt': prompt,
       'resolution': resolution,
       'seed': seed,
+      'sounds': sounds?.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
+      'subjects': subjects?.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
+      'watermark': watermark,
+      'wm_position': wmPosition,
+      'wm_url': wmUrl,
     };
   }
 }
 
 class ViduStartEndToVideoRequest {
-  final String? aspectRatio;
+  final bool? audio;
   final String? callbackUrl;
   final int? duration;
   final List<String> images;
+  final String? metaData;
   final String model;
-  final String? movementAmplitude;
+  final bool? offPeak;
   final String? payload;
   final String? prompt;
   final String? resolution;
   final int? seed;
+  final bool? watermark;
+  final int? wmPosition;
+  final String? wmUrl;
 
   ViduStartEndToVideoRequest({
-    this.aspectRatio,
+    this.audio,
     this.callbackUrl,
     this.duration,
     required this.images,
+    this.metaData,
     required this.model,
-    this.movementAmplitude,
+    this.offPeak,
     this.payload,
     this.prompt,
     this.resolution,
-    this.seed
+    this.seed,
+    this.watermark,
+    this.wmPosition,
+    this.wmUrl
   });
 
   factory ViduStartEndToVideoRequest.fromJson(Map<String, dynamic> json) {
     return ViduStartEndToVideoRequest(
-      aspectRatio: json['aspect_ratio']?.toString(),
+      audio: json['audio'] is bool ? json['audio'] : null,
       callbackUrl: json['callback_url']?.toString(),
       duration: json['duration'] is int ? json['duration'] : null,
       images: (() {
@@ -13976,6 +21215,7 @@ class ViduStartEndToVideoRequest {
             .whereType<String>()
             .toList();
       })(),
+      metaData: json['meta_data']?.toString(),
       model: (() {
         final value = json['model']?.toString();
         if (value == null) {
@@ -13983,47 +21223,75 @@ class ViduStartEndToVideoRequest {
         }
         return value;
       })(),
-      movementAmplitude: json['movement_amplitude']?.toString(),
+      offPeak: json['off_peak'] is bool ? json['off_peak'] : null,
       payload: json['payload']?.toString(),
       prompt: json['prompt']?.toString(),
       resolution: json['resolution']?.toString(),
-      seed: json['seed'] is int ? json['seed'] : null
+      seed: json['seed'] is int ? json['seed'] : null,
+      watermark: json['watermark'] is bool ? json['watermark'] : null,
+      wmPosition: json['wm_position'] is int ? json['wm_position'] : null,
+      wmUrl: json['wm_url']?.toString()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'aspect_ratio': aspectRatio,
+      'audio': audio,
       'callback_url': callbackUrl,
       'duration': duration,
       'images': images.map((item) => item).toList(),
+      'meta_data': metaData,
       'model': model,
-      'movement_amplitude': movementAmplitude,
+      'off_peak': offPeak,
       'payload': payload,
       'prompt': prompt,
       'resolution': resolution,
       'seed': seed,
+      'watermark': watermark,
+      'wm_position': wmPosition,
+      'wm_url': wmUrl,
     };
   }
 }
 
 class ViduTaskCreationsResponse {
+  final String? aspectRatio;
   final String? createdAt;
   final List<ViduCreation>? creations;
+  final int? credits;
+  final int? duration;
+  final String? errCode;
   final String? model;
+  final bool? offPeak;
+  final String? payload;
+  final String? prompt;
+  final String? resolution;
+  final int? seed;
   final String? state;
   final String? taskId;
+  final bool? watermark;
 
   ViduTaskCreationsResponse({
+    this.aspectRatio,
     this.createdAt,
     this.creations,
+    this.credits,
+    this.duration,
+    this.errCode,
     this.model,
+    this.offPeak,
+    this.payload,
+    this.prompt,
+    this.resolution,
+    this.seed,
     this.state,
-    this.taskId
+    this.taskId,
+    this.watermark
   });
 
   factory ViduTaskCreationsResponse.fromJson(Map<String, dynamic> json) {
     return ViduTaskCreationsResponse(
+      aspectRatio: json['aspect_ratio']?.toString(),
       createdAt: json['created_at']?.toString(),
       creations: (() {
         final list = _sdkworkAsList(json['creations']);
@@ -14038,40 +21306,85 @@ class ViduTaskCreationsResponse {
             .whereType<ViduCreation>()
             .toList();
       })(),
+      credits: json['credits'] is int ? json['credits'] : null,
+      duration: json['duration'] is int ? json['duration'] : null,
+      errCode: json['err_code']?.toString(),
       model: json['model']?.toString(),
+      offPeak: json['off_peak'] is bool ? json['off_peak'] : null,
+      payload: json['payload']?.toString(),
+      prompt: json['prompt']?.toString(),
+      resolution: json['resolution']?.toString(),
+      seed: json['seed'] is int ? json['seed'] : null,
       state: json['state']?.toString(),
-      taskId: json['task_id']?.toString()
+      taskId: json['task_id']?.toString(),
+      watermark: json['watermark'] is bool ? json['watermark'] : null
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'aspect_ratio': aspectRatio,
       'created_at': createdAt,
       'creations': creations?.map((item) => item.toJson()).toList(),
+      'credits': credits,
+      'duration': duration,
+      'err_code': errCode,
       'model': model,
+      'off_peak': offPeak,
+      'payload': payload,
+      'prompt': prompt,
+      'resolution': resolution,
+      'seed': seed,
       'state': state,
       'task_id': taskId,
+      'watermark': watermark,
     };
   }
 }
 
 class ViduTemplateRequest {
+  final String? area;
+  final String? aspectRatio;
+  final String? beast;
+  final bool? bgm;
   final String? callbackUrl;
   final List<String> images;
+  final String? metaData;
+  final bool? offPeak;
   final String? payload;
+  final String? prompt;
+  final int? seed;
   final String template;
-  final List<String> videoUrls;
+  final List<String>? videoUrls;
+  final bool? watermark;
+  final int? wmPosition;
+  final String? wmUrl;
 
   ViduTemplateRequest({
+    this.area,
+    this.aspectRatio,
+    this.beast,
+    this.bgm,
     this.callbackUrl,
     required this.images,
+    this.metaData,
+    this.offPeak,
     this.payload,
+    this.prompt,
+    this.seed,
     required this.template,
-    required this.videoUrls
+    this.videoUrls,
+    this.watermark,
+    this.wmPosition,
+    this.wmUrl
   });
 
   factory ViduTemplateRequest.fromJson(Map<String, dynamic> json) {
     return ViduTemplateRequest(
+      area: json['area']?.toString(),
+      aspectRatio: json['aspect_ratio']?.toString(),
+      beast: json['beast']?.toString(),
+      bgm: json['bgm'] is bool ? json['bgm'] : null,
       callbackUrl: json['callback_url']?.toString(),
       images: (() {
         final list = _sdkworkAsList(json['images']);
@@ -14083,7 +21396,11 @@ class ViduTemplateRequest {
             .whereType<String>()
             .toList();
       })(),
+      metaData: json['meta_data']?.toString(),
+      offPeak: json['off_peak'] is bool ? json['off_peak'] : null,
       payload: json['payload']?.toString(),
+      prompt: json['prompt']?.toString(),
+      seed: json['seed'] is int ? json['seed'] : null,
       template: (() {
         final value = json['template']?.toString();
         if (value == null) {
@@ -14094,108 +21411,86 @@ class ViduTemplateRequest {
       videoUrls: (() {
         final list = _sdkworkAsList(json['video_urls']);
         if (list == null) {
-          throw FormatException('ViduTemplateRequest.video_urls is required');
+          return null;
         }
         return list
             .map((item) => item?.toString())
             .whereType<String>()
             .toList();
-      })()
+      })(),
+      watermark: json['watermark'] is bool ? json['watermark'] : null,
+      wmPosition: json['wm_position'] is int ? json['wm_position'] : null,
+      wmUrl: json['wm_url']?.toString()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'area': area,
+      'aspect_ratio': aspectRatio,
+      'beast': beast,
+      'bgm': bgm,
       'callback_url': callbackUrl,
       'images': images.map((item) => item).toList(),
-      'payload': payload,
-      'template': template,
-      'video_urls': videoUrls.map((item) => item).toList(),
-    };
-  }
-}
-
-class ViduTextToVideoRequest {
-  final String? aspectRatio;
-  final String? callbackUrl;
-  final int? duration;
-  final String model;
-  final String? movementAmplitude;
-  final String? payload;
-  final String prompt;
-  final String? resolution;
-  final int? seed;
-
-  ViduTextToVideoRequest({
-    this.aspectRatio,
-    this.callbackUrl,
-    this.duration,
-    required this.model,
-    this.movementAmplitude,
-    this.payload,
-    required this.prompt,
-    this.resolution,
-    this.seed
-  });
-
-  factory ViduTextToVideoRequest.fromJson(Map<String, dynamic> json) {
-    return ViduTextToVideoRequest(
-      aspectRatio: json['aspect_ratio']?.toString(),
-      callbackUrl: json['callback_url']?.toString(),
-      duration: json['duration'] is int ? json['duration'] : null,
-      model: (() {
-        final value = json['model']?.toString();
-        if (value == null) {
-          throw FormatException('ViduTextToVideoRequest.model is required');
-        }
-        return value;
-      })(),
-      movementAmplitude: json['movement_amplitude']?.toString(),
-      payload: json['payload']?.toString(),
-      prompt: (() {
-        final value = json['prompt']?.toString();
-        if (value == null) {
-          throw FormatException('ViduTextToVideoRequest.prompt is required');
-        }
-        return value;
-      })(),
-      resolution: json['resolution']?.toString(),
-      seed: json['seed'] is int ? json['seed'] : null
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return <String, dynamic>{
-      'aspect_ratio': aspectRatio,
-      'callback_url': callbackUrl,
-      'duration': duration,
-      'model': model,
-      'movement_amplitude': movementAmplitude,
+      'meta_data': metaData,
+      'off_peak': offPeak,
       'payload': payload,
       'prompt': prompt,
-      'resolution': resolution,
       'seed': seed,
+      'template': template,
+      'video_urls': videoUrls?.map((item) => item).toList(),
+      'watermark': watermark,
+      'wm_position': wmPosition,
+      'wm_url': wmUrl,
     };
   }
 }
 
-class ViduVideoGenerationTask {
+class ViduTemplateTask {
+  final String? aspectRatio;
+  final bool? bgm;
   final String? createdAt;
   final List<ViduCreation>? creations;
+  final int? credits;
+  final int? duration;
+  final String? errCode;
+  final List<String>? images;
   final String? model;
+  final bool? offPeak;
+  final String? payload;
+  final String? prompt;
+  final String? resolution;
+  final int? seed;
   final String? state;
   final String? taskId;
+  final String? template;
+  final bool? watermark;
 
-  ViduVideoGenerationTask({
+  ViduTemplateTask({
+    this.aspectRatio,
+    this.bgm,
     this.createdAt,
     this.creations,
+    this.credits,
+    this.duration,
+    this.errCode,
+    this.images,
     this.model,
+    this.offPeak,
+    this.payload,
+    this.prompt,
+    this.resolution,
+    this.seed,
     this.state,
-    this.taskId
+    this.taskId,
+    this.template,
+    this.watermark
   });
 
-  factory ViduVideoGenerationTask.fromJson(Map<String, dynamic> json) {
-    return ViduVideoGenerationTask(
+  factory ViduTemplateTask.fromJson(Map<String, dynamic> json) {
+    return ViduTemplateTask(
+      aspectRatio: json['aspect_ratio']?.toString(),
+      bgm: json['bgm'] is bool ? json['bgm'] : null,
       createdAt: json['created_at']?.toString(),
       creations: (() {
         final list = _sdkworkAsList(json['creations']);
@@ -14210,94 +21505,257 @@ class ViduVideoGenerationTask {
             .whereType<ViduCreation>()
             .toList();
       })(),
+      credits: json['credits'] is int ? json['credits'] : null,
+      duration: json['duration'] is int ? json['duration'] : null,
+      errCode: json['err_code']?.toString(),
+      images: (() {
+        final list = _sdkworkAsList(json['images']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
       model: json['model']?.toString(),
+      offPeak: json['off_peak'] is bool ? json['off_peak'] : null,
+      payload: json['payload']?.toString(),
+      prompt: json['prompt']?.toString(),
+      resolution: json['resolution']?.toString(),
+      seed: json['seed'] is int ? json['seed'] : null,
       state: json['state']?.toString(),
-      taskId: json['task_id']?.toString()
+      taskId: json['task_id']?.toString(),
+      template: json['template']?.toString(),
+      watermark: json['watermark'] is bool ? json['watermark'] : null
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'aspect_ratio': aspectRatio,
+      'bgm': bgm,
       'created_at': createdAt,
       'creations': creations?.map((item) => item.toJson()).toList(),
+      'credits': credits,
+      'duration': duration,
+      'err_code': errCode,
+      'images': images?.map((item) => item).toList(),
       'model': model,
+      'off_peak': offPeak,
+      'payload': payload,
+      'prompt': prompt,
+      'resolution': resolution,
+      'seed': seed,
       'state': state,
       'task_id': taskId,
+      'template': template,
+      'watermark': watermark,
     };
   }
 }
 
-class VolcengineContentGenerationTask {
-  final List<VolcengineContentPart>? content;
-  final String? createdAt;
-  final ProviderTaskError? error;
-  final String? id;
-  final String? model;
-  final String? prompt;
-  final ProviderTaskResult? result;
-  final String? state;
-  final String? status;
-  final String? taskId;
-  final String? updatedAt;
-  final List<ProviderGeneratedMedia>? videos;
+class ViduTextToAudioRequest {
+  final bool? bgm;
+  final String? callbackUrl;
+  final double? duration;
+  final String model;
+  final bool? offPeak;
+  final String? payload;
+  final String prompt;
+  final int? seed;
 
-  VolcengineContentGenerationTask({
-    this.content,
-    this.createdAt,
-    this.error,
-    this.id,
-    this.model,
-    this.prompt,
-    this.result,
-    this.state,
-    this.status,
-    this.taskId,
-    this.updatedAt,
-    this.videos
+  ViduTextToAudioRequest({
+    this.bgm,
+    this.callbackUrl,
+    this.duration,
+    required this.model,
+    this.offPeak,
+    this.payload,
+    required this.prompt,
+    this.seed
   });
 
-  factory VolcengineContentGenerationTask.fromJson(Map<String, dynamic> json) {
-    return VolcengineContentGenerationTask(
-      content: (() {
-        final list = _sdkworkAsList(json['content']);
+  factory ViduTextToAudioRequest.fromJson(Map<String, dynamic> json) {
+    return ViduTextToAudioRequest(
+      bgm: json['bgm'] is bool ? json['bgm'] : null,
+      callbackUrl: json['callback_url']?.toString(),
+      duration: json['duration'] is num ? json['duration'].toDouble() : null,
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('ViduTextToAudioRequest.model is required');
+        }
+        return value;
+      })(),
+      offPeak: json['off_peak'] is bool ? json['off_peak'] : null,
+      payload: json['payload']?.toString(),
+      prompt: (() {
+        final value = json['prompt']?.toString();
+        if (value == null) {
+          throw FormatException('ViduTextToAudioRequest.prompt is required');
+        }
+        return value;
+      })(),
+      seed: json['seed'] is int ? json['seed'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'bgm': bgm,
+      'callback_url': callbackUrl,
+      'duration': duration,
+      'model': model,
+      'off_peak': offPeak,
+      'payload': payload,
+      'prompt': prompt,
+      'seed': seed,
+    };
+  }
+}
+
+class ViduTextToVideoRequest {
+  final String? aspectRatio;
+  final bool? audio;
+  final String? callbackUrl;
+  final int? duration;
+  final String? metaData;
+  final String model;
+  final bool? offPeak;
+  final String? payload;
+  final String prompt;
+  final String? resolution;
+  final int? seed;
+  final bool? watermark;
+  final int? wmPosition;
+  final String? wmUrl;
+
+  ViduTextToVideoRequest({
+    this.aspectRatio,
+    this.audio,
+    this.callbackUrl,
+    this.duration,
+    this.metaData,
+    required this.model,
+    this.offPeak,
+    this.payload,
+    required this.prompt,
+    this.resolution,
+    this.seed,
+    this.watermark,
+    this.wmPosition,
+    this.wmUrl
+  });
+
+  factory ViduTextToVideoRequest.fromJson(Map<String, dynamic> json) {
+    return ViduTextToVideoRequest(
+      aspectRatio: json['aspect_ratio']?.toString(),
+      audio: json['audio'] is bool ? json['audio'] : null,
+      callbackUrl: json['callback_url']?.toString(),
+      duration: json['duration'] is int ? json['duration'] : null,
+      metaData: json['meta_data']?.toString(),
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('ViduTextToVideoRequest.model is required');
+        }
+        return value;
+      })(),
+      offPeak: json['off_peak'] is bool ? json['off_peak'] : null,
+      payload: json['payload']?.toString(),
+      prompt: (() {
+        final value = json['prompt']?.toString();
+        if (value == null) {
+          throw FormatException('ViduTextToVideoRequest.prompt is required');
+        }
+        return value;
+      })(),
+      resolution: json['resolution']?.toString(),
+      seed: json['seed'] is int ? json['seed'] : null,
+      watermark: json['watermark'] is bool ? json['watermark'] : null,
+      wmPosition: json['wm_position'] is int ? json['wm_position'] : null,
+      wmUrl: json['wm_url']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'aspect_ratio': aspectRatio,
+      'audio': audio,
+      'callback_url': callbackUrl,
+      'duration': duration,
+      'meta_data': metaData,
+      'model': model,
+      'off_peak': offPeak,
+      'payload': payload,
+      'prompt': prompt,
+      'resolution': resolution,
+      'seed': seed,
+      'watermark': watermark,
+      'wm_position': wmPosition,
+      'wm_url': wmUrl,
+    };
+  }
+}
+
+class ViduTimingToAudioRequest {
+  final bool? bgm;
+  final String? callbackUrl;
+  final double? duration;
+  final String model;
+  final bool? offPeak;
+  final String? payload;
+  final int? seed;
+  final List<Map<String, dynamic>> timingPrompts;
+
+  ViduTimingToAudioRequest({
+    this.bgm,
+    this.callbackUrl,
+    this.duration,
+    required this.model,
+    this.offPeak,
+    this.payload,
+    this.seed,
+    required this.timingPrompts
+  });
+
+  factory ViduTimingToAudioRequest.fromJson(Map<String, dynamic> json) {
+    return ViduTimingToAudioRequest(
+      bgm: json['bgm'] is bool ? json['bgm'] : null,
+      callbackUrl: json['callback_url']?.toString(),
+      duration: json['duration'] is num ? json['duration'].toDouble() : null,
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('ViduTimingToAudioRequest.model is required');
+        }
+        return value;
+      })(),
+      offPeak: json['off_peak'] is bool ? json['off_peak'] : null,
+      payload: json['payload']?.toString(),
+      seed: json['seed'] is int ? json['seed'] : null,
+      timingPrompts: (() {
+        final list = _sdkworkAsList(json['timing_prompts']);
         if (list == null) {
-          return null;
+          throw FormatException('ViduTimingToAudioRequest.timing_prompts is required');
         }
         return list
             .map((item) => (() {
         final map = _sdkworkAsMap(item);
-        return map == null ? null : VolcengineContentPart.fromJson(map);
-      })())
-            .whereType<VolcengineContentPart>()
-            .toList();
-      })(),
-      createdAt: json['created_at']?.toString(),
-      error: (() {
-        final map = _sdkworkAsMap(json['error']);
-        return map == null ? null : ProviderTaskError.fromJson(map);
-      })(),
-      id: json['id']?.toString(),
-      model: json['model']?.toString(),
-      prompt: json['prompt']?.toString(),
-      result: (() {
-        final map = _sdkworkAsMap(json['result']);
-        return map == null ? null : ProviderTaskResult.fromJson(map);
-      })(),
-      state: json['state']?.toString(),
-      status: json['status']?.toString(),
-      taskId: json['task_id']?.toString(),
-      updatedAt: json['updated_at']?.toString(),
-      videos: (() {
-        final list = _sdkworkAsList(json['videos']);
-        if (list == null) {
+        if (map == null) {
           return null;
         }
-        return list
-            .map((item) => (() {
-        final map = _sdkworkAsMap(item);
-        return map == null ? null : ProviderGeneratedMedia.fromJson(map);
+        final result = <String, String>{};
+        map.forEach((key, nestedItem) {
+          final deserialized = nestedItem?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
       })())
-            .whereType<ProviderGeneratedMedia>()
+            .whereType<Map<String, dynamic>>()
             .toList();
       })()
     );
@@ -14305,38 +21763,280 @@ class VolcengineContentGenerationTask {
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'content': content?.map((item) => item.toJson()).toList(),
+      'bgm': bgm,
+      'callback_url': callbackUrl,
+      'duration': duration,
+      'model': model,
+      'off_peak': offPeak,
+      'payload': payload,
+      'seed': seed,
+      'timing_prompts': timingPrompts.map((item) => item.map((key, nestedItem) => MapEntry(key, nestedItem))).toList(),
+    };
+  }
+}
+
+class ViduVideoGenerationTask {
+  final String? aspectRatio;
+  final String? createdAt;
+  final List<ViduCreation>? creations;
+  final int? credits;
+  final int? duration;
+  final String? errCode;
+  final String? model;
+  final bool? offPeak;
+  final String? payload;
+  final String? prompt;
+  final String? resolution;
+  final int? seed;
+  final String? state;
+  final String? taskId;
+  final bool? watermark;
+
+  ViduVideoGenerationTask({
+    this.aspectRatio,
+    this.createdAt,
+    this.creations,
+    this.credits,
+    this.duration,
+    this.errCode,
+    this.model,
+    this.offPeak,
+    this.payload,
+    this.prompt,
+    this.resolution,
+    this.seed,
+    this.state,
+    this.taskId,
+    this.watermark
+  });
+
+  factory ViduVideoGenerationTask.fromJson(Map<String, dynamic> json) {
+    return ViduVideoGenerationTask(
+      aspectRatio: json['aspect_ratio']?.toString(),
+      createdAt: json['created_at']?.toString(),
+      creations: (() {
+        final list = _sdkworkAsList(json['creations']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : ViduCreation.fromJson(map);
+      })())
+            .whereType<ViduCreation>()
+            .toList();
+      })(),
+      credits: json['credits'] is int ? json['credits'] : null,
+      duration: json['duration'] is int ? json['duration'] : null,
+      errCode: json['err_code']?.toString(),
+      model: json['model']?.toString(),
+      offPeak: json['off_peak'] is bool ? json['off_peak'] : null,
+      payload: json['payload']?.toString(),
+      prompt: json['prompt']?.toString(),
+      resolution: json['resolution']?.toString(),
+      seed: json['seed'] is int ? json['seed'] : null,
+      state: json['state']?.toString(),
+      taskId: json['task_id']?.toString(),
+      watermark: json['watermark'] is bool ? json['watermark'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'aspect_ratio': aspectRatio,
       'created_at': createdAt,
+      'creations': creations?.map((item) => item.toJson()).toList(),
+      'credits': credits,
+      'duration': duration,
+      'err_code': errCode,
+      'model': model,
+      'off_peak': offPeak,
+      'payload': payload,
+      'prompt': prompt,
+      'resolution': resolution,
+      'seed': seed,
+      'state': state,
+      'task_id': taskId,
+      'watermark': watermark,
+    };
+  }
+}
+
+class VolcengineContentGenerationTask {
+  final ArkVideoTaskContent? content;
+  final int? createdAt;
+  final bool? draft;
+  final int? duration;
+  final ProviderTaskError? error;
+  final int? executionExpiresAfter;
+  final int? frames;
+  final int? framespersecond;
+  final bool? generateAudio;
+  final String? id;
+  final String? model;
+  final String? outputFormat;
+  final int? priority;
+  final String? ratio;
+  final String? resolution;
+  final String? safetyIdentifier;
+  final int? seed;
+  final String? serviceTier;
+  final String? status;
+  final List<ArkWebSearchTool>? tools;
+  final int? updatedAt;
+  final ArkVideoUsage? usage;
+
+  VolcengineContentGenerationTask({
+    this.content,
+    this.createdAt,
+    this.draft,
+    this.duration,
+    this.error,
+    this.executionExpiresAfter,
+    this.frames,
+    this.framespersecond,
+    this.generateAudio,
+    this.id,
+    this.model,
+    this.outputFormat,
+    this.priority,
+    this.ratio,
+    this.resolution,
+    this.safetyIdentifier,
+    this.seed,
+    this.serviceTier,
+    this.status,
+    this.tools,
+    this.updatedAt,
+    this.usage
+  });
+
+  factory VolcengineContentGenerationTask.fromJson(Map<String, dynamic> json) {
+    return VolcengineContentGenerationTask(
+      content: (() {
+        final map = _sdkworkAsMap(json['content']);
+        return map == null ? null : ArkVideoTaskContent.fromJson(map);
+      })(),
+      createdAt: json['created_at'] is int ? json['created_at'] : null,
+      draft: json['draft'] is bool ? json['draft'] : null,
+      duration: json['duration'] is int ? json['duration'] : null,
+      error: (() {
+        final map = _sdkworkAsMap(json['error']);
+        return map == null ? null : ProviderTaskError.fromJson(map);
+      })(),
+      executionExpiresAfter: json['execution_expires_after'] is int ? json['execution_expires_after'] : null,
+      frames: json['frames'] is int ? json['frames'] : null,
+      framespersecond: json['framespersecond'] is int ? json['framespersecond'] : null,
+      generateAudio: json['generate_audio'] is bool ? json['generate_audio'] : null,
+      id: json['id']?.toString(),
+      model: json['model']?.toString(),
+      outputFormat: json['output_format']?.toString(),
+      priority: json['priority'] is int ? json['priority'] : null,
+      ratio: json['ratio']?.toString(),
+      resolution: json['resolution']?.toString(),
+      safetyIdentifier: json['safety_identifier']?.toString(),
+      seed: json['seed'] is int ? json['seed'] : null,
+      serviceTier: json['service_tier']?.toString(),
+      status: json['status']?.toString(),
+      tools: (() {
+        final list = _sdkworkAsList(json['tools']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : ArkWebSearchTool.fromJson(map);
+      })())
+            .whereType<ArkWebSearchTool>()
+            .toList();
+      })(),
+      updatedAt: json['updated_at'] is int ? json['updated_at'] : null,
+      usage: (() {
+        final map = _sdkworkAsMap(json['usage']);
+        return map == null ? null : ArkVideoUsage.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'content': content?.toJson(),
+      'created_at': createdAt,
+      'draft': draft,
+      'duration': duration,
       'error': error?.toJson(),
+      'execution_expires_after': executionExpiresAfter,
+      'frames': frames,
+      'framespersecond': framespersecond,
+      'generate_audio': generateAudio,
       'id': id,
       'model': model,
-      'prompt': prompt,
-      'result': result?.toJson(),
-      'state': state,
+      'output_format': outputFormat,
+      'priority': priority,
+      'ratio': ratio,
+      'resolution': resolution,
+      'safety_identifier': safetyIdentifier,
+      'seed': seed,
+      'service_tier': serviceTier,
       'status': status,
-      'task_id': taskId,
+      'tools': tools?.map((item) => item.toJson()).toList(),
       'updated_at': updatedAt,
-      'videos': videos?.map((item) => item.toJson()).toList(),
+      'usage': usage?.toJson(),
     };
   }
 }
 
 class VolcengineContentGenerationTaskCreateRequest {
   final String? callbackUrl;
+  final bool? cameraFixed;
   final List<VolcengineContentPart> content;
-  final Map<String, dynamic>? metadata;
+  final bool? draft;
+  final int? duration;
+  final int? executionExpiresAfter;
+  final int? frames;
+  final bool? generateAudio;
   final String model;
+  final String? omniReferenceTaskType;
+  final String? outputFormat;
+  final int? priority;
+  final String? ratio;
+  final String? resolution;
+  final bool? returnLastFrame;
+  final String? safetyIdentifier;
+  final int? seed;
+  final String? serviceTier;
+  final List<ArkWebSearchTool>? tools;
+  final bool? watermark;
 
   VolcengineContentGenerationTaskCreateRequest({
     this.callbackUrl,
+    this.cameraFixed,
     required this.content,
-    this.metadata,
-    required this.model
+    this.draft,
+    this.duration,
+    this.executionExpiresAfter,
+    this.frames,
+    this.generateAudio,
+    required this.model,
+    this.omniReferenceTaskType,
+    this.outputFormat,
+    this.priority,
+    this.ratio,
+    this.resolution,
+    this.returnLastFrame,
+    this.safetyIdentifier,
+    this.seed,
+    this.serviceTier,
+    this.tools,
+    this.watermark
   });
 
   factory VolcengineContentGenerationTaskCreateRequest.fromJson(Map<String, dynamic> json) {
     return VolcengineContentGenerationTaskCreateRequest(
       callbackUrl: json['callback_url']?.toString(),
+      cameraFixed: json['camera_fixed'] is bool ? json['camera_fixed'] : null,
       content: (() {
         final list = _sdkworkAsList(json['content']);
         if (list == null) {
@@ -14350,8 +22050,199 @@ class VolcengineContentGenerationTaskCreateRequest {
             .whereType<VolcengineContentPart>()
             .toList();
       })(),
-      metadata: (() {
-        final map = _sdkworkAsMap(json['metadata']);
+      draft: json['draft'] is bool ? json['draft'] : null,
+      duration: json['duration'] is int ? json['duration'] : null,
+      executionExpiresAfter: json['execution_expires_after'] is int ? json['execution_expires_after'] : null,
+      frames: json['frames'] is int ? json['frames'] : null,
+      generateAudio: json['generate_audio'] is bool ? json['generate_audio'] : null,
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('VolcengineContentGenerationTaskCreateRequest.model is required');
+        }
+        return value;
+      })(),
+      omniReferenceTaskType: json['omni_reference_task_type']?.toString(),
+      outputFormat: json['output_format']?.toString(),
+      priority: json['priority'] is int ? json['priority'] : null,
+      ratio: json['ratio']?.toString(),
+      resolution: json['resolution']?.toString(),
+      returnLastFrame: json['return_last_frame'] is bool ? json['return_last_frame'] : null,
+      safetyIdentifier: json['safety_identifier']?.toString(),
+      seed: json['seed'] is int ? json['seed'] : null,
+      serviceTier: json['service_tier']?.toString(),
+      tools: (() {
+        final list = _sdkworkAsList(json['tools']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : ArkWebSearchTool.fromJson(map);
+      })())
+            .whereType<ArkWebSearchTool>()
+            .toList();
+      })(),
+      watermark: json['watermark'] is bool ? json['watermark'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'callback_url': callbackUrl,
+      'camera_fixed': cameraFixed,
+      'content': content.map((item) => item.toJson()).toList(),
+      'draft': draft,
+      'duration': duration,
+      'execution_expires_after': executionExpiresAfter,
+      'frames': frames,
+      'generate_audio': generateAudio,
+      'model': model,
+      'omni_reference_task_type': omniReferenceTaskType,
+      'output_format': outputFormat,
+      'priority': priority,
+      'ratio': ratio,
+      'resolution': resolution,
+      'return_last_frame': returnLastFrame,
+      'safety_identifier': safetyIdentifier,
+      'seed': seed,
+      'service_tier': serviceTier,
+      'tools': tools?.map((item) => item.toJson()).toList(),
+      'watermark': watermark,
+    };
+  }
+}
+
+class VolcengineContentGenerationTaskCreateResponse {
+  final String? id;
+
+  VolcengineContentGenerationTaskCreateResponse({
+    this.id
+  });
+
+  factory VolcengineContentGenerationTaskCreateResponse.fromJson(Map<String, dynamic> json) {
+    return VolcengineContentGenerationTaskCreateResponse(
+      id: json['id']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'id': id,
+    };
+  }
+}
+
+class VolcengineContentPart {
+  final ArkAudioSource? audioUrl;
+  final ArkDraftTask? draftTask;
+  final ArkImageSource? imageUrl;
+  final String? role;
+  final String? text;
+  final String type;
+  final ArkVideoSource? videoUrl;
+
+  VolcengineContentPart({
+    this.audioUrl,
+    this.draftTask,
+    this.imageUrl,
+    this.role,
+    this.text,
+    required this.type,
+    this.videoUrl
+  });
+
+  factory VolcengineContentPart.fromJson(Map<String, dynamic> json) {
+    return VolcengineContentPart(
+      audioUrl: (() {
+        final map = _sdkworkAsMap(json['audio_url']);
+        return map == null ? null : ArkAudioSource.fromJson(map);
+      })(),
+      draftTask: (() {
+        final map = _sdkworkAsMap(json['draft_task']);
+        return map == null ? null : ArkDraftTask.fromJson(map);
+      })(),
+      imageUrl: (() {
+        final map = _sdkworkAsMap(json['image_url']);
+        return map == null ? null : ArkImageSource.fromJson(map);
+      })(),
+      role: json['role']?.toString(),
+      text: json['text']?.toString(),
+      type: (() {
+        final value = json['type']?.toString();
+        if (value == null) {
+          throw FormatException('VolcengineContentPart.type is required');
+        }
+        return value;
+      })(),
+      videoUrl: (() {
+        final map = _sdkworkAsMap(json['video_url']);
+        return map == null ? null : ArkVideoSource.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'audio_url': audioUrl?.toJson(),
+      'draft_task': draftTask?.toJson(),
+      'image_url': imageUrl?.toJson(),
+      'role': role,
+      'text': text,
+      'type': type,
+      'video_url': videoUrl?.toJson(),
+    };
+  }
+}
+
+class VolcengineImageGenerationRequest {
+  final String? background;
+  final dynamic image;
+  final bool? layerDecomposition;
+  final String model;
+  final Map<String, dynamic>? optimizePromptOptions;
+  final String? outputFormat;
+  final String? prompt;
+  final String? responseFormat;
+  final String? sequentialImageGeneration;
+  final Map<String, dynamic>? sequentialImageGenerationOptions;
+  final String? size;
+  final bool? stream;
+  final List<ArkWebSearchTool>? tools;
+  final bool? watermark;
+
+  VolcengineImageGenerationRequest({
+    this.background,
+    this.image,
+    this.layerDecomposition,
+    required this.model,
+    this.optimizePromptOptions,
+    this.outputFormat,
+    this.prompt,
+    this.responseFormat,
+    this.sequentialImageGeneration,
+    this.sequentialImageGenerationOptions,
+    this.size,
+    this.stream,
+    this.tools,
+    this.watermark
+  });
+
+  factory VolcengineImageGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return VolcengineImageGenerationRequest(
+      background: json['background']?.toString(),
+      image: json['image']?.toString(),
+      layerDecomposition: json['layer_decomposition'] is bool ? json['layer_decomposition'] : null,
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('VolcengineImageGenerationRequest.model is required');
+        }
+        return value;
+      })(),
+      optimizePromptOptions: (() {
+        final map = _sdkworkAsMap(json['optimize_prompt_options']);
         if (map == null) {
           return null;
         }
@@ -14364,10 +22255,950 @@ class VolcengineContentGenerationTaskCreateRequest {
         });
         return result;
       })(),
-      model: (() {
-        final value = json['model']?.toString();
+      outputFormat: json['output_format']?.toString(),
+      prompt: json['prompt']?.toString(),
+      responseFormat: json['response_format']?.toString(),
+      sequentialImageGeneration: json['sequential_image_generation']?.toString(),
+      sequentialImageGenerationOptions: (() {
+        final map = _sdkworkAsMap(json['sequential_image_generation_options']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      size: json['size']?.toString(),
+      stream: json['stream'] is bool ? json['stream'] : null,
+      tools: (() {
+        final list = _sdkworkAsList(json['tools']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : ArkWebSearchTool.fromJson(map);
+      })())
+            .whereType<ArkWebSearchTool>()
+            .toList();
+      })(),
+      watermark: json['watermark'] is bool ? json['watermark'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'background': background,
+      'image': image,
+      'layer_decomposition': layerDecomposition,
+      'model': model,
+      'optimize_prompt_options': optimizePromptOptions?.map((key, item) => MapEntry(key, item)),
+      'output_format': outputFormat,
+      'prompt': prompt,
+      'response_format': responseFormat,
+      'sequential_image_generation': sequentialImageGeneration,
+      'sequential_image_generation_options': sequentialImageGenerationOptions?.map((key, item) => MapEntry(key, item)),
+      'size': size,
+      'stream': stream,
+      'tools': tools?.map((item) => item.toJson()).toList(),
+      'watermark': watermark,
+    };
+  }
+}
+
+class VolcengineImageGenerationResponse {
+  final int? created;
+  final List<ArkImageGenerationData>? data;
+  final ProviderTaskError? error;
+  final String? model;
+  final List<ArkWebSearchTool>? tools;
+  final ArkImageUsage? usage;
+
+  VolcengineImageGenerationResponse({
+    this.created,
+    this.data,
+    this.error,
+    this.model,
+    this.tools,
+    this.usage
+  });
+
+  factory VolcengineImageGenerationResponse.fromJson(Map<String, dynamic> json) {
+    return VolcengineImageGenerationResponse(
+      created: json['created'] is int ? json['created'] : null,
+      data: (() {
+        final list = _sdkworkAsList(json['data']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : ArkImageGenerationData.fromJson(map);
+      })())
+            .whereType<ArkImageGenerationData>()
+            .toList();
+      })(),
+      error: (() {
+        final map = _sdkworkAsMap(json['error']);
+        return map == null ? null : ProviderTaskError.fromJson(map);
+      })(),
+      model: json['model']?.toString(),
+      tools: (() {
+        final list = _sdkworkAsList(json['tools']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : ArkWebSearchTool.fromJson(map);
+      })())
+            .whereType<ArkWebSearchTool>()
+            .toList();
+      })(),
+      usage: (() {
+        final map = _sdkworkAsMap(json['usage']);
+        return map == null ? null : ArkImageUsage.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'created': created,
+      'data': data?.map((item) => item.toJson()).toList(),
+      'error': error?.toJson(),
+      'model': model,
+      'tools': tools?.map((item) => item.toJson()).toList(),
+      'usage': usage?.toJson(),
+    };
+  }
+}
+
+class XaiDeferredImageResponse {
+  final List<XaiGeneratedImage>? data;
+  final Map<String, dynamic>? error;
+  final String requestId;
+  final String status;
+  final XaiUsage? usage;
+
+  XaiDeferredImageResponse({
+    this.data,
+    this.error,
+    required this.requestId,
+    required this.status,
+    this.usage
+  });
+
+  factory XaiDeferredImageResponse.fromJson(Map<String, dynamic> json) {
+    return XaiDeferredImageResponse(
+      data: (() {
+        final list = _sdkworkAsList(json['data']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : XaiGeneratedImage.fromJson(map);
+      })())
+            .whereType<XaiGeneratedImage>()
+            .toList();
+      })(),
+      error: (() {
+        final map = _sdkworkAsMap(json['error']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      requestId: (() {
+        final value = json['request_id']?.toString();
         if (value == null) {
-          throw FormatException('VolcengineContentGenerationTaskCreateRequest.model is required');
+          throw FormatException('XaiDeferredImageResponse.request_id is required');
+        }
+        return value;
+      })(),
+      status: (() {
+        final value = json['status']?.toString();
+        if (value == null) {
+          throw FormatException('XaiDeferredImageResponse.status is required');
+        }
+        return value;
+      })(),
+      usage: (() {
+        final map = _sdkworkAsMap(json['usage']);
+        return map == null ? null : XaiUsage.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'data': data?.map((item) => item.toJson()).toList(),
+      'error': error?.map((key, item) => MapEntry(key, item)),
+      'request_id': requestId,
+      'status': status,
+      'usage': usage?.toJson(),
+    };
+  }
+}
+
+class XaiGeneratedImage {
+  final String? b64Json;
+  final Map<String, dynamic>? fileOutput;
+  final String? mimeType;
+  final String? storageError;
+  final String? url;
+
+  XaiGeneratedImage({
+    this.b64Json,
+    this.fileOutput,
+    this.mimeType,
+    this.storageError,
+    this.url
+  });
+
+  factory XaiGeneratedImage.fromJson(Map<String, dynamic> json) {
+    return XaiGeneratedImage(
+      b64Json: json['b64_json']?.toString(),
+      fileOutput: (() {
+        final map = _sdkworkAsMap(json['file_output']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      mimeType: json['mime_type']?.toString(),
+      storageError: json['storage_error']?.toString(),
+      url: json['url']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'b64_json': b64Json,
+      'file_output': fileOutput?.map((key, item) => MapEntry(key, item)),
+      'mime_type': mimeType,
+      'storage_error': storageError,
+      'url': url,
+    };
+  }
+}
+
+class XaiImageEditRequest {
+  final String? aspectRatio;
+  final bool? deferred_;
+  final XaiImageUrl? image;
+  final List<XaiImageUrl>? images;
+  final String? model;
+  final int? n;
+  final Map<String, dynamic>? output;
+  final String prompt;
+  final String? resolution;
+  final String? responseFormat;
+  final Map<String, dynamic>? storageOptions;
+  final String? user;
+
+  XaiImageEditRequest({
+    this.aspectRatio,
+    this.deferred_,
+    this.image,
+    this.images,
+    this.model,
+    this.n,
+    this.output,
+    required this.prompt,
+    this.resolution,
+    this.responseFormat,
+    this.storageOptions,
+    this.user
+  });
+
+  factory XaiImageEditRequest.fromJson(Map<String, dynamic> json) {
+    return XaiImageEditRequest(
+      aspectRatio: json['aspect_ratio']?.toString(),
+      deferred_: json['deferred'] is bool ? json['deferred'] : null,
+      image: (() {
+        final map = _sdkworkAsMap(json['image']);
+        return map == null ? null : XaiImageUrl.fromJson(map);
+      })(),
+      images: (() {
+        final list = _sdkworkAsList(json['images']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : XaiImageUrl.fromJson(map);
+      })())
+            .whereType<XaiImageUrl>()
+            .toList();
+      })(),
+      model: json['model']?.toString(),
+      n: json['n'] is int ? json['n'] : null,
+      output: (() {
+        final map = _sdkworkAsMap(json['output']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      prompt: (() {
+        final value = json['prompt']?.toString();
+        if (value == null) {
+          throw FormatException('XaiImageEditRequest.prompt is required');
+        }
+        return value;
+      })(),
+      resolution: json['resolution']?.toString(),
+      responseFormat: json['response_format']?.toString(),
+      storageOptions: (() {
+        final map = _sdkworkAsMap(json['storage_options']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      user: json['user']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'aspect_ratio': aspectRatio,
+      'deferred': deferred_,
+      'image': image?.toJson(),
+      'images': images?.map((item) => item.toJson()).toList(),
+      'model': model,
+      'n': n,
+      'output': output?.map((key, item) => MapEntry(key, item)),
+      'prompt': prompt,
+      'resolution': resolution,
+      'response_format': responseFormat,
+      'storage_options': storageOptions?.map((key, item) => MapEntry(key, item)),
+      'user': user,
+    };
+  }
+}
+
+class XaiImageGenerationRequest {
+  final String? aspectRatio;
+  final bool? deferred_;
+  final String? model;
+  final int? n;
+  final Map<String, dynamic>? output;
+  final String prompt;
+  final String? resolution;
+  final String? responseFormat;
+  final Map<String, dynamic>? storageOptions;
+  final String? user;
+
+  XaiImageGenerationRequest({
+    this.aspectRatio,
+    this.deferred_,
+    this.model,
+    this.n,
+    this.output,
+    required this.prompt,
+    this.resolution,
+    this.responseFormat,
+    this.storageOptions,
+    this.user
+  });
+
+  factory XaiImageGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return XaiImageGenerationRequest(
+      aspectRatio: json['aspect_ratio']?.toString(),
+      deferred_: json['deferred'] is bool ? json['deferred'] : null,
+      model: json['model']?.toString(),
+      n: json['n'] is int ? json['n'] : null,
+      output: (() {
+        final map = _sdkworkAsMap(json['output']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      prompt: (() {
+        final value = json['prompt']?.toString();
+        if (value == null) {
+          throw FormatException('XaiImageGenerationRequest.prompt is required');
+        }
+        return value;
+      })(),
+      resolution: json['resolution']?.toString(),
+      responseFormat: json['response_format']?.toString(),
+      storageOptions: (() {
+        final map = _sdkworkAsMap(json['storage_options']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      user: json['user']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'aspect_ratio': aspectRatio,
+      'deferred': deferred_,
+      'model': model,
+      'n': n,
+      'output': output?.map((key, item) => MapEntry(key, item)),
+      'prompt': prompt,
+      'resolution': resolution,
+      'response_format': responseFormat,
+      'storage_options': storageOptions?.map((key, item) => MapEntry(key, item)),
+      'user': user,
+    };
+  }
+}
+
+class XaiImageGenerationResponse {
+  final List<XaiGeneratedImage> data;
+  final XaiUsage? usage;
+
+  XaiImageGenerationResponse({
+    required this.data,
+    this.usage
+  });
+
+  factory XaiImageGenerationResponse.fromJson(Map<String, dynamic> json) {
+    return XaiImageGenerationResponse(
+      data: (() {
+        final list = _sdkworkAsList(json['data']);
+        if (list == null) {
+          throw FormatException('XaiImageGenerationResponse.data is required');
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : XaiGeneratedImage.fromJson(map);
+      })())
+            .whereType<XaiGeneratedImage>()
+            .toList();
+      })(),
+      usage: (() {
+        final map = _sdkworkAsMap(json['usage']);
+        return map == null ? null : XaiUsage.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'data': data.map((item) => item.toJson()).toList(),
+      'usage': usage?.toJson(),
+    };
+  }
+}
+
+class XaiImageUrl {
+  final String? fileId;
+  final String? url;
+
+  XaiImageUrl({
+    this.fileId,
+    this.url
+  });
+
+  factory XaiImageUrl.fromJson(Map<String, dynamic> json) {
+    return XaiImageUrl(
+      fileId: json['file_id']?.toString(),
+      url: json['url']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'file_id': fileId,
+      'url': url,
+    };
+  }
+}
+
+class XaiUsage {
+  final int? completionTokens;
+  final int costInUsdTicks;
+  final int? numSourcesUsed;
+  final int? promptTokens;
+  final int? totalTokens;
+
+  XaiUsage({
+    this.completionTokens,
+    required this.costInUsdTicks,
+    this.numSourcesUsed,
+    this.promptTokens,
+    this.totalTokens
+  });
+
+  factory XaiUsage.fromJson(Map<String, dynamic> json) {
+    return XaiUsage(
+      completionTokens: json['completion_tokens'] is int ? json['completion_tokens'] : null,
+      costInUsdTicks: (() {
+        final value = json['cost_in_usd_ticks'];
+        if (value is! int) {
+          throw FormatException('XaiUsage.cost_in_usd_ticks is required');
+        }
+        return value;
+      })(),
+      numSourcesUsed: json['num_sources_used'] is int ? json['num_sources_used'] : null,
+      promptTokens: json['prompt_tokens'] is int ? json['prompt_tokens'] : null,
+      totalTokens: json['total_tokens'] is int ? json['total_tokens'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'completion_tokens': completionTokens,
+      'cost_in_usd_ticks': costInUsdTicks,
+      'num_sources_used': numSourcesUsed,
+      'prompt_tokens': promptTokens,
+      'total_tokens': totalTokens,
+    };
+  }
+}
+
+class XaiVideoEditRequest {
+  final String? model;
+  final Map<String, dynamic>? output;
+  final String prompt;
+  final Map<String, dynamic>? storageOptions;
+  final String? user;
+  final XaiVideoInput video;
+
+  XaiVideoEditRequest({
+    this.model,
+    this.output,
+    required this.prompt,
+    this.storageOptions,
+    this.user,
+    required this.video
+  });
+
+  factory XaiVideoEditRequest.fromJson(Map<String, dynamic> json) {
+    return XaiVideoEditRequest(
+      model: json['model']?.toString(),
+      output: (() {
+        final map = _sdkworkAsMap(json['output']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      prompt: (() {
+        final value = json['prompt']?.toString();
+        if (value == null) {
+          throw FormatException('XaiVideoEditRequest.prompt is required');
+        }
+        return value;
+      })(),
+      storageOptions: (() {
+        final map = _sdkworkAsMap(json['storage_options']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      user: json['user']?.toString(),
+      video: (() {
+        final map = _sdkworkAsMap(json['video']);
+        if (map == null) {
+          throw FormatException('XaiVideoEditRequest.video is required');
+        }
+        return XaiVideoInput.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'model': model,
+      'output': output?.map((key, item) => MapEntry(key, item)),
+      'prompt': prompt,
+      'storage_options': storageOptions?.map((key, item) => MapEntry(key, item)),
+      'user': user,
+      'video': video.toJson(),
+    };
+  }
+}
+
+class XaiVideoExtensionRequest {
+  final int? duration;
+  final String? model;
+  final Map<String, dynamic>? output;
+  final String prompt;
+  final Map<String, dynamic>? storageOptions;
+  final XaiVideoInput video;
+
+  XaiVideoExtensionRequest({
+    this.duration,
+    this.model,
+    this.output,
+    required this.prompt,
+    this.storageOptions,
+    required this.video
+  });
+
+  factory XaiVideoExtensionRequest.fromJson(Map<String, dynamic> json) {
+    return XaiVideoExtensionRequest(
+      duration: json['duration'] is int ? json['duration'] : null,
+      model: json['model']?.toString(),
+      output: (() {
+        final map = _sdkworkAsMap(json['output']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      prompt: (() {
+        final value = json['prompt']?.toString();
+        if (value == null) {
+          throw FormatException('XaiVideoExtensionRequest.prompt is required');
+        }
+        return value;
+      })(),
+      storageOptions: (() {
+        final map = _sdkworkAsMap(json['storage_options']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      video: (() {
+        final map = _sdkworkAsMap(json['video']);
+        if (map == null) {
+          throw FormatException('XaiVideoExtensionRequest.video is required');
+        }
+        return XaiVideoInput.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'duration': duration,
+      'model': model,
+      'output': output?.map((key, item) => MapEntry(key, item)),
+      'prompt': prompt,
+      'storage_options': storageOptions?.map((key, item) => MapEntry(key, item)),
+      'video': video.toJson(),
+    };
+  }
+}
+
+class XaiVideoGenerationRequest {
+  final String? aspectRatio;
+  final int? duration;
+  final XaiImageUrl? image;
+  final List<XaiImageUrl>? keyframes;
+  final String? model;
+  final Map<String, dynamic>? output;
+  final String? prompt;
+  final List<String>? referenceAudios;
+  final List<XaiImageUrl>? referenceImages;
+  final String? resolution;
+  final Map<String, dynamic>? storageOptions;
+  final String? user;
+
+  XaiVideoGenerationRequest({
+    this.aspectRatio,
+    this.duration,
+    this.image,
+    this.keyframes,
+    this.model,
+    this.output,
+    this.prompt,
+    this.referenceAudios,
+    this.referenceImages,
+    this.resolution,
+    this.storageOptions,
+    this.user
+  });
+
+  factory XaiVideoGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return XaiVideoGenerationRequest(
+      aspectRatio: json['aspect_ratio']?.toString(),
+      duration: json['duration'] is int ? json['duration'] : null,
+      image: (() {
+        final map = _sdkworkAsMap(json['image']);
+        return map == null ? null : XaiImageUrl.fromJson(map);
+      })(),
+      keyframes: (() {
+        final list = _sdkworkAsList(json['keyframes']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : XaiImageUrl.fromJson(map);
+      })())
+            .whereType<XaiImageUrl>()
+            .toList();
+      })(),
+      model: json['model']?.toString(),
+      output: (() {
+        final map = _sdkworkAsMap(json['output']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      prompt: json['prompt']?.toString(),
+      referenceAudios: (() {
+        final list = _sdkworkAsList(json['reference_audios']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
+      referenceImages: (() {
+        final list = _sdkworkAsList(json['reference_images']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : XaiImageUrl.fromJson(map);
+      })())
+            .whereType<XaiImageUrl>()
+            .toList();
+      })(),
+      resolution: json['resolution']?.toString(),
+      storageOptions: (() {
+        final map = _sdkworkAsMap(json['storage_options']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      user: json['user']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'aspect_ratio': aspectRatio,
+      'duration': duration,
+      'image': image?.toJson(),
+      'keyframes': keyframes?.map((item) => item.toJson()).toList(),
+      'model': model,
+      'output': output?.map((key, item) => MapEntry(key, item)),
+      'prompt': prompt,
+      'reference_audios': referenceAudios?.map((item) => item).toList(),
+      'reference_images': referenceImages?.map((item) => item.toJson()).toList(),
+      'resolution': resolution,
+      'storage_options': storageOptions?.map((key, item) => MapEntry(key, item)),
+      'user': user,
+    };
+  }
+}
+
+class XaiVideoGenerationTask {
+  final Map<String, dynamic>? error;
+  final String? model;
+  final int? progress;
+  final String? requestId;
+  final String status;
+  final XaiUsage? usage;
+  final XaiVideoUrl? video;
+
+  XaiVideoGenerationTask({
+    this.error,
+    this.model,
+    this.progress,
+    this.requestId,
+    required this.status,
+    this.usage,
+    this.video
+  });
+
+  factory XaiVideoGenerationTask.fromJson(Map<String, dynamic> json) {
+    return XaiVideoGenerationTask(
+      error: (() {
+        final map = _sdkworkAsMap(json['error']);
+        if (map == null) {
+          return null;
+        }
+        final result = <String, String>{};
+        map.forEach((key, item) {
+          final deserialized = item?.toString();
+          if (deserialized is String) {
+            result[key] = deserialized;
+          }
+        });
+        return result;
+      })(),
+      model: json['model']?.toString(),
+      progress: json['progress'] is int ? json['progress'] : null,
+      requestId: json['request_id']?.toString(),
+      status: (() {
+        final value = json['status']?.toString();
+        if (value == null) {
+          throw FormatException('XaiVideoGenerationTask.status is required');
+        }
+        return value;
+      })(),
+      usage: (() {
+        final map = _sdkworkAsMap(json['usage']);
+        return map == null ? null : XaiUsage.fromJson(map);
+      })(),
+      video: (() {
+        final map = _sdkworkAsMap(json['video']);
+        return map == null ? null : XaiVideoUrl.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'error': error?.map((key, item) => MapEntry(key, item)),
+      'model': model,
+      'progress': progress,
+      'request_id': requestId,
+      'status': status,
+      'usage': usage?.toJson(),
+      'video': video?.toJson(),
+    };
+  }
+}
+
+class XaiVideoInput {
+  final String? fileId;
+  final String? url;
+
+  XaiVideoInput({
+    this.fileId,
+    this.url
+  });
+
+  factory XaiVideoInput.fromJson(Map<String, dynamic> json) {
+    return XaiVideoInput(
+      fileId: json['file_id']?.toString(),
+      url: json['url']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'file_id': fileId,
+      'url': url,
+    };
+  }
+}
+
+class XaiVideoStartResponse {
+  final String requestId;
+
+  XaiVideoStartResponse({
+    required this.requestId
+  });
+
+  factory XaiVideoStartResponse.fromJson(Map<String, dynamic> json) {
+    return XaiVideoStartResponse(
+      requestId: (() {
+        final value = json['request_id']?.toString();
+        if (value == null) {
+          throw FormatException('XaiVideoStartResponse.request_id is required');
         }
         return value;
       })()
@@ -14376,84 +23207,347 @@ class VolcengineContentGenerationTaskCreateRequest {
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'callback_url': callbackUrl,
-      'content': content.map((item) => item.toJson()).toList(),
-      'metadata': metadata?.map((key, item) => MapEntry(key, item)),
-      'model': model,
+      'request_id': requestId,
     };
   }
 }
 
-class VolcengineContentGenerationTaskCreateResponse {
-  final String? createdAt;
-  final String? id;
-  final String? status;
-  final String? taskId;
+class XaiVideoUrl {
+  final int? duration;
+  final String? fileId;
+  final String? url;
 
-  VolcengineContentGenerationTaskCreateResponse({
-    this.createdAt,
-    this.id,
-    this.status,
-    this.taskId
+  XaiVideoUrl({
+    this.duration,
+    this.fileId,
+    this.url
   });
 
-  factory VolcengineContentGenerationTaskCreateResponse.fromJson(Map<String, dynamic> json) {
-    return VolcengineContentGenerationTaskCreateResponse(
-      createdAt: json['created_at']?.toString(),
-      id: json['id']?.toString(),
-      status: json['status']?.toString(),
-      taskId: json['task_id']?.toString()
+  factory XaiVideoUrl.fromJson(Map<String, dynamic> json) {
+    return XaiVideoUrl(
+      duration: json['duration'] is int ? json['duration'] : null,
+      fileId: json['file_id']?.toString(),
+      url: json['url']?.toString()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'created_at': createdAt,
-      'id': id,
-      'status': status,
-      'task_id': taskId,
+      'duration': duration,
+      'file_id': fileId,
+      'url': url,
     };
   }
 }
 
-class VolcengineContentPart {
-  final String? fileId;
-  final String? imageUrl;
-  final String? text;
-  final String type;
-  final String? videoUrl;
+class ZhipuContentFilter {
+  final int? level;
+  final String? role;
 
-  VolcengineContentPart({
-    this.fileId,
-    this.imageUrl,
-    this.text,
-    required this.type,
-    this.videoUrl
+  ZhipuContentFilter({
+    this.level,
+    this.role
   });
 
-  factory VolcengineContentPart.fromJson(Map<String, dynamic> json) {
-    return VolcengineContentPart(
-      fileId: json['file_id']?.toString(),
-      imageUrl: json['image_url']?.toString(),
-      text: json['text']?.toString(),
-      type: (() {
-        final value = json['type']?.toString();
+  factory ZhipuContentFilter.fromJson(Map<String, dynamic> json) {
+    return ZhipuContentFilter(
+      level: json['level'] is int ? json['level'] : null,
+      role: json['role']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'level': level,
+      'role': role,
+    };
+  }
+}
+
+class ZhipuImageGenerationRequest {
+  final String model;
+  final String prompt;
+  final String? quality;
+  final String? size;
+  final String? userId;
+  final bool? watermarkEnabled;
+
+  ZhipuImageGenerationRequest({
+    required this.model,
+    required this.prompt,
+    this.quality,
+    this.size,
+    this.userId,
+    this.watermarkEnabled
+  });
+
+  factory ZhipuImageGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return ZhipuImageGenerationRequest(
+      model: (() {
+        final value = json['model']?.toString();
         if (value == null) {
-          throw FormatException('VolcengineContentPart.type is required');
+          throw FormatException('ZhipuImageGenerationRequest.model is required');
         }
         return value;
       })(),
-      videoUrl: json['video_url']?.toString()
+      prompt: (() {
+        final value = json['prompt']?.toString();
+        if (value == null) {
+          throw FormatException('ZhipuImageGenerationRequest.prompt is required');
+        }
+        return value;
+      })(),
+      quality: json['quality']?.toString(),
+      size: json['size']?.toString(),
+      userId: json['user_id']?.toString(),
+      watermarkEnabled: json['watermark_enabled'] is bool ? json['watermark_enabled'] : null
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'file_id': fileId,
+      'model': model,
+      'prompt': prompt,
+      'quality': quality,
+      'size': size,
+      'user_id': userId,
+      'watermark_enabled': watermarkEnabled,
+    };
+  }
+}
+
+class ZhipuImageGenerationResponse {
+  final List<ZhipuContentFilter>? contentFilter;
+  final int? created;
+  final List<ZhipuImageResult>? data;
+
+  ZhipuImageGenerationResponse({
+    this.contentFilter,
+    this.created,
+    this.data
+  });
+
+  factory ZhipuImageGenerationResponse.fromJson(Map<String, dynamic> json) {
+    return ZhipuImageGenerationResponse(
+      contentFilter: (() {
+        final list = _sdkworkAsList(json['content_filter']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : ZhipuContentFilter.fromJson(map);
+      })())
+            .whereType<ZhipuContentFilter>()
+            .toList();
+      })(),
+      created: json['created'] is int ? json['created'] : null,
+      data: (() {
+        final list = _sdkworkAsList(json['data']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : ZhipuImageResult.fromJson(map);
+      })())
+            .whereType<ZhipuImageResult>()
+            .toList();
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'content_filter': contentFilter?.map((item) => item.toJson()).toList(),
+      'created': created,
+      'data': data?.map((item) => item.toJson()).toList(),
+    };
+  }
+}
+
+class ZhipuImageResult {
+  final String url;
+
+  ZhipuImageResult({
+    required this.url
+  });
+
+  factory ZhipuImageResult.fromJson(Map<String, dynamic> json) {
+    return ZhipuImageResult(
+      url: (() {
+        final value = json['url']?.toString();
+        if (value == null) {
+          throw FormatException('ZhipuImageResult.url is required');
+        }
+        return value;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'url': url,
+    };
+  }
+}
+
+class ZhipuVideoGenerationRequest {
+  final int? duration;
+  final int? fps;
+  final dynamic imageUrl;
+  final String model;
+  final String? prompt;
+  final String? quality;
+  final String? requestId;
+  final String? size;
+  final String? userId;
+  final bool? watermarkEnabled;
+  final bool? withAudio;
+
+  ZhipuVideoGenerationRequest({
+    this.duration,
+    this.fps,
+    this.imageUrl,
+    required this.model,
+    this.prompt,
+    this.quality,
+    this.requestId,
+    this.size,
+    this.userId,
+    this.watermarkEnabled,
+    this.withAudio
+  });
+
+  factory ZhipuVideoGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return ZhipuVideoGenerationRequest(
+      duration: json['duration'] is int ? json['duration'] : null,
+      fps: json['fps'] is int ? json['fps'] : null,
+      imageUrl: json['image_url']?.toString(),
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('ZhipuVideoGenerationRequest.model is required');
+        }
+        return value;
+      })(),
+      prompt: json['prompt']?.toString(),
+      quality: json['quality']?.toString(),
+      requestId: json['request_id']?.toString(),
+      size: json['size']?.toString(),
+      userId: json['user_id']?.toString(),
+      watermarkEnabled: json['watermark_enabled'] is bool ? json['watermark_enabled'] : null,
+      withAudio: json['with_audio'] is bool ? json['with_audio'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'duration': duration,
+      'fps': fps,
       'image_url': imageUrl,
-      'text': text,
-      'type': type,
-      'video_url': videoUrl,
+      'model': model,
+      'prompt': prompt,
+      'quality': quality,
+      'request_id': requestId,
+      'size': size,
+      'user_id': userId,
+      'watermark_enabled': watermarkEnabled,
+      'with_audio': withAudio,
+    };
+  }
+}
+
+class ZhipuVideoGenerationTask {
+  final int? created;
+  final String? id;
+  final List<ZhipuImageResult>? imageResult;
+  final String? model;
+  final String? requestId;
+  final String? taskStatus;
+  final List<ZhipuVideoResult>? videoResult;
+
+  ZhipuVideoGenerationTask({
+    this.created,
+    this.id,
+    this.imageResult,
+    this.model,
+    this.requestId,
+    this.taskStatus,
+    this.videoResult
+  });
+
+  factory ZhipuVideoGenerationTask.fromJson(Map<String, dynamic> json) {
+    return ZhipuVideoGenerationTask(
+      created: json['created'] is int ? json['created'] : null,
+      id: json['id']?.toString(),
+      imageResult: (() {
+        final list = _sdkworkAsList(json['image_result']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : ZhipuImageResult.fromJson(map);
+      })())
+            .whereType<ZhipuImageResult>()
+            .toList();
+      })(),
+      model: json['model']?.toString(),
+      requestId: json['request_id']?.toString(),
+      taskStatus: json['task_status']?.toString(),
+      videoResult: (() {
+        final list = _sdkworkAsList(json['video_result']);
+        if (list == null) {
+          return null;
+        }
+        return list
+            .map((item) => (() {
+        final map = _sdkworkAsMap(item);
+        return map == null ? null : ZhipuVideoResult.fromJson(map);
+      })())
+            .whereType<ZhipuVideoResult>()
+            .toList();
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'created': created,
+      'id': id,
+      'image_result': imageResult?.map((item) => item.toJson()).toList(),
+      'model': model,
+      'request_id': requestId,
+      'task_status': taskStatus,
+      'video_result': videoResult?.map((item) => item.toJson()).toList(),
+    };
+  }
+}
+
+class ZhipuVideoResult {
+  final String? coverImageUrl;
+  final String? url;
+
+  ZhipuVideoResult({
+    this.coverImageUrl,
+    this.url
+  });
+
+  factory ZhipuVideoResult.fromJson(Map<String, dynamic> json) {
+    return ZhipuVideoResult(
+      coverImageUrl: json['cover_image_url']?.toString(),
+      url: json['url']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'cover_image_url': coverImageUrl,
+      'url': url,
     };
   }
 }

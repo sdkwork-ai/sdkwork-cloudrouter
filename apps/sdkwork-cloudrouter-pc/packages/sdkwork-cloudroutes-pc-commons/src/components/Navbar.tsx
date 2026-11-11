@@ -10,10 +10,10 @@ import {
   Menu,
   Moon,
   Sun,
-  Terminal,
   X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { BrandMark } from './BrandMark.tsx';
 import { PortalAccountMenu } from './PortalAccountMenu.tsx';
 import {
   buildPortalAuthLoginRedirect,
@@ -21,7 +21,6 @@ import {
   subscribePortalSessionChange,
 } from '../portal-auth.ts';
 import { useSiteBranding } from '../siteBranding.ts';
-import { readMediaResourceUrl } from '../media-resource.ts';
 import {
   createPortalNotificationService,
   getPortalNotificationAppId,
@@ -65,7 +64,6 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
   const isConsolePath = location.pathname.startsWith('/console');
   const shouldShowAuthenticatedActions = isPortalSessionStored || isConsolePath;
   const displaySiteName = siteBranding.shortName || siteBranding.siteName;
-  const logoSource = readMediaResourceUrl(siteBranding.logo);
   const notificationClient = useMemo(() => getPortalNotificationClient(), []);
   const notificationService = useMemo(() => createPortalNotificationService(), []);
 
@@ -236,17 +234,7 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
           to="/"
           className="flex min-w-0 shrink-0 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background"
         >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 dark:bg-white">
-            {logoSource ? (
-              <img
-                src={logoSource}
-                alt={siteBranding.siteName}
-                className="h-5 w-5 object-contain"
-              />
-            ) : (
-              <Terminal className="h-5 w-5 text-white dark:text-slate-900" aria-hidden="true" />
-            )}
-          </div>
+          <BrandMark branding={siteBranding} />
           <span className="hidden max-w-[7rem] truncate text-base font-bold tracking-tight text-slate-900 dark:text-white sm:inline md:max-w-[10rem] lg:max-w-[12rem] lg:text-lg xl:max-w-none xl:text-xl">
             {displaySiteName}
           </span>

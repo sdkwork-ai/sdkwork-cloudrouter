@@ -2,11 +2,13 @@ package com.sdkwork.cloudrouter.open
 
 data class ViduReferenceToImageRequest(
     val aspectRatio: String? = null,
+    val bgm: Boolean? = null,
     val callbackUrl: String? = null,
     val images: List<String>? = null,
     val model: String? = null,
+    val offPeak: Boolean? = null,
     val payload: String? = null,
     val prompt: String? = null,
-    val seed: Int? = null,
-    val style: String? = null
+    val resolution: String? = null,
+    val seed: Int? = null
 )

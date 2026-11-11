@@ -1,9 +1,11 @@
 package com.sdkwork.cloudrouter.open
 
 data class VolcengineContentPart(
-    val fileId: String? = null,
-    val imageUrl: String? = null,
+    val audioUrl: ArkAudioSource? = null,
+    val draftTask: ArkDraftTask? = null,
+    val imageUrl: ArkImageSource? = null,
+    val role: String? = null,
     val text: String? = null,
     val type: String? = null,
-    val videoUrl: String? = null
+    val videoUrl: ArkVideoSource? = null
 )

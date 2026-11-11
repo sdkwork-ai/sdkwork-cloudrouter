@@ -14,10 +14,20 @@ if TYPE_CHECKING:
 @dataclass
 class GooglePart:
     """Google Gemini google part schema exposed by Cloud Router vendor routing."""
+    audio_transcription: Optional[Dict[str, str]] = None
     code_execution_result: Optional[GoogleCodeExecutionResult] = None
     executable_code: Optional[GoogleExecutableCode] = None
     file_data: Optional[GoogleFileData] = None
     function_call: Optional[GoogleFunctionCall] = None
     function_response: Optional[GoogleFunctionResponse] = None
     inline_data: Optional[GoogleBlob] = None
+    media_processing: Optional[str] = None
+    media_resolution: Optional[Dict[str, str]] = None
+    part_metadata: Optional[Dict[str, str]] = None
+    speech_metadata: Optional[Dict[str, str]] = None
     text: Optional[str] = None
+    thought: Optional[bool] = None
+    thought_signature: Optional[str] = None
+    tool_call: Optional[Dict[str, str]] = None
+    tool_response: Optional[Dict[str, str]] = None
+    video_metadata: Optional[Dict[str, str]] = None

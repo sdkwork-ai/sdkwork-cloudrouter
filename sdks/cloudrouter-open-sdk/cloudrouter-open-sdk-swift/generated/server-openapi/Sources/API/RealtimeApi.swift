@@ -18,8 +18,8 @@ public class RealtimeApi {
     }
 
     /// Hang up realtime call
-    public func createCallsHangup(callId: String, body: OpenAiRealtimeCallActionRequest) async throws -> OpenAiRealtimeCall? {
-        return try await client.post(ApiPaths.aiPath("/realtime/calls/\(serializePathParameter(callId, PathParameterSpec(name: "call_id", style: "simple", explode: false)))/hangup"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: OpenAiRealtimeCall.self)
+    public func createCallsHangup(callId: String) async throws -> OpenAiRealtimeCall? {
+        return try await client.post(ApiPaths.aiPath("/realtime/calls/\(serializePathParameter(callId, PathParameterSpec(name: "call_id", style: "simple", explode: false)))/hangup"), body: nil, responseType: OpenAiRealtimeCall.self)
     }
 
     /// Refer realtime call
@@ -28,7 +28,7 @@ public class RealtimeApi {
     }
 
     /// Reject realtime call
-    public func createCallsReject(callId: String, body: OpenAiRealtimeCallActionRequest) async throws -> OpenAiRealtimeCall? {
+    public func createCallsReject(callId: String, body: OpenAiRealtimeCallRejectRequest) async throws -> OpenAiRealtimeCall? {
         return try await client.post(ApiPaths.aiPath("/realtime/calls/\(serializePathParameter(callId, PathParameterSpec(name: "call_id", style: "simple", explode: false)))/reject"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: OpenAiRealtimeCall.self)
     }
 

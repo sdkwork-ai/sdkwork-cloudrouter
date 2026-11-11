@@ -2,7 +2,10 @@ package com.sdkwork.cloudrouter.open.model;
 
 
 public class MiniMaxMusicGenerationRequest {
+    private String audioBase64;
     private MiniMaxMusicAudioSetting audioSetting;
+    private String audioUrl;
+    private String coverFeatureId;
     private Boolean isInstrumental;
     private String lyrics;
     private Boolean lyricsOptimizer;
@@ -11,12 +14,36 @@ public class MiniMaxMusicGenerationRequest {
     private String prompt;
     private Boolean stream;
 
+    public String getAudioBase64() {
+        return this.audioBase64;
+    }
+
+    public void setAudioBase64(String audioBase64) {
+        this.audioBase64 = audioBase64;
+    }
+
     public MiniMaxMusicAudioSetting getAudioSetting() {
         return this.audioSetting;
     }
 
     public void setAudioSetting(MiniMaxMusicAudioSetting audioSetting) {
         this.audioSetting = audioSetting;
+    }
+
+    public String getAudioUrl() {
+        return this.audioUrl;
+    }
+
+    public void setAudioUrl(String audioUrl) {
+        this.audioUrl = audioUrl;
+    }
+
+    public String getCoverFeatureId() {
+        return this.coverFeatureId;
+    }
+
+    public void setCoverFeatureId(String coverFeatureId) {
+        this.coverFeatureId = coverFeatureId;
     }
 
     public Boolean getIsInstrumental() {

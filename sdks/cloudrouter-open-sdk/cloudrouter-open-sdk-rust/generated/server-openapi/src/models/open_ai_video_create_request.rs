@@ -1,31 +1,24 @@
 use serde::{Deserialize, Serialize};
 
-/// OpenAI-compatible request to create a video.
+/// OpenAI-compatible request to create a video (`POST /v1/videos`).
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct OpenAiVideoCreateRequest {
-    /// Source image reference, URL, file id, or provider-specific image payload.
+    /// Optional input image reference.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub image: Option<String>,
+    pub input_reference: Option<std::collections::HashMap<String, String>>,
 
-    /// Developer-defined metadata attached to the video request.
+    /// Video model id such as sora-2 or sora-2-pro.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<std::collections::HashMap<String, String>>,
+    pub model: Option<String>,
 
-    /// Video model id or Cloud Router catalog key.
-    pub model: String,
-
-    /// Text prompt describing the requested video output.
+    /// Text prompt describing the video to generate.
     pub prompt: String,
 
-    /// Requested duration in seconds.
+    /// Requested video duration.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub seconds: Option<i64>,
+    pub seconds: Option<String>,
 
-    /// Requested video size or resolution.
+    /// Requested video size.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub size: Option<String>,
-
-    /// Source video reference, URL, file id, or provider-specific video payload.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub video: Option<String>,
 }

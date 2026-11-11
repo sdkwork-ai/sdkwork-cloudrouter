@@ -40,7 +40,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "3b32adab2af9eec1bff4a004013e528c6294b44116bc4b184ff62a892bce9e33"
+      "sha256": "b7490fa5c40bfa954c32b3923b456425408cfb2638c96416950b6b3fa9bd5f06"
     },
     {
       "path": "requirements.txt",
@@ -52,23 +52,39 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/__init__.py",
-      "sha256": "e0fb08896e564d821a982c54fa9235ec2b2c1214142defd7e6d592acc2577cf4"
+      "sha256": "a46109da1d6499b8913a1743b4ed5995c36b29bf2818efc995567e0c57bddc3b"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/assistants.py",
       "sha256": "f3d4e8155418c594a03e63fb1322fb3e546e30e6e04a3de21cdac51ed19ab1f8"
     },
     {
+      "path": "sdkwork_cloudrouter_open_sdk/api/audio_alibaba.py",
+      "sha256": "e8fce3b2cff8c394f64d284fa0c5c444064a462fa132bf74f481c57b0f3f9209"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/audio_bytedance.py",
+      "sha256": "477aeeb3233339e1bf3e287678d7b3f12f640aae9c6450322290bc9eeed32673"
+    },
+    {
       "path": "sdkwork_cloudrouter_open_sdk/api/audio_elevenlabs.py",
       "sha256": "377df03c4f110afd55688ccb9380cd672a71329d62369b139460b528e0d471cf"
     },
     {
-      "path": "sdkwork_cloudrouter_open_sdk/api/audio_minimax.py",
-      "sha256": "0474bb63a57746bd38df8afb531435f86298b09a3fe80fd7be06a9a1c0c8feb9"
+      "path": "sdkwork_cloudrouter_open_sdk/api/audio_kling.py",
+      "sha256": "a7d4f37316eece904e7f2b4dad2f2f2c7d79dc2d1d7d84b9d93841e8b597fc18"
     },
     {
-      "path": "sdkwork_cloudrouter_open_sdk/api/audio_suno.py",
-      "sha256": "52cf5fc205c3795e7fbd7ce93bf242e7c63122d1b3307dd5f7aadb109ad0aea9"
+      "path": "sdkwork_cloudrouter_open_sdk/api/audio_minimax.py",
+      "sha256": "0167910b26ac282c9e09fb0cb9ce363d8992975e7f680aeb59b0d27cd1f835e5"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/audio_stability_ai.py",
+      "sha256": "a4511b0ede8ce36b4a6ff29bde018e24e6d0285077d067ca23f8a98842183cd8"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/audio_vidu.py",
+      "sha256": "fc5b7e5d2bf4269f3e254912db781a8f8cdd759a7320924540fb752ddbb968c7"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/audio_volcengine.py",
@@ -80,7 +96,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/batches_anthropic.py",
-      "sha256": "3756f44f5c1a615b383b8d47917f36b6373988891a3cde6559f8ff32af1cfefa"
+      "sha256": "2a9752469d196b169bd36dc7d7b198294c1e9badba7be6c64834438cc8d58d42"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/batches.py",
@@ -88,11 +104,15 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/chat_anthropic.py",
-      "sha256": "061db1d99fdac52f560622113f28b7c28ad92ff883bc7e2682ec5bff3cf3a145"
+      "sha256": "5166cd241461c134034f2b2e46ecaaa0dcac2c8eacb6366d7ae3977562c9085c"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/chat_google.py",
       "sha256": "770d082f501a0c65b8a668d37d1a8d13e61558434a3fa528e87388dc7c6a2385"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/chat_typesafe.py",
+      "sha256": "88da87f2940ab2fa951e47b5ad76db1c5e4bc4df8ed57a3b8a30a3a7f473e1b8"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/chat.py",
@@ -120,7 +140,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/files_anthropic.py",
-      "sha256": "fac566d0a6201589357c4c1c03d3f73b0fc7f3b30b2d9b2ebd2e5c6ca255435f"
+      "sha256": "d23bdb4db4ce9c865dee2d77a9436e2112094692a7d66b01dabab5ce54543b97"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/files_google.py",
@@ -131,16 +151,52 @@
       "sha256": "3dc64997952e827d77954e980a5814cfda183f746c72f1682bcd78f68e011406"
     },
     {
-      "path": "sdkwork_cloudrouter_open_sdk/api/images_midjourney.py",
-      "sha256": "f74983be710baceecf01587d70b84d158bf6d140b950180b19ae59c145f0b3ad"
+      "path": "sdkwork_cloudrouter_open_sdk/api/images_alibaba.py",
+      "sha256": "5c15d6b0c0fb5a1c0db67e076cdb96da4cc821d8b755660d916226f873fea3a5"
     },
     {
-      "path": "sdkwork_cloudrouter_open_sdk/api/images_nano_banana.py",
-      "sha256": "684b704adb56d71e665c4f62a932bcd6c67d0425d43efe9d40230abc53bb9eb5"
+      "path": "sdkwork_cloudrouter_open_sdk/api/images_black_forest_labs.py",
+      "sha256": "eea91e8eaf65f9045ea529f21588ec4910af53d023dbc4b600cf8414de07a09a"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/images_bytedance.py",
+      "sha256": "898393e20ace87911f8268a26a77a22ec20e4c2e40b9c45589d3a0f3610e3c01"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/images_google.py",
+      "sha256": "0a1e150fa7a012421ab95acdf4e87568531f5f4d9ff053d32efb75ef9d522312"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/images_kling.py",
+      "sha256": "3c0d6da2142e67a8e545fc89a98d206265fa28e189b39f5f1cddf2273e28f132"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/images_minimax.py",
+      "sha256": "3feb2556ad18037ada5277b0f38e37fbc47877f288e5b6cd3e9997f51c5667f3"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/images_runway.py",
+      "sha256": "c7223e62c2b593747b6df2d028fe3ad622aa857a1516fe3edb2b943012be988f"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/images_stability_ai.py",
+      "sha256": "2bf175e11d999916b38b9ada2f13845842433741209769f5bd8b0c61fe9b95db"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/images_vidu.py",
       "sha256": "d23c725513d0ab97b0cde378b755c5cbc4a9d38d4d4be82aabb1c9b96463eb52"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/images_volcengine.py",
+      "sha256": "9554bd53e6290790d857782803670a25ee9dddc6baaba6cb7b33169cba8fe6d4"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/images_xai.py",
+      "sha256": "1b34750e02d911c63c210718b9ef25ee4cd9b96f381fc4d563e481bc23960311"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/images_zhipu.py",
+      "sha256": "5f90bcdacf913138a2af9bbbfcf1e42879da7fd6aea391ab30b0e5d6e0ee9857"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/images.py",
@@ -155,8 +211,24 @@
       "sha256": "586a57263d6f70c6d5a1574c0148fe8ee2b1bc14ed6bcd46190994036eb28444"
     },
     {
+      "path": "sdkwork_cloudrouter_open_sdk/api/music_elevenlabs.py",
+      "sha256": "f67c9ff7a0569f06422f638f21aa98a6e8f1f0df92bcc0691d641991ee499f77"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/music_minimax.py",
+      "sha256": "9ef51a05f3fe0d54eeec01d11d79e1e8cfd68754d151c836dbe59e4d53d74518"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/music_mureka.py",
+      "sha256": "6122d85a2cb9de46bb7ca51a06a1fe908e648aa30a0d089cde4f4f6536acb28c"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/music_suno.py",
+      "sha256": "420e1c5de6206d975fd8c50db35f92dde237da245ca265d5a1d4608bf6ae2978"
+    },
+    {
       "path": "sdkwork_cloudrouter_open_sdk/api/realtime.py",
-      "sha256": "717b1dd35356c5d13feba713c3182caef0850d6494f7a7907c4b5dd144ab8d9a"
+      "sha256": "c9280e462c66abcd7111e991a8de887fb258fb8ddc46b4044a5e0c7a2d39ffcf"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/responses_google.py",
@@ -171,6 +243,10 @@
       "sha256": "f996f433afa7a691b3b6ebd974a244735444c21f901edd864fa8462323acb1f7"
     },
     {
+      "path": "sdkwork_cloudrouter_open_sdk/api/tool.py",
+      "sha256": "37f0ab16a6e3ff67da88a7100b3432816f56b3169d0272ea4b0bc39804b27c74"
+    },
+    {
       "path": "sdkwork_cloudrouter_open_sdk/api/uploads.py",
       "sha256": "2e36e1bd38f99c341af623a35ba6a480e1bc378bee3c803406a7b54459545e17"
     },
@@ -183,20 +259,64 @@
       "sha256": "b102e11d6900c6ee52669c62cfc1e3c10ab10678c2daf5d176c9dc42fe55ba88"
     },
     {
+      "path": "sdkwork_cloudrouter_open_sdk/api/videos_alibaba.py",
+      "sha256": "64694770ce29b1138d91a4a46fdf86a27dfffffa4a5ba13c87026e49151cfa4d"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/videos_black_forest_labs.py",
+      "sha256": "9b9257db91661a0a15ad3bd423ac1b9d8e661c0e3ac1008c22cbcaad52f73adf"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/videos_bytedance.py",
+      "sha256": "5ca0a034819b7795e3fced8f10b16f27ac4b579aa7078516a0d2b62436341a25"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/videos_google.py",
+      "sha256": "6eb22d15ef47806f1b2c5a2723c33e51e6f03596cbbe78656da1dd8b5d058760"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/videos_jimeng.py",
+      "sha256": "c65b3003bd02b52163f99446349b5cfba7b2b2e18d692fdd65cda304423a6d4d"
+    },
+    {
       "path": "sdkwork_cloudrouter_open_sdk/api/videos_kling.py",
       "sha256": "b5c5be62210b059816223cf084917944b8f74761980fc250c29ed01b01dc847a"
     },
     {
+      "path": "sdkwork_cloudrouter_open_sdk/api/videos_luma_ai.py",
+      "sha256": "e5a8aea4f1a1a008798467a17f98375d4b79b2e201be5e9e4d7ece895794d3ac"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/videos_minimax.py",
+      "sha256": "67b1943494d9dce863e0c4940d0d177cc126383d3cca768815832b53ed862952"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/videos_pixverse.py",
+      "sha256": "34d167a114e9a259739c9d7f069a86f23d4df2a25da25e93e179ac4d1cf0c734"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/videos_runway.py",
+      "sha256": "aacda26bbb184091f482f25d5a977ba05335f4ba259653ed560ebd485bc028d5"
+    },
+    {
       "path": "sdkwork_cloudrouter_open_sdk/api/videos_vidu.py",
-      "sha256": "5a625ed93705c60053111c4745e3d533486e6c89bd87b35279c7d91ecd7bc8ba"
+      "sha256": "8083b37e621742c8bb31574cc6dd2cc375fc99b3d24d88cf322bcfea4bad9216"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/videos_volcengine.py",
       "sha256": "3519f9a020237b2a6fa852834c89cff9e5c7034e0dfbf1047725c59a7928c1e4"
     },
     {
+      "path": "sdkwork_cloudrouter_open_sdk/api/videos_xai.py",
+      "sha256": "0346f9806f968b926084a984a6b43d59e688366f449d49cfd410af29d300bfba"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/api/videos_zhipu.py",
+      "sha256": "7cebced850158764db99f8018b3e6ffca0448267c37c8f1a3152700872d9ebd9"
+    },
+    {
       "path": "sdkwork_cloudrouter_open_sdk/client.py",
-      "sha256": "27b9f5701cb0a10cfcec262ef1dd868b0f0edbac54c5ea88bf6d5e32778b9dd9"
+      "sha256": "36fac75cd0288fd42d0a8b19d3c36216a3e9e5af8feec6b9647e475233149ca6"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/http_client.py",
@@ -204,11 +324,59 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/__init__.py",
-      "sha256": "c12375067914160d640f673027accf9bf55938d8112546f187314a1b9c97a4fa"
+      "sha256": "7808371355deb212c84cde76ccb88c43a99545f7af0ca267e7806003b05f640c"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/alibaba_async_task.py",
+      "sha256": "da830d686f9000bb8609bfeff292ca1ed8d015c316e02763d4b6f1f696d7980d"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/alibaba_image_generation_request.py",
+      "sha256": "60353b25c7a6d69a0cd449786eff6141d877e56f255bac56a5df278d9d3e1fb5"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/alibaba_image_generation_response.py",
+      "sha256": "59feb93c02550666d20854621bdbe4853fa38a24b7a866e7bb2afc63bf1ad222"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/alibaba_speech_input.py",
+      "sha256": "392ff4a23ea5ed6469e2d3ecc32f04029c90ea3b6a52d6efcec358d41be16ccf"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/alibaba_speech_request.py",
+      "sha256": "b63a94b3efa91411b75e97aeabff21a09fa45d1376e084ec97bdeebbba3c6dec"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/alibaba_speech_response.py",
+      "sha256": "a45be3ea2a21720284fe90fd2896623170f09307edb8c4fc0ccc8bc83639a320"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/alibaba_task_usage.py",
+      "sha256": "b66d12aa0c17f5c253d772db7217a3c8c2f9c8c84723275d9049c552867d7895"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/alibaba_video_generation_request.py",
+      "sha256": "a62dcef00c02e271f7ec3416ca30e5119022ffb96aeb1fa6a3dc9c06b76cbef1"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/alibaba_video_generation_response.py",
+      "sha256": "9ac467a6d2fe71a8e9642043f5b0acac816c864ce24493c2428e813ba3e2de14"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/alibaba_video_generation_task.py",
+      "sha256": "5becad97ff1babb754ff34b10123a8fed7bf7dcb86434963ff9f8d0bf340b990"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_cache_control.py",
+      "sha256": "c34398c098a343a4ffd525065d75d74189f47d4f1009ebe008f3e0e5f087630b"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_container.py",
+      "sha256": "603f91a9f8468d456c4d410dd0667d76bcffd2446cdd5b55e5b38656bb8e4b1e"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_content_block_param.py",
-      "sha256": "f23a5899360286b4d8da138b6fd72e1b658d863e122405c81a96737a868a286d"
+      "sha256": "5b1f251aad3f280dbf0d95f3cf7ee5917ecf7e594237b78623fe18b1f853522b"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_content_block.py",
@@ -220,7 +388,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_count_message_tokens_request.py",
-      "sha256": "95d357b5e7d93cf5d3d1d93c9a715e514cee39c0179361d40740fe88e935e651"
+      "sha256": "19fa375347850915702803cde18afd194b9e1ead740dda3391cce2b2b8230863"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_count_message_tokens_response.py",
@@ -229,6 +397,10 @@
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_delete_response.py",
       "sha256": "bf9a76e8f9063f1f48dd0689203a204730bb75b09c5c57c19994e9eca545fb96"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_diagnostics.py",
+      "sha256": "3fedf5a453585f816d7060f93d2eb9a4961f966dae6e4267a09d98d5d493768b"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_file_list_response.py",
@@ -264,7 +436,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_message_create_request.py",
-      "sha256": "9d3435febebabbffb83fbbb250c24a9b4de2aeb2a13dec7b427e17155be3c834"
+      "sha256": "888f4112db8022c89e285b26d603332535b57b8c7b6f86f958f257b32d40a94a"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_message_param.py",
@@ -275,20 +447,132 @@
       "sha256": "020ead25be7cca305b5858fde4880a755f455137f3025c9646c7bfbbd39e881a"
     },
     {
+      "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_metadata.py",
+      "sha256": "b792b7c023c3325321d8f8056d712fd00839abc4416ddd50513c2d90c1581ac0"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_output_config.py",
+      "sha256": "31778353ac388b37c0b7ec7a0555e48fef8aeca60a401a3d5f3704cb101745f4"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_output_format.py",
+      "sha256": "28ab6330ffd0cb62498d27910a62e1b56c4e87d6c1ce8955c6848289b0f15e9d"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_server_tool.py",
+      "sha256": "d3c9c2ed112dcb375cd1a10b87ae1a5e0db5568ce47903672404ae8f76295140"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_skill.py",
+      "sha256": "dd2b055d8806a048a6fe563bd8e90ea29b4a1a0fdeabcabd6669952131533dc0"
+    },
+    {
       "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_thinking_config.py",
-      "sha256": "2b510a4ef9c664c1e868f91e9a3e7e7ed7028beb6cfa00ca0010089c049b1129"
+      "sha256": "2e6ed6eb0f20778e4e8c4bcd285bbb6b35b80df10b6a1ef6e51ed37f4d596fc2"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_tool_choice.py",
-      "sha256": "129ef171b87e0688ee21844de80614c3301e6909f71f222fe77d260c054bf11a"
+      "sha256": "d83ec5bd69419968dab423a689a326c0f54fa436becd80e83461b4c7331b9f5a"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_tool.py",
-      "sha256": "6b384d5b5a219ca3a44da63ecffec746c1001ab693930c72252dc41b8d8f7eb3"
+      "sha256": "7b7b456fe7038de782db0326ca8b49618aec69b9d0529cb58b9645befac76ebc"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_usage.py",
       "sha256": "3975fd0f4f6093eca8bf0ead8e613eb4aa6cd07603470c83ec3075769f7e9ca6"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/ark_audio_source.py",
+      "sha256": "1937b8b15fe6d787c95777fbc8f216cad0e445a13cb5934534712834e42e3584"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/ark_content_part.py",
+      "sha256": "879440a2f47cb5449e1df7daeb64476530ec91dbb8837027b4e48c2b6bf8f36d"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/ark_draft_task.py",
+      "sha256": "6e4441b6d2cd85cf1800fb39952b7ea25bc6d6dd343c4641426d6ad22356ccf5"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/ark_image_generation_data.py",
+      "sha256": "a94160ad752f9b1ec6a6586567770463757f1e1941b2d8067d1612274b21cc34"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/ark_image_source.py",
+      "sha256": "a770331d0ea5654484f0732af0ba10668ef27d6b3db47e56f2eef02e75a5335d"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/ark_image_usage.py",
+      "sha256": "6d611e50fe2cada58effec66ae89ae4eeb9158d9830e9c5bdc0bb09145a1d012"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/ark_video_source.py",
+      "sha256": "e13455a2dcbf58db8a2a32af8497c1cbc5a4cdbd588f420eec271087147eb1b2"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/ark_video_task_content.py",
+      "sha256": "18f22b26fb056dc1a867d7fc70e18f7862b44aa2022ac9f010f652883eae58f7"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/ark_video_tool_usage.py",
+      "sha256": "2974e1542cd9baaf9b4f6940b47f65187226181b8779d5853963c22f41d5b39f"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/ark_video_usage.py",
+      "sha256": "17d64686a728e2a0abd2ce88456ebb8c442960e638a4cdf0b8458ed7b800b63f"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/ark_web_search_tool.py",
+      "sha256": "b36ed8b102fff8b10ef50d0894c8dd14c91f01f5536c31c52ed4c9d66b69bb90"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/black_forest_labs_image_generation_request.py",
+      "sha256": "c396daae6b9a10b7b1f9e7252c8abd753ec156bb9da8ee7e378c44116aa57195"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/black_forest_labs_image_generation_task.py",
+      "sha256": "d955e1820ed8532c9c08c436d61e76521092a31ac02df43f49d084b3a40b587f"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/black_forest_labs_video_generation_request.py",
+      "sha256": "c7c0d5a8f4e85047dca3836529ee67a2dbdd2123ea565ba4ee14ed798b349106"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/black_forest_labs_video_generation_task.py",
+      "sha256": "cca1f5f58a2ceaf35631a55b232aeed514efbf1f5449aa01728ce87da559748b"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/bytedance_image_generation_request.py",
+      "sha256": "0f9d43041535c07561f9ae88d087df68caaa58d09b956887019366cfd1b57afd"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/bytedance_image_generation_response.py",
+      "sha256": "62d7405bacbe075f6fa6eb753f13ab79ac0f48728659f5407e98d53ef17e03f1"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/bytedance_speech_chunk.py",
+      "sha256": "5e304b7c3f383e0fc7d153c032684e6390202d7b668b4a339ad3d96020fdaa6c"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/bytedance_speech_request.py",
+      "sha256": "650a2dc0b118502fa8ac3fb13a8613099c6c97de88bdf51d215e4b3a592a8062"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/bytedance_tts_audio_params.py",
+      "sha256": "89fc4ca45fa8b8813123eae09a393d108d87685f844ab0e735f21bebb2f89ce2"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/bytedance_tts_request_params.py",
+      "sha256": "5d86937a95e778ed07149a5e998af9922e6404f65297f6eb75bcad3a1e272930"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/bytedance_video_generation_request.py",
+      "sha256": "f64423ca33ea9246b07729295e200f4ead1a46966bc4e4bd1892c8a6eb9b1045"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/bytedance_video_generation_task.py",
+      "sha256": "105605a4f0a1e4b27fe8a0693667be09f3ef674caf1f3b2438fa8fb2667d9406"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/create_completion_choice.py",
@@ -303,8 +587,28 @@
       "sha256": "9b6fc08b21156a392e7bc395448fd6c0cc555f14d3f14ad6aa540d8c960bfda4"
     },
     {
+      "path": "sdkwork_cloudrouter_open_sdk/models/eleven_labs_audio_effects.py",
+      "sha256": "ba8fe8085898def5ad595718e0213f5e463566a8834b54f01c7ecc1e0deb33da"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/eleven_labs_composition_plan.py",
+      "sha256": "c613f2ad12e584e3049c72f6eff9af768f8ec729380916f2735b1e8d7992730f"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/eleven_labs_music_generation_request.py",
+      "sha256": "b4a7120cb3da65cc38928516490867fda029f5a378f2548b71a823e994ee9972"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/eleven_labs_music_prompt.py",
+      "sha256": "6d115c660b7152cc5155a87dc8ca05a956b756361a8d3dfb5ff97ffd3998a710"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/eleven_labs_pronunciation_dictionary_locator.py",
+      "sha256": "dc3c786e99daa6cdb27280959508fe517cb7bd108b6515a119fb62de026ebff4"
+    },
+    {
       "path": "sdkwork_cloudrouter_open_sdk/models/eleven_labs_sound_generation_request.py",
-      "sha256": "31646cc58346727c26e79613c167ab9576ddb28134ce875267648eb9e351aca0"
+      "sha256": "19b3717c737438064901553eca654b1ce9f8eba764605010cda6f1016cd889ce"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/eleven_labs_sound_generation_response.py",
@@ -312,11 +616,31 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/eleven_labs_text_to_speech_request.py",
-      "sha256": "550a2c60e47ab9e11fbe88da95812260d890931d0902725a1d6a9eb0ef68b24e"
+      "sha256": "890c945ec75881275f4172d491ca5227327e3137575ba6e2cca1f8a6b762aafe"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/eleven_labs_text_to_speech_response.py",
       "sha256": "b256dd90c255aac1e9d04e579419aa0effa120d8dacac5891ed4b6f3d7b0dabc"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/eleven_labs_voice_settings.py",
+      "sha256": "512d724b7eb16e272ab3bf9655eb0866bab60ce5f6f4c03d71e646a1aa1d412b"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/gemini_image_generation_request.py",
+      "sha256": "675c6a8a56c0670987f8636368ddbd1db874b131be5302fbd94994aa8b7341b9"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/gemini_image_generation_response.py",
+      "sha256": "f3037fc96e66a478f3eb16cf8a9eca376f2a57e37472ef37eee55769f02f0fe3"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/gemini_video_generation_request.py",
+      "sha256": "ec6b74471fa74527db87f2017c6253e3adb0309177641067b8b4b105afebdfd4"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/gemini_video_operation.py",
+      "sha256": "568f9a490055bd04e88cc477e7e184113e9cb3f2f6494284e43c44cb4347ed23"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/google_batch_embed_contents_request.py",
@@ -332,7 +656,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/google_cached_content_create_request.py",
-      "sha256": "c23f96f484e26e0103d54336d09cfe5a9db61a232679d7045bf3f42965fdd187"
+      "sha256": "48a86daca3c499f36a48980d8d2281e4d895330bdb11f980cffd5a6ad3246079"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/google_cached_content_list_response.py",
@@ -388,7 +712,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/google_embed_content_request.py",
-      "sha256": "c102f5abe574073d5e6f080e98fdbc76cacf344424a85f300fee75330f62bb17"
+      "sha256": "f608c3084f1e55c7e26a7af383845350ee04f52aa150e89287dfe5581f02a9d9"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/google_embed_content_response.py",
@@ -436,7 +760,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/google_generate_content_request.py",
-      "sha256": "2b014ea64fcc69cb6e917d1785cc73112b98f4c538aafc161110e12fc1952158"
+      "sha256": "778d3252f1ccc13cbd195ec90f1b69aa1f6b41e37292a2a23b6e04d29d129e7f"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/google_generate_content_response.py",
@@ -444,11 +768,11 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/google_generation_config.py",
-      "sha256": "ca5ba01db9bce59286c12d94b90844a6803ffcc2d57bac47f3ce096745e8fb6f"
+      "sha256": "658cd22bf36659a9cd9b13b26691b7e7765bce4a8c88ad1e736b815a739d1a43"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/google_part.py",
-      "sha256": "d0bcae7967bddaf10335e6b09a65b6c75c4b354e6d2d1a6c6929f4704fbf04af"
+      "sha256": "887115d7a0eac3fa5c9d8636afb3f38325ba77994532aa3db8dcafd87b2c4800"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/google_prompt_feedback.py",
@@ -480,7 +804,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/google_tool.py",
-      "sha256": "35337ac7aaba4a7b4d188021d15b567a2ea1a1b530d229bb211d318896d0dbdb"
+      "sha256": "f3ad70e3b86660e079e3c6b27b79ad29b8e53320aeef1a4abb7076bd138b9325"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/google_url_context_tool.py",
@@ -491,12 +815,52 @@
       "sha256": "4e5abcbab8e01492c0b3a91a25efea9f19d0ed63c9a9692aa8f72d69dddfccc7"
     },
     {
+      "path": "sdkwork_cloudrouter_open_sdk/models/jimeng_video_generation_request.py",
+      "sha256": "191621e178d40ba42f93d00909855b636d45fafaf114922a9db7aa2b15f5417d"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/jimeng_video_generation_task.py",
+      "sha256": "2e01f5ffcd1a6dee3aea37cca9c5503d713374a1e881d9a1b6e641351ab35f81"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/kling_audio_task.py",
+      "sha256": "79188a0e8d22972fcec24a41c9a8f2043ac679969dfae1e43cfbe978c0098671"
+    },
+    {
       "path": "sdkwork_cloudrouter_open_sdk/models/kling_avatar_create_request.py",
       "sha256": "e3da80d5d6982b3842997252bddea7d4153e3a82d182c68579e08b7444791567"
     },
     {
+      "path": "sdkwork_cloudrouter_open_sdk/models/kling_element_reference.py",
+      "sha256": "bd386d0b53a22810e62117ac548f06bf8754fcf3e1869840aac8d6e65f6e07a1"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/kling_image_generation_request.py",
+      "sha256": "85147c02912f97d24b708c0c675cd039d4bf1b9e963d344da97a505bae9279a6"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/kling_image_generation_task.py",
+      "sha256": "c502fb701c82bd7709ab81214cb2b22d78fcc9b226190b0ff9ccd4eb5334e74f"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/kling_image_result.py",
+      "sha256": "3b085c1d360a6106de060283d03f34cdd670ea81441471d628eace4518e3090e"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/kling_image_task_data.py",
+      "sha256": "334caa76f5ac9a0945982b276f1eaf9c742ca279dc074f885a8f0e5977d1177f"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/kling_image_task_result.py",
+      "sha256": "110d43ee53586754d2b76c2ce257e8061dc77fd7aa9854194a532caec017a7ef"
+    },
+    {
       "path": "sdkwork_cloudrouter_open_sdk/models/kling_motion_control_request.py",
       "sha256": "96b900f6637295cd1902cd3b4681d9b71e7d64ce6846ea1009aaccfa4348339c"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/kling_sound_generation_request.py",
+      "sha256": "a86148c576796f110ba3e7f2799cb38357812071a45eb1ec51a76f8e4940558a"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/kling_video_generation_request.py",
@@ -507,16 +871,40 @@
       "sha256": "c6c88500e8752717c8d3e17a6a43d10f8464340358bebff1e32b6b4f143babeb"
     },
     {
-      "path": "sdkwork_cloudrouter_open_sdk/models/midjourney_image_generation_request.py",
-      "sha256": "b48fe20bd9ce98e1ff7a5abe0a775bf4ec592dc0751dbf260fe3300152b66ad9"
+      "path": "sdkwork_cloudrouter_open_sdk/models/kling_video_to_audio_request.py",
+      "sha256": "39fc6df6a5072ac434c340aa70ad406838cd1ca4c0a9ad48227714fbf985b0c9"
     },
     {
-      "path": "sdkwork_cloudrouter_open_sdk/models/midjourney_image_generation_task.py",
-      "sha256": "7092474146bd433a2db78d1a2c99abbd2cddee39c45aaf9501b613cd6dc65870"
+      "path": "sdkwork_cloudrouter_open_sdk/models/kling_watermark_info.py",
+      "sha256": "3ac1b4413fab95ce3164523445d649953ce6f5cf56f58684595b4395355dcbba"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/luma_concept.py",
+      "sha256": "8d3c8cbb1184c632b0a4326b25c03915e69764a3b7526ee896b5a0c329670b6f"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/luma_generation_assets.py",
+      "sha256": "90e555958e2d41e58e4bf3d79bdbb9aaa950b4623dca21d80c274a6d0bc4e247"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/luma_keyframe.py",
+      "sha256": "a4ad2aa01e60741199345fb4d4c47b4dd370ad3f7471881875c33bba02360c04"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/luma_keyframes.py",
+      "sha256": "9ca9e295c81949156e2c19bbf63eef0a9f0d979230aee839c11804a2ad949661"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/luma_video_generation_request.py",
+      "sha256": "c05ffc58345335f385ef0555ad5471c8752ee14c13e2bc4ddbb5b7e94903e43f"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/luma_video_generation_task.py",
+      "sha256": "c530ae70120ed99360cc70642efd0e209b948cabd5739bc0359992da021d53ad"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/mini_max_music_audio_setting.py",
-      "sha256": "973c8280f3b36847a29aa884f83663b5e6ed5c4e01f7288edd5777bdb7c746a5"
+      "sha256": "87eaeabf6097f77d3e35176846bb3eb5b77076db5e4297344cc8db0e77794f3a"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/mini_max_music_base_resp.py",
@@ -532,19 +920,67 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/mini_max_music_generation_request.py",
-      "sha256": "88e714fa6a778f556ac0ef2977d7837a0533979c7463ac1f6d856dba86587484"
+      "sha256": "5cefc0a7412f185ee360ec4762ac45893b5d52e2219ac283786eb153eff799ca"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/mini_max_music_generation_response.py",
       "sha256": "6a5ac05d20ac409013d226cf6ba6af70bfaee0cc30451aa2c9fbc010d0f92eb9"
     },
     {
-      "path": "sdkwork_cloudrouter_open_sdk/models/nano_banana_image_generation_request.py",
-      "sha256": "982dcf2454961819d5f0da70c5ddea3103619a7de8573b97213a93a5893c92c6"
+      "path": "sdkwork_cloudrouter_open_sdk/models/minimax_base_resp.py",
+      "sha256": "d153d18b012619acf2096b56d4fd394d507b09af95e1b477c02e6371c8c7a1d6"
     },
     {
-      "path": "sdkwork_cloudrouter_open_sdk/models/nano_banana_image_generation_task.py",
-      "sha256": "8d71b9a389fdda7250453372e84769e68e085f9f933b2e2114adac332411576e"
+      "path": "sdkwork_cloudrouter_open_sdk/models/minimax_file_retrieve_response.py",
+      "sha256": "585772b9f3390b084f352c607ae711b41a2fa5e4daafe1f48782ef916663bfd6"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/minimax_image_data.py",
+      "sha256": "2eaab983f20ca18a652f3a92de379855ef7c173c97610d4431d4b256a577df7b"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/minimax_image_generation_request.py",
+      "sha256": "ddf1b2a68453b4e669b74049e170d5c81098a16b26e26bbb38ad9d9a62c187a6"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/minimax_image_generation_response.py",
+      "sha256": "15d912b90141bec4eab83cc3aa2a22209dcddc04403988b38478733986548ce9"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/minimax_stream_options.py",
+      "sha256": "efdda99324397434c4d8e488e72288924d9ec72197c8ac548fa0d735df7170ca"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/minimax_text_to_speech_request.py",
+      "sha256": "8e32f4f2f35b7d76552fe7b930c827c61b04593557e4d92b83dcc556d009a3b8"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/minimax_text_to_speech_response.py",
+      "sha256": "2f17cd5381e3afc81ee581ee5afb6fb27f7d5f918e5c27a878b1bd40740b2416"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/minimax_timbre_weight.py",
+      "sha256": "7cff67304609d5b06b7033fa21d0d5e26003742a772d2c5f3c15319264f57286"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/minimax_video_generation_request.py",
+      "sha256": "25bda95fdbcfdd44ef4f47562a73b91c956ca1841b4b27d43f73ec6e0214e3ba"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/minimax_video_generation_task.py",
+      "sha256": "a4862f2ff844d3e638f59410fc81cb136f268e69c463b0e4cebd3b12cf3ff76d"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/minimax_voice_modify.py",
+      "sha256": "7d10c7172b3ee702482352392ae28eeb8bd8f47945af07e8d6c2419a84a490d2"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/mureka_music_generation_request.py",
+      "sha256": "a3c972174d2b8a0baf0118050bdb50bff6319fd8238320f371cf742977f3b0c5"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/mureka_music_generation_task.py",
+      "sha256": "8c7dfb4b4f0a38b27ab940f0ec15197ee82c1cbd4da2ea9da10340c9e05190b6"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_annotation.py",
@@ -552,7 +988,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_assistant_create_request.py",
-      "sha256": "252e07b71c360855ba163eb5db5312de21be319549fa091ed42a03802f01d2ac"
+      "sha256": "b94502e7e73cc381d974363b2118a26f6f2ed28e11f4581971ec20770eef4567"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_assistant_list.py",
@@ -560,7 +996,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_assistant_update_request.py",
-      "sha256": "50a53f017be16554a1640393092be116902e3f16ba39e1c5a72a34c0ad054d0e"
+      "sha256": "a4614f96d139cbf2cc85fa51fde8ff6e45ca4f39d542cdc64d64eaadb4b99d9e"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_assistant.py",
@@ -592,7 +1028,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_batch_create_request.py",
-      "sha256": "218c2dbb41ebf518cc8e7dced318b74a200f8e47be8d330f6a937b17cbb158d3"
+      "sha256": "f4e0ab32380416a0e42aaa2cb59438e4596ec4ce1df3d9091070e603de370269"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_batch_list.py",
@@ -660,7 +1096,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_completion_create_request.py",
-      "sha256": "7eb92f56b1d9c937007f65eb462d9d4dbd1a943ce5b9249ebe0132ed28ab82d0"
+      "sha256": "b611b398371add30c243964247e0e66290f2d0ba6b1f7c9df843e1304fbae9f1"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_completion_tokens_details.py",
@@ -672,7 +1108,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_container_create_request.py",
-      "sha256": "889cfc2e319ad84fa1ebb23e761236a4a5b22e5f3d46ab6b60ddec7363b5d4ba"
+      "sha256": "deaa230e8827a5b9be843cb7b59cd9a2be36984616be9f9f4d9a9d384898dab9"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_container_file_create_multipart_request.py",
@@ -704,7 +1140,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_conversation_item_create_request.py",
-      "sha256": "3aecbf88620d02d1d6b3ab3213a36bed2d72d87696c81fbc5a32f276ef84f45f"
+      "sha256": "a7b54314f3fc284c4e6d1fb399c488287d466ca28638fcdbe4ebcc3fc6cf20f7"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_conversation_item_list.py",
@@ -729,6 +1165,26 @@
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_conversation.py",
       "sha256": "cfffe48fccf40786a44f43087ed988d03bce59a9cc9aec434dd18b19cc123752"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_deep_seek_web_fetch_request.py",
+      "sha256": "945be215c5826463348ed3a43e844eea497637119c4eb7c2e25d0739f2ddf749"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_deep_seek_web_fetch_response.py",
+      "sha256": "43b104a648394407a8bbb2e2fe9fb358668a9fdc9163544d98bb2bac499c1511"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_deep_seek_web_search_request.py",
+      "sha256": "8ea460f4d0c55a2dc118cf0766f938230c9d237a51b25e7b8976c3024acf5f4b"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_deep_seek_web_search_response.py",
+      "sha256": "1bb26acce05855bd38a745cf71c32c144627b313cc4393c3083d147b17cc39bf"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_deep_seek_web_search_result.py",
+      "sha256": "60030f50ed8a249b01479c47f1636a3f60a259751ad9c0b84fbea98b6d5b3755"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_embedding_list.py",
@@ -788,23 +1244,19 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_image_edit_multipart_request.py",
-      "sha256": "1fbacfac81f655dcc2cbb64bab290977914b3090fc9af7fd9317594b349f1788"
+      "sha256": "9443e1f9b2acc671beca13f2662929112db212ed8a57f4f3dedb70aa8425f885"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_image_edit_request.py",
-      "sha256": "7bc259f003caa69465ffe48a58462c82ca2a816aea18987bf83512f0b378164b"
+      "sha256": "40effce7069c525130add2990e041ac196ae778facc32e9f91beb20ff92b1de4"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_image_generation_request.py",
-      "sha256": "26bb86c1f1c955419740579346206a566fb82527770ba82577d489c4f4130990"
+      "sha256": "582f6eaee789a933ae556c64d1f58a5d32cfc0a5dbce5a835831426bb0b4659e"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_image_list.py",
       "sha256": "b006884b7e5d12277d2ef6b96ad7044174d93fa8938decc885d131f907596569"
-    },
-    {
-      "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_image_reference_input_list.py",
-      "sha256": "20ed291c95f9efd33b9a06d391e4b3e5ec7e16cd53dc4e696f6606cbabe2c6e8"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_image_reference_input.py",
@@ -884,7 +1336,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_realtime_call_action_request.py",
-      "sha256": "f4872b5797c4b605c8ccc3d860813d677fb668197fc1a2ab1584c3b9458959a5"
+      "sha256": "ed2d20b7355febc0d77e485673cdca406f6b0ded017104bd4953f2a407de94ca"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_realtime_call_create_request.py",
@@ -896,7 +1348,11 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_realtime_call_refer_request.py",
-      "sha256": "f2a2f93c0c6c5cb9af60b4c408c90e739e4150cf0dd5d4cd13d839f0f94e9d11"
+      "sha256": "e71c05a9c2723a917f3bea0164964df5c9d44dc4dda1609e0e8eabc26cfa01dc"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_realtime_call_reject_request.py",
+      "sha256": "e7a2e6f699a2763a7a880c1e1af1516598e767cd89d30bb28c11e808232b34d9"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_realtime_call.py",
@@ -904,7 +1360,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_realtime_client_secret_create_request.py",
-      "sha256": "7549696fc3a8bbc6c80ac955ca2e291211005e42f3d6fa4507268b2d7bb1f5f1"
+      "sha256": "2d14e22a873cc368c9d34ea0455683864456811dd10fa96bea3f2d1923cd4d20"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_realtime_client_secret_value.py",
@@ -916,7 +1372,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_realtime_session_create_request.py",
-      "sha256": "48893a70681f9dea2ff239f198b881a8635b9a468d283a0c380cd3d30b1b1bfc"
+      "sha256": "c1589e2212963d5c8a541dd81d7a0c5313dcbe961ff212c45b96e12d6f67a62c"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_realtime_session.py",
@@ -924,7 +1380,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_realtime_transcription_session_create_request.py",
-      "sha256": "5ca3a59d6dc05d4d55394cf6acb2fe31fee0d6f7cd654bbd074ae12253904575"
+      "sha256": "b4654b9af54ac97b09de134edaaa8656d61a4e352af742b563438646856e9259"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_realtime_transcription_session.py",
@@ -944,7 +1400,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_response_compact_request.py",
-      "sha256": "f70dfd6fbe2a1f91e2efa8cecaf84c2e4b2268449e565e92a4b70d8c485cdfb5"
+      "sha256": "bd19c67921d48c4d41e370fd50cfe8cd179fcbc043a4e8526fae7e0fa29fb519"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_response_error.py",
@@ -968,7 +1424,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_response_input_token_count_request.py",
-      "sha256": "59e8ca728d9319676ca310055f689aa1ea11063e0e3ac3d9ce5a97ecc83dac5e"
+      "sha256": "3ac71e28f70aac6e08fe91308f72a680299af246caf9d4d81853b0d2919b6b9d"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_response_input_token_count.py",
@@ -1004,7 +1460,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_run_create_request.py",
-      "sha256": "43c38cc3e9d7fcf15771dfdd297c0703faff7d18de0a1bc22bf6e6cc53b14cc1"
+      "sha256": "24a6422e044c613d94e062b375016cee26bded079ac59c9562b5096a4a4bc0c8"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_run_list.py",
@@ -1032,7 +1488,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_speech_create_request.py",
-      "sha256": "011af4900317e6959b79d390e78f55d8c8e1cc7583e7940fec4ce72ebd31cf88"
+      "sha256": "fa5ab28f0fecc6ed3f86b45cc2721cc204e89cb1696231884845e208973994f2"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_stream_options.py",
@@ -1044,7 +1500,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_thread_and_run_create_request.py",
-      "sha256": "d91f876987bd61c7f74e92917d09401d0961889e1e8e18e6975cf8d2d7e63f7b"
+      "sha256": "a221c18461ac0425bb8d1ec5de5c3116f9d5ede1338fba2a50f56de6d5cae88d"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_thread_create_request.py",
@@ -1104,7 +1560,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_upload_create_request.py",
-      "sha256": "9cfec20c210e014b5add2711e2d7af5803927674776dfe6fe56e075e257670fd"
+      "sha256": "df9ea15c8c9e305400fe8e3eae6659400201b1a1c23a80596fb459606721540b"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_upload_part_multipart_request.py",
@@ -1120,11 +1576,11 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_vector_store_create_request.py",
-      "sha256": "e0c70c0c242a5d361eacbc49cac5f723c4cb15e5cdf30a0f9a8f5186db2d4885"
+      "sha256": "852c765c3ae8857f7d6770ecbb45c2f770a0798301ee720c93aaaec18fcb76b0"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_vector_store_file_batch_create_request.py",
-      "sha256": "4d196b885d92f4e904e1372f6aeb82d84770a713fa98d337fde80a975c071767"
+      "sha256": "d9d6199df8ae6a8133160d201260cd767beedf919dc6c97e2920421642334976"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_vector_store_file_batch.py",
@@ -1188,15 +1644,15 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_video_create_request.py",
-      "sha256": "29ad05e2380417ac8f54819a351faabd1bfe32aaa4cba616a8e68cfbe291c677"
+      "sha256": "7b3f4cae68eaa83e0259629b8193b23ed46c3795a814d0f8729a15a6b5c4ce1d"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_video_edit_request.py",
-      "sha256": "8b8ad1f73559fb9e28dc08b9332d2642190f1af3d6d4a114b14c146d9fa9c05f"
+      "sha256": "c6d08ae5a33928eef99a1b7211cdd7d9bfb7d07b27e5e2c9cd93377aaacf09ab"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_video_extend_request.py",
-      "sha256": "8fb8a09eae7b6e5551b152fd35eceba38f3c45985b57303e7e242882cb60554d"
+      "sha256": "9c6c83d8d0cdbb61c6443a308170c0430f529a8673cae2eea5125873a639b6cf"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_video_list.py",
@@ -1204,7 +1660,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_video_remix_request.py",
-      "sha256": "ae9d32ffad0f11626011900b1652e8f2234ce78035672e95f97af5d7dab0f0c1"
+      "sha256": "f82ca73e11ea2fac0b8357ff5eb55208fc02cdb0847811f9c8a08d2e0df2af0d"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_video.py",
@@ -1224,7 +1680,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_voice_consent_update_request.py",
-      "sha256": "cd5eeab0ed8b3c0feaa8a5b57005584a9bcca1e43439bf5ef6d70392afb7af05"
+      "sha256": "c1b3743c3f9e0e55e89a78b4b4032a9c06fd5ccac6626d6071240abce54ce2f9"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_voice_consent.py",
@@ -1232,11 +1688,11 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_voice_create_multipart_request.py",
-      "sha256": "5dc4f81b156fbc2e112fa9189f653d96880ee8bf5ba20dd0976a478a72bc7776"
+      "sha256": "38a034fdf0d11f026734c631bfb87e6ae404086dcfd5620bae7650d09ec7f6a6"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_voice_create_request.py",
-      "sha256": "eb4cdf6d7c4aff436ca36f96280543ca4a4ef2e2d472f1a048d9c1d1a5db8d4c"
+      "sha256": "097514acc5adca853528be9842d4e483a4d4430dcfd0e5afcdc6b4db8b0eeb17"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_voice_list.py",
@@ -1245,6 +1701,26 @@
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_voice.py",
       "sha256": "947555d244e686df74a04f83bf27898ccbfd3a617379fc85651867f71ac76c57"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/pixverse_error_detail.py",
+      "sha256": "69a941aac40cf0c045cf5cabd746da1a26f620bd225b7fbdeb8b2421296fd00a"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/pixverse_task_resp.py",
+      "sha256": "153e87ea4be1df6b4cf60b244d780c0503a6e93c8c896a65697914f176892c1e"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/pixverse_video_generation_request.py",
+      "sha256": "b4d4e4d3ddf7c5ef0d59867703336dd2483aa6b4762c1def806333307056a410"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/pixverse_video_generation_response.py",
+      "sha256": "be41bcbba413a63ac4e27c7ca89d8507f0040479def4ed2e1e130ecbf4881d7e"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/pixverse_video_generation_task.py",
+      "sha256": "e16eb5b157f9ff3da482fb10f190283a23dcdc86aa05b7e42dff826f67601e0a"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/provider_generated_media.py",
@@ -1259,8 +1735,36 @@
       "sha256": "6723368e3cdcb8480a83934ef71f0893f76c46bba4391e861f583ad8fea04aa4"
     },
     {
-      "path": "sdkwork_cloudrouter_open_sdk/models/provider_task_result.py",
-      "sha256": "030572518c2318cdc07b7a0c52c2fb9cf57736037451c1b11e1a3b1b719eb18d"
+      "path": "sdkwork_cloudrouter_open_sdk/models/runway_image_to_video_request.py",
+      "sha256": "ec4841ae1751f7f612c89f95009619ee845e5e24b085aa48080a30a754518849"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/runway_task_accepted.py",
+      "sha256": "c0655157ff93397f60fec859110abbea84acd2979326ffaff1687fed34b00531"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/runway_task.py",
+      "sha256": "c2f948a16ba8e2991850339238738c3a25ca661e6ef60b288e3b911b78c0820c"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/runway_text_to_image_request.py",
+      "sha256": "56bdbbbf446e6bc5570d20b1bbe8bd270de82a03d5211242e120acdb3b3b6ce8"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/runway_text_to_video_request.py",
+      "sha256": "8180fc1d5268a2a55b4daffc4d5bb9a4c251ef0fa1af7700679581d0fb6595a2"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/stability_audio_request.py",
+      "sha256": "2372c6a30ed460bd6f3be527452e2961a8ceb987954002c1e04a2f8176cbd270"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/stability_image_generation_request.py",
+      "sha256": "3cd3c6715d5bb8f146b43fb3a7c6951cc656ce7d8b1fed725ae33ea7a74f2646"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/stability_image_generation_response.py",
+      "sha256": "2a055a3b1c7407e88c7a29be44909e57d6612ab51dda6f30a2fe5f4222c2f6a0"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/suno_music_generation_request.py",
@@ -1279,60 +1783,188 @@
       "sha256": "bf878dd807d6302d42d1771a75b6ade4197808c5756dab64c91cfde4b127e395"
     },
     {
+      "path": "sdkwork_cloudrouter_open_sdk/models/type_safe_answer.py",
+      "sha256": "254f14c3847f0ee7d588fde0c8b0027abe60747c17e0e7087e9ab787bfbb737f"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/type_safe_question.py",
+      "sha256": "35c1f789a157d15a748cc72a8a1125d9041508e0855277f9fbcc698aa5325e02"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/type_safe_system_one_request.py",
+      "sha256": "e8757c0e95519e300ac2cd83a59e1235378dea8ed34b89f59db6d1a22dcb533b"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/type_safe_system_one_response.py",
+      "sha256": "a0666dc67bdb19556396ed39c1def84ab0fd03b39d52eddc5eb200f11ecd28d7"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/type_safe_usage.py",
+      "sha256": "ae5d5371df543778b150265f889a6bcaccccf1e40caa82bd6819d2b3bf043925"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/vidu_audio_generation_task.py",
+      "sha256": "3e043340394b0fd54b135fb99c31b5adab97c8c894521aa0127d65a4b64d406e"
+    },
+    {
       "path": "sdkwork_cloudrouter_open_sdk/models/vidu_creation.py",
-      "sha256": "4caad5a1f70e7c3cf7421889cf0c94358143ba077ba0a7d1f14de15be8f40f98"
+      "sha256": "f512b61b3b90af142900943f5d8093333dd4f56f6229d92e718eb6dbed941a8a"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/vidu_image_generation_task.py",
-      "sha256": "ffb291736f1496d3d503d37d2819a77c2a72836767f3821949212ad8c49d9189"
+      "sha256": "729735c235ac31233cfa4709dd2444237b441be286879f63ee91e52ff514714b"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/vidu_image_to_video_request.py",
-      "sha256": "e19aa5cc1357381c91503e1cdeebf2f483e8922a72726dc719c5587453aae6c5"
+      "sha256": "86a47e95e1887d61c051bcb42e1e2f6b51f1d8bca364a9387ef315e84bf70bfb"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/vidu_reference_to_image_request.py",
-      "sha256": "e2bf3e54af853d6deeae019a0b1a11ee75daf6b7a9b38e3f8d47f23e39c3026c"
+      "sha256": "bdf214eed0c4ad1c7a3d708f1e28172665a29bbcb0f5f604740f0a9a645740ad"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/vidu_reference_to_video_request.py",
-      "sha256": "8dd78552546875b04cd3c2ecd459aa0fc0d1a01b208779f274d1c81ac1d238db"
+      "sha256": "a81c29ab4f5fba59ed38c312a6e716a59725e62dc1c39b55ae26fd9aef8072ef"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/vidu_start_end_to_video_request.py",
-      "sha256": "4ac157c28e1dd22be0832c49737b348e28be6e9ef90d854ab795425902ef8978"
+      "sha256": "17cca47609a10b3db68a5ba69699ec07bb50d1b0b66d8af759871a7e6aabb58f"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/vidu_task_creations_response.py",
-      "sha256": "41fc112f94e64d4ea9adcc0e7204c63e1adf9f6569222235289ee2b2bb072add"
+      "sha256": "1efa50c29cb3101ac8f0069985f5a6e6c2e0dcdf4b6668c80f150a4a3b9cb881"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/vidu_template_request.py",
-      "sha256": "e147f0d0bbf16818fe0e5fbdd519d1b3ebeec632d78b8bb7f2e9a5f89e9ef336"
+      "sha256": "828ce8fef9e44ffaf126c2a0bce011339fb12dadb3c643f36f9ebe81d23fdd34"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/vidu_template_task.py",
+      "sha256": "eb075d6a0853d8d41fadef6038f5617b3ccbe967aad8fac58d1722e7deb28933"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/vidu_text_to_audio_request.py",
+      "sha256": "37edd84b56fe4cecdb50f66c0f5a0eb6c972134246dca51d0e784c14d05f153b"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/vidu_text_to_video_request.py",
-      "sha256": "4707326a00a47ba3e9c0ea8cf00fcc60db2c6a410da16e8444c57fb4c4469d80"
+      "sha256": "d12649495e148058969cc5afc1c2cd924bdf358caa41d2a0bce0def80d378cfc"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/vidu_timing_to_audio_request.py",
+      "sha256": "f9e1cb60b2081b6d9eae08bd48b0f28b507c3729f94797331165cd761a5fff9d"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/vidu_video_generation_task.py",
-      "sha256": "e8064d0c007f23e5e2d2928ba861af4a23eaac490ee0b64cc11a43bc81fffde6"
+      "sha256": "512ea2250aad94d53dcf0e1a92fe29ee7cc85b6ce0e4112e4ed2665229b7130b"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/volcengine_content_generation_task_create_request.py",
-      "sha256": "31aeeb0416000f637ff7d89be88c93636a68823f286c7fc905a9a25a0ae8a0f4"
+      "sha256": "0a8d51b0a3a740aea617187f4ec1b93708f4974d7c96b48964f52dd9a90b22bc"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/volcengine_content_generation_task_create_response.py",
-      "sha256": "2094f68f898dd4048f6312edff189ef1ec2fde867c2667ce1e14d7af700fc3bf"
+      "sha256": "3dca47ae486cd53b8f23077dedde16812f23c3b44beddfc89217d43b94b630bc"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/volcengine_content_generation_task.py",
-      "sha256": "cebdc1145e55b0dd9b4b0cf9ecee6cac4c20b20a525859e5572a2dd4c2e0f169"
+      "sha256": "6d1fefb83c4cdfdbfa5c0ee57a0ddbd7dbeaff71ee71a309a52e11e0f7c50942"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/volcengine_content_part.py",
-      "sha256": "b6debf54b6b0272e71c6611b6666c8e637a0394538ef4cebda53002fb746c066"
+      "sha256": "9374b4b6293448c9485e070ae5657add3f94354c3c6fafab4dabf2ab60ddc97b"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/volcengine_image_generation_request.py",
+      "sha256": "4c695c6b5b5c75b383fe4ac2bfee21ccd93f82074f69c471ebcd7ce4aeb06701"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/volcengine_image_generation_response.py",
+      "sha256": "215eb3c5a309d0ffbc080680eeff077579a8828c950335e68179e1af69a2c044"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/xai_deferred_image_response.py",
+      "sha256": "aa6680579175149dc2c08015e2a680628eaf1799f833379adcb647bedd65db63"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/xai_generated_image.py",
+      "sha256": "6529b7c070af67088060e3022ad3b2740f6618c1829365805657e022f0e5180a"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/xai_image_edit_request.py",
+      "sha256": "434a83d25185225b552dfc32dcc86549d24f02e04345636b84774b27905a7ad0"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/xai_image_generation_request.py",
+      "sha256": "68dc01de013ac0db02f9b432339f1658e8aa0154543a3e413c23c8ad7fb8d158"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/xai_image_generation_response.py",
+      "sha256": "795574fe8e30879d98df947e15b369ea3e1778c46dc466c3b3d1a8b5f0fd0315"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/xai_image_url.py",
+      "sha256": "597535eecbf3b9f49a60f92e30a4ea486b81507304acc2e037570cd7ff252e41"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/xai_usage.py",
+      "sha256": "bf9bf39321f858536be397e812c6a291ce03da6d40acbf5118901dee9753c9d7"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/xai_video_edit_request.py",
+      "sha256": "6e065193b652bb9da3f9e1508af88d7aaf6e9b45fcf9272c5c07945167be2a6d"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/xai_video_extension_request.py",
+      "sha256": "282267022aa54b687b46401f88cff0b922f35e09cef0419191682f14d5199213"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/xai_video_generation_request.py",
+      "sha256": "f45d23caa42ed685c2554f4f9ad28bb6be80c313f07ee7ff292d5e45c4c8306b"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/xai_video_generation_task.py",
+      "sha256": "a47ac2f2b76b40f53ec7c532262d9b1058ce52fbdb25334e96b686666e077e25"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/xai_video_input.py",
+      "sha256": "248cfa62ffb287626ed6bf8f57fb3814696640c5d21cf507c0b4422a3bbcf0b2"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/xai_video_start_response.py",
+      "sha256": "dabfdf9fbf113608d3db20f7cbbcbc403236c115bfa7e025ae2b3a60c8838db5"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/xai_video_url.py",
+      "sha256": "ee1205224904271ba4ec703ff1e84942f1000218b513209c6584b38e0b270de7"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/zhipu_content_filter.py",
+      "sha256": "c27a992980a90fef3faaa89da6d01bfd6499ea609ff6298d88ea368c772cf40c"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/zhipu_image_generation_request.py",
+      "sha256": "4621cdb9f8988222d4171ca7b44bd155f8bd2273ec346c3557560311dfb158d9"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/zhipu_image_generation_response.py",
+      "sha256": "b8b76977a449a94661634986b5741c6f311d1f07c0323ea5df2938a9e1ce8333"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/zhipu_image_result.py",
+      "sha256": "e3ead4ecd1ee978f5676eac3c7721898609512d5dd41318ae9361cf6241cfd23"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/zhipu_video_generation_request.py",
+      "sha256": "42855e178a200cc6931cb9595f1bff2ef1e7b3d2a0165b795239166f40ca9e60"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/zhipu_video_generation_task.py",
+      "sha256": "ea5a239732a176c1d87e8a08770af2fc18b9dab000477ec5b6b827e4a18f119a"
+    },
+    {
+      "path": "sdkwork_cloudrouter_open_sdk/models/zhipu_video_result.py",
+      "sha256": "020bf44c04bbbfc527b9f07dd48b3c7d737a39777804766242d7d28d84bbbe91"
     },
     {
       "path": "sdkwork-sdk.json",

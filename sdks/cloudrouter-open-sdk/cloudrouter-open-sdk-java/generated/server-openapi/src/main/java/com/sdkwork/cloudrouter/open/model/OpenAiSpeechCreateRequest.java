@@ -1,13 +1,13 @@
 package com.sdkwork.cloudrouter.open.model;
 
-import java.util.Map;
 
 public class OpenAiSpeechCreateRequest {
     private String input;
-    private Map<String, String> metadata;
+    private String instructions;
     private String model;
     private String responseFormat;
     private Double speed;
+    private String streamFormat;
     private String voice;
 
     public String getInput() {
@@ -18,12 +18,12 @@ public class OpenAiSpeechCreateRequest {
         this.input = input;
     }
 
-    public Map<String, String> getMetadata() {
-        return this.metadata;
+    public String getInstructions() {
+        return this.instructions;
     }
 
-    public void setMetadata(Map<String, String> metadata) {
-        this.metadata = metadata;
+    public void setInstructions(String instructions) {
+        this.instructions = instructions;
     }
 
     public String getModel() {
@@ -48,6 +48,14 @@ public class OpenAiSpeechCreateRequest {
 
     public void setSpeed(Double speed) {
         this.speed = speed;
+    }
+
+    public String getStreamFormat() {
+        return this.streamFormat;
+    }
+
+    public void setStreamFormat(String streamFormat) {
+        this.streamFormat = streamFormat;
     }
 
     public String getVoice() {

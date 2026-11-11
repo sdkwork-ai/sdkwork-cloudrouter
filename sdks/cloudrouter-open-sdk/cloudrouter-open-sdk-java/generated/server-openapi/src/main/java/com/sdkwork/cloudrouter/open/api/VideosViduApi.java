@@ -38,9 +38,9 @@ public class VideosViduApi {
     }
 
     /** Vidu create template video */
-    public ViduVideoGenerationTask createEntV2Template(ViduTemplateRequest body) throws Exception {
+    public ViduTemplateTask createEntV2Template(ViduTemplateRequest body) throws Exception {
         Object raw = client.post("/vidu/ent/v2/template", body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<ViduVideoGenerationTask>() {});
+        return client.convertValue(raw, new TypeReference<ViduTemplateTask>() {});
     }
 
     /** Vidu text to video */

@@ -10,3 +10,4 @@ class OpenAiBatchCreateRequest:
     endpoint: str
     input_file_id: str
     metadata: Optional[Dict[str, str]] = None
+    output_expires_after: Optional[Dict[str, str]] = None

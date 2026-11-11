@@ -15,6 +15,7 @@ type OpenAiCompletionCreateRequest struct {
 	Seed int `json:"seed"`
 	Stop string `json:"stop"`
 	Stream bool `json:"stream"`
+	StreamOptions OpenAiStreamOptions `json:"stream_options"`
 	Suffix string `json:"suffix"`
 	Temperature float64 `json:"temperature"`
 	TopP float64 `json:"top_p"`

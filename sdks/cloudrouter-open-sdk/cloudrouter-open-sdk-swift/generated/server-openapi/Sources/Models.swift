@@ -1,5 +1,193 @@
 import Foundation
 
+public struct AlibabaAsyncTask: Codable {
+    public let code: String?
+    public let endTime: String?
+    public let message: String?
+    public let origPrompt: String?
+    public let results: [ProviderGeneratedMedia]?
+    public let scheduledTime: String?
+    public let submitTime: String?
+    public let taskId: String?
+    public let taskStatus: String?
+    public let videoUrl: String?
+
+
+    public init(code: String? = nil, endTime: String? = nil, message: String? = nil, origPrompt: String? = nil, results: [ProviderGeneratedMedia]? = nil, scheduledTime: String? = nil, submitTime: String? = nil, taskId: String? = nil, taskStatus: String? = nil, videoUrl: String? = nil) {
+        self.code = code
+        self.endTime = endTime
+        self.message = message
+        self.origPrompt = origPrompt
+        self.results = results
+        self.scheduledTime = scheduledTime
+        self.submitTime = submitTime
+        self.taskId = taskId
+        self.taskStatus = taskStatus
+        self.videoUrl = videoUrl
+    }
+}
+
+public struct AlibabaImageGenerationRequest: Codable {
+    public let input: [String: String]?
+    public let model: String?
+    public let parameters: [String: String]?
+
+
+    public init(input: [String: String]? = nil, model: String? = nil, parameters: [String: String]? = nil) {
+        self.input = input
+        self.model = model
+        self.parameters = parameters
+    }
+}
+
+public struct AlibabaImageGenerationResponse: Codable {
+    public let code: String?
+    public let message: String?
+    public let output: AlibabaAsyncTask?
+    public let requestId: String?
+    public let usage: AlibabaTaskUsage?
+
+
+    public init(code: String? = nil, message: String? = nil, output: AlibabaAsyncTask? = nil, requestId: String? = nil, usage: AlibabaTaskUsage? = nil) {
+        self.code = code
+        self.message = message
+        self.output = output
+        self.requestId = requestId
+        self.usage = usage
+    }
+}
+
+public struct AlibabaSpeechInput: Codable {
+    public let instructions: String?
+    public let languageType: String?
+    public let optimizeInstructions: Bool?
+    public let text: String?
+    public let voice: String?
+
+
+    public init(instructions: String? = nil, languageType: String? = nil, optimizeInstructions: Bool? = nil, text: String? = nil, voice: String? = nil) {
+        self.instructions = instructions
+        self.languageType = languageType
+        self.optimizeInstructions = optimizeInstructions
+        self.text = text
+        self.voice = voice
+    }
+}
+
+public struct AlibabaSpeechRequest: Codable {
+    public let input: AlibabaSpeechInput?
+    public let model: String?
+    public let parameters: [String: String]?
+
+
+    public init(input: AlibabaSpeechInput? = nil, model: String? = nil, parameters: [String: String]? = nil) {
+        self.input = input
+        self.model = model
+        self.parameters = parameters
+    }
+}
+
+public struct AlibabaSpeechResponse: Codable {
+    public let code: String?
+    public let message: String?
+    public let output: [String: String]?
+    public let requestId: String?
+    public let usage: [String: String]?
+
+
+    public init(code: String? = nil, message: String? = nil, output: [String: String]? = nil, requestId: String? = nil, usage: [String: String]? = nil) {
+        self.code = code
+        self.message = message
+        self.output = output
+        self.requestId = requestId
+        self.usage = usage
+    }
+}
+
+public struct AlibabaTaskUsage: Codable {
+    public let sr: Int?
+    public let duration: Double?
+    public let imageCount: Int?
+    public let inputVideoDuration: Int?
+    public let outputVideoDuration: Int?
+    public let ratio: String?
+
+
+    public init(sr: Int? = nil, duration: Double? = nil, imageCount: Int? = nil, inputVideoDuration: Int? = nil, outputVideoDuration: Int? = nil, ratio: String? = nil) {
+        self.sr = sr
+        self.duration = duration
+        self.imageCount = imageCount
+        self.inputVideoDuration = inputVideoDuration
+        self.outputVideoDuration = outputVideoDuration
+        self.ratio = ratio
+    }
+}
+
+public struct AlibabaVideoGenerationRequest: Codable {
+    public let input: [String: String]?
+    public let model: String?
+    public let parameters: [String: String]?
+
+
+    public init(input: [String: String]? = nil, model: String? = nil, parameters: [String: String]? = nil) {
+        self.input = input
+        self.model = model
+        self.parameters = parameters
+    }
+}
+
+public struct AlibabaVideoGenerationResponse: Codable {
+    public let code: String?
+    public let message: String?
+    public let output: AlibabaAsyncTask?
+    public let requestId: String?
+    public let usage: AlibabaTaskUsage?
+
+
+    public init(code: String? = nil, message: String? = nil, output: AlibabaAsyncTask? = nil, requestId: String? = nil, usage: AlibabaTaskUsage? = nil) {
+        self.code = code
+        self.message = message
+        self.output = output
+        self.requestId = requestId
+        self.usage = usage
+    }
+}
+
+public struct AlibabaVideoGenerationTask: Codable {
+    public let output: AlibabaAsyncTask?
+    public let requestId: String?
+    public let usage: AlibabaTaskUsage?
+
+
+    public init(output: AlibabaAsyncTask? = nil, requestId: String? = nil, usage: AlibabaTaskUsage? = nil) {
+        self.output = output
+        self.requestId = requestId
+        self.usage = usage
+    }
+}
+
+public struct AnthropicCacheControl: Codable {
+    public let ttl: String?
+    public let type: String?
+
+
+    public init(ttl: String? = nil, type: String? = nil) {
+        self.ttl = ttl
+        self.type = type
+    }
+}
+
+public struct AnthropicContainer: Codable {
+    public let id: String?
+    public let skills: [AnthropicSkill]?
+
+
+    public init(id: String? = nil, skills: [AnthropicSkill]? = nil) {
+        self.id = id
+        self.skills = skills
+    }
+}
+
 public struct AnthropicContentBlock: Codable {
     public let id: String?
     public let input: [String: String]?
@@ -18,24 +206,44 @@ public struct AnthropicContentBlock: Codable {
 }
 
 public struct AnthropicContentBlockParam: Codable {
+    public let cacheControl: AnthropicCacheControl?
+    public let caller: [String: String]?
+    public let citations: [[String: String]]?
     public let content: String?
+    public let context: String?
+    public let data: String?
     public let id: String?
     public let input: [String: String]?
+    public let isError: Bool?
     public let name: String?
+    public let signature: String?
     public let source: AnthropicContentSource?
     public let text: String?
+    public let thinking: String?
+    public let title: String?
     public let toolUseId: String?
+    public let toolsetName: String?
     public let type: String?
 
 
-    public init(content: String? = nil, id: String? = nil, input: [String: String]? = nil, name: String? = nil, source: AnthropicContentSource? = nil, text: String? = nil, toolUseId: String? = nil, type: String? = nil) {
+    public init(cacheControl: AnthropicCacheControl? = nil, caller: [String: String]? = nil, citations: [[String: String]]? = nil, content: String? = nil, context: String? = nil, data: String? = nil, id: String? = nil, input: [String: String]? = nil, isError: Bool? = nil, name: String? = nil, signature: String? = nil, source: AnthropicContentSource? = nil, text: String? = nil, thinking: String? = nil, title: String? = nil, toolUseId: String? = nil, toolsetName: String? = nil, type: String? = nil) {
+        self.cacheControl = cacheControl
+        self.caller = caller
+        self.citations = citations
         self.content = content
+        self.context = context
+        self.data = data
         self.id = id
         self.input = input
+        self.isError = isError
         self.name = name
+        self.signature = signature
         self.source = source
         self.text = text
+        self.thinking = thinking
+        self.title = title
         self.toolUseId = toolUseId
+        self.toolsetName = toolsetName
         self.type = type
     }
 }
@@ -58,35 +266,27 @@ public struct AnthropicContentSource: Codable {
 }
 
 public struct AnthropicCountMessageTokensRequest: Codable {
-    public let maxTokens: Int?
+    public let cacheControl: AnthropicCacheControl?
     public let messages: [AnthropicMessageParam]?
-    public let metadata: [String: String]?
     public let model: String?
-    public let stopSequences: [String]?
-    public let stream: Bool?
+    public let outputConfig: AnthropicOutputConfig?
+    public let speed: String?
     public let system: String?
-    public let temperature: Double?
     public let thinking: AnthropicThinkingConfig?
     public let toolChoice: AnthropicToolChoice?
     public let tools: [AnthropicTool]?
-    public let topK: Int?
-    public let topP: Double?
 
 
-    public init(maxTokens: Int? = nil, messages: [AnthropicMessageParam]? = nil, metadata: [String: String]? = nil, model: String? = nil, stopSequences: [String]? = nil, stream: Bool? = nil, system: String? = nil, temperature: Double? = nil, thinking: AnthropicThinkingConfig? = nil, toolChoice: AnthropicToolChoice? = nil, tools: [AnthropicTool]? = nil, topK: Int? = nil, topP: Double? = nil) {
-        self.maxTokens = maxTokens
+    public init(cacheControl: AnthropicCacheControl? = nil, messages: [AnthropicMessageParam]? = nil, model: String? = nil, outputConfig: AnthropicOutputConfig? = nil, speed: String? = nil, system: String? = nil, thinking: AnthropicThinkingConfig? = nil, toolChoice: AnthropicToolChoice? = nil, tools: [AnthropicTool]? = nil) {
+        self.cacheControl = cacheControl
         self.messages = messages
-        self.metadata = metadata
         self.model = model
-        self.stopSequences = stopSequences
-        self.stream = stream
+        self.outputConfig = outputConfig
+        self.speed = speed
         self.system = system
-        self.temperature = temperature
         self.thinking = thinking
         self.toolChoice = toolChoice
         self.tools = tools
-        self.topK = topK
-        self.topP = topP
     }
 }
 
@@ -109,6 +309,15 @@ public struct AnthropicDeleteResponse: Codable {
         self.deleted = deleted
         self.id = id
         self.type = type
+    }
+}
+
+public struct AnthropicDiagnostics: Codable {
+    public let previousMessageId: String?
+
+
+    public init(previousMessageId: String? = nil) {
+        self.previousMessageId = previousMessageId
     }
 }
 
@@ -258,10 +467,17 @@ public struct AnthropicMessageBatchRequestCounts: Codable {
 }
 
 public struct AnthropicMessageCreateRequest: Codable {
+    public let cacheControl: AnthropicCacheControl?
+    public let container: AnthropicContainer?
+    public let diagnostics: AnthropicDiagnostics?
+    public let inferenceGeo: String?
     public let maxTokens: Int?
     public let messages: [AnthropicMessageParam]?
-    public let metadata: [String: String]?
+    public let metadata: AnthropicMetadata?
     public let model: String?
+    public let outputConfig: AnthropicOutputConfig?
+    public let serviceTier: String?
+    public let speed: String?
     public let stopSequences: [String]?
     public let stream: Bool?
     public let system: String?
@@ -273,11 +489,18 @@ public struct AnthropicMessageCreateRequest: Codable {
     public let topP: Double?
 
 
-    public init(maxTokens: Int? = nil, messages: [AnthropicMessageParam]? = nil, metadata: [String: String]? = nil, model: String? = nil, stopSequences: [String]? = nil, stream: Bool? = nil, system: String? = nil, temperature: Double? = nil, thinking: AnthropicThinkingConfig? = nil, toolChoice: AnthropicToolChoice? = nil, tools: [AnthropicTool]? = nil, topK: Int? = nil, topP: Double? = nil) {
+    public init(cacheControl: AnthropicCacheControl? = nil, container: AnthropicContainer? = nil, diagnostics: AnthropicDiagnostics? = nil, inferenceGeo: String? = nil, maxTokens: Int? = nil, messages: [AnthropicMessageParam]? = nil, metadata: AnthropicMetadata? = nil, model: String? = nil, outputConfig: AnthropicOutputConfig? = nil, serviceTier: String? = nil, speed: String? = nil, stopSequences: [String]? = nil, stream: Bool? = nil, system: String? = nil, temperature: Double? = nil, thinking: AnthropicThinkingConfig? = nil, toolChoice: AnthropicToolChoice? = nil, tools: [AnthropicTool]? = nil, topK: Int? = nil, topP: Double? = nil) {
+        self.cacheControl = cacheControl
+        self.container = container
+        self.diagnostics = diagnostics
+        self.inferenceGeo = inferenceGeo
         self.maxTokens = maxTokens
         self.messages = messages
         self.metadata = metadata
         self.model = model
+        self.outputConfig = outputConfig
+        self.serviceTier = serviceTier
+        self.speed = speed
         self.stopSequences = stopSequences
         self.stream = stream
         self.system = system
@@ -301,36 +524,133 @@ public struct AnthropicMessageParam: Codable {
     }
 }
 
-public struct AnthropicThinkingConfig: Codable {
-    public let budgetTokens: Int?
+public struct AnthropicMetadata: Codable {
+    public let userId: String?
+
+
+    public init(userId: String? = nil) {
+        self.userId = userId
+    }
+}
+
+public struct AnthropicOutputConfig: Codable {
+    public let effort: String?
+    public let format: AnthropicOutputFormat?
+
+
+    public init(effort: String? = nil, format: AnthropicOutputFormat? = nil) {
+        self.effort = effort
+        self.format = format
+    }
+}
+
+public struct AnthropicOutputFormat: Codable {
+    public let schema: ProviderJsonSchema?
     public let type: String?
 
 
-    public init(budgetTokens: Int? = nil, type: String? = nil) {
+    public init(schema: ProviderJsonSchema? = nil, type: String? = nil) {
+        self.schema = schema
+        self.type = type
+    }
+}
+
+public struct AnthropicServerTool: Codable {
+    public let allowedCallers: [String]?
+    public let allowedDomains: [String]?
+    public let blockedDomains: [String]?
+    public let cacheControl: AnthropicCacheControl?
+    public let deferLoading: Bool?
+    public let displayHeightPx: Int?
+    public let displayNumber: Int?
+    public let displayWidthPx: Int?
+    public let maxCharacters: Int?
+    public let maxUses: Int?
+    public let name: String?
+    public let strict: Bool?
+    public let type: String?
+    public let userLocation: [String: String]?
+
+
+    public init(allowedCallers: [String]? = nil, allowedDomains: [String]? = nil, blockedDomains: [String]? = nil, cacheControl: AnthropicCacheControl? = nil, deferLoading: Bool? = nil, displayHeightPx: Int? = nil, displayNumber: Int? = nil, displayWidthPx: Int? = nil, maxCharacters: Int? = nil, maxUses: Int? = nil, name: String? = nil, strict: Bool? = nil, type: String? = nil, userLocation: [String: String]? = nil) {
+        self.allowedCallers = allowedCallers
+        self.allowedDomains = allowedDomains
+        self.blockedDomains = blockedDomains
+        self.cacheControl = cacheControl
+        self.deferLoading = deferLoading
+        self.displayHeightPx = displayHeightPx
+        self.displayNumber = displayNumber
+        self.displayWidthPx = displayWidthPx
+        self.maxCharacters = maxCharacters
+        self.maxUses = maxUses
+        self.name = name
+        self.strict = strict
+        self.type = type
+        self.userLocation = userLocation
+    }
+}
+
+public struct AnthropicSkill: Codable {
+    public let skillId: String?
+    public let type: String?
+    public let version: String?
+
+
+    public init(skillId: String? = nil, type: String? = nil, version: String? = nil) {
+        self.skillId = skillId
+        self.type = type
+        self.version = version
+    }
+}
+
+public struct AnthropicThinkingConfig: Codable {
+    public let budgetTokens: Int?
+    public let display: String?
+    public let type: String?
+
+
+    public init(budgetTokens: Int? = nil, display: String? = nil, type: String? = nil) {
         self.budgetTokens = budgetTokens
+        self.display = display
         self.type = type
     }
 }
 
 public struct AnthropicTool: Codable {
+    public let allowedCallers: [String]?
+    public let cacheControl: AnthropicCacheControl?
+    public let deferLoading: Bool?
     public let description: String?
+    public let eagerInputStreaming: Bool?
+    public let inputExamples: [[String: String]]?
     public let inputSchema: ProviderJsonSchema?
     public let name: String?
+    public let strict: Bool?
+    public let type: String?
 
 
-    public init(description: String? = nil, inputSchema: ProviderJsonSchema? = nil, name: String? = nil) {
+    public init(allowedCallers: [String]? = nil, cacheControl: AnthropicCacheControl? = nil, deferLoading: Bool? = nil, description: String? = nil, eagerInputStreaming: Bool? = nil, inputExamples: [[String: String]]? = nil, inputSchema: ProviderJsonSchema? = nil, name: String? = nil, strict: Bool? = nil, type: String? = nil) {
+        self.allowedCallers = allowedCallers
+        self.cacheControl = cacheControl
+        self.deferLoading = deferLoading
         self.description = description
+        self.eagerInputStreaming = eagerInputStreaming
+        self.inputExamples = inputExamples
         self.inputSchema = inputSchema
         self.name = name
+        self.strict = strict
+        self.type = type
     }
 }
 
 public struct AnthropicToolChoice: Codable {
+    public let disableParallelToolUse: Bool?
     public let name: String?
     public let type: String?
 
 
-    public init(name: String? = nil, type: String? = nil) {
+    public init(disableParallelToolUse: Bool? = nil, name: String? = nil, type: String? = nil) {
+        self.disableParallelToolUse = disableParallelToolUse
         self.name = name
         self.type = type
     }
@@ -348,6 +668,529 @@ public struct AnthropicUsage: Codable {
         self.cacheReadInputTokens = cacheReadInputTokens
         self.inputTokens = inputTokens
         self.outputTokens = outputTokens
+    }
+}
+
+public struct ArkAudioSource: Codable {
+    public let url: String?
+
+
+    public init(url: String? = nil) {
+        self.url = url
+    }
+}
+
+public struct ArkContentPart: Codable {
+    public let audioUrl: ArkAudioSource?
+    public let draftTask: ArkDraftTask?
+    public let imageUrl: ArkImageSource?
+    public let role: String?
+    public let text: String?
+    public let type: String?
+    public let videoUrl: ArkVideoSource?
+
+
+    public init(audioUrl: ArkAudioSource? = nil, draftTask: ArkDraftTask? = nil, imageUrl: ArkImageSource? = nil, role: String? = nil, text: String? = nil, type: String? = nil, videoUrl: ArkVideoSource? = nil) {
+        self.audioUrl = audioUrl
+        self.draftTask = draftTask
+        self.imageUrl = imageUrl
+        self.role = role
+        self.text = text
+        self.type = type
+        self.videoUrl = videoUrl
+    }
+}
+
+public struct ArkDraftTask: Codable {
+    public let id: String?
+
+
+    public init(id: String? = nil) {
+        self.id = id
+    }
+}
+
+public struct ArkImageGenerationData: Codable {
+    public let b64Json: String?
+    public let boundingBox: [String: String]?
+    public let description: String?
+    public let error: ProviderTaskError?
+    public let name: String?
+    public let outputFormat: String?
+    public let size: String?
+    public let url: String?
+    public let zIndex: Int?
+
+
+    public init(b64Json: String? = nil, boundingBox: [String: String]? = nil, description: String? = nil, error: ProviderTaskError? = nil, name: String? = nil, outputFormat: String? = nil, size: String? = nil, url: String? = nil, zIndex: Int? = nil) {
+        self.b64Json = b64Json
+        self.boundingBox = boundingBox
+        self.description = description
+        self.error = error
+        self.name = name
+        self.outputFormat = outputFormat
+        self.size = size
+        self.url = url
+        self.zIndex = zIndex
+    }
+}
+
+public struct ArkImageSource: Codable {
+    public let url: String?
+
+
+    public init(url: String? = nil) {
+        self.url = url
+    }
+}
+
+public struct ArkImageUsage: Codable {
+    public let generatedImages: Int?
+    public let inputImages: Int?
+    public let outputTokens: Int?
+    public let toolUsage: ArkVideoToolUsage?
+    public let totalTokens: Int?
+
+
+    public init(generatedImages: Int? = nil, inputImages: Int? = nil, outputTokens: Int? = nil, toolUsage: ArkVideoToolUsage? = nil, totalTokens: Int? = nil) {
+        self.generatedImages = generatedImages
+        self.inputImages = inputImages
+        self.outputTokens = outputTokens
+        self.toolUsage = toolUsage
+        self.totalTokens = totalTokens
+    }
+}
+
+public struct ArkVideoSource: Codable {
+    public let url: String?
+
+
+    public init(url: String? = nil) {
+        self.url = url
+    }
+}
+
+public struct ArkVideoTaskContent: Codable {
+    public let lastFrameUrl: String?
+    public let videoUrl: String?
+
+
+    public init(lastFrameUrl: String? = nil, videoUrl: String? = nil) {
+        self.lastFrameUrl = lastFrameUrl
+        self.videoUrl = videoUrl
+    }
+}
+
+public struct ArkVideoToolUsage: Codable {
+    public let webSearch: Int?
+
+
+    public init(webSearch: Int? = nil) {
+        self.webSearch = webSearch
+    }
+}
+
+public struct ArkVideoUsage: Codable {
+    public let completionTokens: Int?
+    public let toolUsage: ArkVideoToolUsage?
+    public let totalTokens: Int?
+
+
+    public init(completionTokens: Int? = nil, toolUsage: ArkVideoToolUsage? = nil, totalTokens: Int? = nil) {
+        self.completionTokens = completionTokens
+        self.toolUsage = toolUsage
+        self.totalTokens = totalTokens
+    }
+}
+
+public struct ArkWebSearchTool: Codable {
+    public let type: String?
+
+
+    public init(type: String? = nil) {
+        self.type = type
+    }
+}
+
+public struct BlackForestLabsImageGenerationRequest: Codable {
+    public let aspectRatio: String?
+    public let autoCrop: Bool?
+    public let bottom: Int?
+    public let dilatePixels: Int?
+    public let disablePup: Bool?
+    public let finetuneId: String?
+    public let finetuneStrength: Double?
+    public let garment: String?
+    public let grounding: Bool?
+    public let guidance: Double?
+    public let height: Int?
+    public let image: String?
+    public let imagePrompt: String?
+    public let imagePromptStrength: Double?
+    public let images: String?
+    public let inputImage: String?
+    public let inputImage2: String?
+    public let inputImage3: String?
+    public let inputImage4: String?
+    public let inputImage5: String?
+    public let inputImage6: String?
+    public let inputImage7: String?
+    public let inputImage8: String?
+    public let inputImageBlobPath: String?
+    public let left_: Int?
+    public let mask: String?
+    public let mode: String?
+    public let outputFormat: String?
+    public let person: String?
+    public let prompt: String?
+    public let promptUpsampling: Bool?
+    public let raw: Bool?
+    public let referenceOffsetX: Int?
+    public let referenceOffsetY: Int?
+    public let resolution: String?
+    public let right_: Int?
+    public let safetyTolerance: Int?
+    public let seed: Int?
+    public let steps: Int?
+    public let top: Int?
+    public let user: String?
+    public let version: String?
+    public let webhookSecret: String?
+    public let webhookUrl: String?
+    public let width: Int?
+
+
+    public init(aspectRatio: String? = nil, autoCrop: Bool? = nil, bottom: Int? = nil, dilatePixels: Int? = nil, disablePup: Bool? = nil, finetuneId: String? = nil, finetuneStrength: Double? = nil, garment: String? = nil, grounding: Bool? = nil, guidance: Double? = nil, height: Int? = nil, image: String? = nil, imagePrompt: String? = nil, imagePromptStrength: Double? = nil, images: String? = nil, inputImage: String? = nil, inputImage2: String? = nil, inputImage3: String? = nil, inputImage4: String? = nil, inputImage5: String? = nil, inputImage6: String? = nil, inputImage7: String? = nil, inputImage8: String? = nil, inputImageBlobPath: String? = nil, left_: Int? = nil, mask: String? = nil, mode: String? = nil, outputFormat: String? = nil, person: String? = nil, prompt: String? = nil, promptUpsampling: Bool? = nil, raw: Bool? = nil, referenceOffsetX: Int? = nil, referenceOffsetY: Int? = nil, resolution: String? = nil, right_: Int? = nil, safetyTolerance: Int? = nil, seed: Int? = nil, steps: Int? = nil, top: Int? = nil, user: String? = nil, version: String? = nil, webhookSecret: String? = nil, webhookUrl: String? = nil, width: Int? = nil) {
+        self.aspectRatio = aspectRatio
+        self.autoCrop = autoCrop
+        self.bottom = bottom
+        self.dilatePixels = dilatePixels
+        self.disablePup = disablePup
+        self.finetuneId = finetuneId
+        self.finetuneStrength = finetuneStrength
+        self.garment = garment
+        self.grounding = grounding
+        self.guidance = guidance
+        self.height = height
+        self.image = image
+        self.imagePrompt = imagePrompt
+        self.imagePromptStrength = imagePromptStrength
+        self.images = images
+        self.inputImage = inputImage
+        self.inputImage2 = inputImage2
+        self.inputImage3 = inputImage3
+        self.inputImage4 = inputImage4
+        self.inputImage5 = inputImage5
+        self.inputImage6 = inputImage6
+        self.inputImage7 = inputImage7
+        self.inputImage8 = inputImage8
+        self.inputImageBlobPath = inputImageBlobPath
+        self.left_ = left_
+        self.mask = mask
+        self.mode = mode
+        self.outputFormat = outputFormat
+        self.person = person
+        self.prompt = prompt
+        self.promptUpsampling = promptUpsampling
+        self.raw = raw
+        self.referenceOffsetX = referenceOffsetX
+        self.referenceOffsetY = referenceOffsetY
+        self.resolution = resolution
+        self.right_ = right_
+        self.safetyTolerance = safetyTolerance
+        self.seed = seed
+        self.steps = steps
+        self.top = top
+        self.user = user
+        self.version = version
+        self.webhookSecret = webhookSecret
+        self.webhookUrl = webhookUrl
+        self.width = width
+    }
+}
+
+public struct BlackForestLabsImageGenerationTask: Codable {
+    public let details: [String: String]?
+    public let id: String?
+    public let pollingUrl: String?
+    public let progress: Double?
+    public let result: [String: String]?
+    public let status: String?
+
+
+    public init(details: [String: String]? = nil, id: String? = nil, pollingUrl: String? = nil, progress: Double? = nil, result: [String: String]? = nil, status: String? = nil) {
+        self.details = details
+        self.id = id
+        self.pollingUrl = pollingUrl
+        self.progress = progress
+        self.result = result
+        self.status = status
+    }
+}
+
+public struct BlackForestLabsVideoGenerationRequest: Codable {
+    public let aspectRatio: String?
+    public let draft: Bool?
+    public let draftCache: String?
+    public let duration: Int?
+    public let generateAudio: Bool?
+    public let keyframes: String?
+    public let mode: String?
+    public let prompt: String?
+    public let resolution: String?
+    public let safetyTolerance: Int?
+    public let startVideo: String?
+    public let user: String?
+    public let version: String?
+
+
+    public init(aspectRatio: String? = nil, draft: Bool? = nil, draftCache: String? = nil, duration: Int? = nil, generateAudio: Bool? = nil, keyframes: String? = nil, mode: String? = nil, prompt: String? = nil, resolution: String? = nil, safetyTolerance: Int? = nil, startVideo: String? = nil, user: String? = nil, version: String? = nil) {
+        self.aspectRatio = aspectRatio
+        self.draft = draft
+        self.draftCache = draftCache
+        self.duration = duration
+        self.generateAudio = generateAudio
+        self.keyframes = keyframes
+        self.mode = mode
+        self.prompt = prompt
+        self.resolution = resolution
+        self.safetyTolerance = safetyTolerance
+        self.startVideo = startVideo
+        self.user = user
+        self.version = version
+    }
+}
+
+public struct BlackForestLabsVideoGenerationTask: Codable {
+    public let details: [String: String]?
+    public let id: String?
+    public let pollingUrl: String?
+    public let progress: Double?
+    public let result: [String: String]?
+    public let status: String?
+
+
+    public init(details: [String: String]? = nil, id: String? = nil, pollingUrl: String? = nil, progress: Double? = nil, result: [String: String]? = nil, status: String? = nil) {
+        self.details = details
+        self.id = id
+        self.pollingUrl = pollingUrl
+        self.progress = progress
+        self.result = result
+        self.status = status
+    }
+}
+
+public struct BytedanceImageGenerationRequest: Codable {
+    public let background: String?
+    public let image: String?
+    public let layerDecomposition: Bool?
+    public let model: String?
+    public let optimizePromptOptions: [String: String]?
+    public let outputFormat: String?
+    public let prompt: String?
+    public let responseFormat: String?
+    public let sequentialImageGeneration: String?
+    public let sequentialImageGenerationOptions: [String: String]?
+    public let size: String?
+    public let stream: Bool?
+    public let tools: [ArkWebSearchTool]?
+    public let watermark: Bool?
+
+
+    public init(background: String? = nil, image: String? = nil, layerDecomposition: Bool? = nil, model: String? = nil, optimizePromptOptions: [String: String]? = nil, outputFormat: String? = nil, prompt: String? = nil, responseFormat: String? = nil, sequentialImageGeneration: String? = nil, sequentialImageGenerationOptions: [String: String]? = nil, size: String? = nil, stream: Bool? = nil, tools: [ArkWebSearchTool]? = nil, watermark: Bool? = nil) {
+        self.background = background
+        self.image = image
+        self.layerDecomposition = layerDecomposition
+        self.model = model
+        self.optimizePromptOptions = optimizePromptOptions
+        self.outputFormat = outputFormat
+        self.prompt = prompt
+        self.responseFormat = responseFormat
+        self.sequentialImageGeneration = sequentialImageGeneration
+        self.sequentialImageGenerationOptions = sequentialImageGenerationOptions
+        self.size = size
+        self.stream = stream
+        self.tools = tools
+        self.watermark = watermark
+    }
+}
+
+public struct BytedanceImageGenerationResponse: Codable {
+    public let created: Int?
+    public let data: [ArkImageGenerationData]?
+    public let error: ProviderTaskError?
+    public let model: String?
+    public let tools: [ArkWebSearchTool]?
+    public let usage: ArkImageUsage?
+
+
+    public init(created: Int? = nil, data: [ArkImageGenerationData]? = nil, error: ProviderTaskError? = nil, model: String? = nil, tools: [ArkWebSearchTool]? = nil, usage: ArkImageUsage? = nil) {
+        self.created = created
+        self.data = data
+        self.error = error
+        self.model = model
+        self.tools = tools
+        self.usage = usage
+    }
+}
+
+public struct BytedanceSpeechChunk: Codable {
+    public let code: Int?
+    public let data: String?
+    public let message: String?
+    public let sequence: Int?
+
+
+    public init(code: Int? = nil, data: String? = nil, message: String? = nil, sequence: Int? = nil) {
+        self.code = code
+        self.data = data
+        self.message = message
+        self.sequence = sequence
+    }
+}
+
+public struct BytedanceSpeechRequest: Codable {
+    public let reqParams: BytedanceTtsRequestParams?
+
+
+    public init(reqParams: BytedanceTtsRequestParams? = nil) {
+        self.reqParams = reqParams
+    }
+}
+
+public struct BytedanceTtsAudioParams: Codable {
+    public let format: String?
+    public let loudnessRate: Int?
+    public let sampleRate: Int?
+    public let speechRate: Int?
+
+
+    public init(format: String? = nil, loudnessRate: Int? = nil, sampleRate: Int? = nil, speechRate: Int? = nil) {
+        self.format = format
+        self.loudnessRate = loudnessRate
+        self.sampleRate = sampleRate
+        self.speechRate = speechRate
+    }
+}
+
+public struct BytedanceTtsRequestParams: Codable {
+    public let additions: String?
+    public let audioParams: BytedanceTtsAudioParams?
+    public let model: String?
+    public let pronunciationDict: [String: String]?
+    public let speaker: String?
+    public let ssml: String?
+    public let text: String?
+    public let tone: [String]?
+
+
+    public init(additions: String? = nil, audioParams: BytedanceTtsAudioParams? = nil, model: String? = nil, pronunciationDict: [String: String]? = nil, speaker: String? = nil, ssml: String? = nil, text: String? = nil, tone: [String]? = nil) {
+        self.additions = additions
+        self.audioParams = audioParams
+        self.model = model
+        self.pronunciationDict = pronunciationDict
+        self.speaker = speaker
+        self.ssml = ssml
+        self.text = text
+        self.tone = tone
+    }
+}
+
+public struct BytedanceVideoGenerationRequest: Codable {
+    public let callbackUrl: String?
+    public let cameraFixed: Bool?
+    public let content: [ArkContentPart]?
+    public let draft: Bool?
+    public let duration: Int?
+    public let executionExpiresAfter: Int?
+    public let frames: Int?
+    public let generateAudio: Bool?
+    public let model: String?
+    public let omniReferenceTaskType: String?
+    public let outputFormat: String?
+    public let priority: Int?
+    public let ratio: String?
+    public let resolution: String?
+    public let returnLastFrame: Bool?
+    public let safetyIdentifier: String?
+    public let seed: Int?
+    public let serviceTier: String?
+    public let tools: [ArkWebSearchTool]?
+    public let watermark: Bool?
+
+
+    public init(callbackUrl: String? = nil, cameraFixed: Bool? = nil, content: [ArkContentPart]? = nil, draft: Bool? = nil, duration: Int? = nil, executionExpiresAfter: Int? = nil, frames: Int? = nil, generateAudio: Bool? = nil, model: String? = nil, omniReferenceTaskType: String? = nil, outputFormat: String? = nil, priority: Int? = nil, ratio: String? = nil, resolution: String? = nil, returnLastFrame: Bool? = nil, safetyIdentifier: String? = nil, seed: Int? = nil, serviceTier: String? = nil, tools: [ArkWebSearchTool]? = nil, watermark: Bool? = nil) {
+        self.callbackUrl = callbackUrl
+        self.cameraFixed = cameraFixed
+        self.content = content
+        self.draft = draft
+        self.duration = duration
+        self.executionExpiresAfter = executionExpiresAfter
+        self.frames = frames
+        self.generateAudio = generateAudio
+        self.model = model
+        self.omniReferenceTaskType = omniReferenceTaskType
+        self.outputFormat = outputFormat
+        self.priority = priority
+        self.ratio = ratio
+        self.resolution = resolution
+        self.returnLastFrame = returnLastFrame
+        self.safetyIdentifier = safetyIdentifier
+        self.seed = seed
+        self.serviceTier = serviceTier
+        self.tools = tools
+        self.watermark = watermark
+    }
+}
+
+public struct BytedanceVideoGenerationTask: Codable {
+    public let content: ArkVideoTaskContent?
+    public let createdAt: Int?
+    public let draft: Bool?
+    public let duration: Int?
+    public let error: ProviderTaskError?
+    public let executionExpiresAfter: Int?
+    public let frames: Int?
+    public let framespersecond: Int?
+    public let generateAudio: Bool?
+    public let id: String?
+    public let model: String?
+    public let outputFormat: String?
+    public let priority: Int?
+    public let ratio: String?
+    public let resolution: String?
+    public let safetyIdentifier: String?
+    public let seed: Int?
+    public let serviceTier: String?
+    public let status: String?
+    public let tools: [ArkWebSearchTool]?
+    public let updatedAt: Int?
+    public let usage: ArkVideoUsage?
+
+
+    public init(content: ArkVideoTaskContent? = nil, createdAt: Int? = nil, draft: Bool? = nil, duration: Int? = nil, error: ProviderTaskError? = nil, executionExpiresAfter: Int? = nil, frames: Int? = nil, framespersecond: Int? = nil, generateAudio: Bool? = nil, id: String? = nil, model: String? = nil, outputFormat: String? = nil, priority: Int? = nil, ratio: String? = nil, resolution: String? = nil, safetyIdentifier: String? = nil, seed: Int? = nil, serviceTier: String? = nil, status: String? = nil, tools: [ArkWebSearchTool]? = nil, updatedAt: Int? = nil, usage: ArkVideoUsage? = nil) {
+        self.content = content
+        self.createdAt = createdAt
+        self.draft = draft
+        self.duration = duration
+        self.error = error
+        self.executionExpiresAfter = executionExpiresAfter
+        self.frames = frames
+        self.framespersecond = framespersecond
+        self.generateAudio = generateAudio
+        self.id = id
+        self.model = model
+        self.outputFormat = outputFormat
+        self.priority = priority
+        self.ratio = ratio
+        self.resolution = resolution
+        self.safetyIdentifier = safetyIdentifier
+        self.seed = seed
+        self.serviceTier = serviceTier
+        self.status = status
+        self.tools = tools
+        self.updatedAt = updatedAt
+        self.usage = usage
     }
 }
 
@@ -394,6 +1237,95 @@ public struct DeleteResult: Codable {
     }
 }
 
+public struct ElevenLabsAudioEffects: Codable {
+    public let backgroundNoiseId: String?
+    public let distance: Double?
+    public let environmentId: String?
+    public let filterPresetId: String?
+    public let pan: Double?
+    public let sendLevel: Double?
+
+
+    public init(backgroundNoiseId: String? = nil, distance: Double? = nil, environmentId: String? = nil, filterPresetId: String? = nil, pan: Double? = nil, sendLevel: Double? = nil) {
+        self.backgroundNoiseId = backgroundNoiseId
+        self.distance = distance
+        self.environmentId = environmentId
+        self.filterPresetId = filterPresetId
+        self.pan = pan
+        self.sendLevel = sendLevel
+    }
+}
+
+public struct ElevenLabsCompositionPlan: Codable {
+    public let chunks: [[String: String]]?
+
+
+    public init(chunks: [[String: String]]? = nil) {
+        self.chunks = chunks
+    }
+}
+
+public struct ElevenLabsMusicGenerationRequest: Codable {
+    public let compositionPlan: ElevenLabsMusicPrompt?
+    public let finetuneId: String?
+    public let finetuneStrength: Double?
+    public let forceInstrumental: Bool?
+    public let generationMode: String?
+    public let lyricsText: String?
+    public let modelId: String?
+    public let musicLengthMs: Int?
+    public let musicPrompt: ElevenLabsMusicPrompt?
+    public let prompt: String?
+    public let respectSectionsDurations: Bool?
+    public let seed: Int?
+    public let signWithC2pa: Bool?
+    public let storeForInpainting: Bool?
+    public let usePhoneticNames: Bool?
+
+
+    public init(compositionPlan: ElevenLabsMusicPrompt? = nil, finetuneId: String? = nil, finetuneStrength: Double? = nil, forceInstrumental: Bool? = nil, generationMode: String? = nil, lyricsText: String? = nil, modelId: String? = nil, musicLengthMs: Int? = nil, musicPrompt: ElevenLabsMusicPrompt? = nil, prompt: String? = nil, respectSectionsDurations: Bool? = nil, seed: Int? = nil, signWithC2pa: Bool? = nil, storeForInpainting: Bool? = nil, usePhoneticNames: Bool? = nil) {
+        self.compositionPlan = compositionPlan
+        self.finetuneId = finetuneId
+        self.finetuneStrength = finetuneStrength
+        self.forceInstrumental = forceInstrumental
+        self.generationMode = generationMode
+        self.lyricsText = lyricsText
+        self.modelId = modelId
+        self.musicLengthMs = musicLengthMs
+        self.musicPrompt = musicPrompt
+        self.prompt = prompt
+        self.respectSectionsDurations = respectSectionsDurations
+        self.seed = seed
+        self.signWithC2pa = signWithC2pa
+        self.storeForInpainting = storeForInpainting
+        self.usePhoneticNames = usePhoneticNames
+    }
+}
+
+public struct ElevenLabsMusicPrompt: Codable {
+    public let negativeGlobalStyles: [String]?
+    public let positiveGlobalStyles: [String]?
+    public let sections: [[String: String]]?
+
+
+    public init(negativeGlobalStyles: [String]? = nil, positiveGlobalStyles: [String]? = nil, sections: [[String: String]]? = nil) {
+        self.negativeGlobalStyles = negativeGlobalStyles
+        self.positiveGlobalStyles = positiveGlobalStyles
+        self.sections = sections
+    }
+}
+
+public struct ElevenLabsPronunciationDictionaryLocator: Codable {
+    public let pronunciationDictionaryId: String?
+    public let versionId: String?
+
+
+    public init(pronunciationDictionaryId: String? = nil, versionId: String? = nil) {
+        self.pronunciationDictionaryId = pronunciationDictionaryId
+        self.versionId = versionId
+    }
+}
+
 public struct ElevenLabsSoundGenerationRequest: Codable {
     public let durationSeconds: Double?
     public let loop: Bool?
@@ -429,14 +1361,36 @@ public struct ElevenLabsSoundGenerationResponse: Codable {
 }
 
 public struct ElevenLabsTextToSpeechRequest: Codable {
+    public let applyLanguageTextNormalization: Bool?
+    public let applyTextNormalization: String?
+    public let audioEffects: ElevenLabsAudioEffects?
+    public let languageCode: String?
     public let modelId: String?
+    public let nextRequestIds: [String]?
+    public let nextText: String?
+    public let previousRequestIds: [String]?
+    public let previousText: String?
+    public let pronunciationDictionaryLocators: [ElevenLabsPronunciationDictionaryLocator]?
+    public let seed: Int?
     public let text: String?
-    public let voiceSettings: [String: Any]?
+    public let usePvcAsIvc: Bool?
+    public let voiceSettings: ElevenLabsVoiceSettings?
 
 
-    public init(modelId: String? = nil, text: String? = nil, voiceSettings: [String: Any]? = nil) {
+    public init(applyLanguageTextNormalization: Bool? = nil, applyTextNormalization: String? = nil, audioEffects: ElevenLabsAudioEffects? = nil, languageCode: String? = nil, modelId: String? = nil, nextRequestIds: [String]? = nil, nextText: String? = nil, previousRequestIds: [String]? = nil, previousText: String? = nil, pronunciationDictionaryLocators: [ElevenLabsPronunciationDictionaryLocator]? = nil, seed: Int? = nil, text: String? = nil, usePvcAsIvc: Bool? = nil, voiceSettings: ElevenLabsVoiceSettings? = nil) {
+        self.applyLanguageTextNormalization = applyLanguageTextNormalization
+        self.applyTextNormalization = applyTextNormalization
+        self.audioEffects = audioEffects
+        self.languageCode = languageCode
         self.modelId = modelId
+        self.nextRequestIds = nextRequestIds
+        self.nextText = nextText
+        self.previousRequestIds = previousRequestIds
+        self.previousText = previousText
+        self.pronunciationDictionaryLocators = pronunciationDictionaryLocators
+        self.seed = seed
         self.text = text
+        self.usePvcAsIvc = usePvcAsIvc
         self.voiceSettings = voiceSettings
     }
 }
@@ -453,6 +1407,73 @@ public struct ElevenLabsTextToSpeechResponse: Codable {
         self.id = id
         self.status = status
         self.url = url
+    }
+}
+
+public struct ElevenLabsVoiceSettings: Codable {
+    public let cloneStrength: Double?
+    public let similarityBoost: Double?
+    public let speed: Double?
+    public let stability: Double?
+    public let style: Double?
+    public let useSpeakerBoost: Bool?
+
+
+    public init(cloneStrength: Double? = nil, similarityBoost: Double? = nil, speed: Double? = nil, stability: Double? = nil, style: Double? = nil, useSpeakerBoost: Bool? = nil) {
+        self.cloneStrength = cloneStrength
+        self.similarityBoost = similarityBoost
+        self.speed = speed
+        self.stability = stability
+        self.style = style
+        self.useSpeakerBoost = useSpeakerBoost
+    }
+}
+
+public struct GeminiImageGenerationRequest: Codable {
+    public let instances: [[String: String]]?
+    public let parameters: [String: String]?
+
+
+    public init(instances: [[String: String]]? = nil, parameters: [String: String]? = nil) {
+        self.instances = instances
+        self.parameters = parameters
+    }
+}
+
+public struct GeminiImageGenerationResponse: Codable {
+    public let error: [String: String]?
+    public let predictions: [[String: String]]?
+
+
+    public init(error: [String: String]? = nil, predictions: [[String: String]]? = nil) {
+        self.error = error
+        self.predictions = predictions
+    }
+}
+
+public struct GeminiVideoGenerationRequest: Codable {
+    public let instances: [[String: String]]?
+    public let parameters: [String: String]?
+
+
+    public init(instances: [[String: String]]? = nil, parameters: [String: String]? = nil) {
+        self.instances = instances
+        self.parameters = parameters
+    }
+}
+
+public struct GeminiVideoOperation: Codable {
+    public let done: Bool?
+    public let error: [String: String]?
+    public let name: String?
+    public let response: [String: String]?
+
+
+    public init(done: Bool? = nil, error: [String: String]? = nil, name: String? = nil, response: [String: String]? = nil) {
+        self.done = done
+        self.error = error
+        self.name = name
+        self.response = response
     }
 }
 
@@ -675,13 +1696,17 @@ public struct GoogleDynamicRetrievalConfig: Codable {
 
 public struct GoogleEmbedContentRequest: Codable {
     public let content: GoogleContent?
+    public let embedContentConfig: [String: String]?
+    public let model: String?
     public let outputDimensionality: Int?
     public let taskType: String?
     public let title: String?
 
 
-    public init(content: GoogleContent? = nil, outputDimensionality: Int? = nil, taskType: String? = nil, title: String? = nil) {
+    public init(content: GoogleContent? = nil, embedContentConfig: [String: String]? = nil, model: String? = nil, outputDimensionality: Int? = nil, taskType: String? = nil, title: String? = nil) {
         self.content = content
+        self.embedContentConfig = embedContentConfig
+        self.model = model
         self.outputDimensionality = outputDimensionality
         self.taskType = taskType
         self.title = title
@@ -830,18 +1855,28 @@ public struct GoogleFunctionResponse: Codable {
 public struct GoogleGenerateContentRequest: Codable {
     public let cachedContent: String?
     public let contents: [GoogleContent]?
+    public let continuationToken: String?
     public let generationConfig: GoogleGenerationConfig?
+    public let labels: [String: String]?
+    public let model: String?
     public let safetySettings: [GoogleSafetySetting]?
+    public let serviceTier: String?
+    public let store: Bool?
     public let systemInstruction: GoogleContent?
     public let toolConfig: GoogleToolConfig?
     public let tools: [GoogleTool]?
 
 
-    public init(cachedContent: String? = nil, contents: [GoogleContent]? = nil, generationConfig: GoogleGenerationConfig? = nil, safetySettings: [GoogleSafetySetting]? = nil, systemInstruction: GoogleContent? = nil, toolConfig: GoogleToolConfig? = nil, tools: [GoogleTool]? = nil) {
+    public init(cachedContent: String? = nil, contents: [GoogleContent]? = nil, continuationToken: String? = nil, generationConfig: GoogleGenerationConfig? = nil, labels: [String: String]? = nil, model: String? = nil, safetySettings: [GoogleSafetySetting]? = nil, serviceTier: String? = nil, store: Bool? = nil, systemInstruction: GoogleContent? = nil, toolConfig: GoogleToolConfig? = nil, tools: [GoogleTool]? = nil) {
         self.cachedContent = cachedContent
         self.contents = contents
+        self.continuationToken = continuationToken
         self.generationConfig = generationConfig
+        self.labels = labels
+        self.model = model
         self.safetySettings = safetySettings
+        self.serviceTier = serviceTier
+        self.store = store
         self.systemInstruction = systemInstruction
         self.toolConfig = toolConfig
         self.tools = tools
@@ -866,48 +1901,98 @@ public struct GoogleGenerateContentResponse: Codable {
 }
 
 public struct GoogleGenerationConfig: Codable {
+    public let audioTranscriptionConfig: [String: String]?
     public let candidateCount: Int?
+    public let enableAffectiveDialog: Bool?
+    public let enableEnhancedCivicAnswers: Bool?
+    public let frequencyPenalty: Double?
+    public let imageConfig: [String: String]?
+    public let logprobs: Int?
     public let maxOutputTokens: Int?
+    public let mediaResolution: String?
+    public let presencePenalty: Double?
+    public let responseFormat: [String: String]?
+    public let responseJsonSchema: String?
+    public let responseLogprobs: Bool?
     public let responseMimeType: String?
+    public let responseModalities: [String]?
     public let responseSchema: GoogleSchema?
+    public let seed: Int?
+    public let speechConfig: [String: String]?
     public let stopSequences: [String]?
     public let temperature: Double?
     public let thinkingConfig: GoogleThinkingConfig?
     public let topK: Int?
     public let topP: Double?
+    public let translationConfig: [String: String]?
 
 
-    public init(candidateCount: Int? = nil, maxOutputTokens: Int? = nil, responseMimeType: String? = nil, responseSchema: GoogleSchema? = nil, stopSequences: [String]? = nil, temperature: Double? = nil, thinkingConfig: GoogleThinkingConfig? = nil, topK: Int? = nil, topP: Double? = nil) {
+    public init(audioTranscriptionConfig: [String: String]? = nil, candidateCount: Int? = nil, enableAffectiveDialog: Bool? = nil, enableEnhancedCivicAnswers: Bool? = nil, frequencyPenalty: Double? = nil, imageConfig: [String: String]? = nil, logprobs: Int? = nil, maxOutputTokens: Int? = nil, mediaResolution: String? = nil, presencePenalty: Double? = nil, responseFormat: [String: String]? = nil, responseJsonSchema: String? = nil, responseLogprobs: Bool? = nil, responseMimeType: String? = nil, responseModalities: [String]? = nil, responseSchema: GoogleSchema? = nil, seed: Int? = nil, speechConfig: [String: String]? = nil, stopSequences: [String]? = nil, temperature: Double? = nil, thinkingConfig: GoogleThinkingConfig? = nil, topK: Int? = nil, topP: Double? = nil, translationConfig: [String: String]? = nil) {
+        self.audioTranscriptionConfig = audioTranscriptionConfig
         self.candidateCount = candidateCount
+        self.enableAffectiveDialog = enableAffectiveDialog
+        self.enableEnhancedCivicAnswers = enableEnhancedCivicAnswers
+        self.frequencyPenalty = frequencyPenalty
+        self.imageConfig = imageConfig
+        self.logprobs = logprobs
         self.maxOutputTokens = maxOutputTokens
+        self.mediaResolution = mediaResolution
+        self.presencePenalty = presencePenalty
+        self.responseFormat = responseFormat
+        self.responseJsonSchema = responseJsonSchema
+        self.responseLogprobs = responseLogprobs
         self.responseMimeType = responseMimeType
+        self.responseModalities = responseModalities
         self.responseSchema = responseSchema
+        self.seed = seed
+        self.speechConfig = speechConfig
         self.stopSequences = stopSequences
         self.temperature = temperature
         self.thinkingConfig = thinkingConfig
         self.topK = topK
         self.topP = topP
+        self.translationConfig = translationConfig
     }
 }
 
 public struct GooglePart: Codable {
+    public let audioTranscription: [String: String]?
     public let codeExecutionResult: GoogleCodeExecutionResult?
     public let executableCode: GoogleExecutableCode?
     public let fileData: GoogleFileData?
     public let functionCall: GoogleFunctionCall?
     public let functionResponse: GoogleFunctionResponse?
     public let inlineData: GoogleBlob?
+    public let mediaProcessing: String?
+    public let mediaResolution: [String: String]?
+    public let partMetadata: [String: String]?
+    public let speechMetadata: [String: String]?
     public let text: String?
+    public let thought: Bool?
+    public let thoughtSignature: String?
+    public let toolCall: [String: String]?
+    public let toolResponse: [String: String]?
+    public let videoMetadata: [String: String]?
 
 
-    public init(codeExecutionResult: GoogleCodeExecutionResult? = nil, executableCode: GoogleExecutableCode? = nil, fileData: GoogleFileData? = nil, functionCall: GoogleFunctionCall? = nil, functionResponse: GoogleFunctionResponse? = nil, inlineData: GoogleBlob? = nil, text: String? = nil) {
+    public init(audioTranscription: [String: String]? = nil, codeExecutionResult: GoogleCodeExecutionResult? = nil, executableCode: GoogleExecutableCode? = nil, fileData: GoogleFileData? = nil, functionCall: GoogleFunctionCall? = nil, functionResponse: GoogleFunctionResponse? = nil, inlineData: GoogleBlob? = nil, mediaProcessing: String? = nil, mediaResolution: [String: String]? = nil, partMetadata: [String: String]? = nil, speechMetadata: [String: String]? = nil, text: String? = nil, thought: Bool? = nil, thoughtSignature: String? = nil, toolCall: [String: String]? = nil, toolResponse: [String: String]? = nil, videoMetadata: [String: String]? = nil) {
+        self.audioTranscription = audioTranscription
         self.codeExecutionResult = codeExecutionResult
         self.executableCode = executableCode
         self.fileData = fileData
         self.functionCall = functionCall
         self.functionResponse = functionResponse
         self.inlineData = inlineData
+        self.mediaProcessing = mediaProcessing
+        self.mediaResolution = mediaResolution
+        self.partMetadata = partMetadata
+        self.speechMetadata = speechMetadata
         self.text = text
+        self.thought = thought
+        self.thoughtSignature = thoughtSignature
+        self.toolCall = toolCall
+        self.toolResponse = toolResponse
+        self.videoMetadata = videoMetadata
     }
 }
 
@@ -991,15 +2076,25 @@ public struct GoogleThinkingConfig: Codable {
 
 public struct GoogleTool: Codable {
     public let codeExecution: GoogleCodeExecutionTool?
+    public let computerUse: [String: String]?
+    public let fileSearch: [String: String]?
     public let functionDeclarations: [GoogleFunctionDeclaration]?
+    public let googleMaps: [String: String]?
     public let googleSearch: GoogleSearchTool?
+    public let googleSearchRetrieval: [String: String]?
+    public let mcpServers: [[String: String]]?
     public let urlContext: GoogleUrlContextTool?
 
 
-    public init(codeExecution: GoogleCodeExecutionTool? = nil, functionDeclarations: [GoogleFunctionDeclaration]? = nil, googleSearch: GoogleSearchTool? = nil, urlContext: GoogleUrlContextTool? = nil) {
+    public init(codeExecution: GoogleCodeExecutionTool? = nil, computerUse: [String: String]? = nil, fileSearch: [String: String]? = nil, functionDeclarations: [GoogleFunctionDeclaration]? = nil, googleMaps: [String: String]? = nil, googleSearch: GoogleSearchTool? = nil, googleSearchRetrieval: [String: String]? = nil, mcpServers: [[String: String]]? = nil, urlContext: GoogleUrlContextTool? = nil) {
         self.codeExecution = codeExecution
+        self.computerUse = computerUse
+        self.fileSearch = fileSearch
         self.functionDeclarations = functionDeclarations
+        self.googleMaps = googleMaps
         self.googleSearch = googleSearch
+        self.googleSearchRetrieval = googleSearchRetrieval
+        self.mcpServers = mcpServers
         self.urlContext = urlContext
     }
 }
@@ -1039,6 +2134,63 @@ public struct GoogleUsageMetadata: Codable {
     }
 }
 
+public struct JimengVideoGenerationRequest: Codable {
+    public let callbackUrl: String?
+    public let duration: Int?
+    public let fps: Int?
+    public let image: String?
+    public let model: String?
+    public let prompt: String?
+    public let ratio: String?
+    public let seed: Int?
+
+
+    public init(callbackUrl: String? = nil, duration: Int? = nil, fps: Int? = nil, image: String? = nil, model: String? = nil, prompt: String? = nil, ratio: String? = nil, seed: Int? = nil) {
+        self.callbackUrl = callbackUrl
+        self.duration = duration
+        self.fps = fps
+        self.image = image
+        self.model = model
+        self.prompt = prompt
+        self.ratio = ratio
+        self.seed = seed
+    }
+}
+
+public struct JimengVideoGenerationTask: Codable {
+    public let createdAt: Int?
+    public let error: [String: String]?
+    public let id: String?
+    public let status: String?
+    public let taskId: String?
+    public let videoUrl: String?
+
+
+    public init(createdAt: Int? = nil, error: [String: String]? = nil, id: String? = nil, status: String? = nil, taskId: String? = nil, videoUrl: String? = nil) {
+        self.createdAt = createdAt
+        self.error = error
+        self.id = id
+        self.status = status
+        self.taskId = taskId
+        self.videoUrl = videoUrl
+    }
+}
+
+public struct KlingAudioTask: Codable {
+    public let code: Int?
+    public let data: [String: String]?
+    public let message: String?
+    public let requestId: String?
+
+
+    public init(code: Int? = nil, data: [String: String]? = nil, message: String? = nil, requestId: String? = nil) {
+        self.code = code
+        self.data = data
+        self.message = message
+        self.requestId = requestId
+    }
+}
+
 public struct KlingAvatarCreateRequest: Codable {
     public let audioUrl: String?
     public let callbackUrl: String?
@@ -1064,6 +2216,106 @@ public struct KlingAvatarCreateRequest: Codable {
     }
 }
 
+public struct KlingElementReference: Codable {
+    public let elementId: Int?
+
+
+    public init(elementId: Int? = nil) {
+        self.elementId = elementId
+    }
+}
+
+public struct KlingImageGenerationRequest: Codable {
+    public let aspectRatio: String?
+    public let callbackUrl: String?
+    public let elementList: [KlingElementReference]?
+    public let externalTaskId: String?
+    public let humanFidelity: Double?
+    public let image: String?
+    public let imageFidelity: Double?
+    public let imageReference: String?
+    public let modelName: String?
+    public let n: Int?
+    public let negativePrompt: String?
+    public let prompt: String?
+    public let resolution: String?
+    public let watermarkInfo: KlingWatermarkInfo?
+
+
+    public init(aspectRatio: String? = nil, callbackUrl: String? = nil, elementList: [KlingElementReference]? = nil, externalTaskId: String? = nil, humanFidelity: Double? = nil, image: String? = nil, imageFidelity: Double? = nil, imageReference: String? = nil, modelName: String? = nil, n: Int? = nil, negativePrompt: String? = nil, prompt: String? = nil, resolution: String? = nil, watermarkInfo: KlingWatermarkInfo? = nil) {
+        self.aspectRatio = aspectRatio
+        self.callbackUrl = callbackUrl
+        self.elementList = elementList
+        self.externalTaskId = externalTaskId
+        self.humanFidelity = humanFidelity
+        self.image = image
+        self.imageFidelity = imageFidelity
+        self.imageReference = imageReference
+        self.modelName = modelName
+        self.n = n
+        self.negativePrompt = negativePrompt
+        self.prompt = prompt
+        self.resolution = resolution
+        self.watermarkInfo = watermarkInfo
+    }
+}
+
+public struct KlingImageGenerationTask: Codable {
+    public let code: Int?
+    public let data: KlingImageTaskData?
+    public let message: String?
+    public let requestId: String?
+
+
+    public init(code: Int? = nil, data: KlingImageTaskData? = nil, message: String? = nil, requestId: String? = nil) {
+        self.code = code
+        self.data = data
+        self.message = message
+        self.requestId = requestId
+    }
+}
+
+public struct KlingImageResult: Codable {
+    public let index: Int?
+    public let url: String?
+
+
+    public init(index: Int? = nil, url: String? = nil) {
+        self.index = index
+        self.url = url
+    }
+}
+
+public struct KlingImageTaskData: Codable {
+    public let createdAt: Int?
+    public let taskId: String?
+    public let taskInfo: [String: String]?
+    public let taskResult: KlingImageTaskResult?
+    public let taskStatus: String?
+    public let taskStatusMsg: String?
+    public let updatedAt: Int?
+
+
+    public init(createdAt: Int? = nil, taskId: String? = nil, taskInfo: [String: String]? = nil, taskResult: KlingImageTaskResult? = nil, taskStatus: String? = nil, taskStatusMsg: String? = nil, updatedAt: Int? = nil) {
+        self.createdAt = createdAt
+        self.taskId = taskId
+        self.taskInfo = taskInfo
+        self.taskResult = taskResult
+        self.taskStatus = taskStatus
+        self.taskStatusMsg = taskStatusMsg
+        self.updatedAt = updatedAt
+    }
+}
+
+public struct KlingImageTaskResult: Codable {
+    public let images: [KlingImageResult]?
+
+
+    public init(images: [KlingImageResult]? = nil) {
+        self.images = images
+    }
+}
+
 public struct KlingMotionControlRequest: Codable {
     public let callbackUrl: String?
     public let image: String?
@@ -1078,6 +2330,21 @@ public struct KlingMotionControlRequest: Codable {
         self.modelName = modelName
         self.prompt = prompt
         self.video = video
+    }
+}
+
+public struct KlingSoundGenerationRequest: Codable {
+    public let callbackUrl: String?
+    public let duration: Double?
+    public let externalTaskId: String?
+    public let prompt: String?
+
+
+    public init(callbackUrl: String? = nil, duration: Double? = nil, externalTaskId: String? = nil, prompt: String? = nil) {
+        self.callbackUrl = callbackUrl
+        self.duration = duration
+        self.externalTaskId = externalTaskId
+        self.prompt = prompt
     }
 }
 
@@ -1135,49 +2402,127 @@ public struct KlingVideoGenerationTask: Codable {
     }
 }
 
-public struct MidjourneyImageGenerationRequest: Codable {
-    public let aspectRatio: String?
+public struct KlingVideoToAudioRequest: Codable {
+    public let asmrMode: Bool?
+    public let bgmPrompt: String?
     public let callbackUrl: String?
-    public let model: String?
-    public let prompt: String?
-    public let seed: Int?
-    public let style: String?
+    public let externalTaskId: String?
+    public let soundEffectPrompt: String?
+    public let videoId: String?
+    public let videoUrl: String?
 
 
-    public init(aspectRatio: String? = nil, callbackUrl: String? = nil, model: String? = nil, prompt: String? = nil, seed: Int? = nil, style: String? = nil) {
-        self.aspectRatio = aspectRatio
+    public init(asmrMode: Bool? = nil, bgmPrompt: String? = nil, callbackUrl: String? = nil, externalTaskId: String? = nil, soundEffectPrompt: String? = nil, videoId: String? = nil, videoUrl: String? = nil) {
+        self.asmrMode = asmrMode
+        self.bgmPrompt = bgmPrompt
         self.callbackUrl = callbackUrl
-        self.model = model
-        self.prompt = prompt
-        self.seed = seed
-        self.style = style
+        self.externalTaskId = externalTaskId
+        self.soundEffectPrompt = soundEffectPrompt
+        self.videoId = videoId
+        self.videoUrl = videoUrl
     }
 }
 
-public struct MidjourneyImageGenerationTask: Codable {
-    public let createdAt: String?
-    public let error: ProviderTaskError?
+public struct KlingWatermarkInfo: Codable {
+    public let enabled: Bool?
+
+
+    public init(enabled: Bool? = nil) {
+        self.enabled = enabled
+    }
+}
+
+public struct LumaConcept: Codable {
+    public let key: String?
+
+
+    public init(key: String? = nil) {
+        self.key = key
+    }
+}
+
+public struct LumaGenerationAssets: Codable {
+    public let image: String?
+    public let video: String?
+
+
+    public init(image: String? = nil, video: String? = nil) {
+        self.image = image
+        self.video = video
+    }
+}
+
+public struct LumaKeyframe: Codable {
     public let id: String?
-    public let images: [ProviderGeneratedMedia]?
+    public let type: String?
+    public let url: String?
+
+
+    public init(id: String? = nil, type: String? = nil, url: String? = nil) {
+        self.id = id
+        self.type = type
+        self.url = url
+    }
+}
+
+public struct LumaKeyframes: Codable {
+    public let frame0: LumaKeyframe?
+    public let frame1: LumaKeyframe?
+
+
+    public init(frame0: LumaKeyframe? = nil, frame1: LumaKeyframe? = nil) {
+        self.frame0 = frame0
+        self.frame1 = frame1
+    }
+}
+
+public struct LumaVideoGenerationRequest: Codable {
+    public let aspectRatio: String?
+    public let callbackUrl: String?
+    public let concepts: [LumaConcept]?
+    public let duration: String?
+    public let generationType: String?
+    public let keyframes: LumaKeyframes?
+    public let loop: Bool?
     public let model: String?
     public let prompt: String?
-    public let state: String?
-    public let status: String?
-    public let taskId: String?
-    public let updatedAt: String?
+    public let resolution: String?
 
 
-    public init(createdAt: String? = nil, error: ProviderTaskError? = nil, id: String? = nil, images: [ProviderGeneratedMedia]? = nil, model: String? = nil, prompt: String? = nil, state: String? = nil, status: String? = nil, taskId: String? = nil, updatedAt: String? = nil) {
-        self.createdAt = createdAt
-        self.error = error
-        self.id = id
-        self.images = images
+    public init(aspectRatio: String? = nil, callbackUrl: String? = nil, concepts: [LumaConcept]? = nil, duration: String? = nil, generationType: String? = nil, keyframes: LumaKeyframes? = nil, loop: Bool? = nil, model: String? = nil, prompt: String? = nil, resolution: String? = nil) {
+        self.aspectRatio = aspectRatio
+        self.callbackUrl = callbackUrl
+        self.concepts = concepts
+        self.duration = duration
+        self.generationType = generationType
+        self.keyframes = keyframes
+        self.loop = loop
         self.model = model
         self.prompt = prompt
+        self.resolution = resolution
+    }
+}
+
+public struct LumaVideoGenerationTask: Codable {
+    public let assets: LumaGenerationAssets?
+    public let createdAt: String?
+    public let failureReason: String?
+    public let generationType: String?
+    public let id: String?
+    public let model: String?
+    public let request: [String: String]?
+    public let state: String?
+
+
+    public init(assets: LumaGenerationAssets? = nil, createdAt: String? = nil, failureReason: String? = nil, generationType: String? = nil, id: String? = nil, model: String? = nil, request: [String: String]? = nil, state: String? = nil) {
+        self.assets = assets
+        self.createdAt = createdAt
+        self.failureReason = failureReason
+        self.generationType = generationType
+        self.id = id
+        self.model = model
+        self.request = request
         self.state = state
-        self.status = status
-        self.taskId = taskId
-        self.updatedAt = updatedAt
     }
 }
 
@@ -1236,7 +2581,10 @@ public struct MiniMaxMusicExtraInfo: Codable {
 }
 
 public struct MiniMaxMusicGenerationRequest: Codable {
+    public let audioBase64: String?
     public let audioSetting: MiniMaxMusicAudioSetting?
+    public let audioUrl: String?
+    public let coverFeatureId: String?
     public let isInstrumental: Bool?
     public let lyrics: String?
     public let lyricsOptimizer: Bool?
@@ -1246,8 +2594,11 @@ public struct MiniMaxMusicGenerationRequest: Codable {
     public let stream: Bool?
 
 
-    public init(audioSetting: MiniMaxMusicAudioSetting? = nil, isInstrumental: Bool? = nil, lyrics: String? = nil, lyricsOptimizer: Bool? = nil, model: String? = nil, outputFormat: String? = nil, prompt: String? = nil, stream: Bool? = nil) {
+    public init(audioBase64: String? = nil, audioSetting: MiniMaxMusicAudioSetting? = nil, audioUrl: String? = nil, coverFeatureId: String? = nil, isInstrumental: Bool? = nil, lyrics: String? = nil, lyricsOptimizer: Bool? = nil, model: String? = nil, outputFormat: String? = nil, prompt: String? = nil, stream: Bool? = nil) {
+        self.audioBase64 = audioBase64
         self.audioSetting = audioSetting
+        self.audioUrl = audioUrl
+        self.coverFeatureId = coverFeatureId
         self.isInstrumental = isInstrumental
         self.lyrics = lyrics
         self.lyricsOptimizer = lyricsOptimizer
@@ -1271,51 +2622,251 @@ public struct MiniMaxMusicGenerationResponse: Codable {
     }
 }
 
-public struct NanoBananaImageGenerationRequest: Codable {
-    public let aspectRatio: String?
-    public let callbackUrl: String?
-    public let images: [String]?
-    public let model: String?
-    public let prompt: String?
-    public let seed: Int?
-    public let size: String?
+public struct MinimaxBaseResp: Codable {
+    public let statusCode: Int?
+    public let statusMsg: String?
 
 
-    public init(aspectRatio: String? = nil, callbackUrl: String? = nil, images: [String]? = nil, model: String? = nil, prompt: String? = nil, seed: Int? = nil, size: String? = nil) {
-        self.aspectRatio = aspectRatio
-        self.callbackUrl = callbackUrl
-        self.images = images
-        self.model = model
-        self.prompt = prompt
-        self.seed = seed
-        self.size = size
+    public init(statusCode: Int? = nil, statusMsg: String? = nil) {
+        self.statusCode = statusCode
+        self.statusMsg = statusMsg
     }
 }
 
-public struct NanoBananaImageGenerationTask: Codable {
-    public let createdAt: String?
-    public let error: ProviderTaskError?
+public struct MinimaxFileRetrieveResponse: Codable {
+    public let baseResp: MinimaxBaseResp?
+    public let file: [String: String]?
+
+
+    public init(baseResp: MinimaxBaseResp? = nil, file: [String: String]? = nil) {
+        self.baseResp = baseResp
+        self.file = file
+    }
+}
+
+public struct MinimaxImageData: Codable {
+    public let imageBase64: [String]?
+    public let imageUrls: [String]?
+
+
+    public init(imageBase64: [String]? = nil, imageUrls: [String]? = nil) {
+        self.imageBase64 = imageBase64
+        self.imageUrls = imageUrls
+    }
+}
+
+public struct MinimaxImageGenerationRequest: Codable {
+    public let aspectRatio: String?
+    public let height: Int?
+    public let model: String?
+    public let n: Int?
+    public let prompt: String?
+    public let promptOptimizer: Bool?
+    public let responseFormat: String?
+    public let seed: Int?
+    public let subjectReference: [[String: String]]?
+    public let width: Int?
+
+
+    public init(aspectRatio: String? = nil, height: Int? = nil, model: String? = nil, n: Int? = nil, prompt: String? = nil, promptOptimizer: Bool? = nil, responseFormat: String? = nil, seed: Int? = nil, subjectReference: [[String: String]]? = nil, width: Int? = nil) {
+        self.aspectRatio = aspectRatio
+        self.height = height
+        self.model = model
+        self.n = n
+        self.prompt = prompt
+        self.promptOptimizer = promptOptimizer
+        self.responseFormat = responseFormat
+        self.seed = seed
+        self.subjectReference = subjectReference
+        self.width = width
+    }
+}
+
+public struct MinimaxImageGenerationResponse: Codable {
+    public let baseResp: MinimaxBaseResp?
+    public let data: MinimaxImageData?
     public let id: String?
-    public let images: [ProviderGeneratedMedia]?
+    public let metadata: [String: String]?
+
+
+    public init(baseResp: MinimaxBaseResp? = nil, data: MinimaxImageData? = nil, id: String? = nil, metadata: [String: String]? = nil) {
+        self.baseResp = baseResp
+        self.data = data
+        self.id = id
+        self.metadata = metadata
+    }
+}
+
+public struct MinimaxStreamOptions: Codable {
+    public let excludeAggregatedAudio: Bool?
+
+
+    public init(excludeAggregatedAudio: Bool? = nil) {
+        self.excludeAggregatedAudio = excludeAggregatedAudio
+    }
+}
+
+public struct MinimaxTextToSpeechRequest: Codable {
+    public let audioSetting: [String: String]?
+    public let languageBoost: String?
+    public let model: String?
+    public let outputFormat: String?
+    public let pronunciationDict: [String: String]?
+    public let stream: Bool?
+    public let streamOptions: MinimaxStreamOptions?
+    public let subtitleEnable: Bool?
+    public let subtitleType: String?
+    public let text: String?
+    public let textNormalizationMode: String?
+    public let timbreWeights: [MinimaxTimbreWeight]?
+    public let voiceModify: MinimaxVoiceModify?
+    public let voiceSetting: [String: String]?
+
+
+    public init(audioSetting: [String: String]? = nil, languageBoost: String? = nil, model: String? = nil, outputFormat: String? = nil, pronunciationDict: [String: String]? = nil, stream: Bool? = nil, streamOptions: MinimaxStreamOptions? = nil, subtitleEnable: Bool? = nil, subtitleType: String? = nil, text: String? = nil, textNormalizationMode: String? = nil, timbreWeights: [MinimaxTimbreWeight]? = nil, voiceModify: MinimaxVoiceModify? = nil, voiceSetting: [String: String]? = nil) {
+        self.audioSetting = audioSetting
+        self.languageBoost = languageBoost
+        self.model = model
+        self.outputFormat = outputFormat
+        self.pronunciationDict = pronunciationDict
+        self.stream = stream
+        self.streamOptions = streamOptions
+        self.subtitleEnable = subtitleEnable
+        self.subtitleType = subtitleType
+        self.text = text
+        self.textNormalizationMode = textNormalizationMode
+        self.timbreWeights = timbreWeights
+        self.voiceModify = voiceModify
+        self.voiceSetting = voiceSetting
+    }
+}
+
+public struct MinimaxTextToSpeechResponse: Codable {
+    public let baseResp: MinimaxBaseResp?
+    public let data: [String: String]?
+    public let extraInfo: [String: String]?
+    public let traceId: String?
+
+
+    public init(baseResp: MinimaxBaseResp? = nil, data: [String: String]? = nil, extraInfo: [String: String]? = nil, traceId: String? = nil) {
+        self.baseResp = baseResp
+        self.data = data
+        self.extraInfo = extraInfo
+        self.traceId = traceId
+    }
+}
+
+public struct MinimaxTimbreWeight: Codable {
+    public let voiceId: String?
+    public let weight: Int?
+
+
+    public init(voiceId: String? = nil, weight: Int? = nil) {
+        self.voiceId = voiceId
+        self.weight = weight
+    }
+}
+
+public struct MinimaxVideoGenerationRequest: Codable {
+    public let callbackUrl: String?
+    public let duration: Int?
+    public let fastPretreatment: Bool?
+    public let firstFrameImage: String?
+    public let lastFrameImage: String?
     public let model: String?
     public let prompt: String?
-    public let state: String?
-    public let status: String?
-    public let taskId: String?
-    public let updatedAt: String?
+    public let promptOptimizer: Bool?
+    public let resolution: String?
 
 
-    public init(createdAt: String? = nil, error: ProviderTaskError? = nil, id: String? = nil, images: [ProviderGeneratedMedia]? = nil, model: String? = nil, prompt: String? = nil, state: String? = nil, status: String? = nil, taskId: String? = nil, updatedAt: String? = nil) {
-        self.createdAt = createdAt
-        self.error = error
-        self.id = id
-        self.images = images
+    public init(callbackUrl: String? = nil, duration: Int? = nil, fastPretreatment: Bool? = nil, firstFrameImage: String? = nil, lastFrameImage: String? = nil, model: String? = nil, prompt: String? = nil, promptOptimizer: Bool? = nil, resolution: String? = nil) {
+        self.callbackUrl = callbackUrl
+        self.duration = duration
+        self.fastPretreatment = fastPretreatment
+        self.firstFrameImage = firstFrameImage
+        self.lastFrameImage = lastFrameImage
         self.model = model
         self.prompt = prompt
-        self.state = state
+        self.promptOptimizer = promptOptimizer
+        self.resolution = resolution
+    }
+}
+
+public struct MinimaxVideoGenerationTask: Codable {
+    public let baseResp: MinimaxBaseResp?
+    public let fileId: String?
+    public let status: String?
+    public let taskId: String?
+    public let videoHeight: Int?
+    public let videoWidth: Int?
+
+
+    public init(baseResp: MinimaxBaseResp? = nil, fileId: String? = nil, status: String? = nil, taskId: String? = nil, videoHeight: Int? = nil, videoWidth: Int? = nil) {
+        self.baseResp = baseResp
+        self.fileId = fileId
         self.status = status
         self.taskId = taskId
-        self.updatedAt = updatedAt
+        self.videoHeight = videoHeight
+        self.videoWidth = videoWidth
+    }
+}
+
+public struct MinimaxVoiceModify: Codable {
+    public let intensity: Int?
+    public let pitch: Int?
+    public let soundEffects: String?
+    public let timbre: Int?
+
+
+    public init(intensity: Int? = nil, pitch: Int? = nil, soundEffects: String? = nil, timbre: Int? = nil) {
+        self.intensity = intensity
+        self.pitch = pitch
+        self.soundEffects = soundEffects
+        self.timbre = timbre
+    }
+}
+
+public struct MurekaMusicGenerationRequest: Codable {
+    public let callbackUrl: String?
+    public let duration: Int?
+    public let lyrics: String?
+    public let model: String?
+    public let prompt: String?
+    public let referenceAudioUrl: String?
+    public let tags: [String]?
+    public let title: String?
+
+
+    public init(callbackUrl: String? = nil, duration: Int? = nil, lyrics: String? = nil, model: String? = nil, prompt: String? = nil, referenceAudioUrl: String? = nil, tags: [String]? = nil, title: String? = nil) {
+        self.callbackUrl = callbackUrl
+        self.duration = duration
+        self.lyrics = lyrics
+        self.model = model
+        self.prompt = prompt
+        self.referenceAudioUrl = referenceAudioUrl
+        self.tags = tags
+        self.title = title
+    }
+}
+
+public struct MurekaMusicGenerationTask: Codable {
+    public let audioUrl: String?
+    public let duration: Int?
+    public let error: [String: String]?
+    public let id: String?
+    public let status: String?
+    public let taskId: String?
+    public let title: String?
+
+
+    public init(audioUrl: String? = nil, duration: Int? = nil, error: [String: String]? = nil, id: String? = nil, status: String? = nil, taskId: String? = nil, title: String? = nil) {
+        self.audioUrl = audioUrl
+        self.duration = duration
+        self.error = error
+        self.id = id
+        self.status = status
+        self.taskId = taskId
+        self.title = title
     }
 }
 
@@ -1381,6 +2932,7 @@ public struct OpenAiAssistantCreateRequest: Codable {
     public let metadata: [String: String]?
     public let model: String?
     public let name: String?
+    public let reasoningEffort: String?
     public let responseFormat: String?
     public let temperature: Double?
     public let toolResources: String?
@@ -1388,12 +2940,13 @@ public struct OpenAiAssistantCreateRequest: Codable {
     public let topP: Double?
 
 
-    public init(description: String? = nil, instructions: String? = nil, metadata: [String: String]? = nil, model: String? = nil, name: String? = nil, responseFormat: String? = nil, temperature: Double? = nil, toolResources: String? = nil, tools: [String]? = nil, topP: Double? = nil) {
+    public init(description: String? = nil, instructions: String? = nil, metadata: [String: String]? = nil, model: String? = nil, name: String? = nil, reasoningEffort: String? = nil, responseFormat: String? = nil, temperature: Double? = nil, toolResources: String? = nil, tools: [String]? = nil, topP: Double? = nil) {
         self.description = description
         self.instructions = instructions
         self.metadata = metadata
         self.model = model
         self.name = name
+        self.reasoningEffort = reasoningEffort
         self.responseFormat = responseFormat
         self.temperature = temperature
         self.toolResources = toolResources
@@ -1425,6 +2978,7 @@ public struct OpenAiAssistantUpdateRequest: Codable {
     public let metadata: [String: String]?
     public let model: String?
     public let name: String?
+    public let reasoningEffort: String?
     public let responseFormat: String?
     public let temperature: Double?
     public let toolResources: String?
@@ -1432,12 +2986,13 @@ public struct OpenAiAssistantUpdateRequest: Codable {
     public let topP: Double?
 
 
-    public init(description: String? = nil, instructions: String? = nil, metadata: [String: String]? = nil, model: String? = nil, name: String? = nil, responseFormat: String? = nil, temperature: Double? = nil, toolResources: String? = nil, tools: [String]? = nil, topP: Double? = nil) {
+    public init(description: String? = nil, instructions: String? = nil, metadata: [String: String]? = nil, model: String? = nil, name: String? = nil, reasoningEffort: String? = nil, responseFormat: String? = nil, temperature: Double? = nil, toolResources: String? = nil, tools: [String]? = nil, topP: Double? = nil) {
         self.description = description
         self.instructions = instructions
         self.metadata = metadata
         self.model = model
         self.name = name
+        self.reasoningEffort = reasoningEffort
         self.responseFormat = responseFormat
         self.temperature = temperature
         self.toolResources = toolResources
@@ -1592,13 +3147,15 @@ public struct OpenAiBatchCreateRequest: Codable {
     public let endpoint: String?
     public let inputFileId: String?
     public let metadata: [String: String]?
+    public let outputExpiresAfter: [String: String]?
 
 
-    public init(completionWindow: String? = nil, endpoint: String? = nil, inputFileId: String? = nil, metadata: [String: String]? = nil) {
+    public init(completionWindow: String? = nil, endpoint: String? = nil, inputFileId: String? = nil, metadata: [String: String]? = nil, outputExpiresAfter: [String: String]? = nil) {
         self.completionWindow = completionWindow
         self.endpoint = endpoint
         self.inputFileId = inputFileId
         self.metadata = metadata
+        self.outputExpiresAfter = outputExpiresAfter
     }
 }
 
@@ -1912,13 +3469,14 @@ public struct OpenAiCompletionCreateRequest: Codable {
     public let seed: Int?
     public let stop: String?
     public let stream: Bool?
+    public let streamOptions: OpenAiStreamOptions?
     public let suffix: String?
     public let temperature: Double?
     public let topP: Double?
     public let user: String?
 
 
-    public init(bestOf: Int? = nil, echo: Bool? = nil, frequencyPenalty: Double? = nil, logitBias: [String: Double]? = nil, logprobs: Int? = nil, maxTokens: Int? = nil, model: String? = nil, n: Int? = nil, presencePenalty: Double? = nil, prompt: String? = nil, seed: Int? = nil, stop: String? = nil, stream: Bool? = nil, suffix: String? = nil, temperature: Double? = nil, topP: Double? = nil, user: String? = nil) {
+    public init(bestOf: Int? = nil, echo: Bool? = nil, frequencyPenalty: Double? = nil, logitBias: [String: Double]? = nil, logprobs: Int? = nil, maxTokens: Int? = nil, model: String? = nil, n: Int? = nil, presencePenalty: Double? = nil, prompt: String? = nil, seed: Int? = nil, stop: String? = nil, stream: Bool? = nil, streamOptions: OpenAiStreamOptions? = nil, suffix: String? = nil, temperature: Double? = nil, topP: Double? = nil, user: String? = nil) {
         self.bestOf = bestOf
         self.echo = echo
         self.frequencyPenalty = frequencyPenalty
@@ -1932,6 +3490,7 @@ public struct OpenAiCompletionCreateRequest: Codable {
         self.seed = seed
         self.stop = stop
         self.stream = stream
+        self.streamOptions = streamOptions
         self.suffix = suffix
         self.temperature = temperature
         self.topP = topP
@@ -1980,17 +3539,21 @@ public struct OpenAiContainer: Codable {
 }
 
 public struct OpenAiContainerCreateRequest: Codable {
+    public let expiresAfter: [String: String]?
     public let fileIds: [String]?
     public let memoryLimit: String?
-    public let metadata: [String: String]?
     public let name: String?
+    public let networkPolicy: [String: String]?
+    public let skills: [[String: String]]?
 
 
-    public init(fileIds: [String]? = nil, memoryLimit: String? = nil, metadata: [String: String]? = nil, name: String? = nil) {
+    public init(expiresAfter: [String: String]? = nil, fileIds: [String]? = nil, memoryLimit: String? = nil, name: String? = nil, networkPolicy: [String: String]? = nil, skills: [[String: String]]? = nil) {
+        self.expiresAfter = expiresAfter
         self.fileIds = fileIds
         self.memoryLimit = memoryLimit
-        self.metadata = metadata
         self.name = name
+        self.networkPolicy = networkPolicy
+        self.skills = skills
     }
 }
 
@@ -2131,17 +3694,11 @@ public struct OpenAiConversationItem: Codable {
 }
 
 public struct OpenAiConversationItemCreateRequest: Codable {
-    public let content: [OpenAiConversationContentPart]?
-    public let metadata: [String: String]?
-    public let role: String?
-    public let type: String?
+    public let items: [[String: String]]?
 
 
-    public init(content: [OpenAiConversationContentPart]? = nil, metadata: [String: String]? = nil, role: String? = nil, type: String? = nil) {
-        self.content = content
-        self.metadata = metadata
-        self.role = role
-        self.type = type
+    public init(items: [[String: String]]? = nil) {
+        self.items = items
     }
 }
 
@@ -2194,6 +3751,79 @@ public struct OpenAiConversationUpdateRequest: Codable {
 
     public init(metadata: [String: String]? = nil) {
         self.metadata = metadata
+    }
+}
+
+public struct OpenAiDeepSeekWebFetchRequest: Codable {
+    public let url: String?
+
+
+    public init(url: String? = nil) {
+        self.url = url
+    }
+}
+
+public struct OpenAiDeepSeekWebFetchResponse: Codable {
+    public let content: String?
+    public let title: String?
+
+
+    public init(content: String? = nil, title: String? = nil) {
+        self.content = content
+        self.title = title
+    }
+}
+
+public struct OpenAiDeepSeekWebSearchRequest: Codable {
+    public let count: Int?
+    public let localization: String?
+    public let needContent: Bool?
+    public let oriQuestion: String?
+    public let query: String?
+
+
+    public init(count: Int? = nil, localization: String? = nil, needContent: Bool? = nil, oriQuestion: String? = nil, query: String? = nil) {
+        self.count = count
+        self.localization = localization
+        self.needContent = needContent
+        self.oriQuestion = oriQuestion
+        self.query = query
+    }
+}
+
+public struct OpenAiDeepSeekWebSearchResponse: Codable {
+    public let results: [OpenAiDeepSeekWebSearchResult]?
+
+
+    public init(results: [OpenAiDeepSeekWebSearchResult]? = nil) {
+        self.results = results
+    }
+}
+
+public struct OpenAiDeepSeekWebSearchResult: Codable {
+    public let authority: Int?
+    public let content: String?
+    public let date: String?
+    public let rerankScore: Double?
+    public let siteIcon: String?
+    public let siteName: String?
+    public let snippet: String?
+    public let summary: String?
+    public let title: String?
+    public let url: String?
+
+
+    public init(authority: Int? = nil, content: String? = nil, date: String? = nil, rerankScore: Double? = nil, siteIcon: String? = nil, siteName: String? = nil, snippet: String? = nil, summary: String? = nil, title: String? = nil, url: String? = nil) {
+        self.authority = authority
+        self.content = content
+        self.date = date
+        self.rerankScore = rerankScore
+        self.siteIcon = siteIcon
+        self.siteName = siteName
+        self.snippet = snippet
+        self.summary = summary
+        self.title = title
+        self.url = url
     }
 }
 
@@ -2399,51 +4029,147 @@ public struct OpenAiImage: Codable {
 }
 
 public struct OpenAiImageEditMultipartRequest: Codable {
+    public let background: String?
+    public let complexity: String?
+    public let frameCount: Int?
+    public let frameDurationMs: Int?
     public let image: String?
+    public let inputFidelity: String?
+    public let markup: String?
     public let mask: String?
     public let model: String?
+    public let moderation: String?
+    public let n: Int?
+    public let outputCompression: Int?
+    public let outputFormat: String?
+    public let partialImages: Int?
     public let prompt: String?
+    public let quality: String?
+    public let responseFormat: String?
+    public let safetyIdentifier: String?
+    public let size: String?
+    public let stream: Bool?
+    public let svg: [String: String]?
+    public let user: String?
 
 
-    public init(image: String? = nil, mask: String? = nil, model: String? = nil, prompt: String? = nil) {
+    public init(background: String? = nil, complexity: String? = nil, frameCount: Int? = nil, frameDurationMs: Int? = nil, image: String? = nil, inputFidelity: String? = nil, markup: String? = nil, mask: String? = nil, model: String? = nil, moderation: String? = nil, n: Int? = nil, outputCompression: Int? = nil, outputFormat: String? = nil, partialImages: Int? = nil, prompt: String? = nil, quality: String? = nil, responseFormat: String? = nil, safetyIdentifier: String? = nil, size: String? = nil, stream: Bool? = nil, svg: [String: String]? = nil, user: String? = nil) {
+        self.background = background
+        self.complexity = complexity
+        self.frameCount = frameCount
+        self.frameDurationMs = frameDurationMs
         self.image = image
+        self.inputFidelity = inputFidelity
+        self.markup = markup
         self.mask = mask
         self.model = model
+        self.moderation = moderation
+        self.n = n
+        self.outputCompression = outputCompression
+        self.outputFormat = outputFormat
+        self.partialImages = partialImages
         self.prompt = prompt
+        self.quality = quality
+        self.responseFormat = responseFormat
+        self.safetyIdentifier = safetyIdentifier
+        self.size = size
+        self.stream = stream
+        self.svg = svg
+        self.user = user
     }
 }
 
 public struct OpenAiImageEditRequest: Codable {
-    public let image: OpenAiImageReferenceInputList?
-    public let mask: OpenAiImageReferenceInput?
+    public let background: String?
+    public let complexity: String?
+    public let frameCount: Int?
+    public let frameDurationMs: Int?
+    public let images: [OpenAiImageReferenceInput]?
+    public let inputFidelity: String?
+    public let markup: [String: String]?
+    public let mask: [String: String]?
     public let model: String?
+    public let moderation: String?
+    public let n: Int?
+    public let outputCompression: Int?
+    public let outputFormat: String?
+    public let partialImages: Int?
     public let prompt: String?
+    public let quality: String?
+    public let safetyIdentifier: String?
+    public let size: String?
+    public let stream: Bool?
+    public let svg: [String: String]?
+    public let user: String?
 
 
-    public init(image: OpenAiImageReferenceInputList? = nil, mask: OpenAiImageReferenceInput? = nil, model: String? = nil, prompt: String? = nil) {
-        self.image = image
+    public init(background: String? = nil, complexity: String? = nil, frameCount: Int? = nil, frameDurationMs: Int? = nil, images: [OpenAiImageReferenceInput]? = nil, inputFidelity: String? = nil, markup: [String: String]? = nil, mask: [String: String]? = nil, model: String? = nil, moderation: String? = nil, n: Int? = nil, outputCompression: Int? = nil, outputFormat: String? = nil, partialImages: Int? = nil, prompt: String? = nil, quality: String? = nil, safetyIdentifier: String? = nil, size: String? = nil, stream: Bool? = nil, svg: [String: String]? = nil, user: String? = nil) {
+        self.background = background
+        self.complexity = complexity
+        self.frameCount = frameCount
+        self.frameDurationMs = frameDurationMs
+        self.images = images
+        self.inputFidelity = inputFidelity
+        self.markup = markup
         self.mask = mask
         self.model = model
+        self.moderation = moderation
+        self.n = n
+        self.outputCompression = outputCompression
+        self.outputFormat = outputFormat
+        self.partialImages = partialImages
         self.prompt = prompt
+        self.quality = quality
+        self.safetyIdentifier = safetyIdentifier
+        self.size = size
+        self.stream = stream
+        self.svg = svg
+        self.user = user
     }
 }
 
 public struct OpenAiImageGenerationRequest: Codable {
+    public let background: String?
+    public let complexity: String?
+    public let frameCount: Int?
+    public let frameDurationMs: Int?
     public let model: String?
+    public let moderation: String?
     public let n: Int?
+    public let outputCompression: Int?
+    public let outputFormat: String?
+    public let partialImages: Int?
     public let prompt: String?
     public let quality: String?
     public let responseFormat: String?
+    public let safetyIdentifier: String?
     public let size: String?
+    public let stream: Bool?
+    public let style: String?
+    public let svg: [String: String]?
+    public let user: String?
 
 
-    public init(model: String? = nil, n: Int? = nil, prompt: String? = nil, quality: String? = nil, responseFormat: String? = nil, size: String? = nil) {
+    public init(background: String? = nil, complexity: String? = nil, frameCount: Int? = nil, frameDurationMs: Int? = nil, model: String? = nil, moderation: String? = nil, n: Int? = nil, outputCompression: Int? = nil, outputFormat: String? = nil, partialImages: Int? = nil, prompt: String? = nil, quality: String? = nil, responseFormat: String? = nil, safetyIdentifier: String? = nil, size: String? = nil, stream: Bool? = nil, style: String? = nil, svg: [String: String]? = nil, user: String? = nil) {
+        self.background = background
+        self.complexity = complexity
+        self.frameCount = frameCount
+        self.frameDurationMs = frameDurationMs
         self.model = model
+        self.moderation = moderation
         self.n = n
+        self.outputCompression = outputCompression
+        self.outputFormat = outputFormat
+        self.partialImages = partialImages
         self.prompt = prompt
         self.quality = quality
         self.responseFormat = responseFormat
+        self.safetyIdentifier = safetyIdentifier
         self.size = size
+        self.stream = stream
+        self.style = style
+        self.svg = svg
+        self.user = user
     }
 }
 
@@ -2461,11 +4187,6 @@ public struct OpenAiImageList: Codable {
 }
 
 public struct OpenAiImageReferenceInput: Codable {
-
-    public init() {}
-}
-
-public struct OpenAiImageReferenceInputList: Codable {
 
     public init() {}
 }
@@ -2707,11 +4428,37 @@ public struct OpenAiRealtimeCall: Codable {
 }
 
 public struct OpenAiRealtimeCallActionRequest: Codable {
-    public let metadata: [String: String]?
+    public let audio: [String: String]?
+    public let include: [String]?
+    public let instructions: String?
+    public let maxOutputTokens: Int?
+    public let model: String?
+    public let outputModalities: [String]?
+    public let parallelToolCalls: Bool?
+    public let prompt: [String: String]?
+    public let reasoning: [String: String]?
+    public let toolChoice: String?
+    public let tools: [[String: String]]?
+    public let tracing: [String: String]?
+    public let truncation: [String: String]?
+    public let type: String?
 
 
-    public init(metadata: [String: String]? = nil) {
-        self.metadata = metadata
+    public init(audio: [String: String]? = nil, include: [String]? = nil, instructions: String? = nil, maxOutputTokens: Int? = nil, model: String? = nil, outputModalities: [String]? = nil, parallelToolCalls: Bool? = nil, prompt: [String: String]? = nil, reasoning: [String: String]? = nil, toolChoice: String? = nil, tools: [[String: String]]? = nil, tracing: [String: String]? = nil, truncation: [String: String]? = nil, type: String? = nil) {
+        self.audio = audio
+        self.include = include
+        self.instructions = instructions
+        self.maxOutputTokens = maxOutputTokens
+        self.model = model
+        self.outputModalities = outputModalities
+        self.parallelToolCalls = parallelToolCalls
+        self.prompt = prompt
+        self.reasoning = reasoning
+        self.toolChoice = toolChoice
+        self.tools = tools
+        self.tracing = tracing
+        self.truncation = truncation
+        self.type = type
     }
 }
 
@@ -2740,13 +4487,20 @@ public struct OpenAiRealtimeCallMultipartRequest: Codable {
 }
 
 public struct OpenAiRealtimeCallReferRequest: Codable {
-    public let metadata: [String: String]?
-    public let target: String?
+    public let targetUri: String?
 
 
-    public init(metadata: [String: String]? = nil, target: String? = nil) {
-        self.metadata = metadata
-        self.target = target
+    public init(targetUri: String? = nil) {
+        self.targetUri = targetUri
+    }
+}
+
+public struct OpenAiRealtimeCallRejectRequest: Codable {
+    public let statusCode: Int?
+
+
+    public init(statusCode: Int? = nil) {
+        self.statusCode = statusCode
     }
 }
 
@@ -2762,19 +4516,13 @@ public struct OpenAiRealtimeClientSecret: Codable {
 }
 
 public struct OpenAiRealtimeClientSecretCreateRequest: Codable {
-    public let instructions: String?
-    public let metadata: [String: String]?
-    public let modalities: [String]?
-    public let model: String?
-    public let voice: String?
+    public let expiresAfter: [String: String]?
+    public let session: [String: String]?
 
 
-    public init(instructions: String? = nil, metadata: [String: String]? = nil, modalities: [String]? = nil, model: String? = nil, voice: String? = nil) {
-        self.instructions = instructions
-        self.metadata = metadata
-        self.modalities = modalities
-        self.model = model
-        self.voice = voice
+    public init(expiresAfter: [String: String]? = nil, session: [String: String]? = nil) {
+        self.expiresAfter = expiresAfter
+        self.session = session
     }
 }
 
@@ -2811,18 +4559,40 @@ public struct OpenAiRealtimeSession: Codable {
 }
 
 public struct OpenAiRealtimeSessionCreateRequest: Codable {
+    public let clientSecret: [String: String]?
+    public let inputAudioFormat: String?
+    public let inputAudioTranscription: [String: String]?
     public let instructions: String?
-    public let metadata: [String: String]?
+    public let maxResponseOutputTokens: Int?
     public let modalities: [String]?
-    public let model: String?
+    public let outputAudioFormat: String?
+    public let prompt: [String: String]?
+    public let speed: Double?
+    public let temperature: Double?
+    public let toolChoice: String?
+    public let tools: [[String: String]]?
+    public let tracing: [String: String]?
+    public let truncation: [String: String]?
+    public let turnDetection: [String: String]?
     public let voice: String?
 
 
-    public init(instructions: String? = nil, metadata: [String: String]? = nil, modalities: [String]? = nil, model: String? = nil, voice: String? = nil) {
+    public init(clientSecret: [String: String]? = nil, inputAudioFormat: String? = nil, inputAudioTranscription: [String: String]? = nil, instructions: String? = nil, maxResponseOutputTokens: Int? = nil, modalities: [String]? = nil, outputAudioFormat: String? = nil, prompt: [String: String]? = nil, speed: Double? = nil, temperature: Double? = nil, toolChoice: String? = nil, tools: [[String: String]]? = nil, tracing: [String: String]? = nil, truncation: [String: String]? = nil, turnDetection: [String: String]? = nil, voice: String? = nil) {
+        self.clientSecret = clientSecret
+        self.inputAudioFormat = inputAudioFormat
+        self.inputAudioTranscription = inputAudioTranscription
         self.instructions = instructions
-        self.metadata = metadata
+        self.maxResponseOutputTokens = maxResponseOutputTokens
         self.modalities = modalities
-        self.model = model
+        self.outputAudioFormat = outputAudioFormat
+        self.prompt = prompt
+        self.speed = speed
+        self.temperature = temperature
+        self.toolChoice = toolChoice
+        self.tools = tools
+        self.tracing = tracing
+        self.truncation = truncation
+        self.turnDetection = turnDetection
         self.voice = voice
     }
 }
@@ -2845,18 +4615,18 @@ public struct OpenAiRealtimeTranscriptionSession: Codable {
 }
 
 public struct OpenAiRealtimeTranscriptionSessionCreateRequest: Codable {
+    public let include: [String]?
     public let inputAudioFormat: String?
-    public let inputAudioTranscription: String?
-    public let metadata: [String: String]?
-    public let model: String?
-    public let turnDetection: String?
+    public let inputAudioNoiseReduction: [String: String]?
+    public let inputAudioTranscription: [String: String]?
+    public let turnDetection: [String: String]?
 
 
-    public init(inputAudioFormat: String? = nil, inputAudioTranscription: String? = nil, metadata: [String: String]? = nil, model: String? = nil, turnDetection: String? = nil) {
+    public init(include: [String]? = nil, inputAudioFormat: String? = nil, inputAudioNoiseReduction: [String: String]? = nil, inputAudioTranscription: [String: String]? = nil, turnDetection: [String: String]? = nil) {
+        self.include = include
         self.inputAudioFormat = inputAudioFormat
+        self.inputAudioNoiseReduction = inputAudioNoiseReduction
         self.inputAudioTranscription = inputAudioTranscription
-        self.metadata = metadata
-        self.model = model
         self.turnDetection = turnDetection
     }
 }
@@ -2932,17 +4702,27 @@ public struct OpenAiResponse: Codable {
 }
 
 public struct OpenAiResponseCompactRequest: Codable {
+    public let image: [String: String]?
     public let input: String?
-    public let metadata: [String: String]?
+    public let instructions: String?
     public let model: String?
     public let previousResponseId: String?
+    public let promptCacheKey: String?
+    public let promptCacheOptions: [String: String]?
+    public let promptCacheRetention: String?
+    public let serviceTier: String?
 
 
-    public init(input: String? = nil, metadata: [String: String]? = nil, model: String? = nil, previousResponseId: String? = nil) {
+    public init(image: [String: String]? = nil, input: String? = nil, instructions: String? = nil, model: String? = nil, previousResponseId: String? = nil, promptCacheKey: String? = nil, promptCacheOptions: [String: String]? = nil, promptCacheRetention: String? = nil, serviceTier: String? = nil) {
+        self.image = image
         self.input = input
-        self.metadata = metadata
+        self.instructions = instructions
         self.model = model
         self.previousResponseId = previousResponseId
+        self.promptCacheKey = promptCacheKey
+        self.promptCacheOptions = promptCacheOptions
+        self.promptCacheRetention = promptCacheRetention
+        self.serviceTier = serviceTier
     }
 }
 
@@ -3043,17 +4823,33 @@ public struct OpenAiResponseInputTokenCount: Codable {
 }
 
 public struct OpenAiResponseInputTokenCountRequest: Codable {
+    public let conversation: String?
     public let input: String?
     public let instructions: String?
     public let model: String?
+    public let parallelToolCalls: Bool?
+    public let personality: String?
+    public let previousResponseId: String?
+    public let reasoning: String?
+    public let text: String?
+    public let toolChoice: String?
     public let tools: [String]?
+    public let truncation: String?
 
 
-    public init(input: String? = nil, instructions: String? = nil, model: String? = nil, tools: [String]? = nil) {
+    public init(conversation: String? = nil, input: String? = nil, instructions: String? = nil, model: String? = nil, parallelToolCalls: Bool? = nil, personality: String? = nil, previousResponseId: String? = nil, reasoning: String? = nil, text: String? = nil, toolChoice: String? = nil, tools: [String]? = nil, truncation: String? = nil) {
+        self.conversation = conversation
         self.input = input
         self.instructions = instructions
         self.model = model
+        self.parallelToolCalls = parallelToolCalls
+        self.personality = personality
+        self.previousResponseId = previousResponseId
+        self.reasoning = reasoning
+        self.text = text
+        self.toolChoice = toolChoice
         self.tools = tools
+        self.truncation = truncation
     }
 }
 
@@ -3226,22 +5022,42 @@ public struct OpenAiRun: Codable {
 
 public struct OpenAiRunCreateRequest: Codable {
     public let additionalInstructions: String?
+    public let additionalMessages: [OpenAiThreadMessageCreateRequest]?
     public let assistantId: String?
     public let instructions: String?
+    public let maxCompletionTokens: Int?
+    public let maxPromptTokens: Int?
     public let metadata: [String: String]?
     public let model: String?
+    public let parallelToolCalls: Bool?
+    public let reasoningEffort: String?
+    public let responseFormat: String?
     public let stream: Bool?
+    public let temperature: Double?
+    public let toolChoice: String?
     public let tools: [String]?
+    public let topP: Double?
+    public let truncationStrategy: String?
 
 
-    public init(additionalInstructions: String? = nil, assistantId: String? = nil, instructions: String? = nil, metadata: [String: String]? = nil, model: String? = nil, stream: Bool? = nil, tools: [String]? = nil) {
+    public init(additionalInstructions: String? = nil, additionalMessages: [OpenAiThreadMessageCreateRequest]? = nil, assistantId: String? = nil, instructions: String? = nil, maxCompletionTokens: Int? = nil, maxPromptTokens: Int? = nil, metadata: [String: String]? = nil, model: String? = nil, parallelToolCalls: Bool? = nil, reasoningEffort: String? = nil, responseFormat: String? = nil, stream: Bool? = nil, temperature: Double? = nil, toolChoice: String? = nil, tools: [String]? = nil, topP: Double? = nil, truncationStrategy: String? = nil) {
         self.additionalInstructions = additionalInstructions
+        self.additionalMessages = additionalMessages
         self.assistantId = assistantId
         self.instructions = instructions
+        self.maxCompletionTokens = maxCompletionTokens
+        self.maxPromptTokens = maxPromptTokens
         self.metadata = metadata
         self.model = model
+        self.parallelToolCalls = parallelToolCalls
+        self.reasoningEffort = reasoningEffort
+        self.responseFormat = responseFormat
         self.stream = stream
+        self.temperature = temperature
+        self.toolChoice = toolChoice
         self.tools = tools
+        self.topP = topP
+        self.truncationStrategy = truncationStrategy
     }
 }
 
@@ -3340,19 +5156,21 @@ public struct OpenAiRunUpdateRequest: Codable {
 
 public struct OpenAiSpeechCreateRequest: Codable {
     public let input: String?
-    public let metadata: [String: String]?
+    public let instructions: String?
     public let model: String?
     public let responseFormat: String?
     public let speed: Double?
+    public let streamFormat: String?
     public let voice: String?
 
 
-    public init(input: String? = nil, metadata: [String: String]? = nil, model: String? = nil, responseFormat: String? = nil, speed: Double? = nil, voice: String? = nil) {
+    public init(input: String? = nil, instructions: String? = nil, model: String? = nil, responseFormat: String? = nil, speed: Double? = nil, streamFormat: String? = nil, voice: String? = nil) {
         self.input = input
-        self.metadata = metadata
+        self.instructions = instructions
         self.model = model
         self.responseFormat = responseFormat
         self.speed = speed
+        self.streamFormat = streamFormat
         self.voice = voice
     }
 }
@@ -3395,21 +5213,39 @@ public struct OpenAiThread: Codable {
 public struct OpenAiThreadAndRunCreateRequest: Codable {
     public let assistantId: String?
     public let instructions: String?
+    public let maxCompletionTokens: Int?
+    public let maxPromptTokens: Int?
     public let metadata: [String: String]?
     public let model: String?
+    public let parallelToolCalls: Bool?
+    public let responseFormat: String?
     public let stream: Bool?
+    public let temperature: Double?
     public let thread: OpenAiThreadCreateRequest?
+    public let toolChoice: String?
+    public let toolResources: String?
     public let tools: [String]?
+    public let topP: Double?
+    public let truncationStrategy: String?
 
 
-    public init(assistantId: String? = nil, instructions: String? = nil, metadata: [String: String]? = nil, model: String? = nil, stream: Bool? = nil, thread: OpenAiThreadCreateRequest? = nil, tools: [String]? = nil) {
+    public init(assistantId: String? = nil, instructions: String? = nil, maxCompletionTokens: Int? = nil, maxPromptTokens: Int? = nil, metadata: [String: String]? = nil, model: String? = nil, parallelToolCalls: Bool? = nil, responseFormat: String? = nil, stream: Bool? = nil, temperature: Double? = nil, thread: OpenAiThreadCreateRequest? = nil, toolChoice: String? = nil, toolResources: String? = nil, tools: [String]? = nil, topP: Double? = nil, truncationStrategy: String? = nil) {
         self.assistantId = assistantId
         self.instructions = instructions
+        self.maxCompletionTokens = maxCompletionTokens
+        self.maxPromptTokens = maxPromptTokens
         self.metadata = metadata
         self.model = model
+        self.parallelToolCalls = parallelToolCalls
+        self.responseFormat = responseFormat
         self.stream = stream
+        self.temperature = temperature
         self.thread = thread
+        self.toolChoice = toolChoice
+        self.toolResources = toolResources
         self.tools = tools
+        self.topP = topP
+        self.truncationStrategy = truncationStrategy
     }
 }
 
@@ -3625,13 +5461,15 @@ public struct OpenAiUploadCompleteRequest: Codable {
 
 public struct OpenAiUploadCreateRequest: Codable {
     public let bytes: Int?
+    public let expiresAfter: [String: String]?
     public let filename: String?
     public let mimeType: String?
     public let purpose: String?
 
 
-    public init(bytes: Int? = nil, filename: String? = nil, mimeType: String? = nil, purpose: String? = nil) {
+    public init(bytes: Int? = nil, expiresAfter: [String: String]? = nil, filename: String? = nil, mimeType: String? = nil, purpose: String? = nil) {
         self.bytes = bytes
+        self.expiresAfter = expiresAfter
         self.filename = filename
         self.mimeType = mimeType
         self.purpose = purpose
@@ -3695,14 +5533,16 @@ public struct OpenAiVectorStore: Codable {
 
 public struct OpenAiVectorStoreCreateRequest: Codable {
     public let chunkingStrategy: String?
+    public let description: String?
     public let expiresAfter: String?
     public let fileIds: [String]?
     public let metadata: [String: String]?
     public let name: String?
 
 
-    public init(chunkingStrategy: String? = nil, expiresAfter: String? = nil, fileIds: [String]? = nil, metadata: [String: String]? = nil, name: String? = nil) {
+    public init(chunkingStrategy: String? = nil, description: String? = nil, expiresAfter: String? = nil, fileIds: [String]? = nil, metadata: [String: String]? = nil, name: String? = nil) {
         self.chunkingStrategy = chunkingStrategy
+        self.description = description
         self.expiresAfter = expiresAfter
         self.fileIds = fileIds
         self.metadata = metadata
@@ -3758,12 +5598,14 @@ public struct OpenAiVectorStoreFileBatchCreateRequest: Codable {
     public let attributes: [String: String]?
     public let chunkingStrategy: String?
     public let fileIds: [String]?
+    public let files: [[String: String]]?
 
 
-    public init(attributes: [String: String]? = nil, chunkingStrategy: String? = nil, fileIds: [String]? = nil) {
+    public init(attributes: [String: String]? = nil, chunkingStrategy: String? = nil, fileIds: [String]? = nil, files: [[String: String]]? = nil) {
         self.attributes = attributes
         self.chunkingStrategy = chunkingStrategy
         self.fileIds = fileIds
+        self.files = files
     }
 }
 
@@ -3985,64 +5827,42 @@ public struct OpenAiVideoCharacterMultipartRequest: Codable {
 }
 
 public struct OpenAiVideoCreateRequest: Codable {
-    public let image: String?
-    public let metadata: [String: String]?
+    public let inputReference: [String: String]?
     public let model: String?
     public let prompt: String?
-    public let seconds: Int?
+    public let seconds: String?
     public let size: String?
-    public let video: String?
 
 
-    public init(image: String? = nil, metadata: [String: String]? = nil, model: String? = nil, prompt: String? = nil, seconds: Int? = nil, size: String? = nil, video: String? = nil) {
-        self.image = image
-        self.metadata = metadata
+    public init(inputReference: [String: String]? = nil, model: String? = nil, prompt: String? = nil, seconds: String? = nil, size: String? = nil) {
+        self.inputReference = inputReference
         self.model = model
         self.prompt = prompt
         self.seconds = seconds
         self.size = size
-        self.video = video
     }
 }
 
 public struct OpenAiVideoEditRequest: Codable {
-    public let image: String?
-    public let metadata: [String: String]?
-    public let model: String?
     public let prompt: String?
-    public let seconds: Int?
-    public let size: String?
     public let video: String?
 
 
-    public init(image: String? = nil, metadata: [String: String]? = nil, model: String? = nil, prompt: String? = nil, seconds: Int? = nil, size: String? = nil, video: String? = nil) {
-        self.image = image
-        self.metadata = metadata
-        self.model = model
+    public init(prompt: String? = nil, video: String? = nil) {
         self.prompt = prompt
-        self.seconds = seconds
-        self.size = size
         self.video = video
     }
 }
 
 public struct OpenAiVideoExtendRequest: Codable {
-    public let image: String?
-    public let metadata: [String: String]?
-    public let model: String?
     public let prompt: String?
-    public let seconds: Int?
-    public let size: String?
+    public let seconds: String?
     public let video: String?
 
 
-    public init(image: String? = nil, metadata: [String: String]? = nil, model: String? = nil, prompt: String? = nil, seconds: Int? = nil, size: String? = nil, video: String? = nil) {
-        self.image = image
-        self.metadata = metadata
-        self.model = model
+    public init(prompt: String? = nil, seconds: String? = nil, video: String? = nil) {
         self.prompt = prompt
         self.seconds = seconds
-        self.size = size
         self.video = video
     }
 }
@@ -4065,23 +5885,11 @@ public struct OpenAiVideoList: Codable {
 }
 
 public struct OpenAiVideoRemixRequest: Codable {
-    public let image: String?
-    public let metadata: [String: String]?
-    public let model: String?
     public let prompt: String?
-    public let seconds: Int?
-    public let size: String?
-    public let video: String?
 
 
-    public init(image: String? = nil, metadata: [String: String]? = nil, model: String? = nil, prompt: String? = nil, seconds: Int? = nil, size: String? = nil, video: String? = nil) {
-        self.image = image
-        self.metadata = metadata
-        self.model = model
+    public init(prompt: String? = nil) {
         self.prompt = prompt
-        self.seconds = seconds
-        self.size = size
-        self.video = video
     }
 }
 
@@ -4171,41 +5979,47 @@ public struct OpenAiVoiceConsentMultipartRequest: Codable {
 }
 
 public struct OpenAiVoiceConsentUpdateRequest: Codable {
-    public let metadata: [String: String]?
     public let name: String?
 
 
-    public init(metadata: [String: String]? = nil, name: String? = nil) {
-        self.metadata = metadata
+    public init(name: String? = nil) {
         self.name = name
     }
 }
 
 public struct OpenAiVoiceCreateMultipartRequest: Codable {
-    public let description: String?
     public let file: String?
-    public let metadata: String?
+    public let model: String?
     public let name: String?
+    public let prompt: String?
+    public let scriptHint: String?
+    public let type: String?
 
 
-    public init(description: String? = nil, file: String? = nil, metadata: String? = nil, name: String? = nil) {
-        self.description = description
+    public init(file: String? = nil, model: String? = nil, name: String? = nil, prompt: String? = nil, scriptHint: String? = nil, type: String? = nil) {
         self.file = file
-        self.metadata = metadata
+        self.model = model
         self.name = name
+        self.prompt = prompt
+        self.scriptHint = scriptHint
+        self.type = type
     }
 }
 
 public struct OpenAiVoiceCreateRequest: Codable {
-    public let description: String?
-    public let metadata: [String: String]?
+    public let model: String?
     public let name: String?
+    public let prompt: String?
+    public let scriptHint: String?
+    public let type: String?
 
 
-    public init(description: String? = nil, metadata: [String: String]? = nil, name: String? = nil) {
-        self.description = description
-        self.metadata = metadata
+    public init(model: String? = nil, name: String? = nil, prompt: String? = nil, scriptHint: String? = nil, type: String? = nil) {
+        self.model = model
         self.name = name
+        self.prompt = prompt
+        self.scriptHint = scriptHint
+        self.type = type
     }
 }
 
@@ -4223,6 +6037,123 @@ public struct OpenAiVoiceList: Codable {
         self.hasMore = hasMore
         self.lastId = lastId
         self.object = object
+    }
+}
+
+public struct PixverseErrorDetail: Codable {
+    public let message: String?
+    public let param: [String: String]?
+    public let type: String?
+
+
+    public init(message: String? = nil, param: [String: String]? = nil, type: String? = nil) {
+        self.message = message
+        self.param = param
+        self.type = type
+    }
+}
+
+public struct PixverseTaskResp: Codable {
+    public let aspectRatio: String?
+    public let createTime: String?
+    public let credits: Int?
+    public let customerPaths: [String: String]?
+    public let duration: Int?
+    public let hasAudio: Bool?
+    public let id: Int?
+    public let modifyTime: String?
+    public let negativePrompt: String?
+    public let outputHeight: Int?
+    public let outputWidth: Int?
+    public let path: String?
+    public let prompt: String?
+    public let quality: String?
+    public let resolutionRatio: Int?
+    public let seed: Int?
+    public let size: Int?
+    public let status: Int?
+    public let style: String?
+    public let url: String?
+    public let videoId: Int?
+
+
+    public init(aspectRatio: String? = nil, createTime: String? = nil, credits: Int? = nil, customerPaths: [String: String]? = nil, duration: Int? = nil, hasAudio: Bool? = nil, id: Int? = nil, modifyTime: String? = nil, negativePrompt: String? = nil, outputHeight: Int? = nil, outputWidth: Int? = nil, path: String? = nil, prompt: String? = nil, quality: String? = nil, resolutionRatio: Int? = nil, seed: Int? = nil, size: Int? = nil, status: Int? = nil, style: String? = nil, url: String? = nil, videoId: Int? = nil) {
+        self.aspectRatio = aspectRatio
+        self.createTime = createTime
+        self.credits = credits
+        self.customerPaths = customerPaths
+        self.duration = duration
+        self.hasAudio = hasAudio
+        self.id = id
+        self.modifyTime = modifyTime
+        self.negativePrompt = negativePrompt
+        self.outputHeight = outputHeight
+        self.outputWidth = outputWidth
+        self.path = path
+        self.prompt = prompt
+        self.quality = quality
+        self.resolutionRatio = resolutionRatio
+        self.seed = seed
+        self.size = size
+        self.status = status
+        self.style = style
+        self.url = url
+        self.videoId = videoId
+    }
+}
+
+public struct PixverseVideoGenerationRequest: Codable {
+    public let aspectRatio: String?
+    public let duration: Int?
+    public let generateAudioSwitch: Bool?
+    public let generateMultiClipSwitch: Bool?
+    public let model: String?
+    public let prompt: String?
+    public let quality: String?
+    public let seed: Int?
+    public let webhookId: String?
+
+
+    public init(aspectRatio: String? = nil, duration: Int? = nil, generateAudioSwitch: Bool? = nil, generateMultiClipSwitch: Bool? = nil, model: String? = nil, prompt: String? = nil, quality: String? = nil, seed: Int? = nil, webhookId: String? = nil) {
+        self.aspectRatio = aspectRatio
+        self.duration = duration
+        self.generateAudioSwitch = generateAudioSwitch
+        self.generateMultiClipSwitch = generateMultiClipSwitch
+        self.model = model
+        self.prompt = prompt
+        self.quality = quality
+        self.seed = seed
+        self.webhookId = webhookId
+    }
+}
+
+public struct PixverseVideoGenerationResponse: Codable {
+    public let errCode: Int?
+    public let errMsg: String?
+    public let error: PixverseErrorDetail?
+    public let resp: PixverseTaskResp?
+
+
+    public init(errCode: Int? = nil, errMsg: String? = nil, error: PixverseErrorDetail? = nil, resp: PixverseTaskResp? = nil) {
+        self.errCode = errCode
+        self.errMsg = errMsg
+        self.error = error
+        self.resp = resp
+    }
+}
+
+public struct PixverseVideoGenerationTask: Codable {
+    public let errCode: Int?
+    public let errMsg: String?
+    public let error: PixverseErrorDetail?
+    public let resp: PixverseTaskResp?
+
+
+    public init(errCode: Int? = nil, errMsg: String? = nil, error: PixverseErrorDetail? = nil, resp: PixverseTaskResp? = nil) {
+        self.errCode = errCode
+        self.errMsg = errMsg
+        self.error = error
+        self.resp = resp
     }
 }
 
@@ -4283,26 +6214,233 @@ public struct ProviderTaskError: Codable {
     }
 }
 
-public struct ProviderTaskResult: Codable {
-    public let audios: [ProviderGeneratedMedia]?
-    public let content: [VolcengineContentPart]?
+public struct RunwayImageToVideoRequest: Codable {
+    public let audio: Bool?
+    public let bitrate: String?
+    public let cfgScale: Double?
+    public let contentModeration: [String: String]?
+    public let draft: Bool?
+    public let duration: Int?
+    public let model: String?
+    public let negativePrompt: String?
+    public let outputFormat: String?
+    public let promptExpansionMode: String?
+    public let promptImage: String?
+    public let promptText: String?
+    public let proresProfile: String?
+    public let providerSettings: [String: String]?
+    public let ratio: String?
+    public let referenceAudio: [[String: String]]?
+    public let referenceVideos: [[String: String]]?
+    public let references: [[String: String]]?
+    public let resolution: String?
+    public let seed: Int?
+
+
+    public init(audio: Bool? = nil, bitrate: String? = nil, cfgScale: Double? = nil, contentModeration: [String: String]? = nil, draft: Bool? = nil, duration: Int? = nil, model: String? = nil, negativePrompt: String? = nil, outputFormat: String? = nil, promptExpansionMode: String? = nil, promptImage: String? = nil, promptText: String? = nil, proresProfile: String? = nil, providerSettings: [String: String]? = nil, ratio: String? = nil, referenceAudio: [[String: String]]? = nil, referenceVideos: [[String: String]]? = nil, references: [[String: String]]? = nil, resolution: String? = nil, seed: Int? = nil) {
+        self.audio = audio
+        self.bitrate = bitrate
+        self.cfgScale = cfgScale
+        self.contentModeration = contentModeration
+        self.draft = draft
+        self.duration = duration
+        self.model = model
+        self.negativePrompt = negativePrompt
+        self.outputFormat = outputFormat
+        self.promptExpansionMode = promptExpansionMode
+        self.promptImage = promptImage
+        self.promptText = promptText
+        self.proresProfile = proresProfile
+        self.providerSettings = providerSettings
+        self.ratio = ratio
+        self.referenceAudio = referenceAudio
+        self.referenceVideos = referenceVideos
+        self.references = references
+        self.resolution = resolution
+        self.seed = seed
+    }
+}
+
+public struct RunwayTask: Codable {
+    public let createdAt: String?
+    public let failure: String?
+    public let failureCode: String?
     public let id: String?
-    public let images: [ProviderGeneratedMedia]?
-    public let metadata: [String: String]?
+    public let output: [String]?
+    public let progress: Double?
     public let status: String?
-    public let text: String?
-    public let videos: [ProviderGeneratedMedia]?
 
 
-    public init(audios: [ProviderGeneratedMedia]? = nil, content: [VolcengineContentPart]? = nil, id: String? = nil, images: [ProviderGeneratedMedia]? = nil, metadata: [String: String]? = nil, status: String? = nil, text: String? = nil, videos: [ProviderGeneratedMedia]? = nil) {
-        self.audios = audios
-        self.content = content
+    public init(createdAt: String? = nil, failure: String? = nil, failureCode: String? = nil, id: String? = nil, output: [String]? = nil, progress: Double? = nil, status: String? = nil) {
+        self.createdAt = createdAt
+        self.failure = failure
+        self.failureCode = failureCode
         self.id = id
-        self.images = images
-        self.metadata = metadata
+        self.output = output
+        self.progress = progress
         self.status = status
-        self.text = text
-        self.videos = videos
+    }
+}
+
+public struct RunwayTaskAccepted: Codable {
+    public let estimatedCost: [String: String]?
+    public let id: String?
+
+
+    public init(estimatedCost: [String: String]? = nil, id: String? = nil) {
+        self.estimatedCost = estimatedCost
+        self.id = id
+    }
+}
+
+public struct RunwayTextToImageRequest: Codable {
+    public let background: String?
+    public let backgroundColor: String?
+    public let colors: [String]?
+    public let contentModeration: [String: String]?
+    public let edit: Bool?
+    public let grounding: Bool?
+    public let maskUri: String?
+    public let model: String?
+    public let outputCount: Int?
+    public let outputFormat: String?
+    public let preciseEdit: Bool?
+    public let promptText: String?
+    public let quality: String?
+    public let ratio: String?
+    public let referenceImages: [[String: String]]?
+    public let seed: Int?
+    public let thinkingLevel: String?
+
+
+    public init(background: String? = nil, backgroundColor: String? = nil, colors: [String]? = nil, contentModeration: [String: String]? = nil, edit: Bool? = nil, grounding: Bool? = nil, maskUri: String? = nil, model: String? = nil, outputCount: Int? = nil, outputFormat: String? = nil, preciseEdit: Bool? = nil, promptText: String? = nil, quality: String? = nil, ratio: String? = nil, referenceImages: [[String: String]]? = nil, seed: Int? = nil, thinkingLevel: String? = nil) {
+        self.background = background
+        self.backgroundColor = backgroundColor
+        self.colors = colors
+        self.contentModeration = contentModeration
+        self.edit = edit
+        self.grounding = grounding
+        self.maskUri = maskUri
+        self.model = model
+        self.outputCount = outputCount
+        self.outputFormat = outputFormat
+        self.preciseEdit = preciseEdit
+        self.promptText = promptText
+        self.quality = quality
+        self.ratio = ratio
+        self.referenceImages = referenceImages
+        self.seed = seed
+        self.thinkingLevel = thinkingLevel
+    }
+}
+
+public struct RunwayTextToVideoRequest: Codable {
+    public let audio: Bool?
+    public let bitrate: String?
+    public let cfgScale: Double?
+    public let contentModeration: [String: String]?
+    public let draft: Bool?
+    public let draftTaskId: String?
+    public let duration: Int?
+    public let model: String?
+    public let negativePrompt: String?
+    public let outputFormat: String?
+    public let promptExpansionMode: String?
+    public let promptText: String?
+    public let proresProfile: String?
+    public let providerSettings: [String: String]?
+    public let ratio: String?
+    public let referenceAudio: [[String: String]]?
+    public let referenceVideos: [[String: String]]?
+    public let references: [[String: String]]?
+    public let resolution: String?
+    public let seed: Int?
+
+
+    public init(audio: Bool? = nil, bitrate: String? = nil, cfgScale: Double? = nil, contentModeration: [String: String]? = nil, draft: Bool? = nil, draftTaskId: String? = nil, duration: Int? = nil, model: String? = nil, negativePrompt: String? = nil, outputFormat: String? = nil, promptExpansionMode: String? = nil, promptText: String? = nil, proresProfile: String? = nil, providerSettings: [String: String]? = nil, ratio: String? = nil, referenceAudio: [[String: String]]? = nil, referenceVideos: [[String: String]]? = nil, references: [[String: String]]? = nil, resolution: String? = nil, seed: Int? = nil) {
+        self.audio = audio
+        self.bitrate = bitrate
+        self.cfgScale = cfgScale
+        self.contentModeration = contentModeration
+        self.draft = draft
+        self.draftTaskId = draftTaskId
+        self.duration = duration
+        self.model = model
+        self.negativePrompt = negativePrompt
+        self.outputFormat = outputFormat
+        self.promptExpansionMode = promptExpansionMode
+        self.promptText = promptText
+        self.proresProfile = proresProfile
+        self.providerSettings = providerSettings
+        self.ratio = ratio
+        self.referenceAudio = referenceAudio
+        self.referenceVideos = referenceVideos
+        self.references = references
+        self.resolution = resolution
+        self.seed = seed
+    }
+}
+
+public struct StabilityAudioRequest: Codable {
+    public let cfgScale: Double?
+    public let duration: Double?
+    public let model: String?
+    public let outputFormat: String?
+    public let prompt: String?
+    public let seed: Int?
+    public let steps: Int?
+
+
+    public init(cfgScale: Double? = nil, duration: Double? = nil, model: String? = nil, outputFormat: String? = nil, prompt: String? = nil, seed: Int? = nil, steps: Int? = nil) {
+        self.cfgScale = cfgScale
+        self.duration = duration
+        self.model = model
+        self.outputFormat = outputFormat
+        self.prompt = prompt
+        self.seed = seed
+        self.steps = steps
+    }
+}
+
+public struct StabilityImageGenerationRequest: Codable {
+    public let aspectRatio: String?
+    public let cfgScale: Double?
+    public let image: String?
+    public let mode: String?
+    public let model: String?
+    public let negativePrompt: String?
+    public let outputFormat: String?
+    public let prompt: String?
+    public let seed: Int?
+    public let strength: Double?
+    public let stylePreset: String?
+
+
+    public init(aspectRatio: String? = nil, cfgScale: Double? = nil, image: String? = nil, mode: String? = nil, model: String? = nil, negativePrompt: String? = nil, outputFormat: String? = nil, prompt: String? = nil, seed: Int? = nil, strength: Double? = nil, stylePreset: String? = nil) {
+        self.aspectRatio = aspectRatio
+        self.cfgScale = cfgScale
+        self.image = image
+        self.mode = mode
+        self.model = model
+        self.negativePrompt = negativePrompt
+        self.outputFormat = outputFormat
+        self.prompt = prompt
+        self.seed = seed
+        self.strength = strength
+        self.stylePreset = stylePreset
+    }
+}
+
+public struct StabilityImageGenerationResponse: Codable {
+    public let finishReason: String?
+    public let image: String?
+    public let seed: Int?
+
+
+    public init(finishReason: String? = nil, image: String? = nil, seed: Int? = nil) {
+        self.finishReason = finishReason
+        self.image = image
+        self.seed = seed
     }
 }
 
@@ -4386,6 +6524,104 @@ public struct SunoMusicTrack: Codable {
     }
 }
 
+public struct TypeSafeAnswer: Codable {
+    public let choice: String?
+    public let confidence: Double?
+    public let legend: [String: String]?
+    public let noul: Double?
+    public let probabilities: [String: Double]?
+    public let score: Double?
+    public let type: String?
+
+
+    public init(choice: String? = nil, confidence: Double? = nil, legend: [String: String]? = nil, noul: Double? = nil, probabilities: [String: Double]? = nil, score: Double? = nil, type: String? = nil) {
+        self.choice = choice
+        self.confidence = confidence
+        self.legend = legend
+        self.noul = noul
+        self.probabilities = probabilities
+        self.score = score
+        self.type = type
+    }
+}
+
+public struct TypeSafeQuestion: Codable {
+    public let criteria: String?
+    public let instructions: String?
+    public let type: String?
+
+
+    public init(criteria: String? = nil, instructions: String? = nil, type: String? = nil) {
+        self.criteria = criteria
+        self.instructions = instructions
+        self.type = type
+    }
+}
+
+public struct TypeSafeSystemOneRequest: Codable {
+    public let model: String?
+    public let questions: [String: TypeSafeQuestion]?
+    public let state: String?
+
+
+    public init(model: String? = nil, questions: [String: TypeSafeQuestion]? = nil, state: String? = nil) {
+        self.model = model
+        self.questions = questions
+        self.state = state
+    }
+}
+
+public struct TypeSafeSystemOneResponse: Codable {
+    public let answers: [String: TypeSafeAnswer]?
+    public let model: String?
+    public let usage: TypeSafeUsage?
+
+
+    public init(answers: [String: TypeSafeAnswer]? = nil, model: String? = nil, usage: TypeSafeUsage? = nil) {
+        self.answers = answers
+        self.model = model
+        self.usage = usage
+    }
+}
+
+public struct TypeSafeUsage: Codable {
+    public let inputTokens: Int?
+    public let outputTokens: Int?
+
+
+    public init(inputTokens: Int? = nil, outputTokens: Int? = nil) {
+        self.inputTokens = inputTokens
+        self.outputTokens = outputTokens
+    }
+}
+
+public struct ViduAudioGenerationTask: Codable {
+    public let createdAt: String?
+    public let creations: [ViduCreation]?
+    public let credits: Int?
+    public let duration: Int?
+    public let errCode: String?
+    public let model: String?
+    public let prompt: String?
+    public let seed: Int?
+    public let state: String?
+    public let taskId: String?
+
+
+    public init(createdAt: String? = nil, creations: [ViduCreation]? = nil, credits: Int? = nil, duration: Int? = nil, errCode: String? = nil, model: String? = nil, prompt: String? = nil, seed: Int? = nil, state: String? = nil, taskId: String? = nil) {
+        self.createdAt = createdAt
+        self.creations = creations
+        self.credits = credits
+        self.duration = duration
+        self.errCode = errCode
+        self.model = model
+        self.prompt = prompt
+        self.seed = seed
+        self.state = state
+        self.taskId = taskId
+    }
+}
+
 public struct ViduCreation: Codable {
     public let audioUrl: String?
     public let coverUrl: String?
@@ -4399,10 +6635,11 @@ public struct ViduCreation: Codable {
     public let uri: String?
     public let url: String?
     public let videoUrl: String?
+    public let watermarkedUrl: String?
     public let width: Int?
 
 
-    public init(audioUrl: String? = nil, coverUrl: String? = nil, createdAt: String? = nil, duration: Double? = nil, height: Int? = nil, id: String? = nil, imageUrl: String? = nil, metadata: [String: String]? = nil, type: String? = nil, uri: String? = nil, url: String? = nil, videoUrl: String? = nil, width: Int? = nil) {
+    public init(audioUrl: String? = nil, coverUrl: String? = nil, createdAt: String? = nil, duration: Double? = nil, height: Int? = nil, id: String? = nil, imageUrl: String? = nil, metadata: [String: String]? = nil, type: String? = nil, uri: String? = nil, url: String? = nil, videoUrl: String? = nil, watermarkedUrl: String? = nil, width: Int? = nil) {
         self.audioUrl = audioUrl
         self.coverUrl = coverUrl
         self.createdAt = createdAt
@@ -4415,281 +6652,980 @@ public struct ViduCreation: Codable {
         self.uri = uri
         self.url = url
         self.videoUrl = videoUrl
+        self.watermarkedUrl = watermarkedUrl
         self.width = width
     }
 }
 
 public struct ViduImageGenerationTask: Codable {
-    public let createdAt: String?
-    public let creations: [ViduCreation]?
-    public let model: String?
-    public let state: String?
-    public let taskId: String?
-
-
-    public init(createdAt: String? = nil, creations: [ViduCreation]? = nil, model: String? = nil, state: String? = nil, taskId: String? = nil) {
-        self.createdAt = createdAt
-        self.creations = creations
-        self.model = model
-        self.state = state
-        self.taskId = taskId
-    }
-}
-
-public struct ViduImageToVideoRequest: Codable {
     public let aspectRatio: String?
     public let callbackUrl: String?
+    public let createdAt: String?
+    public let creations: [ViduCreation]?
+    public let credits: Int?
     public let duration: Int?
+    public let errCode: String?
     public let images: [String]?
     public let model: String?
-    public let movementAmplitude: String?
+    public let offPeak: Bool?
     public let payload: String?
     public let prompt: String?
     public let resolution: String?
     public let seed: Int?
+    public let state: String?
+    public let taskId: String?
+    public let watermark: Bool?
 
 
-    public init(aspectRatio: String? = nil, callbackUrl: String? = nil, duration: Int? = nil, images: [String]? = nil, model: String? = nil, movementAmplitude: String? = nil, payload: String? = nil, prompt: String? = nil, resolution: String? = nil, seed: Int? = nil) {
+    public init(aspectRatio: String? = nil, callbackUrl: String? = nil, createdAt: String? = nil, creations: [ViduCreation]? = nil, credits: Int? = nil, duration: Int? = nil, errCode: String? = nil, images: [String]? = nil, model: String? = nil, offPeak: Bool? = nil, payload: String? = nil, prompt: String? = nil, resolution: String? = nil, seed: Int? = nil, state: String? = nil, taskId: String? = nil, watermark: Bool? = nil) {
         self.aspectRatio = aspectRatio
         self.callbackUrl = callbackUrl
+        self.createdAt = createdAt
+        self.creations = creations
+        self.credits = credits
         self.duration = duration
+        self.errCode = errCode
         self.images = images
         self.model = model
-        self.movementAmplitude = movementAmplitude
+        self.offPeak = offPeak
         self.payload = payload
         self.prompt = prompt
         self.resolution = resolution
         self.seed = seed
+        self.state = state
+        self.taskId = taskId
+        self.watermark = watermark
+    }
+}
+
+public struct ViduImageToVideoRequest: Codable {
+    public let audio: Bool?
+    public let callbackUrl: String?
+    public let duration: Int?
+    public let images: [String]?
+    public let isRec: Bool?
+    public let metaData: String?
+    public let model: String?
+    public let offPeak: Bool?
+    public let payload: String?
+    public let prompt: String?
+    public let resolution: String?
+    public let seed: Int?
+    public let watermark: Bool?
+    public let wmPosition: Int?
+    public let wmUrl: String?
+
+
+    public init(audio: Bool? = nil, callbackUrl: String? = nil, duration: Int? = nil, images: [String]? = nil, isRec: Bool? = nil, metaData: String? = nil, model: String? = nil, offPeak: Bool? = nil, payload: String? = nil, prompt: String? = nil, resolution: String? = nil, seed: Int? = nil, watermark: Bool? = nil, wmPosition: Int? = nil, wmUrl: String? = nil) {
+        self.audio = audio
+        self.callbackUrl = callbackUrl
+        self.duration = duration
+        self.images = images
+        self.isRec = isRec
+        self.metaData = metaData
+        self.model = model
+        self.offPeak = offPeak
+        self.payload = payload
+        self.prompt = prompt
+        self.resolution = resolution
+        self.seed = seed
+        self.watermark = watermark
+        self.wmPosition = wmPosition
+        self.wmUrl = wmUrl
     }
 }
 
 public struct ViduReferenceToImageRequest: Codable {
     public let aspectRatio: String?
+    public let bgm: Bool?
     public let callbackUrl: String?
     public let images: [String]?
     public let model: String?
+    public let offPeak: Bool?
     public let payload: String?
     public let prompt: String?
+    public let resolution: String?
     public let seed: Int?
-    public let style: String?
 
 
-    public init(aspectRatio: String? = nil, callbackUrl: String? = nil, images: [String]? = nil, model: String? = nil, payload: String? = nil, prompt: String? = nil, seed: Int? = nil, style: String? = nil) {
+    public init(aspectRatio: String? = nil, bgm: Bool? = nil, callbackUrl: String? = nil, images: [String]? = nil, model: String? = nil, offPeak: Bool? = nil, payload: String? = nil, prompt: String? = nil, resolution: String? = nil, seed: Int? = nil) {
         self.aspectRatio = aspectRatio
+        self.bgm = bgm
         self.callbackUrl = callbackUrl
         self.images = images
         self.model = model
+        self.offPeak = offPeak
         self.payload = payload
         self.prompt = prompt
+        self.resolution = resolution
         self.seed = seed
-        self.style = style
     }
 }
 
 public struct ViduReferenceToVideoRequest: Codable {
     public let aspectRatio: String?
+    public let audio: Bool?
+    public let autoSubjects: Bool?
+    public let bgm: Bool?
     public let callbackUrl: String?
     public let duration: Int?
     public let images: [String]?
+    public let metaData: String?
     public let model: String?
     public let movementAmplitude: String?
+    public let offPeak: Bool?
     public let payload: String?
     public let prompt: String?
     public let resolution: String?
     public let seed: Int?
+    public let sounds: [[String: String]]?
+    public let subjects: [[String: String]]?
+    public let watermark: Bool?
+    public let wmPosition: Int?
+    public let wmUrl: String?
 
 
-    public init(aspectRatio: String? = nil, callbackUrl: String? = nil, duration: Int? = nil, images: [String]? = nil, model: String? = nil, movementAmplitude: String? = nil, payload: String? = nil, prompt: String? = nil, resolution: String? = nil, seed: Int? = nil) {
+    public init(aspectRatio: String? = nil, audio: Bool? = nil, autoSubjects: Bool? = nil, bgm: Bool? = nil, callbackUrl: String? = nil, duration: Int? = nil, images: [String]? = nil, metaData: String? = nil, model: String? = nil, movementAmplitude: String? = nil, offPeak: Bool? = nil, payload: String? = nil, prompt: String? = nil, resolution: String? = nil, seed: Int? = nil, sounds: [[String: String]]? = nil, subjects: [[String: String]]? = nil, watermark: Bool? = nil, wmPosition: Int? = nil, wmUrl: String? = nil) {
         self.aspectRatio = aspectRatio
+        self.audio = audio
+        self.autoSubjects = autoSubjects
+        self.bgm = bgm
         self.callbackUrl = callbackUrl
         self.duration = duration
         self.images = images
+        self.metaData = metaData
         self.model = model
         self.movementAmplitude = movementAmplitude
+        self.offPeak = offPeak
         self.payload = payload
         self.prompt = prompt
         self.resolution = resolution
         self.seed = seed
+        self.sounds = sounds
+        self.subjects = subjects
+        self.watermark = watermark
+        self.wmPosition = wmPosition
+        self.wmUrl = wmUrl
     }
 }
 
 public struct ViduStartEndToVideoRequest: Codable {
-    public let aspectRatio: String?
+    public let audio: Bool?
     public let callbackUrl: String?
     public let duration: Int?
     public let images: [String]?
+    public let metaData: String?
     public let model: String?
-    public let movementAmplitude: String?
+    public let offPeak: Bool?
     public let payload: String?
     public let prompt: String?
     public let resolution: String?
     public let seed: Int?
+    public let watermark: Bool?
+    public let wmPosition: Int?
+    public let wmUrl: String?
 
 
-    public init(aspectRatio: String? = nil, callbackUrl: String? = nil, duration: Int? = nil, images: [String]? = nil, model: String? = nil, movementAmplitude: String? = nil, payload: String? = nil, prompt: String? = nil, resolution: String? = nil, seed: Int? = nil) {
-        self.aspectRatio = aspectRatio
+    public init(audio: Bool? = nil, callbackUrl: String? = nil, duration: Int? = nil, images: [String]? = nil, metaData: String? = nil, model: String? = nil, offPeak: Bool? = nil, payload: String? = nil, prompt: String? = nil, resolution: String? = nil, seed: Int? = nil, watermark: Bool? = nil, wmPosition: Int? = nil, wmUrl: String? = nil) {
+        self.audio = audio
         self.callbackUrl = callbackUrl
         self.duration = duration
         self.images = images
+        self.metaData = metaData
         self.model = model
-        self.movementAmplitude = movementAmplitude
+        self.offPeak = offPeak
         self.payload = payload
         self.prompt = prompt
         self.resolution = resolution
         self.seed = seed
+        self.watermark = watermark
+        self.wmPosition = wmPosition
+        self.wmUrl = wmUrl
     }
 }
 
 public struct ViduTaskCreationsResponse: Codable {
+    public let aspectRatio: String?
     public let createdAt: String?
     public let creations: [ViduCreation]?
+    public let credits: Int?
+    public let duration: Int?
+    public let errCode: String?
     public let model: String?
+    public let offPeak: Bool?
+    public let payload: String?
+    public let prompt: String?
+    public let resolution: String?
+    public let seed: Int?
     public let state: String?
     public let taskId: String?
+    public let watermark: Bool?
 
 
-    public init(createdAt: String? = nil, creations: [ViduCreation]? = nil, model: String? = nil, state: String? = nil, taskId: String? = nil) {
+    public init(aspectRatio: String? = nil, createdAt: String? = nil, creations: [ViduCreation]? = nil, credits: Int? = nil, duration: Int? = nil, errCode: String? = nil, model: String? = nil, offPeak: Bool? = nil, payload: String? = nil, prompt: String? = nil, resolution: String? = nil, seed: Int? = nil, state: String? = nil, taskId: String? = nil, watermark: Bool? = nil) {
+        self.aspectRatio = aspectRatio
         self.createdAt = createdAt
         self.creations = creations
+        self.credits = credits
+        self.duration = duration
+        self.errCode = errCode
         self.model = model
+        self.offPeak = offPeak
+        self.payload = payload
+        self.prompt = prompt
+        self.resolution = resolution
+        self.seed = seed
         self.state = state
         self.taskId = taskId
+        self.watermark = watermark
     }
 }
 
 public struct ViduTemplateRequest: Codable {
+    public let area: String?
+    public let aspectRatio: String?
+    public let beast: String?
+    public let bgm: Bool?
     public let callbackUrl: String?
     public let images: [String]?
+    public let metaData: String?
+    public let offPeak: Bool?
     public let payload: String?
+    public let prompt: String?
+    public let seed: Int?
     public let template: String?
     public let videoUrls: [String]?
+    public let watermark: Bool?
+    public let wmPosition: Int?
+    public let wmUrl: String?
 
 
-    public init(callbackUrl: String? = nil, images: [String]? = nil, payload: String? = nil, template: String? = nil, videoUrls: [String]? = nil) {
+    public init(area: String? = nil, aspectRatio: String? = nil, beast: String? = nil, bgm: Bool? = nil, callbackUrl: String? = nil, images: [String]? = nil, metaData: String? = nil, offPeak: Bool? = nil, payload: String? = nil, prompt: String? = nil, seed: Int? = nil, template: String? = nil, videoUrls: [String]? = nil, watermark: Bool? = nil, wmPosition: Int? = nil, wmUrl: String? = nil) {
+        self.area = area
+        self.aspectRatio = aspectRatio
+        self.beast = beast
+        self.bgm = bgm
         self.callbackUrl = callbackUrl
         self.images = images
+        self.metaData = metaData
+        self.offPeak = offPeak
         self.payload = payload
+        self.prompt = prompt
+        self.seed = seed
         self.template = template
         self.videoUrls = videoUrls
+        self.watermark = watermark
+        self.wmPosition = wmPosition
+        self.wmUrl = wmUrl
+    }
+}
+
+public struct ViduTemplateTask: Codable {
+    public let aspectRatio: String?
+    public let bgm: Bool?
+    public let createdAt: String?
+    public let creations: [ViduCreation]?
+    public let credits: Int?
+    public let duration: Int?
+    public let errCode: String?
+    public let images: [String]?
+    public let model: String?
+    public let offPeak: Bool?
+    public let payload: String?
+    public let prompt: String?
+    public let resolution: String?
+    public let seed: Int?
+    public let state: String?
+    public let taskId: String?
+    public let template: String?
+    public let watermark: Bool?
+
+
+    public init(aspectRatio: String? = nil, bgm: Bool? = nil, createdAt: String? = nil, creations: [ViduCreation]? = nil, credits: Int? = nil, duration: Int? = nil, errCode: String? = nil, images: [String]? = nil, model: String? = nil, offPeak: Bool? = nil, payload: String? = nil, prompt: String? = nil, resolution: String? = nil, seed: Int? = nil, state: String? = nil, taskId: String? = nil, template: String? = nil, watermark: Bool? = nil) {
+        self.aspectRatio = aspectRatio
+        self.bgm = bgm
+        self.createdAt = createdAt
+        self.creations = creations
+        self.credits = credits
+        self.duration = duration
+        self.errCode = errCode
+        self.images = images
+        self.model = model
+        self.offPeak = offPeak
+        self.payload = payload
+        self.prompt = prompt
+        self.resolution = resolution
+        self.seed = seed
+        self.state = state
+        self.taskId = taskId
+        self.template = template
+        self.watermark = watermark
+    }
+}
+
+public struct ViduTextToAudioRequest: Codable {
+    public let bgm: Bool?
+    public let callbackUrl: String?
+    public let duration: Double?
+    public let model: String?
+    public let offPeak: Bool?
+    public let payload: String?
+    public let prompt: String?
+    public let seed: Int?
+
+
+    public init(bgm: Bool? = nil, callbackUrl: String? = nil, duration: Double? = nil, model: String? = nil, offPeak: Bool? = nil, payload: String? = nil, prompt: String? = nil, seed: Int? = nil) {
+        self.bgm = bgm
+        self.callbackUrl = callbackUrl
+        self.duration = duration
+        self.model = model
+        self.offPeak = offPeak
+        self.payload = payload
+        self.prompt = prompt
+        self.seed = seed
     }
 }
 
 public struct ViduTextToVideoRequest: Codable {
     public let aspectRatio: String?
+    public let audio: Bool?
     public let callbackUrl: String?
     public let duration: Int?
+    public let metaData: String?
     public let model: String?
-    public let movementAmplitude: String?
+    public let offPeak: Bool?
     public let payload: String?
     public let prompt: String?
     public let resolution: String?
     public let seed: Int?
+    public let watermark: Bool?
+    public let wmPosition: Int?
+    public let wmUrl: String?
 
 
-    public init(aspectRatio: String? = nil, callbackUrl: String? = nil, duration: Int? = nil, model: String? = nil, movementAmplitude: String? = nil, payload: String? = nil, prompt: String? = nil, resolution: String? = nil, seed: Int? = nil) {
+    public init(aspectRatio: String? = nil, audio: Bool? = nil, callbackUrl: String? = nil, duration: Int? = nil, metaData: String? = nil, model: String? = nil, offPeak: Bool? = nil, payload: String? = nil, prompt: String? = nil, resolution: String? = nil, seed: Int? = nil, watermark: Bool? = nil, wmPosition: Int? = nil, wmUrl: String? = nil) {
         self.aspectRatio = aspectRatio
+        self.audio = audio
         self.callbackUrl = callbackUrl
         self.duration = duration
+        self.metaData = metaData
         self.model = model
-        self.movementAmplitude = movementAmplitude
+        self.offPeak = offPeak
         self.payload = payload
         self.prompt = prompt
         self.resolution = resolution
         self.seed = seed
+        self.watermark = watermark
+        self.wmPosition = wmPosition
+        self.wmUrl = wmUrl
+    }
+}
+
+public struct ViduTimingToAudioRequest: Codable {
+    public let bgm: Bool?
+    public let callbackUrl: String?
+    public let duration: Double?
+    public let model: String?
+    public let offPeak: Bool?
+    public let payload: String?
+    public let seed: Int?
+    public let timingPrompts: [[String: String]]?
+
+
+    public init(bgm: Bool? = nil, callbackUrl: String? = nil, duration: Double? = nil, model: String? = nil, offPeak: Bool? = nil, payload: String? = nil, seed: Int? = nil, timingPrompts: [[String: String]]? = nil) {
+        self.bgm = bgm
+        self.callbackUrl = callbackUrl
+        self.duration = duration
+        self.model = model
+        self.offPeak = offPeak
+        self.payload = payload
+        self.seed = seed
+        self.timingPrompts = timingPrompts
     }
 }
 
 public struct ViduVideoGenerationTask: Codable {
+    public let aspectRatio: String?
     public let createdAt: String?
     public let creations: [ViduCreation]?
+    public let credits: Int?
+    public let duration: Int?
+    public let errCode: String?
     public let model: String?
+    public let offPeak: Bool?
+    public let payload: String?
+    public let prompt: String?
+    public let resolution: String?
+    public let seed: Int?
     public let state: String?
     public let taskId: String?
+    public let watermark: Bool?
 
 
-    public init(createdAt: String? = nil, creations: [ViduCreation]? = nil, model: String? = nil, state: String? = nil, taskId: String? = nil) {
+    public init(aspectRatio: String? = nil, createdAt: String? = nil, creations: [ViduCreation]? = nil, credits: Int? = nil, duration: Int? = nil, errCode: String? = nil, model: String? = nil, offPeak: Bool? = nil, payload: String? = nil, prompt: String? = nil, resolution: String? = nil, seed: Int? = nil, state: String? = nil, taskId: String? = nil, watermark: Bool? = nil) {
+        self.aspectRatio = aspectRatio
         self.createdAt = createdAt
         self.creations = creations
+        self.credits = credits
+        self.duration = duration
+        self.errCode = errCode
         self.model = model
+        self.offPeak = offPeak
+        self.payload = payload
+        self.prompt = prompt
+        self.resolution = resolution
+        self.seed = seed
         self.state = state
         self.taskId = taskId
+        self.watermark = watermark
     }
 }
 
 public struct VolcengineContentGenerationTask: Codable {
-    public let content: [VolcengineContentPart]?
-    public let createdAt: String?
+    public let content: ArkVideoTaskContent?
+    public let createdAt: Int?
+    public let draft: Bool?
+    public let duration: Int?
     public let error: ProviderTaskError?
+    public let executionExpiresAfter: Int?
+    public let frames: Int?
+    public let framespersecond: Int?
+    public let generateAudio: Bool?
     public let id: String?
     public let model: String?
-    public let prompt: String?
-    public let result: ProviderTaskResult?
-    public let state: String?
+    public let outputFormat: String?
+    public let priority: Int?
+    public let ratio: String?
+    public let resolution: String?
+    public let safetyIdentifier: String?
+    public let seed: Int?
+    public let serviceTier: String?
     public let status: String?
-    public let taskId: String?
-    public let updatedAt: String?
-    public let videos: [ProviderGeneratedMedia]?
+    public let tools: [ArkWebSearchTool]?
+    public let updatedAt: Int?
+    public let usage: ArkVideoUsage?
 
 
-    public init(content: [VolcengineContentPart]? = nil, createdAt: String? = nil, error: ProviderTaskError? = nil, id: String? = nil, model: String? = nil, prompt: String? = nil, result: ProviderTaskResult? = nil, state: String? = nil, status: String? = nil, taskId: String? = nil, updatedAt: String? = nil, videos: [ProviderGeneratedMedia]? = nil) {
+    public init(content: ArkVideoTaskContent? = nil, createdAt: Int? = nil, draft: Bool? = nil, duration: Int? = nil, error: ProviderTaskError? = nil, executionExpiresAfter: Int? = nil, frames: Int? = nil, framespersecond: Int? = nil, generateAudio: Bool? = nil, id: String? = nil, model: String? = nil, outputFormat: String? = nil, priority: Int? = nil, ratio: String? = nil, resolution: String? = nil, safetyIdentifier: String? = nil, seed: Int? = nil, serviceTier: String? = nil, status: String? = nil, tools: [ArkWebSearchTool]? = nil, updatedAt: Int? = nil, usage: ArkVideoUsage? = nil) {
         self.content = content
         self.createdAt = createdAt
+        self.draft = draft
+        self.duration = duration
         self.error = error
+        self.executionExpiresAfter = executionExpiresAfter
+        self.frames = frames
+        self.framespersecond = framespersecond
+        self.generateAudio = generateAudio
         self.id = id
         self.model = model
-        self.prompt = prompt
-        self.result = result
-        self.state = state
+        self.outputFormat = outputFormat
+        self.priority = priority
+        self.ratio = ratio
+        self.resolution = resolution
+        self.safetyIdentifier = safetyIdentifier
+        self.seed = seed
+        self.serviceTier = serviceTier
         self.status = status
-        self.taskId = taskId
+        self.tools = tools
         self.updatedAt = updatedAt
-        self.videos = videos
+        self.usage = usage
     }
 }
 
 public struct VolcengineContentGenerationTaskCreateRequest: Codable {
     public let callbackUrl: String?
+    public let cameraFixed: Bool?
     public let content: [VolcengineContentPart]?
-    public let metadata: [String: String]?
+    public let draft: Bool?
+    public let duration: Int?
+    public let executionExpiresAfter: Int?
+    public let frames: Int?
+    public let generateAudio: Bool?
     public let model: String?
+    public let omniReferenceTaskType: String?
+    public let outputFormat: String?
+    public let priority: Int?
+    public let ratio: String?
+    public let resolution: String?
+    public let returnLastFrame: Bool?
+    public let safetyIdentifier: String?
+    public let seed: Int?
+    public let serviceTier: String?
+    public let tools: [ArkWebSearchTool]?
+    public let watermark: Bool?
 
 
-    public init(callbackUrl: String? = nil, content: [VolcengineContentPart]? = nil, metadata: [String: String]? = nil, model: String? = nil) {
+    public init(callbackUrl: String? = nil, cameraFixed: Bool? = nil, content: [VolcengineContentPart]? = nil, draft: Bool? = nil, duration: Int? = nil, executionExpiresAfter: Int? = nil, frames: Int? = nil, generateAudio: Bool? = nil, model: String? = nil, omniReferenceTaskType: String? = nil, outputFormat: String? = nil, priority: Int? = nil, ratio: String? = nil, resolution: String? = nil, returnLastFrame: Bool? = nil, safetyIdentifier: String? = nil, seed: Int? = nil, serviceTier: String? = nil, tools: [ArkWebSearchTool]? = nil, watermark: Bool? = nil) {
         self.callbackUrl = callbackUrl
+        self.cameraFixed = cameraFixed
         self.content = content
-        self.metadata = metadata
+        self.draft = draft
+        self.duration = duration
+        self.executionExpiresAfter = executionExpiresAfter
+        self.frames = frames
+        self.generateAudio = generateAudio
         self.model = model
+        self.omniReferenceTaskType = omniReferenceTaskType
+        self.outputFormat = outputFormat
+        self.priority = priority
+        self.ratio = ratio
+        self.resolution = resolution
+        self.returnLastFrame = returnLastFrame
+        self.safetyIdentifier = safetyIdentifier
+        self.seed = seed
+        self.serviceTier = serviceTier
+        self.tools = tools
+        self.watermark = watermark
     }
 }
 
 public struct VolcengineContentGenerationTaskCreateResponse: Codable {
-    public let createdAt: String?
     public let id: String?
-    public let status: String?
-    public let taskId: String?
 
 
-    public init(createdAt: String? = nil, id: String? = nil, status: String? = nil, taskId: String? = nil) {
-        self.createdAt = createdAt
+    public init(id: String? = nil) {
         self.id = id
-        self.status = status
-        self.taskId = taskId
     }
 }
 
 public struct VolcengineContentPart: Codable {
-    public let fileId: String?
-    public let imageUrl: String?
+    public let audioUrl: ArkAudioSource?
+    public let draftTask: ArkDraftTask?
+    public let imageUrl: ArkImageSource?
+    public let role: String?
     public let text: String?
     public let type: String?
-    public let videoUrl: String?
+    public let videoUrl: ArkVideoSource?
 
 
-    public init(fileId: String? = nil, imageUrl: String? = nil, text: String? = nil, type: String? = nil, videoUrl: String? = nil) {
-        self.fileId = fileId
+    public init(audioUrl: ArkAudioSource? = nil, draftTask: ArkDraftTask? = nil, imageUrl: ArkImageSource? = nil, role: String? = nil, text: String? = nil, type: String? = nil, videoUrl: ArkVideoSource? = nil) {
+        self.audioUrl = audioUrl
+        self.draftTask = draftTask
         self.imageUrl = imageUrl
+        self.role = role
         self.text = text
         self.type = type
         self.videoUrl = videoUrl
+    }
+}
+
+public struct VolcengineImageGenerationRequest: Codable {
+    public let background: String?
+    public let image: String?
+    public let layerDecomposition: Bool?
+    public let model: String?
+    public let optimizePromptOptions: [String: String]?
+    public let outputFormat: String?
+    public let prompt: String?
+    public let responseFormat: String?
+    public let sequentialImageGeneration: String?
+    public let sequentialImageGenerationOptions: [String: String]?
+    public let size: String?
+    public let stream: Bool?
+    public let tools: [ArkWebSearchTool]?
+    public let watermark: Bool?
+
+
+    public init(background: String? = nil, image: String? = nil, layerDecomposition: Bool? = nil, model: String? = nil, optimizePromptOptions: [String: String]? = nil, outputFormat: String? = nil, prompt: String? = nil, responseFormat: String? = nil, sequentialImageGeneration: String? = nil, sequentialImageGenerationOptions: [String: String]? = nil, size: String? = nil, stream: Bool? = nil, tools: [ArkWebSearchTool]? = nil, watermark: Bool? = nil) {
+        self.background = background
+        self.image = image
+        self.layerDecomposition = layerDecomposition
+        self.model = model
+        self.optimizePromptOptions = optimizePromptOptions
+        self.outputFormat = outputFormat
+        self.prompt = prompt
+        self.responseFormat = responseFormat
+        self.sequentialImageGeneration = sequentialImageGeneration
+        self.sequentialImageGenerationOptions = sequentialImageGenerationOptions
+        self.size = size
+        self.stream = stream
+        self.tools = tools
+        self.watermark = watermark
+    }
+}
+
+public struct VolcengineImageGenerationResponse: Codable {
+    public let created: Int?
+    public let data: [ArkImageGenerationData]?
+    public let error: ProviderTaskError?
+    public let model: String?
+    public let tools: [ArkWebSearchTool]?
+    public let usage: ArkImageUsage?
+
+
+    public init(created: Int? = nil, data: [ArkImageGenerationData]? = nil, error: ProviderTaskError? = nil, model: String? = nil, tools: [ArkWebSearchTool]? = nil, usage: ArkImageUsage? = nil) {
+        self.created = created
+        self.data = data
+        self.error = error
+        self.model = model
+        self.tools = tools
+        self.usage = usage
+    }
+}
+
+public struct XaiDeferredImageResponse: Codable {
+    public let data: [XaiGeneratedImage]?
+    public let error: [String: String]?
+    public let requestId: String?
+    public let status: String?
+    public let usage: XaiUsage?
+
+
+    public init(data: [XaiGeneratedImage]? = nil, error: [String: String]? = nil, requestId: String? = nil, status: String? = nil, usage: XaiUsage? = nil) {
+        self.data = data
+        self.error = error
+        self.requestId = requestId
+        self.status = status
+        self.usage = usage
+    }
+}
+
+public struct XaiGeneratedImage: Codable {
+    public let b64Json: String?
+    public let fileOutput: [String: String]?
+    public let mimeType: String?
+    public let storageError: String?
+    public let url: String?
+
+
+    public init(b64Json: String? = nil, fileOutput: [String: String]? = nil, mimeType: String? = nil, storageError: String? = nil, url: String? = nil) {
+        self.b64Json = b64Json
+        self.fileOutput = fileOutput
+        self.mimeType = mimeType
+        self.storageError = storageError
+        self.url = url
+    }
+}
+
+public struct XaiImageEditRequest: Codable {
+    public let aspectRatio: String?
+    public let deferred: Bool?
+    public let image: XaiImageUrl?
+    public let images: [XaiImageUrl]?
+    public let model: String?
+    public let n: Int?
+    public let output: [String: String]?
+    public let prompt: String?
+    public let resolution: String?
+    public let responseFormat: String?
+    public let storageOptions: [String: String]?
+    public let user: String?
+
+
+    public init(aspectRatio: String? = nil, deferred: Bool? = nil, image: XaiImageUrl? = nil, images: [XaiImageUrl]? = nil, model: String? = nil, n: Int? = nil, output: [String: String]? = nil, prompt: String? = nil, resolution: String? = nil, responseFormat: String? = nil, storageOptions: [String: String]? = nil, user: String? = nil) {
+        self.aspectRatio = aspectRatio
+        self.deferred = deferred
+        self.image = image
+        self.images = images
+        self.model = model
+        self.n = n
+        self.output = output
+        self.prompt = prompt
+        self.resolution = resolution
+        self.responseFormat = responseFormat
+        self.storageOptions = storageOptions
+        self.user = user
+    }
+}
+
+public struct XaiImageGenerationRequest: Codable {
+    public let aspectRatio: String?
+    public let deferred: Bool?
+    public let model: String?
+    public let n: Int?
+    public let output: [String: String]?
+    public let prompt: String?
+    public let resolution: String?
+    public let responseFormat: String?
+    public let storageOptions: [String: String]?
+    public let user: String?
+
+
+    public init(aspectRatio: String? = nil, deferred: Bool? = nil, model: String? = nil, n: Int? = nil, output: [String: String]? = nil, prompt: String? = nil, resolution: String? = nil, responseFormat: String? = nil, storageOptions: [String: String]? = nil, user: String? = nil) {
+        self.aspectRatio = aspectRatio
+        self.deferred = deferred
+        self.model = model
+        self.n = n
+        self.output = output
+        self.prompt = prompt
+        self.resolution = resolution
+        self.responseFormat = responseFormat
+        self.storageOptions = storageOptions
+        self.user = user
+    }
+}
+
+public struct XaiImageGenerationResponse: Codable {
+    public let data: [XaiGeneratedImage]?
+    public let usage: XaiUsage?
+
+
+    public init(data: [XaiGeneratedImage]? = nil, usage: XaiUsage? = nil) {
+        self.data = data
+        self.usage = usage
+    }
+}
+
+public struct XaiImageUrl: Codable {
+    public let fileId: String?
+    public let url: String?
+
+
+    public init(fileId: String? = nil, url: String? = nil) {
+        self.fileId = fileId
+        self.url = url
+    }
+}
+
+public struct XaiUsage: Codable {
+    public let completionTokens: Int?
+    public let costInUsdTicks: Int?
+    public let numSourcesUsed: Int?
+    public let promptTokens: Int?
+    public let totalTokens: Int?
+
+
+    public init(completionTokens: Int? = nil, costInUsdTicks: Int? = nil, numSourcesUsed: Int? = nil, promptTokens: Int? = nil, totalTokens: Int? = nil) {
+        self.completionTokens = completionTokens
+        self.costInUsdTicks = costInUsdTicks
+        self.numSourcesUsed = numSourcesUsed
+        self.promptTokens = promptTokens
+        self.totalTokens = totalTokens
+    }
+}
+
+public struct XaiVideoEditRequest: Codable {
+    public let model: String?
+    public let output: [String: String]?
+    public let prompt: String?
+    public let storageOptions: [String: String]?
+    public let user: String?
+    public let video: XaiVideoInput?
+
+
+    public init(model: String? = nil, output: [String: String]? = nil, prompt: String? = nil, storageOptions: [String: String]? = nil, user: String? = nil, video: XaiVideoInput? = nil) {
+        self.model = model
+        self.output = output
+        self.prompt = prompt
+        self.storageOptions = storageOptions
+        self.user = user
+        self.video = video
+    }
+}
+
+public struct XaiVideoExtensionRequest: Codable {
+    public let duration: Int?
+    public let model: String?
+    public let output: [String: String]?
+    public let prompt: String?
+    public let storageOptions: [String: String]?
+    public let video: XaiVideoInput?
+
+
+    public init(duration: Int? = nil, model: String? = nil, output: [String: String]? = nil, prompt: String? = nil, storageOptions: [String: String]? = nil, video: XaiVideoInput? = nil) {
+        self.duration = duration
+        self.model = model
+        self.output = output
+        self.prompt = prompt
+        self.storageOptions = storageOptions
+        self.video = video
+    }
+}
+
+public struct XaiVideoGenerationRequest: Codable {
+    public let aspectRatio: String?
+    public let duration: Int?
+    public let image: XaiImageUrl?
+    public let keyframes: [XaiImageUrl]?
+    public let model: String?
+    public let output: [String: String]?
+    public let prompt: String?
+    public let referenceAudios: [String]?
+    public let referenceImages: [XaiImageUrl]?
+    public let resolution: String?
+    public let storageOptions: [String: String]?
+    public let user: String?
+
+
+    public init(aspectRatio: String? = nil, duration: Int? = nil, image: XaiImageUrl? = nil, keyframes: [XaiImageUrl]? = nil, model: String? = nil, output: [String: String]? = nil, prompt: String? = nil, referenceAudios: [String]? = nil, referenceImages: [XaiImageUrl]? = nil, resolution: String? = nil, storageOptions: [String: String]? = nil, user: String? = nil) {
+        self.aspectRatio = aspectRatio
+        self.duration = duration
+        self.image = image
+        self.keyframes = keyframes
+        self.model = model
+        self.output = output
+        self.prompt = prompt
+        self.referenceAudios = referenceAudios
+        self.referenceImages = referenceImages
+        self.resolution = resolution
+        self.storageOptions = storageOptions
+        self.user = user
+    }
+}
+
+public struct XaiVideoGenerationTask: Codable {
+    public let error: [String: String]?
+    public let model: String?
+    public let progress: Int?
+    public let requestId: String?
+    public let status: String?
+    public let usage: XaiUsage?
+    public let video: XaiVideoUrl?
+
+
+    public init(error: [String: String]? = nil, model: String? = nil, progress: Int? = nil, requestId: String? = nil, status: String? = nil, usage: XaiUsage? = nil, video: XaiVideoUrl? = nil) {
+        self.error = error
+        self.model = model
+        self.progress = progress
+        self.requestId = requestId
+        self.status = status
+        self.usage = usage
+        self.video = video
+    }
+}
+
+public struct XaiVideoInput: Codable {
+    public let fileId: String?
+    public let url: String?
+
+
+    public init(fileId: String? = nil, url: String? = nil) {
+        self.fileId = fileId
+        self.url = url
+    }
+}
+
+public struct XaiVideoStartResponse: Codable {
+    public let requestId: String?
+
+
+    public init(requestId: String? = nil) {
+        self.requestId = requestId
+    }
+}
+
+public struct XaiVideoUrl: Codable {
+    public let duration: Int?
+    public let fileId: String?
+    public let url: String?
+
+
+    public init(duration: Int? = nil, fileId: String? = nil, url: String? = nil) {
+        self.duration = duration
+        self.fileId = fileId
+        self.url = url
+    }
+}
+
+public struct ZhipuContentFilter: Codable {
+    public let level: Int?
+    public let role: String?
+
+
+    public init(level: Int? = nil, role: String? = nil) {
+        self.level = level
+        self.role = role
+    }
+}
+
+public struct ZhipuImageGenerationRequest: Codable {
+    public let model: String?
+    public let prompt: String?
+    public let quality: String?
+    public let size: String?
+    public let userId: String?
+    public let watermarkEnabled: Bool?
+
+
+    public init(model: String? = nil, prompt: String? = nil, quality: String? = nil, size: String? = nil, userId: String? = nil, watermarkEnabled: Bool? = nil) {
+        self.model = model
+        self.prompt = prompt
+        self.quality = quality
+        self.size = size
+        self.userId = userId
+        self.watermarkEnabled = watermarkEnabled
+    }
+}
+
+public struct ZhipuImageGenerationResponse: Codable {
+    public let contentFilter: [ZhipuContentFilter]?
+    public let created: Int?
+    public let data: [ZhipuImageResult]?
+
+
+    public init(contentFilter: [ZhipuContentFilter]? = nil, created: Int? = nil, data: [ZhipuImageResult]? = nil) {
+        self.contentFilter = contentFilter
+        self.created = created
+        self.data = data
+    }
+}
+
+public struct ZhipuImageResult: Codable {
+    public let url: String?
+
+
+    public init(url: String? = nil) {
+        self.url = url
+    }
+}
+
+public struct ZhipuVideoGenerationRequest: Codable {
+    public let duration: Int?
+    public let fps: Int?
+    public let imageUrl: String?
+    public let model: String?
+    public let prompt: String?
+    public let quality: String?
+    public let requestId: String?
+    public let size: String?
+    public let userId: String?
+    public let watermarkEnabled: Bool?
+    public let withAudio: Bool?
+
+
+    public init(duration: Int? = nil, fps: Int? = nil, imageUrl: String? = nil, model: String? = nil, prompt: String? = nil, quality: String? = nil, requestId: String? = nil, size: String? = nil, userId: String? = nil, watermarkEnabled: Bool? = nil, withAudio: Bool? = nil) {
+        self.duration = duration
+        self.fps = fps
+        self.imageUrl = imageUrl
+        self.model = model
+        self.prompt = prompt
+        self.quality = quality
+        self.requestId = requestId
+        self.size = size
+        self.userId = userId
+        self.watermarkEnabled = watermarkEnabled
+        self.withAudio = withAudio
+    }
+}
+
+public struct ZhipuVideoGenerationTask: Codable {
+    public let created: Int?
+    public let id: String?
+    public let imageResult: [ZhipuImageResult]?
+    public let model: String?
+    public let requestId: String?
+    public let taskStatus: String?
+    public let videoResult: [ZhipuVideoResult]?
+
+
+    public init(created: Int? = nil, id: String? = nil, imageResult: [ZhipuImageResult]? = nil, model: String? = nil, requestId: String? = nil, taskStatus: String? = nil, videoResult: [ZhipuVideoResult]? = nil) {
+        self.created = created
+        self.id = id
+        self.imageResult = imageResult
+        self.model = model
+        self.requestId = requestId
+        self.taskStatus = taskStatus
+        self.videoResult = videoResult
+    }
+}
+
+public struct ZhipuVideoResult: Codable {
+    public let coverImageUrl: String?
+    public let url: String?
+
+
+    public init(coverImageUrl: String? = nil, url: String? = nil) {
+        self.coverImageUrl = coverImageUrl
+        self.url = url
     }
 }

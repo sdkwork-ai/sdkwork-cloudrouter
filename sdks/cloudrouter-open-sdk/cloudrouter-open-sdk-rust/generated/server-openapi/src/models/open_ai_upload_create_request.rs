@@ -6,6 +6,10 @@ pub struct OpenAiUploadCreateRequest {
     /// Total number of bytes in the upload.
     pub bytes: i64,
 
+    /// Upload expiration policy, for example `{anchor: created_at, seconds: 3600}`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expires_after: Option<std::collections::HashMap<String, String>>,
+
     /// Upload filename.
     pub filename: String,
 

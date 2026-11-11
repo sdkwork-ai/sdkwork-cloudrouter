@@ -6330,17 +6330,6 @@ html.light-mode .sdkwork-cloudrouter-auth-shell {
   width: auto;
 }
 
-.sdkwork-cloudrouter-auth-header-mark {
-  align-items: center;
-  background: rgb(var(--sdkwork-sidebar-accent-rgb));
-  border-radius: 6px;
-  color: #ffffff;
-  display: inline-flex;
-  height: 20px;
-  justify-content: center;
-  width: 20px;
-}
-
 .sdkwork-cloudrouter-auth-header-actions {
   align-items: center;
   display: inline-flex;

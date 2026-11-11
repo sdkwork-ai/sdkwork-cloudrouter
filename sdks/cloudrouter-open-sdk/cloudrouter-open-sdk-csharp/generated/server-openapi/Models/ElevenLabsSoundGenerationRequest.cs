@@ -8,7 +8,7 @@ namespace Sdkwork.CloudRouter.Open.Models
     {
         public double? DurationSeconds { get; set; }
         public bool? Loop { get; set; }
-        public string ModelId { get; set; }
+        public string? ModelId { get; set; }
         public double? PromptInfluence { get; set; }
         public string Text { get; set; }
     }

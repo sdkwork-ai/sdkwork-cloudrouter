@@ -2,10 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  DEFAULT_BRAND_LOGO_URL,
   DEFAULT_SITE_BRANDING,
   fetchSiteBranding,
   getCachedSiteBranding,
   resetSiteBrandingCache,
+  resolveBrandLogoUrl,
   watchSiteBrandingLocale,
 } from './packages/sdkwork-cloudroutes-pc-commons/src/siteBranding.ts';
 import { resetCloudRouterSdkClients } from './packages/sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts';
@@ -107,6 +109,44 @@ function installFakeLocalStorage(value: string | null): { restore: () => void } 
     },
   };
 }
+
+/**
+ * The navbar, footer, admin header and auth chrome all render through this resolver, so the
+ * "no logo published yet" and "the runtime read failed" states both have to resolve to the
+ * shipped mark. Returning an empty string is what used to leave a placeholder glyph in the
+ * chrome, which is why the fallback is asserted here rather than per component.
+ */
+test('brand logo resolution keeps a real mark before an operator publishes a logo', () => {
+  assert.equal(resolveBrandLogoUrl({ logo: undefined }), DEFAULT_BRAND_LOGO_URL);
+  assert.equal(resolveBrandLogoUrl({ logo: DEFAULT_SITE_BRANDING.logo }), DEFAULT_BRAND_LOGO_URL);
+  assert.equal(
+    resolveBrandLogoUrl({
+      logo: {
+        kind: 'image',
+        source: 'external_url',
+        publicUrl: 'https://cdn.example.com/published-logo.png',
+      },
+    }),
+    'https://cdn.example.com/published-logo.png',
+  );
+});
+
+/**
+ * `/admin/site` persists an uploaded logo as a Drive reference (`drive://...` plus a reader share
+ * token), which is not an HTTP URL. Answering with it puts a `drive://` value into an `<img src>`,
+ * so the browser shows a broken image and the operator concludes the upload did not save.
+ */
+test('an uploaded drive logo is never handed to the browser as its drive reference', () => {
+  const driveLogo = {
+    kind: 'image' as const,
+    source: 'drive' as const,
+    uri: 'drive://spaces/space-1/nodes/node-1',
+    id: 'node-1',
+    metadata: { drive: { spaceId: 'space-1', nodeId: 'node-1', shareToken: 'share-token' } },
+  };
+
+  assert.equal(resolveBrandLogoUrl({ logo: driveLogo }), DEFAULT_BRAND_LOGO_URL);
+});
 
 test('site branding fetch reads from the app system site runtime sdk surface', async () => {
   resetCloudRouterSdkClients();

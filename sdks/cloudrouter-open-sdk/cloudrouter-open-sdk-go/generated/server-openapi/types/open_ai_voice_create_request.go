@@ -1,8 +1,10 @@
 package types
 
-// OpenAI-compatible request to create a voice.
+// OpenAI-compatible request to create a voice from a prompt.
 type OpenAiVoiceCreateRequest struct {
-	Description string `json:"description"`
-	Metadata map[string]ProviderJsonValue `json:"metadata"`
+	Model string `json:"model"`
 	Name string `json:"name"`
+	Prompt string `json:"prompt"`
+	ScriptHint string `json:"script_hint"`
+	Type string `json:"type"`
 }

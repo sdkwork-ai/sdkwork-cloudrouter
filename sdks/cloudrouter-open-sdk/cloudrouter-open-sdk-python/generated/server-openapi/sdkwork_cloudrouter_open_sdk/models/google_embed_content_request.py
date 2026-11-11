@@ -10,6 +10,8 @@ if TYPE_CHECKING:
 class GoogleEmbedContentRequest:
     """Google Gemini google embed content request schema exposed by Cloud Router vendor routing."""
     content: GoogleContent
+    embed_content_config: Optional[Dict[str, str]] = None
+    model: Optional[str] = None
     output_dimensionality: Optional[int] = None
     task_type: Optional[str] = None
     title: Optional[str] = None

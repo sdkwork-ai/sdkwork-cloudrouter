@@ -7,6 +7,7 @@ type OpenAiAssistantUpdateRequest struct {
 	Metadata map[string]ProviderJsonValue `json:"metadata"`
 	Model string `json:"model"`
 	Name string `json:"name"`
+	ReasoningEffort string `json:"reasoning_effort"`
 	ResponseFormat ProviderJsonValue `json:"response_format"`
 	Temperature float64 `json:"temperature"`
 	ToolResources ProviderJsonValue `json:"tool_resources"`

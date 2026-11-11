@@ -2,26 +2,44 @@ package com.sdkwork.cloudrouter.open.model;
 
 
 public class VolcengineContentPart {
-    private String fileId;
-    private String imageUrl;
+    private ArkAudioSource audioUrl;
+    private ArkDraftTask draftTask;
+    private ArkImageSource imageUrl;
+    private String role;
     private String text;
     private String type;
-    private String videoUrl;
+    private ArkVideoSource videoUrl;
 
-    public String getFileId() {
-        return this.fileId;
+    public ArkAudioSource getAudioUrl() {
+        return this.audioUrl;
     }
 
-    public void setFileId(String fileId) {
-        this.fileId = fileId;
+    public void setAudioUrl(ArkAudioSource audioUrl) {
+        this.audioUrl = audioUrl;
     }
 
-    public String getImageUrl() {
+    public ArkDraftTask getDraftTask() {
+        return this.draftTask;
+    }
+
+    public void setDraftTask(ArkDraftTask draftTask) {
+        this.draftTask = draftTask;
+    }
+
+    public ArkImageSource getImageUrl() {
         return this.imageUrl;
     }
 
-    public void setImageUrl(String imageUrl) {
+    public void setImageUrl(ArkImageSource imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public String getRole() {
+        return this.role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public String getText() {
@@ -40,11 +58,11 @@ public class VolcengineContentPart {
         this.type = type;
     }
 
-    public String getVideoUrl() {
+    public ArkVideoSource getVideoUrl() {
         return this.videoUrl;
     }
 
-    public void setVideoUrl(String videoUrl) {
+    public void setVideoUrl(ArkVideoSource videoUrl) {
         this.videoUrl = videoUrl;
     }
 }

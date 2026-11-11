@@ -6,7 +6,6 @@ namespace Sdkwork.CloudRouter.Open.Models
 {
     public class OpenAiVoiceConsentUpdateRequest
     {
-        public Dictionary<string, string>? Metadata { get; set; }
         public string? Name { get; set; }
     }
 }

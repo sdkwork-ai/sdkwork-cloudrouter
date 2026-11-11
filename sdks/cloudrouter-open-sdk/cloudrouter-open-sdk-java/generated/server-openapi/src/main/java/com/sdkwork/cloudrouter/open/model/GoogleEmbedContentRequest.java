@@ -1,8 +1,11 @@
 package com.sdkwork.cloudrouter.open.model;
 
+import java.util.Map;
 
 public class GoogleEmbedContentRequest {
     private GoogleContent content;
+    private Map<String, String> embedContentConfig;
+    private String model;
     private Integer outputDimensionality;
     private String taskType;
     private String title;
@@ -13,6 +16,22 @@ public class GoogleEmbedContentRequest {
 
     public void setContent(GoogleContent content) {
         this.content = content;
+    }
+
+    public Map<String, String> getEmbedContentConfig() {
+        return this.embedContentConfig;
+    }
+
+    public void setEmbedContentConfig(Map<String, String> embedContentConfig) {
+        this.embedContentConfig = embedContentConfig;
+    }
+
+    public String getModel() {
+        return this.model;
+    }
+
+    public void setModel(String model) {
+        this.model = model;
     }
 
     public Integer getOutputDimensionality() {

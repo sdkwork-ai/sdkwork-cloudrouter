@@ -13,12 +13,12 @@ func NewAudioMinimaxApi(client *sdkhttp.Client) *AudioMinimaxApi {
     return &AudioMinimaxApi{client: client}
 }
 
-// Minimax create music generation
-func (a *AudioMinimaxApi) CreateV1MusicGeneration(body sdktypes.MiniMaxMusicGenerationRequest) (sdktypes.MiniMaxMusicGenerationResponse, error) {
-    raw, err := a.client.Post("/minimax/v1/music_generation", body, nil, nil, "application/json")
+// MiniMax speech synthesis
+func (a *AudioMinimaxApi) CreateV1T2aV(body sdktypes.MinimaxTextToSpeechRequest) (sdktypes.MinimaxTextToSpeechResponse, error) {
+    raw, err := a.client.Post("/minimax/v1/t2a_v2", body, nil, nil, "application/json")
     if err != nil {
-        var zero sdktypes.MiniMaxMusicGenerationResponse
+        var zero sdktypes.MinimaxTextToSpeechResponse
         return zero, err
     }
-    return decodeResult[sdktypes.MiniMaxMusicGenerationResponse](raw)
+    return decodeResult[sdktypes.MinimaxTextToSpeechResponse](raw)
 }

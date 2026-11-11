@@ -7,6 +7,7 @@ namespace Sdkwork.CloudRouter.Open.Models
     public class OpenAiUploadCreateRequest
     {
         public int Bytes { get; set; }
+        public Dictionary<string, string>? ExpiresAfter { get; set; }
         public string Filename { get; set; }
         public string MimeType { get; set; }
         public string Purpose { get; set; }

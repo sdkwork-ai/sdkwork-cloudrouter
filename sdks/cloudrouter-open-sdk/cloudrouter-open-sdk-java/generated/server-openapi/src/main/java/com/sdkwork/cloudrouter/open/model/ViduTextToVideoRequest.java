@@ -3,14 +3,19 @@ package com.sdkwork.cloudrouter.open.model;
 
 public class ViduTextToVideoRequest {
     private String aspectRatio;
+    private Boolean audio;
     private String callbackUrl;
     private Integer duration;
+    private String metaData;
     private String model;
-    private String movementAmplitude;
+    private Boolean offPeak;
     private String payload;
     private String prompt;
     private String resolution;
     private Integer seed;
+    private Boolean watermark;
+    private Integer wmPosition;
+    private String wmUrl;
 
     public String getAspectRatio() {
         return this.aspectRatio;
@@ -18,6 +23,14 @@ public class ViduTextToVideoRequest {
 
     public void setAspectRatio(String aspectRatio) {
         this.aspectRatio = aspectRatio;
+    }
+
+    public Boolean getAudio() {
+        return this.audio;
+    }
+
+    public void setAudio(Boolean audio) {
+        this.audio = audio;
     }
 
     public String getCallbackUrl() {
@@ -36,6 +49,14 @@ public class ViduTextToVideoRequest {
         this.duration = duration;
     }
 
+    public String getMetaData() {
+        return this.metaData;
+    }
+
+    public void setMetaData(String metaData) {
+        this.metaData = metaData;
+    }
+
     public String getModel() {
         return this.model;
     }
@@ -44,12 +65,12 @@ public class ViduTextToVideoRequest {
         this.model = model;
     }
 
-    public String getMovementAmplitude() {
-        return this.movementAmplitude;
+    public Boolean getOffPeak() {
+        return this.offPeak;
     }
 
-    public void setMovementAmplitude(String movementAmplitude) {
-        this.movementAmplitude = movementAmplitude;
+    public void setOffPeak(Boolean offPeak) {
+        this.offPeak = offPeak;
     }
 
     public String getPayload() {
@@ -82,5 +103,29 @@ public class ViduTextToVideoRequest {
 
     public void setSeed(Integer seed) {
         this.seed = seed;
+    }
+
+    public Boolean getWatermark() {
+        return this.watermark;
+    }
+
+    public void setWatermark(Boolean watermark) {
+        this.watermark = watermark;
+    }
+
+    public Integer getWmPosition() {
+        return this.wmPosition;
+    }
+
+    public void setWmPosition(Integer wmPosition) {
+        this.wmPosition = wmPosition;
+    }
+
+    public String getWmUrl() {
+        return this.wmUrl;
+    }
+
+    public void setWmUrl(String wmUrl) {
+        this.wmUrl = wmUrl;
     }
 }

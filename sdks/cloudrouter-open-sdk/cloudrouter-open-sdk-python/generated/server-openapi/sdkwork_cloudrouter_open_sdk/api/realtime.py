@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import OpenAiRealtimeCall, OpenAiRealtimeCallActionRequest, OpenAiRealtimeCallCreateRequest, OpenAiRealtimeCallReferRequest, OpenAiRealtimeClientSecret, OpenAiRealtimeClientSecretCreateRequest, OpenAiRealtimeSession, OpenAiRealtimeSessionCreateRequest, OpenAiRealtimeTranscriptionSession, OpenAiRealtimeTranscriptionSessionCreateRequest, OpenAiRealtimeTranslationSession, OpenAiRealtimeTranslationSessionCreateRequest
+from ..models import OpenAiRealtimeCall, OpenAiRealtimeCallActionRequest, OpenAiRealtimeCallCreateRequest, OpenAiRealtimeCallReferRequest, OpenAiRealtimeCallRejectRequest, OpenAiRealtimeClientSecret, OpenAiRealtimeClientSecretCreateRequest, OpenAiRealtimeSession, OpenAiRealtimeSessionCreateRequest, OpenAiRealtimeTranscriptionSession, OpenAiRealtimeTranscriptionSessionCreateRequest, OpenAiRealtimeTranslationSession, OpenAiRealtimeTranslationSessionCreateRequest
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -89,15 +89,15 @@ class RealtimeApi:
         """Accept realtime call"""
         return self._client.post(f"/v1/realtime/calls/{serialize_path_parameter(call_id, {'name': 'call_id', 'style': 'simple', 'explode': False})}/accept", json=body)
 
-    def create_calls_hangup(self, call_id: str, body: OpenAiRealtimeCallActionRequest) -> OpenAiRealtimeCall:
+    def create_calls_hangup(self, call_id: str) -> OpenAiRealtimeCall:
         """Hang up realtime call"""
-        return self._client.post(f"/v1/realtime/calls/{serialize_path_parameter(call_id, {'name': 'call_id', 'style': 'simple', 'explode': False})}/hangup", json=body)
+        return self._client.post(f"/v1/realtime/calls/{serialize_path_parameter(call_id, {'name': 'call_id', 'style': 'simple', 'explode': False})}/hangup")
 
     def create_calls_refer(self, call_id: str, body: OpenAiRealtimeCallReferRequest) -> OpenAiRealtimeCall:
         """Refer realtime call"""
         return self._client.post(f"/v1/realtime/calls/{serialize_path_parameter(call_id, {'name': 'call_id', 'style': 'simple', 'explode': False})}/refer", json=body)
 
-    def create_calls_reject(self, call_id: str, body: OpenAiRealtimeCallActionRequest) -> OpenAiRealtimeCall:
+    def create_calls_reject(self, call_id: str, body: OpenAiRealtimeCallRejectRequest) -> OpenAiRealtimeCall:
         """Reject realtime call"""
         return self._client.post(f"/v1/realtime/calls/{serialize_path_parameter(call_id, {'name': 'call_id', 'style': 'simple', 'explode': False})}/reject", json=body)
 

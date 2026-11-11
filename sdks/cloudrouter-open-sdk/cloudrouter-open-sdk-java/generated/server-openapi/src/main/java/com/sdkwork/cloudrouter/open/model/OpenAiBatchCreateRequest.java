@@ -7,6 +7,7 @@ public class OpenAiBatchCreateRequest {
     private String endpoint;
     private String inputFileId;
     private Map<String, String> metadata;
+    private Map<String, String> outputExpiresAfter;
 
     public String getCompletionWindow() {
         return this.completionWindow;
@@ -38,5 +39,13 @@ public class OpenAiBatchCreateRequest {
 
     public void setMetadata(Map<String, String> metadata) {
         this.metadata = metadata;
+    }
+
+    public Map<String, String> getOutputExpiresAfter() {
+        return this.outputExpiresAfter;
+    }
+
+    public void setOutputExpiresAfter(Map<String, String> outputExpiresAfter) {
+        this.outputExpiresAfter = outputExpiresAfter;
     }
 }

@@ -1,12 +1,8 @@
 package types
 
-// OpenAI-compatible request to extend a video.
+// OpenAI-compatible request to extend a video (`POST /v1/videos/extensions`).
 type OpenAiVideoExtendRequest struct {
-	Image ProviderJsonValue `json:"image"`
-	Metadata map[string]ProviderJsonValue `json:"metadata"`
-	Model string `json:"model"`
 	Prompt string `json:"prompt"`
-	Seconds int `json:"seconds"`
-	Size string `json:"size"`
+	Seconds string `json:"seconds"`
 	Video ProviderJsonValue `json:"video"`
 }

@@ -3,28 +3,18 @@ package com.sdkwork.cloudrouter.open.model;
 import java.util.Map;
 
 public class OpenAiVideoCreateRequest {
-    private String image;
-    private Map<String, String> metadata;
+    private Map<String, String> inputReference;
     private String model;
     private String prompt;
-    private Integer seconds;
+    private String seconds;
     private String size;
-    private String video;
 
-    public String getImage() {
-        return this.image;
+    public Map<String, String> getInputReference() {
+        return this.inputReference;
     }
 
-    public void setImage(String image) {
-        this.image = image;
-    }
-
-    public Map<String, String> getMetadata() {
-        return this.metadata;
-    }
-
-    public void setMetadata(Map<String, String> metadata) {
-        this.metadata = metadata;
+    public void setInputReference(Map<String, String> inputReference) {
+        this.inputReference = inputReference;
     }
 
     public String getModel() {
@@ -43,11 +33,11 @@ public class OpenAiVideoCreateRequest {
         this.prompt = prompt;
     }
 
-    public Integer getSeconds() {
+    public String getSeconds() {
         return this.seconds;
     }
 
-    public void setSeconds(Integer seconds) {
+    public void setSeconds(String seconds) {
         this.seconds = seconds;
     }
 
@@ -57,13 +47,5 @@ public class OpenAiVideoCreateRequest {
 
     public void setSize(String size) {
         this.size = size;
-    }
-
-    public String getVideo() {
-        return this.video;
-    }
-
-    public void setVideo(String video) {
-        this.video = video;
     }
 }

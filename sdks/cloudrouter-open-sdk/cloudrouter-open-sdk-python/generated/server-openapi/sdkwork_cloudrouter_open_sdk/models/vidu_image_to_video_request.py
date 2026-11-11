@@ -8,11 +8,16 @@ class ViduImageToVideoRequest:
     """Vidu vidu image to video request schema exposed by Cloud Router vendor routing."""
     images: List[str]
     model: str
-    aspect_ratio: Optional[str] = None
+    audio: Optional[bool] = None
     callback_url: Optional[str] = None
     duration: Optional[int] = None
-    movement_amplitude: Optional[str] = None
+    is_rec: Optional[bool] = None
+    meta_data: Optional[str] = None
+    off_peak: Optional[bool] = None
     payload: Optional[str] = None
     prompt: Optional[str] = None
     resolution: Optional[str] = None
     seed: Optional[int] = None
+    watermark: Optional[bool] = None
+    wm_position: Optional[int] = None
+    wm_url: Optional[str] = None

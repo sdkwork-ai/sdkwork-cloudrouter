@@ -1202,7 +1202,9 @@ test("footer renders configurable site branding and copyright", () => {
     "useSiteBranding()",
     "siteBranding.siteName",
     "siteBranding.footerCopyright",
-    "siteBranding.logo",
+    // The mark is rendered through the shared brand mark, which owns the
+    // operator-logo/default-logo decision for every surface.
+    "<BrandMark branding={siteBranding} size=\"lg\" />",
     "siteBranding.icpRecordNumber",
     "siteBranding.icpRecordUrl",
     "siteBranding.policeRecordNumber",

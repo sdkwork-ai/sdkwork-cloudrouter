@@ -2,6 +2,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
+if TYPE_CHECKING:
+    from .open_ai_stream_options import OpenAiStreamOptions
+
 
 @dataclass
 class OpenAiCompletionCreateRequest:
@@ -19,6 +22,7 @@ class OpenAiCompletionCreateRequest:
     seed: Optional[int] = None
     stop: Optional[str] = None
     stream: Optional[bool] = None
+    stream_options: Optional[OpenAiStreamOptions] = None
     suffix: Optional[str] = None
     temperature: Optional[float] = None
     top_p: Optional[float] = None

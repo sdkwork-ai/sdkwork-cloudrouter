@@ -12,6 +12,14 @@ pub struct OpenAiThreadAndRunCreateRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub instructions: Option<String>,
 
+    /// Maximum completion tokens.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_completion_tokens: Option<i64>,
+
+    /// Maximum prompt tokens before truncation.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_prompt_tokens: Option<i64>,
+
     /// Developer-defined run metadata.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<std::collections::HashMap<String, String>>,
@@ -20,15 +28,43 @@ pub struct OpenAiThreadAndRunCreateRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
 
+    /// Whether the model may call tools in parallel.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parallel_tool_calls: Option<bool>,
+
+    /// Run response format configuration.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub response_format: Option<String>,
+
     /// Whether to stream run events.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stream: Option<bool>,
+
+    /// Sampling temperature.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub temperature: Option<f64>,
 
     /// Thread field on the open ai thread and run create request, using the open ai thread create request module.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thread: Option<OpenAiThreadCreateRequest>,
 
+    /// Tool choice configuration.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_choice: Option<String>,
+
+    /// Resources available to assistant tools.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_resources: Option<String>,
+
     /// Tool definitions available to the run.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tools: Option<Vec<String>>,
+
+    /// Nucleus sampling probability mass.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub top_p: Option<f64>,
+
+    /// Context truncation strategy.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub truncation_strategy: Option<String>,
 }

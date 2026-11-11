@@ -12,5 +12,10 @@ pub struct OpenAiVectorStoreFileBatchCreateRequest {
     pub chunking_strategy: Option<String>,
 
     /// File identifiers to attach to the vector store.
-    pub file_ids: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file_ids: Option<Vec<String>>,
+
+    /// Inline file payloads to attach.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub files: Option<Vec<std::collections::HashMap<String, String>>>,
 }

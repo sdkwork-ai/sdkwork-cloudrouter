@@ -6,6 +6,7 @@ data class OpenAiAssistantCreateRequest(
     val metadata: Map<String, String>? = null,
     val model: String? = null,
     val name: String? = null,
+    val reasoningEffort: String? = null,
     val responseFormat: String? = null,
     val temperature: Double? = null,
     val toolResources: String? = null,

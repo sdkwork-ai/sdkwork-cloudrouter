@@ -15,4 +15,8 @@ pub struct OpenAiBatchCreateRequest {
     /// Developer-defined batch metadata.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<std::collections::HashMap<String, String>>,
+
+    /// Expiration policy for batch output files, for example `{anchor: created_at, seconds: 259200}`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output_expires_after: Option<std::collections::HashMap<String, String>>,
 }

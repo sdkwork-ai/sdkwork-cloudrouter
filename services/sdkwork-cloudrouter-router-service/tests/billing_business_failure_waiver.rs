@@ -232,3 +232,76 @@ async fn an_empty_error_object_is_not_a_failure() {
     assert_eq!("1", invocation.usage.lines[0].quantity.billable_quantity);
     assert!(invocation.charging.waived.is_none());
 }
+
+/// PixVerse：HTTP 200 + `ErrCode != 0` 是业务失败，不能按 1 条收。
+#[tokio::test]
+async fn a_pixverse_errcode_is_waived() {
+    let invocation = invocation(json!({
+        "ErrCode": 1000000,
+        "ErrMsg": "invalid model",
+        "Resp": null
+    }))
+    .await;
+    assert!(invocation.usage.lines.is_empty());
+    assert_eq!(
+        Some("provider_business_failure"),
+        invocation.charging.waived.as_deref()
+    );
+}
+
+/// 对照：PixVerse `ErrCode: 0` 正常返回视频 URL ⇒ 计 1 条。
+#[tokio::test]
+async fn a_pixverse_success_still_bills() {
+    let invocation = invocation(json!({
+        "ErrCode": 0,
+        "ErrMsg": "success",
+        "Resp": {"video_id": 123, "credits": 30}
+    }))
+    .await;
+    assert_eq!(1, invocation.usage.lines.len());
+    assert!(invocation.charging.waived.is_none());
+}
+
+/// DashScope：`output.task_status = FAILED` ⇒ waive。
+#[tokio::test]
+async fn a_dashscope_failed_task_is_waived() {
+    let invocation = invocation(json!({
+        "request_id": "req-1",
+        "output": {"task_id": "t1", "task_status": "FAILED", "code": "InvalidParameter"}
+    }))
+    .await;
+    assert!(invocation.usage.lines.is_empty());
+    assert_eq!(
+        Some("provider_business_failure"),
+        invocation.charging.waived.as_deref()
+    );
+}
+
+/// Luma：`state = failed` ⇒ waive。
+#[tokio::test]
+async fn a_luma_failed_generation_is_waived() {
+    let invocation = invocation(json!({
+        "id": "gen_1",
+        "state": "failed",
+        "failure_reason": "moderation"
+    }))
+    .await;
+    assert!(invocation.usage.lines.is_empty());
+    assert_eq!(
+        Some("provider_business_failure"),
+        invocation.charging.waived.as_deref()
+    );
+}
+
+/// 对照：Luma `state = completed` + assets ⇒ 计 1 条。
+#[tokio::test]
+async fn a_luma_completed_generation_still_bills() {
+    let invocation = invocation(json!({
+        "id": "gen_1",
+        "state": "completed",
+        "assets": {"video": "https://example.test/v.mp4"}
+    }))
+    .await;
+    assert_eq!(1, invocation.usage.lines.len());
+    assert!(invocation.charging.waived.is_none());
+}

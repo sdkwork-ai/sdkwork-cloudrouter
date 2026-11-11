@@ -13,6 +13,11 @@ if TYPE_CHECKING:
 class GoogleTool:
     """Google Gemini google tool schema exposed by Cloud Router vendor routing."""
     code_execution: Optional[GoogleCodeExecutionTool] = None
+    computer_use: Optional[Dict[str, str]] = None
+    file_search: Optional[Dict[str, str]] = None
     function_declarations: Optional[List[GoogleFunctionDeclaration]] = None
+    google_maps: Optional[Dict[str, str]] = None
     google_search: Optional[GoogleSearchTool] = None
+    google_search_retrieval: Optional[Dict[str, str]] = None
+    mcp_servers: Optional[List[Dict[str, str]]] = None
     url_context: Optional[GoogleUrlContextTool] = None

@@ -1,11 +1,9 @@
 package com.sdkwork.cloudrouter.open
 
 data class OpenAiVideoCreateRequest(
-    val image: String? = null,
-    val metadata: Map<String, String>? = null,
+    val inputReference: Map<String, String>? = null,
     val model: String? = null,
     val prompt: String? = null,
-    val seconds: Int? = null,
-    val size: String? = null,
-    val video: String? = null
+    val seconds: String? = null,
+    val size: String? = null
 )

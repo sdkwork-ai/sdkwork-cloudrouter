@@ -3,33 +3,59 @@ package com.sdkwork.cloudrouter.open.model;
 import java.util.List;
 
 public class VolcengineContentGenerationTask {
-    private List<VolcengineContentPart> content;
-    private String createdAt;
+    private ArkVideoTaskContent content;
+    private Integer createdAt;
+    private Boolean draft;
+    private Integer duration;
     private ProviderTaskError error;
+    private Integer executionExpiresAfter;
+    private Integer frames;
+    private Integer framespersecond;
+    private Boolean generateAudio;
     private String id;
     private String model;
-    private String prompt;
-    private ProviderTaskResult result;
-    private String state;
+    private String outputFormat;
+    private Integer priority;
+    private String ratio;
+    private String resolution;
+    private String safetyIdentifier;
+    private Integer seed;
+    private String serviceTier;
     private String status;
-    private String taskId;
-    private String updatedAt;
-    private List<ProviderGeneratedMedia> videos;
+    private List<ArkWebSearchTool> tools;
+    private Integer updatedAt;
+    private ArkVideoUsage usage;
 
-    public List<VolcengineContentPart> getContent() {
+    public ArkVideoTaskContent getContent() {
         return this.content;
     }
 
-    public void setContent(List<VolcengineContentPart> content) {
+    public void setContent(ArkVideoTaskContent content) {
         this.content = content;
     }
 
-    public String getCreatedAt() {
+    public Integer getCreatedAt() {
         return this.createdAt;
     }
 
-    public void setCreatedAt(String createdAt) {
+    public void setCreatedAt(Integer createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Boolean getDraft() {
+        return this.draft;
+    }
+
+    public void setDraft(Boolean draft) {
+        this.draft = draft;
+    }
+
+    public Integer getDuration() {
+        return this.duration;
+    }
+
+    public void setDuration(Integer duration) {
+        this.duration = duration;
     }
 
     public ProviderTaskError getError() {
@@ -38,6 +64,38 @@ public class VolcengineContentGenerationTask {
 
     public void setError(ProviderTaskError error) {
         this.error = error;
+    }
+
+    public Integer getExecutionExpiresAfter() {
+        return this.executionExpiresAfter;
+    }
+
+    public void setExecutionExpiresAfter(Integer executionExpiresAfter) {
+        this.executionExpiresAfter = executionExpiresAfter;
+    }
+
+    public Integer getFrames() {
+        return this.frames;
+    }
+
+    public void setFrames(Integer frames) {
+        this.frames = frames;
+    }
+
+    public Integer getFramespersecond() {
+        return this.framespersecond;
+    }
+
+    public void setFramespersecond(Integer framespersecond) {
+        this.framespersecond = framespersecond;
+    }
+
+    public Boolean getGenerateAudio() {
+        return this.generateAudio;
+    }
+
+    public void setGenerateAudio(Boolean generateAudio) {
+        this.generateAudio = generateAudio;
     }
 
     public String getId() {
@@ -56,28 +114,60 @@ public class VolcengineContentGenerationTask {
         this.model = model;
     }
 
-    public String getPrompt() {
-        return this.prompt;
+    public String getOutputFormat() {
+        return this.outputFormat;
     }
 
-    public void setPrompt(String prompt) {
-        this.prompt = prompt;
+    public void setOutputFormat(String outputFormat) {
+        this.outputFormat = outputFormat;
     }
 
-    public ProviderTaskResult getResult() {
-        return this.result;
+    public Integer getPriority() {
+        return this.priority;
     }
 
-    public void setResult(ProviderTaskResult result) {
-        this.result = result;
+    public void setPriority(Integer priority) {
+        this.priority = priority;
     }
 
-    public String getState() {
-        return this.state;
+    public String getRatio() {
+        return this.ratio;
     }
 
-    public void setState(String state) {
-        this.state = state;
+    public void setRatio(String ratio) {
+        this.ratio = ratio;
+    }
+
+    public String getResolution() {
+        return this.resolution;
+    }
+
+    public void setResolution(String resolution) {
+        this.resolution = resolution;
+    }
+
+    public String getSafetyIdentifier() {
+        return this.safetyIdentifier;
+    }
+
+    public void setSafetyIdentifier(String safetyIdentifier) {
+        this.safetyIdentifier = safetyIdentifier;
+    }
+
+    public Integer getSeed() {
+        return this.seed;
+    }
+
+    public void setSeed(Integer seed) {
+        this.seed = seed;
+    }
+
+    public String getServiceTier() {
+        return this.serviceTier;
+    }
+
+    public void setServiceTier(String serviceTier) {
+        this.serviceTier = serviceTier;
     }
 
     public String getStatus() {
@@ -88,27 +178,27 @@ public class VolcengineContentGenerationTask {
         this.status = status;
     }
 
-    public String getTaskId() {
-        return this.taskId;
+    public List<ArkWebSearchTool> getTools() {
+        return this.tools;
     }
 
-    public void setTaskId(String taskId) {
-        this.taskId = taskId;
+    public void setTools(List<ArkWebSearchTool> tools) {
+        this.tools = tools;
     }
 
-    public String getUpdatedAt() {
+    public Integer getUpdatedAt() {
         return this.updatedAt;
     }
 
-    public void setUpdatedAt(String updatedAt) {
+    public void setUpdatedAt(Integer updatedAt) {
         this.updatedAt = updatedAt;
     }
 
-    public List<ProviderGeneratedMedia> getVideos() {
-        return this.videos;
+    public ArkVideoUsage getUsage() {
+        return this.usage;
     }
 
-    public void setVideos(List<ProviderGeneratedMedia> videos) {
-        this.videos = videos;
+    public void setUsage(ArkVideoUsage usage) {
+        this.usage = usage;
     }
 }

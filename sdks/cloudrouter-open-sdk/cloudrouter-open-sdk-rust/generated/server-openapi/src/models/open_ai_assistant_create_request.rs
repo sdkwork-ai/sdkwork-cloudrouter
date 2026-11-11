@@ -22,6 +22,10 @@ pub struct OpenAiAssistantCreateRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 
+    /// Reasoning effort for reasoning models.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reasoning_effort: Option<String>,
+
     /// Assistant response format configuration.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub response_format: Option<String>,

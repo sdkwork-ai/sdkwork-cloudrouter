@@ -13,15 +13,37 @@ pub struct GoogleGenerateContentRequest {
     /// Conversation contents sent to the Gemini model.
     pub contents: Vec<GoogleContent>,
 
+    /// Opaque continuation token used to resume generation from a previous request.
+    #[serde(rename = "continuationToken")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub continuation_token: Option<String>,
+
     /// Generation config field on the google generate content request, using the google generation config module.
     #[serde(rename = "generationConfig")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub generation_config: Option<GoogleGenerationConfig>,
 
+    /// User-defined labels attached to the request.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub labels: Option<std::collections::HashMap<String, String>>,
+
+    /// Model resource name, `models/{model}`; the path parameter is authoritative when both are present.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+
     /// Safety settings overriding model defaults.
     #[serde(rename = "safetySettings")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub safety_settings: Option<Vec<GoogleSafetySetting>>,
+
+    /// Service tier of the request.
+    #[serde(rename = "serviceTier")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub service_tier: Option<String>,
+
+    /// Logging behavior for this request; takes precedence over the project default.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub store: Option<bool>,
 
     /// System instruction field on the google generate content request, using the google content module.
     #[serde(rename = "systemInstruction")]

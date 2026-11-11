@@ -28,7 +28,7 @@
     },
     {
       "path": "lib/ai_client.dart",
-      "sha256": "9deaa55d28baedb3a7287e412fa10083c734b74ee97b2aebe40adc2dd3a20565"
+      "sha256": "04002f80c6ddb41a418e1c703b5f5f025bfdc6831c642aba914277dfae7a851d"
     },
     {
       "path": "lib/cloudrouter_open_sdk.dart",
@@ -36,23 +36,39 @@
     },
     {
       "path": "lib/src/api/api.dart",
-      "sha256": "3feaf563c009dc93a8b2d37de8353353ed4785e8005963109329efe49dac47ba"
+      "sha256": "ca0cc915b7bcd1943a817ab845e424760c380ba46f2d6e731d07cd2811ba614f"
     },
     {
       "path": "lib/src/api/assistants.dart",
       "sha256": "776f38cfc5a7d4cbf03ef80b595b87bd147b744f92508d04d0adae98f2432e30"
     },
     {
+      "path": "lib/src/api/audio_alibaba.dart",
+      "sha256": "6a9c3765b8cd03fba56e84247bc5ff2ccef26619ed6f2b0bd177da7895ffab93"
+    },
+    {
+      "path": "lib/src/api/audio_bytedance.dart",
+      "sha256": "6f303729e6fb65bc396635a94a4fd555de4e4b88c62f7a373363474b1557583c"
+    },
+    {
       "path": "lib/src/api/audio_elevenlabs.dart",
       "sha256": "999101b64167229f43ecd2fb825cf66b147af8179741be26d918ccb9c6a2964d"
     },
     {
-      "path": "lib/src/api/audio_minimax.dart",
-      "sha256": "4caa3798276e0a003791db4c57362d52aab4e7c55b15c6abaecde2cd9712c9cf"
+      "path": "lib/src/api/audio_kling.dart",
+      "sha256": "621b7e7e9eb6b4cedf0874fe1b19adb743258a239f3034fc2b478059f18469b9"
     },
     {
-      "path": "lib/src/api/audio_suno.dart",
-      "sha256": "72646d5bcb724053ebac04fc4f361ee2f7a33916fec3d7012d5aa910adcc0a06"
+      "path": "lib/src/api/audio_minimax.dart",
+      "sha256": "253c59131a0afee614ad9ec8c9b190cd4d61f81511e9fcc91c2be17af9274fc2"
+    },
+    {
+      "path": "lib/src/api/audio_stability_ai.dart",
+      "sha256": "d7f9e254149fb0a9409b6ba6b8406794e829a3f725ccbff289d46ea5e160651f"
+    },
+    {
+      "path": "lib/src/api/audio_vidu.dart",
+      "sha256": "fd835e1d3d4e1951e0a8816fb28c381b09546422fbfc417c1afb0e37db6cc8ec"
     },
     {
       "path": "lib/src/api/audio_volcengine.dart",
@@ -64,7 +80,7 @@
     },
     {
       "path": "lib/src/api/batches_anthropic.dart",
-      "sha256": "72ff8aec3a27bf18a173620e3aab8f9f6aa5a51ded227aa092ee9bec133746e7"
+      "sha256": "e244f6b30fc1a2dd7ff0f819a22f32ecf49443bf803791478842d2bc98fea7ee"
     },
     {
       "path": "lib/src/api/batches.dart",
@@ -72,11 +88,15 @@
     },
     {
       "path": "lib/src/api/chat_anthropic.dart",
-      "sha256": "fc2433a1a1d48912287501b91dc24725967f2e768c20be3e303b8d796312b69a"
+      "sha256": "59c10620974eb854489f565bf7d10d133977bd5a216d6aae671db686d9473ea4"
     },
     {
       "path": "lib/src/api/chat_google.dart",
       "sha256": "acf3ecbf9b723db19df8a6b2c3551f54c3346fd41224703fa90a4bbb26145e54"
+    },
+    {
+      "path": "lib/src/api/chat_typesafe.dart",
+      "sha256": "8e02019fb6386bd11e7d32a287c77b624a7a81b96511dbc170e54a628d67a517"
     },
     {
       "path": "lib/src/api/chat.dart",
@@ -104,7 +124,7 @@
     },
     {
       "path": "lib/src/api/files_anthropic.dart",
-      "sha256": "746dc1876fbb5ca1319f465489f1bb64563fff34bea0e6030cadb50f518d8adf"
+      "sha256": "d70bd633046e844fcb09cdec0a43db9d8e9d6fa3dcf19300c3a08fc9220fc461"
     },
     {
       "path": "lib/src/api/files_google.dart",
@@ -115,16 +135,52 @@
       "sha256": "624bfda06b5c3827ab3311ae7d3bac86ee3ad4a545a5c9e7c70b012cc4666835"
     },
     {
-      "path": "lib/src/api/images_midjourney.dart",
-      "sha256": "e3c3cab43f8f91337f7b61b079dfdae0d7954775f17d358bb724c50927755d64"
+      "path": "lib/src/api/images_alibaba.dart",
+      "sha256": "57b7b40f834bc1077c308ccd3ab4bbad2b9d32fbae360174d76788abb751bbd4"
     },
     {
-      "path": "lib/src/api/images_nano_banana.dart",
-      "sha256": "b54200897e7b5b9c41c54d3effd61f41e07676acf311fa2306691ace4aa64ea5"
+      "path": "lib/src/api/images_black_forest_labs.dart",
+      "sha256": "5deb1579e53acaf969991b8c8ccb246c8105aea82c6d9541e33151eda1e1f7b7"
+    },
+    {
+      "path": "lib/src/api/images_bytedance.dart",
+      "sha256": "96cbb5f703b3ce7669bbfcd54fe4d3cbacebdcd529f16dc260660a7b1abecfd4"
+    },
+    {
+      "path": "lib/src/api/images_google.dart",
+      "sha256": "1d070ba85ae312aad169ff9262a9622c728e9a80fc0e6df39a29ab14fe105451"
+    },
+    {
+      "path": "lib/src/api/images_kling.dart",
+      "sha256": "7171ea3c71b4a9d181600094f44730f90609535d61061068668ca95d77d1401a"
+    },
+    {
+      "path": "lib/src/api/images_minimax.dart",
+      "sha256": "75a62a5f75ec4872887e54771238f65f0120794ca077ac9c564e09fd5cd13462"
+    },
+    {
+      "path": "lib/src/api/images_runway.dart",
+      "sha256": "378a5e736201fd6b4304abde6542f2208a6093228738b37b29ac5b4a97fe4039"
+    },
+    {
+      "path": "lib/src/api/images_stability_ai.dart",
+      "sha256": "5b5e612b24dc3254c18a570c733bdecaa062bba6cd77ab896d2a651153ec44a7"
     },
     {
       "path": "lib/src/api/images_vidu.dart",
       "sha256": "e8589867495c6f9667fa26a92e45f592b95ca5c9b74269708af93b87d7997c54"
+    },
+    {
+      "path": "lib/src/api/images_volcengine.dart",
+      "sha256": "096fea400164dbf3d56a777a843936f65ad384ed83badb87fcc47aafbe2d8502"
+    },
+    {
+      "path": "lib/src/api/images_xai.dart",
+      "sha256": "ea0b33a7fd9dc933540ce5bcdf84f1a319171a53ee4df42f41e6b84502e816db"
+    },
+    {
+      "path": "lib/src/api/images_zhipu.dart",
+      "sha256": "812b46f9f77d8e166dc3be8bcb78d709e0e0eb8a6e34f59760299ea827035fed"
     },
     {
       "path": "lib/src/api/images.dart",
@@ -139,12 +195,28 @@
       "sha256": "55b84e84e7fea301940797883f787486b2d5fc5cb228657ea3dd7d504366363c"
     },
     {
+      "path": "lib/src/api/music_elevenlabs.dart",
+      "sha256": "13bd2615dac92936ad7bb3e9bcba083ac16271fd018cf4b4eee4fad307490cf2"
+    },
+    {
+      "path": "lib/src/api/music_minimax.dart",
+      "sha256": "99117f5ab85be9e7249d7c0e43810a069d174299feb2a5c2401086557795b844"
+    },
+    {
+      "path": "lib/src/api/music_mureka.dart",
+      "sha256": "00b18c9868bf98763c025b8ea1765956ebb1e4b6d05bbcfac7ac8cf69b10f4ab"
+    },
+    {
+      "path": "lib/src/api/music_suno.dart",
+      "sha256": "e0a72c27c4421c8cab6f93d2d732ab715f44786464e215b2dc1ae9c9cb9f7117"
+    },
+    {
       "path": "lib/src/api/paths.dart",
       "sha256": "2664ad9d1f5759b4d0d27888e8f195b604d5fe973b5f4ed65ae693681cee300c"
     },
     {
       "path": "lib/src/api/realtime.dart",
-      "sha256": "fbf5bbec85e60a42ab5a0504c55aa2fe197162c1b7f62b25f1f9fe70b03e167a"
+      "sha256": "c2cc3e5f7088faed430574e7ca452f26fa54192e4e58b76605f86997b23ca029"
     },
     {
       "path": "lib/src/api/response_helpers.dart",
@@ -163,6 +235,10 @@
       "sha256": "d4bd484f7c2185023bd7cbf947a16f160e7e9a069c032e29a50ff8c84b653310"
     },
     {
+      "path": "lib/src/api/tool.dart",
+      "sha256": "339d76322c935c6ea8e239444491c27bcd00c9d88148ed4218184f89d9f4df6d"
+    },
+    {
       "path": "lib/src/api/uploads.dart",
       "sha256": "aa225923499042088ae4f92a89599f7f8451480970cec18b1fab8544f299fe0d"
     },
@@ -175,16 +251,60 @@
       "sha256": "7264cdc33b19196cd899d610f38daf1fc43bcd34f0cd2ece2b6b71db68e50a30"
     },
     {
+      "path": "lib/src/api/videos_alibaba.dart",
+      "sha256": "ba03c4651559de0b33c54b083e9545225b7e1f2aad51148a744fa90f9a3ba0e2"
+    },
+    {
+      "path": "lib/src/api/videos_black_forest_labs.dart",
+      "sha256": "201b96c58670bccdad90cdede6087b7e88084f47ac2939dc1906e040b74f7c78"
+    },
+    {
+      "path": "lib/src/api/videos_bytedance.dart",
+      "sha256": "edf4f747880f957fcde4e394384807ce8dd84f841d6d8cacb1b57c7d74b5ad49"
+    },
+    {
+      "path": "lib/src/api/videos_google.dart",
+      "sha256": "c5ac30c7076061be54ab6e9ff3c165ee993eb879e552b6a99fb74a6cee8cda89"
+    },
+    {
+      "path": "lib/src/api/videos_jimeng.dart",
+      "sha256": "89a1b36f2b2fb2f307a63e82b08f39b6a700a59aa474283966c1825643270bcc"
+    },
+    {
       "path": "lib/src/api/videos_kling.dart",
       "sha256": "d3226657eae279c0c3e0d32f6aa9927f6df275737c98c996aae0cf33bcde33f9"
     },
     {
+      "path": "lib/src/api/videos_luma_ai.dart",
+      "sha256": "4e51d4c25a12c2e5d388ce2b76a7a0d65229837dc2d734efb028dafe2471ed7a"
+    },
+    {
+      "path": "lib/src/api/videos_minimax.dart",
+      "sha256": "49b09154a026ab2d2294442ac1410f5409ae8327d0425a51527611753b233605"
+    },
+    {
+      "path": "lib/src/api/videos_pixverse.dart",
+      "sha256": "acb5aa4f59333a4b6c4dc34beb6ea675c5c186a06c6c609f32e40118c2be66b7"
+    },
+    {
+      "path": "lib/src/api/videos_runway.dart",
+      "sha256": "d62ef6b1c2e7b804065b046debc496b307546bcd6c2487e85d131235afa9534e"
+    },
+    {
       "path": "lib/src/api/videos_vidu.dart",
-      "sha256": "f5b9596f73f675b5c2dda5c75f808ce7745bfb116016486a13ebc8afe5aa7210"
+      "sha256": "49652d0e12ab1fc53376cfda6659428da5ba48d0cd4081c9cf5b3f0a67c74e91"
     },
     {
       "path": "lib/src/api/videos_volcengine.dart",
       "sha256": "487a82d818ac5e2d787d8b23ef4f05009b1535dac15d74ba99b4a0c6e03451b3"
+    },
+    {
+      "path": "lib/src/api/videos_xai.dart",
+      "sha256": "bbde167e5372e60ac675349a683668c5060746c9594efa9e071f46b46759b885"
+    },
+    {
+      "path": "lib/src/api/videos_zhipu.dart",
+      "sha256": "ef4ebae374ff98ed749a95921d20972ede5e4930cf8340eae16f3405cfc272d1"
     },
     {
       "path": "lib/src/http/client.dart",
@@ -192,7 +312,7 @@
     },
     {
       "path": "lib/src/models.dart",
-      "sha256": "47d6a2d5fe2c73b9b3a57bcaee34faea5fe9eb9665e052a33edfcbb2033e69fa"
+      "sha256": "30010102f5aa2758a7f994418085990d006d2d8613986118d49caf5f15ae8bbb"
     },
     {
       "path": "LICENSE",
@@ -208,7 +328,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "af138f6ada95384cbd053f257a08165f55a2471de76a8cee5843e8cc92bdb4d4"
+      "sha256": "89b12d567d2ca310b6447b254d8032c0a4248fcb9f936ebab1393ea8ad68a2dc"
     },
     {
       "path": "sdkwork-sdk.json",

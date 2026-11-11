@@ -2,10 +2,17 @@ package types
 
 // Anthropic Claude anthropic message create request schema exposed by Cloud Router vendor routing.
 type AnthropicMessageCreateRequest struct {
+	CacheControl AnthropicCacheControl `json:"cache_control"`
+	Container AnthropicContainer `json:"container"`
+	Diagnostics AnthropicDiagnostics `json:"diagnostics"`
+	InferenceGeo string `json:"inference_geo"`
 	MaxTokens int `json:"max_tokens"`
 	Messages []AnthropicMessageParam `json:"messages"`
-	Metadata ProviderMetadata `json:"metadata"`
+	Metadata AnthropicMetadata `json:"metadata"`
 	Model string `json:"model"`
+	OutputConfig AnthropicOutputConfig `json:"output_config"`
+	ServiceTier string `json:"service_tier"`
+	Speed string `json:"speed"`
 	StopSequences []string `json:"stop_sequences"`
 	Stream bool `json:"stream"`
 	System string `json:"system"`

@@ -18,18 +18,16 @@ import {
   MoreHorizontal,
   Shield,
   Sun,
-  Terminal,
   X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   buildPortalAuthLoginRedirect,
   hasStoredPortalSession,
-  readMediaResourceUrl,
   subscribePortalSessionChange,
   useSiteBranding,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
-import { PortalAccountMenu } from '@sdkwork/cloudroutes-pc-commons';
+import { BrandMark, PortalAccountMenu } from '@sdkwork/cloudroutes-pc-commons';
 import type { AdminModuleDef, AdminModuleId } from './adminModuleRegistry.ts';
 
 export {
@@ -86,7 +84,6 @@ export function AdminHeader({
   const location = useLocation();
   const navigate = useNavigate();
   const displaySiteName = siteBranding.shortName || siteBranding.siteName;
-  const logoSource = readMediaResourceUrl(siteBranding.logo);
   const resolvedLanguage = i18n.resolvedLanguage || 'en-US';
   const themeToggleLabel = isDark
     ? t('navbar.theme.switchToLight', 'Switch to light theme')
@@ -293,13 +290,7 @@ export function AdminHeader({
       <div className="mx-auto flex h-full w-full items-center justify-between px-4 md:px-6 lg:px-8">
         <div className="flex min-w-0 shrink-0 items-center gap-6">
           <Link to="/" className="flex min-w-0 items-center gap-2">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white/10">
-              {logoSource ? (
-                <img src={logoSource} alt={siteBranding.siteName} className="h-5 w-5 object-contain" />
-              ) : (
-                <Terminal aria-hidden="true" className="h-5 w-5 text-white" />
-              )}
-            </div>
+            <BrandMark branding={siteBranding} tone="translucent" />
             <span className="max-w-36 truncate text-base font-bold text-white sm:max-w-56 md:text-xl">
               {displaySiteName}
             </span>

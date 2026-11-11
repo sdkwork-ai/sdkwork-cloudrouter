@@ -12,7 +12,7 @@
   "generatedFiles": [
     {
       "path": "Api/Api.cs",
-      "sha256": "ad86c02631ac2b047a0f5077ce9176dd2bc5ee0e5082a63da9d73bc38625094b"
+      "sha256": "bf3fb3e9413041b374fd3e02f2187df3700a6bd7cae3c87a5fac3ea5f0985fbe"
     },
     {
       "path": "Api/ApiPaths.cs",
@@ -23,20 +23,36 @@
       "sha256": "87f5c5247dd01ba5f9bf4b66835d0703b034e909d2db4401ebe832a976f0c88c"
     },
     {
+      "path": "Api/AudioAlibabaApi.cs",
+      "sha256": "3ac55bd206577abaca0bc104184759ac605a681d67f7adc41a79a80897cca8b8"
+    },
+    {
       "path": "Api/AudioApi.cs",
       "sha256": "88a0044cf046ba39f616b8e6f82a539dce350b42ee3be245e65b3670c8a65cb9"
+    },
+    {
+      "path": "Api/AudioBytedanceApi.cs",
+      "sha256": "f9775cd748202888622e2a53a02fca07cf8694f3de56254edd95a83a018868e2"
     },
     {
       "path": "Api/AudioElevenlabsApi.cs",
       "sha256": "63727113218378b9073f52f70d989f1d0ec8c2049777ae307a239512df3143b9"
     },
     {
-      "path": "Api/AudioMinimaxApi.cs",
-      "sha256": "f27808764027a8c6bc17cc9c9b362a7bfe036d10d4071820e71d01ea4242bb65"
+      "path": "Api/AudioKlingApi.cs",
+      "sha256": "c7c5b3183dd8797ea206c810a340b64cf8b07664de3157dc072ef67c34d0a97e"
     },
     {
-      "path": "Api/AudioSunoApi.cs",
-      "sha256": "33d5238b114c74fab6847688b2069cd9f65c67a3e9fdd2f18d60061e4dfdf31e"
+      "path": "Api/AudioMinimaxApi.cs",
+      "sha256": "4c551aba26b646113e0a3a99c27cdac6ec4df4a50b2234231877921d079a231a"
+    },
+    {
+      "path": "Api/AudioStabilityAiApi.cs",
+      "sha256": "c6d14cb7cdabac4f5cef1beccdc786faf269535e3e7b8ee68f6426a218460188"
+    },
+    {
+      "path": "Api/AudioViduApi.cs",
+      "sha256": "bce7d3f07193b5ed90333c04b0d8eb5381066224627e407980359e241778f719"
     },
     {
       "path": "Api/AudioVolcengineApi.cs",
@@ -44,7 +60,7 @@
     },
     {
       "path": "Api/BatchesAnthropicApi.cs",
-      "sha256": "101367907082ae402d807ad14cd75d7f1aa6c9e9c39b4d800c695362ad29066f"
+      "sha256": "44a81771eda9606e80f7f422aad49d2886836eb5cf528ee6c970f9a96c2896d4"
     },
     {
       "path": "Api/BatchesApi.cs",
@@ -52,7 +68,7 @@
     },
     {
       "path": "Api/ChatAnthropicApi.cs",
-      "sha256": "b7001f56fc46769cf0aeee1b59ab6ca4ed23f13b57544c744360317af7af37f1"
+      "sha256": "317a6f76ad1d8aa38addca1a7122200357693792ab6b48070ee9505d351d794e"
     },
     {
       "path": "Api/ChatApi.cs",
@@ -61,6 +77,10 @@
     {
       "path": "Api/ChatGoogleApi.cs",
       "sha256": "6868f47c7b3adce6d3cb2c705ae75801d2d3eb6f6c00510d2731057d79fb5ba8"
+    },
+    {
+      "path": "Api/ChatTypesafeApi.cs",
+      "sha256": "7fd75ea9392bb31ba723df3c84968bb16570908cebeb2d95bceb97dd875cb246"
     },
     {
       "path": "Api/CompletionApi.cs",
@@ -84,7 +104,7 @@
     },
     {
       "path": "Api/FilesAnthropicApi.cs",
-      "sha256": "d8dee7db9d55c8c8664fdfabecb597f05b033db18b868eb18c5b41b9fbd1f0db"
+      "sha256": "31e6e8414cde2c82ed3b2e97b94f5cbf454d6919bfc6be65b78cc7cf6eabe354"
     },
     {
       "path": "Api/FilesApi.cs",
@@ -95,20 +115,56 @@
       "sha256": "7dbc3b61a65ff708828f484093b43d4fd0ade5b7f1b4868c15fb55c66aa9205b"
     },
     {
+      "path": "Api/ImagesAlibabaApi.cs",
+      "sha256": "397ce0477ec767fdae4da3c8755442bf9e53d6a8cb05932585a4c17fecbacd9a"
+    },
+    {
       "path": "Api/ImagesApi.cs",
       "sha256": "575f21285b5c37752a95acbb86219c79e8e0e306ece177486297286666e7162f"
     },
     {
-      "path": "Api/ImagesMidjourneyApi.cs",
-      "sha256": "d56aac8a45c12203aab455e5b2ce4ab2954a2092a0926c978f05459699ab09fa"
+      "path": "Api/ImagesBlackForestLabsApi.cs",
+      "sha256": "8bbe872c433d489a7610fe1ecb7f695279568592036f6c064cc374e057e6628d"
     },
     {
-      "path": "Api/ImagesNanoBananaApi.cs",
-      "sha256": "a86d0c58bb530e4c465f8c702e11ceb2c7b27761adb1e91f99fc87d9f1c1b9cc"
+      "path": "Api/ImagesBytedanceApi.cs",
+      "sha256": "262258b9801f9831e8d0c176f69ced46d6791592ac871ca36a055fdecffb46b1"
+    },
+    {
+      "path": "Api/ImagesGoogleApi.cs",
+      "sha256": "3e7dd9ab1be8172668473eade2de14a26834d39853f70c3811229949c3176c37"
+    },
+    {
+      "path": "Api/ImagesKlingApi.cs",
+      "sha256": "5f170cd9da8d52d6009d44919e3bd1b8706c59ababac7da0a79cea57cc96ae63"
+    },
+    {
+      "path": "Api/ImagesMinimaxApi.cs",
+      "sha256": "4eb4499d2e2d663c243448783dd88f7c6671e50ecff7e4656c55029dd257b9cc"
+    },
+    {
+      "path": "Api/ImagesRunwayApi.cs",
+      "sha256": "1a7c50acb4d49688a3de5c40e4e54cdd679604b842a4082945a1d515d1b88cef"
+    },
+    {
+      "path": "Api/ImagesStabilityAiApi.cs",
+      "sha256": "b463d0d47a4b3d084102b1d4c8d41421f3feca5e3d2ef323283ad8fa574351c7"
     },
     {
       "path": "Api/ImagesViduApi.cs",
       "sha256": "1df5cf4e33572f0e62bb8b8a00d2b7136994d3df5be16cb4ae81814c939f11e8"
+    },
+    {
+      "path": "Api/ImagesVolcengineApi.cs",
+      "sha256": "6c53d6ba77cfef1f9b63c7317cb5c2942e0517519afce29b32c77d5d1f9dff61"
+    },
+    {
+      "path": "Api/ImagesXaiApi.cs",
+      "sha256": "3e9c58614dbe952096e0e81b150a0b2e7709c99a11f0e2a06c333f6a9efcf00f"
+    },
+    {
+      "path": "Api/ImagesZhipuApi.cs",
+      "sha256": "20ba0dc355954a8701126225375f513dff161c50d43d7aefa2c878b5c9a97f05"
     },
     {
       "path": "Api/ModelsApi.cs",
@@ -119,8 +175,24 @@
       "sha256": "105f867abd772f4c7604a24d5039c8a4c67a17c4526f4616c7f5431679e59d30"
     },
     {
+      "path": "Api/MusicElevenlabsApi.cs",
+      "sha256": "e4d5e20c9175531c07045645a1bdb17a44e25840b8b09003646ae767970adcea"
+    },
+    {
+      "path": "Api/MusicMinimaxApi.cs",
+      "sha256": "37d65f79e8936aaeddb661dddb3c06b64f7d9915807cdadea227a9f9f4a9d419"
+    },
+    {
+      "path": "Api/MusicMurekaApi.cs",
+      "sha256": "4be6be64407a277e9ae49c98af0a8af59ad3b6d41f9f128096d00cfffb28655a"
+    },
+    {
+      "path": "Api/MusicSunoApi.cs",
+      "sha256": "0a130adbc09ca88c521c1a023eb3321e92f89b9bfc0036b3d75c482926b1ca55"
+    },
+    {
       "path": "Api/RealtimeApi.cs",
-      "sha256": "29f0dc059112b26ee79f1ccb8a54de2c7578e3d476847d5e248bba005be278a5"
+      "sha256": "427cc09f194ffe54ddbd5f110bcc7fe3dd5342082e1d8e41239ce49c9db6da33"
     },
     {
       "path": "Api/ResponsesApi.cs",
@@ -135,6 +207,10 @@
       "sha256": "f48458d77f44e27215e6941a8429237f23f3a227598fb2912258ef0773d50c08"
     },
     {
+      "path": "Api/ToolApi.cs",
+      "sha256": "476fc2539397710faba024ecd361d1fe471370a3be701357a1a5ce4a588e7b3b"
+    },
+    {
       "path": "Api/UploadsApi.cs",
       "sha256": "45d6f9cc1cd18d7b6565c0263dd321867a23d960f192c931ed862b21c78e4abe"
     },
@@ -147,16 +223,60 @@
       "sha256": "7c7e136c30d252fdb702a9c80434254daceb0dc1d8c9b68bf141cb7be5cb58d2"
     },
     {
+      "path": "Api/VideosAlibabaApi.cs",
+      "sha256": "23a873c9ac50ca0448e0d5f564cee94f513efb31d2762ea15c3788c2165babed"
+    },
+    {
+      "path": "Api/VideosBlackForestLabsApi.cs",
+      "sha256": "c48704e61642d9dc27b1df0400939feea6dd153cee1080b6bb02765b4b310913"
+    },
+    {
+      "path": "Api/VideosBytedanceApi.cs",
+      "sha256": "e0d38dbd67290ab9beb8f3e58f5f40727060fdff7c4774daa5568b6749938fba"
+    },
+    {
+      "path": "Api/VideosGoogleApi.cs",
+      "sha256": "424e1f3d07dfab6dc83c50b0e5160cb4717faf6e94de03e0b3b6518fb7cb0f50"
+    },
+    {
+      "path": "Api/VideosJimengApi.cs",
+      "sha256": "9f302ecbc1d84c82d0b0cb00dcfbc7295dd367892d5506bcf57440c620e712d5"
+    },
+    {
       "path": "Api/VideosKlingApi.cs",
       "sha256": "5868d6e5ad75cc59ff837e866b258d9892936f650baec082d0a8711641c55acb"
     },
     {
+      "path": "Api/VideosLumaAiApi.cs",
+      "sha256": "4ea0ab35044239dc0d8e13fe05a54cbf72d40b6b9a72d11802d7e77008a44ae3"
+    },
+    {
+      "path": "Api/VideosMinimaxApi.cs",
+      "sha256": "53dd49235ae240e0cde4ddbb29bcb79eb222bd1c4c7ac8fbda42b560312b05c1"
+    },
+    {
+      "path": "Api/VideosPixverseApi.cs",
+      "sha256": "fd1b6ffd902238bd4578088ec97c98c8e76a9e82b0946dd50d18ce233709395c"
+    },
+    {
+      "path": "Api/VideosRunwayApi.cs",
+      "sha256": "c77b9b29ab61e7ee23d67f810d5afd7a54ab98113a96063f1df4917192946d7c"
+    },
+    {
       "path": "Api/VideosViduApi.cs",
-      "sha256": "a1b91b52d8f032f9aa19b65eb91e3c90ca453d0eb95de7d922e616848b04b419"
+      "sha256": "35c64d78eedcc7667c9ea27be6b40b238ffc8fa8ea8e6e802a9121579fdc4373"
     },
     {
       "path": "Api/VideosVolcengineApi.cs",
       "sha256": "beca5f31ddc6277c3fec73a813c3b27c46251591749ad3aa146c158e8696945f"
+    },
+    {
+      "path": "Api/VideosXaiApi.cs",
+      "sha256": "2e915f30ad702d38525252d716147eaa9fe3396aff34fdad950ed86ae6724e04"
+    },
+    {
+      "path": "Api/VideosZhipuApi.cs",
+      "sha256": "6c8064f48eefc5941c572e5dd5beef6e7d18c8bafea78fdfc385bd2d4a2df6f4"
     },
     {
       "path": "bin/publish-core.mjs",
@@ -183,12 +303,60 @@
       "sha256": "7840cc7d2b36ff364ac16c2fc5ec15b861bfe96854eecf81fb59b00edb8b1447"
     },
     {
+      "path": "Models/AlibabaAsyncTask.cs",
+      "sha256": "04e3491f947936b47ca07392bdd36f91fea78dbd48048caba6764dfae8dada9c"
+    },
+    {
+      "path": "Models/AlibabaImageGenerationRequest.cs",
+      "sha256": "48c798bd7bd7698abd4adba790922fb760113a129c2d125e1a578dc73a4d8a92"
+    },
+    {
+      "path": "Models/AlibabaImageGenerationResponse.cs",
+      "sha256": "c391bcd77a67af4a03ffdc57c5a9d548c38193ec9cd0fc21bde29b33afd2da5f"
+    },
+    {
+      "path": "Models/AlibabaSpeechInput.cs",
+      "sha256": "4b1118a99771ee9c69ed07418ae383d256d4a0a6c3a9cb354515cb4eeab11088"
+    },
+    {
+      "path": "Models/AlibabaSpeechRequest.cs",
+      "sha256": "092e9524cc2d303e18a12a67699b5d283bce6b2aa0baa7badb1e840658d25425"
+    },
+    {
+      "path": "Models/AlibabaSpeechResponse.cs",
+      "sha256": "0850999fa5483099936a7bbb2ea70a66ce6cca2564c4e46b7dcec101476a52ca"
+    },
+    {
+      "path": "Models/AlibabaTaskUsage.cs",
+      "sha256": "181de5faa749675af52b7da2dc215b568848a0d7e374d2d1009d9a7df33ed630"
+    },
+    {
+      "path": "Models/AlibabaVideoGenerationRequest.cs",
+      "sha256": "6d4e699e58e327dd57714415fd13b02077da959aadc6ebeb04bd1d9b8eaedccb"
+    },
+    {
+      "path": "Models/AlibabaVideoGenerationResponse.cs",
+      "sha256": "6215b4489dc3bbe44af31ee9d88af469f5642dfd4a0d4df82521d7a523527432"
+    },
+    {
+      "path": "Models/AlibabaVideoGenerationTask.cs",
+      "sha256": "81d21a760cf1d2febb13a81e2d5273915983cf5a57257ecd5ca9f97b5412b984"
+    },
+    {
+      "path": "Models/AnthropicCacheControl.cs",
+      "sha256": "a1d1e619c320a077d8135efdcd8eebf3b17cbdd9e2dfdbca11923c79e13d8b95"
+    },
+    {
+      "path": "Models/AnthropicContainer.cs",
+      "sha256": "0e4bdb944a433c49b85e1920dd2fe8434065c63d561a3a5a85b842051508849c"
+    },
+    {
       "path": "Models/AnthropicContentBlock.cs",
       "sha256": "9d2eed1e15ad15905f303faed7c0c8442d27bf50e0143f1a10c3accb1d92ec21"
     },
     {
       "path": "Models/AnthropicContentBlockParam.cs",
-      "sha256": "0fe927ebf5cf8cbee9786d59d5b3ece18fc9679605b1f24f26d85e659e4afa72"
+      "sha256": "c484c52093f3155fa7ddac07eeacd739c7f301f3b5b789c871a521d45f8218be"
     },
     {
       "path": "Models/AnthropicContentSource.cs",
@@ -196,7 +364,7 @@
     },
     {
       "path": "Models/AnthropicCountMessageTokensRequest.cs",
-      "sha256": "d82a4e33d998bcaef5cc19dc9914aa186de28e9a9a32e2c9792bad386d2d2039"
+      "sha256": "794b3482f04d2197f49baa2536f6fdabbd55881453ff534abda0f1be6b35b290"
     },
     {
       "path": "Models/AnthropicCountMessageTokensResponse.cs",
@@ -205,6 +373,10 @@
     {
       "path": "Models/AnthropicDeleteResponse.cs",
       "sha256": "48eaa8f00f91c251dbb23fdb57f91cd1a3dbac2a7108df4144d62ae09e93da52"
+    },
+    {
+      "path": "Models/AnthropicDiagnostics.cs",
+      "sha256": "a7924b689e8b076239bce3439f785be17af816e389212652baa1b41723053f0d"
     },
     {
       "path": "Models/AnthropicFile.cs",
@@ -244,27 +416,139 @@
     },
     {
       "path": "Models/AnthropicMessageCreateRequest.cs",
-      "sha256": "89155400d89896dec0a468421814e8a83678d101269eb0529338859a21a9ff6d"
+      "sha256": "e23ce2514bdad4cf86e178e67666ff06c9b3ed609db3a5255a9c95c3736de0f8"
     },
     {
       "path": "Models/AnthropicMessageParam.cs",
       "sha256": "c81d11e2626ca50e016d5c18f4c9fd69941b61df8eca8b819fec756b1e052bea"
     },
     {
+      "path": "Models/AnthropicMetadata.cs",
+      "sha256": "c95be7a9cfcc7e38993097c74accad15fb4d2fbf4483f39fd8ace3bdd9773fe6"
+    },
+    {
+      "path": "Models/AnthropicOutputConfig.cs",
+      "sha256": "37419e00052fbecd7bd827ce8e6a2befe7dc2488974ebed9f6a8dea4e993f5d5"
+    },
+    {
+      "path": "Models/AnthropicOutputFormat.cs",
+      "sha256": "c30ea689b304a0d448f3dac942c5a3b5f130d43d5f85edebb543ebbd53f789e5"
+    },
+    {
+      "path": "Models/AnthropicServerTool.cs",
+      "sha256": "14b6cec91c4b8c1e32dc178d36316a3e9568d83affce2bf1e537612751f885ef"
+    },
+    {
+      "path": "Models/AnthropicSkill.cs",
+      "sha256": "077d0243e1d417f97532b38f8d925fe5711a742a38df1fe003a999b490d09f88"
+    },
+    {
       "path": "Models/AnthropicThinkingConfig.cs",
-      "sha256": "532fef7ddebc772806e25230033750aad995db073787e7b5813cdad8e64abae6"
+      "sha256": "a72c37de4f47f15fdcfd7692a710d098c8e56578520d036d8111c2fecfd4331f"
     },
     {
       "path": "Models/AnthropicTool.cs",
-      "sha256": "d4ab674e0ca1857dd333398d874e15815f1d27f583228d33ca4e6a3d08656b51"
+      "sha256": "5bebe1d592c06c8bae69682adda61be13f8b411e889021699f53bd8e32e0dd74"
     },
     {
       "path": "Models/AnthropicToolChoice.cs",
-      "sha256": "462baabc29db2bbf6587d5f1eeeb0b88d2216c116615857752288343b0a4aeea"
+      "sha256": "ae4b29dd1be753f9d8fe693ed151a45f18182cca4c47249c8451a0b47a4543f2"
     },
     {
       "path": "Models/AnthropicUsage.cs",
       "sha256": "ba027d30f8d99e8cf90442ef5af2918258783021dfcf10099a40d2569404d3d8"
+    },
+    {
+      "path": "Models/ArkAudioSource.cs",
+      "sha256": "3916a056cdf720129a7bea848201055e61ee1b48c54214e2bf782f25800d9079"
+    },
+    {
+      "path": "Models/ArkContentPart.cs",
+      "sha256": "6db698ad3523d0418c3fcf23f194f7d2a19522a238d1467994eaf58e69a574c8"
+    },
+    {
+      "path": "Models/ArkDraftTask.cs",
+      "sha256": "cebc6f32865216ff3a1f640f27d873319de6a2929fc2c30790687819b6d8ef7a"
+    },
+    {
+      "path": "Models/ArkImageGenerationData.cs",
+      "sha256": "27a3bd1751a5edb5206fc80093dea7553d9c8691e812f2102b582b79e5d34298"
+    },
+    {
+      "path": "Models/ArkImageSource.cs",
+      "sha256": "3a1b583eab0dfb51529a6e6fe9887e4d1f59bb79213f09b3e383b70891497058"
+    },
+    {
+      "path": "Models/ArkImageUsage.cs",
+      "sha256": "33d9ca1ac9245486ff6f767690b1e645e01914aa0dd222f394f75e5eb3d6c602"
+    },
+    {
+      "path": "Models/ArkVideoSource.cs",
+      "sha256": "2e419cf3b60c33200a0829d2f55f791f778dcc1be0f1fdc4c2ef97ecd06430c5"
+    },
+    {
+      "path": "Models/ArkVideoTaskContent.cs",
+      "sha256": "272c68b8ec808c5448bfd1701f9bcf3d2ce371641efcdce6eda6cf8599421e9f"
+    },
+    {
+      "path": "Models/ArkVideoToolUsage.cs",
+      "sha256": "f0dd112d2adacb92e81acf51d43a9850f9905cacf2fd9fb3c4800b6c9c20c728"
+    },
+    {
+      "path": "Models/ArkVideoUsage.cs",
+      "sha256": "e1a3f68d65d2291b0f409d81a62363040fd90d4f805bdc4648f8c00fbd406bbf"
+    },
+    {
+      "path": "Models/ArkWebSearchTool.cs",
+      "sha256": "134a121cc9cfd79e47265a9080bdaa2dffb8a7d8fb81853ffc94a90d8663bb74"
+    },
+    {
+      "path": "Models/BlackForestLabsImageGenerationRequest.cs",
+      "sha256": "c95af5a1b7b49e164b66df2fd41150393606cbaac575bda977d9d82a3f91db5d"
+    },
+    {
+      "path": "Models/BlackForestLabsImageGenerationTask.cs",
+      "sha256": "623ccdc0732579549bffaff191b198a8e28694b7f4a98bfec5f2fc085e6e8a33"
+    },
+    {
+      "path": "Models/BlackForestLabsVideoGenerationRequest.cs",
+      "sha256": "17b7d878daacaa25eb4cf51262a4568607a03af01879d99ed8a1df1b40bb0cac"
+    },
+    {
+      "path": "Models/BlackForestLabsVideoGenerationTask.cs",
+      "sha256": "8dacf7d386b28d51df3f5d79ec3e1ed87058d3dc41d78fd02f88c217249295a4"
+    },
+    {
+      "path": "Models/BytedanceImageGenerationRequest.cs",
+      "sha256": "ff644bf439f08f3592268cf9710323c43b9c2acbf8eb8a40f6734f3d4133e49f"
+    },
+    {
+      "path": "Models/BytedanceImageGenerationResponse.cs",
+      "sha256": "150a297eaedb9079761b29760450da0cb90e130b08be98574ba21c98a7497287"
+    },
+    {
+      "path": "Models/BytedanceSpeechChunk.cs",
+      "sha256": "4dcf11ce1656a89dd546af10f6d18163f20a40ce1746158e6d49ef6689450e2f"
+    },
+    {
+      "path": "Models/BytedanceSpeechRequest.cs",
+      "sha256": "82bd86a4c99c01b390924e82ca12476934eaed7f10329c018e56f716cf5b430f"
+    },
+    {
+      "path": "Models/BytedanceTtsAudioParams.cs",
+      "sha256": "954d3faa43426d8656c4c234ff6dec78f03e96a59347fa6daf7da07f6ea88e76"
+    },
+    {
+      "path": "Models/BytedanceTtsRequestParams.cs",
+      "sha256": "1dedc39a282ec79e81ba0a9e09402d25a735fea0822d1048e200a0d44bd46607"
+    },
+    {
+      "path": "Models/BytedanceVideoGenerationRequest.cs",
+      "sha256": "c3ff476845ffe9aac19643582badcffebd3ad01f23cd9e9980db2a07dbc17f9f"
+    },
+    {
+      "path": "Models/BytedanceVideoGenerationTask.cs",
+      "sha256": "0e0e54c3eb493359922dc828e8e4285101593d71d2cf98187e3af764a2c6b836"
     },
     {
       "path": "Models/CreateCompletionChoice.cs",
@@ -279,8 +563,28 @@
       "sha256": "a5116f141791ad25386af49b99611020c5cce8ef6e140fb085fe1d58178d8c19"
     },
     {
+      "path": "Models/ElevenLabsAudioEffects.cs",
+      "sha256": "68535aa2380a3de667ec18c43c9c96a4b7883a72a5c4540b7796f1520dbc1387"
+    },
+    {
+      "path": "Models/ElevenLabsCompositionPlan.cs",
+      "sha256": "9a742741b4913173f6f63684dc60c38e47c88d3794bdbba795652b4347c31689"
+    },
+    {
+      "path": "Models/ElevenLabsMusicGenerationRequest.cs",
+      "sha256": "023f3d870f4010cccf2bd40326914defeacf581a6da35bce13bd316f8c7500a2"
+    },
+    {
+      "path": "Models/ElevenLabsMusicPrompt.cs",
+      "sha256": "c189bd4111d8cf497240c1995dcb1eea262a0de5c74f971790acedbccf3819ae"
+    },
+    {
+      "path": "Models/ElevenLabsPronunciationDictionaryLocator.cs",
+      "sha256": "9255eb2bbe6816f7930a755a8f958358cffcc401dba243728c7a5436be980389"
+    },
+    {
       "path": "Models/ElevenLabsSoundGenerationRequest.cs",
-      "sha256": "605f91abfd133b15e6174d9b37dcac7df7071ebf62e00357a6b2e0dae2bf36e9"
+      "sha256": "0e121353e8c6755281026d1163042d9624944b130d1eda1e4ce1fc798ab26044"
     },
     {
       "path": "Models/ElevenLabsSoundGenerationResponse.cs",
@@ -288,11 +592,31 @@
     },
     {
       "path": "Models/ElevenLabsTextToSpeechRequest.cs",
-      "sha256": "ef62c93f89f341ddbf75c7ed830461020a8a3f9a38ccbc84b2939931261d59e7"
+      "sha256": "8f015adaff5100a6bb902564cc31feabd8e6a3ded051668228d18d8f03caf9ef"
     },
     {
       "path": "Models/ElevenLabsTextToSpeechResponse.cs",
       "sha256": "4bb58c5fc52ff36ed6f1351580032831dd7cefc36b3e6daae5d40307212edc5c"
+    },
+    {
+      "path": "Models/ElevenLabsVoiceSettings.cs",
+      "sha256": "ce18cbde0b9cdad1e1f815b3a19fe6013a315ea88aac1f6f75c8834042baea6c"
+    },
+    {
+      "path": "Models/GeminiImageGenerationRequest.cs",
+      "sha256": "9e3aec8c910411926a1cf73826779496da878181cadd4a50c889054bc9de7be9"
+    },
+    {
+      "path": "Models/GeminiImageGenerationResponse.cs",
+      "sha256": "b520d058b4af3decbc99a435ddf057cd5326dbfa5a985e4784380137c3aba2a1"
+    },
+    {
+      "path": "Models/GeminiVideoGenerationRequest.cs",
+      "sha256": "5eceeb917129e71d6da5ec75b56058d14e9b1080896b69c059eef3033cad696d"
+    },
+    {
+      "path": "Models/GeminiVideoOperation.cs",
+      "sha256": "ffca46f2614b5068dc63bc090fb403ab0f1828b0b19ad17ba688451d37de7b2e"
     },
     {
       "path": "Models/GoogleBatchEmbedContentsRequest.cs",
@@ -312,7 +636,7 @@
     },
     {
       "path": "Models/GoogleCachedContentCreateRequest.cs",
-      "sha256": "ac0be79b0b7fe91fc20aa2346da8248d066ce9a36166ffd5e81281683c7d87cb"
+      "sha256": "9a5e88dc81668c520f0eadb3d4d0f154600cca6ade69bdec74e83e210cadff95"
     },
     {
       "path": "Models/GoogleCachedContentListResponse.cs",
@@ -364,7 +688,7 @@
     },
     {
       "path": "Models/GoogleEmbedContentRequest.cs",
-      "sha256": "00020ac6dcb261ccd1242f1fbfe22c4ecfd57ae2b55e7586ba1c81e87274c6bd"
+      "sha256": "b85aa8ccc4e2f267d7eec14f49857d07505628a72f42eb405bc0f2b457cd839d"
     },
     {
       "path": "Models/GoogleEmbedContentResponse.cs",
@@ -412,7 +736,7 @@
     },
     {
       "path": "Models/GoogleGenerateContentRequest.cs",
-      "sha256": "55188dd9e3a65e91713c0803d28dc7123e41b281ca126d6e271b506604e041e0"
+      "sha256": "96e4a6fe8bbb817d7f8f0a8a64dadca1ab613a48e3d9f634080e134b91d3910a"
     },
     {
       "path": "Models/GoogleGenerateContentResponse.cs",
@@ -420,11 +744,11 @@
     },
     {
       "path": "Models/GoogleGenerationConfig.cs",
-      "sha256": "e2bfb026339cc72e7b28e5249184091e77d2500fb2bcc8b920125b5ecf54f5a4"
+      "sha256": "36fc8dc987fedf7511d6ee3fde6fcc4b98aec80ec9989d9a24c6fee69f73dd52"
     },
     {
       "path": "Models/GooglePart.cs",
-      "sha256": "6231d27cddbb24f8461071e37bfa594e6dc39ef19f8e3ec54e7119a72c5cdb29"
+      "sha256": "b96d5b0af7ca4cafd8d61b703a1af5b25716b933b21235e22655b66ffd522122"
     },
     {
       "path": "Models/GooglePromptFeedback.cs",
@@ -452,7 +776,7 @@
     },
     {
       "path": "Models/GoogleTool.cs",
-      "sha256": "45bd8ad24190e1ba8928f89b5551c5b5512817c3757d2fd4549f49236e045e2d"
+      "sha256": "62d18a34bb2983d416b578c964b0d1dbf70dc28f8ef237fad55267b3d2e23c36"
     },
     {
       "path": "Models/GoogleToolConfig.cs",
@@ -467,12 +791,52 @@
       "sha256": "a835f4d412b59e8afd1181c94a59273e67dc11f1d5a03d2ee6a9d804025e4824"
     },
     {
+      "path": "Models/JimengVideoGenerationRequest.cs",
+      "sha256": "bac4570058d49d4d714de52b1e4060469e319f27fbad2f8f115581dbce190ec3"
+    },
+    {
+      "path": "Models/JimengVideoGenerationTask.cs",
+      "sha256": "420bceeb757f4d1399a2f5d90e94efe17db82d104515b8251be11555add7da6e"
+    },
+    {
+      "path": "Models/KlingAudioTask.cs",
+      "sha256": "e6faa147074de08d9744c331c8478008dade48a0b15e596bae1af18df60b15af"
+    },
+    {
       "path": "Models/KlingAvatarCreateRequest.cs",
       "sha256": "096756608c06efadf67da46189af45a1154592bda10d988f5ce86499d06b7e53"
     },
     {
+      "path": "Models/KlingElementReference.cs",
+      "sha256": "1e0466ecb46ea55fbf6a62d44d1c976b8a137f3231ebef2be3e5496962cf6cb8"
+    },
+    {
+      "path": "Models/KlingImageGenerationRequest.cs",
+      "sha256": "1bdc4681e0e010495cd215687fb837337ea3b074173a7674664cdcc08cf52637"
+    },
+    {
+      "path": "Models/KlingImageGenerationTask.cs",
+      "sha256": "1d8f5c729d8e11940c4ce1ad85b705a75596307d90c76c5d127383ccdee667bf"
+    },
+    {
+      "path": "Models/KlingImageResult.cs",
+      "sha256": "2294dfa7f74ba103152d903a3766d6458d90b08bb64e565eca5377ead4d540b0"
+    },
+    {
+      "path": "Models/KlingImageTaskData.cs",
+      "sha256": "699c53660d7d1f64ed8975fb76234345cb8472e51b5bd83a61822537a3326116"
+    },
+    {
+      "path": "Models/KlingImageTaskResult.cs",
+      "sha256": "7e7655b11665a666aaac42a28cf559776bf501c990e5d356785c9d410cb8adf7"
+    },
+    {
       "path": "Models/KlingMotionControlRequest.cs",
       "sha256": "695706a29f615e9261e097e2d2bec15706c11eeaf0dafa9398617f35bca11811"
+    },
+    {
+      "path": "Models/KlingSoundGenerationRequest.cs",
+      "sha256": "962bb4c64184d04174146864a5baaef52e6885de7b5a2328a2d5757852f7a9ff"
     },
     {
       "path": "Models/KlingVideoGenerationRequest.cs",
@@ -483,12 +847,56 @@
       "sha256": "c39c5e1abf827dee90db0e0edd26a37af4d50cf5c7010fb979baf1f34ace8d29"
     },
     {
-      "path": "Models/MidjourneyImageGenerationRequest.cs",
-      "sha256": "bd9c83dedad553309aabd6f54308c19213486532898eaa4c7c1031a777343476"
+      "path": "Models/KlingVideoToAudioRequest.cs",
+      "sha256": "282a450a31a24589dac1d3dbd1c21b47fecd13d2b493354983488bf8a201d181"
     },
     {
-      "path": "Models/MidjourneyImageGenerationTask.cs",
-      "sha256": "97976cba972a0f92b95021413622c1ae77e272e9ce0210c1487462c00de74721"
+      "path": "Models/KlingWatermarkInfo.cs",
+      "sha256": "6b94e2d64976e9bbff904561af59e19b1aa24ac0ceb567577938279b097f6244"
+    },
+    {
+      "path": "Models/LumaConcept.cs",
+      "sha256": "b439a8e01c8662428511408569e461a474fb9ed06607e9d25e079cb95b939fb1"
+    },
+    {
+      "path": "Models/LumaGenerationAssets.cs",
+      "sha256": "dee5a30c9686cff70cdda2bf8509729a741c00e3996cbcf22b76a1ce6fc69137"
+    },
+    {
+      "path": "Models/LumaKeyframe.cs",
+      "sha256": "f987ec9450d15aeaad9ba39df9f8dca4b12946b28335321f2927e650c2df1a69"
+    },
+    {
+      "path": "Models/LumaKeyframes.cs",
+      "sha256": "1d70f8d46d3e96e3d9235c3f50aa29b59a746d1324d7cf4ed263bbc9e008c624"
+    },
+    {
+      "path": "Models/LumaVideoGenerationRequest.cs",
+      "sha256": "0655490c1a83ce74d295b870b322794e80576532c692bb014d79c3d46777eda3"
+    },
+    {
+      "path": "Models/LumaVideoGenerationTask.cs",
+      "sha256": "4f3315ba0914f400d4e8263a791dffc60942d01b81740662f8ff885516a2d963"
+    },
+    {
+      "path": "Models/MinimaxBaseResp.cs",
+      "sha256": "fa98ce232b24b99389809ecfa670807761489effe5c3b13bff5b5081fad14963"
+    },
+    {
+      "path": "Models/MinimaxFileRetrieveResponse.cs",
+      "sha256": "b1c11db53f09ca3523e1c88110b4bc005eb212b4ab6a311848e396fc0eefe560"
+    },
+    {
+      "path": "Models/MinimaxImageData.cs",
+      "sha256": "4cb64a7b40df307e4e8d81f6aa92a14f2885bcf5550b095058a107390b1b73d0"
+    },
+    {
+      "path": "Models/MinimaxImageGenerationRequest.cs",
+      "sha256": "e6fa56dbc21908d6e12e99cd39a619f3f2f62056a773ba4272a7ee7bd431254f"
+    },
+    {
+      "path": "Models/MinimaxImageGenerationResponse.cs",
+      "sha256": "26514a2f2b7e99eb34a7c9c334ec4370487f1d71926a7e7dab01196c51b82d83"
     },
     {
       "path": "Models/MiniMaxMusicAudioSetting.cs",
@@ -508,19 +916,47 @@
     },
     {
       "path": "Models/MiniMaxMusicGenerationRequest.cs",
-      "sha256": "57cf7acea3fd8184a0d9382647d932a993dc33b53ad37f899cbdda935c90b5a2"
+      "sha256": "40bd5ad26e0de01324bbf480214a052c1f03527e919b57064333c5bc9cbdef54"
     },
     {
       "path": "Models/MiniMaxMusicGenerationResponse.cs",
       "sha256": "b2a2c6b82862d56282f717ccf4f2dba30a0515e5b5490987082c8efa463e089d"
     },
     {
-      "path": "Models/NanoBananaImageGenerationRequest.cs",
-      "sha256": "6526d56d451fb170f307647a5526e416f55dd95f05818cba8d02ab8c151bd302"
+      "path": "Models/MinimaxStreamOptions.cs",
+      "sha256": "3c0574c36322080ec72f687bea9da91a60a6bacc402bd041da69bd19b58b1bc8"
     },
     {
-      "path": "Models/NanoBananaImageGenerationTask.cs",
-      "sha256": "984da5c6ce55c305ec6acb5b28c66c1225ec0d707be2111f165b4f9ae2d7fdb0"
+      "path": "Models/MinimaxTextToSpeechRequest.cs",
+      "sha256": "deb20c6e4233f1ae9a405183ef4c1b9a24b78fd43526156101b2304ed199a215"
+    },
+    {
+      "path": "Models/MinimaxTextToSpeechResponse.cs",
+      "sha256": "f5498825f7ae647e92b1066bb643171c50b040ba710d8549f4e5bdb091ede216"
+    },
+    {
+      "path": "Models/MinimaxTimbreWeight.cs",
+      "sha256": "25d14a45836f09b840c2108930feddd908e549e58f54a261357b8f0f9fdef259"
+    },
+    {
+      "path": "Models/MinimaxVideoGenerationRequest.cs",
+      "sha256": "77231222b33db50bc7e7e2e6715a343a04e39d60cbe3a1b2cf15a06274d45290"
+    },
+    {
+      "path": "Models/MinimaxVideoGenerationTask.cs",
+      "sha256": "f0d370a4ae7e155f02fa1530e39289a6392a8edbb8f6781988261141a459bdde"
+    },
+    {
+      "path": "Models/MinimaxVoiceModify.cs",
+      "sha256": "2e2deeb5fc086d7f58ae3db0fb7e2cc46959e8a821d0fb54f08d1e9865139edb"
+    },
+    {
+      "path": "Models/MurekaMusicGenerationRequest.cs",
+      "sha256": "8acb422836fc51fb3f17cc3194d168e1f35ab90acf7ed36c377e0d2de964b775"
+    },
+    {
+      "path": "Models/MurekaMusicGenerationTask.cs",
+      "sha256": "ab1bbf2769bab67ffbe33e72157650998d345fd69848dc12106687f0bbee7bca"
     },
     {
       "path": "Models/OpenAiAnnotation.cs",
@@ -532,7 +968,7 @@
     },
     {
       "path": "Models/OpenAiAssistantCreateRequest.cs",
-      "sha256": "c7474dc5d9101cf64efa68ec431809895170349887ac2e76e0f78c7d98c0aac6"
+      "sha256": "99391416e312e5145bcb268da9d0161cfd41e81cf362836eb2fc93c089acd63c"
     },
     {
       "path": "Models/OpenAiAssistantList.cs",
@@ -540,7 +976,7 @@
     },
     {
       "path": "Models/OpenAiAssistantUpdateRequest.cs",
-      "sha256": "a77da16478ba665b2b6b27f0b68adace420527be2988cd0af5b77c10d5670817"
+      "sha256": "59428f299e796ea7c3c98c4164900e2132ff7b659a707563405f40be7ea59609"
     },
     {
       "path": "Models/OpenAiAudioTranscription.cs",
@@ -572,7 +1008,7 @@
     },
     {
       "path": "Models/OpenAiBatchCreateRequest.cs",
-      "sha256": "a714e16284bc5598af4324cb29e8c8ef138e74fda016c2de8516976eb11907f5"
+      "sha256": "af200666f4cb52f9f33a4d489bf94c675c461d6215b7eaf1571e4d2e786a4761"
     },
     {
       "path": "Models/OpenAiBatchList.cs",
@@ -640,7 +1076,7 @@
     },
     {
       "path": "Models/OpenAiCompletionCreateRequest.cs",
-      "sha256": "1abc2aa97716cbf007a21a74728b106d0f7a398f0ef69de514475dcad1817b7c"
+      "sha256": "2a77106b8d9baaa9fc4dac70bf5f8c995643dfed551c277d6d6c0aff0fdc43dc"
     },
     {
       "path": "Models/OpenAiCompletionTokensDetails.cs",
@@ -652,7 +1088,7 @@
     },
     {
       "path": "Models/OpenAiContainerCreateRequest.cs",
-      "sha256": "90fd748309427fc01a0bc329b54aaf5b9c142096c5312fb1e8026ac34b0a0f46"
+      "sha256": "8d3d82261f474d0abf369912754e341cda1e93ef4028541297c80dfd999bab6c"
     },
     {
       "path": "Models/OpenAiContainerFile.cs",
@@ -688,7 +1124,7 @@
     },
     {
       "path": "Models/OpenAiConversationItemCreateRequest.cs",
-      "sha256": "3d87e6791497fa3aa1de004d6c7dae285c93274545b41ab69a7959764f28c5c6"
+      "sha256": "75bb0b7784b890514d2f85b7121d6e3bad875c2d60046e2d93d571e5dc846d10"
     },
     {
       "path": "Models/OpenAiConversationItemList.cs",
@@ -705,6 +1141,26 @@
     {
       "path": "Models/OpenAiConversationUpdateRequest.cs",
       "sha256": "d0605f73bd3cfcc484b6cd089dfdadf51a7483f55e08cacbb6123e9b080ed9c9"
+    },
+    {
+      "path": "Models/OpenAiDeepSeekWebFetchRequest.cs",
+      "sha256": "3409356b9e5e96214059b07c9ce802e5e6f701caa127259951f3ccb154b05546"
+    },
+    {
+      "path": "Models/OpenAiDeepSeekWebFetchResponse.cs",
+      "sha256": "27d10b34646a87929e43b404b6908980c844b87e23494658546f5ef2e92d86fa"
+    },
+    {
+      "path": "Models/OpenAiDeepSeekWebSearchRequest.cs",
+      "sha256": "923137543b124dc2f3d313a0716cd5751ffbc12f11801ce4b204e765d7220b16"
+    },
+    {
+      "path": "Models/OpenAiDeepSeekWebSearchResponse.cs",
+      "sha256": "6285dc63029e14d640768077751e219f11e2e39d14544e076079d875c4a93d95"
+    },
+    {
+      "path": "Models/OpenAiDeepSeekWebSearchResult.cs",
+      "sha256": "0dd124d55b7922e119ce88aabf81e9f80732631d12ee69e859e2eec41b02eb61"
     },
     {
       "path": "Models/OpenAiEmbedding.cs",
@@ -768,15 +1224,15 @@
     },
     {
       "path": "Models/OpenAiImageEditMultipartRequest.cs",
-      "sha256": "7610931cae50dc729094f6085fc568b05325d74cf90ec387558d0bab9f57a6c1"
+      "sha256": "167351e0d7531ddf2b5fd4bf6a510c701378c27713c877076880b88646cabd52"
     },
     {
       "path": "Models/OpenAiImageEditRequest.cs",
-      "sha256": "2d5538a87bb2c093bf2e5c3770ad5ea73db2e46aa15fa72d0bbe3ceb71a8027c"
+      "sha256": "f098908728f84a2ecc92722ad6ddd9530849f1995f296ae8ddfafb1d57b25075"
     },
     {
       "path": "Models/OpenAiImageGenerationRequest.cs",
-      "sha256": "7f815c4d6335faa1e1a70d8d89385c01e2968133e60e07bc6ed898baca7fcda0"
+      "sha256": "2ed054a67f8c4f721b57656a964be2fde70b8f94def69b97ffe1e62d1534cc0f"
     },
     {
       "path": "Models/OpenAiImageList.cs",
@@ -785,10 +1241,6 @@
     {
       "path": "Models/OpenAiImageReferenceInput.cs",
       "sha256": "09fea4e70a6d3d75fff1a4f81416d6b551a2b322d88f1e206d65a76360bf40e1"
-    },
-    {
-      "path": "Models/OpenAiImageReferenceInputList.cs",
-      "sha256": "a1955a4cac0fd7affeb7c3afd10c0397628b7eb3547e55b687a13610ed9214d1"
     },
     {
       "path": "Models/OpenAiImageReferenceObject.cs",
@@ -864,7 +1316,7 @@
     },
     {
       "path": "Models/OpenAiRealtimeCallActionRequest.cs",
-      "sha256": "015563b31eb7d357363234053c1bcf23e263a05fa4bc3bb553a620f4d606609e"
+      "sha256": "cdb616dfcb07c8b0d8f6b2c115b7d03c921a4a0f0bb91a66ca45d250538b6ae6"
     },
     {
       "path": "Models/OpenAiRealtimeCallCreateRequest.cs",
@@ -876,7 +1328,11 @@
     },
     {
       "path": "Models/OpenAiRealtimeCallReferRequest.cs",
-      "sha256": "dec3514118ceb720a427f66362e5a9ae72db0bf527a49dcb24fd9e3e7440bf88"
+      "sha256": "73b596a7976cc6da1d975b8b77aa43230a7ec9d424900e185f567420c4c635c8"
+    },
+    {
+      "path": "Models/OpenAiRealtimeCallRejectRequest.cs",
+      "sha256": "44c128b3759b642d5373be68bdeac96cd3d5af3b2046a5a5cf662932c51b985a"
     },
     {
       "path": "Models/OpenAiRealtimeClientSecret.cs",
@@ -884,7 +1340,7 @@
     },
     {
       "path": "Models/OpenAiRealtimeClientSecretCreateRequest.cs",
-      "sha256": "67f8722ad3dc195566b7c7fdbd2ab7e41c8347bf30cc0e48f64bf0a9f2cb0c57"
+      "sha256": "3ae2c8c15ff28dbedc177048dfcdb9c76dc9f71090acd3788e0709fb766ca1fe"
     },
     {
       "path": "Models/OpenAiRealtimeClientSecretValue.cs",
@@ -896,7 +1352,7 @@
     },
     {
       "path": "Models/OpenAiRealtimeSessionCreateRequest.cs",
-      "sha256": "4162c53ff4d2f1ea86c053679df447b5a194e62bfdcf3f70591940d50c79f09a"
+      "sha256": "a1fc5ea5a0ac5b44a57918f2fbee6a864392dfffaf0e60b4b3f331f917e11239"
     },
     {
       "path": "Models/OpenAiRealtimeTranscriptionSession.cs",
@@ -904,7 +1360,7 @@
     },
     {
       "path": "Models/OpenAiRealtimeTranscriptionSessionCreateRequest.cs",
-      "sha256": "ba7987b3d66aec6949726b9aa769136d0d0dd75620d46391715ff4c544973106"
+      "sha256": "f30b3601eedeb4e1a224a55924e0b0d53c46c3709b38d61a77dfb5451b0b141a"
     },
     {
       "path": "Models/OpenAiRealtimeTranslationSession.cs",
@@ -924,7 +1380,7 @@
     },
     {
       "path": "Models/OpenAiResponseCompactRequest.cs",
-      "sha256": "163097736cfecc66d4fda6abe2ff5f09826c066dd97d3237b27e808c5ddfdf8f"
+      "sha256": "52ee39ed3cca1b701d1e1a944c34ce08b5c85d8677561a5e7380e530397c9448"
     },
     {
       "path": "Models/OpenAiResponseError.cs",
@@ -952,7 +1408,7 @@
     },
     {
       "path": "Models/OpenAiResponseInputTokenCountRequest.cs",
-      "sha256": "244b3d46763c866e732cf27735717bed15e952f4321477d6e56c8113159aea5d"
+      "sha256": "0808698955912799a9d2c0b540cc007cb4d25758bdbb88087819e5b82d47af83"
     },
     {
       "path": "Models/OpenAiResponseInputTokensDetails.cs",
@@ -984,7 +1440,7 @@
     },
     {
       "path": "Models/OpenAiRunCreateRequest.cs",
-      "sha256": "7b5c954991fd956187839f8319ef6d6785348c4a6e83c305160da4955dd0800e"
+      "sha256": "5897488d29797cc6198674a3130306cccc77f5b512379bfdb13bb10169fa8844"
     },
     {
       "path": "Models/OpenAiRunList.cs",
@@ -1008,7 +1464,7 @@
     },
     {
       "path": "Models/OpenAiSpeechCreateRequest.cs",
-      "sha256": "0bfd3737f2c8b6d9971044186fd24c18b2465a944210eda8afde9d15e1d8a0e1"
+      "sha256": "4ac0e51d2f74d38691771b2463f54958b7d65342029183adee6b7a410f940711"
     },
     {
       "path": "Models/OpenAiStreamOptions.cs",
@@ -1024,7 +1480,7 @@
     },
     {
       "path": "Models/OpenAiThreadAndRunCreateRequest.cs",
-      "sha256": "5a4b6cf49f1d73c7a09ded898020c42536b0a552a9f9c32ecd0ec0be44a74cc7"
+      "sha256": "906337314f73bafe4e997d285db6c6617e71ee6961f29d99e6b74bc2006dc2d6"
     },
     {
       "path": "Models/OpenAiThreadCreateRequest.cs",
@@ -1084,7 +1540,7 @@
     },
     {
       "path": "Models/OpenAiUploadCreateRequest.cs",
-      "sha256": "4a221b5453fb40c77ca3fe00fba379a4885b68affbd1f1489323367bdef43f73"
+      "sha256": "547c3f93ed2c731210ef8c1979bd7ada14af84270a448e53434aecf33c1edba7"
     },
     {
       "path": "Models/OpenAiUploadPart.cs",
@@ -1100,7 +1556,7 @@
     },
     {
       "path": "Models/OpenAiVectorStoreCreateRequest.cs",
-      "sha256": "1a411363dacfe2faa9a9bd3bbfc618cf9edbaa499ad1bcacf737c365ee8c9672"
+      "sha256": "83a381efa528d794c25f469706d9a4dafbd521b53fd7c0b130df3d9584f60c5d"
     },
     {
       "path": "Models/OpenAiVectorStoreFile.cs",
@@ -1112,7 +1568,7 @@
     },
     {
       "path": "Models/OpenAiVectorStoreFileBatchCreateRequest.cs",
-      "sha256": "c781454a103fb83642b468d3ee90ac3c785618e36f370f85bc0dc044316b7ec1"
+      "sha256": "825cab84f7f0cfa562ddcd4a469cf8ceb0f19b19f38b311f736cba52991b508a"
     },
     {
       "path": "Models/OpenAiVectorStoreFileCounts.cs",
@@ -1168,15 +1624,15 @@
     },
     {
       "path": "Models/OpenAiVideoCreateRequest.cs",
-      "sha256": "3ef6f99672f3789aead478fdeffa9502447fea9bb3e25780d84326bb40908e91"
+      "sha256": "dcae0239c9ae607b09b21a5806919742668aa35caa4187201b66e49adc156015"
     },
     {
       "path": "Models/OpenAiVideoEditRequest.cs",
-      "sha256": "c274abdec8b0e1d422c516c4956db63759f9d0078046360c310b9d20fb99b6de"
+      "sha256": "457fbd6b9be1f703a199983148e2fadad27e7b6f0214110232ee09f6aae4dd95"
     },
     {
       "path": "Models/OpenAiVideoExtendRequest.cs",
-      "sha256": "ded759f7f10e8a1045a10a30e2f8ad42c46a14321c1ea95e1dac465345d9c89f"
+      "sha256": "13a21315c8af0906b2eda030f4230870809d7d44ad178f264bdde256e7ae9c70"
     },
     {
       "path": "Models/OpenAiVideoList.cs",
@@ -1184,7 +1640,7 @@
     },
     {
       "path": "Models/OpenAiVideoRemixRequest.cs",
-      "sha256": "f7d1a7df72c38c87713de9326fb6eab1dbe64e3b7396479c96e4e42f8f25f0fc"
+      "sha256": "6e94bd523a2ad30307a20a2747724b14a0859f55b678ff7de7b159793591e91d"
     },
     {
       "path": "Models/OpenAiVoice.cs",
@@ -1208,19 +1664,39 @@
     },
     {
       "path": "Models/OpenAiVoiceConsentUpdateRequest.cs",
-      "sha256": "3690f873eb1ea84e8a8c504e2aa7c030d5f25a16c66ae48bbbedbef2063b6d26"
+      "sha256": "f070a97a3e991442fb410a53f983ca65cfed1164c79365d86c153cefdb0b1c41"
     },
     {
       "path": "Models/OpenAiVoiceCreateMultipartRequest.cs",
-      "sha256": "ffd0abd51a0156d7dbbcb01d2478988bc98946b50e4dd5b42647b486c865f625"
+      "sha256": "144fe1d6e2350b6039fc3da1b9f7177c8aa789f5ccd77b2b9d01244c2d470a78"
     },
     {
       "path": "Models/OpenAiVoiceCreateRequest.cs",
-      "sha256": "e21db5783f2481d0f086e0903785dd14b729be6d6fe9e4dd4ff9e69d230330ec"
+      "sha256": "ebd384a499bbe2e3f8cab88585abfbe085eb649ab47b1924328d7b1dff2a0b8f"
     },
     {
       "path": "Models/OpenAiVoiceList.cs",
       "sha256": "a803c399edf5639dd33d6548ee181d7ee572cf53763d4c76015e734333ca351a"
+    },
+    {
+      "path": "Models/PixverseErrorDetail.cs",
+      "sha256": "668db8adb284f3a5132a9822f1dd0b68c62a36167ee509bb9eccad62225fb9b7"
+    },
+    {
+      "path": "Models/PixverseTaskResp.cs",
+      "sha256": "41b2db058ac1cbfb72d9d91cf943c51d5569a1cac8f21817212f2cf07e141208"
+    },
+    {
+      "path": "Models/PixverseVideoGenerationRequest.cs",
+      "sha256": "c1f461ae2c09b7bc3b9f74b22764f26f6e015de966b7b79f87878b92d356c2a4"
+    },
+    {
+      "path": "Models/PixverseVideoGenerationResponse.cs",
+      "sha256": "06ede06c90d0d8e810daffd3d7498a358eaada2077a42a0c7528ed05f65a795e"
+    },
+    {
+      "path": "Models/PixverseVideoGenerationTask.cs",
+      "sha256": "bf5bffe183ac9acdb467e2448cb116baff28928a9ff313f080c0ff49fdeee606"
     },
     {
       "path": "Models/ProviderGeneratedMedia.cs",
@@ -1235,8 +1711,36 @@
       "sha256": "b71bf53547fc818b315c01854b004f4b4fe374f06cd5044071d918de9e5748e9"
     },
     {
-      "path": "Models/ProviderTaskResult.cs",
-      "sha256": "b08ef7fe2be8f107e07d9b5f8397f6183c0160da2ac4722bbc3055147f23ccfc"
+      "path": "Models/RunwayImageToVideoRequest.cs",
+      "sha256": "a09607d1b008c9bc7c74684dff8229cea2a8e654171435fae7ce956ac3bb604f"
+    },
+    {
+      "path": "Models/RunwayTask.cs",
+      "sha256": "b6dbaebbfc261fc3fc2b947b4f3810f632b30e71753dec22562d4ea46e4d4759"
+    },
+    {
+      "path": "Models/RunwayTaskAccepted.cs",
+      "sha256": "eba47a99befe3a54e3b153d29d8b29929b2ea6e3564d376af7aa344311ef528d"
+    },
+    {
+      "path": "Models/RunwayTextToImageRequest.cs",
+      "sha256": "6ede96efbc2f3166ed0acc30ec0eb595d62f5f51d0bd8ac16f2ec93dfd8d2237"
+    },
+    {
+      "path": "Models/RunwayTextToVideoRequest.cs",
+      "sha256": "9ac07378664665cd72d62c9dc38910ccab38bdc9c3110d11e9643d6e54b0b565"
+    },
+    {
+      "path": "Models/StabilityAudioRequest.cs",
+      "sha256": "06cbe25f4c3039c3f6ede0750fc599949d313ee8deb5ec71447d8f2e812d92c8"
+    },
+    {
+      "path": "Models/StabilityImageGenerationRequest.cs",
+      "sha256": "f40ced61fa0c2a3825acdeb2aabcfe50c890de9a223e01a9145fd767a0e46ea3"
+    },
+    {
+      "path": "Models/StabilityImageGenerationResponse.cs",
+      "sha256": "7263d81224f7a45a06c7d37e44eb1ea1a8a71f8149c556716f37846bd2af37d3"
     },
     {
       "path": "Models/SunoMusicGenerationRequest.cs",
@@ -1255,64 +1759,192 @@
       "sha256": "0e87c67ffc9bca1ab95cf5d5f1a5654f68659468d37b048ab18fcc3e95a20573"
     },
     {
+      "path": "Models/TypeSafeAnswer.cs",
+      "sha256": "f7d4868a841de5d797dbeaafbcce4ca95ac158506c28884d1c8d3a49e876ea88"
+    },
+    {
+      "path": "Models/TypeSafeQuestion.cs",
+      "sha256": "a8d378fcc645f672380a3ac37216ef12c4e56d010c277188899e5b599fe904ea"
+    },
+    {
+      "path": "Models/TypeSafeSystemOneRequest.cs",
+      "sha256": "c56f500d342315b2980748d690b2cebb633ace6b2fc93c48e97bacfc937caf92"
+    },
+    {
+      "path": "Models/TypeSafeSystemOneResponse.cs",
+      "sha256": "47fa191863265060ff43299ecf28dfeddf4b59a51b3b83be7786b6d32b61503a"
+    },
+    {
+      "path": "Models/TypeSafeUsage.cs",
+      "sha256": "0e539d997c075f06e03eb25fab581872c815bfc30b3b75edb3913321d03df303"
+    },
+    {
+      "path": "Models/ViduAudioGenerationTask.cs",
+      "sha256": "b06ab01d318c59819d31d2cd48dd119a3d0512a3e353659b5a261b0f62ca1af3"
+    },
+    {
       "path": "Models/ViduCreation.cs",
-      "sha256": "a6e6604af5ebf47e0ba65dd4c71edd7c00097832c5f0ff0d7c16a691eff7b34e"
+      "sha256": "b19a2b6676d05975dab58a8633171388d726212a1e4b72ce17ceb40905d1fb32"
     },
     {
       "path": "Models/ViduImageGenerationTask.cs",
-      "sha256": "379b0a8a9240cb997bec4e76559360c0c63f75791785f0e66c3deb1672a9b212"
+      "sha256": "fb830e993976d12ecbcbb915bc91fbaed3a4c8d68e520bd55526a0e946abb45a"
     },
     {
       "path": "Models/ViduImageToVideoRequest.cs",
-      "sha256": "2575c7ef6ccc4caca5e8ab0f544a979475bcfaffc305105e656ff770604919ed"
+      "sha256": "40d3c39aaa110f07de3ed31978881602ae0f5cf4edf9ccd2056b331e75346749"
     },
     {
       "path": "Models/ViduReferenceToImageRequest.cs",
-      "sha256": "66aa9f4025d06a891291ddb5fa6d08e4d4e3c4c28d394277720c0c4c30b538f0"
+      "sha256": "7cfd15024103348aacb04f93d4b9864f43b8f3f809ca16c61a1da5a6b84eb983"
     },
     {
       "path": "Models/ViduReferenceToVideoRequest.cs",
-      "sha256": "fed5eed5c80c65ea346210d246ced2898f97bc9aacfb702fec177d502d01f125"
+      "sha256": "5f233fca8ced1c6d2ae5051fc584bd00128617b482cd5c36ad4dfe50938d7b34"
     },
     {
       "path": "Models/ViduStartEndToVideoRequest.cs",
-      "sha256": "0bc824209b4d3a5489c7ee87e1ecbb20d5b157bd7638cde195c8397c2cfb041b"
+      "sha256": "6f9204b04560fdd4fa9242165d466fdb545b6f76fc48a4e8bb1ef3c4ccfbe2d9"
     },
     {
       "path": "Models/ViduTaskCreationsResponse.cs",
-      "sha256": "df89f6198e4fdcec0cf8c75a4a208630516b70053083ee10cdae0dc404c4e2d6"
+      "sha256": "b501e544bc328a5270660b415f22ac49fa5f8962cd6fbc438e6e3c56948b8b12"
     },
     {
       "path": "Models/ViduTemplateRequest.cs",
-      "sha256": "86691db5750781cfa04aaa7e6283aad7240efbbe4b6d28238f3656ae206c9d7c"
+      "sha256": "c833e88addb72a26beca26f0422b6ed8f8bbd1c467b5cff08c82d1e2adb1c08b"
+    },
+    {
+      "path": "Models/ViduTemplateTask.cs",
+      "sha256": "e874c632063cac9ffe57d5e47a9d4f3ee34fbc7d1f3ccc820fe384a514d8a9c3"
+    },
+    {
+      "path": "Models/ViduTextToAudioRequest.cs",
+      "sha256": "ada91117e88de06d52e9248de6dffe2928cf57cd43a4583a9f3ab56d8e3ca6f5"
     },
     {
       "path": "Models/ViduTextToVideoRequest.cs",
-      "sha256": "8d853d330e32dfadb59f7088891ae4e4a3adfa5291943479a172281cbfcac457"
+      "sha256": "a6979acb4051c92f0280b3ea8db94af9f924e47ed6d64602d706a4c8bd1f7896"
+    },
+    {
+      "path": "Models/ViduTimingToAudioRequest.cs",
+      "sha256": "cb556408a90134fae7d25149f43828ce94ef6edd5126343c92cab7500b4f2546"
     },
     {
       "path": "Models/ViduVideoGenerationTask.cs",
-      "sha256": "2ad65384e85affc3391def67e418e45cf074ce7716c6443a13f1becaf76416bb"
+      "sha256": "3114aed4782b7c58a07358621bcef391ef4bee2c58b17211a20d52dcddd76db5"
     },
     {
       "path": "Models/VolcengineContentGenerationTask.cs",
-      "sha256": "24f214443c9e70b60b0a5b0b7756173fc25619c4d7e3da80eb55aa3b5ba2b03e"
+      "sha256": "f8708a9b4fb6ca765e73acba20a7799a28be2adf6ac0d2e21eb33a6974428671"
     },
     {
       "path": "Models/VolcengineContentGenerationTaskCreateRequest.cs",
-      "sha256": "fa3f80c3fed37188129c3c124267ec6d280a977280176bf6bcda09b856482976"
+      "sha256": "e5556e0c7f4074f856a24c1ad9c313b853f47c13cdf3ff7a0899b42508402be7"
     },
     {
       "path": "Models/VolcengineContentGenerationTaskCreateResponse.cs",
-      "sha256": "a9d61ea8f01c02c199a2fe0b20a1fa51a6c206a094051a8e4dd337cb10c08bcf"
+      "sha256": "9092dcc2db80063e7297502730dd3f69df1bc8246e79ee776b567aa6db81a93d"
     },
     {
       "path": "Models/VolcengineContentPart.cs",
-      "sha256": "b841dc760f1891fb2fca78c3551586eaf9deb5a453daa20f6faa4213827704b3"
+      "sha256": "1b3a61f6b4e7b12efd2442eb0d6111cebb97ea1c587cef0907d153aa94bec301"
+    },
+    {
+      "path": "Models/VolcengineImageGenerationRequest.cs",
+      "sha256": "e0d2959647ccab653c402004dab909f693a196e36d59ec551e7dd4ef926938bd"
+    },
+    {
+      "path": "Models/VolcengineImageGenerationResponse.cs",
+      "sha256": "3be9ba80d8ed9df36c5c62b83ea73e5776c341036cf771494ee5b7f591f2d23c"
+    },
+    {
+      "path": "Models/XaiDeferredImageResponse.cs",
+      "sha256": "5b837f6d7019382854e70c21c062707aad6faf88386036cc24de369a8499f521"
+    },
+    {
+      "path": "Models/XaiGeneratedImage.cs",
+      "sha256": "cc512ead7c4e72846771f9fbb12baa8cf488052efd5f8398955207970e8d9f40"
+    },
+    {
+      "path": "Models/XaiImageEditRequest.cs",
+      "sha256": "ed471c6c6d804f670316e0d211db130d35b08120ea4683855730bb4711d96763"
+    },
+    {
+      "path": "Models/XaiImageGenerationRequest.cs",
+      "sha256": "81e92057300ce91074d5ef9b8821af33e12cb0129b2b94888260fc51a36ddeae"
+    },
+    {
+      "path": "Models/XaiImageGenerationResponse.cs",
+      "sha256": "d590bb5e086836c7e8924e040fadb27d7dfd0b21c1bc039e14fe5290ce80cecc"
+    },
+    {
+      "path": "Models/XaiImageUrl.cs",
+      "sha256": "334c7aa75fa02a67d4a9abcf9bb87d87f9cde77057065449076b98da66742a98"
+    },
+    {
+      "path": "Models/XaiUsage.cs",
+      "sha256": "5b3644bce6d15499d0f20eae29902d0b9429ebafdf341f8a61afaa417bd66160"
+    },
+    {
+      "path": "Models/XaiVideoEditRequest.cs",
+      "sha256": "0f4bca045fc8b8393d464e746dcdb730ad90b508efacc6b37978c8f78e2d5e5d"
+    },
+    {
+      "path": "Models/XaiVideoExtensionRequest.cs",
+      "sha256": "608162c1a172732b4df86bbf7ff6878260a2ff60f0f16f0050c68ae637cdf6cd"
+    },
+    {
+      "path": "Models/XaiVideoGenerationRequest.cs",
+      "sha256": "4909351fd0ba0e797807da2f475f163bef233285791669421da16dc034ac4771"
+    },
+    {
+      "path": "Models/XaiVideoGenerationTask.cs",
+      "sha256": "c4ef4154a91f00f03a7a4d4f0d790fa11c0ac19a0d416626f898b9a78ac42886"
+    },
+    {
+      "path": "Models/XaiVideoInput.cs",
+      "sha256": "a227e9730f8b510ce173abef3fa69a15b172237404f8a7ff5e6d4781a195ee07"
+    },
+    {
+      "path": "Models/XaiVideoStartResponse.cs",
+      "sha256": "fa189065236b289c162ca21cf808beb301a990746eba6870b9b100f1543436a2"
+    },
+    {
+      "path": "Models/XaiVideoUrl.cs",
+      "sha256": "6d7db2de954bb6c77483419169603e2b92f46ca2e0ea81d6a5391f329dc92717"
+    },
+    {
+      "path": "Models/ZhipuContentFilter.cs",
+      "sha256": "9ec9a657df3eb8f21ef0bdb5f4263af13053d83375660703b95d3f30a5bf354b"
+    },
+    {
+      "path": "Models/ZhipuImageGenerationRequest.cs",
+      "sha256": "708d4cd18edd2886ac3ca75a703031b6cc92cded7758d71a807c1c6c8973271c"
+    },
+    {
+      "path": "Models/ZhipuImageGenerationResponse.cs",
+      "sha256": "044a3580be06d04602070fc9674402681229d668238b9004edd46280824e20b3"
+    },
+    {
+      "path": "Models/ZhipuImageResult.cs",
+      "sha256": "449cb5b676fdfc1395f5ede79cb8f89fd4e39dda55331b840b4da49cc31f0028"
+    },
+    {
+      "path": "Models/ZhipuVideoGenerationRequest.cs",
+      "sha256": "9b735371d42b6ba7136d911dcc9c1cca82e032ef786b671da619cf229fa729d5"
+    },
+    {
+      "path": "Models/ZhipuVideoGenerationTask.cs",
+      "sha256": "18a5fdaf99bf99b55000399dff84b5432e359e937c5581f8894ebd9118ee1a9d"
+    },
+    {
+      "path": "Models/ZhipuVideoResult.cs",
+      "sha256": "aa0848c4dfe3ad8206db7de6284716724f7c6ed3452929ab6f985a50faa325ba"
     },
     {
       "path": "README.md",
-      "sha256": "13b55ff5dddf4a1700fdcb13fc8575c2d407ae4502bb9482f45be5cc95bdf115"
+      "sha256": "a8fc2ff260026875d5e86cd76e7b3ad7373eae6ef1fe2efef8b0b9998d12c6c9"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -1324,7 +1956,7 @@
     },
     {
       "path": "SdkworkAiClient.cs",
-      "sha256": "2edad6419516a8c5a91ca1f4489881caced062ead9303ace2940dafacbf5f7b9"
+      "sha256": "3a215aa1010168c22d19f066c13b0ba6888310e2204293b62f32c86e97f8f25d"
     }
   ],
   "scaffoldFiles": [

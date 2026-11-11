@@ -9,13 +9,13 @@ class AudioMinimaxApi {
 
   AudioMinimaxApi(this._client);
 
-  /// Minimax create music generation
-  Future<MiniMaxMusicGenerationResponse?> createV1MusicGeneration(MiniMaxMusicGenerationRequest body) async {
+  /// MiniMax speech synthesis
+  Future<MinimaxTextToSpeechResponse?> createV1T2aV(MinimaxTextToSpeechRequest body) async {
     final payload = body.toJson();
-    final response = await _client.post('/minimax/v1/music_generation', body: payload, contentType: 'application/json');
+    final response = await _client.post('/minimax/v1/t2a_v2', body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
-      return map == null ? null : MiniMaxMusicGenerationResponse.fromJson(map);
+      return map == null ? null : MinimaxTextToSpeechResponse.fromJson(map);
     })();
   }
 }

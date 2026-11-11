@@ -1,16 +1,16 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Terminal, Mail, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Mail, ArrowRight, CheckCircle2 } from 'lucide-react';
 // Extension-qualified on purpose: this package keeps stray in-place `tsc` emit
 // (`*.js`) beside its sources, and the bundler's extension order puts `.js` ahead
 // of `.ts`. A bare specifier therefore loads a stale compiled copy — which is how
 // the footer silently rendered no QR slots. Naming the source file wins outright.
 import { useSiteBranding } from '../siteBranding.ts';
-import { readMediaResourceUrl } from '../media-resource.ts';
 import { useResolvedMediaResourceUrl } from '../drive-media.ts';
 import { SOCIAL_PLATFORMS } from '../social-platforms.ts';
 import { QR_CHANNELS, type QrChannelCode } from '../qr-channels.ts';
+import { BrandMark } from './BrandMark.tsx';
 import { QrCodePlaceholder } from './QrCodePlaceholder.tsx';
 import { SocialPlatformChip } from './SocialPlatformGlyph.tsx';
 
@@ -30,7 +30,6 @@ export function Footer() {
   const siteBranding = useSiteBranding();
   const displaySiteName = siteBranding.shortName || siteBranding.siteName;
   const description = siteBranding.description || t('footer.desc');
-  const logoSource = readMediaResourceUrl(siteBranding.logo);
   /**
    * Resolved URLs keyed by channel code. Resolved unconditionally and in registry order: calling
    * the hook inside the filter/map that builds the slots would change the hook count the moment
@@ -164,17 +163,7 @@ export function Footer() {
             {sections.brand ? (
               <div className={showBothTopColumns ? 'lg:col-span-5' : ''}>
                 <Link to="/" className="mb-5 flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 shadow-sm dark:bg-white">
-                    {logoSource ? (
-                      <img
-                        src={logoSource}
-                        alt={siteBranding.siteName}
-                        className="h-5 w-5 object-contain"
-                      />
-                    ) : (
-                      <Terminal className="h-5 w-5 text-white dark:text-slate-900" aria-hidden="true" />
-                    )}
-                  </div>
+                  <BrandMark branding={siteBranding} size="lg" />
                   <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
                     {displaySiteName}
                   </span>

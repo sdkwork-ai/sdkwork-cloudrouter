@@ -8,3 +8,4 @@ class AnthropicThinkingConfig:
     """Anthropic Claude anthropic thinking config schema exposed by Cloud Router vendor routing."""
     type: str
     budget_tokens: Optional[int] = None
+    display: Optional[str] = None

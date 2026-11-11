@@ -34,9 +34,9 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// <summary>
         /// Hang up realtime call
         /// </summary>
-        public async Task<Sdkwork.CloudRouter.Open.Models.OpenAiRealtimeCall?> CreateCallsHangupAsync(string callId, Sdkwork.CloudRouter.Open.Models.OpenAiRealtimeCallActionRequest body)
+        public async Task<Sdkwork.CloudRouter.Open.Models.OpenAiRealtimeCall?> CreateCallsHangupAsync(string callId)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.OpenAiRealtimeCall>(ApiPaths.AiPath($"/realtime/calls/{SerializePathParameter(callId, new PathParameterSpec("call_id", "simple", false))}/hangup"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.OpenAiRealtimeCall>(ApiPaths.AiPath($"/realtime/calls/{SerializePathParameter(callId, new PathParameterSpec("call_id", "simple", false))}/hangup"), null);
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// <summary>
         /// Reject realtime call
         /// </summary>
-        public async Task<Sdkwork.CloudRouter.Open.Models.OpenAiRealtimeCall?> CreateCallsRejectAsync(string callId, Sdkwork.CloudRouter.Open.Models.OpenAiRealtimeCallActionRequest body)
+        public async Task<Sdkwork.CloudRouter.Open.Models.OpenAiRealtimeCall?> CreateCallsRejectAsync(string callId, Sdkwork.CloudRouter.Open.Models.OpenAiRealtimeCallRejectRequest body)
         {
             return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.OpenAiRealtimeCall>(ApiPaths.AiPath($"/realtime/calls/{SerializePathParameter(callId, new PathParameterSpec("call_id", "simple", false))}/reject"), body, null, null, "application/json");
         }

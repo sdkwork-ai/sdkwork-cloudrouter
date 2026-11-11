@@ -1,7 +1,0 @@
-package com.sdkwork.cloudrouter.open.model;
-
-
-public class OpenAiImageReferenceInputList {
-
-
-}

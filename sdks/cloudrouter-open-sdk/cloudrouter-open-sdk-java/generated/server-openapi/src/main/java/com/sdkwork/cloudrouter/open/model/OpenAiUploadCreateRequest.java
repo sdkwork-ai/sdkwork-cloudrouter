@@ -1,8 +1,10 @@
 package com.sdkwork.cloudrouter.open.model;
 
+import java.util.Map;
 
 public class OpenAiUploadCreateRequest {
     private Integer bytes;
+    private Map<String, String> expiresAfter;
     private String filename;
     private String mimeType;
     private String purpose;
@@ -13,6 +15,14 @@ public class OpenAiUploadCreateRequest {
 
     public void setBytes(Integer bytes) {
         this.bytes = bytes;
+    }
+
+    public Map<String, String> getExpiresAfter() {
+        return this.expiresAfter;
+    }
+
+    public void setExpiresAfter(Map<String, String> expiresAfter) {
+        this.expiresAfter = expiresAfter;
     }
 
     public String getFilename() {

@@ -10,3 +10,4 @@ class OpenAiUploadCreateRequest:
     filename: str
     mime_type: str
     purpose: str
+    expires_after: Optional[Dict[str, str]] = None

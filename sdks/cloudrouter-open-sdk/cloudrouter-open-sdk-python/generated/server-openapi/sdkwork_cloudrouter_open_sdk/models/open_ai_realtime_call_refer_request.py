@@ -6,5 +6,4 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 @dataclass
 class OpenAiRealtimeCallReferRequest:
     """OpenAI-compatible request to refer or transfer a realtime call."""
-    metadata: Optional[Dict[str, str]] = None
-    target: Optional[str] = None
+    target_uri: str

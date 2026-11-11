@@ -1,25 +1,25 @@
 use serde::{Deserialize, Serialize};
 
-/// OpenAI-compatible request to create a realtime transcription session.
+/// OpenAI-compatible request to create a realtime transcription session (`POST /v1/realtime/transcription_sessions`).
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct OpenAiRealtimeTranscriptionSessionCreateRequest {
-    /// Input audio format for transcription.
+    /// Additional event types to include.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub include: Option<Vec<String>>,
+
+    /// Input audio format.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub input_audio_format: Option<String>,
 
-    /// Realtime transcription configuration.
+    /// Input noise-reduction configuration.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub input_audio_transcription: Option<String>,
+    pub input_audio_noise_reduction: Option<std::collections::HashMap<String, String>>,
 
-    /// Developer-defined realtime metadata.
+    /// Transcription configuration.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<std::collections::HashMap<String, String>>,
+    pub input_audio_transcription: Option<std::collections::HashMap<String, String>>,
 
-    /// Realtime transcription model id or Cloud Router catalog key.
+    /// Voice activity detection configuration.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub model: Option<String>,
-
-    /// Realtime turn detection configuration.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub turn_detection: Option<String>,
+    pub turn_detection: Option<std::collections::HashMap<String, String>>,
 }

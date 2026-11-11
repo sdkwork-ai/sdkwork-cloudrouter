@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::api::paths::ai_path;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{OpenAiRealtimeCall, OpenAiRealtimeCallActionRequest, OpenAiRealtimeCallCreateRequest, OpenAiRealtimeCallReferRequest, OpenAiRealtimeClientSecret, OpenAiRealtimeClientSecretCreateRequest, OpenAiRealtimeSession, OpenAiRealtimeSessionCreateRequest, OpenAiRealtimeTranscriptionSession, OpenAiRealtimeTranscriptionSessionCreateRequest, OpenAiRealtimeTranslationSession, OpenAiRealtimeTranslationSessionCreateRequest};
+use crate::models::{OpenAiRealtimeCall, OpenAiRealtimeCallActionRequest, OpenAiRealtimeCallCreateRequest, OpenAiRealtimeCallReferRequest, OpenAiRealtimeCallRejectRequest, OpenAiRealtimeClientSecret, OpenAiRealtimeClientSecretCreateRequest, OpenAiRealtimeSession, OpenAiRealtimeSessionCreateRequest, OpenAiRealtimeTranscriptionSession, OpenAiRealtimeTranscriptionSessionCreateRequest, OpenAiRealtimeTranslationSession, OpenAiRealtimeTranslationSessionCreateRequest};
 
 #[derive(Clone)]
 pub struct RealtimeApi {
@@ -27,9 +27,9 @@ impl RealtimeApi {
     }
 
     /// Hang up realtime call
-    pub async fn create_calls_hangup(&self, call_id: &str, body: &OpenAiRealtimeCallActionRequest) -> Result<OpenAiRealtimeCall, SdkworkError> {
+    pub async fn create_calls_hangup(&self, call_id: &str) -> Result<OpenAiRealtimeCall, SdkworkError> {
         let path = ai_path(&format!("/realtime/calls/{}/hangup", serialize_path_parameter(call_id, PathParameterSpec::new("call_id", "simple", false))));
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 
     /// Refer realtime call
@@ -39,7 +39,7 @@ impl RealtimeApi {
     }
 
     /// Reject realtime call
-    pub async fn create_calls_reject(&self, call_id: &str, body: &OpenAiRealtimeCallActionRequest) -> Result<OpenAiRealtimeCall, SdkworkError> {
+    pub async fn create_calls_reject(&self, call_id: &str, body: &OpenAiRealtimeCallRejectRequest) -> Result<OpenAiRealtimeCall, SdkworkError> {
         let path = ai_path(&format!("/realtime/calls/{}/reject", serialize_path_parameter(call_id, PathParameterSpec::new("call_id", "simple", false))));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }

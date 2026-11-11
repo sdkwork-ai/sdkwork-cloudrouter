@@ -5,7 +5,9 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
 @dataclass
 class OpenAiVoiceCreateRequest:
-    """OpenAI-compatible request to create a voice."""
-    description: Optional[str] = None
-    metadata: Optional[Dict[str, str]] = None
-    name: Optional[str] = None
+    """OpenAI-compatible request to create a voice from a prompt."""
+    name: str
+    prompt: str
+    type: str
+    model: Optional[str] = None
+    script_hint: Optional[str] = None

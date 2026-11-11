@@ -6,7 +6,6 @@ namespace Sdkwork.CloudRouter.Open.Models
 {
     public class OpenAiRealtimeCallReferRequest
     {
-        public Dictionary<string, string>? Metadata { get; set; }
-        public string? Target { get; set; }
+        public string TargetUri { get; set; }
     }
 }

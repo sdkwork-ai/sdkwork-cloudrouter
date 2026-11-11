@@ -1,6 +1,6 @@
 package types
 
-// Google Gemini google cached content create request schema exposed by Cloud Router vendor routing.
+// Google Gemini cached-content creation request (`POST /v1beta/cachedContents`).
 type GoogleCachedContentCreateRequest struct {
 	Contents []GoogleContent `json:"contents"`
 	DisplayName string `json:"displayName"`

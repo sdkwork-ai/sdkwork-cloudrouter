@@ -1,26 +1,19 @@
 package com.sdkwork.cloudrouter.open.model;
 
-import java.util.Map;
 
 public class OpenAiVoiceCreateRequest {
-    private String description;
-    private Map<String, String> metadata;
+    private String model;
     private String name;
+    private String prompt;
+    private String scriptHint;
+    private String type;
 
-    public String getDescription() {
-        return this.description;
+    public String getModel() {
+        return this.model;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Map<String, String> getMetadata() {
-        return this.metadata;
-    }
-
-    public void setMetadata(Map<String, String> metadata) {
-        this.metadata = metadata;
+    public void setModel(String model) {
+        this.model = model;
     }
 
     public String getName() {
@@ -29,5 +22,29 @@ public class OpenAiVoiceCreateRequest {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getPrompt() {
+        return this.prompt;
+    }
+
+    public void setPrompt(String prompt) {
+        this.prompt = prompt;
+    }
+
+    public String getScriptHint() {
+        return this.scriptHint;
+    }
+
+    public void setScriptHint(String scriptHint) {
+        this.scriptHint = scriptHint;
+    }
+
+    public String getType() {
+        return this.type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }

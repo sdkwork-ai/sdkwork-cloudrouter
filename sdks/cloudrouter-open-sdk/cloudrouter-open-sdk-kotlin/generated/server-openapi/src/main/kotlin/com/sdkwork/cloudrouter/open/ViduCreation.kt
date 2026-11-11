@@ -13,5 +13,6 @@ data class ViduCreation(
     val uri: String? = null,
     val url: String? = null,
     val videoUrl: String? = null,
+    val watermarkedUrl: String? = null,
     val width: Int? = null
 )

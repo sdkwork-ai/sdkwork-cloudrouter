@@ -1,0 +1,11 @@
+[Unit]
+Description=Periodically retain content-hashed Cloud Router Adaptive Web chunks
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=5min
+AccuracySec=1min
+Unit=sdkwork-cloudrouter-retain-web-assets.service
+
+[Install]
+WantedBy=timers.target

@@ -28,8 +28,8 @@ public class VideosViduApi {
     }
 
     /// Vidu create template video
-    public func createEntV2Template(body: ViduTemplateRequest) async throws -> ViduVideoGenerationTask? {
-        return try await client.post("/vidu/ent/v2/template", body: body, params: nil, headers: nil, contentType: "application/json", responseType: ViduVideoGenerationTask.self)
+    public func createEntV2Template(body: ViduTemplateRequest) async throws -> ViduTemplateTask? {
+        return try await client.post("/vidu/ent/v2/template", body: body, params: nil, headers: nil, contentType: "application/json", responseType: ViduTemplateTask.self)
     }
 
     /// Vidu text to video

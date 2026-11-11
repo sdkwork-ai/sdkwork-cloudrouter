@@ -15,8 +15,13 @@ class GoogleGenerateContentRequest:
     """Google Gemini google generate content request schema exposed by Cloud Router vendor routing."""
     contents: List[GoogleContent]
     cached_content: Optional[str] = None
+    continuation_token: Optional[str] = None
     generation_config: Optional[GoogleGenerationConfig] = None
+    labels: Optional[Dict[str, str]] = None
+    model: Optional[str] = None
     safety_settings: Optional[List[GoogleSafetySetting]] = None
+    service_tier: Optional[str] = None
+    store: Optional[bool] = None
     system_instruction: Optional[GoogleContent] = None
     tool_config: Optional[GoogleToolConfig] = None
     tools: Optional[List[GoogleTool]] = None

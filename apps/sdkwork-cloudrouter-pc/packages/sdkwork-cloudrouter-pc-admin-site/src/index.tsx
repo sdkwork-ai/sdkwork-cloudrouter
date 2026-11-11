@@ -34,6 +34,7 @@ import {
   getCloudRouterDriveImageService,
   getCloudRouterUploadSlot,
   readMediaResourceUrl,
+  useResolvedBrandLogoUrl,
   type CloudRouterMediaResource,
   type CloudRouterUploadSlotCode,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
@@ -375,7 +376,7 @@ export function CloudRouterSiteSettingsPage({
       const saved = await SiteSettingsService.updateSettings({
         ...form,
         siteName: form.siteName.trim(),
-      });
+      }, savedForm);
       setForm(saved);
       setSavedForm(saved);
       setSaveSuccess(t('admin.siteSettings.messages.saved'));
@@ -454,7 +455,14 @@ export function CloudRouterSiteSettingsPage({
   const updateDownloadCatalog = (next: string) => {
     setForm((current) => ({ ...current, downloads: next }));
   };
-  const logoSource = readMediaResourceUrl(form.logo);
+  /**
+   * The mark the site is actually serving right now: the operator's upload once its Drive share
+   * link resolves, the shipped brand mark while nothing is configured. Reading it through the
+   * shared resolver is what makes the preview honest — a drive-backed logo has no HTTP URL of its
+   * own, and printing `drive://...` in the preview told operators their upload had failed.
+   */
+  const logoSource = useResolvedBrandLogoUrl({ logo: form.logo });
+  const logoConfigured = readMediaResourceUrl(form.logo) !== '';
 
   if (loading) {
     return (
@@ -629,13 +637,25 @@ export function CloudRouterSiteSettingsPage({
                   slot="site-favicon"
                   value={form.favicon}
                 />
+                {/* What visitors actually get, not the stored reference: a Drive upload has no
+                    readable URL of its own, so the preview resolves it exactly like the navbar,
+                    footer and admin header do. */}
                 <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 dark:bg-white">
-                    {logoSource ? <img alt={form.siteName} className="h-7 w-7 object-contain" src={logoSource} /> : <Image className="h-5 w-5 text-white dark:text-slate-900" />}
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-900 dark:bg-white">
+                    <img
+                      alt={form.siteName}
+                      className={`${logoConfigured ? 'h-7 w-7' : 'h-10 w-10'} object-contain`}
+                      data-admin-site-logo-preview
+                      src={logoSource}
+                    />
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{form.shortName || form.siteName}</p>
-                    <p className="truncate text-xs text-slate-500 dark:text-slate-400">{logoSource || t('admin.siteSettings.preview.noLogo')}</p>
+                    <p className="truncate text-xs text-slate-500 dark:text-slate-400" data-admin-site-logo-status>
+                      {logoConfigured
+                        ? t('admin.siteSettings.preview.customLogo')
+                        : t('admin.siteSettings.preview.defaultLogo')}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1582,7 +1602,9 @@ function MediaUploadField({
   return (
     <div>
       <div className="mb-1.5 flex items-center justify-end gap-3">
-        {value ? (
+        {/* A stored "cleared" record carries no reference at all; it is the absence of a logo,
+            so it must not offer a Remove action that would do nothing. */}
+        {readMediaResourceUrl(value) !== '' ? (
           <button
             className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-red-600 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-red-400"
             onClick={() => onChange(undefined)}
