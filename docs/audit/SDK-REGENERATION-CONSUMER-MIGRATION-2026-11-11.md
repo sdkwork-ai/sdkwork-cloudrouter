@@ -45,7 +45,7 @@ sdkgen（`openapi/cloudrouter-open-sdk.sdkgen.json`）时调用
 | Rust `cargo test` | 通过（0 tests） |
 | TypeScript `node custom/build-runtime.mjs` | exit 0，产出 `dist/` |
 | C# `dotnet build` | **0 errors**（608 个 nullable 警告） |
-| Java `mvn compile` | **0 errors**：先修好 `sdkwork-sdk-common-java` 的 pom（`maven.compiler.source/target` 11→17，源码用了 record），`mvn install` 后再编译 Java SDK |
+| Java `mvn compile` / `mvn test` | **0 errors / exit 0**：先修好 `sdkwork-sdk-common-java` 的 pom（`maven.compiler.source/target` 11→17，源码用了 record），`mvn install` 后再编译/测试 Java SDK |
 | Python `python -m compileall` | 通过 |
 | PC 应用 `pnpm typecheck`（消费 `@sdkwork/cloudrouter-open-sdk`） | 通过 |
 | H5 应用 `pnpm typecheck` | 通过 |
@@ -58,15 +58,20 @@ sdkgen（`openapi/cloudrouter-open-sdk.sdkgen.json`）时调用
 另：`apps/sdkwork-cloudrouter-pc` 的 `vite-config-runtime.test.ts` 有一批**既有失败**
 （`package.json` 的 dev 脚本与测试期望不一致，HEAD 已如此，与本次 SDK 再生无关）。
 
-### Go SDK 的两个生成器缺陷
+### Go SDK 的三个生成器缺陷
 
 1. `http/client.go` 导入 `github.com/sdkwork/sdk-common-go/common`，但该模块的
    `common/` 目录只有子包（`common/core` 才是 `package common` 并定义 `SdkConfig`）。
 2. 即使把导入改成 `.../common/core`，编译仍在 `http/client.go:536` 报
    `no new variables on left side of :=`：函数参数已有 `contentType`，生成器又用
    `contentType := resp.Header.Get(...)` 重复声明。
+3. 修掉前两处后，`api` 包再次报重复声明：
+   `PathParameterSpec`、`SerializePathParameter`、`SerializePathArray`、
+   `SerializePathObject`、`PathPrefix` 在**每个** `api/*.go` 文件里各声明一次，
+   同一 package 下冲突（如 `api/audio.go:107` 与 `api/assistants.go:76`）。
 
-两处都属 `@sdkwork/sdk-generator` 1.0.14 的 Go 模板问题，本仓无法修复。
+三处都属 `@sdkwork/sdk-generator` 1.0.14 的 Go 模板问题，本仓无法修复；Go SDK
+当前不可编译。
 
 ## 4. 消费方迁移（因契约字段变化导致的编译中断）
 

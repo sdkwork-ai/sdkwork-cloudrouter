@@ -225,6 +225,10 @@ fn upstream_account_route_query_projects_the_complete_callable_route() {
             && sql.contains("SELECT 1 FROM account_has_resource_scope has"),
         "resourceEntitlements must be null (unrestricted) for accounts without bindings"
     );
+    assert!(
+        sql.contains("'effectiveResourceEntitlements', ("),
+        "the snapshot must export the effective group x supplier x account scope for catalog projections"
+    );
 }
 
 #[test]
@@ -421,6 +425,44 @@ fn upstream_account_route_row_null_resource_entitlements_stay_unrestricted() {
         binding.resource_entitlements.is_none(),
         "null resourceEntitlements must parse as unrestricted (None)"
     );
+}
+
+#[test]
+fn upstream_account_route_row_parses_effective_resource_entitlements() {
+    let mut row = upstream_account_route_row(3001);
+    row.account_group_bindings_json = r#"[
+        {
+            "accountGroupId": 10,
+            "priority": 10,
+            "weight": 100,
+            "costMultiplierOverride": "1.020000",
+            "apiScope": ["openai.chat_completions"],
+            "capabilities": ["llm"],
+            "resourceEntitlements": null,
+            "effectiveResourceEntitlements": [
+                {
+                    "resourceCode": "vendor.deepseek",
+                    "resourceType": "vendor",
+                    "vendorCode": "deepseek"
+                }
+            ]
+        }
+    ]"#
+    .to_owned();
+
+    let route = row.try_into_domain().unwrap();
+    let binding = &route.account_group_bindings[0];
+    assert!(
+        binding.resource_entitlements.is_none(),
+        "the account keeps its V2 unrestricted contract"
+    );
+    let effective = binding
+        .effective_resource_entitlements
+        .as_ref()
+        .expect("effective scope must parse");
+    assert_eq!(1, effective.len());
+    assert_eq!("vendor.deepseek", effective[0].resource_code);
+    assert_eq!(Some("deepseek"), effective[0].vendor_code.as_deref());
 }
 
 #[test]

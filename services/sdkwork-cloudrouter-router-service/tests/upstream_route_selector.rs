@@ -1752,6 +1752,7 @@ fn diagnostic_fails_when_binding_api_scope_does_not_match() {
         api_scope: vec!["openai.embeddings".to_owned()],
         capabilities: vec![],
         resource_entitlements: None,
+        effective_resource_entitlements: None,
         cost_multiplier_override: None,
     }];
     add_route_and_price(&mut catalog, route);
@@ -1790,6 +1791,7 @@ fn diagnostic_fails_when_binding_capability_does_not_match() {
         api_scope: vec![],
         capabilities: vec!["image".to_owned()],
         resource_entitlements: None,
+        effective_resource_entitlements: None,
         cost_multiplier_override: None,
     }];
     add_route_and_price(&mut catalog, route);

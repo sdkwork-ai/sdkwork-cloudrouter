@@ -974,7 +974,18 @@ fn parse_upstream_account_route_group_binding(
         .unwrap_or(100);
     let api_scope = parse_binding_string_array(&object, "apiScope", "api_scope", index)?;
     let capabilities = parse_binding_string_array(&object, "capabilities", "capabilities", index)?;
-    let resource_entitlements = parse_resource_entitlements(&object, index)?;
+    let resource_entitlements = parse_binding_entitlements(
+        &object,
+        "resourceEntitlements",
+        "resource_entitlements",
+        index,
+    )?;
+    let effective_resource_entitlements = parse_binding_entitlements(
+        &object,
+        "effectiveResourceEntitlements",
+        "effective_resource_entitlements",
+        index,
+    )?;
     let cost_multiplier_override = object
         .get("costMultiplierOverride")
         .and_then(serde_json::Value::as_str)
@@ -991,16 +1002,21 @@ fn parse_upstream_account_route_group_binding(
     if let Some(resource_entitlements) = resource_entitlements {
         binding = binding.with_resource_entitlements(resource_entitlements);
     }
+    if let Some(effective_resource_entitlements) = effective_resource_entitlements {
+        binding = binding.with_effective_resource_entitlements(effective_resource_entitlements);
+    }
     Ok(binding)
 }
 
-fn parse_resource_entitlements(
+fn parse_binding_entitlements(
     object: &serde_json::Map<String, serde_json::Value>,
+    field_camel_key: &str,
+    field_snake_key: &str,
     binding_index: usize,
 ) -> DomainResult<Option<Vec<UpstreamResourceEntitlement>>> {
     let Some(value) = object
-        .get("resourceEntitlements")
-        .or_else(|| object.get("resource_entitlements"))
+        .get(field_camel_key)
+        .or_else(|| object.get(field_snake_key))
     else {
         return Ok(None);
     };
@@ -1013,7 +1029,7 @@ fn parse_resource_entitlements(
     }
     let serde_json::Value::Array(items) = value else {
         return Err(DomainError::new(format!(
-            "route candidate group bindings[{binding_index}].resourceEntitlements must be a json array"
+            "route candidate group bindings[{binding_index}].{field_camel_key} must be a json array"
         )));
     };
 
@@ -1023,7 +1039,7 @@ fn parse_resource_entitlements(
         .map(|(resource_index, value)| {
             let serde_json::Value::Object(resource) = value else {
                 return Err(DomainError::new(format!(
-                    "route candidate group bindings[{binding_index}].resourceEntitlements[{resource_index}] must be a json object"
+                    "route candidate group bindings[{binding_index}].{field_camel_key}[{resource_index}] must be a json object"
                 )));
             };
             let required_text = |camel_key: &str, snake_key: &str| {
@@ -1036,7 +1052,7 @@ fn parse_resource_entitlements(
                     .map(str::to_owned)
                     .ok_or_else(|| {
                         DomainError::new(format!(
-                            "route candidate group bindings[{binding_index}].resourceEntitlements[{resource_index}].{camel_key} is required"
+                            "route candidate group bindings[{binding_index}].{field_camel_key}[{resource_index}].{camel_key} is required"
                         ))
                     })
             };

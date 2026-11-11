@@ -4,7 +4,7 @@ use sdkwork_cloudrouter_router_service::application::{
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
     ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, UpstreamAccountGroup,
-    UpstreamAccountRoute,
+    UpstreamAccountGroupBinding, UpstreamAccountRoute, UpstreamResourceEntitlement,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
 
@@ -443,6 +443,103 @@ fn list_models_returns_complete_admin_group_catalog_independent_of_item_filters(
     assert_eq!("empty-admin-group", page.groups[2].key);
     assert_eq!("Empty Admin Group", page.groups[2].label);
     assert_eq!(0, page.groups[2].model_count);
+}
+
+#[test]
+fn list_models_counts_group_models_from_resource_entitlements() {
+    let mut catalog = InMemoryPricingCatalog::default();
+    catalog.add_vendor(ModelVendorDefinition::new(
+        "openai",
+        ModelVendor::OpenAi,
+        "OpenAI",
+    ));
+    catalog.add_vendor(ModelVendorDefinition::new(
+        "anthropic",
+        ModelVendor::Anthropic,
+        "Anthropic",
+    ));
+    catalog.add_model(AiModel::new(
+        "gpt-4o-mini",
+        "GPT-4o mini",
+        "openai",
+        vec!["chat", "llm"],
+    ));
+    catalog.add_model(AiModel::new(
+        "claude-3-haiku",
+        "Claude 3 Haiku",
+        "anthropic",
+        vec!["chat", "llm"],
+    ));
+    catalog.add_model_upstream_route(ModelUpstreamRoute::new_for_catalog_key(
+        "openai/gpt-4o-mini",
+        "gpt-4o-mini",
+        "openrouter",
+        3001,
+        "gpt-4o-mini",
+    ));
+    catalog.add_upstream_account_group(
+        UpstreamAccountGroup::new(
+            10,
+            "openai-only",
+            "standard",
+            DecimalValue::parse("1.000000").unwrap(),
+            DecimalValue::parse("1.100000").unwrap(),
+        )
+        .with_name("OpenAI Only"),
+    );
+    catalog.add_upstream_account_group(
+        UpstreamAccountGroup::new(
+            11,
+            "empty-admin-group",
+            "standard",
+            DecimalValue::parse("1.000000").unwrap(),
+            DecimalValue::parse("1.100000").unwrap(),
+        )
+        .with_name("Empty Admin Group"),
+    );
+    let mut vendor_entitlement = UpstreamResourceEntitlement::new("vendor.openai", "vendor");
+    vendor_entitlement.vendor_code = Some("openai".to_owned());
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001).with_account_group_bindings(vec![
+            UpstreamAccountGroupBinding::new_resource_scoped(
+                10,
+                10,
+                100,
+                Vec::<String>::new(),
+                vec!["llm"],
+            )
+            .with_resource_entitlements(vec![vendor_entitlement]),
+        ]),
+    );
+    let service = ModelCatalogQueryService::new(&catalog);
+
+    let page = service
+        .list_models(ListModelCatalogQuery {
+            api_key_id: None,
+            billing_meter: BillingMeter::LlmInputToken,
+            vendor_code: None,
+            vendor_codes: Vec::new(),
+            modalities: Vec::new(),
+            capabilities: Vec::new(),
+            categories: Vec::new(),
+            groups: Vec::new(),
+            search_query: None,
+            page_size: Some(20),
+            offset: None,
+        })
+        .unwrap();
+
+    let count_for = |key: &str| {
+        page.groups
+            .iter()
+            .find(|group| group.key == key)
+            .unwrap_or_else(|| panic!("missing group {key}"))
+            .model_count
+    };
+    // Claude has no OpenAI vendor entitlement, so the vendor-scoped group only
+    // counts the OpenAI model instead of every text model in the catalog.
+    assert_eq!(1, count_for("openai-only"));
+    assert_eq!(0, count_for("empty-admin-group"));
 }
 
 #[test]

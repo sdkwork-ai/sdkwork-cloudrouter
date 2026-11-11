@@ -354,6 +354,7 @@ async fn call_chain_logs_diagnose_api_scope_mismatch_as_no_group_bindings() {
         api_scope: vec!["openai.embeddings".to_owned()],
         capabilities: vec![],
         resource_entitlements: None,
+        effective_resource_entitlements: None,
         cost_multiplier_override: None,
     }];
     catalog.add_upstream_account_route(route);

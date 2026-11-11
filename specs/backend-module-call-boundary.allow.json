@@ -1,0 +1,30 @@
+{
+  "comment": "Deliberate exception to MODULE_SPEC.md §4.2. The Cloud Router edge runtime is a separate edge process (CDN-style: it terminates public traffic and proxies upstream), so its upstream base URLs are genuinely cross-process and cannot be in-process calls. Every entry below names an edge upstream, not a backend module calling a sibling.",
+  "allow": [
+    {
+      "file": "crates/sdkwork-cloudrouter-edge-runtime/src/edge_server_runtime_config.rs",
+      "envVar": "SDKWORK_CLOUDROUTER_EDGE_PORTAL_BASE_URL",
+      "module": "portal",
+      "reason": "Separate edge process: the edge runtime proxies the portal surface upstream over HTTP by design (MODULE_SPEC.md §4.2.3 split-deployment exception)."
+    },
+    {
+      "file": "crates/sdkwork-cloudrouter-edge-runtime/src/edge_server_runtime_config.rs",
+      "envVar": "SDKWORK_CLOUDROUTER_EDGE_GATEWAY_BASE_URL",
+      "reason": "Separate edge process: the edge runtime proxies upstream to the application gateway by design."
+    },
+    {
+      "file": "crates/sdkwork-cloudrouter-edge-runtime/src/edge_server_runtime_config.rs",
+      "envVar": "SDKWORK_CLOUDROUTER_EDGE_BACKEND_API_BASE_URL",
+      "reason": "Separate edge process: the edge runtime proxies the backend-api surface upstream by design."
+    },
+    {
+      "file": "crates/sdkwork-cloudrouter-edge-runtime/src/edge_server_runtime_config.rs",
+      "envVar": "SDKWORK_CLOUDROUTER_EDGE_APP_API_BASE_URL",
+      "reason": "Separate edge process: the edge runtime proxies the app-api surface upstream by design."
+    },
+    {
+      "file": "crates/sdkwork-cloudrouter-edge-runtime/src/edge_server.rs",
+      "reason": "Separate edge process (MODULE_SPEC.md §4.2.3 split-deployment exception), recorded file-scoped for the second detection mode: edge_server.rs is the proxy itself — it builds the outbound client and forwards /backend/v3/api and /app/v3/api to the upstreams parsed in edge_server_runtime_config.rs (four variables already allowlisted there). The edge runtime terminates public traffic in its own process, so it has no in-process sibling module to call."
+    }
+  ]
+}

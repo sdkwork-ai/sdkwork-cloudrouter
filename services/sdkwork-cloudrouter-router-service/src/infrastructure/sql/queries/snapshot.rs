@@ -847,7 +847,45 @@ SELECT
                               AND mrs.account_id = c.id
                         ) resource
                     ), '[]'::jsonb)
-                END
+                END,
+                -- Effective group x supplier x account scope. The admin model
+                -- catalog projects per-group model counts from this field; it
+                -- stays null when no resource scope is configured at all, so
+                -- routing's `resourceEntitlements` contract is untouched.
+                'effectiveResourceEntitlements', (
+                    SELECT jsonb_agg(
+                        jsonb_build_object(
+                            'resourceCode', resource.resource_code,
+                            'resourceType', resource.resource_type,
+                            'routeKind', resource.route_kind,
+                            'vendorCode', resource.vendor_code,
+                            'modalityCode', resource.modality_code,
+                            'apiCode', resource.api_code,
+                            'catalogKey', resource.catalog_key,
+                            'model', resource.model,
+                            'providerNativeModel', resource.provider_native_model
+                        )
+                        ORDER BY resource.resource_code
+                    )
+                    FROM (
+                        SELECT DISTINCT
+                            mrs.resource_code,
+                            mrs.resource_type,
+                            mrs.route_kind,
+                            mrs.vendor_code,
+                            mrs.modality_code,
+                            mrs.api_code,
+                            mrs.catalog_key,
+                            mrs.model,
+                            mrs.provider_native_model
+                        FROM effective_matched_resource_scope mrs
+                        WHERE mrs.tenant_id = b.tenant_id
+                          AND mrs.organization_id = b.organization_id
+                          AND mrs.account_group_id = b.account_group_id
+                          AND mrs.supplier_id = c.supplier_id
+                          AND mrs.account_id = c.id
+                    ) resource
+                )
             )
             ORDER BY COALESCE(b.priority, 100) ASC, COALESCE(b.routing_weight, 100) DESC, b.account_group_id ASC, b.id ASC
         )
