@@ -198,18 +198,61 @@ PaymentIntent）；凭据为测试格式时 PSP 会返回其真实认证错误�
   `ORDER_PAYMENT_WEBHOOK_BASE_URL`（指向订单网关
   `POST /app/v3/api/orders/payments/webhooks/{providerCode}`）；
   Cloud Router 自有回调链路的标准化配置见
-  [§5 支付通知（notify）标准](#5-支付通知notify标准)。
+  [§6 支付通知（notify）标准](#6-支付通知notify标准)。
 - PSP 侧：在微信商户平台/支付宝开放平台把该回调地址配置到对应商户号/应用。
 - 未配置时：微信 Native 创建会直接报「notify_url is required」；
   支付宝当面付可以创建并支付成功，但因没有异步通知，状态会停留在
   pending 直到二维码过期——两种情况都应先补齐回调配置再测试。
 
-## 5. 支付通知（notify）标准
+## 5. 支付设置 → 域名设置
+
+管理后台 → 支付中心 → **支付设置 → 域名设置**（`/admin/payments/domainSettings`）集中配置两类支付域名，分别决定**生成的支付二维码 / 收银台链接**与**支付机构回调地址**。
+
+### 5.1 H5 支付域名
+
+- 用途：生成订单收银台深链与二维码内容
+  （`{h5BaseUrl}/cashier/{orderId}?scene={scene}&outTradeNo={outTradeNo}`），并在支付宝
+  WAP/PC 等跳转类支付缺少显式 `return_url` 时作为默认回跳地址。
+- 保存后立即生效：新创建的支付意图 / 一分钱测试二维码使用该域名；已生成的二维码内容不变。
+- 解析顺序：本机构配置行 → 平台 `0` 配置行 → 部署环境
+  `SDKWORK_COMMERCE_CASHIER_BASE_URL` → 平台默认 `https://im.sdkwork.com`。
+- 停用（`inactive`）等价于未配置：收银台回退到部署默认域名。
+- 协议：生产环境仅允许 `https`；`http` 仅限 development/test 本地联调。
+- 数据库：`commerce_payment_domain_setting`（每租户/机构一行，
+  `h5_protocol` / `h5_hostname` / `h5_port` / `h5_status`）。
+- 管理 API：`GET|PUT /backend/v3/api/payments/domain_settings`
+  （`domainSettings.retrieve/update`，权限
+  `commerce.payments.domain_settings.read|update`）。
+
+### 5.2 回调域名
+
+- 用途：生成支付机构支付 / 退款通知地址
+  （`{base}/app/v3/api/orders/payments/webhooks/{providerCode}` 与
+  `.../refunds/webhooks/{providerCode}`）。
+- 快速配置：在「快速添加回调域名」中填协议 / 域名 / 端口（或点「使用当前访问域名」），
+  勾选「设为默认」保存即可；列表支持设为默认、启用/停用、删除。
+- 解析顺序：本机构默认启用域名 → 平台 `0` 默认启用域名 →
+  部署环境 `ORDER_PAYMENT_WEBHOOK_BASE_URL` → 机构账户 metadata `notifyUrl`。
+- 生产环境仅允许 `https`；同一时间仅一个默认启用域名。
+- 数据库：`commerce_payment_notify_domain`（多行，`is_default` + `status`）。
+- 管理 API：`/backend/v3/api/payments/notify_domains`
+  （`notifyDomains.list/create/update/delete`）。
+
+### 5.3 自检
+
+| 检查项 | 位置 | 期望 |
+|---|---|---|
+| H5 域名已保存 | 域名设置 → H5 支付域名 | 收银台基础地址 / 链接模板显示配置值 |
+| 二维码使用配置域名 | 支付方式 → 一分钱测试 | 对话框显示按配置生成的 H5 收银台链接 |
+| 回调域名已配置 | 域名设置 → 回调域名 | 列表存在默认启用域名，回调地址可复制 |
+| PSP 回调可达 | PSP 后台 | 回调地址指向订单网关回调路径 |
+
+## 6. 支付通知（notify）标准
 
 支付/退款通知的完整处理已**统一到 sdkwork-order 订单网关**，Cloud Router 不再
 挂载任何 PSP 回调路径（历史 transit 链已清除）。
 
-### 5.1 权威实现（sdkwork-order）
+### 6.1 权威实现（sdkwork-order）
 
 | 通知类型 | 端点 | 积木规范 | 编排入口 |
 |---|---|---|---|
@@ -225,7 +268,7 @@ PaymentIntent）；凭据为测试格式时 PSP 会返回其真实认证错误�
 - 退款通知：独立 URL 与独立 flow；按 `refund_no` 关联退款单并推进退款状态机，
   订单 `refund_status` 终态幂等（`refunded` 不被 `refund_failed` 覆盖）。
 
-### 5.2 补偿轮询 worker（通知失败兜底）
+### 6.2 补偿轮询 worker（通知失败兜底）
 
 通知接口失败（丢失/未送达）时，由订单网关内置补偿 worker 兜底：每 30 秒认领
 `pending/processing` 支付与 `submitted/processing` 退款，查询 PSP 真实状态，
@@ -235,14 +278,14 @@ notify 积木完成状态同步与履约（幂等事件 id + 终态保护 + 履�
 `SDKWORK_ORDER_PAYMENT_COMPENSATION_WORKER_ENABLED=1`（其余配置项见
 sdkwork-order `TECH_ARCHITECTURE.md` §9）。
 
-### 5.3 下单侧 notifyUrl（Cloud Router 支付意图 API）
+### 6.3 下单侧 notifyUrl（Cloud Router 支付意图 API）
 
 `POST /payments/v3/payment_intents` 仍接受显式 `notifyUrl` 透传（绝对
 http/https、≤2048、无 fragment），随请求传递给 PSP 适配器；标准 notify URL
 的构造与注册由订单网关 checkout 负责（`ORDER_PAYMENT_WEBHOOK_BASE_URL`）。
 `businessType`（默认 `order`）保留为订单侧履约分发的标准约定。
 
-## 6. 操作自检清单
+## 7. 操作自检清单
 
 | 检查项 | 位置 | 期望 |
 |---|---|---|
@@ -255,7 +298,7 @@ http/https、≤2048、无 fragment），随请求传递给 PSP 适配器；标�
 | Webhook 收到 | Webhook 事件 | 有对应事件且 processed |
 | 对账可跑 | 对账任务 | queued → succeeded（由 Cloud Router 对账 worker 消费） |
 
-## 7. 常见问题
+## 8. 常见问题
 
 - **「模拟成功回调」按钮不显示**：仅对 `created/pending/processing` 状态的记录显示；
   意图/尝试需处于未完成状态。
@@ -272,7 +315,7 @@ http/https、≤2048、无 fragment），随请求传递给 PSP 适配器；标�
   再确认该 run 对应周期的机构账单已由账单下载/解析管线导入；账单未就绪时
   run 保持 queued 属正常等待，无需干预。
 
-## 8. 金额单位约定（防回归）
+## 9. 金额单位约定（防回归）
 
 支付域金额的存储与传递**统一使用最小单位整数文本**（minor units，如 ¥0.01 = `"1"`、
 ¥12.50 = `"1250"`），贯穿订单、支付意图、支付尝试、退款、对账全链路：

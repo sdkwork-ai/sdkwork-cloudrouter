@@ -181,3 +181,26 @@ test("admin sidebar nests skills, connectors, plugins, and agents under the AI f
     );
   }
 });
+
+test("payment center exposes 支付设置 → 域名设置 as a sidebar entry", () => {
+  const paymentMenu = getAdminModuleMenu("paymentCenter");
+  const settingsGroup = paymentMenu.groups.find(
+    (group) => group.groupKey === "admin.menu.payments.settings",
+  );
+
+  assert.ok(settingsGroup, "payment settings group must exist");
+  assert.deepEqual(
+    settingsGroup.items.map((item) => item.path),
+    ["/admin/payments/domainSettings"],
+  );
+  assert.equal(
+    settingsGroup.items[0]?.labelKey,
+    "admin.menu.payments.domainSettings",
+    "the domain settings item must resolve its label through i18n",
+  );
+
+  assert.deepEqual(
+    getActiveSidebarItemPaths("/admin/payments/domainSettings", paymentMenu),
+    ["/admin/payments/domainSettings"],
+  );
+});
