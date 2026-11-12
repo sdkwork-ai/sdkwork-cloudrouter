@@ -11,7 +11,7 @@ import { ReferralStrategiesPage } from './ReferralStrategiesPage';
 
 vi.mock('react-i18next', () => {
   const dictionary: Record<string, string> = {
-    'admin.marketing.referralStrategies.rewardType.points': 'Compute Credits',
+    'admin.marketing.referralStrategies.rewardType.points': 'Membership Points',
     'admin.marketing.referralStrategies.rewardTarget.inviter': 'Inviter',
     'admin.marketing.referralStrategies.triggerEvent.REGISTER': 'Successful registration',
   };
@@ -61,7 +61,7 @@ describe('ReferralStrategiesPage enum labels', () => {
   it('renders reward type, target, and trigger through the i18n enum vocabulary', async () => {
     render(<ReferralStrategiesPage />);
 
-    expect(await screen.findByText('Compute Credits')).toBeInTheDocument();
+    expect(await screen.findByText('Membership Points')).toBeInTheDocument();
     expect(screen.getByText('Inviter')).toBeInTheDocument();
     expect(screen.getByText('Successful registration')).toBeInTheDocument();
     expect(screen.queryByText('POINTS')).not.toBeInTheDocument();

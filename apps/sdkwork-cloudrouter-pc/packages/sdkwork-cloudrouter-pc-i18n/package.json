@@ -24,6 +24,7 @@
     "@sdkwork/cloudrouter-pc-admin-upstream": "workspace:*",
     "@sdkwork/cloudrouter-pc-pricing": "workspace:*",
     "@sdkwork/i18n-pc-react": "workspace:*",
+    "@sdkwork/cloudrouter-pc-admin-hardware": "workspace:*",
     "@sdkwork/log-pc-admin-request-log": "workspace:*",
     "@sdkwork/messaging-pc-admin-notify": "workspace:*",
     "@sdkwork/order-pc-admin-orders": "workspace:*",

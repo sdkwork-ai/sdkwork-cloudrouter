@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{AnthropicSkill};
+use crate::models::AnthropicSkill;
 
 /// Anthropic container selection and skills.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

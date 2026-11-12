@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{MinimaxBaseResp};
+use crate::models::MinimaxBaseResp;
 
 /// MiniMax T2A v2 response. data.audio is hex-encoded audio; usage_characters is the billed count.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

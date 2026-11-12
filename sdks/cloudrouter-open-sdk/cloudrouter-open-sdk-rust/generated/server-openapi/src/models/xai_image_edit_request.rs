@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{XaiImageUrl};
+use crate::models::XaiImageUrl;
 
 /// xAI Grok Imagine image edit request (EditImageRequest).
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

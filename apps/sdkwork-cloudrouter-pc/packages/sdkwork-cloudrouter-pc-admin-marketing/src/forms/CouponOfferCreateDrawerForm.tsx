@@ -85,7 +85,7 @@ const INITIAL_VALUES: CouponOfferCreateFormValues = {
   batchExpiresAt: '',
 };
 
-/** 正整数（Token Bank 额度/积分/配额）。 */
+/** 正整数（算力额度/会员积分/配额）。 */
 const positiveIntegerPattern = /^[1-9][0-9]*$/;
 /** 非负整数（赠送额度）。 */
 const nonNegativeIntegerPattern = /^(0|[1-9][0-9]*)$/;
@@ -236,15 +236,15 @@ export function CouponOfferCreateDrawerForm({
     }
     setDiscountErrors({});
     if (benefitKind === 'token_bank_credit') {
-      if (!requirePositiveInteger(values.grantAmount ?? '', t('admin.marketing.coupon.form.requiredGrant', 'Grant amount is required for token bank credit coupons'))) {
+      if (!requirePositiveInteger(values.grantAmount ?? '', t('admin.marketing.coupon.form.requiredGrant', 'Compute Credits are required for Compute Credits coupons'))) {
         return;
       }
       if (values.bonusAmount?.trim() && !nonNegativeIntegerPattern.test(values.bonusAmount.trim())) {
-        setValidationError(t('admin.marketing.coupon.form.invalidBonus', 'Bonus amount must be a non-negative integer'));
+        setValidationError(t('admin.marketing.coupon.form.invalidBonus', 'Bonus Compute Credits must be a non-negative integer'));
         return;
       }
     }
-    if (benefitKind === 'points_credit' && !requirePositiveInteger(values.grantPoints ?? '', t('admin.marketing.coupon.form.requiredPoints', 'Grant points are required for points coupons'))) {
+    if (benefitKind === 'points_credit' && !requirePositiveInteger(values.grantPoints ?? '', t('admin.marketing.coupon.form.requiredPoints', 'Membership points are required for membership point coupons'))) {
       return;
     }
     if (benefitKind === 'cash_credit') {
@@ -322,7 +322,11 @@ export function CouponOfferCreateDrawerForm({
     if (benefitKind === 'token_bank_credit') {
       return (
         <>
-          <MarketingField label={t('admin.marketing.coupon.form.grantAmount', 'Grant Amount')} required>
+          <MarketingField
+            label={t('admin.marketing.coupon.form.grantAmount', 'Compute Credits to grant')}
+            required
+            hint={t('admin.marketing.coupon.form.grantAmountHint', 'Amount in whole Compute Credits')}
+          >
             <input
               type="text"
               value={values.grantAmount ?? ''}
@@ -331,7 +335,7 @@ export function CouponOfferCreateDrawerForm({
               placeholder={t('admin.marketing.coupon.form.grantAmountPlaceholder', 'e.g. 500')}
             />
           </MarketingField>
-          <MarketingField label={t('admin.marketing.coupon.form.bonusAmount', 'Bonus Amount')} hint={t('admin.marketing.coupon.form.bonusAmountHint', 'Optional granted bonus on top of the grant amount')}>
+          <MarketingField label={t('admin.marketing.coupon.form.bonusAmount', 'Bonus Compute Credits')} hint={t('admin.marketing.coupon.form.bonusAmountHint', 'Optional bonus Compute Credits on top of the grant')}>
             <input
               type="text"
               value={values.bonusAmount ?? ''}
@@ -340,22 +344,16 @@ export function CouponOfferCreateDrawerForm({
               placeholder={t('admin.marketing.coupon.form.bonusAmountPlaceholder', 'e.g. 50')}
             />
           </MarketingField>
-          <MarketingField label={t('admin.marketing.coupon.form.currencyCode', 'Currency')} required>
-            <SdkworkBaseDataCurrencySelect
-              className={marketingInputClassName}
-              emptyText={t('admin.marketing.coupon.form.currencyEmpty', 'No matching currency')}
-              onValueChange={(value) => update('currencyCode', value)}
-              placeholder={t('admin.marketing.coupon.form.currencyCodePlaceholder', 'CNY')}
-              searchPlaceholder={t('admin.marketing.coupon.form.currencySearch', 'Search currency by code or name')}
-              value={values.currencyCode}
-            />
-          </MarketingField>
         </>
       );
     }
     if (benefitKind === 'points_credit') {
       return (
-        <MarketingField label={t('admin.marketing.coupon.form.grantPoints', 'Grant Points')} required>
+        <MarketingField
+          label={t('admin.marketing.coupon.form.grantPoints', 'Grant Membership Points')}
+          required
+          hint={t('admin.marketing.coupon.form.grantPointsHint', 'Amount in whole membership points')}
+        >
           <input
             type="text"
             value={values.grantPoints ?? ''}
@@ -485,8 +483,8 @@ export function CouponOfferCreateDrawerForm({
         onChange={(event) => setExchangeBenefitKind(event.target.value as CouponOfferBenefitKind)}
         className={marketingSelectClassName}
       >
-        <option value="token_bank_credit">{t('admin.marketing.coupon.form.benefit.token_bank_credit', 'Token Bank Credit')}</option>
-        <option value="points_credit">{t('admin.marketing.coupon.form.benefit.points_credit', 'Points Credit')}</option>
+        <option value="token_bank_credit">{t('admin.marketing.coupon.form.benefit.token_bank_credit', 'Compute Credits Coupon')}</option>
+        <option value="points_credit">{t('admin.marketing.coupon.form.benefit.points_credit', 'Membership Points Coupon')}</option>
         <option value="cash_credit">{t('admin.marketing.coupon.form.benefit.cash_credit', 'Cash Credit')}</option>
         <option value="subscription">{t('admin.marketing.coupon.form.benefit.subscription', 'Member Card')}</option>
       </select>
@@ -634,6 +632,18 @@ export function CouponOfferCreateDrawerForm({
             </option>
           </select>
         </MarketingField>
+
+        {discountType !== 'NONE' ? (
+          <p
+            role="status"
+            className="sm:col-span-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300"
+          >
+            {t(
+              'admin.marketing.coupon.form.discountCheckoutPending',
+              'Order-discount coupons need checkout integration: the current checkout does not apply FIXED/PERCENTAGE coupons yet, so customers cannot use this coupon at checkout.',
+            )}
+          </p>
+        ) : null}
 
         {discountType === 'FIXED' ? (
           <MarketingField

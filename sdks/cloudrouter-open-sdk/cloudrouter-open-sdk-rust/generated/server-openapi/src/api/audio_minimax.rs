@@ -14,9 +14,13 @@ impl AudioMinimaxApi {
     }
 
     /// MiniMax speech synthesis
-    pub async fn create_v1_t2a_v(&self, body: &MinimaxTextToSpeechRequest) -> Result<MinimaxTextToSpeechResponse, SdkworkError> {
+    pub async fn create_v1_t2a_v(
+        &self,
+        body: &MinimaxTextToSpeechRequest,
+    ) -> Result<MinimaxTextToSpeechResponse, SdkworkError> {
         let path = "/minimax/v1/t2a_v2".to_string();
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
-
 }

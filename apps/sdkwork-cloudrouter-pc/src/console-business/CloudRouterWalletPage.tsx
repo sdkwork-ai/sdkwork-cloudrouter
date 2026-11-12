@@ -150,11 +150,11 @@ function CloudRouterWalletPageContent() {
                         dailyQuota: t('coupon_recharge.daily_quota', '每日额度'),
                         description: t(
                           'coupon_recharge.description',
-                          '输入优惠券兑换码，为 Token Bank 充值算力额度、发放积分/现金或激活限额订阅。',
+                          '输入优惠券兑换码，为 Token Bank 充值算力额度、发放会员积分/现金或激活限额订阅。',
                         ),
                         expiresAt: t('coupon_recharge.expires_at', '有效期至'),
                         invalidCode: t('coupon_recharge.code_required', '请输入兑换码。'),
-                        pointsCredited: t('coupon_recharge.points_credited', '积分已发放'),
+                        pointsCredited: t('coupon_recharge.points_credited', '会员积分已发放'),
                         redeem: t('console.billing.billingview.text.cl1a9g'),
                         redeeming: t('coupon_recharge.redeeming', '正在兑换…'),
                         subscriptionActivated: t('coupon_recharge.subscription_activated', '订阅已激活'),
@@ -178,11 +178,11 @@ function CloudRouterWalletPageContent() {
                     <SdkworkPointsRechargeInline
                       copy={{
                         account: t('points_recharge.account', 'Cloud Router'),
-                        agreement: t('points_recharge.agreement', '支付前请阅读并同意《算力积分充值服务协议》。'),
-                        agreementAccepted: t('points_recharge.agreement_accepted', '您已同意《算力积分充值服务协议》。'),
-                        agreementRequired: t('points_recharge.agreement_required', '请先同意算力积分充值服务协议'),
+                        agreement: t('points_recharge.agreement', '支付前请阅读并同意《会员积分充值服务协议》。'),
+                        agreementAccepted: t('points_recharge.agreement_accepted', '您已同意《会员积分充值服务协议》。'),
+                        agreementRequired: t('points_recharge.agreement_required', '请先同意会员积分充值服务协议'),
                         close: t('close', '关闭'),
-                        completed: t('points_recharge.completed', '支付完成，算力积分已到账'),
+                        completed: t('points_recharge.completed', '支付完成，会员积分已到账'),
                         confirmPayment: t('points_recharge.confirm_payment', '同意并支付'),
                         creatingPayment: t('points_recharge.creating_payment', '正在生成支付二维码...'),
                         emptyPackages: t('points_recharge.empty_packages', '暂无可用充值套餐'),
@@ -194,17 +194,17 @@ function CloudRouterWalletPageContent() {
                         expiresIn: t('points_recharge.expires_in', '订单剩余支付时间'),
                         loadFailed: t('points_recharge.load_failed', '充值套餐加载失败'),
                         loadingPackages: t('points_recharge.loading_packages', '正在加载充值套餐...'),
-                        myPoints: t('points_recharge.my_points', '我的算力积分'),
-                        notice: t('points_recharge.notice', '温馨提示：算力积分不可兑换会员、不可转赠，也不可提现；充值后有效期以平台规则为准。'),
+                        myPoints: t('points_recharge.my_points', '我的会员积分'),
+                        notice: t('points_recharge.notice', '温馨提示：会员积分不可转赠，也不可提现；充值后有效期以平台规则为准。'),
                         paymentUnavailable: t('points_recharge.payment_unavailable', '支付暂不可用'),
                         paymentUnavailableDescription: t('points_recharge.payment_unavailable_description', '暂时无法生成支付二维码，请稍后重试。'),
-                        pointsUnit: t('points_recharge.points_unit', '算力积分'),
+                        pointsUnit: t('points_recharge.points_unit', '会员积分'),
                         retry: t('points_recharge.retry', '重新加载'),
                         retryPayment: t('points_recharge.retry_payment', '重新支付'),
                         scanPrompt: t('points_recharge.scan_prompt', '请扫码完成支付'),
-                        title: t('points_recharge.title', '算力积分购买'),
+                        title: t('points_recharge.title', '会员积分购买'),
                       }}
-                      currentPoints={state.overview.account.tokenBankAvailable}
+                      currentPoints={state.overview.account.availablePoints}
                       onCompleted={async () => {
                         await controller.refresh();
                       }}

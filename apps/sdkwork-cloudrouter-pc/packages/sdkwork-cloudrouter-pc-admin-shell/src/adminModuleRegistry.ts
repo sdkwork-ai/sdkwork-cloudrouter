@@ -32,6 +32,7 @@ import {
   Network,
   Package,
   Puzzle,
+  Plus,
   Radio,
   ReceiptText,
   Recycle,
@@ -60,6 +61,10 @@ import {
   MESSAGING_ADMIN_MENU,
   MESSAGING_ADMIN_MODULE_DEF,
 } from '@sdkwork/messaging-pc-admin-notify/contribution';
+import {
+  HARDWARE_ADMIN_MENU,
+  HARDWARE_ADMIN_MODULE_DEF,
+} from '@sdkwork/cloudrouter-pc-admin-hardware/contribution';
 
 export type AdminModuleId =
   | 'home'
@@ -75,6 +80,8 @@ export type AdminModuleId =
   | 'storageCenter'
   | 'tradeCenter'
   | 'notifyCenter'
+  | 'documentCenter'
+  | 'hardwareCenter'
   | 'operations';
 
 export interface AdminModuleDef {
@@ -208,6 +215,14 @@ export const ADMIN_MODULES: AdminModuleDef[] = [
     defaultPath: '/admin/storage/providers',
     pathPrefixes: ['/admin/storage'],
   }),
+  moduleBlock({
+    id: 'documentCenter',
+    nameKey: 'admin.header.documentCenter',
+    icon: BookOpen,
+    defaultPath: '/admin/documents',
+    pathPrefixes: ['/admin/documents'],
+  }),
+  HARDWARE_ADMIN_MODULE_DEF,
   moduleBlock({
     id: 'operations',
     nameKey: 'admin.header.operations',
@@ -428,6 +443,16 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
       ]),
     ],
   },
+  {
+    moduleId: 'documentCenter',
+    groups: [
+      groupBlock('admin.menu.documents.management', [
+        itemBlock({ path: '/admin/documents', labelKey: 'admin.menu.documents.list', icon: FileText }),
+        itemBlock({ path: '/admin/documents/new', labelKey: 'admin.menu.documents.create', icon: Plus }),
+      ]),
+    ],
+  },
+  HARDWARE_ADMIN_MENU,
   {
     moduleId: 'operations',
     groups: [

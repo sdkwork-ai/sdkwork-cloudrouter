@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{MinimaxBaseResp};
+use crate::models::MinimaxBaseResp;
 
 /// MiniMax asynchronous video generation task, its status, and the produced file id.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

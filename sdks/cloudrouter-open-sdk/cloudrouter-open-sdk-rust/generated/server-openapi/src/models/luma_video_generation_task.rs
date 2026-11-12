@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{LumaGenerationAssets};
+use crate::models::LumaGenerationAssets;
 
 /// Luma Dream Machine generation record and its assets.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

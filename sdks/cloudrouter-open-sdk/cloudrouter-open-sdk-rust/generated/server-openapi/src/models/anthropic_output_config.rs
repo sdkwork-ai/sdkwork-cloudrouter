@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{AnthropicOutputFormat};
+use crate::models::AnthropicOutputFormat;
 
 /// Anthropic output configuration.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

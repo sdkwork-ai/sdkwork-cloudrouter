@@ -14,9 +14,13 @@ impl ChatTypesafeApi {
     }
 
     /// TypeSafe AI System One decision
-    pub async fn create_v1_systemone(&self, body: &TypeSafeSystemOneRequest) -> Result<TypeSafeSystemOneResponse, SdkworkError> {
+    pub async fn create_v1_systemone(
+        &self,
+        body: &TypeSafeSystemOneRequest,
+    ) -> Result<TypeSafeSystemOneResponse, SdkworkError> {
         let path = "/typesafe/v1/systemone".to_string();
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
-
 }

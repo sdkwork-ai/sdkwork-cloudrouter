@@ -14,9 +14,13 @@ impl ImagesMinimaxApi {
     }
 
     /// MiniMax image generation
-    pub async fn create_v1_image_generation(&self, body: &MinimaxImageGenerationRequest) -> Result<MinimaxImageGenerationResponse, SdkworkError> {
+    pub async fn create_v1_image_generation(
+        &self,
+        body: &MinimaxImageGenerationRequest,
+    ) -> Result<MinimaxImageGenerationResponse, SdkworkError> {
         let path = "/minimax/v1/image_generation".to_string();
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
-
 }

@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@sdkwork/aiot-backend-sdk": "workspace:*",
     "@sdkwork/cloudroutes-pc-commons": "workspace:*",
     "@sdkwork/cloudrouter-backend-sdk": "workspace:*",
     "@sdkwork/models-backend-sdk": "workspace:*",

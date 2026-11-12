@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{GoogleCitationSource};
+use crate::models::GoogleCitationSource;
 
 /// Citation metadata returned by Gemini.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

@@ -77,9 +77,9 @@ export function Footer() {
   ];
 
   const resourceLinks = [
-    { label: t('nav.productDocs'), href: '/product-docs' },
+    { label: t('nav.productDocs'), href: '/dev-docs/product-docs' },
     { label: t('footer.docs'), href: '/docs' },
-    { label: t('footer.api'), href: '/api-reference' },
+    { label: t('footer.api'), href: '/dev-docs/api-reference' },
     { label: t('footer.guides'), href: '/guides' },
     { label: t('footer.blog'), href: '/blog' },
   ];
@@ -90,6 +90,10 @@ export function Footer() {
     { label: t('footer.contact'), href: '/contact' },
     { label: t('footer.privacy'), href: siteBranding.privacyUrl || '/privacy' },
     { label: t('footer.terms'), href: siteBranding.termsUrl || '/terms' },
+    // Cookie Policy is served by the shared sdkwork-documents legal pages; the
+    // footer keeps a stable in-app link because the operator branding schema
+    // exposes no cookie URL override.
+    { label: t('footer.cookies'), href: '/cookies' },
   ];
 
   /**

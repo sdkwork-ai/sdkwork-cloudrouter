@@ -32,13 +32,15 @@
 | 库存不超卖 | DB CHECK + CAS（双保险） | 不变 |
 | 单券不可并发双兑 | 行锁 + CAS | 不变 |
 | **一单不可叠加两张不可组合券** | 无 | **应用层：双方均须 `COMBINABLE`（已落地）** |
+| **人群资格（新客/回流）** | 仅存字段 | **应用层：claim/redeem/apply 按用户已支付订单数校验（已落地）** |
+| **商品范围（充值/订阅）** | 仅存字段 | **应用层：订单抵扣 apply 按订单 subject 校验（已落地）** |
 | 计数与明细一致 | 无对账 | 后台库存页有"账不平"标记；对账作业待 S5 |
 | 码大小写唯一 | 唯一索引区分大小写 | 查找函数索引已补；**归一化唯一**待数据核查后加 |
-| 兑换尝试有证据 | 无 | **已落地（成功同事务、失败独立事务）** |
+| 兑换尝试有证据 | 无 | **已落地（成功同事务、失败独立事务；order 路径成功尝试也已写入）** |
 | 码只能受控访问且留痕 | 无（列表直接返回明文、导出无审计） | **已落地**：列表掩码 + 揭示/导出走审计接口 |
 | 码身份不可逆推、查找走索引、大小写唯一 | 明文查找全表扫描 | **已落地**：`code_hash`（sha256 归一化）+ 唯一约束 + 哈希首查；明文保留仅供审计化揭示/导出（生产实测 100/100 行可回填、0 重复） |
 | 时间窗 `end > start` | 仅出码批次校验 | 待 S5（DB CHECK） |
-| 金额单位唯一 | 混用（major/minor/资产单位） | **未动**，需单位决策 |
+| 金额单位唯一 | 混用（major/minor/资产单位） | **券权益已对齐**：算力券规则=整数算力额度，订单/账本=微积分；会员积分=整数；现金=最小单位。其余营销金额列仍待统一 |
 
 ### 1.3 迁移卫生
 
@@ -207,7 +209,113 @@ error=SDKWORK_ACCESS_TOKEN is required for account value ledger commands; …
 
 **遗留**：订单路径 `redeem_promotion_code_for_order` 不写 `promotion_code_redemption_attempt`（只有独立的 `/promotion/codes/redeem` 写），因此最常用的核销路径缺少失败证据——应补。
 
-### 5.3 契约检查遗留（requires a naming decision）
+### 5.3 生产缺陷与修复：算力券 110 额度只入账 +0.00011（2026-11-11）
+
+**现象**：运营创建面值 110 的算力券（`token_bank_credit`），用户兑换后 Token Bank 流水为 `+0.00011`，期望 `+110`。
+
+**根因**：券规则 `grantAmount`/`bonusAmount` 是**整数算力额度**（运营输入 110 就是 110 算力额度），而 Token Bank 账户账本以**微积分**记账（1 算力额度 = 1e6 微积分）。promotion 的订单权益解析把 110 原样交给订单/账户，账本于是只增加 110 微积分 = 0.00011 算力额度。赠送额度也走同一条路径，因此同样缩小 1e6 倍。
+
+**修复**：
+
+| 层 | 变更 |
+|---|---|
+| promotion 订单权益 | `parse_order_coupon_benefit` 先合并 `grantAmount + bonusAmount`（整数算力额度），再 `checked_mul(1_000_000)` 转微积分；legacy 无规则券同样处理。溢出在核销前以 validation 拒绝。 |
+| promotion 直兑入账 | `credit_coupon_benefit_in_tx` 与 `map_redemption_preview` 对 Token Bank 使用同一微积分口径。 |
+| order 客户端 | `@sdkwork/order-service`、H5 `normalizeCouponRedemptionResult`、小程序 `formatTokenBankPoints`、Flutter `formatTokenBankPoints` 都把 Token Bank 微积分换算回算力额度展示；PC/H5/小程序/Flutter 兑换结果不再显示裸微积分或误除 100。 |
+| 后台展示 | 兑换尝试台账按微积分格式化算力额度；券详情/表单明确「算力券（算力额度）」与「会员积分券（会员积分）」两套口径。 |
+| 回归 | promotion `coupon_benefit`：110 → 110_000_000、110+20 → 130_000_000、legacy 500 元 → 5_000_000_000 微积分、溢出拒绝；order-service：110000000 微积分 → 110。 |
+
+**口径结论**：`token_bank_credit` = 算力券 → Token Bank 算力额度；`points_credit` = 会员积分券 → 会员积分（Points）账户。两者不是重复券种，此前是把会员积分券误标成「算力额度券」才看起来重复。
+
+**存量账务**：修复只改变后续核销的换算，已写入 `acct_ledger_entry` 的 `+0.00011` 历史流水不会被重放。若该券已核销且余额需要补正，应以 `token_bank_grant` 业务类型补记差额（110 算力额度 − 已入账 0.00011 = 109.99989 算力额度，即 109_999_890 微积分），并在来源备注写清原订单号/券码后四位；不要直接改账本行。
+
+### 5.4 商业化落地复核（2026-11-12）
+
+本轮新增修复：
+
+| 问题 | 修复 | 验证 |
+|---|---|---|
+| 现金券币种在订单层丢失：promotion 携带 `currencyCode`，order 集成丢弃并按 CNY 建单，USD 现金券会入 CNY 现金账户 | `CouponRedemptionBenefit::CashCredit` 增加 `currency_code`；订单快照写入/读取 `currencyCode`；专用与通用兑换路由都以券币种建单；PC/H5/小程序/Flutter 按币种展示 | promotion `order_cash_credit_parses_grant_amount_with_offer_currency`；order `coupon_snapshot_preserves_cash_currency...`；order-service/PC/H5 测试 |
+| 券中心兑换仍走 promotion 直兑路由（写不存在的 `commerce_account`，必然 500） | Cloud Router 券中心通过 `createSdkworkCouponController` 覆盖 `redeemCoupon`，改走 order-owned 兑换链路（与钱包一致） | Cloud Router `commerce-business-runtime.test.ts`；`pnpm typecheck` |
+| promotion 直兑路由写不存在的 `commerce_account` | 已下线写入路径：`redeem_promotion_code` 返回 409 `promotion direct code redemption is retired; redeem ... through the order coupon redemption API`，不再以 storage 500 暴露 | promotion 单元测试 `order_failure_attempt_is_written_after_rollback_and_direct_is_retired` |
+| `goods_scope` 仅存库不生效 | 订单抵扣 apply 读取订单 `subject` 并在核销前校验 `ALL/RECHARGE/SUBSCRIPTION`；未知值 fail-closed | promotion `goods_scope_limits_order_discount_application` |
+| `audience_scope` 仅存库不生效 | claim/redeem/apply 统一按用户已支付订单数校验 `ALL/NEW_USER/RETURNING_USER`；订单域不可用时非 ALL 场景 fail-closed | promotion `audience_scope_requires_the_matching_paid_order_history` |
+| order 路径兑换未进 attempt 台账 | `redeem_promotion_code_for_order` 在兑换事务内写成功 attempt，失败后在事务外写 failure attempt（含 order id）；后台兑换记录可见成功/失败 | promotion `order_redemption_writes_success_attempt_evidence`、`order_redemption_writes_failure_attempt_after_rollback` |
+| 券码可被高频暴力尝试 | preview/redeem（direct + order）在事务内按 subject 统计最近 10 分钟 failed attempt，≥20 次直接拒绝；后台 attempts 页新增 `rate_limited` / `coupon_expired` / `coupon_not_redeemable` / `audience_not_eligible` 文案 | promotion `redemption_paths_enforce_a_failure_rate_limit`、`every_redemption_rejection_maps_to_its_documented_failure_code`；Cloud Router admin 214 |
+| 订单抵扣 apply 在真实 PG 必然失败 | `load_user_coupon_for_discount_apply` 的 `FOR UPDATE` 锁到 LEFT JOIN 可空侧；`promotion_discount_application` insert 漏 `owner_user_id`（NOT NULL）；replay 用 `stored_money_minor_units` 把已是最小单位的金额再 ×100 | 真实 PG 集成测试 `claim_then_redeem_consumes_one_coupon_and_one_stock_unit` 覆盖 apply + budget + replay |
+| app 用户券金额 100x | app user coupon 的 `amount` 是最小单位，PC 用 `formatMoney` 按 major 渲染；app 路由新增 `minor_units_to_major_string` 转换 | promotion app route `minor_units_are_rendered_as_major_units_for_the_app_surface` |
+| 订单抵扣 settle/release 金额 100x | `promotion_discount_application.discount_amount` 已是整数最小单位，admin settle/release 又用 `money_cents` 按 major 解析；改为 `contract_money_minor_units` | 真实 PG 集成测试 settle：预算 `(97000, 0, 3000)`、application `settled`、replay 0 |
+| 订单侧无法按抵扣改价 | 新增 `PostgresCommerceOrderStore::apply_order_discount`：锁定 order + `order_total` breakdown，累加折扣、重算 payable、校验订单状态与上限 | 真实 PG `order_discount_postgres`：3000→7000、再 500→3500/6500、超额拒绝、paid 拒绝 |
+| order 无 promotion 抵扣端口 | 新增 `PromotionDiscountPort`（apply / settle-by-order / release-by-order）+ `PromotionDiscountAdapter` + `OrderServiceHost` 注入；金额只接受整数最小单位 | order integration `applied_discount_amount_is_read_as_integer_minor_units` |
+| 无“订单应用券”路由 | 新增 `POST /app/v3/api/orders/{orderId}/discount`：promotion apply → order 改价；改价失败时 release 补偿；route manifest、OpenAPI、生成的 order app SDK 均已更新 | order app `cargo check`、`api:assembly:validate`、api pattern/envelope checks passed；SDK 生成 `orders.discount.create` |
+| checkout 前端无调用入口 | order service 新增 `applySdkworkOrderDiscount`，封装生成的 `orders.discount.create`，校验必填并归一化最小单位金额 | order-service vitest `order-discount-service.test.ts` 2 passed |
+| 支付成功不结算抵扣预算 | `settle_owner_order_after_payment_success_with_registry` 在履约后调用 `promotion_discount_port.settle_discounts(order)`；失败记录错误但不阻断已成功支付的 webhook ack | order service 50 单测 + payment notify 10 + account value 12 passed |
+| 超时订单不释放抵扣预算 | expiration scheduler 在过期订单关闭支付/释放库存后调用 `promotion_discount_port.release_discounts(order)`，失败仅告警；promotion 过期清扫兜底 | order host `cargo check` 通过 |
+
+#### 5.4.1 真实 PostgreSQL 集成回归
+
+`crates/sdkwork-commerce-promotion-repository-sqlx/tests/pg_coupon_lifecycle.rs` 在一次性 `promotion_it` 库上重建 public schema（baseline + 0001–0008）并执行：
+
+```bash
+DATABASE_URL=postgres://postgres:postgres@127.0.0.1:55432/promotion_it \
+  cargo test -p sdkwork-commerce-promotion-repository-sqlx --test pg_coupon_lifecycle
+```
+
+覆盖并通过：
+
+- realtime claim 生成 `CL...` 码；
+- wallet list 权益快照（算力券 110+20=130）；
+- offer catalog 可见、剩余库存 9；
+- 用领取码走 order 路径兑换 → `130_000_000` 微积分；
+- 库存 `(available, claimed, redeemed) = (9, 1, 1)`，只扣一次；
+- 只存在一条 `promotion_user_coupon`，状态 `redeemed`；
+- 成功 attempt 记录 `token_bank_credit / 130000000`；
+- 同一 order id 重放 → `replayed=true`，库存/券行不变；
+- batch 码池领取到预生成码并可兑换；
+- 会员积分券 → `points_credit / 50`；
+- USD 现金券 → `grant_units=10050, currency_code=USD`；
+- 过期领取券 → 拒绝且 `redeemed_quantity` 不变；
+- FIXED ¥30 订单抵扣 apply → `discount_amount=3000` 最小单位，预算 `(97000, 3000)`，replay 不重复预留；
+- 抵扣冲正 → 预算恢复 `(100000, 0)`、application `released`、券回到 `claimed`，replay 不重复释放；
+- 支付结算 → 预算 `(97000, 0, 3000)`、application `settled`、replay settle 0；
+- NEW_USER 券被已有支付订单的用户拒绝，库存不消耗；
+- 订阅券 → `package_id=1 / duration=30 / daily=100 / total=1000`；
+- 权益发放汇总 → 算力券 `240000000` 微积分×2、积分 `50`、现金 `10050 USD`、订阅配额 `1000`；
+- 20 次失败后 preview 被限流拒绝。
+| realtime 领取券不可兑换，claim→redeem 重复插行/计数 | `redeem` 先回查 `promotion_user_coupon.coupon_code`，消费既有领取券（`status='redeemed'`、不新插行），并跳过 claim 已计过的库存/券码计数；order replay 按订单号+券码找回；券中心 `claimed/pending/issued` 归一为 available，并兼容 app `code` 字段 | promotion `claimed_coupon_redemption_consumes_the_existing_row`、`order_redemption_replay_finds_a_claimed_coupon_by_order_and_code`；Cloud Router typecheck/commerce tests |
+| 券中心“我的券”始终为空 | app API `userCoupons.wallet.list`/`retrieve` 原为 stub（返回空/404），且 app 返回 `data.items`、PC 只读 `content`；已实现 wallet list/retrieve（复用 `list_promotion_user_coupons` 并按 id 查找），PC 同时兼容 `content`/`items` | promotion app routes compile；Cloud Router `pnpm typecheck`、`commerce-business-runtime.test.ts` 22 passed |
+| 券中心“可领取”目录为空 | app `offers.list`/`offers.retrieve` 原为 stub；新增 tenant-scoped offer catalog 查询（active offer + 有效 stock 聚合，含 claim 窗口/剩余量/每人限领/权益条款），offers 路由改为 authenticated（`x-route-scope: console` + dual token） | promotion `cargo check`、`api:assembly:validate` passed |
+| 券中心资产券面值显示 `—` | app user coupon 与 offer catalog 都从冻结的 `rule_json` 派生 `benefitKind/benefitAmount/benefitCurrencyCode`；券中心按“算力额度 / 会员积分 / 现金币种 / 配额”展示，折扣券回退到金额 | promotion `user_coupon_benefit_display_is_derived_from_frozen_rule_terms`；app route `user_coupon_response_keeps_the_frozen_benefit_snapshot`、catalog benefit test；Cloud Router typecheck |
+
+> offers 改为 authenticated 后需要重新生成 promotion app SDK；当前 `pnpm sdk:check` 被既有 `codes.redemptions.create missing permission` 契约缺口阻塞，生成器未完成。该权限补齐后需重新生成并验证 Cloud Router 的 offers 调用头。
+| 券中心/领取记录对资产券显示 0 CNY | 券中心列表/详情已对 0 面值改为空值占位；实际面值仍需 promotion 契约补字段（见下） | — |
+
+### 5.5 仍未闭环的商业化缺口（按优先级）
+
+| 缺口 | 现状证据 | 影响 | 建议 |
+|---|---|---|---|
+| **订单抵扣券未接结算** | `postgres_checkout.rs` 的 `discount_amount` 恒为 `"0"`，checkout 输入无 `couponCode`；promotion 的 apply/settle/release 只有独立接口 | 满减/折扣券创建后无法在结算页使用，属不可售能力 | 下一阶段在 order checkout 增 promotion 抵扣端口（quote 预留 → 下单绑定 → 支付成功 settle → 取消/超时 release），或在接入前隐藏 `FIXED/PERCENTAGE` 创建入口 |
+
+### 5.6 商业化验证矩阵
+
+| 层 | 命令/范围 | 最近结果 |
+|---|---|---|
+| promotion 仓储单测 | `cargo test -p sdkwork-commerce-promotion-repository-sqlx --lib` | 94 passed |
+| promotion 服务单测 | `cargo test -p sdkwork-commerce-promotion-service --lib` | 45 passed |
+| promotion app routes | `cargo test -p sdkwork-routes-promotion-app-api` | 6 passed |
+| promotion 真实 PG | `--test pg_coupon_lifecycle`（四类券/人群/限流/apply/settle/release/reverse/replay/发放汇总） | 1 passed |
+| order 仓储单测 | `cargo test -p sdkwork-order-repository-sqlx --lib` | 42 passed |
+| order 改价真实 PG | `--test order_discount_postgres`（累加/超额/paid 拒绝） | 1 passed |
+| order promotion 端口 | `cargo test -p sdkwork-order-integration-promotion` | 1 passed |
+| order service 封装 | `applySdkworkOrderDiscount` vitest | 2 passed |
+| order API 契约 | pattern / envelope / assembly / SDK 生成 | passed |
+| Cloud Router | typecheck / admin 214 / commerce 22 / i18n 8500 | passed |
+
+**商业化判定**：
+- **资产型券（算力/积分/现金/订阅）**：账户映射、单位、币种、生命周期、审计、防刷、各端展示均已通过真实 PG + 分层测试，可商业化。
+- **订单抵扣券**：promotion 引擎（apply/预算/settle/release/reverse）、order 改价、API/SDK/service 均已验证；缺支付/取消回调与 checkout UI，尚不能宣称端到端可售。
+
+### 5.7 契约检查遗留（requires a naming decision）
 
 `check-api-operation-patterns.mjs` 仍以退出码 1 结束，原因是两个**历史**字段（各在权威契约与派生镜像中出现一次，共 4 条）：
 

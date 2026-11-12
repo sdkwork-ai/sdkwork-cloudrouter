@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{OpenAiResponseInputTokensDetails};
+use crate::models::OpenAiResponseInputTokensDetails;
 
 /// OpenAI-compatible response input token count result.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{AnthropicCacheControl};
+use crate::models::AnthropicCacheControl;
 
 /// Anthropic server tool definition (bash, text editor, web search, or tool search).
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

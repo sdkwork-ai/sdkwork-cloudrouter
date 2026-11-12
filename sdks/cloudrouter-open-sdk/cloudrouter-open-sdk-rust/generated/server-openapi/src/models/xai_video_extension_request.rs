@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{XaiVideoInput};
+use crate::models::XaiVideoInput;
 
 /// xAI video extension request (ExtendVideoRequest).
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{ElevenLabsMusicPrompt};
+use crate::models::ElevenLabsMusicPrompt;
 
 /// ElevenLabs music generation request (`POST /v1/music`). Supply `prompt`, or `composition_plan`, but not both.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

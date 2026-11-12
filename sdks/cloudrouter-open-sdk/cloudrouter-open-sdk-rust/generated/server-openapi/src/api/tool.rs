@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use crate::api::paths::ai_path;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{OpenAiDeepSeekWebFetchRequest, OpenAiDeepSeekWebFetchResponse, OpenAiDeepSeekWebSearchRequest, OpenAiDeepSeekWebSearchResponse};
+use crate::models::{
+    OpenAiDeepSeekWebFetchRequest, OpenAiDeepSeekWebFetchResponse, OpenAiDeepSeekWebSearchRequest,
+    OpenAiDeepSeekWebSearchResponse,
+};
 
 #[derive(Clone)]
 pub struct ToolApi {
@@ -15,15 +18,24 @@ impl ToolApi {
     }
 
     /// Fetch a web page
-    pub async fn create_fetch(&self, body: &OpenAiDeepSeekWebFetchRequest) -> Result<OpenAiDeepSeekWebFetchResponse, SdkworkError> {
+    pub async fn create_fetch(
+        &self,
+        body: &OpenAiDeepSeekWebFetchRequest,
+    ) -> Result<OpenAiDeepSeekWebFetchResponse, SdkworkError> {
         let path = ai_path(&"/tools/fetch".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
 
     /// Search the web
-    pub async fn search(&self, body: &OpenAiDeepSeekWebSearchRequest) -> Result<OpenAiDeepSeekWebSearchResponse, SdkworkError> {
+    pub async fn search(
+        &self,
+        body: &OpenAiDeepSeekWebSearchRequest,
+    ) -> Result<OpenAiDeepSeekWebSearchResponse, SdkworkError> {
         let path = ai_path(&"/tools/search".to_string());
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
-
 }

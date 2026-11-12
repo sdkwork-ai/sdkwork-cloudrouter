@@ -1,6 +1,6 @@
 pub mod base;
-pub mod paths;
 pub mod images_alibaba;
+pub mod paths;
 pub use images_alibaba::ImagesAlibabaApi;
 pub mod videos_alibaba;
 pub use videos_alibaba::VideosAlibabaApi;

@@ -1,8 +1,11 @@
 import {
   publicApiReferenceMessages,
   publicDocsMessages,
+  publicLegalMessages,
   publicSdkReferenceMessages,
 } from '@sdkwork/documents-pc-i18n';
+import { documentsAdminMessages } from '@sdkwork/documents-pc-admin-documents';
+import { publicDocumentsMessages } from '@sdkwork/documents-pc-public-documents';
 import { sdkworkSubscriptionCheckoutI18nBundle } from '@sdkwork/membership-pc-subscription/catalog';
 import {
   upstreamAccountGroupMessages,
@@ -22,6 +25,7 @@ import { rtcAdminMessages } from '@sdkwork/rtc-pc-admin-core/i18n';
 import { adminOrdersMessages } from '@sdkwork/order-pc-admin-orders/i18n';
 import { adminTradeMessages } from '@sdkwork/order-pc-admin-trade/i18n';
 import { messagingNotifyAdminMessages } from '@sdkwork/messaging-pc-admin-notify/i18n';
+import { hardwareAdminMessages } from '@sdkwork/cloudrouter-pc-admin-hardware/i18n';
 import { logAdminI18n } from '@sdkwork/log-pc-admin-request-log/i18n';
 import { mergeI18nBundles } from './merge';
 import { adminAnalyticsRecordMessages } from './admin/analytics-record';
@@ -77,6 +81,7 @@ import { sharedNavigationMessages } from './shared/navigation';
 
 export const resources = mergeI18nBundles([
   messagingNotifyAdminMessages,
+  hardwareAdminMessages,
   adminAnalyticsRecordMessages,
   adminAuthSettingsMessages,
   adminBusinessManagementMessages,
@@ -139,10 +144,13 @@ export const resources = mergeI18nBundles([
   playgroundPreviewMessages,
   publicApiReferenceMessages,
   publicDocsMessages,
+  publicLegalMessages,
   publicModelsMessages,
   publicRankingsMessages,
   pricingMessages,
   publicSdkReferenceMessages,
+  documentsAdminMessages,
+  publicDocumentsMessages,
   sharedAccountMessages,
   sharedCommonMessages,
   sharedNavigationMessages,

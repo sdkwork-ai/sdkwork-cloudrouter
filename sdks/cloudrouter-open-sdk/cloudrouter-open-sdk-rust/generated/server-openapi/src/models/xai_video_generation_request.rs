@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{XaiImageUrl};
+use crate::models::XaiImageUrl;
 
 /// xAI Grok Imagine video generation request (GenerateVideoRequest). prompt is required for text-to-video and reference-to-video and optional when image supplies the first frame.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{ProviderTaskError};
+use crate::models::ProviderTaskError;
 
 /// One generated image record returned by Ark.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

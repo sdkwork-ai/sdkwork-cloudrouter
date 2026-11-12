@@ -112,6 +112,10 @@ describe('RedemptionAttemptsPage rows', () => {
       ['redemption_in_progress', 'Redemption in progress'],
       ['benefit_invalid', 'Benefit rule invalid'],
       ['internal_error', 'System error'],
+      ['rate_limited', 'Too many attempts'],
+      ['coupon_not_redeemable', 'Coupon no longer redeemable'],
+      ['coupon_expired', 'Coupon expired'],
+      ['audience_not_eligible', 'Audience not eligible'],
       ['mystery_code', 'mystery_code'],
     ];
     mockAttempts(failureCases.map(([failureCode], index) => ({

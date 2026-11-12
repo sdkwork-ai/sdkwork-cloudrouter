@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::api::base::{RequestHeaders};
+use crate::api::base::RequestHeaders;
 use crate::http::{SdkworkError, SdkworkHttpClient};
 use crate::models::{RunwayImageToVideoRequest, RunwayTaskAccepted, RunwayTextToVideoRequest};
 
@@ -15,31 +15,55 @@ impl VideosRunwayApi {
     }
 
     /// Runway image to video
-    pub async fn create_v1_image_to_video(&self, body: &RunwayImageToVideoRequest, x_runway_version: &str) -> Result<RunwayTaskAccepted, SdkworkError> {
+    pub async fn create_v1_image_to_video(
+        &self,
+        body: &RunwayImageToVideoRequest,
+        x_runway_version: &str,
+    ) -> Result<RunwayTaskAccepted, SdkworkError> {
         let path = "/runway/v1/image_to_video".to_string();
         let headers = build_request_headers(
-            &[
-                ("X-Runway-Version", HeaderParameterSpec::new(x_runway_version, "simple", false, None)),
-            ],
+            &[(
+                "X-Runway-Version",
+                HeaderParameterSpec::new(x_runway_version, "simple", false, None),
+            )],
             &[],
         );
-        self.client.post(&path, Some(body), None, headers.as_ref(), Some("application/json")).await
+        self.client
+            .post(
+                &path,
+                Some(body),
+                None,
+                headers.as_ref(),
+                Some("application/json"),
+            )
+            .await
     }
 
     /// Runway text to video
-    pub async fn create_v1_text_to_video(&self, body: &RunwayTextToVideoRequest, x_runway_version: &str) -> Result<RunwayTaskAccepted, SdkworkError> {
+    pub async fn create_v1_text_to_video(
+        &self,
+        body: &RunwayTextToVideoRequest,
+        x_runway_version: &str,
+    ) -> Result<RunwayTaskAccepted, SdkworkError> {
         let path = "/runway/v1/text_to_video".to_string();
         let headers = build_request_headers(
-            &[
-                ("X-Runway-Version", HeaderParameterSpec::new(x_runway_version, "simple", false, None)),
-            ],
+            &[(
+                "X-Runway-Version",
+                HeaderParameterSpec::new(x_runway_version, "simple", false, None),
+            )],
             &[],
         );
-        self.client.post(&path, Some(body), None, headers.as_ref(), Some("application/json")).await
+        self.client
+            .post(
+                &path,
+                Some(body),
+                None,
+                headers.as_ref(),
+                Some("application/json"),
+            )
+            .await
     }
-
 }
-
 
 struct HeaderParameterSpec {
     value: serde_json::Value,
@@ -62,7 +86,10 @@ impl HeaderParameterSpec {
     }
 }
 
-fn build_request_headers(headers: &[(&str, HeaderParameterSpec)], cookies: &[(&str, HeaderParameterSpec)]) -> Option<RequestHeaders> {
+fn build_request_headers(
+    headers: &[(&str, HeaderParameterSpec)],
+    cookies: &[(&str, HeaderParameterSpec)],
+) -> Option<RequestHeaders> {
     let mut request_headers = RequestHeaders::new();
     for (name, parameter) in headers {
         if let Some(value) = serialize_header_parameter(parameter) {
@@ -153,8 +180,6 @@ fn serialize_json_value(value: &serde_json::Value) -> Option<String> {
         other => Some(other.to_string()),
     }
 }
-
-
 
 fn percent_encode(value: &str) -> String {
     value

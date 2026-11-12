@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{TypeSafeQuestion};
+use crate::models::TypeSafeQuestion;
 
 /// Type safe system one request schema exposed by Cloud Router.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

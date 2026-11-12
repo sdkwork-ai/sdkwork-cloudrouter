@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{ProviderGeneratedMedia};
+use crate::models::ProviderGeneratedMedia;
 
 /// DashScope asynchronous task record shared by task submission and task polling.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

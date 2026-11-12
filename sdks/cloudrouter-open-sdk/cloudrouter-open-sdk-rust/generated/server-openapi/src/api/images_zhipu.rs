@@ -14,9 +14,13 @@ impl ImagesZhipuApi {
     }
 
     /// Zhipu CogView image generation
-    pub async fn create_api_paas_v4_images_generation(&self, body: &ZhipuImageGenerationRequest) -> Result<ZhipuImageGenerationResponse, SdkworkError> {
+    pub async fn create_api_paas_v4_images_generation(
+        &self,
+        body: &ZhipuImageGenerationRequest,
+    ) -> Result<ZhipuImageGenerationResponse, SdkworkError> {
         let path = "/zhipu/api/paas/v4/images/generations".to_string();
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
-
 }

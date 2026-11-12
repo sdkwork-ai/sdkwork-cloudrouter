@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{AlibabaSpeechInput};
+use crate::models::AlibabaSpeechInput;
 
 /// Alibaba DashScope Qwen-Audio-TTS / CosyVoice speech synthesis request.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

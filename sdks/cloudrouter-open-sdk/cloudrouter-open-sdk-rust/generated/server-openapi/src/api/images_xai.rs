@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{XaiDeferredImageResponse, XaiImageEditRequest, XaiImageGenerationRequest, XaiImageGenerationResponse};
+use crate::models::{
+    XaiDeferredImageResponse, XaiImageEditRequest, XaiImageGenerationRequest,
+    XaiImageGenerationResponse,
+};
 
 #[derive(Clone)]
 pub struct ImagesXaiApi {
@@ -14,23 +17,41 @@ impl ImagesXaiApi {
     }
 
     /// xAI Grok Imagine image edit
-    pub async fn create_v1_images_edit(&self, body: &XaiImageEditRequest) -> Result<XaiImageGenerationResponse, SdkworkError> {
+    pub async fn create_v1_images_edit(
+        &self,
+        body: &XaiImageEditRequest,
+    ) -> Result<XaiImageGenerationResponse, SdkworkError> {
         let path = "/xai/v1/images/edits".to_string();
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
 
     /// xAI Grok Imagine image generation
-    pub async fn create_v1_images_generation(&self, body: &XaiImageGenerationRequest) -> Result<XaiImageGenerationResponse, SdkworkError> {
+    pub async fn create_v1_images_generation(
+        &self,
+        body: &XaiImageGenerationRequest,
+    ) -> Result<XaiImageGenerationResponse, SdkworkError> {
         let path = "/xai/v1/images/generations".to_string();
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
 
     /// xAI Grok Imagine retrieve deferred image
-    pub async fn list_v1_images(&self, request_id: &str) -> Result<XaiDeferredImageResponse, SdkworkError> {
-        let path = format!("/xai/v1/images/{}", serialize_path_parameter(request_id, PathParameterSpec::new("request_id", "simple", false)));
+    pub async fn list_v1_images(
+        &self,
+        request_id: &str,
+    ) -> Result<XaiDeferredImageResponse, SdkworkError> {
+        let path = format!(
+            "/xai/v1/images/{}",
+            serialize_path_parameter(
+                request_id,
+                PathParameterSpec::new("request_id", "simple", false)
+            )
+        );
         self.client.get(&path, None, None).await
     }
-
 }
 
 struct PathParameterSpec<'a> {
@@ -41,7 +62,11 @@ struct PathParameterSpec<'a> {
 
 impl<'a> PathParameterSpec<'a> {
     fn new(name: &'a str, style: &'a str, explode: bool) -> Self {
-        Self { name, style, explode }
+        Self {
+            name,
+            style,
+            explode,
+        }
     }
 }
 
@@ -50,15 +75,32 @@ fn serialize_path_parameter<T: serde::Serialize>(value: T, spec: PathParameterSp
     if value.is_null() {
         return String::new();
     }
-    let style = if spec.style.is_empty() { "simple" } else { spec.style };
+    let style = if spec.style.is_empty() {
+        "simple"
+    } else {
+        spec.style
+    };
     match value {
-        serde_json::Value::Array(values) => serialize_path_array(spec.name, &values, style, spec.explode),
-        serde_json::Value::Object(values) => serialize_path_object(spec.name, &values, style, spec.explode),
-        value => format!("{}{}", path_primitive_prefix(spec.name, style), percent_encode(&primitive_to_string(&value))),
+        serde_json::Value::Array(values) => {
+            serialize_path_array(spec.name, &values, style, spec.explode)
+        }
+        serde_json::Value::Object(values) => {
+            serialize_path_object(spec.name, &values, style, spec.explode)
+        }
+        value => format!(
+            "{}{}",
+            path_primitive_prefix(spec.name, style),
+            percent_encode(&primitive_to_string(&value))
+        ),
     }
 }
 
-fn serialize_path_array(name: &str, values: &[serde_json::Value], style: &str, explode: bool) -> String {
+fn serialize_path_array(
+    name: &str,
+    values: &[serde_json::Value],
+    style: &str,
+    explode: bool,
+) -> String {
     let serialized = values
         .iter()
         .filter(|value| !value.is_null())
@@ -69,7 +111,11 @@ fn serialize_path_array(name: &str, values: &[serde_json::Value], style: &str, e
     }
     if style == "matrix" {
         if explode {
-            return serialized.iter().map(|item| format!(";{}={}", name, item)).collect::<Vec<_>>().join("");
+            return serialized
+                .iter()
+                .map(|item| format!(";{}={}", name, item))
+                .collect::<Vec<_>>()
+                .join("");
         }
         return format!(";{}={}", name, serialized.join(","));
     }
@@ -130,8 +176,6 @@ fn path_primitive_prefix(name: &str, style: &str) -> String {
         path_prefix(name, style)
     }
 }
-
-
 
 fn primitive_to_string(value: &serde_json::Value) -> String {
     match value {

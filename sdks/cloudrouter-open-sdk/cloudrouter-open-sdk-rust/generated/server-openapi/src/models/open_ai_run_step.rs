@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{OpenAiTokenUsage};
+use crate::models::OpenAiTokenUsage;
 
 /// OpenAI-compatible run step object.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

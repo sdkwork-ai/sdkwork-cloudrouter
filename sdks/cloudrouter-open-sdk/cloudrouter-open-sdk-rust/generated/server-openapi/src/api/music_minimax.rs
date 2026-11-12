@@ -14,9 +14,13 @@ impl MusicMinimaxApi {
     }
 
     /// Minimax create music generation
-    pub async fn create_v1_music_generation(&self, body: &MiniMaxMusicGenerationRequest) -> Result<MiniMaxMusicGenerationResponse, SdkworkError> {
+    pub async fn create_v1_music_generation(
+        &self,
+        body: &MiniMaxMusicGenerationRequest,
+    ) -> Result<MiniMaxMusicGenerationResponse, SdkworkError> {
         let path = "/minimax/v1/music_generation".to_string();
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
-
 }

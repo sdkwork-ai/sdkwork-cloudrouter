@@ -393,9 +393,9 @@ importers:
 
   ../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin:
     dependencies:
-      '@sdkwork/agents-backend-sdk':
+      '@sdkwork/agents-pc-core':
         specifier: workspace:*
-        version: link:../../../../sdks/sdkwork-agents-backend-sdk/sdkwork-agents-backend-sdk-typescript
+        version: link:../sdkwork-agents-pc-core
       '@sdkwork/utils':
         specifier: workspace:*
         version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
@@ -579,6 +579,9 @@ importers:
       '@sdkwork/agents-app-sdk':
         specifier: workspace:*
         version: link:../../../../sdks/sdkwork-agents-app-sdk/sdkwork-agents-app-sdk-typescript
+      '@sdkwork/agents-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../../sdks/sdkwork-agents-backend-sdk/sdkwork-agents-backend-sdk-typescript
       '@sdkwork/assets-app-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-assets/sdks/sdkwork-assets-app-sdk/sdkwork-assets-app-sdk-typescript
@@ -748,6 +751,22 @@ importers:
       '@sdkwork/utils':
         specifier: workspace:*
         version: link:../../../../sdkwork-utils/packages/sdkwork-utils-typescript
+
+  ../sdkwork-aiot/sdks/sdkwork-aiot-backend-sdk/sdkwork-aiot-backend-sdk-typescript:
+    dependencies:
+      '@sdkwork/sdk-common':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+      '@sdkwork/utils':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-utils/packages/sdkwork-utils-typescript
+    devDependencies:
+      '@sdkwork/sdk-generator':
+        specifier: ^1.0.10
+        version: 1.0.14
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
 
   ../sdkwork-app-topology: {}
 
@@ -1249,6 +1268,40 @@ importers:
         specifier: workspace:*
         version: link:../../../../sdkwork-utils/packages/sdkwork-utils-typescript
 
+  ../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-admin-documents:
+    dependencies:
+      '@sdkwork/documents-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-documents-pc-commons
+      '@tiptap/pm':
+        specifier: ^3.23.4
+        version: 3.28.0
+      '@tiptap/react':
+        specifier: ^3.23.4
+        version: 3.28.0(@floating-ui/dom@1.7.6)(@tiptap/core@3.28.0(@tiptap/pm@3.28.0))(@tiptap/pm@3.28.0)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@tiptap/starter-kit':
+        specifier: ^3.23.4
+        version: 3.28.0
+      lucide-react:
+        specifier: ^0.511.0
+        version: 0.511.0(react@19.2.8)
+      react:
+        specifier: ^19.1.0
+        version: 19.2.8
+      react-i18next:
+        specifier: 'catalog:'
+        version: 17.0.11(i18next@26.6.0(typescript@5.8.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.8.3)
+      react-router-dom:
+        specifier: ^7.14.0
+        version: 7.18.5(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      typescript:
+        specifier: ~5.8.2
+        version: 5.8.3
+
   ../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference:
     dependencies:
       '@sdkwork/documents-pc-commons':
@@ -1314,6 +1367,53 @@ importers:
         specifier: 'catalog:'
         version: 17.0.11(i18next@26.3.3(typescript@5.8.3))(react@19.2.8)(typescript@5.8.3)
     devDependencies:
+      typescript:
+        specifier: ~5.8.2
+        version: 5.8.3
+
+  ../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-legal:
+    dependencies:
+      '@sdkwork/documents-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-documents-pc-commons
+      lucide-react:
+        specifier: ^0.511.0
+        version: 0.511.0(react@19.2.8)
+      react:
+        specifier: ^19.1.0
+        version: 19.2.8
+      react-i18next:
+        specifier: 'catalog:'
+        version: 17.0.11(i18next@26.6.0(typescript@5.8.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.8.3)
+      react-router-dom:
+        specifier: ^7.14.0
+        version: 7.18.5(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      typescript:
+        specifier: ~5.8.2
+        version: 5.8.3
+
+  ../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-public-documents:
+    dependencies:
+      lucide-react:
+        specifier: ^0.511.0
+        version: 0.511.0(react@19.2.8)
+      react:
+        specifier: ^19.1.0
+        version: 19.2.8
+      react-i18next:
+        specifier: 'catalog:'
+        version: 17.0.11(i18next@26.6.0(typescript@5.8.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.8.3)
+      react-router-dom:
+        specifier: ^7.14.0
+        version: 7.18.5(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
       typescript:
         specifier: ~5.8.2
         version: 5.8.3
@@ -2271,7 +2371,7 @@ importers:
         version: link:../sdkwork-log-pc-request-log
       react-i18next:
         specifier: 'catalog:'
-        version: 17.0.11(i18next@26.6.0(typescript@5.8.3))(react@19.2.8)(typescript@5.8.3)
+        version: 17.0.11(i18next@26.6.0(typescript@5.8.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.8.3)
     devDependencies:
       '@types/react':
         specifier: ^19.0.0
@@ -4855,6 +4955,9 @@ importers:
       '@sdkwork/cloudrouter-pc-admin-dashboard':
         specifier: workspace:*
         version: link:packages/sdkwork-cloudrouter-pc-admin-dashboard
+      '@sdkwork/cloudrouter-pc-admin-hardware':
+        specifier: workspace:*
+        version: link:packages/sdkwork-cloudrouter-pc-admin-hardware
       '@sdkwork/cloudrouter-pc-admin-iam':
         specifier: workspace:*
         version: link:packages/sdkwork-cloudrouter-pc-admin-iam
@@ -4984,12 +5087,21 @@ importers:
       '@sdkwork/course-backend-sdk':
         specifier: workspace:*
         version: link:../../../sdkwork-course/sdks/sdkwork-course-backend-sdk/sdkwork-course-backend-sdk-typescript
+      '@sdkwork/documents-pc-admin-documents':
+        specifier: workspace:*
+        version: link:../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-admin-documents
       '@sdkwork/documents-pc-api-reference':
         specifier: workspace:*
         version: link:../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference
       '@sdkwork/documents-pc-commons':
         specifier: workspace:*
         version: link:../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-commons
+      '@sdkwork/documents-pc-legal':
+        specifier: workspace:*
+        version: link:../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-legal
+      '@sdkwork/documents-pc-public-documents':
+        specifier: workspace:*
+        version: link:../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-public-documents
       '@sdkwork/documents-pc-sdk-reference':
         specifier: workspace:*
         version: link:../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-sdk-reference
@@ -5483,6 +5595,9 @@ importers:
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-core:
     dependencies:
+      '@sdkwork/aiot-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-aiot/sdks/sdkwork-aiot-backend-sdk/sdkwork-aiot-backend-sdk-typescript
       '@sdkwork/cloudrouter-backend-sdk':
         specifier: workspace:*
         version: link:../../../../sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript
@@ -5534,6 +5649,22 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 4.1.10(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(tsx@4.23.12)
+
+  apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-hardware:
+    dependencies:
+      '@sdkwork/cloudrouter-pc-admin-core':
+        specifier: workspace:*
+        version: link:../sdkwork-cloudrouter-pc-admin-core
+      '@sdkwork/cloudroutes-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-cloudroutes-pc-commons
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-iam:
     dependencies:
@@ -5787,6 +5918,9 @@ importers:
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-shell:
     dependencies:
+      '@sdkwork/cloudrouter-pc-admin-hardware':
+        specifier: workspace:*
+        version: link:../sdkwork-cloudrouter-pc-admin-hardware
       '@sdkwork/cloudrouter-pc-admin-iam':
         specifier: workspace:*
         version: link:../sdkwork-cloudrouter-pc-admin-iam
@@ -6117,6 +6251,9 @@ importers:
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-i18n:
     dependencies:
+      '@sdkwork/cloudrouter-pc-admin-hardware':
+        specifier: workspace:*
+        version: link:../sdkwork-cloudrouter-pc-admin-hardware
       '@sdkwork/cloudrouter-pc-admin-iam':
         specifier: workspace:*
         version: link:../sdkwork-cloudrouter-pc-admin-iam
@@ -6297,6 +6434,9 @@ importers:
       '@sdkwork/agents-backend-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-agents/sdks/sdkwork-agents-backend-sdk/sdkwork-agents-backend-sdk-typescript
+      '@sdkwork/aiot-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-aiot/sdks/sdkwork-aiot-backend-sdk/sdkwork-aiot-backend-sdk-typescript
       '@sdkwork/appbase-pc-react':
         specifier: workspace:*
         version: link:../../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-appbase-pc-react
@@ -6622,6 +6762,21 @@ packages:
   '@algolia/requester-node-http@5.55.1':
     resolution: {integrity: sha512-lCwXyijwPm3vbYHpBXPRomMcD6mgiptmps27gnMCf4HK+u/AOeFPBnIFh4V3l4A5SnP9VRiKBZqwGBpUH0vaTg==}
     engines: {node: '>= 14.0.0'}
+
+  '@apidevtools/json-schema-ref-parser@9.1.2':
+    resolution: {integrity: sha512-r1w81DpR+KyRWd3f+rk6TNqMgedmAxZP5v5KWlXQWlgMUUtyEJch0DKEci1SorPMiSeM8XPl7MZ3miJ60JIpQg==}
+
+  '@apidevtools/openapi-schemas@2.1.0':
+    resolution: {integrity: sha512-Zc1AlqrJlX3SlpupFGpiLi2EbteyP7fXmUOGup6/DnkRgjP9bgMM/ag+n91rsv0U1Gpz0H3VILA/o3bW7Ua6BQ==}
+    engines: {node: '>=10'}
+
+  '@apidevtools/swagger-methods@3.0.2':
+    resolution: {integrity: sha512-QAkD5kK2b1WfjDS/UQn/qQkbwF31uqRjPTrsCs5ZG9BQGAkjwvqGFjjPqAuzac/IYzpPtRzjCP1WrTuAIjMrXg==}
+
+  '@apidevtools/swagger-parser@10.0.3':
+    resolution: {integrity: sha512-sNiLY51vZOmSPFZA5TF35KZ2HbgYklQnTSDnkghamzLb3EkNtcQnrBQEj5AOCxHpTtXpqMCRM1CrmV2rG6nw4g==}
+    peerDependencies:
+      openapi-types: '>=7'
 
   '@asamuzakjp/css-color@5.1.11':
     resolution: {integrity: sha512-KVw6qIiCTUQhByfTd78h2yD1/00waTmm9uy/R7Ck/ctUyAPj+AEDLkQIdJW0T8+qGgj3j5bpNKK7Q3G+LedJWg==}
@@ -7364,6 +7519,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@jsdevtools/ono@7.1.3':
+    resolution: {integrity: sha512-4JQNk+3mVzK3xh2rqd6RB4J46qUR19azEHBneZyTZM+c456qOrbbM/5xcR8huNCCcbVt7+UmizG6GuUvPvKUYg==}
 
   '@keyv/bigmap@1.3.1':
     resolution: {integrity: sha512-WbzE9sdmQtKy8vrNPa9BRnwZh5UF4s1KTmSK0KUVLo3eff5BlQNNWDnFOouNpKfPKDnms9xynJjsMYjMaT/aFQ==}
@@ -8509,6 +8667,11 @@ packages:
       '@sdkwork/iam-app-sdk':
         optional: true
 
+  '@sdkwork/sdk-generator@1.0.14':
+    resolution: {integrity: sha512-AYo26NlP1U1atF4nb91GyuyjHn8o9fV3dRnbZi9qusEzZa5AkiMXLf1a6je6lexUXWtu3Aw56dGNOvG4hnAIAQ==}
+    engines: {node: '>=18.0.0'}
+    hasBin: true
+
   '@shikijs/core@2.5.0':
     resolution: {integrity: sha512-uu/8RExTKtavlpH7XqnVYBrfBkUc20ngXiX9NSrBhOVZYv/7XQRKUyhtkeflY5QsxC0GbJThCerruZfsUaSldg==}
 
@@ -9534,6 +9697,9 @@ packages:
   argparse@1.0.10:
     resolution: {integrity: sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==}
 
+  argparse@2.0.1:
+    resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
+
   aria-hidden@1.2.6:
     resolution: {integrity: sha512-ik3ZgC9dY/lYVVM++OISsaYDeg1tb0VtP5uL3ouh1koGOaUMDPpbFIei4JkFimWUFPn90sbMNMXQAIVOlnYKJA==}
     engines: {node: '>=10'}
@@ -9631,6 +9797,9 @@ packages:
   cacheable@2.5.0:
     resolution: {integrity: sha512-60cyAOytib/OzBw1JNSoSV/boK1AtHryDIjvVBk7XbN4ugfkM3+Sry7fEjNgPMGgOjuaZPAp8ruZ0Cxafwyq9g==}
 
+  call-me-maybe@1.0.2:
+    resolution: {integrity: sha512-HpX65o1Hnr9HH25ojC1YGs7HCQLq0GCOibSaWER0eNpgJ/Z1MZv2mTc7+xh6WOPxbRVcmgbv4hGU+uSQ/2xFZQ==}
+
   camelcase@5.3.1:
     resolution: {integrity: sha512-L28STB170nwWS63UjtlEOE3dldQApaJXZkOI1uMFfzf3rRuPegHaHesyee+YxQ+W6SvRDQV6UrdOdRiR153wJg==}
     engines: {node: '>=6'}
@@ -9701,6 +9870,14 @@ packages:
 
   comma-separated-tokens@2.0.3:
     resolution: {integrity: sha512-Fu4hJdvzeylCfQPp9SGWidpzrMs7tTrlu6Vb8XGaRGck8QSNZJJp538Wrb60Lax4fPwR64ViY468OIUTbRlGZg==}
+
+  commander@12.1.0:
+    resolution: {integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==}
+    engines: {node: '>=18'}
+
+  commander@9.5.0:
+    resolution: {integrity: sha512-KRs7WVDKg86PWiuAqhDrAQnTXZKraVcCc6vFdL14qrZ/DcWwuRo7VoiYXalXO7S5GKpqYiVEwCbgFDfxNHKJBQ==}
+    engines: {node: ^12.20.0 || >=14}
 
   compare-versions@6.1.1:
     resolution: {integrity: sha512-4hm4VPpIecmlg59CHXnRDnqGplJFrbLG4aFEl5vl6cK1u76ws3LLvX7ikFnTDl5vo39sjWD6AaDPYodJp/NNHg==}
@@ -10347,6 +10524,10 @@ packages:
   js-tokens@9.0.1:
     resolution: {integrity: sha512-mxa9E9ITFOt0ban3j6L5MpjwegGz6lBQmM1IJkWeBZGcMxto50+eWdjC/52xDbS2vy0k7vIMK0Fe2wfL9OQSpQ==}
 
+  js-yaml@4.3.2:
+    resolution: {integrity: sha512-SFNOvSJ+Dgf/9An904Yx+CgSlIPCkIpao4qo51lpee25TIRejdH3rhR4EZMGoNx3/TP3O+wzWuiTFl4sqbltzA==}
+    hasBin: true
+
   jsdom@29.1.1:
     resolution: {integrity: sha512-ECi4Fi2f7BdJtUKTflYRTiaMxIB0O6zfR1fX0GXpUrf6flp8QIYn1UT20YQqdSOfk2dfkCwS8LAFoJDEppNK5Q==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24.0.0}
@@ -10557,6 +10738,14 @@ packages:
   locate-path@6.0.0:
     resolution: {integrity: sha512-iPZK6eYjbxRu3uB4/WZ3EsEIMJFMqAoopl3R+zuq0UjcAm/MO6KCweDgPfP3elTztoKP3KtnVHxTn2NHBSDVUw==}
     engines: {node: '>=10'}
+
+  lodash.get@4.4.2:
+    resolution: {integrity: sha512-z+Uw/vLuy6gQe8cfaFWD7p0wVv8fJl3mbzXh33RS+0oW2wvUqiRXiQ69gLWSLpgB5/6sU+r6BlQR0MBILadqTQ==}
+    deprecated: This package is deprecated. Use the optional chaining (?.) operator instead.
+
+  lodash.isequal@4.5.0:
+    resolution: {integrity: sha512-pDo3lu8Jhfjqls6GkMgpahsF9kCyayhgykjyLMNFTKWrpVdAQtYyB4muAMWozBB4ig/dtWAmsMxLEI8wuz+DYQ==}
+    deprecated: This package is deprecated. Use require('node:util').isDeepStrictEqual instead.
 
   longest-streak@3.1.0:
     resolution: {integrity: sha512-9Ri+o0JYgehTaVBBDoMqIl8GXtbWg711O3srftcHhZ0dqnETqLaoIK0x17fUw9rFSlK/0NlsKe0Ahhyl5pXE2g==}
@@ -10841,6 +11030,9 @@ packages:
   oniguruma-to-es@3.1.1:
     resolution: {integrity: sha512-bUH8SDvPkH3ho3dvwJwfonjlQ4R80vjyvrU8YpxuROddv55vAEJrTuCuCVUhhsHbtlD9tGGbaNApGQckXhS8iQ==}
 
+  openapi-types@12.1.3:
+    resolution: {integrity: sha512-N4YtSYJqghVu4iek2ZUvcN/0aqH1kRDuNqzcycDxhOUpg7GdvLa2F3DgS6yBNhInhv2r/6I0Flkn7CqL8+nIcw==}
+
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
     engines: {node: '>= 0.8.0'}
@@ -10971,6 +11163,11 @@ packages:
   prelude-ls@1.2.1:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
+
+  prettier@3.10.0:
+    resolution: {integrity: sha512-mBi4765LgjO1PFjlEs7pUeK0nb1bw71c+N4/ItfeUWNdY5cV2pRKaFpbbFRYmDJMO+5ZwzGxHRqHxFZna7iv5w==}
+    engines: {node: '>=14'}
+    hasBin: true
 
   pretty-format@27.5.1:
     resolution: {integrity: sha512-Qb1gy5OrP5+zDf2Bvnzdl3jsTf1qXVMazbvCoKhtKqVs4/YK4ozX4gKQJJVyNe+cajNPn0KoC0MC3FUmaHWEmQ==}
@@ -11527,6 +11724,10 @@ packages:
     resolution: {integrity: sha512-qsjeeq5YjBZ5eMdFuUa4ZosMLxgr5RZ+F+Y1OrDhuOCEInRMA3x74XdBtggJcj9kOeInz0WE+LgCPDkZFlBYJw==}
     engines: {node: '>=12.0.0'}
 
+  swagger-parser@10.0.3:
+    resolution: {integrity: sha512-nF7oMeL4KypldrQhac8RyHerJeGPD1p2xDh900GPvc+Nk7nWP6jX2FcC7WmkinMoAmoO774+AFXcWsW8gMWEIg==}
+    engines: {node: '>=10'}
+
   symbol-tree@3.2.4:
     resolution: {integrity: sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==}
 
@@ -11778,6 +11979,10 @@ packages:
 
   utrie@1.0.2:
     resolution: {integrity: sha512-1MLa5ouZiOmQzUbjbu9VmjLzn1QLXBhwpUa7kdLUQK+KQ5KA9I1vk5U4YHe/X2Ch7PYnJfWuWT+VbuxbGwljhw==}
+
+  validator@13.15.35:
+    resolution: {integrity: sha512-TQ5pAGhd5whStmqWvYF4OjQROlmv9SMFVt37qoCBdqRffuuklWYQlCNnEs2ZaIBD1kZRNnikiZOS1eqgkar0iw==}
+    engines: {node: '>= 0.10'}
 
   vfile-location@5.0.3:
     resolution: {integrity: sha512-5yXvWDEgqeiYiBe1lbxYF7UMAIm/IcopxMHrMQDq3nvKcjPKIhZklUKL+AE7J7uApI4kwe2snsK+eI6UTj9EHg==}
@@ -12223,6 +12428,11 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
+  z-schema@5.0.5:
+    resolution: {integrity: sha512-D7eujBWkLa3p2sIpJA0d1pr7es+a7m0vFAnZLlCEKq/Ij2k0MLi9Br2UPxoxdYystm5K1yeBGzub0FlYUEWj2Q==}
+    engines: {node: '>=8.0.0'}
+    hasBin: true
+
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
@@ -12340,6 +12550,27 @@ snapshots:
   '@algolia/requester-node-http@5.55.1':
     dependencies:
       '@algolia/client-common': 5.55.1
+
+  '@apidevtools/json-schema-ref-parser@9.1.2':
+    dependencies:
+      '@jsdevtools/ono': 7.1.3
+      '@types/json-schema': 7.0.15
+      call-me-maybe: 1.0.2
+      js-yaml: 4.3.2
+
+  '@apidevtools/openapi-schemas@2.1.0': {}
+
+  '@apidevtools/swagger-methods@3.0.2': {}
+
+  '@apidevtools/swagger-parser@10.0.3(openapi-types@12.1.3)':
+    dependencies:
+      '@apidevtools/json-schema-ref-parser': 9.1.2
+      '@apidevtools/openapi-schemas': 2.1.0
+      '@apidevtools/swagger-methods': 3.0.2
+      '@jsdevtools/ono': 7.1.3
+      call-me-maybe: 1.0.2
+      openapi-types: 12.1.3
+      z-schema: 5.0.5
 
   '@asamuzakjp/css-color@5.1.11':
     dependencies:
@@ -12884,6 +13115,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@jsdevtools/ono@7.1.3': {}
 
   '@keyv/bigmap@1.3.1(keyv@5.6.0)':
     dependencies:
@@ -13857,6 +14090,16 @@ snapshots:
       '@sdkwork/utils': link:../sdkwork-utils/packages/sdkwork-utils-typescript
     optionalDependencies:
       '@sdkwork/iam-app-sdk': link:../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript
+
+  '@sdkwork/sdk-generator@1.0.14':
+    dependencies:
+      '@sdkwork/sdk-common': link:../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+      commander: 12.1.0
+      fs-extra: 11.3.5
+      js-yaml: 4.3.2
+      openapi-types: 12.1.3
+      prettier: 3.10.0
+      swagger-parser: 10.0.3(openapi-types@12.1.3)
 
   '@shikijs/core@2.5.0':
     dependencies:
@@ -15035,6 +15278,8 @@ snapshots:
     dependencies:
       sprintf-js: 1.0.3
 
+  argparse@2.0.1: {}
+
   aria-hidden@1.2.6:
     dependencies:
       tslib: 2.8.1
@@ -15127,6 +15372,8 @@ snapshots:
       keyv: 5.6.0
       qified: 0.10.1
 
+  call-me-maybe@1.0.2: {}
+
   camelcase@5.3.1: {}
 
   caniuse-lite@1.0.30001799: {}
@@ -15202,6 +15449,11 @@ snapshots:
   color-name@1.1.4: {}
 
   comma-separated-tokens@2.0.3: {}
+
+  commander@12.1.0: {}
+
+  commander@9.5.0:
+    optional: true
 
   compare-versions@6.1.1: {}
 
@@ -15919,6 +16171,10 @@ snapshots:
 
   js-tokens@9.0.1: {}
 
+  js-yaml@4.3.2:
+    dependencies:
+      argparse: 2.0.1
+
   jsdom@29.1.1:
     dependencies:
       '@asamuzakjp/css-color': 5.1.11
@@ -16099,6 +16355,10 @@ snapshots:
     dependencies:
       p-locate: 5.0.0
 
+  lodash.get@4.4.2: {}
+
+  lodash.isequal@4.5.0: {}
+
   longest-streak@3.1.0: {}
 
   loupe@3.2.1: {}
@@ -16117,6 +16377,10 @@ snapshots:
   lucide-react@0.511.0(react@19.2.4):
     dependencies:
       react: 19.2.4
+
+  lucide-react@0.511.0(react@19.2.8):
+    dependencies:
+      react: 19.2.8
 
   lucide-react@0.546.0(react@19.2.8):
     dependencies:
@@ -16576,6 +16840,8 @@ snapshots:
       regex: 6.1.0
       regex-recursion: 6.0.2
 
+  openapi-types@12.1.3: {}
+
   optionator@0.9.4:
     dependencies:
       deep-is: 0.1.4
@@ -16699,6 +16965,8 @@ snapshots:
   preact@10.29.3: {}
 
   prelude-ls@1.2.1: {}
+
+  prettier@3.10.0: {}
 
   pretty-format@27.5.1:
     dependencies:
@@ -16863,7 +17131,7 @@ snapshots:
       react-dom: 19.2.8(react@19.2.4)
       typescript: 5.8.3
 
-  react-i18next@17.0.11(i18next@26.6.0(typescript@5.8.3))(react@19.2.8)(typescript@5.8.3):
+  react-i18next@17.0.11(i18next@26.6.0(typescript@5.8.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.8.3):
     dependencies:
       '@babel/runtime': 7.29.7
       html-parse-stringify: 4.0.1
@@ -16871,6 +17139,7 @@ snapshots:
       react: 19.2.8
       use-sync-external-store: 1.6.0(react@19.2.8)
     optionalDependencies:
+      react-dom: 19.2.8(react@19.2.8)
       typescript: 5.8.3
 
   react-i18next@17.0.11(i18next@26.6.0(typescript@5.9.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.9.3):
@@ -17465,6 +17734,12 @@ snapshots:
   svg-pathdata@6.0.3:
     optional: true
 
+  swagger-parser@10.0.3(openapi-types@12.1.3):
+    dependencies:
+      '@apidevtools/swagger-parser': 10.0.3(openapi-types@12.1.3)
+    transitivePeerDependencies:
+      - openapi-types
+
   symbol-tree@3.2.4: {}
 
   tabbable@6.5.0: {}
@@ -17691,6 +17966,8 @@ snapshots:
   utrie@1.0.2:
     dependencies:
       base64-arraybuffer: 1.0.2
+
+  validator@13.15.35: {}
 
   vfile-location@5.0.3:
     dependencies:
@@ -18211,5 +18488,13 @@ snapshots:
       yargs-parser: 18.1.3
 
   yocto-queue@0.1.0: {}
+
+  z-schema@5.0.5:
+    dependencies:
+      lodash.get: 4.4.2
+      lodash.isequal: 4.5.0
+      validator: 13.15.35
+    optionalDependencies:
+      commander: 9.5.0
 
   zwitch@2.0.4: {}

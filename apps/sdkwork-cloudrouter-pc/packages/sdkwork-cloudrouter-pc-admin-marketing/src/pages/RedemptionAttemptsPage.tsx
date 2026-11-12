@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { CopyButton } from '@sdkwork/cloudroutes-pc-commons';
-import type { ApiRecord } from '@sdkwork/cloudroutes-pc-commons/runtime';
+import { formatTokenBankPoints, type ApiRecord } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import {
   MarketingListView,
   type MarketingColumn,
@@ -13,6 +13,7 @@ import {
 } from '../components/MarketingValueBadge';
 import {
   backendRedemptionAttemptsList,
+  formatMarketingAmountMinor,
   formatMarketingInteger,
   formatMarketingTimestamp,
   MARKETING_EMPTY_VALUE,
@@ -70,6 +71,22 @@ const redemptionFailureCodeLabels: Record<string, { key: string; fallback: strin
     key: 'admin.marketing.enums.redemptionFailureCode.internal_error',
     fallback: 'System error',
   },
+  rate_limited: {
+    key: 'admin.marketing.enums.redemptionFailureCode.rate_limited',
+    fallback: 'Too many attempts',
+  },
+  coupon_not_redeemable: {
+    key: 'admin.marketing.enums.redemptionFailureCode.coupon_not_redeemable',
+    fallback: 'Coupon no longer redeemable',
+  },
+  coupon_expired: {
+    key: 'admin.marketing.enums.redemptionFailureCode.coupon_expired',
+    fallback: 'Coupon expired',
+  },
+  audience_not_eligible: {
+    key: 'admin.marketing.enums.redemptionFailureCode.audience_not_eligible',
+    fallback: 'Audience not eligible',
+  },
 };
 
 /** 权益类型词表：复用优惠券表单的账户口径；未知值原样展示。 */
@@ -80,7 +97,7 @@ const redemptionBenefitLabels: Record<string, { key: string; fallback: string }>
   },
   points_credit: {
     key: 'admin.marketing.coupon.form.benefit.account.points_credit',
-    fallback: 'Compute Credits',
+    fallback: 'Membership Points',
   },
   cash_credit: {
     key: 'admin.marketing.coupon.form.benefit.account.cash_credit',
@@ -221,10 +238,28 @@ export function RedemptionAttemptsPage() {
         const grantedAmount = readRecordText(record, 'grantedAmount');
         const currencyCode = readRecordText(record, 'currencyCode');
         const kindLabel = kind ? redemptionBenefitLabel(kind, t) : '';
-        const formattedAmount = formatMarketingInteger(grantedAmount || undefined, { locale: i18n.language });
-        const amountLabel = formattedAmount === MARKETING_EMPTY_VALUE
-          ? ''
-          : `${formattedAmount}${currencyCode ? ` ${currencyCode}` : ''}`;
+        // Token Bank attempts store the account minor unit (micro-points);
+        // cash attempts store currency minor units and carry their ISO code;
+        // membership points are integers.
+        let amountLabel = '';
+        if (kind === 'token_bank_credit' && grantedAmount) {
+          // Token Bank is points-denominated; the attempt's currencyCode is the
+          // offer's pricing currency and must not be appended as a unit.
+          amountLabel = formatTokenBankPoints(grantedAmount, i18n.language);
+        } else if (kind === 'cash_credit' && grantedAmount) {
+          amountLabel = formatMarketingAmountMinor(
+            grantedAmount,
+            currencyCode || 'CNY',
+            i18n.language,
+          );
+        } else {
+          const formatted = formatMarketingInteger(grantedAmount || undefined, {
+            locale: i18n.language,
+          });
+          amountLabel = formatted === MARKETING_EMPTY_VALUE
+            ? ''
+            : `${formatted}${currencyCode ? ` ${currencyCode}` : ''}`;
+        }
         if (!kindLabel && !amountLabel) {
           return MARKETING_EMPTY_VALUE;
         }

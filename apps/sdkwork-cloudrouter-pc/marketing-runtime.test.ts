@@ -180,6 +180,21 @@ test("token bank coupon with bonus merges bonusAmount into benefit", () => {
   });
 });
 
+test("token bank coupon keeps the authored whole-Compute-Credits amount on the admin wire", () => {
+  // 110 is 110 Compute Credits, not 110 micro-points. Promotion converts the
+  // whole-credit rule to the account's micro-point unit exactly once when it
+  // builds the order benefit, so the admin form must not pre-scale the value.
+  const requests = buildCouponOfferCreateRequests(
+    baseFormValues({ grantAmount: "110" }),
+    "idem-credits-110",
+  );
+
+  assert.deepEqual(requests.offerRequest.couponBenefit, {
+    kind: "token_bank_credit",
+    grantAmount: "110",
+  });
+});
+
 test("points coupon emits grant points benefit", () => {
   const requests = buildCouponOfferCreateRequests(
     baseFormValues({ benefitKind: "points_credit", grantPoints: "1000", grantAmount: undefined }),

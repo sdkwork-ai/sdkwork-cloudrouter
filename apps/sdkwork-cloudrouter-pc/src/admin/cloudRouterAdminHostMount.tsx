@@ -1,15 +1,18 @@
-import { lazy, useEffect, useState, type ComponentType, type LazyExoticComponent, type ReactElement } from 'react';
+import { lazy, useEffect, useMemo, useState, type ComponentType, type LazyExoticComponent, type ReactElement } from 'react';
 import { Navigate, Route, useParams } from 'react-router-dom';
 import { IAM_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-iam/contribution';
 import { RTC_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-rtc/contribution';
 import { RTC_ADMIN_ROUTE_ELEMENTS } from '@sdkwork/cloudrouter-pc-admin-rtc';
 import { TRADE_ADMIN_ROUTE_RECORDS } from '@sdkwork/order-pc-admin-trade/contribution';
 import { MESSAGING_ADMIN_ROUTE_RECORDS } from '@sdkwork/messaging-pc-admin-notify/contribution';
+import { HARDWARE_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-hardware/contribution';
 import { TradeCenterHostElement } from './tradeCenterHostElement.tsx';
+import { DocumentsAdminRuntimeProvider } from '@sdkwork/documents-pc-admin-documents';
+import { createCloudRouterDocumentsAdminClient } from '@sdkwork/cloudroutes-pc-commons';
 
 export type CloudRouterAdminRouteContribution = {
   path: string;
-  owner: 'sdkwork-cloudrouter' | 'sdkwork-models' | 'sdkwork-log' | 'sdkwork-partner' | 'sdkwork-rtc' | 'sdkwork-order' | 'sdkwork-messaging' | 'sdkwork-course' | 'sdkwork-skills' | 'sdkwork-mcp' | 'sdkwork-agents' | 'sdkwork-plugins';
+  owner: 'sdkwork-cloudrouter' | 'sdkwork-models' | 'sdkwork-log' | 'sdkwork-partner' | 'sdkwork-rtc' | 'sdkwork-order' | 'sdkwork-messaging' | 'sdkwork-course' | 'sdkwork-skills' | 'sdkwork-mcp' | 'sdkwork-agents' | 'sdkwork-plugins' | 'sdkwork-documents' | 'sdkwork-aiot';
   adminPackage: `@sdkwork/${string}`;
   backendSdkFamilies: readonly string[];
   requiredPermission: string;
@@ -88,6 +91,46 @@ const MessagingNotifyEmailChannel = lazyAdminRoute(() => import('@sdkwork/messag
 const MessagingNotifySmsChannel = lazyAdminRoute(() => import('@sdkwork/messaging-pc-admin-notify'), 'SmsChannelPage');
 const MessagingNotifyEmailTemplates = lazyAdminRoute(() => import('@sdkwork/messaging-pc-admin-notify'), 'EmailTemplatesPage');
 const MessagingNotifySmsTemplates = lazyAdminRoute(() => import('@sdkwork/messaging-pc-admin-notify'), 'SmsTemplatesPage');
+const DocumentsAdminList = lazyAdminRoute(() => import('@sdkwork/documents-pc-admin-documents'), 'DocumentCenterPage');const DocumentsAdminEditor = lazyAdminRoute(
+  () => import('@sdkwork/documents-pc-admin-documents'),
+  'DocumentEditorPage',
+) as LazyExoticComponent<ComponentType<{ documentId?: string }>>;
+
+/**
+ * Smart Hardware Center screens. The AIoT management backend answers every one
+ * of these pages; the host only lazily loads the UI blocks and injects the
+ * AIoT backend SDK client at startup (see `hardwareSdkHostWiring.ts`).
+ */
+const HardwareOverviewAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-hardware'), 'HardwareOverviewPage');
+const HardwareProductsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-hardware'), 'HardwareProductsPage');
+const HardwareProfilesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-hardware'), 'HardwareProfilesPage');
+const HardwareProtocolProfilesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-hardware'), 'HardwareProtocolProfilesPage');
+const HardwareCapabilityModelsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-hardware'), 'HardwareCapabilityModelsPage');
+const HardwareDevicesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-hardware'), 'HardwareDevicesPage');
+const HardwareDeviceDetailAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-hardware'), 'HardwareDeviceDetailPage');
+const HardwareDeviceSettingsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-hardware'), 'HardwareDeviceSettingsPage');
+const HardwareFirmwareArtifactsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-hardware'), 'HardwareFirmwareArtifactsPage');
+const HardwareFirmwareRolloutsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-hardware'), 'HardwareFirmwareRolloutsPage');
+const HardwareEventsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-hardware'), 'HardwareEventsPage');
+const HardwareProtocolAdaptersAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-hardware'), 'HardwareProtocolAdaptersPage');
+const HardwareRuntimeAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-hardware'), 'HardwareRuntimePage');
+
+/** Screen key to element, mirroring `HARDWARE_ADMIN_ROUTE_RECORDS[].screen`. */
+const HARDWARE_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>> = {
+  'overview': <HardwareOverviewAdmin />,
+  'products': <HardwareProductsAdmin />,
+  'hardware-profiles': <HardwareProfilesAdmin />,
+  'protocol-profiles': <HardwareProtocolProfilesAdmin />,
+  'capability-models': <HardwareCapabilityModelsAdmin />,
+  'devices': <HardwareDevicesAdmin />,
+  'device-detail': <HardwareDeviceDetailAdmin />,
+  'device-settings': <HardwareDeviceSettingsAdmin />,
+  'firmware-artifacts': <HardwareFirmwareArtifactsAdmin />,
+  'firmware-rollouts': <HardwareFirmwareRolloutsAdmin />,
+  'events': <HardwareEventsAdmin />,
+  'protocol-adapters': <HardwareProtocolAdaptersAdmin />,
+  'runtime': <HardwareRuntimeAdmin />,
+};
 
 /**
  * Lazy route elements for the IAM admin module; paths mirror
@@ -193,6 +236,11 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   route('partner/:sectionId?', 'sdkwork-partner', '@sdkwork/cloudrouter-pc-admin-partner', ['sdkwork-partner-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={PartnerAdmin} />),
   route('payments/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-payments', ['sdkwork-payment-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={PaymentsAdmin} />),
   route('storage/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-storage', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={StorageAdmin} />),
+  // Document Center: pages and rich-text editor are owned by sdkwork-documents;
+  // the portal supplies the generated documents app client through the port.
+  route('documents', 'sdkwork-documents', '@sdkwork/documents-pc-admin-documents', ['sdkwork-documents-app-sdk'], 'cloudrouter.admin.access', <DocumentsAdminHostRoute />),
+  route('documents/new', 'sdkwork-documents', '@sdkwork/documents-pc-admin-documents', ['sdkwork-documents-app-sdk'], 'cloudrouter.admin.access', <DocumentsAdminEditorHostRoute />),
+  route('documents/:documentId', 'sdkwork-documents', '@sdkwork/documents-pc-admin-documents', ['sdkwork-documents-app-sdk'], 'cloudrouter.admin.access', <DocumentsAdminEditorHostRoute />),
   ...IAM_ADMIN_ROUTE_RECORDS.map((record) =>
     route(
       record.path,
@@ -241,11 +289,52 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
         : MESSAGING_ADMIN_ROUTE_ELEMENTS[record.screen]!,
     ),
   ),
+  ...HARDWARE_ADMIN_ROUTE_RECORDS.map((record) =>
+    route(
+      record.path,
+      'sdkwork-aiot',
+      '@sdkwork/cloudrouter-pc-admin-hardware',
+      ['aiot-backend-sdk'],
+      record.requiredPermission,
+      record.redirectTo
+        ? <Navigate to={record.redirectTo} replace />
+        : HARDWARE_ADMIN_ROUTE_ELEMENTS[record.screen]!,
+    ),
+  ),
 ];
 
 function AdminSectionRoute({ component: Component }: { component: ComponentType<{ sectionId?: string }> }) {
   const { sectionId } = useParams<{ sectionId?: string }>();
   return <Component sectionId={sectionId} />;
+}
+
+function useDocumentsAdminRuntimeValue() {
+  return useMemo(
+    () => ({
+      client: createCloudRouterDocumentsAdminClient(),
+      basePath: '/admin/documents',
+    }),
+    [],
+  );
+}
+
+function DocumentsAdminHostRoute() {
+  const runtime = useDocumentsAdminRuntimeValue();
+  return (
+    <DocumentsAdminRuntimeProvider value={runtime}>
+      <DocumentsAdminList />
+    </DocumentsAdminRuntimeProvider>
+  );
+}
+
+function DocumentsAdminEditorHostRoute() {
+  const runtime = useDocumentsAdminRuntimeValue();
+  const { documentId } = useParams<{ documentId?: string }>();
+  return (
+    <DocumentsAdminRuntimeProvider value={runtime}>
+      <DocumentsAdminEditor documentId={documentId} />
+    </DocumentsAdminRuntimeProvider>
+  );
 }
 
 function AdminMarketingRoute({ component: Component }: { component: ComponentType<{ sectionId?: string; batchId?: string }> }) {

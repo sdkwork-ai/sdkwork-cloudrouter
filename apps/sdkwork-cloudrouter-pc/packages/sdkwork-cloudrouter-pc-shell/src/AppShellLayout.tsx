@@ -1,6 +1,6 @@
 import type { ComponentType, ReactNode } from 'react';
 import { useEffect } from 'react';
-import { Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Footer, Navbar } from '@sdkwork/cloudroutes-pc-commons';
 
@@ -49,7 +49,7 @@ export function RouteFallback() {
 }
 
 const PORTAL_HOST_OFFSET_ROUTE_PATTERN =
-  /^\/(?:pricing|product-docs|docs|api-reference|token-plan|partner-join)(?:\/|$)/;
+  /^\/(?:pricing|product-docs|docs|dev-docs|api-reference|sdk-reference|token-plan|partner-join|privacy|terms|cookies)(?:\/|$)/;
 
 export function AppShellLayout({
   isDark,
@@ -103,10 +103,16 @@ export function AppShellLayout({
           <Route path="/models/:provider/:model" element={<ModelDetails />} />
           <Route path="/rankings" element={<Rankings />} />
           <Route path="/pricing" element={<Pricing />} />
-          <Route path="/product-docs" element={<ProductDocs />} />
-          <Route path="/docs" element={<Docs />} />
-          <Route path="/api-reference" element={<ApiReference />} />
-          <Route path="/sdk-reference" element={<SdkReference />} />
+          <Route path="/dev-docs" element={<Docs />} />
+          <Route path="/dev-docs/api-reference" element={<ApiReference />} />
+          <Route path="/dev-docs/sdk-reference" element={<SdkReference />} />
+          <Route path="/dev-docs/product-docs" element={<ProductDocs />} />
+          {/* Legacy developer-docs links: /docs and its children now belong to
+              the Drive-backed document center, so old deep links are redirected
+              to the relocated developer documentation. */}
+          <Route path="/api-reference" element={<Navigate replace to="/dev-docs/api-reference" />} />
+          <Route path="/sdk-reference" element={<Navigate replace to="/dev-docs/sdk-reference" />} />
+          <Route path="/product-docs" element={<Navigate replace to="/dev-docs/product-docs" />} />
           <Route path="/playground/*" element={<Playground />} />
           <Route path="/c/:conversationId" element={<Playground />} />
           <Route path="/token-plan" element={<TokenPlan />} />

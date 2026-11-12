@@ -14,5 +14,9 @@ export function listSdkworkAdminCoreSdkInventory(): readonly SdkworkSdkInventory
     { workspace: 'sdkwork-mcp-backend-sdk', surface: 'backend-api', credentialMode: 'authenticated-backend-admin' },
     { workspace: 'sdkwork-agents-backend-sdk', surface: 'backend-api', credentialMode: 'authenticated-backend-admin' },
     { workspace: 'sdkwork-plugins-backend-sdk', surface: 'backend-api', credentialMode: 'authenticated-backend-admin' },
+    // AIoT management API: owned by sdkwork-aiot, mounted same-origin by the
+    // host, and consumed by the Smart Hardware Center module.
+    { workspace: 'sdkwork-aiot-backend-sdk', surface: 'backend-api', credentialMode: 'authenticated-backend-admin' },
   ] as const;
 }
+

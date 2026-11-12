@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{AnthropicCacheControl, AnthropicMessageParam, AnthropicOutputConfig, AnthropicThinkingConfig, AnthropicTool, AnthropicToolChoice};
+use crate::models::{
+    AnthropicCacheControl, AnthropicMessageParam, AnthropicOutputConfig, AnthropicThinkingConfig,
+    AnthropicTool, AnthropicToolChoice,
+};
 
 /// Anthropic token-counting request (`POST /v1/messages/count_tokens`). The vendor accepts the conversation, system prompt, tools, and thinking configuration, but not the generation controls.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

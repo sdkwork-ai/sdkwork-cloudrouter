@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{MiniMaxMusicExtraInfo};
+use crate::models::MiniMaxMusicExtraInfo;
 
 /// Mini max music data schema exposed by Cloud Router.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

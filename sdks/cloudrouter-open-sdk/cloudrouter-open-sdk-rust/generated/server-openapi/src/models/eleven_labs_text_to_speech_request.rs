@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{ElevenLabsAudioEffects, ElevenLabsPronunciationDictionaryLocator, ElevenLabsVoiceSettings};
+use crate::models::{
+    ElevenLabsAudioEffects, ElevenLabsPronunciationDictionaryLocator, ElevenLabsVoiceSettings,
+};
 
 /// ElevenLabs text-to-speech request (`POST /v1/text-to-speech/{voice_id}`).
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

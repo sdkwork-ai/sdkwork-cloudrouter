@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{BytedanceTtsAudioParams};
+use crate::models::BytedanceTtsAudioParams;
 
 /// ByteDance Seed TTS synthesis parameters.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

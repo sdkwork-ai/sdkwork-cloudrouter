@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{ArkWebSearchTool};
+use crate::models::ArkWebSearchTool;
 
 /// ByteDance Ark Seedream image generation request; the vendor serves the official `/api/v3/images/generations` contract.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{OpenAiImageReferenceInput};
+use crate::models::OpenAiImageReferenceInput;
 
 /// OpenAI-compatible image edit request (JSON form, `POST /v1/images/edits`).
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

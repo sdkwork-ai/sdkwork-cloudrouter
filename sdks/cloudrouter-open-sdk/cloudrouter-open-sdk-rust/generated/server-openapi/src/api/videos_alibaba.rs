@@ -1,8 +1,10 @@
 use std::sync::Arc;
 
-use crate::api::base::{RequestHeaders};
+use crate::api::base::RequestHeaders;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{AlibabaVideoGenerationRequest, AlibabaVideoGenerationResponse, AlibabaVideoGenerationTask};
+use crate::models::{
+    AlibabaVideoGenerationRequest, AlibabaVideoGenerationResponse, AlibabaVideoGenerationTask,
+};
 
 #[derive(Clone)]
 pub struct VideosAlibabaApi {
@@ -15,23 +17,41 @@ impl VideosAlibabaApi {
     }
 
     /// Alibaba Wan video generation
-    pub async fn create_api_v1_services_aigc_video_generation_video_synthesi(&self, body: &AlibabaVideoGenerationRequest, x_dash_scope_async: &str) -> Result<AlibabaVideoGenerationResponse, SdkworkError> {
+    pub async fn create_api_v1_services_aigc_video_generation_video_synthesi(
+        &self,
+        body: &AlibabaVideoGenerationRequest,
+        x_dash_scope_async: &str,
+    ) -> Result<AlibabaVideoGenerationResponse, SdkworkError> {
         let path = "/alibaba/api/v1/services/aigc/video-generation/video-synthesis".to_string();
         let headers = build_request_headers(
-            &[
-                ("X-DashScope-Async", HeaderParameterSpec::new(x_dash_scope_async, "simple", false, None)),
-            ],
+            &[(
+                "X-DashScope-Async",
+                HeaderParameterSpec::new(x_dash_scope_async, "simple", false, None),
+            )],
             &[],
         );
-        self.client.post(&path, Some(body), None, headers.as_ref(), Some("application/json")).await
+        self.client
+            .post(
+                &path,
+                Some(body),
+                None,
+                headers.as_ref(),
+                Some("application/json"),
+            )
+            .await
     }
 
     /// Alibaba Wan retrieve video generation task
-    pub async fn list_api_v1_tasks(&self, task_id: &str) -> Result<AlibabaVideoGenerationTask, SdkworkError> {
-        let path = format!("/alibaba/api/v1/tasks/{}", serialize_path_parameter(task_id, PathParameterSpec::new("task_id", "simple", false)));
+    pub async fn list_api_v1_tasks(
+        &self,
+        task_id: &str,
+    ) -> Result<AlibabaVideoGenerationTask, SdkworkError> {
+        let path = format!(
+            "/alibaba/api/v1/tasks/{}",
+            serialize_path_parameter(task_id, PathParameterSpec::new("task_id", "simple", false))
+        );
         self.client.get(&path, None, None).await
     }
-
 }
 
 struct PathParameterSpec<'a> {
@@ -42,7 +62,11 @@ struct PathParameterSpec<'a> {
 
 impl<'a> PathParameterSpec<'a> {
     fn new(name: &'a str, style: &'a str, explode: bool) -> Self {
-        Self { name, style, explode }
+        Self {
+            name,
+            style,
+            explode,
+        }
     }
 }
 
@@ -51,15 +75,32 @@ fn serialize_path_parameter<T: serde::Serialize>(value: T, spec: PathParameterSp
     if value.is_null() {
         return String::new();
     }
-    let style = if spec.style.is_empty() { "simple" } else { spec.style };
+    let style = if spec.style.is_empty() {
+        "simple"
+    } else {
+        spec.style
+    };
     match value {
-        serde_json::Value::Array(values) => serialize_path_array(spec.name, &values, style, spec.explode),
-        serde_json::Value::Object(values) => serialize_path_object(spec.name, &values, style, spec.explode),
-        value => format!("{}{}", path_primitive_prefix(spec.name, style), percent_encode(&primitive_to_string(&value))),
+        serde_json::Value::Array(values) => {
+            serialize_path_array(spec.name, &values, style, spec.explode)
+        }
+        serde_json::Value::Object(values) => {
+            serialize_path_object(spec.name, &values, style, spec.explode)
+        }
+        value => format!(
+            "{}{}",
+            path_primitive_prefix(spec.name, style),
+            percent_encode(&primitive_to_string(&value))
+        ),
     }
 }
 
-fn serialize_path_array(name: &str, values: &[serde_json::Value], style: &str, explode: bool) -> String {
+fn serialize_path_array(
+    name: &str,
+    values: &[serde_json::Value],
+    style: &str,
+    explode: bool,
+) -> String {
     let serialized = values
         .iter()
         .filter(|value| !value.is_null())
@@ -70,7 +111,11 @@ fn serialize_path_array(name: &str, values: &[serde_json::Value], style: &str, e
     }
     if style == "matrix" {
         if explode {
-            return serialized.iter().map(|item| format!(";{}={}", name, item)).collect::<Vec<_>>().join("");
+            return serialized
+                .iter()
+                .map(|item| format!(";{}={}", name, item))
+                .collect::<Vec<_>>()
+                .join("");
         }
         return format!(";{}={}", name, serialized.join(","));
     }
@@ -153,7 +198,10 @@ impl HeaderParameterSpec {
     }
 }
 
-fn build_request_headers(headers: &[(&str, HeaderParameterSpec)], cookies: &[(&str, HeaderParameterSpec)]) -> Option<RequestHeaders> {
+fn build_request_headers(
+    headers: &[(&str, HeaderParameterSpec)],
+    cookies: &[(&str, HeaderParameterSpec)],
+) -> Option<RequestHeaders> {
     let mut request_headers = RequestHeaders::new();
     for (name, parameter) in headers {
         if let Some(value) = serialize_header_parameter(parameter) {
@@ -244,7 +292,6 @@ fn serialize_json_value(value: &serde_json::Value) -> Option<String> {
         other => Some(other.to_string()),
     }
 }
-
 
 fn primitive_to_string(value: &serde_json::Value) -> String {
     match value {

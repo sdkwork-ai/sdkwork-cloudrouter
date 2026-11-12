@@ -14,9 +14,13 @@ impl VideosBlackForestLabsApi {
     }
 
     /// Black Forest Labs FLUX 3 video generation
-    pub async fn create_flux_3_video(&self, body: &BlackForestLabsVideoGenerationRequest) -> Result<BlackForestLabsVideoGenerationTask, SdkworkError> {
+    pub async fn create_flux_3_video(
+        &self,
+        body: &BlackForestLabsVideoGenerationRequest,
+    ) -> Result<BlackForestLabsVideoGenerationTask, SdkworkError> {
         let path = "/black_forest_labs/v1/flux-3-video".to_string();
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
-
 }

@@ -350,7 +350,6 @@ test("Compute Credits balances and activity use the Token Bank account", () => {
     readPortalFile("./src/console-business/CloudRouterNavbarWalletQuickPanel.tsx"),
     readPortalFile("./src/console-business/CloudRouterTokenBankBalancePanel.tsx"),
     readPortalFile("./src/console-business/CloudRouterTokenBankTransactionList.tsx"),
-    readPortalFile("./src/console-business/CloudRouterWalletPage.tsx"),
     readPortalFile("./src/console-business/ConsoleAccountView.tsx"),
     readPortalFile("./src/token-plan/tokenPlanMemberSummary.ts"),
   ];
@@ -389,7 +388,14 @@ test("Compute Credits balances and activity use the Token Bank account", () => {
   assert.doesNotMatch(combinedSource, /formatWalletDelta\s*\(/);
 });
 
-test("English and Chinese catalogs use the Compute Credits terminology", () => {
+test("Membership Points balance and recharge use the points account, not Token Bank", () => {
+  const walletSource = readPortalFile("./src/console-business/CloudRouterWalletPage.tsx");
+  assert.match(walletSource, /currentPoints=\{state\.overview\.account\.availablePoints\}/);
+  assert.doesNotMatch(walletSource, /currentPoints=\{state\.overview\.account\.tokenBankAvailable\}/);
+  assert.match(walletSource, /points_recharge\.my_points/);
+});
+
+test("Token Bank uses Compute Credits and the points account uses Membership Points", () => {
   const resourcesRoot = new URL(
     "./packages/sdkwork-cloudrouter-pc-i18n/src/resources/",
     import.meta.url,
@@ -402,7 +408,14 @@ test("English and Chinese catalogs use the Compute Credits terminology", () => {
       new URL(relativePath.replaceAll("\\", "/"), resourcesRoot),
       "utf8",
     );
-    assert.doesNotMatch(source, /积分/, `${relativePath} must not display the retired Chinese term`);
+    // 会员积分 belongs to the points account; the bare retired term must not
+    // reappear as a synonym for Token Bank Compute Credits.
+    const displaySource = source.replaceAll("会员积分", "");
+    assert.doesNotMatch(
+      displaySource,
+      /积分/,
+      `${relativePath} must use 会员积分 for the points account or 算力额度 for Token Bank, not the bare retired term`,
+    );
 
     for (const line of source.split(/\r?\n/)) {
       const match = line.match(/^\s*"[^"]+":\s*"((?:[^"\\]|\\.)*)",?\s*$/);
@@ -411,6 +424,9 @@ test("English and Chinese catalogs use the Compute Credits terminology", () => {
       }
       const displayValue = match[1]
         .replaceAll("Compute Credits", "")
+        // Membership Points is the points account's explicit unit; every other
+        // point/credit spelling stays ambiguous and is rejected.
+        .replaceAll(/membership points?/gi, "")
         .replaceAll(/\{\{[^}]+\}\}/g, "")
         .replaceAll(/credit card/gi, "")
         .replaceAll("Unified Social Credit Code", "")
@@ -600,7 +616,10 @@ test("console coupons page passes resolved locale", () => {
   const styleSource = readPortalFile("./src/index.css");
 
   assert.match(mountSource, /resolveConsoleCouponLocale/);
-  assert.match(mountSource, /<SdkworkCouponPage locale=\{locale\} \/>/);
+  assert.match(mountSource, /createSdkworkCouponController/);
+  assert.match(mountSource, /getCloudRouterCouponRechargeService/);
+  assert.match(mountSource, /<SdkworkCouponPage controller=\{controller\} locale=\{locale\} \/>/);
+  assert.doesNotMatch(mountSource, /promotions\.codes\.redemptions/);
   assert.match(mountSource, /<ConsoleBusinessPageFrame surface="coupons">/);
   assert.match(localeSource, /normalizeSdkworkCouponLocale/);
   assert.match(

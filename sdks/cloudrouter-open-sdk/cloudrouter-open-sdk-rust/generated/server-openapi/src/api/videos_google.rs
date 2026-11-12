@@ -14,17 +14,36 @@ impl VideosGoogleApi {
     }
 
     /// Google Gemini retrieve video operation (Veo)
-    pub async fn list_v1beta_models_operations(&self, model: &str, operation_id: &str) -> Result<GeminiVideoOperation, SdkworkError> {
-        let path = format!("/google/v1beta/models/{}/operations/{}", serialize_path_parameter(model, PathParameterSpec::new("model", "simple", false)), serialize_path_parameter(operation_id, PathParameterSpec::new("operation_id", "simple", false)));
+    pub async fn list_v1beta_models_operations(
+        &self,
+        model: &str,
+        operation_id: &str,
+    ) -> Result<GeminiVideoOperation, SdkworkError> {
+        let path = format!(
+            "/google/v1beta/models/{}/operations/{}",
+            serialize_path_parameter(model, PathParameterSpec::new("model", "simple", false)),
+            serialize_path_parameter(
+                operation_id,
+                PathParameterSpec::new("operation_id", "simple", false)
+            )
+        );
         self.client.get(&path, None, None).await
     }
 
     /// Google Gemini video generation (Veo)
-    pub async fn create_v1beta_models_model_generate_video(&self, model: &str, body: &GeminiVideoGenerationRequest) -> Result<GeminiVideoOperation, SdkworkError> {
-        let path = format!("/google/v1beta/models/{}:generateVideos", serialize_path_parameter(model, PathParameterSpec::new("model", "simple", false)));
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    pub async fn create_v1beta_models_model_generate_video(
+        &self,
+        model: &str,
+        body: &GeminiVideoGenerationRequest,
+    ) -> Result<GeminiVideoOperation, SdkworkError> {
+        let path = format!(
+            "/google/v1beta/models/{}:generateVideos",
+            serialize_path_parameter(model, PathParameterSpec::new("model", "simple", false))
+        );
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
-
 }
 
 struct PathParameterSpec<'a> {
@@ -35,7 +54,11 @@ struct PathParameterSpec<'a> {
 
 impl<'a> PathParameterSpec<'a> {
     fn new(name: &'a str, style: &'a str, explode: bool) -> Self {
-        Self { name, style, explode }
+        Self {
+            name,
+            style,
+            explode,
+        }
     }
 }
 
@@ -44,15 +67,32 @@ fn serialize_path_parameter<T: serde::Serialize>(value: T, spec: PathParameterSp
     if value.is_null() {
         return String::new();
     }
-    let style = if spec.style.is_empty() { "simple" } else { spec.style };
+    let style = if spec.style.is_empty() {
+        "simple"
+    } else {
+        spec.style
+    };
     match value {
-        serde_json::Value::Array(values) => serialize_path_array(spec.name, &values, style, spec.explode),
-        serde_json::Value::Object(values) => serialize_path_object(spec.name, &values, style, spec.explode),
-        value => format!("{}{}", path_primitive_prefix(spec.name, style), percent_encode(&primitive_to_string(&value))),
+        serde_json::Value::Array(values) => {
+            serialize_path_array(spec.name, &values, style, spec.explode)
+        }
+        serde_json::Value::Object(values) => {
+            serialize_path_object(spec.name, &values, style, spec.explode)
+        }
+        value => format!(
+            "{}{}",
+            path_primitive_prefix(spec.name, style),
+            percent_encode(&primitive_to_string(&value))
+        ),
     }
 }
 
-fn serialize_path_array(name: &str, values: &[serde_json::Value], style: &str, explode: bool) -> String {
+fn serialize_path_array(
+    name: &str,
+    values: &[serde_json::Value],
+    style: &str,
+    explode: bool,
+) -> String {
     let serialized = values
         .iter()
         .filter(|value| !value.is_null())
@@ -63,7 +103,11 @@ fn serialize_path_array(name: &str, values: &[serde_json::Value], style: &str, e
     }
     if style == "matrix" {
         if explode {
-            return serialized.iter().map(|item| format!(";{}={}", name, item)).collect::<Vec<_>>().join("");
+            return serialized
+                .iter()
+                .map(|item| format!(";{}={}", name, item))
+                .collect::<Vec<_>>()
+                .join("");
         }
         return format!(";{}={}", name, serialized.join(","));
     }
@@ -124,8 +168,6 @@ fn path_primitive_prefix(name: &str, style: &str) -> String {
         path_prefix(name, style)
     }
 }
-
-
 
 fn primitive_to_string(value: &serde_json::Value) -> String {
     match value {

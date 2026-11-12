@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{OpenAiDeepSeekWebSearchResult};
+use crate::models::OpenAiDeepSeekWebSearchResult;
 
 /// DeepSeek-compatible web search response.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

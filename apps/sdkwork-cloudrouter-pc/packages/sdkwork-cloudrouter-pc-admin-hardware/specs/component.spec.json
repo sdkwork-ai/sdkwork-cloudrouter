@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "component": {
+    "name": "sdkwork-cloudrouter-pc-admin-hardware",
+    "package": "@sdkwork/cloudrouter-pc-admin-hardware",
+    "owner": "sdkwork-cloudrouter",
+    "surface": "backend-admin"
+  },
+  "contracts": {
+    "backendSdkFamilies": ["aiot-backend-sdk"],
+    "apiSurface": "backend",
+    "routes": [
+      "/admin/hardware",
+      "/admin/hardware/products",
+      "/admin/hardware/hardware-profiles",
+      "/admin/hardware/protocol-profiles",
+      "/admin/hardware/capability-models",
+      "/admin/hardware/devices",
+      "/admin/hardware/devices/:deviceId",
+      "/admin/hardware/device-settings",
+      "/admin/hardware/firmware-artifacts",
+      "/admin/hardware/firmware-rollouts",
+      "/admin/hardware/events",
+      "/admin/hardware/protocol-adapters",
+      "/admin/hardware/runtime"
+    ],
+    "permissions": ["cloudrouter.admin.access"]
+  }
+}

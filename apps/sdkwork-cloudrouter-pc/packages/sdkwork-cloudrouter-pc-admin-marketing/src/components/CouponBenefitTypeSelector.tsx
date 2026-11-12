@@ -26,14 +26,14 @@ const BENEFIT_OPTIONS: BenefitOption[] = [
 /** 卡片名称/目标账户/一句话说明的英文回退，防止资源缺失时渲染裸 key。 */
 const BENEFIT_LABEL_FALLBACKS: Record<CouponOfferCardKind, { name: string; account: string; desc: string }> = {
   token_bank_credit: {
-    name: 'Token Bank Credit Coupon',
+    name: 'Compute Credits Coupon',
     account: 'Token Bank',
-    desc: 'Grant Token Bank compute credit, with optional bonus.',
+    desc: 'Grant Token Bank Compute Credits, with optional bonus credits.',
   },
   points_credit: {
-    name: 'Compute Credits Coupon',
-    account: 'Compute Credits',
-    desc: 'Grant Compute Credits on redemption.',
+    name: 'Membership Points Coupon',
+    account: 'Membership Points',
+    desc: 'Grant membership points to the Membership Points account on redemption.',
   },
   cash_credit: {
     name: 'Cash Coupon',

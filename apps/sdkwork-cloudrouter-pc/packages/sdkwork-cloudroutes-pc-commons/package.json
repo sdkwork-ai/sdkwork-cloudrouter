@@ -169,6 +169,7 @@
     "@sdkwork/account-service": "workspace:*",
     "@sdkwork/agents-app-sdk": "workspace:*",
     "@sdkwork/agents-backend-sdk": "workspace:*",
+    "@sdkwork/aiot-backend-sdk": "workspace:*",
     "@sdkwork/appbase-pc-react": "workspace:*",
     "@sdkwork/appstore-app-sdk": "^0.1.6",
     "@sdkwork/assets-app-sdk": "workspace:*",

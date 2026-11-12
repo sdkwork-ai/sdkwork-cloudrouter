@@ -1,6 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{AnthropicCacheControl, AnthropicContainer, AnthropicDiagnostics, AnthropicMessageParam, AnthropicMetadata, AnthropicOutputConfig, AnthropicThinkingConfig, AnthropicTool, AnthropicToolChoice};
+use crate::models::{
+    AnthropicCacheControl, AnthropicContainer, AnthropicDiagnostics, AnthropicMessageParam,
+    AnthropicMetadata, AnthropicOutputConfig, AnthropicThinkingConfig, AnthropicTool,
+    AnthropicToolChoice,
+};
 
 /// Anthropic Claude anthropic message create request schema exposed by Cloud Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

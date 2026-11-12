@@ -36,6 +36,8 @@ export * from './media-resource.ts';
 export * from './model-catalog-identity.ts';
 export * from './reference-sidebar-groups.ts';
 export * from './documents-reference-runtime-adapter.ts';
+export * from './documents-admin-client.ts';
+export * from './public-documents-client.ts';
 export * from './share-url.ts';
 export * from './portal-auth.ts';
 export * from './recharge-math.ts';

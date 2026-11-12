@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{LumaKeyframe};
+use crate::models::LumaKeyframe;
 
 /// Luma first and last keyframes.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

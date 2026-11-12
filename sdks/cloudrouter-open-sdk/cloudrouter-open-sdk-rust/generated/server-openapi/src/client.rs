@@ -1,6 +1,19 @@
 use std::sync::Arc;
 
-use crate::api::{ImagesAlibabaApi, VideosAlibabaApi, AudioAlibabaApi, FilesAnthropicApi, ChatAnthropicApi, BatchesAnthropicApi, VideosBlackForestLabsApi, ImagesBlackForestLabsApi, VideosBytedanceApi, ImagesBytedanceApi, AudioBytedanceApi, MusicElevenlabsApi, AudioElevenlabsApi, ResponsesGoogleApi, FilesGoogleApi, VideosGoogleApi, EmbeddingsGoogleApi, ChatGoogleApi, ImagesGoogleApi, VideosJimengApi, AudioKlingApi, ImagesKlingApi, VideosKlingApi, VideosLumaAiApi, VideosMinimaxApi, ImagesMinimaxApi, MusicMinimaxApi, AudioMinimaxApi, MusicMurekaApi, VideosPixverseApi, VideosRunwayApi, ImagesRunwayApi, AudioStabilityAiApi, ImagesStabilityAiApi, MusicSunoApi, ChatTypesafeApi, AssistantsApi, AudioApi, BatchesApi, ChatApi, CompletionApi, ContainerApi, ConversationApi, EmbeddingsApi, FilesApi, ImagesApi, ModelsApi, ModerationsApi, RealtimeApi, ResponsesApi, ThreadsApi, ToolApi, UploadsApi, VectorStoresApi, VideoApi, VideosViduApi, ImagesViduApi, AudioViduApi, AudioVolcengineApi, VideosVolcengineApi, ImagesVolcengineApi, ImagesXaiApi, VideosXaiApi, VideosZhipuApi, ImagesZhipuApi};
+use crate::api::{
+    AssistantsApi, AudioAlibabaApi, AudioApi, AudioBytedanceApi, AudioElevenlabsApi, AudioKlingApi,
+    AudioMinimaxApi, AudioStabilityAiApi, AudioViduApi, AudioVolcengineApi, BatchesAnthropicApi,
+    BatchesApi, ChatAnthropicApi, ChatApi, ChatGoogleApi, ChatTypesafeApi, CompletionApi,
+    ContainerApi, ConversationApi, EmbeddingsApi, EmbeddingsGoogleApi, FilesAnthropicApi, FilesApi,
+    FilesGoogleApi, ImagesAlibabaApi, ImagesApi, ImagesBlackForestLabsApi, ImagesBytedanceApi,
+    ImagesGoogleApi, ImagesKlingApi, ImagesMinimaxApi, ImagesRunwayApi, ImagesStabilityAiApi,
+    ImagesViduApi, ImagesVolcengineApi, ImagesXaiApi, ImagesZhipuApi, ModelsApi, ModerationsApi,
+    MusicElevenlabsApi, MusicMinimaxApi, MusicMurekaApi, MusicSunoApi, RealtimeApi, ResponsesApi,
+    ResponsesGoogleApi, ThreadsApi, ToolApi, UploadsApi, VectorStoresApi, VideoApi,
+    VideosAlibabaApi, VideosBlackForestLabsApi, VideosBytedanceApi, VideosGoogleApi,
+    VideosJimengApi, VideosKlingApi, VideosLumaAiApi, VideosMinimaxApi, VideosPixverseApi,
+    VideosRunwayApi, VideosViduApi, VideosVolcengineApi, VideosXaiApi, VideosZhipuApi,
+};
 use crate::http::{SdkworkConfig, SdkworkError, SdkworkHttpClient};
 
 #[derive(Clone)]
@@ -34,7 +47,6 @@ impl SdkworkAiClient {
         self
     }
 
-
     pub fn set_header(&self, key: impl Into<String>, value: impl Into<String>) -> &Self {
         self.http.set_header(key, value);
         self
@@ -45,262 +57,262 @@ impl SdkworkAiClient {
     }
 
     pub fn images_alibaba(&self) -> ImagesAlibabaApi {
-            ImagesAlibabaApi::new(Arc::clone(&self.http))
-        }
+        ImagesAlibabaApi::new(Arc::clone(&self.http))
+    }
 
     pub fn videos_alibaba(&self) -> VideosAlibabaApi {
-            VideosAlibabaApi::new(Arc::clone(&self.http))
-        }
+        VideosAlibabaApi::new(Arc::clone(&self.http))
+    }
 
     pub fn audio_alibaba(&self) -> AudioAlibabaApi {
-            AudioAlibabaApi::new(Arc::clone(&self.http))
-        }
+        AudioAlibabaApi::new(Arc::clone(&self.http))
+    }
 
     pub fn files_anthropic(&self) -> FilesAnthropicApi {
-            FilesAnthropicApi::new(Arc::clone(&self.http))
-        }
+        FilesAnthropicApi::new(Arc::clone(&self.http))
+    }
 
     pub fn chat_anthropic(&self) -> ChatAnthropicApi {
-            ChatAnthropicApi::new(Arc::clone(&self.http))
-        }
+        ChatAnthropicApi::new(Arc::clone(&self.http))
+    }
 
     pub fn batches_anthropic(&self) -> BatchesAnthropicApi {
-            BatchesAnthropicApi::new(Arc::clone(&self.http))
-        }
+        BatchesAnthropicApi::new(Arc::clone(&self.http))
+    }
 
     pub fn videos_black_forest_labs(&self) -> VideosBlackForestLabsApi {
-            VideosBlackForestLabsApi::new(Arc::clone(&self.http))
-        }
+        VideosBlackForestLabsApi::new(Arc::clone(&self.http))
+    }
 
     pub fn images_black_forest_labs(&self) -> ImagesBlackForestLabsApi {
-            ImagesBlackForestLabsApi::new(Arc::clone(&self.http))
-        }
+        ImagesBlackForestLabsApi::new(Arc::clone(&self.http))
+    }
 
     pub fn videos_bytedance(&self) -> VideosBytedanceApi {
-            VideosBytedanceApi::new(Arc::clone(&self.http))
-        }
+        VideosBytedanceApi::new(Arc::clone(&self.http))
+    }
 
     pub fn images_bytedance(&self) -> ImagesBytedanceApi {
-            ImagesBytedanceApi::new(Arc::clone(&self.http))
-        }
+        ImagesBytedanceApi::new(Arc::clone(&self.http))
+    }
 
     pub fn audio_bytedance(&self) -> AudioBytedanceApi {
-            AudioBytedanceApi::new(Arc::clone(&self.http))
-        }
+        AudioBytedanceApi::new(Arc::clone(&self.http))
+    }
 
     pub fn music_elevenlabs(&self) -> MusicElevenlabsApi {
-            MusicElevenlabsApi::new(Arc::clone(&self.http))
-        }
+        MusicElevenlabsApi::new(Arc::clone(&self.http))
+    }
 
     pub fn audio_elevenlabs(&self) -> AudioElevenlabsApi {
-            AudioElevenlabsApi::new(Arc::clone(&self.http))
-        }
+        AudioElevenlabsApi::new(Arc::clone(&self.http))
+    }
 
     pub fn responses_google(&self) -> ResponsesGoogleApi {
-            ResponsesGoogleApi::new(Arc::clone(&self.http))
-        }
+        ResponsesGoogleApi::new(Arc::clone(&self.http))
+    }
 
     pub fn files_google(&self) -> FilesGoogleApi {
-            FilesGoogleApi::new(Arc::clone(&self.http))
-        }
+        FilesGoogleApi::new(Arc::clone(&self.http))
+    }
 
     pub fn videos_google(&self) -> VideosGoogleApi {
-            VideosGoogleApi::new(Arc::clone(&self.http))
-        }
+        VideosGoogleApi::new(Arc::clone(&self.http))
+    }
 
     pub fn embeddings_google(&self) -> EmbeddingsGoogleApi {
-            EmbeddingsGoogleApi::new(Arc::clone(&self.http))
-        }
+        EmbeddingsGoogleApi::new(Arc::clone(&self.http))
+    }
 
     pub fn chat_google(&self) -> ChatGoogleApi {
-            ChatGoogleApi::new(Arc::clone(&self.http))
-        }
+        ChatGoogleApi::new(Arc::clone(&self.http))
+    }
 
     pub fn images_google(&self) -> ImagesGoogleApi {
-            ImagesGoogleApi::new(Arc::clone(&self.http))
-        }
+        ImagesGoogleApi::new(Arc::clone(&self.http))
+    }
 
     pub fn videos_jimeng(&self) -> VideosJimengApi {
-            VideosJimengApi::new(Arc::clone(&self.http))
-        }
+        VideosJimengApi::new(Arc::clone(&self.http))
+    }
 
     pub fn audio_kling(&self) -> AudioKlingApi {
-            AudioKlingApi::new(Arc::clone(&self.http))
-        }
+        AudioKlingApi::new(Arc::clone(&self.http))
+    }
 
     pub fn images_kling(&self) -> ImagesKlingApi {
-            ImagesKlingApi::new(Arc::clone(&self.http))
-        }
+        ImagesKlingApi::new(Arc::clone(&self.http))
+    }
 
     pub fn videos_kling(&self) -> VideosKlingApi {
-            VideosKlingApi::new(Arc::clone(&self.http))
-        }
+        VideosKlingApi::new(Arc::clone(&self.http))
+    }
 
     pub fn videos_luma_ai(&self) -> VideosLumaAiApi {
-            VideosLumaAiApi::new(Arc::clone(&self.http))
-        }
+        VideosLumaAiApi::new(Arc::clone(&self.http))
+    }
 
     pub fn videos_minimax(&self) -> VideosMinimaxApi {
-            VideosMinimaxApi::new(Arc::clone(&self.http))
-        }
+        VideosMinimaxApi::new(Arc::clone(&self.http))
+    }
 
     pub fn images_minimax(&self) -> ImagesMinimaxApi {
-            ImagesMinimaxApi::new(Arc::clone(&self.http))
-        }
+        ImagesMinimaxApi::new(Arc::clone(&self.http))
+    }
 
     pub fn music_minimax(&self) -> MusicMinimaxApi {
-            MusicMinimaxApi::new(Arc::clone(&self.http))
-        }
+        MusicMinimaxApi::new(Arc::clone(&self.http))
+    }
 
     pub fn audio_minimax(&self) -> AudioMinimaxApi {
-            AudioMinimaxApi::new(Arc::clone(&self.http))
-        }
+        AudioMinimaxApi::new(Arc::clone(&self.http))
+    }
 
     pub fn music_mureka(&self) -> MusicMurekaApi {
-            MusicMurekaApi::new(Arc::clone(&self.http))
-        }
+        MusicMurekaApi::new(Arc::clone(&self.http))
+    }
 
     pub fn videos_pixverse(&self) -> VideosPixverseApi {
-            VideosPixverseApi::new(Arc::clone(&self.http))
-        }
+        VideosPixverseApi::new(Arc::clone(&self.http))
+    }
 
     pub fn videos_runway(&self) -> VideosRunwayApi {
-            VideosRunwayApi::new(Arc::clone(&self.http))
-        }
+        VideosRunwayApi::new(Arc::clone(&self.http))
+    }
 
     pub fn images_runway(&self) -> ImagesRunwayApi {
-            ImagesRunwayApi::new(Arc::clone(&self.http))
-        }
+        ImagesRunwayApi::new(Arc::clone(&self.http))
+    }
 
     pub fn audio_stability_ai(&self) -> AudioStabilityAiApi {
-            AudioStabilityAiApi::new(Arc::clone(&self.http))
-        }
+        AudioStabilityAiApi::new(Arc::clone(&self.http))
+    }
 
     pub fn images_stability_ai(&self) -> ImagesStabilityAiApi {
-            ImagesStabilityAiApi::new(Arc::clone(&self.http))
-        }
+        ImagesStabilityAiApi::new(Arc::clone(&self.http))
+    }
 
     pub fn music_suno(&self) -> MusicSunoApi {
-            MusicSunoApi::new(Arc::clone(&self.http))
-        }
+        MusicSunoApi::new(Arc::clone(&self.http))
+    }
 
     pub fn chat_typesafe(&self) -> ChatTypesafeApi {
-            ChatTypesafeApi::new(Arc::clone(&self.http))
-        }
+        ChatTypesafeApi::new(Arc::clone(&self.http))
+    }
 
     pub fn assistants(&self) -> AssistantsApi {
-            AssistantsApi::new(Arc::clone(&self.http))
-        }
+        AssistantsApi::new(Arc::clone(&self.http))
+    }
 
     pub fn audio(&self) -> AudioApi {
-            AudioApi::new(Arc::clone(&self.http))
-        }
+        AudioApi::new(Arc::clone(&self.http))
+    }
 
     pub fn batches(&self) -> BatchesApi {
-            BatchesApi::new(Arc::clone(&self.http))
-        }
+        BatchesApi::new(Arc::clone(&self.http))
+    }
 
     pub fn chat(&self) -> ChatApi {
-            ChatApi::new(Arc::clone(&self.http))
-        }
+        ChatApi::new(Arc::clone(&self.http))
+    }
 
     pub fn completion(&self) -> CompletionApi {
-            CompletionApi::new(Arc::clone(&self.http))
-        }
+        CompletionApi::new(Arc::clone(&self.http))
+    }
 
     pub fn container(&self) -> ContainerApi {
-            ContainerApi::new(Arc::clone(&self.http))
-        }
+        ContainerApi::new(Arc::clone(&self.http))
+    }
 
     pub fn conversation(&self) -> ConversationApi {
-            ConversationApi::new(Arc::clone(&self.http))
-        }
+        ConversationApi::new(Arc::clone(&self.http))
+    }
 
     pub fn embeddings(&self) -> EmbeddingsApi {
-            EmbeddingsApi::new(Arc::clone(&self.http))
-        }
+        EmbeddingsApi::new(Arc::clone(&self.http))
+    }
 
     pub fn files(&self) -> FilesApi {
-            FilesApi::new(Arc::clone(&self.http))
-        }
+        FilesApi::new(Arc::clone(&self.http))
+    }
 
     pub fn images(&self) -> ImagesApi {
-            ImagesApi::new(Arc::clone(&self.http))
-        }
+        ImagesApi::new(Arc::clone(&self.http))
+    }
 
     pub fn models(&self) -> ModelsApi {
-            ModelsApi::new(Arc::clone(&self.http))
-        }
+        ModelsApi::new(Arc::clone(&self.http))
+    }
 
     pub fn moderations(&self) -> ModerationsApi {
-            ModerationsApi::new(Arc::clone(&self.http))
-        }
+        ModerationsApi::new(Arc::clone(&self.http))
+    }
 
     pub fn realtime(&self) -> RealtimeApi {
-            RealtimeApi::new(Arc::clone(&self.http))
-        }
+        RealtimeApi::new(Arc::clone(&self.http))
+    }
 
     pub fn responses(&self) -> ResponsesApi {
-            ResponsesApi::new(Arc::clone(&self.http))
-        }
+        ResponsesApi::new(Arc::clone(&self.http))
+    }
 
     pub fn threads(&self) -> ThreadsApi {
-            ThreadsApi::new(Arc::clone(&self.http))
-        }
+        ThreadsApi::new(Arc::clone(&self.http))
+    }
 
     pub fn tool(&self) -> ToolApi {
-            ToolApi::new(Arc::clone(&self.http))
-        }
+        ToolApi::new(Arc::clone(&self.http))
+    }
 
     pub fn uploads(&self) -> UploadsApi {
-            UploadsApi::new(Arc::clone(&self.http))
-        }
+        UploadsApi::new(Arc::clone(&self.http))
+    }
 
     pub fn vector_stores(&self) -> VectorStoresApi {
-            VectorStoresApi::new(Arc::clone(&self.http))
-        }
+        VectorStoresApi::new(Arc::clone(&self.http))
+    }
 
     pub fn video(&self) -> VideoApi {
-            VideoApi::new(Arc::clone(&self.http))
-        }
+        VideoApi::new(Arc::clone(&self.http))
+    }
 
     pub fn videos_vidu(&self) -> VideosViduApi {
-            VideosViduApi::new(Arc::clone(&self.http))
-        }
+        VideosViduApi::new(Arc::clone(&self.http))
+    }
 
     pub fn images_vidu(&self) -> ImagesViduApi {
-            ImagesViduApi::new(Arc::clone(&self.http))
-        }
+        ImagesViduApi::new(Arc::clone(&self.http))
+    }
 
     pub fn audio_vidu(&self) -> AudioViduApi {
-            AudioViduApi::new(Arc::clone(&self.http))
-        }
+        AudioViduApi::new(Arc::clone(&self.http))
+    }
 
     pub fn audio_volcengine(&self) -> AudioVolcengineApi {
-            AudioVolcengineApi::new(Arc::clone(&self.http))
-        }
+        AudioVolcengineApi::new(Arc::clone(&self.http))
+    }
 
     pub fn videos_volcengine(&self) -> VideosVolcengineApi {
-            VideosVolcengineApi::new(Arc::clone(&self.http))
-        }
+        VideosVolcengineApi::new(Arc::clone(&self.http))
+    }
 
     pub fn images_volcengine(&self) -> ImagesVolcengineApi {
-            ImagesVolcengineApi::new(Arc::clone(&self.http))
-        }
+        ImagesVolcengineApi::new(Arc::clone(&self.http))
+    }
 
     pub fn images_xai(&self) -> ImagesXaiApi {
-            ImagesXaiApi::new(Arc::clone(&self.http))
-        }
+        ImagesXaiApi::new(Arc::clone(&self.http))
+    }
 
     pub fn videos_xai(&self) -> VideosXaiApi {
-            VideosXaiApi::new(Arc::clone(&self.http))
-        }
+        VideosXaiApi::new(Arc::clone(&self.http))
+    }
 
     pub fn videos_zhipu(&self) -> VideosZhipuApi {
-            VideosZhipuApi::new(Arc::clone(&self.http))
-        }
+        VideosZhipuApi::new(Arc::clone(&self.http))
+    }
 
     pub fn images_zhipu(&self) -> ImagesZhipuApi {
-            ImagesZhipuApi::new(Arc::clone(&self.http))
-        }
+        ImagesZhipuApi::new(Arc::clone(&self.http))
+    }
 }

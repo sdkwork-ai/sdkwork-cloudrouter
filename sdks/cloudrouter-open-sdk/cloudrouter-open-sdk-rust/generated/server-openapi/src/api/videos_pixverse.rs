@@ -1,8 +1,10 @@
 use std::sync::Arc;
 
-use crate::api::base::{RequestHeaders};
+use crate::api::base::RequestHeaders;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{PixverseVideoGenerationRequest, PixverseVideoGenerationResponse, PixverseVideoGenerationTask};
+use crate::models::{
+    PixverseVideoGenerationRequest, PixverseVideoGenerationResponse, PixverseVideoGenerationTask,
+};
 
 #[derive(Clone)]
 pub struct VideosPixverseApi {
@@ -15,29 +17,52 @@ impl VideosPixverseApi {
     }
 
     /// PixVerse retrieve video generation
-    pub async fn list_openapi_v2_video_result(&self, video_id: &str, ai_trace_id: &str) -> Result<PixverseVideoGenerationTask, SdkworkError> {
-        let path = format!("/pixverse/openapi/v2/video/result/{}", serialize_path_parameter(video_id, PathParameterSpec::new("video_id", "simple", false)));
+    pub async fn list_openapi_v2_video_result(
+        &self,
+        video_id: &str,
+        ai_trace_id: &str,
+    ) -> Result<PixverseVideoGenerationTask, SdkworkError> {
+        let path = format!(
+            "/pixverse/openapi/v2/video/result/{}",
+            serialize_path_parameter(
+                video_id,
+                PathParameterSpec::new("video_id", "simple", false)
+            )
+        );
         let headers = build_request_headers(
-            &[
-                ("Ai-trace-id", HeaderParameterSpec::new(ai_trace_id, "simple", false, None)),
-            ],
+            &[(
+                "Ai-trace-id",
+                HeaderParameterSpec::new(ai_trace_id, "simple", false, None),
+            )],
             &[],
         );
         self.client.get(&path, None, headers.as_ref()).await
     }
 
     /// PixVerse text to video generation
-    pub async fn create_openapi_v2_video_text_generate(&self, body: &PixverseVideoGenerationRequest, ai_trace_id: &str) -> Result<PixverseVideoGenerationResponse, SdkworkError> {
+    pub async fn create_openapi_v2_video_text_generate(
+        &self,
+        body: &PixverseVideoGenerationRequest,
+        ai_trace_id: &str,
+    ) -> Result<PixverseVideoGenerationResponse, SdkworkError> {
         let path = "/pixverse/openapi/v2/video/text/generate".to_string();
         let headers = build_request_headers(
-            &[
-                ("Ai-trace-id", HeaderParameterSpec::new(ai_trace_id, "simple", false, None)),
-            ],
+            &[(
+                "Ai-trace-id",
+                HeaderParameterSpec::new(ai_trace_id, "simple", false, None),
+            )],
             &[],
         );
-        self.client.post(&path, Some(body), None, headers.as_ref(), Some("application/json")).await
+        self.client
+            .post(
+                &path,
+                Some(body),
+                None,
+                headers.as_ref(),
+                Some("application/json"),
+            )
+            .await
     }
-
 }
 
 struct PathParameterSpec<'a> {
@@ -48,7 +73,11 @@ struct PathParameterSpec<'a> {
 
 impl<'a> PathParameterSpec<'a> {
     fn new(name: &'a str, style: &'a str, explode: bool) -> Self {
-        Self { name, style, explode }
+        Self {
+            name,
+            style,
+            explode,
+        }
     }
 }
 
@@ -57,15 +86,32 @@ fn serialize_path_parameter<T: serde::Serialize>(value: T, spec: PathParameterSp
     if value.is_null() {
         return String::new();
     }
-    let style = if spec.style.is_empty() { "simple" } else { spec.style };
+    let style = if spec.style.is_empty() {
+        "simple"
+    } else {
+        spec.style
+    };
     match value {
-        serde_json::Value::Array(values) => serialize_path_array(spec.name, &values, style, spec.explode),
-        serde_json::Value::Object(values) => serialize_path_object(spec.name, &values, style, spec.explode),
-        value => format!("{}{}", path_primitive_prefix(spec.name, style), percent_encode(&primitive_to_string(&value))),
+        serde_json::Value::Array(values) => {
+            serialize_path_array(spec.name, &values, style, spec.explode)
+        }
+        serde_json::Value::Object(values) => {
+            serialize_path_object(spec.name, &values, style, spec.explode)
+        }
+        value => format!(
+            "{}{}",
+            path_primitive_prefix(spec.name, style),
+            percent_encode(&primitive_to_string(&value))
+        ),
     }
 }
 
-fn serialize_path_array(name: &str, values: &[serde_json::Value], style: &str, explode: bool) -> String {
+fn serialize_path_array(
+    name: &str,
+    values: &[serde_json::Value],
+    style: &str,
+    explode: bool,
+) -> String {
     let serialized = values
         .iter()
         .filter(|value| !value.is_null())
@@ -76,7 +122,11 @@ fn serialize_path_array(name: &str, values: &[serde_json::Value], style: &str, e
     }
     if style == "matrix" {
         if explode {
-            return serialized.iter().map(|item| format!(";{}={}", name, item)).collect::<Vec<_>>().join("");
+            return serialized
+                .iter()
+                .map(|item| format!(";{}={}", name, item))
+                .collect::<Vec<_>>()
+                .join("");
         }
         return format!(";{}={}", name, serialized.join(","));
     }
@@ -159,7 +209,10 @@ impl HeaderParameterSpec {
     }
 }
 
-fn build_request_headers(headers: &[(&str, HeaderParameterSpec)], cookies: &[(&str, HeaderParameterSpec)]) -> Option<RequestHeaders> {
+fn build_request_headers(
+    headers: &[(&str, HeaderParameterSpec)],
+    cookies: &[(&str, HeaderParameterSpec)],
+) -> Option<RequestHeaders> {
     let mut request_headers = RequestHeaders::new();
     for (name, parameter) in headers {
         if let Some(value) = serialize_header_parameter(parameter) {
@@ -250,7 +303,6 @@ fn serialize_json_value(value: &serde_json::Value) -> Option<String> {
         other => Some(other.to_string()),
     }
 }
-
 
 fn primitive_to_string(value: &serde_json::Value) -> String {
     match value {

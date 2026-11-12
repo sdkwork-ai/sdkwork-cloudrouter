@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{OpenAiVectorStoreFileCounts};
+use crate::models::OpenAiVectorStoreFileCounts;
 
 /// OpenAI-compatible vector store file batch object.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

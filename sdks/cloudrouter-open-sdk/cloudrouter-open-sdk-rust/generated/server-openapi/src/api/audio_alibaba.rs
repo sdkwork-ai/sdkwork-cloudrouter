@@ -14,9 +14,13 @@ impl AudioAlibabaApi {
     }
 
     /// Alibaba Qwen TTS speech synthesis
-    pub async fn create_api_v1_services_audio_tts_speech_synthesizer(&self, body: &AlibabaSpeechRequest) -> Result<AlibabaSpeechResponse, SdkworkError> {
+    pub async fn create_api_v1_services_audio_tts_speech_synthesizer(
+        &self,
+        body: &AlibabaSpeechRequest,
+    ) -> Result<AlibabaSpeechResponse, SdkworkError> {
         let path = "/alibaba/api/v1/services/audio/tts/SpeechSynthesizer".to_string();
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
-
 }

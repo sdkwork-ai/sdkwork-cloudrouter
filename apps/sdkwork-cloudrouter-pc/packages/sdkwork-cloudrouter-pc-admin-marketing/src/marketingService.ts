@@ -785,13 +785,13 @@ export interface CouponOfferCreateFormValues {
   endsAt?: string;
   status: 'active' | 'disabled';
   benefitKind: CouponOfferBenefitKind;
-  /** Token Bank 额度券：发放额度（整数最小单位）；现金券：发放金额（元，提交时转为最小单位）。 */
+  /** Compute Credits coupon: whole Compute Credits to grant; cash coupon: amount in major units (converted to minor units on submit). */
   grantAmount?: string;
-  /** Token Bank 额度券：赠送额度（可选，整数最小单位）。 */
+  /** Compute Credits coupon: optional whole bonus Compute Credits. */
   bonusAmount?: string;
-  /** 积分券：发放积分（整数）。 */
+  /** Membership points coupon: whole membership points to grant. */
   grantPoints?: string;
-  /** 现金券/Token Bank 额度券使用的币种（现金券以元为单位输入）。 */
+  /** Cash / Compute Credits coupon currency (cash coupons are entered in major units). */
   currencyCode: string;
   /**
    * 订单抵扣条款：`NONE`（仅权益）/ `FIXED`（满减）/ `PERCENTAGE`（折扣）。
@@ -1083,7 +1083,7 @@ function buildCouponOfferRequestPayload(
   };
 }
 
-/** 按券类型构建权益载荷：现金券金额（元）转换为最小单位（分），Token Bank 赠送额度可省略。 */
+/** 按券类型构建权益载荷：现金券金额（元）转换为最小单位（分）；算力券/会员积分券按整数原样提交。 */
 export function buildCouponOfferBenefit(values: CouponOfferCreateFormValues): SdkworkPromotionCouponBenefitRequest {
   switch (values.benefitKind) {
     case 'token_bank_credit':
@@ -1735,11 +1735,11 @@ export function readMarketingProblemStatus(error: unknown): number | null {
 /** 从 offer 记录中读取结构化的券权益信息（用于列表与详情展示）。 */
 export interface CouponBenefitDisplay {
   kind: CouponOfferBenefitKind;
-  /** Token Bank 额度券发放额度 / 现金券最小单位金额。 */
+  /** Compute Credits coupon: whole Compute Credits; cash coupon: minor-unit amount. */
   grantAmount?: string;
-  /** Token Bank 额度券赠送额度。 */
+  /** Compute Credits coupon: whole bonus Compute Credits. */
   bonusAmount?: string;
-  /** 积分券发放积分。 */
+  /** Membership points coupon: whole membership points. */
   grantPoints?: string;
   period?: string;
   durationDays?: string;

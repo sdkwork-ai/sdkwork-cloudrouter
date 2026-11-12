@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{MiniMaxMusicAudioSetting};
+use crate::models::MiniMaxMusicAudioSetting;
 
 /// MiniMax music generation request (`POST /v1/music_generation`).
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

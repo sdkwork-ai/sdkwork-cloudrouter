@@ -35,6 +35,9 @@ import {
   resolvePortalAccountInitials,
 } from "./packages/sdkwork-cloudroutes-pc-commons/src/portal-account.ts";
 import { PORTAL_EXTERNAL_TAILWIND_SOURCES } from "./src/portal-external-tailwind-sources.ts";
+import { LEGAL_DOCUMENTS, resolveLegalLocale } from "@sdkwork/documents-pc-legal/documents";
+import { LEGAL_DOCUMENT_IDS, LEGAL_DOCUMENT_PATHS } from "@sdkwork/documents-pc-legal/paths";
+import { resources as cloudRouterI18nResources } from "@sdkwork/cloudrouter-pc-i18n";
 import { normalizeGeneratedSdkBaseUrl, resolveSharedDependencySurfaceBaseUrl } from "./packages/sdkwork-cloudroutes-pc-commons/src/sdk-base-url.ts";
 import { formatRechargeCurrencyAmount } from "./packages/sdkwork-cloudroutes-pc-commons/src/recharge-math.ts";
 import {
@@ -694,7 +697,7 @@ test("portal shell offsets embedded documents routes below the fixed navbar", ()
   assert.match(shellSource, /navbarAuthenticatedActionsStart/);
   assert.match(shellSource, /authenticatedActionsStart=\{navbarAuthenticatedActionsStart\}/);
   assert.match(shellSource, /PORTAL_HOST_OFFSET_ROUTE_PATTERN/);
-  assert.match(shellSource, /product-docs\|docs\|api-reference\|token-plan/);
+  assert.match(shellSource, /product-docs\|docs\|dev-docs\|api-reference/);
   assert.match(shellSource, /sdkwork-cloudrouter-documents-host-offset flex-1/);
   assert.match(indexCssSource, /\.sdkwork-cloudrouter-documents-host-offset \{/);
   assert.match(indexCssSource, /padding-top: var\(--sdkwork-portal-navbar-height, 4rem\);/);
@@ -747,9 +750,135 @@ test("portal i18n consumes documents catalogs from sdkwork-documents", () => {
   assert.match(resourcesSource, /publicDocsMessages/);
   assert.match(resourcesSource, /publicApiReferenceMessages/);
   assert.match(resourcesSource, /publicSdkReferenceMessages/);
+  assert.match(resourcesSource, /publicLegalMessages/);
   assert.doesNotMatch(resourcesSource, /\.\/public\/docs/);
   assert.match(mainSource, /platformName: 'Cloud Router'/);
   assert.match(mainSource, /defaultVariables=/);
+});
+
+test("documents legal pages ship complete bilingual policy documents", () => {
+  for (const documentId of LEGAL_DOCUMENT_IDS) {
+    for (const locale of ["en", "zh"] as const) {
+      const document = LEGAL_DOCUMENTS[locale][documentId];
+
+      assert.equal(document.id, documentId);
+      assert.equal(document.locale, locale);
+      assert.equal(document.path, LEGAL_DOCUMENT_PATHS[documentId]);
+      assert.match(document.path, /^\/[a-z-]+$/);
+      assert.ok(document.title.length >= 2, `${documentId}/${locale} title is too short`);
+      assert.ok(document.summary.length >= 40, `${documentId}/${locale} summary is too short`);
+      assert.match(document.effectiveDate, /^\d{4}-\d{2}-\d{2}$/);
+      assert.match(document.lastUpdated, /^\d{4}-\d{2}-\d{2}$/);
+      assert.match(document.contactEmail, /^[^@\s]+@[^@\s]+$/);
+      assert.ok(document.sections.length >= 4, `${documentId}/${locale} needs real sections`);
+
+      const sectionIds = new Set<string>();
+      for (const section of document.sections) {
+        assert.match(section.id, /^[a-z0-9-]+$/, `${documentId}/${locale} section id must be a stable anchor`);
+        assert.ok(!sectionIds.has(section.id), `${documentId}/${locale} has duplicate section ${section.id}`);
+        sectionIds.add(section.id);
+        assert.ok(section.heading.trim().length > 0);
+        assert.ok(section.blocks.length > 0);
+
+        for (const block of section.blocks) {
+          switch (block.type) {
+            case "paragraph":
+              assert.ok(block.text.trim().length > 0);
+              break;
+            case "bulletList":
+            case "numberedList":
+              assert.ok(block.items.length > 0);
+              assert.ok(block.items.every((item) => item.trim().length > 0));
+              break;
+            case "table":
+              assert.ok(block.columns.length >= 2);
+              assert.ok(block.rows.length > 0);
+              assert.ok(
+                block.rows.every((row) => row.length === block.columns.length),
+                `${documentId}/${locale}/${section.id} table rows must match the column count`,
+              );
+              break;
+            case "callout":
+              assert.ok(block.title.trim().length > 0);
+              assert.ok(block.text.trim().length > 0);
+              break;
+            case "definitions":
+              assert.ok(block.items.length > 0);
+              assert.ok(block.items.every((item) => item.term.trim().length > 0 && item.description.trim().length > 0));
+              break;
+            default: {
+              const exhaustive: never = block;
+              assert.fail(`unhandled legal block ${String(exhaustive)}`);
+            }
+          }
+        }
+      }
+    }
+  }
+});
+
+test("documents legal page chrome is bilingual and resolvable for host locales", () => {
+  const englishLegalKeys = Object.keys(cloudRouterI18nResources.en.translation)
+    .filter((key) => key.startsWith("legal."))
+    .sort();
+  const chineseLegalKeys = Object.keys(cloudRouterI18nResources.zh.translation)
+    .filter((key) => key.startsWith("legal."))
+    .sort();
+
+  assert.ok(englishLegalKeys.length >= 12, "documents legal chrome must reach the portal catalog");
+  assert.deepEqual(chineseLegalKeys, englishLegalKeys);
+  assert.match(cloudRouterI18nResources.en.translation["legal.page.fallbackNotice"], /\{\{locale\}\}/);
+
+  assert.equal(resolveLegalLocale("zh-CN"), "zh");
+  assert.equal(resolveLegalLocale("zh-Hant"), "zh");
+  assert.equal(resolveLegalLocale("en-GB"), "en");
+  assert.equal(resolveLegalLocale("de-DE"), "en");
+  assert.equal(resolveLegalLocale(undefined), "en");
+});
+
+test("portal mounts the shared sdkwork-documents legal policy pages", () => {
+  const appSource = readPortalSource("./src/App.tsx");
+  const shellSource = readPortalSource("./packages/sdkwork-cloudrouter-pc-shell/src/AppShellLayout.tsx");
+  const footerSource = readPortalSource("./packages/sdkwork-cloudroutes-pc-commons/src/components/Footer.tsx");
+
+  assert.match(appSource, /from '@sdkwork\/documents-pc-legal\/paths'/);
+  assert.match(appSource, /import\('@sdkwork\/documents-pc-legal'\)/);
+  assert.match(appSource, /LEGAL_DOCUMENT_PATHS\['privacy-policy'\]/);
+  assert.match(appSource, /LEGAL_DOCUMENT_PATHS\['terms-of-service'\]/);
+  assert.match(appSource, /LEGAL_DOCUMENT_PATHS\['cookie-policy'\]/);
+  assert.match(shellSource, /privacy\|terms\|cookies/);
+  assert.match(footerSource, /href: '\/cookies'/);
+});
+
+test("admin exposes the document center module backed by the shared documents editor", () => {  const registrySource = readPortalSource("./packages/sdkwork-cloudrouter-pc-admin-shell/src/adminModuleRegistry.ts");
+  const hostSource = readPortalSource("./src/admin/cloudRouterAdminHostMount.tsx");
+  const moduleSettingsSource = readPortalSource("./packages/sdkwork-cloudroutes-pc-commons/src/admin-modules.ts");
+  const mainSource = readPortalSource("./src/main.tsx");
+
+  assert.match(registrySource, /id: 'documentCenter'/);
+  assert.match(registrySource, /pathPrefixes: \['\/admin\/documents'\]/);
+  assert.match(registrySource, /path: '\/admin\/documents\/new'/);
+  assert.match(moduleSettingsSource, /id: 'documentCenter'/);
+  assert.match(hostSource, /documents-pc-admin-documents/);
+  assert.match(hostSource, /DocumentsAdminRuntimeProvider/);
+  assert.match(hostSource, /createCloudRouterDocumentsAdminClient/);
+  assert.match(mainSource, /documents-pc-admin-documents\/styles\.css/);
+});
+
+test("portal serves public documents at /docs and relocates developer docs to /dev-docs", () => {
+  const appSource = readPortalSource("./src/App.tsx");
+  const shellSource = readPortalSource("./packages/sdkwork-cloudrouter-pc-shell/src/AppShellLayout.tsx");
+  const navbarSource = readPortalSource("./packages/sdkwork-cloudroutes-pc-commons/src/components/Navbar.tsx");
+  const footerSource = readPortalSource("./packages/sdkwork-cloudroutes-pc-commons/src/components/Footer.tsx");
+
+  assert.match(appSource, /path="\/docs"/);
+  assert.match(appSource, /path="\/docs\/:documentRef"/);
+  assert.match(appSource, /documents-pc-public-documents\/runtime/);
+  assert.match(appSource, /createCloudRouterPublicDocumentsClient/);
+  assert.match(shellSource, /path="\/dev-docs"/);
+  assert.match(shellSource, /to="\/dev-docs\/api-reference"/);
+  assert.match(navbarSource, /'\/dev-docs\/api-reference'/);
+  assert.match(footerSource, /'\/dev-docs\/product-docs'/);
 });
 
 test("sdk clients use a static IAM runtime reset dependency so Vite can chunk the portal deterministically", () => {

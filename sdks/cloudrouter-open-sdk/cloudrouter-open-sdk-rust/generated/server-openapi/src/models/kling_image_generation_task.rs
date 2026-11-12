@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{KlingImageTaskData};
+use crate::models::KlingImageTaskData;
 
 /// Kling image task envelope returned by the create and query endpoints.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

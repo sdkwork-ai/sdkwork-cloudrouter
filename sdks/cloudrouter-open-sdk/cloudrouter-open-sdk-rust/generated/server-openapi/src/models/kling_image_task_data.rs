@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{KlingImageTaskResult};
+use crate::models::KlingImageTaskResult;
 
 /// Kling image task record.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

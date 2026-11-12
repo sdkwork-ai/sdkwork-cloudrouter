@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{ArkWebSearchTool};
+use crate::models::ArkWebSearchTool;
 
 /// Volcengine Ark image generation request (`POST /api/v3/images/generations`).
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

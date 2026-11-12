@@ -78,7 +78,7 @@ export function CloudRouterTokenPlanRedeemModal({
         dailyQuota: t("coupon_recharge.daily_quota", "每日额度"),
         description: t(
           "coupon_recharge.description",
-          "输入优惠券兑换码，为 Token Bank 充值算力额度或激活限额订阅。",
+          "输入优惠券兑换码，为 Token Bank 充值算力额度、发放会员积分或激活限额订阅。",
         ),
         expiresAt: t("coupon_recharge.expires_at", "有效期至"),
         invalidCode: t("coupon_recharge.code_required", "请输入兑换码。"),

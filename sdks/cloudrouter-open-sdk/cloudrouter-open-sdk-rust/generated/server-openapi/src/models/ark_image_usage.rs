@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{ArkVideoToolUsage};
+use crate::models::ArkVideoToolUsage;
 
 /// Ark image generation usage.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

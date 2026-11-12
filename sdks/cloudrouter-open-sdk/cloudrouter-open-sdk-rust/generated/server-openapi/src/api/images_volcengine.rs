@@ -14,9 +14,13 @@ impl ImagesVolcengineApi {
     }
 
     /// Volcengine Ark image generation
-    pub async fn create_api_v3_images_generation(&self, body: &VolcengineImageGenerationRequest) -> Result<VolcengineImageGenerationResponse, SdkworkError> {
+    pub async fn create_api_v3_images_generation(
+        &self,
+        body: &VolcengineImageGenerationRequest,
+    ) -> Result<VolcengineImageGenerationResponse, SdkworkError> {
         let path = "/volcengine/api/v3/images/generations".to_string();
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
-
 }

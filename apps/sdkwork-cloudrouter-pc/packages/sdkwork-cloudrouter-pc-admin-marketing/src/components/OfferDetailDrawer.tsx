@@ -223,12 +223,12 @@ export function OfferDetailDrawer({ offerId, onClose, onEdit }: OfferDetailDrawe
                   <>
                     <DetailRow label={t('admin.marketing.coupon.form.benefitKind', 'Benefit Type')} value={kindLabel} />
                     <DetailRow
-                      label={t('admin.marketing.offers.detail.tokenBankGrantAmount', 'Grant Amount (Token Bank credits)')}
+                      label={t('admin.marketing.offers.detail.tokenBankGrantAmount', 'Grant Amount (Compute Credits)')}
                       value={formatMarketingInteger(benefit.grantAmount)}
                     />
                     {benefit.bonusAmount ? (
                       <DetailRow
-                        label={t('admin.marketing.offers.detail.tokenBankBonusAmount', 'Bonus Amount (Token Bank credits)')}
+                        label={t('admin.marketing.offers.detail.tokenBankBonusAmount', 'Bonus Amount (Compute Credits)')}
                         value={formatMarketingInteger(benefit.bonusAmount)}
                       />
                     ) : null}

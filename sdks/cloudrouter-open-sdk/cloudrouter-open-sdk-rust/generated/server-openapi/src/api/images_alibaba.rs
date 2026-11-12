@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::api::base::{RequestHeaders};
+use crate::api::base::RequestHeaders;
 use crate::http::{SdkworkError, SdkworkHttpClient};
 use crate::models::{AlibabaImageGenerationRequest, AlibabaImageGenerationResponse};
 
@@ -15,19 +15,30 @@ impl ImagesAlibabaApi {
     }
 
     /// Alibaba Wanx image generation
-    pub async fn create_api_v1_services_aigc_text2image_image_synthesi(&self, body: &AlibabaImageGenerationRequest, x_dash_scope_async: &str) -> Result<AlibabaImageGenerationResponse, SdkworkError> {
+    pub async fn create_api_v1_services_aigc_text2image_image_synthesi(
+        &self,
+        body: &AlibabaImageGenerationRequest,
+        x_dash_scope_async: &str,
+    ) -> Result<AlibabaImageGenerationResponse, SdkworkError> {
         let path = "/alibaba/api/v1/services/aigc/text2image/image-synthesis".to_string();
         let headers = build_request_headers(
-            &[
-                ("X-DashScope-Async", HeaderParameterSpec::new(x_dash_scope_async, "simple", false, None)),
-            ],
+            &[(
+                "X-DashScope-Async",
+                HeaderParameterSpec::new(x_dash_scope_async, "simple", false, None),
+            )],
             &[],
         );
-        self.client.post(&path, Some(body), None, headers.as_ref(), Some("application/json")).await
+        self.client
+            .post(
+                &path,
+                Some(body),
+                None,
+                headers.as_ref(),
+                Some("application/json"),
+            )
+            .await
     }
-
 }
-
 
 struct HeaderParameterSpec {
     value: serde_json::Value,
@@ -50,7 +61,10 @@ impl HeaderParameterSpec {
     }
 }
 
-fn build_request_headers(headers: &[(&str, HeaderParameterSpec)], cookies: &[(&str, HeaderParameterSpec)]) -> Option<RequestHeaders> {
+fn build_request_headers(
+    headers: &[(&str, HeaderParameterSpec)],
+    cookies: &[(&str, HeaderParameterSpec)],
+) -> Option<RequestHeaders> {
     let mut request_headers = RequestHeaders::new();
     for (name, parameter) in headers {
         if let Some(value) = serialize_header_parameter(parameter) {
@@ -141,8 +155,6 @@ fn serialize_json_value(value: &serde_json::Value) -> Option<String> {
         other => Some(other.to_string()),
     }
 }
-
-
 
 fn percent_encode(value: &str) -> String {
     value

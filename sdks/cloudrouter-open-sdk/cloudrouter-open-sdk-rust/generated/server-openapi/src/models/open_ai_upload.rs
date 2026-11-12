@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{OpenAiFile};
+use crate::models::OpenAiFile;
 
 /// OpenAI-compatible upload object.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

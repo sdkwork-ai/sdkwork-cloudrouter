@@ -303,11 +303,13 @@ test('admin host composes owner admin modules through the backend-admin core SDK
 
   assert.match(appSource, /CloudRouterAdminHostRoutes/);
   assert.doesNotMatch(appSource, /const (?:Dashboard|Model|Upstream)Admin = lazyRoute/);
-  // 31 first-party/relay records plus the nine federated capability records
-  // for the skills, MCP connector, plugin, and agent admin groups (the MCP
-  // detail record is one extra: list + categories + detail, and agent
-  // categories is the other).
-  assert.equal((hostSource.match(/\broute\('/g) ?? []).length, 40);
+  // Literal `route('...')` records only: the IAM, RTC, TRADE, messaging, and
+  // Smart Hardware contributions are composed from module-owned records and are
+  // therefore not counted here. Current literal set: the first-party/relay
+  // records, the nine federated capability records for the skills, MCP
+  // connector, plugin, and agent admin groups, plus the three Document Center
+  // records.
+  assert.equal((hostSource.match(/\broute\('/g) ?? []).length, 43);
   assert.match(hostSource, /'sdkwork-models', '@sdkwork\/models-pc-admin-catalog', \['sdkwork-models-backend-sdk'\]/);
   assert.match(hostSource, /'sdkwork-cloudrouter', '@sdkwork\/cloudrouter-pc-admin-upstream', \['cloudrouter-backend-sdk'\]/);
   assert.match(
@@ -399,14 +401,16 @@ test('admin host composes owner admin modules through the backend-admin core SDK
   }
 
   assert.deepEqual(Object.keys(adminCorePackage.dependencies).sort(), [
+    '@sdkwork/aiot-backend-sdk',
     '@sdkwork/cloudrouter-backend-sdk',
     '@sdkwork/cloudroutes-pc-commons',
     '@sdkwork/models-backend-sdk',
     '@sdkwork/payment-backend-sdk',
   ]);
-  // The admin composition boundary also carries the four federated
-  // intelligence capability SDKs (skills, MCP, agents, plugins) that the new
-  // home-module admin groups load same-origin through the host runtime.
+  // The admin composition boundary also carries the federal owner-domain backend
+  // SDKs (skills, MCP, agents, plugins) plus the AIoT management API that the
+  // Smart Hardware Center consumes; all are loaded same-origin through the host
+  // runtime and injected into their port holders.
   assert.deepEqual(
     adminCoreComponent.contracts.sdkDependencies.map((dependency) => dependency.workspace),
     [
@@ -416,6 +420,7 @@ test('admin host composes owner admin modules through the backend-admin core SDK
       'sdkwork-mcp-backend-sdk',
       'sdkwork-agents-backend-sdk',
       'sdkwork-plugins-backend-sdk',
+      'sdkwork-aiot-backend-sdk',
     ],
   );
   const adminCoreInventory = [...adminCoreInventorySource.matchAll(
@@ -490,7 +495,7 @@ test('commons SDK bootstrap keeps app composition separate and backend client ow
   const sdkClientsSource = source('packages/sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts');
 
   // The commons SDK bootstrap consumes capability SDK clients directly and
-  // must not round-trip through cloudrouter-pc-core (the pc-core ←→ commons
+  // must not round-trip through cloudrouter-pc-core (the pc-core 鈫愨啋 commons
   // cycle was deliberately broken; pc-core depends on commons/runtime).
   assert.doesNotMatch(sdkClientsSource, /from '@sdkwork\/cloudrouter-pc-core\/sdk'/);
   assert.doesNotMatch(sdkClientsSource, /DomainTransport|domain-transport|createAppDomainCanonicalFacade/);
@@ -686,3 +691,4 @@ test('commons package uses public IAM packages without local typecheck shims', (
   assert.equal(commonsPackageJson.dependencies['@sdkwork/iam-sdk-adapter'], undefined);
   assert.equal(existsSync(typecheckShimsUrl), false);
 });
+

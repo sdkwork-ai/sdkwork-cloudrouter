@@ -14,9 +14,13 @@ impl ImagesBytedanceApi {
     }
 
     /// ByteDance Seedream image generation
-    pub async fn create_api_v3_images_generation(&self, body: &BytedanceImageGenerationRequest) -> Result<BytedanceImageGenerationResponse, SdkworkError> {
+    pub async fn create_api_v3_images_generation(
+        &self,
+        body: &BytedanceImageGenerationRequest,
+    ) -> Result<BytedanceImageGenerationResponse, SdkworkError> {
         let path = "/bytedance/api/v3/images/generations".to_string();
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
-
 }

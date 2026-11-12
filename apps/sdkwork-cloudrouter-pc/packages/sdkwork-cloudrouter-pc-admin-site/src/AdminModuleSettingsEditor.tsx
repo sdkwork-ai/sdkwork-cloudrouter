@@ -3,10 +3,12 @@ import {
   AlertTriangle,
   BadgePercent,
   Bell,
+  BookOpen,
   ChevronDown,
   ChevronUp,
   CloudCog,
   Compass,
+  CircuitBoard,
   CreditCard,
   Crown,
   GraduationCap,
@@ -57,6 +59,8 @@ const MODULE_ICONS: Record<AdminModuleId, LucideIcon> = {
   partnerCenter: Network,
   paymentCenter: CreditCard,
   storageCenter: CloudCog,
+  documentCenter: BookOpen,
+  hardwareCenter: CircuitBoard,
   operations: Wrench,
 };
 

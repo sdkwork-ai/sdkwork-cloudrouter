@@ -14,7 +14,10 @@ import { configureCloudRouterLogBackendSdkClient } from './admin/logSdkHostWirin
 import { configureCloudRouterOrderBackendSdkClient } from './admin/orderSdkHostWiring.ts';
 import { configureCloudRouterPartnerBackendSdkClient } from './admin/partnerSdkHostWiring.ts';
 import { configureCloudRouterMessagingBackendSdkClient } from './admin/messagingSdkHostWiring.ts';
+import { configureCloudRouterHardwareBackendSdkClient } from './admin/hardwareSdkHostWiring.ts';
 import { DocumentsReferenceRuntimeProvider } from '@sdkwork/documents-pc-commons';
+import '@sdkwork/documents-pc-admin-documents/styles.css';
+import '@sdkwork/documents-pc-public-documents/styles.css';
 import { initializeThemePreferences } from './themePreference.ts';
 import './index.css';
 
@@ -24,6 +27,7 @@ configureCloudRouterLogBackendSdkClient();
 configureCloudRouterOrderBackendSdkClient();
 configureCloudRouterPartnerBackendSdkClient();
 configureCloudRouterMessagingBackendSdkClient();
+configureCloudRouterHardwareBackendSdkClient();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

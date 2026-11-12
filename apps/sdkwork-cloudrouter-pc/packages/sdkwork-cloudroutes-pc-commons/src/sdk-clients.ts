@@ -37,6 +37,7 @@ import { SdkworkBackendClient as BaseDataBackendClient } from '@sdkwork/base-dat
 import { SdkworkBackendClient as PromotionBackendClient } from '@sdkwork/promotion-backend-sdk';
 import { SdkworkBackendClient as PartnerBackendClient } from '@sdkwork/partner-backend-sdk';
 import { SdkworkBackendClient as MessagingBackendClient } from '@sdkwork/messaging-backend-sdk';
+import { SdkworkBackendClient as AiotBackendClient } from '@sdkwork/aiot-backend-sdk';
 import { SdkworkAiClient, type SdkworkAiConfig } from '@sdkwork/cloudrouter-open-sdk';
 import {
   createClient as createSdkworkDriveOpenClient,
@@ -721,6 +722,7 @@ let baseDataBackendClient: BaseDataBackendClient | null = null;
 let promotionBackendClient: PromotionBackendClient | null = null;
 let partnerBackendClient: PartnerBackendClient | null = null;
 let messagingBackendClient: MessagingBackendClient | null = null;
+let aiotBackendClient: AiotBackendClient | null = null;
 let partnerAppClient: PartnerAppClient | null = null;
 let accountAppClient: AccountAppClient | null = null;
 let catalogAppClient: CatalogAppClient | null = null;
@@ -922,6 +924,40 @@ export function createSdkworkMessagingBackendSdkClient(
   return attachCloudRouterSdkSessionAuthBoundary(
     new MessagingBackendClient(buildDependencyBackendConfig(options, 'VITE_SDKWORK_MESSAGING_BACKEND_API_BASE_URL')),
   );
+}
+
+export type SdkworkAiotBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
+
+/**
+ * AIoT backend client used by the Smart Hardware Center (`/admin/hardware`).
+ *
+ * The AIoT management API is owned by the SDKWork AIoT application and served
+ * under the same backend API surface (`/backend/v3/api/iot/...`), so this
+ * factory follows the dependency-backend chain: explicit override, the
+ * `VITE_SDKWORK_AIOT_BACKEND_API_BASE_URL` family key, the portal backend key,
+ * the shared public SDK root and finally the same-origin `/backend/v3/api`
+ * prefix. Session auth, locale propagation and projection sanitization are
+ * attached by the shared Cloud Router SDK boundary, exactly as for every other
+ * dependency backend family.
+ */
+export function createSdkworkAiotBackendSdkClient(
+  options: SdkworkAiotBackendSdkClientOptions = {},
+): AiotBackendClient {
+  return attachCloudRouterSdkSessionAuthBoundary(
+    new AiotBackendClient(buildDependencyBackendConfig(options, 'VITE_SDKWORK_AIOT_BACKEND_API_BASE_URL')),
+  );
+}
+
+export function getSdkworkAiotBackendSdkClient(
+  options: SdkworkAiotBackendSdkClientOptions = {},
+): AiotBackendClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkAiotBackendSdkClient(options);
+  }
+  if (!aiotBackendClient) {
+    aiotBackendClient = createSdkworkAiotBackendSdkClient();
+  }
+  return aiotBackendClient;
 }
 
 export function createSdkworkPartnerAppSdkClient(
@@ -1730,6 +1766,7 @@ function resetCloudRouterSdkClientCaches(): void {
   promotionBackendClient = null;
   partnerBackendClient = null;
   messagingBackendClient = null;
+  aiotBackendClient = null;
   accountAppClient = null;
   catalogAppClient = null;
   membershipAppClient = null;

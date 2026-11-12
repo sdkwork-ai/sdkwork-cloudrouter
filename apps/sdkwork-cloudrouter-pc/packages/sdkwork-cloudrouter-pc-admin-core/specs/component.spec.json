@@ -101,6 +101,11 @@
     "workspace": "sdkwork-plugins-backend-sdk",
     "surface": "backend-api",
     "credentialMode": "authenticated-backend-admin"
+   },
+   {
+    "workspace": "sdkwork-aiot-backend-sdk",
+    "surface": "backend-api",
+    "credentialMode": "authenticated-backend-admin"
    }
   ],
   "dependencyApiExports": [],
@@ -149,6 +154,12 @@
      "manifestRef": "../../../../../sdkwork-plugins/specs/iam.module.manifest.json",
      "inheritPermissions": true,
      "inheritRoles": true
+    },
+    {
+     "moduleId": "aiot",
+     "manifestRef": "../../../../../sdkwork-aiot/specs/iam.module.manifest.json",
+     "inheritPermissions": true,
+     "inheritRoles": true
     }
    ],
    "bootstrapAccessTokenScope": {
@@ -184,3 +195,6 @@
   "standardVersion": "2026-06-08"
  }
 }
+
+
+

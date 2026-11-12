@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use crate::api::paths::append_query_string;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{ElevenLabsSoundGenerationRequest, ElevenLabsSoundGenerationResponse, ElevenLabsTextToSpeechRequest, ElevenLabsTextToSpeechResponse};
+use crate::models::{
+    ElevenLabsSoundGenerationRequest, ElevenLabsSoundGenerationResponse,
+    ElevenLabsTextToSpeechRequest, ElevenLabsTextToSpeechResponse,
+};
 
 #[derive(Clone)]
 pub struct AudioElevenlabsApi {
@@ -15,23 +18,54 @@ impl AudioElevenlabsApi {
     }
 
     /// Generate sound effect
-    pub async fn create_v1_sound_generation(&self, body: &ElevenLabsSoundGenerationRequest, output_format: Option<&str>) -> Result<ElevenLabsSoundGenerationResponse, SdkworkError> {
-        let query = build_query_string(&[
-            QueryParameterSpec::new("output_format", output_format, "form", true, false, None),
-        ]);
+    pub async fn create_v1_sound_generation(
+        &self,
+        body: &ElevenLabsSoundGenerationRequest,
+        output_format: Option<&str>,
+    ) -> Result<ElevenLabsSoundGenerationResponse, SdkworkError> {
+        let query = build_query_string(&[QueryParameterSpec::new(
+            "output_format",
+            output_format,
+            "form",
+            true,
+            false,
+            None,
+        )]);
         let path = append_query_string("/elevenlabs/v1/sound-generation".to_string(), &query);
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
 
     /// Synthesize speech
-    pub async fn create_v1_text_to_speech(&self, voice_id: &str, body: &ElevenLabsTextToSpeechRequest, output_format: Option<&str>) -> Result<ElevenLabsTextToSpeechResponse, SdkworkError> {
-        let query = build_query_string(&[
-            QueryParameterSpec::new("output_format", output_format, "form", true, false, None),
-        ]);
-        let path = append_query_string(format!("/elevenlabs/v1/text-to-speech/{}", serialize_path_parameter(voice_id, PathParameterSpec::new("voice_id", "simple", false))), &query);
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    pub async fn create_v1_text_to_speech(
+        &self,
+        voice_id: &str,
+        body: &ElevenLabsTextToSpeechRequest,
+        output_format: Option<&str>,
+    ) -> Result<ElevenLabsTextToSpeechResponse, SdkworkError> {
+        let query = build_query_string(&[QueryParameterSpec::new(
+            "output_format",
+            output_format,
+            "form",
+            true,
+            false,
+            None,
+        )]);
+        let path = append_query_string(
+            format!(
+                "/elevenlabs/v1/text-to-speech/{}",
+                serialize_path_parameter(
+                    voice_id,
+                    PathParameterSpec::new("voice_id", "simple", false)
+                )
+            ),
+            &query,
+        );
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
-
 }
 
 struct PathParameterSpec<'a> {
@@ -42,7 +76,11 @@ struct PathParameterSpec<'a> {
 
 impl<'a> PathParameterSpec<'a> {
     fn new(name: &'a str, style: &'a str, explode: bool) -> Self {
-        Self { name, style, explode }
+        Self {
+            name,
+            style,
+            explode,
+        }
     }
 }
 
@@ -51,15 +89,32 @@ fn serialize_path_parameter<T: serde::Serialize>(value: T, spec: PathParameterSp
     if value.is_null() {
         return String::new();
     }
-    let style = if spec.style.is_empty() { "simple" } else { spec.style };
+    let style = if spec.style.is_empty() {
+        "simple"
+    } else {
+        spec.style
+    };
     match value {
-        serde_json::Value::Array(values) => serialize_path_array(spec.name, &values, style, spec.explode),
-        serde_json::Value::Object(values) => serialize_path_object(spec.name, &values, style, spec.explode),
-        value => format!("{}{}", path_primitive_prefix(spec.name, style), percent_encode(&primitive_to_string(&value))),
+        serde_json::Value::Array(values) => {
+            serialize_path_array(spec.name, &values, style, spec.explode)
+        }
+        serde_json::Value::Object(values) => {
+            serialize_path_object(spec.name, &values, style, spec.explode)
+        }
+        value => format!(
+            "{}{}",
+            path_primitive_prefix(spec.name, style),
+            percent_encode(&primitive_to_string(&value))
+        ),
     }
 }
 
-fn serialize_path_array(name: &str, values: &[serde_json::Value], style: &str, explode: bool) -> String {
+fn serialize_path_array(
+    name: &str,
+    values: &[serde_json::Value],
+    style: &str,
+    explode: bool,
+) -> String {
     let serialized = values
         .iter()
         .filter(|value| !value.is_null())
@@ -70,7 +125,11 @@ fn serialize_path_array(name: &str, values: &[serde_json::Value], style: &str, e
     }
     if style == "matrix" {
         if explode {
-            return serialized.iter().map(|item| format!(";{}={}", name, item)).collect::<Vec<_>>().join("");
+            return serialized
+                .iter()
+                .map(|item| format!(";{}={}", name, item))
+                .collect::<Vec<_>>()
+                .join("");
         }
         return format!(";{}={}", name, serialized.join(","));
     }
@@ -132,7 +191,6 @@ fn path_primitive_prefix(name: &str, style: &str) -> String {
     }
 }
 
-
 struct QueryParameterSpec<'a> {
     name: &'a str,
     value: serde_json::Value,
@@ -183,12 +241,36 @@ fn append_serialized_parameter(pairs: &mut Vec<String>, parameter: &QueryParamet
         return;
     }
 
-    let style = if parameter.style.is_empty() { "form" } else { parameter.style };
+    let style = if parameter.style.is_empty() {
+        "form"
+    } else {
+        parameter.style
+    };
     match &parameter.value {
-        serde_json::Value::Array(values) => append_array_parameter(pairs, parameter.name, values, style, parameter.explode, parameter.allow_reserved),
-        serde_json::Value::Object(values) if style == "deepObject" => append_deep_object_parameter(pairs, parameter.name, values, parameter.allow_reserved),
-        serde_json::Value::Object(values) => append_object_parameter(pairs, parameter.name, values, style, parameter.explode, parameter.allow_reserved),
-        value => pairs.push(format!("{}={}", percent_encode(parameter.name), encode_query_value(&primitive_to_string(value), parameter.allow_reserved))),
+        serde_json::Value::Array(values) => append_array_parameter(
+            pairs,
+            parameter.name,
+            values,
+            style,
+            parameter.explode,
+            parameter.allow_reserved,
+        ),
+        serde_json::Value::Object(values) if style == "deepObject" => {
+            append_deep_object_parameter(pairs, parameter.name, values, parameter.allow_reserved)
+        }
+        serde_json::Value::Object(values) => append_object_parameter(
+            pairs,
+            parameter.name,
+            values,
+            style,
+            parameter.explode,
+            parameter.allow_reserved,
+        ),
+        value => pairs.push(format!(
+            "{}={}",
+            percent_encode(parameter.name),
+            encode_query_value(&primitive_to_string(value), parameter.allow_reserved)
+        )),
     }
 }
 
@@ -200,17 +282,29 @@ fn append_array_parameter(
     explode: bool,
     allow_reserved: bool,
 ) {
-    let serialized = values.iter().filter(|value| !value.is_null()).map(primitive_to_string).collect::<Vec<_>>();
+    let serialized = values
+        .iter()
+        .filter(|value| !value.is_null())
+        .map(primitive_to_string)
+        .collect::<Vec<_>>();
     if serialized.is_empty() {
         return;
     }
     if style == "form" && explode {
         for item in serialized {
-            pairs.push(format!("{}={}", percent_encode(name), encode_query_value(&item, allow_reserved)));
+            pairs.push(format!(
+                "{}={}",
+                percent_encode(name),
+                encode_query_value(&item, allow_reserved)
+            ));
         }
         return;
     }
-    pairs.push(format!("{}={}", percent_encode(name), encode_query_value(&serialized.join(","), allow_reserved)));
+    pairs.push(format!(
+        "{}={}",
+        percent_encode(name),
+        encode_query_value(&serialized.join(","), allow_reserved)
+    ));
 }
 
 fn append_object_parameter(
@@ -227,14 +321,22 @@ fn append_object_parameter(
             continue;
         }
         if style == "form" && explode {
-            pairs.push(format!("{}={}", percent_encode(key), encode_query_value(&primitive_to_string(value), allow_reserved)));
+            pairs.push(format!(
+                "{}={}",
+                percent_encode(key),
+                encode_query_value(&primitive_to_string(value), allow_reserved)
+            ));
         } else {
             serialized.push(key.clone());
             serialized.push(primitive_to_string(value));
         }
     }
     if !serialized.is_empty() {
-        pairs.push(format!("{}={}", percent_encode(name), encode_query_value(&serialized.join(","), allow_reserved)));
+        pairs.push(format!(
+            "{}={}",
+            percent_encode(name),
+            encode_query_value(&serialized.join(","), allow_reserved)
+        ));
     }
 }
 
@@ -246,7 +348,11 @@ fn append_deep_object_parameter(
 ) {
     for (key, value) in values {
         if !value.is_null() {
-            pairs.push(format!("{}={}", percent_encode(&format!("{}[{}]", name, key)), encode_query_value(&primitive_to_string(value), allow_reserved)));
+            pairs.push(format!(
+                "{}={}",
+                percent_encode(&format!("{}[{}]", name, key)),
+                encode_query_value(&primitive_to_string(value), allow_reserved)
+            ));
         }
     }
 }
@@ -257,11 +363,24 @@ fn encode_query_value(value: &str, allow_reserved: bool) -> String {
         return encoded;
     }
     for (escaped, reserved) in [
-        ("%3A", ":"), ("%2F", "/"), ("%3F", "?"), ("%23", "#"),
-        ("%5B", "["), ("%5D", "]"), ("%40", "@"), ("%21", "!"),
-        ("%24", "$"), ("%26", "&"), ("%27", "'"), ("%28", "("),
-        ("%29", ")"), ("%2A", "*"), ("%2B", "+"), ("%2C", ","),
-        ("%3B", ";"), ("%3D", "="),
+        ("%3A", ":"),
+        ("%2F", "/"),
+        ("%3F", "?"),
+        ("%23", "#"),
+        ("%5B", "["),
+        ("%5D", "]"),
+        ("%40", "@"),
+        ("%21", "!"),
+        ("%24", "$"),
+        ("%26", "&"),
+        ("%27", "'"),
+        ("%28", "("),
+        ("%29", ")"),
+        ("%2A", "*"),
+        ("%2B", "+"),
+        ("%2C", ","),
+        ("%3B", ";"),
+        ("%3D", "="),
     ] {
         encoded = encoded.replace(escaped, reserved);
     }

@@ -1,7 +1,11 @@
 use std::sync::Arc;
 
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{ViduImageToVideoRequest, ViduReferenceToVideoRequest, ViduStartEndToVideoRequest, ViduTaskCreationsResponse, ViduTemplateRequest, ViduTemplateTask, ViduTextToVideoRequest, ViduVideoGenerationTask};
+use crate::models::{
+    ViduImageToVideoRequest, ViduReferenceToVideoRequest, ViduStartEndToVideoRequest,
+    ViduTaskCreationsResponse, ViduTemplateRequest, ViduTemplateTask, ViduTextToVideoRequest,
+    ViduVideoGenerationTask,
+};
 
 #[derive(Clone)]
 pub struct VideosViduApi {
@@ -14,41 +18,71 @@ impl VideosViduApi {
     }
 
     /// Vidu image to video
-    pub async fn create_ent_v2_img2video(&self, body: &ViduImageToVideoRequest) -> Result<ViduVideoGenerationTask, SdkworkError> {
+    pub async fn create_ent_v2_img2video(
+        &self,
+        body: &ViduImageToVideoRequest,
+    ) -> Result<ViduVideoGenerationTask, SdkworkError> {
         let path = "/vidu/ent/v2/img2video".to_string();
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
 
     /// Vidu reference to video
-    pub async fn create_ent_v2_reference2video(&self, body: &ViduReferenceToVideoRequest) -> Result<ViduVideoGenerationTask, SdkworkError> {
+    pub async fn create_ent_v2_reference2video(
+        &self,
+        body: &ViduReferenceToVideoRequest,
+    ) -> Result<ViduVideoGenerationTask, SdkworkError> {
         let path = "/vidu/ent/v2/reference2video".to_string();
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
 
     /// Vidu start-end to video
-    pub async fn create_ent_v2_start_end2video(&self, body: &ViduStartEndToVideoRequest) -> Result<ViduVideoGenerationTask, SdkworkError> {
+    pub async fn create_ent_v2_start_end2video(
+        &self,
+        body: &ViduStartEndToVideoRequest,
+    ) -> Result<ViduVideoGenerationTask, SdkworkError> {
         let path = "/vidu/ent/v2/start-end2video".to_string();
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
 
     /// Vidu get task creations
-    pub async fn list_ent_v2_tasks_creations(&self, task_id: &str) -> Result<ViduTaskCreationsResponse, SdkworkError> {
-        let path = format!("/vidu/ent/v2/tasks/{}/creations", serialize_path_parameter(task_id, PathParameterSpec::new("task_id", "simple", false)));
+    pub async fn list_ent_v2_tasks_creations(
+        &self,
+        task_id: &str,
+    ) -> Result<ViduTaskCreationsResponse, SdkworkError> {
+        let path = format!(
+            "/vidu/ent/v2/tasks/{}/creations",
+            serialize_path_parameter(task_id, PathParameterSpec::new("task_id", "simple", false))
+        );
         self.client.get(&path, None, None).await
     }
 
     /// Vidu create template video
-    pub async fn create_ent_v2_template(&self, body: &ViduTemplateRequest) -> Result<ViduTemplateTask, SdkworkError> {
+    pub async fn create_ent_v2_template(
+        &self,
+        body: &ViduTemplateRequest,
+    ) -> Result<ViduTemplateTask, SdkworkError> {
         let path = "/vidu/ent/v2/template".to_string();
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
 
     /// Vidu text to video
-    pub async fn create_ent_v2_text2video(&self, body: &ViduTextToVideoRequest) -> Result<ViduVideoGenerationTask, SdkworkError> {
+    pub async fn create_ent_v2_text2video(
+        &self,
+        body: &ViduTextToVideoRequest,
+    ) -> Result<ViduVideoGenerationTask, SdkworkError> {
         let path = "/vidu/ent/v2/text2video".to_string();
-        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+        self.client
+            .post(&path, Some(body), None, None, Some("application/json"))
+            .await
     }
-
 }
 
 struct PathParameterSpec<'a> {
@@ -59,7 +93,11 @@ struct PathParameterSpec<'a> {
 
 impl<'a> PathParameterSpec<'a> {
     fn new(name: &'a str, style: &'a str, explode: bool) -> Self {
-        Self { name, style, explode }
+        Self {
+            name,
+            style,
+            explode,
+        }
     }
 }
 
@@ -68,15 +106,32 @@ fn serialize_path_parameter<T: serde::Serialize>(value: T, spec: PathParameterSp
     if value.is_null() {
         return String::new();
     }
-    let style = if spec.style.is_empty() { "simple" } else { spec.style };
+    let style = if spec.style.is_empty() {
+        "simple"
+    } else {
+        spec.style
+    };
     match value {
-        serde_json::Value::Array(values) => serialize_path_array(spec.name, &values, style, spec.explode),
-        serde_json::Value::Object(values) => serialize_path_object(spec.name, &values, style, spec.explode),
-        value => format!("{}{}", path_primitive_prefix(spec.name, style), percent_encode(&primitive_to_string(&value))),
+        serde_json::Value::Array(values) => {
+            serialize_path_array(spec.name, &values, style, spec.explode)
+        }
+        serde_json::Value::Object(values) => {
+            serialize_path_object(spec.name, &values, style, spec.explode)
+        }
+        value => format!(
+            "{}{}",
+            path_primitive_prefix(spec.name, style),
+            percent_encode(&primitive_to_string(&value))
+        ),
     }
 }
 
-fn serialize_path_array(name: &str, values: &[serde_json::Value], style: &str, explode: bool) -> String {
+fn serialize_path_array(
+    name: &str,
+    values: &[serde_json::Value],
+    style: &str,
+    explode: bool,
+) -> String {
     let serialized = values
         .iter()
         .filter(|value| !value.is_null())
@@ -87,7 +142,11 @@ fn serialize_path_array(name: &str, values: &[serde_json::Value], style: &str, e
     }
     if style == "matrix" {
         if explode {
-            return serialized.iter().map(|item| format!(";{}={}", name, item)).collect::<Vec<_>>().join("");
+            return serialized
+                .iter()
+                .map(|item| format!(";{}={}", name, item))
+                .collect::<Vec<_>>()
+                .join("");
         }
         return format!(";{}={}", name, serialized.join(","));
     }
@@ -148,8 +207,6 @@ fn path_primitive_prefix(name: &str, style: &str) -> String {
         path_prefix(name, style)
     }
 }
-
-
 
 fn primitive_to_string(value: &serde_json::Value) -> String {
     match value {

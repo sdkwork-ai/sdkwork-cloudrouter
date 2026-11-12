@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{ProviderJsonSchema};
+use crate::models::ProviderJsonSchema;
 
 /// Anthropic JSON output format.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

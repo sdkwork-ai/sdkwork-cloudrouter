@@ -18,15 +18,15 @@ function benefitValueText(
   switch (benefit.kind) {
     case 'token_bank_credit':
       return benefit.bonusAmount
-        ? t('admin.marketing.coupon.summary.tokenBankWithBonus', '{{grant}} + {{bonus}} bonus (Token Bank credits)', {
+        ? t('admin.marketing.coupon.summary.tokenBankWithBonus', '{{grant}} + {{bonus}} bonus Compute Credits', {
             grant: formatMarketingInteger(benefit.grantAmount, { locale }),
             bonus: formatMarketingInteger(benefit.bonusAmount, { locale }),
           })
-        : t('admin.marketing.coupon.summary.tokenBank', '{{grant}} (Token Bank credits)', {
+        : t('admin.marketing.coupon.summary.tokenBank', '{{grant}} Compute Credits', {
             grant: formatMarketingInteger(benefit.grantAmount, { locale }),
           });
     case 'points_credit':
-      return t('admin.marketing.coupon.summary.points', '{{points}} pts', {
+      return t('admin.marketing.coupon.summary.points', '{{points}} Membership Points', {
         points: benefit.grantPoints ?? MARKETING_EMPTY_VALUE,
       });
     case 'cash_credit':

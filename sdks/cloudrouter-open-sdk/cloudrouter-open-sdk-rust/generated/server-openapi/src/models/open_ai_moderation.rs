@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{OpenAiModerationResult};
+use crate::models::OpenAiModerationResult;
 
 /// OpenAI-compatible moderation response.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{OpenAiStreamOptions};
+use crate::models::OpenAiStreamOptions;
 
 /// OpenAI-compatible request to create a legacy text completion.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

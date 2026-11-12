@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{MinimaxBaseResp};
+use crate::models::MinimaxBaseResp;
 
 /// MiniMax file metadata and its download URL.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

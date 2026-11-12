@@ -79,7 +79,7 @@ describe('OfferDetailDrawer money labels', () => {
     expect(screen.queryByText(/CNY/u)).not.toBeInTheDocument();
   });
 
-  it('adds an explicit Token Bank credit unit to grant and bonus amounts', async () => {
+  it('adds an explicit Compute Credits unit to grant and bonus amounts', async () => {
     mockOffer({
       ...baseOffer,
       currencyCode: 'CNY',
@@ -87,8 +87,8 @@ describe('OfferDetailDrawer money labels', () => {
     });
     render(<OfferDetailDrawer offerId="o1" onClose={() => undefined} />);
 
-    expect(await screen.findByText('Grant Amount (Token Bank credits)')).toBeInTheDocument();
-    expect(screen.getByText('Bonus Amount (Token Bank credits)')).toBeInTheDocument();
+    expect(await screen.findByText('Grant Amount (Compute Credits)')).toBeInTheDocument();
+    expect(screen.getByText('Bonus Amount (Compute Credits)')).toBeInTheDocument();
     expect(screen.getByText('1,000')).toBeInTheDocument();
     expect(screen.getByText('250')).toBeInTheDocument();
   });

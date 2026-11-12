@@ -1,4 +1,4 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 @plugin "tailwindcss-animate";
 @source "../packages";
 @source "../src";
@@ -17,6 +17,9 @@
 @source "../../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src";
 @source "../../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-sdk-reference/src";
 @source "../../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-commons/src";
+@source "../../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-legal/src";
+@source "../../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-admin-documents/src";
+@source "../../../../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-public-documents/src";
 @source "../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-i18n-pc-react/src";
 @source "../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-appbase-pc-react/src";
 @source "../../../../sdkwork-appbase/packages/pc-react/notification/sdkwork-notification-pc-react/src";
