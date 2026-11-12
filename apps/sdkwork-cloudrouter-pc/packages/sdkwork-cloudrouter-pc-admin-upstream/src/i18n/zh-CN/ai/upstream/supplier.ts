@@ -1,6 +1,7 @@
 export const upstreamSupplierZhCnMessages = {
   'admin.upstream.supplier.search.placeholder': '搜索供应商',
   'admin.upstream.supplier.actions.new': '新建供应商',
+  'admin.upstream.supplier.actions.copy': '复制为新建',
   'admin.upstream.supplier.filter.all': '全部',
   'admin.upstream.supplier.filter.official': '官方供应商',
   'admin.upstream.supplier.filter.relay': '中转站供应商',
@@ -17,6 +18,9 @@ export const upstreamSupplierZhCnMessages = {
   'admin.upstream.supplier.delete.description': '确定删除 {{name}}？请先重新分配该供应商下的账号。',
   'admin.upstream.supplier.form.createTitle': '新建供应商',
   'admin.upstream.supplier.form.editTitle': '编辑供应商',
+  'admin.upstream.supplier.form.copyTitle': '复制供应商',
+  'admin.upstream.supplier.form.copySubtitle': '复制「{{name}}」创建新供应商：账号与密钥不会复制，保存前请确认协议地址与授权资源。',
+  'admin.upstream.supplier.form.copyDisplaySuffix': '（副本）',
   'admin.upstream.supplier.form.createAction': '创建供应商',
   'admin.upstream.supplier.form.supplierName': '供应商名称',
   'admin.upstream.supplier.form.displayName': '显示名称',

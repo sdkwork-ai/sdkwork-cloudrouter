@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { Building2, Check, CheckCircle2, ChevronDown, Edit3, ExternalLink, Loader2, Plus, RefreshCw, Settings2, Share2, Sparkles, Trash2, X } from 'lucide-react';
+import { Building2, Check, CheckCircle2, ChevronDown, Copy, Edit3, ExternalLink, Loader2, Plus, RefreshCw, Settings2, Share2, Sparkles, Trash2, X } from 'lucide-react';
 import { AdminTableShell, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
 import { SdkworkSearchableSelect } from '@sdkwork/appbase-pc-react';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +17,7 @@ import { upstreamService } from './upstreamService';
 import { isKnownLlmProtocol, LLM_PROTOCOLS, llmProtocolLabelKey, PROTOCOL_RESOURCE_GROUPS } from './llmProtocols';
 import { resolveVendorBaseUrl, vendorAddressUnavailableReason, vendorDefaultBaseUrl, resolveVendorProtocolDefaultUrl, normalizeVendorRegion, vendorStandardBaseUrl, vendorSupportedProtocols } from './vendorProtocolCatalog';
 import { emptyResourceSelection, ResourcePicker, toEntitlements, toSelection, type ResourceSelection } from './resourcePicker';
+import { uniqueSupplierCopyName } from './supplierCopy';
 import {
   dangerButtonClass,
   errorMessage,
@@ -37,6 +38,15 @@ import {
 } from './components';
 
 type SupplierType = 'official' | 'relay';
+
+/** 供应商抽屉模式：新建 / 编辑 / 复制（复制沿用来源内容，但提交时创建新供应商）。 */
+type SupplierDrawerMode = 'create' | 'edit' | 'copy';
+
+interface SupplierEditorState {
+  mode: SupplierDrawerMode;
+  /** 编辑或复制的来源供应商；新建时为 null。 */
+  supplier: UpstreamSupplier | null;
+}
 
 interface SupplierFormValues {
   supplierName: string;
@@ -59,6 +69,8 @@ interface SupplierFormValues {
   sortOrder: number;
   status: number;
   resources: UpstreamResourceEntitlementInput[];
+  /** 复制来源供应商手动维护的非协议端点：仅复制新建时随主请求写入，编辑模式忽略。 */
+  customEndpoints: UpstreamSupplierEndpointInput[];
 }
 
 export function UpstreamSupplierAdmin() {
@@ -165,7 +177,7 @@ export function SupplierAdminPanel() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [editing, setEditing] = useState<UpstreamSupplier | null | undefined>(undefined);
+  const [editor, setEditor] = useState<SupplierEditorState | null>(null);
   const [selected, setSelected] = useState<UpstreamSupplier | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UpstreamSupplier | null>(null);
 
@@ -233,8 +245,10 @@ export function SupplierAdminPanel() {
         status: values.status,
       };
       let supplier: UpstreamSupplier;
-      if (editing) {
-        supplier = await upstreamService.suppliers.update(editing, input);
+      // 仅编辑模式更新原记录；新建与复制都创建新供应商
+      const editingSupplier = editor?.mode === 'edit' ? editor.supplier : null;
+      if (editingSupplier) {
+        supplier = await upstreamService.suppliers.update(editingSupplier, input);
       } else {
         supplier = await upstreamService.suppliers.create(input);
       }
@@ -244,7 +258,7 @@ export function SupplierAdminPanel() {
         // 嵌套替换会推进供应商版本：重新读取最新版本，避免下一次 If-Match 冲突
         supplier = await upstreamService.suppliers.retrieve(supplier.id);
       } catch (cause) {
-        setEditing(undefined);
+        setEditor(null);
         setSelected(supplier);
         setError(t('admin.upstream.supplier.errors.authMethodsNotSaved'));
         await load();
@@ -252,15 +266,17 @@ export function SupplierAdminPanel() {
       }
       try {
         // 每个协议行同步为一条 endpoint（protocolCode + baseUrl），供运行时路由使用；
-        // 保留详情面板中手动添加的非协议端点（protocol-* 前缀由抽屉管理，避免全量替换时静默丢失）
-        const existingEndpoints = await upstreamService.suppliers.listEndpoints(supplier.id);
+        // 保留详情面板中手动添加的非协议端点（protocol-* 前缀由抽屉管理，避免全量替换时静默丢失）。
+        // 新建（含复制）时原供应商尚无端点，复制带来的非协议端点随首次写入一起落库。
+        const existingEndpoints = editingSupplier ? await upstreamService.suppliers.listEndpoints(supplier.id) : [];
         // 官方供应商的中转站自动绑定其自身 vendor（默认 vendor 为空时保留原值，由后端必填校验拦截）
         const officialVendorCodes = values.supplierType === 'official' && values.defaultVendorCode
           ? [values.defaultVendorCode as string]
           : null;
-        const customEndpoints = existingEndpoints
-          .filter((endpoint) => !(endpoint.endpointCode ?? '').startsWith('protocol-'))
-          .map(({ endpointCode, endpointName, baseUrl, protocolCode, regionCode, environment, priority, routingWeight, timeoutMs, status, vendorCodes }) => ({ endpointCode, endpointName, baseUrl, protocolCode, regionCode, environment, priority, routingWeight, timeoutMs, status, vendorCodes: officialVendorCodes ?? vendorCodes }));
+        const customEndpoints = (editingSupplier
+          ? existingEndpoints.filter((endpoint) => !(endpoint.endpointCode ?? '').startsWith('protocol-'))
+          : values.customEndpoints
+        ).map(({ endpointCode, endpointName, baseUrl, protocolCode, regionCode, environment, priority, routingWeight, timeoutMs, status, vendorCodes }) => ({ endpointCode, endpointName, baseUrl, protocolCode, regionCode, environment, priority, routingWeight, timeoutMs, status, vendorCodes: officialVendorCodes ?? vendorCodes }));
         await upstreamService.suppliers.replaceEndpoints(supplier, {
           items: [
             ...values.protocols.map((protocol, index) => ({
@@ -280,7 +296,7 @@ export function SupplierAdminPanel() {
         // 同上：重新读取最新版本后再进行下一次嵌套替换
         supplier = await upstreamService.suppliers.retrieve(supplier.id);
       } catch (cause) {
-        setEditing(undefined);
+        setEditor(null);
         setSelected(supplier);
         setError(t('admin.upstream.supplier.errors.endpointsNotSaved'));
         await load();
@@ -290,14 +306,14 @@ export function SupplierAdminPanel() {
         try {
           await upstreamService.suppliers.replaceResources(supplier, { items: values.resources });
         } catch (cause) {
-          setEditing(undefined);
+          setEditor(null);
           setSelected(supplier);
           setError(t('admin.upstream.supplier.errors.resourcesNotSaved'));
           await load();
           return;
         }
       }
-      setEditing(undefined);
+      setEditor(null);
       await load();
     } catch (cause) {
       setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
@@ -365,7 +381,7 @@ export function SupplierAdminPanel() {
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             {t('common.actions.refresh')}
           </button>
-          <button type="button" className={primaryButtonClass} onClick={() => setEditing(null)} data-admin-upstream-primary-action>
+          <button type="button" className={primaryButtonClass} onClick={() => setEditor({ mode: 'create', supplier: null })} data-admin-upstream-primary-action>
             <Plus className="h-4 w-4" />
             {t('admin.upstream.supplier.actions.new')}
           </button>
@@ -410,7 +426,8 @@ export function SupplierAdminPanel() {
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-1">
                     <button type="button" className={secondaryButtonClass} onClick={() => setSelected(supplier)} title={t('admin.upstream.common.actions.configure')}><Settings2 className="h-4 w-4" /></button>
-                    <button type="button" className={secondaryButtonClass} onClick={() => setEditing(supplier)} title={t('common.actions.edit')}><Edit3 className="h-4 w-4" /></button>
+                    <button type="button" className={secondaryButtonClass} onClick={() => setEditor({ mode: 'edit', supplier })} title={t('common.actions.edit')}><Edit3 className="h-4 w-4" /></button>
+                    <button type="button" className={secondaryButtonClass} onClick={() => setEditor({ mode: 'copy', supplier })} title={t('admin.upstream.supplier.actions.copy')} aria-label={t('admin.upstream.supplier.actions.copy')}><Copy className="h-4 w-4" /></button>
                     <button type="button" className={dangerButtonClass} onClick={() => setDeleteTarget(supplier)} title={t('common.actions.delete')}><Trash2 className="h-4 w-4" /></button>
                   </div>
                 </td>
@@ -425,8 +442,16 @@ export function SupplierAdminPanel() {
         ) : null}
       </AdminTableShell>
 
-      {editing !== undefined ? (
-        <SupplierDrawer supplier={editing} catalog={catalog} busy={busy} onSubmit={(values) => void submitSupplier(values)} onClose={() => setEditing(undefined)} />
+      {editor ? (
+        <SupplierDrawer
+          mode={editor.mode}
+          supplier={editor.supplier}
+          suggestedSupplierName={editor.mode === 'copy' && editor.supplier ? uniqueSupplierCopyName(editor.supplier, items) : undefined}
+          catalog={catalog}
+          busy={busy}
+          onSubmit={(values) => void submitSupplier(values)}
+          onClose={() => setEditor(null)}
+        />
       ) : null}
       {selected ? (
         <SupplierCapabilities supplier={selected} onChanged={updateSelected} onClose={() => setSelected(null)} />
@@ -446,8 +471,20 @@ export function SupplierAdminPanel() {
   );
 }
 
-function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { supplier: UpstreamSupplier | null; catalog: UpstreamResourceCatalogResponse | null; busy: boolean; onSubmit: (values: SupplierFormValues) => void; onClose: () => void }) {
+function SupplierDrawer({ mode, supplier, suggestedSupplierName, catalog, busy, onSubmit, onClose }: {
+  mode: SupplierDrawerMode;
+  supplier: UpstreamSupplier | null;
+  /** 复制模式的默认供应商名称（已去重），避免与原记录重名。 */
+  suggestedSupplierName?: string;
+  catalog: UpstreamResourceCatalogResponse | null;
+  busy: boolean;
+  onSubmit: (values: SupplierFormValues) => void;
+  onClose: () => void;
+}) {
   const { t } = useTranslation();
+  const isCopy = mode === 'copy';
+  const isEdit = mode === 'edit';
+  const [customEndpoints, setCustomEndpoints] = useState<UpstreamSupplierEndpointInput[]>([]);
   const [supplierType, setSupplierType] = useState<SupplierType>(supplier?.supplierType as SupplierType ?? 'official');
   const [defaultVendorCode, setDefaultVendorCode] = useState<string | null>(supplier?.defaultVendorCode ?? null);
   const [defaultBaseUrl, setDefaultBaseUrl] = useState(supplier?.defaultBaseUrl ?? '');
@@ -472,6 +509,9 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
   const [modelWhitelist, setModelWhitelist] = useState<UpstreamSupplierModelListEntry[]>(() => supplier?.modelWhitelist ?? []);
   const [rightTab, setRightTab] = useState<'groups' | 'resources' | 'modelBlacklist'>('groups');
   const [resourcesLoading, setResourcesLoading] = useState(Boolean(supplier));
+  // 复制/编辑还要读取来源端点：未读完就提交会把「复制内容」变成静默丢端点
+  const [endpointsLoading, setEndpointsLoading] = useState(Boolean(supplier));
+  const relationsLoading = resourcesLoading || endpointsLoading;
   const [formError, setFormError] = useState<string | null>(null);
 
   const vendorResources = useMemo(() => (catalog?.resources ?? []).filter((resource) => resource.resourceType === 'vendor'), [catalog]);
@@ -527,7 +567,8 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
     return () => { cancelled = true; };
   }, [supplier, t]);
 
-  // 编辑模式：把已存在的 protocol-* 中转站官方 vendor 回填到对应协议行；
+  // 编辑/复制模式：把已存在的 protocol-* 中转站官方 vendor 回填到对应协议行，
+  // 并留取手工维护的非协议端点（复制时随首次写入一并复制）；
   // 旧数据（空 vendor）自动带供应商默认 vendor，兼容必填语义
   useEffect(() => {
     if (!supplier) return;
@@ -542,6 +583,9 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
             filled[code.slice('protocol-'.length)] = endpoint.vendorCodes;
           }
         }
+        setCustomEndpoints(items
+          .filter((endpoint) => !(endpoint.endpointCode ?? '').startsWith('protocol-'))
+          .map(({ endpointCode, endpointName, baseUrl, protocolCode, regionCode, environment, priority, routingWeight, timeoutMs, status, vendorCodes }) => ({ endpointCode, endpointName, baseUrl, protocolCode, regionCode, environment, priority, routingWeight, timeoutMs, status, vendorCodes })));
         setProtocolVendors((current) => {
           // 用户已手动勾选的值优先；其余协议行（含旧数据空 vendor）回填
           const merged: Record<string, string[]> = { ...filled };
@@ -557,6 +601,9 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
       })
       .catch((cause) => {
         if (!cancelled) setFormError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
+      })
+      .finally(() => {
+        if (!cancelled) setEndpointsLoading(false);
       });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -709,6 +756,8 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    // 关联数据未读完时不允许提交：复制会静默丢掉来源配置
+    if (busy || relationsLoading) return;
     setFormError(null);
     if (!supplierType) return;
     if (supplierType === 'official' && !defaultVendorCode) {
@@ -754,21 +803,30 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
       setFormError(t('admin.upstream.common.validation.required', { field: t('admin.upstream.supplier.form.supplierName') }));
       return;
     }
+    // 复制来源的非协议端点随新建请求一并提交；编辑模式由提交阶段读取服务端现值，忽略该字段
+    values.customEndpoints = customEndpoints;
     onSubmit(values);
   };
 
   return (
     <SidePanel
-      title={supplier ? t('admin.upstream.supplier.form.editTitle') : t('admin.upstream.supplier.form.createTitle')}
+      title={isCopy
+        ? t('admin.upstream.supplier.form.copyTitle')
+        : isEdit
+          ? t('admin.upstream.supplier.form.editTitle')
+          : t('admin.upstream.supplier.form.createTitle')}
+      subtitle={isCopy && supplier
+        ? t('admin.upstream.supplier.form.copySubtitle', { name: supplier.displayName || supplier.supplierName })
+        : undefined}
       anchor="left"
       widthClass="max-w-7xl"
       onClose={onClose}
       footer={
         <>
-          <button type="button" className={secondaryButtonClass} onClick={onClose} disabled={busy || resourcesLoading}>{t('common.actions.cancel')}</button>
-          <button type="submit" form="supplier-drawer-form" className={primaryButtonClass} disabled={busy || resourcesLoading}>
-            {(busy || resourcesLoading) ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            {supplier ? t('common.actions.saveChanges') : t('admin.upstream.supplier.form.createAction')}
+          <button type="button" className={secondaryButtonClass} onClick={onClose} disabled={busy || relationsLoading}>{t('common.actions.cancel')}</button>
+          <button type="submit" form="supplier-drawer-form" className={primaryButtonClass} disabled={busy || relationsLoading}>
+            {(busy || relationsLoading) ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {isEdit ? t('common.actions.saveChanges') : t('admin.upstream.supplier.form.createAction')}
           </button>
         </>
       }
@@ -848,8 +906,8 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
 
         <FormSection title={t('admin.upstream.supplier.form.section.basic')}>
           <div className="grid grid-cols-2 gap-4">
-            <DrawerField label={t('admin.upstream.supplier.form.supplierName')} required><input name="supplierName" className={inputClass} defaultValue={supplier?.supplierName} required /></DrawerField>
-            <DrawerField label={t('admin.upstream.supplier.form.displayName')} hint={t('admin.upstream.supplier.form.displayNameHint')}><input name="displayName" className={inputClass} defaultValue={supplier?.displayName} /></DrawerField>
+            <DrawerField label={t('admin.upstream.supplier.form.supplierName')} required><input name="supplierName" className={inputClass} defaultValue={suggestedSupplierName ?? supplier?.supplierName} required /></DrawerField>
+            <DrawerField label={t('admin.upstream.supplier.form.displayName')} hint={t('admin.upstream.supplier.form.displayNameHint')}><input name="displayName" className={inputClass} defaultValue={isCopy && supplier ? `${supplier.displayName || supplier.supplierName}${t('admin.upstream.supplier.form.copyDisplaySuffix')}` : supplier?.displayName} /></DrawerField>
           </div>
         </FormSection>
         <FormSection title={t('admin.upstream.supplier.form.section.protocol')}>
@@ -1042,6 +1100,8 @@ function valuesFromForm(form: HTMLFormElement, supplierType: SupplierType, defau
     sortOrder: numericFormValue(formData, 'sortOrder', 100),
     status: numericFormValue(formData, 'status', 1),
     resources: toEntitlements(selection),
+    // 复制模式在提交前由抽屉写入来源的非协议端点；其余模式为空
+    customEndpoints: [],
   };
 }
 

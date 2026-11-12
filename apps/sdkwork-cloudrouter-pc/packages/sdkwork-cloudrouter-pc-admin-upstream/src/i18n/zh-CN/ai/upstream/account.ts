@@ -1,6 +1,7 @@
 export const upstreamAccountZhCnMessages = {
   'admin.upstream.account.search.placeholder': '搜索供应商账号',
   'admin.upstream.account.actions.new': '新建账号',
+  'admin.upstream.account.actions.copy': '复制为新建',
   'admin.upstream.account.table.account': '账号',
   'admin.upstream.account.table.supplier': '供应商',
   'admin.upstream.account.table.authentication': '认证方式',
@@ -28,6 +29,9 @@ export const upstreamAccountZhCnMessages = {
   'admin.upstream.account.delete.removeFromGroups': '同时从这 {{count}} 个账号分组中移除该账号，再执行删除',
   'admin.upstream.account.form.createTitle': '新建供应商账号',
   'admin.upstream.account.form.editTitle': '编辑供应商账号',
+  'admin.upstream.account.form.copyTitle': '复制供应商账号',
+  'admin.upstream.account.form.copyDescription': '复制「{{name}}」创建新账号：API Key 与凭证不会复制，请填写新密钥；创建前请确认账号分组与授权资源。',
+  'admin.upstream.account.form.copyNameSuffix': '（副本）',
   'admin.upstream.account.form.createAction': '创建账号',
   'admin.upstream.account.form.accountName': '账号名称',
   'admin.upstream.account.form.supplier': '供应商',

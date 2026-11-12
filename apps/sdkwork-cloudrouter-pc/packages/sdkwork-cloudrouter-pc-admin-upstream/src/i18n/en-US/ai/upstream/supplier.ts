@@ -1,6 +1,7 @@
 export const upstreamSupplierEnUsMessages = {
   'admin.upstream.supplier.search.placeholder': 'Search suppliers',
   'admin.upstream.supplier.actions.new': 'New supplier',
+  'admin.upstream.supplier.actions.copy': 'Duplicate',
   'admin.upstream.supplier.filter.all': 'All',
   'admin.upstream.supplier.filter.official': 'Official',
   'admin.upstream.supplier.filter.relay': 'Relay',
@@ -17,6 +18,9 @@ export const upstreamSupplierEnUsMessages = {
   'admin.upstream.supplier.delete.description': 'Delete {{name}}? Accounts must be reassigned first.',
   'admin.upstream.supplier.form.createTitle': 'Create supplier',
   'admin.upstream.supplier.form.editTitle': 'Edit supplier',
+  'admin.upstream.supplier.form.copyTitle': 'Duplicate supplier',
+  'admin.upstream.supplier.form.copySubtitle': 'Create a new supplier from "{{name}}". Accounts and credentials are not copied; review protocol addresses and granted resources before saving.',
+  'admin.upstream.supplier.form.copyDisplaySuffix': ' (Copy)',
   'admin.upstream.supplier.form.createAction': 'Create supplier',
   'admin.upstream.supplier.form.supplierName': 'Supplier name',
   'admin.upstream.supplier.form.displayName': 'Display name',

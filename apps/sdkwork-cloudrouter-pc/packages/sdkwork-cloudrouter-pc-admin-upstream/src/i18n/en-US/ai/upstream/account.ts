@@ -1,6 +1,7 @@
 export const upstreamAccountEnUsMessages = {
   'admin.upstream.account.search.placeholder': 'Search accounts',
   'admin.upstream.account.actions.new': 'New account',
+  'admin.upstream.account.actions.copy': 'Duplicate',
   'admin.upstream.account.table.account': 'Account',
   'admin.upstream.account.table.supplier': 'Supplier',
   'admin.upstream.account.table.authentication': 'Authentication',
@@ -28,6 +29,9 @@ export const upstreamAccountEnUsMessages = {
   'admin.upstream.account.delete.removeFromGroups': 'Also remove this account from the {{count}} account group(s), then delete it',
   'admin.upstream.account.form.createTitle': 'Create supplier account',
   'admin.upstream.account.form.editTitle': 'Edit supplier account',
+  'admin.upstream.account.form.copyTitle': 'Duplicate supplier account',
+  'admin.upstream.account.form.copyDescription': 'Create a new account from "{{name}}". API keys and credentials are not copied; enter a new key and review the account group and granted resources before creating.',
+  'admin.upstream.account.form.copyNameSuffix': ' (Copy)',
   'admin.upstream.account.form.createAction': 'Create account',
   'admin.upstream.account.form.accountName': 'Account name',
   'admin.upstream.account.form.supplier': 'Supplier',

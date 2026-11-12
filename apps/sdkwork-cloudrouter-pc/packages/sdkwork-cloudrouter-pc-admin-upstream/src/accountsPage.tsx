@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { CheckCircle2, ChevronRight, Edit3, Eye, EyeOff, Layers3, Plus, Power, PowerOff, RefreshCw, RotateCcw, Search, Settings2, SlidersHorizontal, Trash2, X, XCircle } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Copy, Edit3, Eye, EyeOff, Layers3, Plus, Power, PowerOff, RefreshCw, RotateCcw, Search, Settings2, SlidersHorizontal, Trash2, X, XCircle } from 'lucide-react';
 import { SdkworkSearchableSelect } from '@sdkwork/appbase-pc-react';
 import { AdminTableShell, BottomPagination, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
 import { formatDecimalDisplay } from '@sdkwork/cloudroutes-pc-commons/runtime';
@@ -20,6 +20,7 @@ import type {
   UpdateUpstreamAccountRequest,
 } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import { ResourcePicker, emptyResourceSelection, toEntitlements, toSelection, type ResourceSelection } from './resourcePicker';
+import { accountCopyName } from './accountCopy';
 import { upstreamService } from './upstreamService';
 import {
   dangerButtonClass,
@@ -71,6 +72,15 @@ const DEFAULT_ACCOUNT_AUTH_METHOD: UpstreamSupplierAuthMethodInput = {
 interface ProtocolOverride {
   enabled: boolean;
   baseUrl: string;
+}
+
+/** 账号弹窗模式：新建 / 编辑 / 复制（复制沿用来源配置，但提交时创建新账号）。 */
+type AccountModalMode = 'create' | 'edit' | 'copy';
+
+interface AccountEditorState {
+  mode: AccountModalMode;
+  /** 编辑或复制的来源账号；新建时为 null。 */
+  account: UpstreamAccount | null;
 }
 
 /** 仅提交勾选且已填写的协议覆盖（留空行视为继承供应商，不提交） */
@@ -138,7 +148,7 @@ export function AccountAdminPanel() {
   const [membersLoading, setMembersLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [editing, setEditing] = useState<UpstreamAccount | null | undefined>(undefined);
+  const [editor, setEditor] = useState<AccountEditorState | null>(null);
   const [selected, setSelected] = useState<UpstreamAccount | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UpstreamAccount | null>(null);
   const [deleteTargetGroups, setDeleteTargetGroups] = useState<UpstreamAccountGroup[]>([]);
@@ -286,8 +296,10 @@ export function AccountAdminPanel() {
         if (existing.some((member) => member.accountId === account.id)) return;
         await upstreamService.accountGroups.replaceMembers(group, { items: [...existing, { accountId: account.id, priority: 100, routingWeight: 100, enabled: true, status: 1 }] });
       };
-      if (editing) {
-        const updated = await upstreamService.accounts.update(editing, updateAccountInput(form, t));
+      // 仅编辑模式更新原记录；新建与复制都创建新账号
+      const editingAccount = editor?.mode === 'edit' ? editor.account : null;
+      if (editingAccount) {
+        const updated = await upstreamService.accounts.update(editingAccount, updateAccountInput(form, t));
         // 编辑模式：只有真正改动了明文密钥才创建新凭证。
         // 输入框回填的是明文，不能用掩码做“未修改”的比较基准，否则每次保存
         // 都会把同一把 Key 复制成一条新凭证（credential_version 无限增长）。
@@ -307,14 +319,14 @@ export function AccountAdminPanel() {
           await saveResources(created);
         } catch (cause) {
           // 账号已创建但分组/资源保存失败：打开右侧详情提示重试
-          setEditing(undefined);
+          setEditor(null);
           setSelected(created);
           setError(t('admin.upstream.account.errors.resourcesNotSaved'));
           await load();
           return;
         }
       }
-      setEditing(undefined);
+      setEditor(null);
       await load();
     } catch (cause) {
       setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
@@ -416,6 +428,18 @@ export function AccountAdminPanel() {
   // 分组徽标只在对应成员已按需加载后显示，避免为显示计数而批量查询所有分组
   const allMembershipsLoaded = groups.every((group) => group.id in memberships);
 
+  /** 复制账号的默认目标分组：当前分组视图 > 已缓存的成员关系；都没有时由弹窗要求手动选择。 */
+  const resolveCopyGroupId = (accountId: string): string | null => {
+    if (selectedKey !== null && selectedKey !== UNGROUPED_KEY && (memberships[selectedKey] ?? []).includes(accountId)) {
+      return selectedKey;
+    }
+    const cached = Object.entries(memberships).find(([, memberIds]) => memberIds.includes(accountId));
+    if (cached) return cached[0];
+    return selectedKey !== null && selectedKey !== UNGROUPED_KEY ? selectedKey : null;
+  };
+  const copySource = editor?.mode === 'copy' ? editor.account : null;
+  const copyTargetGroupId = copySource ? resolveCopyGroupId(copySource.id) : null;
+
   return (
     <div className="grid min-h-0 flex-1 auto-rows-[minmax(0,1fr)] gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
       <aside className="flex min-h-0 flex-col rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5">
@@ -477,7 +501,7 @@ export function AccountAdminPanel() {
           <SearchBox value={query} placeholder={t('admin.upstream.account.search.placeholder')} onChange={setQuery} onSubmit={setAppliedQuery} />
           <div className="flex gap-2">
             <button type="button" className={secondaryButtonClass} onClick={() => void load()} disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />{t('common.actions.refresh')}</button>
-            <button type="button" className={primaryButtonClass} onClick={() => setEditing(null)} disabled={suppliers.length === 0 || groups.length === 0}><Plus className="h-4 w-4" />{t('admin.upstream.account.actions.new')}</button>
+            <button type="button" className={primaryButtonClass} onClick={() => setEditor({ mode: 'create', account: null })} disabled={suppliers.length === 0 || groups.length === 0}><Plus className="h-4 w-4" />{t('admin.upstream.account.actions.new')}</button>
           </div>
         </div>
         <nav className="flex min-w-0 items-center gap-1.5 text-sm" aria-label={t('admin.upstream.account.groups.title')}>
@@ -511,7 +535,7 @@ export function AccountAdminPanel() {
                 <td className="px-4 py-3 font-mono">{formatDecimalDisplay(account.contractCostMultiplier)}</td>
                 <td className="px-4 py-3"><span>{formatDecimalDisplay(account.quotaUsed, '0')} / {formatDecimalDisplay(account.quotaLimit)}</span><span className="block text-xs text-slate-500">{t('admin.upstream.account.table.rpm', { value: account.rpmLimit ?? '-' })}</span></td>
                 <td className="px-4 py-3"><StatusBadge status={account.status} healthy={account.healthStatus} /></td>
-                <td className="px-4 py-3"><div className="flex justify-end gap-1">{account.status === 1 ? <button type="button" className={dangerButtonClass} onClick={() => void toggleAccountStatus(account)} title={t('admin.upstream.account.actions.disable')}><PowerOff className="h-4 w-4" /></button> : <button type="button" className={secondaryButtonClass} onClick={() => void toggleAccountStatus(account)} title={t('admin.upstream.account.actions.enable')}><Power className="h-4 w-4" /></button>}<button type="button" className={secondaryButtonClass} onClick={() => setSelected(account)} title={t('admin.upstream.account.actions.credentials')}><Settings2 className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setEditing(account)} title={t('common.actions.edit')}><Edit3 className="h-4 w-4" /></button><button type="button" className={dangerButtonClass} onClick={() => void openDeleteDialog(account)} title={t('common.actions.delete')}><Trash2 className="h-4 w-4" /></button></div></td>
+                <td className="px-4 py-3"><div className="flex justify-end gap-1">{account.status === 1 ? <button type="button" className={dangerButtonClass} onClick={() => void toggleAccountStatus(account)} title={t('admin.upstream.account.actions.disable')}><PowerOff className="h-4 w-4" /></button> : <button type="button" className={secondaryButtonClass} onClick={() => void toggleAccountStatus(account)} title={t('admin.upstream.account.actions.enable')}><Power className="h-4 w-4" /></button>}<button type="button" className={secondaryButtonClass} onClick={() => setSelected(account)} title={t('admin.upstream.account.actions.credentials')}><Settings2 className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setEditor({ mode: 'edit', account })} title={t('common.actions.edit')}><Edit3 className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setEditor({ mode: 'copy', account })} title={t('admin.upstream.account.actions.copy')} aria-label={t('admin.upstream.account.actions.copy')}><Copy className="h-4 w-4" /></button><button type="button" className={dangerButtonClass} onClick={() => void openDeleteDialog(account)} title={t('common.actions.delete')}><Trash2 className="h-4 w-4" /></button></div></td>
               </tr>
             ))}
           </tbody>
@@ -534,7 +558,18 @@ export function AccountAdminPanel() {
             showingLabel={t('common.pagination.showing', 'Showing')}
           />
         ) : null}
-        {editing !== undefined ? <AccountModal account={editing} suppliers={suppliers} groups={groups} initialGroupId={selectedKey !== null && selectedKey !== UNGROUPED_KEY ? selectedKey : null} busy={busy} onSubmit={submitAccount} onClose={() => setEditing(undefined)} /> : null}
+        {editor ? (
+          <AccountModal
+            mode={editor.mode}
+            account={editor.account}
+            suppliers={suppliers}
+            groups={groups}
+            initialGroupId={editor.mode === 'copy' ? copyTargetGroupId : (selectedKey !== null && selectedKey !== UNGROUPED_KEY ? selectedKey : null)}
+            busy={busy}
+            onSubmit={submitAccount}
+            onClose={() => setEditor(null)}
+          />
+        ) : null}
         {selected ? <AccountCredentials account={selected} supplier={suppliers.find((item) => item.id === selected.supplierId) ?? null} onClose={() => setSelected(null)} onAccountChanged={(account) => { setSelected(account); setItems((current) => current.map((item) => item.id === account.id ? account : item)); }} /> : null}
         {deleteTarget ? <ConfirmDialog
           title={t('admin.upstream.account.delete.title')}
@@ -574,8 +609,19 @@ function RowField({ label, required, children }: { label: string; required?: boo
   );
 }
 
-function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubmit, onClose }: { account: UpstreamAccount | null; suppliers: UpstreamSupplier[]; groups: UpstreamAccountGroup[]; initialGroupId: string | null; busy: boolean; onSubmit: (event: FormEvent<HTMLFormElement>, selection: ResourceSelection, apiKeyMasked: string, apiKeyOriginal: string, groupId: string, resourcesChanged: boolean) => void; onClose: () => void }) {
+function AccountModal({ mode, account, suppliers, groups, initialGroupId, busy, onSubmit, onClose }: {
+  mode: AccountModalMode;
+  account: UpstreamAccount | null;
+  suppliers: UpstreamSupplier[];
+  groups: UpstreamAccountGroup[];
+  initialGroupId: string | null;
+  busy: boolean;
+  onSubmit: (event: FormEvent<HTMLFormElement>, selection: ResourceSelection, apiKeyMasked: string, apiKeyOriginal: string, groupId: string, resourcesChanged: boolean) => void;
+  onClose: () => void;
+}) {
   const { t, i18n } = useTranslation();
+  const isCopy = mode === 'copy';
+  const isEdit = mode === 'edit';
   const [supplierId, setSupplierId] = useState(account?.supplierId ?? suppliers[0]?.id ?? '');
   const [groupId, setGroupId] = useState(initialGroupId ?? '');
   const [authMethods, setAuthMethods] = useState<UpstreamSupplierAuthMethod[]>([]);
@@ -583,13 +629,16 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
   const [authMethodCode, setAuthMethodCode] = useState(account?.authMethodCode ?? '');
   const [catalog, setCatalog] = useState<UpstreamResourceCatalogResponse | null>(null);
   const [selection, setSelection] = useState<ResourceSelection>(emptyResourceSelection());
-  const [resourcesDirty, setResourcesDirty] = useState(false);
+  // 复制模式预填来源账号的授权资源，因此需要在创建后主动写入一次
+  const [resourcesDirty, setResourcesDirty] = useState(isCopy);
   const [apiKeyMasked, setApiKeyMasked] = useState('');
   const [apiKeyOriginal, setApiKeyOriginal] = useState('');
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [preferredEndpointId, setPreferredEndpointId] = useState('');
   const [preferredEndpointStale, setPreferredEndpointStale] = useState(false);
   const [resourcesLoading, setResourcesLoading] = useState(true);
+  // 复制模式预填认证方式/首选端点依赖供应商配置，未加载完不允许提交
+  const [supplierConfigLoading, setSupplierConfigLoading] = useState(true);
   const [groupMissing, setGroupMissing] = useState(false);
   const [seedingAuth, setSeedingAuth] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -631,14 +680,20 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
   }, [account]);
 
   useEffect(() => {
-    if (!supplierId) return;
+    if (!supplierId) {
+      setSupplierConfigLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setSupplierConfigLoading(true);
     void Promise.all([
       upstreamService.suppliers.listAuthMethods(supplierId),
       upstreamService.suppliers.listEndpoints(supplierId),
     ]).then(([nextMethods, nextEndpoints]) => {
+      if (cancelled) return;
       setAuthMethods(nextMethods);
       setEndpoints(nextEndpoints);
-      // 编辑模式：端点加载完成后回填当前首选端点；该端点已停用/不存在时回退为「自动选择」并提示，
+      // 编辑/复制模式：端点加载完成后回填当前首选端点；该端点已停用/不存在时回退为「自动选择」并提示，
       // 保存时提交 null，由后端清除失效绑定（更新语义：缺省=保持、null=清除、id=设置）。
       if (account) {
         const current = account.preferredEndpointId ?? '';
@@ -655,8 +710,13 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
       if (!account) {
         setAuthMethodCode(defaultAuthMethodCode(nextMethods));
       }
+    }).catch((cause) => {
+      if (!cancelled) setAuthError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
+    }).finally(() => {
+      if (!cancelled) setSupplierConfigLoading(false);
     });
-  }, [supplierId, account]);
+    return () => { cancelled = true; };
+  }, [supplierId, account, t]);
 
   // 供应商未配置认证方式时一键播种默认 API Key 认证方式（后端验证/运行时按 auth_method_code
   // 关联供应商认证方式，供应商侧必须存在对应配置）
@@ -682,13 +742,15 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
     void Promise.all([
       upstreamService.fetchResourceCatalog(),
       account ? upstreamService.accounts.listResources(account.id) : Promise.resolve([]),
-      account ? upstreamService.accounts.listCredentials(account.id, { page: 1, pageSize: 200 }) : Promise.resolve([]),
+      // 复制模式不读取来源凭证：新账号必须录入自己的 API Key，避免静默复制密钥
+      isEdit && account ? upstreamService.accounts.listCredentials(account.id, { page: 1, pageSize: 200 }) : Promise.resolve([]),
     ])
       .then(async ([nextCatalog, items, credentials]) => {
         if (cancelled) return;
         setCatalog(nextCatalog);
         if (!account) return;
         setSelection(toSelection(items.map(({ resourceCode, resourceGroupCode, grantType, priority, status }) => ({ resourceCode, resourceGroupCode, grantType, priority, status }))));
+        if (!isEdit) return;
         const activeCredential = credentials.find((credential) => credential.status === 1 && credential.isActive)
           ?? credentials.find((credential) => credential.isActive)
           ?? credentials[0]
@@ -727,7 +789,7 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
         if (!cancelled) setResourcesLoading(false);
       });
     return () => { cancelled = true; };
-  }, [account]);
+  }, [account, isEdit]);
 
   const selectedAuthMethod = authMethods.find((method) => method.authMethodCode === authMethodCode) ?? null;
   // 认证方式为 APIKEY 时显示 API Key 输入：创建模式必填，编辑模式回填当前
@@ -750,8 +812,10 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // 新建账号必须归属某个账号分组
-    if (!account && !groupId) {
+    // 复制的资源/供应商配置仍在加载时不允许提交：否则预填内容会被静默丢弃
+    if (isCopy && (resourcesLoading || supplierConfigLoading)) return;
+    // 新建/复制账号必须归属某个账号分组
+    if (!isEdit && !groupId) {
       setGroupMissing(true);
       return;
     }
@@ -764,10 +828,26 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
   };
 
   return (
-    <Modal title={account ? t('admin.upstream.account.form.editTitle') : t('admin.upstream.account.form.createTitle')} busy={busy} submitLabel={account ? t('common.actions.saveChanges') : t('admin.upstream.account.form.createAction')} size="xl" fillHeight maxHeightClass="max-h-[80vh]" onSubmit={handleSubmit} onClose={onClose}>
+    <Modal
+      title={isCopy
+        ? t('admin.upstream.account.form.copyTitle')
+        : isEdit
+          ? t('admin.upstream.account.form.editTitle')
+          : t('admin.upstream.account.form.createTitle')}
+      description={isCopy && account
+        ? t('admin.upstream.account.form.copyDescription', { name: account.accountName })
+        : undefined}
+      busy={busy || (isCopy && (resourcesLoading || supplierConfigLoading))}
+      submitLabel={isEdit ? t('common.actions.saveChanges') : t('admin.upstream.account.form.createAction')}
+      size="xl"
+      fillHeight
+      maxHeightClass="max-h-[80vh]"
+      onSubmit={handleSubmit}
+      onClose={onClose}
+    >
       <div className="grid gap-5 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)] lg:grid-rows-[minmax(0,1fr)]">
         <div className="grid min-w-0 content-start gap-3 lg:min-h-0 lg:overflow-y-auto">
-          <RowField label={t('admin.upstream.account.form.accountName')} required><input name="accountName" className={inputClass} defaultValue={account?.accountName} required /></RowField>
+          <RowField label={t('admin.upstream.account.form.accountName')} required><input name="accountName" className={inputClass} defaultValue={isCopy && account ? accountCopyName(account.accountName, t('admin.upstream.account.form.copyNameSuffix')) : account?.accountName} required /></RowField>
           <RowField label={t('admin.upstream.account.form.supplier')} required>
             <input type="hidden" name="supplierId" value={supplierId} />
             <SdkworkSearchableSelect
@@ -806,7 +886,7 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
           {/* 编辑模式且账号供应商不在列表中（无法展示协议行）时提交空串，
               更新请求据此省略 protocols 字段（缺省=保持），避免意外清除既有协议覆盖 */}
           <input type="hidden" name="protocols" value={account && !selectedSupplier ? '' : JSON.stringify(enabledProtocolConfigs(protocolOverrides))} />
-          {account ? <RowField label={t('admin.upstream.account.form.preferredBaseUrl')}><div className="min-w-0"><select name="preferredEndpointId" className={selectClass} value={preferredEndpointId} onChange={(event) => setPreferredEndpointId(event.currentTarget.value)}><option value="">{t('admin.upstream.account.form.automatic')}</option>{endpoints.filter((endpoint) => endpoint.status === 1).map((endpoint) => <option key={endpoint.id} value={endpoint.id}>{endpoint.endpointName} ({endpoint.baseUrl})</option>)}</select>{preferredEndpointStale ? <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">{t('admin.upstream.account.errors.preferredEndpointStale')}</p> : null}</div></RowField> : null}
+          {mode !== 'create' ? <RowField label={t('admin.upstream.account.form.preferredBaseUrl')}><div className="min-w-0"><select name="preferredEndpointId" className={selectClass} value={preferredEndpointId} onChange={(event) => setPreferredEndpointId(event.currentTarget.value)}><option value="">{t('admin.upstream.account.form.automatic')}</option>{endpoints.filter((endpoint) => endpoint.status === 1).map((endpoint) => <option key={endpoint.id} value={endpoint.id}>{endpoint.endpointName} ({endpoint.baseUrl})</option>)}</select>{preferredEndpointStale ? <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">{t('admin.upstream.account.errors.preferredEndpointStale')}</p> : null}</div></RowField> : null}
           <RowField label={t('admin.upstream.account.form.authMethod')} required>
             <div className="min-w-0">
               <select name="authMethodCode" className={selectClass} value={authMethodCode} onChange={(event) => setAuthMethodCode(event.currentTarget.value)} required disabled={authMethods.length === 0}><option value="">{t('admin.upstream.account.form.selectMethod')}</option>{authMethods.map((method) => <option key={method.id} value={method.authMethodCode}>{method.authMethodName}</option>)}</select>
@@ -819,8 +899,8 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
               {authError ? <p className="mt-1 text-xs text-red-500">{authError}</p> : null}
             </div>
           </RowField>
-          {showApiKeyInput ? <RowField label={t('admin.upstream.account.form.apiKey')} required={!account}><div className="relative min-w-0 flex-1"><input name="apiKey" type={showApiKey ? 'text' : 'password'} autoComplete="new-password" className={`${inputClass} pr-10`} value={apiKeyInput} onChange={(event) => setApiKeyInput(event.currentTarget.value)} placeholder={account ? t('admin.upstream.account.form.apiKeyRotatePlaceholder') : t('admin.upstream.account.form.apiKeyPlaceholder')} required={!account} /><button type="button" title={showApiKey ? t('admin.upstream.account.form.hideApiKey') : t('admin.upstream.account.form.showApiKey')} aria-label={showApiKey ? t('admin.upstream.account.form.hideApiKey') : t('admin.upstream.account.form.showApiKey')} className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-slate-200" onClick={() => setShowApiKey((current) => !current)}>{showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></RowField> : null}
-          {!account ? <RowField label={t('admin.upstream.account.form.accountGroup')} required>
+          {showApiKeyInput ? <RowField label={t('admin.upstream.account.form.apiKey')} required={!isEdit}><div className="relative min-w-0 flex-1"><input name="apiKey" type={showApiKey ? 'text' : 'password'} autoComplete="new-password" className={`${inputClass} pr-10`} value={apiKeyInput} onChange={(event) => setApiKeyInput(event.currentTarget.value)} placeholder={isEdit ? t('admin.upstream.account.form.apiKeyRotatePlaceholder') : t('admin.upstream.account.form.apiKeyPlaceholder')} required={!isEdit} /><button type="button" title={showApiKey ? t('admin.upstream.account.form.hideApiKey') : t('admin.upstream.account.form.showApiKey')} aria-label={showApiKey ? t('admin.upstream.account.form.hideApiKey') : t('admin.upstream.account.form.showApiKey')} className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-slate-200" onClick={() => setShowApiKey((current) => !current)}>{showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></RowField> : null}
+          {!isEdit ? <RowField label={t('admin.upstream.account.form.accountGroup')} required>
             <div className="min-w-0">
               <SdkworkSearchableSelect
                 className="h-9"
@@ -1078,6 +1158,8 @@ function AccountCredentials({ account, supplier, onAccountChanged, onClose }: { 
 function createAccountInput(form: FormData, t: TranslationFunction): CreateUpstreamAccountRequest {
   const apiKey = optional(form, 'apiKey');
   const defaultBaseUrl = optional(form, 'defaultBaseUrl');
+  // 复制模式会显示首选端点选择；普通新建不渲染该字段，optional 返回 null
+  const preferredEndpointId = optional(form, 'preferredEndpointId');
   const protocols = parseProtocolConfigs(form);
   return {
     accountName: required(form, 'accountName', t('admin.upstream.account.form.accountName'), t),
@@ -1089,6 +1171,7 @@ function createAccountInput(form: FormData, t: TranslationFunction): CreateUpstr
     timeoutMs: numeric(form, 'timeoutMs', 120000, t('admin.upstream.account.form.timeoutMs'), t),
     status: numeric(form, 'status', 1),
     ...(defaultBaseUrl ? { defaultBaseUrl } : {}),
+    ...(preferredEndpointId ? { preferredEndpointId } : {}),
     ...(protocols.length > 0 ? { protocols } : {}),
     ...(apiKey ? { apiKey } : {}),
   };
