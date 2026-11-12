@@ -296,7 +296,7 @@ export function PaymentDomainSettingsAdmin() {
     setCallbackError(null);
     const hostname = callbackForm.hostname.trim();
     if (!hostname) {
-      setCallbackError(t('admin.commerce.payments.domainSettings.h5.hostnameRequired', 'Enter the H5 domain hostname (without scheme or path).'));
+      setCallbackError(t('admin.commerce.payments.domainSettings.hostnameRequired', 'Enter the domain hostname (without scheme or path).'));
       return;
     }
     const port = parseOptionalPort(callbackForm.port);
