@@ -1248,9 +1248,11 @@ where
         // the invocation pipeline is not involved.
         base_router
             .merge(
-                sdkwork_cloudrouter_router_service::api::openai_models_router(
+                sdkwork_cloudrouter_router_service::api::openai_models_router_with_auth_extensions(
                     Arc::clone(&catalog),
                     Arc::clone(&api_key_hasher),
+                    auth_token_authenticator.clone(),
+                    sdkwork_web_core::default_open_api_bearer_classifier(),
                 ),
             )
             .merge(

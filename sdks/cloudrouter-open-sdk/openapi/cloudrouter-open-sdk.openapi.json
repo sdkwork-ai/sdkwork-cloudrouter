@@ -12450,6 +12450,10 @@
             "format": "int64",
             "type": "integer"
           },
+          "displayName": {
+            "description": "Model display name from the Cloud Router catalog.",
+            "type": "string"
+          },
           "id": {
             "description": "Model identifier or Cloud Router catalog key.",
             "type": "string"
@@ -12463,6 +12467,10 @@
           },
           "owned_by": {
             "description": "Organization or provider that owns the model.",
+            "type": "string"
+          },
+          "vendorDisplayName": {
+            "description": "Display name of the model vendor from the Cloud Router catalog.",
             "type": "string"
           }
         },
@@ -22167,7 +22175,8 @@
     },
     "securitySchemes": {
       "bearerAuth": {
-        "bearerFormat": "Cloud Router API key",
+        "bearerFormat": "Cloud Router API key or SDKWork IAM login auth token",
+        "description": "Bearer credential: a Cloud Router API key (`sk-`/`sp-` prefix) or an SDKWork IAM login auth token. An auth-token caller may also send the paired dual-token session access token in the `Access-Token` header.",
         "scheme": "bearer",
         "type": "http"
       }
@@ -35517,9 +35526,19 @@
     },
     "/v1/models": {
       "get": {
-        "description": "Lists Cloud Router models available to the caller.",
+        "description": "Lists Cloud Router models available to the caller. The bearer credential may be a Cloud Router API key (`sk-`/`sp-` prefix) or an SDKWork IAM login auth token; an auth-token caller may also send the paired dual-token session access token in the optional `Access-Token` header.",
         "operationId": "listModels",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Optional dual-token session access token that pairs with an SDKWork IAM login auth token in `Authorization`. Cloud Router API key credentials do not need it.",
+            "in": "header",
+            "name": "Access-Token",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -35604,7 +35623,7 @@
     },
     "/v1/models/{model}": {
       "get": {
-        "description": "Retrieves one model from the Cloud Router catalog.",
+        "description": "Retrieves one model from the Cloud Router catalog. The bearer credential may be a Cloud Router API key (`sk-`/`sp-` prefix) or an SDKWork IAM login auth token; an auth-token caller may also send the paired dual-token session access token in the optional `Access-Token` header.",
         "operationId": "retrieveModel",
         "parameters": [
           {
@@ -35612,6 +35631,15 @@
             "in": "path",
             "name": "model",
             "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Optional dual-token session access token that pairs with an SDKWork IAM login auth token in `Authorization`. Cloud Router API key credentials do not need it.",
+            "in": "header",
+            "name": "Access-Token",
+            "required": false,
             "schema": {
               "type": "string"
             }

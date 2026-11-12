@@ -146,6 +146,7 @@ pub use openai_invocation::{
     OpenAiInvocationRelayOutcome, OpenAiUpstreamRoute, AUTH_TOKEN_SESSION_NAME_SNAPSHOT,
 };
 pub use openai_models::openai_models_router;
+pub use openai_models::openai_models_router_with_auth_extensions;
 pub use openai_responses::openai_responses_router;
 pub use openai_responses::openai_responses_router_with_relay;
 pub use openai_responses::openai_responses_router_with_relay_and_plugins;

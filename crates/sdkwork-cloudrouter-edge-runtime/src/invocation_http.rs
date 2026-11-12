@@ -699,16 +699,25 @@ fn apply_gateway_dispatch_defaults<C>(
                     return true;
                 }
             }
-            let owned_by = catalog
-                .find_vendor(&model.vendor_code)
+            let vendor = catalog.find_vendor(&model.vendor_code);
+            let owned_by = vendor
+                .as_ref()
                 .map(|vendor| vendor.vendor.code().to_owned())
                 .unwrap_or_else(|| model.vendor_code.clone());
-            models.push(json!({
+            // Same display metadata as the concrete models router
+            // (`openai_models::to_model_response`), so model pickers render the
+            // list without a second catalog lookup.
+            let mut entry = json!({
                 "id": model.model,
                 "object": "model",
                 "created": 0,
-                "owned_by": owned_by
-            }));
+                "owned_by": owned_by,
+                "displayName": model.display_name
+            });
+            if let Some(vendor) = vendor {
+                entry["vendorDisplayName"] = json!(vendor.display_name);
+            }
+            models.push(entry);
             true
         });
         invocation.dispatch.mode = DispatchMode::SyntheticLocalResponse;
@@ -1376,6 +1385,8 @@ mod gateway_dispatch_defaults_tests {
             ids,
             "unreachable model must be filtered"
         );
+        assert_eq!("GPT-4o mini", models[0]["displayName"]);
+        assert_eq!("OpenAI", models[0]["vendorDisplayName"]);
     }
 
     #[test]

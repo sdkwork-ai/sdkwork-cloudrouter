@@ -20,6 +20,19 @@ const DEFAULT_HOME_PATH = '/';
 const AUTH_BASE_PATH = '/auth';
 const AUTH_LOGIN_PATH = '/auth/login';
 /**
+ * Hosted sign-out page. The page itself is implemented by the shared IAM auth
+ * package (`@sdkwork/auth-pc-react` serves it below whichever auth base path a
+ * host mounts); this application owns the URL path and publishes it, so the
+ * desktop shells and partner surfaces that open the page in a system browser
+ * can link to it without depending on this application's bundle.
+ *
+ * Authenticated visitors must keep this route: redirecting them to the portal
+ * home — the normal treatment for `/auth/*` — would make signing out
+ * impossible. `PortalAuthenticatedAuthRouteGuard` exempts it explicitly.
+ */
+export const PORTAL_AUTH_BASE_PATH = AUTH_BASE_PATH;
+export const PORTAL_AUTH_SIGN_OUT_PATH = `${AUTH_BASE_PATH}/sign-out`;
+/**
  * Landing path for a fresh authenticated session whose URL carries no
  * `redirect` target. It is the public portal home, never the operator
  * `/admin` console: `/admin` is permission-gated, so a newly registered
@@ -63,6 +76,20 @@ export function hasStoredPortalSession(): boolean {
 export function isPortalAuthRoute(pathname: string): boolean {
   const normalized = normalizePortalPathname(pathname);
   return normalized === AUTH_BASE_PATH || normalized.startsWith(`${AUTH_BASE_PATH}/`);
+}
+
+/**
+ * Whether a path is the hosted sign-out page.
+ *
+ * It lives under the auth base path but is not an anonymous-only route: the
+ * visitor is signed in when they arrive, and the page ends that session.
+ * @param pathname - browser pathname.
+ * @returns true for the sign-out page.
+ */
+export function isPortalSignOutPath(pathname: string): boolean {
+  const normalized = normalizePortalPathname(pathname);
+  return normalized === PORTAL_AUTH_SIGN_OUT_PATH
+    || normalized.startsWith(`${PORTAL_AUTH_SIGN_OUT_PATH}/`);
 }
 
 /**

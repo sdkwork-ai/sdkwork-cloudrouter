@@ -100,8 +100,8 @@ miss means the object was never created through this gateway.
 `displayName` is mandatory on every sdkwork-models entity (model, vendor,
 family, voice) and flows JSON → importer → `ai_model.display_name` /
 `ai_model_vendor.display_name` → the SQL snapshot → `/v1/models`
-(`displayName`, `vendorDisplayName` extra fields; the `OpenAiModel` contract's
-`additionalProperties` allows them) and `/v1/vendors` (`name`,
+(`displayName`, `vendorDisplayName`, documented optional fields on the
+`OpenAiModel` contract) and `/v1/vendors` (`name`,
 `displayName` per model).
 
 ## Verification

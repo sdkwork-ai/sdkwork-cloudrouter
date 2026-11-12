@@ -13,6 +13,7 @@ import { CloudRouterAuthShell } from './CloudRouterAuthShell';
 import { useCloudRouterAuthRuntimeConfig } from './cloudRouterAuthConfig';
 import { InviteGate } from './InviteGate';
 import { cloudRouterTauriAuthHostReadiness } from './cloudRouterTauriAuthHost';
+import { CLOUD_ROUTER_AUTH_BASE_PATH } from './cloudRouterAuthPaths';
 
 const AUTH_METHOD_UNAVAILABLE_MESSAGE = 'This Cloud Router sign-in method is temporarily unavailable.';
 
@@ -40,7 +41,7 @@ export function CloudRouterAuthRoutes() {
       <InviteGate>
         <SdkworkIamAuthRoutes
           appearance={resolveCloudRouterAuthAppearance()}
-          basePath="/auth"
+          basePath={CLOUD_ROUTER_AUTH_BASE_PATH}
           brand={brand}
           className="!bg-transparent"
           getRuntime={getCloudRouterAuthRuntime}

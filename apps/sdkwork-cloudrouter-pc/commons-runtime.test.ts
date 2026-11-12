@@ -25,6 +25,10 @@ import {
 import {
   buildPortalAuthLoginRedirect,
   hasStoredPortalSession,
+  isPortalAuthRoute,
+  isPortalSignOutPath,
+  PORTAL_AUTH_BASE_PATH,
+  PORTAL_AUTH_SIGN_OUT_PATH,
   resolvePortalLoginRequiredAction,
 } from "./packages/sdkwork-cloudroutes-pc-commons/src/portal-auth.ts";
 import {
@@ -1730,6 +1734,20 @@ test("portal auth login redirect never re-wraps an auth-route URL", () => {  ass
     }),
     "/auth/login?redirect=%2Fmodels%2Fopenai%2Fgpt-4o%3Fsort%3Dtop%23comments",
   );
+});
+
+test("hosted sign-out route lives under the published auth base path", () => {
+  // The page is served by @sdkwork/auth-pc-react; this application owns the
+  // URL the desktop shells open, so the published constant and the matcher
+  // must agree.
+  assert.equal(PORTAL_AUTH_BASE_PATH, "/auth");
+  assert.equal(PORTAL_AUTH_SIGN_OUT_PATH, "/auth/sign-out");
+  assert.equal(isPortalAuthRoute(PORTAL_AUTH_SIGN_OUT_PATH), true);
+  assert.equal(isPortalSignOutPath(PORTAL_AUTH_SIGN_OUT_PATH), true);
+  assert.equal(isPortalSignOutPath("/auth/sign-out/"), true);
+  assert.equal(isPortalSignOutPath("/auth/login"), false);
+  assert.equal(isPortalSignOutPath("/auth/sign-outside"), false);
+  assert.equal(isPortalSignOutPath("/console"), false);
 });
 
 test("navbar sign-in preserves the current public route while console links use route protection", () => {

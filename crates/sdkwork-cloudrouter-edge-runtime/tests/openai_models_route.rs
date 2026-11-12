@@ -134,8 +134,8 @@ async fn gateway_retrieves_openai_model_by_wire_format_id_and_exposes_display_na
         let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
         assert_eq!("gpt-4o-mini", payload["id"], "model id: {model_id}");
-        // displayName / vendorDisplayName 扩展字段（契约 additionalProperties
-        // 允许），供模型选择器直接展示。
+        // displayName / vendorDisplayName 是 `OpenAiModel` 契约声明的可选属性，
+        // 供模型选择器直接展示。
         assert_eq!(
             "GPT-4o mini", payload["displayName"],
             "model id: {model_id}"

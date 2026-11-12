@@ -6,6 +6,7 @@ import {
   isPortalAppHandoffPath,
   isPortalAppSignInHandoff,
   isPortalAuthRoute,
+  isPortalSignOutPath,
   isProtectedPortalPath,
   PROTECTED_PORTAL_ROUTE_PREFIXES,
   resolvePortalAuthenticatedAuthRouteRedirect,
@@ -15,7 +16,7 @@ import {
 
 import { usePortalIamSession } from './usePortalIamSession.ts';
 
-export { PROTECTED_PORTAL_ROUTE_PREFIXES, isPortalAppHandoffPath, isProtectedPortalPath };
+export { PROTECTED_PORTAL_ROUTE_PREFIXES, isPortalAppHandoffPath, isPortalSignOutPath, isProtectedPortalPath };
 
 export interface ProtectedPortalLocationLike {
   hash?: string;
@@ -56,9 +57,17 @@ export function PortalAuthenticatedAuthRouteGuard({ children }: { children: Reac
   // The app hand-off page, and the hosted login that still carries the
   // IAM-issued sign-in state, run *after* a successful sign-in: they must
   // render so the one-time code reaches the operating system's deep-link
-  // handler. An authenticated visitor without either marker is a normal
-  // revisit of the auth surface and goes to the authenticated home.
-  if (isAuthenticated && isPortalAuthRoute(location.pathname) && !isPortalAppSignInHandoff(location)) {
+  // handler. The hosted sign-out page is the same kind of exception in the
+  // other direction: only a signed-in visitor can end the session, so
+  // redirecting them home would make sign-out unreachable. An authenticated
+  // visitor without any of those markers is a normal revisit of the auth
+  // surface and goes to the authenticated home.
+  if (
+    isAuthenticated
+    && isPortalAuthRoute(location.pathname)
+    && !isPortalSignOutPath(location.pathname)
+    && !isPortalAppSignInHandoff(location)
+  ) {
     return createElement(Navigate, {
       replace: true,
       to: resolvePortalAuthenticatedAuthRouteRedirect({ location }),

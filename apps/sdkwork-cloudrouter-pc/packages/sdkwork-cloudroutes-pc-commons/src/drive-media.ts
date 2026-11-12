@@ -219,6 +219,19 @@ export function toDriveMediaReference(
 
 const driveNodeShareTokenCache = new Map<string, string>();
 
+/**
+ * Drop every drive media credential cached for the current session.
+ *
+ * A minted reader share token and a presigned download URL are both issued
+ * for one authenticated account; keeping them across a sign-out or an account
+ * switch would let the next account reuse the previous account's access. The
+ * session bridge calls this whenever the IAM session changes.
+ */
+export function clearDriveMediaCaches(): void {
+  driveNodeShareTokenCache.clear();
+  driveMediaUrlCache.clear();
+}
+
 /** 无预存 token 时为节点补建只读分享链接，使 drive 引用可独立解析。 */
 async function ensureDriveShareToken(media: CloudRouterMediaResource): Promise<string> {
   const existing = readDriveShareToken(media);

@@ -40,6 +40,7 @@ import {
   resetCloudRouterSdkClients,
 } from './sdk-clients.ts';
 import { resetCloudRouterMessagingVerificationService } from './messaging-verification-service.ts';
+import { clearDriveMediaCaches } from './drive-media.ts';
 import { normalizeGeneratedSdkBaseUrl, resolveSharedDependencySurfaceBaseUrl } from './sdk-base-url.ts';
 import { readCloudRouterRuntimeEnv } from './utils/env.ts';
 
@@ -71,6 +72,7 @@ export function createCloudRouterIamRuntimeComposition(): SdkworkAppbasePcAuthRu
     hooks: {
       onSessionChanged: () => {
         resetCloudRouterMessagingVerificationService();
+        clearDriveMediaCaches();
         resetCloudRouterSdkClients();
       },
     },
@@ -114,17 +116,20 @@ export function getCloudRouterIamRuntime(): IamRuntime {
 
 export function resetCloudRouterIamRuntime(): void {
   runtimeComposition = null;
+  clearDriveMediaCaches();
   resetCloudRouterMessagingVerificationService();
 }
 
 function clearCloudRouterIamRuntimeSession(): void {
   clearStoredAppSessionToken();
+  clearDriveMediaCaches();
   resetCloudRouterMessagingVerificationService();
   resetCloudRouterSdkClients();
 }
 
 function commitCloudRouterIamRuntimeSession(session: unknown): PortalIamBridgeSession | undefined {
   const stored = storeAppSessionFromResult(session);
+  clearDriveMediaCaches();
   resetCloudRouterMessagingVerificationService();
   resetCloudRouterSdkClients();
   return toPortalIamBridgeSession(stored) ?? undefined;

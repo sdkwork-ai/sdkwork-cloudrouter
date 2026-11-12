@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- `GET /v1/models` and `GET /v1/models/{model}` now accept an SDKWork IAM login
+  auth token as the `Authorization: Bearer` credential in addition to a Cloud
+  Router API key (`sk-`/`sp-` prefix), so a signed-in product can fetch
+  available models without an API key. Both operations document the optional
+  `Access-Token` header carrying the paired dual-token session access token, and
+  the `bearerAuth` security scheme now describes both credential kinds.
+- `OpenAiModel` now documents the optional `displayName` and
+  `vendorDisplayName` properties that the model list already returns from the
+  catalog.
 - Volcengine Ark and ByteDance Ark media doors now publish the vendor's official
   request bodies instead of a reduced local subset:
   - `POST /volcengine/api/v3/contents/generations/tasks` and

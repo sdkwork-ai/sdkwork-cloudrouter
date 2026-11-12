@@ -3620,9 +3620,52 @@ class CloudRouterGatewayOpenApiGenerator:
 
     def _paths(self) -> dict[str, Any]:
         paths: dict[str, Any] = {}
-        paths["/v1/models"] = {"get": self._operation("Models", "listModels", "List models", "Lists Cloud Router models available to the caller.", None, "OpenAiModelList")}
+        # Models is part of the flexible bearer channel: the same credential may
+        # be a gateway API key or an SDKWork IAM login auth token, and an
+        # auth-token caller may pair the dual-token session access token.
+        access_token_header = self._header_param(
+            "Access-Token",
+            (
+                "Optional dual-token session access token that pairs with an SDKWork IAM "
+                "login auth token in `Authorization`. Cloud Router API key credentials do "
+                "not need it."
+            ),
+            required=False,
+        )
+        paths["/v1/models"] = {
+            "get": self._operation(
+                "Models",
+                "listModels",
+                "List models",
+                (
+                    "Lists Cloud Router models available to the caller. The bearer credential "
+                    "may be a Cloud Router API key (`sk-`/`sp-` prefix) or an SDKWork IAM login "
+                    "auth token; an auth-token caller may also send the paired dual-token "
+                    "session access token in the optional `Access-Token` header."
+                ),
+                None,
+                "OpenAiModelList",
+                parameters=[access_token_header],
+            )
+        }
         paths["/v1/models/{model}"] = {
-            "get": self._operation("Models", "retrieveModel", "Retrieve model", "Retrieves one model from the Cloud Router catalog.", None, "OpenAiModel", parameters=[self._path_param("model", "Model identifier or catalog key.")]),
+            "get": self._operation(
+                "Models",
+                "retrieveModel",
+                "Retrieve model",
+                (
+                    "Retrieves one model from the Cloud Router catalog. The bearer credential "
+                    "may be a Cloud Router API key (`sk-`/`sp-` prefix) or an SDKWork IAM login "
+                    "auth token; an auth-token caller may also send the paired dual-token "
+                    "session access token in the optional `Access-Token` header."
+                ),
+                None,
+                "OpenAiModel",
+                parameters=[
+                    self._path_param("model", "Model identifier or catalog key."),
+                    access_token_header,
+                ],
+            ),
         }
         paths["/v1/completions"] = {"post": self._operation("Completions", "createCompletion", "Create completion", "Creates a legacy text completion through an OpenAI-compatible request.", "JsonObject", "JsonObject")}
         paths["/v1/moderations"] = {"post": self._operation("Moderations", "createModeration", "Create moderation", "Classifies text or multimodal input through an OpenAI-compatible moderation request.", "JsonObject", "JsonObject")}
@@ -4232,7 +4275,16 @@ class CloudRouterGatewayOpenApiGenerator:
     def _components(self) -> dict[str, Any]:
         return {
             "securitySchemes": {
-                "bearerAuth": {"type": "http", "scheme": "bearer", "bearerFormat": "Cloud Router API key"}
+                "bearerAuth": {
+                    "type": "http",
+                    "scheme": "bearer",
+                    "bearerFormat": "Cloud Router API key or SDKWork IAM login auth token",
+                    "description": (
+                        "Bearer credential: a Cloud Router API key (`sk-`/`sp-` prefix) or an "
+                        "SDKWork IAM login auth token. An auth-token caller may also send the "
+                        "paired dual-token session access token in the `Access-Token` header."
+                    ),
+                }
             },
             "schemas": {
                 "JsonObject": {"type": "object", "additionalProperties": True, "description": "Provider-specific JSON payload accepted by Cloud Router."},
@@ -4276,7 +4328,9 @@ class CloudRouterGatewayOpenApiGenerator:
                         "id": {"type": "string", "description": "Model identifier or Cloud Router catalog key."},
                         "object": {"type": "string", "enum": ["model"], "description": "Object type, always model."},
                         "created": {"type": "integer", "format": "int64", "description": "Unix timestamp in seconds when the model was created, when known."},
+                        "displayName": {"type": "string", "description": "Model display name from the Cloud Router catalog."},
                         "owned_by": {"type": "string", "description": "Organization or provider that owns the model."},
+                        "vendorDisplayName": {"type": "string", "description": "Display name of the model vendor from the Cloud Router catalog."},
                     },
                 },
                 "OpenAiChatCompletionRequest": {
