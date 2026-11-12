@@ -2,6 +2,921 @@
   "operations": [
     {
       "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/agents",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts#createManagedAgent@/admin/agent",
+      "kind": "create",
+      "module": "sdkwork-agents-pc-admin",
+      "openapi_exposed": true,
+      "operation": "createManagedAgent",
+      "operation_id": "agents.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_agent"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/agent",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "agents",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_agent"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/agent_categories",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts#listAgentCategories@/admin/agent/categories",
+      "kind": "read",
+      "module": "sdkwork-agents-pc-admin",
+      "openapi_exposed": true,
+      "operation": "listAgentCategories",
+      "operation_id": "agentCategories.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_agent_category"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/agent/categories",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "agents",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/agents",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts#listManagedAgents@/admin/agent",
+      "kind": "read",
+      "module": "sdkwork-agents-pc-admin",
+      "openapi_exposed": true,
+      "operation": "listManagedAgents",
+      "operation_id": "agents.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_agent"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/agent",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "agents",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/agents/{agentId}/restore",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts#restoreManagedAgent@/admin/agent",
+      "kind": "action",
+      "module": "sdkwork-agents-pc-admin",
+      "openapi_exposed": true,
+      "operation": "restoreManagedAgent",
+      "operation_id": "agents.restore",
+      "path_params": [
+        "agentId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_agent"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/agent",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "agents",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_agent"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/agents/{agentId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts#retrieveManagedAgent@/admin/agent",
+      "kind": "read",
+      "module": "sdkwork-agents-pc-admin",
+      "openapi_exposed": true,
+      "operation": "retrieveManagedAgent",
+      "operation_id": "agents.retrieve",
+      "path_params": [
+        "agentId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_agent"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/agent",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "agents",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/ai/agents/{agentId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts#updateManagedAgent@/admin/agent",
+      "kind": "update",
+      "module": "sdkwork-agents-pc-admin",
+      "openapi_exposed": true,
+      "operation": "updateManagedAgent",
+      "operation_id": "agents.update",
+      "path_params": [
+        "agentId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_agent"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/agent",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "agents",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_agent"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/agents/{agentId}/status",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts#updateManagedAgentStatus@/admin/agent",
+      "kind": "action",
+      "module": "sdkwork-agents-pc-admin",
+      "openapi_exposed": true,
+      "operation": "updateManagedAgentStatus",
+      "operation_id": "agents.status.create",
+      "path_params": [
+        "agentId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_agent"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/agent",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "agents",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_agent"
+      ]
+    },
+    {
+      "api_method": "PUT",
+      "api_path": "/backend/v3/api/ai/agent_categories/{categoryCode}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts#upsertAgentCategory@/admin/agent/categories",
+      "kind": "update",
+      "module": "sdkwork-agents-pc-admin",
+      "openapi_exposed": true,
+      "operation": "upsertAgentCategory",
+      "operation_id": "agentCategories.update",
+      "path_params": [
+        "categoryCode"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_agent_category"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/agent/categories",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "agents",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin/src/agentsAdminService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_agent_category"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/mcp/invocations",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts#appendAdminInvocation@/admin/connector",
+      "kind": "create",
+      "module": "sdkwork-mcp-pc-core",
+      "openapi_exposed": true,
+      "operation": "appendAdminInvocation",
+      "operation_id": "invocations.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_mcp_invocation"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/connector",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "mcp",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "tag": "mcp",
+      "write_tables": [
+        "ai_mcp_invocation"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/mcp/servers",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts#createAdminServer@/admin/connector",
+      "kind": "create",
+      "module": "sdkwork-mcp-pc-core",
+      "openapi_exposed": true,
+      "operation": "createAdminServer",
+      "operation_id": "servers.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_mcp_server"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/connector",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "mcp",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "tag": "mcp",
+      "write_tables": [
+        "ai_mcp_server"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/mcp/servers/{serverId}/connectors/{connectorKey}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts#deleteAdminConnector@/admin/connector",
+      "kind": "delete",
+      "module": "sdkwork-mcp-pc-core",
+      "openapi_exposed": true,
+      "operation": "deleteAdminConnector",
+      "operation_id": "servers.connectors.delete",
+      "path_params": [
+        "serverId",
+        "connectorKey"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_mcp_connector"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/connector",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "mcp",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "tag": "mcp",
+      "write_tables": [
+        "ai_mcp_connector"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/mcp/servers/{serverKey}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts#deleteAdminServer@/admin/connector",
+      "kind": "delete",
+      "module": "sdkwork-mcp-pc-core",
+      "openapi_exposed": true,
+      "operation": "deleteAdminServer",
+      "operation_id": "servers.delete",
+      "path_params": [
+        "serverKey"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_mcp_server"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/connector",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "mcp",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "tag": "mcp",
+      "write_tables": [
+        "ai_mcp_server"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/mcp/categories",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts#listAdminCategories@/admin/connector/categories",
+      "kind": "read",
+      "module": "sdkwork-mcp-pc-core",
+      "openapi_exposed": true,
+      "operation": "listAdminCategories",
+      "operation_id": "categories.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_mcp_server_category"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/connector/categories",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "mcp",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "tag": "mcp",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/mcp/servers/{serverId}/connectors",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts#listAdminConnectors@/admin/connector",
+      "kind": "read",
+      "module": "sdkwork-mcp-pc-core",
+      "openapi_exposed": true,
+      "operation": "listAdminConnectors",
+      "operation_id": "servers.connectors.list",
+      "path_params": [
+        "serverId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_mcp_connector"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/connector",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "mcp",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "tag": "mcp",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/mcp/invocations",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts#listAdminInvocations@/admin/connector",
+      "kind": "read",
+      "module": "sdkwork-mcp-pc-core",
+      "openapi_exposed": true,
+      "operation": "listAdminInvocations",
+      "operation_id": "invocations.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_mcp_invocation"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/connector",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "mcp",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "tag": "mcp",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/mcp/servers",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts#listAdminServers@/admin/connector",
+      "kind": "read",
+      "module": "sdkwork-mcp-pc-core",
+      "openapi_exposed": true,
+      "operation": "listAdminServers",
+      "operation_id": "servers.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_mcp_server"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/connector",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "mcp",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "tag": "mcp",
+      "write_tables": []
+    },
+    {
+      "api_method": "PUT",
+      "api_path": "/backend/v3/api/mcp/servers/{serverKey}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts#updateAdminServer@/admin/connector",
+      "kind": "update",
+      "module": "sdkwork-mcp-pc-core",
+      "openapi_exposed": true,
+      "operation": "updateAdminServer",
+      "operation_id": "servers.update",
+      "path_params": [
+        "serverKey"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_mcp_server"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/connector",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "mcp",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "tag": "mcp",
+      "write_tables": [
+        "ai_mcp_server"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/mcp/categories",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts#upsertAdminCategory@/admin/connector/categories",
+      "kind": "action",
+      "module": "sdkwork-mcp-pc-core",
+      "openapi_exposed": true,
+      "operation": "upsertAdminCategory",
+      "operation_id": "categories.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_mcp_server_category"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/connector/categories",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "mcp",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "tag": "mcp",
+      "write_tables": [
+        "ai_mcp_server_category"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/mcp/servers/{serverId}/connectors",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts#upsertAdminConnector@/admin/connector",
+      "kind": "action",
+      "module": "sdkwork-mcp-pc-core",
+      "openapi_exposed": true,
+      "operation": "upsertAdminConnector",
+      "operation_id": "servers.connectors.create",
+      "path_params": [
+        "serverId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_mcp_connector"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/connector",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "mcp",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "tag": "mcp",
+      "write_tables": [
+        "ai_mcp_connector"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/mcp/servers/{serverId}/prompts",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts#upsertAdminPrompt@/admin/connector",
+      "kind": "action",
+      "module": "sdkwork-mcp-pc-core",
+      "openapi_exposed": true,
+      "operation": "upsertAdminPrompt",
+      "operation_id": "servers.prompts.create",
+      "path_params": [
+        "serverId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_mcp_prompt"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/connector",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "mcp",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "tag": "mcp",
+      "write_tables": [
+        "ai_mcp_prompt"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/mcp/servers/{serverId}/resources",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts#upsertAdminResource@/admin/connector",
+      "kind": "action",
+      "module": "sdkwork-mcp-pc-core",
+      "openapi_exposed": true,
+      "operation": "upsertAdminResource",
+      "operation_id": "servers.resources.create",
+      "path_params": [
+        "serverId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_mcp_resource"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/connector",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "mcp",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "tag": "mcp",
+      "write_tables": [
+        "ai_mcp_resource"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/mcp/servers/{serverId}/tools",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts#upsertAdminTool@/admin/connector",
+      "kind": "action",
+      "module": "sdkwork-mcp-pc-core",
+      "openapi_exposed": true,
+      "operation": "upsertAdminTool",
+      "operation_id": "servers.tools.create",
+      "path_params": [
+        "serverId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_mcp_tool"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/connector",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "mcp",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+      "tag": "mcp",
+      "write_tables": [
+        "ai_mcp_tool"
+      ]
+    },
+    {
+      "api_method": "POST",
       "api_path": "/backend/v3/api/ai/models",
       "api_surface": "backend",
       "file_targets": [],
@@ -3935,6 +4850,748 @@
       "write_tables": [
         "ai_resource_group_item",
         "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/plugins",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts#createPlugin@/admin/plugin",
+      "kind": "create",
+      "module": "sdkwork-plugins-pc-admin",
+      "openapi_exposed": true,
+      "operation": "createPlugin",
+      "operation_id": "plugins.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_plugin"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/plugin",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_plugin"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/ai/plugins/{pluginKey}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts#deletePlugin@/admin/plugin",
+      "kind": "delete",
+      "module": "sdkwork-plugins-pc-admin",
+      "openapi_exposed": true,
+      "operation": "deletePlugin",
+      "operation_id": "plugins.delete",
+      "path_params": [
+        "pluginKey"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_plugin"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/plugin",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_plugin"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/plugin_categories",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts#listPluginCategories@/admin/plugin/categories",
+      "kind": "read",
+      "module": "sdkwork-plugins-pc-admin",
+      "openapi_exposed": true,
+      "operation": "listPluginCategories",
+      "operation_id": "pluginCategories.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_plugin_category"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/plugin/categories",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/plugins",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts#listPlugins@/admin/plugin",
+      "kind": "read",
+      "module": "sdkwork-plugins-pc-admin",
+      "openapi_exposed": true,
+      "operation": "listPlugins",
+      "operation_id": "plugins.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_plugin"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/plugin",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "PUT",
+      "api_path": "/backend/v3/api/ai/plugins/{pluginKey}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts#updatePlugin@/admin/plugin",
+      "kind": "update",
+      "module": "sdkwork-plugins-pc-admin",
+      "openapi_exposed": true,
+      "operation": "updatePlugin",
+      "operation_id": "plugins.update",
+      "path_params": [
+        "pluginKey"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_plugin"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/plugin",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_plugin"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/plugin_categories",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts#upsertPluginCategory@/admin/plugin/categories",
+      "kind": "action",
+      "module": "sdkwork-plugins-pc-admin",
+      "openapi_exposed": true,
+      "operation": "upsertPluginCategory",
+      "operation_id": "pluginCategories.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_plugin_category"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/plugin/categories",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin/src/pluginsAdminService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_plugin_category"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/skill_packages/{packageId}/artifacts",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts#createSkillArtifact@/admin/skill",
+      "kind": "create",
+      "module": "sdkwork-skills-pc-admin-core",
+      "openapi_exposed": true,
+      "operation": "createSkillArtifact",
+      "operation_id": "skillPackages.artifacts.create",
+      "path_params": [
+        "packageId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_skill_artifact"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/skill",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "ecosystem",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_skill_artifact"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/skill_capabilities",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts#createSkillCapability@/admin/skill",
+      "kind": "create",
+      "module": "sdkwork-skills-pc-admin-core",
+      "openapi_exposed": true,
+      "operation": "createSkillCapability",
+      "operation_id": "skillCapabilities.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_skill_capability"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/skill",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "ecosystem",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_skill_capability"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/skill_categories",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts#createSkillCategory@/admin/skill/categories",
+      "kind": "create",
+      "module": "sdkwork-skills-pc-admin-core",
+      "openapi_exposed": true,
+      "operation": "createSkillCategory",
+      "operation_id": "skillCategories.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_skill_category"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/skill/categories",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "ecosystem",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_skill_category"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/skill_packages",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts#createSkillPackage@/admin/skill",
+      "kind": "create",
+      "module": "sdkwork-skills-pc-admin-core",
+      "openapi_exposed": true,
+      "operation": "createSkillPackage",
+      "operation_id": "skillPackages.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_skill_package"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/skill",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "ecosystem",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_skill_package"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/ai/skill_packages/{packageId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts#deleteSkillPackage@/admin/skill",
+      "kind": "delete",
+      "module": "sdkwork-skills-pc-admin-core",
+      "openapi_exposed": true,
+      "operation": "deleteSkillPackage",
+      "operation_id": "skillPackages.delete",
+      "path_params": [
+        "packageId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_skill_package"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/skill",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "ecosystem",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_skill_package"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/skill_categories",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts#listManagedSkillCategories@/admin/skill/categories",
+      "kind": "read",
+      "module": "sdkwork-skills-pc-admin-core",
+      "openapi_exposed": true,
+      "operation": "listManagedSkillCategories",
+      "operation_id": "skills.skillCategories.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_skill_category"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/skill/categories",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "ecosystem",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/skill_packages",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts#listManagedSkillPackages@/admin/skill",
+      "kind": "read",
+      "module": "sdkwork-skills-pc-admin-core",
+      "openapi_exposed": true,
+      "operation": "listManagedSkillPackages",
+      "operation_id": "skills.skillPackages.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_skill_package"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/skill",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "ecosystem",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/skill_packages/{packageId}/artifacts",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts#listPackageArtifacts@/admin/skill",
+      "kind": "read",
+      "module": "sdkwork-skills-pc-admin-core",
+      "openapi_exposed": true,
+      "operation": "listPackageArtifacts",
+      "operation_id": "skillPackages.artifacts.list",
+      "path_params": [
+        "packageId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_skill_artifact"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/skill",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "ecosystem",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/skill_capabilities",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts#listSkillCapabilities@/admin/skill",
+      "kind": "read",
+      "module": "sdkwork-skills-pc-admin-core",
+      "openapi_exposed": true,
+      "operation": "listSkillCapabilities",
+      "operation_id": "skillCapabilities.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_skill_capability"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/skill",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "ecosystem",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/ai/skill_capabilities/{capabilityId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts#updateSkillCapability@/admin/skill",
+      "kind": "update",
+      "module": "sdkwork-skills-pc-admin-core",
+      "openapi_exposed": true,
+      "operation": "updateSkillCapability",
+      "operation_id": "skillCapabilities.update",
+      "path_params": [
+        "capabilityId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_skill_capability"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/skill",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "ecosystem",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_skill_capability"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/ai/skill_categories/{categoryId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts#updateSkillCategory@/admin/skill/categories",
+      "kind": "update",
+      "module": "sdkwork-skills-pc-admin-core",
+      "openapi_exposed": true,
+      "operation": "updateSkillCategory",
+      "operation_id": "skillCategories.update",
+      "path_params": [
+        "categoryId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_skill_category"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/skill/categories",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "ecosystem",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_skill_category"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/ai/skill_packages/{packageId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts#updateSkillPackage@/admin/skill",
+      "kind": "update",
+      "module": "sdkwork-skills-pc-admin-core",
+      "openapi_exposed": true,
+      "operation": "updateSkillPackage",
+      "operation_id": "skillPackages.update",
+      "path_params": [
+        "packageId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_skill_package"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/skill",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "ecosystem",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-core/src/services/skillsBackendService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_skill_package"
       ]
     },
     {
@@ -26770,6 +28427,11 @@
                     "maxItems": 128,
                     "type": "array"
                   },
+                  "colorToken": {
+                    "maxLength": 64,
+                    "nullable": true,
+                    "type": "string"
+                  },
                   "contextTokens": {
                     "format": "int32",
                     "maximum": 100000000,
@@ -26785,6 +28447,16 @@
                   "displayName": {
                     "maxLength": 256,
                     "minLength": 1,
+                    "type": "string"
+                  },
+                  "docsUrl": {
+                    "maxLength": 1024,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "familyCode": {
+                    "maxLength": 64,
+                    "nullable": true,
                     "type": "string"
                   },
                   "groups": {
@@ -26978,6 +28650,18 @@
                     "maxLength": 64,
                     "minLength": 1,
                     "type": "string"
+                  },
+                  "videoProfileCount": {
+                    "format": "int32",
+                    "maximum": 10000,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "voiceBindingCount": {
+                    "format": "int32",
+                    "maximum": 10000,
+                    "minimum": 0,
+                    "type": "integer"
                   }
                 },
                 "required": [
@@ -27010,7 +28694,12 @@
                   "replacementModel",
                   "providerCodes",
                   "officialReferencePrices",
-                  "priceAvailability"
+                  "priceAvailability",
+                  "familyCode",
+                  "colorToken",
+                  "docsUrl",
+                  "videoProfileCount",
+                  "voiceBindingCount"
                 ],
                 "type": "object"
               },
@@ -33517,25 +35206,25 @@
   },
   "summary": {
     "api_method_counts": {
-      "DELETE": 21,
-      "GET": 112,
-      "PATCH": 20,
-      "POST": 58,
-      "PUT": 12
+      "DELETE": 25,
+      "GET": 125,
+      "PATCH": 24,
+      "POST": 74,
+      "PUT": 15
     },
     "api_surface_counts": {
       "app": 74,
-      "backend": 149
+      "backend": 189
     },
-    "operation_count": 223,
+    "operation_count": 263,
     "route_scope_counts": {
-      "admin": 149,
+      "admin": 189,
       "console": 31,
       "public": 43
     },
     "sdk_client_counts": {
       "SdkworkAppClient": 74,
-      "SdkworkBackendClient": 149
+      "SdkworkBackendClient": 189
     }
   }
 }

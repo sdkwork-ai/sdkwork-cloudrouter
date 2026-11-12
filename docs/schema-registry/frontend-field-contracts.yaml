@@ -1270,8 +1270,13 @@ frontend_operations:
                   type: array
                 vendor: { maxLength: 64, minLength: 1, type: string }
                 vendorCode: { maxLength: 64, minLength: 1, type: string }
+                colorToken: { maxLength: 64, nullable: true, type: string }
+                docsUrl: { maxLength: 1024, nullable: true, type: string }
+                familyCode: { maxLength: 64, nullable: true, type: string }
+                videoProfileCount: { format: int32, maximum: 10000, minimum: 0, type: integer }
+                voiceBindingCount: { format: int32, maximum: 10000, minimum: 0, type: integer }
               required: [catalogKey, model, displayName, vendorCode, vendor, capabilities, groups, categories, description, modalities, inputModalities, outputModalities, apiFormat, capabilityIntro, limitations, supportedLanguages, useCases,
-                trainingDataCutoff, contextTokens, maxOutputTokens, supportsStreaming, supportsTools, supportsJsonSchema, releaseStage, shelfState, routingState, replacementModel, providerCodes, officialReferencePrices, priceAvailability]
+                trainingDataCutoff, contextTokens, maxOutputTokens, supportsStreaming, supportsTools, supportsJsonSchema, releaseStage, shelfState, routingState, replacementModel, providerCodes, officialReferencePrices, priceAvailability, familyCode, colorToken, docsUrl, videoProfileCount, voiceBindingCount]
               type: object
             maxItems: 200
             type: array
@@ -12815,6 +12820,7 @@ frontend_operations:
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/skill_packages
+    request_body_required: false
     sdk_domain: skills
     read_sources:
       - ai_skill_package
@@ -12837,6 +12843,7 @@ frontend_operations:
     api_surface: backend
     api_method: PATCH
     api_path: /backend/v3/api/skill_packages/{packageId}
+    request_body_required: false
     sdk_domain: skills
     read_sources:
       - ai_skill_package
@@ -12901,6 +12908,7 @@ frontend_operations:
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/skill_packages/{packageId}/artifacts
+    request_body_required: false
     sdk_domain: skills
     read_sources:
       - ai_skill_artifact
@@ -12943,6 +12951,7 @@ frontend_operations:
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/skill_capabilities
+    request_body_required: false
     sdk_domain: skills
     read_sources:
       - ai_skill_capability
@@ -12965,6 +12974,7 @@ frontend_operations:
     api_surface: backend
     api_method: PATCH
     api_path: /backend/v3/api/skill_capabilities/{capabilityId}
+    request_body_required: false
     sdk_domain: skills
     read_sources:
       - ai_skill_capability
@@ -12987,6 +12997,7 @@ frontend_operations:
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/skill_categories
+    request_body_required: false
     sdk_domain: skills
     read_sources:
       - ai_skill_category
@@ -13009,6 +13020,7 @@ frontend_operations:
     api_surface: backend
     api_method: PATCH
     api_path: /backend/v3/api/skill_categories/{categoryId}
+    request_body_required: false
     sdk_domain: skills
     read_sources:
       - ai_skill_category
@@ -13031,6 +13043,7 @@ frontend_operations:
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/mcp/categories
+    request_body_required: false
     sdk_domain: mcp
     read_sources:
       - ai_mcp_server_category
@@ -13053,6 +13066,7 @@ frontend_operations:
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/mcp/servers
+    request_body_required: false
     sdk_domain: mcp
     read_sources:
       - ai_mcp_server
@@ -13075,6 +13089,7 @@ frontend_operations:
     api_surface: backend
     api_method: PUT
     api_path: /backend/v3/api/mcp/servers/{serverKey}
+    request_body_required: false
     sdk_domain: mcp
     read_sources:
       - ai_mcp_server
@@ -13139,6 +13154,7 @@ frontend_operations:
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/mcp/servers/{serverId}/connectors
+    request_body_required: false
     sdk_domain: mcp
     read_sources:
       - ai_mcp_connector
@@ -13183,6 +13199,7 @@ frontend_operations:
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/mcp/servers/{serverId}/tools
+    request_body_required: false
     sdk_domain: mcp
     read_sources:
       - ai_mcp_tool
@@ -13205,6 +13222,7 @@ frontend_operations:
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/mcp/servers/{serverId}/resources
+    request_body_required: false
     sdk_domain: mcp
     read_sources:
       - ai_mcp_resource
@@ -13227,6 +13245,7 @@ frontend_operations:
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/mcp/servers/{serverId}/prompts
+    request_body_required: false
     sdk_domain: mcp
     read_sources:
       - ai_mcp_prompt
@@ -13269,6 +13288,7 @@ frontend_operations:
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/mcp/invocations
+    request_body_required: false
     sdk_domain: mcp
     read_sources:
       - ai_mcp_invocation
@@ -13291,6 +13311,7 @@ frontend_operations:
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/plugin_categories
+    request_body_required: false
     sdk_domain: plugins
     read_sources:
       - ai_plugin_category
@@ -13313,6 +13334,7 @@ frontend_operations:
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/plugins
+    request_body_required: false
     sdk_domain: plugins
     read_sources:
       - ai_plugin
@@ -13335,6 +13357,7 @@ frontend_operations:
     api_surface: backend
     api_method: PUT
     api_path: /backend/v3/api/plugins/{pluginKey}
+    request_body_required: false
     sdk_domain: plugins
     read_sources:
       - ai_plugin
@@ -13379,6 +13402,7 @@ frontend_operations:
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/ai/agents
+    request_body_required: false
     sdk_domain: agents
     read_sources:
       - ai_agent
@@ -13421,6 +13445,7 @@ frontend_operations:
     api_surface: backend
     api_method: PATCH
     api_path: /backend/v3/api/ai/agents/{agentId}
+    request_body_required: false
     sdk_domain: agents
     read_sources:
       - ai_agent
@@ -13443,6 +13468,7 @@ frontend_operations:
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/ai/agents/{agentId}/status
+    request_body_required: false
     sdk_domain: agents
     read_sources:
       - ai_agent
@@ -13465,6 +13491,7 @@ frontend_operations:
     api_surface: backend
     api_method: POST
     api_path: /backend/v3/api/ai/agents/{agentId}/restore
+    request_body_required: false
     sdk_domain: agents
     read_sources:
       - ai_agent
@@ -13507,6 +13534,7 @@ frontend_operations:
     api_surface: backend
     api_method: PUT
     api_path: /backend/v3/api/ai/agent_categories/{categoryCode}
+    request_body_required: false
     sdk_domain: agents
     read_sources:
       - ai_agent_category

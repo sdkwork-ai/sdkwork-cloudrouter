@@ -73,6 +73,21 @@ fn generation_mode_api_code(operation: &str) -> String {
     }
 }
 
+/// Vendor-native api code the video tier decision should use.
+///
+/// The app API routes a video command by operation (`image_to_video`,
+/// `video_extend`, ...), while the composer submits the precise catalog mode in
+/// `generationMode` (`reference_to_video`, `start_end_frame`, ...). Pricing the
+/// routed operation alone would price a different profile than the one the
+/// command executes, so the explicit mode wins when present.
+fn video_api_code(operation: &str, generation_mode: Option<&str>) -> String {
+    generation_mode
+        .map(str::trim)
+        .filter(|mode| !mode.is_empty())
+        .map(generation_mode_api_code)
+        .unwrap_or_else(|| generation_mode_api_code(operation))
+}
+
 fn string_field(source: &serde_json::Value, keys: &[&str]) -> Option<String> {
     keys.iter().find_map(|key| {
         source.get(*key).and_then(|value| match value {
@@ -109,6 +124,8 @@ struct CommandQuantities {
     result_count: Option<DecimalValue>,
     quality: Option<String>,
     vendor: Option<String>,
+    /// Precise catalog generation mode the command carries.
+    generation_mode: Option<String>,
 }
 
 impl CommandQuantities {
@@ -147,6 +164,7 @@ impl CommandQuantities {
             vendor: config
                 .and_then(|config| string_field(config, &["vendor", "vendorCode"]))
                 .or_else(|| string_field(parameters, &["vendor", "vendorCode"])),
+            generation_mode: read_string(&["generationMode", "generation_mode"]),
         }
     }
 }
@@ -466,7 +484,7 @@ impl GenerationPricingPort for SqlGenerationsPricingEstimator {
                 )
                 .to_owned()
             });
-        let api_code = generation_mode_api_code(&operation);
+        let api_code = video_api_code(&operation, quantities.generation_mode.as_deref());
 
         let mut lines: Vec<GenerationPricingEstimateLine> = Vec::new();
         let mut unpriced_reason: Option<String> = None;
@@ -657,6 +675,29 @@ mod tests {
         assert_eq!(generation_mode_api_code("motion_mimicry"), "motion_control");
         assert_eq!(generation_mode_api_code("avatar"), "avatar");
         assert_eq!(generation_mode_api_code("text_to_video"), "text_to_video");
+    }
+
+    #[test]
+    fn explicit_generation_mode_wins_over_the_routed_operation() {
+        // The command routes as image_to_video but executes the start-end
+        // profile, whose tier codes are the ones actually priced.
+        assert_eq!(video_api_code("image_to_video", Some("start_end_frame")), "start_end_frame");
+        assert_eq!(video_api_code("image_to_video", Some("reference_to_video")), "reference_to_video");
+        assert_eq!(video_api_code("image_to_video", Some("motion_mimicry")), "motion_control");
+        // No explicit mode keeps the routed operation's mapping.
+        assert_eq!(video_api_code("image_to_video", None), "image_to_video");
+        assert_eq!(video_api_code("image_to_video", Some("  ")), "image_to_video");
+    }
+
+    #[test]
+    fn quantities_read_the_precise_generation_mode() {
+        let parameters = serde_json::json!({
+            "generationMode": "reference_to_video",
+            "generationConfig": { "resolution": "720p", "durationSeconds": 5 }
+        });
+        let quantities = CommandQuantities::from_parameters(Some(&parameters));
+        assert_eq!(quantities.generation_mode.as_deref(), Some("reference_to_video"));
+        assert_eq!(quantities.resolution.as_deref(), Some("720p"));
     }
 
     #[test]
