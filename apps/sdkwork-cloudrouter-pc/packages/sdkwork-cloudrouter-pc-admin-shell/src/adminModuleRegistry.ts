@@ -412,6 +412,9 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
   {
     moduleId: 'paymentCenter',
     groups: [
+      groupBlock('admin.menu.payments.settings', [
+        itemBlock({ path: '/admin/payments/domainSettings', labelKey: 'admin.menu.payments.domainSettings', icon: Globe2 }),
+      ]),
       groupBlock('admin.menu.payments.configuration', [
         itemBlock({ path: '/admin/payments/providers', labelKey: 'admin.menu.payments.providers', icon: CloudCog }),
         itemBlock({ path: '/admin/payments/providerAccounts', labelKey: 'admin.menu.payments.providerAccounts', icon: CreditCard }),

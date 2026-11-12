@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toDataURL } from 'qrcode';
 import { loadStripe, type Stripe, type StripeCardElement } from '@stripe/stripe-js';
-import { CheckCircle2, CreditCard, ExternalLink, Loader2, QrCode, RefreshCw, RotateCcw, X } from 'lucide-react';
+import { CheckCircle2, Copy, CreditCard, ExternalLink, Loader2, QrCode, RefreshCw, RotateCcw, X } from 'lucide-react';
 import type { TestPayment } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import {
+  copyTextToClipboard,
   readAdminResourceRecordList,
   resolveProblemMessage,
   type AdminResourceRecord,
@@ -83,6 +84,7 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
   const [payingCard, setPayingCard] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
   const [createAttempt, setCreateAttempt] = useState(0);
+  const [cashierCopied, setCashierCopied] = useState(false);
   const createSequenceRef = useRef(0);
 
   useEffect(() => {
@@ -459,6 +461,39 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
                       {t('admin.commerce.payments.methods.testPayment.expiresIn', 'Order remaining time')}: {formatRemainingTime(remainingSeconds)}
                     </div>
                   ) : null}
+                </div>
+              ) : null}
+
+              {testPayment.cashierUrl && !isExpired ? (
+                <div className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-white/5">
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    {t(
+                      'admin.commerce.payments.methods.testPayment.h5Cashier',
+                      'H5 cashier link (generated from Payment Settings → Domain Settings)',
+                    )}
+                  </div>
+                  <div className="mt-1 flex items-center gap-2">
+                    <code className="min-w-0 flex-1 truncate text-xs text-slate-700 dark:text-slate-200">
+                      {testPayment.cashierUrl}
+                    </code>
+                    <button
+                      className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10"
+                      onClick={() => {
+                        void copyTextToClipboard(String(testPayment.cashierUrl)).then((result) => {
+                          if (result.ok) {
+                            setCashierCopied(true);
+                            window.setTimeout(() => setCashierCopied(false), 1500);
+                          }
+                        });
+                      }}
+                      type="button"
+                    >
+                      {cashierCopied ? <CheckCircle2 className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                      {cashierCopied
+                        ? t('admin.commerce.payments.methods.testPayment.copied', 'Copied')
+                        : t('admin.commerce.payments.methods.testPayment.copyLink', 'Copy link')}
+                    </button>
+                  </div>
                 </div>
               ) : null}
 

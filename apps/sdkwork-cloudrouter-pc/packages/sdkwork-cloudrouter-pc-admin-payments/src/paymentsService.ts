@@ -14,12 +14,17 @@ import type {
   CreateRefundCommand,
   CreateRouteRuleCommand,
   CreateTestPaymentCommand,
+  NotifyDomain,
+  NotifyDomainCreateRequest,
+  NotifyDomainUpdateRequest,
+  PaymentDomainSetting,
   PaymentIntent,
   Refund,
   RetryRefundCommand,
   SandboxTriggerCommand,
   TestPayment,
   UpdatePaymentChannelCommand,
+  UpdatePaymentDomainSettingRequest,
   UpdatePaymentMethodCommand,
   UpdateRouteRuleCommand,
 } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
@@ -150,6 +155,55 @@ export async function backendPaymentDevCheckAttemptStatus(body: CheckAttemptStat
     body,
     createIdempotencyParams('check-attempt-status'),
   );
+}
+
+// ---------------------------------------------------------------------------
+// Payment domain settings (支付设置 → 域名设置)
+// ---------------------------------------------------------------------------
+
+/** Reads the tenant/organization H5 payment domain settings (never null). */
+export async function backendPaymentDomainSettingRetrieve(): Promise<PaymentDomainSetting> {
+  return getSdkworkPaymentBackendSdkClient().payments.domainSettings.retrieve();
+}
+
+/** Saves the H5 payment domain settings. */
+export async function backendPaymentDomainSettingUpdate(
+  body: UpdatePaymentDomainSettingRequest,
+): Promise<PaymentDomainSetting> {
+  return getSdkworkPaymentBackendSdkClient().payments.domainSettings.update(
+    body,
+    createIdempotencyParams('payment-domain-setting-update'),
+  );
+}
+
+/** Lists the callback (notify) domains configured for the tenant scope. */
+export async function backendPaymentNotifyDomainsList(params?: Parameters<BackendPaymentsService['notifyDomains']['list']>[0]) {
+  return getSdkworkPaymentBackendSdkClient().payments.notifyDomains.list(params ?? { page: 1, pageSize: 200 });
+}
+
+/** Creates a callback (notify) domain. */
+export async function backendPaymentNotifyDomainCreate(body: NotifyDomainCreateRequest): Promise<NotifyDomain> {
+  return getSdkworkPaymentBackendSdkClient().payments.notifyDomains.create(
+    body,
+    createIdempotencyParams('payment-notify-domain-create'),
+  );
+}
+
+/** Updates a callback (notify) domain (set default, enable/disable, rename). */
+export async function backendPaymentNotifyDomainUpdate(
+  domainId: string,
+  body: NotifyDomainUpdateRequest,
+): Promise<NotifyDomain> {
+  return getSdkworkPaymentBackendSdkClient().payments.notifyDomains.update(
+    domainId,
+    body,
+    createIdempotencyParams('payment-notify-domain-update'),
+  );
+}
+
+/** Deletes a callback (notify) domain. */
+export async function backendPaymentNotifyDomainDelete(domainId: string): Promise<void> {
+  return getSdkworkPaymentBackendSdkClient().payments.notifyDomains.delete(domainId);
 }
 
 // ---------------------------------------------------------------------------

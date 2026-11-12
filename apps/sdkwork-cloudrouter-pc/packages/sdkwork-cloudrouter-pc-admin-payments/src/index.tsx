@@ -92,10 +92,12 @@ import {
 import { IntentDetailDrawer } from './components/IntentDetailDrawer';
 import { RefundDetailDrawer } from './components/RefundDetailDrawer';
 import { PaymentTestDialog } from './components/PaymentTestDialog';
+import { PaymentDomainSettingsAdmin } from './components/PaymentDomainSettingsAdmin';
 
 type PaymentsAdminTab =
   | 'providers'
   | 'providerAccounts'
+  | 'domainSettings'
   | 'methods'
   | 'channels'
   | 'routeRules'
@@ -105,7 +107,7 @@ type PaymentsAdminTab =
   | 'reconciliationRuns'
   | 'refunds';
 
-type PaymentResourceTab = Exclude<PaymentsAdminTab, 'providerAccounts'>;
+type PaymentResourceTab = Exclude<PaymentsAdminTab, 'providerAccounts' | 'domainSettings'>;
 type PaymentsAdminGroup = string;
 
 type PaymentsAdminProps = {
@@ -122,6 +124,7 @@ function resolvePaymentsSectionId(sectionId?: string): PaymentsAdminTab {
   if (
     sectionId === 'providers'
     || sectionId === 'providerAccounts'
+    || sectionId === 'domainSettings'
     || sectionId === 'methods'
     || sectionId === 'channels'
     || sectionId === 'routeRules'
@@ -140,6 +143,9 @@ export function PaymentsAdmin({ sectionId }: PaymentsAdminProps = {}) {
   const activeSectionId = resolvePaymentsSectionId(sectionId);
   if (activeSectionId === 'providerAccounts') {
     return <PaymentProviderAccountsAdmin />;
+  }
+  if (activeSectionId === 'domainSettings') {
+    return <PaymentDomainSettingsAdmin />;
   }
   return <PaymentResourceAdmin activeSectionId={activeSectionId} />;
 }
