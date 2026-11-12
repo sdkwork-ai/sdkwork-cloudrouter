@@ -1332,7 +1332,7 @@
     },
     {
       "path": "src/types/open-ai-model.ts",
-      "sha256": "792fca41184a56715a6bcff6be0268f817ed39c19a92acc845b85cc1d32caac2"
+      "sha256": "a4988312cd67adf61912072c076765c7d230ba2ec8848a9d30631899024915a0"
     },
     {
       "path": "src/types/open-ai-moderation-create-request.ts",
@@ -1688,7 +1688,7 @@
     },
     {
       "path": "src/types/open-ai-video-extend-request.ts",
-      "sha256": "6618930817353add4757c97e9e4a9270e816f7e14ef3ec26628f5ddcac3b9d82"
+      "sha256": "87f5326d6802156b2c4853867d5003d8ace26469daeb2b58fb4a041423276d98"
     },
     {
       "path": "src/types/open-ai-video-list.ts",

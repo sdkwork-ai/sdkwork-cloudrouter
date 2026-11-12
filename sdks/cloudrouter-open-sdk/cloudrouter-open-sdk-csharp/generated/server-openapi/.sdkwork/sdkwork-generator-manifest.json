@@ -1268,7 +1268,7 @@
     },
     {
       "path": "Models/OpenAiModel.cs",
-      "sha256": "ac5856686a45164fab464023a4a92188c4f941d18a86eeaf2e66d4f4e3aaf981"
+      "sha256": "52e622b5f70c387e4f243f203dbc17d608c61bcc6c6e2acfdc1a5024b6d2fb87"
     },
     {
       "path": "Models/OpenAiModelList.cs",

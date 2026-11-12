@@ -28,6 +28,19 @@ export function createCloudRouterDocumentsAdminClient(): DocumentsAdminClient {
       const page = await client.documents.list();
       return page.items.map(toAdminDocument);
     },
+    async overview() {
+      const page = await client.documentOverview.list();
+      return page.items.map((item) => ({
+        id: item.id,
+        title: item.title,
+        status: item.status,
+        locale: item.locale,
+        slug: item.slug,
+        category: item.category,
+        tags: item.tags,
+        updatedAt: item.updatedAt,
+      }));
+    },
     async retrieve(documentId) {
       return toAdminDocument(await client.documents.retrieve(documentId));
     },
@@ -96,6 +109,39 @@ export function createCloudRouterDocumentsAdminClient(): DocumentsAdminClient {
     },
     async restoreRevision(documentId, revisionId) {
       return toAdminDocument(await client.revisions.restore(documentId, revisionId));
+    },
+    async listCategories() {
+      const result = await client.documentCategories.list();
+      return result.items.map((item) => ({
+        id: item.id,
+        slug: item.slug,
+        name: item.name,
+        nameEn: item.nameEn,
+        description: item.description,
+        sortOrder: item.sortOrder,
+        status: item.status,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      }));
+    },
+    async createCategory(input) {
+      return client.documentCategories.create(input);
+    },
+    async updateCategory(categoryId, input) {
+      return client.documentCategories.update(categoryId, input);
+    },
+    async deleteCategory(categoryId) {
+      await client.documentCategories.delete(categoryId);
+    },
+    async listTags() {
+      const result = await client.documentTags.list();
+      return result.items;
+    },
+    async getTaxonomy(documentId) {
+      return client.documentTaxonomy.retrieve(documentId);
+    },
+    async updateTaxonomy(documentId, input) {
+      return client.documentTaxonomy.update(documentId, input);
     },
   };
 }

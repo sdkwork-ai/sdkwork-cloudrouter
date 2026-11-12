@@ -13055,20 +13055,25 @@ class OpenAiJsonSchemaFormat {
 
 class OpenAiModel {
   final int? created;
+  final String? displayName;
   final String id;
   final String object;
   final String ownedBy;
+  final String? vendorDisplayName;
 
   OpenAiModel({
     this.created,
+    this.displayName,
     required this.id,
     required this.object,
-    required this.ownedBy
+    required this.ownedBy,
+    this.vendorDisplayName
   });
 
   factory OpenAiModel.fromJson(Map<String, dynamic> json) {
     return OpenAiModel(
       created: json['created'] is int ? json['created'] : null,
+      displayName: json['displayName']?.toString(),
       id: (() {
         final value = json['id']?.toString();
         if (value == null) {
@@ -13089,16 +13094,19 @@ class OpenAiModel {
           throw FormatException('OpenAiModel.owned_by is required');
         }
         return value;
-      })()
+      })(),
+      vendorDisplayName: json['vendorDisplayName']?.toString()
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'created': created,
+      'displayName': displayName,
       'id': id,
       'object': object,
       'owned_by': ownedBy,
+      'vendorDisplayName': vendorDisplayName,
     };
   }
 }

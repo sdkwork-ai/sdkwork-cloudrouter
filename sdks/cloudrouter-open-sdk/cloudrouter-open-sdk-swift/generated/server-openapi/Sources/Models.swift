@@ -4281,16 +4281,20 @@ public struct OpenAiJsonSchemaFormat: Codable {
 
 public struct OpenAiModel: Codable {
     public let created: Int?
+    public let displayName: String?
     public let id: String?
     public let object: String?
     public let ownedBy: String?
+    public let vendorDisplayName: String?
 
 
-    public init(created: Int? = nil, id: String? = nil, object: String? = nil, ownedBy: String? = nil) {
+    public init(created: Int? = nil, displayName: String? = nil, id: String? = nil, object: String? = nil, ownedBy: String? = nil, vendorDisplayName: String? = nil) {
         self.created = created
+        self.displayName = displayName
         self.id = id
         self.object = object
         self.ownedBy = ownedBy
+        self.vendorDisplayName = vendorDisplayName
     }
 }
 

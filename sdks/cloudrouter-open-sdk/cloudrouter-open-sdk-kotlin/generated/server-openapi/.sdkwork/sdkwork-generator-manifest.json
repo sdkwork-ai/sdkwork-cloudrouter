@@ -1284,7 +1284,7 @@
     },
     {
       "path": "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiModel.kt",
-      "sha256": "0c7844fbc3c69486a478a0b9d3be8f2a762f723511178cdf4f2131ca3cf483e8"
+      "sha256": "c36b3b558def71a516b9606a490bed971b2bf2a574addd001af90d9368d2ef5a"
     },
     {
       "path": "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiModelList.kt",

@@ -1296,7 +1296,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_model.py",
-      "sha256": "ca9a775c19168d82eb9339bf88e0ac2c3dc7650b5f181ea40c3b4fc57e02e5cf"
+      "sha256": "0448e0f41bc664cd654b2288be0cb5da979fd8982df00248dc3b1e329bfb557f"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/open_ai_moderation_create_request.py",

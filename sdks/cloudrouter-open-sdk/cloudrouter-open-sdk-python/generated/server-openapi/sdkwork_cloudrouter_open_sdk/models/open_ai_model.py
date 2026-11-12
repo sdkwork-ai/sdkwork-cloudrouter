@@ -10,3 +10,5 @@ class OpenAiModel:
     object: str
     owned_by: str
     created: Optional[int] = None
+    display_name: Optional[str] = None
+    vendor_display_name: Optional[str] = None

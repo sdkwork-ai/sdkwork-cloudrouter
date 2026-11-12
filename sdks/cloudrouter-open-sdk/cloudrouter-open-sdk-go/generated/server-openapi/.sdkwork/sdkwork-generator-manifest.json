@@ -1320,7 +1320,7 @@
     },
     {
       "path": "types/open_ai_model.go",
-      "sha256": "98c1148050be6645fd60e866fdd819f600bb7103f2dbce754e744e778b4fbea2"
+      "sha256": "190324c3346cae2c2c33f12c6b18a0a21fc009fbd19fbc73f52209131e10355a"
     },
     {
       "path": "types/open_ai_moderation_create_request.go",

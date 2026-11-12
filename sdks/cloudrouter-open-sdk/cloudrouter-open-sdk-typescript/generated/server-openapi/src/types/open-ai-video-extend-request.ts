@@ -4,8 +4,8 @@ import type { ProviderJsonValue } from './provider-json-value';
 export interface OpenAiVideoExtendRequest {
   /** Text prompt describing the extension. */
   prompt: string;
-  /** Extension duration in seconds. */
-  seconds: string;
+  /** Extension duration in seconds (allowed values: 4, 8, 12, 16, 20). */
+  seconds: '4' | '8' | '12' | '16' | '20';
   /** Source video reference, URL, file id, or provider-specific video payload. */
   video: ProviderJsonValue;
 }

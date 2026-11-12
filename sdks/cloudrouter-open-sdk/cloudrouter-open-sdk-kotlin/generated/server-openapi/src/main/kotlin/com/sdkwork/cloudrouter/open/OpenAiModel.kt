@@ -2,7 +2,9 @@ package com.sdkwork.cloudrouter.open
 
 data class OpenAiModel(
     val created: Int? = null,
+    val displayName: String? = null,
     val id: String? = null,
     val object_: String? = null,
-    val ownedBy: String? = null
+    val ownedBy: String? = null,
+    val vendorDisplayName: String? = null
 )

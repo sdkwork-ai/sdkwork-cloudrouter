@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "sdkwork-cloudrouter-open-sdk"
   },
-  "changeFingerprint": "e181abc809842cce138614b66a75e16bfc4b7e477d14b4475ea71798a79697a6",
+  "changeFingerprint": "533329e321b844d3663dbf7a6c583659c507db1fed19960a1969fa90623a80c6",
   "changes": {
     "createdGeneratedFiles": [
       "bin/publish-core.mjs",

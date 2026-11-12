@@ -17183,7 +17183,14 @@
             "type": "string"
           },
           "seconds": {
-            "description": "Extension duration in seconds.",
+            "description": "Extension duration in seconds (allowed values: 4, 8, 12, 16, 20).",
+            "enum": [
+              "4",
+              "8",
+              "12",
+              "16",
+              "20"
+            ],
             "type": "string"
           },
           "video": {

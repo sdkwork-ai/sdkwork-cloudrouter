@@ -16,6 +16,8 @@ const PUBLIC_DOCUMENT = {
   summary: '我们如何处理个人信息。',
   body: '<h2>信息收集</h2><p>我们仅收集提供服务所需的信息。</p><script>window.__xss = true;</script>',
   category: 'policy',
+  categoryName: '平台政策',
+  tags: [{ id: 'tag-1', slug: 'privacy', name: '隐私' }],
   publishedAt: '2026-11-12',
 };
 
@@ -52,6 +54,8 @@ test.describe('public document center', () => {
     await expect(page).toHaveURL(/\/docs\/privacy-policy/);
     await expect(page.getByRole('heading', { name: '隐私政策' })).toBeVisible();
     await expect(page.getByText('信息收集')).toBeVisible();
+    await expect(page.getByText('平台政策').first()).toBeVisible();
+    await expect(page.getByText('隐私').first()).toBeVisible();
   });
 
   test('sanitizes stored HTML before rendering', async ({ page }) => {

@@ -37,6 +37,16 @@ use sdkwork_intelligence_generations_service::domain::pricing::{
 /// One point of token-bank credit is stored as 1e6 micro-points.
 const MICRO_POINTS_PER_POINT: i64 = 1_000_000;
 
+/// Total points for an estimate.
+///
+/// Settlement debits the **primary** meter only, so the estimate total is the
+/// first line's points. Summing every priced meter would overstate the wallet
+/// debit when a model publishes both a resolution-tiered per-second rate and a
+/// duration-tiered per-result rate (Vidu Q3 does exactly that).
+fn estimate_points_micros(lines: &[GenerationPricingEstimateLine]) -> i64 {
+    lines.first().map(|line| line.points_micros).unwrap_or(0)
+}
+
 /// Formats micro-points as a decimal string in points, trimming the
 /// micro-scale trailing zeros so whole points render without a fraction.
 fn micros_to_points_string(micros: i64) -> String {
@@ -616,6 +626,13 @@ impl GenerationPricingPort for SqlGenerationsPricingEstimator {
                         points_micros,
                         tier_code: tier_code.clone(),
                     });
+                    // Settlement debits the primary meter only
+                    // (`InvocationPricingIdentity::primary_meter`); a second
+                    // priced meter is an alternate pricing dimension (Vidu
+                    // publishes per-second + per-result rates), not an extra
+                    // charge. Stop after the first priced line so the total
+                    // cannot double count.
+                    break;
                 }
                 PriceResolutionStatus::NonChargeable => {
                     // Free/not-applicable rates consume no credits; skip.
@@ -638,7 +655,7 @@ impl GenerationPricingPort for SqlGenerationsPricingEstimator {
             ));
         }
 
-        let points_micros = lines.iter().map(|line| line.points_micros).sum::<i64>();
+        let points_micros = estimate_points_micros(&lines);
         let currency_code = lines.first().map(|line| line.currency_code.clone());
 
         Ok(GenerationPricingEstimate {
@@ -668,6 +685,34 @@ mod tests {
         assert_eq!(micros_to_points_string(31_360_000), "31.36");
         assert_eq!(micros_to_points_string(1), "0.000001");
         assert_eq!(micros_to_points_string(1_500_000), "1.5");
+    }
+
+    #[test]
+    fn estimate_total_counts_only_the_primary_meter_line() {
+        // Vidu publishes a resolution-tiered per-second rate and a
+        // duration-tiered per-result rate for the same generation; settlement
+        // debits the primary meter only, so the estimate must not add both.
+        let line = |meter: &str, points_micros: i64| -> GenerationPricingEstimateLine {
+            serde_json::from_value(serde_json::json!({
+                "meterCode": meter,
+                "quantity": "5",
+                "quantityBasis": "requested",
+                "quantityUnit": "second",
+                "unitPrice": "0.1",
+                "currencyCode": "USD",
+                "unitSize": "1",
+                "amount": "0.5",
+                "points": "0.5",
+                "pointsMicros": points_micros
+            }))
+            .expect("estimate line deserializes")
+        };
+        let lines = vec![
+            line("video_output_second", 100),
+            line("video_result", 50),
+        ];
+        assert_eq!(estimate_points_micros(&lines), 100);
+        assert_eq!(estimate_points_micros(&[]), 0);
     }
 
     #[test]

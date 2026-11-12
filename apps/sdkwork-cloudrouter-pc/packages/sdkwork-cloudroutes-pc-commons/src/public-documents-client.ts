@@ -13,6 +13,8 @@ function toPublicDocument(document: {
   summary?: string;
   body: string;
   category?: string;
+  categoryName?: string;
+  tags?: { id: string; slug: string; name: string }[];
   publishedAt?: string;
 }): PublicDocument {
   return {
@@ -23,6 +25,8 @@ function toPublicDocument(document: {
     summary: document.summary ?? '',
     body: document.body,
     category: document.category ?? '',
+    categoryName: document.categoryName ?? '',
+    tags: document.tags ?? [],
     publishedAt: document.publishedAt ?? '',
   };
 }

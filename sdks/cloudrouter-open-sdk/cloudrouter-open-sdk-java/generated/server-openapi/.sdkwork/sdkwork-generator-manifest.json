@@ -1280,7 +1280,7 @@
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiModel.java",
-      "sha256": "998ca4fff716ffc8c135952682eb6c46e18812d4347c5905b1a8a65d0d35216b"
+      "sha256": "9f14ae76eba39a66ad6744d3500f1d08d02fbaac624b723968f77648d3044b74"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiModelList.java",

@@ -1308,7 +1308,7 @@
     },
     {
       "path": "src/models/open_ai_model.rs",
-      "sha256": "3311482fc65a90ee55e472a962ab26e4f1d7f0a5237323f1d13dda826ae8e216"
+      "sha256": "42e6084d687d9c5b727ee3543814cf0748c583a5c3834f884a2dd463a4a65af5"
     },
     {
       "path": "src/models/open_ai_moderation_create_request.rs",
@@ -1664,7 +1664,7 @@
     },
     {
       "path": "src/models/open_ai_video_extend_request.rs",
-      "sha256": "4a55553030a4579c6d771f45e6d2932d0e0e60daabb2f75a839b881c88f2c2a9"
+      "sha256": "6bdf1d93c8959843795c5685b475e629bfe1c6a616983bdd348517086a027c45"
     },
     {
       "path": "src/models/open_ai_video_list.rs",

@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "github.com/sdkwork/cloudrouter-open-sdk"
   },
-  "changeFingerprint": "9d44aec52f09871c8ffe16a7f19e42cb44cbe1885a224a8609b1bbaed26998dc",
+  "changeFingerprint": "efbf115cb03367598718a3c9eeaf546fb8538bbb431ad7eec162e5a2bb96f216",
   "changes": {
     "createdGeneratedFiles": [
       "api/assistants.go",

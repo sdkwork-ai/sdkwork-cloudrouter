@@ -7,8 +7,10 @@ namespace Sdkwork.CloudRouter.Open.Models
     public class OpenAiModel
     {
         public int? Created { get; set; }
+        public string? DisplayName { get; set; }
         public string Id { get; set; }
         public string Object { get; set; }
         public string OwnedBy { get; set; }
+        public string? VendorDisplayName { get; set; }
     }
 }
