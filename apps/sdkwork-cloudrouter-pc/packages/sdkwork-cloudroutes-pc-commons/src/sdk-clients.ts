@@ -38,6 +38,7 @@ import { SdkworkBackendClient as PromotionBackendClient } from '@sdkwork/promoti
 import { SdkworkBackendClient as PartnerBackendClient } from '@sdkwork/partner-backend-sdk';
 import { SdkworkBackendClient as MessagingBackendClient } from '@sdkwork/messaging-backend-sdk';
 import { SdkworkBackendClient as AiotBackendClient } from '@sdkwork/aiot-backend-sdk';
+import { SdkworkAppClient as AiotAppClient } from '@sdkwork/aiot-app-sdk';
 import { SdkworkAiClient, type SdkworkAiConfig } from '@sdkwork/cloudrouter-open-sdk';
 import {
   createClient as createSdkworkDriveOpenClient,
@@ -723,6 +724,7 @@ let promotionBackendClient: PromotionBackendClient | null = null;
 let partnerBackendClient: PartnerBackendClient | null = null;
 let messagingBackendClient: MessagingBackendClient | null = null;
 let aiotBackendClient: AiotBackendClient | null = null;
+let aiotAppClient: AiotAppClient | null = null;
 let partnerAppClient: PartnerAppClient | null = null;
 let accountAppClient: AccountAppClient | null = null;
 let catalogAppClient: CatalogAppClient | null = null;
@@ -958,6 +960,38 @@ export function getSdkworkAiotBackendSdkClient(
     aiotBackendClient = createSdkworkAiotBackendSdkClient();
   }
   return aiotBackendClient;
+}
+
+export type SdkworkAiotAppSdkClientOptions = CloudRouterAppSdkClientOptions;
+
+/**
+ * AIoT app (user-surface) client used by the console Smart Hardware group.
+ *
+ * The user-facing AIoT operations — own device list/detail, device twin, device
+ * events, and device commands — live on the app API surface
+ * (`/app/v3/api/iot/...`). The client follows the dependency-app base-url chain
+ * (explicit override, `VITE_SDKWORK_AIOT_APP_API_BASE_URL`, portal app key, the
+ * shared public SDK root, then the same-origin `/app/v3/api` prefix) and carries
+ * the portal session auth, locale, and projection boundaries.
+ */
+export function createSdkworkAiotAppSdkClient(
+  options: SdkworkAiotAppSdkClientOptions = {},
+): AiotAppClient {
+  return attachCloudRouterSdkSessionAuthBoundary(
+    new AiotAppClient(buildDependencyAppConfig(options, 'VITE_SDKWORK_AIOT_APP_API_BASE_URL')),
+  );
+}
+
+export function getSdkworkAiotAppSdkClient(
+  options: SdkworkAiotAppSdkClientOptions = {},
+): AiotAppClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkAiotAppSdkClient(options);
+  }
+  if (!aiotAppClient) {
+    aiotAppClient = createSdkworkAiotAppSdkClient();
+  }
+  return aiotAppClient;
 }
 
 export function createSdkworkPartnerAppSdkClient(
@@ -1767,6 +1801,7 @@ function resetCloudRouterSdkClientCaches(): void {
   partnerBackendClient = null;
   messagingBackendClient = null;
   aiotBackendClient = null;
+  aiotAppClient = null;
   accountAppClient = null;
   catalogAppClient = null;
   membershipAppClient = null;

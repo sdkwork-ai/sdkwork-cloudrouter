@@ -86,6 +86,12 @@ const AgentsEditorPage = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console
 // sdkwork-memory console block. Route packages must stay lazy-loaded (portal
 // lazy-route rule), so the Memory console chunk loads with the route.
 const MemoryView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-memory'), 'MemoryView');
+// Smart Hardware group: the user's own terminal devices, firmware downloads, and
+// per-device agent binding. Lazy-loaded for the same portal lazy-route rule.
+const HardwareConsoleView = lazyRoute(
+  () => import('@sdkwork/cloudrouter-pc-console-hardware'),
+  'HardwareConsoleView',
+);
 
 // The api-keys service layer resolves clients through the injectable seam
 // (embeddable hosts construct their own); the console binds the shared
@@ -277,6 +283,9 @@ export default function App() {
               <Route path="agents/*" element={<AgentsView />} />
               {/* Memory console: module sub-routes stay deep-linkable. */}
               <Route path="memory/*" element={<MemoryView />} />
+              {/* Smart Hardware console: list, firmware downloads, and device
+                  detail all live under the group path so they stay deep-linkable. */}
+              <Route path="hardware/*" element={<HardwareConsoleView />} />
               <Route path="iam/oauth/official-accounts/:resourceAccountId/custom-menus" element={<CloudRouterConsoleIamOauthMenuRoute />} />
               <Route path="account" element={<AccountView />} />
               {CloudRouterConsoleBusinessHostRoutes()}

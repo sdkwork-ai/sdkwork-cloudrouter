@@ -18,6 +18,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@sdkwork/cloudrouter-pc-console-hardware": "workspace:*",
     "@sdkwork/cloudroutes-pc-commons": "workspace:*"
   },
   "peerDependencies": {

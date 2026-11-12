@@ -31,6 +31,7 @@ test("every console route is covered by the shared content gutter contract", () 
     "api-keys",
     "agents",
     "memory",
+    "hardware",
     "account",
     "wallet",
     "coupons",
@@ -45,6 +46,27 @@ test("every console route is covered by the shared content gutter contract", () 
   for (const routePath of consoleRoutePaths) {
     assert.match(routeSource, new RegExp(`path=["']${routePath}(?:/\\*)?["']`), routePath);
   }
+});
+
+test("console sidebar renders the smart hardware group directly below memory", () => {
+  const shellSource = readPortalFile(
+    "./packages/sdkwork-cloudrouter-pc-console-shell/src/ConsoleLayout.tsx",
+  );
+
+  const memoryIndex = shellSource.indexOf("groupBlock('console.menu.group.memory'");
+  const hardwareIndex = shellSource.indexOf('consoleHardwareGroup,');
+  const businessIndex = shellSource.indexOf("groupBlock('console.menu.group.accountBusiness'");
+
+  assert.ok(memoryIndex > -1, "memory group must stay declared in the console sidebar");
+  assert.ok(hardwareIndex > -1, "the smart hardware group must be composed from its contribution");
+  assert.ok(
+    hardwareIndex > memoryIndex,
+    "smart hardware must render below the memory group",
+  );
+  assert.ok(
+    businessIndex > hardwareIndex,
+    "smart hardware must render above the account and commerce group",
+  );
 });
 
 test("console business pages do not duplicate shell-owned outer gutters", () => {

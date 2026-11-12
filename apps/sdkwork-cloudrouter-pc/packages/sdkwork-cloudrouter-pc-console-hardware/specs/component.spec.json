@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "component": {
+    "name": "sdkwork-cloudrouter-pc-console-hardware",
+    "package": "@sdkwork/cloudrouter-pc-console-hardware",
+    "owner": "sdkwork-cloudrouter",
+    "surface": "console"
+  },
+  "contracts": {
+    "backendSdkFamilies": ["aiot-app-sdk", "aiot-backend-sdk", "agents-app-sdk"],
+    "apiSurface": "app",
+    "routes": [
+      "/console/hardware",
+      "/console/hardware/firmware",
+      "/console/hardware/devices/:deviceId"
+    ],
+    "permissions": ["iot.devices.read"]
+  }
+}

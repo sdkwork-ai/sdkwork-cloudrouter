@@ -22,6 +22,7 @@ import {
 
 import { Navbar } from '@sdkwork/cloudroutes-pc-commons';
 import { revokeAppSession } from '@sdkwork/cloudroutes-pc-commons/runtime';
+import { HARDWARE_CONSOLE_NAV_GROUP } from '@sdkwork/cloudrouter-pc-console-hardware/contribution';
 
 import { useTranslation } from 'react-i18next';
 
@@ -52,6 +53,23 @@ const consoleSidebarItems = [
   itemBlock({ path: '/console/dashboard', labelKey: 'console.menu.dashboard', fallbackLabel: 'Dashboard', icon: LayoutDashboard }),
 ];
 
+/**
+ * Smart Hardware group, declared by
+ * `@sdkwork/cloudrouter-pc-console-hardware/contribution` and rendered directly
+ * below the Memory group. The feature package owns the paths, labels, and icons;
+ * the shell only places the group in the sidebar order.
+ */
+const consoleHardwareGroup = groupBlock(
+  HARDWARE_CONSOLE_NAV_GROUP.groupKey,
+  HARDWARE_CONSOLE_NAV_GROUP.fallbackLabel,
+  HARDWARE_CONSOLE_NAV_GROUP.items.map((item) => itemBlock({
+    path: item.path,
+    labelKey: item.labelKey,
+    fallbackLabel: item.fallbackLabel,
+    icon: item.icon,
+  })),
+);
+
 const consoleSidebarGroups = [
   groupBlock('console.menu.group.integration', 'Access & Routing', [
     itemBlock({ path: '/console/api-keys', labelKey: 'console.menu.apiKeys', fallbackLabel: 'Token management', icon: Key }),
@@ -62,6 +80,7 @@ const consoleSidebarGroups = [
   groupBlock('console.menu.group.memory', 'Memory', [
     itemBlock({ path: '/console/memory', labelKey: 'console.menu.memory', fallbackLabel: 'Memory console', icon: Brain }),
   ]),
+  consoleHardwareGroup,
   groupBlock('console.menu.group.accountBusiness', 'Account & Commerce', [
     itemBlock({ path: '/console/account', labelKey: 'console.menu.account', fallbackLabel: 'Account overview', icon: CreditCard }),
     itemBlock({ path: '/console/wallet', labelKey: 'console.menu.wallet', fallbackLabel: 'Wallet & top-up', icon: Wallet }),
