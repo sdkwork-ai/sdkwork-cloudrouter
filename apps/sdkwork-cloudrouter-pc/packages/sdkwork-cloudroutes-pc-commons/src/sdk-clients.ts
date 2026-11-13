@@ -175,7 +175,10 @@ import {
 } from '@sdkwork/auth-runtime-pc-react/handleSdkworkSessionAuthUnauthorizedError';
 import { isSdkworkSdkSessionAuthError } from '@sdkwork/auth-runtime-pc-react/sdkSessionAuthError';
 import { readCloudRouterRuntimeEnv } from './utils/env.ts';
-import { resolveSharedDependencySurfaceBaseUrl } from './sdk-base-url.ts';
+import {
+  resolveCanonicalDependencySurfaceBaseUrl,
+  resolveSharedDependencySurfaceBaseUrl,
+} from './sdk-base-url.ts';
 import {
   prepareCredentialEntryTokens,
   readBootstrapAccessTokenFromProcessEnv,
@@ -2147,7 +2150,8 @@ function buildAgentAppConfig(options: SdkworkAgentAppSdkClientOptions): SdkworkA
   // @sdkwork/agents-app-sdk performs its own transport-base normalization and
   // rejects an empty config.baseUrl before stripping the app-api prefix.
   // Preserve the canonical same-origin surface URL here instead of pre-stripping
-  // it to an empty transport root via normalizeGeneratedSdkBaseUrl.
+  // it to an empty transport root via normalizeGeneratedSdkBaseUrl; the factory
+  // owns the `'/'` (standalone) and `;`-joined family (cloud) authored shapes.
     baseUrl: resolveDependencyAppSurfaceBaseUrl(options, 'VITE_SDKWORK_AGENT_APP_API_BASE_URL'),
     platform: options.platform ?? 'web',
     tokenManager: resolveCloudRouterSdkTokenManager(options.tokenManager),
@@ -2258,9 +2262,21 @@ function resolveDependencyAppSurfaceBaseUrl(
   options: CloudRouterAppSdkClientOptions,
   baseUrlEnvName: string,
 ): string {
-  return options.appBaseUrl
-    ?? readCloudRouterRuntimeEnv(baseUrlEnvName)
-    ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_APP_API_BASE_URL')
+  // A dependency app-api client that resolves the canonical prefix itself
+  // (`@sdkwork/agents-app-sdk` rejects an empty base and strips `/app/v3/api`
+  // on its own) must receive ONE canonical surface URL. The standalone browser
+  // document authors `'/'` and a cloud document authors a `;`-joined domain
+  // family (BROWSER_RUNTIME_ENV_SPEC §5.1); neither shape survives the
+  // transport-root reduction `normalizeGeneratedSdkBaseUrl` applies for the
+  // sibling factories, and `'/'` folds to an empty base the agents client
+  // refuses to construct.
+  const canonicalSurfaceBaseUrl = resolveCanonicalDependencySurfaceBaseUrl(
+    options.appBaseUrl
+      ?? readCloudRouterRuntimeEnv(baseUrlEnvName)
+      ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_APP_API_BASE_URL'),
+    APP_API_PREFIX,
+  );
+  return canonicalSurfaceBaseUrl
     ?? deriveDependencySurfaceBaseUrl('PORTAL_PUBLIC_SDK_BASE_URL', APP_API_PREFIX)
     ?? resolveSharedDependencySurfaceBaseUrl(APP_API_PREFIX)
     ?? APP_API_PREFIX;

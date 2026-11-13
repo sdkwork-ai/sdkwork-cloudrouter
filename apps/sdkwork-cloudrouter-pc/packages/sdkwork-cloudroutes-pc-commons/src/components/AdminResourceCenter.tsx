@@ -501,7 +501,7 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
                             <div className="flex justify-end gap-2">
                               {onRecordOpen ? (
                                 <button
-                                  className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+                                  className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
                                   onClick={() => onRecordOpen(record, activeSection)}
                                   type="button"
                                 >
@@ -561,10 +561,12 @@ function normalizePageSize(pageSize: number | undefined): number {
 }
 
 function adminResourceRowActionClassName(tone: 'default' | 'danger' | undefined): string {
+  // `shrink-0 whitespace-nowrap`：表格列被挤压时行操作按钮必须整词不换行，
+  // 否则「编辑 / 删除」会被拆成竖排两行（窄屏 + 多列时高发）。
   if (tone === 'danger') {
-    return 'inline-flex items-center justify-center gap-1.5 rounded-md border border-red-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-500/30 dark:bg-white/5 dark:text-red-300 dark:hover:bg-red-500/10';
+    return 'inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-red-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-500/30 dark:bg-white/5 dark:text-red-300 dark:hover:bg-red-500/10';
   }
-  return 'inline-flex items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10';
+  return 'inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10';
 }
 
 function groupAdminResourceSections<TSectionId extends string, TGroup extends string>(

@@ -71,6 +71,14 @@ function readAuthoredSurfaceBaseUrl(apiPrefix: string): string | undefined {
   return undefined;
 }
 
+function primaryDeclaredOrigin(authoredValue: string): string | undefined {
+  const [primary] = stripTrailingSlash(authoredValue)
+    .split(/[,;]/u)
+    .map((candidate) => stripTrailingSlash(candidate.trim()))
+    .filter((candidate) => /^[a-z][a-z\d+\-.]*:\/\//iu.test(candidate));
+  return primary;
+}
+
 /**
  * Normalize an authored base into the dependency surface URL a generated SDK
  * transport expects.
@@ -103,11 +111,60 @@ function resolveAuthoredSurfaceBase(
   if (resolved && !resolved.startsWith('/') && resolution.reason !== 'derived-from-host') {
     return `${resolved}${normalizedPrefix}`;
   }
-  const [primary] = trimmed
-    .split(/[,;]/u)
-    .map((candidate) => stripTrailingSlash(candidate.trim()))
-    .filter((candidate) => /^[a-z][a-z\d+\-.]*:\/\//iu.test(candidate));
+  const primary = primaryDeclaredOrigin(trimmed);
   return primary ? `${primary}${normalizedPrefix}` : undefined;
+}
+
+/**
+ * Canonical dependency-surface URL for a generated SDK client that resolves the
+ * canonical API prefix itself.
+ *
+ * `@sdkwork/agents-app-sdk` owns both halves of that contract: it rejects an
+ * empty base URL (`Agents App SDK base URL must not be empty`) and strips the
+ * `/app/v3/api` suffix on its own. Such a client therefore cannot receive the
+ * transport-root value `normalizeGeneratedSdkBaseUrl` produces for its sibling
+ * factories — every authored shape has to arrive as ONE canonical surface URL:
+ *
+ * - blank: `undefined`, so the caller keeps its own fallback chain;
+ * - `'/'` (what the standalone browser document authors,
+ *   BROWSER_RUNTIME_ENV_SPEC §5.1) or a root-relative mount path: the page
+ *   origin fronts the canonical prefix, so `'/app/v3/api'` / `'/mount/app/v3/api'`;
+ * - an already canonical surface URL (absolute or relative, mount subpath
+ *   included): returned verbatim;
+ * - an absolute origin or the `;`-joined cloud domain family: the family member
+ *   matching the page, else the primary declared origin, plus the canonical
+ *   prefix — never a derived gateway dev port (ENVIRONMENT_SPEC §5.1.0.1, §6.3).
+ */
+export function resolveCanonicalDependencySurfaceBaseUrl(
+  authoredValue: string | undefined,
+  apiPrefix: string,
+): string | undefined {
+  const normalizedPrefix = normalizePrefix(apiPrefix);
+  const trimmed = trim(authoredValue ?? '');
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const withoutTrailingSlash = stripTrailingSlash(trimmed);
+  if (!withoutTrailingSlash) {
+    return normalizedPrefix || undefined;
+  }
+  if (normalizedPrefix && withoutTrailingSlash.endsWith(normalizedPrefix)) {
+    return withoutTrailingSlash;
+  }
+  if (withoutTrailingSlash.startsWith('/') && !withoutTrailingSlash.startsWith('//')) {
+    return `${withoutTrailingSlash}${normalizedPrefix}` || undefined;
+  }
+
+  const resolution = resolveBaseUrlWithAlignProtocol({
+    baseUrls: [withoutTrailingSlash],
+    preservePath: true,
+  });
+  const resolved = stripTrailingSlash(resolution.url);
+  const origin = resolved && !resolved.startsWith('/') && resolution.reason !== 'derived-from-host'
+    ? resolved
+    : primaryDeclaredOrigin(trimmed);
+  return origin ? `${origin}${normalizedPrefix}` : undefined;
 }
 
 /**
