@@ -165,7 +165,7 @@ async fn set_default_bucket(
             updated_by = excluded.updated_by,
             reason = excluded.reason,
             request_id = excluded.request_id,
-            status = 'active',
+            status = 1,
             updated_at = now()
         RETURNING id
         "#,
