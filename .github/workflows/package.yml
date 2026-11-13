@@ -177,6 +177,7 @@ jobs:
                     "SDKWORK_MESSAGING_REF": "${{ vars.SDKWORK_MESSAGING_REF }}",
                     "SDKWORK_MODELS_REF": "${{ vars.SDKWORK_MODELS_REF }}",
                     "SDKWORK_MUSIC_REF": "${{ vars.SDKWORK_MUSIC_REF }}",
+                    "SDKWORK_NEWS_REF": "${{ vars.SDKWORK_NEWS_REF }}",
                     "SDKWORK_ORDER_REF": "${{ vars.SDKWORK_ORDER_REF }}",
                     "SDKWORK_PARTNER_REF": "${{ vars.SDKWORK_PARTNER_REF }}",
                     "SDKWORK_PAYMENT_REF": "${{ vars.SDKWORK_PAYMENT_REF }}",
