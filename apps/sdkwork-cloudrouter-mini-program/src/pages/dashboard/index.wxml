@@ -1,24 +1,84 @@
-<view class="cr-page">
-  <view wx:if="{{loading}}" class="cr-state">
-    <view class="cr-spinner" />
-    <text class="cr-state-text">{{labels.loading}}</text>
+<view class="cr-home {{themeClass}}">
+  <view class="cr-hero">
+    <view class="cr-hero__badge">☁ AI 云计算平台</view>
+    <text class="cr-hero__title">算力与模型，<text class="cr-hero__accent">一站式上云</text></text>
+    <text class="cr-hero__subtitle">会员、积分、模型路由与用量管理，一个应用全部搞定。</text>
+    <input
+      class="cr-hero__search"
+      placeholder="搜索云产品、模型或订单"
+      placeholder-class="cr-hero__search-placeholder"
+      value="{{searchValue}}"
+      bindinput="onSearchInput"
+      bindconfirm="onSearch"
+    />
   </view>
-  <view wx:elif="{{error}}" class="cr-state">
-    <text class="cr-state-text">{{error}}</text>
-    <button class="cr-retry" hover-class="cr-retry--hover" bindtap="onReload">{{labels.reload}}</button>
-  </view>
-  <view wx:elif="{{metrics.length === 0}}" class="cr-state">
-    <text class="cr-state-text">{{labels.empty}}</text>
-  </view>
-  <block wx:else>
-    <view wx:if="{{windowLabel}}" class="cr-window">
-      <text class="cr-window-text">{{windowLabel}}</text>
+
+  <view class="cr-primary">
+    <view
+      wx:for="{{primaryActions}}"
+      wx:key="action"
+      class="cr-primary__item"
+      data-action="{{item.action}}"
+      bindtap="onAction"
+    >
+      <view class="cr-primary__icon" style="background: {{item.background}}; color: {{item.color}};">{{item.icon}}</view>
+      <text class="cr-primary__label">{{item.label}}</text>
     </view>
-    <view class="cr-metrics">
-      <view wx:for="{{metrics}}" wx:key="id" class="cr-metric">
-        <text class="cr-metric-label">{{item.label}}</text>
-        <text class="cr-metric-value">{{item.value}}</text>
+  </view>
+
+  <view class="cr-card">
+    <view class="cr-card__header">
+      <text class="cr-card__title">全部服务</text>
+    </view>
+    <view class="cr-services">
+      <view
+        wx:for="{{services}}"
+        wx:key="label"
+        class="cr-service"
+        data-action="{{item.action}}"
+        bindtap="onAction"
+      >
+        <text class="cr-service__icon">{{item.icon}}</text>
+        <text class="cr-service__label">{{item.label}}</text>
       </view>
     </view>
-  </block>
+  </view>
+
+  <view class="cr-notice" bindtap="onAction" data-action="news">
+    <text class="cr-notice__tag">公告</text>
+    <text class="cr-notice__text">新模型上线 · 统一路由自动选择更优通道</text>
+    <text class="cr-notice__chevron">›</text>
+  </view>
+
+  <view class="cr-promo" bindtap="onAction" data-action="recharge">
+    <text class="cr-promo__icon">⚡</text>
+    <view class="cr-promo__copy">
+      <text class="cr-promo__title">首次充值赠体验金</text>
+      <text class="cr-promo__subtitle">新用户充值即享额外算力额度</text>
+    </view>
+    <text class="cr-promo__chevron">›</text>
+  </view>
+
+  <view class="cr-experience" bindtap="onAction" data-action="playground">
+    <view class="cr-experience__copy">
+      <text class="cr-experience__title">体验中心</text>
+      <text class="cr-experience__subtitle">与 AI 对话，快速体验模型能力</text>
+    </view>
+    <text class="cr-experience__arrow">→</text>
+  </view>
+
+  <view class="cr-stats">
+    <view class="cr-stats__item">
+      <text class="cr-stats__value">99.9%</text>
+      <text class="cr-stats__label">可用性</text>
+    </view>
+    <view class="cr-stats__item">
+      <text class="cr-stats__value">24/7</text>
+      <text class="cr-stats__label">平台支持</text>
+    </view>
+    <view class="cr-stats__item">
+      <text class="cr-stats__value">全球</text>
+      <text class="cr-stats__label">节点覆盖</text>
+    </view>
+  </view>
 </view>

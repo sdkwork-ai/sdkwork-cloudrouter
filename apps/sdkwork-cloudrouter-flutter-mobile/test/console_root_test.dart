@@ -4,6 +4,8 @@ import 'package:sdkwork_cloudrouter_flutter_mobile_commons/sdkwork_cloudrouter_f
 import 'package:sdkwork_cloudrouter_flutter_mobile_console_api_keys/sdkwork_cloudrouter_flutter_mobile_console_api_keys.dart';
 import 'package:sdkwork_cloudrouter_flutter_mobile_console_catalog/sdkwork_cloudrouter_flutter_mobile_console_catalog.dart';
 import 'package:sdkwork_cloudrouter_flutter_mobile_console_dashboard/sdkwork_cloudrouter_flutter_mobile_console_dashboard.dart';
+import 'package:sdkwork_cloudrouter_flutter_mobile_console_messages/sdkwork_cloudrouter_flutter_mobile_console_messages.dart';
+import 'package:sdkwork_cloudrouter_flutter_mobile_console_profile/sdkwork_cloudrouter_flutter_mobile_console_profile.dart';
 import 'package:sdkwork_cloudrouter_flutter_mobile_console_usage/sdkwork_cloudrouter_flutter_mobile_console_usage.dart';
 import 'package:sdkwork_cloudrouter_flutter_mobile_core/sdkwork_cloudrouter_flutter_mobile_core.dart';
 import 'package:sdkwork_cloudrouter_flutter_mobile_shell/sdkwork_cloudrouter_flutter_mobile_shell.dart';
@@ -18,12 +20,20 @@ import 'package:sdkwork_cloudrouter_flutter_mobile/sdkwork_cloudrouter_flutter_m
 
 void main() {
   group('console route assembly', () {
-    test('contributes exactly the four console tabs', () {
+    test('contributes the five shell tabs plus the retained standalone routes', () {
       final routes = createRoutes();
-      expect(routes.length, 4);
+      expect(routes.length, 7);
       expect(
         routes.map((route) => route.routeName).toList(),
-        <String>['/dashboard', '/usage', '/api-keys', '/catalog'],
+        <String>[
+          '/dashboard',
+          '/usage',
+          '/api-keys',
+          '/messages',
+          '/playground',
+          '/catalog',
+          '/profile',
+        ],
       );
     });
 
@@ -165,7 +175,7 @@ void main() {
   });
 
   group('console shell composition', () {
-    testWidgets('renders the app bar, four tab destinations, and the first tab',
+    testWidgets('renders the app bar, five tab destinations, and the first tab',
         (tester) async {
       final sdkClients = createCloudRouterAppSdkClients(
         appApiBaseUrl: 'http://127.0.0.1:3905/app/v3/api',
@@ -182,14 +192,18 @@ void main() {
           runtime: runtime,
           child: MaterialApp(
             theme: buildSdkworkCloudRouterTheme(),
-            home: const ConsoleShell(),
+            home: ConsoleShell(
+              session: runtime.session,
+              messagesRepository: _FakeMessagesRepository(),
+              playground: const SizedBox.shrink(),
+            ),
           ),
         ),
       );
       await tester.pump();
 
       expect(find.byType(NavigationBar), findsOneWidget);
-      expect(find.byType(NavigationDestination), findsNWidgets(4));
+      expect(find.byType(NavigationDestination), findsNWidgets(5));
 
       final destinations = tester
           .widgetList<NavigationDestination>(find.byType(NavigationDestination))
@@ -202,8 +216,23 @@ void main() {
             (destination.selectedIcon as ConsoleTabGlyphIcon).filled, isTrue);
       }
       // The active tab title appears in the app bar and as the tab label.
-      expect(find.text('Overview'), findsNWidgets(2));
-      expect(find.byType(ConsoleDashboardScreen), findsOneWidget);
+      expect(find.text('首页'), findsNWidgets(2));
+      expect(find.byType(ConsoleHomeScreen), findsOneWidget);
+      expect(find.byType(ConsoleMessagesScreen, skipOffstage: false), findsOneWidget);
+      expect(find.byType(ConsoleProfileScreen, skipOffstage: false), findsOneWidget);
     });
   });
+}
+
+class _FakeMessagesRepository implements ConsoleMessagesRepository {
+  @override
+  Future<List<ConsoleConversation>> loadConversations() async =>
+      const <ConsoleConversation>[];
+
+  @override
+  Future<List<ConsoleMessage>> loadMessages(String conversationId) async =>
+      const <ConsoleMessage>[];
+
+  @override
+  Future<void> sendText(String conversationId, String text) async {}
 }

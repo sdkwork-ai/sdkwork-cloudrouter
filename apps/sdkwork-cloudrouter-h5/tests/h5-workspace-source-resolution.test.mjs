@@ -26,5 +26,8 @@ test('workspace source resolution prefers authored TypeScript extensions', () =>
 test('the H5 renderer applies the workspace source resolution order', () => {
   const configSource = readFileSync(path.join(h5Root, 'vite.config.ts'), 'utf8');
   assert.match(configSource, /WORKSPACE_SOURCE_RESOLVE_EXTENSIONS/u);
-  assert.match(configSource, /resolve:\s*\{\s*extensions:\s*\[\.\.\.WORKSPACE_SOURCE_RESOLVE_EXTENSIONS\],?\s*\}/u);
+  assert.match(
+    configSource,
+    /resolve:\s*\{[\s\S]*?extensions:\s*\[\.\.\.WORKSPACE_SOURCE_RESOLVE_EXTENSIONS\][\s\S]*?\}/u,
+  );
 });

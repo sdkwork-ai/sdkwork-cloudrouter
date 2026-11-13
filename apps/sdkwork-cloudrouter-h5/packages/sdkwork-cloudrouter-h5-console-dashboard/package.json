@@ -28,6 +28,7 @@
     "@sdkwork/cloudrouter-h5-commons": "workspace:*",
     "@sdkwork/cloudrouter-h5-i18n": "workspace:*",
     "@sdkwork/cloudrouter-service": "workspace:*",
+    "lucide-react": "catalog:",
     "react": "catalog:"
   }
 }

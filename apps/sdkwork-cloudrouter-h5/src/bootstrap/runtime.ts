@@ -2,6 +2,10 @@ import {
   loadRuntimeEnv,
   resolveCloudRouterAppApiBaseUrl,
 } from '@sdkwork/cloudrouter-h5-core/sdk';
+import {
+  applyH5SiteBrandingToDocument,
+  fetchH5SiteBranding,
+} from '@sdkwork/cloudrouter-h5-core/branding';
 
 import { createHostEnvironment } from './environment.js';
 import { registerHostAdapters } from './hostAdapters.js';
@@ -28,6 +32,9 @@ export async function bootstrapH5Application(): Promise<void> {
   registerHostAdapters();
   bootstrapIamRuntime();
   const sdk = bootstrapH5SdkClients();
+  // Start the public branding read before React mounts so the document title
+  // and the navbar paint the operator's configured site name/logo.
+  void fetchH5SiteBranding().then(applyH5SiteBrandingToDocument);
   configureConsoleRuntime({
     platform: 'h5',
     environment: environment.lifecycleEnvironment,

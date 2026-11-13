@@ -122,6 +122,20 @@ export default defineConfig(({ mode, command }) => ({
   // "Cannot read properties of undefined (reading 'demandClaims')" crash.
   resolve: {
     extensions: [...WORKSPACE_SOURCE_RESOLVE_EXTENSIONS],
+    // Sibling workspace packages (order mobile UI, shared mobile primitives)
+    // carry their own pnpm store links to React and the router. Resolve every
+    // copy of the runtime dependencies from this app so the cashier shares one
+    // React/React Router/i18next instance with the console shell.
+    dedupe: [
+      'react',
+      'react-dom',
+      'react-router',
+      'react-router-dom',
+      'react-i18next',
+      'i18next',
+      'lucide-react',
+      'motion',
+    ],
   },
   plugins: [
     // The app-auth surface consumes IAM SDK routes, so the credential-entry

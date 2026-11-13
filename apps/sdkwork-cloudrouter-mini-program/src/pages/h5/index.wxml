@@ -1,0 +1,4 @@
+<web-view wx:if="{{src}}" src="{{src}}"></web-view>
+<view wx:else class="cr-webview-empty">
+  <text>页面地址未配置</text>
+</view>

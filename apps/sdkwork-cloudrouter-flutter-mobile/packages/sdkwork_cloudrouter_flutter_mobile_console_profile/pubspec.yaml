@@ -1,0 +1,27 @@
+name: sdkwork_cloudrouter_flutter_mobile_console_profile
+description: Cloud Router Flutter mobile profile and shared settings center.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  shared_preferences: ^2.5.3
+  sdkwork_cloudrouter_flutter_mobile_commons:
+    path: ../sdkwork_cloudrouter_flutter_mobile_commons
+  sdkwork_cloudrouter_flutter_mobile_shell:
+    path: ../sdkwork_cloudrouter_flutter_mobile_shell
+  sdkwork_settings_flutter:
+    path: ../../../../../sdkwork-appbase/packages/mobile-flutter/system/sdkwork_settings_flutter
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

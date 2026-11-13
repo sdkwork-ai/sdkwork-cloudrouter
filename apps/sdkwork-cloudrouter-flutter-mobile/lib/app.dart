@@ -14,10 +14,15 @@ class CloudRouterApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return CloudRouterRuntimeScope(
       runtime: runtime,
-      child: MaterialApp(
-        title: 'SDKWork CloudRouter',
-        theme: buildSdkworkCloudRouterTheme(),
-        home: const CloudRouterAuthGate(),
+      child: ValueListenableBuilder<ThemeMode>(
+        valueListenable: cloudRouterThemeMode,
+        builder: (context, themeMode, _) => MaterialApp(
+          title: 'SDKWork CloudRouter',
+          theme: buildSdkworkCloudRouterTheme(),
+          darkTheme: buildSdkworkCloudRouterDarkTheme(),
+          themeMode: themeMode,
+          home: const CloudRouterAuthGate(),
+        ),
       ),
     );
   }

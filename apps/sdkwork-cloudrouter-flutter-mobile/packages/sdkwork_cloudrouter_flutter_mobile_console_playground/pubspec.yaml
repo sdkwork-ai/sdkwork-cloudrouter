@@ -1,0 +1,26 @@
+name: sdkwork_cloudrouter_flutter_mobile_console_playground
+description: Cloud Router Flutter mobile Agents playground tab.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  sdkwork_agents_app_sdk:
+    path: ../../../../../sdkwork-agents/sdks/sdkwork-agents-app-sdk/sdkwork-agents-app-sdk-flutter/generated/server-openapi
+  sdkwork_agents_flutter_mobile_conversation:
+    path: ../../../../../sdkwork-agents/apps/sdkwork-agents-flutter-mobile/packages/sdkwork_agents_flutter_mobile_conversation
+  sdkwork_cloudrouter_flutter_mobile_shell:
+    path: ../sdkwork_cloudrouter_flutter_mobile_shell
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

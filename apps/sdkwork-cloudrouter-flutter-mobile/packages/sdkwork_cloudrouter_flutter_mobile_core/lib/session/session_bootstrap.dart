@@ -1,32 +1,53 @@
+import 'package:sdkwork_iam_app_sdk/sdkwork_iam_app_sdk.dart' as iam_sdk;
+
 import '../sdk/cloudrouter_app_sdk_clients.dart';
 
 import 'console_session.dart';
 
-/// Reason surfaced when the generated Dart transport cannot express the session
-/// bootstrap call.
+/// Creates a console session through the generated IAM app SDK.
 ///
-/// The browser roots sign in through the generated app SDK HTTP client
-/// (`client.http.request('/auth/sessions', ...)`); the generated Dart client
-/// keeps its HTTP surface private and exposes only token setters, so the same
-/// wire call cannot be expressed yet. Per `APP_FLUTTER_UI_SPEC.md` section 4 the
-/// gap MUST be fixed by regenerating the Dart SDK with the session endpoint
-/// instead of filling it with raw `http` calls, manual headers, or copied
-/// TypeScript wrapper logic. The sign-in screen shows this reason verbatim.
-const String generatedDartSessionBootstrapGapReason =
-    'The generated Dart transport cloudrouter_app_sdk cannot express the session '
-    'bootstrap call yet: SdkworkAppClient exposes token setters but no request '
-    'surface for POST /auth/sessions. Regenerate the Dart SDK with the session '
-    'endpoint before enabling sign-in.';
-
-/// Creates a console session from account credentials.
-///
-/// Always throws [UnsupportedError] carrying
-/// [generatedDartSessionBootstrapGapReason] until the Dart SDK is regenerated;
-/// callers surface the reason instead of failing silently.
+/// The browser roots sign in through `POST /auth/sessions` on the IAM app SDK;
+/// this root uses the generated Dart counterpart instead of raw HTTP or copied
+/// TypeScript wrapper logic. Tokens are written back to the CloudRouter app SDK
+/// client so the console ports call the API with the new identity immediately.
 Future<CloudRouterSession> requestCloudRouterConsoleSession({
   required CloudRouterAppSdkClients clients,
   required String account,
   required String password,
 }) async {
-  throw UnsupportedError(generatedDartSessionBootstrapGapReason);
+  final iamClient = iam_sdk.SdkworkAppClient.withBaseUrl(
+    baseUrl: resolveCloudRouterTransportBaseUrl(clients.appApiBaseUrl),
+  );
+  final response = await iamClient.auth.sessionsCreate(
+    iam_sdk.AppbaseSessionCreateCommand(
+      username: account,
+      password: password,
+    ),
+  );
+  final data = response?.data;
+  if (data is! Map) {
+    throw StateError('IAM sign-in returned no session payload.');
+  }
+  final accessToken = data['accessToken']?.toString();
+  final authToken = data['authToken']?.toString();
+  final hasAccess = accessToken != null && accessToken.isNotEmpty;
+  final hasAuth = authToken != null && authToken.isNotEmpty;
+  if (!hasAccess && !hasAuth) {
+    throw StateError('IAM sign-in returned no token.');
+  }
+  if (hasAccess) {
+    clients.client.setAccessToken(accessToken);
+  }
+  if (hasAuth) {
+    clients.client.setAuthToken(authToken);
+  }
+  final user = data['user'];
+  final subject = user is Map
+      ? (user['id'] ?? user['userId'])?.toString()
+      : data['userId']?.toString();
+  return readCloudRouterSession(
+    accessToken: accessToken,
+    authToken: authToken,
+    subject: subject,
+  );
 }

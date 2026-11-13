@@ -656,3 +656,28 @@ test("federated commerce runtime mounts the complete Order gateway assembly", ()
   assert.match(runtimeSource, /\.merge\(order_assembly\.router\)/);
   assert.doesNotMatch(runtimeSource, /sdkwork_routes_order_app_api::/);
 });
+
+test("order cashier routes keep the unified deep link and the sdkwork-im path shape", () => {
+  const appSource = readPortalFile("./src/App.tsx");
+  const packageJson = JSON.parse(readPortalFile("./package.json")) as {
+    dependencies: Record<string, string>;
+  };
+  const cashierSource = readPortalFile(
+    "./packages/sdkwork-cloudrouter-pc-cashier/src/CloudRouterCashierPage.tsx",
+  );
+  const serviceSource = readPortalFile(
+    "./packages/sdkwork-cloudrouter-pc-cashier/src/cashierService.ts",
+  );
+
+  assert.equal(packageJson.dependencies["@sdkwork/cloudrouter-pc-cashier"], "workspace:*");
+  // The order/payment backend emits `{h5BaseUrl}/cashier/{orderId}`, and the
+  // authenticated order flow reaches `/me/orders/{orderId}/cashier`; both are
+  // mounted outside the console shell and match sdkwork-im exactly.
+  assert.match(appSource, /path="\/cashier\/:orderId"/);
+  assert.match(appSource, /path="\/me\/orders\/:orderId\/cashier"/);
+  assert.match(cashierSource, /SdkworkOrderCheckoutDialog/);
+  assert.match(cashierSource, /createCloudRouterCashierCheckoutDriver/);
+  assert.match(serviceSource, /getSdkworkOrderAppSdkClient/);
+  assert.match(serviceSource, /orders\.payments\.create/);
+  assert.match(serviceSource, /orders\.paymentSuccess\.retrieve/);
+});

@@ -1,45 +1,56 @@
 {
   "pages": [
     "pages/dashboard/index",
+    "pages/playground/index",
+    "pages/catalog/index",
+    "pages/messages/index",
+    "pages/profile/index",
     "pages/usage/index",
     "pages/api-keys/index",
-    "pages/catalog/index"
+    "pages/settings/index",
+    "pages/h5/index"
   ],
   "window": {
     "backgroundTextStyle": "dark",
-    "navigationBarBackgroundColor": "#0f172a",
+    "navigationBarBackgroundColor": "#ffffff",
     "navigationBarTitleText": "CloudRouter",
-    "navigationBarTextStyle": "white"
+    "navigationBarTextStyle": "black"
   },
   "tabBar": {
-    "color": "#94a3b8",
-    "selectedColor": "#38bdf8",
-    "backgroundColor": "#0f172a",
-    "borderStyle": "black",
+    "color": "#64748b",
+    "selectedColor": "#2563eb",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
     "list": [
       {
         "pagePath": "pages/dashboard/index",
-        "text": "概览",
+        "text": "首页",
         "iconPath": "images/tabbar/dashboard-outline.png",
         "selectedIconPath": "images/tabbar/dashboard-filled.png"
       },
       {
-        "pagePath": "pages/usage/index",
-        "text": "用量",
-        "iconPath": "images/tabbar/usage-outline.png",
-        "selectedIconPath": "images/tabbar/usage-filled.png"
-      },
-      {
-        "pagePath": "pages/api-keys/index",
-        "text": "API Key",
-        "iconPath": "images/tabbar/api-keys-outline.png",
-        "selectedIconPath": "images/tabbar/api-keys-filled.png"
+        "pagePath": "pages/playground/index",
+        "text": "体验中心",
+        "iconPath": "images/tabbar/playground-outline.png",
+        "selectedIconPath": "images/tabbar/playground-filled.png"
       },
       {
         "pagePath": "pages/catalog/index",
         "text": "模型与定价",
         "iconPath": "images/tabbar/catalog-outline.png",
         "selectedIconPath": "images/tabbar/catalog-filled.png"
+      },
+      {
+        "pagePath": "pages/messages/index",
+        "text": "消息",
+        "iconPath": "images/tabbar/messages-outline.png",
+        "selectedIconPath": "images/tabbar/messages-filled.png"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的",
+        "iconPath": "images/tabbar/profile-outline.png",
+        "selectedIconPath": "images/tabbar/profile-filled.png"
       }
     ]
   },

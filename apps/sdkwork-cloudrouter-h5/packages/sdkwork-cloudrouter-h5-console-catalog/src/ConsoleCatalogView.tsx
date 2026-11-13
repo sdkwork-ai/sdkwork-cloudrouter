@@ -1,7 +1,9 @@
-import { Panel } from '@sdkwork/cloudrouter-h5-commons';
+import { PageHeader, Panel } from '@sdkwork/cloudrouter-h5-commons';
 import type { ConsoleCatalogRateRow } from '@sdkwork/cloudrouter-contracts';
 
 export interface ConsoleCatalogLabels {
+  readonly title: string;
+  readonly summary: string;
   readonly columnVendor: string;
   readonly columnModel: string;
   readonly columnInput: string;
@@ -29,27 +31,36 @@ function formatPrice(value: number | null, currency: string, locale: string): st
  */
 export function ConsoleCatalogView({ rows, locale, labels }: ConsoleCatalogViewProps) {
   return (
-    <Panel title={labels.columnModel}>
-      <ul className="divide-y divide-white/10">
-        {rows.map((row) => (
-          <li key={row.id} className="flex items-start justify-between gap-3 py-2 text-[11px]">
-            <div className="min-w-0">
-              <p className="truncate text-gray-100">{row.model}</p>
-              <p className="text-gray-500">
-                {labels.columnVendor}: {row.vendor} · {row.unit}
-              </p>
-            </div>
-            <div className="shrink-0 text-right">
-              <p className="text-gray-200">
-                {labels.columnInput}: {formatPrice(row.inputPricePerMillionTokens, row.currency, locale)}
-              </p>
-              <p className="text-gray-400">
-                {labels.columnOutput}: {formatPrice(row.outputPricePerMillionTokens, row.currency, locale)}
-              </p>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </Panel>
+    <div className="flex flex-col">
+      <PageHeader title={labels.title} summary={labels.summary} />
+      <Panel>
+        <ul className="divide-y divide-line">
+          {rows.map((row) => (
+            <li key={row.id} className="flex items-start justify-between gap-3 py-3">
+              <div className="min-w-0">
+                <p className="truncate text-[13px] font-medium text-ink">{row.model}</p>
+                <p className="mt-0.5 text-[11px] text-ink-subtle">
+                  {labels.columnVendor}: {row.vendor} · {row.unit}
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="text-[11px] text-ink-muted">
+                  <span className="text-ink-subtle">{labels.columnInput}</span>{' '}
+                  <span className="font-medium text-ink">
+                    {formatPrice(row.inputPricePerMillionTokens, row.currency, locale)}
+                  </span>
+                </p>
+                <p className="mt-0.5 text-[11px] text-ink-muted">
+                  <span className="text-ink-subtle">{labels.columnOutput}</span>{' '}
+                  <span className="font-medium text-ink">
+                    {formatPrice(row.outputPricePerMillionTokens, row.currency, locale)}
+                  </span>
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </Panel>
+    </div>
   );
 }

@@ -10,9 +10,15 @@ Page({
     rows: [],
     hasMore: false,
     labels: {},
+    themeClass: '',
   },
 
   controller: null,
+
+  onShow() {
+    this.setData({ themeClass: app.themeClass() });
+    app.applyChrome();
+  },
 
   onLoad() {
     const runtime = app.globalData;

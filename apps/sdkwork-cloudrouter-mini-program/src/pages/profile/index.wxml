@@ -1,0 +1,63 @@
+<view class="cr-profile {{themeClass}}">
+  <view class="cr-profile__header" bindtap="onOpenSignIn">
+    <view class="cr-profile__avatar">C</view>
+    <view class="cr-profile__copy">
+      <text class="cr-profile__name">{{displayName}}</text>
+      <text class="cr-profile__subtitle">{{subtitle}}</text>
+    </view>
+    <text class="cr-profile__chevron">›</text>
+  </view>
+
+  <view class="cr-profile__card cr-balance">
+    <view class="cr-balance__head">
+      <text class="cr-balance__label">余额(元)</text>
+      <view class="cr-balance__recharge" bindtap="onOpenRecharge">充值</view>
+    </view>
+    <text class="cr-balance__value">--</text>
+    <view class="cr-balance__divider"></view>
+    <view class="cr-balance__row" bindtap="onOpenAutoRecharge">
+      <text>设置自动充值</text>
+      <text class="cr-profile__chevron">›</text>
+    </view>
+    <view class="cr-balance__divider"></view>
+    <view class="cr-balance__grid">
+      <view class="cr-balance__cell">
+        <text class="cr-balance__label">优惠券(张)</text>
+        <text class="cr-balance__value">--</text>
+      </view>
+      <view class="cr-balance__cell">
+        <text class="cr-balance__label">可开发票(元)</text>
+        <text class="cr-balance__value">--</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="cr-profile__card">
+    <view class="cr-profile__row" bindtap="onOpenRecords" hover-class="cr-profile__row--hover">
+      <text class="cr-profile__label">操作记录</text>
+      <text class="cr-profile__chevron">›</text>
+    </view>
+    <view class="cr-profile__divider"></view>
+    <view class="cr-profile__row" bindtap="onOpenHelp" hover-class="cr-profile__row--hover">
+      <text class="cr-profile__label">帮助中心</text>
+      <text class="cr-profile__chevron">›</text>
+    </view>
+    <view class="cr-profile__divider"></view>
+    <view class="cr-profile__row" bindtap="onOpenSettings" hover-class="cr-profile__row--hover">
+      <text class="cr-profile__label">设置</text>
+      <text class="cr-profile__chevron">›</text>
+    </view>
+    <view class="cr-profile__divider"></view>
+    <view class="cr-profile__row" bindtap="onOpenOther" hover-class="cr-profile__row--hover">
+      <text class="cr-profile__label">其他</text>
+      <text class="cr-profile__chevron">›</text>
+    </view>
+    <view class="cr-profile__divider"></view>
+    <view class="cr-profile__row" bindtap="onOpenPrivacy" hover-class="cr-profile__row--hover">
+      <text class="cr-profile__label">隐私政策</text>
+      <text class="cr-profile__chevron">›</text>
+    </view>
+  </view>
+
+  <text class="cr-profile__footer">CloudRouter · 统一模型路由与 AI 算力平台</text>
+</view>

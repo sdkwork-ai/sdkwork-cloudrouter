@@ -165,6 +165,7 @@ jobs:
                     "SDKWORK_IAM_REF": "${{ vars.SDKWORK_IAM_REF }}",
                     "SDKWORK_ID_REF": "${{ vars.SDKWORK_ID_REF }}",
                     "SDKWORK_IMAGE_REF": "${{ vars.SDKWORK_IMAGE_REF }}",
+                    "SDKWORK_IM_REF": "${{ vars.SDKWORK_IM_REF }}",
                     "SDKWORK_INVENTORY_REF": "${{ vars.SDKWORK_INVENTORY_REF }}",
                     "SDKWORK_INVOICE_REF": "${{ vars.SDKWORK_INVOICE_REF }}",
                     "SDKWORK_KERNEL_REF": "${{ vars.SDKWORK_KERNEL_REF }}",

@@ -131,13 +131,14 @@ export function HardwareConsoleView({ service }: HardwareConsoleViewProps = {}) 
 
   return (
     <div
-      className="flex h-full min-h-0 flex-col"
+      className="flex h-full min-h-0 w-full min-w-0 flex-col"
       data-cloudrouter-hardware-console
       data-cloudrouter-hardware-devices-path={HARDWARE_CONSOLE_BASE_PATH}
       data-cloudrouter-hardware-firmware-path={HARDWARE_CONSOLE_FIRMWARE_PATH}
     >
       <SdkworkHardwareConsole
         canManage={canManage}
+        className="min-w-0"
         copy={copy}
         initialScreen={initialScreen}
         service={resolvedService}

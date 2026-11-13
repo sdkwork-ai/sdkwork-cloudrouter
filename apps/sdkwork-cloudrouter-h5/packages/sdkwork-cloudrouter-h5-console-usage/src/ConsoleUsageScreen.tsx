@@ -68,30 +68,48 @@ export function ConsoleUsageScreen({ ports, locale, labels }: ConsoleUsageScreen
       .finally(() => setLoadingMore(false));
   }, [ports, nextCursor, loadingMore, labels.empty]);
 
-  if (loading) return <p className="py-6 text-center text-xs text-gray-400">{labels.loading}</p>;
+  if (loading) {
+    return (
+      <p className="bg-surface px-[0.9rem] py-10 text-center text-xs text-ink-subtle">
+        {labels.loading}
+      </p>
+    );
+  }
   if (error) {
     return (
-      <div className="border-y border-red-500/40 bg-red-500/10 px-[0.9rem] py-3 text-xs text-red-200">
+      <div className="border-b border-line bg-danger-soft px-[0.9rem] py-4 text-xs text-danger">
         <p>{error}</p>
-        <button type="button" onClick={reload} className="mt-2 rounded-md border border-red-400/60 px-2 py-1 text-[11px]">
+        <button
+          type="button"
+          onClick={reload}
+          className="mt-2 rounded-md border border-danger/40 px-2.5 py-1 text-[11px] font-medium"
+        >
           {labels.reload}
         </button>
       </div>
     );
   }
-  if (records.length === 0) return <p className="py-6 text-center text-xs text-gray-400">{labels.empty}</p>;
+  if (records.length === 0) {
+    return (
+      <p className="bg-surface px-[0.9rem] py-10 text-center text-xs text-ink-subtle">
+        {labels.empty}
+      </p>
+    );
+  }
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col">
       <ConsoleUsageView records={records} locale={locale} labels={labels} />
       {hasMore && nextCursor !== null && (
-        <button
-          type="button"
-          disabled={loadingMore}
-          onClick={loadMore}
-          className="w-full rounded-md border border-white/15 px-3 py-2 text-xs text-gray-300 disabled:opacity-50"
-        >
-          {loadingMore ? labels.loading : labels.loadMore}
-        </button>
+        <div className="bg-surface px-[0.9rem] pb-4">
+          <button
+            type="button"
+            disabled={loadingMore}
+            onClick={loadMore}
+            className="w-full rounded-xl border border-line bg-canvas px-3 py-2.5 text-xs font-medium text-ink-muted transition-colors active:bg-surface-elevated disabled:opacity-50"
+          >
+            {loadingMore ? labels.loading : labels.loadMore}
+          </button>
+        </div>
       )}
     </div>
   );

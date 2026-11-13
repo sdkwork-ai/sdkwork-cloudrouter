@@ -1,0 +1,148 @@
+<view class="sdk-settings {{themeClass}}">
+  <view wx:if="{{status === 'error'}}" class="sdk-settings-state">
+    <view class="sdk-settings-state__title">无法加载设置</view>
+    <button class="sdk-settings-button" bindtap="onBack">重试</button>
+  </view>
+
+  <block wx:elif="{{view === 'list'}}">
+    <view class="sdk-settings-header">
+      <view class="sdk-settings-back" bindtap="onBack">‹</view>
+      <view class="sdk-settings-header__copy">
+        <view class="sdk-settings-header__title">设置</view>
+        <view class="sdk-settings-header__description">管理外观、语音与通知偏好。</view>
+      </view>
+    </view>
+
+    <scroll-view class="sdk-settings-body" scroll-y>
+      <view wx:for="{{navigation}}" wx:key="id" class="sdk-settings-group">
+        <view class="sdk-settings-group__title">{{item.title}}</view>
+        <view class="sdk-settings-group__rows">
+          <view
+            wx:for="{{item.items}}"
+            wx:for-item="section"
+            wx:key="id"
+            class="sdk-settings-link"
+            data-section-id="{{section.id}}"
+            bindtap="onSelectSection"
+          >
+            <view class="sdk-settings-link__copy">
+              <view class="sdk-settings-link__title">
+                {{section.title}}
+                <view wx:if="{{section.dirty}}" class="sdk-settings-dot"></view>
+              </view>
+              <view wx:if="{{section.description}}" class="sdk-settings-link__description">
+                {{section.description}}
+              </view>
+            </view>
+            <view class="sdk-settings-link__chevron">›</view>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </block>
+
+  <block wx:else>
+    <view class="sdk-settings-header">
+      <view class="sdk-settings-back" bindtap="onBack">‹</view>
+      <view class="sdk-settings-header__copy">
+        <view class="sdk-settings-header__title">{{activeSection.title}}</view>
+        <view wx:if="{{activeSection.description}}" class="sdk-settings-header__description">
+          {{activeSection.description}}
+        </view>
+      </view>
+    </view>
+
+    <scroll-view class="sdk-settings-body" scroll-y>
+      <view class="sdk-settings-group__rows">
+        <view
+          wx:for="{{activeSection.rows}}"
+          wx:key="settingId"
+          class="sdk-settings-row"
+        >
+          <view class="sdk-settings-row__copy">
+            <view class="sdk-settings-row__title">
+              {{item.title}}
+              <view wx:if="{{item.requiresRestart}}" class="sdk-settings-badge">需重启</view>
+              <view wx:if="{{item.dirty}}" class="sdk-settings-dot"></view>
+            </view>
+            <view wx:if="{{item.description}}" class="sdk-settings-row__description">
+              {{item.description}}
+            </view>
+            <view wx:if="{{item.errors.length}}" class="sdk-settings-row__error">
+              {{item.errors[0]}}
+            </view>
+          </view>
+
+          <view class="sdk-settings-row__control">
+            <switch
+              wx:if="{{item.kind === 'toggle'}}"
+              checked="{{item.value}}"
+              disabled="{{item.disabled || readOnly}}"
+              data-setting-id="{{item.settingId}}"
+              bindchange="onToggle"
+            />
+            <radio-group
+              wx:elif="{{item.kind === 'select' || item.kind === 'radio'}}"
+              data-setting-id="{{item.settingId}}"
+              bindchange="onChoice"
+            >
+              <label
+                wx:for="{{item.options}}"
+                wx:for-item="option"
+                wx:key="value"
+                class="sdk-settings-option"
+              >
+                <radio value="{{option.value}}" checked="{{option.value === item.value}}" />
+                <text>{{option.label}}</text>
+              </label>
+            </radio-group>
+            <view wx:elif="{{item.kind === 'slider'}}" class="sdk-settings-slider">
+              <slider
+                min="{{item.min || 0}}"
+                max="{{item.max || 100}}"
+                step="{{item.step || 1}}"
+                value="{{item.value}}"
+                disabled="{{item.disabled || readOnly}}"
+                data-setting-id="{{item.settingId}}"
+                bindchange="onChoice"
+              />
+              <text class="sdk-settings-value">{{item.valueText}}</text>
+            </view>
+            <input
+              wx:elif="{{item.kind === 'number'}}"
+              class="sdk-settings-input"
+              type="digit"
+              value="{{item.value}}"
+              data-setting-id="{{item.settingId}}"
+              bindinput="onInput"
+            />
+            <input
+              wx:elif="{{item.kind === 'text'}}"
+              class="sdk-settings-input"
+              value="{{item.value}}"
+              data-setting-id="{{item.settingId}}"
+              bindinput="onInput"
+            />
+            <view
+              wx:elif="{{item.kind === 'action'}}"
+              class="sdk-settings-row__action"
+              data-setting-id="{{item.settingId}}"
+              bindtap="onAction"
+            >
+              <view class="sdk-settings-link__chevron">›</view>
+            </view>
+            <view wx:else class="sdk-settings-value">{{item.valueText}}</view>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+
+    <view wx:if="{{savebarVisible}}" class="sdk-settings-savebar">
+      <view class="sdk-settings-savebar__copy">有未保存的修改</view>
+      <button class="sdk-settings-button" bindtap="onDiscard">放弃</button>
+      <button class="sdk-settings-button sdk-settings-button--primary" bindtap="onSave">
+        保存
+      </button>
+    </view>
+  </block>
+</view>

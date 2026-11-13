@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 /// `@sdkwork/cloudrouter-contracts` (`CLOUDROUTER_CONSOLE_TABS`) and the same
 /// four glyphs the mini program paints into its `iconPath` / `selectedIconPath`
 /// pair, so the tab bar reads identically on every mobile root.
-enum ConsoleTabGlyph { dashboard, receipt, key, barChart }
+enum ConsoleTabGlyph { dashboard, receipt, key, barChart, profile, chat, playground }
 
 /// Draws one console tab glyph in outline or filled form.
 ///
@@ -39,7 +39,7 @@ class ConsoleTabGlyphIcon extends StatelessWidget {
         painter: _ConsoleTabGlyphPainter(
           glyph: glyph,
           filled: filled,
-          color: color ?? (filled ? const Color(0xFF38BDF8) : const Color(0xFF94A3B8)),
+          color: color ?? (filled ? const Color(0xFF2563EB) : const Color(0xFF64748B)),
         ),
       ),
     );
@@ -80,6 +80,12 @@ class _ConsoleTabGlyphPainter extends CustomPainter {
         _paintKey(canvas, paint);
       case ConsoleTabGlyph.barChart:
         _paintBarChart(canvas, paint);
+      case ConsoleTabGlyph.profile:
+        _paintProfile(canvas, paint);
+      case ConsoleTabGlyph.chat:
+        _paintChat(canvas, paint);
+      case ConsoleTabGlyph.playground:
+        _paintPlayground(canvas, paint);
     }
     canvas.restore();
   }
@@ -146,6 +152,41 @@ class _ConsoleTabGlyphPainter extends CustomPainter {
     }
     final baseline = Rect.fromLTWH(16, 86, 68, 6);
     canvas.drawRect(baseline, paint);
+  }
+
+  void _paintProfile(Canvas canvas, Paint paint) {
+    canvas.drawCircle(const Offset(50, 34), 18, paint);
+    final body = Path()
+      ..moveTo(18, 88)
+      ..cubicTo(22, 62, 38, 58, 50, 58)
+      ..cubicTo(62, 58, 78, 62, 82, 88)
+      ..close();
+    canvas.drawPath(body, paint);
+  }
+
+  void _paintChat(Canvas canvas, Paint paint) {
+    final bubble = RRect.fromRectAndRadius(
+      const Rect.fromLTWH(12, 18, 76, 50),
+      const Radius.circular(14),
+    );
+    canvas.drawRRect(bubble, paint);
+    final tail = Path()
+      ..moveTo(30, 66)
+      ..lineTo(30, 86)
+      ..lineTo(50, 68)
+      ..close();
+    canvas.drawPath(tail, paint);
+  }
+
+  void _paintPlayground(Canvas canvas, Paint paint) {
+    final star = Path()
+      ..moveTo(50, 10)
+      ..quadraticBezierTo(56, 42, 90, 50)
+      ..quadraticBezierTo(56, 58, 50, 90)
+      ..quadraticBezierTo(44, 58, 10, 50)
+      ..quadraticBezierTo(44, 42, 50, 10)
+      ..close();
+    canvas.drawPath(star, paint);
   }
 
   @override

@@ -1,9 +1,167 @@
 @import "tailwindcss";
 
+/*
+ * Order/cashier and membership surfaces live in sibling workspace packages;
+ * Tailwind v4 does not scan linked repositories automatically, so the mobile
+ * commerce pages and the shared mobile UI primitives are explicit sources.
+ */
+@source "../packages/sdkwork-cloudrouter-h5-orders/src";
+@source "../packages/sdkwork-cloudrouter-h5-messages/src";
+@source "../../../../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-mobile-react-orders/src";
+@source "../../../../sdkwork-membership/apps/sdkwork-membership-common/packages/sdkwork-membership-mobile-react-subscription/src";
+@source "../../../../sdkwork-ui/sdkwork-ui-mobile-react/src";
+@source "../../../../sdkwork-iam/apps/sdkwork-iam-h5/packages/sdkwork-iam-h5-auth/src";
+@source "../../../../sdkwork-agents/apps/sdkwork-agents-h5/packages/sdkwork-agents-h5-conversation/src";
+@source "../../../../sdkwork-agents/apps/sdkwork-agents-h5/packages/sdkwork-agents-h5-playground/src";
+@source "../../../../sdkwork-agents/apps/sdkwork-agents-h5/packages/sdkwork-agents-h5-commons/src";
+
+/*
+ * The H5 renderer follows the PC portal design language: CloudRouter blue as
+ * the single accent, slate/neutral surfaces, square full-bleed sections, and a
+ * flat operational layer stack (no decorative gradients or glass blur). The
+ * semantic tokens below are the only color source for capability packages, so
+ * light and dark stay aligned with the PC console without duplicating palettes
+ * in every screen.
+ */
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial,
+    sans-serif;
+  --color-canvas: var(--cr-canvas);
+  --color-surface: var(--cr-surface);
+  --color-surface-elevated: var(--cr-surface-elevated);
+  --color-line: var(--cr-line);
+  --color-line-strong: var(--cr-line-strong);
+  --color-ink: var(--cr-ink);
+  --color-ink-muted: var(--cr-ink-muted);
+  --color-ink-subtle: var(--cr-ink-subtle);
+  --color-brand: var(--cr-brand);
+  --color-brand-strong: var(--cr-brand-strong);
+  --color-brand-soft: var(--cr-brand-soft);
+  --color-brand-fill: var(--cr-brand-fill);
+  --color-brand-fill-strong: var(--cr-brand-fill-strong);
+  --color-on-brand: var(--cr-on-brand);
+  --color-brand-contrast: var(--cr-brand-contrast);
+  --color-danger: var(--cr-danger);
+  --color-danger-soft: var(--cr-danger-soft);
+
+  /*
+   * Order-owned mobile UI tokens (`@sdkwork/ui-mobile-react` + the cashier
+   * pages use `bg-bg-color`, `text-text-main`, `border-border-color`, ...).
+   * They project the console palette so the cashier follows the renderer's
+   * light/dark theme instead of shipping a second palette.
+   */
+  --color-primary-blue: var(--cr-brand);
+  --color-bg-color: var(--cr-canvas);
+  --color-chat-other-bg: var(--cr-surface);
+  --color-text-main: var(--cr-ink);
+  --color-text-sub: var(--cr-ink-muted);
+  --color-border-color: var(--cr-line);
+  --color-hover-bg: var(--cr-surface-elevated);
+  --color-active-bg: var(--cr-surface-elevated);
+}
+
+/*
+ * Light palette (PC: slate-50 canvas, white surfaces, slate borders).
+ * `prefers-color-scheme` supplies the dark palette before hydration so the
+ * first paint matches the system; the explicit `light`/`dark` classes applied by
+ * `themePreference.ts` then win over the media query.
+ */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   /* Bottom tab bar height; the canvas reserves it plus the safe-area inset. */
   --cr-tabbar-height: 3.5rem;
+
+  --cr-canvas: #f8fafc;
+  --cr-surface: #ffffff;
+  --cr-surface-elevated: #f1f5f9;
+  --cr-line: #e2e8f0;
+  --cr-line-strong: #cbd5e1;
+  --cr-ink: #0f172a;
+  --cr-ink-muted: #475569;
+  --cr-ink-subtle: #64748b;
+  --cr-brand: #2563eb;
+  --cr-brand-strong: #1d4ed8;
+  --cr-brand-soft: #eff6ff;
+  --cr-brand-fill: #2563eb;
+  --cr-brand-fill-strong: #1d4ed8;
+  --cr-on-brand: #ffffff;
+  --cr-brand-contrast: #ffffff;
+  --cr-danger: #dc2626;
+  --cr-danger-soft: #fef2f2;
+
+  /*
+   * Runtime aliases consumed by the shared Agents H5 conversation surface via
+   * arbitrary `var(--color-*)` values. They project the same console palette so
+   * the Playground tab follows the H5 light/dark theme.
+   */
+  --color-bg-color: var(--cr-canvas);
+  --color-surface-color: var(--cr-surface);
+  --color-surface-muted: var(--cr-surface-elevated);
+  --color-text-main: var(--cr-ink);
+  --color-text-sub: var(--cr-ink-muted);
+  --color-primary-blue: var(--cr-brand);
+  --color-primary-subtle: var(--cr-brand-soft);
+  --color-hover-bg: var(--cr-surface-elevated);
+  --color-danger: var(--cr-danger);
+  --color-danger-bg: var(--cr-danger-soft);
+  --color-warning-bg: #fffbeb;
+  --color-warning-text: #b45309;
+  --color-scrim: rgb(15 23 42 / 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    color-scheme: dark;
+
+    --cr-canvas: #121212;
+    --cr-surface: #1e1e1e;
+    --cr-surface-elevated: #252525;
+    --cr-line: rgb(255 255 255 / 0.08);
+    --cr-line-strong: rgb(255 255 255 / 0.16);
+    --cr-ink: #f8fafc;
+    --cr-ink-muted: #cbd5e1;
+    --cr-ink-subtle: #94a3b8;
+    --cr-brand: #60a5fa;
+    --cr-brand-strong: #93c5fd;
+    --cr-brand-soft: rgb(37 99 235 / 0.18);
+    --cr-brand-fill: #2563eb;
+    --cr-brand-fill-strong: #1d4ed8;
+    --cr-on-brand: #ffffff;
+    --cr-brand-contrast: #ffffff;
+    --cr-danger: #f87171;
+    --cr-danger-soft: rgb(239 68 68 / 0.12);
+    --color-warning-bg: rgb(245 158 11 / 0.12);
+    --color-warning-text: #fbbf24;
+    --color-scrim: rgb(0 0 0 / 0.55);
+  }
+}
+
+:root.dark {
+  color-scheme: dark;
+
+  --cr-canvas: #121212;
+  --cr-surface: #1e1e1e;
+  --cr-surface-elevated: #252525;
+  --cr-line: rgb(255 255 255 / 0.08);
+  --cr-line-strong: rgb(255 255 255 / 0.16);
+  --cr-ink: #f8fafc;
+  --cr-ink-muted: #cbd5e1;
+  --cr-ink-subtle: #94a3b8;
+  --cr-brand: #60a5fa;
+  --cr-brand-strong: #93c5fd;
+  --cr-brand-soft: rgb(37 99 235 / 0.18);
+  --cr-brand-fill: #2563eb;
+  --cr-brand-fill-strong: #1d4ed8;
+  --cr-on-brand: #ffffff;
+  --cr-brand-contrast: #ffffff;
+  --cr-danger: #f87171;
+  --cr-danger-soft: rgb(239 68 68 / 0.12);
+  --color-warning-bg: rgb(245 158 11 / 0.12);
+  --color-warning-text: #fbbf24;
+  --color-scrim: rgb(0 0 0 / 0.55);
 }
 
 html,
@@ -14,10 +172,10 @@ body,
 
 body {
   margin: 0;
-  background: #0b1220;
-  color: #e2e8f0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
-    "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial,
+  background: var(--cr-canvas);
+  color: var(--cr-ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial,
     sans-serif;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
@@ -48,4 +206,31 @@ body,
 /* The fixed tab bar keeps the safe-area inset inside its own height. */
 .cr-tabbar {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Safe-area helper used by the shared mobile page header. */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+  box-sizing: content-box;
+}
+
+/*
+ * Shared settings center (`@sdkwork/settings-mobile-react`) token projection.
+ * The component is palette-agnostic; these aliases keep it on the console
+ * light/dark palette without forking its CSS.
+ */
+.sdk-mobile-settings {
+  --sdk-color-surface-canvas: var(--cr-canvas);
+  --sdk-color-surface-panel: var(--cr-surface);
+  --sdk-color-surface-panel-muted: var(--cr-surface-elevated);
+  --sdk-color-border-default: var(--cr-line);
+  --sdk-color-border-subtle: var(--cr-line);
+  --sdk-color-text-primary: var(--cr-ink);
+  --sdk-color-text-secondary: var(--cr-ink-muted);
+  --sdk-color-text-muted: var(--cr-ink-subtle);
+  --sdk-color-brand-primary: var(--cr-brand);
+  --sdk-color-brand-primary-soft: var(--cr-brand-soft);
+  --sdk-color-danger: var(--cr-danger);
+  --sdk-color-warning: #b45309;
+  --sdk-color-warning-soft: #fffbeb;
 }

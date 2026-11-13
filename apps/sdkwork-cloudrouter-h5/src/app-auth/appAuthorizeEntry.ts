@@ -36,6 +36,8 @@ export const APP_AUTHORIZE_ALIAS_PATH = '/auth/app';
 export const APP_AUTHORIZE_LOGIN_PATH = '/auth/login';
 /** Hand-off page that fires the deep link after authorization completes. */
 export const APP_AUTHORIZE_LAUNCH_PATH = '/auth/desktop/launch';
+/** IAM H5 OAuth provider callback (WeChat web authorization) hash route. */
+export const APP_OAUTH_CALLBACK_PATH = '/auth/oauth/callback';
 /** Canonical app-api prefix; its origin also serves the IAM open-api. */
 export const APP_API_PREFIX = '/app/v3/api';
 
@@ -48,6 +50,7 @@ export const APP_AUTH_ENTRY_PATHS: readonly string[] = Object.freeze([
   APP_AUTHORIZE_ALIAS_PATH,
   APP_AUTHORIZE_LOGIN_PATH,
   APP_AUTHORIZE_LAUNCH_PATH,
+  APP_OAUTH_CALLBACK_PATH,
 ]);
 
 const SCOPE_PATTERN = /^[a-z][a-z0-9._-]{0,63}$/u;

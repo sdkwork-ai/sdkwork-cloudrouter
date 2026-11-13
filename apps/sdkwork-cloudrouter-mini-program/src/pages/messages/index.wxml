@@ -1,0 +1,6 @@
+<view class="cr-bridge {{themeClass}}">
+  <view class="cr-bridge__icon">💬</view>
+  <text class="cr-bridge__title">消息</text>
+  <text class="cr-bridge__desc">消息中心由 H5 提供，包含完整会话、已读与发送能力。</text>
+  <button class="cr-bridge__button" bindtap="onOpen">打开消息中心</button>
+</view>

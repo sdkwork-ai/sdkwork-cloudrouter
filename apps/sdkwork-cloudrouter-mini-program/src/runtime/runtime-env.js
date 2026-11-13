@@ -5,6 +5,7 @@ module.exports = {
   "SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT": "development",
   "SDKWORK_CLOUDROUTER_ROUTER_PROFILE_ID": "standalone.development",
   "SDKWORK_CLOUDROUTER_ROUTER_RUNTIME_TARGET": "mini-program",
+  "SDKWORK_CLOUDROUTER_ROUTER_WEB_PUBLIC_HTTP_URL": "http://127.0.0.1:4734",
   "SDKWORK_DEPLOYMENT_PROFILE": "standalone",
   "SDKWORK_ENVIRONMENT": "development",
   "SDKWORK_PROFILE_ID": "standalone.development",

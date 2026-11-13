@@ -116,13 +116,15 @@
       "package.json#scripts.build"
     ],
     "sdkClients": [
-      "SdkworkAppClient"
+      "SdkworkAppClient",
+      "SdkworkOrderAppClient"
     ],
     "events": [],
     "configKeys": [],
     "routeManifest": null,
     "sdkDependencies": [
-      "cloudrouter-app-sdk"
+      "cloudrouter-app-sdk",
+      "order-app-sdk"
     ],
     "layerRole": "runtime-composition",
     "providedPorts": [

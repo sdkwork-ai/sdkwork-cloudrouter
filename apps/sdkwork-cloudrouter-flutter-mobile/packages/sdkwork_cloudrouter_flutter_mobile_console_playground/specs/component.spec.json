@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "sdkwork_cloudrouter_flutter_mobile_console_playground",
+    "displayName": "SDKWork Cloud Router Flutter Playground",
+    "version": "0.1.0",
+    "type": "flutter-package",
+    "root": "apps/sdkwork-cloudrouter-flutter-mobile/packages/sdkwork_cloudrouter_flutter_mobile_console_playground",
+    "domain": "ai",
+    "capability": "playground",
+    "surface": "mobile",
+    "languages": ["dart", "flutter"],
+    "generated": false,
+    "status": "standardizing",
+    "manifests": ["pubspec.yaml"]
+  },
+  "contracts": {
+    "layerRole": "frontend-feature",
+    "publicExports": ["lib/sdkwork_cloudrouter_flutter_mobile_console_playground.dart"],
+    "runtimeEntrypoints": ["lib/src/screens/console_playground_screen.dart"],
+    "sdkClients": ["SdkworkAppClient"],
+    "sdkDependencies": [
+      {
+        "workspace": "sdkwork-agents-app-sdk",
+        "packageName": "sdkwork_agents_app_sdk",
+        "purpose": "Agents sessions and turn streaming"
+      },
+      {
+        "workspace": "sdkwork-agents-flutter-mobile-conversation",
+        "packageName": "sdkwork_agents_flutter_mobile_conversation",
+        "purpose": "Shared conversation controller and chat screen"
+      }
+    ],
+    "providedPorts": [
+      {
+        "name": "cloudrouterFlutterPlaygroundScreen",
+        "export": "lib/sdkwork_cloudrouter_flutter_mobile_console_playground.dart"
+      },
+      {
+        "name": "cloudrouterFlutterPlaygroundRoute",
+        "export": "lib/sdkwork_cloudrouter_flutter_mobile_console_playground.dart"
+      }
+    ],
+    "requiredPorts": [],
+    "routeManifest": null
+  },
+  "verification": {
+    "commands": ["flutter analyze", "flutter test"]
+  }
+}

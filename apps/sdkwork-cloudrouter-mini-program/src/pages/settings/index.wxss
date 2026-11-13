@@ -1,0 +1,234 @@
+page {
+  --sdk-settings-bg: #f2f3f5;
+  --sdk-settings-panel: #ffffff;
+  --sdk-settings-border: #e3e6ea;
+  --sdk-settings-text: #1c2430;
+  --sdk-settings-text-secondary: #626c7a;
+  --sdk-settings-brand: #2b6cf6;
+  background: var(--sdk-settings-bg);
+  color: var(--sdk-settings-text);
+  font-size: 28rpx;
+}
+
+.sdk-settings {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.sdk-settings-slider {
+  align-items: center;
+  display: flex;
+  gap: 12rpx;
+  min-width: 240rpx;
+}
+
+.sdk-settings-header {
+  align-items: center;
+  background: var(--sdk-settings-panel);
+  border-bottom: 1rpx solid var(--sdk-settings-border);
+  display: flex;
+  gap: 12rpx;
+  padding: 20rpx 28rpx;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.sdk-settings-header__copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.sdk-settings-header__title {
+  font-size: 36rpx;
+  font-weight: 600;
+}
+
+.sdk-settings-header__description {
+  color: var(--sdk-settings-text-secondary);
+  font-size: 24rpx;
+  margin-top: 4rpx;
+}
+
+.sdk-settings-back {
+  font-size: 48rpx;
+  line-height: 1;
+  padding: 4rpx 12rpx;
+}
+
+.sdk-settings-search {
+  background: var(--sdk-settings-bg);
+  border-radius: 16rpx;
+  flex: 1;
+  font-size: 26rpx;
+  min-height: 64rpx;
+  padding: 0 20rpx;
+}
+
+.sdk-settings-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.sdk-settings-group {
+  margin-top: 20rpx;
+}
+
+.sdk-settings-group__title {
+  color: var(--sdk-settings-text-secondary);
+  font-size: 24rpx;
+  padding: 0 32rpx 10rpx;
+}
+
+.sdk-settings-group__rows {
+  background: var(--sdk-settings-panel);
+  border-bottom: 1rpx solid var(--sdk-settings-border);
+  border-top: 1rpx solid var(--sdk-settings-border);
+}
+
+.sdk-settings-link,
+.sdk-settings-row {
+  align-items: center;
+  border-bottom: 1rpx solid var(--sdk-settings-border);
+  display: flex;
+  gap: 20rpx;
+  min-height: 104rpx;
+  padding: 18rpx 28rpx;
+}
+
+.sdk-settings-row:last-child,
+.sdk-settings-link:last-child {
+  border-bottom: 0;
+}
+
+.sdk-settings-link__copy,
+.sdk-settings-row__copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.sdk-settings-link__title,
+.sdk-settings-row__title {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 30rpx;
+  font-weight: 500;
+  gap: 8rpx;
+}
+
+.sdk-settings-link__description,
+.sdk-settings-row__description {
+  color: var(--sdk-settings-text-secondary);
+  font-size: 24rpx;
+  margin-top: 4rpx;
+}
+
+.sdk-settings-link__chevron {
+  color: #8a94a3;
+  font-size: 40rpx;
+  line-height: 1;
+}
+
+.sdk-settings-row__control {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  max-width: 55%;
+}
+
+.sdk-settings-dot {
+  background: var(--sdk-settings-brand);
+  border-radius: 50%;
+  display: inline-block;
+  height: 12rpx;
+  width: 12rpx;
+}
+
+.sdk-settings-badge {
+  background: #fffaeb;
+  border-radius: 999rpx;
+  color: #b54708;
+  font-size: 20rpx;
+  padding: 2rpx 12rpx;
+}
+
+.sdk-settings-row__error {
+  color: #d92d20;
+  font-size: 22rpx;
+  margin-top: 4rpx;
+}
+
+.sdk-settings-option {
+  align-items: center;
+  display: flex;
+  font-size: 26rpx;
+  gap: 6rpx;
+  margin-left: 16rpx;
+}
+
+.sdk-settings-input {
+  border: 1rpx solid var(--sdk-settings-border);
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  min-height: 64rpx;
+  padding: 0 16rpx;
+  width: 240rpx;
+}
+
+.sdk-settings-value {
+  color: var(--sdk-settings-text-secondary);
+  font-size: 26rpx;
+  max-width: 320rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sdk-settings-savebar {
+  align-items: center;
+  background: var(--sdk-settings-panel);
+  border-top: 1rpx solid var(--sdk-settings-border);
+  display: flex;
+  gap: 16rpx;
+  padding: 16rpx 28rpx calc(env(safe-area-inset-bottom) + 16rpx);
+}
+
+.sdk-settings-savebar__copy {
+  color: var(--sdk-settings-text-secondary);
+  flex: 1;
+  font-size: 24rpx;
+}
+
+.sdk-settings-button {
+  background: var(--sdk-settings-panel);
+  border: 1rpx solid var(--sdk-settings-border);
+  border-radius: 14rpx;
+  font-size: 26rpx;
+  min-height: 68rpx;
+  padding: 0 24rpx;
+}
+
+.sdk-settings-button--primary {
+  background: var(--sdk-settings-brand);
+  border-color: var(--sdk-settings-brand);
+  color: #ffffff;
+}
+
+.sdk-settings-state {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 48rpx;
+  text-align: center;
+}
+
+.sdk-settings-state__title {
+  font-size: 32rpx;
+  font-weight: 600;
+}

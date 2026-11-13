@@ -7,9 +7,11 @@
  * the PC renderer, and the final `/auth/desktop/launch` page hands the
  * authorization code back through the app's registered deep link.
  */
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Route } from 'lucide-react';
 
+import { SdkworkIamH5AuthLoginSurface } from '@sdkwork/iam-h5-auth';
 import {
   createConsoleTranslator,
   resolveConsoleLocale,
@@ -27,8 +29,8 @@ import {
 import {
   completeAppAuthorization,
   isConsoleSessionAuthenticated,
-  signInConsoleSession,
 } from './appSession.js';
+import { useConsoleRuntime } from '../providers/AppProviders.js';
 
 /** Automatic deep-link hand-off delay so the success state paints first. */
 const AUTO_LAUNCH_DELAY_MS = 400;
@@ -59,13 +61,19 @@ interface AuthCardProps {
 function AuthCard({ children, title, description, testId }: AuthCardProps) {
   return (
     <main
-      className="flex min-h-screen items-center justify-center bg-[#141414] px-[0.9rem] text-gray-100"
+      className="flex min-h-screen items-center justify-center bg-surface px-[0.9rem] text-ink"
       data-testid={testId}
     >
       <section className="w-full max-w-sm space-y-4">
-        <header className="space-y-1">
-          <h1 className="text-lg font-semibold">{title}</h1>
-          <p className="text-[11px] text-gray-400">{description}</p>
+        <header className="space-y-1.5">
+          <span
+            aria-hidden
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-soft text-brand"
+          >
+            <Route className="h-5 w-5" />
+          </span>
+          <h1 className="pt-1 text-xl font-semibold tracking-tight">{title}</h1>
+          <p className="text-[12px] leading-5 text-ink-muted">{description}</p>
         </header>
         {children}
       </section>
@@ -112,12 +120,12 @@ export function AppAuthorizeEntryPage() {
     >
       {invalid ? (
         <>
-          <p className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-[11px] text-gray-400">
-            <span className="mr-2 font-semibold text-gray-200">{translate('cloudrouter.auth.app.problemLabel')}</span>
+          <p className="rounded-xl border border-line bg-canvas px-3.5 py-3 text-[11px] text-ink-muted">
+            <span className="mr-2 font-semibold text-ink">{translate('cloudrouter.auth.app.problemLabel')}</span>
             <span className="font-mono">{problem}</span>
           </p>
-          <p className="text-[11px] leading-5 text-gray-500">{translate('cloudrouter.auth.app.hint')}</p>
-          <Link className="inline-block text-xs font-medium text-gray-200 underline" to="/">
+          <p className="text-[11px] leading-5 text-ink-subtle">{translate('cloudrouter.auth.app.hint')}</p>
+          <Link className="inline-block text-xs font-medium text-brand underline" to="/">
             {translate('cloudrouter.auth.app.backToConsole')}
           </Link>
         </>
@@ -129,12 +137,10 @@ export function AppAuthorizeEntryPage() {
 /** The hosted login page that completes the pending app authorization. */
 export function AppSignInPage() {
   const translate = useAppAuthTranslate();
+  const runtime = useConsoleRuntime();
   const location = useLocation();
   const navigate = useNavigate();
   const authorizationStateId = readParameter(location.search, AUTHORIZATION_STATE_PARAM);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const completionStartedRef = useRef(false);
 
@@ -149,15 +155,13 @@ export function AppSignInPage() {
 
   useEffect(() => {
     if (authorizationStateId === undefined || completionStartedRef.current) return;
-    if (!isConsoleSessionAuthenticated()) return;
+    if (!runtime.authenticated && !isConsoleSessionAuthenticated()) return;
     completionStartedRef.current = true;
-    setBusy(true);
     void finishAuthorization(authorizationStateId)
       .catch((completionError: unknown) => {
         setError(completionError instanceof Error ? completionError.message : translate('cloudrouter.auth.app.failed'));
-      })
-      .finally(() => { setBusy(false); });
-  }, [authorizationStateId, finishAuthorization, translate]);
+      });
+  }, [authorizationStateId, finishAuthorization, runtime.authenticated, translate]);
 
   if (authorizationStateId === undefined) {
     return (
@@ -166,66 +170,45 @@ export function AppSignInPage() {
         testId="cloudrouter-h5-app-sign-in"
         title={translate('cloudrouter.auth.app.invalidTitle')}
       >
-        <Link className="inline-block text-xs font-medium text-gray-200 underline" to="/">
+        <Link className="inline-block text-xs font-medium text-brand underline" to="/">
           {translate('cloudrouter.auth.app.backToConsole')}
         </Link>
       </AuthCard>
     );
   }
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await signInConsoleSession({ email, password });
-      completionStartedRef.current = true;
-      await finishAuthorization(authorizationStateId);
-    } catch (signInError) {
-      setError(signInError instanceof Error ? signInError.message : translate('cloudrouter.auth.app.failed'));
-    } finally {
-      setBusy(false);
-    }
-  };
+  if (error !== null) {
+    return (
+      <AuthCard
+        description={translate('cloudrouter.auth.app.failed')}
+        testId="cloudrouter-h5-app-sign-in"
+        title={translate('cloudrouter.auth.app.invalidTitle')}
+      >
+        <p role="alert" className="rounded-xl border border-danger/30 bg-danger-soft px-3 py-2 text-xs text-danger">
+          {error}
+        </p>
+        <Link className="inline-block text-xs font-medium text-brand underline" to="/">
+          {translate('cloudrouter.auth.app.backToConsole')}
+        </Link>
+      </AuthCard>
+    );
+  }
 
+  // IAM owns the hosted sign-in UI (password/code/register/recovery/scan/
+  // third-party), exactly as it does for the console route. The host only
+  // completes the pending app authorization once IAM commits the session.
   return (
-    <AuthCard
-      description={translate('cloudrouter.auth.app.signInDescription')}
-      testId="cloudrouter-h5-app-sign-in"
-      title={translate('cloudrouter.auth.app.title')}
-    >
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        <label className="block space-y-1 text-xs">
-          <span className="text-gray-300">{translate('cloudrouter.auth.signIn.email')}</span>
-          <input
-            autoComplete="username"
-            className="w-full rounded-md border border-white/15 bg-black/40 px-3 py-2 text-sm outline-none focus:border-white/40"
-            onChange={(event) => setEmail(event.target.value)}
-            type="text"
-            value={email}
-          />
-        </label>
-        <label className="block space-y-1 text-xs">
-          <span className="text-gray-300">{translate('cloudrouter.auth.signIn.password')}</span>
-          <input
-            autoComplete="current-password"
-            className="w-full rounded-md border border-white/15 bg-black/40 px-3 py-2 text-sm outline-none focus:border-white/40"
-            onChange={(event) => setPassword(event.target.value)}
-            type="password"
-            value={password}
-          />
-        </label>
-        {error === null ? null : <p className="text-xs text-red-300">{error}</p>}
-        <button
-          className="w-full rounded-md bg-white px-3 py-2 text-sm font-medium text-black disabled:opacity-60"
-          disabled={busy}
-          type="submit"
-        >
-          {busy ? translate('cloudrouter.auth.app.completing') : translate('cloudrouter.auth.signIn.submit')}
-        </button>
-      </form>
-    </AuthCard>
+    <SdkworkIamH5AuthLoginSurface
+      controller={runtime.iamAuthController}
+      locale={runtime.locale}
+      onAuthenticated={() => {
+        if (completionStartedRef.current) return;
+        completionStartedRef.current = true;
+        void finishAuthorization(authorizationStateId).catch((completionError: unknown) => {
+          setError(completionError instanceof Error ? completionError.message : translate('cloudrouter.auth.app.failed'));
+        });
+      }}
+    />
   );
 }
 
@@ -263,7 +246,7 @@ export function AppLaunchPage() {
         testId="cloudrouter-h5-app-launch"
         title={translate('cloudrouter.auth.app.launchTitle')}
       >
-        <Link className="inline-block text-xs font-medium text-gray-200 underline" to="/">
+        <Link className="inline-block text-xs font-medium text-brand underline" to="/">
           {translate('cloudrouter.auth.app.backToConsole')}
         </Link>
       </AuthCard>
@@ -277,7 +260,7 @@ export function AppLaunchPage() {
       title={translate('cloudrouter.auth.app.launchTitle')}
     >
       <button
-        className="w-full rounded-md bg-white px-3 py-2 text-sm font-medium text-black"
+        className="w-full rounded-xl bg-brand-fill px-4 py-3 text-sm font-semibold text-on-brand shadow-sm"
         onClick={() => {
           try {
             window.location.assign(redirectUrl);
@@ -294,19 +277,19 @@ export function AppLaunchPage() {
           browser blocks the scripted navigation. The text is copy, never the
           URL, so the one-time authorization code is not rendered. */}
       <a
-        className="block w-full rounded-md border border-white/15 px-3 py-2 text-center text-xs font-medium text-gray-200"
+        className="block w-full rounded-xl border border-line bg-surface px-4 py-3 text-center text-xs font-medium text-ink"
         data-testid="cloudrouter-h5-app-launch-link"
         href={redirectUrl}
         onClick={() => { setPhase('launched'); }}
       >
         {translate('cloudrouter.auth.app.launchLink')}
       </a>
-      <p className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-[11px] leading-5 text-gray-400">
+      <p className="rounded-xl border border-line bg-canvas px-3.5 py-3 text-[11px] leading-5 text-ink-muted">
         {phase === 'failed'
           ? translate('cloudrouter.auth.app.launchFailed')
           : translate('cloudrouter.auth.app.launchHint')}
       </p>
-      <Link className="inline-block text-xs font-medium text-gray-200 underline" to="/">
+      <Link className="inline-block text-xs font-medium text-brand underline" to="/">
         {translate('cloudrouter.auth.app.backToConsole')}
       </Link>
     </AuthCard>

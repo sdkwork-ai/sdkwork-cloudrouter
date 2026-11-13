@@ -23,7 +23,7 @@ class SdkworkCloudRouterConsoleTab {
   final ConsoleTabGlyph glyph;
 }
 
-/// The four console tabs in canonical order: overview, usage, API keys, models.
+/// The five mobile tabs: 首页, 体验中心, 模型与定价, 消息, 我的.
 const List<SdkworkCloudRouterConsoleTab> consoleTabs = <SdkworkCloudRouterConsoleTab>[
   SdkworkCloudRouterConsoleTab(
     routeKey: 'dashboard',
@@ -32,21 +32,27 @@ const List<SdkworkCloudRouterConsoleTab> consoleTabs = <SdkworkCloudRouterConsol
     glyph: ConsoleTabGlyph.dashboard,
   ),
   SdkworkCloudRouterConsoleTab(
-    routeKey: 'usage',
-    path: '/usage',
-    titleKey: 'cloudrouter.console.usage.title',
-    glyph: ConsoleTabGlyph.receipt,
-  ),
-  SdkworkCloudRouterConsoleTab(
-    routeKey: 'apiKeys',
-    path: '/api-keys',
-    titleKey: 'cloudrouter.console.apiKeys.title',
-    glyph: ConsoleTabGlyph.key,
+    routeKey: 'playground',
+    path: '/playground',
+    titleKey: 'cloudrouter.console.playground.title',
+    glyph: ConsoleTabGlyph.playground,
   ),
   SdkworkCloudRouterConsoleTab(
     routeKey: 'catalog',
     path: '/catalog',
     titleKey: 'cloudrouter.console.catalog.title',
     glyph: ConsoleTabGlyph.barChart,
+  ),
+  SdkworkCloudRouterConsoleTab(
+    routeKey: 'messages',
+    path: '/messages',
+    titleKey: 'cloudrouter.console.messages.title',
+    glyph: ConsoleTabGlyph.chat,
+  ),
+  SdkworkCloudRouterConsoleTab(
+    routeKey: 'profile',
+    path: '/profile',
+    titleKey: 'cloudrouter.console.profile.title',
+    glyph: ConsoleTabGlyph.profile,
   ),
 ];

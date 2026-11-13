@@ -1,4 +1,12 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useLayoutEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import {
   createConsoleTranslator,
@@ -9,13 +17,21 @@ import {
   getCloudRouterTokenManager,
   readCloudRouterSession,
 } from '@sdkwork/cloudrouter-h5-core/session';
+import {
+  applyH5SiteBrandingToDocument,
+  useH5SiteBranding,
+} from '@sdkwork/cloudrouter-h5-core/branding';
 import type { CloudRouterConsolePorts } from '@sdkwork/cloudrouter-sdk-ports';
 import {
-  signInConsoleSession,
-  type ConsoleSignInCredentials,
-} from '../app-auth/appSession.js';
-
-export type { ConsoleSignInCredentials } from '../app-auth/appSession.js';
+  applyThemePreference,
+  nextThemePreference,
+  persistThemePreference,
+  resolveEffectiveThemePreference,
+  resolveInitialThemePreference,
+  type ResolvedThemePreference,
+  type ThemePreference,
+} from '../themePreference.js';
+import { createCloudRouterIamAuth } from '../bootstrap/iamAuth.js';
 
 export interface ConsoleRuntimeConfiguration {
   readonly platform: 'h5' | 'mini-program' | 'flutter' | 'harmony';
@@ -27,9 +43,21 @@ export interface ConsoleRuntimeConfiguration {
 export interface ConsoleRuntimeValue extends ConsoleRuntimeConfiguration {
   readonly locale: SdkworkConsoleLocale;
   readonly brand: string;
+  readonly brandName: string;
+  readonly brandShortName: string;
+  readonly brandDescription: string;
+  readonly brandLogoUrl?: string;
   readonly authenticated: boolean;
+  /** Signed-in IAM account subject, when the session exposes one. */
+  readonly accountId: string | null;
+  readonly isDark: boolean;
+  readonly theme: ThemePreference;
   readonly translate: (key: string) => string;
-  readonly signIn: (credentials: ConsoleSignInCredentials) => Promise<void>;
+  readonly toggleTheme: () => void;
+  /** Explicit theme preference used by the shared settings page. */
+  readonly setTheme: (theme: ThemePreference) => void;
+  /** IAM-owned sign-in/sign-up/recovery controller rendered by the auth routes. */
+  readonly iamAuthController: ReturnType<typeof createCloudRouterIamAuth>['controller'];
   readonly signOut: () => void;
 }
 
@@ -68,26 +96,90 @@ export function ConsoleRuntimeProvider({ configuration: runtimeConfiguration, ch
   const [authenticated, setAuthenticated] = useState(
     () => readCloudRouterSession().authenticated,
   );
+  const [accountId, setAccountId] = useState<string | null>(
+    () => readCloudRouterSession().subject,
+  );
+  const [theme, setTheme] = useState<ThemePreference>(() => resolveInitialThemePreference());
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedThemePreference>(
+    () => resolveEffectiveThemePreference(resolveInitialThemePreference()),
+  );
+  // One shared branding read feeds the navbar, home, sign-in page, and document
+  // title. Operators configure the name/logo in `/admin/site`, the same
+  // `system.site.runtime` authority the PC portal uses.
+  const branding = useH5SiteBranding();
+  // The IAM H5 auth screens own the credential UI and the session commit. The
+  // host only mirrors a committed session into the CloudRouter stores/TokenManager.
+  const [iamAuth] = useState(() => createCloudRouterIamAuth({
+    onSessionCommitted: () => {
+      setAuthenticated(true);
+      setAccountId(readCloudRouterSession().subject);
+    },
+  }));
+
+  useLayoutEffect(() => {
+    const syncTheme = () => {
+      const nextResolvedTheme = applyThemePreference(theme);
+      setResolvedTheme((currentTheme) =>
+        currentTheme === nextResolvedTheme ? currentTheme : nextResolvedTheme,
+      );
+    };
+
+    syncTheme();
+    persistThemePreference(theme);
+
+    if (theme !== 'system' || typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
+    if (!mediaQuery) {
+      return undefined;
+    }
+
+    mediaQuery.addEventListener('change', syncTheme);
+    return () => {
+      mediaQuery.removeEventListener('change', syncTheme);
+    };
+  }, [theme]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme((currentTheme) => nextThemePreference(currentTheme));
+  }, []);
+
+  useLayoutEffect(() => {
+    applyH5SiteBrandingToDocument(branding);
+  }, [branding]);
+
   const value = useMemo<ConsoleRuntimeValue>(() => {
     const locale = resolveConsoleLocale();
     const translate = createConsoleTranslator(locale);
     return {
       ...runtimeConfiguration,
       locale,
-      brand: 'SDKWork CloudRouter',
+      brand: branding.shortName || branding.siteName,
+      brandName: branding.siteName,
+      brandShortName: branding.shortName || branding.siteName,
+      brandDescription: branding.description,
+      ...(branding.logoUrl ? { brandLogoUrl: branding.logoUrl } : {}),
       authenticated,
+      accountId,
+      isDark: resolvedTheme === 'dark',
+      theme,
       translate,
-      signIn: async (credentials) => {
-        await signInConsoleSession(credentials);
-        setAuthenticated(true);
-      },
+      toggleTheme,
+      setTheme: (nextTheme) => setTheme(nextTheme),
+      iamAuthController: iamAuth.controller,
       signOut: () => {
+        // IAM owns the server-side session revocation; local state is cleared
+        // regardless so a failed network call cannot leave the UI signed in.
+        void iamAuth.controller.logout().catch(() => {});
         runtimeConfiguration.ports.session.clearSession();
         getCloudRouterTokenManager().clearTokens();
         setAuthenticated(false);
+        setAccountId(null);
       },
     };
-  }, [authenticated, runtimeConfiguration]);
+  }, [accountId, authenticated, branding, iamAuth, resolvedTheme, runtimeConfiguration, theme, toggleTheme]);
 
   return <ConsoleRuntimeContext.Provider value={value}>{children}</ConsoleRuntimeContext.Provider>;
 }

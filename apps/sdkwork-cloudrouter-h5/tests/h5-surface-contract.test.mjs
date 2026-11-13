@@ -63,6 +63,7 @@ const CAPABILITY_DIRS = [
   'sdkwork-cloudrouter-h5-commons',
   'sdkwork-cloudrouter-h5-shell',
   'sdkwork-cloudrouter-h5-i18n',
+  'sdkwork-cloudrouter-h5-orders',
   'sdkwork-cloudrouter-h5-console-dashboard',
   'sdkwork-cloudrouter-h5-console-usage',
   'sdkwork-cloudrouter-h5-console-api-keys',
@@ -99,6 +100,7 @@ describe('cloudrouter h5 application root', () => {
     const coreSpec = readJson('packages/sdkwork-cloudrouter-h5-core/specs/component.spec.json');
     assert.deepEqual(coreSpec.contracts.sdkDependencies, [
       { workspace: 'cloudrouter-app-sdk', surface: 'app-api', credentialMode: 'authenticated-app-api' },
+      { workspace: 'order-app-sdk', surface: 'app-api', credentialMode: 'authenticated-app-api' },
     ]);
     for (const dir of CAPABILITY_DIRS.filter((name) => name.includes('-console-') || name.endsWith('-shell'))) {
       const spec = readJson(`packages/${dir}/specs/component.spec.json`);
@@ -118,7 +120,7 @@ describe('cloudrouter h5 application root', () => {
       'console-usage',
     ]);
     assert.equal(rootSpec.component.type, 'h5-app-root');
-    assert.deepEqual(rootSpec.contracts.sdkDependencies, ['cloudrouter-app-sdk']);
+    assert.deepEqual(rootSpec.contracts.sdkDependencies, ['cloudrouter-app-sdk', 'order-app-sdk']);
   });
 
   it('maps every shared capability onto its own package route contribution', () => {
@@ -149,12 +151,18 @@ describe('cloudrouter h5 application root', () => {
       assert.ok(navigation.includes(`${glyph}: '`), `ICON_BY_GLYPH covers the ${glyph} glyph`);
     }
     assert.ok(!navigation.includes('/sign-in'), 'the sign-in route is not a tab');
+    assert.ok(navigation.includes("key: 'profile'"), 'the shell appends the host-level profile tab');
+    assert.ok(navigation.includes("path: '/me'"), 'the profile tab routes to /me');
+    assert.ok(navigation.includes('profileTab'), 'the profile tab has a localized label');
   });
 
   it('keeps the tab bar on the tab roots only, with native selected slots', () => {
     const layout = readText('packages/sdkwork-cloudrouter-h5-shell/src/layout/ConsoleShellLayout.tsx');
     assert.ok(layout.includes('cr-tabbar fixed bottom-0'), 'the tab bar sits outside the scroll flow');
-    assert.ok(layout.includes('grid-cols-4'), 'the tab bar declares one column per console tab');
+    assert.ok(
+      layout.includes('grid-cols-5'),
+      'the tab bar declares one column for the four console tabs plus the profile tab',
+    );
     // The app canvas is the only scroll container; the document frame never
     // scrolls.
     assert.ok(layout.includes('overflow-y-auto'), 'the canvas scrolls vertically');
@@ -174,6 +182,8 @@ describe('cloudrouter h5 application root', () => {
       !routes.includes('CLOUDROUTER_CONSOLE_ROUTES.signIn.path'),
       'the sign-in route renders outside the tab shell',
     );
+    assert.ok(routes.includes('path="/me"'), 'the profile tab root is mounted inside the shell');
+    assert.ok(routes.includes('ConsoleProfileScreen'), 'the profile tab renders the account screen');
   });
 
   it('contains document scrolling to the app canvas and the tab bar', () => {

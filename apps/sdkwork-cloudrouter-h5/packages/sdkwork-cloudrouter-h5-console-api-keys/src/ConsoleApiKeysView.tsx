@@ -1,8 +1,10 @@
 import type { ConsoleApiKeySummary } from '@sdkwork/cloudrouter-contracts';
-import { Panel } from '@sdkwork/cloudrouter-h5-commons';
+import { PageHeader, Panel } from '@sdkwork/cloudrouter-h5-commons';
 import { formatIsoTimestamp } from '@sdkwork/cloudrouter-service';
 
 export interface ConsoleApiKeysLabels {
+  readonly title: string;
+  readonly summary: string;
   readonly create: string;
   readonly creating: string;
   readonly revoke: string;
@@ -32,6 +34,12 @@ function statusText(status: ConsoleApiKeySummary['status'], labels: ConsoleApiKe
   return status;
 }
 
+function statusClassName(status: ConsoleApiKeySummary['status']): string {
+  if (status === 'active') return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
+  if (status === 'disabled') return 'bg-surface-elevated text-ink-subtle';
+  return 'bg-danger-soft text-danger';
+}
+
 export function ConsoleApiKeysView({
   keys,
   locale,
@@ -43,41 +51,48 @@ export function ConsoleApiKeysView({
   onRevoke,
 }: ConsoleApiKeysViewProps) {
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col">
+      <PageHeader title={labels.title} summary={labels.summary} />
       <Panel>
         <div className="flex gap-2">
           <input
             value={draftName}
             onChange={(event) => onDraftNameChange(event.target.value)}
             placeholder={labels.namePlaceholder}
-            className="min-w-0 flex-1 rounded-md border border-white/15 bg-black/40 px-3 py-2 text-xs outline-none focus:border-white/40"
+            className="min-w-0 flex-1 rounded-xl border border-line bg-canvas px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-subtle focus:border-brand focus:ring-2 focus:ring-brand/20"
           />
           <button
             type="button"
             disabled={busy || !draftName.trim()}
             onClick={onCreate}
-            className="rounded-md bg-white px-3 py-2 text-xs font-medium text-black disabled:opacity-50"
+            className="shrink-0 rounded-xl bg-brand-fill px-4 py-2.5 text-xs font-semibold text-on-brand transition-opacity disabled:opacity-50"
           >
             {busy ? labels.creating : labels.create}
           </button>
         </div>
       </Panel>
       <Panel>
-        <ul className="divide-y divide-white/10">
+        <ul className="divide-y divide-line">
           {keys.map((key) => (
-            <li key={key.id} className="flex items-center justify-between gap-3 py-2 text-[11px]">
+            <li key={key.id} className="flex items-start justify-between gap-3 py-3">
               <div className="min-w-0">
-                <p className="truncate text-gray-100">{key.name}</p>
-                <p className="font-mono text-[10px] text-gray-400">{key.maskedKey}</p>
-                <p className="text-gray-500">
-                  {labels.columnStatus}: {statusText(key.status, labels)} · {labels.columnTime}:{' '}
-                  {formatIsoTimestamp(key.createdAt, locale) ?? '-'}
+                <div className="flex items-center gap-2">
+                  <p className="truncate text-[13px] font-medium text-ink">{key.name}</p>
+                  <span
+                    className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${statusClassName(key.status)}`}
+                  >
+                    {statusText(key.status, labels)}
+                  </span>
+                </div>
+                <p className="mt-1 truncate font-mono text-[10px] text-ink-subtle">{key.maskedKey}</p>
+                <p className="mt-0.5 text-[10px] text-ink-subtle">
+                  {labels.columnTime}: {formatIsoTimestamp(key.createdAt, locale) ?? '-'}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => onRevoke(key.id)}
-                className="shrink-0 rounded-md border border-red-400/50 px-2 py-1 text-[10px] text-red-200"
+                className="shrink-0 rounded-lg border border-danger/40 px-2.5 py-1.5 text-[10px] font-medium text-danger transition-colors active:bg-danger-soft"
               >
                 {labels.revoke}
               </button>

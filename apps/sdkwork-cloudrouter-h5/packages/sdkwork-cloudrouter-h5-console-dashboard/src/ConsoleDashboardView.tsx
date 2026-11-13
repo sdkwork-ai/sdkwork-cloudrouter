@@ -1,4 +1,4 @@
-import { Panel } from '@sdkwork/cloudrouter-h5-commons';
+import { PageHeader, Panel } from '@sdkwork/cloudrouter-h5-commons';
 import type { ConsoleOverviewSnapshot } from '@sdkwork/cloudrouter-contracts';
 import {
   formatMinorUnitsAsCurrency,
@@ -7,6 +7,8 @@ import {
 } from '@sdkwork/cloudrouter-service';
 
 export interface ConsoleDashboardLabels {
+  readonly title: string;
+  readonly summary: string;
   readonly requests: string;
   readonly tokens: string;
   readonly cost: string;
@@ -21,7 +23,9 @@ export interface ConsoleDashboardViewProps {
 
 /**
  * Overview stat tiles. The section spans the viewport edge-to-edge (square
- * corners); the tiles are inset elements inside it and may keep a radius.
+ * corners); the tiles are inset elements inside it and keep a radius. Tile
+ * surfaces and labels use the shared theme tokens so the overview matches the
+ * PC console in both schemes.
  */
 export function ConsoleDashboardView({ snapshot, locale, labels }: ConsoleDashboardViewProps) {
   const cards = [
@@ -31,18 +35,21 @@ export function ConsoleDashboardView({ snapshot, locale, labels }: ConsoleDashbo
     { id: 'errorRate', label: labels.errorRate, value: formatPercent(snapshot.errorRate, locale) },
   ];
   return (
-    <Panel>
-      <div className="grid grid-cols-2 gap-3">
-        {cards.map((card) => (
-          <div key={card.id} className="rounded-xl bg-black/30 p-3">
-            <p className="text-[11px] text-gray-400">{card.label}</p>
-            <p className="mt-1 text-lg font-semibold text-white">{card.value}</p>
-          </div>
-        ))}
-      </div>
-      {snapshot.windowLabel && (
-        <p className="mt-3 text-[10px] text-gray-500">{snapshot.windowLabel}</p>
-      )}
-    </Panel>
+    <div className="flex flex-col">
+      <PageHeader title={labels.title} summary={labels.summary} />
+      <Panel>
+        <div className="grid grid-cols-2 gap-3">
+          {cards.map((card) => (
+            <div key={card.id} className="rounded-xl border border-line bg-canvas p-3.5">
+              <p className="text-[11px] text-ink-subtle">{card.label}</p>
+              <p className="mt-1 text-lg font-semibold tracking-tight text-ink">{card.value}</p>
+            </div>
+          ))}
+        </div>
+        {snapshot.windowLabel && (
+          <p className="mt-3 text-[10px] text-ink-subtle">{snapshot.windowLabel}</p>
+        )}
+      </Panel>
+    </div>
   );
 }

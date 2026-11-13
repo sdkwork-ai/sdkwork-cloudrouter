@@ -1,13 +1,13 @@
 /*
- * CloudRouter console usage list (full-bleed per APP_MINI_PROGRAM_UI_SPEC §7:
- * rows span the viewport edge-to-edge with square corners; the row surface
- * carries its own documented content inset).
+ * CloudRouter console usage list (light theme, full-bleed per
+ * APP_MINI_PROGRAM_UI_SPEC §7: rows span the viewport edge-to-edge with square
+ * corners; the row surface carries its own documented content inset).
  */
 
 .cr-page {
   min-height: 100%;
   box-sizing: border-box;
-  background: #0b1220;
+  background: #f5f7fb;
   padding: 24rpx 0 48rpx;
 }
 
@@ -21,15 +21,15 @@
 
 .cr-state-text {
   font-size: 26rpx;
-  color: #94a3b8;
+  color: #64748b;
   text-align: center;
 }
 
 .cr-spinner {
   width: 52rpx;
   height: 52rpx;
-  border: 5rpx solid #1e293b;
-  border-top-color: #38bdf8;
+  border: 5rpx solid #e2e8f0;
+  border-top-color: #2563eb;
   border-radius: 50%;
   animation: cr-spin 0.9s linear infinite;
 }
@@ -43,8 +43,8 @@
 .cr-retry {
   margin: 0;
   padding: 14rpx 56rpx;
-  background: #1e293b;
-  color: #38bdf8;
+  background: #eff6ff;
+  color: #2563eb;
   font-size: 26rpx;
   line-height: 1.6;
   border-radius: 12rpx;
@@ -55,13 +55,13 @@
 }
 
 .cr-retry--hover {
-  background: #334155;
+  background: #dbeafe;
 }
 
 .cr-rows {
   display: flex;
   flex-direction: column;
-  background: #0f172a;
+  background: #ffffff;
 }
 
 .cr-row {
@@ -70,7 +70,7 @@
   justify-content: space-between;
   gap: 24rpx;
   padding: 24rpx;
-  border-bottom: 1rpx solid #1e293b;
+  border-bottom: 1rpx solid #e2e8f0;
 }
 
 .cr-row-main {
@@ -83,7 +83,7 @@
 
 .cr-row-title {
   font-size: 28rpx;
-  color: #f1f5f9;
+  color: #0f172a;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -104,12 +104,12 @@
 
 .cr-row-tokens {
   font-size: 24rpx;
-  color: #cbd5e1;
+  color: #475569;
 }
 
 .cr-row-cost {
   font-size: 24rpx;
-  color: #38bdf8;
+  color: #2563eb;
 }
 
 .cr-more {
@@ -120,10 +120,11 @@
   margin: 0;
   width: 100%;
   padding: 18rpx 0;
-  background: #1e293b;
-  color: #cbd5e1;
+  background: #ffffff;
+  color: #334155;
   font-size: 24rpx;
   line-height: 1.6;
+  border: 1rpx solid #e2e8f0;
   border-radius: 12rpx;
 }
 
@@ -132,9 +133,9 @@
 }
 
 .cr-more-button--hover {
-  background: #334155;
+  background: #f1f5f9;
 }
 
 .cr-more-button[disabled] {
-  color: #64748b;
+  color: #94a3b8;
 }
