@@ -707,10 +707,7 @@ mod tests {
             }))
             .expect("estimate line deserializes")
         };
-        let lines = vec![
-            line("video_output_second", 100),
-            line("video_result", 50),
-        ];
+        let lines = vec![line("video_output_second", 100), line("video_result", 50)];
         assert_eq!(estimate_points_micros(&lines), 100);
         assert_eq!(estimate_points_micros(&[]), 0);
     }
@@ -726,12 +723,24 @@ mod tests {
     fn explicit_generation_mode_wins_over_the_routed_operation() {
         // The command routes as image_to_video but executes the start-end
         // profile, whose tier codes are the ones actually priced.
-        assert_eq!(video_api_code("image_to_video", Some("start_end_frame")), "start_end_frame");
-        assert_eq!(video_api_code("image_to_video", Some("reference_to_video")), "reference_to_video");
-        assert_eq!(video_api_code("image_to_video", Some("motion_mimicry")), "motion_control");
+        assert_eq!(
+            video_api_code("image_to_video", Some("start_end_frame")),
+            "start_end_frame"
+        );
+        assert_eq!(
+            video_api_code("image_to_video", Some("reference_to_video")),
+            "reference_to_video"
+        );
+        assert_eq!(
+            video_api_code("image_to_video", Some("motion_mimicry")),
+            "motion_control"
+        );
         // No explicit mode keeps the routed operation's mapping.
         assert_eq!(video_api_code("image_to_video", None), "image_to_video");
-        assert_eq!(video_api_code("image_to_video", Some("  ")), "image_to_video");
+        assert_eq!(
+            video_api_code("image_to_video", Some("  ")),
+            "image_to_video"
+        );
     }
 
     #[test]
@@ -741,7 +750,10 @@ mod tests {
             "generationConfig": { "resolution": "720p", "durationSeconds": 5 }
         });
         let quantities = CommandQuantities::from_parameters(Some(&parameters));
-        assert_eq!(quantities.generation_mode.as_deref(), Some("reference_to_video"));
+        assert_eq!(
+            quantities.generation_mode.as_deref(),
+            Some("reference_to_video")
+        );
         assert_eq!(quantities.resolution.as_deref(), Some("720p"));
     }
 

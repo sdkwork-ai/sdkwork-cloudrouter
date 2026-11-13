@@ -111,11 +111,11 @@ async fn list_default_buckets(
             {status_label} AS status,
             CAST(d.updated_at AS TEXT) AS "updatedAt"
         FROM storage_default_bucket_policy d
-        JOIN object_bucket b
+        JOIN storage_bucket b
           ON b.tenant_id = d.tenant_id
          AND b.organization_id = d.organization_id
          AND b.id = d.bucket_id
-        JOIN object_provider p
+        JOIN storage_provider p
           ON p.tenant_id = b.tenant_id
          AND p.organization_id = b.organization_id
          AND p.id = b.provider_id
@@ -377,11 +377,11 @@ async fn list_reconciliation_runs(
             CAST(r.started_at AS TEXT) AS "startedAt",
             CAST(COALESCE(r.completed_at::text, '') AS TEXT) AS "completedAt"
         FROM storage_reconciliation_run r
-        LEFT JOIN object_provider p
+        LEFT JOIN storage_provider p
           ON p.tenant_id = r.tenant_id
          AND p.organization_id = r.organization_id
          AND p.id = r.provider_id
-        LEFT JOIN object_bucket b
+        LEFT JOIN storage_bucket b
           ON b.tenant_id = r.tenant_id
          AND b.organization_id = r.organization_id
          AND b.id = r.bucket_id
@@ -1004,7 +1004,7 @@ async fn ensure_provider_exists(
     let exists: Option<i64> = sqlx::query_scalar(
         r#"
         SELECT 1::bigint
-        FROM object_provider
+        FROM storage_provider
         WHERE tenant_id = $1 AND organization_id = $2 AND id = $3
         LIMIT 1
         "#,
@@ -1029,7 +1029,7 @@ async fn ensure_bucket_exists(
     let exists: Option<i64> = sqlx::query_scalar(
         r#"
         SELECT 1::bigint
-        FROM object_bucket
+        FROM storage_bucket
         WHERE tenant_id = $1 AND organization_id = $2 AND id = $3
         LIMIT 1
         "#,
@@ -1054,7 +1054,7 @@ async fn load_bucket_logical_scope(
     sqlx::query_scalar(
         r#"
         SELECT logical_scope
-        FROM object_bucket
+        FROM storage_bucket
         WHERE tenant_id = $1 AND organization_id = $2 AND id = $3
         LIMIT 1
         "#,

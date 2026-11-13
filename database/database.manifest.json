@@ -50,7 +50,7 @@
     "provider": "default",
     "hooks": []
   },
-  "materializedTableCount": 35,
+  "materializedTableCount": 42,
   "materializedTables": [
     "ai_chat_context_snapshot",
     "ai_chat_conversation",
@@ -86,12 +86,20 @@
     "ai_upstream_supplier_endpoint",
     "ai_upstream_supplier_endpoint_health_state",
     "iam_user_preference",
-    "integration_webhook_endpoint"
+    "integration_webhook_endpoint",
+    "storage_bucket",
+    "storage_default_bucket_policy",
+    "storage_gc_job",
+    "storage_provider",
+    "storage_quota_policy",
+    "storage_reconciliation_run",
+    "storage_usage_counter"
   ],
   "databaseRole": "authoritative-server",
   "tablePrefixes": [
     "ai_",
     "iam_user_",
-    "integration_"
+    "integration_",
+    "storage_"
   ]
 }

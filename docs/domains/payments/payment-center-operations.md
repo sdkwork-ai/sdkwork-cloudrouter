@@ -44,7 +44,9 @@
 1. 进入 **支付中心 → 机构账户**（`/admin/payments/providerAccounts`）。
 2. 列表应有种子账户 `bootstrap-sandbox-default`（环境 Dev、状态 Active、主密钥已配置）。
 3. 若缺失，点 **创建账户**：
-   - 账户编号：如 `sandbox-001`；机构：Sandbox；模式：直连；环境：开发环境
+   - 账户编号：**无需填写**，保存时由系统自动生成唯一编号（形如
+     `sandbox-development-4f3c9a2b1d6e`），创建后不可修改
+   - 机构：Sandbox；模式：直连；环境：开发环境
    - 商户 ID：任意（如 `sandbox_merchant`）
    - 主凭据：任意值（沙箱不校验，填 `sandbox` 即可）
    - 先以「停用」创建 → 点 **Test**（沙箱必通过）→ 编辑改为「启用」。

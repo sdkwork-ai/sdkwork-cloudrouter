@@ -16,6 +16,11 @@
       "prefix": "integration_",
       "owner": "cloud-router-platform",
       "domain": "cloudrouter"
+    },
+    {
+      "prefix": "storage_",
+      "owner": "cloud-router-platform",
+      "domain": "cloudrouter"
     }
   ]
 }
