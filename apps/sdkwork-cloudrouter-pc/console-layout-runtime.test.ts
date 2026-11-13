@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
+import { resolveConsoleSidebarActivePath } from "./packages/sdkwork-cloudrouter-pc-console-shell/src/consoleSidebarActive.ts";
+
 function readPortalFile(relativePath: string): string {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8");
 }
@@ -66,6 +68,36 @@ test("console sidebar renders the smart hardware group directly below memory", (
   assert.ok(
     businessIndex > hardwareIndex,
     "smart hardware must render above the account and commerce group",
+  );
+});
+
+test("console sidebar highlights exactly one entry for nested routes", () => {
+  const paths = ['/console/hardware', '/console/hardware/firmware', '/console/memory'];
+
+  assert.equal(
+    resolveConsoleSidebarActivePath('/console/hardware', paths),
+    '/console/hardware',
+    "the hardware group root must activate only the device registry entry",
+  );
+  assert.equal(
+    resolveConsoleSidebarActivePath('/console/hardware/firmware', paths),
+    '/console/hardware/firmware',
+    "a nested firmware route must not also activate its parent entry",
+  );
+  assert.equal(
+    resolveConsoleSidebarActivePath('/console/hardware/firmware?tab=all', paths),
+    '/console/hardware/firmware',
+    "query strings must not affect the active entry",
+  );
+  assert.equal(
+    resolveConsoleSidebarActivePath('/console/hardware/legacy/deep', paths),
+    '/console/hardware',
+    "unknown nested segments fall back to their owning entry",
+  );
+  assert.equal(
+    resolveConsoleSidebarActivePath('/console/wallet', paths),
+    null,
+    "routes outside the sidebar must not activate any entry",
   );
 });
 

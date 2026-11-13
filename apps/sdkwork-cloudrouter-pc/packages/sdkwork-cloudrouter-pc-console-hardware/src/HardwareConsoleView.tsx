@@ -1,10 +1,12 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { hasPortalPermission, readPortalPermissionScope } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import {
-  SdkworkHardwareConsole,
+  SdkworkHardwareDevicesPage,
+  SdkworkHardwareFirmwarePage,
+  type ConsoleHardwareScreen,
   type HardwareConsoleCopy,
 } from '@sdkwork/aiot-pc-console-hardware';
 
@@ -26,15 +28,18 @@ export interface HardwareConsoleViewProps {
 /**
  * Cloud Router user-console entry for the Smart Hardware group.
  *
- * The console itself is owned by `sdkwork-aiot`: this view only supplies the
- * localized copy and the Cloud Router session-bound AIoT clients, so the device
- * domain keeps one implementation across the AIoT application and this portal.
+ * Each URL renders exactly one AIoT page: `/console/hardware` renders the device
+ * registry and `/console/hardware/firmware` renders the firmware catalog. The page
+ * switcher inside the console navigates between those two routes; the console
+ * itself is owned by `sdkwork-aiot`, so this view only supplies localized copy, the
+ * session-bound AIoT clients, and the route wiring.
  */
 export function HardwareConsoleView({ service }: HardwareConsoleViewProps = {}) {
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
   const resolvedService = useMemo(() => service ?? createCloudRouterHardwareService(), [service]);
-  const initialScreen = useMemo(
+  const screen = useMemo(
     () => resolveHardwareConsoleScreen(location.pathname).screen,
     [location.pathname],
   );
@@ -42,6 +47,13 @@ export function HardwareConsoleView({ service }: HardwareConsoleViewProps = {}) 
   const canManage = useMemo(
     () => hasPortalPermission(IOT_PERMISSION_DEVICES_WRITE, permissionScope),
     [permissionScope],
+  );
+
+  const handleNavigate = useCallback(
+    (target: ConsoleHardwareScreen) => {
+      navigate(target === 'firmware' ? HARDWARE_CONSOLE_FIRMWARE_PATH : HARDWARE_CONSOLE_BASE_PATH);
+    },
+    [navigate],
   );
 
   const copy = useMemo<HardwareConsoleCopy>(
@@ -133,16 +145,26 @@ export function HardwareConsoleView({ service }: HardwareConsoleViewProps = {}) 
     <div
       className="flex h-full min-h-0 w-full min-w-0 flex-col"
       data-cloudrouter-hardware-console
+      data-cloudrouter-hardware-screen={screen}
       data-cloudrouter-hardware-devices-path={HARDWARE_CONSOLE_BASE_PATH}
       data-cloudrouter-hardware-firmware-path={HARDWARE_CONSOLE_FIRMWARE_PATH}
     >
-      <SdkworkHardwareConsole
-        canManage={canManage}
-        className="min-w-0"
-        copy={copy}
-        initialScreen={initialScreen}
-        service={resolvedService}
-      />
+      {screen === 'firmware' ? (
+        <SdkworkHardwareFirmwarePage
+          className="min-w-0"
+          copy={copy}
+          onNavigate={handleNavigate}
+          service={resolvedService}
+        />
+      ) : (
+        <SdkworkHardwareDevicesPage
+          canManage={canManage}
+          className="min-w-0"
+          copy={copy}
+          onNavigate={handleNavigate}
+          service={resolvedService}
+        />
+      )}
     </div>
   );
 }

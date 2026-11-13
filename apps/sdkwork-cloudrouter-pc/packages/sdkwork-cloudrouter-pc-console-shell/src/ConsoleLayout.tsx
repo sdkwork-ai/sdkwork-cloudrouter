@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, type ReactNode } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, type ReactNode } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Activity,
@@ -25,6 +25,8 @@ import { revokeAppSession } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { HARDWARE_CONSOLE_NAV_GROUP } from '@sdkwork/cloudrouter-pc-console-hardware/contribution';
 
 import { useTranslation } from 'react-i18next';
+
+import { resolveConsoleSidebarActivePath } from './consoleSidebarActive.ts';
 
 const CONSOLE_SIDEBAR_GROUPS_DEFAULT_OPEN = true;
 
@@ -119,20 +121,21 @@ interface ConsoleLayoutProps {
   setThemeColor: (themeColor: ConsoleThemeColorPreference) => void;
 }
 
-function isConsoleSidebarItemActive(pathname: string, item: ConsoleMenuItem): boolean {
-  return pathname === item.path || pathname.startsWith(`${item.path}/`);
+function isConsoleSidebarItemActive(item: ConsoleMenuItem, activePath: string | null): boolean {
+  return item.path === activePath;
 }
 
 function ConsoleSidebarItem({
   item,
   sidebarOpen,
+  activePath,
 }: {
   item: ConsoleMenuItem;
   sidebarOpen: boolean;
+  activePath: string | null;
 }) {
   const { t } = useTranslation();
-  const location = useLocation();
-  const isActive = isConsoleSidebarItemActive(location.pathname, item);
+  const isActive = isConsoleSidebarItemActive(item, activePath);
   const Icon = item.icon;
   const itemName = t(item.labelKey, item.fallbackLabel);
 
@@ -157,15 +160,16 @@ function ConsoleSidebarGroup({
   group,
   sidebarOpen,
   defaultOpen,
+  activePath,
 }: {
   group: ConsoleMenuGroup;
   sidebarOpen: boolean;
   defaultOpen: boolean;
+  activePath: string | null;
 }) {
   const { t } = useTranslation();
-  const location = useLocation();
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  const hasActiveChild = group.items.some((item) => isConsoleSidebarItemActive(location.pathname, item));
+  const hasActiveChild = group.items.some((item) => isConsoleSidebarItemActive(item, activePath));
   const shouldRenderItems = !sidebarOpen || isOpen;
 
   return (
@@ -188,8 +192,13 @@ function ConsoleSidebarGroup({
       {shouldRenderItems && (
         <div className="flex flex-col gap-0.5">
           {group.items.map((item) => (
-            <ConsoleSidebarItem key={item.path} item={item} sidebarOpen={sidebarOpen} />
-          ))}
+              <ConsoleSidebarItem
+                key={item.path}
+                activePath={activePath}
+                item={item}
+                sidebarOpen={sidebarOpen}
+              />
+            ))}
         </div>
       )}
     </div>
@@ -211,6 +220,16 @@ export function ConsoleLayout({
   const [sidebarWidth, setSidebarWidth] = useState(256);
   const [isResizing, setIsResizing] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const location = useLocation();
+  const activeSidebarPath = useMemo(
+    () =>
+      resolveConsoleSidebarActivePath(location.pathname, [
+        ...consoleSidebarItems.map((item) => item.path),
+        ...consoleSidebarGroups.flatMap((group) => group.items.map((item) => item.path)),
+      ]),
+    [location.pathname],
+  );
 
   const startResizing = useCallback((e: React.MouseEvent) => {
     setIsResizing(true);
@@ -301,12 +320,18 @@ export function ConsoleLayout({
           {/* Main Nav */}
           <nav className="flex-1 overflow-y-auto pt-6 pb-6 px-3 flex flex-col gap-1 custom-scrollbar">
             {consoleSidebarItems.map((item) => (
-              <ConsoleSidebarItem key={item.path} item={item} sidebarOpen={sidebarOpen} />
+              <ConsoleSidebarItem
+                key={item.path}
+                activePath={activeSidebarPath}
+                item={item}
+                sidebarOpen={sidebarOpen}
+              />
             ))}
             <div className={sidebarOpen ? 'my-2 h-px bg-slate-200 dark:bg-white/10' : 'my-2'} />
             {consoleSidebarGroups.map((group) => (
               <ConsoleSidebarGroup
                 key={group.groupKey}
+                activePath={activeSidebarPath}
                 group={group}
                 sidebarOpen={sidebarOpen}
                 defaultOpen={CONSOLE_SIDEBAR_GROUPS_DEFAULT_OPEN}

@@ -4,21 +4,32 @@ import { CircuitBoard, Cpu, Download } from 'lucide-react';
  * Smart Hardware console contribution.
  *
  * Data-only: the console shell spreads {@link HARDWARE_CONSOLE_NAV_GROUP} into
- * its sidebar right below the Memory group, and the host route table mounts
- * {@link HARDWARE_CONSOLE_BASE_PATH} as a `hardware/*` route. Keeping this file
- * free of page imports means the shell bundle does not pull the hardware pages.
+ * its sidebar right below the Memory group, and the host route table mounts the two
+ * page paths. Keeping this file free of page imports means the shell bundle does
+ * not pull the hardware pages.
  */
 
-export const HARDWARE_CONSOLE_BASE_PATH = '/console/hardware';
+/** Group root; the host redirects it to the device registry page. */
+export const HARDWARE_CONSOLE_GROUP_PATH = '/console/hardware';
 
-export const HARDWARE_CONSOLE_FIRMWARE_PATH = `${HARDWARE_CONSOLE_BASE_PATH}/firmware`;
+/** Device registry page: `…/hardware/devices`. */
+export const HARDWARE_CONSOLE_DEVICES_PATH = `${HARDWARE_CONSOLE_GROUP_PATH}/devices`;
+
+/** Firmware catalog page: `…/hardware/firmware`. */
+export const HARDWARE_CONSOLE_FIRMWARE_PATH = `${HARDWARE_CONSOLE_GROUP_PATH}/firmware`;
+
+/**
+ * Default console path. Kept as the alias for the device registry page so callers
+ * that only need "the hardware console" land on the group's primary page.
+ */
+export const HARDWARE_CONSOLE_BASE_PATH = HARDWARE_CONSOLE_DEVICES_PATH;
 
 export const HARDWARE_CONSOLE_NAV_GROUP = {
   groupKey: 'console.menu.group.hardware',
   fallbackLabel: 'Smart Hardware',
   items: [
     {
-      path: HARDWARE_CONSOLE_BASE_PATH,
+      path: HARDWARE_CONSOLE_DEVICES_PATH,
       labelKey: 'console.menu.hardwareDevices',
       fallbackLabel: 'My hardware',
       icon: Cpu,
@@ -42,19 +53,19 @@ export type HardwareConsoleScreen = 'devices' | 'firmware';
 /**
  * Reads which hardware screen the current pathname addresses.
  *
- * `/console/hardware` -> the device registry, `/console/hardware/firmware` ->
- * the firmware catalog. Any other segment falls back to the device registry, so a
- * stale deep link still lands on a usable screen.
+ * `/console/hardware/devices` -> the device registry, `/console/hardware/firmware`
+ * -> the firmware catalog. The bare group root and any unknown segment fall back to
+ * the device registry, so a stale deep link still lands on a usable screen.
  */
 export function resolveHardwareConsoleScreen(pathname: string): {
   screen: HardwareConsoleScreen;
 } {
   const [pathOnly] = pathname.split(/[?#]/u);
-  if (pathOnly !== HARDWARE_CONSOLE_BASE_PATH && !pathOnly.startsWith(`${HARDWARE_CONSOLE_BASE_PATH}/`)) {
+  if (!pathOnly.startsWith(`${HARDWARE_CONSOLE_GROUP_PATH}/`)) {
     return { screen: 'devices' };
   }
   const segments = pathOnly
-    .slice(HARDWARE_CONSOLE_BASE_PATH.length)
+    .slice(HARDWARE_CONSOLE_GROUP_PATH.length)
     .split('/')
     .filter(Boolean);
   if (segments[0] === 'firmware') {
