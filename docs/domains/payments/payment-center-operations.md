@@ -316,6 +316,14 @@ http/https、≤2048、无 fragment），随请求传递给 PSP 适配器；标�
   （`SDKWORK_CLOUDROUTER_PAYMENT_RECONCILIATION_ENABLED=true` + 租户范围），
   再确认该 run 对应周期的机构账单已由账单下载/解析管线导入；账单未就绪时
   run 保持 queued 属正常等待，无需干预。
+- **保存域名报 `40001 Sdkwork-Request-Hash header is required`**：旧版支付后端把
+  命令哈希当成必填请求头，但权威 OpenAPI 只声明 `Idempotency-Key`，浏览器端无法
+  计算服务端 scope-canonical 哈希。当前版本改为：客户端传入哈希时仍强校验，
+  未传入时由服务端从请求体派生并持久化同一条指纹。部署新版 `sdkwork-payment`
+  后恢复；前端不需要额外发送 `Sdkwork-Request-Hash`。
+- **回调域名默认不是 `api.*`**：回调域名快速配置按 `api.<base-domain>` 生成
+  （例如 `platform.birdcoder.com` → `api.birdcoder.com`），因为 PSP 只能回调到
+  API 网关；H5 支付域名仍取当前访问域名（收银台页面所在域）。
 
 ## 9. 金额单位约定（防回归）
 
