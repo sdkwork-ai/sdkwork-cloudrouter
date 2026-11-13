@@ -302,8 +302,13 @@ export default function App() {
               <Route path="agents/*" element={<AgentsView />} />
               {/* Memory console: module sub-routes stay deep-linkable. */}
               <Route path="memory/*" element={<MemoryView />} />
-              {/* Smart Hardware console: list, firmware downloads, and device
-                  detail all live under the group path so they stay deep-linkable. */}
+              {/* Smart Hardware console: the device registry and the firmware
+                  catalog are two independent pages on their own URLs. The bare
+                  group root redirects to the registry page, and `*` keeps older
+                  deep links usable. */}
+              <Route path="hardware" element={<Navigate to="devices" replace />} />
+              <Route path="hardware/devices" element={<HardwareConsoleView />} />
+              <Route path="hardware/firmware" element={<HardwareConsoleView />} />
               <Route path="hardware/*" element={<HardwareConsoleView />} />
               <Route path="iam/oauth/official-accounts/:resourceAccountId/custom-menus" element={<CloudRouterConsoleIamOauthMenuRoute />} />
               <Route path="account" element={<AccountView />} />

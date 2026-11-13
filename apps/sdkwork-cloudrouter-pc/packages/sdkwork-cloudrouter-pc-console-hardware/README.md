@@ -10,16 +10,16 @@ Cloud Router **用户控制台**中的「智能硬件」分组，位于**记忆*
 
 | 文件 | 职责 |
 | --- | --- |
-| `src/contribution.ts` | 侧边栏分组（`console.menu.group.hardware`）+ `/console/hardware`、`/console/hardware/firmware` 路由常量与深链解析 |
+| `src/contribution.ts` | 侧边栏分组（`console.menu.group.hardware`）+ `/console/hardware/devices`、`/console/hardware/firmware` 路由常量与深链解析 |
 | `src/cloudRouterHardwareService.ts` | 把 AIoT 控制台端口绑定到 Cloud Router 会话客户端：AIoT **app** 客户端（我的设备/注册/固件/绑定）+ agents app 客户端（智能体选择） |
-| `src/HardwareConsoleView.tsx` | 挂载 AIoT 的 `SdkworkHardwareConsole`，注入 i18n 文案、`initialScreen` 深链、`canManage` 权限门控 |
+| `src/HardwareConsoleView.tsx` | 按 URL 渲染 AIoT 的对应页面（设备页 / 固件页），注入 i18n 文案、`onNavigate` 真实路由跳转、`canManage` 权限门控 |
 | `src/i18n/**` | `console.hardware.*` / `console.menu.hardware*` 的 en-US + zh-CN 片段 |
 
 ## 2. 集成点
 
-- 侧边栏：`sdkwork-cloudrouter-pc-console-shell/src/ConsoleLayout.tsx` 在 `记忆` 分组之后展开 `HARDWARE_CONSOLE_NAV_GROUP`。
-- 路由：`src/App.tsx` 以 `/console/hardware/*` 懒加载 `HardwareConsoleView`。
-- 权限：`iot.devices.write` 决定注册与智能体绑定入口是否出现；缺权限时 AIoT 控制台显示只读提示。
+- 侧边栏：`sdkwork-cloudrouter-pc-console-shell/src/ConsoleLayout.tsx` 在 `记忆` 分组之后展开 `HARDWARE_CONSOLE_NAV_GROUP`；激活项按**最长匹配**解析，`/console/hardware/firmware` 不会同时点亮 `/console/hardware/devices`。
+- 路由：`src/App.tsx` 声明 `hardware/devices`、`hardware/firmware` 两条路由（`hardware` 重定向到设备页，外加 `hardware/*` 兼容旧深链），两条路由渲染**不同页面**。
+- 权限：`iot.devices.write` 决定注册、改名与智能体绑定入口是否出现；缺权限时设备页显示只读提示。
 
 ## 3. 验证
 
