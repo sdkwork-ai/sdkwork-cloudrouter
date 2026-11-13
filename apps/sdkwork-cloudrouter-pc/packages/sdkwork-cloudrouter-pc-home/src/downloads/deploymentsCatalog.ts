@@ -9,6 +9,8 @@
  * makes no call at all.
  */
 
+import { APP_API_PREFIX } from '@sdkwork/cloudroutes-pc-commons/runtime';
+
 /** Build-time origin of the Deployments app API; empty keeps the bundled catalog. */
 const DEPLOYMENTS_BASE_URL = (
   (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env
@@ -46,7 +48,7 @@ export async function fetchDeploymentsCatalog(
   const deadline = setTimeout(() => controller.abort(), CATALOG_TIMEOUT_MS);
   try {
     const response = await fetchImpl(
-      `${root}/app/v3/api/downloads/catalog/${encodeURIComponent(catalogKey)}`,
+      `${root}${APP_API_PREFIX}/downloads/catalog/${encodeURIComponent(catalogKey)}`,
       { signal: controller.signal, headers: { accept: 'application/json' } },
     );
     if (!response.ok) return undefined;

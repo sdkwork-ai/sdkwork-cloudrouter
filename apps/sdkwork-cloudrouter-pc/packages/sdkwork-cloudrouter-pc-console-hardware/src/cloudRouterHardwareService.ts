@@ -5,9 +5,9 @@
  * lives in `@sdkwork/aiot-pc-console-hardware`. This module only binds that port
  * to the Cloud Router user session:
  *
- * - AIoT app client (`/app/v3/api/iot/...`) for the user's own devices, device
- *   registration, firmware catalog, and the device metadata update that carries
- *   the agent binding;
+ * - AIoT app client (AIoT app-api iot surface) for the user's own devices,
+ *   device registration, firmware catalog, and the device metadata update that
+ *   carries the agent binding;
  * - agents app client for the agent picker.
  */
 
