@@ -42,7 +42,7 @@ import { PORTAL_EXTERNAL_TAILWIND_SOURCES } from "./src/portal-external-tailwind
 import { LEGAL_DOCUMENTS, resolveLegalLocale } from "@sdkwork/documents-pc-legal/documents";
 import { LEGAL_DOCUMENT_IDS, LEGAL_DOCUMENT_PATHS } from "@sdkwork/documents-pc-legal/paths";
 import { resources as cloudRouterI18nResources } from "@sdkwork/cloudrouter-pc-i18n";
-import { normalizeGeneratedSdkBaseUrl, resolveSharedDependencySurfaceBaseUrl } from "./packages/sdkwork-cloudroutes-pc-commons/src/sdk-base-url.ts";
+import { normalizeGeneratedSdkBaseUrl, resolveCanonicalDependencySurfaceBaseUrl, resolveSharedDependencySurfaceBaseUrl } from "./packages/sdkwork-cloudroutes-pc-commons/src/sdk-base-url.ts";
 import { formatRechargeCurrencyAmount } from "./packages/sdkwork-cloudroutes-pc-commons/src/recharge-math.ts";
 import {
   createCloudRouterAiSdkClient,
@@ -582,6 +582,91 @@ test("agents app SDK factory preserves the canonical app-api surface URL", async
   assert.deepEqual(requestedUrls, [
     "/app/v3/api/ai/agents?scope=market&page=1&page_size=20",
     "https://tenant.example.com/router/app/v3/api/ai/agents?scope=market&page=1&page_size=20",
+  ]);
+});
+
+test("canonical dependency surface base keeps every authored browser shape usable", () => {
+  // The agents app SDK rejects an empty base URL and strips `/app/v3/api`
+  // itself, so the factory must hand it ONE canonical surface URL for each
+  // shape a browser document may author (BROWSER_RUNTIME_ENV_SPEC §5.1).
+  assert.equal(resolveCanonicalDependencySurfaceBaseUrl(undefined, "/app/v3/api"), undefined);
+  assert.equal(resolveCanonicalDependencySurfaceBaseUrl("   ", "/app/v3/api"), undefined);
+  // Standalone documents author the same-origin ROOT; folding that to `''`
+  // aborted the agents client with "base URL must not be empty".
+  assert.equal(resolveCanonicalDependencySurfaceBaseUrl("/", "/app/v3/api"), "/app/v3/api");
+  assert.equal(resolveCanonicalDependencySurfaceBaseUrl("/app/v3/api", "/app/v3/api"), "/app/v3/api");
+  assert.equal(
+    resolveCanonicalDependencySurfaceBaseUrl("/tenant-a", "/app/v3/api"),
+    "/tenant-a/app/v3/api",
+  );
+  // Already canonical surface URLs stay verbatim, mount subpath included.
+  assert.equal(
+    resolveCanonicalDependencySurfaceBaseUrl("https://tenant.example.com/router/app/v3/api/", "/app/v3/api"),
+    "https://tenant.example.com/router/app/v3/api",
+  );
+  assert.equal(
+    resolveCanonicalDependencySurfaceBaseUrl("https://tenant.example.com/router", "/app/v3/api"),
+    "https://tenant.example.com/router/app/v3/api",
+  );
+  // A cloud document authors the `;`-joined domain family: select one member
+  // and append the canonical prefix instead of passing the raw list through.
+  assert.equal(
+    resolveCanonicalDependencySurfaceBaseUrl(
+      "https://api-dev.sdkwork.com;https://api-dev.birdcoder.com",
+      "/app/v3/api",
+    ),
+    "https://api-dev.sdkwork.com/app/v3/api",
+  );
+});
+
+test("standalone same-origin root document constructs the agents app SDK client", async () => {
+  // Regression: the standalone build document authors
+  // `VITE_CLOUDROUTER_APP_API_BASE_URL: '/'`, which the agents app SDK reduced
+  // to an empty transport base and rejected in its constructor, so the console
+  // agent catalog failed with "Agents App SDK base URL must not be empty."
+  const standaloneDocument = {
+    VITE_API_BASE_URL: "/",
+    VITE_CLOUDROUTER_APP_API_BASE_URL: "/",
+    VITE_CLOUDROUTER_BACKEND_API_BASE_URL: "/",
+    VITE_CLOUDROUTER_OPEN_API_BASE_URL: "/",
+    VITE_SDKWORK_APPBASE_APP_API_BASE_URL: "/",
+    VITE_SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE: "standalone",
+    VITE_SDKWORK_CLOUDROUTER_ROUTER_PROFILE_ID: "standalone.development",
+  };
+  const requestedUrls: string[] = [];
+  const tokenManager = getCloudRouterGlobalTokenManager();
+  tokenManager.setTokens({ accessToken: "agents-standalone-access-token" });
+  globalThis.fetch = async (input) => {
+    requestedUrls.push(String(input));
+    return new Response(
+      JSON.stringify({
+        code: 0,
+        data: {
+          items: [],
+          pageInfo: { page: 1, pageSize: 20, total: 0, totalPages: 0 },
+        },
+      }),
+      { headers: { "content-type": "application/json" }, status: 200 },
+    );
+  };
+
+  try {
+    assert.equal(
+      withBrowserRuntimeDocument(standaloneDocument, () =>
+        resolveCanonicalDependencySurfaceBaseUrl("/", "/app/v3/api")),
+      "/app/v3/api",
+    );
+    const client = withBrowserRuntimeDocument(standaloneDocument, () =>
+      createSdkworkAgentAppSdkClient({ tokenManager }));
+    await client.ai.agents.list({ scope: "market", page: 1, pageSize: 20 });
+  } finally {
+    tokenManager.clearTokens();
+    resetCloudRouterSdkClients();
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.deepEqual(requestedUrls, [
+    "/app/v3/api/ai/agents?scope=market&page=1&page_size=20",
   ]);
 });
 
