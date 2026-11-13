@@ -55,6 +55,14 @@ const TermsOfService = lazyRoute(() => import('@sdkwork/documents-pc-legal'), 'T
 const CookiePolicy = lazyRoute(() => import('@sdkwork/documents-pc-legal'), 'CookiePolicyPage');
 const Playground = lazyRoute(() => import('@sdkwork/cloudrouter-pc-playground'), 'Playground');
 const CloudRouterTokenPlanPage = lazyRoute(() => import('./token-plan/CloudRouterTokenPlanPage'), 'CloudRouterTokenPlanPage');
+// Order cashier: the payment backend emits `/cashier/{orderId}` and the order
+// flow reaches `/me/orders/{orderId}/cashier` (same paths as sdkwork-im). The
+// order-owned checkout dialog renders the cashier; this package only loads the
+// order and drives the payment command.
+const CloudRouterCashierPage = lazyRoute(
+  () => import('@sdkwork/cloudrouter-pc-cashier'),
+  'CloudRouterCashierPage',
+);
 const CloudRouterAuthRoutes = lazyRoute(() => import('./auth/CloudRouterAuthRoutes'), 'CloudRouterAuthRoutes');
 // Hosted app sign-in entry: native applications open the platform's
 // `/iam/v3/oauth/authorize` in the system browser and return through the
@@ -259,6 +267,17 @@ export default function App() {
             <Route path="/iam/oauth/authorize" element={<CloudRouterAppAuthorizeEntry />} />
             <Route path="/auth/app" element={<CloudRouterAppAuthorizeEntry />} />
             <Route path="/auth/*" element={<PortalAuthenticatedAuthRouteGuard><CloudRouterAuthRoutes /></PortalAuthenticatedAuthRouteGuard>} />
+
+            {/* Unified order cashier, reachable from a QR deep link and from the
+                order flow; both paths match sdkwork-im byte for byte. */}
+            <Route
+              path="/cashier/:orderId"
+              element={<PortalErrorBoundary><RequirePortalSession><CloudRouterCashierPage /></RequirePortalSession></PortalErrorBoundary>}
+            />
+            <Route
+              path="/me/orders/:orderId/cashier"
+              element={<PortalErrorBoundary><RequirePortalSession><CloudRouterCashierPage /></RequirePortalSession></PortalErrorBoundary>}
+            />
 
             {/* Agents create/edit renders full-bleed, so it is declared as a
                 sibling of the console branch rather than a child of it: the form

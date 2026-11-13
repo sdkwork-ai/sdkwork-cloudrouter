@@ -693,7 +693,264 @@ async function withRetry(fn, config = {}) {
   throw lastError;
 }
 
-// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/node_modules/.pnpm/@sdkwork_utils@0.11.0/node_modules/@sdkwork/utils/dist/runtime/random.js
+// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/url.js
+var DEFAULT_BASE_URL_ENV_KEY = "SDKWORK_API_BASE_URL";
+var DEPLOYMENT_MODE_ENV_KEYS = [
+  "SDKWORK_DEPLOY_MODE",
+  "SDKWORK_DEPLOYMENT_PROFILE",
+  "VITE_SDKWORK_DEPLOY_MODE",
+  "VITE_SDKWORK_DEPLOYMENT_PROFILE"
+];
+var ENV_SUFFIXES = [
+  {
+    label: "dev",
+    suffix: "-dev"
+  },
+  {
+    label: "test",
+    suffix: "-test"
+  },
+  {
+    label: "staging",
+    suffix: "-staging"
+  }
+];
+function readRuntimeEnv(key) {
+  var _a, _b, _c, _d, _e;
+  const bridgeValue = (_a = globalThis["SDKWORK_RUNTIME_ENV"]) == null ? void 0 : _a[key];
+  if (typeof bridgeValue === "string" && bridgeValue.length > 0) return bridgeValue;
+  const viteValue = (_c = (_b = globalThis["import.meta"]) == null ? void 0 : _b.env) == null ? void 0 : _c[key];
+  if (typeof viteValue === "string" && viteValue.length > 0) return viteValue;
+  const processValue = (_e = (_d = globalThis["process"]) == null ? void 0 : _d.env) == null ? void 0 : _e[key];
+  if (typeof processValue === "string" && processValue.length > 0) return processValue;
+}
+function splitBaseUrls(value) {
+  return (typeof value === "string" ? value : value.join(",")).split(/[,;]/).map((item) => item.trim()).filter((item) => item.length > 0);
+}
+function getEnvironmentLabel(hostname) {
+  const host = (hostname || "").toLowerCase();
+  if (!host) return "development";
+  if (isLocalhost(host) || isIpAddress(host)) return "development";
+  for (const { label, suffix } of ENV_SUFFIXES) if (host.includes(suffix + ".")) return label;
+  return "production";
+}
+function getBrand(hostname) {
+  const host = (hostname || "").toLowerCase();
+  const parts = host.split(".").filter((p) => p.length > 0);
+  if (parts.length < 2) return host || "";
+  return parts.slice(-2).join(".");
+}
+function getApiHostForEnvironment(environmentLabel, brand) {
+  const env = environmentLabel.toLowerCase();
+  return `${env === "production" ? "api." : `api-${env}.`}${brand.toLowerCase().replace(/^\.+|\.+$/g, "")}`;
+}
+function normalizeDeploymentMode(value) {
+  const normalized = (value != null ? value : "").trim().toLowerCase();
+  if (normalized === "cloud" || normalized === "standalone") return normalized;
+}
+function resolveDeploymentMode(options = {}) {
+  var _a, _b;
+  const explicit = normalizeDeploymentMode(options.mode);
+  if (explicit) return explicit;
+  const readEnv2 = (_a = options.readEnv) != null ? _a : readRuntimeEnv;
+  for (const key of (_b = options.modeEnvKeys) != null ? _b : DEPLOYMENT_MODE_ENV_KEYS) {
+    const fromEnv = normalizeDeploymentMode(readEnv2(key));
+    if (fromEnv) return fromEnv;
+  }
+  return "cloud";
+}
+function resolveApiHost(options) {
+  var _a, _b, _c;
+  const hostname = ((_a = options.hostname) != null ? _a : "").trim().toLowerCase();
+  if (!hostname) return "";
+  const environment = ((_b = options.environment) != null ? _b : getEnvironmentLabel(hostname)).toLowerCase();
+  if (environment === "development") return hostname;
+  if (((_c = options.mode) != null ? _c : "cloud") === "standalone") return hostname;
+  return getApiHostForEnvironment(environment, getBrand(hostname));
+}
+function resolveApiPort(options) {
+  var _a, _b, _c, _d, _e;
+  const hostname = ((_a = options.hostname) != null ? _a : "").trim().toLowerCase();
+  if (!hostname) return "";
+  if (((_b = options.environment) != null ? _b : getEnvironmentLabel(hostname)).toLowerCase() !== "development") return "";
+  if (((_c = options.mode) != null ? _c : "cloud") === "standalone") return ((_d = options.currentPort) != null ? _d : "").trim();
+  return ((_e = options.devPort) != null ? _e : "3910").trim();
+}
+function resolveBaseUrl(options = {}) {
+  var _a, _b, _c, _d, _e, _f, _g, _h, _i;
+  const readEnv2 = (_a = options.readEnv) != null ? _a : readRuntimeEnv;
+  const candidates = options.baseUrls ? splitBaseUrls(options.baseUrls) : splitBaseUrls((_c = readEnv2((_b = options.envKey) != null ? _b : DEFAULT_BASE_URL_ENV_KEY)) != null ? _c : "");
+  const currentHost = ((_d = options.hostname) != null ? _d : getCurrentHostname()).trim().toLowerCase();
+  const currentProtocol = ((_e = options.protocol) != null ? _e : getCurrentProtocol()).trim().toLowerCase() || "https";
+  const currentPort = ((_f = options.port) != null ? _f : getCurrentPort()).trim();
+  const mode = resolveDeploymentMode({
+    mode: options.mode,
+    modeEnvKeys: options.modeEnvKeys,
+    readEnv: readEnv2
+  });
+  const environmentLabel = getEnvironmentLabel(currentHost);
+  const devPort = ((_h = (_g = options.devPort) != null ? _g : readEnv2("SDKWORK_API_DEV_PORT")) != null ? _h : "3910").trim();
+  const normalizeCandidate = options.preservePath ? removeTrailingSlash : toBaseOrigin;
+  const targetHost = resolveApiHost({
+    hostname: currentHost,
+    mode,
+    environment: environmentLabel,
+    devPort
+  });
+  const targetPort = resolveApiPort({
+    hostname: currentHost,
+    mode,
+    environment: environmentLabel,
+    currentPort,
+    devPort
+  });
+  const derivedUrl = targetHost ? `${currentProtocol}://${targetHost}${targetPort ? `:${targetPort}` : ""}` : "";
+  const result = (url, reason) => ({
+    url,
+    reason,
+    mode,
+    environment: environmentLabel,
+    host: targetHost
+  });
+  if (candidates.length === 0) return derivedUrl ? result(derivedUrl, "derived-from-host") : result("", "empty");
+  const parts = candidates.map((candidate) => ({
+    candidate,
+    ...candidateParts(candidate)
+  }));
+  const relativeCandidate = parts.find((item) => item.candidate.startsWith("/") && !item.candidate.startsWith("//"));
+  if (relativeCandidate) return {
+    ...result(relativeCandidate.candidate.replace(/\/+$/u, "") || "/", "same-origin-relative"),
+    host: ""
+  };
+  const exact = parts.find((item) => item.host === targetHost && item.port === targetPort && item.protocol.toLowerCase() === currentProtocol);
+  if (exact) return result(normalizeCandidate(exact.candidate), "current-host-match");
+  const sameHostPort = parts.find((item) => item.host === targetHost && item.port === targetPort);
+  if (sameHostPort) return result(normalizeCandidate(alignCandidateProtocol(sameHostPort.candidate, currentProtocol)), "current-host-match");
+  const sameHost = parts.find((item) => item.host === targetHost && (!item.port || !targetPort));
+  if (sameHost) return result(normalizeCandidate(alignCandidateProtocol(sameHost.candidate, currentProtocol)), "current-host-match");
+  if (environmentLabel === "development") {
+    const localCandidate = parts.find((item) => item.host.length > 0 && (isLocalhost(item.host) || isIpAddress(item.host)));
+    if (localCandidate) return result(normalizeCandidate(localCandidate.candidate), "development-local-candidate");
+  }
+  if (derivedUrl) return result(derivedUrl, "derived-from-host");
+  return result(normalizeCandidate((_i = candidates[0]) != null ? _i : ""), "fallback-first");
+}
+function resolveBaseUrlWithAlignProtocol(options = {}) {
+  const resolution = resolveBaseUrl(options);
+  if (typeof window === "undefined") return resolution;
+  const aligned = alignBaseUrlToPageProtocol(resolution.url);
+  if (aligned === resolution.url) return resolution;
+  return {
+    ...resolution,
+    url: aligned
+  };
+}
+function alignBaseUrlToPageProtocol(url, options = {}) {
+  var _a;
+  const aligned = alignCandidateProtocol(url, ((_a = options.protocol) != null ? _a : getCurrentProtocol()).replace(/:$/u, "").toLowerCase() || "https");
+  if (aligned === url) return url;
+  try {
+    const parsed = new URL(aligned);
+    if (parsed.pathname === "/" && !parsed.search && !parsed.hash) return parsed.origin;
+    return parsed.toString().replace(/\/$/u, "");
+  } catch {
+    return aligned;
+  }
+}
+function alignCandidateProtocol(candidate, currentProtocol) {
+  const parts = candidateParts(candidate);
+  if (!parts.host || !parts.protocol || parts.protocol === currentProtocol) return candidate;
+  const rewritable = (scheme) => scheme === "http" || scheme === "https";
+  if (!rewritable(parts.protocol) || !rewritable(currentProtocol)) return candidate;
+  return setProtocol(candidate, currentProtocol);
+}
+function candidateParts(candidate) {
+  if (!isAbsolute(candidate)) return {
+    protocol: "",
+    host: "",
+    port: ""
+  };
+  try {
+    const parsed = new URL(candidate);
+    return {
+      protocol: parsed.protocol.replace(":", "").toLowerCase(),
+      host: parsed.hostname.toLowerCase(),
+      port: parsed.port
+    };
+  } catch {
+    return {
+      protocol: "",
+      host: "",
+      port: ""
+    };
+  }
+}
+function toBaseOrigin(url) {
+  try {
+    const parsed = new URL(url);
+    parsed.pathname = "";
+    parsed.search = "";
+    parsed.hash = "";
+    return parsed.origin;
+  } catch {
+    return url.replace(/\/+$/, "");
+  }
+}
+function getCurrentHostname() {
+  if (typeof window !== "undefined" && window.location) return window.location.hostname;
+  return "";
+}
+function getCurrentProtocol() {
+  if (typeof window !== "undefined" && window.location) return window.location.protocol.replace(":", "");
+  return "https";
+}
+function getCurrentPort() {
+  var _a;
+  if (typeof window !== "undefined" && window.location) return (_a = window.location.port) != null ? _a : "";
+  return "";
+}
+function isAbsolute(url) {
+  return /^[a-z][a-z\d+\-.]*:\/\//i.test(url);
+}
+function getHostname(url) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return "";
+  }
+}
+function setProtocol(url, protocol) {
+  try {
+    const parsed = new URL(url);
+    parsed.protocol = protocol.endsWith(":") ? protocol : `${protocol}:`;
+    return parsed.href;
+  } catch {
+    return url;
+  }
+}
+function isLocalhost(url) {
+  const hostname = hostnameOf(url).toLowerCase();
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname.startsWith("192.168.") || hostname.startsWith("10.") || hostname.startsWith("172.");
+}
+function isIpAddress(url) {
+  const hostname = hostnameOf(url);
+  return /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || /^\[?([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\]?$/.test(hostname);
+}
+function hostnameOf(url) {
+  if (isAbsolute(url)) return getHostname(url);
+  return url;
+}
+function removeTrailingSlash(url) {
+  try {
+    const parsed = new URL(url);
+    parsed.pathname = parsed.pathname.replace(/\/+$/, "") || "/";
+    return parsed.href;
+  } catch {
+    return url.replace(/\/+$/, "") || "/";
+  }
+}
+
+// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/sdkwork-utils/packages/sdkwork-utils-typescript/src/runtime/random.js
 function getCrypto() {
   const crypto = globalThis.crypto;
   if (!(crypto == null ? void 0 : crypto.getRandomValues)) throw new Error("Web Crypto API is not available in this environment.");
@@ -705,16 +962,20 @@ function randomBytes(length) {
   return bytes;
 }
 function randomUuid() {
+  var _a, _b;
   const crypto = getCrypto();
-  if (crypto.randomUUID) return crypto.randomUUID();
+  if (typeof crypto.randomUUID === "function") try {
+    return crypto.randomUUID.call(crypto);
+  } catch {
+  }
   const bytes = randomBytes(16);
-  bytes[6] = bytes[6] & 15 | 64;
-  bytes[8] = bytes[8] & 63 | 128;
+  bytes[6] = ((_a = bytes[6]) != null ? _a : 0) & 15 | 64;
+  bytes[8] = ((_b = bytes[8]) != null ? _b : 0) & 63 | 128;
   const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/node_modules/.pnpm/@sdkwork_utils@0.11.0/node_modules/@sdkwork/utils/dist/id.js
+// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/sdkwork-utils/packages/sdkwork-utils-typescript/src/id.js
 function uuid() {
   return randomUuid();
 }
@@ -902,11 +1163,11 @@ var StringUtils;
     return (_a = value == null ? void 0 : value.replace(regex, "")) != null ? _a : "";
   }
   _StringUtils.removeAll = removeAll;
-  function countOccurrences(value, search) {
+  function countOccurrences2(value, search) {
     if (isEmpty(value) || isEmpty(search)) return 0;
     return (value.match(new RegExp(escapeRegex(search), "g")) || []).length;
   }
-  _StringUtils.countOccurrences = countOccurrences;
+  _StringUtils.countOccurrences = countOccurrences2;
   function escapeHtml(value) {
     var _a;
     const htmlEntities = {
@@ -1255,8 +1516,8 @@ var StringUtils;
   }
   _StringUtils.isPalindrome = isPalindrome;
   function isAnagram(a, b) {
-    const normalize2 = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "").split("").sort().join("");
-    return normalize2(a) === normalize2(b);
+    const normalize3 = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "").split("").sort().join("");
+    return normalize3(a) === normalize3(b);
   }
   _StringUtils.isAnagram = isAnagram;
   function reverseWords(value) {
@@ -2187,263 +2448,6 @@ var TIME_UNITS_IN_MS = {
   year: 365 * MILLISECONDS_IN_DAY
 };
 
-// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/utils/url.js
-var DEFAULT_BASE_URL_ENV_KEY = "SDKWORK_API_BASE_URL";
-var DEPLOYMENT_MODE_ENV_KEYS = [
-  "SDKWORK_DEPLOY_MODE",
-  "SDKWORK_DEPLOYMENT_PROFILE",
-  "VITE_SDKWORK_DEPLOY_MODE",
-  "VITE_SDKWORK_DEPLOYMENT_PROFILE"
-];
-var ENV_SUFFIXES = [
-  {
-    label: "dev",
-    suffix: "-dev"
-  },
-  {
-    label: "test",
-    suffix: "-test"
-  },
-  {
-    label: "staging",
-    suffix: "-staging"
-  }
-];
-function readRuntimeEnv(key) {
-  var _a, _b, _c, _d, _e;
-  const bridgeValue = (_a = globalThis["SDKWORK_RUNTIME_ENV"]) == null ? void 0 : _a[key];
-  if (typeof bridgeValue === "string" && bridgeValue.length > 0) return bridgeValue;
-  const viteValue = (_c = (_b = globalThis["import.meta"]) == null ? void 0 : _b.env) == null ? void 0 : _c[key];
-  if (typeof viteValue === "string" && viteValue.length > 0) return viteValue;
-  const processValue = (_e = (_d = globalThis["process"]) == null ? void 0 : _d.env) == null ? void 0 : _e[key];
-  if (typeof processValue === "string" && processValue.length > 0) return processValue;
-}
-function splitBaseUrls(value) {
-  return (typeof value === "string" ? value : value.join(",")).split(/[,;]/).map((item) => item.trim()).filter((item) => item.length > 0);
-}
-function getEnvironmentLabel(hostname) {
-  const host = (hostname || "").toLowerCase();
-  if (!host) return "development";
-  if (isLocalhost(host) || isIpAddress(host)) return "development";
-  for (const { label, suffix } of ENV_SUFFIXES) if (host.includes(suffix + ".")) return label;
-  return "production";
-}
-function getBrand(hostname) {
-  const host = (hostname || "").toLowerCase();
-  const parts = host.split(".").filter((p) => p.length > 0);
-  if (parts.length < 2) return host || "";
-  return parts.slice(-2).join(".");
-}
-function getApiHostForEnvironment(environmentLabel, brand) {
-  const env = environmentLabel.toLowerCase();
-  return `${env === "production" ? "api." : `api-${env}.`}${brand.toLowerCase().replace(/^\.+|\.+$/g, "")}`;
-}
-function normalizeDeploymentMode(value) {
-  const normalized = (value != null ? value : "").trim().toLowerCase();
-  if (normalized === "cloud" || normalized === "standalone") return normalized;
-}
-function resolveDeploymentMode(options = {}) {
-  var _a, _b;
-  const explicit = normalizeDeploymentMode(options.mode);
-  if (explicit) return explicit;
-  const readEnv2 = (_a = options.readEnv) != null ? _a : readRuntimeEnv;
-  for (const key of (_b = options.modeEnvKeys) != null ? _b : DEPLOYMENT_MODE_ENV_KEYS) {
-    const fromEnv = normalizeDeploymentMode(readEnv2(key));
-    if (fromEnv) return fromEnv;
-  }
-  return "cloud";
-}
-function resolveApiHost(options) {
-  var _a, _b, _c;
-  const hostname = ((_a = options.hostname) != null ? _a : "").trim().toLowerCase();
-  if (!hostname) return "";
-  const environment = ((_b = options.environment) != null ? _b : getEnvironmentLabel(hostname)).toLowerCase();
-  if (environment === "development") return hostname;
-  if (((_c = options.mode) != null ? _c : "cloud") === "standalone") return hostname;
-  return getApiHostForEnvironment(environment, getBrand(hostname));
-}
-function resolveApiPort(options) {
-  var _a, _b, _c, _d, _e;
-  const hostname = ((_a = options.hostname) != null ? _a : "").trim().toLowerCase();
-  if (!hostname) return "";
-  if (((_b = options.environment) != null ? _b : getEnvironmentLabel(hostname)).toLowerCase() !== "development") return "";
-  if (((_c = options.mode) != null ? _c : "cloud") === "standalone") return ((_d = options.currentPort) != null ? _d : "").trim();
-  return ((_e = options.devPort) != null ? _e : "3910").trim();
-}
-function resolveBaseUrl(options = {}) {
-  var _a, _b, _c, _d, _e, _f, _g, _h, _i;
-  const readEnv2 = (_a = options.readEnv) != null ? _a : readRuntimeEnv;
-  const candidates = options.baseUrls ? splitBaseUrls(options.baseUrls) : splitBaseUrls((_c = readEnv2((_b = options.envKey) != null ? _b : DEFAULT_BASE_URL_ENV_KEY)) != null ? _c : "");
-  const currentHost = ((_d = options.hostname) != null ? _d : getCurrentHostname()).trim().toLowerCase();
-  const currentProtocol = ((_e = options.protocol) != null ? _e : getCurrentProtocol()).trim().toLowerCase() || "https";
-  const currentPort = ((_f = options.port) != null ? _f : getCurrentPort()).trim();
-  const mode = resolveDeploymentMode({
-    mode: options.mode,
-    modeEnvKeys: options.modeEnvKeys,
-    readEnv: readEnv2
-  });
-  const environmentLabel = getEnvironmentLabel(currentHost);
-  const devPort = ((_h = (_g = options.devPort) != null ? _g : readEnv2("SDKWORK_API_DEV_PORT")) != null ? _h : "3910").trim();
-  const normalizeCandidate = options.preservePath ? removeTrailingSlash : toBaseOrigin;
-  const targetHost = resolveApiHost({
-    hostname: currentHost,
-    mode,
-    environment: environmentLabel,
-    devPort
-  });
-  const targetPort = resolveApiPort({
-    hostname: currentHost,
-    mode,
-    environment: environmentLabel,
-    currentPort,
-    devPort
-  });
-  const derivedUrl = targetHost ? `${currentProtocol}://${targetHost}${targetPort ? `:${targetPort}` : ""}` : "";
-  const result = (url, reason) => ({
-    url,
-    reason,
-    mode,
-    environment: environmentLabel,
-    host: targetHost
-  });
-  if (candidates.length === 0) return derivedUrl ? result(derivedUrl, "derived-from-host") : result("", "empty");
-  const parts = candidates.map((candidate) => ({
-    candidate,
-    ...candidateParts(candidate)
-  }));
-  const relativeCandidate = parts.find((item) => item.candidate.startsWith("/") && !item.candidate.startsWith("//"));
-  if (relativeCandidate) return {
-    ...result(relativeCandidate.candidate.replace(/\/+$/u, "") || "/", "same-origin-relative"),
-    host: ""
-  };
-  const exact = parts.find((item) => item.host === targetHost && item.port === targetPort && item.protocol.toLowerCase() === currentProtocol);
-  if (exact) return result(normalizeCandidate(exact.candidate), "current-host-match");
-  const sameHostPort = parts.find((item) => item.host === targetHost && item.port === targetPort);
-  if (sameHostPort) return result(normalizeCandidate(alignCandidateProtocol(sameHostPort.candidate, currentProtocol)), "current-host-match");
-  const sameHost = parts.find((item) => item.host === targetHost && (!item.port || !targetPort));
-  if (sameHost) return result(normalizeCandidate(alignCandidateProtocol(sameHost.candidate, currentProtocol)), "current-host-match");
-  if (environmentLabel === "development") {
-    const localCandidate = parts.find((item) => item.host.length > 0 && (isLocalhost(item.host) || isIpAddress(item.host)));
-    if (localCandidate) return result(normalizeCandidate(localCandidate.candidate), "development-local-candidate");
-  }
-  if (derivedUrl) return result(derivedUrl, "derived-from-host");
-  return result(normalizeCandidate((_i = candidates[0]) != null ? _i : ""), "fallback-first");
-}
-function resolveBaseUrlWithAlignProtocol(options = {}) {
-  const resolution = resolveBaseUrl(options);
-  if (typeof window === "undefined") return resolution;
-  const aligned = alignBaseUrlToPageProtocol(resolution.url);
-  if (aligned === resolution.url) return resolution;
-  return {
-    ...resolution,
-    url: aligned
-  };
-}
-function alignBaseUrlToPageProtocol(url, options = {}) {
-  var _a;
-  const aligned = alignCandidateProtocol(url, ((_a = options.protocol) != null ? _a : getCurrentProtocol()).replace(/:$/u, "").toLowerCase() || "https");
-  if (aligned === url) return url;
-  try {
-    const parsed = new URL(aligned);
-    if (parsed.pathname === "/" && !parsed.search && !parsed.hash) return parsed.origin;
-    return parsed.toString().replace(/\/$/u, "");
-  } catch {
-    return aligned;
-  }
-}
-function alignCandidateProtocol(candidate, currentProtocol) {
-  const parts = candidateParts(candidate);
-  if (!parts.host || !parts.protocol || parts.protocol === currentProtocol) return candidate;
-  const rewritable = (scheme) => scheme === "http" || scheme === "https";
-  if (!rewritable(parts.protocol) || !rewritable(currentProtocol)) return candidate;
-  return setProtocol(candidate, currentProtocol);
-}
-function candidateParts(candidate) {
-  if (!isAbsolute(candidate)) return {
-    protocol: "",
-    host: "",
-    port: ""
-  };
-  try {
-    const parsed = new URL(candidate);
-    return {
-      protocol: parsed.protocol.replace(":", "").toLowerCase(),
-      host: parsed.hostname.toLowerCase(),
-      port: parsed.port
-    };
-  } catch {
-    return {
-      protocol: "",
-      host: "",
-      port: ""
-    };
-  }
-}
-function toBaseOrigin(url) {
-  try {
-    const parsed = new URL(url);
-    parsed.pathname = "";
-    parsed.search = "";
-    parsed.hash = "";
-    return parsed.origin;
-  } catch {
-    return url.replace(/\/+$/, "");
-  }
-}
-function getCurrentHostname() {
-  if (typeof window !== "undefined" && window.location) return window.location.hostname;
-  return "";
-}
-function getCurrentProtocol() {
-  if (typeof window !== "undefined" && window.location) return window.location.protocol.replace(":", "");
-  return "https";
-}
-function getCurrentPort() {
-  var _a;
-  if (typeof window !== "undefined" && window.location) return (_a = window.location.port) != null ? _a : "";
-  return "";
-}
-function isAbsolute(url) {
-  return /^[a-z][a-z\d+\-.]*:\/\//i.test(url);
-}
-function getHostname(url) {
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return "";
-  }
-}
-function setProtocol(url, protocol) {
-  try {
-    const parsed = new URL(url);
-    parsed.protocol = protocol.endsWith(":") ? protocol : `${protocol}:`;
-    return parsed.href;
-  } catch {
-    return url;
-  }
-}
-function isLocalhost(url) {
-  const hostname = hostnameOf(url).toLowerCase();
-  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname.startsWith("192.168.") || hostname.startsWith("10.") || hostname.startsWith("172.");
-}
-function isIpAddress(url) {
-  const hostname = hostnameOf(url);
-  return /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || /^\[?([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\]?$/.test(hostname);
-}
-function hostnameOf(url) {
-  if (isAbsolute(url)) return getHostname(url);
-  return url;
-}
-function removeTrailingSlash(url) {
-  try {
-    const parsed = new URL(url);
-    parsed.pathname = parsed.pathname.replace(/\/+$/, "") || "/";
-    return parsed.href;
-  } catch {
-    return url.replace(/\/+$/, "") || "/";
-  }
-}
-
 // ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/http/stream-parser.js
 function extractStreamLines(buffer, flush = false) {
   const lines = [];
@@ -2959,7 +2963,7 @@ function defaultRuntimeEnvSource() {
   return globalThis;
 }
 function resolveRuntimeEnv(source = defaultRuntimeEnvSource()) {
-  var _a, _b;
+  var _a, _b, _c;
   const lifecycle = (_a = readEnv(source, "SDKWORK_ENVIRONMENT")) != null ? _a : "production";
   const appApiBaseUrl = readEnv(source, "SDKWORK_CLOUDROUTER_ROUTER_APP_API_BASE_URL");
   if (!appApiBaseUrl) {
@@ -2967,11 +2971,30 @@ function resolveRuntimeEnv(source = defaultRuntimeEnvSource()) {
       "Cloud Router mini program requires SDKWORK_CLOUDROUTER_ROUTER_APP_API_BASE_URL in the runtime environment."
     );
   }
+  const appApiOrigin = resolveCloudRouterAppApiBaseUrl(appApiBaseUrl);
+  const configuredPublicUrl = readEnv(
+    source,
+    "SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL"
+  );
+  const configuredWebUrl = readEnv(
+    source,
+    "SDKWORK_CLOUDROUTER_ROUTER_WEB_PUBLIC_HTTP_URL"
+  );
   return {
-    appApiBaseUrl: resolveCloudRouterAppApiBaseUrl(appApiBaseUrl),
+    appApiBaseUrl: appApiOrigin,
+    webPublicHttpUrl: (_b = configuredWebUrl != null ? configuredWebUrl : configuredPublicUrl) != null ? _b : deriveOrigin(appApiOrigin),
     lifecycleEnvironment: LIFECYCLE_ENVIRONMENTS.has(lifecycle) ? lifecycle : "production",
-    profileId: (_b = readEnv(source, "SDKWORK_PROFILE_ID")) != null ? _b : "standalone.production"
+    profileId: (_c = readEnv(source, "SDKWORK_PROFILE_ID")) != null ? _c : "standalone.production"
   };
+}
+function deriveOrigin(candidate) {
+  const match = /^(https?:\/\/[^/]+)/iu.exec(candidate.trim());
+  if (!match) {
+    throw new Error(
+      "Cloud Router mini program requires an absolute application public HTTP URL."
+    );
+  }
+  return match[1];
 }
 function resolveCloudRouterAppApiBaseUrl(candidate) {
   const stripped = candidate.replace(/\/+$/u, "");
@@ -3056,6 +3079,11 @@ function getCloudRouterTokenManager() {
     }
   );
   return tokenManager;
+}
+
+// ../../../sdkwork-utils/packages/sdkwork-utils-typescript/src/string.js
+function trim(value) {
+  return value.trim();
 }
 
 // ../../../sdkwork-utils/packages/sdkwork-utils-typescript/src/runtime/binary.js
@@ -4090,7 +4118,7 @@ var AiPricingRatesApi = class {
       { name: "page", value: params == null ? void 0 : params.page, style: "form", explode: true, allowReserved: false },
       { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false }
     ]);
-    return this.client.request(appendQueryString$4(appApiPath(`/ai/pricing/rates`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", skipAuth: true, sdkworkUnwrapKind: "page" });
+    return this.client.request(appendQueryString$4(appApiPath(`/ai/pricing/rates`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
   }
 };
 var AiPricingApi = class {
@@ -5429,13 +5457,2084 @@ function createConsoleTranslator(locale) {
   };
 }
 
+// ../../../sdkwork-appbase/packages/common/system/sdkwork-settings-core/src/values.ts
+function isSameSdkworkSettingsValue(left, right) {
+  if (left === right) {
+    return true;
+  }
+  if (Array.isArray(left) && Array.isArray(right)) {
+    if (left.length !== right.length) {
+      return false;
+    }
+    return left.every((item, index) => item === right[index]);
+  }
+  return false;
+}
+function resolveSdkworkSettingsValues(catalog, layers = {}) {
+  const values = { ...catalog.defaults };
+  const scopedLayers = [
+    layers.system,
+    layers.tenant,
+    layers.user
+  ];
+  for (const layer of scopedLayers) {
+    if (!layer) {
+      continue;
+    }
+    for (const setting of catalog.settings) {
+      const nextValue = layer[setting.id];
+      if (nextValue !== void 0) {
+        values[setting.id] = nextValue;
+      }
+    }
+  }
+  return values;
+}
+function findSdkworkSettingsDirtyIds(catalog, values, savedValues) {
+  return catalog.settings.filter(
+    (setting) => !isSameSdkworkSettingsValue(values[setting.id], savedValues[setting.id])
+  ).map((setting) => setting.id);
+}
+function freezeSdkworkSettingsValues(values) {
+  return Object.freeze({ ...values });
+}
+
+// ../../../sdkwork-appbase/packages/common/system/sdkwork-settings-core/src/catalog.ts
+var DEFAULT_GROUP_ORDER = [
+  "account",
+  "general",
+  "appearance",
+  "language",
+  "notifications",
+  "privacy",
+  "security",
+  "storage",
+  "advanced",
+  "workspace",
+  "ai",
+  "usage",
+  "system",
+  "about"
+];
+function humanizeSdkworkSettingsId(id) {
+  return id.split(/[-_.]/u).filter(Boolean).map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`).join(" ");
+}
+function createIds(values, label) {
+  const byId = {};
+  for (const value of values) {
+    if (!value.id) {
+      throw new Error(`Settings ${label} must define a non-empty id`);
+    }
+    if (byId[value.id]) {
+      throw new Error(`Duplicate settings ${label} id: ${value.id}`);
+    }
+    byId[value.id] = value;
+  }
+  return byId;
+}
+function compareOrder(leftOrder, rightOrder) {
+  return (leftOrder != null ? leftOrder : Number.MAX_SAFE_INTEGER) - (rightOrder != null ? rightOrder : Number.MAX_SAFE_INTEGER);
+}
+function groupRank(groupId) {
+  const rank = DEFAULT_GROUP_ORDER.indexOf(
+    groupId
+  );
+  return rank === -1 ? DEFAULT_GROUP_ORDER.length : rank;
+}
+function sortGroups(groups) {
+  return [...groups].sort((left, right) => {
+    const orderDifference = compareOrder(left.order, right.order);
+    if (orderDifference !== 0) {
+      return orderDifference;
+    }
+    const rankDifference = groupRank(left.id) - groupRank(right.id);
+    if (rankDifference !== 0) {
+      return rankDifference;
+    }
+    return String(left.id).localeCompare(String(right.id));
+  });
+}
+function sortSections(sections) {
+  return [...sections].sort((left, right) => {
+    var _a, _b, _c, _d;
+    const groupDifference = groupRank(left.groupId) - groupRank(right.groupId);
+    if (groupDifference !== 0) {
+      return groupDifference;
+    }
+    const orderDifference = compareOrder(left.order, right.order);
+    if (orderDifference !== 0) {
+      return orderDifference;
+    }
+    return ((_b = (_a = left.titleKey) != null ? _a : left.title) != null ? _b : left.id).localeCompare(
+      (_d = (_c = right.titleKey) != null ? _c : right.title) != null ? _d : right.id
+    );
+  });
+}
+function sortSettings(settings) {
+  return [...settings].sort((left, right) => {
+    var _a, _b, _c, _d;
+    const orderDifference = compareOrder(left.order, right.order);
+    if (orderDifference !== 0) {
+      return orderDifference;
+    }
+    return ((_b = (_a = left.titleKey) != null ? _a : left.title) != null ? _b : left.id).localeCompare(
+      (_d = (_c = right.titleKey) != null ? _c : right.title) != null ? _d : right.id
+    );
+  });
+}
+function assertSettingDefinition(setting, sectionById) {
+  const section = sectionById[setting.sectionId];
+  if (!section) {
+    throw new Error(
+      `Settings setting ${setting.id} references unknown section ${setting.sectionId}`
+    );
+  }
+  if (setting.kind === "select" || setting.kind === "radio") {
+    if (!setting.options || setting.options.length === 0) {
+      throw new Error(
+        `Settings setting ${setting.id} requires options for kind ${setting.kind}`
+      );
+    }
+    const optionValues = new Set(setting.options.map((option) => option.value));
+    if (!optionValues.has(setting.defaultValue)) {
+      throw new Error(
+        `Settings setting ${setting.id} default value is not a declared option`
+      );
+    }
+  }
+  if (setting.kind === "toggle" && typeof setting.defaultValue !== "boolean") {
+    throw new Error(`Settings toggle ${setting.id} requires a boolean default`);
+  }
+  if ((setting.kind === "number" || setting.kind === "slider") && typeof setting.defaultValue !== "number") {
+    throw new Error(`Settings ${setting.kind} ${setting.id} requires a numeric default`);
+  }
+}
+function createNavigation(groups, sections) {
+  return groups.map((group) => ({
+    group,
+    sections: sections.filter((section) => section.groupId === group.id)
+  })).filter((entry) => entry.sections.length > 0);
+}
+function createSdkworkSettingsCatalog(input) {
+  var _a;
+  const sectionById = createIds(input.sections, "section");
+  const settingById = createIds(input.settings, "setting");
+  const groupInputById = /* @__PURE__ */ new Map();
+  for (const group of (_a = input.groups) != null ? _a : []) {
+    if (groupInputById.has(group.id)) {
+      throw new Error(`Duplicate settings group id: ${group.id}`);
+    }
+    groupInputById.set(group.id, group);
+  }
+  for (const section of input.sections) {
+    if (!groupInputById.has(section.groupId)) {
+      groupInputById.set(section.groupId, {
+        id: section.groupId,
+        titleKey: `settings.group.${section.groupId}.title`
+      });
+    }
+  }
+  for (const setting of input.settings) {
+    assertSettingDefinition(setting, sectionById);
+  }
+  const groups = sortGroups([...groupInputById.values()]);
+  const sections = sortSections(input.sections);
+  const settings = sortSettings(input.settings);
+  const sectionSettings = {};
+  for (const section of sections) {
+    sectionSettings[section.id] = settings.filter(
+      (setting) => setting.sectionId === section.id
+    );
+  }
+  const defaults = {};
+  for (const setting of settings) {
+    defaults[setting.id] = setting.defaultValue;
+  }
+  return {
+    defaults: Object.freeze(defaults),
+    groups: Object.freeze(groups),
+    navigation: Object.freeze(createNavigation(groups, sections)),
+    sectionById: Object.freeze(sectionById),
+    sectionSettings: Object.freeze(sectionSettings),
+    sections: Object.freeze(sections),
+    settingById: Object.freeze(settingById),
+    settings: Object.freeze(settings)
+  };
+}
+function matchesPermission(permission, permissions) {
+  return !permission || permissions.includes(permission) || permissions.includes("*");
+}
+function isVisible(definition, context) {
+  const visible = typeof definition.visible === "function" ? definition.visible(context) : definition.visible !== false;
+  const enabled = typeof definition.enabled === "function" ? definition.enabled(context) : definition.enabled !== false;
+  return visible && enabled;
+}
+function resolveVisibleSdkworkSettings(catalog, context) {
+  var _a;
+  const sections = catalog.sections.filter(
+    (section) => matchesPermission(section.permission, context.permissions) && isVisible(section, context)
+  );
+  const settingsBySection = {};
+  for (const section of sections) {
+    settingsBySection[section.id] = ((_a = catalog.sectionSettings[section.id]) != null ? _a : []).filter(
+      (setting) => matchesPermission(setting.permission, context.permissions) && isVisible(setting, context)
+    );
+  }
+  return {
+    sections: Object.freeze(sections),
+    settingsBySection: Object.freeze(settingsBySection)
+  };
+}
+function resolveDefaultSdkworkSettingsSectionId(catalog) {
+  var _a, _b;
+  return (_b = (_a = catalog.navigation[0]) == null ? void 0 : _a.sections[0]) == null ? void 0 : _b.id;
+}
+
+// ../../../sdkwork-appbase/packages/common/system/sdkwork-settings-core/src/defaults.ts
+var DEFAULT_GROUPS = [
+  { id: "account", titleKey: "settings.group.account.title", order: 10 },
+  { id: "general", titleKey: "settings.group.general.title", order: 20 },
+  { id: "privacy", titleKey: "settings.group.privacy.title", order: 30 },
+  { id: "notifications", titleKey: "settings.group.notifications.title", order: 40 },
+  { id: "storage", titleKey: "settings.group.storage.title", order: 50 },
+  { id: "advanced", titleKey: "settings.group.advanced.title", order: 60 },
+  { id: "about", titleKey: "settings.group.about.title", order: 70 }
+];
+var DEFAULT_SECTIONS = [
+  {
+    id: "profile",
+    groupId: "account",
+    icon: "user",
+    order: 10,
+    titleKey: "settings.section.profile.title",
+    descriptionKey: "settings.section.profile.description"
+  },
+  {
+    id: "account-security",
+    groupId: "account",
+    icon: "shield",
+    order: 20,
+    titleKey: "settings.section.account-security.title",
+    descriptionKey: "settings.section.account-security.description"
+  },
+  {
+    id: "appearance",
+    groupId: "general",
+    icon: "palette",
+    order: 10,
+    saveMode: "auto",
+    titleKey: "settings.section.appearance.title",
+    descriptionKey: "settings.section.appearance.description"
+  },
+  {
+    id: "language",
+    groupId: "general",
+    icon: "languages",
+    order: 20,
+    saveMode: "auto",
+    titleKey: "settings.section.language.title",
+    descriptionKey: "settings.section.language.description"
+  },
+  {
+    id: "voice",
+    groupId: "general",
+    icon: "volume",
+    order: 30,
+    saveMode: "auto",
+    titleKey: "settings.section.voice.title",
+    descriptionKey: "settings.section.voice.description"
+  },
+  {
+    id: "notifications",
+    groupId: "notifications",
+    icon: "bell",
+    order: 10,
+    saveMode: "auto",
+    titleKey: "settings.section.notifications.title",
+    descriptionKey: "settings.section.notifications.description"
+  },
+  {
+    id: "privacy",
+    groupId: "privacy",
+    icon: "lock",
+    order: 10,
+    saveMode: "manual",
+    titleKey: "settings.section.privacy.title",
+    descriptionKey: "settings.section.privacy.description"
+  },
+  {
+    id: "storage",
+    groupId: "storage",
+    icon: "database",
+    order: 10,
+    titleKey: "settings.section.storage.title",
+    descriptionKey: "settings.section.storage.description"
+  },
+  {
+    id: "advanced",
+    groupId: "advanced",
+    icon: "sliders",
+    order: 10,
+    saveMode: "manual",
+    titleKey: "settings.section.advanced.title",
+    descriptionKey: "settings.section.advanced.description"
+  },
+  {
+    id: "about",
+    groupId: "about",
+    icon: "info",
+    order: 10,
+    titleKey: "settings.section.about.title",
+    descriptionKey: "settings.section.about.description"
+  }
+];
+var DEFAULT_SETTINGS = [
+  {
+    id: "account.profile",
+    sectionId: "profile",
+    kind: "action",
+    scope: "user",
+    defaultValue: null,
+    order: 10,
+    titleKey: "settings.account.profile.title",
+    descriptionKey: "settings.account.profile.description",
+    metadata: { action: "open-profile" }
+  },
+  {
+    id: "account.security",
+    sectionId: "profile",
+    kind: "action",
+    scope: "user",
+    defaultValue: null,
+    order: 20,
+    titleKey: "settings.account.security.title",
+    descriptionKey: "settings.account.security.description",
+    metadata: { action: "open-account-security" }
+  },
+  {
+    id: "appearance.theme",
+    sectionId: "appearance",
+    kind: "select",
+    scope: "user",
+    defaultValue: "system",
+    order: 10,
+    saveMode: "auto",
+    titleKey: "settings.appearance.theme.title",
+    descriptionKey: "settings.appearance.theme.description",
+    options: [
+      { value: "system", labelKey: "settings.appearance.theme.option.system" },
+      { value: "light", labelKey: "settings.appearance.theme.option.light" },
+      { value: "dark", labelKey: "settings.appearance.theme.option.dark" }
+    ]
+  },
+  {
+    id: "appearance.font-size",
+    sectionId: "appearance",
+    kind: "radio",
+    scope: "user",
+    defaultValue: "medium",
+    order: 20,
+    saveMode: "auto",
+    titleKey: "settings.appearance.font-size.title",
+    descriptionKey: "settings.appearance.font-size.description",
+    options: [
+      { value: "small", labelKey: "settings.appearance.font-size.option.small" },
+      { value: "medium", labelKey: "settings.appearance.font-size.option.medium" },
+      { value: "large", labelKey: "settings.appearance.font-size.option.large" }
+    ]
+  },
+  {
+    id: "appearance.density",
+    sectionId: "appearance",
+    kind: "radio",
+    scope: "user",
+    defaultValue: "comfortable",
+    order: 30,
+    saveMode: "auto",
+    titleKey: "settings.appearance.density.title",
+    descriptionKey: "settings.appearance.density.description",
+    options: [
+      {
+        value: "comfortable",
+        labelKey: "settings.appearance.density.option.comfortable"
+      },
+      {
+        value: "compact",
+        labelKey: "settings.appearance.density.option.compact"
+      }
+    ]
+  },
+  {
+    id: "appearance.reduce-motion",
+    sectionId: "appearance",
+    kind: "toggle",
+    scope: "user",
+    defaultValue: false,
+    order: 40,
+    saveMode: "auto",
+    titleKey: "settings.appearance.reduce-motion.title",
+    descriptionKey: "settings.appearance.reduce-motion.description"
+  },
+  {
+    id: "language.locale",
+    sectionId: "language",
+    kind: "select",
+    scope: "user",
+    defaultValue: "zh-CN",
+    order: 10,
+    saveMode: "auto",
+    titleKey: "settings.language.locale.title",
+    descriptionKey: "settings.language.locale.description",
+    options: [
+      { value: "zh-CN", label: "\u7B80\u4F53\u4E2D\u6587" },
+      { value: "en-US", label: "English (US)" },
+      { value: "ja-JP", label: "\u65E5\u672C\u8A9E" },
+      { value: "ko-KR", label: "\uD55C\uAD6D\uC5B4" }
+    ]
+  },
+  {
+    id: "language.timezone",
+    sectionId: "language",
+    kind: "select",
+    scope: "user",
+    defaultValue: "Asia/Shanghai",
+    order: 20,
+    saveMode: "auto",
+    titleKey: "settings.language.timezone.title",
+    descriptionKey: "settings.language.timezone.description",
+    options: [
+      { value: "Asia/Shanghai", label: "UTC+08:00 \xB7 \u5317\u4EAC / \u4E0A\u6D77" },
+      { value: "Asia/Tokyo", label: "UTC+09:00 \xB7 \u4E1C\u4EAC" },
+      { value: "UTC", label: "UTC \xB7 \u534F\u8C03\u4E16\u754C\u65F6" },
+      { value: "America/Los_Angeles", label: "UTC-08:00 \xB7 \u6D1B\u6749\u77F6" }
+    ]
+  },
+  {
+    id: "language.date-format",
+    sectionId: "language",
+    kind: "radio",
+    scope: "user",
+    defaultValue: "YYYY-MM-DD",
+    order: 30,
+    saveMode: "auto",
+    titleKey: "settings.language.date-format.title",
+    descriptionKey: "settings.language.date-format.description",
+    options: [
+      { value: "YYYY-MM-DD", label: "2026-07-01" },
+      { value: "DD/MM/YYYY", label: "01/07/2026" },
+      { value: "MM/DD/YYYY", label: "07/01/2026" }
+    ]
+  },
+  {
+    id: "voice.enabled",
+    sectionId: "voice",
+    kind: "toggle",
+    scope: "user",
+    defaultValue: true,
+    order: 10,
+    saveMode: "auto",
+    titleKey: "settings.voice.enabled.title",
+    descriptionKey: "settings.voice.enabled.description"
+  },
+  {
+    id: "voice.speaker",
+    sectionId: "voice",
+    kind: "select",
+    scope: "user",
+    defaultValue: "system",
+    order: 20,
+    saveMode: "auto",
+    titleKey: "settings.voice.speaker.title",
+    descriptionKey: "settings.voice.speaker.description",
+    options: [
+      { value: "system", labelKey: "settings.voice.speaker.option.system" },
+      { value: "female", labelKey: "settings.voice.speaker.option.female" },
+      { value: "male", labelKey: "settings.voice.speaker.option.male" }
+    ]
+  },
+  {
+    id: "voice.rate",
+    sectionId: "voice",
+    kind: "slider",
+    scope: "user",
+    defaultValue: 1,
+    order: 30,
+    saveMode: "auto",
+    titleKey: "settings.voice.rate.title",
+    descriptionKey: "settings.voice.rate.description",
+    constraints: { min: 0.5, max: 2, step: 0.1 },
+    ui: { unit: "x" }
+  },
+  {
+    id: "notifications.enabled",
+    sectionId: "notifications",
+    kind: "toggle",
+    scope: "user",
+    defaultValue: true,
+    order: 10,
+    saveMode: "auto",
+    titleKey: "settings.notifications.enabled.title",
+    descriptionKey: "settings.notifications.enabled.description"
+  },
+  {
+    id: "notifications.sound",
+    sectionId: "notifications",
+    kind: "toggle",
+    scope: "user",
+    defaultValue: true,
+    order: 20,
+    saveMode: "auto",
+    titleKey: "settings.notifications.sound.title",
+    descriptionKey: "settings.notifications.sound.description"
+  },
+  {
+    id: "notifications.preview",
+    sectionId: "notifications",
+    kind: "toggle",
+    scope: "user",
+    defaultValue: true,
+    order: 30,
+    saveMode: "auto",
+    titleKey: "settings.notifications.preview.title",
+    descriptionKey: "settings.notifications.preview.description"
+  },
+  {
+    id: "notifications.email",
+    sectionId: "notifications",
+    kind: "toggle",
+    scope: "user",
+    defaultValue: false,
+    order: 40,
+    saveMode: "auto",
+    titleKey: "settings.notifications.email.title",
+    descriptionKey: "settings.notifications.email.description"
+  },
+  {
+    id: "privacy.analytics",
+    sectionId: "privacy",
+    kind: "toggle",
+    scope: "user",
+    defaultValue: false,
+    order: 10,
+    saveMode: "manual",
+    titleKey: "settings.privacy.analytics.title",
+    descriptionKey: "settings.privacy.analytics.description"
+  },
+  {
+    id: "privacy.crash-reports",
+    sectionId: "privacy",
+    kind: "toggle",
+    scope: "user",
+    defaultValue: true,
+    order: 20,
+    saveMode: "manual",
+    titleKey: "settings.privacy.crash-reports.title",
+    descriptionKey: "settings.privacy.crash-reports.description"
+  },
+  {
+    id: "privacy.personalization",
+    sectionId: "privacy",
+    kind: "toggle",
+    scope: "user",
+    defaultValue: false,
+    order: 30,
+    saveMode: "manual",
+    titleKey: "settings.privacy.personalization.title",
+    descriptionKey: "settings.privacy.personalization.description"
+  },
+  {
+    id: "storage.clear-cache",
+    sectionId: "storage",
+    kind: "action",
+    scope: "user",
+    defaultValue: null,
+    order: 10,
+    titleKey: "settings.storage.clear-cache.title",
+    descriptionKey: "settings.storage.clear-cache.description",
+    metadata: { action: "clear-cache" }
+  },
+  {
+    id: "storage.offline-downloads",
+    sectionId: "storage",
+    kind: "action",
+    scope: "user",
+    defaultValue: null,
+    order: 20,
+    titleKey: "settings.storage.offline-downloads.title",
+    descriptionKey: "settings.storage.offline-downloads.description",
+    metadata: { action: "open-offline-downloads" }
+  },
+  {
+    id: "advanced.developer-mode",
+    sectionId: "advanced",
+    kind: "toggle",
+    scope: "user",
+    defaultValue: false,
+    order: 10,
+    saveMode: "manual",
+    requiresRestart: true,
+    titleKey: "settings.advanced.developer-mode.title",
+    descriptionKey: "settings.advanced.developer-mode.description"
+  },
+  {
+    id: "advanced.experimental",
+    sectionId: "advanced",
+    kind: "toggle",
+    scope: "user",
+    defaultValue: false,
+    order: 20,
+    saveMode: "manual",
+    requiresRestart: true,
+    titleKey: "settings.advanced.experimental.title",
+    descriptionKey: "settings.advanced.experimental.description"
+  },
+  {
+    id: "advanced.reset",
+    sectionId: "advanced",
+    kind: "action",
+    scope: "user",
+    defaultValue: null,
+    order: 30,
+    titleKey: "settings.advanced.reset.title",
+    descriptionKey: "settings.advanced.reset.description",
+    ui: { destructive: true },
+    metadata: { action: "reset-settings" }
+  },
+  {
+    id: "about.version",
+    sectionId: "about",
+    kind: "info",
+    scope: "system",
+    defaultValue: "",
+    order: 10,
+    titleKey: "settings.about.version.title",
+    descriptionKey: "settings.about.version.description"
+  },
+  {
+    id: "about.terms",
+    sectionId: "about",
+    kind: "action",
+    scope: "system",
+    defaultValue: null,
+    order: 20,
+    titleKey: "settings.about.terms.title",
+    descriptionKey: "settings.about.terms.description",
+    metadata: { action: "open-terms" }
+  },
+  {
+    id: "about.privacy-policy",
+    sectionId: "about",
+    kind: "action",
+    scope: "system",
+    defaultValue: null,
+    order: 30,
+    titleKey: "settings.about.privacy-policy.title",
+    descriptionKey: "settings.about.privacy-policy.description",
+    metadata: { action: "open-privacy-policy" }
+  }
+];
+function createDefaultSdkworkSettingsCatalog(input = {}) {
+  var _a, _b, _c;
+  return createSdkworkSettingsCatalog({
+    groups: [...DEFAULT_GROUPS, ...(_a = input.extraGroups) != null ? _a : []],
+    sections: [...DEFAULT_SECTIONS, ...(_b = input.extraSections) != null ? _b : []],
+    settings: [...DEFAULT_SETTINGS, ...(_c = input.extraSettings) != null ? _c : []]
+  });
+}
+var SDKWORK_SETTINGS_DEFAULT_GROUP_IDS = Object.freeze(
+  DEFAULT_GROUPS.map((group) => group.id)
+);
+
+// ../../../sdkwork-appbase/packages/common/system/sdkwork-settings-core/src/i18n/en-US/system/settings/center.ts
+var enUsSettingsMessages = {
+  "settings.group.about.title": "About",
+  "settings.group.account.title": "Account",
+  "settings.group.advanced.title": "Advanced",
+  "settings.group.ai.title": "Intelligence",
+  "settings.group.appearance.title": "Appearance",
+  "settings.group.general.title": "General",
+  "settings.group.language.title": "Language & region",
+  "settings.group.notifications.title": "Notifications",
+  "settings.group.privacy.title": "Privacy",
+  "settings.group.security.title": "Security",
+  "settings.group.storage.title": "Storage",
+  "settings.group.system.title": "System",
+  "settings.group.usage.title": "Usage",
+  "settings.group.workspace.title": "Workspace",
+  "settings.section.profile.title": "Profile",
+  "settings.section.profile.description": "Your public identity across SDKWork applications.",
+  "settings.section.account-security.title": "Account security",
+  "settings.section.account-security.description": "Sign-in methods, sessions, and recovery options.",
+  "settings.section.appearance.title": "Appearance",
+  "settings.section.appearance.description": "Theme, type scale, and display density.",
+  "settings.section.language.title": "Language & region",
+  "settings.section.language.description": "Interface language, time zone, and date formatting.",
+  "settings.section.voice.title": "Voice",
+  "settings.section.voice.description": "Voice playback, speaker, and rate.",
+  "settings.section.notifications.title": "Notifications",
+  "settings.section.notifications.description": "Choose which updates reach you and how.",
+  "settings.section.privacy.title": "Privacy",
+  "settings.section.privacy.description": "Control diagnostic data and personalization.",
+  "settings.section.storage.title": "Storage",
+  "settings.section.storage.description": "Manage cached data and local downloads.",
+  "settings.section.about.title": "About",
+  "settings.section.about.description": "Version information, terms, and policies.",
+  "settings.section.advanced.title": "Advanced",
+  "settings.section.advanced.description": "Developer tools and experimental capabilities.",
+  "settings.section.workspace.title": "Workspace",
+  "settings.section.workspace.description": "Defaults for this workspace.",
+  "settings.section.ai.title": "Intelligence",
+  "settings.section.ai.description": "Assistant behavior and model preferences.",
+  "settings.account.profile.title": "Profile",
+  "settings.account.profile.description": "Name, avatar, and public profile.",
+  "settings.account.security.title": "Security",
+  "settings.account.security.description": "Password, passkeys, and active sessions.",
+  "settings.appearance.theme.title": "Theme",
+  "settings.appearance.theme.description": "Follow the system or choose a fixed appearance.",
+  "settings.appearance.theme.option.system": "System",
+  "settings.appearance.theme.option.light": "Light",
+  "settings.appearance.theme.option.dark": "Dark",
+  "settings.appearance.font-size.title": "Text size",
+  "settings.appearance.font-size.description": "Adjust the base size of interface text.",
+  "settings.appearance.font-size.option.small": "Small",
+  "settings.appearance.font-size.option.medium": "Medium",
+  "settings.appearance.font-size.option.large": "Large",
+  "settings.appearance.density.title": "Display density",
+  "settings.appearance.density.description": "Compact mode fits more content on one screen.",
+  "settings.appearance.density.option.comfortable": "Comfortable",
+  "settings.appearance.density.option.compact": "Compact",
+  "settings.appearance.reduce-motion.title": "Reduce motion",
+  "settings.appearance.reduce-motion.description": "Minimize non-essential animation.",
+  "settings.language.locale.title": "Interface language",
+  "settings.language.locale.description": "Language used by menus, labels, and messages.",
+  "settings.language.timezone.title": "Time zone",
+  "settings.language.timezone.description": "Affects timestamps, schedules, and reminders.",
+  "settings.language.date-format.title": "Date format",
+  "settings.language.date-format.description": "How calendar dates are displayed.",
+  "settings.voice.enabled.title": "Voice playback",
+  "settings.voice.enabled.description": "Enable assistant voice playback and voice interaction.",
+  "settings.voice.speaker.title": "Voice",
+  "settings.voice.speaker.description": "Choose the voice used for playback.",
+  "settings.voice.speaker.option.system": "System default",
+  "settings.voice.speaker.option.female": "Female",
+  "settings.voice.speaker.option.male": "Male",
+  "settings.voice.rate.title": "Speaking rate",
+  "settings.voice.rate.description": "Adjust the speed of voice playback.",
+  "settings.notifications.enabled.title": "Notifications",
+  "settings.notifications.enabled.description": "Receive account and product updates.",
+  "settings.notifications.sound.title": "Sound",
+  "settings.notifications.sound.description": "Play a sound for new notifications.",
+  "settings.notifications.preview.title": "Message preview",
+  "settings.notifications.preview.description": "Show content in notification previews.",
+  "settings.notifications.email.title": "Email notifications",
+  "settings.notifications.email.description": "Receive important updates by email.",
+  "settings.privacy.analytics.title": "Usage analytics",
+  "settings.privacy.analytics.description": "Share anonymous usage data to improve the product.",
+  "settings.privacy.crash-reports.title": "Crash reports",
+  "settings.privacy.crash-reports.description": "Send diagnostic information after a crash.",
+  "settings.privacy.personalization.title": "Personalized recommendations",
+  "settings.privacy.personalization.description": "Use activity to tailor suggestions.",
+  "settings.storage.clear-cache.title": "Clear cache",
+  "settings.storage.clear-cache.description": "Remove temporary files. Your data stays intact.",
+  "settings.storage.offline-downloads.title": "Offline downloads",
+  "settings.storage.offline-downloads.description": "Review files stored on this device.",
+  "settings.about.version.title": "Version",
+  "settings.about.version.description": "Installed application version.",
+  "settings.about.terms.title": "Terms of service",
+  "settings.about.terms.description": "Read the terms that govern this application.",
+  "settings.about.privacy-policy.title": "Privacy policy",
+  "settings.about.privacy-policy.description": "Learn how data is collected and used.",
+  "settings.advanced.developer-mode.title": "Developer mode",
+  "settings.advanced.developer-mode.description": "Enable diagnostics and developer tooling.",
+  "settings.advanced.experimental.title": "Experimental features",
+  "settings.advanced.experimental.description": "Try features that are still in progress.",
+  "settings.advanced.reset.title": "Reset all settings",
+  "settings.advanced.reset.description": "Restore every preference to its default value.",
+  "settings.ui.search.placeholder": "Search settings",
+  "settings.ui.title": "Settings",
+  "settings.ui.description": "Manage your account, preferences, and application behavior.",
+  "settings.ui.search.empty-title": "No settings match your search",
+  "settings.ui.search.empty-description": "Try a different keyword or browse the navigation.",
+  "settings.ui.loading": "Loading settings\u2026",
+  "settings.ui.error-title": "Settings could not be loaded",
+  "settings.ui.error-description": "Check your connection and try again.",
+  "settings.ui.retry": "Retry",
+  "settings.ui.save": "Save",
+  "settings.ui.saving": "Saving\u2026",
+  "settings.ui.saved": "Saved",
+  "settings.ui.discard": "Discard",
+  "settings.ui.dirty-title": "Unsaved changes",
+  "settings.ui.dirty-description": "Review your changes before leaving this page.",
+  "settings.ui.restart-required": "Restart required",
+  "settings.ui.restart-description": "Some changes take effect after the application restarts.",
+  "settings.ui.restart": "Restart now",
+  "settings.ui.back": "Back",
+  "settings.ui.close": "Close",
+  "settings.ui.reset": "Reset",
+  "settings.ui.navigation": "Settings navigation",
+  "settings.ui.section-navigation": "Sections in this group",
+  "settings.ui.read-only": "Read only",
+  "settings.ui.unavailable": "Unavailable",
+  "settings.ui.unsaved-badge": "Unsaved",
+  "settings.ui.danger-zone": "Danger zone",
+  "settings.ui.on": "On",
+  "settings.ui.off": "Off",
+  "settings.ui.not-set": "Not set",
+  "settings.validation.required": "This field is required.",
+  "settings.validation.min": "The value is below the allowed minimum.",
+  "settings.validation.max": "The value is above the allowed maximum.",
+  "settings.validation.min-length": "The value is too short.",
+  "settings.validation.max-length": "The value is too long.",
+  "settings.validation.pattern": "The value does not match the required format.",
+  "settings.validation.pattern-invalid": "The validation pattern is invalid.",
+  "settings.validation.option": "Choose one of the available options.",
+  "settings.validation.boolean": "This setting must be on or off.",
+  "settings.validation.number": "Enter a number.",
+  "settings.validation.text": "Enter text.",
+  "settings.validation.step": "The value must use the allowed increment."
+};
+
+// ../../../sdkwork-appbase/packages/common/system/sdkwork-settings-core/src/i18n/zh-CN/system/settings/center.ts
+var zhCnSettingsMessages = {
+  "settings.group.about.title": "\u5173\u4E8E",
+  "settings.group.account.title": "\u8D26\u6237",
+  "settings.group.advanced.title": "\u9AD8\u7EA7",
+  "settings.group.ai.title": "\u667A\u80FD",
+  "settings.group.appearance.title": "\u5916\u89C2",
+  "settings.group.general.title": "\u901A\u7528",
+  "settings.group.language.title": "\u8BED\u8A00\u4E0E\u5730\u533A",
+  "settings.group.notifications.title": "\u901A\u77E5",
+  "settings.group.privacy.title": "\u9690\u79C1",
+  "settings.group.security.title": "\u5B89\u5168",
+  "settings.group.storage.title": "\u5B58\u50A8",
+  "settings.group.system.title": "\u7CFB\u7EDF",
+  "settings.group.usage.title": "\u7528\u91CF",
+  "settings.group.workspace.title": "\u5DE5\u4F5C\u533A",
+  "settings.section.profile.title": "\u4E2A\u4EBA\u8D44\u6599",
+  "settings.section.profile.description": "\u5728 SDKWork \u5E94\u7528\u4E2D\u5C55\u793A\u7684\u516C\u5F00\u8EAB\u4EFD\u3002",
+  "settings.section.account-security.title": "\u8D26\u6237\u5B89\u5168",
+  "settings.section.account-security.description": "\u767B\u5F55\u65B9\u5F0F\u3001\u4F1A\u8BDD\u4E0E\u627E\u56DE\u9009\u9879\u3002",
+  "settings.section.appearance.title": "\u5916\u89C2",
+  "settings.section.appearance.description": "\u4E3B\u9898\u3001\u5B57\u4F53\u5927\u5C0F\u4E0E\u663E\u793A\u5BC6\u5EA6\u3002",
+  "settings.section.language.title": "\u8BED\u8A00\u4E0E\u5730\u533A",
+  "settings.section.language.description": "\u754C\u9762\u8BED\u8A00\u3001\u65F6\u533A\u4E0E\u65E5\u671F\u683C\u5F0F\u3002",
+  "settings.section.voice.title": "\u8BED\u97F3",
+  "settings.section.voice.description": "\u8BED\u97F3\u64AD\u62A5\u3001\u97F3\u8272\u4E0E\u8BED\u901F\u3002",
+  "settings.section.notifications.title": "\u901A\u77E5",
+  "settings.section.notifications.description": "\u9009\u62E9\u63A5\u6536\u54EA\u4E9B\u52A8\u6001\u4EE5\u53CA\u63A5\u6536\u65B9\u5F0F\u3002",
+  "settings.section.privacy.title": "\u9690\u79C1",
+  "settings.section.privacy.description": "\u63A7\u5236\u8BCA\u65AD\u6570\u636E\u4E0E\u4E2A\u6027\u5316\u3002",
+  "settings.section.storage.title": "\u5B58\u50A8",
+  "settings.section.storage.description": "\u7BA1\u7406\u7F13\u5B58\u6570\u636E\u4E0E\u672C\u5730\u4E0B\u8F7D\u3002",
+  "settings.section.about.title": "\u5173\u4E8E",
+  "settings.section.about.description": "\u7248\u672C\u4FE1\u606F\u3001\u6761\u6B3E\u4E0E\u653F\u7B56\u3002",
+  "settings.section.advanced.title": "\u9AD8\u7EA7",
+  "settings.section.advanced.description": "\u5F00\u53D1\u8005\u5DE5\u5177\u4E0E\u5B9E\u9A8C\u529F\u80FD\u3002",
+  "settings.section.workspace.title": "\u5DE5\u4F5C\u533A",
+  "settings.section.workspace.description": "\u5F53\u524D\u5DE5\u4F5C\u533A\u7684\u9ED8\u8BA4\u8BBE\u7F6E\u3002",
+  "settings.section.ai.title": "\u667A\u80FD",
+  "settings.section.ai.description": "\u52A9\u624B\u884C\u4E3A\u4E0E\u6A21\u578B\u504F\u597D\u3002",
+  "settings.account.profile.title": "\u4E2A\u4EBA\u8D44\u6599",
+  "settings.account.profile.description": "\u59D3\u540D\u3001\u5934\u50CF\u4E0E\u516C\u5F00\u8D44\u6599\u3002",
+  "settings.account.security.title": "\u5B89\u5168",
+  "settings.account.security.description": "\u5BC6\u7801\u3001\u901A\u884C\u5BC6\u94A5\u4E0E\u767B\u5F55\u4F1A\u8BDD\u3002",
+  "settings.appearance.theme.title": "\u4E3B\u9898",
+  "settings.appearance.theme.description": "\u8DDF\u968F\u7CFB\u7EDF\u6216\u56FA\u5B9A\u4F7F\u7528\u67D0\u79CD\u5916\u89C2\u3002",
+  "settings.appearance.theme.option.system": "\u8DDF\u968F\u7CFB\u7EDF",
+  "settings.appearance.theme.option.light": "\u6D45\u8272",
+  "settings.appearance.theme.option.dark": "\u6DF1\u8272",
+  "settings.appearance.font-size.title": "\u5B57\u4F53\u5927\u5C0F",
+  "settings.appearance.font-size.description": "\u8C03\u6574\u754C\u9762\u6587\u5B57\u7684\u57FA\u7840\u5927\u5C0F\u3002",
+  "settings.appearance.font-size.option.small": "\u5C0F",
+  "settings.appearance.font-size.option.medium": "\u4E2D",
+  "settings.appearance.font-size.option.large": "\u5927",
+  "settings.appearance.density.title": "\u663E\u793A\u5BC6\u5EA6",
+  "settings.appearance.density.description": "\u7D27\u51D1\u6A21\u5F0F\u53EF\u5728\u4E00\u5C4F\u5185\u5C55\u793A\u66F4\u591A\u5185\u5BB9\u3002",
+  "settings.appearance.density.option.comfortable": "\u8212\u9002",
+  "settings.appearance.density.option.compact": "\u7D27\u51D1",
+  "settings.appearance.reduce-motion.title": "\u51CF\u5C11\u52A8\u6548",
+  "settings.appearance.reduce-motion.description": "\u5C3D\u91CF\u51CF\u5C11\u975E\u5FC5\u8981\u52A8\u753B\u3002",
+  "settings.language.locale.title": "\u754C\u9762\u8BED\u8A00",
+  "settings.language.locale.description": "\u83DC\u5355\u3001\u6807\u7B7E\u4E0E\u63D0\u793A\u4F7F\u7528\u7684\u8BED\u8A00\u3002",
+  "settings.language.timezone.title": "\u65F6\u533A",
+  "settings.language.timezone.description": "\u5F71\u54CD\u65F6\u95F4\u6233\u3001\u65E5\u7A0B\u4E0E\u63D0\u9192\u7684\u663E\u793A\u3002",
+  "settings.language.date-format.title": "\u65E5\u671F\u683C\u5F0F",
+  "settings.language.date-format.description": "\u65E5\u5386\u65E5\u671F\u7684\u663E\u793A\u65B9\u5F0F\u3002",
+  "settings.voice.enabled.title": "\u8BED\u97F3\u64AD\u62A5",
+  "settings.voice.enabled.description": "\u5F00\u542F\u52A9\u624B\u8BED\u97F3\u64AD\u62A5\u4E0E\u8BED\u97F3\u4EA4\u4E92\u3002",
+  "settings.voice.speaker.title": "\u8BED\u97F3\u97F3\u8272",
+  "settings.voice.speaker.description": "\u9009\u62E9\u64AD\u62A5\u65F6\u4F7F\u7528\u7684\u58F0\u97F3\u3002",
+  "settings.voice.speaker.option.system": "\u7CFB\u7EDF\u9ED8\u8BA4",
+  "settings.voice.speaker.option.female": "\u5973\u58F0",
+  "settings.voice.speaker.option.male": "\u7537\u58F0",
+  "settings.voice.rate.title": "\u8BED\u901F",
+  "settings.voice.rate.description": "\u8C03\u6574\u8BED\u97F3\u64AD\u62A5\u901F\u5EA6\u3002",
+  "settings.notifications.enabled.title": "\u901A\u77E5",
+  "settings.notifications.enabled.description": "\u63A5\u6536\u8D26\u6237\u4E0E\u4EA7\u54C1\u52A8\u6001\u3002",
+  "settings.notifications.sound.title": "\u58F0\u97F3",
+  "settings.notifications.sound.description": "\u65B0\u901A\u77E5\u5230\u8FBE\u65F6\u64AD\u653E\u63D0\u793A\u97F3\u3002",
+  "settings.notifications.preview.title": "\u6D88\u606F\u9884\u89C8",
+  "settings.notifications.preview.description": "\u5728\u901A\u77E5\u9884\u89C8\u4E2D\u663E\u793A\u5185\u5BB9\u3002",
+  "settings.notifications.email.title": "\u90AE\u4EF6\u901A\u77E5",
+  "settings.notifications.email.description": "\u901A\u8FC7\u90AE\u4EF6\u63A5\u6536\u91CD\u8981\u66F4\u65B0\u3002",
+  "settings.privacy.analytics.title": "\u4F7F\u7528\u5206\u6790",
+  "settings.privacy.analytics.description": "\u5171\u4EAB\u533F\u540D\u4F7F\u7528\u6570\u636E\u4EE5\u6539\u8FDB\u4EA7\u54C1\u3002",
+  "settings.privacy.crash-reports.title": "\u5D29\u6E83\u62A5\u544A",
+  "settings.privacy.crash-reports.description": "\u5D29\u6E83\u540E\u53D1\u9001\u8BCA\u65AD\u4FE1\u606F\u3002",
+  "settings.privacy.personalization.title": "\u4E2A\u6027\u5316\u63A8\u8350",
+  "settings.privacy.personalization.description": "\u6839\u636E\u6D3B\u52A8\u8BB0\u5F55\u8C03\u6574\u63A8\u8350\u5185\u5BB9\u3002",
+  "settings.storage.clear-cache.title": "\u6E05\u9664\u7F13\u5B58",
+  "settings.storage.clear-cache.description": "\u5220\u9664\u4E34\u65F6\u6587\u4EF6\uFF0C\u4E0D\u4F1A\u5F71\u54CD\u4F60\u7684\u6570\u636E\u3002",
+  "settings.storage.offline-downloads.title": "\u79BB\u7EBF\u4E0B\u8F7D",
+  "settings.storage.offline-downloads.description": "\u67E5\u770B\u4FDD\u5B58\u5728\u672C\u8BBE\u5907\u4E0A\u7684\u6587\u4EF6\u3002",
+  "settings.about.version.title": "\u7248\u672C",
+  "settings.about.version.description": "\u5F53\u524D\u5B89\u88C5\u7684\u5E94\u7528\u7248\u672C\u3002",
+  "settings.about.terms.title": "\u670D\u52A1\u6761\u6B3E",
+  "settings.about.terms.description": "\u9605\u8BFB\u9002\u7528\u4E8E\u672C\u5E94\u7528\u7684\u6761\u6B3E\u3002",
+  "settings.about.privacy-policy.title": "\u9690\u79C1\u653F\u7B56",
+  "settings.about.privacy-policy.description": "\u4E86\u89E3\u6570\u636E\u5982\u4F55\u88AB\u6536\u96C6\u4E0E\u4F7F\u7528\u3002",
+  "settings.advanced.developer-mode.title": "\u5F00\u53D1\u8005\u6A21\u5F0F",
+  "settings.advanced.developer-mode.description": "\u542F\u7528\u8BCA\u65AD\u4E0E\u5F00\u53D1\u8005\u5DE5\u5177\u3002",
+  "settings.advanced.experimental.title": "\u5B9E\u9A8C\u529F\u80FD",
+  "settings.advanced.experimental.description": "\u4F53\u9A8C\u4ECD\u5728\u5F00\u53D1\u4E2D\u7684\u529F\u80FD\u3002",
+  "settings.advanced.reset.title": "\u91CD\u7F6E\u5168\u90E8\u8BBE\u7F6E",
+  "settings.advanced.reset.description": "\u5C06\u6240\u6709\u504F\u597D\u6062\u590D\u4E3A\u9ED8\u8BA4\u503C\u3002",
+  "settings.ui.search.placeholder": "\u641C\u7D22\u8BBE\u7F6E",
+  "settings.ui.title": "\u8BBE\u7F6E",
+  "settings.ui.description": "\u7BA1\u7406\u8D26\u6237\u3001\u504F\u597D\u4E0E\u5E94\u7528\u884C\u4E3A\u3002",
+  "settings.ui.search.empty-title": "\u6CA1\u6709\u5339\u914D\u7684\u8BBE\u7F6E",
+  "settings.ui.search.empty-description": "\u5C1D\u8BD5\u5176\u4ED6\u5173\u952E\u8BCD\uFF0C\u6216\u76F4\u63A5\u6D4F\u89C8\u5BFC\u822A\u3002",
+  "settings.ui.loading": "\u6B63\u5728\u52A0\u8F7D\u8BBE\u7F6E\u2026",
+  "settings.ui.error-title": "\u65E0\u6CD5\u52A0\u8F7D\u8BBE\u7F6E",
+  "settings.ui.error-description": "\u8BF7\u68C0\u67E5\u7F51\u7EDC\u8FDE\u63A5\u540E\u91CD\u8BD5\u3002",
+  "settings.ui.retry": "\u91CD\u8BD5",
+  "settings.ui.save": "\u4FDD\u5B58",
+  "settings.ui.saving": "\u6B63\u5728\u4FDD\u5B58\u2026",
+  "settings.ui.saved": "\u5DF2\u4FDD\u5B58",
+  "settings.ui.discard": "\u653E\u5F03",
+  "settings.ui.dirty-title": "\u6709\u672A\u4FDD\u5B58\u7684\u66F4\u6539",
+  "settings.ui.dirty-description": "\u79BB\u5F00\u6B64\u9875\u9762\u524D\u8BF7\u786E\u8BA4\u4F60\u7684\u66F4\u6539\u3002",
+  "settings.ui.restart-required": "\u9700\u8981\u91CD\u542F",
+  "settings.ui.restart-description": "\u90E8\u5206\u66F4\u6539\u5C06\u5728\u5E94\u7528\u91CD\u542F\u540E\u751F\u6548\u3002",
+  "settings.ui.restart": "\u7ACB\u5373\u91CD\u542F",
+  "settings.ui.back": "\u8FD4\u56DE",
+  "settings.ui.close": "\u5173\u95ED",
+  "settings.ui.reset": "\u91CD\u7F6E",
+  "settings.ui.navigation": "\u8BBE\u7F6E\u5BFC\u822A",
+  "settings.ui.section-navigation": "\u6B64\u5206\u7EC4\u4E0B\u7684\u7AE0\u8282",
+  "settings.ui.read-only": "\u53EA\u8BFB",
+  "settings.ui.unavailable": "\u4E0D\u53EF\u7528",
+  "settings.ui.unsaved-badge": "\u672A\u4FDD\u5B58",
+  "settings.ui.danger-zone": "\u5371\u9669\u533A\u57DF",
+  "settings.ui.on": "\u5F00",
+  "settings.ui.off": "\u5173",
+  "settings.ui.not-set": "\u672A\u8BBE\u7F6E",
+  "settings.validation.required": "\u6B64\u9879\u4E3A\u5FC5\u586B\u9879\u3002",
+  "settings.validation.min": "\u8BE5\u503C\u4F4E\u4E8E\u5141\u8BB8\u7684\u6700\u5C0F\u503C\u3002",
+  "settings.validation.max": "\u8BE5\u503C\u9AD8\u4E8E\u5141\u8BB8\u7684\u6700\u5927\u503C\u3002",
+  "settings.validation.min-length": "\u5185\u5BB9\u8FC7\u77ED\u3002",
+  "settings.validation.max-length": "\u5185\u5BB9\u8FC7\u957F\u3002",
+  "settings.validation.pattern": "\u5185\u5BB9\u683C\u5F0F\u4E0D\u6B63\u786E\u3002",
+  "settings.validation.pattern-invalid": "\u6821\u9A8C\u89C4\u5219\u65E0\u6548\u3002",
+  "settings.validation.option": "\u8BF7\u9009\u62E9\u53EF\u7528\u7684\u9009\u9879\u3002",
+  "settings.validation.boolean": "\u6B64\u8BBE\u7F6E\u53EA\u80FD\u4E3A\u5F00\u6216\u5173\u3002",
+  "settings.validation.number": "\u8BF7\u8F93\u5165\u6570\u5B57\u3002",
+  "settings.validation.text": "\u8BF7\u8F93\u5165\u6587\u672C\u3002",
+  "settings.validation.step": "\u8BE5\u503C\u5FC5\u987B\u7B26\u5408\u5141\u8BB8\u7684\u6B65\u957F\u3002"
+};
+
+// ../../../sdkwork-appbase/packages/common/system/sdkwork-settings-core/src/messages.ts
+var BASE_MESSAGES = enUsSettingsMessages;
+function createSdkworkSettingsMessageCatalog(options = {}) {
+  var _a, _b, _c;
+  const locale = (_a = options.locale) != null ? _a : "en-US";
+  const localeMessages = locale.toLowerCase().startsWith("zh") ? zhCnSettingsMessages : void 0;
+  return Object.freeze({
+    direction: (_b = options.direction) != null ? _b : "ltr",
+    locale,
+    messages: Object.freeze({
+      ...BASE_MESSAGES,
+      ...localeMessages != null ? localeMessages : {},
+      ...(_c = options.messages) != null ? _c : {}
+    })
+  });
+}
+function resolveSdkworkSettingsMessage(catalog, key, fallback) {
+  var _a, _b;
+  if (!key) {
+    return fallback != null ? fallback : "";
+  }
+  return (_b = (_a = catalog.messages[key]) != null ? _a : fallback) != null ? _b : key;
+}
+function resolveSdkworkSettingsGroupTitle(group, catalog) {
+  var _a, _b;
+  return (_b = group.title) != null ? _b : resolveSdkworkSettingsMessage(
+    catalog,
+    (_a = group.titleKey) != null ? _a : `settings.group.${group.id}.title`,
+    humanizeSdkworkSettingsId(String(group.id))
+  );
+}
+function resolveSdkworkSettingsGroupDescription(group, catalog) {
+  var _a;
+  return (_a = group.description) != null ? _a : group.descriptionKey ? resolveSdkworkSettingsMessage(catalog, group.descriptionKey) : void 0;
+}
+function resolveSdkworkSettingsSectionTitle(section, catalog) {
+  var _a, _b;
+  return (_b = section.title) != null ? _b : resolveSdkworkSettingsMessage(
+    catalog,
+    (_a = section.titleKey) != null ? _a : `settings.section.${section.id}.title`,
+    humanizeSdkworkSettingsId(section.id)
+  );
+}
+function resolveSdkworkSettingsSectionDescription(section, catalog) {
+  var _a;
+  return (_a = section.description) != null ? _a : section.descriptionKey ? resolveSdkworkSettingsMessage(catalog, section.descriptionKey) : void 0;
+}
+function resolveSdkworkSettingTitle(setting, catalog) {
+  var _a, _b;
+  return (_b = setting.title) != null ? _b : resolveSdkworkSettingsMessage(
+    catalog,
+    (_a = setting.titleKey) != null ? _a : `settings.setting.${setting.id}.title`,
+    humanizeSdkworkSettingsId(setting.id)
+  );
+}
+function resolveSdkworkSettingDescription(setting, catalog) {
+  var _a;
+  return (_a = setting.description) != null ? _a : setting.descriptionKey ? resolveSdkworkSettingsMessage(catalog, setting.descriptionKey) : void 0;
+}
+function resolveSdkworkSettingOptionTitle(option, catalog) {
+  var _a;
+  return (_a = option.label) != null ? _a : resolveSdkworkSettingsMessage(
+    catalog,
+    option.labelKey,
+    String(option.value)
+  );
+}
+function resolveSdkworkSettingsValidationMessage(issue2, catalog) {
+  var _a, _b;
+  return (_b = issue2.message) != null ? _b : resolveSdkworkSettingsMessage(
+    catalog,
+    (_a = issue2.messageKey) != null ? _a : `settings.validation.${issue2.code}`,
+    "This value is invalid."
+  );
+}
+
+// ../../../sdkwork-appbase/packages/common/system/sdkwork-settings-core/src/validation.ts
+function issue(settingId, code, messageKey) {
+  return { code, messageKey, settingId };
+}
+function validateConstraints(setting, value, constraints) {
+  const issues = [];
+  const isBlankString = typeof value === "string" && value.length === 0;
+  if (constraints.required && (value === null || value === void 0 || isBlankString)) {
+    return [issue(setting.id, "required", "settings.validation.required")];
+  }
+  if (typeof value === "number") {
+    if (constraints.min !== void 0 && value < constraints.min) {
+      issues.push(issue(setting.id, "min", "settings.validation.min"));
+    }
+    if (constraints.max !== void 0 && value > constraints.max) {
+      issues.push(issue(setting.id, "max", "settings.validation.max"));
+    }
+    if (constraints.step !== void 0 && constraints.step > 0 && Math.round(value / constraints.step) * constraints.step !== value) {
+      issues.push(issue(setting.id, "invalid-type", "settings.validation.step"));
+    }
+  }
+  if (typeof value === "string" && value.length > 0) {
+    if (constraints.minLength !== void 0 && value.length < constraints.minLength) {
+      issues.push(issue(setting.id, "min-length", "settings.validation.min-length"));
+    }
+    if (constraints.maxLength !== void 0 && value.length > constraints.maxLength) {
+      issues.push(issue(setting.id, "max-length", "settings.validation.max-length"));
+    }
+    if (constraints.pattern) {
+      try {
+        if (!new RegExp(constraints.pattern, "u").test(value)) {
+          issues.push(issue(setting.id, "pattern", "settings.validation.pattern"));
+        }
+      } catch {
+        issues.push(issue(setting.id, "custom", "settings.validation.pattern-invalid"));
+      }
+    }
+  }
+  return issues;
+}
+function validateKind(setting, value) {
+  var _a;
+  if (setting.kind === "toggle" && typeof value !== "boolean") {
+    return [issue(setting.id, "invalid-type", "settings.validation.boolean")];
+  }
+  if ((setting.kind === "number" || setting.kind === "slider") && typeof value !== "number") {
+    return [issue(setting.id, "invalid-type", "settings.validation.number")];
+  }
+  if ((setting.kind === "text" || setting.kind === "select" || setting.kind === "radio") && typeof value !== "string" && setting.kind !== "select") {
+    return [issue(setting.id, "invalid-type", "settings.validation.text")];
+  }
+  if (setting.kind === "select" || setting.kind === "radio") {
+    const optionValues = new Set(((_a = setting.options) != null ? _a : []).map((option) => option.value));
+    if (!optionValues.has(value)) {
+      return [issue(setting.id, "invalid-option", "settings.validation.option")];
+    }
+  }
+  return [];
+}
+function validateSdkworkSettingValue(setting, value, values) {
+  var _a;
+  const issues = [
+    ...validateKind(setting, value),
+    ...validateConstraints(setting, value, (_a = setting.constraints) != null ? _a : {})
+  ];
+  if (setting.validate) {
+    issues.push(
+      ...setting.validate(value, {
+        setting,
+        values
+      })
+    );
+  }
+  return issues;
+}
+function validateSdkworkSettingsValues(catalog, values) {
+  return catalog.settings.flatMap(
+    (setting) => {
+      var _a;
+      return validateSdkworkSettingValue(setting, (_a = values[setting.id]) != null ? _a : setting.defaultValue, values);
+    }
+  );
+}
+function createSdkworkSettingsSavePlan(catalog, dirtySettingIds) {
+  var _a, _b;
+  const autoSettingIds = [];
+  const manualSettingIds = [];
+  const applySettingIds = [];
+  const restartSettingIds = [];
+  for (const settingId of dirtySettingIds) {
+    const setting = catalog.settingById[settingId];
+    if (!setting) {
+      continue;
+    }
+    if (setting.requiresRestart) {
+      restartSettingIds.push(settingId);
+    }
+    const section = catalog.sectionById[setting.sectionId];
+    const saveMode = (_b = (_a = setting.saveMode) != null ? _a : section == null ? void 0 : section.saveMode) != null ? _b : "manual";
+    if (saveMode === "auto") {
+      autoSettingIds.push(settingId);
+    } else if (saveMode === "apply") {
+      applySettingIds.push(settingId);
+    } else {
+      manualSettingIds.push(settingId);
+    }
+  }
+  return {
+    applySettingIds: Object.freeze(applySettingIds),
+    autoSettingIds: Object.freeze(autoSettingIds),
+    manualSettingIds: Object.freeze(manualSettingIds),
+    restartSettingIds: Object.freeze(restartSettingIds)
+  };
+}
+
+// ../../../sdkwork-appbase/packages/common/system/sdkwork-settings-core/src/runtime.ts
+function groupIssues(issues) {
+  var _a;
+  const grouped = {};
+  for (const issue2 of issues) {
+    grouped[issue2.settingId] = [...(_a = grouped[issue2.settingId]) != null ? _a : [], issue2];
+  }
+  return grouped;
+}
+function toErrorMessage(error) {
+  return error instanceof Error ? error.message : "Unknown settings error";
+}
+function createSdkworkSettingsRuntime(options) {
+  var _a, _b, _c, _d;
+  const autoSaveDelayMs = (_a = options.autoSaveDelayMs) != null ? _a : 600;
+  let values = freezeSdkworkSettingsValues(
+    resolveSdkworkSettingsValues(options.catalog, {
+      ...options.layers,
+      user: {
+        ...(_c = (_b = options.layers) == null ? void 0 : _b.user) != null ? _c : {},
+        ...(_d = options.initialValues) != null ? _d : {}
+      }
+    })
+  );
+  let savedValues = values;
+  let status = options.autoLoad === false ? "ready" : "idle";
+  let activeSectionId = resolveDefaultSdkworkSettingsSectionId(options.catalog);
+  let query = "";
+  let readOnly = false;
+  let lastError;
+  let lastSavedAt;
+  let revision;
+  let autoSaveTimer;
+  let destroyed = false;
+  const listeners = /* @__PURE__ */ new Set();
+  function computeSnapshot() {
+    const dirtySettingIds = findSdkworkSettingsDirtyIds(
+      options.catalog,
+      values,
+      savedValues
+    );
+    const issues = validateSdkworkSettingsValues(options.catalog, values);
+    return {
+      activeSectionId,
+      dirtySettingIds: Object.freeze(dirtySettingIds),
+      issuesBySettingId: Object.freeze(groupIssues(issues)),
+      lastError,
+      lastSavedAt,
+      query,
+      readOnly,
+      revision,
+      savedValues,
+      status,
+      values
+    };
+  }
+  let snapshot = computeSnapshot();
+  function publish() {
+    snapshot = computeSnapshot();
+    for (const listener of listeners) {
+      listener();
+    }
+  }
+  function emit(event) {
+    var _a2;
+    (_a2 = options.onEvent) == null ? void 0 : _a2.call(options, event);
+  }
+  function clearAutoSaveTimer() {
+    if (autoSaveTimer !== void 0) {
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = void 0;
+    }
+  }
+  function scheduleAutoSave() {
+    clearAutoSaveTimer();
+    if (autoSaveDelayMs <= 0) {
+      return;
+    }
+    const plan = createSdkworkSettingsSavePlan(
+      options.catalog,
+      findSdkworkSettingsDirtyIds(options.catalog, values, savedValues)
+    );
+    if (plan.autoSettingIds.length === 0) {
+      return;
+    }
+    autoSaveTimer = setTimeout(() => {
+      autoSaveTimer = void 0;
+      void save(plan.autoSettingIds);
+    }, autoSaveDelayMs);
+  }
+  function setStatus(nextStatus) {
+    status = nextStatus;
+    publish();
+    emit({ status, type: "status" });
+  }
+  function resolveTargetIds(settingIds) {
+    return settingIds ? [...settingIds] : findSdkworkSettingsDirtyIds(options.catalog, values, savedValues);
+  }
+  async function save(settingIds) {
+    var _a2;
+    if (destroyed) {
+      return {
+        error: { code: "save-failed", message: "Settings runtime was destroyed" },
+        status: "failed"
+      };
+    }
+    const targetIds = resolveTargetIds(settingIds);
+    if (targetIds.length === 0) {
+      return { reason: "nothing-dirty", status: "skipped" };
+    }
+    const targetSet = new Set(targetIds);
+    const issues = validateSdkworkSettingsValues(options.catalog, values).filter(
+      (issue2) => targetSet.has(issue2.settingId)
+    );
+    if (issues.length > 0) {
+      publish();
+      return { issues: Object.freeze(issues), status: "invalid" };
+    }
+    setStatus("saving");
+    lastError = void 0;
+    try {
+      const result = await options.store.save({
+        changedSettingIds: targetIds,
+        query: options.query,
+        values
+      });
+      const nextSavedValues = { ...savedValues };
+      for (const settingId of targetIds) {
+        nextSavedValues[settingId] = (_a2 = values[settingId]) != null ? _a2 : null;
+      }
+      savedValues = freezeSdkworkSettingsValues(nextSavedValues);
+      lastSavedAt = result.updatedAt;
+      revision = result.revision;
+      status = "ready";
+      publish();
+      emit({ type: "saved", values });
+      return {
+        savedSettingIds: Object.freeze(targetIds),
+        status: "saved"
+      };
+    } catch (error) {
+      lastError = { code: "save-failed", message: toErrorMessage(error) };
+      status = "error";
+      publish();
+      emit({ message: lastError.message, type: "error" });
+      return { error: lastError, status: "failed" };
+    }
+  }
+  async function load(signal) {
+    if (destroyed) {
+      return;
+    }
+    setStatus("loading");
+    lastError = void 0;
+    try {
+      const stored = await options.store.load(options.query, signal);
+      if (stored) {
+        const permitted = {};
+        for (const setting of options.catalog.settings) {
+          const storedValue = stored.values[setting.id];
+          if (storedValue !== void 0) {
+            permitted[setting.id] = storedValue;
+          }
+        }
+        values = freezeSdkworkSettingsValues({
+          ...values,
+          ...permitted
+        });
+        savedValues = values;
+        lastSavedAt = stored.updatedAt;
+        revision = stored.revision;
+      } else {
+        savedValues = values;
+      }
+      status = "ready";
+      publish();
+      emit({ type: "loaded", values });
+    } catch (error) {
+      lastError = { code: "load-failed", message: toErrorMessage(error) };
+      status = "error";
+      publish();
+      emit({ message: lastError.message, type: "error" });
+    }
+  }
+  function update(settingId, nextValue) {
+    if (readOnly || destroyed) {
+      return;
+    }
+    const setting = options.catalog.settingById[settingId];
+    if (!setting) {
+      throw new Error(`Unknown settings setting id: ${settingId}`);
+    }
+    const normalized = setting.normalize ? setting.normalize(nextValue, { setting, values }) : nextValue;
+    const nextValues = {
+      ...values,
+      [settingId]: normalized
+    };
+    const changedIds = findSdkworkSettingsDirtyIds(
+      options.catalog,
+      nextValues,
+      savedValues
+    );
+    values = freezeSdkworkSettingsValues(nextValues);
+    publish();
+    emit({
+      change: {
+        changedSettingIds: Object.freeze(changedIds),
+        reason: "update",
+        values
+      },
+      type: "changed"
+    });
+    emit({ dirtySettingIds: snapshot.dirtySettingIds, type: "dirty" });
+    scheduleAutoSave();
+  }
+  function updateMany(nextValues) {
+    for (const [settingId, value] of Object.entries(nextValues)) {
+      update(settingId, value);
+    }
+  }
+  function discard(settingIds) {
+    var _a2, _b2;
+    if (destroyed) {
+      return;
+    }
+    const targetIds = resolveTargetIds(settingIds);
+    const nextValues = { ...values };
+    for (const settingId of targetIds) {
+      nextValues[settingId] = (_b2 = (_a2 = savedValues[settingId]) != null ? _a2 : options.catalog.defaults[settingId]) != null ? _b2 : null;
+    }
+    values = freezeSdkworkSettingsValues(nextValues);
+    lastError = void 0;
+    publish();
+    emit({
+      change: {
+        changedSettingIds: Object.freeze(targetIds),
+        reason: "discard",
+        values
+      },
+      type: "changed"
+    });
+  }
+  async function reset(settingIds) {
+    var _a2, _b2;
+    if (destroyed) {
+      return;
+    }
+    const targetIds = settingIds != null ? settingIds : options.catalog.settings.map((setting) => setting.id);
+    setStatus("saving");
+    try {
+      await options.store.reset({
+        query: options.query,
+        ...settingIds ? { settingIds } : {}
+      });
+      const nextValues = { ...values };
+      for (const settingId of targetIds) {
+        nextValues[settingId] = (_a2 = options.catalog.defaults[settingId]) != null ? _a2 : null;
+      }
+      values = freezeSdkworkSettingsValues(nextValues);
+      const nextSavedValues = { ...savedValues };
+      for (const settingId of targetIds) {
+        nextSavedValues[settingId] = (_b2 = nextValues[settingId]) != null ? _b2 : null;
+      }
+      savedValues = freezeSdkworkSettingsValues(nextSavedValues);
+      lastError = void 0;
+      status = "ready";
+      publish();
+      emit({
+        change: {
+          changedSettingIds: Object.freeze(targetIds),
+          reason: "reset",
+          values
+        },
+        type: "changed"
+      });
+    } catch (error) {
+      lastError = { code: "reset-failed", message: toErrorMessage(error) };
+      status = "error";
+      publish();
+      emit({ message: lastError.message, type: "error" });
+    }
+  }
+  if (options.autoLoad !== false) {
+    void load();
+  }
+  return {
+    apply: save,
+    destroy() {
+      destroyed = true;
+      clearAutoSaveTimer();
+      listeners.clear();
+    },
+    discard,
+    getSnapshot() {
+      return snapshot;
+    },
+    getVisibleSections(context) {
+      return resolveVisibleSdkworkSettings(options.catalog, {
+        locale: context.locale,
+        permissions: context.permissions,
+        platform: context.platform,
+        scope: context.scope,
+        values
+      });
+    },
+    load,
+    reset,
+    save,
+    setActiveSectionId(sectionId) {
+      const nextSectionId = sectionId && options.catalog.sectionById[sectionId] ? sectionId : void 0;
+      if (activeSectionId === nextSectionId) {
+        return;
+      }
+      activeSectionId = nextSectionId;
+      publish();
+    },
+    setQuery(nextQuery) {
+      const normalized = trim(nextQuery);
+      if (query === normalized) {
+        return;
+      }
+      query = normalized;
+      publish();
+    },
+    setReadOnly(nextReadOnly) {
+      if (readOnly === nextReadOnly) {
+        return;
+      }
+      readOnly = nextReadOnly;
+      publish();
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    update,
+    updateMany
+  };
+}
+
+// ../../../sdkwork-appbase/packages/common/system/sdkwork-settings-core/src/search.ts
+function normalize2(value) {
+  return value.toLocaleLowerCase();
+}
+function collectSettingText(setting) {
+  var _a, _b;
+  return [
+    setting.id,
+    setting.title,
+    setting.titleKey,
+    setting.description,
+    setting.descriptionKey,
+    setting.customType,
+    ...(_a = setting.keywords) != null ? _a : [],
+    ...((_b = setting.options) != null ? _b : []).flatMap((option) => {
+      var _a2;
+      return [
+        option.label,
+        option.labelKey,
+        option.description,
+        option.descriptionKey,
+        ...(_a2 = option.keywords) != null ? _a2 : []
+      ];
+    })
+  ].filter((part) => Boolean(part)).join(" ");
+}
+function collectSectionText(section) {
+  var _a;
+  return [
+    section.id,
+    section.title,
+    section.titleKey,
+    section.description,
+    section.descriptionKey,
+    ...(_a = section.keywords) != null ? _a : []
+  ].filter((part) => Boolean(part)).join(" ");
+}
+function countOccurrences(haystack, needle) {
+  if (!needle) {
+    return 0;
+  }
+  let count = 0;
+  let index = haystack.indexOf(needle);
+  while (index !== -1) {
+    count += 1;
+    index = haystack.indexOf(needle, index + needle.length);
+  }
+  return count;
+}
+function scoreText(haystack, query) {
+  if (!query) {
+    return 0;
+  }
+  const normalized = normalize2(haystack);
+  const idStart = normalized.startsWith(query) ? 3 : 0;
+  const wordStart = normalized.includes(` ${query}`) ? 2 : 0;
+  const occurrences = countOccurrences(normalized, query);
+  return idStart + wordStart + Math.min(occurrences, 4);
+}
+function searchSdkworkSettings(catalog, query) {
+  var _a;
+  const normalizedQuery = normalize2(trim(query));
+  if (!normalizedQuery) {
+    return [];
+  }
+  const results = [];
+  for (const section of catalog.sections) {
+    const sectionScore = scoreText(collectSectionText(section), normalizedQuery);
+    if (sectionScore > 0) {
+      results.push({ section, score: sectionScore });
+    }
+    for (const setting of (_a = catalog.sectionSettings[section.id]) != null ? _a : []) {
+      const settingScore = scoreText(
+        collectSettingText(setting),
+        normalizedQuery
+      );
+      if (settingScore > 0) {
+        results.push({ section, setting, score: settingScore + 0.5 });
+      }
+    }
+  }
+  return results.sort((left, right) => {
+    var _a2, _b, _c, _d;
+    if (right.score !== left.score) {
+      return right.score - left.score;
+    }
+    return ((_b = (_a2 = left.setting) == null ? void 0 : _a2.id) != null ? _b : left.section.id).localeCompare(
+      (_d = (_c = right.setting) == null ? void 0 : _c.id) != null ? _d : right.section.id
+    );
+  });
+}
+
+// ../../../sdkwork-appbase/packages/common/system/sdkwork-settings-core/src/stores.ts
+function createSdkworkSettingsStorageKey(query) {
+  var _a, _b, _c;
+  return [
+    "sdkwork.settings.v1",
+    encodeURIComponent(query.appId),
+    query.scope,
+    encodeURIComponent((_a = query.tenantId) != null ? _a : "-"),
+    encodeURIComponent((_b = query.userId) != null ? _b : "-"),
+    encodeURIComponent((_c = query.namespace) != null ? _c : "default")
+  ].join(":");
+}
+function isSdkworkSettingsValue(value) {
+  if (value === null || typeof value === "boolean" || typeof value === "number" || typeof value === "string") {
+    return true;
+  }
+  if (Array.isArray(value)) {
+    return value.every(
+      (item) => typeof item === "string" || typeof item === "number"
+    );
+  }
+  return false;
+}
+function toStoredValues(values) {
+  const stored = {};
+  for (const [key, value] of Object.entries(values)) {
+    if (isSdkworkSettingsValue(value)) {
+      stored[key] = value;
+    }
+  }
+  return stored;
+}
+var SdkworkMemorySettingsStore = class {
+  constructor() {
+    __publicField(this, "snapshots", /* @__PURE__ */ new Map());
+  }
+  async load(query, signal) {
+    var _a;
+    signal == null ? void 0 : signal.throwIfAborted();
+    return (_a = this.snapshots.get(createSdkworkSettingsStorageKey(query))) != null ? _a : null;
+  }
+  async reset(request) {
+    var _a;
+    const key = createSdkworkSettingsStorageKey(request.query);
+    const current = this.snapshots.get(key);
+    if (!current) {
+      return;
+    }
+    if (!request.settingIds) {
+      this.snapshots.delete(key);
+      return;
+    }
+    const values = { ...current.values };
+    for (const settingId of request.settingIds) {
+      delete values[settingId];
+    }
+    this.snapshots.set(key, {
+      revision: `${Number((_a = current.revision) != null ? _a : 0) + 1}`,
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+      values
+    });
+  }
+  async save(request) {
+    var _a;
+    const current = this.snapshots.get(createSdkworkSettingsStorageKey(request.query));
+    const snapshot = {
+      revision: `${Number((_a = current == null ? void 0 : current.revision) != null ? _a : 0) + 1}`,
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+      values: Object.freeze(toStoredValues(request.values))
+    };
+    this.snapshots.set(createSdkworkSettingsStorageKey(request.query), snapshot);
+    return snapshot;
+  }
+};
+
+// ../../../sdkwork-appbase/packages/common/system/sdkwork-settings-core/src/view-model.ts
+function createRow(setting, input) {
+  var _a, _b, _c, _d, _e, _f, _g, _h, _i;
+  const dirty = (input.savedValues ? findSdkworkSettingsDirtyIds(
+    input.catalog,
+    { [setting.id]: input.values[setting.id] },
+    { [setting.id]: input.savedValues[setting.id] }
+  ) : []).length > 0;
+  const issues = (_b = (_a = input.issuesBySettingId) == null ? void 0 : _a[setting.id]) != null ? _b : [];
+  return {
+    action: typeof ((_c = setting.metadata) == null ? void 0 : _c.action) === "string" ? setting.metadata.action : void 0,
+    customType: setting.customType,
+    description: resolveSdkworkSettingDescription(setting, input.messages),
+    destructive: ((_d = setting.ui) == null ? void 0 : _d.destructive) === true,
+    dirty,
+    disabled: setting.enabled === false,
+    kind: setting.kind,
+    options: ((_e = setting.options) != null ? _e : []).map((option) => ({
+      disabled: option.disabled === true,
+      label: resolveSdkworkSettingOptionTitle(option, input.messages),
+      value: option.value
+    })),
+    placeholder: setting.placeholderKey ? resolveSdkworkSettingsMessage(input.messages, setting.placeholderKey) : setting.placeholder,
+    requiresRestart: setting.requiresRestart === true,
+    settingId: setting.id,
+    span: (_g = (_f = setting.ui) == null ? void 0 : _f.span) != null ? _g : "full",
+    title: resolveSdkworkSettingTitle(setting, input.messages),
+    unit: (_h = setting.ui) == null ? void 0 : _h.unit,
+    validationMessages: issues.map(
+      (issue2) => resolveSdkworkSettingsValidationMessage(issue2, input.messages)
+    ),
+    value: (_i = input.values[setting.id]) != null ? _i : setting.defaultValue
+  };
+}
+function createSection(section, input, settingsBySection) {
+  var _a;
+  return {
+    description: resolveSdkworkSettingsSectionDescription(section, input.messages),
+    id: section.id,
+    rows: ((_a = settingsBySection[section.id]) != null ? _a : []).map(
+      (setting) => createRow(setting, input)
+    ),
+    title: resolveSdkworkSettingsSectionTitle(section, input.messages)
+  };
+}
+function matchesSearch(section, query, catalog) {
+  var _a;
+  if (!query) {
+    return null;
+  }
+  const results = searchSdkworkSettings(catalog, query);
+  const settingIds = /* @__PURE__ */ new Set();
+  for (const result of results) {
+    if (result.section.id === section.id) {
+      if (result.setting) {
+        settingIds.add(result.setting.id);
+      } else {
+        for (const setting of (_a = catalog.sectionSettings[section.id]) != null ? _a : []) {
+          settingIds.add(setting.id);
+        }
+      }
+    }
+  }
+  return settingIds;
+}
+function createSdkworkSettingsViewModel(input) {
+  var _a, _b, _c, _d, _e, _f, _g, _h;
+  const query = (_a = input.query) != null ? _a : "";
+  const dirtySettingIds = input.savedValues ? findSdkworkSettingsDirtyIds(input.catalog, input.values, input.savedValues) : [];
+  const visible = resolveVisibleSdkworkSettings(input.catalog, {
+    locale: input.locale,
+    permissions: (_b = input.permissions) != null ? _b : [],
+    platform: input.platform,
+    scope: input.scope,
+    values: input.values
+  });
+  const dirty = new Set(dirtySettingIds);
+  const groups = [];
+  for (const navGroup of input.catalog.navigation) {
+    const groupSections = visible.sections.filter(
+      (section) => section.groupId === navGroup.group.id
+    );
+    const sections = [];
+    const items = [];
+    for (const section of groupSections) {
+      const matchedSettingIds = matchesSearch(section, query, input.catalog);
+      if (matchedSettingIds && matchedSettingIds.size === 0) {
+        continue;
+      }
+      const sectionSettingIds = (_d = (_c = input.catalog.sectionSettings[section.id]) == null ? void 0 : _c.map((setting) => setting.id)) != null ? _d : [];
+      const isDirty = sectionSettingIds.some((settingId) => dirty.has(settingId));
+      sections.push({ matchedSettingIds, section });
+      items.push({
+        description: resolveSdkworkSettingsSectionDescription(section, input.messages),
+        dirty: isDirty,
+        icon: section.icon,
+        id: section.id,
+        title: resolveSdkworkSettingsSectionTitle(section, input.messages)
+      });
+    }
+    if (items.length > 0) {
+      groups.push({ group: navGroup.group, items, sections });
+    }
+  }
+  const availableSectionIds = groups.flatMap(
+    (group) => group.sections.map((entry) => entry.section.id)
+  );
+  let activeSectionId = (_e = input.activeSectionId) != null ? _e : "";
+  if (!availableSectionIds.includes(activeSectionId)) {
+    activeSectionId = (_g = (_f = availableSectionIds[0]) != null ? _f : resolveDefaultSdkworkSettingsSectionId(input.catalog)) != null ? _g : "";
+  }
+  const activeGroup = groups.find(
+    (group) => group.sections.some((entry) => entry.section.id === activeSectionId)
+  );
+  const activeEntry = activeGroup == null ? void 0 : activeGroup.sections.find(
+    (entry) => entry.section.id === activeSectionId
+  );
+  const activeSection = activeEntry ? createSection(
+    activeEntry.section,
+    input,
+    activeEntry.matchedSettingIds ? {
+      [activeEntry.section.id]: ((_h = visible.settingsBySection[activeEntry.section.id]) != null ? _h : []).filter(
+        (setting) => {
+          var _a2;
+          return (_a2 = activeEntry.matchedSettingIds) == null ? void 0 : _a2.has(setting.id);
+        }
+      )
+    } : visible.settingsBySection
+  ) : void 0;
+  const navigation = groups.map(
+    (group) => ({
+      description: resolveSdkworkSettingsGroupDescription(group.group, input.messages),
+      id: String(group.group.id),
+      items: group.items,
+      title: resolveSdkworkSettingsGroupTitle(group.group, input.messages)
+    })
+  );
+  return {
+    activeSection,
+    activeSectionId,
+    dirtySettingIds,
+    navigation,
+    query
+  };
+}
+
+// ../../../sdkwork-appbase/packages/mini-program/system/sdkwork-settings-mini-program/src/projection/model.ts
+function valueText(row) {
+  var _a, _b, _c;
+  if (row.kind === "toggle") {
+    return row.value === true ? "On" : "Off";
+  }
+  if (row.kind === "select" || row.kind === "radio") {
+    const option = row.options.find((candidate) => candidate.value === row.value);
+    return (_b = option == null ? void 0 : option.label) != null ? _b : String((_a = row.value) != null ? _a : "");
+  }
+  if (row.value === null || row.value === "") {
+    return "\u2014";
+  }
+  return `${row.value}${(_c = row.unit) != null ? _c : ""}`;
+}
+function projectRow(row, setting) {
+  var _a, _b, _c, _d, _e, _f, _g;
+  return {
+    description: row.description,
+    dirty: row.dirty,
+    disabled: row.disabled,
+    errors: row.validationMessages,
+    kind: row.kind,
+    ...((_a = setting == null ? void 0 : setting.constraints) == null ? void 0 : _a.max) != null ? { max: setting.constraints.max } : {},
+    ...((_b = setting == null ? void 0 : setting.constraints) == null ? void 0 : _b.min) != null ? { min: setting.constraints.min } : {},
+    ...((_c = setting == null ? void 0 : setting.constraints) == null ? void 0 : _c.step) != null ? { step: setting.constraints.step } : {},
+    options: row.options.map((option) => ({
+      disabled: option.disabled,
+      label: option.label,
+      value: option.value
+    })),
+    requiresRestart: row.requiresRestart,
+    settingId: row.settingId,
+    title: row.title,
+    ...((_e = row.unit) != null ? _e : (_d = setting == null ? void 0 : setting.ui) == null ? void 0 : _d.unit) ? { unit: (_g = row.unit) != null ? _g : (_f = setting == null ? void 0 : setting.ui) == null ? void 0 : _f.unit } : {},
+    value: row.value,
+    valueText: valueText(row)
+  };
+}
+function projectSdkworkMiniProgramSettings(runtime, options) {
+  var _a, _b, _c, _d;
+  const snapshot = runtime.getSnapshot();
+  const locale = (_a = options.locale) != null ? _a : "en-US";
+  const messages = (_b = options.messages) != null ? _b : createSdkworkSettingsMessageCatalog({
+    locale,
+    messages: options.messageOverrides
+  });
+  const viewModel = createSdkworkSettingsViewModel({
+    activeSectionId: snapshot.activeSectionId,
+    catalog: options.catalog,
+    issuesBySettingId: snapshot.issuesBySettingId,
+    locale,
+    messages,
+    permissions: (_c = options.permissions) != null ? _c : [],
+    platform: "mini-program",
+    query: snapshot.query,
+    savedValues: snapshot.savedValues,
+    scope: "user",
+    values: snapshot.values
+  });
+  const manualDirtyCount = options.catalog.settings.filter((setting) => {
+    var _a2, _b2;
+    if (!snapshot.dirtySettingIds.includes(setting.id)) {
+      return false;
+    }
+    const section = options.catalog.sectionById[setting.sectionId];
+    return ((_b2 = (_a2 = setting.saveMode) != null ? _a2 : section == null ? void 0 : section.saveMode) != null ? _b2 : "manual") === "manual";
+  }).length;
+  return {
+    activeSection: viewModel.activeSection ? {
+      description: viewModel.activeSection.description,
+      id: viewModel.activeSection.id,
+      rows: viewModel.activeSection.rows.map(
+        (row) => projectRow(row, options.catalog.settingById[row.settingId])
+      ),
+      title: viewModel.activeSection.title
+    } : null,
+    activeSectionId: viewModel.activeSectionId,
+    dirtyCount: manualDirtyCount,
+    navigation: viewModel.navigation.map((group) => ({
+      id: group.id,
+      items: group.items.map((item) => ({
+        description: item.description,
+        dirty: item.dirty,
+        icon: item.icon,
+        id: item.id,
+        title: item.title
+      })),
+      title: group.title
+    })),
+    query: snapshot.query,
+    readOnly: snapshot.readOnly,
+    savebarVisible: manualDirtyCount > 0,
+    status: snapshot.status,
+    view: (_d = options.view) != null ? _d : "list"
+  };
+}
+
+// ../../../sdkwork-appbase/packages/mini-program/system/sdkwork-settings-mini-program/src/projection/wechat.ts
+function createSdkworkMiniProgramSettingsBinding(runtime, options) {
+  var _a;
+  let listener = null;
+  let unsubscribe = null;
+  let view = (_a = options.view) != null ? _a : "list";
+  function getData() {
+    return projectSdkworkMiniProgramSettings(runtime, { ...options, view });
+  }
+  function publish() {
+    listener == null ? void 0 : listener(getData());
+  }
+  return {
+    attach(setData) {
+      listener = setData;
+      unsubscribe == null ? void 0 : unsubscribe();
+      unsubscribe = runtime.subscribe(publish);
+      publish();
+    },
+    detach() {
+      unsubscribe == null ? void 0 : unsubscribe();
+      unsubscribe = null;
+      listener = null;
+    },
+    getData,
+    onBack() {
+      view = "list";
+      runtime.setQuery("");
+      publish();
+    },
+    onChoice(settingId, value) {
+      runtime.update(settingId, value);
+      publish();
+    },
+    onDiscard() {
+      runtime.discard();
+      publish();
+    },
+    onInput(settingId, value) {
+      runtime.update(settingId, value);
+      publish();
+    },
+    async onSave() {
+      await runtime.save();
+      publish();
+    },
+    onSearch(query) {
+      runtime.setQuery(query);
+      publish();
+    },
+    onSelectSection(sectionId) {
+      view = "detail";
+      runtime.setActiveSectionId(sectionId);
+      runtime.setQuery("");
+      publish();
+    },
+    onToggle(settingId, value) {
+      runtime.update(settingId, value);
+      publish();
+    }
+  };
+}
+
 // src/bootstrap/runtime.ts
+var CLOUDROUTER_SETTINGS_SECTIONS = /* @__PURE__ */ new Set([
+  "appearance",
+  "voice",
+  "notifications",
+  "about"
+]);
+function createMiniSettingsCatalog() {
+  const defaults = createDefaultSdkworkSettingsCatalog();
+  const sections = defaults.sections.filter(
+    (section) => CLOUDROUTER_SETTINGS_SECTIONS.has(section.id)
+  );
+  const settings = defaults.settings.filter(
+    (setting) => CLOUDROUTER_SETTINGS_SECTIONS.has(setting.sectionId)
+  );
+  const groups = defaults.groups.filter(
+    (group) => sections.some((section) => section.groupId === group.id)
+  );
+  return createSdkworkSettingsCatalog({ groups, sections, settings });
+}
+function createMiniSettingsStore() {
+  const storage = globalThis.wx;
+  if (!storage) {
+    return new SdkworkMemorySettingsStore();
+  }
+  return {
+    async load(query) {
+      try {
+        const values = storage.getStorageSync(createSdkworkSettingsStorageKey(query));
+        return values && typeof values === "object" ? { values } : null;
+      } catch {
+        return null;
+      }
+    },
+    async save(request) {
+      storage.setStorageSync(
+        createSdkworkSettingsStorageKey(request.query),
+        request.values
+      );
+      return { values: request.values };
+    },
+    async reset(request) {
+      const key = createSdkworkSettingsStorageKey(request.query);
+      if (!request.settingIds) {
+        storage.removeStorageSync(key);
+        return;
+      }
+      try {
+        const stored = storage.getStorageSync(key);
+        if (stored && typeof stored === "object") {
+          const values = { ...stored };
+          for (const settingId of request.settingIds) {
+            delete values[settingId];
+          }
+          storage.setStorageSync(key, values);
+        }
+      } catch {
+        storage.removeStorageSync(key);
+      }
+    }
+  };
+}
 function bootstrapMiniProgramApplication() {
   const environment = resolveRuntimeEnv();
   const locale = resolveConsoleLocale();
+  const settingsCatalog = createMiniSettingsCatalog();
+  const settingsRuntime = createSdkworkSettingsRuntime({
+    autoLoad: true,
+    catalog: settingsCatalog,
+    query: {
+      appId: "sdkwork-cloudrouter-mini-program",
+      scope: "user",
+      userId: "local"
+    },
+    store: createMiniSettingsStore()
+  });
   return {
     locale,
     translate: createConsoleTranslator(locale),
-    consolePorts: createCloudRouterMpConsolePorts(environment.appApiBaseUrl)
+    consolePorts: createCloudRouterMpConsolePorts(environment.appApiBaseUrl),
+    webPublicHttpUrl: environment.webPublicHttpUrl,
+    settingsBinding: createSdkworkMiniProgramSettingsBinding(settingsRuntime, {
+      catalog: settingsCatalog,
+      locale
+    }),
+    settingsRuntime
   };
 }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sdkwork_cloudrouter_flutter_mobile_commons/sdkwork_cloudrouter_flutter_mobile_commons.dart';
 
 import 'app.dart';
 import 'bootstrap/runtime.dart';
@@ -10,6 +12,10 @@ Future<void> main() async {
   SdkworkTlsTrust.installForApp();
 
   WidgetsFlutterBinding.ensureInitialized();
+  final preferences = await SharedPreferences.getInstance();
+  cloudRouterThemeMode.value = cloudRouterThemeModeFromPreference(
+    preferences.getString(cloudRouterThemeStorageKey),
+  );
   final runtime = await bootstrap();
   runApp(CloudRouterApp(runtime: runtime));
 }

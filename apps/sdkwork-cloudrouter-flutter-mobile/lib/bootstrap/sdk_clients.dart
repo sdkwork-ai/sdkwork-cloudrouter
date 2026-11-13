@@ -30,6 +30,16 @@ const String sdkworkRuntimeTarget = String.fromEnvironment(
   defaultValue: 'flutter-android',
 );
 
+const String _configuredWebPublicHttpUrl = String.fromEnvironment(
+  'SDKWORK_CLOUDROUTER_ROUTER_WEB_PUBLIC_HTTP_URL',
+  defaultValue: 'http://127.0.0.1:4734',
+);
+
+/// H5/web ingress origin used by in-app web-view bridges (commerce, etc.).
+String resolveCloudRouterWebPublicHttpUrl() {
+  return _configuredWebPublicHttpUrl.trim().replaceFirst(RegExp(r'/+$'), '');
+}
+
 SdkClients createSdkClients({
   String? appApiBaseUrl,
   String? authToken,

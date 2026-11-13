@@ -1,4 +1,4 @@
-<view class="cr-page">
+<view class="cr-page {{themeClass}}">
   <view wx:if="{{loading}}" class="cr-state">
     <view class="cr-spinner" />
     <text class="cr-state-text">{{labels.loading}}</text>

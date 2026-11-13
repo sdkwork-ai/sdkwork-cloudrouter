@@ -55,6 +55,7 @@ import { adminStorageMessages } from './admin/storage';
 import { consoleAccountMessages } from './console/account';
 import { consoleApiKeysMessages } from './console/api-keys';
 import { consoleBillingMessages } from './console/billing';
+import { cloudRouterCashierMessages } from './console/cashier';
 import { consoleCoreMessages } from './console/core';
 import { consoleDashboardMessages } from './console/dashboard';
 import { consoleGatewayMessages } from './console/gateway';
@@ -127,6 +128,7 @@ export const resources = mergeI18nBundles([
   consoleAccountMessages,
   consoleApiKeysMessages,
   consoleBillingMessages,
+  cloudRouterCashierMessages,
   consoleCoreMessages,
   consoleDashboardMessages,
   consoleGatewayMessages,

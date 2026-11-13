@@ -1,4 +1,4 @@
-<view class="cr-page">
+<view class="cr-page {{themeClass}}">
   <view wx:if="{{createdSecret}}" class="cr-secret">
     <text class="cr-secret-title">{{labels.createdOnce}}</text>
     <text class="cr-secret-value" user-select="{{true}}">{{createdSecret}}</text>

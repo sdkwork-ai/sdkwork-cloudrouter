@@ -15,6 +15,7 @@ export type CloudRouterMpLifecycleEnvironment = 'development' | 'test' | 'stagin
  */
 export interface CloudRouterMpRuntimeEnv {
   readonly appApiBaseUrl: string;
+  readonly webPublicHttpUrl: string;
   readonly lifecycleEnvironment: CloudRouterMpLifecycleEnvironment;
   readonly profileId: string;
 }
@@ -31,6 +32,8 @@ export interface CloudRouterMpRuntimeEnvSource {
   readonly SDKWORK_ENVIRONMENT?: unknown;
   readonly SDKWORK_PROFILE_ID?: unknown;
   readonly SDKWORK_CLOUDROUTER_ROUTER_APP_API_BASE_URL?: unknown;
+  readonly SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL?: unknown;
+  readonly SDKWORK_CLOUDROUTER_ROUTER_WEB_PUBLIC_HTTP_URL?: unknown;
 }
 
 function readEnv(
@@ -56,13 +59,34 @@ export function resolveRuntimeEnv(
       'Cloud Router mini program requires SDKWORK_CLOUDROUTER_ROUTER_APP_API_BASE_URL in the runtime environment.',
     );
   }
+  const appApiOrigin = resolveCloudRouterAppApiBaseUrl(appApiBaseUrl);
+  const configuredPublicUrl = readEnv(
+    source,
+    'SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL',
+  );
+  const configuredWebUrl = readEnv(
+    source,
+    'SDKWORK_CLOUDROUTER_ROUTER_WEB_PUBLIC_HTTP_URL',
+  );
   return {
-    appApiBaseUrl: resolveCloudRouterAppApiBaseUrl(appApiBaseUrl),
+    appApiBaseUrl: appApiOrigin,
+    webPublicHttpUrl:
+      configuredWebUrl ?? configuredPublicUrl ?? deriveOrigin(appApiOrigin),
     lifecycleEnvironment: LIFECYCLE_ENVIRONMENTS.has(lifecycle as CloudRouterMpLifecycleEnvironment)
       ? (lifecycle as CloudRouterMpLifecycleEnvironment)
       : 'production',
     profileId: readEnv(source, 'SDKWORK_PROFILE_ID') ?? 'standalone.production',
   };
+}
+
+function deriveOrigin(candidate: string): string {
+  const match = /^(https?:\/\/[^/]+)/iu.exec(candidate.trim());
+  if (!match) {
+    throw new Error(
+      'Cloud Router mini program requires an absolute application public HTTP URL.',
+    );
+  }
+  return match[1];
 }
 
 /**

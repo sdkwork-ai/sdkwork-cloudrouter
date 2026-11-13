@@ -67,7 +67,7 @@ describe('H5 hosted app sign-in', () => {
     }
   });
 
-  it('seeds the canonical credential-entry bootstrap token before signing in', () => {
+  it('seeds the canonical credential-entry bootstrap token for the IAM client', () => {
     const canonical = fs.readFileSync(
       path.join(
         REPO,
@@ -82,8 +82,11 @@ describe('H5 hosted app sign-in', () => {
       session.includes(`CREDENTIAL_ENTRY_BOOTSTRAP_GLOBAL = '${canonicalKey}'`),
       'the H5 sign-in must read the same bootstrap-token global the platform injects',
     );
-    assert.match(session, /manager\.hasAccessToken\(\)/u);
-    assert.match(session, /seedCredentialEntryBootstrapToken\(\);\s*\n\s*const tokens = await requestSessionToken/u);
+    const iamAuth = readSource('src/bootstrap/iamAuth.ts');
+    assert.match(iamAuth, /CREDENTIAL_ENTRY_BOOTSTRAP_GLOBAL/u);
+    assert.match(iamAuth, /createIamH5RuntimeService/u);
+    assert.match(iamAuth, /accessToken: initialAccessToken/u);
+    assert.doesNotMatch(session, /\/auth\/sessions/u, 'the host no longer posts a local login request');
   });
 
   it('sends both session tokens to the SDK transport', () => {

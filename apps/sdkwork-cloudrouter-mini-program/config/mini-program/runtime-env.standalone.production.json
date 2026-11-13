@@ -5,6 +5,7 @@
   "SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT": "production",
   "SDKWORK_CLOUDROUTER_ROUTER_PROFILE_ID": "standalone.production",
   "SDKWORK_CLOUDROUTER_ROUTER_RUNTIME_TARGET": "mini-program",
+  "SDKWORK_CLOUDROUTER_ROUTER_WEB_PUBLIC_HTTP_URL": "https://router.sdkwork.com",
   "SDKWORK_DEPLOYMENT_PROFILE": "standalone",
   "SDKWORK_ENVIRONMENT": "production",
   "SDKWORK_PROFILE_ID": "standalone.production",

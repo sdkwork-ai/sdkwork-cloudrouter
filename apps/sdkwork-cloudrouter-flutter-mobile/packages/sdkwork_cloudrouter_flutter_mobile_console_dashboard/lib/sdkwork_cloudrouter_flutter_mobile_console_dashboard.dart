@@ -6,3 +6,4 @@ export 'src/state/console_dashboard_state.dart';
 export 'src/copy/console_dashboard_messages.dart';
 export 'src/routes/route_contributions.dart';
 export 'src/screens/console_dashboard_screen.dart';
+export 'src/screens/console_home_screen.dart';

@@ -1,0 +1,44 @@
+page {
+  background: #f5f7fb;
+}
+
+.cr-bridge {
+  align-items: center;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 64rpx 48rpx;
+  text-align: center;
+}
+
+.cr-bridge__icon {
+  font-size: 64rpx;
+}
+
+.cr-bridge__title {
+  color: #0f172a;
+  font-size: 36rpx;
+  font-weight: 700;
+}
+
+.cr-bridge__desc {
+  color: #64748b;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+
+.cr-bridge__button {
+  background: #2563eb;
+  border-radius: 12rpx;
+  color: #ffffff;
+  font-size: 28rpx;
+  margin-top: 16rpx;
+  padding: 18rpx 56rpx;
+}
+
+.cr-bridge__button::after {
+  border: none;
+}

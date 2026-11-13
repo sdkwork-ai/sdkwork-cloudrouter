@@ -1,19 +1,14 @@
 /**
- * Console and hosted-app session transitions for the H5 renderer.
+ * Hosted app session helpers for the H5 renderer.
  *
- * Sign-in and the app-authorization completion share one transport: the
- * generated H5 app SDK client, whose access token comes from the shared token
- * manager. Keeping both transitions here (instead of inside the provider)
- * lets the router's hosted sign-in page run them without the console shell.
+ * Sign-in itself is owned by the shared `@sdkwork/iam-h5-auth` screens and the
+ * `@sdkwork/iam-h5-core` runtime (`src/bootstrap/iamAuth.ts`). This module keeps
+ * only the two transitions that belong to the hosted native-app hand-off:
+ * checking whether a session exists and completing the app authorization with
+ * the IAM authorization server.
  */
-import {
-  applyCloudRouterSessionTokens,
-  getCloudRouterTokenManager,
-  readCloudRouterSession,
-} from '@sdkwork/cloudrouter-h5-core/session';
+import { readCloudRouterSession } from '@sdkwork/cloudrouter-h5-core/session';
 import { getCloudRouterH5AppSdkClient } from '@sdkwork/cloudrouter-h5-core/sdk';
-
-import { buildAppSignInBody } from './appSignInBody.js';
 
 /**
  * Browser global the platform's credential-entry bootstrap script publishes.
@@ -21,49 +16,9 @@ import { buildAppSignInBody } from './appSignInBody.js';
  * Mirrors `SDKWORK_CREDENTIAL_ENTRY_BOOTSTRAP_ACCESS_TOKEN_GLOBAL_KEY` in
  * `@sdkwork/iam-credential-entry`; the H5 root does not declare that package,
  * and `tests/h5-app-auth-routes.test.mjs` asserts the two names stay equal.
+ * The IAM auth host reads it to seed the IAM app SDK client before login.
  */
 export const CREDENTIAL_ENTRY_BOOTSTRAP_GLOBAL = '__SDKWORK_CREDENTIAL_ENTRY_BOOTSTRAP_ACCESS_TOKEN__';
-
-export interface ConsoleSignInCredentials {
-  readonly email: string;
-  readonly password: string;
-}
-
-interface SessionTokenPair {
-  readonly accessToken: string;
-  readonly authToken: string;
-}
-
-/**
- * Seed the bootstrap Access-Token before a credential-entry call.
- *
- * A login request is not a user session: the platform scopes credential
- * verification with the application bootstrap `Access-Token` it injected into
- * the page (`/__sdkwork/credential-entry-bootstrap.js`), and a request without
- * it is rejected before the credentials are read. The same rule as
- * `initializeCredentialEntryTokenManager` in the canonical package: only an
- * absent token is seeded, and only the access token is set, so no
- * `Authorization` header is sent.
- */
-function seedCredentialEntryBootstrapToken(): void {
-  const manager = getCloudRouterTokenManager();
-  if (manager.hasAccessToken()) return;
-  const value = (globalThis as Record<string, unknown>)[CREDENTIAL_ENTRY_BOOTSTRAP_GLOBAL];
-  if (typeof value !== 'string') return;
-  const token = value.trim();
-  if (token !== '') manager.setAccessToken(token);
-}
-
-/**
- * Create an app session and install its tokens in the shared token manager.
- * @param credentials - console account credentials.
- * @returns once the session tokens are installed.
- */
-export async function signInConsoleSession(credentials: ConsoleSignInCredentials): Promise<void> {
-  seedCredentialEntryBootstrapToken();
-  const tokens = await requestSessionToken(credentials);
-  applyCloudRouterSessionTokens(tokens.accessToken, tokens.authToken);
-}
 
 /**
  * Whether the shared session store currently holds an authenticated session.
@@ -92,25 +47,4 @@ export async function completeAppAuthorization(authorizationStateId: string): Pr
     throw new Error('The app sign-in completion returned no redirect URL.');
   }
   return redirectUrl.trim();
-}
-
-/**
- * Creates an app session. The generated app SDK exposes IAM user settings but
- * not the session bootstrap endpoint, so the session call goes through the
- * SDK-owned HTTP client to keep headers, base URL, and error handling in one
- * boundary.
- * @param credentials - console account credentials.
- * @returns the session token pair.
- */
-async function requestSessionToken(credentials: ConsoleSignInCredentials): Promise<SessionTokenPair> {
-  const payload = (await getCloudRouterH5AppSdkClient().http.request('/auth/sessions', {
-    method: 'POST',
-    body: buildAppSignInBody(credentials),
-  })) as Record<string, unknown>;
-  const accessToken = typeof payload.accessToken === 'string' ? payload.accessToken : '';
-  const authToken = typeof payload.authToken === 'string' ? payload.authToken : '';
-  if (!accessToken && !authToken) {
-    throw new Error('CloudRouter sign-in returned no session token.');
-  }
-  return { accessToken, authToken };
 }

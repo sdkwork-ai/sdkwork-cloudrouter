@@ -103,17 +103,25 @@ export function ConsoleApiKeysScreen({ ports, locale, labels }: ConsoleApiKeysSc
   );
 
   return (
-    <div className="space-y-3">
-      {createdSecret && (
-        <p className="break-all border-y border-amber-400/40 bg-amber-400/10 px-[0.9rem] py-3 text-[11px] text-amber-100">
-          {labels.createdOnce} <span className="font-mono">{createdSecret}</span>
+    <div className="flex flex-col">
+      {createdSecret ? (
+        <section className="border-b border-line bg-amber-500/10 px-[0.9rem] py-3 text-[11px] leading-5 text-amber-700 dark:text-amber-300">
+          {labels.createdOnce} <span className="break-all font-mono">{createdSecret}</span>
+        </section>
+      ) : null}
+      {error ? (
+        <p role="alert" className="border-b border-line bg-danger-soft px-[0.9rem] py-2.5 text-[11px] text-danger">
+          {error}
         </p>
-      )}
-      {error && <p className="px-[0.9rem] py-2 text-[11px] text-red-300">{error}</p>}
+      ) : null}
       {loading ? (
-        <p className="py-6 text-center text-xs text-gray-400">{labels.loading}</p>
+        <p className="bg-surface px-[0.9rem] py-10 text-center text-xs text-ink-subtle">
+          {labels.loading}
+        </p>
       ) : keys.length === 0 ? (
-        <p className="py-6 text-center text-xs text-gray-400">{labels.empty}</p>
+        <p className="bg-surface px-[0.9rem] py-10 text-center text-xs text-ink-subtle">
+          {labels.empty}
+        </p>
       ) : (
         <>
           <ConsoleApiKeysView
@@ -127,14 +135,16 @@ export function ConsoleApiKeysScreen({ ports, locale, labels }: ConsoleApiKeysSc
             onRevoke={handleRevoke}
           />
           {hasMore && (
-            <button
-              type="button"
-              disabled={loadingMore}
-              onClick={loadMore}
-              className="w-full rounded-md border border-white/15 px-3 py-2 text-xs text-gray-300 disabled:opacity-50"
-            >
-              {loadingMore ? labels.loading : labels.loadMore}
-            </button>
+            <div className="bg-surface px-[0.9rem] pb-4">
+              <button
+                type="button"
+                disabled={loadingMore}
+                onClick={loadMore}
+                className="w-full rounded-xl border border-line bg-canvas px-3 py-2.5 text-xs font-medium text-ink-muted transition-colors active:bg-surface-elevated disabled:opacity-50"
+              >
+                {loadingMore ? labels.loading : labels.loadMore}
+              </button>
+            </div>
           )}
         </>
       )}

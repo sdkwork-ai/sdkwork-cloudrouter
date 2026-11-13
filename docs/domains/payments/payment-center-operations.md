@@ -215,7 +215,7 @@ PaymentIntent）；凭据为测试格式时 PSP 会返回其真实认证错误�
   WAP/PC 等跳转类支付缺少显式 `return_url` 时作为默认回跳地址。
 - 保存后立即生效：新创建的支付意图 / 一分钱测试二维码使用该域名；已生成的二维码内容不变。
 - 解析顺序：本机构配置行 → 平台 `0` 配置行 → 部署环境
-  `SDKWORK_COMMERCE_CASHIER_BASE_URL` → 平台默认 `https://im.sdkwork.com`。
+  `SDKWORK_COMMERCE_CASHIER_BASE_URL` → 平台默认 `https://platform.sdkwork.com`。
 - 停用（`inactive`）等价于未配置：收银台回退到部署默认域名。
 - 协议：生产环境仅允许 `https`；`http` 仅限 development/test 本地联调。
 - 数据库：`commerce_payment_domain_setting`（每租户/机构一行，

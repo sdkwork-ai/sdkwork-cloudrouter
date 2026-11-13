@@ -1,0 +1,6 @@
+<view class="cr-bridge {{themeClass}}">
+  <view class="cr-bridge__icon">✦</view>
+  <text class="cr-bridge__title">体验中心</text>
+  <text class="cr-bridge__desc">与 AI 对话，快速体验模型能力。</text>
+  <button class="cr-bridge__button" bindtap="onOpen">打开体验中心</button>
+</view>

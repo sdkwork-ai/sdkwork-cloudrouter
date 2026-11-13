@@ -1,0 +1,8 @@
+.cr-webview-empty {
+  align-items: center;
+  color: #64748b;
+  display: flex;
+  font-size: 26rpx;
+  justify-content: center;
+  min-height: 100vh;
+}

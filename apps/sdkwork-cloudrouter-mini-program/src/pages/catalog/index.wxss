@@ -1,13 +1,13 @@
 /*
- * CloudRouter console model & pricing catalog (full-bleed per
+ * CloudRouter console model & pricing catalog (light theme, full-bleed per
  * APP_MINI_PROGRAM_UI_SPEC §7: the header band and rows span the viewport
- * edge-to-edge with square corners; rows carry their own content inset).
+ * edge-to-edge; rows carry their own content inset).
  */
 
 .cr-page {
   min-height: 100%;
   box-sizing: border-box;
-  background: #0b1220;
+  background: #f5f7fb;
   padding: 24rpx 0 48rpx;
 }
 
@@ -21,15 +21,15 @@
 
 .cr-state-text {
   font-size: 26rpx;
-  color: #94a3b8;
+  color: #64748b;
   text-align: center;
 }
 
 .cr-spinner {
   width: 52rpx;
   height: 52rpx;
-  border: 5rpx solid #1e293b;
-  border-top-color: #38bdf8;
+  border: 5rpx solid #e2e8f0;
+  border-top-color: #2563eb;
   border-radius: 50%;
   animation: cr-spin 0.9s linear infinite;
 }
@@ -43,8 +43,8 @@
 .cr-retry {
   margin: 0;
   padding: 14rpx 56rpx;
-  background: #1e293b;
-  color: #38bdf8;
+  background: #eff6ff;
+  color: #2563eb;
   font-size: 26rpx;
   line-height: 1.6;
   border-radius: 12rpx;
@@ -55,7 +55,7 @@
 }
 
 .cr-retry--hover {
-  background: #334155;
+  background: #dbeafe;
 }
 
 .cr-head,
@@ -67,22 +67,22 @@
 }
 
 .cr-head {
-  background: #111c33;
+  background: #f1f5f9;
 }
 
 .cr-rows {
   display: flex;
   flex-direction: column;
-  background: #0f172a;
+  background: #ffffff;
 }
 
 .cr-row {
-  border-bottom: 1rpx solid #1e293b;
+  border-bottom: 1rpx solid #e2e8f0;
 }
 
 .cr-head text {
   font-size: 20rpx;
-  color: #7dd3fc;
+  color: #2563eb;
 }
 
 .cr-head-vendor,
@@ -108,12 +108,12 @@
 .cr-row-model,
 .cr-row-price {
   font-size: 24rpx;
-  color: #e2e8f0;
+  color: #1e293b;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .cr-row-price {
-  color: #cbd5e1;
+  color: #475569;
 }

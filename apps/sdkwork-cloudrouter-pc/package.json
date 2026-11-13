@@ -153,6 +153,7 @@
     "@sdkwork/cloudrouter-app-sdk": "workspace:*",
     "@sdkwork/cloudrouter-backend-sdk": "workspace:*",
     "@sdkwork/cloudrouter-open-sdk": "workspace:*",
+    "@sdkwork/cloudrouter-pc-cashier": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-agent": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-analytics": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-application": "workspace:*",

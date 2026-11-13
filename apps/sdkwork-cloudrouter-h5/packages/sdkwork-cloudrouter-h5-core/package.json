@@ -18,6 +18,11 @@
       "import": "./src/sdk/index.ts",
       "default": "./src/sdk/index.ts"
     },
+    "./branding": {
+      "types": "./src/branding/index.ts",
+      "import": "./src/branding/index.ts",
+      "default": "./src/branding/index.ts"
+    },
     "./modules": {
       "types": "./src/modules/index.ts",
       "import": "./src/modules/index.ts",
@@ -53,6 +58,7 @@
     "@sdkwork/cloudrouter-contracts": "workspace:*",
     "@sdkwork/cloudrouter-sdk-ports": "workspace:*",
     "@sdkwork/cloudrouter-service": "workspace:*",
+    "@sdkwork/order-app-sdk": "workspace:*",
     "@sdkwork/sdk-common": "workspace:*"
   }
 }

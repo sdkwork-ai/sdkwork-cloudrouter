@@ -40,13 +40,13 @@ export class RouteErrorBoundary extends Component<RouteErrorBoundaryProps, Route
   render(): ReactNode {
     if (this.state.hasError) {
       return (
-        <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-200">
-          <p className="font-medium">{this.props.labels.title}</p>
-          <p className="mt-1 text-[11px] text-red-200/80">{this.props.labels.message}</p>
+        <div className="border-b border-line bg-danger-soft px-[0.9rem] py-4 text-xs text-danger">
+          <p className="font-semibold">{this.props.labels.title}</p>
+          <p className="mt-1 text-[11px] leading-5 opacity-80">{this.props.labels.message}</p>
           <button
             type="button"
             onClick={this.handleRetry}
-            className="mt-2 rounded-md border border-red-400/60 px-2 py-1 text-[11px]"
+            className="mt-2 rounded-md border border-danger/40 px-2.5 py-1 text-[11px] font-medium"
           >
             {this.props.labels.retry}
           </button>

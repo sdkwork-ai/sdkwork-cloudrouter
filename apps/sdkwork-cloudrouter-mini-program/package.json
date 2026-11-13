@@ -38,7 +38,9 @@
     "@sdkwork/cloudrouter-mp-shell": "workspace:*",
     "@sdkwork/cloudrouter-sdk-ports": "workspace:*",
     "@sdkwork/cloudrouter-service": "workspace:*",
-    "@sdkwork/sdk-common": "workspace:*"
+    "@sdkwork/sdk-common": "workspace:*",
+    "@sdkwork/settings-core": "workspace:*",
+    "@sdkwork/settings-mini-program": "workspace:*"
   },
   "devDependencies": {
     "@sdkwork/app-topology": "workspace:*",

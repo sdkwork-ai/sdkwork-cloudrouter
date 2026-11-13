@@ -146,16 +146,24 @@ describe('cloudrouter mini program application root', () => {
     }
   });
 
-  it('declares the console tab bar with outline/filled icon pairs', () => {
+  it('declares the H5 five-tab sequence with icon pairs', () => {
     assert.ok(Array.isArray(consoleRouteOrder) && consoleRouteOrder.length === 4);
     const tabBar = appJson.tabBar;
-    assert.equal(tabBar.list.length, consoleRouteOrder.length);
-    // The tab sequence is the canonical route order; only the page path and the
-    // icon pair are mini-program specific.
     assert.deepEqual(
-      tabBar.list.map((entry) => entry.pagePath),
-      consoleRouteOrder.map((key) => `pages/${key === 'apiKeys' ? 'api-keys' : key}/index`),
+      tabBar.list.map((entry) => ({ path: entry.pagePath, text: entry.text })),
+      [
+        { path: 'pages/dashboard/index', text: '首页' },
+        { path: 'pages/playground/index', text: '体验中心' },
+        { path: 'pages/catalog/index', text: '模型与定价' },
+        { path: 'pages/messages/index', text: '消息' },
+        { path: 'pages/profile/index', text: '我的' },
+      ],
     );
+    // Usage and API Key remain mounted pages, never tabs.
+    assert.ok(appJson.pages.includes('pages/usage/index'));
+    assert.ok(appJson.pages.includes('pages/api-keys/index'));
+    assert.ok(!tabBar.list.some((entry) => entry.pagePath.includes('usage')));
+    assert.ok(!tabBar.list.some((entry) => entry.pagePath.includes('api-keys')));
     const iconFiles = new Set();
     for (const entry of tabBar.list) {
       assert.ok(entry.iconPath, `${entry.pagePath} declares iconPath`);
@@ -172,11 +180,32 @@ describe('cloudrouter mini program application root', () => {
       }
     }
     // One distinct pair per tab: no glyph may be shared between two tabs.
-    assert.equal(iconFiles.size, consoleRouteOrder.length * 2);
-    // The pair colors are the shared glyph ramp, not a color-only swap.
-    assert.equal(tabBar.color, '#94a3b8');
-    assert.equal(tabBar.selectedColor, '#38bdf8');
-    assert.equal(tabBar.borderStyle, 'black');
+    assert.equal(iconFiles.size, tabBar.list.length * 2);
+    // H5 light tab bar with the tech-blue selected state.
+    assert.equal(tabBar.color, '#64748b');
+    assert.equal(tabBar.selectedColor, '#2563eb');
+    assert.equal(tabBar.backgroundColor, '#ffffff');
+    assert.equal(tabBar.borderStyle, 'white');
+  });
+
+  it('keeps web-view out of tabBar pages and opens H5 from native entries', () => {
+    for (const [page, title] of [
+      ['messages', '消息'],
+      ['playground', '体验中心'],
+    ]) {
+      const json = readJson(`src/pages/${page}/index.json`);
+      assert.equal(json.navigationBarTitleText, title);
+      const js = readText(`src/pages/${page}/index.js`);
+      assert.ok(js.includes(`/pages/h5/index?route=${page}`));
+      const wxml = readText(`src/pages/${page}/index.wxml`);
+      assert.ok(wxml.includes('cr-bridge'), `${page} is a native tab entry`);
+      assert.ok(!wxml.includes('<web-view'), `${page} must not put web-view in a tabBar page`);
+    }
+    const bridge = readText('src/pages/h5/index.js');
+    assert.ok(bridge.includes('webPublicHttpUrl'));
+    for (const route of ['messages', 'playground', 'membership', 'recharge', 'orders']) {
+      assert.ok(bridge.includes(route), `${route} is an allowed H5 bridge route`);
+    }
   });
 
   it('derives the shell tab bar from the shared console tab descriptors', () => {

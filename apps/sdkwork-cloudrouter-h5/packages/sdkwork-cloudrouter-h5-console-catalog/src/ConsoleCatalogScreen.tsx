@@ -42,17 +42,33 @@ export function ConsoleCatalogScreen({ ports, locale, labels }: ConsoleCatalogSc
 
   useEffect(() => reload(), [reload]);
 
-  if (loading) return <p className="py-6 text-center text-xs text-gray-400">{labels.loading}</p>;
+  if (loading) {
+    return (
+      <p className="bg-surface px-[0.9rem] py-10 text-center text-xs text-ink-subtle">
+        {labels.loading}
+      </p>
+    );
+  }
   if (error) {
     return (
-      <div className="border-y border-red-500/40 bg-red-500/10 px-[0.9rem] py-3 text-xs text-red-200">
+      <div className="border-b border-line bg-danger-soft px-[0.9rem] py-4 text-xs text-danger">
         <p>{error}</p>
-        <button type="button" onClick={reload} className="mt-2 rounded-md border border-red-400/60 px-2 py-1 text-[11px]">
+        <button
+          type="button"
+          onClick={reload}
+          className="mt-2 rounded-md border border-danger/40 px-2.5 py-1 text-[11px] font-medium"
+        >
           {labels.reload}
         </button>
       </div>
     );
   }
-  if (rows.length === 0) return <p className="py-6 text-center text-xs text-gray-400">{labels.empty}</p>;
+  if (rows.length === 0) {
+    return (
+      <p className="bg-surface px-[0.9rem] py-10 text-center text-xs text-ink-subtle">
+        {labels.empty}
+      </p>
+    );
+  }
   return <ConsoleCatalogView rows={rows} locale={locale} labels={labels} />;
 }

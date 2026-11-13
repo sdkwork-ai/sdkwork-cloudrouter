@@ -20,16 +20,16 @@ export function ScreenState({
   children,
 }: ScreenStateProps) {
   if (loading) {
-    return <p className="px-1 py-6 text-center text-xs text-gray-400">…</p>;
+    return <p className="bg-surface px-[0.9rem] py-8 text-center text-xs text-ink-subtle">…</p>;
   }
   if (error) {
     return (
-      <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-200">
+      <div className="border-b border-line bg-danger-soft px-[0.9rem] py-4 text-xs text-danger">
         <p>{error}</p>
         <button
           type="button"
           onClick={onRetry}
-          className="mt-2 rounded-md border border-red-400/60 px-2 py-1 text-[11px]"
+          className="mt-2 rounded-md border border-danger/40 px-2.5 py-1 text-[11px] font-medium"
         >
           {retryLabel}
         </button>
@@ -37,7 +37,9 @@ export function ScreenState({
     );
   }
   if (empty) {
-    return <p className="px-1 py-6 text-center text-xs text-gray-400">{emptyLabel}</p>;
+    return (
+      <p className="bg-surface px-[0.9rem] py-8 text-center text-xs text-ink-subtle">{emptyLabel}</p>
+    );
   }
   return <>{children}</>;
 }

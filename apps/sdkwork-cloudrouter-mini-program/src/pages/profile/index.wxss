@@ -1,0 +1,154 @@
+page {
+  background: #f5f7fb;
+}
+
+.cr-profile {
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 32rpx 28rpx 64rpx;
+}
+
+.cr-profile__header {
+  align-items: center;
+  display: flex;
+  gap: 24rpx;
+  padding: 12rpx 4rpx 36rpx;
+}
+
+.cr-profile__avatar {
+  align-items: center;
+  background: #dbeafe;
+  border-radius: 50%;
+  color: #1d4ed8;
+  display: flex;
+  font-size: 40rpx;
+  font-weight: 700;
+  height: 112rpx;
+  justify-content: center;
+  width: 112rpx;
+}
+
+.cr-profile__copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.cr-profile__header .cr-profile__chevron {
+  color: #94a3b8;
+  font-size: 36rpx;
+}
+
+.cr-balance {
+  margin-bottom: 20rpx;
+  padding: 26rpx 28rpx 10rpx;
+}
+
+.cr-balance__head {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.cr-balance__label {
+  color: #64748b;
+  font-size: 24rpx;
+}
+
+.cr-balance__recharge {
+  border: 1rpx solid #2563eb;
+  border-radius: 12rpx;
+  color: #2563eb;
+  font-size: 24rpx;
+  padding: 6rpx 24rpx;
+}
+
+.cr-balance__value {
+  color: #0f172a;
+  display: block;
+  font-size: 34rpx;
+  font-weight: 700;
+  margin-top: 8rpx;
+}
+
+.cr-balance__divider {
+  background: #eef2f7;
+  height: 1rpx;
+  margin-top: 16rpx;
+}
+
+.cr-balance__row {
+  align-items: center;
+  color: #2563eb;
+  display: flex;
+  font-size: 26rpx;
+  justify-content: space-between;
+  padding: 20rpx 0;
+}
+
+.cr-balance__grid {
+  display: flex;
+  gap: 24rpx;
+  padding: 18rpx 0;
+}
+
+.cr-balance__cell {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.cr-profile__footer {
+  color: #94a3b8;
+  display: block;
+  font-size: 22rpx;
+  padding: 48rpx 0 24rpx;
+  text-align: center;
+}
+
+.cr-profile__name {
+  color: #0f172a;
+  font-size: 34rpx;
+  font-weight: 600;
+}
+
+.cr-profile__subtitle {
+  color: #64748b;
+  font-size: 24rpx;
+}
+
+.cr-profile__card {
+  background: #ffffff;
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+
+.cr-profile__row {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  min-height: 104rpx;
+  padding: 0 28rpx;
+}
+
+.cr-profile__row--hover {
+  background: #f1f5f9;
+}
+
+.cr-profile__label {
+  color: #1e293b;
+  font-size: 30rpx;
+}
+
+.cr-profile__chevron {
+  color: #94a3b8;
+  font-size: 36rpx;
+}
+
+.cr-profile__divider {
+  background: #eef2f7;
+  height: 1rpx;
+  margin-left: 28rpx;
+}

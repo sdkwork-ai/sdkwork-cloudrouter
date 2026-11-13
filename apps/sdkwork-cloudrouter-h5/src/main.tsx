@@ -2,9 +2,18 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { adoptAppAuthHashEntry } from './app-auth/entryRoute.js';
+import { adoptOrderDeepLinkHash } from './commerce/entryRoute.js';
 import { App } from './App.js';
 import { bootstrapH5Application } from './bootstrap/runtime.js';
+import { initializeThemePreferences } from './themePreference.js';
 import './index.css';
+
+/**
+ * Apply the persisted light/dark preference before the first render so the
+ * shell paints with the resolved palette instead of flashing the system
+ * default supplied by the CSS media query.
+ */
+initializeThemePreferences();
 
 const container = document.getElementById('root');
 if (!container) {
@@ -18,6 +27,14 @@ if (!container) {
  * application never renders the console shell first.
  */
 adoptAppAuthHashEntry();
+
+/**
+ * The order cashier is emitted as a real pathname deep link
+ * (`{h5BaseUrl}/cashier/{orderId}?scene=..&outTradeNo=..`). Fold it into the
+ * hash router before the first render so the scanned QR code opens the cashier
+ * instead of the console fallback.
+ */
+adoptOrderDeepLinkHash();
 
 /**
  * A bootstrap failure leaves ``#root`` empty, and because the console runtime is a
