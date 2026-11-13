@@ -17,7 +17,7 @@ import {
 } from "@sdkwork/order-pc-recharge";
 import {
   getCloudRouterCouponRechargeService,
-  getCloudRouterPointsRechargeService,
+  getCloudRouterTokenBankRechargeService,
 } from "@sdkwork/cloudroutes-pc-commons/domain-service-providers";
 import { useNavigate } from "react-router-dom";
 
@@ -188,43 +188,43 @@ export function CloudRouterTokenPlanTokenBankPurchaseModal({
   return (
     <SdkworkPointsRechargeDialog
       copy={{
-        account: t("points_recharge.account", "Cloud Router"),
-        agreement: t("points_recharge.agreement", "支付前请阅读并同意《算力积分充值服务协议》"),
-        agreementAccepted: t("points_recharge.agreement_accepted", "您已同意《算力积分充值服务协议》"),
-        agreementRequired: t("points_recharge.agreement_required", "请先同意算力积分充值服务协议"),
+        account: t("token_bank_recharge.account", "Cloud Router"),
+        agreement: t("token_bank_recharge.agreement", "支付前请阅读并同意《Token Bank 充值服务协议》"),
+        agreementAccepted: t("token_bank_recharge.agreement_accepted", "您已同意《Token Bank 充值服务协议》"),
+        agreementRequired: t("token_bank_recharge.agreement_required", "请先同意 Token Bank 充值服务协议"),
         close: t("close", "关闭"),
-        completed: t("points_recharge.completed", "支付完成，算力积分已到账"),
-        confirmPayment: t("points_recharge.confirm_payment", "同意并支付"),
-        creatingPayment: t("points_recharge.creating_payment", "正在生成支付二维码..."),
-        emptyPackages: t("points_recharge.empty_packages", "暂无可用充值套餐"),
-        expired: t("points_recharge.expired", "订单已过期"),
+        completed: t("token_bank_recharge.completed", "支付完成，Token Bank 额度已到账"),
+        confirmPayment: t("token_bank_recharge.confirm_payment", "同意并支付"),
+        creatingPayment: t("token_bank_recharge.creating_payment", "正在生成支付二维码..."),
+        emptyPackages: t("token_bank_recharge.empty_packages", "暂无可用充值套餐"),
+        expired: t("token_bank_recharge.expired", "订单已过期"),
         expiredDescription: t(
-          "points_recharge.expired_description",
+          "token_bank_recharge.expired_description",
           "当前充值订单已过期，请重新创建订单后继续支付。",
         ),
-        expiresIn: t("points_recharge.expires_in", "订单剩余支付时间"),
-        loadFailed: t("points_recharge.load_failed", "充值套餐加载失败"),
-        loadingPackages: t("points_recharge.loading_packages", "正在加载充值套餐..."),
-        myPoints: t("points_recharge.my_points", "我的算力积分"),
+        expiresIn: t("token_bank_recharge.expires_in", "订单剩余支付时间"),
+        loadFailed: t("token_bank_recharge.load_failed", "充值套餐加载失败"),
+        loadingPackages: t("token_bank_recharge.loading_packages", "正在加载充值套餐..."),
+        myPoints: t("token_bank_recharge.my_points", "我的 Token Bank 额度"),
         notice: t(
-          "points_recharge.notice",
-          "温馨提示：算力积分不可兑换会员、不可转赠，也不可提现；充值后有效期以平台规则为准。",
+          "token_bank_recharge.notice",
+          "温馨提示：Token Bank 额度不可提现；充值与使用规则以平台规则为准。",
         ),
-        paymentUnavailable: t("points_recharge.payment_unavailable", "支付暂不可用"),
+        paymentUnavailable: t("token_bank_recharge.payment_unavailable", "支付暂不可用"),
         paymentUnavailableDescription: t(
-          "points_recharge.payment_unavailable_description",
+          "token_bank_recharge.payment_unavailable_description",
           "暂时无法生成支付二维码，请稍后重试。",
         ),
-        pointsUnit: t("points_recharge.points_unit", "算力积分"),
-        retry: t("points_recharge.retry", "重新加载"),
-        retryPayment: t("points_recharge.retry_payment", "重新支付"),
-        scanPrompt: t("points_recharge.scan_prompt", "请扫码完成支付"),
-        title: t("points_recharge.title", "算力积分购买"),
+        pointsUnit: t("token_bank_recharge.points_unit", "Token Bank 额度"),
+        retry: t("token_bank_recharge.retry", "重新加载"),
+        retryPayment: t("token_bank_recharge.retry_payment", "重新支付"),
+        scanPrompt: t("token_bank_recharge.scan_prompt", "请扫码完成支付"),
+        title: t("token_bank_recharge.title", "购买 Token Bank 额度"),
       }}
       currentPoints={currentTokenBank}
       isOpen={isOpen}
       onClose={onClose}
-      service={getCloudRouterPointsRechargeService()}
+      service={getCloudRouterTokenBankRechargeService()}
     />
   );
 }

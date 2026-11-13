@@ -55,7 +55,7 @@ Provider account placeholders:
 Payment channels:
 
 - one inactive channel for each provider-backed method and checkout scene combination
-- scenes: `checkout`, `membership_purchase`, `points_recharge`, `wallet_recharge`, `subscription`, `invoice`
+- scenes: `checkout`, `membership_purchase`, `recharge` (all account-value recharge subjects: `points_recharge`, `token_bank_recharge`, `token_bank_plan_purchase`, `token_bank_plan_renewal`, `account_recharge_package`, `coupon_recharge`), `subscription`, `invoice`
 - `card` channels route through the Stripe provider account
 - `wallet_balance` stays as a method only because it is an internal balance instrument, not an external payment channel
 

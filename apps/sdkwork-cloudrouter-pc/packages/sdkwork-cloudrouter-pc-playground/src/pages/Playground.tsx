@@ -18,7 +18,7 @@ import { buildPortalAuthLoginRedirect } from '@sdkwork/cloudroutes-pc-commons';
 import {
   getCloudRouterCouponRechargeService,
   getCloudRouterMembershipCheckoutService,
-  getCloudRouterPointsRechargeService,
+  getCloudRouterTokenBankRechargeService,
 } from '@sdkwork/cloudroutes-pc-commons/domain-service-providers';
 import { createPlaygroundBalancePort } from '../playgroundBalancePort';
 
@@ -41,7 +41,10 @@ configureAgentsPlaygroundRuntime({
     checkoutService: getCloudRouterMembershipCheckoutService(),
     couponRechargeService: getCloudRouterCouponRechargeService(),
     onLoginRequired: () => window.location.assign(buildPortalAuthLoginRedirect(window.location)),
-    pointsRechargeService: getCloudRouterPointsRechargeService(),
+    // The agents host still names this slot `pointsRechargeService`; the
+    // Playground sells Token Bank compute credits, so it must receive the
+    // token_bank_recharge service, never the membership-points one.
+    pointsRechargeService: getCloudRouterTokenBankRechargeService(),
   },
 });
 

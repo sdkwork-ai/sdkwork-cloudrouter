@@ -10,9 +10,6 @@ export const cloudRouterCashierMessages = {
     'cloudrouter.cashier.paid': "Payment completed. The order will be processed shortly.",
     'cloudrouter.cashier.notPayable': "This order is not payable in its current state.",
     'cloudrouter.cashier.backToWallet': "Back to wallet",
-    'cloudrouter.cashier.subject_membership': "Membership Subscription",
-    'cloudrouter.cashier.subject_points_recharge': "Points Recharge",
-    'cloudrouter.cashier.subject_token_bank_recharge': "Token Bank Recharge",
   },
   zh: {
     'cloudrouter.cashier.title': "收银台",
@@ -25,8 +22,5 @@ export const cloudRouterCashierMessages = {
     'cloudrouter.cashier.paid': "支付已完成，订单将尽快处理。",
     'cloudrouter.cashier.notPayable': "该订单当前状态不支持支付。",
     'cloudrouter.cashier.backToWallet': "返回钱包",
-    'cloudrouter.cashier.subject_membership': "会员订阅",
-    'cloudrouter.cashier.subject_points_recharge': "积分充值",
-    'cloudrouter.cashier.subject_token_bank_recharge': "算力积分充值",
   },
 } as const;

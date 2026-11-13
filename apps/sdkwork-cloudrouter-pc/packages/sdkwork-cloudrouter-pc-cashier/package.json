@@ -21,6 +21,7 @@
     "@sdkwork/cloudroutes-pc-commons": "workspace:*",
     "@sdkwork/membership-pc-subscription": "workspace:*",
     "@sdkwork/order-pc-checkout": "workspace:*",
+    "@sdkwork/order-pc-core": "workspace:*",
     "@sdkwork/ui-pc-react": "workspace:*",
     "@sdkwork/utils": "workspace:*",
     "lucide-react": "catalog:",

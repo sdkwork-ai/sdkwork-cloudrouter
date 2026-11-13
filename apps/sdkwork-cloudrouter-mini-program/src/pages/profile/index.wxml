@@ -10,7 +10,7 @@
 
   <view class="cr-profile__card cr-balance">
     <view class="cr-balance__head">
-      <text class="cr-balance__label">余额(元)</text>
+      <text class="cr-balance__label">现金余额(元)</text>
       <view class="cr-balance__recharge" bindtap="onOpenRecharge">充值</view>
     </view>
     <text class="cr-balance__value">--</text>

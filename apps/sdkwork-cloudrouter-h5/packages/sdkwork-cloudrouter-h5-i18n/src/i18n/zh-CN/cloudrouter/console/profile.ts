@@ -7,7 +7,7 @@ export const profileMessages: Record<string, string> = {
   'cloudrouter.console.profile.guestHint': "登录后查看账户与余额",
   'cloudrouter.console.profile.accountFallback': "CloudRouter 用户",
   'cloudrouter.console.profile.verified': "已认证",
-  'cloudrouter.console.profile.balance': "余额(元)",
+  'cloudrouter.console.profile.balance': "现金余额(元)",
   'cloudrouter.console.profile.recharge': "充值",
   'cloudrouter.console.profile.autoRecharge': "设置自动充值",
   'cloudrouter.console.profile.coupons': "优惠券(张)",

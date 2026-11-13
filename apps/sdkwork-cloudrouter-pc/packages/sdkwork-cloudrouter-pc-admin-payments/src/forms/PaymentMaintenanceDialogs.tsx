@@ -25,6 +25,7 @@ import type {
   CreatePaymentMethodCommand,
   CreateReconciliationRunCommand,
   CreateRouteRuleCommand,
+  UpdatePaymentChannelCommand,
   UpdatePaymentMethodCommand,
   UpdateRouteRuleCommand,
 } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
@@ -207,8 +208,30 @@ export function buildChannelCreateCommand(values: PaymentChannelFormValues): Cre
   };
 }
 
-export function buildRouteRuleCreateCommand(values: RouteRuleFormValues): CreateRouteRuleCommand {
+/**
+ * Channel update payload. The edit path used to re-send the *create* command,
+ * which happened to type-check because both commands share the same fields; it
+ * is spelled out here so a future divergence (an immutable `channelNo`, an
+ * extra update-only field) fails at compile time instead of silently sending
+ * the wrong body.
+ */
+export function buildChannelUpdateCommand(values: PaymentChannelFormValues): UpdatePaymentChannelCommand {
   return {
+    channelNo: values.channelNo.trim(),
+    channelName: optionalText(values.channelName),
+    providerAccountId: values.providerAccountId.trim(),
+    methodId: values.methodId.trim(),
+    providerCode: values.providerCode as UpdatePaymentChannelCommand['providerCode'],
+    sceneCode: values.sceneCode as UpdatePaymentChannelCommand['sceneCode'],
+    currencyCode: values.currencyCode.trim().toUpperCase(),
+    countryCode: values.countryCode.trim().toUpperCase(),
+    status: values.status as UpdatePaymentChannelCommand['status'],
+    priority: optionalNumber(values.priority),
+    sortOrder: optionalNumber(values.sortOrder),
+  };
+}
+
+export function buildRouteRuleCreateCommand(values: RouteRuleFormValues): CreateRouteRuleCommand {  return {
     ruleNo: values.ruleNo.trim(),
     priority: optionalNumber(values.priority),
     purchaseType: optionalText(values.purchaseType),

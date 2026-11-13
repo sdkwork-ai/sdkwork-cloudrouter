@@ -6627,6 +6627,9 @@ importers:
       '@sdkwork/order-pc-checkout':
         specifier: workspace:*
         version: link:../../../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-checkout
+      '@sdkwork/order-pc-core':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-core
       '@sdkwork/ui-pc-react':
         specifier: workspace:*
         version: link:../../../../../sdkwork-ui/sdkwork-ui-pc-react

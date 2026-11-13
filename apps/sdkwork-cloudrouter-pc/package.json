@@ -114,7 +114,7 @@
     "lint": "node scripts/typecheck-owned-sources.mjs",
     "check:size": "size-limit",
     "test:e2e": "playwright test",
-    "test:commerce": "node --import tsx --test commerce-debt-runtime.test.ts commerce-business-runtime.test.ts sdk-composition-standard.test.mjs",
+    "test:commerce": "node --import tsx --test commerce-debt-runtime.test.ts commerce-business-runtime.test.ts commerce-order-subject-i18n.test.ts sdk-composition-standard.test.mjs",
     "test:portal-alignment": "pnpm --filter @sdkwork/cloudrouter-pc-console-agents test && pnpm --filter @sdkwork/cloudrouter-pc-console-memory test && node --test vite-config-runtime.test.ts sdk-composition-standard.test.mjs scripts/portal-workspace-package-resolver.test.mjs scripts/storage-i18n-coverage.test.mjs scripts/typecheck-owned-sources.test.mjs",
     "test:admin": "pnpm --filter @sdkwork/cloudrouter-pc-admin-dashboard test && pnpm --filter @sdkwork/cloudrouter-pc-admin-site test && pnpm --filter @sdkwork/cloudrouter-pc-admin-upstream typecheck && pnpm --filter @sdkwork/cloudrouter-pc-admin-upstream test && pnpm --filter @sdkwork/cloudrouter-pc-admin-runtime-region test && pnpm --filter @sdkwork/cloudrouter-pc-admin-cache test && pnpm --filter @sdkwork/cloudrouter-pc-admin-course test && node --import tsx --import ./scripts/css-stub-loader.mjs --test admin-sidebar-runtime.test.ts trade-center-admin-runtime.test.ts models-runtime.test.ts commons-runtime.test.ts home-downloads-runtime.test.ts deployments-catalog-runtime.test.ts site-branding-runtime.test.ts app-auth-runtime.test.ts && pnpm vitest run trade-i18n-runtime.test.ts trade-host-route-runtime.test.ts --config vite.config.ts --configLoader native --pool vmThreads",
     "typecheck": "node scripts/typecheck-owned-sources.mjs",

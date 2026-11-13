@@ -185,7 +185,7 @@ test("console usage logs copy is routed through i18n without read-only caveats",
   const source = readPortalFile("./packages/sdkwork-cloudrouter-pc-console-usage/src/UsageView.tsx");
 
   assert.match(source, /t\('console\.usage\.table\.cash', '现金花费'\)/);
-  assert.match(source, /t\('console\.usage\.table\.points', '积分花费'\)/);
+  assert.match(source, /t\('console\.usage\.table\.points', '算力额度花费'\)/);
   assert.match(source, /formatCashAmount\(log\.cost, log\.currency, displayLocale\)/);
   assert.doesNotMatch(source, /t\('console\.usage\.loadedCost', 'Loaded cost'\)/);
   assert.doesNotMatch(source, /t\('console\.usage\.table\.cost', 'Cost'\)/);

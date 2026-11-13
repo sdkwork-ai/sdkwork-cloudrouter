@@ -8,6 +8,7 @@ import {
   type SdkworkOrderCheckoutDialogCopy,
 } from '@sdkwork/order-pc-checkout';
 import { Button, StatusNotice } from '@sdkwork/ui-pc-react';
+import { localizeSdkworkOrderSubject } from '@sdkwork/order-pc-core/subject';
 
 import {
   createCloudRouterCashierCheckoutDriver,
@@ -20,17 +21,6 @@ import {
 } from './cashierService.js';
 
 const CHECKOUT_KEYS = SDKWORK_SUBSCRIPTION_I18N_KEYS.checkout;
-
-/** Backend order subjects that should render as localized plan titles. */
-const SUBJECT_KEYS: Readonly<Record<string, string>> = {
-  membership: 'cloudrouter.cashier.subject_membership',
-  'membership subscription': 'cloudrouter.cashier.subject_membership',
-  vip: 'cloudrouter.cashier.subject_membership',
-  points_recharge: 'cloudrouter.cashier.subject_points_recharge',
-  'points recharge': 'cloudrouter.cashier.subject_points_recharge',
-  token_bank_recharge: 'cloudrouter.cashier.subject_token_bank_recharge',
-  'token bank recharge': 'cloudrouter.cashier.subject_token_bank_recharge',
-};
 
 /**
  * PC cashier page mounted at the unified cashier route (`/cashier/:orderId`)
@@ -73,11 +63,10 @@ export function CloudRouterCashierPage() {
     };
   }, [orderId, reloadToken]);
 
-  const localizedSubject = useMemo(() => {
-    const subject = order?.subject?.trim() ?? '';
-    const key = SUBJECT_KEYS[subject.toLowerCase()];
-    return key ? t(key, subject) : subject;
-  }, [order?.subject, t]);
+  const localizedSubject = useMemo(
+    () => localizeSdkworkOrderSubject(order?.subject, (key, fallback) => t(key, fallback ?? key)),
+    [order?.subject, t],
+  );
 
   const summary = useMemo(
     () => (order ? toCloudRouterCashierSummary(order, localizedSubject, locale) : null),

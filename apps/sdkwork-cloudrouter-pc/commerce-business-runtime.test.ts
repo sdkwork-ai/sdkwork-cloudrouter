@@ -7,6 +7,7 @@ import {
   storeAppSessionFromResult,
 } from "./packages/sdkwork-cloudroutes-pc-commons/src/app-session-token.ts";
 import { resetCloudRouterSdkClients } from "./packages/sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts";
+import { consoleTokenPlanTeamMessages } from "./packages/sdkwork-cloudrouter-pc-i18n/src/resources/console/token-plan-team.ts";
 import { backendPromotionOffersList } from "./packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts";
 import {
   fetchMembershipAdminPackageGroups,
@@ -307,8 +308,9 @@ test("token plan purchases use order-owned checkout services and dialogs", () =>
   assert.match(i18nResourcesSource, /sdkworkSubscriptionCheckoutI18nBundle/);
   assert.match(modalSource, /@sdkwork\/order-pc-recharge/);
   assert.match(modalSource, /SdkworkPointsRechargeDialog/);
-  assert.match(modalSource, /getCloudRouterPointsRechargeService/);
-  assert.match(modalSource, /service=\{getCloudRouterPointsRechargeService\(\)\}/);
+  assert.match(modalSource, /getCloudRouterTokenBankRechargeService/);
+  assert.match(modalSource, /service=\{getCloudRouterTokenBankRechargeService\(\)\}/);
+  assert.doesNotMatch(modalSource, /getCloudRouterPointsRechargeService/);
   assert.match(modalSource, /SdkworkCouponRedemptionDialog/);
   assert.match(modalSource, /service=\{getCloudRouterCouponRechargeService\(\)\}/);
   assert.doesNotMatch(modalSource, /getCloudRouterCouponRechargeService\(\)\.redeem/);
@@ -462,7 +464,7 @@ test("Playground delegates Token Plan UI to Agents and injects only host service
   assert.match(playgroundSource, /tokenPlan:\s*\{/);
   assert.match(playgroundSource, /checkoutService:\s*getCloudRouterMembershipCheckoutService\(\)/);
   assert.match(playgroundSource, /couponRechargeService:\s*getCloudRouterCouponRechargeService\(\)/);
-  assert.match(playgroundSource, /pointsRechargeService:\s*getCloudRouterPointsRechargeService\(\)/);
+  assert.match(playgroundSource, /pointsRechargeService:\s*getCloudRouterTokenBankRechargeService\(\)/);
   assert.doesNotMatch(playgroundSource, /SdkworkSubscriptionCatalogPage/);
   assert.doesNotMatch(playgroundSource, /\bfetch\s*\(|axios|Authorization|Access-Token/);
 });
@@ -511,14 +513,15 @@ test("recharge hosts provide server-expiration checkout copy", () => {
     "./packages/sdkwork-cloudrouter-pc-i18n/src/resources/console/recharge.ts",
   );
 
-  for (const source of [tokenPlanSource, walletSource]) {
-    assert.match(source, /points_recharge\.expires_in/);
-    assert.match(source, /points_recharge\.expired_description/);
-    assert.match(source, /points_recharge\.retry_payment/);
+  // The compute-credit purchase (token plan) is a Token Bank recharge; the
+  // console wallet tab stays the membership-points recharge. Each surface must
+  // use its own copy family so a Token Bank order is never described as points.
+  for (const copyKey of ["expires_in", "expired_description", "retry_payment"]) {
+    assert.match(tokenPlanSource, new RegExp(`token_bank_recharge\\.${copyKey}`));
+    assert.match(walletSource, new RegExp(`points_recharge\\.${copyKey}`));
+    assert.match(rechargeCatalogSource, new RegExp(`"points_recharge\\.${copyKey}"`));
+    assert.match(rechargeCatalogSource, new RegExp(`"token_bank_recharge\\.${copyKey}"`));
   }
-  assert.match(rechargeCatalogSource, /"points_recharge\.expires_in"/);
-  assert.match(rechargeCatalogSource, /"points_recharge\.expired_description"/);
-  assert.match(rechargeCatalogSource, /"points_recharge\.retry_payment"/);
 });
 
 test("token plan and console wallet delegate coupon redemption to the order-owned flow", () => {
@@ -680,4 +683,88 @@ test("order cashier routes keep the unified deep link and the sdkwork-im path sh
   assert.match(serviceSource, /getSdkworkOrderAppSdkClient/);
   assert.match(serviceSource, /orders\.payments\.create/);
   assert.match(serviceSource, /orders\.paymentSuccess\.retrieve/);
+});
+
+test("token plan page composes the audience switch, personal catalog, and team seat surface", () => {
+  const pageSource = readPortalFile("./src/token-plan/CloudRouterTokenPlanPage.tsx");
+  const surfaceSource = readPortalFile("./src/token-plan/CloudRouterTokenPlanSurface.tsx");
+  const tabsSource = readPortalFile("./src/token-plan/CloudRouterTokenPlanAudienceTabs.tsx");
+  const teamPageSource = readPortalFile("./src/token-plan/team/CloudRouterTeamPlanPage.tsx");
+  const teamServiceSource = readPortalFile("./src/token-plan/team/teamSubscriptionService.ts");
+  const teamDialogSource = readPortalFile("./src/token-plan/team/CloudRouterTeamCheckoutDialog.tsx");
+  const teamCardsSource = readPortalFile("./src/token-plan/team/TeamPlanCards.tsx");
+  const teamDirectorySource = readPortalFile("./src/token-plan/team/TeamSeatDirectory.tsx");
+  const teamPolicySource = readPortalFile("./src/token-plan/team/TeamSeatPolicy.tsx");
+
+  // The Cloud Router composition seam owns the switch; the shared catalog does not.
+  assert.match(pageSource, /CloudRouterTokenPlanAudienceTabs/);
+  assert.match(pageSource, /CloudRouterTeamPlanPage/);
+  assert.match(pageSource, /CloudRouterTokenPlanSurface/);
+  assert.match(pageSource, /mx-auto w-full max-w-7xl px-4 py-10 md:px-6 lg:px-8/);
+  assert.match(pageSource, /audience === 'personal'/);
+  assert.doesNotMatch(surfaceSource, /CloudRouterTokenPlanAudienceTabs/);
+  assert.match(tabsSource, /data-token-plan-audience-tabs/);
+  assert.match(tabsSource, /role="tablist"/);
+
+  // The team surface reaches the generated membership SDK and the order-owned
+  // checkout only through its service module.
+  assert.match(teamPageSource, /getSdkworkMembershipAppSdkClient/);
+  assert.match(teamPageSource, /getCloudRouterMembershipCheckoutService/);
+  assert.match(teamPageSource, /data-team-plan-surface/);
+  assert.match(teamPageSource, /!state\.isBootstrapped && !state\.isLoading && !state\.lastError/);
+  assert.match(teamPageSource, /bootstrap\(\)\.catch/);
+  assert.match(teamServiceSource, /getSdkworkMembershipAppSdkClient\(\)\.memberships/);
+  assert.match(teamServiceSource, /getCloudRouterMembershipCheckoutService\(\)\.createCheckout/);
+  assert.match(teamServiceSource, /quantity: input\.seats/);
+  assert.match(teamServiceSource, /paymentProduct: 'mobile_cashier_h5'/);
+  assert.match(teamServiceSource, /memberships\.teamSeats\.policy\.update|teamSeats\.policy\.update/);
+  for (const componentSource of [
+    teamCardsSource,
+    teamDialogSource,
+    teamDirectorySource,
+    teamPolicySource,
+  ]) {
+    assert.doesNotMatch(
+      componentSource,
+      /getSdkworkMembershipAppSdkClient|getCloudRouterMembershipCheckoutService/,
+    );
+  }
+
+  // Checkout reuses the order-owned dialog and polls the team order status.
+  assert.match(teamDialogSource, /SdkworkOrderCheckoutDialog/);
+  assert.match(teamDialogSource, /getTeamCheckoutStatus/);
+  assert.match(teamCardsSource, /grid-cols-1 gap-5 md:grid-cols-3/);
+  assert.match(teamCardsSource, /token_plan\.team\.buy_seats/);
+  assert.match(teamDirectorySource, /data-team-seat-directory/);
+  assert.match(teamDirectorySource, /token_plan\.team\.seat_capacity_exceeded/);
+  assert.match(teamPolicySource, /data-team-seat-policy/);
+});
+
+test("token plan audience and team seat copy exist in both locales", () => {
+  const en = consoleTokenPlanTeamMessages.en as Record<string, string>;
+  const zh = consoleTokenPlanTeamMessages.zh as Record<string, string>;
+  const requiredKeys = [
+    "token_plan.audience.personal",
+    "token_plan.audience.team",
+    "token_plan.team.title",
+    "token_plan.team.buy_seats",
+    "token_plan.team.checkout_success",
+    "token_plan.team.policy_saved",
+  ];
+
+  for (const key of requiredKeys) {
+    assert.ok(en[key], `en is missing ${key}`);
+    assert.ok(zh[key], `zh is missing ${key}`);
+  }
+  assert.equal(en["token_plan.audience.team"], "Team");
+  assert.equal(zh["token_plan.audience.team"], "团队订阅");
+  assert.match(en["token_plan.team.buy_seats"] ?? "", /\{\{seats\}\}/);
+  assert.match(zh["token_plan.team.buy_seats"] ?? "", /\{\{seats\}\}/);
+
+  // `I18nMessageBundle` requires en+zh to stay key-identical.
+  assert.deepEqual(Object.keys(zh).sort(), Object.keys(en).sort());
+  assert.match(
+    readPortalFile("./packages/sdkwork-cloudrouter-pc-i18n/src/resources/index.ts"),
+    /consoleTokenPlanTeamMessages/,
+  );
 });

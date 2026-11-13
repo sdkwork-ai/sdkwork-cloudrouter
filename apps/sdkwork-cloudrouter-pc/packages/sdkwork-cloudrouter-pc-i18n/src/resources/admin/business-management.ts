@@ -28,7 +28,7 @@ export const adminBusinessManagementMessages = {
     'admin.menu.community.tiers': 'Membership Tiers',
     'admin.menu.recharges.business': 'Recharge Business',
     'admin.menu.recharges.packages': 'Recharge Packages',
-    'admin.menu.recharges.tokenBankRates': 'Token Bank Points & Rates',
+    'admin.menu.recharges.tokenBankRates': 'Token Bank Compute Credits & Rates',
     'admin.menu.marketing.design': 'Campaign Design',
     'admin.menu.marketing.offers': 'Coupon Offers',
     'admin.menu.marketing.couponStocks': 'Coupon Stocks',

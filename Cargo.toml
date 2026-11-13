@@ -298,6 +298,7 @@ sdkwork_routes_partner_backend_api = { package = "sdkwork-routes-partner-backend
 sdkwork_routes_community_backend_api = { package = "sdkwork-routes-community-backend-api", path = "../sdkwork-community/crates/sdkwork-routes-community-backend-api" }
 sdkwork_routes_rtc_backend_api = { package = "sdkwork-routes-rtc-backend-api", path = "../sdkwork-rtc/crates/sdkwork-routes-rtc-backend-api" }
 sdkwork_routes_storage_backend_api = { package = "sdkwork-routes-storage-backend-api", path = "../sdkwork-drive/crates/sdkwork-routes-storage-backend-api" }
+sdkwork-drive-database-host = { package = "sdkwork-drive-database-host", path = "../sdkwork-drive/crates/sdkwork-drive-database-host" }
 sdkwork_promotion_service_host = { package = "sdkwork-promotion-service-host", path = "../sdkwork-promotion/crates/sdkwork-promotion-service-host" }
 sdkwork_promotion_database_host = { package = "sdkwork-promotion-database-host", path = "../sdkwork-promotion/crates/sdkwork-promotion-database-host" }
 sdkwork_api_partner_assembly = { package = "sdkwork-api-partner-assembly", path = "../sdkwork-partner/crates/sdkwork-api-partner-assembly" }

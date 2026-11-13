@@ -61,9 +61,11 @@ import { consoleDashboardMessages } from './console/dashboard';
 import { consoleGatewayMessages } from './console/gateway';
 import { consoleMembershipsMessages } from './console/memberships';
 import { consoleMessagesMessages } from './console/messages';
+import { consoleOrderSubjectMessages } from './console/order-subjects';
 import { consoleRechargeMessages } from './console/recharge';
 import { consoleSettingsMessages } from './console/settings';
 import { consoleSettlementsMessages } from './console/settlements';
+import { consoleTokenPlanTeamMessages } from './console/token-plan-team';
 import { consoleUsageMessages } from './console/usage';
 import { backendErrorMessages } from './errors';
 import { playgroundAssetsMessages } from './playground/assets';
@@ -134,9 +136,11 @@ export const resources = mergeI18nBundles([
   consoleGatewayMessages,
   consoleMembershipsMessages,
   consoleMessagesMessages,
+  consoleOrderSubjectMessages,
   consoleRechargeMessages,
   consoleSettingsMessages,
   consoleSettlementsMessages,
+  consoleTokenPlanTeamMessages,
   consoleUsageMessages,
   playgroundAssetsMessages,
   playgroundChatMessages,

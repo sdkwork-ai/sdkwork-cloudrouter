@@ -2,7 +2,7 @@
   <view class="cr-hero">
     <view class="cr-hero__badge">☁ AI 云计算平台</view>
     <text class="cr-hero__title">算力与模型，<text class="cr-hero__accent">一站式上云</text></text>
-    <text class="cr-hero__subtitle">会员、积分、模型路由与用量管理，一个应用全部搞定。</text>
+    <text class="cr-hero__subtitle">会员、Token Bank 算力额度、模型路由与用量管理，一个应用全部搞定。</text>
     <input
       class="cr-hero__search"
       placeholder="搜索云产品、模型或订单"

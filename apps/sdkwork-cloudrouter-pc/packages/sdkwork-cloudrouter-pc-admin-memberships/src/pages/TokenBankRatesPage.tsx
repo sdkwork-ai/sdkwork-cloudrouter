@@ -208,7 +208,7 @@ export function TokenBankRatesPage() {
       <div className="flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto">
         <div>
           <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
-            {t('admin.commerce.memberships.tokenBankRates.title', 'Token Bank Points & Rates')}
+            {t('admin.commerce.memberships.tokenBankRates.title', 'Token Bank Compute Credits & Rates')}
           </h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {t('admin.commerce.memberships.tokenBankRates.desc', 'Maintain the per-currency points conversion and exchange rates that determine Token Bank credits for recharge and withdrawal.')}

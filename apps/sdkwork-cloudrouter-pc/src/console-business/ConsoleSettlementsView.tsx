@@ -46,20 +46,19 @@ const SETTLEMENTS_FILTERS: SdkworkOrderFilter[] = [
 /**
  * Order subjects that credit a Token Bank quota.
  *
- * The warehouse is not uniform here, so both spellings must be accepted:
- *
  * - `token_bank_recharge` / `token_bank_plan_purchase` / `token_bank_plan_renewal`
- *   are the subjects the contract maps to the Token Bank asset
+ *   are the canonical Token Bank subjects
  *   (`AccountValueOrderSubject::fixed_target_asset` in
  *   `sdkwork-order-service/src/domain/account_value.rs`).
- * - `points_recharge` is the contract default and is what the existing orders
- *   actually carry: every Token Bank recharge in the database is stored with
- *   this subject, and its ledger entries all land on the `token_bank` asset.
- *   Rejecting it would leave the quota column empty for real rows.
+ * - `points_recharge` is the **Membership Points** subject. It is accepted here
+ *   only because historical Token Bank purchases were booked with it before the
+ *   subject migration; its ledger rows credit the `points` asset, so the quota
+ *   column stays empty for genuinely points-funded orders.
  *
  * `account_recharge_package`, `coupon_recharge`, `refund_request` and
  * `cash_withdrawal` are deliberately excluded — the contract gives the first
  * two no fixed asset and the last two are not recharges.
+ * Authority: `sdkwork-order/specs/ACCOUNT_VALUE_ORDER_SPEC.md` §2.1.
  */
 const TOKEN_BANK_QUOTA_SUBJECTS = new Set([
   'points_recharge',
@@ -238,6 +237,7 @@ function SettlementsPageContent({ controller }: { controller: SdkworkOrderContro
     formatFilter,
     formatPaymentMethod,
     formatStatus,
+    formatSubject,
     formatTimestamp,
     locale,
   } = useSdkworkOrderIntl();
@@ -427,7 +427,7 @@ function SettlementsPageContent({ controller }: { controller: SdkworkOrderContro
                             {billId}
                           </td>
                           <td className="max-w-[20rem] truncate px-4 py-3.5 text-sm font-medium text-[var(--sdk-color-text-primary)]">
-                            {order.subject}
+                            {formatSubject(order.subject)}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3.5">
                             <span

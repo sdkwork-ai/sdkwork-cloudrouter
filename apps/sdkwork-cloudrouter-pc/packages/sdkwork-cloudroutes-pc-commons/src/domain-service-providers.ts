@@ -19,6 +19,7 @@ import {
   createSdkworkMembershipCheckoutService,
   createSdkworkCouponRechargeService,
   createSdkworkPointsRechargeService,
+  createSdkworkTokenBankRechargeService,
   createSdkworkOrderAppService,
   type SdkworkMembershipCheckoutService,
   type SdkworkCouponRechargeService,
@@ -55,6 +56,7 @@ import {
 } from './sdk-clients.ts';
 
 let pointsRechargeService: SdkworkPointsRechargeService | null = null;
+let tokenBankRechargeService: SdkworkPointsRechargeService | null = null;
 let membershipCheckoutService: SdkworkMembershipCheckoutService | null = null;
 let couponRechargeService: SdkworkCouponRechargeService | null = null;
 
@@ -131,6 +133,9 @@ export function configureCloudRouterDomainServiceProviders(): void {
   pointsRechargeService = createSdkworkPointsRechargeService({
     appService: orderAppService,
   });
+  tokenBankRechargeService = createSdkworkTokenBankRechargeService({
+    appService: orderAppService,
+  });
   couponRechargeService = createSdkworkCouponRechargeService({
     appService: orderAppService,
   });
@@ -194,6 +199,20 @@ export function getCloudRouterPointsRechargeService(): SdkworkPointsRechargeServ
     throw new Error('Cloud Router Compute Credits recharge service is not configured.');
   }
   return pointsRechargeService;
+}
+
+/**
+ * Token Bank compute-credit recharge (`token_bank_recharge` → `token_bank`).
+ *
+ * Distinct from {@link getCloudRouterPointsRechargeService}, which sells
+ * membership points (`points_recharge` → `points`). Never use the points
+ * service for a Token Bank purchase.
+ */
+export function getCloudRouterTokenBankRechargeService(): SdkworkPointsRechargeService {
+  if (!tokenBankRechargeService) {
+    throw new Error('Cloud Router Token Bank recharge service is not configured.');
+  }
+  return tokenBankRechargeService;
 }
 
 export function getCloudRouterCouponRechargeService(): SdkworkCouponRechargeService {
