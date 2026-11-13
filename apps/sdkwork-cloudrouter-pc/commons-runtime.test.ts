@@ -1265,6 +1265,34 @@ test("admin resource center collection metadata reads only the canonical pageSiz
   assert.doesNotMatch(source, /data\.page_size/);
 });
 
+test("admin resource center row action buttons keep their labels on one line", () => {
+  const source = readFileSync(
+    new URL("./packages/sdkwork-cloudroutes-pc-commons/src/components/AdminResourceCenter.tsx", import.meta.url),
+    "utf8",
+  );
+
+  // 行操作列会被多列表格挤压：按钮缺少 `whitespace-nowrap` / `shrink-0` 时，
+  // 「编辑」「删除」这类 CJK 标签会被折成竖排两行（窄屏 + 多列时高发）。
+  const helperStart = source.indexOf("function adminResourceRowActionClassName");
+  assert.notEqual(helperStart, -1, "missing adminResourceRowActionClassName");
+  const helper = source.slice(
+    helperStart,
+    source.indexOf("function groupAdminResourceSections", helperStart),
+  ).split("\n").filter((line) => !line.trim().startsWith("//")).join("\n");
+  for (const utility of ["shrink-0", "whitespace-nowrap"]) {
+    const found = helper.match(new RegExp(`\\b${utility}\\b`, "g")) ?? [];
+    assert.equal(found.length, 2, `both row action tones must declare ${utility}`);
+  }
+
+  // 「详情」行操作按钮同样必须整词不换行。
+  const openStart = source.indexOf("onClick={() => onRecordOpen(record, activeSection)}");
+  assert.notEqual(openStart, -1, "missing record open action button");
+  const openButton = source.slice(source.lastIndexOf("<button", openStart), openStart);
+  for (const utility of ["shrink-0", "whitespace-nowrap"]) {
+    assert.ok(openButton.includes(utility), `record open action button must declare ${utility}`);
+  }
+});
+
 test("portal css stabilizes navbar notification dropdown empty state dimensions", () => {
   const cssSource = readFileSync(
     new URL("./src/index.css", import.meta.url),

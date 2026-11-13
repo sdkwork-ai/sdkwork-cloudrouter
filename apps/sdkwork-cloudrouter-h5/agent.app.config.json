@@ -149,6 +149,19 @@
     "standardOwner": "sdkwork-platform",
     "initializedAt": "2026-09-17T00:00:00Z",
     "deploymentConfig": "etc/sdkwork.deployment.config.json",
-    "architectureSpec": "APP_H5_ARCHITECTURE_SPEC.md"
+    "architectureSpec": "APP_H5_ARCHITECTURE_SPEC.md",
+    "publishing": {
+      "appIdByTarget": {
+        "cloud.development": "6f9eb50e-91d4-4a98-a76e-e2902b67832b"
+      },
+      "birdcoder": {
+        "appId": "6f9eb50e-91d4-4a98-a76e-e2902b67832b",
+        "appName": "SDKWork CloudRouter H5",
+        "appSlug": "sdkwork-cloudrouter-h5",
+        "appKey": "sdkwork-cloudrouter-h5",
+        "sourceDirectory": "D:\\sdkwork-space\\sdkwork-cloudrouter\\apps\\sdkwork-cloudrouter-h5",
+        "updatedAt": "2026-11-13T15:00:57.654Z"
+      }
+    }
   }
 }
