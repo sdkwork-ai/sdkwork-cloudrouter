@@ -206,7 +206,10 @@ pub enum OpenAiStop {
 #[serde(untagged)]
 pub enum OpenAiToolChoice {
     Mode(OpenAiToolChoiceMode),
-    Tool(OpenAiNamedToolChoice),
+    // Boxed: the named-tool variant dominates the enum size (clippy
+    // large-enum-variant) and the untagged serde representation is unchanged
+    // through the indirection.
+    Tool(Box<OpenAiNamedToolChoice>),
 }
 
 /// A named tool choice, in either wire shape:
