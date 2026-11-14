@@ -51,7 +51,7 @@ x-cloudrouter-common: &cloudrouter-common
   # (ENVIRONMENT_SPEC §7.1 local development allowance).
   network_mode: ${SDKWORK_CLOUDROUTER_NETWORK_MODE:-sdkwork-cloudrouter-${SDKWORK_CLOUDROUTER_ENVIRONMENT}}
   environment:
-    SDKWORK_CLOUDROUTER_CONFIG_FILE: /etc/sdkwork/router/config.toml
+    SDKWORK_CLOUDROUTER_CONFIG_FILE: /etc/sdkwork/router/config/${SDKWORK_CLOUDROUTER_ENVIRONMENT}.config.toml
     SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE: server
     SDKWORK_CLOUDROUTER_DEPLOYMENT_PROFILE: standalone
     SDKWORK_CLOUDROUTER_RUNTIME_TARGET: container
@@ -109,7 +109,10 @@ x-cloudrouter-common: &cloudrouter-common
     - cloudrouter-data:/var/lib/sdkwork/router
     # Per-environment runtime config rendered by the operator (INSTALL.md):
     # [database]/[redis] must point at the external dependencies before boot.
-    - ../env/config/${SDKWORK_CLOUDROUTER_ENVIRONMENT}.config.toml:/etc/sdkwork/router/config.toml:ro
+    # Mount the whole config directory: a single-file bind mount fails under
+    # runc when the host path is a regular file (MS_REC bind), and the deployed
+    # bundle ships one `<env>.config.toml` per environment in this directory.
+    - ../env/config:/etc/sdkwork/router/config:ro
     - ../env/secrets/${SDKWORK_CLOUDROUTER_ENVIRONMENT}:/run/secrets/sdkwork/router:ro
   healthcheck:
     test:

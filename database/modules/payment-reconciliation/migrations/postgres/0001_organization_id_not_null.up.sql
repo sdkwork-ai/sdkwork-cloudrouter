@@ -25,8 +25,18 @@ UPDATE commerce_payment_reconciliation_item SET organization_id = '0' WHERE orga
 ALTER TABLE commerce_payment_reconciliation_item ALTER COLUMN organization_id SET DEFAULT '0';
 ALTER TABLE commerce_payment_reconciliation_item ALTER COLUMN organization_id SET NOT NULL;
 
-UPDATE commerce_payment_reconciliation_run SET organization_id = '0' WHERE organization_id IS NULL;
-ALTER TABLE commerce_payment_reconciliation_run ALTER COLUMN organization_id SET DEFAULT '0';
-ALTER TABLE commerce_payment_reconciliation_run ALTER COLUMN organization_id SET NOT NULL;
+-- The run table is owned by the federated `sdkwork-payment` module; when module
+-- discovery has not converged it yet, this migration must stay a no-op instead
+-- of failing the whole lifecycle bootstrap (the owning baseline already
+-- declares organization_id NOT NULL DEFAULT '0').
+DO $$
+BEGIN
+    IF to_regclass('commerce_payment_reconciliation_run') IS NOT NULL THEN
+        UPDATE commerce_payment_reconciliation_run SET organization_id = '0' WHERE organization_id IS NULL;
+        ALTER TABLE commerce_payment_reconciliation_run ALTER COLUMN organization_id SET DEFAULT '0';
+        ALTER TABLE commerce_payment_reconciliation_run ALTER COLUMN organization_id SET NOT NULL;
+    END IF;
+END
+$$;
 
 COMMIT;
