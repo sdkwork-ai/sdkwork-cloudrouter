@@ -66,6 +66,8 @@ export interface CloudRouterAnonymousCashierPageProps {
   readonly locale: SdkworkConsoleLocale;
   /** Capability token from the scanned `/cashier/{token}` deep link. */
   readonly token: string;
+  /** IAM anonymous payment OAuth entry for the in-WeChat JSAPI trade. */
+  readonly wechatAuthorizeUrl?: string;
 }
 
 /**
@@ -78,6 +80,7 @@ export interface CloudRouterAnonymousCashierPageProps {
 export function CloudRouterAnonymousCashierPage({
   locale,
   token,
+  wechatAuthorizeUrl,
 }: CloudRouterAnonymousCashierPageProps) {
   return (
     <CloudRouterOrdersI18nProvider locale={locale}>
@@ -85,6 +88,7 @@ export function CloudRouterAnonymousCashierPage({
         token={token}
         orderCenterPath={CLOUDROUTER_H5_ORDER_ROUTES.orderCenter.path}
         signInPath="/sign-in"
+        {...(wechatAuthorizeUrl ? { wechatAuthorizeUrl } : {})}
       />
     </CloudRouterOrdersI18nProvider>
   );

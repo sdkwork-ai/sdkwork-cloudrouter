@@ -30,12 +30,16 @@ export function isCashierCapabilityToken(value: string | undefined | null): bool
 /**
  * Anonymous wire methods the cashier may request.
  *
- * `wechat_jsapi` is intentionally absent: it needs a payer openid bound to the
- * capability token (IAM anonymous payment OAuth), and the anonymous contract does
- * not accept a client-supplied openid. Inside WeChat the page therefore reports an
- * explicit "open in browser" hint instead of silently failing.
+ * `wechat_jsapi` is available because the IAM anonymous payment OAuth can bind a
+ * payer openid to the capability token; the caller can still never supply an
+ * openid of its own choosing (the binding is signed server-side).
  */
-export type AnonymousWireMethod = 'wechat_pay' | 'wechat_h5' | 'alipay' | 'alipay_wap';
+export type AnonymousWireMethod =
+  | 'wechat_pay'
+  | 'wechat_h5'
+  | 'wechat_jsapi'
+  | 'alipay'
+  | 'alipay_wap';
 
 /** One selectable payment option for the anonymous cashier. */
 export interface AnonymousMethodOption {
@@ -72,10 +76,10 @@ export function resolveAnonymousMethodOptions(
 ): readonly AnonymousMethodOption[] {
   const allowed = new Set(allowedMethods);
   if (environment === 'wechat') {
-    // JSAPI is not an anonymous method yet; the page surfaces a browser hint.
-    return allowed.has('wechat_h5')
-      ? [{ method: 'wechat_h5', ...WECHAT_OPTION }]
-      : [];
+    // Inside WeChat only the JSAPI bridge can complete a payment; the H5 trade is
+    // for payer browsers outside WeChat.
+    if (allowed.has('wechat_jsapi')) return [{ method: 'wechat_jsapi', ...WECHAT_OPTION }];
+    return allowed.has('wechat_h5') ? [{ method: 'wechat_h5', ...WECHAT_OPTION }] : [];
   }
   if (environment === 'alipay') {
     return allowed.has('alipay_wap') ? [{ method: 'alipay_wap', ...ALIPAY_OPTION }] : [];
@@ -96,9 +100,15 @@ export async function loadAnonymousCashier(token: string): Promise<CashierOrder>
 export async function createAnonymousCashierPayment(
   token: string,
   paymentMethod: AnonymousWireMethod,
+  authorization?: { readonly openid: string; readonly openidBinding: string },
 ): Promise<CashierPayment> {
   const client: SdkworkAppClient = requireCloudRouterOrderAppClient();
-  return client.orderCashier.cashier.payments.create(token, { paymentMethod });
+  return client.orderCashier.cashier.payments.create(token, {
+    paymentMethod,
+    ...(authorization
+      ? { openid: authorization.openid, openidBinding: authorization.openidBinding }
+      : {}),
+  });
 }
 
 /** Reads the anonymous cashier payment status. */
