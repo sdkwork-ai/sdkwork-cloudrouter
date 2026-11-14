@@ -54,8 +54,16 @@ export function withoutMessagePrefixes(
   prefixes: readonly string[],
 ): I18nMessageBundle {
   const isDropped = (key: string): boolean => prefixes.some((prefix) => key.startsWith(prefix));
-  const filterMessages = (messages: LocaleMessages): LocaleMessages =>
-    Object.fromEntries(Object.entries(messages).filter(([key]) => !isDropped(key)));
+  const filterMessages = (messages: Partial<LocaleMessages>): LocaleMessages => {
+    const kept: LocaleMessages = {};
+    for (const [key, value] of Object.entries(messages)) {
+      if (value === undefined || isDropped(key)) {
+        continue;
+      }
+      kept[key] = value;
+    }
+    return kept;
+  };
 
   const filtered: I18nMessageBundle = {
     en: filterMessages(bundle.en),
