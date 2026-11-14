@@ -3071,6 +3071,144 @@ importers:
         specifier: workspace:*
         version: link:../../../../sdkwork-utils/packages/sdkwork-utils-typescript
 
+  ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-control-plane:
+    dependencies:
+      '@sdkwork/memory-pc-admin-core':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-admin-core
+      '@sdkwork/memory-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-commons
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+
+  ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-core:
+    dependencies:
+      '@sdkwork/memory-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../../sdks/sdkwork-memory-backend-sdk/sdkwork-memory-backend-sdk-typescript
+      '@sdkwork/memory-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-commons
+      '@sdkwork/sdk-common':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+
+  ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-evaluation:
+    dependencies:
+      '@sdkwork/memory-pc-admin-core':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-admin-core
+      '@sdkwork/memory-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-commons
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+
+  ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-governance:
+    dependencies:
+      '@sdkwork/memory-pc-admin-core':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-admin-core
+      '@sdkwork/memory-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-commons
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+
+  ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-knowledge-graph:
+    dependencies:
+      '@sdkwork/memory-pc-admin-core':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-admin-core
+      '@sdkwork/memory-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-commons
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+
+  ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-learning:
+    dependencies:
+      '@sdkwork/memory-pc-admin-core':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-admin-core
+      '@sdkwork/memory-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-commons
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+
+  ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-memory:
+    dependencies:
+      '@sdkwork/memory-pc-admin-core':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-admin-core
+      '@sdkwork/memory-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-commons
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+
+  ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-overview:
+    dependencies:
+      '@sdkwork/memory-pc-admin-core':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-admin-core
+      '@sdkwork/memory-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-commons
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+
+  ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-providers:
+    dependencies:
+      '@sdkwork/memory-pc-admin-core':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-admin-core
+      '@sdkwork/memory-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-commons
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+
+  ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-retrieval:
+    dependencies:
+      '@sdkwork/memory-pc-admin-core':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-admin-core
+      '@sdkwork/memory-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-commons
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+
+  ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-shell:
+    dependencies:
+      '@sdkwork/memory-pc-admin-core':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-admin-core
+      '@sdkwork/memory-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-commons
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+      react-router-dom:
+        specifier: ^7.14.0
+        version: 7.18.5(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+
   ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-commons:
     dependencies:
       '@sdkwork/utils':
@@ -3204,6 +3342,15 @@ importers:
         version: 7.18.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
 
   ../sdkwork-memory/sdks/sdkwork-memory-app-sdk/sdkwork-memory-app-sdk-typescript:
+    dependencies:
+      '@sdkwork/sdk-common':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+      '@sdkwork/utils':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-utils/packages/sdkwork-utils-typescript
+
+  ../sdkwork-memory/sdks/sdkwork-memory-backend-sdk/sdkwork-memory-backend-sdk-typescript:
     dependencies:
       '@sdkwork/sdk-common':
         specifier: workspace:*
@@ -5537,6 +5684,9 @@ importers:
       '@sdkwork/cloudrouter-pc-admin-memberships':
         specifier: workspace:*
         version: link:packages/sdkwork-cloudrouter-pc-admin-memberships
+      '@sdkwork/cloudrouter-pc-admin-memory':
+        specifier: workspace:*
+        version: link:packages/sdkwork-cloudrouter-pc-admin-memory
       '@sdkwork/cloudrouter-pc-admin-monitor':
         specifier: workspace:*
         version: link:packages/sdkwork-cloudrouter-pc-admin-monitor
@@ -6299,6 +6449,55 @@ importers:
       '@sdkwork/cloudroutes-pc-commons':
         specifier: workspace:*
         version: link:../sdkwork-cloudroutes-pc-commons
+
+  apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memory:
+    dependencies:
+      '@sdkwork/cloudroutes-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-cloudroutes-pc-commons
+      '@sdkwork/memory-pc-admin-control-plane':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-control-plane
+      '@sdkwork/memory-pc-admin-core':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-core
+      '@sdkwork/memory-pc-admin-evaluation':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-evaluation
+      '@sdkwork/memory-pc-admin-governance':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-governance
+      '@sdkwork/memory-pc-admin-knowledge-graph':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-knowledge-graph
+      '@sdkwork/memory-pc-admin-learning':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-learning
+      '@sdkwork/memory-pc-admin-memory':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-memory
+      '@sdkwork/memory-pc-admin-overview':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-overview
+      '@sdkwork/memory-pc-admin-providers':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-providers
+      '@sdkwork/memory-pc-admin-retrieval':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-retrieval
+      '@sdkwork/memory-pc-admin-shell':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-shell
+      '@sdkwork/memory-pc-commons':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-commons
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      typescript:
+        specifier: ~5.8.2
+        version: 5.8.3
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor:
     dependencies:
@@ -7189,6 +7388,9 @@ importers:
       '@sdkwork/memory-app-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-memory/sdks/sdkwork-memory-app-sdk/sdkwork-memory-app-sdk-typescript
+      '@sdkwork/memory-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-memory/sdks/sdkwork-memory-backend-sdk/sdkwork-memory-backend-sdk-typescript
       '@sdkwork/messaging-app-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-messaging/sdks/sdkwork-messaging-app-sdk/sdkwork-messaging-app-sdk-typescript

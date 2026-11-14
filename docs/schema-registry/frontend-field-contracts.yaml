@@ -6,6 +6,46 @@ frontend_operation_sdk_authorities:
   sdkwork-models-app-sdk:
     manifest: ../sdkwork-models/sdks/sdkwork-models-app-sdk/sdk-manifest.json
 frontend_operations:
+  - route: /admin/memory/categories
+    source: ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-core/src/sdk/index.tsx
+    operation: fetchMemoryCategories
+    operation_id: memory.backend.spaces.list
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/memory/spaces
+    sdk_domain: memory
+    read_sources:
+      - ai_space
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
+  - route: /admin/memory
+    source: ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-core/src/sdk/index.tsx
+    operation: fetchMemoryRecords
+    operation_id: memory.backend.records.list
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/memory/memories
+    sdk_domain: memory
+    read_sources:
+      - ai_record
+    response_schema:
+      name: NoData
+      schema:
+        $schema: https://json-schema.org/draft/2020-12/schema
+        additionalProperties: false
+        properties: {}
+        type: object
+    query_parameters: []
+
   - route: /console/hardware
     source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-hardware/src/cloudRouterHardwareService.ts
     operation: resolveConsoleHardwareAgents
@@ -13630,6 +13670,14 @@ frontend_operations:
     query_parameters: []
 
 routes:
+  - route: /admin/memory/categories
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-memory-backend-sdk
+    required_tables: []
+  - route: /admin/memory
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-memory-backend-sdk
+    required_tables: []
   - route: /admin/documents
     dependency_owned: true
     dependency_sdk_family: sdkwork-documents-app-sdk

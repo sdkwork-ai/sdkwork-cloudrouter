@@ -47,6 +47,8 @@ const AgentsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-a
 const AgentCategoriesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-agent'), 'AgentCategoriesAdminPage');
 const PluginsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-plugin'), 'PluginsAdminPage');
 const PluginCategoriesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-plugin'), 'PluginCategoriesAdminPage');
+const MemoryAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-memory'), 'MemoryAdminPage');
+const MemoryCategoriesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-memory'), 'MemoryCategoriesAdminPage');
 const RecordAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-record'), 'RecordAdmin');
 const RequestLogAdmin = lazyAdminRoute(() => import('@sdkwork/log-pc-admin-request-log'), 'RequestLogAdmin');
 const MonitorAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-monitor'), 'MonitorAdmin');
@@ -214,6 +216,8 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   route('plugin', 'sdkwork-plugins', '@sdkwork/cloudrouter-pc-admin-plugin', ['sdkwork-plugins-backend-sdk'], 'cloudrouter.admin.access', <PluginsAdmin />),
   route('agent/categories', 'sdkwork-agents', '@sdkwork/cloudrouter-pc-admin-agent', ['sdkwork-agents-backend-sdk'], 'cloudrouter.admin.access', <AgentCategoriesAdmin />),
   route('agent', 'sdkwork-agents', '@sdkwork/cloudrouter-pc-admin-agent', ['sdkwork-agents-backend-sdk'], 'cloudrouter.admin.access', <AgentsAdmin />),
+  route('memory/categories', 'sdkwork-memory', '@sdkwork/cloudrouter-pc-admin-memory', ['sdkwork-memory-backend-sdk'], 'cloudrouter.admin.access', <MemoryCategoriesAdmin />),
+  route('memory', 'sdkwork-memory', '@sdkwork/cloudrouter-pc-admin-memory', ['sdkwork-memory-backend-sdk'], 'cloudrouter.admin.access', <MemoryAdmin />),
   route('record', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-record', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <RecordAdmin />),
   route('request-log', 'sdkwork-log', '@sdkwork/log-pc-admin-request-log', ['sdkwork-log-backend-sdk'], 'cloudrouter.system.read', <RequestLogAdmin />),
   route('monitor', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-monitor', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <MonitorAdmin />),

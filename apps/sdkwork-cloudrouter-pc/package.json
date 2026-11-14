@@ -170,6 +170,7 @@
     "@sdkwork/cloudrouter-pc-admin-monitor": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-partner": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-payments": "workspace:*",
+    "@sdkwork/cloudrouter-pc-admin-memory": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-plugin": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-pricing": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-ratelimit": "workspace:*",

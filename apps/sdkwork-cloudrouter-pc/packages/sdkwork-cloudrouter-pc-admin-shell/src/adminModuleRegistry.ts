@@ -153,6 +153,7 @@ export const ADMIN_MODULES: AdminModuleDef[] = [
       '/admin/connector',
       '/admin/plugin',
       '/admin/agent',
+      '/admin/memory',
     ],
   }),
   IAM_ADMIN_MODULE_DEF,
