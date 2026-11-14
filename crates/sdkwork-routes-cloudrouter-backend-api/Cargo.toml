@@ -50,6 +50,7 @@ sdkwork_routes_course_backend_api.workspace = true
 sdkwork_routes_rtc_backend_api.workspace = true
 sdkwork_routes_skills_backend_api.workspace = true
 sdkwork_routes_mcp_backend_api.workspace = true
+sdkwork_routes_memory_backend_api.workspace = true
 sdkwork_routes_plugins_backend_api.workspace = true
 sdkwork_api_agents_assembly.workspace = true
 serde.workspace = true

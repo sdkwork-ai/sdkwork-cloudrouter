@@ -128,6 +128,11 @@ const MOUNTED_BACKEND_CAPABILITIES: &[MountedBackendCapability] = &[
         owner: "sdkwork-plugins",
         manifest: sdkwork_routes_plugins_backend_api::backend_route_manifest,
     },
+    MountedBackendCapability {
+        workspace: "sdkwork-memory",
+        owner: "sdkwork-memory",
+        manifest: sdkwork_routes_memory_backend_api::backend_route_manifest,
+    },
 ];
 
 fn dependency_mounts() -> Vec<RouteManifestMount> {
@@ -324,6 +329,7 @@ mod tests {
             "sdkwork-mcp",
             "sdkwork-agents",
             "sdkwork-plugins",
+            "sdkwork-memory",
         ] {
             assert!(
                 workspaces.contains(&required),
@@ -365,6 +371,10 @@ mod tests {
             (
                 "sdkwork-plugins",
                 "sdkwork_api_plugins_assembly::assemble_backend_api_contribution",
+            ),
+            (
+                "sdkwork-memory",
+                "sdkwork_api_memory_assembly::assemble_backend_api_contribution_from_env",
             ),
         ] {
             assert!(
@@ -830,6 +840,54 @@ mod tests {
                 Some(permission),
                 route.required_permission,
                 "{method} {path} must keep its declared plugins permission"
+            );
+        }
+    }
+
+    #[test]
+    fn composed_manifest_includes_memory_backend_routes() {
+        // Regression guard: the Memory admin module (记忆管理/记忆分类管理)
+        // reaches `/backend/v3/api/memory/*` through the same-origin dependency
+        // backend base URL. The capability is dependency-owned, so the spaces,
+        // memories, and usage paths must be registered by the memory mount and
+        // keep their dual-token auth and `memory.backend.*` permissions.
+        let manifest = cloud_router_backend_composed_route_manifest();
+        for (method, path, permission) in [
+            (
+                "GET",
+                "/backend/v3/api/memory/spaces",
+                "memory.backend.spaces.read",
+            ),
+            (
+                "PATCH",
+                "/backend/v3/api/memory/spaces/{spaceId}",
+                "memory.backend.spaces.write",
+            ),
+            ("GET", "/backend/v3/api/memory/memories", "memory.backend.records.read"),
+            (
+                "PATCH",
+                "/backend/v3/api/memory/memories/{memoryId}",
+                "memory.backend.records.write",
+            ),
+            (
+                "POST",
+                "/backend/v3/api/memory/memories/{memoryId}/supersede",
+                "memory.backend.records.write",
+            ),
+            ("GET", "/backend/v3/api/memory/usage", "memory.backend.usage.read"),
+        ] {
+            let route = manifest.match_route(method, path).unwrap_or_else(|| {
+                panic!("{method} {path} must be registered by the memory mount")
+            });
+            assert_eq!(
+                RouteAuth::DualToken,
+                route.auth,
+                "{method} {path} must inherit dual-token auth from the memory manifest"
+            );
+            assert_eq!(
+                Some(permission),
+                route.required_permission,
+                "{method} {path} must keep its declared memory permission"
             );
         }
     }
