@@ -9,10 +9,12 @@ import { TeamSeatDirectory } from './TeamSeatDirectory.tsx';
 import { TeamSeatPolicy } from './TeamSeatPolicy.tsx';
 import { TeamSubscriptionSummary } from './TeamSubscriptionSummary.tsx';
 import { resolveTeamPlanErrorCopy } from './teamPlanErrorCopy.ts';
+import { applyOverviewToComposition } from './teamRosterComposition.ts';
 import {
-  getTeamOverview,
+  loadTeamSeatSnapshot,
   normalizeTeamPlanError,
   type TeamPlanServiceError,
+  type TeamSeatSnapshot,
   type TeamSubscriptionOverview,
 } from './teamSubscriptionService.ts';
 
@@ -20,10 +22,15 @@ import {
  * Organization (team) token plan container.
  *
  * Data access is centralized in `teamSubscriptionService.ts`, which is the only
- * module that resolves `getSdkworkMembershipAppSdkClient()` and
+ * module that resolves `getSdkworkMembershipAppSdkClient()`,
+ * `getSdkworkAppbaseAppSdkClient()` (IAM directory), and
  * `getCloudRouterMembershipCheckoutService()`.
  *
- * This component owns the overview request lifecycle only: bootstrap, retry,
+ * Membership returns membership-owned facts only (the subscription overview and
+ * the seat assignments); the organization roster, the caller's role, and the
+ * member counts are composed from the IAM app SDK by the service module.
+ *
+ * This component owns the snapshot request lifecycle only: bootstrap, retry,
  * unauthenticated sign-in guidance, and the summary / seat-management
  * composition.
  */
@@ -37,14 +44,14 @@ interface TeamPlanState {
   isBootstrapped: boolean;
   isLoading: boolean;
   lastError: TeamPlanServiceError | null;
-  overview: TeamSubscriptionOverview | null;
+  snapshot: TeamSeatSnapshot | null;
 }
 
 const INITIAL_TEAM_PLAN_STATE: TeamPlanState = {
   isBootstrapped: false,
   isLoading: false,
   lastError: null,
-  overview: null,
+  snapshot: null,
 };
 
 const ROLE_COPY: Record<string, { fallback: string; key: string }> = {
@@ -62,13 +69,13 @@ function useTeamPlanController() {
     ));
 
     try {
-      const overview = await getTeamOverview();
-      setState({ isBootstrapped: true, isLoading: false, lastError: null, overview });
+      const snapshot = await loadTeamSeatSnapshot();
+      setState({ isBootstrapped: true, isLoading: false, lastError: null, snapshot });
     } catch (error) {
       const normalized = normalizeTeamPlanError(error);
       setState((current) => (
-        silent && current.overview
-          // A background refresh never replaces a valid overview with an error.
+        silent && current.snapshot
+          // A background refresh never replaces a valid snapshot with an error.
           ? { ...current, isBootstrapped: true, isLoading: false }
           : { ...current, isBootstrapped: true, isLoading: false, lastError: normalized }
       ));
@@ -81,8 +88,28 @@ function useTeamPlanController() {
     void run(true).catch(() => undefined);
   }, [run]);
 
+  /**
+   * Applies the overview a seat mutation or policy update returned.
+   *
+   * The roster and the seat map are unchanged by a policy update, so only the
+   * membership-owned facts and the seat-overflow derivation are refreshed.
+   */
   const replaceOverview = useCallback((overview: TeamSubscriptionOverview) => {
-    setState({ isBootstrapped: true, isLoading: false, lastError: null, overview });
+    setState((current) => {
+      if (!current.snapshot) {
+        return current;
+      }
+      return {
+        isBootstrapped: true,
+        isLoading: false,
+        lastError: null,
+        snapshot: {
+          ...current.snapshot,
+          composition: applyOverviewToComposition(current.snapshot.composition, overview),
+          overview,
+        },
+      };
+    });
   }, []);
 
   return { bootstrap, refresh, replaceOverview, state };
@@ -105,10 +132,15 @@ export function CloudRouterTeamPlanPage({ onLoginRequired }: CloudRouterTeamPlan
     refresh();
   }
 
-  const overview = state.overview;
+  const snapshot = state.snapshot;
+  const overview = snapshot?.overview;
+  const composition = snapshot?.composition;
   const lastError = state.lastError;
   const errorCopy = lastError ? resolveTeamPlanErrorCopy(lastError.reason) : null;
-  const roleCopy = ROLE_COPY[overview?.viewerRole ?? ''] ?? null;
+  const roleCopy = ROLE_COPY[composition?.viewerRole ?? ''] ?? null;
+  const organizationTitle = composition?.organizationName?.trim()
+    || composition?.organizationId?.trim()
+    || t('token_plan.team.no_org', 'No organization selected');
 
   return (
     <div
@@ -168,7 +200,7 @@ export function CloudRouterTeamPlanPage({ onLoginRequired }: CloudRouterTeamPlan
         </div>
       ) : null}
 
-      {overview ? (
+      {overview && composition ? (
         <>
           <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div className="min-w-0">
@@ -178,8 +210,7 @@ export function CloudRouterTeamPlanPage({ onLoginRequired }: CloudRouterTeamPlan
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <Building2 aria-hidden="true" className="h-5 w-5 shrink-0 text-slate-400" />
                 <h1 className="min-w-0 truncate text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">
-                  {overview.organizationName?.trim()
-                    || t('token_plan.team.no_org', 'No organization selected')}
+                  {organizationTitle}
                 </h1>
                 {roleCopy ? (
                   <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700 dark:bg-white/10 dark:text-slate-200">
@@ -219,17 +250,25 @@ export function CloudRouterTeamPlanPage({ onLoginRequired }: CloudRouterTeamPlan
               ) : null}
 
               <TeamSubscriptionSummary
+                composition={composition}
                 onBuyMoreSeats={
-                  overview.canManageSeats && !isExpanding ? () => setIsExpanding(true) : undefined
+                  composition.canManageSeats && !isExpanding ? () => setIsExpanding(true) : undefined
                 }
                 overview={overview}
               />
 
-              {overview.canManageSeats ? (
-                <TeamSeatDirectory onSeatChanged={refresh} overview={overview} />
+              {composition.canManageSeats ? (
+                <TeamSeatDirectory
+                  canManageSeats={composition.canManageSeats}
+                  onNotify={onNotify}
+                  onSeatChanged={refresh}
+                  organizationId={composition.organizationId}
+                  overview={overview}
+                  seatAssignments={snapshot.seatAssignments}
+                />
               ) : null}
 
-              {overview.canManageSeats ? (
+              {composition.canManageSeats ? (
                 <TeamSeatPolicy
                   onNotify={onNotify}
                   onUpdated={replaceOverview}

@@ -11,6 +11,8 @@ import {
   formatTeamCnyAmount,
   groupTeamPlanPackages,
   parseTeamSeatInput,
+  resolveAdditionalSeatBounds,
+  resolveDefaultAdditionalSeatCount,
   resolveDefaultTeamSeatCount,
   resolveTeamSeatBounds,
   selectTeamPlanPackage,
@@ -33,11 +35,17 @@ export type TeamPlanNotify = (
 ) => void;
 
 export interface TeamPlanCardsProps {
-  /** Current purchased seats; the stepper floor when expanding a subscription. */
+  /**
+   * Current purchased seats. Only the `subscribe` stepper uses it as a floor;
+   * `expand` counts seats to ADD, so it never pre-fills the current total.
+   */
   initialSeats: number;
   /**
-   * `subscribe` starts the first team subscription (`purchase`).
-   * `expand` adds seats to the active subscription (`renew` with the new total).
+   * `subscribe` starts the first team subscription (`purchase` with the total
+   * seat count).
+   * `expand` buys additional seats for the active subscription
+   * (`add_seats` with the ADDITIONAL seat count). It never uses `renew`, which
+   * extends the subscription period.
    */
   mode: 'expand' | 'subscribe';
   onCheckoutCompleted: () => void;
@@ -125,7 +133,9 @@ export function TeamPlanCards({
     setPurchasingPackageId(pkg.id);
 
     void startTeamCheckout({
-      action: mode === 'expand' ? 'renew' : 'purchase',
+      // Buying more seats is seat expansion, not a renewal: `add_seats` keeps
+      // startsAt/expiresAt untouched and only grows `seats_purchased`.
+      action: mode === 'expand' ? 'add_seats' : 'purchase',
       packageId: pkg.id,
       seats,
     })
@@ -153,7 +163,12 @@ export function TeamPlanCards({
 
   function handleCheckoutCompleted(): void {
     setSession(null);
-    onNotify(t('token_plan.team.checkout_success', 'Team subscription activated.'), 'success');
+    onNotify(
+      mode === 'expand'
+        ? t('token_plan.team.add_seats_success', 'Seats added to your team subscription.')
+        : t('token_plan.team.checkout_success', 'Team subscription activated.'),
+      'success',
+    );
     onCheckoutCompleted();
   }
 
@@ -256,9 +271,20 @@ export function TeamPlanCards({
             if (!activePackage) {
               return null;
             }
-            const bounds = resolveTeamSeatBounds(activePackage);
+            const isExpanding = mode === 'expand';
+            const planBounds = resolveTeamSeatBounds(activePackage);
+            // Expanding an existing subscription sells ADDITIONAL seats: the
+            // stepper floor is one seat and the default is five (or the plan
+            // minimum), never the current seat total.
+            const bounds = isExpanding
+              ? resolveAdditionalSeatBounds(planBounds)
+              : planBounds;
             const draft = seatDrafts[group.planId]
-              ?? String(resolveDefaultTeamSeatCount(bounds, initialSeats));
+              ?? String(
+                isExpanding
+                  ? resolveDefaultAdditionalSeatCount(planBounds)
+                  : resolveDefaultTeamSeatCount(planBounds, initialSeats),
+              );
             const parsedSeats = parseTeamSeatInput(draft, bounds);
             const seats = clampTeamSeatCount(parsedSeats, bounds);
             const total = computeTeamSeatTotal(activePackage.price, seats);
@@ -326,7 +352,9 @@ export function TeamPlanCards({
                       className="text-sm font-medium text-slate-700 dark:text-slate-300"
                       htmlFor={`team-seat-input-${group.planId}`}
                     >
-                      {t('token_plan.team.seat_label', 'Seats')}
+                      {isExpanding
+                        ? t('token_plan.team.seat_label_add', 'Seats to add')
+                        : t('token_plan.team.seat_label', 'Seats')}
                     </label>
                     <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                       <UsersRound aria-hidden="true" className="h-3.5 w-3.5" />
@@ -392,6 +420,15 @@ export function TeamPlanCards({
                   </span>
                 </div>
 
+                {isExpanding ? (
+                  <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                    {t(
+                      'token_plan.team.add_seats_hint',
+                      'Added seats take effect immediately and are billed at the seat price for the current term. The subscription period does not change.',
+                    )}
+                  </p>
+                ) : null}
+
                 <Button
                   className="mt-4 w-full bg-lobster-500 text-white hover:bg-lobster-600 focus-visible:ring-2 focus-visible:ring-lobster-500 disabled:cursor-not-allowed disabled:opacity-40"
                   disabled={isPurchasing}
@@ -400,7 +437,9 @@ export function TeamPlanCards({
                   type="button"
                 >
                   <Check aria-hidden="true" className="h-4 w-4" />
-                  {t('token_plan.team.buy_seats', { seats })}
+                  {isExpanding
+                    ? t('token_plan.team.add_seats', { seats })
+                    : t('token_plan.team.buy_seats', { seats })}
                 </Button>
               </article>
             );

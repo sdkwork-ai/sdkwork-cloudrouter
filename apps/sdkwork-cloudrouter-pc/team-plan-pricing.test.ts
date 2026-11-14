@@ -7,6 +7,8 @@ import {
   formatTeamCnyAmount,
   groupTeamPlanPackages,
   parseTeamSeatInput,
+  resolveAdditionalSeatBounds,
+  resolveDefaultAdditionalSeatCount,
   resolveDefaultTeamSeatCount,
   resolveTeamSeatBounds,
   selectTeamPlanPackage,
@@ -71,6 +73,27 @@ test('expanding defaults to the larger of the plan minimum and the purchased sea
   assert.equal(resolveDefaultTeamSeatCount(bounds, 2), 5);
   assert.equal(resolveDefaultTeamSeatCount(bounds, 8), 8);
   assert.equal(resolveDefaultTeamSeatCount(bounds, 500), 50);
+});
+
+test('buying more seats counts ADDITIONAL seats from a floor of one', () => {
+  // Seat expansion is `add_seats`: the stepper counts seats to ADD, so the floor
+  // is one seat even when the plan itself demands a larger minimum total.
+  assert.deepEqual(resolveAdditionalSeatBounds({ max: 50, min: 5 }), { max: 50, min: 1 });
+  assert.deepEqual(resolveAdditionalSeatBounds({ max: 100, min: 3 }), { max: 100, min: 1 });
+  assert.deepEqual(resolveAdditionalSeatBounds({ max: 1, min: 1 }), { max: 1, min: 1 });
+
+  // Default is five added seats, or the plan minimum when that is larger — never
+  // the current seat total (the old `renew` prefill).
+  assert.equal(resolveDefaultAdditionalSeatCount({ max: 50, min: 5 }), 5);
+  assert.equal(resolveDefaultAdditionalSeatCount({ max: 50, min: 8 }), 8);
+  assert.equal(resolveDefaultAdditionalSeatCount({ max: 2, min: 1 }), 2);
+  assert.equal(resolveDefaultAdditionalSeatCount({ max: 3, min: 3 }), 3);
+
+  // The pricing math stays unit price × added seats (no proration, no period).
+  assert.equal(
+    computeTeamSeatTotal('69.90', resolveDefaultAdditionalSeatCount({ max: 50, min: 5 })),
+    349.5,
+  );
 });
 
 test('stepper input falls back to the plan minimum and ignores non-digits', () => {
