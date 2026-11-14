@@ -332,12 +332,41 @@
     }
   },
   "release": {
-    "currentVersion": "0.4.12",
+    "currentVersion": "0.4.13",
     "defaultChannel": "STABLE",
     "latest": {
-      "STABLE": "0.4.12"
+      "STABLE": "0.4.13"
     },
     "notes": [
+      {
+        "version": "0.4.13",
+        "releaseChannel": "STABLE",
+        "title": "SDKWork Cloud Router 0.4.13",
+        "summary": "Admin payment center gains production-grade payment and refund record querying: server-side status/provider/currency/reason/creation-window filters, server-side search, currency-correct money rendering, related-record detail drawers, and CSV export of the filtered set.",
+        "content": "The admin payment center could configure providers, methods, channels, and routing rules, but its runtime record pages were not usable for finance work: payment intents and refunds had no server-side filters, the search box only filtered the already-loaded page, creation-time windows were impossible, refund amounts were rendered from NUMERIC text instead of integer minor units, and operators could not export a filtered result set. This release closes that gap across the contract and the admin UI. The payment backend list contract now accepts created_after/created_before (RFC 3339, validated and normalized to UTC before SQL), provider_code, currency_code, and reason_code, and the intents list finally implements the q parameter it already declared. Malformed or inverted time windows return 400 instead of surfacing a storage-layer 500, and blank filter values behave as absent filters. Refund read responses now carry integer minor-unit amounts, matching payment intents, attempts, and the repository read model, and the OpenAPI schemas document the amount unit. The shared admin resource center gained text/date filter controls, an opt-in server search mode with debounced commit and page reset, section toolbar actions bound to the current query, a clear-filters control, and a total-record count in the pagination footer; every addition is optional so existing admin pages keep their behaviour. The payment admin package renders payment records and refund records with server-side filters and search, a CSV export that walks the filtered query page by page under an explicit 5,000 row cap, a currency-aware money formatter (two-decimal, zero-decimal, and three-decimal currencies, string arithmetic for large values), and detail drawers that show a payment with its provider attempts and refunds and a refund with its lifecycle. Payment attempts, webhook events, and reconciliation runs now expose the server-side filters the backend already supported. Chinese and English copy is complete for every new control.",
+        "highlights": [
+          "Payment records and refund records are queryable server-side: status, provider, currency, refund reason, payment intent, and created_after/created_before",
+          "Server-side search covers the whole filtered result set (intent/order/owner for payments, refund/order for refunds)",
+          "Refund amounts move to the documented integer minor-unit wire contract; every console amount is currency-aware",
+          "Payment detail shows its attempts and refunds; refund detail shows amount, reason, requester, and lifecycle",
+          "CSV export downloads the filtered set (5,000 row cap reported, never silently truncated)",
+          "Payment attempts, webhook events, and reconciliation runs expose their backend-supported filters",
+          "Shared admin resource center additions are opt-in: existing admin pages keep their behaviour",
+          "Verified locally: canonical owned-source typecheck, payment query unit tests, jsdom filter/server-search test, commons runtime suite, and the production web build"
+        ],
+        "packageIds": [
+          "web-universal-cloud-browser-zip",
+          "web-universal-standalone-browser-zip",
+          "windows-x64-standalone-desktop-zip",
+          "macos-universal-standalone-desktop-dmg",
+          "linux-x64-standalone-desktop-appimage"
+        ],
+        "publishedAt": "2026-11-14T00:00:00Z",
+        "current": true,
+        "forceUpdate": false,
+        "minSupportedVersion": "0.4.12",
+        "metadata": {}
+      },
       {
         "version": "0.4.12",
         "releaseChannel": "STABLE",
@@ -360,7 +389,7 @@
           "linux-x64-standalone-desktop-appimage"
         ],
         "publishedAt": "2026-10-18T00:00:00Z",
-        "current": true,
+        "current": false,
         "forceUpdate": false,
         "minSupportedVersion": "0.4.11",
         "metadata": {}

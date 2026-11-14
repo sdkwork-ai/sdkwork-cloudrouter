@@ -797,6 +797,13 @@ export default defineConfig(({mode, command}) => {
   const sdkworkMembershipRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-membership');
   const sdkworkPaymentRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-payment');
   const sdkworkOrderRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-order');
+  // The Smart Hardware console (`/console/hardware/*`) renders the AIoT-owned
+  // `@sdkwork/aiot-pc-console-hardware` pages. That package is a sibling-repo
+  // workspace member resolved straight to TSX source by
+  // `resolvePortalPackageModule`, so its root has to join the dev serving allow
+  // list exactly like every other embedded sibling; without it Vite rejects the
+  // module with 403 and the page cannot load in `pnpm dev`.
+  const sdkworkAiotRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-aiot');
   const portalWorkspaceDependencyRoots = [
     appbaseRoot,
     iamRoot,
@@ -820,6 +827,7 @@ export default defineConfig(({mode, command}) => {
     sdkworkMembershipRoot,
     sdkworkPaymentRoot,
     sdkworkOrderRoot,
+    sdkworkAiotRoot,
   ];
   const env = loadEnv(mode, configDir, '');
   // Vite `mode` is a profile id (`standalone.development` / `cloud.development`),
@@ -922,6 +930,7 @@ export default defineConfig(({mode, command}) => {
                 sdkworkMembershipRoot,
                 sdkworkPaymentRoot,
                 sdkworkOrderRoot,
+                sdkworkAiotRoot,
               ],
             },
             proxy: resolvePortalDevProxy({ ...process.env, ...env }),

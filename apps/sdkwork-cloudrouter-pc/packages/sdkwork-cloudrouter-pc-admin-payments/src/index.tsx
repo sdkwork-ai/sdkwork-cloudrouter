@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Activity, BarChart3, CheckCircle2, CreditCard, Eye, Pencil, Plus, Power, PowerOff, QrCode, Receipt, RotateCcw, ShieldCheck, Trash2, Undo2 } from 'lucide-react';
+import { Activity, BarChart3, CheckCircle2, CreditCard, Download, Eye, Pencil, Plus, Power, PowerOff, QrCode, Receipt, RotateCcw, ShieldCheck, Trash2, Undo2 } from 'lucide-react';
 import {
   AdminResourceCenter,
   AdminResourceHelpButton,
   readAdminResourceRecordList,
   resolveProblemMessage,
   type AdminResourceHelpContent,
+  type AdminResourceListQuery,
   type AdminResourceLoadParams,
   type AdminResourceRecord,
   type AdminResourceSection,
@@ -43,14 +44,15 @@ import {
   backendPaymentRouteRulesUpdate,
   backendPaymentWebhookEventsReplay,
   backendPaymentsAttemptsList,
+  backendPaymentsAttemptsListFiltered,
   backendPaymentsChannelsList,
   backendPaymentsIntentsList,
   backendPaymentsMethodsList,
   backendPaymentsProvidersListFiltered,
-  backendPaymentsReconciliationRunsList,
+  backendPaymentsReconciliationRunsListFiltered,
   backendPaymentsRefundsList,
   backendPaymentsRouteRulesList,
-  backendPaymentsWebhookEventsList,
+  backendPaymentsWebhookEventsListFiltered,
 } from './paymentsService';
 import {
   createPaymentChannelColumns,
@@ -66,6 +68,27 @@ import {
   formatPaymentEnumValue,
   type PaymentTranslate,
 } from './paymentFormat';
+import { formatPaymentAmount } from './paymentMoney';
+import {
+  buildPaymentRecordListQuery,
+  buildRefundListQuery,
+  PAYMENT_INTENT_STATUSES,
+  PAYMENT_RECORD_EXPORT_LIMIT,
+  RECONCILIATION_RUN_STATUSES,
+  REFUND_REASON_CODES,
+  REFUND_STATUSES,
+  WEBHOOK_EVENT_STATUSES,
+} from './services/paymentRecordsQuery';
+import {
+  buildCsvContent,
+  buildCsvFileName,
+  buildPaymentRecordCsvRows,
+  buildRefundCsvRows,
+  collectPaymentRecords,
+  collectRefundRecords,
+  downloadCsvFile,
+  type PaymentRecordRowFormatting,
+} from './services/paymentRecordsExport';
 import {
   buildChannelCreateCommand,
   buildChannelUpdateCommand,
@@ -98,7 +121,6 @@ import {
 import {
   buildRefundCreateCommand,
   buildRefundRetryCommand,
-  formatRefundAmount,
   RefundCreateDialog,
   RefundRetryDialog,
   type RefundCreateFormValues,
@@ -523,11 +545,58 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
     }),
     createPaymentListSection({
       id: 'intents',
-      title: t('admin.commerce.payments.intents.title', 'Payment Intents'),
-      description: t('admin.commerce.payments.intents.desc', 'Unified payment intents created from orders, memberships, recharge, and wallet flows.'),
+      title: t('admin.commerce.payments.intents.title', 'Payment records'),
+      description: t(
+        'admin.commerce.payments.intents.desc',
+        'Every payment created from orders, memberships, recharge, and wallet flows. Filter by status, provider, currency, and creation window, search by intent number, order number, or owner, then open a record to inspect its attempts and refunds.',
+      ),
       icon: <Receipt className="h-4 w-4" />,
       group: t('admin.commerce.payments.group.paymentRuntime', 'Payment Runtime'),
-      load: backendPaymentsIntentsList,
+      load: (params) => backendPaymentsIntentsList(buildPaymentRecordListQuery(params)),
+      searchMode: 'server',
+      searchPlaceholder: t('admin.commerce.payments.intents.searchPlaceholder', 'Search intent no, order no, or owner user'),
+      filters: [
+        {
+          key: 'status',
+          label: t('admin.commerce.payments.filters.status', 'Status'),
+          placeholder: t('admin.commerce.payments.filters.allStatuses', 'All statuses'),
+          options: PAYMENT_INTENT_STATUSES.map((code) => ({
+            value: code,
+            label: t(`admin.commerce.payments.value.status.${code}`, code),
+          })),
+        },
+        {
+          key: 'providerCode',
+          label: t('admin.commerce.payments.filters.provider', 'Provider'),
+          placeholder: t('admin.commerce.payments.filters.allProviders', 'All providers'),
+          options: PROVIDER_CODES.map((code) => ({
+            value: code,
+            label: t(`admin.commerce.payments.value.provider.${code}`, code),
+          })),
+        },
+        {
+          key: 'currencyCode',
+          kind: 'text',
+          label: t('admin.commerce.payments.filters.currency', 'Currency'),
+          placeholder: t('admin.commerce.payments.filters.currencyPlaceholder', 'Currency (e.g. CNY)'),
+          maxLength: 3,
+        },
+        {
+          key: 'createdAfter',
+          kind: 'datetime-local',
+          label: t('admin.commerce.payments.filters.createdFrom', 'Created from'),
+        },
+        {
+          key: 'createdBefore',
+          kind: 'datetime-local',
+          label: t('admin.commerce.payments.filters.createdTo', 'Created to'),
+        },
+      ],
+      resolveToolbarActions: (query) => [{
+        label: t('admin.commerce.payments.export.action', 'Export CSV'),
+        icon: <Download className="h-4 w-4" />,
+        onClick: () => void runRecordExport('paymentRecords', query),
+      }],
       rowActions: [{
         label: t('admin.commerce.payments.intents.detail.open', 'Details'),
         icon: <Eye className="h-3.5 w-3.5" />,
@@ -554,7 +623,12 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
         { key: 'paymentMethod', label: t('admin.commerce.payments.col.paymentMethod', 'Payment Method') },
         { key: 'ownerUserId', label: t('admin.commerce.payments.col.ownerUserId', 'Owner User') },
         { key: 'providerCode', label: t('admin.col.provider', 'Provider'), render: (value) => <PaymentProviderCompactCell value={value} /> },
-        { key: 'amount', label: t('admin.col.amount', 'Amount'), align: 'right' },
+        {
+          key: 'amount',
+          label: t('admin.col.amount', 'Amount'),
+          align: 'right',
+          format: (value, record) => formatPaymentAmount(value, record.currencyCode, i18n.language),
+        },
         { key: 'currencyCode', label: t('admin.col.currency', 'Currency') },
         { key: 'status', label: t('admin.col.status', 'Status'), format: formatStatus },
         { key: 'createdAt', label: t('admin.col.created', 'Created'), format: formatDateTime },
@@ -570,7 +644,33 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       description: t('admin.commerce.payments.attempts.desc', 'Provider request attempts, external trade numbers, and payment result lifecycle.'),
       icon: <Receipt className="h-4 w-4" />,
       group: t('admin.commerce.payments.group.paymentRuntime', 'Payment Runtime'),
-      load: backendPaymentsAttemptsList,
+      load: (params) => backendPaymentsAttemptsListFiltered(params?.filters),
+      filters: [
+        {
+          key: 'status',
+          label: t('admin.commerce.payments.filters.status', 'Status'),
+          placeholder: t('admin.commerce.payments.filters.allStatuses', 'All statuses'),
+          options: PAYMENT_INTENT_STATUSES.map((code) => ({
+            value: code,
+            label: t(`admin.commerce.payments.value.status.${code}`, code),
+          })),
+        },
+        {
+          key: 'providerCode',
+          label: t('admin.commerce.payments.filters.provider', 'Provider'),
+          placeholder: t('admin.commerce.payments.filters.allProviders', 'All providers'),
+          options: PROVIDER_CODES.map((code) => ({
+            value: code,
+            label: t(`admin.commerce.payments.value.provider.${code}`, code),
+          })),
+        },
+        {
+          key: 'paymentIntentId',
+          kind: 'text',
+          label: t('admin.commerce.payments.filters.paymentIntentId', 'Intent ID'),
+          placeholder: t('admin.commerce.payments.filters.paymentIntentIdPlaceholder', 'Payment intent ID'),
+        },
+      ],
       rowActions: [{
         label: t('admin.commerce.payments.sandboxTrigger.action', 'Simulate success callback'),
         icon: <RotateCcw className="h-3.5 w-3.5" />,
@@ -583,7 +683,12 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
         { key: 'providerCode', label: t('admin.col.provider', 'Provider'), render: (value) => <PaymentProviderCompactCell value={value} /> },
         { key: 'outTradeNo', label: t('admin.commerce.payments.col.outTradeNo', 'Out Trade No') },
         { key: 'providerTransactionId', label: t('admin.commerce.payments.col.providerTransactionId', 'Provider Transaction') },
-        { key: 'amount', label: t('admin.col.amount', 'Amount'), align: 'right' },
+        {
+          key: 'amount',
+          label: t('admin.col.amount', 'Amount'),
+          align: 'right',
+          format: (value, record) => formatPaymentAmount(value, record.currencyCode, i18n.language),
+        },
         { key: 'currencyCode', label: t('admin.col.currency', 'Currency') },
         { key: 'status', label: t('admin.col.status', 'Status'), format: formatStatus },
         { key: 'paidAt', label: t('admin.col.paid', 'Paid') },
@@ -599,7 +704,33 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       description: t('admin.commerce.payments.webhookEvents.desc', 'Inbound payment webhook events and idempotent processing state.'),
       icon: <ShieldCheck className="h-4 w-4" />,
       group: t('admin.commerce.payments.group.riskReconciliation', 'Risk & Reconciliation'),
-      load: backendPaymentsWebhookEventsList,
+      load: (params) => backendPaymentsWebhookEventsListFiltered(params?.filters),
+      filters: [
+        {
+          key: 'status',
+          label: t('admin.commerce.payments.filters.status', 'Status'),
+          placeholder: t('admin.commerce.payments.filters.allStatuses', 'All statuses'),
+          options: WEBHOOK_EVENT_STATUSES.map((code) => ({
+            value: code,
+            label: t(`admin.commerce.payments.value.status.${code}`, code),
+          })),
+        },
+        {
+          key: 'providerCode',
+          label: t('admin.commerce.payments.filters.provider', 'Provider'),
+          placeholder: t('admin.commerce.payments.filters.allProviders', 'All providers'),
+          options: PROVIDER_CODES.map((code) => ({
+            value: code,
+            label: t(`admin.commerce.payments.value.provider.${code}`, code),
+          })),
+        },
+        {
+          key: 'eventType',
+          kind: 'text',
+          label: t('admin.commerce.payments.filters.eventType', 'Event type'),
+          placeholder: t('admin.commerce.payments.filters.eventTypePlaceholder', 'e.g. payment_intent.succeeded'),
+        },
+      ],
       rowActions: [{
         label: t('admin.commerce.payments.webhookEvents.replay', 'Replay'),
         icon: <RotateCcw className="h-3.5 w-3.5" />,
@@ -625,7 +756,33 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       description: t('admin.commerce.payments.reconciliationRuns.desc', 'Payment reconciliation batches, statement imports, and discrepancy tracking.'),
       icon: <BarChart3 className="h-4 w-4" />,
       group: t('admin.commerce.payments.group.riskReconciliation', 'Risk & Reconciliation'),
-      load: backendPaymentsReconciliationRunsList,
+      load: (params) => backendPaymentsReconciliationRunsListFiltered(params?.filters),
+      filters: [
+        {
+          key: 'status',
+          label: t('admin.commerce.payments.filters.status', 'Status'),
+          placeholder: t('admin.commerce.payments.filters.allStatuses', 'All statuses'),
+          options: RECONCILIATION_RUN_STATUSES.map((code) => ({
+            value: code,
+            label: t(`admin.commerce.payments.value.status.${code}`, code),
+          })),
+        },
+        {
+          key: 'providerCode',
+          label: t('admin.commerce.payments.filters.provider', 'Provider'),
+          placeholder: t('admin.commerce.payments.filters.allProviders', 'All providers'),
+          options: PROVIDER_CODES.map((code) => ({
+            value: code,
+            label: t(`admin.commerce.payments.value.provider.${code}`, code),
+          })),
+        },
+        {
+          key: 'providerAccountId',
+          kind: 'text',
+          label: t('admin.commerce.payments.filters.providerAccountId', 'Provider account'),
+          placeholder: t('admin.commerce.payments.filters.providerAccountIdPlaceholder', 'Provider account ID'),
+        },
+      ],
       action: capabilities.canCreateReconciliationRun ? {
         label: t('admin.commerce.payments.reconciliationRuns.create.title', 'Create reconciliation run'),
         icon: <Plus className="h-4 w-4" />,
@@ -650,11 +807,73 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
     }),
     createPaymentListSection({
       id: 'refunds',
-      title: t('admin.commerce.payments.refunds.title', 'Refunds'),
-      description: t('admin.commerce.payments.refunds.desc', 'Operator-initiated refunds with idempotent creation, retry of failed refunds, and amount-bounded processing.'),
+      title: t('admin.commerce.payments.refunds.title', 'Refund records'),
+      description: t(
+        'admin.commerce.payments.refunds.desc',
+        'Refunds issued against succeeded payments: idempotent creation, provider retry, and amount-bounded processing. Filter by status, provider, reason, currency, or creation window, and search by refund number or order number.',
+      ),
       icon: <Undo2 className="h-4 w-4" />,
       group: t('admin.commerce.payments.group.riskReconciliation', 'Risk & Reconciliation'),
-      load: backendPaymentsRefundsList,
+      load: (params) => backendPaymentsRefundsList(buildRefundListQuery(params)),
+      searchMode: 'server',
+      searchPlaceholder: t('admin.commerce.payments.refunds.searchPlaceholder', 'Search refund no or order no'),
+      filters: [
+        {
+          key: 'status',
+          label: t('admin.commerce.payments.filters.status', 'Status'),
+          placeholder: t('admin.commerce.payments.filters.allStatuses', 'All statuses'),
+          options: REFUND_STATUSES.map((code) => ({
+            value: code,
+            label: t(`admin.commerce.payments.value.status.${code}`, code),
+          })),
+        },
+        {
+          key: 'providerCode',
+          label: t('admin.commerce.payments.filters.provider', 'Provider'),
+          placeholder: t('admin.commerce.payments.filters.allProviders', 'All providers'),
+          options: PROVIDER_CODES.map((code) => ({
+            value: code,
+            label: t(`admin.commerce.payments.value.provider.${code}`, code),
+          })),
+        },
+        {
+          key: 'reasonCode',
+          label: t('admin.commerce.payments.filters.reasonCode', 'Reason'),
+          placeholder: t('admin.commerce.payments.filters.allReasons', 'All reasons'),
+          options: REFUND_REASON_CODES.map((code) => ({
+            value: code,
+            label: t(`admin.commerce.payments.value.reasonCode.${code}`, code),
+          })),
+        },
+        {
+          key: 'currencyCode',
+          kind: 'text',
+          label: t('admin.commerce.payments.filters.currency', 'Currency'),
+          placeholder: t('admin.commerce.payments.filters.currencyPlaceholder', 'Currency (e.g. CNY)'),
+          maxLength: 3,
+        },
+        {
+          key: 'paymentIntentId',
+          kind: 'text',
+          label: t('admin.commerce.payments.filters.paymentIntentId', 'Intent ID'),
+          placeholder: t('admin.commerce.payments.filters.paymentIntentIdPlaceholder', 'Payment intent ID'),
+        },
+        {
+          key: 'createdAfter',
+          kind: 'datetime-local',
+          label: t('admin.commerce.payments.filters.createdFrom', 'Created from'),
+        },
+        {
+          key: 'createdBefore',
+          kind: 'datetime-local',
+          label: t('admin.commerce.payments.filters.createdTo', 'Created to'),
+        },
+      ],
+      resolveToolbarActions: (query) => [{
+        label: t('admin.commerce.payments.export.action', 'Export CSV'),
+        icon: <Download className="h-4 w-4" />,
+        onClick: () => void runRecordExport('refunds', query),
+      }],
       action: capabilities.canCreateRefund ? {
         label: t('admin.commerce.payments.refunds.create.action', 'Create refund'),
         icon: <Plus className="h-4 w-4" />,
@@ -681,7 +900,12 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
         { key: 'orderId', label: t('admin.col.order', 'Order') },
         { key: 'paymentIntentId', label: t('admin.commerce.payments.col.paymentIntentId', 'Intent ID') },
         { key: 'providerCode', label: t('admin.col.provider', 'Provider'), render: (value) => <PaymentProviderCompactCell value={value} /> },
-        { key: 'amount', label: t('admin.col.amount', 'Amount'), align: 'right', format: (value, record) => formatRefundAmount(value, String(record.currencyCode ?? '')) },
+        {
+          key: 'amount',
+          label: t('admin.col.amount', 'Amount'),
+          align: 'right',
+          format: (value, record) => formatPaymentAmount(value, record.currencyCode, i18n.language),
+        },
         { key: 'currencyCode', label: t('admin.col.currency', 'Currency') },
         { key: 'status', label: t('admin.col.status', 'Status'), format: formatStatus },
         { key: 'reasonCode', label: t('admin.commerce.payments.col.reasonCode', 'Reason'), format: formatReasonCode },
@@ -743,6 +967,61 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
 
   async function submitRefundRetryForm(values: RefundRetryFormValues, state: Extract<PaymentDialogState, { kind: 'refund-retry' }>) {
     await backendPaymentRefundsRetry(String(state.record.id ?? ''), buildRefundRetryCommand(values), values.idempotencyKey);
+  }
+
+  const exportingRef = useRef(false);
+
+  const exportFormatting = useMemo<PaymentRecordRowFormatting>(() => ({
+    formatAmount: (value, currencyCode) => formatPaymentAmount(value, currencyCode, i18n.language),
+    formatDateTime: (value) => formatDateTime(value),
+    translateStatus: (value) => formatPaymentEnumValue(t, 'admin.commerce.payments.value.status', value),
+    translateReason: (value) => formatPaymentEnumValue(t, 'admin.commerce.payments.value.reasonCode', value),
+    translateRequestedBy: (value) => formatPaymentEnumValue(t, 'admin.commerce.payments.value.requestedByType', value),
+  }), [i18n.language, t]);
+
+  /**
+   * Exports the records that match the *current* filters (not just the visible
+   * page) as CSV. Guarded against double submission: a second click while the
+   * export walk is still running would download a duplicate file.
+   */
+  async function runRecordExport(kind: 'paymentRecords' | 'refunds', query: AdminResourceListQuery) {
+    if (exportingRef.current) {
+      return;
+    }
+    exportingRef.current = true;
+    setMessage(null);
+    try {
+      if (kind === 'paymentRecords') {
+        const result = await collectPaymentRecords(buildPaymentRecordListQuery(query));
+        if (result.items.length === 0) {
+          setMessage({ kind: 'error', text: t('admin.commerce.payments.export.empty', 'There is nothing to export for the current filters.') });
+          return;
+        }
+        downloadCsvFile(
+          buildCsvFileName('payment-records'),
+          buildCsvContent(paymentRecordCsvHeaders(t), buildPaymentRecordCsvRows(result.items, exportFormatting)),
+        );
+        setMessage(exportResultMessage(t, result.items.length, result.truncated));
+        return;
+      }
+      const result = await collectRefundRecords(buildRefundListQuery(query));
+      if (result.items.length === 0) {
+        setMessage({ kind: 'error', text: t('admin.commerce.payments.export.empty', 'There is nothing to export for the current filters.') });
+        return;
+      }
+      downloadCsvFile(
+        buildCsvFileName('refund-records'),
+        buildCsvContent(refundCsvHeaders(t), buildRefundCsvRows(result.items, exportFormatting)),
+      );
+      setMessage(exportResultMessage(t, result.items.length, result.truncated));
+    } catch (error) {
+      setMessage({
+        kind: 'error',
+        text: resolveProblemMessage(error, t, t('admin.commerce.payments.export.error', 'Export failed.')),
+      });
+    } finally {
+      exportingRef.current = false;
+    }
   }
 
   async function runDialogAction(action: () => Promise<unknown>, successText: string, errorText: string) {
@@ -814,6 +1093,7 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
       <div className="min-h-0 flex-1 overflow-hidden">
         <AdminResourceCenter
           activeSectionId={activeSectionId}
+          clearFiltersLabel={t('admin.commerce.payments.clearFilters', 'Clear filters')}
           emptyDescription={t('admin.commerce.payments.emptyDesc', 'Adjust the search query or reload the current section.')}
           emptyTitle={t('admin.commerce.payments.empty', 'No payment records')}
           errorTitle={t('admin.commerce.payments.error', 'Payment data could not be loaded')}
@@ -828,6 +1108,7 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
           paginationPageSizeLabel={t('admin.commerce.payments.pagination.pageSize', 'Rows')}
           paginationPreviousLabel={t('admin.commerce.payments.pagination.previous', 'Previous page')}
           paginationShowingLabel={t('admin.commerce.payments.pagination.showing', 'Showing')}
+          paginationTotalLabel={t('admin.commerce.payments.pagination.total', 'Total')}
           recordActionColumnLabel={t('admin.commerce.payments.action', 'Action')}
           refreshKey={refreshKey}
           reloadLabel={t('admin.commerce.payments.reload', 'Reload')}
@@ -1225,6 +1506,61 @@ function createPaymentListSection<TTab extends PaymentResourceTab>(
 
 function formatEnumCell(t: PaymentTranslate, keyPrefix: string): (value: unknown) => string {
   return (value) => formatPaymentEnumValue(t, keyPrefix, value);
+}
+
+/** CSV column order mirrors the payment record table (labels, then values). */
+function paymentRecordCsvHeaders(t: PaymentTranslate): string[] {
+  return [
+    t('admin.commerce.payments.col.paymentIntentNo', 'Intent No'),
+    t('admin.col.order', 'Order'),
+    t('admin.commerce.payments.col.ownerUserId', 'Owner User'),
+    t('admin.commerce.payments.col.paymentMethod', 'Payment Method'),
+    t('admin.col.provider', 'Provider'),
+    t('admin.col.amount', 'Amount'),
+    t('admin.col.currency', 'Currency'),
+    t('admin.col.status', 'Status'),
+    t('admin.col.created', 'Created'),
+    t('admin.col.updated', 'Updated'),
+  ];
+}
+
+/** CSV column order mirrors the refund record table (labels, then values). */
+function refundCsvHeaders(t: PaymentTranslate): string[] {
+  return [
+    t('admin.commerce.payments.col.refundNo', 'Refund No'),
+    t('admin.col.order', 'Order'),
+    t('admin.commerce.payments.col.paymentIntentId', 'Intent ID'),
+    t('admin.commerce.payments.col.paymentAttemptId', 'Attempt ID'),
+    t('admin.col.provider', 'Provider'),
+    t('admin.col.amount', 'Amount'),
+    t('admin.col.currency', 'Currency'),
+    t('admin.col.status', 'Status'),
+    t('admin.commerce.payments.col.reasonCode', 'Reason'),
+    t('admin.commerce.payments.col.requestedByType', 'Requested By'),
+    t('admin.commerce.payments.col.requestedBy', 'Requester'),
+    t('admin.col.created', 'Created'),
+    t('admin.col.updated', 'Updated'),
+  ];
+}
+
+function exportResultMessage(
+  t: PaymentTranslate,
+  count: number,
+  truncated: boolean,
+): { kind: 'error' | 'success'; text: string } {
+  return truncated
+    ? {
+      kind: 'error',
+      text: t(
+        'admin.commerce.payments.export.limit',
+        'Export is capped at {{limit}} rows. Narrow the filters and export again.',
+        { limit: PAYMENT_RECORD_EXPORT_LIMIT },
+      ),
+    }
+    : {
+      kind: 'success',
+      text: t('admin.commerce.payments.export.success', 'Exported {{count}} records.', { count }),
+    };
 }
 
 function formatEnumArrayCell(t: PaymentTranslate, keyPrefix: string): (value: unknown) => string {

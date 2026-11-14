@@ -33,6 +33,17 @@ type BackendPaymentsService = ReturnType<typeof getSdkworkPaymentBackendSdkClien
 type CloudBackendPaymentsService = ReturnType<typeof getCloudRouterBackendSdkClient>['payments'];
 type BackendBaseDataService = ReturnType<typeof getSdkworkBaseDataBackendSdkClient>['baseData'];
 
+/** List-query shape accepted by the payment intent (payment record) list API. */
+export type PaymentIntentListQuery = Parameters<BackendPaymentsService['intents']['list']>[0];
+/** List-query shape accepted by the refund list API. */
+export type RefundListQuery = Parameters<BackendPaymentsService['refunds']['list']>[0];
+/** List-query shape accepted by the payment attempt list API. */
+export type PaymentAttemptListQuery = Parameters<BackendPaymentsService['attempts']['list']>[0];
+/** List-query shape accepted by the webhook event list API. */
+export type WebhookEventListQuery = Parameters<BackendPaymentsService['webhookEvents']['list']>[0];
+/** List-query shape accepted by the reconciliation run list API. */
+export type ReconciliationRunListQuery = Parameters<BackendPaymentsService['reconciliationRuns']['list']>[0];
+
 export type { CreatePaymentChannelCommand as PaymentChannelCreateInput } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 export type { CreatePaymentMethodCommand as PaymentMethodCreateInput } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 export type { UpdatePaymentMethodCommand as PaymentMethodUpdateInput } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
@@ -135,8 +146,39 @@ export async function backendPaymentsAttemptsList(params?: Parameters<BackendPay
   return getSdkworkPaymentBackendSdkClient().payments.attempts.list(params);
 }
 
+/**
+ * Attempts list with the server-side filters the backend exposes (status,
+ * provider, intent). Passing them as query parameters is what makes the list
+ * answer "which attempts failed on Stripe for this payment", instead of only
+ * narrowing the already-loaded page in the browser.
+ */
+export async function backendPaymentsAttemptsListFiltered(filters?: Record<string, string>) {
+  const value = (key: string) => {
+    const current = filters?.[key]?.trim();
+    return current ? current : undefined;
+  };
+  return getSdkworkPaymentBackendSdkClient().payments.attempts.list({
+    status: value('status') as NonNullable<PaymentAttemptListQuery>['status'],
+    providerCode: value('providerCode'),
+    paymentIntentId: value('paymentIntentId'),
+  });
+}
+
 export async function backendPaymentsWebhookEventsList(params?: Parameters<BackendPaymentsService['webhookEvents']['list']>[0]) {
   return getSdkworkPaymentBackendSdkClient().payments.webhookEvents.list(params);
+}
+
+/** Webhook events list with server-side status/provider/event-type filters. */
+export async function backendPaymentsWebhookEventsListFiltered(filters?: Record<string, string>) {
+  const value = (key: string) => {
+    const current = filters?.[key]?.trim();
+    return current ? current : undefined;
+  };
+  return getSdkworkPaymentBackendSdkClient().payments.webhookEvents.list({
+    status: value('status') as NonNullable<WebhookEventListQuery>['status'],
+    providerCode: value('providerCode'),
+    eventType: value('eventType'),
+  });
 }
 
 export async function backendPaymentWebhookEventsReplay(eventId: string) {
@@ -147,6 +189,19 @@ export async function backendPaymentsReconciliationRunsList(
   params?: Parameters<BackendPaymentsService['reconciliationRuns']['list']>[0],
 ) {
   return getSdkworkPaymentBackendSdkClient().payments.reconciliationRuns.list(params);
+}
+
+/** Reconciliation runs list with server-side status/provider/account filters. */
+export async function backendPaymentsReconciliationRunsListFiltered(filters?: Record<string, string>) {
+  const value = (key: string) => {
+    const current = filters?.[key]?.trim();
+    return current ? current : undefined;
+  };
+  return getSdkworkPaymentBackendSdkClient().payments.reconciliationRuns.list({
+    status: value('status') as NonNullable<ReconciliationRunListQuery>['status'],
+    providerCode: value('providerCode'),
+    providerAccountId: value('providerAccountId'),
+  });
 }
 
 export async function backendPaymentReconciliationRunsCreate(body: CreateReconciliationRunCommand) {

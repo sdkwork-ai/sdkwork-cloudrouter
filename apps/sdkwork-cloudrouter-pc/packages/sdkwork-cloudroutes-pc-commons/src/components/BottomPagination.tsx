@@ -8,6 +8,10 @@ export interface BottomPaginationProps {
   showingLabel: string;
   pageLabel: string;
   pageSizeLabel: string;
+  /** Total matching records for the active query, when the server reports it. */
+  totalItems?: number;
+  /** Label rendered before `totalItems` (for example "Total"). */
+  totalLabel?: string;
   previousLabel?: string;
   nextLabel?: string;
   pageSizeOptions?: number[];
@@ -30,6 +34,8 @@ export function BottomPagination({
   showingLabel,
   pageLabel,
   pageSizeLabel,
+  totalItems,
+  totalLabel,
   previousLabel = 'Previous page',
   nextLabel = 'Next page',
   pageSizeOptions = defaultPageSizeOptions,
@@ -54,6 +60,13 @@ export function BottomPagination({
       } border-t border-slate-200 px-4 py-3 text-sm text-slate-600 dark:border-white/10 dark:text-slate-300 ${className}`.trim()}
     >
       <div className="whitespace-nowrap text-xs font-medium text-slate-500 dark:text-slate-400">
+        {totalItems !== undefined && totalLabel ? (
+          <>
+            {totalLabel}
+            <span className="ml-2 font-mono text-slate-700 dark:text-slate-200">{totalItems}</span>
+            <span className="mx-2 text-slate-300 dark:text-white/20">·</span>
+          </>
+        ) : null}
         {showingLabel}
         <span className="ml-2 font-mono text-slate-700 dark:text-slate-200">
           {start} - {end}

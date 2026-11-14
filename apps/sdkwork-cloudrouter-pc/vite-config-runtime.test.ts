@@ -1553,3 +1553,121 @@ test("workspace SDK facades resolve their internal modules from TypeScript sourc
 
   assert.ok(checked > 0, "expected at least one workspace SDK facade to verify");
 });
+
+function normalizeFsPath(value: string): string {
+  return path.resolve(value).replaceAll("\\", "/").replace(/\/+$/u, "");
+}
+
+/**
+ * Translate every Tailwind `@source` entry into the directories it scans.
+ *
+ * `**` spans any depth, `*` spans one path segment, and a bare directory entry
+ * scans that directory recursively — the same semantics Tailwind v4 applies,
+ * which is why an entry naming an ancestor directory covers every package
+ * below it.
+ */
+function tailwindSourceRoots(indexCss: string, cssDirectory: string): Array<{ pattern: RegExp }> {
+  return [...indexCss.matchAll(/@source\s+"([^"]+)"/gu)].map((match) => {
+    let pattern = normalizeFsPath(path.resolve(cssDirectory, match[1]));
+    const scansRecursively = pattern.endsWith("/**");
+    if (scansRecursively) {
+      pattern = pattern.slice(0, -3);
+    }
+    let source = "";
+    for (let index = 0; index < pattern.length; index += 1) {
+      const character = pattern[index];
+      if (character === "*") {
+        const isGlobstar = pattern[index + 1] === "*";
+        source += isGlobstar ? ".*" : "[^/]*";
+        if (isGlobstar) {
+          index += 1;
+        }
+      } else if ("\\^$.|?+()[]{}".includes(character)) {
+        source += `\\${character}`;
+      } else {
+        source += character;
+      }
+    }
+    return { pattern: new RegExp(`^${source}${scansRecursively ? "(?:/.*)?" : ""}$`, "u") };
+  });
+}
+
+function isDirectoryScannedBy(roots: Array<{ pattern: RegExp }>, directory: string): boolean {
+  const normalized = normalizeFsPath(directory);
+  const candidates: string[] = [];
+  let current = normalized;
+  while (current.includes("/")) {
+    candidates.push(current);
+    current = current.slice(0, current.lastIndexOf("/"));
+  }
+  return candidates.some((candidate) => roots.some((root) => root.pattern.test(candidate)));
+}
+
+test("Smart Hardware console sibling pages are served in dev and scanned by the CSS build", async () => {
+  // Regression guard: a sibling-repo page package embedded through the pnpm
+  // workspace resolves to TSX *source* outside this app. Both host integrations
+  // are easy to forget when such a page is added:
+  //   - `server.fs.allow` must cover its repository, or the dev server answers
+  //     403 and the route cannot load at all;
+  //   - `src/index.css` must `@source` its directory, or its Tailwind utilities
+  //     are never generated. A partially generated inverted pair
+  //     (`bg-zinc-900 dark:bg-zinc-100` + `text-white dark:text-zinc-900`)
+  //     collapsed the hardware console's primary action and active page tab
+  //     into `dark:text-zinc-900` on `bg-zinc-900`: invisible labels.
+  const config = await resolvePortalViteConfig();
+  const allowList = (config.server?.fs?.allow ?? []).map(normalizeFsPath);
+  const cssDirectory = fileURLToPath(new URL("./src/", import.meta.url));
+  const sourceRoots = tailwindSourceRoots(readFileSync(path.join(cssDirectory, "index.css"), "utf8"), cssDirectory);
+  const consoleHardwareManifest = JSON.parse(
+    readFileSync(
+      new URL("./packages/sdkwork-cloudrouter-pc-console-hardware/package.json", import.meta.url),
+      "utf8",
+    ),
+  ) as { dependencies?: Record<string, string> };
+  const embeddedPackages = Object.keys(consoleHardwareManifest.dependencies ?? {})
+    .filter((packageName) => packageName.startsWith("@sdkwork/"));
+  const importer = new URL("./src/App.tsx", import.meta.url).pathname;
+
+  let verified = 0;
+  for (const packageName of embeddedPackages) {
+    const resolvedEntry = resolvePortalPackageModule(packageName, import.meta.dirname, importer);
+    if (!resolvedEntry) {
+      continue;
+    }
+    const sourceDirectory = path.dirname(resolvedEntry);
+    const authorsUtilities = [...collectSourceFiles(sourceDirectory)]
+      .some((filePath) => /className/u.test(readFileSync(filePath, "utf8")));
+    if (!authorsUtilities) {
+      continue;
+    }
+    verified += 1;
+    assert.ok(
+      allowList.some((root) => normalizeFsPath(resolvedEntry).startsWith(`${root}/`)),
+      `${packageName} resolves to ${resolvedEntry}, which Vite dev refuses to serve; its repository must join server.fs.allow`,
+    );
+    assert.ok(
+      isDirectoryScannedBy(sourceRoots, sourceDirectory),
+      `${packageName} authors Tailwind utilities in ${sourceDirectory}, which no @source entry scans; its utilities would be missing from the CSS build`,
+    );
+  }
+
+  assert.ok(verified > 0, "expected at least one embedded sibling page package to verify");
+});
+
+function* collectSourceFiles(directory: string): Generator<string> {
+  if (!existsSync(directory)) {
+    return;
+  }
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      if (entry.name === "node_modules" || entry.name === "__tests__") {
+        continue;
+      }
+      yield* collectSourceFiles(path.join(directory, entry.name));
+      continue;
+    }
+    if (/\.(?:tsx|ts)$/u.test(entry.name) && !/\.d\.ts$/u.test(entry.name)) {
+      yield path.join(directory, entry.name);
+    }
+  }
+}

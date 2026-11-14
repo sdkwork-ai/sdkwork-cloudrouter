@@ -6,6 +6,7 @@ import {
 } from '@sdkwork/order-mobile-react-orders';
 import type { SdkworkConsoleLocale } from '@sdkwork/cloudrouter-h5-i18n';
 
+import { AnonymousCashierPage } from './AnonymousCashierPage.js';
 import { CloudRouterOrdersI18nProvider } from './OrdersI18nProvider.js';
 import { CLOUDROUTER_H5_ORDER_ROUTES } from './routes.js';
 
@@ -57,6 +58,34 @@ export function CloudRouterRefundRequestsPage({ locale }: CloudRouterOrderPagePr
   return (
     <CloudRouterOrdersI18nProvider locale={locale}>
       <RefundRequestsPage />
+    </CloudRouterOrdersI18nProvider>
+  );
+}
+
+export interface CloudRouterAnonymousCashierPageProps {
+  readonly locale: SdkworkConsoleLocale;
+  /** Capability token from the scanned `/cashier/{token}` deep link. */
+  readonly token: string;
+}
+
+/**
+ * Host adapter for the no-login cashier.
+ *
+ * A scanned QR carries a capability token instead of a session, so this page must
+ * render **outside** the console auth gate. Only the sign-in hand-off stays
+ * authenticated: the payer can opt in afterwards to manage the order.
+ */
+export function CloudRouterAnonymousCashierPage({
+  locale,
+  token,
+}: CloudRouterAnonymousCashierPageProps) {
+  return (
+    <CloudRouterOrdersI18nProvider locale={locale}>
+      <AnonymousCashierPage
+        token={token}
+        orderCenterPath={CLOUDROUTER_H5_ORDER_ROUTES.orderCenter.path}
+        signInPath="/sign-in"
+      />
     </CloudRouterOrdersI18nProvider>
   );
 }

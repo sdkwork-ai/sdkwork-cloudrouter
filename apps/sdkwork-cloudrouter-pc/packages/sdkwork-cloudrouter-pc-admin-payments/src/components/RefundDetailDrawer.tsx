@@ -1,44 +1,29 @@
 /**
  * Refund detail drawer.
  *
- * Fetches a single refund via the backend SDK retrieve operation and renders
- * its fields in a right-side drawer, mirroring the payment intent detail
- * drawer pattern. Amounts are backend integer minor units and are formatted
- * to yuan for display.
+ * Fetches a single refund through the backend SDK retrieve operation. The
+ * amount is an integer minor-unit string, shown through the shared currency
+ * formatter so it can never disagree with the refund list or the intent drawer.
  */
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
+import { CopyButton, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import type { Refund } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import { backendPaymentRefundsRetrieve } from '../paymentsService';
-import { formatRefundAmount, translateEnumValue } from '../forms/RefundDialogs';
-import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
+import { formatPaymentDateTime, formatPaymentEnumValue } from '../paymentFormat';
+import { formatPaymentAmount } from '../paymentMoney';
+import { DetailRow } from './DetailRow';
+import { PaymentStatusPill } from './PaymentStatusPill';
 
 interface RefundDetailDrawerProps {
   refundId: string | null;
   onClose: () => void;
 }
 
-function DetailRow({ label, value }: { label: string; value: unknown }) {
-  let text = value === null || value === undefined || value === '' ? '-' : String(value);
-  // Backend timestamps are ISO 8601 (contain "T") — show them in local time.
-  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(text)) {
-    const date = new Date(text);
-    if (!Number.isNaN(date.getTime())) {
-      text = date.toLocaleString();
-    }
-  }
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-slate-50 py-2 text-sm dark:border-white/5">
-      <span className="shrink-0 text-slate-500 dark:text-slate-400">{label}</span>
-      <span className="text-right font-mono text-xs text-slate-900 dark:text-white">{text}</span>
-    </div>
-  );
-}
-
 export function RefundDetailDrawer({ refundId, onClose }: RefundDetailDrawerProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [refund, setRefund] = useState<Refund | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -88,15 +73,31 @@ export function RefundDetailDrawer({ refundId, onClose }: RefundDetailDrawerProp
         role="dialog"
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-white/10">
-          <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t('admin.commerce.payments.refunds.detail.title', 'Refund details')}</h2>
-          <button
-            aria-label={t('admin.commerce.payments.help.close', 'Close')}
-            className="grid h-9 w-9 place-items-center rounded-md text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10"
-            onClick={onClose}
-            type="button"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <div className="min-w-0">
+            <h2 className="truncate text-base font-semibold text-slate-900 dark:text-white">
+              {t('admin.commerce.payments.refunds.detail.title', 'Refund details')}
+            </h2>
+            {refund?.refundNo ? (
+              <p className="mt-0.5 truncate font-mono text-xs text-slate-500 dark:text-slate-400">{refund.refundNo}</p>
+            ) : null}
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            {refund ? (
+              <CopyButton
+                copiedLabel={t('admin.commerce.payments.detail.copied', 'Copied')}
+                label={t('admin.commerce.payments.detail.copy', 'Copy')}
+                text={String(refund.refundNo ?? refund.id ?? '')}
+              />
+            ) : null}
+            <button
+              aria-label={t('admin.commerce.payments.help.close', 'Close')}
+              className="grid h-9 w-9 place-items-center rounded-md text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10"
+              onClick={onClose}
+              type="button"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {error ? (
@@ -109,20 +110,44 @@ export function RefundDetailDrawer({ refundId, onClose }: RefundDetailDrawerProp
             </div>
           ) : (
             <div>
-              <DetailRow label={t('admin.commerce.payments.col.refundNo', 'Refund No')} value={refund.refundNo} />
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-white/5">
+                <PaymentStatusPill status={refund.status} />
+                <span className="font-mono text-lg font-semibold text-slate-900 dark:text-white">
+                  {formatPaymentAmount(refund.amount, refund.currencyCode, i18n.language)}
+                </span>
+              </div>
               <DetailRow label={t('admin.col.order', 'Order')} value={refund.orderId} />
               <DetailRow label={t('admin.commerce.payments.col.paymentIntentId', 'Intent ID')} value={refund.paymentIntentId} />
               <DetailRow label={t('admin.commerce.payments.col.paymentAttemptId', 'Attempt ID')} value={refund.paymentAttemptId} />
               <DetailRow label={t('admin.col.provider', 'Provider')} value={refund.providerCode} />
               <DetailRow label={t('admin.col.account', 'Account')} value={refund.providerAccountId} />
-              <DetailRow label={t('admin.col.amount', 'Amount')} value={`${formatRefundAmount(refund.amount, refund.currencyCode)} ${refund.currencyCode ?? ''}`} />
               <DetailRow label={t('admin.col.currency', 'Currency')} value={refund.currencyCode} />
-              <DetailRow label={t('admin.col.status', 'Status')} value={translateEnumValue(t, 'status', refund.status)} />
-              <DetailRow label={t('admin.commerce.payments.col.reasonCode', 'Reason')} value={translateEnumValue(t, 'reasonCode', refund.reasonCode)} />
-              <DetailRow label={t('admin.commerce.payments.col.requestedByType', 'Requested By')} value={translateEnumValue(t, 'requestedByType', refund.requestedByType)} />
+              <DetailRow label={t('admin.commerce.payments.col.reasonCode', 'Reason')} value={formatPaymentEnumValue(t, 'admin.commerce.payments.value.reasonCode', refund.reasonCode)} />
+              <DetailRow label={t('admin.commerce.payments.col.requestedByType', 'Requested By')} value={formatPaymentEnumValue(t, 'admin.commerce.payments.value.requestedByType', refund.requestedByType)} />
               <DetailRow label={t('admin.commerce.payments.col.requestedBy', 'Requester')} value={refund.requestedBy} />
-              <DetailRow label={t('admin.col.created', 'Created')} value={refund.createdAt} />
-              <DetailRow label={t('admin.col.updated', 'Updated')} value={refund.updatedAt} />
+
+              <section aria-labelledby="payment-refund-lifecycle-title" className="mt-5">
+                <h3 className="mb-2 text-sm font-semibold text-slate-900 dark:text-white" id="payment-refund-lifecycle-title">
+                  {t('admin.commerce.payments.refunds.detail.lifecycle', 'Refund lifecycle')}
+                </h3>
+                <ol className="space-y-3 border-l border-slate-200 pl-4 dark:border-white/10">
+                  <li className="relative">
+                    <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-slate-300 dark:bg-white/20" />
+                    <div className="text-xs font-medium text-slate-900 dark:text-white">
+                      {t('admin.commerce.payments.refunds.detail.submittedAt', 'Submitted')}
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">{formatPaymentDateTime(refund.createdAt)}</div>
+                  </li>
+                  <li className="relative">
+                    <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-lobster-500" />
+                    <div className="flex items-center gap-2 text-xs font-medium text-slate-900 dark:text-white">
+                      {t('admin.commerce.payments.refunds.detail.lastUpdatedAt', 'Last update')}
+                      <PaymentStatusPill status={refund.status} />
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">{formatPaymentDateTime(refund.updatedAt)}</div>
+                  </li>
+                </ol>
+              </section>
             </div>
           )}
         </div>

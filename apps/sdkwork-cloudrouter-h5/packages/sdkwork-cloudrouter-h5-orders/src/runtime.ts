@@ -19,6 +19,15 @@ export interface ConfigureCloudRouterOrderRuntimeInput {
 }
 
 /**
+ * The bootstrap-built Order App SDK client.
+ *
+ * Held so host-owned surfaces (the anonymous cashier) can call the same client
+ * instead of constructing their own: `APP_SDK_INTEGRATION_SPEC.md` forbids feature
+ * packages creating SDK clients or raw HTTP transports.
+ */
+let orderAppClient: SdkworkAppClient | null = null;
+
+/**
  * Injects the bootstrap-built Order App SDK client into the order-owned mobile
  * runtime (`OrderService` plus the cashier pages).
  *
@@ -29,5 +38,19 @@ export function configureCloudRouterOrderRuntime({
   client,
   paymentRegion = CLOUDROUTER_ORDER_PAYMENT_REGION,
 }: ConfigureCloudRouterOrderRuntimeInput): void {
+  orderAppClient = client;
   configureOrderMobileRuntime({ client, paymentRegion });
+}
+
+/**
+ * Returns the configured Order App SDK client.
+ *
+ * Throws when the host bootstrap has not run: a cashier page that silently
+ * degraded to an empty client would show a payable order as unpayable.
+ */
+export function requireCloudRouterOrderAppClient(): SdkworkAppClient {
+  if (!orderAppClient) {
+    throw new Error('CloudRouter order runtime is not configured before first use.');
+  }
+  return orderAppClient;
 }
