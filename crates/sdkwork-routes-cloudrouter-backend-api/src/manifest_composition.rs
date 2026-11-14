@@ -158,7 +158,18 @@ fn dependency_mounts() -> Vec<RouteManifestMount> {
 ///
 /// Keep this list aligned with `included_in_cloud_assembly_manifest` on
 /// `MOUNTED_APP_CAPABILITIES` in `sdkwork-routes-cloudrouter-app-api`.
-const CLOUD_ASSEMBLY_BACKEND_WORKSPACES: &[&str] = &["sdkwork-models-catalog", "sdkwork-partner"];
+///
+/// Memory belongs here for the same reason as `sdkwork-models-catalog`: the
+/// edge runtime mounts the Memory backend contribution in-process
+/// (`assemble_backend_api_contribution_from_env`) and no platform gateway module
+/// contributes the same `sdkwork-memory` owner, so omitting it left every
+/// `/backend/v3/api/memory*` admin call answering `404 route-not-in-manifest`
+/// while the executable backend router still dispatched it.
+const CLOUD_ASSEMBLY_BACKEND_WORKSPACES: &[&str] = &[
+    "sdkwork-models-catalog",
+    "sdkwork-memory",
+    "sdkwork-partner",
+];
 
 fn mounts_for_cloud_assembly() -> Vec<RouteManifestMount> {
     MOUNTED_BACKEND_CAPABILITIES
@@ -280,6 +291,55 @@ mod tests {
                 RouteAuth::DualToken,
                 route.auth,
                 "{method} {path} must inherit dual-token auth from the models-catalog manifest"
+            );
+        }
+    }
+
+    #[test]
+    fn platform_gateway_backend_manifest_includes_memory_routes() {
+        // Regression: the edge runtime merged the Memory backend contribution
+        // (`assemble_backend_api_contribution_from_env`) while the cloud
+        // assembly backend manifest only advertised models-catalog and partner.
+        // Every `/backend/v3/api/memory*` admin call therefore answered
+        // 404 route-not-in-manifest.
+        let manifest = cloud_router_backend_composed_route_manifest_for_platform_gateway();
+        for (method, path) in [
+            ("GET", "/backend/v3/api/memory/spaces"),
+            ("GET", "/backend/v3/api/memory/spaces/{spaceId}"),
+            ("GET", "/backend/v3/api/memory/memories"),
+            ("GET", "/backend/v3/api/memory/usage"),
+        ] {
+            let route = manifest.match_route(method, path).unwrap_or_else(|| {
+                panic!("{method} {path} must be registered by the platform-gateway memory mount")
+            });
+            assert_eq!(
+                RouteAuth::DualToken,
+                route.auth,
+                "{method} {path} must inherit dual-token auth from the memory backend manifest"
+            );
+        }
+    }
+
+    #[test]
+    fn composed_backend_manifest_includes_drive_admin_workspace_routes() {
+        // The storage center's space and file sections call the drive admin
+        // workspace routes. They are registered by the drive admin storage
+        // contribution (`assemble_backend_admin_storage_contribution_with_pool`),
+        // so the composed standalone manifest must advertise them; otherwise the
+        // Web Framework answers `404 route-not-in-manifest` before the handler
+        // runs even though the router dispatches the path.
+        let manifest = cloud_router_backend_composed_route_manifest();
+        for (method, path) in [
+            ("GET", "/backend/v3/api/drive/spaces"),
+            ("GET", "/backend/v3/api/drive/files"),
+        ] {
+            let route = manifest.match_route(method, path).unwrap_or_else(|| {
+                panic!("{method} {path} must be registered by the drive admin workspace mount")
+            });
+            assert_eq!(
+                RouteAuth::DualToken,
+                route.auth,
+                "{method} {path} must inherit dual-token auth from the drive backend manifest"
             );
         }
     }
@@ -863,7 +923,11 @@ mod tests {
                 "/backend/v3/api/memory/spaces/{spaceId}",
                 "memory.backend.spaces.write",
             ),
-            ("GET", "/backend/v3/api/memory/memories", "memory.backend.records.read"),
+            (
+                "GET",
+                "/backend/v3/api/memory/memories",
+                "memory.backend.records.read",
+            ),
             (
                 "PATCH",
                 "/backend/v3/api/memory/memories/{memoryId}",
@@ -874,7 +938,11 @@ mod tests {
                 "/backend/v3/api/memory/memories/{memoryId}/supersede",
                 "memory.backend.records.write",
             ),
-            ("GET", "/backend/v3/api/memory/usage", "memory.backend.usage.read"),
+            (
+                "GET",
+                "/backend/v3/api/memory/usage",
+                "memory.backend.usage.read",
+            ),
         ] {
             let route = manifest.match_route(method, path).unwrap_or_else(|| {
                 panic!("{method} {path} must be registered by the memory mount")

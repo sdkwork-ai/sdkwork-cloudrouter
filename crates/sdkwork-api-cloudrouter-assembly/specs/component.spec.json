@@ -110,6 +110,16 @@
         "name": "partnerBackendApiRouteManifest",
         "provider": "sdkwork-api-partner-assembly",
         "export": "sdkwork_api_partner_assembly::backend_api_route_manifest"
+      },
+      {
+        "name": "memoryAppApiContribution",
+        "provider": "sdkwork-api-memory-assembly",
+        "export": "sdkwork_api_memory_assembly::assemble_app_api_contribution_from_env"
+      },
+      {
+        "name": "memoryBackendApiContribution",
+        "provider": "sdkwork-api-memory-assembly",
+        "export": "sdkwork_api_memory_assembly::assemble_backend_api_contribution_from_env"
       }
     ],
     "runtimeEntrypoints": [
@@ -236,6 +246,46 @@
         "embeddedExecutableExport": "sdkwork_api_partner_assembly::backend_api_route_manifest",
         "coverageEvidence": [
           "src/bootstrap.rs#assemble_api_router_with_in_process_upstreams",
+          "../sdkwork-routes-cloudrouter-backend-api/src/manifest_composition.rs#cloud_router_backend_composed_route_manifest_for_platform_gateway"
+        ]
+      },
+      {
+        "workspace": "sdkwork-memory",
+        "sdkFamily": "sdkwork-memory-app-sdk",
+        "apiAuthority": "sdkwork-memory-app-api",
+        "surface": "app-api",
+        "apiPrefixes": [
+          "/app/v3/api/memory"
+        ],
+        "runtimeMode": "same-origin-mounted",
+        "profileCoverage": [
+          "standalone",
+          "cloud"
+        ],
+        "cargoDependency": "sdkwork_api_memory_assembly",
+        "embeddedExecutableExport": "sdkwork_api_memory_assembly::assemble_app_api_contribution_from_env",
+        "coverageEvidence": [
+          "../sdkwork-routes-cloudrouter-app-api/src/memory_runtime.rs#merge_federated_memory_app_router",
+          "../sdkwork-routes-cloudrouter-app-api/src/manifest_composition.rs#cloud_router_app_composed_route_manifest_for_platform_gateway"
+        ]
+      },
+      {
+        "workspace": "sdkwork-memory",
+        "sdkFamily": "sdkwork-memory-backend-sdk",
+        "apiAuthority": "sdkwork-memory-backend-api",
+        "surface": "backend-api",
+        "apiPrefixes": [
+          "/backend/v3/api/memory"
+        ],
+        "runtimeMode": "same-origin-mounted",
+        "profileCoverage": [
+          "standalone",
+          "cloud"
+        ],
+        "cargoDependency": "sdkwork_api_memory_assembly",
+        "embeddedExecutableExport": "sdkwork_api_memory_assembly::assemble_backend_api_contribution_from_env",
+        "coverageEvidence": [
+          "../sdkwork-cloudrouter-edge-runtime/src/runtime.rs#all_in_one_in_process_upstreams_from_env",
           "../sdkwork-routes-cloudrouter-backend-api/src/manifest_composition.rs#cloud_router_backend_composed_route_manifest_for_platform_gateway"
         ]
       }
