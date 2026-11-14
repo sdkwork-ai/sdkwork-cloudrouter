@@ -135,19 +135,30 @@ CREATE TABLE IF NOT EXISTS commerce_payment_reconciliation_run (
 -- The reconciliation worker shares this run table with `payment-reconciliation`,
 -- which owns the statement/result tables. These additive guards keep the worker
 -- runnable against a baseline that predates those columns; all are no-ops here.
-ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS reconciliation_type TEXT NOT NULL DEFAULT 'daily';
-ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS unmatched_count INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS total_difference_amount NUMERIC(18,2) NOT NULL DEFAULT 0;
-ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS currency_code TEXT NOT NULL DEFAULT 'CNY';
-ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
-ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ NULL;
+-- `commerce_payment_reconciliation_run` is owned by the federated
+-- `sdkwork-payment` module, so this block is skipped when that module has not
+-- initialized yet (a fresh install discovers modules in dependency order and
+-- MUST NOT fail on a federated table that does not exist; the federated
+-- baseline creates the same columns and index).
+DO $$
+BEGIN
+    IF to_regclass('commerce_payment_reconciliation_run') IS NOT NULL THEN
+        ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS reconciliation_type TEXT NOT NULL DEFAULT 'daily';
+        ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS unmatched_count INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS total_difference_amount NUMERIC(18,2) NOT NULL DEFAULT 0;
+        ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS currency_code TEXT NOT NULL DEFAULT 'CNY';
+        ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
+        ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ NULL;
 
-CREATE UNIQUE INDEX IF NOT EXISTS ux_commerce_payment_reconciliation_run_no
-    ON commerce_payment_reconciliation_run (tenant_id, run_no)
-    WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_commerce_payment_reconciliation_run_claim
-    ON commerce_payment_reconciliation_run (tenant_id, status, created_at)
-    WHERE deleted_at IS NULL;
+        CREATE UNIQUE INDEX IF NOT EXISTS ux_commerce_payment_reconciliation_run_no
+            ON commerce_payment_reconciliation_run (tenant_id, run_no)
+            WHERE deleted_at IS NULL;
+        CREATE INDEX IF NOT EXISTS idx_commerce_payment_reconciliation_run_claim
+            ON commerce_payment_reconciliation_run (tenant_id, status, created_at)
+            WHERE deleted_at IS NULL;
+    END IF;
+END
+$$;
 
 CREATE INDEX IF NOT EXISTS idx_commerce_payment_route_decision_intent
     ON commerce_payment_route_decision (tenant_id, payment_intent_id);
@@ -163,51 +174,63 @@ CREATE INDEX IF NOT EXISTS idx_commerce_refund_item_refund
 -- Cloud Router projects a provider-dispatch payload and two pre-confirmation
 -- statuses onto the federated `commerce_payment_intent` / `attempt` facts. The
 -- retired `payment-runtime` module used to provision that wider shape; this
--- additive guard restores it on a fresh install. `sdkwork-payment` is a hard
--- dependency installed before this module, so the tables always exist here.
+-- additive guard restores it on an install whose federated module has already
+-- initialized. The federated `sdkwork-payment` baseline is the owner and
+-- creates the same shape, so the guard is skipped when that module has not
+-- initialized yet (a fresh install MUST NOT fail on a table it does not own).
 -- Kept semantically identical to
 -- `database/migrations/postgres/0047_payment_runtime_shape_guard.up.sql`, which
 -- wraps the same statements in `to_regclass` guards for upgrades.
-ALTER TABLE commerce_payment_intent
-    ADD COLUMN IF NOT EXISTS merchant_order_no TEXT NOT NULL DEFAULT '';
-ALTER TABLE commerce_payment_intent
-    ADD COLUMN IF NOT EXISTS subject TEXT NOT NULL DEFAULT '';
-ALTER TABLE commerce_payment_intent
-    ADD COLUMN IF NOT EXISTS provider TEXT NOT NULL DEFAULT '';
-ALTER TABLE commerce_payment_intent
-    ADD COLUMN IF NOT EXISTS supplier_code TEXT NOT NULL DEFAULT '';
-ALTER TABLE commerce_payment_intent
-    ADD COLUMN IF NOT EXISTS scene_code TEXT NOT NULL DEFAULT '';
-ALTER TABLE commerce_payment_intent
-    ADD COLUMN IF NOT EXISTS metadata_json JSONB NOT NULL DEFAULT '{}'::jsonb;
-ALTER TABLE commerce_payment_intent
-    ADD COLUMN IF NOT EXISTS provider_native_json JSONB;
-ALTER TABLE commerce_payment_intent
-    ADD COLUMN IF NOT EXISTS next_action_json JSONB;
-ALTER TABLE commerce_payment_intent
-    ADD COLUMN IF NOT EXISTS captured_amount NUMERIC(18, 2) NOT NULL DEFAULT 0;
-ALTER TABLE commerce_payment_intent
-    ADD COLUMN IF NOT EXISTS refunded_amount NUMERIC(18, 2) NOT NULL DEFAULT 0;
-ALTER TABLE commerce_payment_intent
-    DROP CONSTRAINT IF EXISTS commerce_payment_intent_status_check;
-ALTER TABLE commerce_payment_intent
-    ADD CONSTRAINT commerce_payment_intent_status_check
-    CHECK (status IN (
-        'created', 'pending', 'processing', 'succeeded', 'failed',
-        'canceled', 'closed', 'requires_confirmation', 'requires_action'
-    ));
+DO $$
+BEGIN
+    IF to_regclass('commerce_payment_intent') IS NOT NULL THEN
+        ALTER TABLE commerce_payment_intent
+            ADD COLUMN IF NOT EXISTS merchant_order_no TEXT NOT NULL DEFAULT '';
+        ALTER TABLE commerce_payment_intent
+            ADD COLUMN IF NOT EXISTS subject TEXT NOT NULL DEFAULT '';
+        ALTER TABLE commerce_payment_intent
+            ADD COLUMN IF NOT EXISTS provider TEXT NOT NULL DEFAULT '';
+        ALTER TABLE commerce_payment_intent
+            ADD COLUMN IF NOT EXISTS supplier_code TEXT NOT NULL DEFAULT '';
+        ALTER TABLE commerce_payment_intent
+            ADD COLUMN IF NOT EXISTS scene_code TEXT NOT NULL DEFAULT '';
+        ALTER TABLE commerce_payment_intent
+            ADD COLUMN IF NOT EXISTS metadata_json JSONB NOT NULL DEFAULT '{}'::jsonb;
+        ALTER TABLE commerce_payment_intent
+            ADD COLUMN IF NOT EXISTS provider_native_json JSONB;
+        ALTER TABLE commerce_payment_intent
+            ADD COLUMN IF NOT EXISTS next_action_json JSONB;
+        ALTER TABLE commerce_payment_intent
+            ADD COLUMN IF NOT EXISTS captured_amount NUMERIC(18, 2) NOT NULL DEFAULT 0;
+        ALTER TABLE commerce_payment_intent
+            ADD COLUMN IF NOT EXISTS refunded_amount NUMERIC(18, 2) NOT NULL DEFAULT 0;
+        ALTER TABLE commerce_payment_intent
+            DROP CONSTRAINT IF EXISTS commerce_payment_intent_status_check;
+        ALTER TABLE commerce_payment_intent
+            ADD CONSTRAINT commerce_payment_intent_status_check
+            CHECK (status IN (
+                'created', 'pending', 'processing', 'succeeded', 'failed',
+                'canceled', 'closed', 'requires_confirmation', 'requires_action'
+            ));
+    END IF;
 
-ALTER TABLE commerce_payment_attempt
-    ADD COLUMN IF NOT EXISTS provider TEXT NOT NULL DEFAULT '';
-ALTER TABLE commerce_payment_attempt
-    DROP CONSTRAINT IF EXISTS commerce_payment_attempt_status_check;
-ALTER TABLE commerce_payment_attempt
-    ADD CONSTRAINT commerce_payment_attempt_status_check
-    CHECK (status IN (
-        'created', 'pending', 'processing', 'succeeded', 'failed',
-        'canceled', 'closed', 'requires_confirmation', 'requires_action'
-    ));
+    IF to_regclass('commerce_payment_attempt') IS NOT NULL THEN
+        ALTER TABLE commerce_payment_attempt
+            ADD COLUMN IF NOT EXISTS provider TEXT NOT NULL DEFAULT '';
+        ALTER TABLE commerce_payment_attempt
+            DROP CONSTRAINT IF EXISTS commerce_payment_attempt_status_check;
+        ALTER TABLE commerce_payment_attempt
+            ADD CONSTRAINT commerce_payment_attempt_status_check
+            CHECK (status IN (
+                'created', 'pending', 'processing', 'succeeded', 'failed',
+                'canceled', 'closed', 'requires_confirmation', 'requires_action'
+            ));
+    END IF;
 
--- Cloud Router records the operator/system reason on the refund event; the
--- federated shape keeps only the coded reason on `commerce_refund`.
-ALTER TABLE commerce_refund_event ADD COLUMN IF NOT EXISTS reason TEXT;
+    -- Cloud Router records the operator/system reason on the refund event; the
+    -- federated shape keeps only the coded reason on `commerce_refund`.
+    IF to_regclass('commerce_refund_event') IS NOT NULL THEN
+        ALTER TABLE commerce_refund_event ADD COLUMN IF NOT EXISTS reason TEXT;
+    END IF;
+END
+$$;

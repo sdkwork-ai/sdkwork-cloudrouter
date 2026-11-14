@@ -139,19 +139,26 @@ CREATE INDEX IF NOT EXISTS idx_commerce_payment_reconciliation_item_unresolved
 -- module. This block deliberately does NOT create the table: it only re-asserts
 -- the columns and indexes the reconciliation worker reads/writes, so the worker
 -- can run against a `payment-control-plane` baseline that predates them. It is a
--- no-op on current baselines.
+-- no-op on current baselines and is skipped while the owning module has not
+-- initialized yet (fresh installs MUST NOT fail on a table they do not own).
 -- -----------------------------------------------------------------------------
-ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS reconciliation_type TEXT NOT NULL DEFAULT 'daily';
-ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS unmatched_count INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS total_difference_amount NUMERIC(18,2) NOT NULL DEFAULT 0;
-ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS currency_code TEXT NOT NULL DEFAULT 'CNY';
-ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
-ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ NULL;
+DO $$
+BEGIN
+    IF to_regclass('commerce_payment_reconciliation_run') IS NOT NULL THEN
+        ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS reconciliation_type TEXT NOT NULL DEFAULT 'daily';
+        ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS unmatched_count INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS total_difference_amount NUMERIC(18,2) NOT NULL DEFAULT 0;
+        ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS currency_code TEXT NOT NULL DEFAULT 'CNY';
+        ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
+        ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ NULL;
 
-CREATE UNIQUE INDEX IF NOT EXISTS ux_commerce_payment_reconciliation_run_no
-    ON commerce_payment_reconciliation_run (tenant_id, run_no)
-    WHERE deleted_at IS NULL;
+        CREATE UNIQUE INDEX IF NOT EXISTS ux_commerce_payment_reconciliation_run_no
+            ON commerce_payment_reconciliation_run (tenant_id, run_no)
+            WHERE deleted_at IS NULL;
 
-CREATE INDEX IF NOT EXISTS idx_commerce_payment_reconciliation_run_claim
-    ON commerce_payment_reconciliation_run (tenant_id, status, created_at)
-    WHERE deleted_at IS NULL;
+        CREATE INDEX IF NOT EXISTS idx_commerce_payment_reconciliation_run_claim
+            ON commerce_payment_reconciliation_run (tenant_id, status, created_at)
+            WHERE deleted_at IS NULL;
+    END IF;
+END
+$$;

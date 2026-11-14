@@ -235,6 +235,23 @@ GET /app/v3/api/oauth/wechat/payment/cashier/start?cashierToken=<token>&redirect
 - 告警：同一 `tokenId` 短时间内多 IP 支付尝试、单令牌建支付失败次数超阈值。
 - 限流键不使用原始令牌：用 `sha256(token)` 前 16 字节做键。
 
+## 6.1 平台前置条件：网关必须能解密渠道凭据
+
+统一网关（`sdkwork-api-cloud-gateway`）组合了 order/payment 面，因此**必须**在进程启动时安装支付凭据解密器
+（`SDKWORK_PAYMENT_CREDENTIAL_MASTER_KEY_FILE` 指向的主密钥）。否则租户渠道凭据无法解密，
+渠道注册表里没有适配器，每一次结账都会落到「未富化回退」。
+
+该缺陷对**登录态收银台同样成立**，不是匿名通道特有的。判据（dev 实测）：
+
+```
+网关日志: payment provider is not configured（provider=alipay）
+DB:       commerce_payment_attempt 已创建，status=pending
+返回:     paymentParams 只有 cashierScene/cashierUrl/... 没有 payUrl
+```
+
+修复方式：网关启动时若检测到主密钥文件则安装 `LocalFilePaymentCredentialCipher`（幂等、缺失即跳过）。
+在修复前，匿名通道仍可完整走到「创建支付尝试」，但拿不到渠道拉起参数。
+
 ---
 
 ## 7. 验收（每条都要有自动化测试）
