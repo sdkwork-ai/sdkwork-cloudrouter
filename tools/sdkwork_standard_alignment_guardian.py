@@ -51,6 +51,10 @@ class SdkworkStandardAlignmentGuardian:
         "specs/application-env-standard.md",
         "specs/database-store-migration.manifest.json",
         "specs/process-database-pool.spec.json",
+        # Deliberate MODULE_SPEC §4.2 exception registry: cloudrouter's edge
+        # runtime terminates public traffic and proxies upstream, so its edge
+        # upstream base URLs are genuinely cross-process (not in-process calls).
+        "specs/backend-module-call-boundary.allow.json",
     )
     RETIRED_REPOSITORY_CONTRACTS: tuple[str, ...] = (
         "specs/API_SPEC.md",

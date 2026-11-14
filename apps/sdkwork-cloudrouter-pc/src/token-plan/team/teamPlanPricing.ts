@@ -52,6 +52,16 @@ export interface TeamSeatBounds {
 
 const FALLBACK_SEAT_MIN = 1;
 
+/**
+ * Floor for the "seats to add" stepper when expanding an existing team
+ * subscription. `add_seats` quantity is the number of seats ADDED, so the
+ * smallest meaningful value is one seat — never the current seat total.
+ */
+const ADDITIONAL_SEAT_MIN = 1;
+
+/** Default number of seats to add when the buyer has not touched the stepper. */
+const ADDITIONAL_SEAT_DEFAULT = 5;
+
 function toFiniteNumber(value: unknown, fallback = 0): number {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : fallback;
@@ -108,6 +118,30 @@ export function resolveDefaultTeamSeatCount(
 ): number {
   const target = Number.isFinite(seatsPurchased) ? Math.trunc(seatsPurchased) : bounds.min;
   return clampTeamSeatCount(Math.max(bounds.min, target), bounds);
+}
+
+/**
+ * Stepper bounds when buying MORE seats for an existing subscription.
+ *
+ * `add_seats` sends the number of seats to ADD, so the floor stays at one seat
+ * (adding a single seat is always meaningful) while the ceiling remains the
+ * package's seat maximum.
+ */
+export function resolveAdditionalSeatBounds(bounds: TeamSeatBounds): TeamSeatBounds {
+  return {
+    max: Math.max(ADDITIONAL_SEAT_MIN, bounds.max),
+    min: ADDITIONAL_SEAT_MIN,
+  };
+}
+
+/**
+ * Default number of seats to ADD when expanding a subscription: five seats, or
+ * the plan minimum when that is larger — never the current seat total, which is
+ * what the previous period-extension flow pre-filled.
+ */
+export function resolveDefaultAdditionalSeatCount(bounds: TeamSeatBounds): number {
+  const additional = resolveAdditionalSeatBounds(bounds);
+  return clampTeamSeatCount(Math.max(ADDITIONAL_SEAT_DEFAULT, bounds.min), additional);
 }
 
 /** Parses the stepper input, falling back to the plan minimum. */

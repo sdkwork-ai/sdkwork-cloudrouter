@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@sdkwork/ui-pc-react';
 
+import type { TeamSeatComposition } from './teamRosterComposition.ts';
 import type { TeamSubscriptionOverview } from './teamSubscriptionService.ts';
 
 const STATUS_COPY: Record<string, { fallback: string; key: string }> = {
@@ -22,6 +23,11 @@ const STATUS_COPY: Record<string, { fallback: string; key: string }> = {
 };
 
 export interface TeamSubscriptionSummaryProps {
+  /**
+   * IAM-derived team facts: member counts, the viewer role, and the seat
+   * overflow derivation. Membership only supplies the overview.
+   */
+  composition: TeamSeatComposition;
   /**
    * Opens the plan cards so the owner can buy more seats. Omit it for members
    * without seat-management rights; the CTA is then hidden.
@@ -46,6 +52,7 @@ function formatTeamDate(value: string | undefined, locale: string): string | nul
  * and the unlicensed-member warning.
  */
 export function TeamSubscriptionSummary({
+  composition,
   onBuyMoreSeats,
   overview,
 }: TeamSubscriptionSummaryProps) {
@@ -60,14 +67,14 @@ export function TeamSubscriptionSummary({
   const seatPercent = overview.seatsPurchased > 0
     ? Math.min(100, Math.round((overview.seatsUsed / overview.seatsPurchased) * 100))
     : 0;
-  const hasUnlicensedMembers = overview.overSeat || overview.unlicensedMembers > 0;
+  const hasUnlicensedMembers = composition.overSeat || composition.unlicensedMembers > 0;
 
   const tiles: ReadonlyArray<{ icon: typeof Users; label: string; value: number }> = [
     { icon: Users, label: t('token_plan.team.seats_purchased', 'Purchased'), value: overview.seatsPurchased },
     { icon: UserCheck, label: t('token_plan.team.seats_used', 'Assigned'), value: overview.seatsUsed },
     { icon: TicketCheck, label: t('token_plan.team.seats_available', 'Available'), value: overview.seatsAvailable },
-    { icon: UsersRound, label: t('token_plan.team.members_total', 'Organization members'), value: overview.membersTotal },
-    { icon: UserPlus, label: t('token_plan.team.unlicensed_members', 'Waiting for a seat'), value: overview.unlicensedMembers },
+    { icon: UsersRound, label: t('token_plan.team.members_total', 'Organization members'), value: composition.membersTotal },
+    { icon: UserPlus, label: t('token_plan.team.unlicensed_members', 'Waiting for a seat'), value: composition.unlicensedMembers },
   ];
 
   return (
@@ -125,7 +132,7 @@ export function TeamSubscriptionSummary({
         >
           <div
             className={`h-full rounded-full transition-[width] ${
-              overview.overSeat ? 'bg-amber-500' : 'bg-lobster-500'
+              composition.overSeat ? 'bg-amber-500' : 'bg-lobster-500'
             }`}
             style={{ width: `${seatPercent}%` }}
           />
@@ -161,7 +168,7 @@ export function TeamSubscriptionSummary({
           <div className="min-w-0">
             <p className="text-sm font-semibold">
               {t('token_plan.team.over_seat_warning', {
-                count: overview.unlicensedMembers,
+                count: composition.unlicensedMembers,
               })}
             </p>
             <p className="mt-1 text-xs opacity-80">

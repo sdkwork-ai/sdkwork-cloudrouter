@@ -27,6 +27,7 @@ export const consoleTokenPlanTeamMessages: I18nMessageBundle = {
     'token_plan.team.billing_annual': 'Annual',
     'token_plan.team.billing_annual_hint': 'Save about 17% with annual billing.',
     'token_plan.team.seat_label': 'Seats',
+    'token_plan.team.seat_label_add': 'Seats to add',
     'token_plan.team.seat_unit': 'seat',
     'token_plan.team.seat_min_hint': 'At least {{min}} seats for this plan.',
     'token_plan.team.seat_max_hint': 'Up to {{max}} seats.',
@@ -38,6 +39,9 @@ export const consoleTokenPlanTeamMessages: I18nMessageBundle = {
     'token_plan.team.recommended': 'Recommended',
     'token_plan.team.buy_seats': 'Subscribe {{seats}} seats',
     'token_plan.team.buy_more_seats': 'Buy more seats',
+    'token_plan.team.add_seats': 'Add {{seats}} seats',
+    'token_plan.team.add_seats_hint':
+      'Added seats take effect immediately and are billed at the seat price for the current term. The subscription period does not change.',
     'token_plan.team.current_plan': 'Current plan',
     'token_plan.team.status_active': 'Active',
     'token_plan.team.status_pending': 'Activating',
@@ -81,6 +85,11 @@ export const consoleTokenPlanTeamMessages: I18nMessageBundle = {
     'token_plan.team.confirm_revoke_desc': '{{name}} will lose subscription benefits until a new seat is assigned.',
     'token_plan.team.confirm_revoke_action': 'Revoke seat',
     'token_plan.team.last_owner_required': 'The owner keeps the last active seat. Assign another seat before revoking this one.',
+    'token_plan.team.reconcile_seats': 'Reconcile seats',
+    'token_plan.team.reconcile_saving': 'Reconciling…',
+    'token_plan.team.reconcile_success':
+      '{{revoked}} seat(s) revoked for members who left the organization.',
+    'token_plan.team.reconcile_none': 'Every seat matches an active organization member.',
 
     'token_plan.team.policy_title': 'Seat policy',
     'token_plan.team.auto_assign': 'Assign new members automatically',
@@ -106,6 +115,8 @@ export const consoleTokenPlanTeamMessages: I18nMessageBundle = {
     'token_plan.team.checkout_total': '{{amount}} per {{period}}',
     'token_plan.team.checkout_hint': 'Payment activates the team subscription automatically. Assign seats to members afterwards.',
     'token_plan.team.checkout_success': 'Team subscription activated. Manage seats for your members now.',
+    'token_plan.team.add_seats_success':
+      'Seats added to your team subscription. Assign them to your members now.',
     'token_plan.team.checkout_failed': 'Team subscription payment could not be started.',
   },
   zh: {
@@ -128,6 +139,7 @@ export const consoleTokenPlanTeamMessages: I18nMessageBundle = {
     'token_plan.team.billing_annual': '按年',
     'token_plan.team.billing_annual_hint': '按年付费立省约 17%。',
     'token_plan.team.seat_label': '坐席数',
+    'token_plan.team.seat_label_add': '增加的坐席数',
     'token_plan.team.seat_unit': '个坐席',
     'token_plan.team.seat_min_hint': '该套餐至少购买 {{min}} 个坐席。',
     'token_plan.team.seat_max_hint': '最多 {{max}} 个坐席。',
@@ -139,6 +151,9 @@ export const consoleTokenPlanTeamMessages: I18nMessageBundle = {
     'token_plan.team.recommended': '推荐',
     'token_plan.team.buy_seats': '订阅 {{seats}} 个坐席',
     'token_plan.team.buy_more_seats': '购买更多坐席',
+    'token_plan.team.add_seats': '增加 {{seats}} 个坐席',
+    'token_plan.team.add_seats_hint':
+      '新增坐席立即生效，按当前订阅周期内的坐席单价计费；订阅周期保持不变。',
     'token_plan.team.current_plan': '当前套餐',
     'token_plan.team.status_active': '生效中',
     'token_plan.team.status_pending': '开通中',
@@ -180,6 +195,10 @@ export const consoleTokenPlanTeamMessages: I18nMessageBundle = {
     'token_plan.team.confirm_revoke_desc': '{{name}} 将失去订阅权益，直到重新分配坐席。',
     'token_plan.team.confirm_revoke_action': '回收坐席',
     'token_plan.team.last_owner_required': '组织所有者需保留最后一个生效坐席，请先为其他成员分配坐席后再回收。',
+    'token_plan.team.reconcile_seats': '校准坐席',
+    'token_plan.team.reconcile_saving': '校准中…',
+    'token_plan.team.reconcile_success': '已回收 {{revoked}} 个已离职成员的坐席。',
+    'token_plan.team.reconcile_none': '所有坐席均与组织有效成员一致。',
 
     'token_plan.team.policy_title': '坐席策略',
     'token_plan.team.auto_assign': '自动为新成员分配坐席',
@@ -205,6 +224,7 @@ export const consoleTokenPlanTeamMessages: I18nMessageBundle = {
     'token_plan.team.checkout_total': '{{amount}} / {{period}}',
     'token_plan.team.checkout_hint': '支付成功后团队订阅将自动开通，随后可为成员分配坐席。',
     'token_plan.team.checkout_success': '团队订阅已开通，现在可以为成员分配坐席。',
+    'token_plan.team.add_seats_success': '坐席已增加到团队订阅，现在可以分配给成员。',
     'token_plan.team.checkout_failed': '团队订阅支付未能发起。',
   },
 };
