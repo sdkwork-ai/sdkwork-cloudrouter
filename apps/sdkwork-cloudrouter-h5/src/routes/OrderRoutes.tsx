@@ -2,13 +2,18 @@ import { lazy, Suspense, type ComponentType, type LazyExoticComponent } from 're
 import { useParams } from 'react-router-dom';
 
 import type { SdkworkConsoleLocale } from '@sdkwork/cloudrouter-h5-i18n';
+import { resolveCloudRouterAppApiBaseUrl } from '@sdkwork/cloudrouter-h5-core/sdk';
 import { isCashierCapabilityToken } from '@sdkwork/cloudrouter-h5-orders';
 
 import { AppAuthGate } from '../AuthGate.js';
 import { useConsoleRuntime } from '../providers/AppProviders.js';
 
 type OrderPageProps = { readonly locale: SdkworkConsoleLocale };
-type AnonymousCashierPageProps = { readonly locale: SdkworkConsoleLocale; readonly token: string };
+type AnonymousCashierPageProps = {
+  readonly locale: SdkworkConsoleLocale;
+  readonly token: string;
+  readonly wechatAuthorizeUrl?: string;
+};
 
 function lazyOrderPage(exportName: string): LazyExoticComponent<ComponentType<OrderPageProps>> {
   return lazy(async () => {
@@ -89,6 +94,15 @@ export function CashierEntryRoute() {
   const { orderId } = useParams<{ orderId: string }>();
   const { locale, translate } = useConsoleRuntime();
   if (isCashierCapabilityToken(orderId)) {
+    const token = orderId!;
+    // In-WeChat JSAPI needs the payer openid; the IAM anonymous payment OAuth
+    // issues it against this capability token and returns to this exact URL.
+    const oauthParams = new URLSearchParams({
+      cashierToken: token,
+      redirect: `/#/cashier/${token}`,
+    });
+    const wechatAuthorizeUrl =
+      `${resolveCloudRouterAppApiBaseUrl()}/app/v3/api/oauth/wechat/payment/cashier/start?${oauthParams.toString()}`;
     return (
       <Suspense
         fallback={(
@@ -97,7 +111,11 @@ export function CashierEntryRoute() {
           </div>
         )}
       >
-        <CloudRouterAnonymousCashierPage locale={locale} token={orderId!} />
+        <CloudRouterAnonymousCashierPage
+          locale={locale}
+          token={token}
+          wechatAuthorizeUrl={wechatAuthorizeUrl}
+        />
       </Suspense>
     );
   }

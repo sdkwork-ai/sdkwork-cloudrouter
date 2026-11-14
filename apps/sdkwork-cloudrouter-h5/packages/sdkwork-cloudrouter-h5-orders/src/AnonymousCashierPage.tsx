@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import {
   detectPaymentEnvironment,
@@ -44,6 +44,13 @@ export interface AnonymousCashierPageProps {
   readonly orderCenterPath?: string;
   /** Sign-in route the anonymous page offers after payment. */
   readonly signInPath?: string;
+  /**
+   * IAM anonymous payment OAuth entry used inside WeChat.
+   *
+   * Built by the host because only the host knows the API origin; the page never
+   * constructs transport URLs itself.
+   */
+  readonly wechatAuthorizeUrl?: string;
 }
 
 /**
@@ -58,10 +65,15 @@ export function AnonymousCashierPage({
   token,
   orderCenterPath = '/me/orders',
   signInPath = '/sign-in',
+  wechatAuthorizeUrl,
 }: AnonymousCashierPageProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const environment = useMemo<PaymentEnvironment>(() => detectPaymentEnvironment(), []);
+  /** Payer openid returned by the anonymous payment OAuth, bound to this token. */
+  const openid = searchParams.get('openid');
+  const openidBinding = searchParams.get('openidBinding');
 
   const [phase, setPhase] = useState<CashierPhase>('loading');
   const [subject, setSubject] = useState('');
@@ -172,13 +184,28 @@ export function AnonymousCashierPage({
 
   const launch = useCallback(async (method: AnonymousWireMethod) => {
     if (createInFlightRef.current) return;
+    // Inside WeChat the JSAPI trade needs the payer openid. Without it, hand the
+    // payer to the anonymous payment OAuth first; the callback returns to this
+    // exact cashier URL with the openid and its token binding.
+    if (method === 'wechat_jsapi' && !openid) {
+      if (wechatAuthorizeUrl) {
+        window.location.assign(wechatAuthorizeUrl);
+        return;
+      }
+      setNotice(t('orders.cashier_wechat_authorize_unavailable', '微信支付授权暂不可用，请稍后重试'));
+      return;
+    }
     createInFlightRef.current = true;
     setSelectedMethod(method);
     setPhase('creating');
     setNotice(null);
     setErrorText(null);
     try {
-      const payment = await createAnonymousCashierPayment(token, method);
+      const authorization =
+        method === 'wechat_jsapi' && openid && openidBinding
+          ? { openid, openidBinding }
+          : undefined;
+      const payment = await createAnonymousCashierPayment(token, method, authorization);
       const target = resolveCashierLaunch(payment);
       setPhase('pending');
       startPolling();
@@ -202,7 +229,7 @@ export function AnonymousCashierPage({
     } finally {
       createInFlightRef.current = false;
     }
-  }, [startPolling, t, token]);
+  }, [openid, openidBinding, startPolling, t, token, wechatAuthorizeUrl]);
 
   const formatCountdown = (totalSeconds: number) => {
     const minutes = Math.floor(totalSeconds / 60);
