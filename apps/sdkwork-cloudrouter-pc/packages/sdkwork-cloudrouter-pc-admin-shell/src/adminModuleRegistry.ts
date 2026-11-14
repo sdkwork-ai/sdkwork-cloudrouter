@@ -435,9 +435,21 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
   {
     moduleId: 'storageCenter',
     groups: [
+      groupBlock('admin.menu.storage.overview', [
+        itemBlock({ path: '/admin/storage/overview', labelKey: 'admin.menu.storage.overview', icon: LayoutDashboard }),
+      ]),
       groupBlock('admin.menu.storage.configuration', [
         itemBlock({ path: '/admin/storage/providers', labelKey: 'admin.menu.storage.providers', icon: CloudCog }),
+        itemBlock({ path: '/admin/storage/kinds', labelKey: 'admin.menu.storage.kinds', icon: Boxes }),
+        itemBlock({ path: '/admin/storage/buckets', labelKey: 'admin.menu.storage.buckets', icon: Database }),
+      ]),
+      groupBlock('admin.menu.storage.routing', [
+        itemBlock({ path: '/admin/storage/bindings', labelKey: 'admin.menu.storage.bindings', icon: Network }),
         itemBlock({ path: '/admin/storage/defaultBuckets', labelKey: 'admin.menu.storage.defaultBuckets', icon: HardDrive }),
+      ]),
+      groupBlock('admin.menu.storage.workspace', [
+        itemBlock({ path: '/admin/storage/spaces', labelKey: 'admin.menu.storage.spaces', icon: FolderTree }),
+        itemBlock({ path: '/admin/storage/files', labelKey: 'admin.menu.storage.files', icon: FileText }),
       ]),
       groupBlock('admin.menu.storage.governance', [
         itemBlock({ path: '/admin/storage/quotas', labelKey: 'admin.menu.storage.quotas', icon: Gauge }),

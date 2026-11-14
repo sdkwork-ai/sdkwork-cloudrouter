@@ -7,7 +7,11 @@
     "surface": "backend-admin"
   },
   "contracts": {
-    "backendSdkFamilies": ["cloudrouter-backend-sdk"],
+    "backendSdkFamilies": [
+      "cloudrouter-backend-sdk",
+      "sdkwork-drive-admin-storage-sdk",
+      "sdkwork-drive-backend-sdk"
+    ],
     "apiSurface": "backend",
     "routes": ["/admin/storage/:sectionId?"],
     "permissions": ["cloudrouter.admin.access"]

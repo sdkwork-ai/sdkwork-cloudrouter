@@ -1,6 +1,7 @@
 import {
   getCloudRouterBackendSdkClient,
   getSdkworkDriveAdminStorageSdkClient,
+  getSdkworkDriveBackendSdkClient,
 } from '@sdkwork/cloudroutes-pc-commons/sdk-clients';
 import { createClientOperationToken } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { loadStoredAppSessionToken } from '@sdkwork/cloudroutes-pc-commons/runtime';
@@ -20,6 +21,25 @@ export type StorageReconciliationCreateInput = NonNullable<Parameters<BackendSto
 export type StorageGarbageCollectionCreateInput = NonNullable<Parameters<BackendStorageService['gcJobs']['create']>[1]>;
 
 /**
+ * Drive admin session projection.
+ *
+ * Drive's admin pages expect the drive-owned `SessionSnapshot` shape; the
+ * Cloud Router portal stores the same tenant/user ids in its own session, so
+ * the projection is the single bridge between the two contracts. Both the
+ * storage-provider editor and the space/file pages use it.
+ */
+function getDriveAdminSessionSnapshot(): SessionSnapshot {
+  const context = loadStoredAppSessionToken()?.context;
+  return {
+    context: {
+      tenantId: context?.tenantId,
+      // cloudrouter 会话无 actorId 概念：操作者即当前用户。
+      actorId: context?.userId,
+    },
+  } as SessionSnapshot;
+}
+
+/**
  * 存储提供者/桶管理走 drive 存储管理面（sdkwork-drive 属主）：
  * 页面数据与对象浏览全部来自 drive 的 provider 体系（单桶 per provider），
  * cloudrouter 不再维护平行 provider/bucket 数据。
@@ -31,19 +51,37 @@ export function getStorageProviderAdminService(): StorageProviderAdminService {
     storageProviderAdminService = createStorageProviderAdminService({
       adminStorageSdkClient: getSdkworkDriveAdminStorageSdkClient(),
       // drive service 的写操作需要租户与操作者上下文；cloudrouter 从本地会话投影。
-      getSession: () => {
-        const context = loadStoredAppSessionToken()?.context;
-        return {
-          context: {
-            tenantId: context?.tenantId,
-            // cloudrouter 会话无 actorId 概念：操作者即当前用户。
-            actorId: context?.userId,
-          },
-        } as SessionSnapshot;
-      },
+      getSession: getDriveAdminSessionSnapshot,
     });
   }
   return storageProviderAdminService;
+}
+
+/**
+ * Drive admin workspace client: owner of space and file governance.
+ *
+ * The storage center renders drive's own admin pages, so the transport must be
+ * drive's `DriveBackendSdkClient` port rather than a Cloud Router re-implementation.
+ */
+export function getDriveAdminBackendSdkClient() {
+  return getSdkworkDriveBackendSdkClient();
+}
+
+/** Session getter passed to drive's admin pages. */
+export function getDriveAdminSession() {
+  return getDriveAdminSessionSnapshot;
+}
+
+/**
+ * Drive admin-storage transport for the pages this console mounts directly
+ * (overview, provider kinds, buckets, bindings).
+ *
+ * Those pages are drive-owned components; giving them the same generated
+ * admin-storage client the provider facade uses keeps one transport and one
+ * envelope decoder in the storage center instead of a Cloud Router copy.
+ */
+export function getDriveAdminStorageSdkClient() {
+  return getSdkworkDriveAdminStorageSdkClient();
 }
 
 export type StorageProviderRecord = StorageProviderView;
@@ -71,7 +109,7 @@ export interface StorageProviderUpdateInput {
 }
 
 /** 编译期防漂移断言：本接口必须与共享服务签名双向可赋值。 */
-type StorageProviderUpdateInputMatchesService = [
+export type StorageProviderUpdateInputMatchesService = [
   StorageProviderUpdateInput,
 ] extends [Parameters<StorageProviderAdminService['updateProvider']>[1]]
   ? [Parameters<StorageProviderAdminService['updateProvider']>[1]] extends [
@@ -90,8 +128,25 @@ export type StorageProviderAccountCreateInput = Parameters<StorageProviderAdminS
 /** 账号中心：账号视图。 */
 export type StorageProviderAccountRecord = StorageProviderAccountsPage['items'][number];
 
+/**
+ * 全部服务商配置（跨游标页）。
+ *
+ * 表格没有分页控件，只取第一页会把 25 个内置配置里的尾部藏起来——按 id 排序时
+ * 恰好是 `tencent_cos`（默认绑定的那一个）及其相邻几个，界面上看起来就像
+ * 「腾讯云 COS 没有初始化」。这里走 drive 共享服务的分页遍历，拿到完整集合。
+ */
 export async function backendStorageProvidersList() {
-  return getStorageProviderAdminService().listProviders();
+  return getStorageProviderAdminService().listAllProviders();
+}
+
+/**
+ * 一键补齐内置服务商配置（含腾讯云 COS）与租户默认绑定。
+ *
+ * 幂等：已存在的行一概不动，只补缺失的。部署种子没跑到（或运维换过租户）时，
+ * 这是控制台内可用的修复入口。
+ */
+export async function backendStorageInitializeProviderDefaults() {
+  return getStorageProviderAdminService().initializeProviderAccountDefaults();
 }
 
 export async function backendStorageProviderCreate(body: StorageProviderCreateInput) {

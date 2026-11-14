@@ -68,6 +68,17 @@ vi.mock('sdkwork-drive-pc-commons', () => ({
 }));
 
 /**
+ * The workspace governance pages are drive-owned and heavyweight (filter bar,
+ * table, detail dialog). This suite is about the provider section, so only the
+ * presence of the two section components matters here; their behavior is
+ * asserted in `storage-workspace.test.tsx`.
+ */
+vi.mock('sdkwork-drive-pc-admin-operations', () => ({
+  SpacesAdminPage: () => null,
+  FilesAdminPage: () => null,
+}));
+
+/**
  * `@sdkwork/cloudroutes-pc-commons` pulls every sibling app's generated backend
  * SDK (membership / community / models / prompts …). Those build artifacts are
  * cross-repo and are absent here, so the module graph cannot be loaded at all —
@@ -138,6 +149,11 @@ vi.mock('sdkwork-drive-pc-admin-storage-providers', async () => {
   const h = React.createElement;
   return {
     StorageObjectBrowser: () => null,
+    StorageBindingsAdminPage: () => null,
+    StorageOverviewAdminPage: () => null,
+    StorageProviderKindsAdminPage: () => null,
+    providerDisplayName: (_translate: unknown, provider: { displayName?: string; id?: string }) =>
+      provider.displayName ?? provider.id ?? '',
     StorageProviderEditor: (props: Record<string, unknown>) => {
       hoisted.editorProps = props;
       const provider = props.provider as { id: string } | undefined;
@@ -197,6 +213,7 @@ vi.mock('sdkwork-drive-pc-admin-storage-providers', async () => {
 
 vi.mock('../storageService', () => ({
   backendStorageProvidersList: vi.fn().mockResolvedValue(hoisted.mockProviders),
+  backendStorageInitializeProviderDefaults: vi.fn().mockResolvedValue([]),
   backendStorageProviderCreate: hoisted.services.create,
   backendStorageProviderUpdate: hoisted.services.update,
   backendStorageProviderDelete: hoisted.services.remove,
@@ -209,8 +226,10 @@ vi.mock('../storageService', () => ({
   backendStorageProviderAccountCreate: hoisted.services.createAccount,
   getStorageProviderAdminService: () => ({
     listProviders: vi.fn().mockResolvedValue(hoisted.mockProviders),
+    listAllProviders: vi.fn().mockResolvedValue(hoisted.mockProviders),
     updateProvider: hoisted.services.update,
   }),
+  getDriveAdminStorageSdkClient: () => ({}),
   backendStorageDefaultBucketsList: vi.fn().mockResolvedValue({ items: [] }),
   backendStorageDefaultBucketUpdate: vi.fn().mockResolvedValue({}),
   backendStorageGarbageCollectionJobsList: vi.fn().mockResolvedValue({ items: [] }),
@@ -220,6 +239,8 @@ vi.mock('../storageService', () => ({
   backendStorageReconciliationRunsList: vi.fn().mockResolvedValue({ items: [] }),
   backendStorageReconciliationRunCreate: vi.fn().mockResolvedValue({}),
   backendStorageUsageList: vi.fn().mockResolvedValue({ items: [] }),
+  getDriveAdminBackendSdkClient: () => ({}),
+  getDriveAdminSession: () => () => ({}),
 }));
 
 import { StorageAdmin } from '../index';

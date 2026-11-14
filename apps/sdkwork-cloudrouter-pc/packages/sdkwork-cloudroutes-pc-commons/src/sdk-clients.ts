@@ -23,9 +23,17 @@ import {
   sdkMetadata as driveAdminStorageSdkMetadata,
 } from '@sdkwork/drive-admin-storage-sdk';
 import {
+  createGeneratedDriveBackendClient,
+  operations as driveBackendOperations,
+  sdkMetadata as driveBackendSdkMetadata,
+} from '@sdkwork/drive-backend-sdk';
+import {
   DriveAdminStorageSdkError,
+  DriveBackendSdkError,
   type DriveAdminStorageSdkClient,
   type DriveAdminStorageSdkRequest,
+  type DriveBackendSdkClient,
+  type DriveBackendSdkRequest,
 } from 'sdkwork-drive-pc-admin-core';
 import { SdkworkBackendClient as ModelsBackendClient } from '@sdkwork/models-backend-sdk';
 import { SdkworkAppClient as ModelsAppClient } from '@sdkwork/models-app-sdk';
@@ -1594,7 +1602,7 @@ export function createSdkworkDriveAdminStorageSdkClient(
       const operation = driveAdminStorageOperations[request.operationId];
       try {
         return await generatedClient.http.request<T>(
-          resolveDriveAdminStorageOperationPath(operation.path, request.pathParams),
+          resolveGeneratedSdkOperationPath(operation.path, request.pathParams),
           {
             method: operation.method,
             params: request.query,
@@ -1627,8 +1635,79 @@ export function getSdkworkDriveAdminStorageSdkClient(
   return driveAdminStorageClient;
 }
 
+export type SdkworkDriveBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
+
+/**
+ * Drive backend (admin) SDK client: the tenant-scoped management surface that
+ * owns space and file governance (`spaces.admin.list`, `files.admin.list`).
+ *
+ * It mirrors the admin-storage client: the generated transport carries the
+ * Cloud Router session auth boundary, and the caller receives the small
+ * drive-owned `DriveBackendSdkClient` port the drive admin pages accept instead
+ * of a generated client class.
+ */
+export function createSdkworkDriveBackendSdkClient(
+  options: SdkworkDriveBackendSdkClientOptions = {},
+): DriveBackendSdkClient {
+  const baseUrl = normalizeGeneratedSdkBaseUrl(
+    options.backendBaseUrl
+      ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL')
+      ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_BACKEND_API_BASE_URL')
+      ?? resolveSharedDependencySurfaceBaseUrl(BACKEND_API_PREFIX)
+      ?? BACKEND_API_PREFIX,
+    BACKEND_API_PREFIX,
+  );
+  const generatedClient = createGeneratedDriveBackendClient({
+    authMode: 'dual-token',
+    baseUrl,
+    platform: options.platform ?? 'web-admin',
+    tokenManager: resolveCloudRouterSdkTokenManager(options.tokenManager),
+    timeout: options.timeout,
+  });
+  attachCloudRouterSdkSessionAuthBoundary(generatedClient as unknown as CloudRouterSdkClientWithHttp);
+  return {
+    metadata: { ...driveBackendSdkMetadata, baseUrl },
+    operations: driveBackendOperations,
+    async request<T>(request: DriveBackendSdkRequest): Promise<T> {
+      const operation = driveBackendOperations[request.operationId];
+      try {
+        return await generatedClient.http.request<T>(
+          resolveGeneratedSdkOperationPath(operation.path, request.pathParams),
+          {
+            method: operation.method,
+            params: request.query,
+            body: request.body,
+            contentType: request.body === undefined ? undefined : 'application/json',
+            signal: request.signal,
+          },
+        );
+      } catch (error) {
+        throw normalizeDriveBackendSdkError(request.operationId, error);
+      }
+    },
+    setTokenManager() {
+      // The generated transport is already bound to the Cloud Router token
+      // manager above; a host-side swap would bypass the session auth boundary.
+    },
+  };
+}
+
+let driveBackendClient: DriveBackendSdkClient | null = null;
+
+export function getSdkworkDriveBackendSdkClient(
+  options: SdkworkDriveBackendSdkClientOptions = {},
+): DriveBackendSdkClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkDriveBackendSdkClient(options);
+  }
+  if (!driveBackendClient) {
+    driveBackendClient = createSdkworkDriveBackendSdkClient();
+  }
+  return driveBackendClient;
+}
+
 /** 替换操作路径中的 `{param}` 占位符（SDK 序列化职责，不做二次编码）。 */
-function resolveDriveAdminStorageOperationPath(
+function resolveGeneratedSdkOperationPath(
   path: string,
   pathParams?: Record<string, string | number>,
 ): string {
@@ -1641,10 +1720,15 @@ function resolveDriveAdminStorageOperationPath(
   );
 }
 
-function normalizeDriveAdminStorageSdkError(
-  operationId: DriveAdminStorageSdkRequest['operationId'],
-  error: unknown,
-): DriveAdminStorageSdkError {
+interface SdkProblemFields {
+  status: number;
+  title?: string;
+  detail?: string;
+  code?: number;
+  traceId?: string;
+}
+
+function readSdkProblemFields(error: unknown): SdkProblemFields {
   const record = (error && typeof error === 'object' ? error : {}) as Record<string, unknown>;
   const numberValue = (key: string): number | undefined => {
     const value = record[key];
@@ -1658,13 +1742,32 @@ function normalizeDriveAdminStorageSdkError(
     const value = record[key];
     return typeof value === 'string' && value.trim() !== '' ? value : undefined;
   };
-  return new DriveAdminStorageSdkError({
-    operationId,
+  return {
     status: numberValue('httpStatus') ?? numberValue('status') ?? 0,
     title: stringValue('title') ?? (typeof record.name === 'string' ? record.name : undefined),
     detail: stringValue('detail') ?? stringValue('message'),
     code: numberValue('businessCode') ?? numberValue('code'),
     traceId: stringValue('traceId') ?? stringValue('trace_id'),
+  };
+}
+
+function normalizeDriveAdminStorageSdkError(
+  operationId: DriveAdminStorageSdkRequest['operationId'],
+  error: unknown,
+): DriveAdminStorageSdkError {
+  return new DriveAdminStorageSdkError({
+    operationId,
+    ...readSdkProblemFields(error),
+  });
+}
+
+function normalizeDriveBackendSdkError(
+  operationId: DriveBackendSdkRequest['operationId'],
+  error: unknown,
+): DriveBackendSdkError {
+  return new DriveBackendSdkError({
+    operationId,
+    ...readSdkProblemFields(error),
   });
 }
 
