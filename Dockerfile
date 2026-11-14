@@ -53,6 +53,12 @@ RUN apt-get update \
 
 WORKDIR ${INSTALL_ROOT}
 COPY . ${INSTALL_ROOT}
+# The runtime user owns the install root: the IAM registry materialization
+# writes its lock file beside the packaged manifests, the catalog refresh writes
+# snapshots under data/, and cloudrouterctl backup/restore touch the data root.
+# A root-owned tree makes every one of those writes fail (and a failed lock
+# write keeps the installation status at upgrade_required on a fresh install).
+RUN chown -R sdkwork:sdkwork ${INSTALL_ROOT}
 RUN chmod 0755 ${INSTALL_ROOT}/bin/${GATEWAY_BINARY} \
     ${INSTALL_ROOT}/bin/${INSTALLER_BINARY} \
     ${INSTALL_ROOT}/container/entrypoint
