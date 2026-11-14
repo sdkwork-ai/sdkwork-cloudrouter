@@ -1,0 +1,52 @@
+{
+  "name": "@sdkwork/cloudrouter-pc-admin-memory",
+  "version": "0.1.0",
+  "private": true,
+  "license": "SEE LICENSE IN ../../../../LICENSE",
+  "type": "module",
+  "description": "SDKWork Cloud Router PC admin console Memory integration block (backend-admin surface).",
+  "main": "./src/index.tsx",
+  "module": "./src/index.tsx",
+  "types": "./src/index.tsx",
+  "exports": {
+    ".": {
+      "types": "./src/index.tsx",
+      "import": "./src/index.tsx",
+      "default": "./src/index.tsx"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sdkwork/cloudroutes-pc-commons": "workspace:*",
+    "@sdkwork/memory-pc-admin-control-plane": "workspace:*",
+    "@sdkwork/memory-pc-admin-core": "workspace:*",
+    "@sdkwork/memory-pc-admin-evaluation": "workspace:*",
+    "@sdkwork/memory-pc-admin-governance": "workspace:*",
+    "@sdkwork/memory-pc-admin-knowledge-graph": "workspace:*",
+    "@sdkwork/memory-pc-admin-learning": "workspace:*",
+    "@sdkwork/memory-pc-admin-memory": "workspace:*",
+    "@sdkwork/memory-pc-commons": "workspace:*",
+    "@sdkwork/memory-pc-admin-overview": "workspace:*",
+    "@sdkwork/memory-pc-admin-providers": "workspace:*",
+    "@sdkwork/memory-pc-admin-retrieval": "workspace:*",
+    "@sdkwork/memory-pc-admin-shell": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=19.0.0 <20.0.0",
+    "react-dom": ">=19.0.0 <20.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "typescript": "~5.8.2"
+  },
+  "sdkwork": {
+    "workspace": "sdkwork-cloudrouter",
+    "architecture": "pc-admin-react",
+    "domain": "memory",
+    "capability": "memory",
+    "surface": "admin",
+    "status": "ready"
+  }
+}

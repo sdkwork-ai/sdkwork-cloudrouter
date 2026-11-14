@@ -538,6 +538,24 @@
     }
    },
    {
+    "sdkFamily": "sdkwork-memory-backend-sdk",
+    "packageName": "@sdkwork/memory-backend-sdk",
+    "surface": "backend-api",
+    "apiPrefix": "/backend/v3/api",
+    "sourceExport": "./sdk-clients",
+    "factory": "createMemoryBackendSdkClient",
+    "getter": "getMemoryBackendSdkClient",
+    "dependencyApiSurface": "sdkwork-memory-backend-sdk",
+    "runtimeIntegration": {
+     "mode": "same-origin-mounted",
+     "sameOriginAllowed": true,
+     "baseUrlEnv": "VITE_SDKWORK_MEMORY_BACKEND_API_BASE_URL",
+     "fallbackBaseUrlEnv": "VITE_CLOUDROUTER_BACKEND_API_BASE_URL",
+     "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
+     "tokenManager": "cloud-router-global"
+    }
+   },
+   {
     "sdkFamily": "sdkwork-models-app-sdk",
     "packageName": "@sdkwork/models-app-sdk",
     "surface": "app-api",

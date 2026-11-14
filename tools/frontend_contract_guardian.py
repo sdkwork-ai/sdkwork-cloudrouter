@@ -298,6 +298,10 @@ class FrontendContractGuardian:
             "getPluginsBackendSdkClient",
             "@sdkwork/plugins-backend-sdk",
         },
+        "memory": {
+            "getMemoryBackendSdkClient",
+            "@sdkwork/memory-backend-sdk",
+        },
         "drive": {
             "getSdkworkDriveAppSdkClient",
             "getSdkworkDriveBackendSdkClient",
@@ -1512,6 +1516,8 @@ class FrontendContractGuardian:
             expected_client = "getSdkworkAgentAppSdkClient"
         elif dependency_sdk_family == "sdkwork-aiot-app-sdk":
             expected_client = "getSdkworkAiotAppSdkClient"
+        elif dependency_sdk_family == "sdkwork-memory-backend-sdk":
+            expected_client = "getMemoryBackendSdkClient"
         if not any(
             self._operation_uses_allowed_sdk_client_boundary(operation, expected_client)
             for operation in matching_operations

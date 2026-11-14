@@ -685,224 +685,83 @@ test("order cashier routes keep the unified deep link and the sdkwork-im path sh
   assert.match(serviceSource, /orders\.paymentSuccess\.retrieve/);
 });
 
-test("token plan page composes the audience switch, personal catalog, and team seat surface", () => {
+test("token plan page mounts the shared audience switch and team seat surface", () => {
   const pageSource = readPortalFile("./src/token-plan/CloudRouterTokenPlanPage.tsx");
   const surfaceSource = readPortalFile("./src/token-plan/CloudRouterTokenPlanSurface.tsx");
-  const tabsSource = readPortalFile("./src/token-plan/CloudRouterTokenPlanAudienceTabs.tsx");
-  const teamPageSource = readPortalFile("./src/token-plan/team/CloudRouterTeamPlanPage.tsx");
-  const teamServiceSource = readPortalFile("./src/token-plan/team/teamSubscriptionService.ts");
-  const teamCompositionSource = readPortalFile("./src/token-plan/team/teamRosterComposition.ts");
-  const teamDialogSource = readPortalFile("./src/token-plan/team/CloudRouterTeamCheckoutDialog.tsx");
-  const teamCardsSource = readPortalFile("./src/token-plan/team/TeamPlanCards.tsx");
-  const teamDirectorySource = readPortalFile("./src/token-plan/team/TeamSeatDirectory.tsx");
-  const teamPolicySource = readPortalFile("./src/token-plan/team/TeamSeatPolicy.tsx");
+  const portSource = readPortalFile("./src/token-plan/team/cloudRouterTeamSubscriptionPort.ts");
 
-  // The Cloud Router composition seam owns the switch; the shared catalog does not.
-  assert.match(pageSource, /CloudRouterTokenPlanAudienceTabs/);
-  assert.match(pageSource, /CloudRouterTeamPlanPage/);
+  // The shared membership subscription package owns the audience switch and the
+  // team seat surface; Cloud Router only supplies the team port and page chrome.
   assert.match(pageSource, /CloudRouterTokenPlanSurface/);
-  assert.match(pageSource, /mx-auto w-full max-w-7xl px-4 py-10 md:px-6 lg:px-8/);
-  assert.match(pageSource, /audience === 'personal'/);
-  assert.doesNotMatch(surfaceSource, /CloudRouterTokenPlanAudienceTabs/);
-  assert.match(tabsSource, /data-token-plan-audience-tabs/);
-  assert.match(tabsSource, /role="tablist"/);
+  assert.match(pageSource, /cloudRouterTeamSubscriptionPort/);
+  assert.match(pageSource, /data-token-plan-page/);
+  assert.match(pageSource, /team=\{team\}/);
+  assert.match(pageSource, /nav\.tokenPlan/);
+  assert.match(surfaceSource, /SdkworkSubscriptionCatalogPage/);
+  assert.match(surfaceSource, /type SdkworkSubscriptionCatalogTeamProps/);
+  assert.match(surfaceSource, /team=\{team\}/);
+  assert.doesNotMatch(pageSource, /CloudRouterTokenPlanAudienceTabs|data-token-plan-audience-tabs/);
+  assert.doesNotMatch(surfaceSource, /CloudRouterTeamPlanPage|TeamPlanCards|TeamSeatDirectory/);
 
-  // The team surface composes two owners: the generated membership SDK for
-  // membership-owned facts and the published IAM app SDK for the roster/role.
-  assert.match(teamPageSource, /loadTeamSeatSnapshot/);
-  assert.match(teamPageSource, /data-team-plan-surface/);
-  assert.match(teamPageSource, /!state\.isBootstrapped && !state\.isLoading && !state\.lastError/);
-  assert.match(teamPageSource, /bootstrap\(\)\.catch/);
-  assert.match(teamPageSource, /composition\.canManageSeats/);
-  assert.match(teamPageSource, /organizationTitle/);
-
-  // Membership overview + seat assignments come from the membership app SDK.
-  assert.match(teamServiceSource, /getSdkworkMembershipAppSdkClient\(\)\.memberships/);
-  assert.match(teamServiceSource, /teamSubscription\.retrieve\(\)/);
-  assert.match(teamServiceSource, /teamSeats\.list\(/);
-  assert.match(teamServiceSource, /teamSeats\.create\(/);
-  assert.match(teamServiceSource, /getCloudRouterMembershipCheckoutService\(\)\.createCheckout/);
-  assert.match(teamServiceSource, /quantity: input\.seats/);
-  assert.match(teamServiceSource, /paymentProduct: 'mobile_cashier_h5'/);
-  assert.match(teamServiceSource, /memberships\.teamSeats\.policy\.update|teamSeats\.policy\.update/);
-
-  // The IAM roster, the caller's own memberships, and the organization name are
-  // read through the published IAM app SDK, never through a custom header.
-  assert.match(teamServiceSource, /getSdkworkAppbaseAppSdkClient\(\)\.iam/);
-  assert.match(teamServiceSource, /organizations\.members\.list\(/);
-  assert.match(teamServiceSource, /organizationMemberships\.list\(/);
-  assert.match(teamServiceSource, /organizations\.list\(/);
-  assert.match(teamServiceSource, /organizations\.tree\.retrieve\(\)/);
-  assert.doesNotMatch(teamServiceSource, /x-sdkwork-organization-id|x-organization-id/i);
-
-  // The roster/seat join and the derived counts live in one pure module.
-  assert.match(teamCompositionSource, /joinTeamSeatDirectory/);
-  assert.match(teamCompositionSource, /composeTeamSeatComposition/);
-  assert.match(teamCompositionSource, /seatsUsed - input\.overview\.seatsPurchased/);
-  assert.match(teamCompositionSource, /membersTotal - licensedMembers/);
-  assert.match(teamCompositionSource, /canManageTeamSeats/);
-
-  for (const componentSource of [
-    teamCardsSource,
-    teamDialogSource,
-    teamDirectorySource,
-    teamPolicySource,
+  // The app-local team UI is deleted: one shared team surface, no per-app copy.
+  for (const relativePath of [
+    "./src/token-plan/CloudRouterTokenPlanAudienceTabs.tsx",
+    "./src/token-plan/team/CloudRouterTeamCheckoutDialog.tsx",
+    "./src/token-plan/team/CloudRouterTeamPlanPage.tsx",
+    "./src/token-plan/team/TeamPlanCards.tsx",
+    "./src/token-plan/team/TeamSeatDirectory.tsx",
+    "./src/token-plan/team/TeamSeatPolicy.tsx",
+    "./src/token-plan/team/TeamSubscriptionSummary.tsx",
+    "./src/token-plan/team/teamPlanErrorCopy.ts",
+    "./src/token-plan/team/teamPlanPricing.ts",
+    "./src/token-plan/team/teamRosterComposition.ts",
+    "./src/token-plan/team/teamSubscriptionService.ts",
   ]) {
-    assert.doesNotMatch(
-      componentSource,
-      /getSdkworkMembershipAppSdkClient|getSdkworkAppbaseAppSdkClient|getCloudRouterMembershipCheckoutService/,
-    );
+    assert.equal(portalFileExists(relativePath), false, `${relativePath} must not exist`);
   }
 
-  // Checkout reuses the order-owned dialog and polls the team order status.
-  assert.match(teamDialogSource, /SdkworkOrderCheckoutDialog/);
-  assert.match(teamDialogSource, /getTeamCheckoutStatus/);
-  assert.match(teamCardsSource, /grid-cols-1 gap-5 md:grid-cols-3/);
-  assert.match(teamCardsSource, /token_plan\.team\.buy_seats/);
+  // One port composes membership-owned facts, IAM roster/role facts, and the
+  // order-owned checkout; no custom organization header is involved.
+  assert.match(portSource, /SdkworkTeamSubscriptionPort/);
+  assert.match(portSource, /getSdkworkMembershipAppSdkClient\(\)\.memberships/);
+  assert.match(portSource, /teamSubscription\.retrieve\(\)/);
+  assert.match(portSource, /teamSeats\.list\(/);
+  assert.match(portSource, /teamSeats\.create\(/);
+  assert.match(portSource, /teamSeats\.delete\(/);
+  assert.match(portSource, /teamSeats\.policy\.update\(/);
+  assert.match(portSource, /teamSeats\.reconcile\(\)/);
+  assert.match(portSource, /packages\.list\(/);
+  assert.match(portSource, /audience: 'team'/);
+  assert.match(portSource, /getSdkworkAppbaseAppSdkClient\(\)\.iam/);
+  assert.match(portSource, /organizations\.members\.list\(/);
+  assert.match(portSource, /organizationMemberships\.list\(/);
+  assert.doesNotMatch(portSource, /x-sdkwork-organization-id|x-organization-id/i);
+  assert.match(portSource, /getCloudRouterMembershipCheckoutService\(\)\.createCheckout/);
+  assert.match(portSource, /quantity: input\.seats/);
+  assert.match(portSource, /paymentProduct: 'mobile_cashier_h5'/);
+  assert.match(portSource, /readSdkworkTeamPackageNumericId/);
+  assert.match(portSource, /normalizeSdkworkTeamError/);
 
-  // Seat directory: IAM roster page + `q` search re-joined with the seat map.
-  assert.match(teamDirectorySource, /data-team-seat-directory/);
-  assert.match(teamDirectorySource, /token_plan\.team\.seat_capacity_exceeded/);
-  assert.match(teamDirectorySource, /listTeamRosterPage\(/);
-  assert.match(teamDirectorySource, /joinTeamSeatDirectory\(/);
-  assert.match(teamDirectorySource, /organizationId/);
-  assert.match(teamDirectorySource, /q: searchQuery/);
-  assert.doesNotMatch(teamDirectorySource, /listTeamSeats|seatState/);
-  assert.match(teamPolicySource, /data-team-seat-policy/);
-
-  // Member-removal reconciliation: one membership-owned command exposed only to
-  // a caller who can manage seats, refreshed through the same snapshot refresh,
-  // and reported by `revokedCount` in a toast.
-  assert.match(
-    teamServiceSource,
-    /export async function reconcileTeamSeats\(\): Promise<TeamSeatReconciliationResult>/,
-  );
-  assert.match(teamServiceSource, /teamSeats\.reconcile\(\)/);
-  assert.match(teamServiceSource, /TeamSeatReconciliationResult/);
-  assert.match(teamDirectorySource, /data-team-seat-reconcile/);
-  assert.match(teamDirectorySource, /token_plan\.team\.reconcile_seats/);
-  assert.match(teamDirectorySource, /reconcileTeamSeats\(\)/);
-  assert.match(teamDirectorySource, /result\.revokedCount > 0/);
-  assert.match(teamDirectorySource, /token_plan\.team\.reconcile_success/);
-  assert.match(teamDirectorySource, /token_plan\.team\.reconcile_none/);
-  assert.match(teamDirectorySource, /revoked: result\.revokedCount/);
-  // The action is gated on the IAM-derived seat-management capability.
-  assert.match(teamDirectorySource, /canManageSeats \? \(/);
-  assert.match(teamPageSource, /canManageSeats=\{composition\.canManageSeats\}/);
-  assert.match(teamPageSource, /onNotify=\{onNotify\}/);
-  // Refresh after a sweep: local page reload plus the container overview.
-  assert.match(teamDirectorySource, /onSeatChanged\(\)/);
-  assert.match(teamDirectorySource, /setReloadToken\(\(token\) => token \+ 1\)/);
+  // Switching the team organization: IAM app SDK selection + IAM session
+  // refresh, with the platform's sign-in-only selection reported explicitly.
+  assert.match(portSource, /async switchOrganization\(organizationId: string\): Promise<void>/);
+  assert.match(portSource, /auth\.sessions\.organizationSelection\.create\(\{/);
+  assert.match(portSource, /hydrateTokenManager\(\)/);
+  assert.match(portSource, /resetCloudRouterSdkClients\(\)/);
+  assert.match(portSource, /organization_sign_in_required/);
 });
 
-test("buying more team seats sends the add_seats action with the ADDITIONAL seat count", () => {
-  const teamServiceSource = readPortalFile("./src/token-plan/team/teamSubscriptionService.ts");
-  const teamCardsSource = readPortalFile("./src/token-plan/team/TeamPlanCards.tsx");
-  const teamPricingSource = readPortalFile("./src/token-plan/team/teamPlanPricing.ts");
+test("the team port forwards the checkout action and seat quantity unchanged", () => {
+  const portSource = readPortalFile("./src/token-plan/team/cloudRouterTeamSubscriptionPort.ts");
 
-  // `add_seats` is a first-class checkout action: "buy more seats" must never
-  // reuse `renew`, which extends the subscription period.
-  assert.match(
-    teamServiceSource,
-    /export type TeamCheckoutAction = 'purchase' \| 'renew' \| 'add_seats';/,
-  );
-  assert.match(teamCardsSource, /action: mode === 'expand' \? 'add_seats' : 'purchase'/);
-  assert.doesNotMatch(teamCardsSource, /action: mode === 'expand' \? 'renew'/);
-
-  // Expand mode counts seats to ADD: floor 1, default 5 or the plan minimum, and
-  // never the current seat total that the retired `renew` prefill used.
-  assert.match(teamCardsSource, /resolveAdditionalSeatBounds\(planBounds\)/);
-  assert.match(teamCardsSource, /resolveDefaultAdditionalSeatCount\(planBounds\)/);
-  assert.doesNotMatch(teamCardsSource, /resolveDefaultTeamSeatCount\(bounds, initialSeats\)/);
-  assert.match(teamPricingSource, /const ADDITIONAL_SEAT_MIN = 1;/);
-  assert.match(teamPricingSource, /const ADDITIONAL_SEAT_DEFAULT = 5;/);
-  assert.match(teamPricingSource, /export function resolveAdditionalSeatBounds/);
-  assert.match(teamPricingSource, /export function resolveDefaultAdditionalSeatCount/);
-
-  // The seat quantity still travels as the order `quantity` of the same
-  // order-owned checkout service; no second subscription endpoint is added.
-  assert.match(teamServiceSource, /quantity: input\.seats/);
-  assert.match(teamServiceSource, /getCloudRouterMembershipCheckoutService\(\)\.createCheckout/);
+  // `add_seats` vs `purchase` is decided by the shared team surface; the port
+  // only forwards the action and sends the seat count as the order `quantity`.
+  assert.match(portSource, /action: input\.action/);
+  assert.match(portSource, /quantity: input\.seats/);
+  assert.doesNotMatch(portSource, /action: input\.action === 'purchase' \? 'renew'/);
+  // The int64 catalog id is validated before it becomes the numeric order id.
+  assert.match(portSource, /packageId: readSdkworkTeamPackageNumericId\(input\.packageId\)/);
 });
-
-test("team seat composition derives viewer role, license counts, and overflow from IAM + membership facts", async () => {
-  const {
-    composeTeamSeatComposition,
-    joinTeamSeatDirectory,
-    parseOwnMemberships,
-    resolveTeamOrganizationId,
-    resolveTeamViewerRole,
-  } = await import("./src/token-plan/team/teamRosterComposition.ts");
-
-  // The caller's own IAM membership is authoritative for the organization.
-  const ownMemberships = parseOwnMemberships([
-    { id: "m-2", isPrimary: false, membershipType: "member", organizationId: "org-secondary", status: "active" },
-    { id: "m-1", isPrimary: true, membershipType: "OWNER", organizationId: "org-primary", status: "active" },
-  ]);
-  const organizationId = resolveTeamOrganizationId(ownMemberships, "org-from-principal");
-  assert.equal(organizationId, "org-primary");
-  assert.equal(resolveTeamViewerRole(ownMemberships, organizationId), "owner");
-
-  // 4 roster members, 3 seats assigned, one of them to a user outside the roster.
-  const roster = [
-    { displayName: "Ada", isPrimary: true, membershipId: "m-1", membershipKind: "owner" as const, status: "active", userId: "u-1", username: "ada" },
-    { displayName: "Bob", isPrimary: false, membershipId: "m-2", membershipKind: "member" as const, status: "active", userId: "u-2", username: "bob" },
-    { displayName: "Cara", isPrimary: false, membershipId: "m-3", membershipKind: "admin" as const, status: "active", userId: "u-3", username: "cara" },
-    { displayName: "Dan", isPrimary: false, membershipId: "m-4", membershipKind: "member" as const, status: "active", userId: "u-4", username: "dan" },
-  ];
-  const seatAssignments = [
-    { assignedAt: "2026-01-01T00:00:00Z", seatNo: 1, userId: "u-1" },
-    { assignedAt: "2026-01-02T00:00:00Z", seatNo: 2, userId: "u-2" },
-    { assignedAt: "2026-01-03T00:00:00Z", seatNo: 3, userId: "u-999" },
-  ];
-  const overview = {
-    autoAssignSeat: true,
-    hasSubscription: true,
-    organizationId: "org-from-principal",
-    seatPolicy: "flex_overflow" as const,
-    seatsAvailable: 0,
-    seatsPurchased: 2,
-    seatsUsed: 3,
-  };
-  const composition = composeTeamSeatComposition({
-    membersTotal: roster.length,
-    organizationId,
-    organizationName: "Acme",
-    overview,
-    roster,
-    seatAssignments,
-    viewerRole: "owner",
-  });
-
-  assert.equal(composition.membersTotal, 4);
-  // Only assignments whose user is on the roster count as licensed.
-  assert.equal(composition.licensedMembers, 2);
-  assert.equal(composition.unlicensedMembers, 2);
-  assert.equal(composition.overSeat, true);
-  assert.equal(composition.overSeatCount, 1);
-  assert.equal(composition.canManageSeats, true);
-  assert.equal(composition.organizationId, "org-primary");
-  assert.equal(composition.organizationName, "Acme");
-
-  // The member role never manages seats and never over-counts licences.
-  const memberView = composeTeamSeatComposition({
-    membersTotal: roster.length,
-    organizationId,
-    overview,
-    roster,
-    seatAssignments,
-    viewerRole: "member",
-  });
-  assert.equal(memberView.canManageSeats, false);
-
-  // Unassigned roster members still appear, with no seat number.
-  const rows = joinTeamSeatDirectory(roster, seatAssignments);
-  assert.equal(rows.length, 4);
-  assert.equal(rows.filter((row) => row.isAssigned).length, 2);
-  assert.deepEqual(rows.map((row) => row.seatNo ?? null), [1, 2, null, null]);
-  assert.equal(rows[3]?.name, "Dan");
-});
-
 
 test("token plan audience and team seat copy exist in both locales", () => {
   const en = consoleTokenPlanTeamMessages.en as Record<string, string>;
@@ -918,6 +777,15 @@ test("token plan audience and team seat copy exist in both locales", () => {
     "token_plan.team.reconcile_saving",
     "token_plan.team.reconcile_success",
     "token_plan.team.reconcile_none",
+    "token_plan.team.organization_selector_title",
+    "token_plan.team.organization_selector_hint",
+    "token_plan.team.organization_switching",
+    "token_plan.team.organization_current",
+    "token_plan.team.organization_switch",
+    "token_plan.team.organization_only_membership",
+    "token_plan.team.organization_none",
+    "token_plan.team.organization_switched",
+    "token_plan.team.organization_sign_in_required",
   ];
 
   for (const key of requiredKeys) {

@@ -201,6 +201,7 @@
     "@sdkwork/iam-service": "workspace:*",
     "@sdkwork/mcp-app-sdk": "workspace:*",
     "@sdkwork/mcp-backend-sdk": "workspace:*",
+    "@sdkwork/memory-backend-sdk": "workspace:*",
     "@sdkwork/membership-app-sdk": "workspace:*",
     "@sdkwork/membership-backend-sdk": "workspace:*",
     "@sdkwork/membership-sdk-ports": "workspace:*",

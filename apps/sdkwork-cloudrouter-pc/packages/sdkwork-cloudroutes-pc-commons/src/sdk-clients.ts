@@ -75,6 +75,7 @@ import {
 } from '@sdkwork/skills-app-sdk';
 import { SdkworkBackendClient as SkillsBackendClient } from '@sdkwork/skills-backend-sdk';
 import { SdkworkBackendClient as McpBackendClient } from '@sdkwork/mcp-backend-sdk';
+import { SdkworkBackendClient as MemoryBackendClient } from '@sdkwork/memory-backend-sdk';
 import { SdkworkBackendClient as PluginsBackendClient } from '@sdkwork/plugins-backend-sdk';
 import {
   createClient as createMcpAppSdkClient,
@@ -1187,10 +1188,14 @@ export function getSkillsBackendSdkClient(
 export type McpBackendSdkClient = McpBackendClient;
 export type McpBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
 
+export type MemoryBackendSdkClient = MemoryBackendClient;
+export type MemoryBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
+
 export type PluginsBackendSdkClient = PluginsBackendClient;
 export type PluginsBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
 
 let mcpBackendClient: McpBackendSdkClient | null = null;
+let memoryBackendClient: MemoryBackendSdkClient | null = null;
 let pluginsBackendClient: PluginsBackendSdkClient | null = null;
 
 export function createMcpBackendSdkClient(
@@ -1213,6 +1218,28 @@ export function getMcpBackendSdkClient(
     mcpBackendClient = createMcpBackendSdkClient();
   }
   return mcpBackendClient;
+}
+
+export function createMemoryBackendSdkClient(
+  options: MemoryBackendSdkClientOptions = {},
+): MemoryBackendSdkClient {
+  return attachCloudRouterSdkSessionAuthBoundary(
+    new MemoryBackendClient(
+      buildDependencyBackendConfig(options, 'VITE_SDKWORK_MEMORY_BACKEND_API_BASE_URL'),
+    ),
+  );
+}
+
+export function getMemoryBackendSdkClient(
+  options: MemoryBackendSdkClientOptions = {},
+): MemoryBackendSdkClient {
+  if (hasRuntimeOverrides(options)) {
+    return createMemoryBackendSdkClient(options);
+  }
+  if (!memoryBackendClient) {
+    memoryBackendClient = createMemoryBackendSdkClient();
+  }
+  return memoryBackendClient;
 }
 
 export function createPluginsBackendSdkClient(
@@ -1794,6 +1821,7 @@ function resetCloudRouterSdkClientCaches(): void {
   mcpAppClient = null;
   skillsBackendClient = null;
   mcpBackendClient = null;
+  memoryBackendClient = null;
   pluginsBackendClient = null;
   driveAppClient = null;
   membershipBackendClient = null;
@@ -2360,6 +2388,7 @@ function hasRuntimeOverrides(
     | SdkworkAgentBackendSdkClientOptions
     | SkillsBackendSdkClientOptions
     | McpBackendSdkClientOptions
+    | MemoryBackendSdkClientOptions
     | PluginsBackendSdkClientOptions
     | SdkworkMembershipBackendSdkClientOptions
     | SdkworkPaymentBackendSdkClientOptions

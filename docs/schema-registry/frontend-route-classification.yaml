@@ -1107,4 +1107,29 @@ routes:
   - /docs/:documentRef
   evidence:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
-
+- route: /admin/memory/categories
+  package: '@sdkwork/cloudrouter-pc-admin-memory'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-memory-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/memory/categories
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx
+- route: /admin/memory
+  package: '@sdkwork/cloudrouter-pc-admin-memory'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-memory-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/memory
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx

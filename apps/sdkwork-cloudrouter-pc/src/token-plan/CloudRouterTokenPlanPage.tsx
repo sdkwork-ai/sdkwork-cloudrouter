@@ -1,30 +1,25 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { buildPortalAuthLoginRedirect } from '@sdkwork/cloudroutes-pc-commons';
+import type { SdkworkSubscriptionCatalogTeamProps } from '@sdkwork/membership-pc-subscription/catalog';
 
-import {
-  CloudRouterTokenPlanAudienceTabs,
-  type CloudRouterTokenPlanAudience,
-} from './CloudRouterTokenPlanAudienceTabs.tsx';
 import { CloudRouterTokenPlanSurface } from './CloudRouterTokenPlanSurface.tsx';
-import { CloudRouterTeamPlanPage } from './team/CloudRouterTeamPlanPage.tsx';
+import { cloudRouterTeamSubscriptionPort } from './team/cloudRouterTeamSubscriptionPort.ts';
 
 /**
  * Token plan page shell.
  *
- * The audience switch is the Cloud Router composition seam: the personal
- * catalog (`CloudRouterTokenPlanSurface`) stays audience-agnostic and mounted
- * from the console membership page too, while the organization (team) seat
- * surface is composed here only.
+ * The audience switch and the team seat surface are owned by the shared
+ * membership subscription package; this page only supplies the Cloud Router
+ * implementation of the team port and the page chrome.
  */
 export function CloudRouterTokenPlanPage() {
-  const { t } = useTranslation();
-  const [audience, setAudience] = useState<CloudRouterTokenPlanAudience>('personal');
-
-  function handleLoginRequired(): void {
-    const redirectTo = buildPortalAuthLoginRedirect(window.location);
-    window.location.assign(redirectTo);
-  }
+  const { t, i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage ?? i18n.language;
+  const team = useMemo<SdkworkSubscriptionCatalogTeamProps>(() => ({
+    port: cloudRouterTeamSubscriptionPort,
+    translate: (key, defaultValue) => String(t(key, defaultValue ?? key)),
+    ...(locale ? { locale } : {}),
+  }), [locale, t]);
 
   return (
     <div className="w-full bg-zinc-50 dark:bg-black" data-token-plan-page>
@@ -34,16 +29,9 @@ export function CloudRouterTokenPlanPage() {
             {t('nav.tokenPlan', 'Token Plan')}
           </h1>
         </header>
-        <div className="mt-6">
-          <CloudRouterTokenPlanAudienceTabs active={audience} onChange={setAudience} />
-        </div>
       </div>
 
-      {audience === 'personal' ? (
-        <CloudRouterTokenPlanSurface />
-      ) : (
-        <CloudRouterTeamPlanPage onLoginRequired={handleLoginRequired} />
-      )}
+      <CloudRouterTokenPlanSurface team={team} />
     </div>
   );
 }

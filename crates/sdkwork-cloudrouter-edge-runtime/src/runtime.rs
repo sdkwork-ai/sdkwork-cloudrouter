@@ -2123,6 +2123,19 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
             .await
             .map_err(anyhow::Error::msg)?;
     let backend_router = backend_router.merge(plugins_backend_contribution.router);
+    // Memory backend surface (`/backend/v3/api/memory/*`) is dependency-owned.
+    // It enters through the Memory API assembly backend contribution on the
+    // Memory database host (per-module lifecycle manifest) — not through a
+    // direct `sdkwork-routes-*` import — per API_ASSEMBLY_SPEC §3/§6.1. The
+    // contribution is framework-wrapped per surface (the host MUST NOT apply a
+    // second Web Framework layer); its domain context injectors are chained
+    // into the finalize call below. The app-surface composition spawns the
+    // Memory background workers, keeping worker ownership single.
+    let memory_backend_contribution =
+        sdkwork_api_memory_assembly::assemble_backend_api_contribution_from_env()
+            .await
+            .map_err(anyhow::Error::msg)?;
+    let backend_router = backend_router.merge(memory_backend_contribution.router);
     let app_router = sdkwork_routes_cloudrouter_app_api::router_with_postgres_shared_runtime(
         sdkwork_routes_cloudrouter_app_api::PostgresSharedRuntime {
             config: context.database_config.clone(),
@@ -2177,6 +2190,7 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
             .chain(mcp_backend_contribution.domain_context_injectors)
             .chain(agents_backend_contribution.domain_context_injectors)
             .chain(plugins_backend_contribution.domain_context_injectors)
+            .chain(memory_backend_contribution.domain_context_injectors)
             .collect(),
     )
     .await;
