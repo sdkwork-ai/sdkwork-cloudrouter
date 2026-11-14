@@ -2,7 +2,11 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import test from 'node:test';
 
+import { adminOrdersMessages } from '@sdkwork/order-pc-admin-orders/i18n';
+import { adminTradeMessages } from '@sdkwork/order-pc-admin-trade/i18n';
+
 import { consoleOrderSubjectMessages } from './packages/sdkwork-cloudrouter-pc-i18n/src/resources/console/order-subjects.ts';
+import { mergeI18nBundles, withoutMessagePrefixes } from './packages/sdkwork-cloudrouter-pc-i18n/src/resources/merge.ts';
 import { consoleRechargeMessages } from './packages/sdkwork-cloudrouter-pc-i18n/src/resources/console/recharge.ts';
 
 function readPortalFile(relativePath: string): string {
@@ -89,6 +93,65 @@ test('PC i18n defines every subject and asset label in both locales', () => {
     assert.doesNotMatch(bundle['orders.subject_points_recharge'], /token bank/i);
     assert.doesNotMatch(bundle['orders.subject_token_bank_recharge'], /membership points|会员积分/i);
   }
+});
+
+test('the flat host catalog owns orders.* copy exactly once', () => {
+  // Both order admin modules ship the same `orders.*` labels for their own
+  // providers; composing them raw in one flat catalog is the boot crash
+  // (`Duplicate i18n key orders.subject_product in en bundle ...`).
+  assert.throws(
+    () => mergeI18nBundles([adminOrdersMessages, adminTradeMessages]),
+    /Duplicate i18n key orders\.subject_product/,
+  );
+
+  const orderAdminCopies = [adminOrdersMessages, adminTradeMessages];
+  const resources = mergeI18nBundles([
+    ...orderAdminCopies.map((bundle) => withoutMessagePrefixes(bundle, ['orders.'])),
+    consoleOrderSubjectMessages,
+  ]);
+
+  const en = resources.en.translation;
+  const zh = resources.zh.translation;
+  assert.equal(en['orders.subject_product'], 'Product order');
+  assert.equal(zh['orders.subject_product'], '商品订单');
+  assert.equal(en['orders.target_asset_cash'], 'Cash balance');
+  assert.equal(zh['orders.target_asset_cash'], '现金余额');
+  // The declaration only drops `orders.*`; module copy stays composed.
+  assert.equal(en['admin.trade.workbench.title'], 'Trading Center Workbench');
+  assert.equal(en['admin.orders.title'], 'Order supervision');
+
+  // Dropping the module copy must not lose a label: the host bundle owns every
+  // `orders.*` key the order modules ship, so a new module key fails here until
+  // the host copy learns it.
+  for (const bundle of orderAdminCopies) {
+    for (const key of Object.keys(bundle.en).filter((entry) => entry.startsWith('orders.'))) {
+      assert.ok(
+        (consoleOrderSubjectMessages.en as Record<string, string>)[key],
+        `host order-subject copy must own ${key}`,
+      );
+      assert.ok(
+        (consoleOrderSubjectMessages.zh as Record<string, string>)[key],
+        `host order-subject copy must own the zh value for ${key}`,
+      );
+    }
+  }
+
+  // `withoutMessagePrefixes` is a copy, never a mutation of the module bundle.
+  assert.equal((adminOrdersMessages.en as Record<string, string>)['orders.subject_product'], 'Product order');
+  assert.ok((adminTradeMessages.zh as Record<string, string>)['orders.target_asset_cash']);
+});
+
+test('withoutMessagePrefixes keeps required and optional locales aligned', () => {
+  const bundle = {
+    en: { 'orders.subject_product': 'Product order', 'admin.trade.list.reset': 'Reset' },
+    zh: { 'orders.subject_product': '商品订单', 'admin.trade.list.reset': '重置' },
+    ja: { 'admin.trade.list.reset': 'リセット' },
+  };
+  const filtered = withoutMessagePrefixes(bundle, ['orders.']);
+  assert.deepEqual(Object.keys(filtered.en).sort(), ['admin.trade.list.reset']);
+  assert.deepEqual(Object.keys(filtered.zh).sort(), ['admin.trade.list.reset']);
+  assert.deepEqual(filtered.ja, { 'admin.trade.list.reset': 'リセット' });
+  assert.deepEqual(Object.keys(bundle.en).sort(), ['admin.trade.list.reset', 'orders.subject_product']);
 });
 
 test('web orders bundle labels every canonical order subject', () => {

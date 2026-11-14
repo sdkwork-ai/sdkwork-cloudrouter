@@ -28,7 +28,7 @@ import { messagingNotifyAdminMessages } from '@sdkwork/messaging-pc-admin-notify
 import { hardwareAdminMessages } from '@sdkwork/cloudrouter-pc-admin-hardware/i18n';
 import { hardwareConsoleMessages } from '@sdkwork/cloudrouter-pc-console-hardware/i18n';
 import { logAdminI18n } from '@sdkwork/log-pc-admin-request-log/i18n';
-import { mergeI18nBundles } from './merge';
+import { mergeI18nBundles, withoutMessagePrefixes } from './merge';
 import { adminAnalyticsRecordMessages } from './admin/analytics-record';
 import { adminAuthSettingsMessages } from './admin/auth-settings';
 import { adminBusinessManagementMessages } from './admin/business-management';
@@ -83,6 +83,18 @@ import { sharedAccountMessages } from './shared/account';
 import { sharedCommonMessages } from './shared/common';
 import { sharedNavigationMessages } from './shared/navigation';
 
+/**
+ * Key prefixes the host catalog owns.
+ *
+ * The order capability ships the whole `orders.subject_*` / `orders.target_asset_*`
+ * label set with each admin module, because each module resolves order copy
+ * through its own provider. `console/order-subjects.ts` owns those keys in this
+ * flat host catalog (the order modules keep rendering their own copy), so the
+ * module copies are dropped here instead of redefining them — a second
+ * declaration would abort the merge at boot.
+ */
+const HOST_OWNED_MESSAGE_PREFIXES = ['orders.'] as const;
+
 export const resources = mergeI18nBundles([
   messagingNotifyAdminMessages,
   hardwareAdminMessages,
@@ -124,8 +136,8 @@ export const resources = mergeI18nBundles([
   cloudRouterIamAdminMessages,
   cloudRouterRtcAdminMessages,
   rtcAdminMessages,
-  adminOrdersMessages,
-  adminTradeMessages,
+  withoutMessagePrefixes(adminOrdersMessages, HOST_OWNED_MESSAGE_PREFIXES),
+  withoutMessagePrefixes(adminTradeMessages, HOST_OWNED_MESSAGE_PREFIXES),
   logAdminI18n,
   consoleAccountMessages,
   consoleApiKeysMessages,
