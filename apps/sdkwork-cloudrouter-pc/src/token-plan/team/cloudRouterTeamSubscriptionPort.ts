@@ -14,6 +14,7 @@ import {
   type SdkworkTeamCheckoutPayment,
   type SdkworkTeamOwnMembership,
   type SdkworkTeamPackage,
+  type SdkworkTeamPackageGroup,
   type SdkworkTeamRosterPage,
   type SdkworkTeamRosterQuery,
   type SdkworkTeamSeatAssignment,
@@ -204,6 +205,28 @@ export const cloudRouterTeamSubscriptionPort: SdkworkTeamSubscriptionPort = {
         }
       }
       return packages;
+    } catch (error) {
+      throw normalizeSdkworkTeamError(error);
+    }
+  },
+
+  async listPackageGroups(): Promise<readonly SdkworkTeamPackageGroup[]> {
+    try {
+      const memberships = teamMemberships();
+      const groups: SdkworkTeamPackageGroup[] = [];
+      for (let page = 1; page <= TEAM_PACKAGE_MAX_PAGES; page += 1) {
+        const result = await memberships.packageGroups.list({
+          audience: 'team',
+          category: 'token',
+          page,
+          pageSize: TEAM_PACKAGE_PAGE_SIZE,
+        });
+        groups.push(...result.items);
+        if (!result.pageInfo.hasMore) {
+          break;
+        }
+      }
+      return groups;
     } catch (error) {
       throw normalizeSdkworkTeamError(error);
     }

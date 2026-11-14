@@ -731,6 +731,11 @@ test("token plan page mounts the shared audience switch and team seat surface", 
   assert.match(portSource, /teamSeats\.policy\.update\(/);
   assert.match(portSource, /teamSeats\.reconcile\(\)/);
   assert.match(portSource, /packages\.list\(/);
+  // The four team billing options (annual / monthly / quarterly / single month)
+  // come from membership package groups, so the shared cycle tabs render the
+  // catalog's own group names and discounts.
+  assert.match(portSource, /packageGroups\.list\(/);
+  assert.match(portSource, /listPackageGroups\(\)/);
   assert.match(portSource, /audience: 'team'/);
   assert.match(portSource, /getSdkworkAppbaseAppSdkClient\(\)\.iam/);
   assert.match(portSource, /organizations\.members\.list\(/);

@@ -1,17 +1,20 @@
 import type { I18nMessageBundle } from '../types';
 
 /**
- * Canonical order-subject and account-asset display labels for the PC host.
+ * Canonical order-subject and account-asset display labels for the PC host
+ * catalog.
  *
- * These keys mirror the order-domain catalog
- * (`@sdkwork/order-pc-core/subject` → `orders.subject_*` /
- * `orders.target_asset_*`), so every PC host surface that resolves a subject
- * through i18next renders the same label as the order packages' own bundles.
+ * The host catalog is flat: every console surface that localizes an order
+ * subject resolves `orders.subject_*` / `orders.target_asset_*` through
+ * i18next (`@sdkwork/order-pc-core/subject` → `localizeSdkworkOrderSubject`).
+ * The order admin modules ship their own copy for their own providers, so this
+ * bundle is the single owner of those keys in the host catalog and the module
+ * copies are dropped at composition (`resources/index.ts`).
  *
- * Semantics (authority: `sdkwork-order/specs/ACCOUNT_VALUE_ORDER_SPEC.md` §2):
+ * Labels follow the order-domain naming authority
+ * (`sdkwork-order/specs/ACCOUNT_VALUE_ORDER_SPEC.md` §2):
  * - `points` is the **Membership Points** asset.
- * - `token_bank` is the **Token Bank** compute-credit asset (en display:
- *   "Compute Credits"; zh display: "算力额度").
+ * - `token_bank` is the **Token Bank** compute-credit asset.
  * - `cash` is withdrawable cash; `subscription` is a membership entitlement and
  *   never an account ledger asset.
  */

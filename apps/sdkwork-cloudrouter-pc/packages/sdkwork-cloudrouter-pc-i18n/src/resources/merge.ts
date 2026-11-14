@@ -38,6 +38,46 @@ function assignBundleMessages(locale: LocaleCode, target: LocaleMessages, bundle
   }
 }
 
+/**
+ * Returns a copy of `bundle` without the messages whose key starts with one of
+ * `prefixes`.
+ *
+ * A capability may ship the same copy with several self-sufficient modules: the
+ * order capability carries its whole `orders.*` subject/asset label set in every
+ * admin module so a module can render through its own provider. When the host
+ * composes those modules into one flat catalog only one owner may remain, so the
+ * host drops the module copies before merging. The duplicate-key guard still
+ * rejects every collision that was not declared here.
+ */
+export function withoutMessagePrefixes(
+  bundle: I18nMessageBundle,
+  prefixes: readonly string[],
+): I18nMessageBundle {
+  const isDropped = (key: string): boolean => prefixes.some((prefix) => key.startsWith(prefix));
+  const filterMessages = (messages: Partial<LocaleMessages>): LocaleMessages => {
+    const kept: LocaleMessages = {};
+    for (const [key, value] of Object.entries(messages)) {
+      if (value === undefined || isDropped(key)) {
+        continue;
+      }
+      kept[key] = value;
+    }
+    return kept;
+  };
+
+  const filtered: I18nMessageBundle = {
+    en: filterMessages(bundle.en),
+    zh: filterMessages(bundle.zh),
+  };
+  for (const locale of OPTIONAL_LOCALES) {
+    const messages = bundle[locale];
+    if (messages) {
+      filtered[locale] = filterMessages(messages);
+    }
+  }
+  return filtered;
+}
+
 export function mergeI18nBundles(bundles: I18nMessageBundle[]): I18nResources {
   const translations = ALL_LOCALES.reduce(
     (acc, locale) => {
