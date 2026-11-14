@@ -44,6 +44,35 @@ export type WebhookEventListQuery = Parameters<BackendPaymentsService['webhookEv
 /** List-query shape accepted by the reconciliation run list API. */
 export type ReconciliationRunListQuery = Parameters<BackendPaymentsService['reconciliationRuns']['list']>[0];
 
+/** Wire shape of one aggregation bucket (counts stay int64-safe strings). */
+export type PaymentSummaryAmountBucket = {
+  currencyCode: string;
+  amount: string;
+  count: string;
+};
+
+export type PaymentSummaryStatusBucket = {
+  status: string;
+  count: string;
+};
+
+export type PaymentSummaryReasonBucket = {
+  reasonCode: string;
+  count: string;
+};
+
+/** Aggregated view of the filtered payment record set. */
+export type PaymentRecordsSummaryData = {
+  totalCount: string;
+  totalAmounts: PaymentSummaryAmountBucket[];
+  statusCounts: PaymentSummaryStatusBucket[];
+};
+
+/** Aggregated view of the filtered refund set. */
+export type RefundRecordsSummaryData = PaymentRecordsSummaryData & {
+  reasonCounts: PaymentSummaryReasonBucket[];
+};
+
 export type { CreatePaymentChannelCommand as PaymentChannelCreateInput } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 export type { CreatePaymentMethodCommand as PaymentMethodCreateInput } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 export type { UpdatePaymentMethodCommand as PaymentMethodUpdateInput } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
@@ -136,6 +165,17 @@ export async function backendPaymentRouteRulesDelete(routeRuleId: string) {
 
 export async function backendPaymentsIntentsList(params?: Parameters<BackendPaymentsService['intents']['list']>[0]) {
   return getSdkworkPaymentBackendSdkClient().payments.intents.list(params);
+}
+
+/**
+ * Aggregated totals for the filtered payment record set. The console summary
+ * must describe every matching record, not the visible page, so it is a
+ * server-side aggregation over the same filters as the list.
+ */
+export async function backendPaymentRecordsSummary(
+  params?: Parameters<BackendPaymentsService['intents']['summary']['retrieve']>[0],
+): Promise<PaymentRecordsSummaryData> {
+  return getSdkworkPaymentBackendSdkClient().payments.intents.summary.retrieve(params);
 }
 
 export async function backendPaymentIntentsRetrieve(paymentIntentId: string): Promise<PaymentIntent> {
@@ -283,6 +323,13 @@ export async function backendPaymentsRefundsList(
   params?: Parameters<BackendPaymentsService['refunds']['list']>[0],
 ) {
   return getSdkworkPaymentBackendSdkClient().payments.refunds.list(params);
+}
+
+/** Aggregated totals for the filtered refund set (same filters as the list). */
+export async function backendRefundRecordsSummary(
+  params?: Parameters<BackendPaymentsService['refunds']['summary']['retrieve']>[0],
+): Promise<RefundRecordsSummaryData> {
+  return getSdkworkPaymentBackendSdkClient().payments.refunds.summary.retrieve(params);
 }
 
 export async function backendPaymentRefundsRetrieve(refundId: string): Promise<Refund> {

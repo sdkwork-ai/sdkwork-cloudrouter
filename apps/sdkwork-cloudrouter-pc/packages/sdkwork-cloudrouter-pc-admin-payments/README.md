@@ -50,6 +50,10 @@ read consoles, not page-local tables:
 - The adjacent monitoring lists (payment attempts, webhook events,
   reconciliation runs) expose the server-side filters the backend already
   supports: status, provider, intent id, event type, and provider account.
+- A server-side summary strip above both record tables reports the filtered
+  record count, amount totals per currency, and status (refunds: reason) counts
+  from `GET .../intents/summary` and `GET .../refunds/summary`. It never sums the
+  visible page, so a filtered view still shows the true totals.
 
 These capabilities require the `sdkwork-payment` backend read contract
 (`created_after`/`created_before`/`provider_code`/`currency_code`/`reason_code`

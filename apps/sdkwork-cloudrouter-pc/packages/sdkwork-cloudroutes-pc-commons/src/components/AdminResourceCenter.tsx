@@ -111,6 +111,12 @@ export type AdminResourceSection<TSectionId extends string = string, TGroup exte
    * filters and search term the operator is looking at.
    */
   resolveToolbarActions?: (query: AdminResourceListQuery) => AdminResourceAction[];
+  /**
+   * Aggregate strip rendered above the table (record totals, amount sums for
+   * the active filters). Server-side sections use this instead of summing the
+   * visible page, which would understate every figure.
+   */
+  renderSummary?: (query: AdminResourceListQuery) => React.ReactNode;
   group: TGroup;
   action?: AdminResourceAction;
   actions?: AdminResourceAction[];
@@ -283,13 +289,15 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
     pageSize: normalizePageSize(activePagination?.initialPageSize),
   };
   const recordRowActions = activeSection.rowActions ?? [];
-  // 工具栏动作看到的是「当前屏幕上的查询条件」：草稿态筛选 + 已提交的服务端搜索词。
-  const activeToolbarActions = activeSection.resolveToolbarActions?.({
+  // 工具栏动作与汇总条看到的是「当前屏幕上的查询条件」：草稿态筛选 + 已提交的服务端搜索词。
+  const activeQuery: AdminResourceListQuery = {
     filters: filterDrafts,
     ...(activeSection.searchMode === 'server' && serverSearch ? { search: serverSearch } : {}),
     page: activePageState.page,
     pageSize: activePageState.pageSize,
-  }) ?? [];
+  };
+  const activeToolbarActions = activeSection.resolveToolbarActions?.(activeQuery) ?? [];
+  const activeSummary = activeSection.renderSummary?.(activeQuery) ?? null;
   const hasRecordActions = Boolean(onRecordOpen) || recordRowActions.length > 0;
   const tableColumnCount = activeSection.columns.length + (hasRecordActions ? 1 : 0);
   const declaredTotalPages = activeState.collectionMeta?.totalPages
@@ -633,6 +641,12 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
             </button>
           </div>
         </div>
+
+        {activeSummary ? (
+          <div className="shrink-0 border-b border-slate-200 px-5 py-3 dark:border-white/10">
+            {activeSummary}
+          </div>
+        ) : null}
 
         {activeState.error ? (
           <BusinessStatePanel
