@@ -128,6 +128,7 @@ import {
 } from './forms/RefundDialogs';
 import { IntentDetailDrawer } from './components/IntentDetailDrawer';
 import { RefundDetailDrawer } from './components/RefundDetailDrawer';
+import { PaymentRecordsSummary } from './components/PaymentRecordsSummary';
 import { PaymentTestDialog } from './components/PaymentTestDialog';
 import { PaymentDomainSettingsAdmin } from './components/PaymentDomainSettingsAdmin';
 
@@ -597,6 +598,7 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
         icon: <Download className="h-4 w-4" />,
         onClick: () => void runRecordExport('paymentRecords', query),
       }],
+      renderSummary: (query) => <PaymentRecordsSummary kind="paymentRecords" query={query} />,
       rowActions: [{
         label: t('admin.commerce.payments.intents.detail.open', 'Details'),
         icon: <Eye className="h-3.5 w-3.5" />,
@@ -874,6 +876,7 @@ function PaymentResourceAdmin({ activeSectionId }: { activeSectionId: PaymentRes
         icon: <Download className="h-4 w-4" />,
         onClick: () => void runRecordExport('refunds', query),
       }],
+      renderSummary: (query) => <PaymentRecordsSummary kind="refunds" query={query} />,
       action: capabilities.canCreateRefund ? {
         label: t('admin.commerce.payments.refunds.create.action', 'Create refund'),
         icon: <Plus className="h-4 w-4" />,
