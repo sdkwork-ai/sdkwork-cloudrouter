@@ -13,7 +13,7 @@
     "@sdkwork/cloudrouter-pc-admin-core": "workspace:*",
     "@sdkwork/cloudroutes-pc-commons": "workspace:*",
     "@sdkwork/payment-pc-admin-provider": "workspace:*",
-    "@stripe/stripe-js": "^9.13.0",
+    "@stripe/stripe-js": "^9.14.0",
     "lucide-react": "catalog:",
     "qrcode": "catalog:",
     "react": "catalog:",
