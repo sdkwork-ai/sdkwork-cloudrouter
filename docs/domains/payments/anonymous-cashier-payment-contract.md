@@ -192,27 +192,40 @@ POST /app/v3/api/cashier/{token}/payments
 
 ### 5.1 微信授权（场景 1）
 
-现有 `oauth/wechat/payment/start` 要求登录态，必须新增**持令牌分支**：
+现有 `oauth/wechat/payment/start` 要求登录态，因此新增**独立的匿名公开入口**（保持原 `start` 的会话语义不变，回归测试 `wechat_payment_oauth_start_keeps_requiring_dual_token` 继续有效）：
 
 ```
-GET /app/v3/api/oauth/wechat/payment/start?cashierToken=<token>
+GET /app/v3/api/oauth/wechat/payment/cashier/start?cashierToken=<token>&redirect=<相对路径>
 ```
 
-- 用令牌里的 `tenantId` 取该租户的微信 OAuth 配置（不依赖会话）。
+- 用令牌里的 `tenantId` 取该租户的微信 OAuth 配置（不依赖会话）；令牌无效/篡改/过期 → 404。
 - `snsapi_base` 静默授权，回调换 openid 后**不创建 IAM 会话**。
-- openid 绑定方式：服务端短存 `tokenId → openid`（TTL 10 分钟），回调重定向只带一次性 `openidRef`；**禁止**把 openid 明文放进 URL。
-- 现有「登录态分支」保持不变，回归测试 `wechat_payment_oauth_start_keeps_requiring_dual_token` 继续有效。
+- openid 绑定方式（已实现）：回调把 `tokenId` 记在 HttpOnly cookie 中，随后用**租户密钥**对
+  `cashier-openid|<tokenId>|<openid>` 做 HMAC-SHA256，重定向回收银台时带上
+  `openid` 与 `openidBinding` 两个参数。
+- 订单侧建支付时用同一密钥重算并比对 `openidBinding`，不一致即拒绝。
+  这样客户端无法自选 openid，也无法把为另一张令牌签发的 openid 挪用到本令牌上。
+- 消息格式由 `sdkwork_utils_rust::cashier_openid_binding_message` 单点定义，避免签发/校验两侧格式漂移。
 
-### 5.2 场景 3 的既有缺陷（必须修）
+### 5.2 场景 3（手机浏览器）的修复
 
-现状：手机浏览器选微信 → wire method 仍是 `wechat_pay`（native），前端拿不到可跳转链接，退化为「请在微信中打开」的死路。
+修复前：手机浏览器选微信 → wire method 仍是 `wechat_pay`（native），前端拿不到可跳转链接，退化为「请在微信中打开」的死路。
 
-修复：手机浏览器下
-- 微信 → `wechat_h5`（`/v3/pay/transactions/h5` → `h5_url`，需 `client_ip`）；
-- 支付宝 → `alipay_wap`（或 `alipays://` scheme 拉起）；
-- 渠道未安装/未跳转成功 → 提供「复制链接到微信/支付宝打开」兜底。
+已实现：匿名收银台按环境收敛方法并为每种方法请求正确的渠道产品——手机浏览器下
+- 微信 → `wechat_h5`（`/v3/pay/transactions/h5` → `h5_url`，需 `client_ip`，由服务端从可信代理解析后注入 `metadata.client_ip`）；
+- 支付宝 → `alipay_wap`；
+- 微信内 → `wechat_jsapi`（需 §5.1 的令牌绑定）；
+- 支付宝内 → `alipay_wap`。
 
-订单侧可接受方法白名单需新增 `wechat_h5`。
+订单侧的可接受方法白名单已包含 `wechat_h5` 与 `wechat_jsapi`。
+
+### 5.3 富化失败时不得降级成旧链接
+
+令牌是在「渠道富化」阶段铸造的。若富化失败（渠道未配置、渠道故障），回退路径必须**补铸令牌**，
+否则扫码链接会悄悄退回 `{base}/cashier/{orderId}`，再次变成登录墙。
+
+已实现：`apply_cashier_capability_to_outcome` 对未富化的结果补铸能力令牌；币种从支付尝试行读取，
+取不到则保持原样（绝不臆造金额或币种）。
 
 ---
 
@@ -260,11 +273,11 @@ GET /app/v3/api/oauth/wechat/payment/start?cashierToken=<token>
 |---|---|---|---|
 | S1 ✅ | sdkwork-utils | 令牌编解码 + 租户密钥派生 + 令牌版链接构建（23 测试通过，clippy 干净） | — |
 | S2 ✅ | sdkwork-payment | 签发点接入：结算富化单点铸造令牌，令牌链接覆盖渠道返回与旧链接，WAP `return_url` 携带令牌（75 测试通过，新增 12 条） | S1 |
-| S3 ✅ | sdkwork-order | 三个匿名端点 + 读模型 + 路由清单 + OpenAPI（51 单元测试、契约校验器全绿） | S1、S2 |
-| S3.5 | sdkwork-order | 重新生成 `sdkwork-order-app-sdk`，让 H5 拿到带类型的匿名客户端 | S3 |
-| S3 | sdkwork-order | 三个匿名端点 + OpenAPI + SDK 重新生成 | S1、S2 |
-| S4 | sdkwork-iam | 微信授权 `start` 匿名分支 + openid 绑定 | S3 |
-| S5 | sdkwork-cloudrouter H5 | `/cashier/:token` 免登录路由 + 匿名数据源 + 场景 3 修复 | S3、S4 |
+| S3 ✅ | sdkwork-order | 三个匿名端点 + 读模型 + 路由清单 + OpenAPI（58 单元测试、契约校验器全绿） | S1、S2 |
+| S3.5 ✅ | sdkwork-order | `api:materialize` + `sdk:generate` 重新生成 `sdkwork-order-app-sdk`；匿名端点带 `skipAuth: true` | S3 |
+| S4 ✅ | sdkwork-iam | 独立公开入口 `oauth/wechat/payment/cashier/start` + `openidBinding` 令牌绑定；订单侧校验（58 测试、IAM 37+31 测试） | S3 |
+| S5 ✅ | sdkwork-cloudrouter H5 | `/cashier/{token}` 免登录分派 + 匿名收银台页 + 微信 JSAPI 授权跳转（typecheck + 79 测试） | S3、S4 |
+| S6 ✅ | sdkwork-payment / order | 富化失败时补铸令牌，避免扫码降级为登录墙 | S2、S3 |
 
 灰度：S5 上线时用宿主配置开关，令牌链接与旧链接并行 30 天；旧链接继续要求登录。
 

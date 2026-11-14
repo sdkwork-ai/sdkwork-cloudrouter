@@ -364,6 +364,11 @@ function createBuildPlan(settings, root = workspaceRoot) {
       { archivePath: names.gatewayArchive, sourcePath: path.join(root, names.gatewaySource) },
       { archivePath: names.installerArchive, sourcePath: path.join(root, names.installerSource) },
       { archivePath: 'portal/dist', sourcePath: path.join(portalDistRoot, 'prod') },
+      // Adaptive Web: the container install package declares portal/h5 next to
+      // portal/dist because the standalone gateway selects the surface per
+      // device class (SDKWORK_DEPLOY_SPEC.md section 8). Staging only the PC
+      // tree failed package validation with "requires staged artifact portal/h5".
+      { archivePath: 'portal/h5', sourcePath: path.join(root, 'apps', 'sdkwork-cloudrouter-h5', 'dist', 'standalone', 'prod') },
       { archivePath: 'etc/iam', sourcePath: path.join(root, 'dist', 'application-registry') },
       { archivePath: 'portal/dist/sdk-archives', sourcePath: path.join(root, 'apps', 'sdkwork-cloudrouter-pc', 'dist', 'sdk-archives') },
       { archivePath: '.env.standalone.production.example', sourcePath: path.join(root, '.env.standalone.production.example') },
