@@ -8129,3 +8129,993 @@ tables:
     semantic_contracts: null
     frontend_routes:
       - /console/settings
+  - name: storage_bucket
+    domain: storage
+    profile: tenant_entity
+    compliance_level: L2
+    write_owner: router-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      provider_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      bucket_name:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      bucket_region:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL DEFAULT ''
+      logical_scope:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+    constraints:
+      - name: pk_storage_bucket
+        type: primary_key
+        columns:
+          - id
+      - name: ck_storage_bucket_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_storage_bucket_scope_name
+        type: unique
+        columns: &id074
+          - tenant_id
+          - organization_id
+          - provider_id
+          - bucket_name
+        where: null
+      - name: ck_storage_bucket_scope
+        type: check
+        columns: []
+        expression: tenant_id >= 0 AND organization_id >= 0 AND provider_id > 0
+      - name: ck_storage_bucket_values
+        type: check
+        columns: []
+        expression: length(bucket_name) > 0 AND length(logical_scope) > 0 AND length(bucket_region) <= 64
+    indexes:
+      - name: uk_storage_bucket_scope_name
+        columns: *id074
+        unique: true
+        where: null
+      - name: ix_storage_bucket_scope_scope
+        columns:
+          - tenant_id
+          - organization_id
+          - logical_scope
+          - bucket_name
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes:
+      - /admin/storage/defaultBuckets
+  - name: storage_default_bucket_policy
+    domain: storage
+    profile: tenant_entity
+    compliance_level: L2
+    write_owner: router-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      logical_scope:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      bucket_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      bucket_logical_scope:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      updated_by:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      reason:
+        type: string(512)
+        required: true
+        postgres_type: VARCHAR(512)
+        constraints: NOT NULL DEFAULT ''
+      request_id:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL DEFAULT ''
+    constraints:
+      - name: pk_storage_default_bucket_policy
+        type: primary_key
+        columns:
+          - id
+      - name: ck_storage_default_bucket_policy_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_storage_default_bucket_scope
+        type: unique
+        columns: &id075
+          - tenant_id
+          - organization_id
+          - logical_scope
+        where: null
+      - name: ck_storage_default_bucket_scope
+        type: check
+        columns: []
+        expression: tenant_id >= 0 AND organization_id >= 0
+      - name: ck_storage_default_bucket_values
+        type: check
+        columns: []
+        expression: length(logical_scope) > 0 AND length(bucket_logical_scope) > 0 AND bucket_id > 0 AND length(reason) <=
+          512
+    indexes:
+      - name: uk_storage_default_bucket_scope
+        columns: *id075
+        unique: true
+        where: null
+      - name: ix_storage_default_bucket_scope_updated
+        columns:
+          - tenant_id
+          - organization_id
+          - status
+          - updated_at
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes:
+      - /admin/storage/defaultBuckets
+  - name: storage_gc_job
+    domain: storage
+    profile: tenant_entity
+    compliance_level: L2
+    write_owner: router-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      job_type:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      dry_run:
+        type: bool
+        required: true
+        postgres_type: BOOLEAN
+        constraints: NOT NULL DEFAULT TRUE
+      requested_by:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      idempotency_key:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      request_id:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL DEFAULT ''
+      criteria_json:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      result_json:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      candidate_count:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      completed_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+    constraints:
+      - name: pk_storage_gc_job
+        type: primary_key
+        columns:
+          - id
+      - name: ck_storage_gc_job_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_storage_gc_job_idempotency
+        type: unique
+        columns: &id076
+          - tenant_id
+          - organization_id
+          - idempotency_key
+        where: null
+      - name: ck_storage_gc_job_scope
+        type: check
+        columns: []
+        expression: tenant_id >= 0 AND organization_id >= 0
+      - name: ck_storage_gc_job_values
+        type: check
+        columns: []
+        expression: candidate_count >= 0 AND length(job_type) > 0
+    indexes:
+      - name: uk_storage_gc_job_idempotency
+        columns: *id076
+        unique: true
+        where: null
+      - name: ix_storage_gc_job_scope_created
+        columns:
+          - tenant_id
+          - organization_id
+          - status
+          - id
+        unique: false
+        where: null
+      - name: ix_storage_gc_job_uuid
+        columns:
+          - uuid
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes:
+      - /admin/storage/garbageCollection
+  - name: storage_provider
+    domain: storage
+    profile: tenant_entity
+    compliance_level: L2
+    write_owner: router-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      name:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL DEFAULT ''
+      supplier_code:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      provider_type:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      endpoint_url:
+        type: string(512)
+        required: true
+        postgres_type: VARCHAR(512)
+        constraints: NOT NULL DEFAULT ''
+      region:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL DEFAULT ''
+    constraints:
+      - name: pk_storage_provider
+        type: primary_key
+        columns:
+          - id
+      - name: ck_storage_provider_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_storage_provider_scope_code
+        type: unique
+        columns: &id077
+          - tenant_id
+          - organization_id
+          - supplier_code
+        where: null
+      - name: ck_storage_provider_scope
+        type: check
+        columns: []
+        expression: tenant_id >= 0 AND organization_id >= 0
+      - name: ck_storage_provider_values
+        type: check
+        columns: []
+        expression: length(supplier_code) > 0 AND length(provider_type) > 0 AND length(endpoint_url) <= 512 AND length(region)
+          <= 64
+    indexes:
+      - name: uk_storage_provider_scope_code
+        columns: *id077
+        unique: true
+        where: null
+      - name: ix_storage_provider_scope_status
+        columns:
+          - tenant_id
+          - organization_id
+          - status
+          - supplier_code
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes:
+      - /admin/storage/defaultBuckets
+  - name: storage_quota_policy
+    domain: storage
+    profile: tenant_entity
+    compliance_level: L2
+    write_owner: router-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      scope_type:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      scope_id:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      quota_limit_bytes:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      single_file_limit_bytes:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      enforcement:
+        type: string(16)
+        required: true
+        postgres_type: VARCHAR(16)
+        constraints: NOT NULL DEFAULT 'hard'
+      idempotency_key:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      request_id:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL DEFAULT ''
+    constraints:
+      - name: pk_storage_quota_policy
+        type: primary_key
+        columns:
+          - id
+      - name: ck_storage_quota_policy_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_storage_quota_policy_scope
+        type: unique
+        columns: &id078
+          - tenant_id
+          - organization_id
+          - scope_type
+          - scope_id
+        where: null
+      - name: uk_storage_quota_policy_idempotency
+        type: unique
+        columns: &id079
+          - tenant_id
+          - organization_id
+          - idempotency_key
+        where: null
+      - name: ck_storage_quota_policy_scope
+        type: check
+        columns: []
+        expression: tenant_id >= 0 AND organization_id >= 0
+      - name: ck_storage_quota_policy_values
+        type: check
+        columns: []
+        expression: quota_limit_bytes >= 0 AND (single_file_limit_bytes IS NULL OR single_file_limit_bytes >= 0) AND enforcement
+          IN ('hard', 'soft') AND length(scope_type) > 0 AND length(scope_id) > 0
+    indexes:
+      - name: uk_storage_quota_policy_scope
+        columns: *id078
+        unique: true
+        where: null
+      - name: uk_storage_quota_policy_idempotency
+        columns: *id079
+        unique: true
+        where: null
+      - name: ix_storage_quota_policy_scope_status
+        columns:
+          - tenant_id
+          - organization_id
+          - scope_type
+          - status
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes:
+      - /admin/storage/quotas
+  - name: storage_reconciliation_run
+    domain: storage
+    profile: tenant_entity
+    compliance_level: L2
+    write_owner: router-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      provider_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      bucket_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      run_type:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      dry_run:
+        type: bool
+        required: true
+        postgres_type: BOOLEAN
+        constraints: NOT NULL DEFAULT TRUE
+      requested_by:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      idempotency_key:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      request_id:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL DEFAULT ''
+      summary_json:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      missing_object_count:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      orphan_object_count:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      checksum_mismatch_count:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      started_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      completed_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+    constraints:
+      - name: pk_storage_reconciliation_run
+        type: primary_key
+        columns:
+          - id
+      - name: ck_storage_reconciliation_run_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_storage_reconciliation_run_idempotency
+        type: unique
+        columns: &id080
+          - tenant_id
+          - organization_id
+          - idempotency_key
+        where: null
+      - name: ck_storage_reconciliation_run_scope
+        type: check
+        columns: []
+        expression: tenant_id >= 0 AND organization_id >= 0
+      - name: ck_storage_reconciliation_run_values
+        type: check
+        columns: []
+        expression: missing_object_count >= 0 AND orphan_object_count >= 0 AND checksum_mismatch_count >= 0 AND length(run_type)
+          > 0
+    indexes:
+      - name: uk_storage_reconciliation_run_idempotency
+        columns: *id080
+        unique: true
+        where: null
+      - name: ix_storage_reconciliation_run_scope_created
+        columns:
+          - tenant_id
+          - organization_id
+          - status
+          - id
+        unique: false
+        where: null
+      - name: ix_storage_reconciliation_run_uuid
+        columns:
+          - uuid
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes:
+      - /admin/storage/reconciliation
+  - name: storage_usage_counter
+    domain: storage
+    profile: operational_state
+    compliance_level: L2
+    write_owner: router-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      scope_type:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      scope_id:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      used_logical_bytes:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      reserved_bytes:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      file_count:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+    constraints:
+      - name: pk_storage_usage_counter
+        type: primary_key
+        columns:
+          - id
+      - name: ck_storage_usage_counter_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_storage_usage_counter_scope
+        type: unique
+        columns: &id081
+          - tenant_id
+          - organization_id
+          - scope_type
+          - scope_id
+        where: null
+      - name: ck_storage_usage_counter_scope
+        type: check
+        columns: []
+        expression: tenant_id >= 0 AND organization_id >= 0
+      - name: ck_storage_usage_counter_values
+        type: check
+        columns: []
+        expression: used_logical_bytes >= 0 AND reserved_bytes >= 0 AND file_count >= 0 AND length(scope_type) > 0 AND length(scope_id)
+          > 0
+    indexes:
+      - name: uk_storage_usage_counter_scope
+        columns: *id081
+        unique: true
+        where: null
+      - name: ix_storage_usage_counter_scope_id
+        columns:
+          - tenant_id
+          - organization_id
+          - scope_type
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes:
+      - /admin/storage/usage

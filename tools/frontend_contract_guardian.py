@@ -1508,6 +1508,10 @@ class FrontendContractGuardian:
             expected_client = "getMcpBackendSdkClient"
         elif dependency_sdk_family == "sdkwork-plugins-backend-sdk":
             expected_client = "getPluginsBackendSdkClient"
+        elif dependency_sdk_family == "sdkwork-agent-app-sdk":
+            expected_client = "getSdkworkAgentAppSdkClient"
+        elif dependency_sdk_family == "sdkwork-aiot-app-sdk":
+            expected_client = "getSdkworkAiotAppSdkClient"
         if not any(
             self._operation_uses_allowed_sdk_client_boundary(operation, expected_client)
             for operation in matching_operations

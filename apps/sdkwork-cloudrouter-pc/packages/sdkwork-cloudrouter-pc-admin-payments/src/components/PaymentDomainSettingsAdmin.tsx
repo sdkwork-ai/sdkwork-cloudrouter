@@ -34,6 +34,7 @@ import {
   backendPaymentNotifyDomainsList,
   backendPaymentNotifyDomainUpdate,
 } from '../paymentsService';
+import { resolvePublicApiHostname } from '../services/payment-domain-defaults';
 import {
   FormError,
   PaymentConfirmDialog,
@@ -125,6 +126,33 @@ function currentBrowserHost(): { hostname: string; port: string; protocol: Proto
   };
 }
 
+/**
+ * The callback quick-fill targets the public API gateway, not the console the
+ * operator is browsing: `platform.birdcoder.com` suggests `api.birdcoder.com`.
+ * PSP webhooks can only reach the order gateway on the API host.
+ */
+function currentCallbackHost(): { hostname: string; port: string; protocol: Protocol } | null {
+  const current = currentBrowserHost();
+  if (!current) {
+    return null;
+  }
+  return { ...current, hostname: resolvePublicApiHostname(current.hostname) };
+}
+
+/** The callback quick-add default: the derived API host, or an empty form. */
+function defaultCallbackForm(): CallbackDomainForm {
+  const current = currentCallbackHost();
+  if (!current) {
+    return { ...EMPTY_CALLBACK_FORM };
+  }
+  return {
+    protocol: current.protocol,
+    hostname: current.hostname,
+    port: current.port,
+    isDefault: true,
+  };
+}
+
 function notifyDomainLabel(domain: NotifyDomain): string {
   return domain.port ? `${domain.hostname}:${domain.port}` : domain.hostname;
 }
@@ -193,7 +221,7 @@ export function PaymentDomainSettingsAdmin() {
   const [h5Error, setH5Error] = useState<string | null>(null);
 
   const [notifyDomains, setNotifyDomains] = useState<NotifyDomain[]>([]);
-  const [callbackForm, setCallbackForm] = useState<CallbackDomainForm>(EMPTY_CALLBACK_FORM);
+  const [callbackForm, setCallbackForm] = useState<CallbackDomainForm>(defaultCallbackForm);
   const [callbackSaving, setCallbackSaving] = useState(false);
   const [callbackError, setCallbackError] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<NotifyDomain | null>(null);
@@ -245,7 +273,7 @@ export function PaymentDomainSettingsAdmin() {
   };
 
   const fillCallbackFromCurrentHost = () => {
-    const current = currentBrowserHost();
+    const current = currentCallbackHost();
     if (!current) {
       return;
     }
@@ -319,7 +347,7 @@ export function PaymentDomainSettingsAdmin() {
           : current;
         return [...rest, created];
       });
-      setCallbackForm({ ...EMPTY_CALLBACK_FORM, protocol: callbackForm.protocol });
+      setCallbackForm(defaultCallbackForm());
       setMessage({
         kind: 'success',
         text: t('admin.commerce.payments.domainSettings.callback.added', 'Callback domain added.'),

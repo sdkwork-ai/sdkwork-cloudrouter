@@ -240,6 +240,7 @@ table_fragments:
 - tables/ai-chat-runtime.yaml
 - tables/user-settings.yaml
 - tables/payment-control-plane.yaml
+- tables/storage-center.yaml
 modules:
   user-settings:
     owner: cloud-router-platform
@@ -250,6 +251,21 @@ modules:
     tables:
     - iam_user_preference
     - integration_webhook_endpoint
+    ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
+  storage-center:
+    owner: cloud-router-platform
+    description: Storage-center governance records for default buckets, quota policies,
+      usage counters, reconciliation runs, and garbage-collection jobs.
+    compliance_level: L2
+    tables_count: 7
+    tables:
+    - storage_provider
+    - storage_bucket
+    - storage_default_bucket_policy
+    - storage_quota_policy
+    - storage_usage_counter
+    - storage_reconciliation_run
+    - storage_gc_job
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
   ai-routing:
     owner: cloud-router-platform

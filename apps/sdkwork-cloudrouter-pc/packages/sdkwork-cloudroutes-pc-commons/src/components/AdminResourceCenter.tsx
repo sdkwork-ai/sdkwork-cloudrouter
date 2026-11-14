@@ -37,6 +37,12 @@ export type AdminResourceColumn = {
   label: string;
   align?: 'right';
   format?: (value: unknown, record: AdminResourceRecord) => string;
+  /**
+   * 富单元格内容（品牌标记、状态药丸、代码标签等）。设置后单元格渲染该节点而不是
+   * `format` 的纯文本；此时单元格不再截断文本、也不写 `title`，由渲染内容自行提供
+   * 完整信息与无障碍标签。纯文本列仍走 `format`。
+   */
+  render?: (value: unknown, record: AdminResourceRecord) => React.ReactNode;
 };
 
 export type AdminResourceSection<TSectionId extends string = string, TGroup extends string = string> = {
@@ -485,14 +491,17 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
                 ) : visibleRecords.map((record, index) => (
                   <tr className="transition-colors hover:bg-slate-50 dark:hover:bg-white/5" key={adminResourceRecordKey(record, index)}>
                     {activeSection.columns.map((column) => {
-                      const cellValue = formatAdminResourceColumnCell(column, record);
+                      const hasRenderer = typeof column.render === 'function';
+                      const cellValue = hasRenderer ? null : formatAdminResourceColumnCell(column, record);
                       return (
                         <td
-                          className={`max-w-[280px] truncate px-6 py-4 ${column.align === 'right' ? 'text-right tabular-nums' : ''}`}
+                          className={`px-6 py-4 ${
+                            hasRenderer ? 'align-middle' : 'max-w-[280px] truncate'
+                          } ${column.align === 'right' ? 'text-right tabular-nums' : ''}`}
                           key={column.key}
-                          title={cellValue}
+                          title={hasRenderer ? undefined : (cellValue ?? undefined)}
                         >
-                          {cellValue}
+                          {hasRenderer && column.render ? column.render(record[column.key], record) : cellValue}
                         </td>
                       );
                     })}

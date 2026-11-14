@@ -4,7 +4,7 @@
  */
 export const sharedMessages: Record<string, string> = {
   'cloudrouter.console.shared.appTitle': "CloudRouter 控制台",
-  'cloudrouter.console.shared.appSubtitle': "AI 云计算平台 · 会员与积分",
+  'cloudrouter.console.shared.appSubtitle': "AI 云计算平台 · 会员与算力额度",
   'cloudrouter.console.shared.homeTab': "首页",
   'cloudrouter.console.shared.messagesTab': "消息",
   'cloudrouter.console.shared.playgroundTab': "体验中心",

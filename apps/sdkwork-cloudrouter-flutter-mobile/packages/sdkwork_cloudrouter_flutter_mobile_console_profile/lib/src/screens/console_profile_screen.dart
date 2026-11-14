@@ -65,7 +65,7 @@ class ConsoleProfileScreen extends StatelessWidget {
                 Row(
                   children: <Widget>[
                     Text(
-                      '余额(元)',
+                      '现金余额(元)',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),

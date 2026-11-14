@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.5.0.
--- Registry SHA-256: bb58476b0b7f42ea4f34fca12f1a91b2572c64c50a2f6f844c92f4b0a8530c68.
+-- Registry SHA-256: 88ca4c05d52d9e55211d8ab2d5c3a926ad7935dffde6aba355ce520f1c1b17d3.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -2587,3 +2587,184 @@ CREATE TABLE IF NOT EXISTS sdkwork_node_registry (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sdkwork_node_registry_service_expiry ON sdkwork_node_registry (service_name, expires_at_ms);
+
+CREATE TABLE IF NOT EXISTS storage_bucket (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    provider_id BIGINT NOT NULL,
+    bucket_name VARCHAR(128) NOT NULL,
+    bucket_region VARCHAR(64) NOT NULL DEFAULT '',
+    logical_scope VARCHAR(64) NOT NULL,
+    CONSTRAINT ck_storage_bucket_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_storage_bucket_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND provider_id > 0),
+    CONSTRAINT ck_storage_bucket_values CHECK (length(bucket_name) > 0 AND length(logical_scope) > 0 AND length(bucket_region) <= 64)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_storage_bucket_scope_name ON storage_bucket (tenant_id, organization_id, provider_id, bucket_name);
+CREATE INDEX IF NOT EXISTS ix_storage_bucket_scope_scope ON storage_bucket (tenant_id, organization_id, logical_scope, bucket_name);
+
+CREATE TABLE IF NOT EXISTS storage_default_bucket_policy (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    logical_scope VARCHAR(64) NOT NULL,
+    bucket_id BIGINT NOT NULL,
+    bucket_logical_scope VARCHAR(64) NOT NULL,
+    updated_by BIGINT NOT NULL DEFAULT 0,
+    reason VARCHAR(512) NOT NULL DEFAULT '',
+    request_id VARCHAR(128) NOT NULL DEFAULT '',
+    CONSTRAINT ck_storage_default_bucket_policy_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_storage_default_bucket_scope CHECK (tenant_id >= 0 AND organization_id >= 0),
+    CONSTRAINT ck_storage_default_bucket_values CHECK (length(logical_scope) > 0 AND length(bucket_logical_scope) > 0 AND bucket_id > 0 AND length(reason) <= 512)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_storage_default_bucket_scope ON storage_default_bucket_policy (tenant_id, organization_id, logical_scope);
+CREATE INDEX IF NOT EXISTS ix_storage_default_bucket_scope_updated ON storage_default_bucket_policy (tenant_id, organization_id, status, updated_at);
+
+CREATE TABLE IF NOT EXISTS storage_gc_job (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    job_type VARCHAR(32) NOT NULL,
+    dry_run BOOLEAN NOT NULL DEFAULT TRUE,
+    requested_by BIGINT NOT NULL DEFAULT 0,
+    idempotency_key VARCHAR(128) NOT NULL,
+    request_id VARCHAR(128) NOT NULL DEFAULT '',
+    criteria_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+    result_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+    candidate_count BIGINT NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMPTZ,
+    CONSTRAINT ck_storage_gc_job_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_storage_gc_job_scope CHECK (tenant_id >= 0 AND organization_id >= 0),
+    CONSTRAINT ck_storage_gc_job_values CHECK (candidate_count >= 0 AND length(job_type) > 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_storage_gc_job_idempotency ON storage_gc_job (tenant_id, organization_id, idempotency_key);
+CREATE INDEX IF NOT EXISTS ix_storage_gc_job_scope_created ON storage_gc_job (tenant_id, organization_id, status, id);
+CREATE INDEX IF NOT EXISTS ix_storage_gc_job_uuid ON storage_gc_job (uuid);
+
+CREATE TABLE IF NOT EXISTS storage_provider (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    name VARCHAR(128) NOT NULL DEFAULT '',
+    supplier_code VARCHAR(64) NOT NULL,
+    provider_type VARCHAR(64) NOT NULL,
+    endpoint_url VARCHAR(512) NOT NULL DEFAULT '',
+    region VARCHAR(64) NOT NULL DEFAULT '',
+    CONSTRAINT ck_storage_provider_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_storage_provider_scope CHECK (tenant_id >= 0 AND organization_id >= 0),
+    CONSTRAINT ck_storage_provider_values CHECK (length(supplier_code) > 0 AND length(provider_type) > 0 AND length(endpoint_url) <= 512 AND length(region) <= 64)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_storage_provider_scope_code ON storage_provider (tenant_id, organization_id, supplier_code);
+CREATE INDEX IF NOT EXISTS ix_storage_provider_scope_status ON storage_provider (tenant_id, organization_id, status, supplier_code);
+
+CREATE TABLE IF NOT EXISTS storage_quota_policy (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    scope_type VARCHAR(32) NOT NULL,
+    scope_id VARCHAR(128) NOT NULL,
+    quota_limit_bytes BIGINT NOT NULL,
+    single_file_limit_bytes BIGINT,
+    enforcement VARCHAR(16) NOT NULL DEFAULT 'hard',
+    idempotency_key VARCHAR(128) NOT NULL,
+    request_id VARCHAR(128) NOT NULL DEFAULT '',
+    CONSTRAINT ck_storage_quota_policy_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_storage_quota_policy_scope CHECK (tenant_id >= 0 AND organization_id >= 0),
+    CONSTRAINT ck_storage_quota_policy_values CHECK (quota_limit_bytes >= 0 AND (single_file_limit_bytes IS NULL OR single_file_limit_bytes >= 0) AND enforcement IN ('hard', 'soft') AND length(scope_type) > 0 AND length(scope_id) > 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_storage_quota_policy_scope ON storage_quota_policy (tenant_id, organization_id, scope_type, scope_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_storage_quota_policy_idempotency ON storage_quota_policy (tenant_id, organization_id, idempotency_key);
+CREATE INDEX IF NOT EXISTS ix_storage_quota_policy_scope_status ON storage_quota_policy (tenant_id, organization_id, scope_type, status, id);
+
+CREATE TABLE IF NOT EXISTS storage_reconciliation_run (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    provider_id BIGINT,
+    bucket_id BIGINT,
+    run_type VARCHAR(32) NOT NULL,
+    dry_run BOOLEAN NOT NULL DEFAULT TRUE,
+    requested_by BIGINT NOT NULL DEFAULT 0,
+    idempotency_key VARCHAR(128) NOT NULL,
+    request_id VARCHAR(128) NOT NULL DEFAULT '',
+    summary_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+    status INTEGER NOT NULL DEFAULT 1,
+    missing_object_count BIGINT NOT NULL DEFAULT 0,
+    orphan_object_count BIGINT NOT NULL DEFAULT 0,
+    checksum_mismatch_count BIGINT NOT NULL DEFAULT 0,
+    started_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT ck_storage_reconciliation_run_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_storage_reconciliation_run_scope CHECK (tenant_id >= 0 AND organization_id >= 0),
+    CONSTRAINT ck_storage_reconciliation_run_values CHECK (missing_object_count >= 0 AND orphan_object_count >= 0 AND checksum_mismatch_count >= 0 AND length(run_type) > 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_storage_reconciliation_run_idempotency ON storage_reconciliation_run (tenant_id, organization_id, idempotency_key);
+CREATE INDEX IF NOT EXISTS ix_storage_reconciliation_run_scope_created ON storage_reconciliation_run (tenant_id, organization_id, status, id);
+CREATE INDEX IF NOT EXISTS ix_storage_reconciliation_run_uuid ON storage_reconciliation_run (uuid);
+
+CREATE TABLE IF NOT EXISTS storage_usage_counter (
+    id BIGINT NOT NULL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    scope_type VARCHAR(32) NOT NULL,
+    scope_id VARCHAR(128) NOT NULL,
+    used_logical_bytes BIGINT NOT NULL DEFAULT 0,
+    reserved_bytes BIGINT NOT NULL DEFAULT 0,
+    file_count BIGINT NOT NULL DEFAULT 0,
+    version BIGINT NOT NULL DEFAULT 0,
+    CONSTRAINT ck_storage_usage_counter_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_storage_usage_counter_scope CHECK (tenant_id >= 0 AND organization_id >= 0),
+    CONSTRAINT ck_storage_usage_counter_values CHECK (used_logical_bytes >= 0 AND reserved_bytes >= 0 AND file_count >= 0 AND length(scope_type) > 0 AND length(scope_id) > 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_storage_usage_counter_scope ON storage_usage_counter (tenant_id, organization_id, scope_type, scope_id);
+CREATE INDEX IF NOT EXISTS ix_storage_usage_counter_scope_id ON storage_usage_counter (tenant_id, organization_id, scope_type, id);

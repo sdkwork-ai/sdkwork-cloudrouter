@@ -57,6 +57,15 @@
       "lock": "exclusive",
       "lock_timeout": "2s",
       "statement_timeout": "30s"
+    },
+    "0051_storage_center_governance.up.sql": {
+      "engine": "postgres",
+      "reversible": "true",
+      "rollback": "down-migration",
+      "transactional": "true",
+      "lock": "exclusive",
+      "lock_timeout": "2s",
+      "statement_timeout": "30s"
     }
   }
 }

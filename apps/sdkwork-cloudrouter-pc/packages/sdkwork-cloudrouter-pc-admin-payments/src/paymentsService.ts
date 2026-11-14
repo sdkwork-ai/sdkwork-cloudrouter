@@ -47,6 +47,20 @@ export async function backendPaymentsProvidersList(params?: Parameters<CloudBack
   return getCloudRouterBackendSdkClient().payments.providers.list(params);
 }
 
+/**
+ * Provider inventory with select-filter support (status). Providers are
+ * operator-managed inventory, so the status filter is the difference between
+ * scrolling a long catalogue and answering "what is switched off?" — the
+ * backend supports it natively, so the list is filtered server-side rather than
+ * slicing an already-paged window.
+ */
+export async function backendPaymentsProvidersListFiltered(filters?: Record<string, string>) {
+  const status = filters?.status;
+  return getCloudRouterBackendSdkClient().payments.providers.list({
+    status: status ? (status as 'active' | 'inactive' | 'disabled') : undefined,
+  });
+}
+
 export async function backendPaymentProvidersUpdate(providerId: string, body: UpdatePaymentProviderRequest) {
   return getCloudRouterBackendSdkClient().payments.providers.update(providerId, body);
 }

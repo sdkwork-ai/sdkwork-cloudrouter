@@ -87,7 +87,7 @@ ROOT_MODULE = DatabaseModuleSpec(
     # The root module additionally owns the console user-settings tables
     # (`iam_user_preference`, `integration_webhook_endpoint`) that live in its
     # composite baseline next to the auxiliary module tables.
-    table_prefixes=("ai_", "iam_user_", "integration_"),
+    table_prefixes=("ai_", "iam_user_", "integration_", "storage_"),
 )
 
 AUXILIARY_MODULES = (

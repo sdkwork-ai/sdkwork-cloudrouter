@@ -252,7 +252,7 @@ class _Hero extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '会员、积分、模型路由与用量管理，一个应用全部搞定。',
+            '会员、Token Bank 算力额度、模型路由与用量管理，一个应用全部搞定。',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),

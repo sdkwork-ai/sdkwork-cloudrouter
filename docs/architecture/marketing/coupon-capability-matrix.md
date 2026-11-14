@@ -312,7 +312,8 @@ DATABASE_URL=postgres://postgres:postgres@127.0.0.1:55432/promotion_it \
 | Cloud Router | typecheck / admin 214 / commerce 22 / i18n 8500 | passed |
 
 **商业化判定**：
-- **资产型券（算力/积分/现金/订阅）**：账户映射、单位、币种、生命周期、审计、防刷、各端展示均已通过真实 PG + 分层测试，可商业化。
+- **资产型券（算力/会员积分/现金）**：账户映射、单位、币种、生命周期、审计、防刷、各端展示均已通过真实 PG + 分层测试，可商业化。
+- **订阅券**：属于权益型券，由会员服务履约，不进入账户账本（`CommerceAccountAssetType` 只有 Cash / Points / TokenBank），因此不参与账户映射与账本单位校验。
 - **订单抵扣券**：promotion 引擎（apply/预算/settle/release/reverse）、order 改价、API/SDK/service 均已验证；缺支付/取消回调与 checkout UI，尚不能宣称端到端可售。
 
 ### 5.7 契约检查遗留（requires a naming decision）

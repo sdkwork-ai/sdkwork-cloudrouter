@@ -1293,6 +1293,11 @@ worker 尚未挂到应用启动生命周期，也还没有真实 provider execut
 Token Bank 的扣款单位是积分，目录价是货币金额；两者之间只允许一条确定的换算
 路径：
 
+> **术语校正（2026-11-14）**：本节是 2026-10-18 的审计原文，其中"积分"指代码里的
+> `token_points_for_charge` / `debit_points`，即 **Token Bank 的微积分记账单位**
+> （1 算力额度 = 1e6 微积分）。它不是会员积分（`points` 账户）。规范口径见
+> `sdkwork-order/specs/ACCOUNT_VALUE_ORDER_SPEC.md` §2。
+
 1. `customer_charge_amount`（货币）→ `token_points_for_charge`：
    `ceil(amount × currency→CNY × base_points_per_CNY × 1e6)` 微积分；
 2. 请求内多条 usage fact 用**累计上界法**分配 `debit_points`，各条之和恰好

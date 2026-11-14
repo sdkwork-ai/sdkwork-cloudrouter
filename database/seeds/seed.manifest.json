@@ -45,7 +45,8 @@
     },
     "standard": {
       "common": [
-        "001_bootstrap.sql"
+        "001_bootstrap.sql",
+        "002_storage_center_defaults.sql"
       ],
       "locales": {
         "zh-CN": [

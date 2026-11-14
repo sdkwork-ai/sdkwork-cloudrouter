@@ -443,7 +443,7 @@ async fn list_recharge_records(
           ON o.id = pa.order_id
          AND o.tenant_id = pa.tenant_id
          AND (o.organization_id = pa.organization_id)
-         AND o.subject = 'points_recharge'
+         AND o.subject IN ('points_recharge', 'token_bank_recharge')
         LEFT JOIN commerce_payment_method pm
           ON pm.tenant_id = pa.tenant_id
          AND (pm.organization_id = pa.organization_id)
@@ -499,7 +499,7 @@ async fn load_recharge_record(
           ON o.id = pa.order_id
          AND o.tenant_id = pa.tenant_id
          AND (o.organization_id = pa.organization_id)
-         AND o.subject = 'points_recharge'
+         AND o.subject IN ('points_recharge', 'token_bank_recharge')
         LEFT JOIN commerce_payment_method pm
           ON pm.tenant_id = pa.tenant_id
          AND (pm.organization_id = pa.organization_id)

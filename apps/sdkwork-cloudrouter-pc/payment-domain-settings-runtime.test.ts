@@ -56,3 +56,13 @@ test('domain settings page keeps hostname and port validation local', () => {
   assert.match(page, /h5Port/);
   assert.match(page, /h5Status/);
 });
+
+test('callback domain defaults to the public API host, not the console host', () => {
+  const page = readSource(
+    './packages/sdkwork-cloudrouter-pc-admin-payments/src/components/PaymentDomainSettingsAdmin.tsx',
+  );
+
+  assert.match(page, /resolvePublicApiHostname/);
+  assert.match(page, /currentCallbackHost/);
+  assert.match(page, /useState<CallbackDomainForm>\(defaultCallbackForm\)/);
+});

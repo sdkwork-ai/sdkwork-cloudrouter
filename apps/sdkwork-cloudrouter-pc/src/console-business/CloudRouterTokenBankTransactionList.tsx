@@ -15,16 +15,40 @@ export function getTokenBankTransactions(
   return transactions.filter((transaction) => transaction.tokenBankDelta !== 0);
 }
 
-/** Business types that represent a compute-credit consumption debit. */
+/**
+ * Business types that represent a compute-credit consumption debit.
+ *
+ * `token_bank_debit` / `token_bank_burn` are the account-ledger names for an
+ * actual debit; the gateway billing and async settlement types are the
+ * invocation-level producers of the same movement.
+ */
 const TOKEN_BANK_USAGE_TYPES = new Set([
   'gateway_invocation_billing',
   'usage_settlement',
+  'token_bank_debit',
+  'token_bank_burn',
+  'token_bank_hold',
+  'token_bank_hold_settle',
 ]);
 
-/** Business types that add compute credits to the Token Bank account. */
+/**
+ * Business types that add compute credits to the Token Bank account.
+ *
+ * These are all Token Bank ledger types. `points_recharge` is deliberately
+ * absent: it is the Membership Points asset and must never be presented as a
+ * Token Bank top-up (`ACCOUNT_VALUE_ORDER_SPEC.md` §2.1).
+ */
 const TOKEN_BANK_CREDIT_TYPES = new Set([
   'token_bank_purchase_credit',
+  'token_bank_grant',
+  'token_bank_issue',
+]);
+
+/** Business types that return previously debited compute credits. */
+const TOKEN_BANK_RETURN_TYPES = new Set([
   'refund',
+  'token_bank_reversal',
+  'token_bank_hold_release',
 ]);
 
 /**
@@ -55,10 +79,10 @@ export function resolveTokenBankTransactionTitle(
       ? translate('console.tokenBank.transactionTitles.gatewayReturn')
       : translate('console.tokenBank.transactionTitles.gatewayUsage');
   }
-  if (type === 'token_bank_purchase_credit' || type === 'points_recharge') {
+  if (TOKEN_BANK_CREDIT_TYPES.has(type)) {
     return translate('console.tokenBank.transactionTitles.recharge');
   }
-  if (type === 'refund') {
+  if (TOKEN_BANK_RETURN_TYPES.has(type)) {
     return translate('console.tokenBank.transactionTitles.refund');
   }
 
@@ -102,10 +126,10 @@ export function classifyTokenBankTransaction(
   if (TOKEN_BANK_USAGE_TYPES.has(type)) {
     return 'usage';
   }
-  if (type === 'token_bank_purchase_credit' || type === 'points_recharge') {
+  if (TOKEN_BANK_CREDIT_TYPES.has(type)) {
     return 'recharge';
   }
-  if (type === 'refund') {
+  if (TOKEN_BANK_RETURN_TYPES.has(type)) {
     return 'refund';
   }
   const haystack = [

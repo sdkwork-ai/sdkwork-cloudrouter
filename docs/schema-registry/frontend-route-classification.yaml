@@ -369,20 +369,6 @@ routes:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
-- route: /api-reference
-  package: '@sdkwork/documents-pc-api-reference'
-  owner: developer-tools
-  route_scope: public
-  delivery_kind: sdk_backed_business_runtime
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-documents-app-sdk
-  api_surface: app
-  operation_routes:
-  - /api-reference
-  evidence:
-  - apps/sdkwork-cloudrouter-pc/src/App.tsx
-  - sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/index.ts
-  - docs/schema-registry/frontend-field-contracts.yaml
 - route: /auth/forgot-password
   package: portal-root
   owner: product-surface
@@ -625,20 +611,6 @@ routes:
   evidence:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - docs/schema-registry/frontend-field-contracts.yaml
-- route: /docs
-  package: '@sdkwork/documents-pc-api-reference'
-  owner: developer-tools
-  route_scope: public
-  delivery_kind: sdk_backed_business_runtime
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-documents-app-sdk
-  api_surface: app
-  operation_routes:
-  - /docs
-  evidence:
-  - apps/sdkwork-cloudrouter-pc/src/App.tsx
-  - sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/index.ts
-  - docs/schema-registry/frontend-field-contracts.yaml
 - route: /models
   delivery_kind: sdk_backed_business_runtime
   api_surface: app
@@ -717,20 +689,6 @@ routes:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing/src/services/pricingService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
-- route: /product-docs
-  package: '@sdkwork/documents-pc-api-reference'
-  owner: developer-tools
-  route_scope: public
-  delivery_kind: sdk_backed_business_runtime
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-documents-app-sdk
-  api_surface: app
-  operation_routes:
-  - /product-docs
-  evidence:
-  - apps/sdkwork-cloudrouter-pc/src/App.tsx
-  - sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/index.ts
-  - docs/schema-registry/frontend-field-contracts.yaml
 - route: /rankings
   delivery_kind: sdk_backed_business_runtime
   api_surface: app
@@ -745,20 +703,6 @@ routes:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-rankings/src/rankingCatalog.ts
   - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-rankings/src/rankingService.ts
-  - docs/schema-registry/frontend-field-contracts.yaml
-- route: /sdk-reference
-  package: '@sdkwork/documents-pc-sdk-reference'
-  owner: developer-tools
-  route_scope: public
-  delivery_kind: sdk_backed_business_runtime
-  dependency_owned: true
-  dependency_sdk_family: sdkwork-documents-app-sdk
-  api_surface: app
-  operation_routes:
-  - /sdk-reference
-  evidence:
-  - apps/sdkwork-cloudrouter-pc/src/App.tsx
-  - sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-sdk-reference/src/index.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - package: '@sdkwork/cloudrouter-pc-admin-upstream'
   owner: admin-control-plane
@@ -1021,3 +965,146 @@ routes:
   - /iam/v3/oauth/authorize
   evidence:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
+- route: /admin/documents
+  package: '@sdkwork/documents-pc-admin-documents'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-documents-app-sdk
+  api_surface: app
+  operation_routes:
+  - /admin/documents
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+
+- route: /admin/documents/:documentId
+  package: '@sdkwork/documents-pc-admin-documents'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-documents-app-sdk
+  api_surface: app
+  operation_routes:
+  - /admin/documents/:documentId
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+
+- route: /admin/documents/new
+  package: '@sdkwork/documents-pc-admin-documents'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-documents-app-sdk
+  api_surface: app
+  operation_routes:
+  - /admin/documents/new
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+
+- route: /console/hardware
+  package: '@sdkwork/cloudrouter-pc-console-hardware'
+  owner: product-surface
+  route_scope: console
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-agent-app-sdk
+  api_surface: app
+  operation_routes:
+  - /console/hardware
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+
+- route: /console/hardware/devices
+  package: '@sdkwork/cloudrouter-pc-console-hardware'
+  owner: product-surface
+  route_scope: console
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-agent-app-sdk
+  api_surface: app
+  operation_routes:
+  - /console/hardware/devices
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+
+- route: /console/hardware/firmware
+  package: '@sdkwork/cloudrouter-pc-console-hardware'
+  owner: product-surface
+  route_scope: console
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-agent-app-sdk
+  api_surface: app
+  operation_routes:
+  - /console/hardware/firmware
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+
+- route: /dev-docs
+  package: '@sdkwork/documents-pc-api-reference'
+  owner: product-surface
+  route_scope: public
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-documents-app-sdk
+  api_surface: app
+  operation_routes:
+  - /dev-docs
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+
+- route: /dev-docs/api-reference
+  package: '@sdkwork/documents-pc-api-reference'
+  owner: product-surface
+  route_scope: public
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-documents-app-sdk
+  api_surface: app
+  operation_routes:
+  - /dev-docs/api-reference
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+
+- route: /dev-docs/product-docs
+  package: '@sdkwork/documents-pc-api-reference'
+  owner: product-surface
+  route_scope: public
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-documents-app-sdk
+  api_surface: app
+  operation_routes:
+  - /dev-docs/product-docs
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+
+- route: /dev-docs/sdk-reference
+  package: '@sdkwork/documents-pc-sdk-reference'
+  owner: product-surface
+  route_scope: public
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-documents-app-sdk
+  api_surface: app
+  operation_routes:
+  - /dev-docs/sdk-reference
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+
+- route: /docs/:documentRef
+  package: '@sdkwork/documents-pc-public-documents'
+  owner: product-surface
+  route_scope: public
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-documents-app-sdk
+  api_surface: app
+  operation_routes:
+  - /docs/:documentRef
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+

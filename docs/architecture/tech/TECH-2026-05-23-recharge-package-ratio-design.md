@@ -1,5 +1,16 @@
 > Migrated from `docs/superpowers/specs/2026-05-23-recharge-package-ratio-design.md` on 2026-06-24.
 > Owner: SDKWork maintainers
+>
+> **Terminology correction (2026-11-14).** This design was written when the compute-credit
+> balance was called "points". The canonical model
+> (`sdkwork-order/specs/ACCOUNT_VALUE_ORDER_SPEC.md` §2) separates three account assets:
+> `token_bank` (compute credits, zh display 算力额度), `points` (membership points, zh display
+> 会员积分), and `cash`. Everything this document calls "point recharge" / `CASH -> POINTS` is
+> the **Token Bank** recharge product; the `points` asset is membership points and is not sold
+> by these packages. The implementation still stores the ratio as `target_asset_type = points`
+> and the wire field `basePointsPerCny` — that is tracked debt (see the taxonomy doc's D-list),
+> not the canonical naming. Read "points" in this document as "Token Bank credits" unless the
+> text explicitly says membership points.
 
 ## Goal
 

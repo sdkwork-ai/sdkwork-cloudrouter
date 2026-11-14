@@ -7,7 +7,7 @@ export const profileMessages: Record<string, string> = {
   'cloudrouter.console.profile.guestHint': "Sign in to view your account and balance",
   'cloudrouter.console.profile.accountFallback': "CloudRouter user",
   'cloudrouter.console.profile.verified': "Verified",
-  'cloudrouter.console.profile.balance': "Balance (CNY)",
+  'cloudrouter.console.profile.balance': "Cash balance (CNY)",
   'cloudrouter.console.profile.recharge': "Top up",
   'cloudrouter.console.profile.autoRecharge': "Set up auto top-up",
   'cloudrouter.console.profile.coupons': "Coupons",

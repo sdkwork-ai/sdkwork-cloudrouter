@@ -272,6 +272,12 @@ entries:
     status: active
     owner: cloudrouter-commercial
     title: Edition tier matrix
+  - id: DOMAIN-MEMBERSHIP-0001
+    path: docs/domains/membership/team-subscription.md
+    kind: domain-design
+    status: active
+    owner: cloudrouter-data
+    title: Team subscription (organization and seats) design
 domains:
   - id: gateway
     name: Gateway
@@ -288,6 +294,12 @@ domains:
     description: Billing ledger, usage settlement, payment adapter, financial compliance
     documents:
       - SCHEMA-0001
+  - id: membership
+    name: Membership
+    owner: cloudrouter-data
+    description: Personal and organization subscriptions, seat licensing, entitlement fulfillment
+    documents:
+      - DOMAIN-MEMBERSHIP-0001
   - id: iam
     name: IAM
     owner: cloudrouter-security

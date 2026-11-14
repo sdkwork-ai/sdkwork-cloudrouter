@@ -4,7 +4,7 @@
 //! builds a transport client itself: the hosting portal injects the generated
 //! `@sdkwork/aiot-backend-sdk` client into the AIoT core port, exactly like the
 //! messaging, partner, and order host wirings. The AIoT management API is served
-//! on the same backend API surface (`/backend/v3/api/iot/...`), so the client
+//! on the same backend API surface (the AIoT backend iot surface), so the client
 //! reuses the portal backend base-url chain and the portal's global app-session
 //! token manager.
 

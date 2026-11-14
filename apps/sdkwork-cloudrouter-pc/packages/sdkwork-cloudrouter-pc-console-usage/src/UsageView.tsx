@@ -346,7 +346,7 @@ export function UsageView() {
           </div>
           <div className="flex flex-col px-3.5 py-2 rounded-lg bg-white dark:bg-[#252525] border border-slate-200 dark:border-white/5 shadow-sm">
             <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-medium">
-              {t('console.usage.stat.pagePoints', '本页积分')}
+              {t('console.usage.stat.pagePoints', '本页算力额度')}
             </span>
             <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 font-mono">
               {formatPoints(String(pageStats.pagePoints), displayLocale)}
@@ -479,7 +479,7 @@ export function UsageView() {
                   <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-right">{t('console.usage.table.input', 'Input')}</th>
                   <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-right">{t('console.usage.table.output', 'Output')}</th>
                   <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-right">{t('console.usage.table.cash', '现金花费')}</th>
-                  <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-right">{t('console.usage.table.points', '积分花费')}</th>
+                  <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-right">{t('console.usage.table.points', '算力额度花费')}</th>
                   <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-center">{t('console.usage.table.ip', 'IP')}</th>
                   <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-center">{t('console.usage.table.userAgent', 'User Agent')}</th>
                   <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-wider">{t('console.usage.table.details', '详情')}</th>
@@ -729,7 +729,7 @@ export function UsageView() {
                                     {t('console.usage.metric.cash', '现金')} <span className="font-mono text-rose-600 dark:text-rose-400">{formatCashAmount(log.cost, log.currency, displayLocale)}</span>
                                   </span>
                                   <span className="text-slate-600 dark:text-slate-300">
-                                    {t('console.usage.metric.points', '积分')} <span className="font-mono text-indigo-600 dark:text-indigo-400">{formatPoints(log.points, displayLocale)}</span>
+                                    {t('console.usage.metric.points', '算力额度')} <span className="font-mono text-indigo-600 dark:text-indigo-400">{formatPoints(log.points, displayLocale)}</span>
                                   </span>
                                 </div>
 

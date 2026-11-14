@@ -263,7 +263,7 @@ export function RecordAdmin() {
                 </th>
                 <th className="px-4 py-3.5 font-medium text-right">{t("admin.record.index.text.outputHeader", "输出 (Token数)")}</th>
                 <th className="px-4 py-3.5 font-medium text-right">{t("admin.record.index.text.1rexn4k", "现金花费")}</th>
-                <th className="px-4 py-3.5 font-medium text-right">{t("admin.record.index.text.cashxh2", "积分花费")}</th>
+                <th className="px-4 py-3.5 font-medium text-right">{t("admin.record.index.text.cashxh2", "算力额度花费")}</th>
                 <th className="px-4 py-3.5 font-medium text-center relative">
                   {t('admin.record.table.ip', 'IP')}
                   <Info className="w-3.5 h-3.5 inline-block ml-1 opacity-50 cursor-pointer" />
@@ -477,7 +477,7 @@ export function RecordAdmin() {
 
                               <div className="mt-1.5 flex w-fit max-w-full flex-col gap-1.5 p-3 bg-white dark:bg-[#1a1a1a] rounded-lg border border-slate-200 dark:border-white/5 font-mono text-[11px] shadow-sm dark:shadow-none">
                                 <div className="text-slate-500 dark:text-slate-400">
-                                  {t("admin.record.index.text.pointsExchangeRate", "积分汇率:")} <Coins className="w-3 h-3 inline-block text-indigo-500/80 -mt-0.5" /> 1 {(log.currency || 'USD').toUpperCase()} ≈ <span className="text-indigo-600 dark:text-indigo-400">{formatPointsRateLabel(log)}</span> 积分
+                                  {t("admin.record.index.text.pointsExchangeRate", "算力额度汇率:")} <Coins className="w-3 h-3 inline-block text-indigo-500/80 -mt-0.5" /> 1 {(log.currency || 'USD').toUpperCase()} ≈ <span className="text-indigo-600 dark:text-indigo-400">{formatPointsRateLabel(log)}</span> 算力额度
                                 </div>
                                 <div className="text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-white/5 p-2 rounded">
                                   {t(
@@ -500,7 +500,7 @@ export function RecordAdmin() {
                                   {t("admin.record.index.text.cashLb", "现金")}<Zap className="w-3 h-3 inline-block text-rose-500/80 -mt-0.5" /> <span className="font-mono text-rose-600 dark:text-rose-500 font-medium">{formatCashAmount(log.cost, log.currency)}</span>
                                 </span>
                                 <span className="text-slate-600 dark:text-slate-300">
-                                  {t("admin.record.index.text.ptsLb", "积分")}<Coins className="w-3 h-3 inline-block text-indigo-500/80 -mt-0.5" /> <span className="font-mono text-indigo-600 dark:text-indigo-400 font-medium">{formatPoints(log.points)}</span>
+                                  {t("admin.record.index.text.ptsLb", "算力额度")}<Coins className="w-3 h-3 inline-block text-indigo-500/80 -mt-0.5" /> <span className="font-mono text-indigo-600 dark:text-indigo-400 font-medium">{formatPoints(log.points)}</span>
                                 </span>
                               </div>
 

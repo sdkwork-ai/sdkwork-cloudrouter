@@ -5,7 +5,10 @@ use sdkwork_database_config::DatabaseConfig;
 use sdkwork_database_lifecycle::{
     lifecycle_options_from_env, LifecycleOrchestrator, RegistryLifecycleOrchestrator,
 };
-use sdkwork_database_spi::{DatabaseModuleRegistry, DefaultDatabaseModule};
+use sdkwork_database_spi::{
+    DatabaseAssetProvider, DatabaseManifest, DatabaseModuleRegistry, DefaultDatabaseModule,
+    LocaleTag,
+};
 use sdkwork_database_sqlx::{create_pool_from_config, DatabasePool};
 use sha2::{Digest, Sha256};
 
@@ -91,6 +94,56 @@ impl CloudRouterDatabaseHost {
                 .len();
         }
         Ok(count)
+    }
+
+    /// Applies every module's configured seed set on an explicit lifecycle
+    /// command.
+    ///
+    /// Production keeps `SDKWORK_DATABASE_SEED_ON_BOOT` off
+    /// (DATABASE_FRAMEWORK_SPEC.md §5.5, ENVIRONMENT_SPEC.md §7.1) and drives
+    /// lifecycle through explicit installer commands, so `cloudrouterctl
+    /// install|upgrade|ensure` must apply the module seed sets itself. Without
+    /// this step the storage-center reference data
+    /// (`database/seeds/common/002_storage_center_defaults.sql`: providers,
+    /// Tencent COS buckets, and the per-logical-scope default-bucket policies
+    /// behind `/admin/storage/defaultBuckets`) exists only on a development
+    /// boot, and a packaged install reports success with an empty console
+    /// section.
+    ///
+    /// The seed runner records each file's content checksum in the shared
+    /// history tables, so repeated ensures apply only new or changed seeds.
+    ///
+    /// `seed_locale` is the installer's resolved locale override (environment or
+    /// runtime TOML). When omitted, the module's own manifest/env default
+    /// applies.
+    pub async fn seed(&self, applied_by: &str, seed_locale: Option<&str>) -> Result<usize, String> {
+        let mut applied = 0usize;
+        for module in &self.modules {
+            let manifest =
+                DatabaseManifest::from_file(module.manifest_path()).map_err(|error| {
+                    format!(
+                        "read cloud router database module {} manifest failed: {error}",
+                        module.manifest().module_id
+                    )
+                })?;
+            let options = lifecycle_options_from_env("CLOUD_ROUTER", &manifest);
+            let locale = LocaleTag(
+                seed_locale
+                    .map(str::to_owned)
+                    .unwrap_or_else(|| options.seed_locale.0.clone()),
+            );
+            applied += self
+                .orchestrator(module.clone(), applied_by)
+                .seed(&locale, &options.seed_profile)
+                .await
+                .map_err(|error| {
+                    format!(
+                        "cloud router database module {} seed failed: {error}",
+                        manifest.module_id
+                    )
+                })?;
+        }
+        Ok(applied)
     }
 }
 
@@ -495,5 +548,31 @@ mod tests {
         assert!(!explicit_lifecycle_command());
         unsafe { std::env::remove_var("SDKWORK_DATABASE_LIFECYCLE_COMMAND") };
         assert!(!explicit_lifecycle_command());
+    }
+
+    /// The storage-center reference data behind `/admin/storage/defaultBuckets`
+    /// is seed-only data. The module must expose an explicit-command seed entry
+    /// point (production does not boot-seed) and the standard profile must
+    /// actually register the seed file.
+    #[test]
+    fn explicit_lifecycle_exposes_the_module_seed_set() {
+        let source = include_str!("lib.rs");
+        // Needles are split so this test's own literals cannot satisfy them.
+        assert!(
+            source.contains(concat!("pub async fn ", "seed(")),
+            "the database host must let the explicit lifecycle apply the module seed set"
+        );
+        assert!(
+            source.contains(concat!(".seed(&locale, ", "&options.seed_profile)")),
+            "the seed entry point must honor the configured seed profile"
+        );
+
+        let seed_manifest =
+            std::fs::read_to_string(resolve_app_root().join("database/seeds/seed.manifest.json"))
+                .expect("read the Cloud Router seed manifest");
+        assert!(
+            seed_manifest.contains("002_storage_center_defaults.sql"),
+            "the standard seed profile must ship the storage-center defaults"
+        );
     }
 }

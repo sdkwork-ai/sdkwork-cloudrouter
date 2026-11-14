@@ -142,6 +142,31 @@ fn restore_optional_env(key: &str, value: Option<std::ffi::OsString>) {
     }
 }
 
+/// Applies Cloud Router's own module seed set during an explicit lifecycle
+/// command.
+///
+/// `database.manifest.json` declares `seedOnBoot = true` and the `standard`
+/// profile. Runtime boot honors that in development, but production keeps the
+/// `SDKWORK_DATABASE_*` lifecycle switches off and `cloudrouterctl
+/// install|upgrade|ensure` owns the work. Without this step the seed files
+/// registered in `database/seeds/seed.manifest.json` — most importantly
+/// `common/002_storage_center_defaults.sql`, which installs the provider,
+/// bucket, and per-logical-scope default-bucket rows the storage admin console
+/// reads — never apply to a packaged or deployed database.
+///
+/// The seed runner records each file's content checksum, so a repeated ensure
+/// applies only new or changed seeds and never rewrites operator edits.
+async fn bootstrap_cloud_router_seed_set(
+    pool: &sdkwork_database_sqlx::DatabasePool,
+    seed_locale: Option<&str>,
+) -> anyhow::Result<()> {
+    let host = connect_cloud_router_database(pool.clone()).map_err(anyhow::Error::msg)?;
+    host.seed("cloudrouterctl", seed_locale)
+        .await
+        .map_err(|error| anyhow::anyhow!("cloud router database seed bootstrap failed: {error}"))?;
+    Ok(())
+}
+
 async fn run_postgres(config: DatabaseConfig, command: InstallerCommand) -> anyhow::Result<()> {
     let database_pool = connect_installer_database_pool(&config).await?;
     apply_explicit_schema_lifecycle_if_required(&database_pool, &command).await?;
@@ -162,6 +187,26 @@ async fn run_postgres(config: DatabaseConfig, command: InstallerCommand) -> anyh
         .map_err(|error| {
             InstallerCliError::DatabaseConnection(format!(
                 "federated commerce database bootstrap failed: {error}"
+            ))
+        })?;
+        // Cloud Router's own module seed set (standard profile): the
+        // storage-center reference data behind `/admin/storage/defaultBuckets`
+        // (providers, Tencent Cloud COS buckets, default-bucket policies) is
+        // installed only by the seed lifecycle, and production runs with
+        // `SDKWORK_DATABASE_SEED_ON_BOOT` off.
+        bootstrap_cloud_router_seed_set(&database_pool, install_options.seed_locale.as_deref())
+            .await?;
+        // Drive's admin-storage module seed set: the mainstream storage provider
+        // catalog and the Tencent Cloud COS tenant default binding behind
+        // `/admin/storage/providers`.
+        federated::bootstrap_federated_storage_module(
+            &database_pool,
+            install_options.seed_locale.as_deref(),
+        )
+        .await
+        .map_err(|error| {
+            InstallerCliError::DatabaseConnection(format!(
+                "Drive storage database bootstrap failed: {error}"
             ))
         })?;
     }
@@ -1292,6 +1337,39 @@ mod tests {
                 "bootstrap_federated_commerce_modules(\n            &database_pool,\n            install_options.seed_locale.as_deref(),"
             ),
             "federated bootstrap must use the canonical seed locale override"
+        );
+    }
+
+    /// Install/upgrade must also apply the seed sets the storage admin console
+    /// depends on: Cloud Router's own module seeds (the storage-center provider,
+    /// bucket, and default-bucket rows) and Drive's storage module seed (the
+    /// mainstream provider catalog and the Tencent COS default binding).
+    /// Otherwise a packaged deployment reports success with empty
+    /// `/admin/storage/providers` and `/admin/storage/defaultBuckets`.
+    #[test]
+    fn schema_lifecycle_commands_seed_the_storage_center_reference_data() {
+        let source = include_str!("main.rs");
+        // Needles are split so this test's own literals cannot satisfy them.
+        let migration_gate = source
+            .find("if command.requires_schema_migration() {")
+            .expect("explicit lifecycle gate");
+        let cloudrouter_seed = source
+            .find(concat!("bootstrap_cloud_router_seed_", "set("))
+            .expect("Cloud Router module seed set must run on install/upgrade");
+        let drive_seed = source
+            .find(concat!(
+                "federated::bootstrap_federated_",
+                "storage_module("
+            ))
+            .expect("Drive storage module seed must run on install/upgrade");
+
+        assert!(
+            cloudrouter_seed > migration_gate,
+            "Cloud Router seed set must run only for explicit schema lifecycle commands"
+        );
+        assert!(
+            drive_seed > migration_gate,
+            "Drive storage seed must run only for explicit schema lifecycle commands"
         );
     }
 
