@@ -282,10 +282,31 @@ export const cloudRouterTeamSubscriptionPort: SdkworkTeamSubscriptionPort = {
   },
 
   /**
+   * Binds the caller's paid-but-unbound team subscription to an organization.
+   *
+   * Business rule: a team subscription can be bought before any organization
+   * exists. The membership endpoint then answers the caller's unbound
+   * subscription (`organizationBindingStatus: 'unbound'`, empty organizationId)
+   * and this call consumes it: IAM authorizes the caller's
+   * `TEAM_SEAT_MANAGE` capability in the target organization, and membership
+   * re-scopes the subscription, audits `team_org_bind`, and returns the bound
+   * overview the surface refreshes to.
+   */
+  async bindOrganization(organizationId: string): Promise<SdkworkTeamSubscriptionOverview> {
+    try {
+      return await teamMemberships().teamSubscription.bind({ organizationId });
+    } catch (error) {
+      throw normalizeSdkworkTeamError(error);
+    }
+  },
+
+  /**
    * Starts the order-owned membership checkout for a team plan.
    *
    * `quantity` is the seat count of the requested action: the total seat count
    * for a first `purchase`, or the number of ADDITIONAL seats for `add_seats`.
+   * A `purchase` needs no organization: the paid order is fulfilled as an
+   * unbound team subscription that is bound to an organization afterwards.
    */
   async startCheckout(input: SdkworkTeamCheckoutInput): Promise<SdkworkTeamCheckoutPayment> {
     try {

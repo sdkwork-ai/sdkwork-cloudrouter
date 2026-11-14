@@ -35,6 +35,19 @@ export const consoleTokenPlanTeamMessages: I18nMessageBundle = {
     'token_plan.team.organization_sign_in_required':
       'This platform requires choosing the organization at sign-in. Sign in again and pick the team organization.',
 
+    'token_plan.team.unbound_title': 'No organization bound yet',
+    'token_plan.team.unbound_hint':
+      'Your team subscription is paid for. Pick an organization to bind it and then assign seats to your members.',
+    'token_plan.team.bind_title': 'Bind an organization',
+    'token_plan.team.bind_subtitle':
+      'Team subscription purchased with {{seats}} seats. Pick an organization to finish binding, then assign seats.',
+    'token_plan.team.bind_action': 'Bind to this organization',
+    'token_plan.team.bind_ineligible': 'Only organization owners and admins can bind a team subscription.',
+    'token_plan.team.bind_no_organization':
+      'This account does not belong to any team organization. Create one, or join one as owner or admin, then come back to bind.',
+    'token_plan.team.bind_failed': 'Organization binding failed.',
+    'token_plan.team.bind_success': 'Team subscription bound to the organization. You can assign seats now.',
+
     'token_plan.team.billing_monthly': 'Monthly',
     'token_plan.team.billing_annual': 'Annual',
     'token_plan.team.billing_annual_hint': 'Save about 17% with annual billing.',
@@ -120,6 +133,14 @@ export const consoleTokenPlanTeamMessages: I18nMessageBundle = {
     'token_plan.team.error_not_member': 'This user is not an active member of the organization.',
     'token_plan.team.error_subscription_inactive': 'The team subscription is not active.',
     'token_plan.team.error_assignment_not_found': 'This member does not hold a seat.',
+    'token_plan.team.error_subscription_unbound':
+      'The team subscription is not bound to an organization yet. Bind one before managing seats.',
+    'token_plan.team.error_subscription_already_unbound':
+      'This account already owns an unbound team subscription. Bind it before purchasing another.',
+    'token_plan.team.error_subscription_not_found':
+      'No team subscription is waiting to be bound. Purchase a team plan first.',
+    'token_plan.team.error_organization_already_subscribed':
+      'This organization already has an active team subscription and cannot be bound again.',
 
     'token_plan.team.checkout_title': 'Team subscription checkout',
     'token_plan.team.checkout_item': 'Team subscription',
@@ -155,6 +176,16 @@ export const consoleTokenPlanTeamMessages: I18nMessageBundle = {
     'token_plan.team.organization_none': '当前账号不属于任何团队组织，因此无法购买或管理团队坐席。',
     'token_plan.team.organization_switched': '已切换到所选团队组织。',
     'token_plan.team.organization_sign_in_required': '该平台需要在登录时选择组织，请重新登录并选择团队组织。',
+
+    'token_plan.team.unbound_title': '尚未绑定组织',
+    'token_plan.team.unbound_hint': '团队订阅已购买成功。选择一个组织完成绑定后，即可把坐席分配给团队成员。',
+    'token_plan.team.bind_title': '绑定组织',
+    'token_plan.team.bind_subtitle': '团队订阅已购买成功，共 {{seats}} 个坐席。选择一个组织完成绑定，之后即可分配坐席。',
+    'token_plan.team.bind_action': '绑定到此组织',
+    'token_plan.team.bind_ineligible': '仅组织所有者或管理员可以绑定团队订阅。',
+    'token_plan.team.bind_no_organization': '当前账号不属于任何团队组织。请先创建一个组织，或加入一个拥有者/管理员身份的组织后再回来绑定。',
+    'token_plan.team.bind_failed': '组织绑定失败。',
+    'token_plan.team.bind_success': '团队订阅已绑定到组织，现在可以分配坐席了。',
 
     'token_plan.team.billing_monthly': '按月',
     'token_plan.team.billing_annual': '按年',
@@ -238,6 +269,10 @@ export const consoleTokenPlanTeamMessages: I18nMessageBundle = {
     'token_plan.team.error_not_member': '该用户不是组织的有效成员。',
     'token_plan.team.error_subscription_inactive': '团队订阅当前未生效。',
     'token_plan.team.error_assignment_not_found': '该成员未持有坐席。',
+    'token_plan.team.error_subscription_unbound': '团队订阅尚未绑定组织，请先完成组织绑定再管理坐席。',
+    'token_plan.team.error_subscription_already_unbound': '当前账号已有一笔未绑定组织的团队订阅，请先绑定组织后再购买。',
+    'token_plan.team.error_subscription_not_found': '未找到可绑定的团队订阅，请先完成团队订阅购买。',
+    'token_plan.team.error_organization_already_subscribed': '该组织已拥有生效中的团队订阅，无法重复绑定。',
 
     'token_plan.team.checkout_title': '团队订阅结算',
     'token_plan.team.checkout_item': '团队订阅',
