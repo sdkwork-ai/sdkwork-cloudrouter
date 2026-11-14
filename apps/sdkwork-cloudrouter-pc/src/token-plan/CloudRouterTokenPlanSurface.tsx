@@ -1,6 +1,7 @@
 import {
   SdkworkSubscriptionCatalogPage,
   sdkworkSubscriptionCatalogHostComponents,
+  type SdkworkSubscriptionCatalogTeamProps,
 } from '@sdkwork/membership-pc-subscription/catalog';
 import { buildPortalAuthLoginRedirect } from '@sdkwork/cloudroutes-pc-commons';
 import { getCloudRouterMembershipCheckoutService } from '@sdkwork/cloudroutes-pc-commons/domain-service-providers';
@@ -14,13 +15,23 @@ import {
 import { useTokenPlanMemberSummary } from './tokenPlanMemberSummary.ts';
 import { useTokenPlanNotify } from './tokenPlanNotify.tsx';
 
+export interface CloudRouterTokenPlanSurfaceProps {
+  /**
+   * Organization (team) capability handed to the shared catalog page.
+   *
+   * The public token-plan page supplies the team port so the audience switch
+   * appears; the console membership page omits it and stays personal-only.
+   */
+  team?: SdkworkSubscriptionCatalogTeamProps;
+}
+
 /**
  * The canonical Cloud Router token-plan surface.
  *
  * Keep public and console membership entry points on this shared composition so
  * catalog behavior, host modals, notifications, and visual treatment cannot drift.
  */
-export function CloudRouterTokenPlanSurface() {
+export function CloudRouterTokenPlanSurface({ team }: CloudRouterTokenPlanSurfaceProps) {
   const { memberSummary, refreshMembership, setMembershipTierKey } = useTokenPlanMemberSummary();
   const { NotifyOutlet, onNotify } = useTokenPlanNotify();
 
@@ -46,6 +57,7 @@ export function CloudRouterTokenPlanSurface() {
           void refreshMembership().catch(() => undefined);
         }}
         onNotify={onNotify}
+        team={team}
       />
     </div>
   );

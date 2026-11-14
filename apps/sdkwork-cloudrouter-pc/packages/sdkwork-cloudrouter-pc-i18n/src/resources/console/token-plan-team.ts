@@ -22,6 +22,18 @@ export const consoleTokenPlanTeamMessages: I18nMessageBundle = {
     'token_plan.team.role_member': 'Member',
     'token_plan.team.no_org': 'No organization selected',
     'token_plan.team.no_org_hint': 'Switch to a team organization to purchase and manage team seats.',
+    'token_plan.team.organization_selector_title': 'Team organizations',
+    'token_plan.team.organization_selector_hint':
+      'Team subscriptions are billed per organization. Choose the organization you want to manage.',
+    'token_plan.team.organization_switching': 'Switching organization…',
+    'token_plan.team.organization_current': 'Current organization',
+    'token_plan.team.organization_switch': 'Switch',
+    'token_plan.team.organization_only_membership': 'This account belongs to this team organization only.',
+    'token_plan.team.organization_none':
+      'This account does not belong to a team organization, so team seats cannot be purchased or managed.',
+    'token_plan.team.organization_switched': 'Switched to the selected team organization.',
+    'token_plan.team.organization_sign_in_required':
+      'This platform requires choosing the organization at sign-in. Sign in again and pick the team organization.',
 
     'token_plan.team.billing_monthly': 'Monthly',
     'token_plan.team.billing_annual': 'Annual',
@@ -134,6 +146,15 @@ export const consoleTokenPlanTeamMessages: I18nMessageBundle = {
     'token_plan.team.role_member': '成员',
     'token_plan.team.no_org': '未选择组织',
     'token_plan.team.no_org_hint': '请先切换到团队组织，再购买和管理团队坐席。',
+    'token_plan.team.organization_selector_title': '团队组织',
+    'token_plan.team.organization_selector_hint': '团队订阅按组织计费，请选择要管理的团队组织。',
+    'token_plan.team.organization_switching': '正在切换组织…',
+    'token_plan.team.organization_current': '当前组织',
+    'token_plan.team.organization_switch': '切换',
+    'token_plan.team.organization_only_membership': '当前账号只属于这一个团队组织。',
+    'token_plan.team.organization_none': '当前账号不属于任何团队组织，因此无法购买或管理团队坐席。',
+    'token_plan.team.organization_switched': '已切换到所选团队组织。',
+    'token_plan.team.organization_sign_in_required': '该平台需要在登录时选择组织，请重新登录并选择团队组织。',
 
     'token_plan.team.billing_monthly': '按月',
     'token_plan.team.billing_annual': '按年',
