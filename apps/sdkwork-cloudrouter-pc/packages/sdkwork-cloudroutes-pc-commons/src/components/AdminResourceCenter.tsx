@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MoreHorizontal, RefreshCw, Search } from 'lucide-react';
+import { MoreHorizontal, RefreshCw, Search, X } from 'lucide-react';
 import { AdminTableShell } from './AdminTableShell';
 import { BottomPagination } from './BottomPagination';
 import { BusinessStatePanel, BusinessStateTableRow } from './BusinessState';
@@ -9,19 +9,54 @@ export type AdminResourceRecord = Record<string, unknown>;
 export type AdminResourceLoadParams = {
   page: number;
   pageSize: number;
-  /** Active select-filter values keyed by filter key. */
+  /** Active select/text-filter values keyed by filter key. */
   filters?: Record<string, string>;
+  /**
+   * Committed free-text search term when the section runs server-side search
+   * (`AdminResourceSection.searchMode: 'server'`). Never sent for client
+   * sections, which keep filtering the loaded page in the browser.
+   */
+  search?: string;
 };
 
 export type AdminResourceSelectFilter = {
   key: string;
   label: string;
+  /** Default filter control. `'select'` is accepted explicitly for readability. */
+  kind?: 'select';
   /** 静态选项，或按当前 filter 值动态求值的级联选项
    *  （如 region 选项随选中的 provider 变化）。 */
   options:
     | readonly { value: string; label: string }[]
     | ((filters: Record<string, string>) => readonly { value: string; label: string }[]);
   placeholder?: string;
+};
+
+/** Free-text filter control kind; `date`/`datetime-local` cover time windows. */
+export type AdminResourceInputFilterKind = 'text' | 'date' | 'datetime-local' | 'number' | 'search';
+
+/**
+ * Text-like filter (identifiers, currency codes, creation-time bounds).
+ *
+ * Values are committed with a short debounce so typing does not fire one list
+ * request per keystroke, while the committed value still resets pagination.
+ */
+export type AdminResourceInputFilter = {
+  key: string;
+  label: string;
+  kind: AdminResourceInputFilterKind;
+  placeholder?: string;
+  maxLength?: number;
+};
+
+export type AdminResourceFilter = AdminResourceSelectFilter | AdminResourceInputFilter;
+
+/** Snapshot of the list query currently applied by the toolbar controls. */
+export type AdminResourceListQuery = {
+  filters: Record<string, string>;
+  search?: string;
+  page: number;
+  pageSize: number;
 };
 
 export type AdminResourceCollectionMeta = {
@@ -53,9 +88,29 @@ export type AdminResourceSection<TSectionId extends string = string, TGroup exte
   load: (params?: AdminResourceLoadParams) => Promise<unknown>;
   columns: AdminResourceColumn[];
   searchFields: string[];
-  /** Optional select dropdowns rendered above the list; values are forwarded
-   *  to `load` through `AdminResourceLoadParams.filters`. */
-  filters?: AdminResourceSelectFilter[];
+  /**
+   * Optional filter controls rendered above the list; values are forwarded to
+   * `load` through `AdminResourceLoadParams.filters`.
+   */
+  filters?: AdminResourceFilter[];
+  /**
+   * Search behavior. `'client'` (default) filters the loaded page in the
+   * browser; `'server'` forwards the committed search term as
+   * `AdminResourceLoadParams.search` and renders exactly what the server
+   * returned, which is what record consoles with paged data need.
+   */
+  searchMode?: 'client' | 'server';
+  /**
+   * Per-section search placeholder. Record consoles search different fields
+   * (intent no vs refund no), so the shared placeholder would be misleading.
+   */
+  searchPlaceholder?: string;
+  /**
+   * Section-owned toolbar buttons that need the current query (CSV export,
+   * statement download). Resolved on render so the handler always sees the
+   * filters and search term the operator is looking at.
+   */
+  resolveToolbarActions?: (query: AdminResourceListQuery) => AdminResourceAction[];
   group: TGroup;
   action?: AdminResourceAction;
   actions?: AdminResourceAction[];
@@ -113,6 +168,8 @@ export interface AdminResourceCenterProps<TSectionId extends string = string, TG
   paginationPageSizeLabel?: string;
   paginationPreviousLabel?: string;
   paginationShowingLabel?: string;
+  /** Label before the total matching record count (e.g. "Total"). */
+  paginationTotalLabel?: string;
   onRecordOpen?: (record: AdminResourceRecord, section: AdminResourceSection<TSectionId, TGroup>) => void;
   recordActionColumnLabel?: string;
   recordOpenLabel?: string;
@@ -122,6 +179,8 @@ export interface AdminResourceCenterProps<TSectionId extends string = string, TG
   helpNotesLabel?: string;
   /** 「更多」溢出菜单按钮的无障碍标签。 */
   rowActionsMoreLabel?: string;
+  /** Shown on the button that resets every active filter and the search box. */
+  clearFiltersLabel?: string;
 }
 
 const INITIAL_STATE: AdminResourceState = {
@@ -130,6 +189,28 @@ const INITIAL_STATE: AdminResourceState = {
   records: [],
   collectionMeta: null,
 };
+
+/** Text/date filters commit after this idle window so typing stays one request. */
+const FILTER_INPUT_DEBOUNCE_MS = 350;
+/** Server-side search commits after this idle window (same rationale). */
+const SERVER_SEARCH_DEBOUNCE_MS = 300;
+
+function filtersEqual(left: Record<string, string>, right: Record<string, string>): boolean {
+  const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
+  for (const key of keys) {
+    if ((left[key] ?? '') !== (right[key] ?? '')) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/** Narrows a filter to its dropdown variant (the default control kind). */
+function isAdminResourceSelectFilter(
+  filter: AdminResourceFilter,
+): filter is AdminResourceSelectFilter {
+  return filter.kind === undefined || filter.kind === 'select';
+}
 
 export function AdminResourceCenter<TSectionId extends string = string, TGroup extends string = string>({
   activeSectionId,
@@ -144,6 +225,7 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
   paginationPageSizeLabel = 'Rows',
   paginationPreviousLabel = 'Previous page',
   paginationShowingLabel = 'Showing',
+  paginationTotalLabel,
   recordActionColumnLabel = 'Action',
   recordOpenLabel = 'Details',
   reloadLabel = 'Reload',
@@ -157,6 +239,7 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
   helpCloseLabel,
   helpNotesLabel,
   rowActionsMoreLabel = 'More',
+  clearFiltersLabel = 'Clear filters',
 }: AdminResourceCenterProps<TSectionId, TGroup>) {
   const firstSection = sections[0];
   if (!firstSection) {
@@ -167,7 +250,12 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
     activeSectionId ?? initialSectionId ?? firstSection.id,
   );
   const [search, setSearch] = useState('');
+  /** Immediate filter-control values; text inputs commit on a short debounce. */
+  const [filterDrafts, setFilterDrafts] = useState<Record<string, string>>({});
+  /** Committed filter values — the ones a list request is built from. */
   const [filterState, setFilterState] = useState<Record<string, string>>({});
+  /** Committed server-side search term (only used by `searchMode: 'server'`). */
+  const [serverSearch, setServerSearch] = useState('');
   const [stateByTab, setStateByTab] = useState<Record<TSectionId, AdminResourceState>>(
     () => Object.fromEntries(sections.map((section) => [section.id, INITIAL_STATE])) as Record<TSectionId, AdminResourceState>,
   );
@@ -195,6 +283,13 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
     pageSize: normalizePageSize(activePagination?.initialPageSize),
   };
   const recordRowActions = activeSection.rowActions ?? [];
+  // 工具栏动作看到的是「当前屏幕上的查询条件」：草稿态筛选 + 已提交的服务端搜索词。
+  const activeToolbarActions = activeSection.resolveToolbarActions?.({
+    filters: filterDrafts,
+    ...(activeSection.searchMode === 'server' && serverSearch ? { search: serverSearch } : {}),
+    page: activePageState.page,
+    pageSize: activePageState.pageSize,
+  }) ?? [];
   const hasRecordActions = Boolean(onRecordOpen) || recordRowActions.length > 0;
   const tableColumnCount = activeSection.columns.length + (hasRecordActions ? 1 : 0);
   const declaredTotalPages = activeState.collectionMeta?.totalPages
@@ -221,11 +316,13 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
       const activeFilters = Object.fromEntries(
         (section.filters ?? []).map((filter) => [filter.key, filterState[filter.key] ?? '']),
       );
+      const committedSearch = section.searchMode === 'server' && serverSearch ? { search: serverSearch } : {};
+      const hasFilterInputs = Boolean(section.filters?.length) || section.searchMode === 'server';
       const result = await section.load(
         pageState
-          ? { ...pageState, filters: activeFilters }
-          : section.filters?.length
-            ? { page: 1, pageSize: 20, filters: activeFilters }
+          ? { ...pageState, filters: activeFilters, ...committedSearch }
+          : hasFilterInputs
+            ? { page: 1, pageSize: 20, filters: activeFilters, ...committedSearch }
             : undefined,
       );
       const records = readAdminResourceRecordList(result);
@@ -249,9 +346,9 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
         }));
       }
     }
-    // filterState 参与依赖：filter 变化时重建闭包，由 useEffect 驱动重新加载，
-    // 保证传入 section.load 的 filters 始终是最新值。
-  }, [errorTitle, filterState]);
+    // filterState / serverSearch 参与依赖：筛选或服务端搜索提交后重建闭包，
+    // 由 useEffect 驱动重新加载，保证传入 section.load 的筛选值始终是最新值。
+  }, [errorTitle, filterState, serverSearch]);
 
   useEffect(() => {
     let active = true;
@@ -262,9 +359,44 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
   }, [activePageState.page, activePageState.pageSize, activePagination, activeSection, loadSection, refreshKey]);
 
   useEffect(() => {
+    // 切换资源分节时丢弃上一节的搜索词与筛选，避免请求带着看不见的条件。
     setSearch('');
+    setFilterDrafts({});
     setFilterState({});
+    setServerSearch('');
   }, [activeTab]);
+
+  // 文本/日期筛选按输入防抖提交：连续键入不触发逐字请求，但提交后仍会回到第一页。
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilterState((current) => (
+        filtersEqual(current, filterDrafts) ? current : { ...filterDrafts }
+      ));
+    }, FILTER_INPUT_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [filterDrafts]);
+
+  // 服务端搜索同样防抖提交，并且在分节关闭服务端搜索时清空残留条件。
+  useEffect(() => {
+    if (activeSection.searchMode !== 'server') {
+      setServerSearch('');
+      return undefined;
+    }
+    const timer = setTimeout(() => {
+      setServerSearch(search.trim());
+    }, SERVER_SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [activeSection.searchMode, search]);
+
+  // 条件变化必须回到第一页：停留在旧条件算出的深页会显示「无记录」而误导操作员。
+  useEffect(() => {
+    if (!activePagination) return;
+    setPaginationByTab((current) => {
+      const currentPageState = current[activeTab];
+      if (!currentPageState || currentPageState.page === 1) return current;
+      return { ...current, [activeTab]: { ...currentPageState, page: 1 } };
+    });
+  }, [activePagination, activeTab, filterState, serverSearch]);
 
   useEffect(() => {
     setPaginationByTab((current) => {
@@ -285,6 +417,10 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
   }, [sections]);
 
   const visibleRecords = useMemo(() => {
+    // 服务端搜索模式下结果集已由后端收窄，客户端再过滤会隐藏后端命中的记录。
+    if (activeSection.searchMode === 'server') {
+      return activeState.records;
+    }
     const query = search.trim().toLowerCase();
     if (!query) {
       return activeState.records;
@@ -294,7 +430,18 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
         String(record[field] ?? '').toLowerCase().includes(query),
       ),
     );
-  }, [activeSection.searchFields, activeState.records, search]);
+  }, [activeSection.searchFields, activeSection.searchMode, activeState.records, search]);
+
+  // 任一筛选或搜索词非空即视为「有条件」：清空按钮按此出现，清空后回到无条件的首页。
+  const hasActiveFilters = search.trim() !== ''
+    || Object.values(filterDrafts).some((value) => value.trim() !== '');
+
+  function clearAllFilters() {
+    setSearch('');
+    setFilterDrafts({});
+    setFilterState({});
+    setServerSearch('');
+  }
 
   const groupedSections = useMemo(() => groupAdminResourceSections(sections), [sections]);
   const viewportProps = tableViewportDataAttribute
@@ -316,6 +463,8 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
       pageSizeOptions={activePagination.pageSizeOptions}
       previousLabel={paginationPreviousLabel}
       showingLabel={paginationShowingLabel}
+      totalItems={activeState.collectionMeta?.total}
+      totalLabel={paginationTotalLabel}
     />
   ) : undefined;
 
@@ -373,33 +522,53 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
         <div className="flex shrink-0 flex-col gap-3 border-b border-slate-200 p-3 dark:border-white/10 md:flex-row md:items-center md:justify-between">
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
             {activeSection.filters?.map((filter) => {
-              const filterOptions = typeof filter.options === 'function'
-                ? filter.options(filterState)
-                : filter.options;
+              if (isAdminResourceSelectFilter(filter)) {
+                return (
+                  <select
+                    aria-label={filter.label}
+                    className="h-9 shrink-0 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700 shadow-sm outline-none transition-colors focus:border-lobster-500 dark:border-white/10 dark:bg-[#1e1e1e] dark:text-slate-200"
+                    key={filter.key}
+                    onChange={(event) => {
+                      // 下拉筛选立即提交；loadSection 随 filterState 重建，
+                      // 由 useEffect 依赖驱动重新加载（filters 始终为最新值）。
+                      const value = event.target.value;
+                      setFilterDrafts((current) => ({ ...current, [filter.key]: value }));
+                      setFilterState((current) => ({ ...current, [filter.key]: value }));
+                      // 过滤条件变化时回到第一页，避免停留在旧过滤下的深页。
+                      if (activePagination) {
+                        setPaginationByTab((current) => ({
+                          ...current,
+                          [activeTab]: { ...(current[activeTab] ?? activePageState), page: 1 },
+                        }));
+                      }
+                    }}
+                    title={filter.label}
+                    value={filterDrafts[filter.key] ?? ''}
+                  >
+                    <option value="">{filter.placeholder ?? filter.label}</option>
+                    {(typeof filter.options === 'function' ? filter.options(filterDrafts) : filter.options).map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                );
+              }
               return (
-                <select
+                <input
                   aria-label={filter.label}
-                  className="h-9 shrink-0 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700 shadow-sm outline-none transition-colors focus:border-lobster-500 dark:border-white/10 dark:bg-[#1e1e1e] dark:text-slate-200"
+                  className="h-9 shrink-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-lobster-500 dark:border-white/10 dark:bg-[#1e1e1e] dark:text-slate-200"
+                  inputMode={filter.kind === 'number' ? 'numeric' : undefined}
                   key={filter.key}
+                  maxLength={filter.maxLength}
                   onChange={(event) => {
-                    // 仅更新 filter 状态；loadSection 随 filterState 重建，
-                    // 由 useEffect 依赖驱动重新加载（filters 始终为最新值）。
-                    setFilterState((current) => ({ ...current, [filter.key]: event.target.value }));
-                    // 过滤条件变化时回到第一页，避免停留在旧过滤下的深页。
-                    if (activePagination) {
-                      setPaginationByTab((current) => ({
-                        ...current,
-                        [activeTab]: { ...(current[activeTab] ?? activePageState), page: 1 },
-                      }));
-                    }
+                    // 立即回显，但由 filterState 的防抖提交驱动请求，避免逐字请求。
+                    const value = event.target.value;
+                    setFilterDrafts((current) => ({ ...current, [filter.key]: value }));
                   }}
-                  value={filterState[filter.key] ?? ''}
-                >
-                  <option value="">{filter.placeholder ?? filter.label}</option>
-                  {filterOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
+                  placeholder={filter.placeholder ?? filter.label}
+                  title={filter.label}
+                  type={filter.kind}
+                  value={filterDrafts[filter.key] ?? ''}
+                />
               );
             })}
             <div className="relative min-w-0 flex-1 md:max-w-72">
@@ -407,7 +576,7 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
               <input
                 className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-900 shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-lobster-500 dark:border-white/10 dark:bg-[#1e1e1e] dark:text-white"
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder={searchPlaceholder}
+                placeholder={activeSection.searchPlaceholder ?? searchPlaceholder}
                 type="text"
                 value={search}
               />
@@ -432,6 +601,27 @@ export function AdminResourceCenter<TSectionId extends string = string, TGroup e
                 label={helpLabel}
                 notesLabel={helpNotesLabel}
               />
+            ) : null}
+            {activeToolbarActions.map((action, index) => (
+              <button
+                className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+                key={`toolbar-${action.label}-${index}`}
+                onClick={action.onClick}
+                type="button"
+              >
+                {action.icon}
+                {action.label}
+              </button>
+            ))}
+            {hasActiveFilters ? (
+              <button
+                className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+                onClick={clearAllFilters}
+                type="button"
+              >
+                <X className="h-4 w-4" />
+                {clearFiltersLabel}
+              </button>
             ) : null}
             <button
               className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"

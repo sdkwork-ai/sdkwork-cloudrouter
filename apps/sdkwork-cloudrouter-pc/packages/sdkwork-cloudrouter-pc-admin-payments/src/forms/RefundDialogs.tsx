@@ -17,6 +17,7 @@ import {
   type AdminResourceRecord,
 } from '@sdkwork/cloudroutes-pc-commons';
 import { createClientOperationToken } from '@sdkwork/cloudroutes-pc-commons/idempotency';
+import { formatPaymentAmount } from '../paymentMoney';
 import type {
   CreateRefundCommand,
   RetryRefundCommand,
@@ -97,36 +98,12 @@ export function yuanToMinorUnitsString(input: string): string | null {
 }
 
 /**
- * ISO 4217 currencies whose smallest unit equals the primary unit (no minor
- * unit). Their amounts must be displayed as-is instead of divided by 100.
- */
-const ZERO_DECIMAL_CURRENCIES = new Set([
-  'BIF', 'CLP', 'DJF', 'GNF', 'IDR', 'ISK', 'JPY', 'KMF', 'KRW', 'PYG',
-  'RWF', 'UGX', 'VND', 'VUV', 'XAF', 'XOF', 'XPF',
-]);
-
-/**
- * Formats a backend amount for display. Refund amounts are integer minor
- * units ("1250" -> "12.50"); values that already carry a decimal separator
- * (e.g. dev test intents) are shown as-is, and zero-decimal currencies
- * (JPY, KRW, ...) keep the raw integer.
+ * Formats a backend refund amount for display. Refund amounts are integer minor
+ * units ("1250" -> "12.50"), formatted currency-aware through the shared
+ * payment money helper so refunds, intents, and attempts always agree.
  */
 export function formatRefundAmount(value: unknown, currencyCode?: string): string {
-  const raw = value === null || value === undefined || value === '' ? '-' : String(value);
-  if (raw === '-') {
-    return raw;
-  }
-  if (raw.includes('.')) {
-    return raw;
-  }
-  if (currencyCode && ZERO_DECIMAL_CURRENCIES.has(currencyCode.trim().toUpperCase())) {
-    return raw;
-  }
-  const minor = Number(raw);
-  if (!Number.isFinite(minor)) {
-    return raw;
-  }
-  return (minor / 100).toFixed(2);
+  return formatPaymentAmount(value, currencyCode);
 }
 
 export function buildRefundCreateCommand(values: RefundCreateFormValues): CreateRefundCommand {
