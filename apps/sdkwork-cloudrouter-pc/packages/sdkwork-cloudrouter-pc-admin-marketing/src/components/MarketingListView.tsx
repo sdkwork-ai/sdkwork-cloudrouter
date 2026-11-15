@@ -316,40 +316,42 @@ export function MarketingListView<T extends object>({
           </div>
         ) : null}
         footer={(
-          <>
-            <BottomPagination
-              disabled={isLoading}
-              hasNextPage={hasNextMarketingPage(pageInfo, page, records.length, pageSize)}
-              itemCount={records.length}
-              nextLabel={t('common.pagination.next', 'Next page')}
-              onNextPage={() => setPage((current) => current + 1)}
-              onPageSizeChange={(nextPageSize) => {
-                setPage(1);
-                setPageSize(nextPageSize);
-              }}
-              onPreviousPage={() => setPage((current) => Math.max(1, current - 1))}
-              page={page}
-              pageLabel={marketingPageLabel(t, page, pageInfo)}
-              pageSize={pageSize}
-              pageSizeLabel={t('common.pagination.rows', 'Rows')}
-              pageSizeOptions={[20, 50, 100]}
-              previousLabel={t('common.pagination.previous', 'Previous page')}
-              showingLabel={t('common.pagination.showing', 'Showing')}
-            />
-            <MarketingPageJump
-              totalPages={totalPages}
-              disabled={isLoading}
-              jumpLabel={t('admin.marketing.pagination.jumpLabel', 'Go to page')}
-              goLabel={t('admin.marketing.pagination.go', 'Go')}
-              invalidPageLabel={totalPages !== null
-                ? t('admin.marketing.pagination.invalidPage', 'Enter a page between 1 and {{totalPages}}', { totalPages })
-                : ''}
-              totalItemsLabel={totalItems !== null
-                ? t('admin.marketing.pagination.totalItems', '{{totalItems}} rows in total', { totalItems })
-                : null}
-              onJump={(nextPage) => setPage(nextPage)}
-            />
-          </>
+          // 底部只有一条分页行：总行数在左，行数选择/页码/翻页/跳页在右。
+          // 跳页控件以前是同一 footer 里的兄弟节点，会额外占一行（两行分页）。
+          <BottomPagination
+            disabled={isLoading}
+            hasNextPage={hasNextMarketingPage(pageInfo, page, records.length, pageSize)}
+            itemCount={records.length}
+            nextLabel={t('common.pagination.next', 'Next page')}
+            onNextPage={() => setPage((current) => current + 1)}
+            onPageSizeChange={(nextPageSize) => {
+              setPage(1);
+              setPageSize(nextPageSize);
+            }}
+            onPreviousPage={() => setPage((current) => Math.max(1, current - 1))}
+            page={page}
+            pageLabel={marketingPageLabel(t, page, pageInfo)}
+            pageSize={pageSize}
+            pageSizeLabel={t('common.pagination.rows', 'Rows')}
+            pageSizeOptions={[20, 50, 100]}
+            previousLabel={t('common.pagination.previous', 'Previous page')}
+            showingLabel={t('common.pagination.showing', 'Showing')}
+            summary={totalItems !== null
+              ? t('admin.marketing.pagination.totalItems', '{{totalItems}} rows in total', { totalItems })
+              : null}
+            extraControls={(
+              <MarketingPageJump
+                totalPages={totalPages}
+                disabled={isLoading}
+                jumpLabel={t('admin.marketing.pagination.jumpLabel', 'Go to page')}
+                goLabel={t('admin.marketing.pagination.go', 'Go')}
+                invalidPageLabel={totalPages !== null
+                  ? t('admin.marketing.pagination.invalidPage', 'Enter a page between 1 and {{totalPages}}', { totalPages })
+                  : ''}
+                onJump={(nextPage) => setPage(nextPage)}
+              />
+            )}
+          />
         )}
       >
         <table className="w-full border-collapse text-sm">

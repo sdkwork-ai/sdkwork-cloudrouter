@@ -18,6 +18,25 @@ export function readPortalPermissionScope(): readonly string[] {
   return permissionScope.map((code) => normalizePortalPermissionCode(code));
 }
 
+/**
+ * IAM role codes of the signed-in operator, as IAM resolved them.
+ *
+ * The admin console filters the AI-foundation catalogs by role, and a catalog
+ * record names the roles allowed to see it. The codes therefore come from the
+ * session context IAM already resolved for this session — never from a role
+ * code the page invents. An unsigned-in or role-less session resolves to an
+ * empty list, which callers translate into the catalog's "all data" view.
+ */
+export function readPortalRoleCodes(): readonly string[] {
+  const roleCodes = loadStoredAppSessionToken()?.context?.standardRoleCodes;
+  if (!roleCodes?.length) {
+    return [];
+  }
+  return roleCodes
+    .map((code) => code.trim())
+    .filter((code) => code.length > 0);
+}
+
 export function hasPortalPermission(
   requiredPermission: string,
   grantedScope: readonly string[] = readPortalPermissionScope(),

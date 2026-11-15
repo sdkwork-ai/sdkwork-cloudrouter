@@ -46,7 +46,12 @@ export function createCloudRouterDocumentsAdminClient(): DocumentsAdminClient {
     },
     async create(input) {
       const document = await client.documents.create(
-        { title: input.title, body: input.body ?? '' },
+        {
+          title: input.title,
+          body: input.body ?? '',
+          ...(input.locale ? { locale: input.locale } : {}),
+          ...(input.slug ? { slug: input.slug } : {}),
+        },
         createIdempotencyParams('documents-admin-create'),
       );
       return toAdminDocument(document);

@@ -12,6 +12,7 @@ import {
   fetchCloudRouterAuthSettings,
   updateCloudRouterAuthSettings,
 } from './AuthSettingsService';
+import { CorsSettingsPanel } from './CorsSettingsPanel';
 
 type LoginMethod = NonNullable<AdminAuthSettingsUpdateRequest['loginMethods']>[number];
 type RegisterMethod = NonNullable<AdminAuthSettingsUpdateRequest['registerMethods']>[number];
@@ -219,6 +220,7 @@ export function CloudRouterAuthSettingsPage() {
           data-admin-auth-settings-main
           className="space-y-5 xl:min-h-0 xl:overflow-y-auto xl:pr-1 custom-scrollbar"
         >
+          <CorsSettingsPanel />
           <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
             <SectionHeader icon={<Settings2 className="h-5 w-5 text-lobster-500" />} title={t('admin.authSettings.sections.runtime')} />
             <div className="mt-5 space-y-6">

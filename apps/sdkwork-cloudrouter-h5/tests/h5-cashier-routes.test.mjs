@@ -103,3 +103,41 @@ test('the bootstrap injects the order App SDK client into the order runtime', ()
     'workspace:*',
   );
 });
+
+test('a legacy cashier link is exchanged for a token instead of showing login', async () => {
+  const { planCashierEntry } = await import('../src/commerce/cashierEntry.ts');
+  // Signed token links render the anonymous cashier directly.
+  assert.deepEqual(planCashierEntry('v1.payload.signature', null), {
+    kind: 'token',
+    token: 'v1.payload.signature',
+  });
+  // The reported legacy shape: orderId + outTradeNo from the printed QR.
+  assert.deepEqual(
+    planCashierEntry(
+      '69d1124a-4740-4631-baeb-5d63717e6eb8',
+      'MEMBERSHIP88d35e114d97f6e5',
+    ),
+    {
+      kind: 'exchange',
+      orderId: '69d1124a-4740-4631-baeb-5d63717e6eb8',
+      outTradeNo: 'MEMBERSHIP88d35e114d97f6e5',
+    },
+  );
+  // A token that also carries a stale query parameter still wins.
+  assert.equal(planCashierEntry('v1.a.b', 'OT-1').kind, 'token');
+  // A bare order id has no payable proof and keeps the session-gated flow.
+  assert.deepEqual(planCashierEntry('69d1124a-4740-4631-baeb-5d63717e6eb8', null), {
+    kind: 'login',
+  });
+  assert.deepEqual(planCashierEntry(undefined, 'OT-1'), { kind: 'login' });
+  assert.deepEqual(planCashierEntry('  ', '  '), { kind: 'login' });
+});
+
+test('the cashier entry exchanges legacy links through the generated Order SDK', () => {
+  const routeSource = read('src/routes/OrderRoutes.tsx');
+  assert.match(routeSource, /resolveLegacyCashierToken/u);
+  assert.match(routeSource, /planCashierEntry/u);
+  assert.doesNotMatch(routeSource, /isCashierCapabilityToken/u);
+  const serviceSource = read('packages/sdkwork-cloudrouter-h5-orders/src/anonymousCashier.ts');
+  assert.match(serviceSource, /orderCashier\.cashier\.links\.create/u);
+});

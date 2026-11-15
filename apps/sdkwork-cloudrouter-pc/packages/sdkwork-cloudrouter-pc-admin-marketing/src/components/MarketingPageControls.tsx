@@ -132,13 +132,15 @@ export interface MarketingPageJumpProps {
   goLabel: string;
   /** 页码越界提示（由调用方按当前 totalPages 插入变量）；未知总页数时为空串。 */
   invalidPageLabel: string;
-  /** 总行数文案；未知总行数时为 null。 */
-  totalItemsLabel: string | null;
   onJump: (page: number) => void;
 }
 
 /**
- * 页码跳转条：与既有上一页/下一页共用同一视觉规范（h-8、圆角、边框、字号）。
+ * 页码跳转控件：与既有上一页/下一页共用同一视觉规范（h-8、圆角、边框、字号），
+ * 并以**内联片段**形式渲染，供底部唯一分页行追加在翻页按钮之后使用。
+ *
+ * 它不能再自带外框/上边框或整行容器：那会在分页区下方多出一个第二条分页行。
+ * 总行数文案也不在这里输出，由分页行左侧的 `summary` 槽位承担。
  * 总页数未知时禁用跳转（无法做 1..totalPages 校验），已经知道总页数时校验输入
  * 范围并给出可朗读的错误提示。
  */
@@ -148,7 +150,6 @@ export function MarketingPageJump({
   jumpLabel,
   goLabel,
   invalidPageLabel,
-  totalItemsLabel,
   onJump,
 }: MarketingPageJumpProps) {
   const inputId = useId();
@@ -174,49 +175,42 @@ export function MarketingPageJump({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 px-4 py-2 dark:border-white/5">
-      {totalItemsLabel !== null ? (
-        <span className="mr-auto whitespace-nowrap text-xs font-medium text-slate-500 dark:text-slate-400">
-          {totalItemsLabel}
-        </span>
-      ) : null}
-      <form onSubmit={handleSubmit} className="ml-auto flex items-center gap-2" noValidate>
-        <label
-          htmlFor={inputId}
-          className="whitespace-nowrap text-xs font-medium text-slate-500 dark:text-slate-400"
-        >
-          {jumpLabel}
-        </label>
-        <input
-          id={inputId}
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={totalPages ?? undefined}
-          value={rawPage}
-          disabled={!canJump}
-          onChange={(event) => {
-            setRawPage(event.target.value);
-            setError(null);
-          }}
-          aria-describedby={error !== null ? errorId : undefined}
-          aria-invalid={error !== null}
-          className="h-8 w-20 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 outline-none focus:border-lobster-400 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-[#202020] dark:text-slate-200"
-        />
-        <button
-          type="submit"
-          disabled={!canJump}
-          className="inline-flex h-8 items-center rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-600 transition-colors hover:border-lobster-300 hover:text-lobster-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:border-lobster-500/40 dark:hover:text-lobster-300"
-        >
-          {goLabel}
-        </button>
-      </form>
+    <form onSubmit={handleSubmit} className="flex items-center gap-2" noValidate>
+      <label
+        htmlFor={inputId}
+        className="whitespace-nowrap text-xs font-medium text-slate-500 dark:text-slate-400"
+      >
+        {jumpLabel}
+      </label>
+      <input
+        id={inputId}
+        type="number"
+        inputMode="numeric"
+        min={1}
+        max={totalPages ?? undefined}
+        value={rawPage}
+        disabled={!canJump}
+        onChange={(event) => {
+          setRawPage(event.target.value);
+          setError(null);
+        }}
+        aria-describedby={error !== null ? errorId : undefined}
+        aria-invalid={error !== null}
+        className="h-8 w-20 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 outline-none focus:border-lobster-400 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-[#202020] dark:text-slate-200"
+      />
+      <button
+        type="submit"
+        disabled={!canJump}
+        className="inline-flex h-8 items-center rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-600 transition-colors hover:border-lobster-300 hover:text-lobster-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:border-lobster-500/40 dark:hover:text-lobster-300"
+      >
+        {goLabel}
+      </button>
       {error !== null ? (
-        <p id={errorId} role="alert" className="w-full text-xs text-red-600 dark:text-red-400">
+        <p id={errorId} role="alert" className="whitespace-nowrap text-xs text-red-600 dark:text-red-400">
           {error}
         </p>
       ) : null}
-    </div>
+    </form>
   );
 }
 

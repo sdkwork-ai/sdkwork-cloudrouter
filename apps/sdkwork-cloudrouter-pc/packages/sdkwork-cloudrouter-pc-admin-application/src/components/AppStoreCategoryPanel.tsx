@@ -381,7 +381,10 @@ export function AppStoreCategoryPanel({
           const rowBusy = busyId === category.id;
           const inactive = category.status === "inactive";
           return (
-            <div className="flex flex-wrap items-center justify-end gap-1.5">
+            <div
+              className="flex min-w-max flex-nowrap items-center justify-end gap-1.5 whitespace-nowrap"
+              data-application-row-actions
+            >
               <Button
                 disabled={rowBusy}
                 onClick={() => setFormTarget({ category })}

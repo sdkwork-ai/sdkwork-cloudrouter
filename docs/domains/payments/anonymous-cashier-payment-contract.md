@@ -81,11 +81,34 @@ sdkwork_utils_rust::derive_cashier_token_key(secret, tenant_id) -> [u8; 32]
 
 | 部署状态 | 链接形态 | 收银台行为 |
 |---|---|---|
-| 未配置 `SDKWORK_COMMERCE_CASHIER_TOKEN_SECRET` | `{base}/cashier/{orderId}?scene=..&outTradeNo=..` | 保持登录态（现状） |
+| 未配置 `SDKWORK_COMMERCE_CASHIER_TOKEN_SECRET` | `{base}/cashier/{orderId}?scene=..&outTradeNo=..` | 无法签发令牌；H5 换令牌 404，回落到登录态 |
 | 已配置 | `{base}/cashier/{token}` | 免登录 |
+| 已配置（旧链接） | `{base}/cashier/{orderId}?scene=..&outTradeNo=..` | H5 调 `POST /cashier/links` 换取令牌后免登录；换取失败才回落登录态 |
 
 - **令牌是否存在就是逐链接的灰度开关**，不需要额外的全局 feature flag。
+- 旧链接不要求重新出码：H5 入口用 `orderId + outTradeNo` 换取令牌（见 §4.4），
+  已打印/已发出的二维码在配置密钥后同样免登录。
 - 顺序约束：`SDKWORK_COMMERCE_CASHIER_TOKEN_SECRET` 必须在 S5（H5 宿主支持 `/cashier/:token`）上线**之后**才能配置。提前配置会让扫码落到只认 orderId 的旧路由。
+
+### 2.3 租户密钥 epoch 与轮换
+
+实现：`sdkwork_utils_rust::derive_cashier_token_key_with_epoch`。
+
+- 根密钥仍是部署密钥 `SDKWORK_COMMERCE_CASHIER_TOKEN_SECRET`（≥32 字节；容器安装在
+  `scripts/generate-dev-secrets.mjs` 中自动生成 64 hex，不需要人工填写）。
+- 租户签名密钥 = `HKDF(根密钥, "tenant={tenant};[epoch={n};]purpose=cashier-token")`；
+  **epoch 1 保留原派生**，因此存量令牌不失效。
+- 令牌 claims 增加 `epoch`；校验方用**令牌里携带的 epoch** 派生密钥，所以 IAM/订单
+  校验令牌时不需要读 commerce 库。篡改 epoch 只会让验签失败。
+- **轮换 = 租户 epoch + 1**（支付中心 → 支付设置 → 收银台密钥，一键刷新）。新令牌立即
+  使用新 epoch；旧 epoch 已签发的令牌在 15 分钟 TTL 内继续校验，因此不需要宽限表、
+  不需要重启、多副本天然一致。
+- 解析顺序：租户行 → 平台 `0` 行 → epoch 1。表
+  `commerce_payment_cashier_token_setting` 只存**公开 epoch 与轮换元数据**，不存密钥；
+  数据库备份/只读账号无法伪造收银台令牌。
+- 管理面：`GET /backend/v3/api/payments/cashier_token_settings` 与
+  `POST /backend/v3/api/payments/cashier_token_settings/rotate`；复用
+  `commerce.payments.domain_settings.read|update` 权限，响应永不返回密钥。
 
 ---
 
@@ -99,7 +122,10 @@ sdkwork_utils_rust::derive_cashier_token_key(secret, tenant_id) -> [u8; 32]
 | 是否含 query 参数 | 是 | **否**（全部绑定进令牌） |
 
 - 旧函数保留，供登录态路径与灰度回退使用。
-- 旧链接 `/cashier/{orderId}` 保留 30 天，**继续要求登录**，到期下线。
+- 旧链接 `/cashier/{orderId}?outTradeNo=..` 保留 30 天。H5 入口用
+  `POST /app/v3/api/cashier/links` 把 `orderId + outTradeNo` 换成令牌后再渲染匿名
+  收银台；换取失败（无密钥、流水号不匹配、订单不存在）才回落到登录态。不要求
+  运营重新生成已发出的二维码。
 
 ### 三处链接生成点 → 一个收敛点（已实现）
 
@@ -133,15 +159,16 @@ GET  /orders/{id} (record)  ─┘        ↓
 
 ## 4. 匿名端点契约
 
-三个端点全部：`RouteAuth::Public`、OpenAPI `security: []`、`x-sdkwork-auth-mode: anonymous`；生成的 SDK 自动跳过凭证。
+四个端点全部：`RouteAuth::Public`、OpenAPI `security: []`、`x-sdkwork-auth-mode: anonymous`；生成的 SDK 自动跳过凭证。
 
 | 方法 | 路径 | 用途 | 幂等 |
 |---|---|---|---|
 | GET | `/app/v3/api/cashier/{token}` | 收银台视图 | — |
 | POST | `/app/v3/api/cashier/{token}/payments` | 创建支付 | **服务端派生**（`tokenId` + method） |
 | GET | `/app/v3/api/cashier/{token}/status` | 轮询支付状态 | — |
+| POST | `/app/v3/api/cashier/links` | 旧链接换令牌（`orderId` + `outTradeNo`） | 每次签发新 `tokenId`，无需客户端幂等键 |
 
-> 建支付路由**不声明** `x-sdkwork-idempotent` / `with_idempotent`，因为该标记要求客户端提供 `Idempotency-Key` 头。匿名收银台的幂等键必须由服务端派生：客户端一旦能自选幂等键，重试即可绕过幂等再建一笔支付。
+> 建支付路由**不声明** `x-sdkwork-idempotent` / `with_idempotent`，因为该标记要求客户端提供 `Idempotency-Key` 头。匿名收银台的幂等键必须由服务端派生：客户端一旦能自选幂等键，重试即可绕过幂等再建一笔支付。换令牌接口同理不读取客户端幂等键。
 
 实现状态：路由、处理器、白名单 DTO 与 OpenAPI 均已落地；限流键策略见 §6。
 
@@ -176,6 +203,26 @@ POST /app/v3/api/cashier/{token}/payments
 | 金额或币种与订单不一致 | 409 | 40903 |
 | 支付方式不可用（含 `balance`、未上线的 `wechat_jsapi`） | 400 | 40001 |
 | 限流 | 429 | 42901 |
+
+### 4.4 旧链接换令牌
+
+```
+POST /app/v3/api/cashier/links
+{ "orderId": "...", "outTradeNo": "..." }
+
+201 { "code": 0, "data": { "item": { "token": "v1...." } }, "traceId": "..." }
+```
+
+- 校验：`outTradeNo` 必须与订单的 `request_no`、`order_no`，或该订单最近一次
+  `commerce_payment_attempt.out_trade_no` 之一常量时间相等。
+- `orderId` 单独永远不够；任何不匹配（未知订单、流水号错误、未配置密钥）统一
+  `404` / `40401`，不区分原因，避免被用作订单枚举或时序探测。
+- 令牌 TTL 15 分钟；订单终态由收银台视图的 `payable` 与建支付路由的 `409` 共同兜底。
+- H5 宿主只在路径段不是 `v1.` 令牌且 URL 带 `outTradeNo` 时调用；换取失败回落登录态。
+- **换令牌无支付副作用**：只签发短期令牌，不创建支付意图/尝试。刷新或多开页面会得到不同
+  `tokenId`，但建支付仍由订单服务按「订单 + 支付方式 + 支付元数据」复用已有 pending
+  attempt 兜底，同一设备/渠道在 attempt 有效期内不会重复建单；`wechat_h5` 的渠道交易按
+  `client_ip` 绑定，换网络时重建 attempt 是该渠道的要求，不是幂等缺口。
 
 ---
 
@@ -271,11 +318,12 @@ DB:       commerce_payment_attempt 已创建，status=pending
 8. 篡改令牌 / 改金额 / 换订单 → 404 或 409，且无信息泄露。
 9. 重复建支付 → 幂等，不产生第二笔。
 10. 订单终态 → 不可支付。
+10.1 旧链接换令牌：`orderId + outTradeNo` 匹配 `request_no` / `order_no` / 最近一次支付尝试的 `out_trade_no` → 201 签发令牌；任一不匹配 / 无密钥 → 404。
 
 **宿主层（sdkwork-cloudrouter H5）**
 11. 未登录打开 `/cashier/{token}` 直接渲染收银台，不出现登录面。
 12. `/me/orders/*` 未登录仍走登录（不回归）。
-13. 旧 `/cashier/{orderId}` 仍要求登录。
+13. 旧 `/cashier/{orderId}?outTradeNo=..` 未登录打开时先换令牌、直接渲染收银台；换取失败回落登录态。裸 `/cashier/{orderId}`（无 `outTradeNo`）仍走登录。
 
 **端到端（真机）**
 14. 微信扫 → 只出现微信 → 完成支付。
@@ -295,8 +343,11 @@ DB:       commerce_payment_attempt 已创建，status=pending
 | S4 ✅ | sdkwork-iam | 独立公开入口 `oauth/wechat/payment/cashier/start` + `openidBinding` 令牌绑定；订单侧校验（58 测试、IAM 37+31 测试） | S3 |
 | S5 ✅ | sdkwork-cloudrouter H5 | `/cashier/{token}` 免登录分派 + 匿名收银台页 + 微信 JSAPI 授权跳转（typecheck + 79 测试） | S3、S4 |
 | S6 ✅ | sdkwork-payment / order | 富化失败时补铸令牌，避免扫码降级为登录墙 | S2、S3 |
+| S7 ✅ | sdkwork-order / cloudrouter H5 | 会员 H5 链接补签令牌 + 旧链接换令牌接口 + H5 入口分派（cargo 单元测试、H5 81 测试、typecheck） | S5、S6 |
+| S8 ✅ | payment / order / IAM / cloudrouter | 租户密钥 epoch 派生 + 支付中心状态/一键刷新 + 安装自动生成根密钥 + 令牌 epoch 兼容 | S5–S7 |
 
-灰度：S5 上线时用宿主配置开关，令牌链接与旧链接并行 30 天；旧链接继续要求登录。
+灰度：S5 上线时用宿主配置开关，令牌链接与旧链接并行 30 天；S7 起旧链接在配置密钥后
+也能换取令牌免登录，换取失败才回落登录态。
 
 ---
 

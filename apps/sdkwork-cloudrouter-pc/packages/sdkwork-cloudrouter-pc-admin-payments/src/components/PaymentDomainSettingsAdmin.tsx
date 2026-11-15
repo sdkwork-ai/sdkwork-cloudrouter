@@ -41,6 +41,7 @@ import {
   SelectField,
   TextField,
 } from '../forms/PaymentMaintenanceDialogs';
+import { CashierTokenSettingsPanel } from './CashierTokenSettingsPanel';
 
 type Protocol = 'https' | 'http';
 type SettingStatus = 'active' | 'inactive';
@@ -707,6 +708,8 @@ export function PaymentDomainSettingsAdmin() {
           </div>
         </div>
       </section>
+
+      <CashierTokenSettingsPanel canRotate={canUpdate} />
 
       {pendingDelete ? (
         <PaymentConfirmDialog

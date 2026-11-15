@@ -10,6 +10,7 @@ import {
   getSdkworkDriveAppSdkClient,
   getSdkworkSkillsAppSdkClient,
   getSkillsBackendSdkClient,
+  readPortalRoleCodes,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 
 /**
@@ -60,11 +61,15 @@ export function SkillsAdminPage({
   roleCodes,
   initialEditPackageId,
 }: SkillsAdminPageProps) {
+  // The page needs the operator's own IAM role codes for its category
+  // permission check. A host that does not pass them gets the signed-in
+  // operator's roles instead of an empty list, which would read as "no role".
+  const effectiveRoleCodes = roleCodes ?? readPortalRoleCodes();
   return (
     <SkillsAdminClientsProvider>
       <AdminSkillsPage
         grantedPermissions={grantedPermissions}
-        roleCodes={roleCodes}
+        roleCodes={effectiveRoleCodes}
         initialEditPackageId={initialEditPackageId}
       />
     </SkillsAdminClientsProvider>

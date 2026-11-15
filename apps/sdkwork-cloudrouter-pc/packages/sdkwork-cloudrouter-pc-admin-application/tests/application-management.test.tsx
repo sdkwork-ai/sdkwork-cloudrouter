@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { SdkworkI18nProvider } from "@sdkwork/i18n-pc-react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -218,5 +218,19 @@ describe("application management page", () => {
     fireEvent.click(screen.getByRole("button", { name: "访问令牌" }));
 
     await screen.findByText(/当前账号没有签发应用访问令牌的权限/);
+  });
+
+  it("keeps every application row action on one line", async () => {
+    const loaders = createLoaders();
+    const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
+    renderPage({ loaders, resolveContext, tenantId: "tenant-1" });
+
+    await screen.findAllByText("Console");
+    const actions = document.querySelector("[data-application-row-actions]");
+    expect(actions).not.toBeNull();
+    // The operations column must widen instead of stacking the four buttons.
+    expect(actions?.className).toContain("flex-nowrap");
+    expect(actions?.className).toContain("min-w-max");
+    expect(within(actions as HTMLElement).getAllByRole("button")).toHaveLength(4);
   });
 });

@@ -66,3 +66,21 @@ test('callback domain defaults to the public API host, not the console host', ()
   assert.match(page, /currentCallbackHost/);
   assert.match(page, /useState<CallbackDomainForm>\(defaultCallbackForm\)/);
 });
+
+test('cashier signing key epoch is managed from the payment settings page', () => {
+  const service = readSource('./packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts');
+  assert.match(service, /payments\.cashierTokenSettings\.retrieve\(\)/);
+  assert.match(service, /payments\.cashierTokenSettings\.rotate\(\)/);
+
+  const page = readSource(
+    './packages/sdkwork-cloudrouter-pc-admin-payments/src/components/PaymentDomainSettingsAdmin.tsx',
+  );
+  assert.match(page, /<CashierTokenSettingsPanel canRotate=\{canUpdate\} \/>/);
+
+  const panel = readSource(
+    './packages/sdkwork-cloudrouter-pc-admin-payments/src/components/CashierTokenSettingsPanel.tsx',
+  );
+  assert.match(panel, /cashierToken\.rotate/);
+  assert.match(panel, /keyEpoch/);
+  assert.match(panel, /cashierToken\.rotateConfirm/);
+});
