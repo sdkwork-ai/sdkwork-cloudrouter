@@ -11,8 +11,6 @@ export const PORTAL_EXTERNAL_TAILWIND_SOURCES = [
   '../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-audit/src',
   '../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-core/src',
   '../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-oauth/src',
-  '../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-mini-program/src',
-  '../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-official-accounts/src',
   '../../../../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-upload-image/src',
   '../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-organization/src',
   '../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-permission/src',
