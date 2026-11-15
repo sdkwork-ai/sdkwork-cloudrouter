@@ -17,7 +17,7 @@ app-api routes `/app/v3/api/ai/model_vendors`, `/app/v3/api/ai/models`, and
    vendor-grouped document with per-model request parameters.
 2. **Model parameters as data**. `apiFormat`, `capabilities`, and capacities are
    exposed; the request parameters a model accepts (temperature, reasoning
-   effort, tool choice, response format, …), their ranges, defaults, wire
+   effort, tool choice, response format, ...), their ranges, defaults, wire
    names, and protocol applicability are not.
 3. **A synchronization contract**. Clients have no catalog revision, no ETag, no
    delta feed, and no tombstones, so a first-party application must either
@@ -130,16 +130,18 @@ an unknown value and MUST NOT reorder known values.
 
 ## 5. Open API Surface
 
-Mount: the existing gateway `/v1` prefix. Auth: `Authorization: Bearer
-<api-key>` with the `model_catalog:read` scope. Responses are raw resources
-(no `SdkWorkApiResponse` envelope), matching `/v1/models`.
+Mount: the existing gateway `/v1` prefix. Auth: the same bearer credential as
+`/v1/models` - a Cloud Router API key (`sk-`/`sp-` prefix) or an SDKWork IAM
+login auth token, with the paired `Access-Token` header when the caller uses
+dual-token auth. Responses are raw resources (no `SdkWorkApiResponse`
+envelope), matching `/v1/models`.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
 | GET | `/v1/model_catalog` | Current snapshot, paged, vendor-filterable |
 | GET | `/v1/model_catalog/changes` | Delta since a revision |
 | GET | `/v1/model_catalog/vendors` | Vendor list with model counts |
-| GET | `/v1/model_catalog/models/{catalog_key}` | One model with parameters |
+| GET | `/v1/model_catalog/models/{vendor_code}/{model_id}` | One model with parameters |
 | GET | `/v1/model_catalog/parameters` | Parameter descriptor registry |
 | GET | `/v1/models` | Unchanged OpenAI-compatible id list |
 
@@ -157,8 +159,8 @@ incompatible change for strict clients.
 | `capability` | query | all | Capability code filter |
 | `input_modality` / `output_modality` | query | all | Modality filters |
 | `include` | query | `parameters` | Comma list of `parameters`, `pricing`, `extensions` |
-| `page_size` | query | 100 | 1–500 |
-| `cursor` | query | — | Opaque cursor from `pageInfo.nextCursor` |
+| `page_size` | query | 100 | 1-500 |
+| `cursor` | query | - | Opaque cursor from `pageInfo.nextCursor` |
 | `page` | query | 1 | Offset mode for small catalogs; mutually exclusive with `cursor` |
 
 `include=parameters` returns parameter **names** plus `defaultParameters` on
@@ -170,6 +172,52 @@ same `revision`. If a client observes a different `revision` mid-pagination it
 MUST discard the partial result and restart. A client swaps its local snapshot
 only after the last page arrives and the assembled catalog validates.
 
+### 5.2 Presentation policy (admin-authored)
+
+The catalog's display surface is operator-configurable. The policy is owned by
+`sdkwork-models`, not by Cloud Router's operational settings store: it lives in
+the model-frontend tables (`ai_model_frontend_channel`,
+`ai_model_frontend_channel_model`, `ai_model_frontend_field`, and
+`ai_model_frontend_revision`; see `sdkwork-models` ADR
+`ADR-20261115-frontend-model-config-tables`). The admin Models page's
+`模型前端配置` menu item edits one channel tab
+per product surface (LLM / video / image / audio / music / …); the models
+backend serves the revisioned document and the catalog projection resolves it
+into every snapshot as the `presentation` member.
+
+The channel's enable/order/default-model/field-visibility document maps onto the
+catalog policy below. The catalog projection reads the enabled channels and
+their capability bindings; `openApiEnabled`/`appApiEnabled` are derived from the
+channel's `enabled` flag and the deployment's surface policy.
+
+| Field | Type | Default | Meaning |
+| --- | --- | --- | --- |
+| `openApiEnabled` | boolean | `true` | Serve `/v1/model_catalog` to API-key callers |
+| `appApiEnabled` | boolean | `true` | Serve `/app/v3/api/ai/model_catalog` to signed-in clients |
+| `includeParameters` | boolean | `true` | Include the parameter registry when `include` is omitted |
+| `includePricing` | boolean | `false` | Include reference prices when `include` is omitted |
+| `includeExtensions` | boolean | `false` | Include namespaced extension data when `include` is omitted |
+| `exposeDeprecatedModels` | boolean | `false` | Keep deprecated/retired models in the served catalog |
+| `defaultPageSize` | integer | `100` | Page size when `page_size` is omitted |
+| `maxPageSize` | integer | `500` | Largest accepted page size |
+| `vendorOrder` | string[] | `[]` | Vendor codes in presentation order; unlisted vendors follow in catalog order |
+
+Rules:
+
+- The stored document is sparse: an omitted field means "the shipped default",
+  and `{}` restores every default. The resolved policy is what `presentation`
+  reports, so a client never re-implements defaulting.
+- A stored value outside the declared domain is rejected at write time, so a
+  served snapshot always carries a valid policy.
+- Disabling a surface hides it: the disabled prefix answers `404` with code
+  `model_catalog.surface_disabled`. The other surface is unaffected.
+- `include*` fields are defaults for a request that omits `include`; an explicit
+  `include` always wins.
+- `defaultPageSize` MUST NOT exceed `maxPageSize`; a write that would violate
+  this is normalized to the maximum.
+- `vendorOrder` affects presentation order only. `catalogKey` identity and
+  `revision` semantics are unchanged.
+
 ## 6. App API Surface
 
 Mount: `/app/v3/api/ai`. Auth: existing app tokens (`AuthToken` + `AccessToken`)
@@ -180,7 +228,7 @@ with organization membership, exactly like `/app/v3/api/ai/models`.
 | GET | `/app/v3/api/ai/model_catalog` | Current snapshot, paged |
 | GET | `/app/v3/api/ai/model_catalog/changes` | Delta since a revision |
 | GET | `/app/v3/api/ai/model_catalog/vendors` | Vendor list with counts |
-| GET | `/app/v3/api/ai/model_catalog/models/{catalog_key}` | One model |
+| GET | `/app/v3/api/ai/model_catalog/models/{vendor_code}/{model_id}` | One model |
 | GET | `/app/v3/api/ai/model_catalog/parameters` | Parameter registry |
 
 App responses use the existing `SdkWorkApiResponse` envelope
@@ -343,16 +391,16 @@ Client state: `{ schemaVersion, catalogVersion, revision, etag, snapshot }`.
 ### 8.2 Conditional sync (warm)
 
 1. `GET model_catalog` with `If-None-Match: <etag>`.
-2. `304 Not Modified` → keep the snapshot; update `lastCheckedAt` only.
-3. `200` → behave as cold sync from step 3.
+2. `304 Not Modified` - keep the snapshot; update `lastCheckedAt` only.
+3. `200` - behave as cold sync from step 3.
 
 ### 8.3 Delta sync
 
 1. `GET model_catalog/changes?since_revision=<local.revision>` with
    `If-None-Match`.
-2. `304` → nothing to do.
-3. `200` with `baseRevision === local.revision` → apply, validate, publish.
-4. `409` / `baseRevision` mismatch / unknown `schemaVersion` → full resync.
+2. `304` - nothing to do.
+3. `200` with `baseRevision === local.revision` - apply, validate, publish.
+4. `409` / `baseRevision` mismatch / unknown `schemaVersion` - full resync.
 
 ### 8.4 Triggers and backoff
 
@@ -361,7 +409,7 @@ manual refresh, and a periodic poll (default 30 minutes, floor 5 minutes).
 A future server push (SSE/webhook carrying only `revision`) may replace the
 poll; the fetch contract stays the same.
 
-Backoff: 1s, 2s, 4s, 8s, … capped at 60s, ±20% jitter, and never less than
+Backoff: 1s, 2s, 4s, 8s, ... capped at 60s, ±20% jitter, and never less than
 `Retry-After`. Network and 5xx failures are retryable; 4xx contract errors put
 the syncer in `degraded` and keep the last known good snapshot.
 
@@ -425,8 +473,8 @@ Write order:
 
 Read order:
 
-1. Read `current.json`. If missing or malformed → step 3.
-2. Read and validate the referenced revision file. If invalid → quarantine the
+1. Read `current.json`. If missing or malformed -> step 3.
+2. Read and validate the referenced revision file. If invalid -> quarantine the
    file, then step 3.
 3. Scan `revisions/` newest first and publish the first valid snapshot.
 4. If nothing valid exists, publish the bundled seed.
@@ -447,9 +495,9 @@ completed, fsynced files.
 
 Sources, strongest first:
 
-1. **remote** — a validated snapshot served by this API.
-2. **local** — the last known good persisted snapshot.
-3. **seed** — the build-time projection of `sdkwork-models`.
+1. **remote** - a validated snapshot served by this API.
+2. **local** - the last known good persisted snapshot.
+3. **seed** - the build-time projection of `sdkwork-models`.
 
 Resolution rule (the backend wins when it has data):
 
@@ -469,6 +517,11 @@ An empty remote catalog is treated as "backend catalog not configured for this
 deployment", not as "all models were removed". A removal reaches the client as
 a tombstone or as an absent row inside a non-empty catalog.
 
+A build-time seed carries no server revision. The client therefore applies the
+monotonic `revision` rule only between backend-sourced snapshots: the first
+backend revision may legitimately share the seed's number, and the seed is
+replaced wholesale rather than compared against it.
+
 ## 12. Error Model
 
 Errors on both surfaces use `application/problem+json` (RFC 9457) with a stable
@@ -477,11 +530,12 @@ the same `code` in the existing failure envelope.
 
 | HTTP | `code` | Client action |
 | --- | --- | --- |
-| 304 | — | Keep snapshot |
+| 304 | - | Keep snapshot |
 | 400 | `model_catalog.invalid_cursor` | Restart from page 1 |
 | 401 | `model_catalog.unauthorized` | Require sign-in / API key |
 | 403 | `model_catalog.forbidden` | Stop; keep local catalog |
 | 404 | `model_catalog.model_not_found` | Treat as removed |
+| 404 | `model_catalog.surface_disabled` | The admin policy disabled this surface; use the other surface or stop |
 | 409 | `model_catalog.revision_gap` | Full resync |
 | 422 | `model_catalog.version_unsupported` | Degrade; keep local catalog |
 | 429 | `model_catalog.rate_limited` | Back off per `Retry-After` |
@@ -489,8 +543,10 @@ the same `code` in the existing failure envelope.
 
 ## 13. Security And Tenancy
 
-- open-api requires the `model_catalog:read` API-key scope. An API key without
-  it receives `403`.
+- open-api requires a valid Cloud Router credential, exactly like `/v1/models`:
+  an API key or a dual-token IAM session. Catalog reads add no separate scope; a
+  deployment that enables scoped API keys may gate the surface behind a
+  `model_catalog:read` scope without changing this contract.
 - app-api requires organization membership; the catalog is tenant-visible data,
   so responses are identical between members and carry no tenant identifiers.
 - No credentials, base URLs with embedded secrets, or upstream account ids are
@@ -537,7 +593,7 @@ the same `code` in the existing failure envelope.
 
 ## 17. Cross-Repository Implementation Plan
 
-### Phase 1 — Contract (this change)
+### Phase 1 - Contract (this change)
 
 - `sdkwork-cloudrouter`:
   - this standard;
@@ -547,7 +603,7 @@ the same `code` in the existing failure envelope.
   - link this shard from `TECH_ARCHITECTURE.md`.
 - No runtime behavior changes.
 
-### Phase 2 — cloudrouter projection
+### Phase 2 - cloudrouter projection
 
 - `sdkwork-models`: add parameter descriptors to the catalog release
   (`models/parameters.json` + optional per-model `parameters` and
@@ -558,14 +614,15 @@ the same `code` in the existing failure envelope.
   `published_at`) written in the same transaction as catalog imports; serve the
   new routes from the imported catalog; compute `ETag` from
   `revision + content_sha256`; retain deltas for `N` revisions (default 30).
-- Route crates: add the five routes to `sdkwork-routes-catalog-app-api` and the
-  corresponding open-api gateway manifest, then regenerate OpenAPI through the
-  existing pipeline (`pnpm api:http-route-manifest:write`,
-  `pnpm api:materialize:write`, `pnpm api:standard-extensions:write`).
+- Route crates: add the five routes to `sdkwork-routes-cloudrouter-app-api`
+  (app-api) and the open-api gateway route manifest, delegating to the catalog
+  projection service; then regenerate OpenAPI through the existing pipeline
+  (`pnpm api:http-route-manifest:write`, `pnpm api:materialize:write`,
+  `pnpm api:standard-extensions:write`).
 - Never hand-edit generated OpenAPI authorities. The fragments in this change
   are authoring inputs for the generator, not authorities.
 
-### Phase 3 — local runtime
+### Phase 3 - local runtime
 
 - `sdkwork-birdcoder2`: `@deepseek-ai/dsh-llm` exposes the COW store, delta
   application, persistence adapter, and sync orchestrator implemented with this
@@ -573,9 +630,9 @@ the same `code` in the existing failure envelope.
   remote catalog replaces the generated seed when non-empty, and the seed
   remains the offline fallback.
 
-### Phase 4 — rollout
+### Phase 4 - rollout
 
-- Ship Phase 1–3 dark (sync disabled by default in a deployment that has no
+- Ship Phase 1-3 dark (sync disabled by default in a deployment that has no
   catalog endpoint).
 - Enable for internal accounts, compare picker output against the seed, then
   enable broadly.
@@ -601,7 +658,7 @@ Runtime tests (Phase 2+):
   replaces it wholesale.
 - Two clients syncing the same revision apply it idempotently.
 
-## Appendix A — Minimal End-To-End Sequence
+## Appendix A - Minimal End-To-End Sequence
 
 ```text
 client                          cloudrouter
@@ -622,7 +679,7 @@ client                          cloudrouter
   | apply delta on a copy, validate, swap |
 ```
 
-## Appendix B — Field Dictionary (snapshot)
+## Appendix B - Field Dictionary (snapshot)
 
 | Field | Type | Notes |
 | --- | --- | --- |

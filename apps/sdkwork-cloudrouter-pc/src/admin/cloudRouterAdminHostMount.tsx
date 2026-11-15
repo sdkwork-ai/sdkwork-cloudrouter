@@ -37,6 +37,7 @@ const UpstreamAccountAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-p
 const UpstreamAccountGroupAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-upstream'), 'UpstreamAccountGroupAdmin');
 const ModelAdmin = lazyAdminRoute(() => import('@sdkwork/models-pc-admin-catalog'), 'ModelAdmin');
 const ModelMappingAdmin = lazyAdminRoute(() => import('@sdkwork/models-pc-admin-catalog'), 'ModelMappingAdmin');
+const FrontendModelAdmin = lazyAdminRoute(() => import('@sdkwork/models-pc-admin-catalog'), 'FrontendModelAdmin');
 const ResourceAdmin = lazyAdminRoute(() => import('@sdkwork/models-pc-admin-resource'), 'ResourceAdmin');
 const SkillsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-skill'), 'SkillsAdminPage');
 const SkillCategoriesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-skill'), 'SkillCategoriesAdminPage');
@@ -218,6 +219,7 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   route('model', 'sdkwork-models', '@sdkwork/models-pc-admin-catalog', ['sdkwork-models-backend-sdk'], 'cloudrouter.admin.access', <ModelAdmin />),
   route('model/resources', 'sdkwork-models', '@sdkwork/models-pc-admin-resource', ['sdkwork-models-backend-sdk'], 'cloudrouter.admin.access', <ResourceAdmin />),
   route('model/mappings', 'sdkwork-models', '@sdkwork/models-pc-admin-catalog', ['sdkwork-models-backend-sdk'], 'cloudrouter.admin.access', <ModelMappingAdmin />),
+  route('model/frontend', 'sdkwork-models', '@sdkwork/models-pc-admin-catalog', ['sdkwork-models-backend-sdk'], 'cloudrouter.admin.access', <FrontendModelAdmin />),
   route('skill/categories', 'sdkwork-skills', '@sdkwork/cloudrouter-pc-admin-skill', ['sdkwork-skills-backend-sdk'], 'cloudrouter.admin.access', <SkillCategoriesAdmin />),
   route('skill', 'sdkwork-skills', '@sdkwork/cloudrouter-pc-admin-skill', ['sdkwork-skills-backend-sdk'], 'cloudrouter.admin.access', <SkillsAdmin />),
   route('connector/categories', 'sdkwork-mcp', '@sdkwork/cloudrouter-pc-admin-connector', ['sdkwork-mcp-backend-sdk'], 'cloudrouter.admin.access', <McpCategoriesAdmin />),

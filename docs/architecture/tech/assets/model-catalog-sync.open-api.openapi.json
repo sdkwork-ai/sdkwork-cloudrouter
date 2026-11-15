@@ -289,14 +289,14 @@
         "x-sdkwork-required-surface": "organizationMember"
       }
     },
-    "/v1/model_catalog/models/{catalog_key}": {
+    "/v1/model_catalog/models/{vendor_code}/{model_id}": {
       "get": {
         "tags": [
           "model_catalog"
         ],
         "operationId": "modelCatalog.retrieveModel",
         "summary": "Retrieve one catalog model",
-        "description": "Returns one model by its catalog key. The `catalog_key` path segment is percent-encoded (`deepseek%2Fdeepseek-flash`) because the key contains a slash.",
+        "description": "Returns one model by its vendor code and vendor-local model id.",
         "security": [
           {
             "bearerAuth": []
@@ -304,7 +304,10 @@
         ],
         "parameters": [
           {
-            "$ref": "#/components/parameters/CatalogKeyPath"
+            "$ref": "#/components/parameters/VendorCodePath"
+          },
+          {
+            "$ref": "#/components/parameters/ModelIdPath"
           },
           {
             "$ref": "#/components/parameters/RegionQuery"
@@ -532,15 +535,26 @@
           "minimum": 1
         }
       },
-      "CatalogKeyPath": {
-        "name": "catalog_key",
+      "VendorCodePath": {
+        "name": "vendor_code",
         "in": "path",
         "required": true,
-        "description": "Percent-encoded catalog key (`<vendorCode>/<modelId>`).",
+        "description": "Vendor code (the first catalog-key segment).",
         "schema": {
           "type": "string",
-          "maxLength": 512,
-          "minLength": 3
+          "maxLength": 64,
+          "minLength": 1
+        }
+      },
+      "ModelIdPath": {
+        "name": "model_id",
+        "in": "path",
+        "required": true,
+        "description": "Vendor-local model id (the second catalog-key segment).",
+        "schema": {
+          "type": "string",
+          "maxLength": 256,
+          "minLength": 1
         }
       },
       "IfNoneMatchHeader": {
@@ -1220,6 +1234,10 @@
           },
           "extensions": {
             "$ref": "#/components/schemas/Extensions"
+          },
+          "presentation": {
+            "$ref": "#/components/schemas/CatalogPresentation",
+            "description": "Presentation policy resolved for this snapshot."
           }
         },
         "required": [
@@ -1414,6 +1432,73 @@
           "title",
           "status",
           "code"
+        ]
+      },
+      "CatalogPresentation": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Resolved presentation policy for this catalog. The admin Models page authors it; every omitted stored field resolves to the shipped default.",
+        "properties": {
+          "openApiEnabled": {
+            "type": "boolean",
+            "description": "Whether the open-api surface is served to API-key callers."
+          },
+          "appApiEnabled": {
+            "type": "boolean",
+            "description": "Whether the app-api surface is served to signed-in clients."
+          },
+          "includeParameters": {
+            "type": "boolean",
+            "description": "Whether a snapshot includes the parameter registry when include is omitted."
+          },
+          "includePricing": {
+            "type": "boolean",
+            "description": "Whether a snapshot includes reference prices when include is omitted."
+          },
+          "includeExtensions": {
+            "type": "boolean",
+            "description": "Whether a snapshot includes namespaced extension data when include is omitted."
+          },
+          "exposeDeprecatedModels": {
+            "type": "boolean",
+            "description": "Whether deprecated and retired models stay in the served catalog."
+          },
+          "defaultPageSize": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "maximum": 500,
+            "description": "Snapshot page size when the caller omits page_size."
+          },
+          "maxPageSize": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "maximum": 500,
+            "description": "Largest accepted page size."
+          },
+          "vendorOrder": {
+            "type": "array",
+            "maxItems": 200,
+            "description": "Vendor codes in presentation order; unlisted vendors follow in catalog order.",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "description": "One vendor code."
+            }
+          }
+        },
+        "required": [
+          "openApiEnabled",
+          "appApiEnabled",
+          "includeParameters",
+          "includePricing",
+          "includeExtensions",
+          "exposeDeprecatedModels",
+          "defaultPageSize",
+          "maxPageSize",
+          "vendorOrder"
         ]
       }
     }

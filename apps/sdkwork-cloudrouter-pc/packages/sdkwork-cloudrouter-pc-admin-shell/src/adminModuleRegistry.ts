@@ -43,6 +43,7 @@ import {
   Settings,
   ShieldAlert,
   ShieldCheck,
+  SlidersHorizontal,
   Sparkles,
   Store,
   TicketPercent,
@@ -261,6 +262,7 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
         itemBlock({ path: '/admin/model', labelKey: 'admin.menu.models', icon: Database }),
         itemBlock({ path: '/admin/model/resources', labelKey: 'admin.menu.modelResources', icon: Boxes, iconColor: 'text-lobster-400' }),
         itemBlock({ path: '/admin/model/mappings', labelKey: 'admin.menu.modelMappings', icon: ArrowRightLeft, iconColor: 'text-lobster-400' }),
+        itemBlock({ path: '/admin/model/frontend', labelKey: 'admin.menu.modelFrontend', icon: SlidersHorizontal, iconColor: 'text-lobster-400' }),
       ]),
       groupBlock('admin.menu.home.upstreamManagement', [
         itemBlock({ path: '/admin/upstream/suppliers', labelKey: 'admin.menu.upstream.suppliers', icon: Building2, iconColor: 'text-lobster-400' }),

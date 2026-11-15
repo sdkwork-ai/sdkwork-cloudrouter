@@ -57,11 +57,12 @@ use sdkwork_cloudrouter_settlements_dashboard_repository_sqlx::PostgresSettlemen
 use sdkwork_content_documents_sdk_reference::app_sdk_reference_router;
 use sdkwork_database_sqlx::DatabasePool;
 use sdkwork_models_catalog_repository_sqlx::{
-    PostgresModelCatalogAdminStore, PostgresModelRankingRefreshStore,
+    PostgresFrontendConfigStore, PostgresModelCatalogAdminStore, PostgresModelRankingRefreshStore,
     PostgresModelRankingsReadStore,
 };
 use sdkwork_routes_models_catalog_app_api::{
-    app_model_catalog_router, app_model_rankings_router, app_model_rankings_router_with_read_store,
+    app_frontend_config_router_with_store, app_model_catalog_router, app_model_rankings_router,
+    app_model_rankings_router_with_read_store,
 };
 use sqlx::PgPool;
 use tokio::time::sleep;
@@ -307,6 +308,17 @@ async fn finalize_product_router_with_federated_capabilities(
     database_pool: Option<&sdkwork_database_sqlx::DatabasePool>,
     generations_pricing_port: Option<Arc<dyn GenerationPricingPort>>,
 ) -> Result<Router, ProductCatalogRouterError> {
+    // Front-end model configuration is served by the models app surface and
+    // owned by the models database module; the Cloud Router app gateway only
+    // mounts the models router over the shared pool.
+    let router = match database_pool {
+        Some(sdkwork_database_sqlx::DatabasePool::Postgres(pool, _)) => {
+            router.merge(app_frontend_config_router_with_store(Arc::new(
+                PostgresFrontendConfigStore::new(pool.clone()),
+            )))
+        }
+        _ => router,
+    };
     let router = crate::invoice_runtime::merge_federated_invoice_app_router(
         router,
         database_pool,

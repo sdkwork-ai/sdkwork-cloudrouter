@@ -65,7 +65,7 @@ class ModelCatalogSyncContractTest(unittest.TestCase):
             "/v1/model_catalog": "modelCatalog.retrieve",
             "/v1/model_catalog/changes": "modelCatalog.listChanges",
             "/v1/model_catalog/vendors": "modelCatalog.listVendors",
-            "/v1/model_catalog/models/{catalog_key}": "modelCatalog.retrieveModel",
+            "/v1/model_catalog/models/{vendor_code}/{model_id}": "modelCatalog.retrieveModel",
             "/v1/model_catalog/parameters": "modelCatalog.listParameters",
         }
         for path, operation_id in expected.items():
@@ -83,7 +83,7 @@ class ModelCatalogSyncContractTest(unittest.TestCase):
             "/app/v3/api/ai/model_catalog": "modelCatalog.retrieve",
             "/app/v3/api/ai/model_catalog/changes": "modelCatalog.listChanges",
             "/app/v3/api/ai/model_catalog/vendors": "modelCatalog.listVendors",
-            "/app/v3/api/ai/model_catalog/models/{catalog_key}": "modelCatalog.retrieveModel",
+            "/app/v3/api/ai/model_catalog/models/{vendor_code}/{model_id}": "modelCatalog.retrieveModel",
             "/app/v3/api/ai/model_catalog/parameters": "modelCatalog.listParameters",
         }
         for path, operation_id in expected.items():
@@ -137,6 +137,21 @@ class ModelCatalogSyncContractTest(unittest.TestCase):
         model_fields = schemas["CatalogModel"]["properties"]
         for field in ("catalogKey", "parameters", "defaultParameters", "parameterConstraints", "extensions"):
             self.assertIn(field, model_fields)
+
+        presentation_fields = schemas["CatalogPresentation"]["properties"]
+        for field in (
+            "openApiEnabled",
+            "appApiEnabled",
+            "includeParameters",
+            "includePricing",
+            "includeExtensions",
+            "exposeDeprecatedModels",
+            "defaultPageSize",
+            "maxPageSize",
+            "vendorOrder",
+        ):
+            self.assertIn(field, presentation_fields)
+        self.assertIn("presentation", snapshot_fields)
 
     def test_standard_is_linked_from_the_architecture_index(self) -> None:
         self.assertTrue(STANDARD.is_file())

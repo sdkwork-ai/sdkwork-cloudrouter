@@ -7,7 +7,7 @@
     "x-sdkwork-domain": "intelligence",
     "x-sdkwork-api-authority": "sdkwork-cloudrouter-app-api",
     "x-sdkwork-api-surface": "app-api",
-    "x-sdkwork-source-route-crate": "sdkwork-routes-catalog-app-api"
+    "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api"
   },
   "servers": [
     {
@@ -287,14 +287,14 @@
         "x-sdkwork-required-surface": "organizationMember"
       }
     },
-    "/app/v3/api/ai/model_catalog/models/{catalog_key}": {
+    "/app/v3/api/ai/model_catalog/models/{vendor_code}/{model_id}": {
       "get": {
         "tags": [
           "ai"
         ],
         "operationId": "modelCatalog.retrieveModel",
         "summary": "Retrieve one catalog model",
-        "description": "Returns one model by its catalog key. The `catalog_key` path segment is percent-encoded (`deepseek%2Fdeepseek-flash`) because the key contains a slash.",
+        "description": "Returns one model by its vendor code and vendor-local model id.",
         "security": [
           {
             "AuthToken": [],
@@ -303,7 +303,10 @@
         ],
         "parameters": [
           {
-            "$ref": "#/components/parameters/CatalogKeyPath"
+            "$ref": "#/components/parameters/VendorCodePath"
+          },
+          {
+            "$ref": "#/components/parameters/ModelIdPath"
           },
           {
             "$ref": "#/components/parameters/RegionQuery"
@@ -534,15 +537,26 @@
           "minimum": 1
         }
       },
-      "CatalogKeyPath": {
-        "name": "catalog_key",
+      "VendorCodePath": {
+        "name": "vendor_code",
         "in": "path",
         "required": true,
-        "description": "Percent-encoded catalog key (`<vendorCode>/<modelId>`).",
+        "description": "Vendor code (the first catalog-key segment).",
         "schema": {
           "type": "string",
-          "maxLength": 512,
-          "minLength": 3
+          "maxLength": 64,
+          "minLength": 1
+        }
+      },
+      "ModelIdPath": {
+        "name": "model_id",
+        "in": "path",
+        "required": true,
+        "description": "Vendor-local model id (the second catalog-key segment).",
+        "schema": {
+          "type": "string",
+          "maxLength": 256,
+          "minLength": 1
         }
       },
       "IfNoneMatchHeader": {

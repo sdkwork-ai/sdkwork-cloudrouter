@@ -61,7 +61,7 @@ use sdkwork_cloudrouter_router_service::ports::{
 use sdkwork_database_sqlx::DatabasePool;
 use sdkwork_models_catalog_repository_sqlx::{
     PostgresAdminAiResourceStore as CatalogPostgresAdminAiResourceStore,
-    PostgresModelCatalogAdminStore, PostgresModelRankingRefreshStore,
+    PostgresFrontendConfigStore, PostgresModelCatalogAdminStore, PostgresModelRankingRefreshStore,
     PostgresModelRankingsReadStore,
 };
 use sdkwork_models_contract_service::{AdminAiResourceStore, ModelCatalogAdminStore};
@@ -70,6 +70,7 @@ use sdkwork_routes_models_catalog_backend_api::{
     admin_model_catalog_router_with_api_key_hasher, admin_model_management_router_with_store,
     admin_model_rankings_router, admin_model_rankings_router_with_read_store,
     admin_model_rankings_router_with_read_store_and_refresh_store,
+    backend_frontend_config_router_with_store,
 };
 use sdkwork_web_axum::problem_response_for_request;
 use sdkwork_web_core::{WebFrameworkError, WebRequestContext};
@@ -93,6 +94,8 @@ type SiteSettingsRuntimeStore = Arc<dyn SiteSettingsStore + Send + Sync>;
 type RuntimeRegionSettingsRuntimeStore = Arc<dyn RuntimeRegionSettingsStore + Send + Sync>;
 type AdminModuleEntryRuntimeStore = Arc<dyn AdminModuleEntryStore + Send + Sync>;
 type AdminAiResourceRuntimeStore = Arc<dyn AdminAiResourceStore + Send + Sync>;
+type FrontendConfigRuntimeStore =
+    Arc<dyn sdkwork_models_contract_service::FrontendConfigStore + Send + Sync>;
 type AdminUpstreamRuntimeStore = Arc<dyn AdminUpstreamStore + Send + Sync>;
 type AdminUpstreamRuntimeVerifier = Arc<dyn AdminUpstreamAccountVerifier + Send + Sync>;
 type AdminIpRateLimitRuntimeStore = Arc<dyn AdminIpRateLimitStore + Send + Sync>;
@@ -172,6 +175,7 @@ struct AdminRouterRuntime<'a> {
     runtime_region_settings_store: Option<RuntimeRegionSettingsRuntimeStore>,
     admin_module_entry_store: Option<AdminModuleEntryRuntimeStore>,
     ai_resource_store: Option<AdminAiResourceRuntimeStore>,
+    frontend_config_store: Option<FrontendConfigRuntimeStore>,
     upstream_store: Option<AdminUpstreamRuntimeStore>,
     upstream_verifier: Option<AdminUpstreamRuntimeVerifier>,
     ip_rate_limit_store: Option<AdminIpRateLimitRuntimeStore>,
@@ -324,6 +328,7 @@ where
         runtime_region_settings_store,
         admin_module_entry_store,
         ai_resource_store,
+        frontend_config_store,
         upstream_store,
         upstream_verifier,
         ip_rate_limit_store,
@@ -541,6 +546,12 @@ where
                     catalog_store,
                     Arc::new(OsApiKeySecretGenerator),
                 ),
+            ));
+        }
+        if let Some(store) = frontend_config_store {
+            router = router.merge(layer_with_admin_subject_boundary(
+                admin_subject_boundary_config.clone(),
+                backend_frontend_config_router_with_store(store, Arc::new(OsApiKeySecretGenerator)),
             ));
         }
         if let Some(store) = upstream_store {
@@ -842,6 +853,8 @@ pub async fn router_with_postgres_shared_runtime(
         Arc::new(PostgresAdminModuleEntryStore::new(pool.clone()));
     let ai_resource_store: AdminAiResourceRuntimeStore =
         Arc::new(CatalogPostgresAdminAiResourceStore::new(pool.clone()));
+    let frontend_config_store: FrontendConfigRuntimeStore =
+        Arc::new(PostgresFrontendConfigStore::new(pool.clone()));
     let upstream_store: AdminUpstreamRuntimeStore = Arc::new(PostgresAdminUpstreamStore::new(
         pool.clone(),
         credential_secret_codec.clone(),
@@ -962,6 +975,7 @@ pub async fn router_with_postgres_shared_runtime(
             runtime_region_settings_store: Some(runtime_region_settings_store),
             admin_module_entry_store: Some(admin_module_entry_store),
             ai_resource_store: Some(ai_resource_store),
+            frontend_config_store: Some(frontend_config_store),
             upstream_store: Some(upstream_store),
             upstream_verifier: Some(upstream_verifier),
             ip_rate_limit_store: Some(ip_rate_limit_store),
@@ -1153,6 +1167,8 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
         Arc::new(PostgresAdminModuleEntryStore::new(pool.clone()));
     let ai_resource_store: AdminAiResourceRuntimeStore =
         Arc::new(CatalogPostgresAdminAiResourceStore::new(pool.clone()));
+    let frontend_config_store: FrontendConfigRuntimeStore =
+        Arc::new(PostgresFrontendConfigStore::new(pool.clone()));
     let upstream_store: AdminUpstreamRuntimeStore = Arc::new(PostgresAdminUpstreamStore::new(
         pool.clone(),
         credential_secret_codec.clone(),
@@ -1220,6 +1236,7 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
                     runtime_region_settings_store: Some(runtime_region_settings_store),
                     admin_module_entry_store: Some(admin_module_entry_store),
                     ai_resource_store: Some(ai_resource_store),
+            frontend_config_store: Some(frontend_config_store),
                     upstream_store: Some(upstream_store),
                     upstream_verifier: Some(upstream_verifier),
                     ip_rate_limit_store: Some(ip_rate_limit_store),
