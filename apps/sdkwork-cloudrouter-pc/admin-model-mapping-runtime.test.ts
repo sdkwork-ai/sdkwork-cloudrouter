@@ -381,6 +381,7 @@ test('admin model mapping catalog tolerates models without region prices', async
               status: 'active',
               color: 'bg-indigo-500',
               description: 'OpenAI models',
+              modelCount: 1,
             },
           ],
         };

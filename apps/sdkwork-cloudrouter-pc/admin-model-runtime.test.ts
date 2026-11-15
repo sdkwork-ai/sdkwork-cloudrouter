@@ -46,6 +46,7 @@ function adminVendor(overrides: Record<string, unknown> = {}): Record<string, un
     status: "active",
     color: "bg-indigo-500",
     description: "Valid row",
+    modelCount: 3,
     ...overrides,
   };
   for (const [key, value] of Object.entries(vendor)) {
@@ -2030,6 +2031,7 @@ test("admin model vendor list fails closed when backend omits required vendor fi
     ["status", /Vendor status is required/],
     ["color", /Vendor color is required/],
     ["description", /Vendor description is required/],
+    ["modelCount", /Vendor model count must be a non-negative integer/],
   ];
 
   for (const [field, error] of cases) {
