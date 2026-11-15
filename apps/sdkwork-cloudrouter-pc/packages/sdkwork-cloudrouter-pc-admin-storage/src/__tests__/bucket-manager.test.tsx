@@ -134,6 +134,13 @@ describe('BucketManagerSection', () => {
       logicalPlaneCreated: false,
       logicalBucketCount: '4',
       businessBindingCount: '12',
+      objectWriteVerified: true,
+      objectReadVerified: true,
+      objectDeleteVerified: true,
+      multipartVerified: true,
+      presignedUploadVerified: true,
+      presignedDownloadVerified: true,
+      ready: true,
     });
     hoisted.service.headBucket.mockResolvedValue({
       providerId: 'provider-cos',
@@ -256,7 +263,7 @@ describe('BucketManagerSection', () => {
       expect(hoisted.service.initializeProvider).toHaveBeenCalledWith('provider-cos');
     });
     expect(
-      await screen.findByText(/Provider initialized: bucket "sdkwork-drive-cos-1250000000", 4 logical buckets and 12 business bindings ready\./),
+      await screen.findByText(/Storage is ready: bucket "sdkwork-drive-cos-1250000000", 4 logical buckets and 12 business bindings verified\./),
     ).toBeTruthy();
     cleanup();
   });

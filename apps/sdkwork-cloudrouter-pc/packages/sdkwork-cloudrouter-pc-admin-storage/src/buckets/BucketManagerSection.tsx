@@ -208,16 +208,25 @@ export function BucketManagerSection({
       await loadProviders();
       await loadBuckets(selectedProvider);
       setNotice({
-        kind: 'success',
-        text: t(
-          'admin.storage.bucketsAdmin.initializeSuccess',
-          'Provider initialized: bucket "{{bucket}}", {{logical}} logical buckets and {{business}} business bindings ready.',
-          {
-            bucket: result.bucket,
-            logical: result.logicalBucketCount,
-            business: result.businessBindingCount,
-          },
-        ),
+        kind: result.ready ? 'success' : 'error',
+        text: result.ready
+          ? t(
+              'admin.storage.bucketsAdmin.initializeSuccess',
+              'Storage is ready: bucket "{{bucket}}", {{logical}} logical buckets and {{business}} business bindings verified.',
+              {
+                bucket: result.bucket,
+                logical: result.logicalBucketCount,
+                business: result.businessBindingCount,
+              },
+            )
+          : t(
+              'admin.storage.bucketsAdmin.initializeNotReady',
+              'Provider initialized partially, but storage is not production-ready yet: {{detail}}',
+              {
+                detail: result.readinessError
+                  ?? 'object write/read/delete or multipart upload verification failed.',
+              },
+            ),
       });
     } catch (error) {
       setNotice({
