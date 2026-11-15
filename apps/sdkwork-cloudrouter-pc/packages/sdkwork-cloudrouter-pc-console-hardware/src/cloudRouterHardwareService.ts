@@ -19,6 +19,7 @@ import {
   type ConsoleHardwarePage,
   type ConsoleHardwareService,
 } from '@sdkwork/aiot-pc-console-hardware';
+import type { AgentConfig } from '@sdkwork/agents-pc-agents/services';
 import {
   getSdkworkAgentAppSdkClient,
   getSdkworkAiotAppSdkClient,
@@ -40,6 +41,23 @@ export function createCloudRouterHardwareService(): ConsoleHardwareService {
     resolveAgents: async (): Promise<ConsoleHardwarePage<ConsoleHardwareAgent>> => {
       const page = await getSdkworkAgentAppSdkClient().ai.agents.list({ page: 1, pageSize: 100 });
       return mapPage(page, mapAgent);
+    },
+    createAgent: async ({ name, description }) => {
+      // Agent creation is owned by the Agents console service, not by the
+      // hardware console: load it on demand so the hardware route does not pull
+      // the Agents console graph until the operator actually creates an agent.
+      const { DEFAULT_AGENT_CONFIG, createSdkworkAgentService } = await import(
+        '@sdkwork/agents-pc-agents/services'
+      );
+      const config: AgentConfig = {
+        ...DEFAULT_AGENT_CONFIG,
+        name,
+        description: description ?? '',
+        type: 'normal',
+      };
+      const service = createSdkworkAgentService(() => getSdkworkAgentAppSdkClient());
+      const created = await service.createAgent(config);
+      return mapAgent({ id: created.id, name: created.name, description: created.description });
     },
   });
 }
