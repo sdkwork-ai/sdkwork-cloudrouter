@@ -3,7 +3,11 @@ import {
   AgentsAdminPage as AgentsAdminBlock,
 } from '@sdkwork/agents-pc-admin';
 import { configureAgentsAdminRuntime } from '@sdkwork/agents-pc-admin/agentsAdminService';
-import { getSdkworkAgentBackendSdkClient } from '@sdkwork/cloudroutes-pc-commons/runtime';
+import { configureDriveAppSdkClientProvider } from '@sdkwork/agents-pc-core/sdk/driveAppSdkClient';
+import {
+  getSdkworkAgentBackendSdkClient,
+  getSdkworkDriveAppSdkClient,
+} from '@sdkwork/cloudroutes-pc-commons/runtime';
 
 /**
  * Binds the host runtime once, as a side effect of loading this chunk.
@@ -23,6 +27,7 @@ import { getSdkworkAgentBackendSdkClient } from '@sdkwork/cloudroutes-pc-commons
 configureAgentsAdminRuntime({
   getBackendSdkClient: getSdkworkAgentBackendSdkClient,
 });
+configureDriveAppSdkClientProvider(getSdkworkDriveAppSdkClient);
 
 export {
   AgentsAdminBlock as AgentsAdminPage,
