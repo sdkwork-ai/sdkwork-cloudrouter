@@ -260,4 +260,20 @@ describe('BucketManagerSection', () => {
     ).toBeTruthy();
     cleanup();
   });
+
+  it('keeps the configured bucket visible when the vendor inventory fails', async () => {
+    hoisted.service.listBuckets.mockRejectedValue(new Error('endpoint offline'));
+
+    render(
+      <BucketManagerSection
+        service={service()}
+        renderObjectBrowser={() => <div data-testid="object-browser" />}
+      />,
+    );
+
+    expect(await screen.findByText('Pending initialization')).toBeTruthy();
+    expect(screen.getAllByText('sdkwork-drive-cos-1250000000').length).toBeGreaterThan(0);
+    expect(screen.getByRole('alert')).toBeTruthy();
+    cleanup();
+  });
 });

@@ -121,20 +121,33 @@ export function BucketManagerSection({
   );
 
   const loadBuckets = useCallback(
-    async (providerId: string, signal?: AbortSignal) => {
-      if (!providerId) {
+    async (provider: StorageProviderView | undefined, signal?: AbortSignal) => {
+      if (!provider) {
         setBuckets([]);
         return;
       }
       setLoadingBuckets(true);
       setLoadError(false);
       try {
-        const items = await service.listBuckets(providerId, { signal });
+        const items = await service.listBuckets(provider.id, { signal });
         if (signal?.aborted) return;
         setBuckets(items);
       } catch (error) {
         if (signal?.aborted) return;
-        setBuckets([]);
+        // Keep the configured bucket visible even when the vendor inventory is
+        // unreachable (credentials not stored yet, endpoint offline). The error
+        // banner explains the failure; the row gives the operator the concrete
+        // initialization target instead of an empty page.
+        setBuckets(
+          provider.bucket
+            ? [{
+                bucket: provider.bucket,
+                configured: true,
+                exists: false,
+                region: provider.region,
+              }]
+            : [],
+        );
         setLoadError(true);
       } finally {
         if (!signal?.aborted) setLoadingBuckets(false);
@@ -154,18 +167,19 @@ export function BucketManagerSection({
       setBuckets([]);
       return undefined;
     }
+    const provider = providers.find((item) => item.id === selectedProviderId);
     const controller = new AbortController();
-    void loadBuckets(selectedProviderId, controller.signal);
+    void loadBuckets(provider, controller.signal);
     return () => controller.abort();
-  }, [loadBuckets, selectedProviderId]);
+  }, [loadBuckets, providers, selectedProviderId]);
 
   const refresh = useCallback(async () => {
     setBusy('refresh');
     setNotice(null);
     await loadProviders();
-    if (selectedProviderId) await loadBuckets(selectedProviderId);
+    if (selectedProvider) await loadBuckets(selectedProvider);
     setBusy(null);
-  }, [loadBuckets, loadProviders, selectedProviderId]);
+  }, [loadBuckets, loadProviders, selectedProvider]);
 
   async function useBucket(bucket: string) {
     if (!selectedProvider) return;
@@ -176,7 +190,7 @@ export function BucketManagerSection({
       // 切桶后立即幂等确保该桶存在：厂商侧已存在则 changed=false，不重复创建。
       await service.initializeBucket(selectedProvider.id);
       await loadProviders();
-      await loadBuckets(selectedProvider.id);
+      await loadBuckets(selectedProvider);
       setNotice({ kind: 'success', text: t('admin.storage.bucketsAdmin.useSuccess', 'Bucket selected and verified.') });
     } catch (error) {
       setNotice({ kind: 'error', text: t('admin.storage.bucketsAdmin.useError', 'The bucket could not be selected.') });
@@ -192,7 +206,7 @@ export function BucketManagerSection({
     try {
       const result = await service.initializeProvider(selectedProvider.id);
       await loadProviders();
-      await loadBuckets(selectedProvider.id);
+      await loadBuckets(selectedProvider);
       setNotice({
         kind: 'success',
         text: t(
@@ -244,7 +258,7 @@ export function BucketManagerSection({
     try {
       await service.deleteBucket(selectedProvider.id);
       setPendingDelete(false);
-      await loadBuckets(selectedProvider.id);
+      await loadBuckets(selectedProvider);
       setNotice({ kind: 'success', text: t('admin.storage.bucketsAdmin.deleteSuccess', 'The configured bucket was removed.') });
     } catch (error) {
       setNotice({ kind: 'error', text: t('admin.storage.bucketsAdmin.deleteError', 'The configured bucket could not be removed.') });
@@ -380,13 +394,14 @@ export function BucketManagerSection({
           <div className="min-h-0 flex-1 overflow-auto custom-scrollbar">
           {loadError ? (
             <div
-              className="flex min-h-[320px] flex-col items-center justify-center gap-2 p-6 text-center text-sm text-slate-500 dark:text-slate-400"
+              className="flex items-start gap-2 border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
               role="alert"
             >
-              <CircleAlert className="h-5 w-5" />
-              {t('admin.storage.bucketsAdmin.loadError', 'Bucket data could not be loaded. Check the provider credentials and endpoint.')}
+              <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+              {t('admin.storage.bucketsAdmin.loadError', 'Bucket data could not be loaded. Check the provider credentials and endpoint; the configured bucket stays listed so you can retry initialization.')}
             </div>
-          ) : loadingBuckets ? (
+          ) : null}
+          {loadingBuckets ? (
             <div className="flex min-h-[320px] items-center justify-center gap-2 p-6 text-sm text-slate-500 dark:text-slate-400">
               <LoaderCircle className="h-4 w-4 animate-spin" />
               {t('admin.storage.form.bucketLoading', 'Loading buckets...')}
