@@ -230,6 +230,7 @@
     "@sdkwork/iam-core-pc-react": "workspace:*",
     "@sdkwork/iam-credential-entry": "workspace:*",
     "@sdkwork/iam-pc-admin-oauth": "workspace:*",
+    "@sdkwork/iam-pc-official-accounts": "workspace:*",
     "@sdkwork/iam-react": "workspace:*",
     "@sdkwork/iam-runtime": "workspace:*",
     "@sdkwork/iam-sdk-ports": "workspace:*",

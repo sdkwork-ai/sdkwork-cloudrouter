@@ -8,6 +8,14 @@
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-audit/src";
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-core/src";
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-oauth/src";
+/* The unified official-account panel lives in the IAM repo and is mounted here
+   twice — by the admin OAuth page and by the console self-service route — so its
+   own utilities and the shared Drive upload-image field it renders must be
+   declared explicitly. Tailwind only scans the app root by default; a missing
+   entry fails silently, emitting a utility only when some other scanned source
+   happens to use the same class. */
+@source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-official-accounts/src";
+@source "../../../../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-upload-image/src";
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-organization/src";
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-permission/src";
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-shell/src";

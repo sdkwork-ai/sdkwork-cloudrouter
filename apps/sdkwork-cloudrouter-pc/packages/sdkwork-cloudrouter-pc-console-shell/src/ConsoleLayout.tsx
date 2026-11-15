@@ -13,6 +13,7 @@ import {
   Key,
   LayoutDashboard,
   LogOut,
+  MessageCircle,
   Receipt,
   Settings,
   Ticket,
@@ -75,6 +76,10 @@ const consoleHardwareGroup = groupBlock(
 const consoleSidebarGroups = [
   groupBlock('console.menu.group.integration', 'Access & Routing', [
     itemBlock({ path: '/console/api-keys', labelKey: 'console.menu.apiKeys', fallbackLabel: 'Token management', icon: Key }),
+    // The caller's own WeChat official accounts: the unified
+    // `@sdkwork/iam-pc-official-accounts` self-service surface, the same
+    // component the admin surface mounts in operator posture.
+    itemBlock({ path: '/console/iam/oauth/official-accounts', labelKey: 'console.menu.officialAccounts', fallbackLabel: 'Official accounts', icon: MessageCircle }),
   ]),
   groupBlock('console.menu.group.agents', 'Agents', [
     itemBlock({ path: '/console/agents', labelKey: 'console.menu.agents', fallbackLabel: 'Agents console', icon: Bot }),

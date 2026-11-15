@@ -2435,6 +2435,9 @@ importers:
       '@sdkwork/iam-pc-admin-core':
         specifier: workspace:*
         version: link:../sdkwork-iam-pc-admin-core
+      '@sdkwork/iam-pc-mini-program':
+        specifier: workspace:*
+        version: link:../sdkwork-iam-pc-mini-program
       '@sdkwork/iam-pc-official-accounts':
         specifier: workspace:*
         version: link:../sdkwork-iam-pc-official-accounts
@@ -2611,6 +2614,31 @@ importers:
       typescript:
         specifier: ^6.0.2
         version: 6.0.3
+
+  ../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-mini-program:
+    dependencies:
+      '@sdkwork/i18n-pc-react':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-i18n-pc-react
+      '@sdkwork/ui-pc-react':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-ui/sdkwork-ui-pc-react
+    devDependencies:
+      '@testing-library/react':
+        specifier: 'catalog:'
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(tsx@4.23.12)
 
   ../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-official-accounts:
     dependencies:
@@ -5934,6 +5962,9 @@ importers:
       '@sdkwork/iam-pc-admin-oauth':
         specifier: workspace:*
         version: link:../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-oauth
+      '@sdkwork/iam-pc-official-accounts':
+        specifier: workspace:*
+        version: link:../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-official-accounts
       '@sdkwork/iam-react':
         specifier: workspace:*
         version: link:../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-react
