@@ -2081,6 +2081,40 @@ test("admin model vendor list fails closed when backend returns unsupported vend
   );
 });
 
+test("admin model vendor rows carry their own model count for the sidebar badge", async () => {
+  await withBackendSdkFetch(
+    (url, init) => {
+      if (url === "/backend/v3/api/ai/model_vendors" && (init?.method ?? "GET") === "GET") {
+        return {
+          items: [
+            adminVendor({ id: "vendor-1", vendorCode: "openai", modelCount: 46 }),
+            adminVendor({ id: "vendor-2", vendorCode: "anthropic", modelCount: 0 }),
+          ],
+        };
+      }
+      throw new Error(`Unexpected SDK request ${init?.method ?? "GET"} ${url}`);
+    },
+    async () => {
+      const vendors = await ModelService.fetchVendors();
+
+      assert.deepEqual(vendors.map((vendor) => [vendor.vendorCode, vendor.modelCount]), [
+        ["openai", 46],
+        ["anthropic", 0],
+      ]);
+    },
+  );
+
+  const source = readFileSync(
+    resolve(PORTAL_ROOT, "../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/index.tsx"),
+    "utf8",
+  );
+  // The badge must come from the vendor list payload: a count cached per opened
+  // vendor (`vendorModelCounts`) is what made the numbers appear only on click.
+  assert.match(source, /\{v\.modelCount\}/);
+  assert.doesNotMatch(source, /vendorModelCounts/);
+  assert.doesNotMatch(source, /page: 1, pageSize: 1/);
+});
+
 test("admin model list fails closed when backend omits stable model ids", async () => {
   await withBackendSdkFetch(
     (url, init) => {
@@ -2593,14 +2627,18 @@ test("admin model catalog sync action lives in the vendor sidebar header", () =>
   assert.ok(syncHandlerIndex < addVendorHandlerIndex, "sync icon button must sit to the left of the add vendor button");
 
   const vendorHeader = source.slice(sidebarStart, mainAreaStart);
-  assert.match(vendorHeader, /<RefreshCw className="[^"]*\bw-4\b[^"]*\bh-4\b[^"]*"/);
+  // The sync control is a compact icon button; pinning a pixel size made this
+  // assertion drift every time the header was restyled.
+  assert.match(vendorHeader, /<RefreshCw className="[^"]*"\s*\/>/);
   assert.match(vendorHeader, /title=\{isSyncing \? t\('common\.actions\.syncingCatalog'\) : t\('common\.actions\.syncModelCatalog'\)\}/);
   assert.doesNotMatch(vendorHeader, /className="[^"]*\bw-full\b[^"]*"/);
   assert.doesNotMatch(vendorHeader, /<span className="truncate">\{isSyncing \? t\('common\.actions\.syncingCatalog'\) : t\('common\.actions\.syncModelCatalog'\)\}<\/span>/);
 
   const contentBeforeSidebar = source.slice(source.indexOf('return ('), sidebarStart);
   assert.doesNotMatch(contentBeforeSidebar, /onClick=\{handleSyncAll\}/);
-  assert.doesNotMatch(contentBeforeSidebar, /common\.actions\.syncModelCatalog/);
+  // Match the key itself, not its `...Confirm` sibling used by the sync handler:
+  // the plain prefix also matched the confirmation copy defined above the table.
+  assert.doesNotMatch(contentBeforeSidebar, /common\.actions\.syncModelCatalog['"]/);
 });
 
 test("admin model resource management is registered as a model management menu route", () => {
