@@ -204,10 +204,12 @@ function SiteSettingsRoute() {
 export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRouteContribution[] = [
   route('dashboard', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-dashboard', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <DashboardAdmin />),
   // Application Center: one tenant-wide catalog over the three application
-  // platforms (IAM, Deploy, App Store), with delegated access-token issuance.
-  // It is its own header module, so it gets a top-level route rather than
-  // living only under the IAM tenant drill-down.
-  route('applications', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-iam-backend-sdk', 'sdkwork-deployments-app-sdk', 'sdkwork-appstore-app-sdk'], 'cloudrouter.admin.access', <ApplicationCenterAdmin />),
+  // platforms (IAM, Deploy, App Store) plus the App Store category tree. The
+  // view lives in the URL (`/admin/applications/iam|deploy|app-store|categories`)
+  // so the admin shell sidebar is the single left menu; the wildcard route keeps
+  // one page instance mounted while the view changes.
+  route('applications', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-iam-backend-sdk', 'sdkwork-deployments-app-sdk', 'sdkwork-appstore-app-sdk', 'sdkwork-appstore-backend-sdk'], 'cloudrouter.admin.access', <Navigate to="/admin/applications/iam" replace />),
+  route('applications/*', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-iam-backend-sdk', 'sdkwork-deployments-app-sdk', 'sdkwork-appstore-app-sdk', 'sdkwork-appstore-backend-sdk'], 'cloudrouter.admin.access', <ApplicationCenterAdmin />),
   route('analytics', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-analytics', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <AnalyticsAdmin />),
   route('upstream', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-upstream', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <Navigate to="/admin/upstream/suppliers" replace />),
   route('upstream/suppliers', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-upstream', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <UpstreamSupplierAdmin />),

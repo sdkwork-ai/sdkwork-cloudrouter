@@ -26,6 +26,104 @@ export interface ApplicationCatalogMessages {
     unavailable: string;
   };
   back: string;
+  categories: {
+    actions: {
+      activate: string;
+      applying: string;
+      deactivate: string;
+      delete: string;
+      edit: string;
+    };
+    columns: {
+      actions: string;
+      category: string;
+      parent: string;
+      sortOrder: string;
+      status: string;
+      updatedAt: string;
+    };
+    countTemplate: string;
+    create: string;
+    delete: {
+      blockedChildren: string;
+      cancel: string;
+      confirm: string;
+      deleting: string;
+      description: string;
+      error: string;
+      title: string;
+    };
+    description: string;
+    emptyDescription: string;
+    emptyTitle: string;
+    filterAll: string;
+    forbidden: string;
+    form: {
+      cancel: string;
+      close: string;
+      code: string;
+      codeHint: string;
+      codeImmutable: string;
+      codePlaceholder: string;
+      createDescription: string;
+      createTitle: string;
+      description: string;
+      descriptionPlaceholder: string;
+      editDescription: string;
+      editTitle: string;
+      icon: string;
+      iconHint: string;
+      iconPlaceholder: string;
+      level: string;
+      localeDescriptionHint: string;
+      localeEn: string;
+      localeHint: string;
+      localeZh: string;
+      name: string;
+      namePlaceholder: string;
+      parent: string;
+      parentHint: string;
+      parentLockedHint: string;
+      parentNone: string;
+      save: string;
+      saveError: string;
+      saved: string;
+      saving: string;
+      sortOrder: string;
+      sortOrderHint: string;
+      status: string;
+      statusHint: string;
+      validation: {
+        "code-duplicate": string;
+        "code-invalid": string;
+        "code-required": string;
+        "description-too-long": string;
+        "name-required": string;
+        "name-too-long": string;
+        "parent-cycle": string;
+        "parent-level-invalid": string;
+        "parent-missing": string;
+        "sort-order-invalid": string;
+      };
+    };
+    loadError: string;
+    loadMore: string;
+    loadingMore: string;
+    navDescription: string;
+    navLabel: string;
+    refresh: string;
+    retry: string;
+    rootParent: string;
+    searchPlaceholder: string;
+    statuses: {
+      active: string;
+      deleted: string;
+      inactive: string;
+      unknown: string;
+    };
+    title: string;
+    unavailable: string;
+  };
   columns: {
     actions: string;
     application: string;
@@ -45,6 +143,128 @@ export interface ApplicationCatalogMessages {
     appStore: { description: string; label: string };
     deploy: { description: string; label: string };
     iam: { description: string; label: string };
+  };
+  integrations: {
+    actions: {
+      miniProgram: string;
+      officialAccount: string;
+      payment: string;
+    };
+    channel: {
+      accountType: string;
+      appId: string;
+      availableTitle: string;
+      clear: string;
+      currentTitle: string;
+      disabled: string;
+      emptyAvailable: string;
+      emptyCurrent: string;
+      enabled: string;
+      provider: string;
+      searchPlaceholder: string;
+      select: string;
+      selected: string;
+      status: string;
+      unauthorized: string;
+    };
+    drawer: {
+      anchor: {
+        description: string;
+        linked: string;
+        noDeployApps: string;
+        placeholder: string;
+        required: string;
+        title: string;
+      };
+      application: string;
+      close: string;
+      deployAnchor: string;
+      descriptions: {
+        miniProgram: string;
+        officialAccount: string;
+        payment: string;
+      };
+      environment: {
+        description: string;
+        empty: string;
+        label: string;
+      };
+      errors: string;
+      forbidden: string;
+      loadError: string;
+      loading: string;
+      noChanges: string;
+      retry: string;
+      save: string;
+      saveError: string;
+      saved: string;
+      saving: string;
+      titles: {
+        miniProgram: string;
+        officialAccount: string;
+        payment: string;
+      };
+      unavailable: string;
+      warnings: string;
+    };
+    payment: {
+      accountName: string;
+      accountNo: string;
+      add: string;
+      availableTitle: string;
+      boundTitle: string;
+      country: string;
+      currency: string;
+      defaultBadge: string;
+      directMode: string;
+      emptyAvailable: string;
+      emptyBound: string;
+      environment: string;
+      incompatible: string;
+      makeDefault: string;
+      mode: string;
+      noPayCapability: string;
+      partnerMode: string;
+      provider: string;
+      remove: string;
+      searchPlaceholder: string;
+      status: string;
+      summary: string;
+    };
+    paymentEnvironments: {
+      development: string;
+      production: string;
+      sandbox: string;
+    };
+    paymentStatuses: {
+      active: string;
+      deprecated: string;
+      inactive: string;
+      suspended: string;
+      unknown: string;
+    };
+    summary: {
+      miniProgram: string;
+      officialAccount: string;
+      paymentCount: string;
+    };
+    validation: {
+      "channel-app-id-missing": string;
+      "channel-disabled": string;
+      "channel-not-found": string;
+      "channel-unauthorized": string;
+      "payment-capability-missing": string;
+      "payment-default-duplicate": string;
+      "payment-default-missing": string;
+      "payment-duplicate": string;
+      "payment-environment-mismatch": string;
+      "payment-inactive": string;
+      "payment-not-found": string;
+      "payment-partner-sub-merchant-missing": string;
+      "wechat-app-id-mismatch": string;
+      "wechat-channel-missing": string;
+      "wechat-payment-missing": string;
+    };
   };
   loadError: string;
   organizationAppStoreNotice: string;

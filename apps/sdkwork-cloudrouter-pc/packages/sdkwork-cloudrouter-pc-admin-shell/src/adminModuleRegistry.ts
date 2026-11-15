@@ -44,6 +44,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   Sparkles,
+  Store,
   TicketPercent,
   TrendingUp,
   Undo2,
@@ -297,7 +298,10 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
   {
     moduleId: 'appCenter',
     items: [
-      itemBlock({ path: '/admin/applications', labelKey: 'admin.menu.appCenter.applications', icon: Boxes }),
+      itemBlock({ path: '/admin/applications/iam', labelKey: 'admin.menu.appCenter.iam', icon: Boxes }),
+      itemBlock({ path: '/admin/applications/deploy', labelKey: 'admin.menu.appCenter.deploy', icon: Layers3 }),
+      itemBlock({ path: '/admin/applications/app-store', labelKey: 'admin.menu.appCenter.appStore', icon: Store }),
+      itemBlock({ path: '/admin/applications/categories', labelKey: 'admin.menu.appCenter.categories', icon: FolderTree }),
     ],
     groups: [],
   },
