@@ -1,4 +1,9 @@
 @import "tailwindcss";
+/* The unified official-account panel that the admin OAuth page and the console
+   self-service route both mount lives in the IAM repo. Its Tailwind source
+   fragment is owned by the shared package, so this entry imports the IAM admin
+   OAuth fragment instead of enumerating IAM paths here. */
+@import "@sdkwork/iam-pc-admin-oauth/panel-tailwind.css";
 @plugin "tailwindcss-animate";
 @source "../packages";
 @source "../src";
@@ -8,6 +13,10 @@
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-audit/src";
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-core/src";
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-oauth/src";
+/* The shared Drive image-upload field the official-account logo drawer renders.
+   The official-account/mini-program panel sources themselves come from the
+   imported IAM fragment above. */
+@source "../../../../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-upload-image/src";
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-organization/src";
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-permission/src";
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-shell/src";

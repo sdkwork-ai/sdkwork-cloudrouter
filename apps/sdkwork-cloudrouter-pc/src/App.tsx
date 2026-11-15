@@ -23,6 +23,7 @@ import { createCloudRouterPublicDocumentsClient } from '@sdkwork/cloudroutes-pc-
 import { PublicDocumentsRuntimeProvider } from '@sdkwork/documents-pc-public-documents/runtime';
 import { CloudRouterConsoleBusinessHostRoutes } from './console-business/consoleBusinessHostMount';
 import { CloudRouterConsoleIamOauthMenuRoute } from './console-business/consoleIamOauthMenuHost';
+import { CloudRouterConsoleIamOfficialAccountsRoute } from './console-business/consoleIamOfficialAccountsHost';
 import { CloudRouterConsoleBusinessNavbarActions } from './console-business/consoleBusinessNavbar';
 import { applySdkCommerceThemeVariables } from './console-business/consoleCommerceTheme';
 import { CloudRouterAdminHostRoutes } from './admin/cloudRouterAdminHostMount';
@@ -310,6 +311,7 @@ export default function App() {
               <Route path="hardware/devices" element={<HardwareConsoleView />} />
               <Route path="hardware/firmware" element={<HardwareConsoleView />} />
               <Route path="hardware/*" element={<HardwareConsoleView />} />
+              <Route path="iam/oauth/official-accounts" element={<CloudRouterConsoleIamOfficialAccountsRoute />} />
               <Route path="iam/oauth/official-accounts/:resourceAccountId/custom-menus" element={<CloudRouterConsoleIamOauthMenuRoute />} />
               <Route path="account" element={<AccountView />} />
               {CloudRouterConsoleBusinessHostRoutes()}

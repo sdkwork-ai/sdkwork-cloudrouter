@@ -147,6 +147,7 @@ const PORTAL_SOURCE_OPTIMIZE_EXCLUDE = [
   '@sdkwork/iam-pc-admin-organization',
   '@sdkwork/iam-pc-admin-permission',
   '@sdkwork/iam-pc-admin-oauth',
+  '@sdkwork/iam-pc-official-accounts',
   '@sdkwork/iam-pc-admin-account-binding',
   '@sdkwork/iam-pc-admin-audit',
   '@sdkwork/ui-pc-react',

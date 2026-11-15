@@ -2,6 +2,7 @@ import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import { SdkworkI18nProvider } from '@sdkwork/i18n-pc-react';
 import { agentsWorkbenchI18nCatalogs } from '@sdkwork/cloudrouter-pc-playground/i18n';
+import { SDKWORK_OFFICIAL_ACCOUNTS_I18N_CATALOG } from '@sdkwork/iam-pc-official-accounts';
 import {
   cloudRouterI18nCatalog,
   cloudRouterI18nRuntimeConfig,
@@ -33,7 +34,14 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <PortalQueryProvider>
       <SdkworkI18nProvider
-        catalogs={[cloudRouterI18nCatalog, ...agentsWorkbenchI18nCatalogs]}
+        catalogs={[
+          cloudRouterI18nCatalog,
+          ...agentsWorkbenchI18nCatalogs,
+          // The shared official-account panel resolves its own namespace; without
+          // this entry it would fall back to the catalog's default locale instead
+          // of the console's active one.
+          SDKWORK_OFFICIAL_ACCOUNTS_I18N_CATALOG,
+        ]}
         config={cloudRouterI18nRuntimeConfig}
         defaultVariables={{ platformName: 'Cloud Router' }}
         locale={resolveCloudRouterInitialLocale()}

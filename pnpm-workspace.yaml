@@ -170,6 +170,8 @@ packages:
   - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-permission"
   - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-tenant"
   - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-user"
+  - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-mini-program"
+  - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-official-accounts"
   - "../sdkwork-iam/apps/sdkwork-iam-h5"
   - "../sdkwork-iam/apps/sdkwork-iam-h5/packages/*"
   - "../sdkwork-im/sdks/sdkwork-im-sdk/sdkwork-im-sdk-typescript"
