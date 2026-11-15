@@ -11,8 +11,8 @@ import {
  * holding the official brand mark in its own brand colour, so the column reads
  * as one visual system regardless of which providers an operator has enabled.
  * Marks come from the CC0 `simple-icons` set (see
- * `scripts/generate-payment-provider-brand-icons.mjs`): inert SVG paths, so no
- * per-row network request and no `<img>` failure mode, crisp on any DPI.
+ * `scripts/generate-provider-brand-icons.mjs --set payment`): inert SVG paths,
+ * so no per-row network request and no `<img>` failure mode, crisp on any DPI.
  *
  * Marks whose artwork fills the full 24x24 box are complete app-icon squares
  * (Alipay, PhonePe, Square…). Those are drawn edge to edge and clipped by the

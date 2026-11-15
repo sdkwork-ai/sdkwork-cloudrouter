@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
   Boxes,
   Copy,
+  CreditCard,
   Eye,
   EyeOff,
+  FolderTree,
   KeyRound,
   Layers,
+  MessageCircle,
   RefreshCw,
   Search,
+  Smartphone,
   Store,
   type LucideIcon,
 } from "lucide-react";
@@ -30,6 +34,8 @@ import {
   type StatusBadgeVariant,
 } from "@sdkwork/ui-pc-react";
 
+import { ApplicationIntegrationDrawer } from "../components/ApplicationIntegrationDrawer";
+import { AppStoreCategoryPanel } from "../components/AppStoreCategoryPanel";
 import { useApplicationCatalogMessages, type ApplicationCatalogMessages } from "../i18n";
 import {
   isApplicationSourceUnavailable,
@@ -41,6 +47,17 @@ import {
   loadIamApplications,
   resolveApplicationCatalogContext,
 } from "../services/application-catalog";
+import {
+  resolveDeployApplicationForRecord,
+  summarizeApplicationIntegration,
+} from "../services/application-integration-document";
+import { getApplicationIntegrationService } from "../services/application-integrations";
+import type {
+  ApplicationIntegrationKind,
+  ApplicationIntegrationSaveResult,
+  ApplicationIntegrationService,
+  ApplicationIntegrationSummary,
+} from "../types/application-integrations";
 import type {
   ApplicationAccessToken,
   ApplicationAccessTokenIssuer,
@@ -49,6 +66,7 @@ import type {
   ApplicationGroupState,
   ApplicationRecord,
 } from "../types/application-catalog";
+import type { AppStoreCategoryService } from "../types/appstore-categories";
 
 interface ApplicationGroupDefinition {
   id: ApplicationGroupId;
@@ -62,6 +80,29 @@ const APPLICATION_GROUPS: readonly ApplicationGroupDefinition[] = [
   { id: "deploy", icon: Layers, loader: loadDeployApplications, messageKey: "deploy" },
   { id: "app-store", icon: Store, loader: loadAppStoreApplications, messageKey: "appStore" },
 ];
+
+/** Left-navigation views: the three app sources plus category governance. */
+export type ApplicationCatalogView = ApplicationGroupId | "categories";
+
+/**
+ * Resolve the App Center view from its route.
+ *
+ * The App Center module owns one route per view so the admin shell sidebar is
+ * the only left navigation; the index route redirects to
+ * `/admin/applications/iam`. Unknown subpaths fall back to IAM.
+ */
+export function resolveApplicationCatalogView(pathname: string): ApplicationCatalogView {
+  if (/\/categories\/?$/u.test(pathname)) {
+    return "categories";
+  }
+  if (/\/deploy\/?$/u.test(pathname)) {
+    return "deploy";
+  }
+  if (/\/app-store\/?$/u.test(pathname)) {
+    return "app-store";
+  }
+  return "iam";
+}
 
 function createInitialGroupStates(): Record<ApplicationGroupId, ApplicationGroupState> {
   return {
@@ -80,14 +121,24 @@ function createInitialGroupStates(): Record<ApplicationGroupId, ApplicationGroup
  * layout gives operators one place to see every application the entity owns.
  */
 export function ApplicationManagementPage({
+  activeView: controlledView,
   backTo,
+  categoryService,
+  integrations,
   issueToken,
   loaders,
   organizationId,
   resolveContext,
+  showViewNav = true,
   tenantId,
 }: {
+  /** Controlled view used by the App Center routes (shell sidebar owns navigation). */
+  activeView?: ApplicationCatalogView;
   backTo: string;
+  /** Test/extension seam: override the App Store category transport. */
+  categoryService?: AppStoreCategoryService;
+  /** Test/extension seam: override the application integration transport. */
+  integrations?: ApplicationIntegrationService;
   /** Test/extension seam: override access-token issuance. */
   issueToken?: ApplicationAccessTokenIssuer;
   /** Test/extension seam: override one or more group loaders. */
@@ -95,6 +146,14 @@ export function ApplicationManagementPage({
   organizationId?: string;
   /** Test/extension seam: override context resolution. */
   resolveContext?: (input: { organizationId?: string; tenantId?: string }) => Promise<ApplicationCatalogContext>;
+  /**
+   * Render the in-page view switcher.
+   *
+   * `false` for the App Center module, whose views are shell-sidebar routes;
+   * tenant/organization drill-down pages keep the switcher because their paths
+   * carry dynamic ownership ids the shell menu cannot express.
+   */
+  showViewNav?: boolean;
   tenantId?: string;
 }) {
   const messages = useApplicationCatalogMessages();
@@ -107,9 +166,12 @@ export function ApplicationManagementPage({
   resolveContextRef.current = resolveContext;
   const issueTokenRef = useRef(issueToken);
   issueTokenRef.current = issueToken;
+  const integrationsRef = useRef(integrations);
+  integrationsRef.current = integrations;
   const [context, setContext] = useState<ApplicationCatalogContext>();
   const [groupStates, setGroupStates] = useState(createInitialGroupStates);
-  const [activeGroupId, setActiveGroupId] = useState<ApplicationGroupId>("iam");
+  const [internalView, setInternalView] = useState<ApplicationCatalogView>("iam");
+  const activeView = controlledView ?? internalView;
   const [query, setQuery] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
   const [tokenTarget, setTokenTarget] = useState<ApplicationRecord>();
@@ -120,9 +182,16 @@ export function ApplicationManagementPage({
   >({ status: "loading" });
   const [tokenRevealed, setTokenRevealed] = useState(false);
   const [tokenCopied, setTokenCopied] = useState(false);
+  const [integrationTarget, setIntegrationTarget] = useState<{
+    application: ApplicationRecord;
+    kind: ApplicationIntegrationKind;
+  }>();
 
-  const activeGroup = APPLICATION_GROUPS.find((group) => group.id === activeGroupId) ?? APPLICATION_GROUPS[0];
-  const activeState = groupStates[activeGroup.id];
+  const activeGroup = activeView === "categories"
+    ? undefined
+    : (APPLICATION_GROUPS.find((group) => group.id === activeView) ?? APPLICATION_GROUPS[0]);
+  const activeState = activeGroup ? groupStates[activeGroup.id] : undefined;
+  const deployApplications = groupStates.deploy.items;
 
   useEffect(() => {
     let cancelled = false;
@@ -195,25 +264,81 @@ export function ApplicationManagementPage({
   };
 
   const filteredItems = useMemo(() => {
+    const items = activeState?.items ?? [];
     const normalizedQuery = query.trim().toLowerCase();
     if (!normalizedQuery) {
-      return activeState.items;
+      return items;
     }
-    return activeState.items.filter((item) =>
+    return items.filter((item) =>
       [item.name, item.reference, item.domain, item.kind, item.status]
         .some((value) => value?.toLowerCase().includes(normalizedQuery)));
-  }, [activeState.items, query]);
+  }, [activeState?.items, query]);
+
+  const integrationSummaries = useMemo(() => {
+    const summaries = new Map<string, ApplicationIntegrationSummary>();
+    for (const item of activeState?.items ?? []) {
+      const deployApplication = resolveDeployApplicationForRecord(item, deployApplications);
+      if (!deployApplication) {
+        continue;
+      }
+      const summary = summarizeApplicationIntegration(
+        deployApplication.metadata,
+        deployApplication.id,
+        item.groupId !== "deploy",
+      );
+      if (summary) {
+        summaries.set(rowKey(item), summary);
+      }
+    }
+    return summaries;
+  }, [activeState?.items, deployApplications]);
+
+  const openIntegration = (application: ApplicationRecord, kind: ApplicationIntegrationKind) => {
+    setIntegrationTarget({ application, kind });
+  };
+
+  const handleIntegrationSaved = (result: ApplicationIntegrationSaveResult) => {
+    const updatedMetadata = new Map<string, Record<string, unknown>>([
+      [result.deployAppId, result.metadata],
+      ...(result.previousDeployApp
+        ? [[result.previousDeployApp.deployAppId, result.previousDeployApp.metadata] as const]
+        : []),
+    ]);
+    setGroupStates((current) => ({
+      ...current,
+      deploy: {
+        ...current.deploy,
+        items: current.deploy.items.map((application) => {
+          const metadata = updatedMetadata.get(application.id);
+          if (!metadata) {
+            return application;
+          }
+          return {
+            ...application,
+            metadata,
+            ...(application.id === result.deployAppId && result.updatedAt !== undefined
+              ? { updatedAt: result.updatedAt }
+              : {}),
+          };
+        }),
+      },
+    }));
+  };
 
   const columns = useMemo<DataTableColumn<ApplicationRecord>[]>(() => {
     const identity: DataTableColumn<ApplicationRecord> = {
-      cell: (item) => (
-        <div className="min-w-0">
-          <div className="truncate font-medium text-[var(--sdk-color-text-primary)]">{item.name}</div>
-          {item.reference ? (
-            <div className="truncate text-xs text-[var(--sdk-color-text-muted)]">{item.reference}</div>
-          ) : null}
-        </div>
-      ),
+      cell: (item) => {
+        const summary = integrationSummaries.get(rowKey(item));
+        return (
+          <div className="min-w-0">
+            <div className="truncate font-medium text-[var(--sdk-color-text-primary)]">{item.name}</div>
+            {item.reference ? (
+              <div className="truncate text-xs text-[var(--sdk-color-text-muted)]">{item.reference}</div>
+            ) : null}
+            {summary ? <IntegrationSummaryChips messages={messages} summary={summary} /> : null}
+          </div>
+        );
+      },
       header: messages.columns.application,
       id: "application",
     };
@@ -247,7 +372,7 @@ export function ApplicationManagementPage({
       id: "updatedAt",
     };
 
-    if (activeGroup.id === "iam") {
+    if (!activeGroup || activeGroup.id === "iam") {
       return [
         identity,
         kind,
@@ -278,7 +403,7 @@ export function ApplicationManagementPage({
       { cell: (item) => item.version || "-", header: messages.columns.version, id: "version" },
       updatedAt,
     ];
-  }, [activeGroup.id, messages]);
+  }, [activeGroup?.id, integrationSummaries, messages]);
 
   const scopeName = context?.organizationName ?? context?.tenantName;
   const subtitle = context
@@ -287,7 +412,7 @@ export function ApplicationManagementPage({
       { name: scopeName ?? context.organizationId ?? context.tenantId },
     )
     : "";
-  const activeCopy = messages.groups[activeGroup.messageKey];
+  const activeCopy = activeGroup ? messages.groups[activeGroup.messageKey] : undefined;
   const busy = APPLICATION_GROUPS.some((group) => groupStates[group.id].status === "loading");
 
   return (
@@ -309,6 +434,7 @@ export function ApplicationManagementPage({
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
+        {showViewNav ? (
         <nav
           aria-label={messages.title}
           className="flex w-full shrink-0 flex-row gap-1 overflow-x-auto rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] p-2 lg:w-64 lg:flex-col lg:overflow-visible"
@@ -316,7 +442,7 @@ export function ApplicationManagementPage({
           {APPLICATION_GROUPS.map((group) => {
             const copy = messages.groups[group.messageKey];
             const state = groupStates[group.id];
-            const active = group.id === activeGroup.id;
+            const active = group.id === activeView;
             const Icon = group.icon;
             return (
               <button
@@ -329,7 +455,7 @@ export function ApplicationManagementPage({
                     : "text-[var(--sdk-color-text-secondary)] hover:bg-[var(--sdk-color-surface-panel-muted)]",
                 ].join(" ")}
                 key={group.id}
-                onClick={() => setActiveGroupId(group.id)}
+                onClick={() => setInternalView(group.id)}
                 type="button"
               >
                 <Icon className="h-4 w-4 shrink-0" />
@@ -340,13 +466,42 @@ export function ApplicationManagementPage({
               </button>
             );
           })}
+          <div
+            aria-hidden="true"
+            className="my-1 hidden border-t border-[var(--sdk-color-border-default)] lg:block"
+          />
+          <button
+            aria-current={activeView === "categories" ? "page" : undefined}
+            data-application-group="categories"
+            className={[
+              "flex min-w-0 items-center gap-3 rounded-[var(--sdk-radius-control)] px-3 py-2 text-left transition-colors",
+              activeView === "categories"
+                ? "bg-[var(--sdk-color-brand-primary-soft)] text-[var(--sdk-color-brand-primary)]"
+                : "text-[var(--sdk-color-text-secondary)] hover:bg-[var(--sdk-color-surface-panel-muted)]",
+            ].join(" ")}
+            onClick={() => setInternalView("categories")}
+            type="button"
+          >
+            <FolderTree className="h-4 w-4 shrink-0" />
+            <span className="min-w-0 flex-1 truncate text-sm font-medium">
+              {messages.categories.navLabel}
+            </span>
+          </button>
         </nav>
+        ) : null}
 
+        {activeView === "categories" ? (
+          <AppStoreCategoryPanel
+            key={reloadToken}
+            messages={messages}
+            service={categoryService}
+          />
+        ) : (
         <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="min-w-0">
-              <h2 className="text-base font-semibold text-[var(--sdk-color-text-primary)]">{activeCopy.label}</h2>
-              <p className="text-sm text-[var(--sdk-color-text-muted)]">{activeCopy.description}</p>
+              <h2 className="text-base font-semibold text-[var(--sdk-color-text-primary)]">{activeCopy?.label}</h2>
+              <p className="text-sm text-[var(--sdk-color-text-muted)]">{activeCopy?.description}</p>
             </div>
             <label className="relative w-full max-w-72">
               <span className="sr-only">{messages.searchPlaceholder}</span>
@@ -361,15 +516,15 @@ export function ApplicationManagementPage({
             </label>
           </div>
 
-          {context?.organizationId && activeGroup.id === "app-store" ? (
+          {context?.organizationId && activeGroup?.id === "app-store" ? (
             <StatusNotice tone="warning">{messages.organizationAppStoreNotice}</StatusNotice>
           ) : null}
 
-          {activeState.status === "error" ? (
+          {activeState?.status === "error" ? (
             <StatusNotice tone="danger">
               <span className="flex flex-wrap items-center gap-3">
                 <span>
-                  {isApplicationSourceUnavailable(activeState.error) ? messages.unavailable : messages.loadError}
+                  {isApplicationSourceUnavailable(activeState?.error) ? messages.unavailable : messages.loadError}
                 </span>
                 <Button onClick={() => setReloadToken((token) => token + 1)} size="sm" type="button" variant="outline">
                   {messages.retry}
@@ -388,12 +543,44 @@ export function ApplicationManagementPage({
             emptyDescription={messages.emptyDescription}
             emptyTitle={messages.emptyTitle}
             getRowId={(item) => `${item.groupId}:${item.id}`}
-            loading={activeState.status === "loading"}
+            loading={activeState?.status === "loading"}
             rowActions={(item) => (
-              <Button onClick={() => openAccessToken(item)} size="sm" type="button" variant="outline">
-                <KeyRound className="h-3.5 w-3.5" />
-                {messages.accessToken.action}
-              </Button>
+              <div className="flex flex-wrap items-center justify-end gap-1.5">
+                <Button onClick={() => openAccessToken(item)} size="sm" type="button" variant="outline">
+                  <KeyRound className="h-3.5 w-3.5" />
+                  {messages.accessToken.action}
+                </Button>
+                <Button
+                  onClick={() => openIntegration(item, "payment")}
+                  size="sm"
+                  title={messages.integrations.drawer.titles.payment}
+                  type="button"
+                  variant="outline"
+                >
+                  <CreditCard className="h-3.5 w-3.5" />
+                  {messages.integrations.actions.payment}
+                </Button>
+                <Button
+                  onClick={() => openIntegration(item, "mini-program")}
+                  size="sm"
+                  title={messages.integrations.drawer.titles.miniProgram}
+                  type="button"
+                  variant="outline"
+                >
+                  <Smartphone className="h-3.5 w-3.5" />
+                  {messages.integrations.actions.miniProgram}
+                </Button>
+                <Button
+                  onClick={() => openIntegration(item, "official-account")}
+                  size="sm"
+                  title={messages.integrations.drawer.titles.officialAccount}
+                  type="button"
+                  variant="outline"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  {messages.integrations.actions.officialAccount}
+                </Button>
+              </div>
             )}
             rowActionsLabel={messages.columns.actions}
             rows={[...filteredItems]}
@@ -405,6 +592,7 @@ export function ApplicationManagementPage({
             stickyHeader
           />
         </section>
+        )}
       </div>
 
       <Drawer
@@ -524,6 +712,18 @@ export function ApplicationManagementPage({
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
+
+      {integrationTarget ? (
+        <ApplicationIntegrationDrawer
+          application={integrationTarget.application}
+          deployApplications={deployApplications}
+          kind={integrationTarget.kind}
+          messages={messages}
+          onClose={() => setIntegrationTarget(undefined)}
+          onSaved={handleIntegrationSaved}
+          service={integrationsRef.current ?? getApplicationIntegrationService()}
+        />
+      ) : null}
     </div>
   );
 }
@@ -544,9 +744,20 @@ export const CloudRouterTenantApplicationsPage: ComponentType = function CloudRo
  * (`appCenter`): the header entry opens the tenant-wide catalog so an operator
  * can review every application the current tenant owns and issue delegated
  * access tokens without going through the IAM tenant drill-down first.
+ *
+ * The module's views are shell-sidebar routes (`/admin/applications/iam`,
+ * `/deploy`, `/app-store`, `/categories`), so this page renders no second
+ * navigation: the admin shell sidebar is the single left menu.
  */
 export const CloudRouterApplicationCenterPage: ComponentType = function CloudRouterApplicationCenterPageEntry() {
-  return <ApplicationManagementPage backTo="/admin/dashboard" />;
+  const location = useLocation();
+  return (
+    <ApplicationManagementPage
+      activeView={resolveApplicationCatalogView(location.pathname)}
+      backTo="/admin/dashboard"
+      showViewNav={false}
+    />
+  );
 };
 
 export const CloudRouterOrganizationApplicationsPage: ComponentType = function CloudRouterOrganizationApplicationsPageEntry() {
@@ -556,6 +767,45 @@ export const CloudRouterOrganizationApplicationsPage: ComponentType = function C
   }
   return <ApplicationManagementPage backTo="/admin/iam/organizations" organizationId={organizationId} />;
 };
+
+function rowKey(application: ApplicationRecord): string {
+  return `${application.groupId}:${application.id}`;
+}
+
+function IntegrationSummaryChips({
+  messages,
+  summary,
+}: {
+  messages: ApplicationCatalogMessages;
+  summary: ApplicationIntegrationSummary;
+}) {
+  const copy = messages.integrations.summary;
+  return (
+    <div
+      className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]"
+      data-application-integration-summary={summary.deployAppId}
+    >
+      {summary.paymentAccountCount > 0 ? (
+        <span className="inline-flex items-center gap-1 rounded-full border border-[var(--sdk-color-border-default)] px-2 py-0.5 text-[var(--sdk-color-text-secondary)]">
+          <CreditCard className="h-3 w-3" />
+          {template(copy.paymentCount, { count: String(summary.paymentAccountCount) })}
+        </span>
+      ) : null}
+      {summary.officialAccountCount > 0 ? (
+        <span className="inline-flex items-center gap-1 rounded-full border border-[var(--sdk-color-border-default)] px-2 py-0.5 text-[var(--sdk-color-text-secondary)]">
+          <MessageCircle className="h-3 w-3" />
+          {copy.officialAccount}
+        </span>
+      ) : null}
+      {summary.miniProgramCount > 0 ? (
+        <span className="inline-flex items-center gap-1 rounded-full border border-[var(--sdk-color-border-default)] px-2 py-0.5 text-[var(--sdk-color-text-secondary)]">
+          <Smartphone className="h-3 w-3" />
+          {copy.miniProgram}
+        </span>
+      ) : null}
+    </div>
+  );
+}
 
 function groupMessageKey(groupId: ApplicationGroupId): "appStore" | "deploy" | "iam" {
   if (groupId === "iam") {

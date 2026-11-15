@@ -41,6 +41,7 @@ import {
   type AdminResourceSection,
 } from '@sdkwork/cloudroutes-pc-commons';
 import { BucketManagerSection } from './buckets/BucketManagerSection';
+import { createStorageProviderColumns } from './components/StorageProviderCells';
 import {
   backendStorageDefaultBucketsList,
   backendStorageGarbageCollectionJobCreate,
@@ -372,18 +373,7 @@ function StorageAdminSections({ sectionId, onSectionChange }: StorageAdminProps 
           onClick: (record) => openProviderDelete(record),
         },
       ],
-      columns: [
-        { key: 'name', label: t('admin.storage.col.name', 'Name'), format: (value) => {
-          const name = typeof value === 'string' && value ? value : '';
-          return name || '-';
-        } },
-        { key: 'providerType', label: t('admin.storage.col.type', 'Type'), format: (value) => formatProviderType(t, value) },
-        { key: 'bucket', label: t('admin.storage.col.bucket', 'Bucket') },
-        { key: 'endpointUrl', label: t('admin.storage.col.endpoint', 'Endpoint') },
-        { key: 'region', label: t('admin.storage.col.region', 'Region') },
-        { key: 'credentialConfigured', label: t('admin.storage.col.credentialRef', 'Credential Ref'), format: (value) => formatCredentialConfigured(t, value) },
-        { key: 'status', label: t('admin.storage.col.status', 'Status'), format: (value) => translateStorageValue(t, 'status', value) },
-      ],
+      columns: createStorageProviderColumns(t),
       searchFields: ['name', 'providerType', 'bucket', 'endpointUrl', 'region', 'status'],
     },
     {
@@ -1390,24 +1380,6 @@ function optionalText(value: string): string | undefined {
   return normalized || undefined;
 }
 
-/**
- * 服务商类型渲染：drive 的类型枚举里 `custom:<slug>` 是参数化取值
- * （DDL 约束 `^custom:[a-z0-9_-]{2,32}$`），i18n 表只能声明到 `custom` 一档。
- * 单独把后缀拼出来，否则「类型」列会出现 `custom:minio` 这种裸 token ——
- * 而这正是自建 MinIO / 私有 S3 端点的取值。
- */
-function formatProviderType(t: TFunction, value: unknown): string {
-  const raw = value === null || value === undefined ? '' : String(value).trim();
-  if (!raw) return '-';
-  const separator = raw.indexOf(':');
-  if (separator <= 0) {
-    return t(`admin.storage.value.providerType.${raw}`, raw);
-  }
-  const base = raw.slice(0, separator);
-  const suffix = raw.slice(separator + 1);
-  const label = t(`admin.storage.value.providerType.${base}`, base);
-  return suffix ? `${label} (${suffix})` : label;
-}
 
 /**
  * 数据值国际化：按枚举值查 i18n（admin.storage.value.<group>.<value>），

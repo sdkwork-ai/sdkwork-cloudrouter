@@ -24,7 +24,15 @@ import { getApplicationCatalogIamService } from "./iam-service";
  */
 
 const CATALOG_PAGE_SIZE = 200;
-const APP_STORE_PAGE_SIZE = 50;
+const APP_STORE_PAGE_SIZE = 200;
+/**
+ * Upper bound on App Store library pages loaded by one catalog refresh.
+ *
+ * The generated app SDK exposes a cursor page, not a full collection read; an
+ * unbounded loop would turn a pathological cursor into a page that never
+ * settles. Five full pages cover every realistic tenant library.
+ */
+const APP_STORE_MAX_PAGES = 5;
 
 export async function loadIamApplications(
   context: ApplicationCatalogContext,
@@ -61,10 +69,21 @@ export async function loadAppStoreApplications(
     return [];
   }
   const client = getSdkworkAppstoreAppSdkClient();
-  const page = await client.library.appstore.library.items.list({
-    pageSize: APP_STORE_PAGE_SIZE,
-  });
-  return (page.items ?? [])
+  const rawItems: unknown[] = [];
+  let cursor: string | undefined;
+  for (let pageIndex = 0; pageIndex < APP_STORE_MAX_PAGES; pageIndex += 1) {
+    const page = await client.library.appstore.library.items.list({
+      pageSize: APP_STORE_PAGE_SIZE,
+      ...(cursor ? { cursor } : {}),
+    });
+    rawItems.push(...(page.items ?? []));
+    const nextCursor = page.pageInfo?.nextCursor;
+    if (!nextCursor) {
+      break;
+    }
+    cursor = nextCursor;
+  }
+  return rawItems
     .map((item) => mapAppStoreApplication(item))
     .filter((item): item is ApplicationRecord => item !== undefined);
 }
@@ -216,6 +235,7 @@ function mapDeployApplication(value: unknown): ApplicationRecord | undefined {
     reference: optionalString(record.slug),
     status: optionalString(record.appStatus),
     updatedAt: optionalString(record.updatedAt),
+    ...(isRecord(record.metadata) ? { metadata: record.metadata } : {}),
   };
 }
 
@@ -261,6 +281,10 @@ function extractItems(payload: unknown): readonly unknown[] {
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 function optionalString(value: unknown): string | undefined {

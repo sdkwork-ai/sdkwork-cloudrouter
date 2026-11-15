@@ -148,6 +148,7 @@ jobs:
                     "SDKWORK_AIOT_REF": "${{ vars.SDKWORK_AIOT_REF }}",
                     "SDKWORK_APP_TOPOLOGY_REF": "${{ vars.SDKWORK_APP_TOPOLOGY_REF }}",
                     "SDKWORK_APPBASE_REF": "${{ vars.SDKWORK_APPBASE_REF }}",
+                    "SDKWORK_APPSTORE_REF": "${{ vars.SDKWORK_APPSTORE_REF }}",
                     "SDKWORK_ASSETS_REF": "${{ vars.SDKWORK_ASSETS_REF }}",
                     "SDKWORK_AUDIO_REF": "${{ vars.SDKWORK_AUDIO_REF }}",
                     "SDKWORK_MCP_REF": "${{ vars.SDKWORK_MCP_REF }}",

@@ -1,0 +1,1506 @@
+{
+  "openapi": "3.1.2",
+  "info": {
+    "title": "SDKWork Cloud Router Model Catalog Sync Open API",
+    "version": "1.0.0",
+    "description": "Versioned read-only model catalog for external API-key integrations. Serves the vendor catalog, each vendor's models, the model parameter registry, and an incremental delta feed. Authoring input for the generated open-api authority; see docs/architecture/tech/TECH-2026-11-15-model-catalog-sync-api.md.",
+    "x-sdkwork-domain": "intelligence",
+    "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+    "x-sdkwork-api-surface": "open-api",
+    "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-llm-open-api"
+  },
+  "servers": [
+    {
+      "url": "https://api.sdkwork.com",
+      "description": "Production gateway."
+    }
+  ],
+  "tags": [
+    {
+      "name": "model_catalog",
+      "description": "Versioned model catalog synchronization."
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/model_catalog": {
+      "get": {
+        "tags": [
+          "model_catalog"
+        ],
+        "operationId": "modelCatalog.retrieve",
+        "summary": "Retrieve the current model catalog snapshot",
+        "description": "Returns one revision of the model catalog. Follow `pageInfo.nextCursor` until `hasMore` is false; every page of one snapshot reports the same `revision`. Send `If-None-Match` with the previously stored `ETag` to receive `304 Not Modified`.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/VendorQuery"
+          },
+          {
+            "$ref": "#/components/parameters/RegionQuery"
+          },
+          {
+            "$ref": "#/components/parameters/CapabilityQuery"
+          },
+          {
+            "$ref": "#/components/parameters/InputModalityQuery"
+          },
+          {
+            "$ref": "#/components/parameters/OutputModalityQuery"
+          },
+          {
+            "$ref": "#/components/parameters/IncludeQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageSizeQuery"
+          },
+          {
+            "$ref": "#/components/parameters/CursorQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageQuery"
+          },
+          {
+            "$ref": "#/components/parameters/IfNoneMatchHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of the current catalog snapshot.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              },
+              "X-Catalog-Revision": {
+                "$ref": "#/components/headers/CatalogRevision"
+              },
+              "X-Catalog-Version": {
+                "$ref": "#/components/headers/CatalogVersion"
+              },
+              "X-Catalog-Schema-Version": {
+                "$ref": "#/components/headers/CatalogSchemaVersion"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/PrivateCache"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogSnapshot"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The stored ETag already describes the current revision.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-contract-kind": "read",
+        "x-route-scope": "external",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
+    },
+    "/v1/model_catalog/changes": {
+      "get": {
+        "tags": [
+          "model_catalog"
+        ],
+        "operationId": "modelCatalog.listChanges",
+        "summary": "List catalog changes since a revision",
+        "description": "Returns the rows that changed after `since_revision`, including tombstones for removed models. `baseRevision` must equal the client's stored revision; otherwise the client performs a full snapshot resync. Reapplying the same delta is a no-op.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SinceRevisionQuery"
+          },
+          {
+            "$ref": "#/components/parameters/VendorQuery"
+          },
+          {
+            "$ref": "#/components/parameters/RegionQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageSizeQuery"
+          },
+          {
+            "$ref": "#/components/parameters/IfNoneMatchHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A delta between two consecutive revisions.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              },
+              "X-Catalog-Revision": {
+                "$ref": "#/components/headers/CatalogRevision"
+              },
+              "X-Catalog-Version": {
+                "$ref": "#/components/headers/CatalogVersion"
+              },
+              "X-Catalog-Schema-Version": {
+                "$ref": "#/components/headers/CatalogSchemaVersion"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/PrivateCache"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogDelta"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "No catalog change since the stored ETag.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-contract-kind": "read",
+        "x-route-scope": "external",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
+    },
+    "/v1/model_catalog/vendors": {
+      "get": {
+        "tags": [
+          "model_catalog"
+        ],
+        "operationId": "modelCatalog.listVendors",
+        "summary": "List catalog vendors",
+        "description": "Returns every vendor offered in the requested region, with the number of models the current revision exposes for it.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RegionQuery"
+          },
+          {
+            "$ref": "#/components/parameters/CapabilityQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vendor rows of the current revision.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              },
+              "X-Catalog-Revision": {
+                "$ref": "#/components/headers/CatalogRevision"
+              },
+              "X-Catalog-Version": {
+                "$ref": "#/components/headers/CatalogVersion"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogVendorList"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "x-contract-kind": "read",
+        "x-route-scope": "external",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
+    },
+    "/v1/model_catalog/models/{vendor_code}/{model_id}": {
+      "get": {
+        "tags": [
+          "model_catalog"
+        ],
+        "operationId": "modelCatalog.retrieveModel",
+        "summary": "Retrieve one catalog model",
+        "description": "Returns one model by its vendor code and vendor-local model id.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/VendorCodePath"
+          },
+          {
+            "$ref": "#/components/parameters/ModelIdPath"
+          },
+          {
+            "$ref": "#/components/parameters/RegionQuery"
+          },
+          {
+            "$ref": "#/components/parameters/IncludeQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The requested model row.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              },
+              "X-Catalog-Revision": {
+                "$ref": "#/components/headers/CatalogRevision"
+              },
+              "X-Catalog-Version": {
+                "$ref": "#/components/headers/CatalogVersion"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogModel"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "x-contract-kind": "read",
+        "x-route-scope": "external",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
+    },
+    "/v1/model_catalog/parameters": {
+      "get": {
+        "tags": [
+          "model_catalog"
+        ],
+        "operationId": "modelCatalog.listParameters",
+        "summary": "List the model parameter registry",
+        "description": "Returns the parameter descriptors referenced by model rows in this revision. A descriptor states type, range, enum, protocol applicability, and lifecycle.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The parameter registry of the current revision.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              },
+              "X-Catalog-Revision": {
+                "$ref": "#/components/headers/CatalogRevision"
+              },
+              "X-Catalog-Version": {
+                "$ref": "#/components/headers/CatalogVersion"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParameterRegistry"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "x-contract-kind": "read",
+        "x-route-scope": "external",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Cloud Router API key",
+        "description": "Cloud Router API key or SDKWork IAM login auth token."
+      }
+    },
+    "parameters": {
+      "VendorQuery": {
+        "name": "vendor",
+        "in": "query",
+        "required": false,
+        "description": "Vendor code filter. Repeat the parameter or comma-separate values.",
+        "schema": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1
+          }
+        }
+      },
+      "RegionQuery": {
+        "name": "region",
+        "in": "query",
+        "required": false,
+        "description": "Region code filter. Defaults to `global`.",
+        "schema": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1,
+          "default": "global"
+        }
+      },
+      "CapabilityQuery": {
+        "name": "capability",
+        "in": "query",
+        "required": false,
+        "description": "Capability code filter. Unknown codes are rejected; open value sets are documented in the catalog standard.",
+        "schema": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1
+        }
+      },
+      "InputModalityQuery": {
+        "name": "input_modality",
+        "in": "query",
+        "required": false,
+        "description": "Accepted input modality filter.",
+        "schema": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1
+        }
+      },
+      "OutputModalityQuery": {
+        "name": "output_modality",
+        "in": "query",
+        "required": false,
+        "description": "Produced output modality filter.",
+        "schema": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1
+        }
+      },
+      "IncludeQuery": {
+        "name": "include",
+        "in": "query",
+        "required": false,
+        "description": "Comma list of optional sections: `parameters`, `pricing`, `extensions`.",
+        "schema": {
+          "type": "string",
+          "default": "parameters"
+        }
+      },
+      "PageSizeQuery": {
+        "name": "page_size",
+        "in": "query",
+        "required": false,
+        "description": "Page size.",
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 100
+        }
+      },
+      "CursorQuery": {
+        "name": "cursor",
+        "in": "query",
+        "required": false,
+        "description": "Opaque cursor from `pageInfo.nextCursor`. Mutually exclusive with `page`.",
+        "schema": {
+          "type": "string",
+          "maxLength": 512
+        }
+      },
+      "PageQuery": {
+        "name": "page",
+        "in": "query",
+        "required": false,
+        "description": "One-based page number. Mutually exclusive with `cursor`.",
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "minimum": 1,
+          "default": 1
+        }
+      },
+      "SinceRevisionQuery": {
+        "name": "since_revision",
+        "in": "query",
+        "required": true,
+        "description": "Revision the client already holds. The response base must equal it.",
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1
+        }
+      },
+      "VendorCodePath": {
+        "name": "vendor_code",
+        "in": "path",
+        "required": true,
+        "description": "Vendor code (the first catalog-key segment).",
+        "schema": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1
+        }
+      },
+      "ModelIdPath": {
+        "name": "model_id",
+        "in": "path",
+        "required": true,
+        "description": "Vendor-local model id (the second catalog-key segment).",
+        "schema": {
+          "type": "string",
+          "maxLength": 256,
+          "minLength": 1
+        }
+      },
+      "IfNoneMatchHeader": {
+        "name": "If-None-Match",
+        "in": "header",
+        "required": false,
+        "description": "The `ETag` of the stored snapshot.",
+        "schema": {
+          "type": "string",
+          "maxLength": 128
+        }
+      }
+    },
+    "headers": {
+      "ETag": {
+        "description": "Strong validator `\"mcat-<revision>-<sha256-prefix-16>\"`.",
+        "schema": {
+          "type": "string",
+          "maxLength": 128
+        }
+      },
+      "CatalogRevision": {
+        "description": "Numeric catalog revision.",
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "CatalogVersion": {
+        "description": "`sdkwork-models` data release version.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "CatalogSchemaVersion": {
+        "description": "Catalog contract schema version.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "PrivateCache": {
+        "description": "Private caching policy.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "RetryAfter": {
+        "description": "Seconds the client must wait before retrying.",
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "minimum": 0
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Malformed request or unknown cursor.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing or invalid credential.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "The credential lacks the `model_catalog:read` scope.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "The catalog key does not exist in the current revision.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "The requested revision left the delta retention window; perform a full resync.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "Unprocessable": {
+        "description": "Unsupported catalog schema major.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Rate limit exceeded.",
+        "headers": {
+          "Retry-After": {
+            "$ref": "#/components/headers/RetryAfter"
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "Unavailable": {
+        "description": "The catalog projection is temporarily unavailable.",
+        "headers": {
+          "Retry-After": {
+            "$ref": "#/components/headers/RetryAfter"
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Extensions": {
+        "type": "object",
+        "description": "Namespaced extension data. Keys use `<namespace>.<name>`; `sdkwork`, `cloudrouter`, and `x-` are reserved. Clients preserve unknown entries.",
+        "additionalProperties": true
+      },
+      "PageInfo": {
+        "type": "object",
+        "description": "Pagination state of one snapshot page.",
+        "additionalProperties": false,
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "offset",
+              "cursor"
+            ]
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "totalItems": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "mode",
+          "hasMore"
+        ]
+      },
+      "CatalogVendor": {
+        "type": "object",
+        "description": "One vendor offered in one region.",
+        "additionalProperties": false,
+        "properties": {
+          "vendorCode": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "regionCode": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "modelCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "capabilities": {
+            "type": "array",
+            "maxItems": 128,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          },
+          "homepageUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1024
+          },
+          "logoUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1024
+          },
+          "extensions": {
+            "$ref": "#/components/schemas/Extensions"
+          }
+        },
+        "required": [
+          "vendorCode",
+          "regionCode",
+          "displayName",
+          "modelCount",
+          "capabilities"
+        ]
+      },
+      "ParameterDescriptor": {
+        "type": "object",
+        "description": "One request parameter a model may accept.",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "maxLength": 128
+          },
+          "wireName": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "string",
+              "number",
+              "integer",
+              "boolean",
+              "enum",
+              "array",
+              "object"
+            ]
+          },
+          "enum": {
+            "type": "array",
+            "maxItems": 256,
+            "items": {
+              "type": [
+                "string",
+                "number",
+                "boolean"
+              ]
+            }
+          },
+          "minimum": {
+            "type": "number"
+          },
+          "maximum": {
+            "type": "number"
+          },
+          "multipleOf": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "minLength": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "maxLength": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "default": {
+            "description": "Descriptor-level default value."
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "request",
+              "route"
+            ]
+          },
+          "protocols": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "deprecated",
+              "experimental"
+            ]
+          },
+          "replacement": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "extensions": {
+            "$ref": "#/components/schemas/Extensions"
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ]
+      },
+      "ParameterRegistry": {
+        "type": "object",
+        "description": "Parameter descriptors referenced by the catalog revision.",
+        "additionalProperties": false,
+        "properties": {
+          "object": {
+            "type": "string",
+            "const": "model_catalog.parameters"
+          },
+          "schemaVersion": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+          },
+          "parameterRegistryVersion": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "parameters": {
+            "type": "array",
+            "maxItems": 512,
+            "items": {
+              "$ref": "#/components/schemas/ParameterDescriptor"
+            }
+          },
+          "extensions": {
+            "$ref": "#/components/schemas/Extensions"
+          }
+        },
+        "required": [
+          "object",
+          "schemaVersion",
+          "parameterRegistryVersion",
+          "revision",
+          "parameters"
+        ]
+      },
+      "ParameterConstraint": {
+        "type": "object",
+        "description": "A per-model narrowing of one parameter descriptor.",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "minimum": {
+            "type": "number"
+          },
+          "maximum": {
+            "type": "number"
+          },
+          "enum": {
+            "type": "array",
+            "maxItems": 256,
+            "items": {
+              "type": [
+                "string",
+                "number",
+                "boolean"
+              ]
+            }
+          },
+          "default": {
+            "description": "Per-model default value."
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CatalogModel": {
+        "type": "object",
+        "description": "One model row of the catalog revision.",
+        "additionalProperties": false,
+        "properties": {
+          "catalogKey": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 512
+          },
+          "modelId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "vendorCode": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "vendorName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "regionCode": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "capabilities": {
+            "type": "array",
+            "maxItems": 128,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          },
+          "inputModalities": {
+            "type": "array",
+            "maxItems": 128,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          },
+          "outputModalities": {
+            "type": "array",
+            "maxItems": 128,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          },
+          "apiFormat": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "contextTokens": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "maxOutputTokens": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "supportsStreaming": {
+            "type": "boolean"
+          },
+          "supportsTools": {
+            "type": "boolean"
+          },
+          "supportsJsonSchema": {
+            "type": "boolean"
+          },
+          "lifecycle": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "releaseStage": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "shelfState": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "routingState": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "parameters": {
+            "type": "array",
+            "maxItems": 512,
+            "items": {
+              "type": "string",
+              "maxLength": 128
+            }
+          },
+          "defaultParameters": {
+            "type": "object",
+            "description": "Parameter defaults for this model, keyed by parameter name.",
+            "additionalProperties": true
+          },
+          "parameterConstraints": {
+            "type": "array",
+            "maxItems": 512,
+            "items": {
+              "$ref": "#/components/schemas/ParameterConstraint"
+            }
+          },
+          "pricing": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/CatalogPrice"
+            }
+          },
+          "extensions": {
+            "$ref": "#/components/schemas/Extensions"
+          }
+        },
+        "required": [
+          "catalogKey",
+          "modelId",
+          "vendorCode",
+          "vendorName",
+          "regionCode",
+          "displayName",
+          "capabilities",
+          "inputModalities",
+          "outputModalities",
+          "apiFormat",
+          "supportsStreaming",
+          "supportsTools",
+          "supportsJsonSchema",
+          "lifecycle",
+          "releaseStage",
+          "shelfState",
+          "routingState",
+          "parameters"
+        ]
+      },
+      "CatalogPrice": {
+        "type": "object",
+        "description": "One reference price row for a model.",
+        "additionalProperties": false,
+        "properties": {
+          "billingMeter": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "regionCode": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "unitPrice": {
+            "type": "string",
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$"
+          },
+          "currency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          }
+        },
+        "required": [
+          "billingMeter",
+          "regionCode",
+          "unitPrice",
+          "currency"
+        ]
+      },
+      "CatalogSnapshot": {
+        "type": "object",
+        "description": "One page of one catalog revision.",
+        "additionalProperties": false,
+        "properties": {
+          "object": {
+            "type": "string",
+            "const": "model_catalog"
+          },
+          "schemaVersion": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+          },
+          "catalogVersion": {
+            "type": "string",
+            "pattern": "^[0-9]{4}\\.[0-9]{2}\\.[0-9]{2}\\.[0-9]+$"
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "parameterRegistryVersion": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          },
+          "vendors": {
+            "type": "array",
+            "maxItems": 500,
+            "items": {
+              "$ref": "#/components/schemas/CatalogVendor"
+            }
+          },
+          "models": {
+            "type": "array",
+            "maxItems": 500,
+            "items": {
+              "$ref": "#/components/schemas/CatalogModel"
+            }
+          },
+          "parameters": {
+            "type": "array",
+            "maxItems": 512,
+            "items": {
+              "$ref": "#/components/schemas/ParameterDescriptor"
+            }
+          },
+          "extensions": {
+            "$ref": "#/components/schemas/Extensions"
+          },
+          "presentation": {
+            "$ref": "#/components/schemas/CatalogPresentation",
+            "description": "Presentation policy resolved for this snapshot."
+          }
+        },
+        "required": [
+          "object",
+          "schemaVersion",
+          "catalogVersion",
+          "revision",
+          "parameterRegistryVersion",
+          "generatedAt",
+          "updatedAt",
+          "pageInfo"
+        ]
+      },
+      "CatalogVendorList": {
+        "type": "object",
+        "description": "Vendor rows of one catalog revision.",
+        "additionalProperties": false,
+        "properties": {
+          "object": {
+            "type": "string",
+            "const": "model_catalog.vendors"
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "catalogVersion": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "maxItems": 500,
+            "items": {
+              "$ref": "#/components/schemas/CatalogVendor"
+            }
+          }
+        },
+        "required": [
+          "object",
+          "revision",
+          "catalogVersion",
+          "items"
+        ]
+      },
+      "CatalogTombstone": {
+        "type": "object",
+        "description": "A model removed from the catalog at a revision.",
+        "additionalProperties": false,
+        "properties": {
+          "catalogKey": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 3
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "removedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "catalogKey",
+          "revision",
+          "removedAt"
+        ]
+      },
+      "CatalogDelta": {
+        "type": "object",
+        "description": "Rows changed between two consecutive revisions.",
+        "additionalProperties": false,
+        "properties": {
+          "object": {
+            "type": "string",
+            "const": "model_catalog.changes"
+          },
+          "schemaVersion": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+          },
+          "catalogVersion": {
+            "type": "string"
+          },
+          "baseRevision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "parameterRegistryVersion": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+          },
+          "vendors": {
+            "type": "array",
+            "maxItems": 500,
+            "items": {
+              "$ref": "#/components/schemas/CatalogVendor"
+            }
+          },
+          "models": {
+            "type": "array",
+            "maxItems": 500,
+            "items": {
+              "$ref": "#/components/schemas/CatalogModel"
+            }
+          },
+          "parameters": {
+            "type": "array",
+            "maxItems": 512,
+            "items": {
+              "$ref": "#/components/schemas/ParameterDescriptor"
+            }
+          },
+          "tombstones": {
+            "type": "array",
+            "maxItems": 500,
+            "items": {
+              "$ref": "#/components/schemas/CatalogTombstone"
+            }
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "nextSinceRevision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "object",
+          "schemaVersion",
+          "catalogVersion",
+          "baseRevision",
+          "revision",
+          "updatedAt",
+          "tombstones",
+          "hasMore"
+        ]
+      },
+      "ProblemDetail": {
+        "type": "object",
+        "description": "RFC 9457 problem details with a stable SDKWork code.",
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 599
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "traceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "latestRevision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "title",
+          "status",
+          "code"
+        ]
+      },
+      "CatalogPresentation": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Resolved presentation policy for this catalog. The admin Models page authors it; every omitted stored field resolves to the shipped default.",
+        "properties": {
+          "openApiEnabled": {
+            "type": "boolean",
+            "description": "Whether the open-api surface is served to API-key callers."
+          },
+          "appApiEnabled": {
+            "type": "boolean",
+            "description": "Whether the app-api surface is served to signed-in clients."
+          },
+          "includeParameters": {
+            "type": "boolean",
+            "description": "Whether a snapshot includes the parameter registry when include is omitted."
+          },
+          "includePricing": {
+            "type": "boolean",
+            "description": "Whether a snapshot includes reference prices when include is omitted."
+          },
+          "includeExtensions": {
+            "type": "boolean",
+            "description": "Whether a snapshot includes namespaced extension data when include is omitted."
+          },
+          "exposeDeprecatedModels": {
+            "type": "boolean",
+            "description": "Whether deprecated and retired models stay in the served catalog."
+          },
+          "defaultPageSize": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "maximum": 500,
+            "description": "Snapshot page size when the caller omits page_size."
+          },
+          "maxPageSize": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "maximum": 500,
+            "description": "Largest accepted page size."
+          },
+          "vendorOrder": {
+            "type": "array",
+            "maxItems": 200,
+            "description": "Vendor codes in presentation order; unlisted vendors follow in catalog order.",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "description": "One vendor code."
+            }
+          }
+        },
+        "required": [
+          "openApiEnabled",
+          "appApiEnabled",
+          "includeParameters",
+          "includePricing",
+          "includeExtensions",
+          "exposeDeprecatedModels",
+          "defaultPageSize",
+          "maxPageSize",
+          "vendorOrder"
+        ]
+      }
+    }
+  }
+}

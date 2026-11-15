@@ -13,6 +13,7 @@ const MODEL_VENDOR = {
   status: 'active',
   color: '#111827',
   description: 'OpenAI model catalog',
+  modelCount: 1,
 };
 
 const PRICED_MODEL = {

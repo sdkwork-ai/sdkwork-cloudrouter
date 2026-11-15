@@ -1,0 +1,839 @@
+{
+  "openapi": "3.1.2",
+  "info": {
+    "title": "SDKWork Cloud Router Model Catalog Sync App API",
+    "version": "1.0.0",
+    "description": "Versioned read-only model catalog for signed-in product clients. Serves the same snapshot, delta, vendor, model, and parameter resources as the open-api surface inside the SDKWork app envelope. Authoring input for the generated app-api authority; see docs/architecture/tech/TECH-2026-11-15-model-catalog-sync-api.md.",
+    "x-sdkwork-domain": "intelligence",
+    "x-sdkwork-api-authority": "sdkwork-cloudrouter-app-api",
+    "x-sdkwork-api-surface": "app-api",
+    "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api"
+  },
+  "servers": [
+    {
+      "url": "https://api.sdkwork.com",
+      "description": "Production gateway."
+    }
+  ],
+  "tags": [
+    {
+      "name": "ai",
+      "description": "AI operations exposed by Cloud Router."
+    }
+  ],
+  "security": [
+    {
+      "AuthToken": [],
+      "AccessToken": []
+    }
+  ],
+  "paths": {
+    "/app/v3/api/ai/model_catalog": {
+      "get": {
+        "tags": [
+          "ai"
+        ],
+        "operationId": "modelCatalog.retrieve",
+        "summary": "Retrieve the current model catalog snapshot",
+        "description": "Returns one revision of the model catalog inside the SDKWork app envelope. Follow `data.pageInfo.nextCursor` until `data.pageInfo.hasMore` is false; every page of one snapshot reports the same `data.revision`. Send `If-None-Match` with the previously stored `ETag` to receive `304 Not Modified`.",
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/VendorQuery"
+          },
+          {
+            "$ref": "#/components/parameters/RegionQuery"
+          },
+          {
+            "$ref": "#/components/parameters/CapabilityQuery"
+          },
+          {
+            "$ref": "#/components/parameters/InputModalityQuery"
+          },
+          {
+            "$ref": "#/components/parameters/OutputModalityQuery"
+          },
+          {
+            "$ref": "#/components/parameters/IncludeQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageSizeQuery"
+          },
+          {
+            "$ref": "#/components/parameters/CursorQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageQuery"
+          },
+          {
+            "$ref": "#/components/parameters/IfNoneMatchHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of the current catalog snapshot.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              },
+              "X-Catalog-Revision": {
+                "$ref": "#/components/headers/CatalogRevision"
+              },
+              "X-Catalog-Version": {
+                "$ref": "#/components/headers/CatalogVersion"
+              },
+              "X-Catalog-Schema-Version": {
+                "$ref": "#/components/headers/CatalogSchemaVersion"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/PrivateCache"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogSnapshotEnvelope"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "The stored ETag already describes the current revision.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-contract-kind": "read",
+        "x-route-scope": "console",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
+    },
+    "/app/v3/api/ai/model_catalog/changes": {
+      "get": {
+        "tags": [
+          "ai"
+        ],
+        "operationId": "modelCatalog.listChanges",
+        "summary": "List catalog changes since a revision",
+        "description": "Returns the rows that changed after `since_revision`, including tombstones for removed models. `data.baseRevision` must equal the client's stored revision; otherwise the client performs a full snapshot resync.",
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SinceRevisionQuery"
+          },
+          {
+            "$ref": "#/components/parameters/VendorQuery"
+          },
+          {
+            "$ref": "#/components/parameters/RegionQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageSizeQuery"
+          },
+          {
+            "$ref": "#/components/parameters/IfNoneMatchHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A delta between two consecutive revisions.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              },
+              "X-Catalog-Revision": {
+                "$ref": "#/components/headers/CatalogRevision"
+              },
+              "X-Catalog-Version": {
+                "$ref": "#/components/headers/CatalogVersion"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/PrivateCache"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogDeltaEnvelope"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "No catalog change since the stored ETag.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-contract-kind": "read",
+        "x-route-scope": "console",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
+    },
+    "/app/v3/api/ai/model_catalog/vendors": {
+      "get": {
+        "tags": [
+          "ai"
+        ],
+        "operationId": "modelCatalog.listVendors",
+        "summary": "List catalog vendors",
+        "description": "Returns every vendor offered in the requested region, with the number of models the current revision exposes for it.",
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RegionQuery"
+          },
+          {
+            "$ref": "#/components/parameters/CapabilityQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vendor rows of the current revision.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              },
+              "X-Catalog-Revision": {
+                "$ref": "#/components/headers/CatalogRevision"
+              },
+              "X-Catalog-Version": {
+                "$ref": "#/components/headers/CatalogVersion"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogVendorListEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "x-contract-kind": "read",
+        "x-route-scope": "console",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
+    },
+    "/app/v3/api/ai/model_catalog/models/{vendor_code}/{model_id}": {
+      "get": {
+        "tags": [
+          "ai"
+        ],
+        "operationId": "modelCatalog.retrieveModel",
+        "summary": "Retrieve one catalog model",
+        "description": "Returns one model by its vendor code and vendor-local model id.",
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/VendorCodePath"
+          },
+          {
+            "$ref": "#/components/parameters/ModelIdPath"
+          },
+          {
+            "$ref": "#/components/parameters/RegionQuery"
+          },
+          {
+            "$ref": "#/components/parameters/IncludeQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The requested model row.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              },
+              "X-Catalog-Revision": {
+                "$ref": "#/components/headers/CatalogRevision"
+              },
+              "X-Catalog-Version": {
+                "$ref": "#/components/headers/CatalogVersion"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogModelEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "x-contract-kind": "read",
+        "x-route-scope": "console",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
+    },
+    "/app/v3/api/ai/model_catalog/parameters": {
+      "get": {
+        "tags": [
+          "ai"
+        ],
+        "operationId": "modelCatalog.listParameters",
+        "summary": "List the model parameter registry",
+        "description": "Returns the parameter descriptors referenced by model rows in this revision.",
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The parameter registry of the current revision.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              },
+              "X-Catalog-Revision": {
+                "$ref": "#/components/headers/CatalogRevision"
+              },
+              "X-Catalog-Version": {
+                "$ref": "#/components/headers/CatalogVersion"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParameterRegistryEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "x-contract-kind": "read",
+        "x-route-scope": "console",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "AuthToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "SDKWork auth token"
+      },
+      "AccessToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Access-Token"
+      }
+    },
+    "parameters": {
+      "VendorQuery": {
+        "name": "vendor",
+        "in": "query",
+        "required": false,
+        "description": "Vendor code filter. Repeat the parameter or comma-separate values.",
+        "schema": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1
+          }
+        }
+      },
+      "RegionQuery": {
+        "name": "region",
+        "in": "query",
+        "required": false,
+        "description": "Region code filter. Defaults to `global`.",
+        "schema": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1,
+          "default": "global"
+        }
+      },
+      "CapabilityQuery": {
+        "name": "capability",
+        "in": "query",
+        "required": false,
+        "description": "Capability code filter.",
+        "schema": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1
+        }
+      },
+      "InputModalityQuery": {
+        "name": "input_modality",
+        "in": "query",
+        "required": false,
+        "description": "Accepted input modality filter.",
+        "schema": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1
+        }
+      },
+      "OutputModalityQuery": {
+        "name": "output_modality",
+        "in": "query",
+        "required": false,
+        "description": "Produced output modality filter.",
+        "schema": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1
+        }
+      },
+      "IncludeQuery": {
+        "name": "include",
+        "in": "query",
+        "required": false,
+        "description": "Comma list of optional sections: `parameters`, `pricing`, `extensions`.",
+        "schema": {
+          "type": "string",
+          "default": "parameters"
+        }
+      },
+      "PageSizeQuery": {
+        "name": "page_size",
+        "in": "query",
+        "required": false,
+        "description": "Page size.",
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 100
+        }
+      },
+      "CursorQuery": {
+        "name": "cursor",
+        "in": "query",
+        "required": false,
+        "description": "Opaque cursor from `pageInfo.nextCursor`. Mutually exclusive with `page`.",
+        "schema": {
+          "type": "string",
+          "maxLength": 512
+        }
+      },
+      "PageQuery": {
+        "name": "page",
+        "in": "query",
+        "required": false,
+        "description": "One-based page number. Mutually exclusive with `cursor`.",
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "minimum": 1,
+          "default": 1
+        }
+      },
+      "SinceRevisionQuery": {
+        "name": "since_revision",
+        "in": "query",
+        "required": true,
+        "description": "Revision the client already holds. The response base must equal it.",
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1
+        }
+      },
+      "VendorCodePath": {
+        "name": "vendor_code",
+        "in": "path",
+        "required": true,
+        "description": "Vendor code (the first catalog-key segment).",
+        "schema": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1
+        }
+      },
+      "ModelIdPath": {
+        "name": "model_id",
+        "in": "path",
+        "required": true,
+        "description": "Vendor-local model id (the second catalog-key segment).",
+        "schema": {
+          "type": "string",
+          "maxLength": 256,
+          "minLength": 1
+        }
+      },
+      "IfNoneMatchHeader": {
+        "name": "If-None-Match",
+        "in": "header",
+        "required": false,
+        "description": "The `ETag` of the stored snapshot.",
+        "schema": {
+          "type": "string",
+          "maxLength": 128
+        }
+      }
+    },
+    "headers": {
+      "ETag": {
+        "description": "Strong validator `\"mcat-<revision>-<sha256-prefix-16>\"`.",
+        "schema": {
+          "type": "string",
+          "maxLength": 128
+        }
+      },
+      "CatalogRevision": {
+        "description": "Numeric catalog revision.",
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "CatalogVersion": {
+        "description": "`sdkwork-models` data release version.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "CatalogSchemaVersion": {
+        "description": "Catalog contract schema version.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "PrivateCache": {
+        "description": "Private caching policy.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "RetryAfter": {
+        "description": "Seconds the client must wait before retrying.",
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "minimum": 0
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Malformed request or unknown cursor.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "./model-catalog-sync.open-api.openapi.json#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing or invalid credential.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "./model-catalog-sync.open-api.openapi.json#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "The caller is not an organization member.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "./model-catalog-sync.open-api.openapi.json#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "The catalog key does not exist in the current revision.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "./model-catalog-sync.open-api.openapi.json#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "The requested revision left the delta retention window; perform a full resync.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "./model-catalog-sync.open-api.openapi.json#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "Unprocessable": {
+        "description": "Unsupported catalog schema major.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "./model-catalog-sync.open-api.openapi.json#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Rate limit exceeded.",
+        "headers": {
+          "Retry-After": {
+            "$ref": "#/components/headers/RetryAfter"
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "./model-catalog-sync.open-api.openapi.json#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      },
+      "Unavailable": {
+        "description": "The catalog projection is temporarily unavailable.",
+        "headers": {
+          "Retry-After": {
+            "$ref": "#/components/headers/RetryAfter"
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "./model-catalog-sync.open-api.openapi.json#/components/schemas/ProblemDetail"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SdkWorkApiResponse": {
+        "type": "object",
+        "description": "SDKWork response envelope.",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32",
+            "const": 0
+          },
+          "data": {
+            "description": "Operation-specific payload typed per response schema."
+          },
+          "traceId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "code",
+          "data",
+          "traceId"
+        ]
+      },
+      "CatalogSnapshotEnvelope": {
+        "type": "object",
+        "description": "App envelope carrying one catalog snapshot page.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "$ref": "./model-catalog-sync.open-api.openapi.json#/components/schemas/CatalogSnapshot"
+              }
+            },
+            "required": [
+              "data"
+            ]
+          }
+        ],
+        "x-operation-id": "modelCatalog.retrieve"
+      },
+      "CatalogDeltaEnvelope": {
+        "type": "object",
+        "description": "App envelope carrying one catalog delta.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "$ref": "./model-catalog-sync.open-api.openapi.json#/components/schemas/CatalogDelta"
+              }
+            },
+            "required": [
+              "data"
+            ]
+          }
+        ],
+        "x-operation-id": "modelCatalog.listChanges"
+      },
+      "CatalogVendorListEnvelope": {
+        "type": "object",
+        "description": "App envelope carrying the vendor rows.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "$ref": "./model-catalog-sync.open-api.openapi.json#/components/schemas/CatalogVendorList"
+              }
+            },
+            "required": [
+              "data"
+            ]
+          }
+        ],
+        "x-operation-id": "modelCatalog.listVendors"
+      },
+      "CatalogModelEnvelope": {
+        "type": "object",
+        "description": "App envelope carrying one model row.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "$ref": "./model-catalog-sync.open-api.openapi.json#/components/schemas/CatalogModel"
+              }
+            },
+            "required": [
+              "data"
+            ]
+          }
+        ],
+        "x-operation-id": "modelCatalog.retrieveModel"
+      },
+      "ParameterRegistryEnvelope": {
+        "type": "object",
+        "description": "App envelope carrying the parameter registry.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "$ref": "./model-catalog-sync.open-api.openapi.json#/components/schemas/ParameterRegistry"
+              }
+            },
+            "required": [
+              "data"
+            ]
+          }
+        ],
+        "x-operation-id": "modelCatalog.listParameters"
+      }
+    }
+  }
+}

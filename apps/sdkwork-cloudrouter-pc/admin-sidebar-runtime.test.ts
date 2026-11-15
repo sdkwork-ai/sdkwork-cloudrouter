@@ -12,17 +12,37 @@ import {
 } from "@sdkwork/cloudrouter-pc-admin-shell";
 import { ADMIN_MODULE_CATALOG, ADMIN_MODULE_IDS } from "./packages/sdkwork-cloudroutes-pc-commons/src/admin-modules.ts";
 
-test("application center is a header module with its own route and menu", () => {
+test("application center is a header module with one sidebar entry per view", () => {
   const appCenter = ADMIN_MODULES.find((module) => module.id === "appCenter");
 
   assert.ok(appCenter, "the application center must be a header module");
   assert.equal(appCenter.defaultPath, "/admin/applications");
   assert.deepEqual(appCenter.pathPrefixes, ["/admin/applications"]);
   assert.equal(getActiveModuleFromPath("/admin/applications"), "appCenter");
+  assert.equal(getActiveModuleFromPath("/admin/applications/categories"), "appCenter");
+
+  const appCenterMenu = getAdminModuleMenu("appCenter");
   assert.deepEqual(
-    getAdminModuleMenu("appCenter").items?.map((item) => item.path),
-    ["/admin/applications"],
+    appCenterMenu.items?.map((item) => item.path),
+    [
+      "/admin/applications/iam",
+      "/admin/applications/deploy",
+      "/admin/applications/app-store",
+      "/admin/applications/categories",
+    ],
+    "the shell sidebar is the only App Center menu, so every view needs its own entry",
   );
+
+  assert.deepEqual(
+    getActiveSidebarItemPaths("/admin/applications/categories", appCenterMenu),
+    ["/admin/applications/categories"],
+  );
+  const categoriesItem = appCenterMenu.items?.find((item) => item.path === "/admin/applications/categories");
+  const iamItem = appCenterMenu.items?.find((item) => item.path === "/admin/applications/iam");
+  assert.ok(categoriesItem, "category view entry must exist");
+  assert.ok(iamItem, "IAM view entry must exist");
+  assert.equal(isSidebarItemActive("/admin/applications/categories", categoriesItem, appCenterMenu), true);
+  assert.equal(isSidebarItemActive("/admin/applications/categories", iamItem, appCenterMenu), false);
 });
 
 test("admin module manager catalog mirrors the header registry order", () => {

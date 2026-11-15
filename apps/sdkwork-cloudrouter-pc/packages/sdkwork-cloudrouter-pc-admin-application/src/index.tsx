@@ -10,7 +10,9 @@ export {
   CloudRouterApplicationCenterPage,
   CloudRouterOrganizationApplicationsPage,
   CloudRouterTenantApplicationsPage,
+  resolveApplicationCatalogView,
 } from "./pages/ApplicationManagementPage";
+export type { ApplicationCatalogView } from "./pages/ApplicationManagementPage";
 export { CLOUDROUTER_APPLICATION_CATALOG_I18N, useApplicationCatalogMessages } from "./i18n";
 export type { ApplicationCatalogMessages } from "./i18n";
 export {
@@ -31,3 +33,78 @@ export type {
   ApplicationGroupState,
   ApplicationRecord,
 } from "./types/application-catalog";
+export {
+  createAppStoreCategoryService,
+  getAppStoreCategoryService,
+  isAppStoreCategoryConflict,
+  isAppStoreCategoryForbidden,
+  isAppStoreCategoryUnavailable,
+  mapCategory,
+  mapCategoryPage,
+  nextCategoryStatus,
+  resolveCategoryDescription,
+  resolveCategoryDisplayName,
+  resetAppStoreCategoryService,
+} from "./services/appstore-categories";
+export {
+  APP_STORE_CATEGORY_CODE_PATTERN,
+  APP_STORE_CATEGORY_LOCALES,
+  createCategoryDraft,
+  createEmptyCategoryDraft,
+  listEligibleParents,
+  resolveDraftLevel,
+  sortCategories,
+  toCategoryCreateInput,
+  toCategoryUpdateInput,
+  validateCategoryDraft,
+} from "./services/appstore-category-form";
+export type { AppStoreCategoryTransport } from "./services/appstore-categories";
+export type {
+  AppStoreCategoryDraft,
+  AppStoreCategoryDraftIssue,
+} from "./services/appstore-category-form";
+export type {
+  AppStoreCategory,
+  AppStoreCategoryCreateInput,
+  AppStoreCategoryListInput,
+  AppStoreCategoryLocalization,
+  AppStoreCategoryPage,
+  AppStoreCategoryService,
+  AppStoreCategoryStatus,
+  AppStoreCategoryUpdateInput,
+  AppStoreCategoryWritableStatus,
+} from "./types/appstore-categories";
+export {
+  emptyApplicationIntegrationDocument,
+  resolveDeployApplicationForRecord,
+  summarizeApplicationIntegration,
+  validateApplicationIntegration,
+} from "./services/application-integration-document";
+export {
+  createApplicationIntegrationService,
+  getApplicationIntegrationService,
+  resetApplicationIntegrationService,
+} from "./services/application-integrations";
+export {
+  loadDeployedMiniProgramApps,
+  toDeployedMiniProgramApps,
+} from "./services/deployed-mini-program-apps";
+export type { DeployedMiniProgramApp } from "./services/deployed-mini-program-apps";
+export type {
+  ApplicationChannelAccountBinding,
+  ApplicationChannelAccountOption,
+  ApplicationEnvironmentIntegration,
+  ApplicationEnvironmentOption,
+  ApplicationIntegrationDocument,
+  ApplicationIntegrationIssue,
+  ApplicationIntegrationIssueCode,
+  ApplicationIntegrationKind,
+  ApplicationIntegrationSaveInput,
+  ApplicationIntegrationSaveResult,
+  ApplicationIntegrationService,
+  ApplicationIntegrationSummary,
+  ApplicationPaymentAccountBinding,
+  ApplicationPaymentAccountOption,
+  ChannelAccountKind,
+  LinkedApplicationRef,
+} from "./types/application-integrations";

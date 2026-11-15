@@ -49,6 +49,12 @@
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
+      "id": "sdkwork-appstore",
+      "repository": "sdkwork-ai/sdkwork-appstore",
+      "refInput": "SDKWORK_APPSTORE_REF",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    },
+    {
       "id": "sdkwork-assets",
       "repository": "sdkwork-ai/sdkwork-assets",
       "refInput": "SDKWORK_ASSETS_REF",

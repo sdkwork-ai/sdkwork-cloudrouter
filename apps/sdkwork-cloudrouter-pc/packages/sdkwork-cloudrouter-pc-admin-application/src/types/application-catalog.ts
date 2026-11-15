@@ -26,6 +26,14 @@ export interface ApplicationRecord {
   domain?: string;
   version?: string;
   updatedAt?: string;
+  /**
+   * Deploy app `metadata` echo, present only for Deploy rows.
+   *
+   * The application integration binding document lives under its
+   * `integrations` key; keeping the raw object lets the integration drawer
+   * merge its write into whatever else the app already stores.
+   */
+  metadata?: Record<string, unknown>;
 }
 
 export interface ApplicationCatalogContext {
