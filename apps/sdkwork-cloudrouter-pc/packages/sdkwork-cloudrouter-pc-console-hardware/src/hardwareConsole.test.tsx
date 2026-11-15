@@ -125,8 +125,10 @@ describe('smart hardware console host view', () => {
     await renderAt(HARDWARE_CONSOLE_BASE_PATH, stubService());
     await waitFor(() => expect(screen.getAllByText('Lobby lock').length).toBeGreaterThan(0));
     expect(screen.getByRole('heading', { level: 1, name: 'My smart hardware' })).toBeTruthy();
-    expect(screen.getByText('My devices')).toBeTruthy();
     expect(screen.queryByText('lock-fw')).toBeNull();
+    // Navigation between the two hardware pages belongs to the console sidebar;
+    // the page itself must not repeat it as an in-page switcher.
+    expect(screen.queryByRole('button', { name: 'Firmware downloads' })).toBeNull();
   });
 
   test('the firmware URL renders only the firmware page', async () => {
@@ -136,17 +138,14 @@ describe('smart hardware console host view', () => {
     );
     expect(screen.getByText('lock-fw')).toBeTruthy();
     expect(screen.queryByText('Lobby lock')).toBeNull();
-    expect(screen.queryByText('My devices')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'My devices' })).toBeNull();
   });
 
-  test('the page switcher navigates between the two URLs', async () => {
+  test('no in-page page switcher duplicates the sidebar navigation', async () => {
     await renderAt(HARDWARE_CONSOLE_BASE_PATH, stubService());
     await waitFor(() => expect(screen.getAllByText('Lobby lock').length).toBeGreaterThan(0));
-    screen.getByRole('button', { name: 'Firmware downloads' }).click();
-    await waitFor(() =>
-      expect(screen.getByRole('heading', { level: 1, name: 'Firmware downloads' })).toBeTruthy(),
-    );
-    await waitFor(() => expect(screen.getByText('lock-fw')).toBeTruthy());
-    expect(screen.queryByText('Lobby lock')).toBeNull();
+    expect(screen.queryByRole('navigation', { name: 'My smart hardware' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'My devices' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Firmware downloads' })).toBeNull();
   });
 });

@@ -149,11 +149,6 @@ export function createStorageProviderColumns(t: TFunction): AdminResourceColumn[
       render: (value) => <MonoCell value={value} />,
     },
     {
-      key: 'endpointUrl',
-      label: t('admin.storage.col.endpoint', 'Endpoint'),
-      render: (value) => <MonoCell value={value} />,
-    },
-    {
       key: 'region',
       label: t('admin.storage.col.region', 'Region'),
       render: (value) => <TextCell value={value} />,

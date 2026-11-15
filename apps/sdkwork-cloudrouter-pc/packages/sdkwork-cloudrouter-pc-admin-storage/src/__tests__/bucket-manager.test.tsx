@@ -19,8 +19,10 @@ const hoisted = vi.hoisted(() => ({
   service: {
     listAllProviders: vi.fn(),
     listBuckets: vi.fn(),
+    getDefaultBinding: vi.fn(),
     updateProvider: vi.fn(),
     initializeBucket: vi.fn(),
+    initializeProvider: vi.fn(),
     headBucket: vi.fn(),
     deleteBucket: vi.fn(),
   },
@@ -83,12 +85,14 @@ const buckets = [
   {
     bucket: 'sdkwork-drive-cos-1250000000',
     configured: true,
+    exists: true,
     region: 'ap-guangzhou',
     creationDateIso: '2026-01-02T03:04:05.000Z',
   },
   {
     bucket: 'sdkwork-drive-cos-archive',
     configured: false,
+    exists: true,
     region: 'ap-guangzhou',
     creationDateIso: '2026-01-03T03:04:05.000Z',
   },
@@ -98,8 +102,10 @@ function service(): StorageProviderAdminService {
   return {
     listAllProviders: hoisted.service.listAllProviders,
     listBuckets: hoisted.service.listBuckets,
+    getDefaultBinding: hoisted.service.getDefaultBinding,
     updateProvider: hoisted.service.updateProvider,
     initializeBucket: hoisted.service.initializeBucket,
+    initializeProvider: hoisted.service.initializeProvider,
     headBucket: hoisted.service.headBucket,
     deleteBucket: hoisted.service.deleteBucket,
   } as unknown as StorageProviderAdminService;
@@ -107,13 +113,35 @@ function service(): StorageProviderAdminService {
 
 describe('BucketManagerSection', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     hoisted.service.listAllProviders.mockResolvedValue(providers);
     hoisted.service.listBuckets.mockResolvedValue(buckets);
+    hoisted.service.getDefaultBinding.mockResolvedValue({
+      providerId: 'provider-cos',
+      bucket: 'sdkwork-drive-cos-1250000000',
+    });
     hoisted.service.updateProvider.mockResolvedValue(providers[0]);
     hoisted.service.initializeBucket.mockResolvedValue({
       providerId: 'provider-cos',
       bucket: 'sdkwork-drive-cos-archive',
       changed: false,
+    });
+    hoisted.service.initializeProvider.mockResolvedValue({
+      providerId: 'provider-cos',
+      bucket: 'sdkwork-drive-cos-1250000000',
+      bucketCreated: true,
+      bucketVerified: true,
+      defaultBindingCreated: false,
+      logicalPlaneCreated: false,
+      logicalBucketCount: '4',
+      businessBindingCount: '12',
+      objectWriteVerified: true,
+      objectReadVerified: true,
+      objectDeleteVerified: true,
+      multipartVerified: true,
+      presignedUploadVerified: true,
+      presignedDownloadVerified: true,
+      ready: true,
     });
     hoisted.service.headBucket.mockResolvedValue({
       providerId: 'provider-cos',
@@ -158,8 +186,8 @@ describe('BucketManagerSection', () => {
         'provider-cos',
         { bucket: 'sdkwork-drive-cos-archive' },
       );
+      expect(hoisted.service.initializeBucket).toHaveBeenCalledWith('provider-cos');
     });
-    expect(hoisted.service.initializeBucket).toHaveBeenCalledWith('provider-cos');
     cleanup();
   });
 
@@ -192,6 +220,99 @@ describe('BucketManagerSection', () => {
     );
 
     expect(await screen.findByText('No active storage provider yet.')).toBeTruthy();
+    cleanup();
+  });
+
+  it('selects the tenant default provider before the first row', async () => {
+    hoisted.service.listAllProviders.mockResolvedValueOnce([providers[1], providers[0]]);
+
+    render(
+      <BucketManagerSection
+        service={service()}
+        renderObjectBrowser={() => <div data-testid="object-browser" />}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(hoisted.service.listBuckets).toHaveBeenCalledWith('provider-cos', expect.anything());
+    });
+    expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('provider-cos');
+    cleanup();
+  });
+
+  it('shows the configured bucket before it exists and initializes it in one click', async () => {
+    hoisted.service.listBuckets.mockResolvedValue([
+      {
+        bucket: 'sdkwork-drive-cos-1250000000',
+        configured: true,
+        exists: false,
+        region: 'ap-guangzhou',
+      },
+    ]);
+
+    render(
+      <BucketManagerSection
+        service={service()}
+        renderObjectBrowser={() => <div data-testid="object-browser" />}
+      />,
+    );
+
+    expect(await screen.findByText('Pending initialization')).toBeTruthy();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Initialize provider' })[0]!);
+
+    await waitFor(() => {
+      expect(hoisted.service.initializeProvider).toHaveBeenCalledWith('provider-cos');
+    });
+    expect(
+      await screen.findByText(/Storage is ready: bucket "sdkwork-drive-cos-1250000000", 4 logical buckets and 12 business bindings verified\./),
+    ).toBeTruthy();
+    cleanup();
+  });
+
+  it('refuses to attach a bucket from another signing region', async () => {
+    hoisted.service.listBuckets.mockResolvedValue([
+      {
+        bucket: 'sdkwork-drive-cos-1250000000',
+        configured: true,
+        exists: true,
+        region: 'ap-guangzhou',
+      },
+      {
+        bucket: 'sdkwork-drive-cos-shanghai',
+        configured: false,
+        exists: true,
+        region: 'ap-shanghai',
+      },
+    ]);
+
+    render(
+      <BucketManagerSection
+        service={service()}
+        renderObjectBrowser={() => <div data-testid="object-browser" />}
+      />,
+    );
+
+    fireEvent.click(await screen.findByText('Use this bucket'));
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getAllByText(/ap-shanghai/).length).toBeGreaterThan(0);
+    expect(hoisted.service.updateProvider).not.toHaveBeenCalled();
+    cleanup();
+  });
+
+  it('keeps the configured bucket visible when the vendor inventory fails', async () => {
+    hoisted.service.listBuckets.mockRejectedValue(new Error('endpoint offline'));
+
+    render(
+      <BucketManagerSection
+        service={service()}
+        renderObjectBrowser={() => <div data-testid="object-browser" />}
+      />,
+    );
+
+    expect(await screen.findByText('Pending initialization')).toBeTruthy();
+    expect(screen.getAllByText('sdkwork-drive-cos-1250000000').length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('alert').length).toBeGreaterThan(0);
     cleanup();
   });
 });

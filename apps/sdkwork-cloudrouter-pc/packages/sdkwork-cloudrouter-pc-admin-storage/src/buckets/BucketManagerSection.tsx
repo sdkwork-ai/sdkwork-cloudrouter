@@ -41,20 +41,26 @@ export interface BucketManagerSectionProps {
   initialProviderId?: string;
 }
 
-type BusyAction = 'refresh' | 'use' | 'ensure' | 'delete' | 'verify';
+type BusyAction = 'refresh' | 'use' | 'initialize' | 'delete' | 'verify';
 
 type Notice = { readonly kind: 'success' | 'error'; readonly text: string };
 
 const CARD_CLASS =
-  'rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900';
+  'rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]';
+const TABLE_SHELL_CLASS =
+  'flex min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#171717]';
 const PRIMARY_BUTTON_CLASS =
-  'inline-flex h-9 items-center gap-1.5 rounded-lg bg-slate-900 px-3 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200';
+  'inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-lobster-500 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-lobster-600 disabled:cursor-not-allowed disabled:opacity-50';
 const SECONDARY_BUTTON_CLASS =
-  'inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800';
+  'inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10';
 const SELECT_CLASS =
-  'h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-900 outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-white';
+  'h-9 shrink-0 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700 shadow-sm outline-none transition-colors focus:border-lobster-500 dark:border-white/10 dark:bg-[#1e1e1e] dark:text-slate-200';
+const ROW_ACTION_CLASS =
+  'inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10';
+const ROW_ACTION_PRIMARY_CLASS =
+  'inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md bg-lobster-500 px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-lobster-600 disabled:cursor-not-allowed disabled:opacity-50';
 const BADGE_CLASS =
-  'inline-flex items-center rounded-full border border-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:border-slate-700 dark:text-slate-300';
+  'inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300';
 
 export function BucketManagerSection({
   service,
@@ -87,12 +93,23 @@ export function BucketManagerSection({
       setLoadingProviders(true);
       setLoadError(false);
       try {
-        const items = await service.listAllProviders({ status: 'active', signal });
+        const [items, tenantBinding] = await Promise.all([
+          service.listAllProviders({ status: 'active', signal }),
+          // The tenant default is the provider the install is meant to run on
+          // (Tencent COS for the seeded plane). Prefer it over the alphabetical
+          // first row so the bucket page opens on the operator's target.
+          service.getDefaultBinding(undefined, { signal }).catch(() => undefined),
+        ]);
         if (signal?.aborted) return;
         setProviders(items);
-        setSelectedProviderId((current) => (
-          items.some((provider) => provider.id === current) ? current : (items[0]?.id ?? '')
-        ));
+        setSelectedProviderId((current) => {
+          if (items.some((provider) => provider.id === current)) return current;
+          const preferred = tenantBinding?.providerId;
+          if (preferred && items.some((provider) => provider.id === preferred)) {
+            return preferred;
+          }
+          return items[0]?.id ?? '';
+        });
       } catch (error) {
         if (signal?.aborted) return;
         setLoadError(true);
@@ -104,20 +121,33 @@ export function BucketManagerSection({
   );
 
   const loadBuckets = useCallback(
-    async (providerId: string, signal?: AbortSignal) => {
-      if (!providerId) {
+    async (provider: StorageProviderView | undefined, signal?: AbortSignal) => {
+      if (!provider) {
         setBuckets([]);
         return;
       }
       setLoadingBuckets(true);
       setLoadError(false);
       try {
-        const items = await service.listBuckets(providerId, { signal });
+        const items = await service.listBuckets(provider.id, { signal });
         if (signal?.aborted) return;
         setBuckets(items);
       } catch (error) {
         if (signal?.aborted) return;
-        setBuckets([]);
+        // Keep the configured bucket visible even when the vendor inventory is
+        // unreachable (credentials not stored yet, endpoint offline). The error
+        // banner explains the failure; the row gives the operator the concrete
+        // initialization target instead of an empty page.
+        setBuckets(
+          provider.bucket
+            ? [{
+                bucket: provider.bucket,
+                configured: true,
+                exists: false,
+                region: provider.region,
+              }]
+            : [],
+        );
         setLoadError(true);
       } finally {
         if (!signal?.aborted) setLoadingBuckets(false);
@@ -137,21 +167,44 @@ export function BucketManagerSection({
       setBuckets([]);
       return undefined;
     }
+    const provider = providers.find((item) => item.id === selectedProviderId);
     const controller = new AbortController();
-    void loadBuckets(selectedProviderId, controller.signal);
+    void loadBuckets(provider, controller.signal);
     return () => controller.abort();
-  }, [loadBuckets, selectedProviderId]);
+  }, [loadBuckets, providers, selectedProviderId]);
 
   const refresh = useCallback(async () => {
     setBusy('refresh');
     setNotice(null);
     await loadProviders();
-    if (selectedProviderId) await loadBuckets(selectedProviderId);
     setBusy(null);
-  }, [loadBuckets, loadProviders, selectedProviderId]);
+  }, [loadBuckets, loadProviders, selectedProvider]);
 
   async function useBucket(bucket: string) {
     if (!selectedProvider) return;
+    const target = buckets.find((item) => item.bucket === bucket);
+    // A provider's signing region is part of the access path. Selecting a
+    // bucket from another region would make both the new bucket and every
+    // existing object (whose stored locator lacks a region) unreachable.
+    if (
+      target?.region
+      && selectedProvider.region
+      && target.region !== selectedProvider.region
+    ) {
+      setNotice({
+        kind: 'error',
+        text: t(
+          'admin.storage.bucketsAdmin.bucketRegionMismatch',
+          'Bucket "{{bucket}}" is in {{bucketRegion}}, but this provider is configured for {{providerRegion}}. Use a provider configuration in the same region, or migrate the existing objects before switching.',
+          {
+            bucket,
+            bucketRegion: target.region,
+            providerRegion: selectedProvider.region,
+          },
+        ),
+      });
+      return;
+    }
     setBusy('use');
     setNotice(null);
     try {
@@ -159,7 +212,6 @@ export function BucketManagerSection({
       // 切桶后立即幂等确保该桶存在：厂商侧已存在则 changed=false，不重复创建。
       await service.initializeBucket(selectedProvider.id);
       await loadProviders();
-      await loadBuckets(selectedProvider.id);
       setNotice({ kind: 'success', text: t('admin.storage.bucketsAdmin.useSuccess', 'Bucket selected and verified.') });
     } catch (error) {
       setNotice({ kind: 'error', text: t('admin.storage.bucketsAdmin.useError', 'The bucket could not be selected.') });
@@ -168,21 +220,42 @@ export function BucketManagerSection({
     }
   }
 
-  async function ensureConfiguredBucket() {
+  async function initializeProviderContent() {
     if (!selectedProvider) return;
-    setBusy('ensure');
+    setBusy('initialize');
     setNotice(null);
     try {
-      const result = await service.initializeBucket(selectedProvider.id);
+      const result = await service.initializeProvider(selectedProvider.id);
+      await loadProviders();
       setNotice({
-        kind: 'success',
-        text: result.changed
-          ? t('admin.storage.bucketsAdmin.ensureCreated', 'Bucket created.')
-          : t('admin.storage.bucketsAdmin.ensureExists', 'Bucket already exists.'),
+        kind: result.ready ? 'success' : 'error',
+        text: result.ready
+          ? t(
+              'admin.storage.bucketsAdmin.initializeSuccess',
+              'Storage is ready: bucket "{{bucket}}", {{logical}} logical buckets and {{business}} business bindings verified.',
+              {
+                bucket: result.bucket,
+                logical: result.logicalBucketCount,
+                business: result.businessBindingCount,
+              },
+            )
+          : t(
+              'admin.storage.bucketsAdmin.initializeNotReady',
+              'Provider initialized partially, but storage is not production-ready yet: {{detail}}',
+              {
+                detail: result.readinessError
+                  ?? 'object write/read/delete or multipart upload verification failed.',
+              },
+            ),
       });
-      await loadBuckets(selectedProvider.id);
     } catch (error) {
-      setNotice({ kind: 'error', text: t('admin.storage.bucketsAdmin.ensureError', 'The bucket could not be created or verified.') });
+      setNotice({
+        kind: 'error',
+        text: t(
+          'admin.storage.bucketsAdmin.initializeError',
+          'Provider initialization failed. Check the cloud account credentials and bucket name, then retry.',
+        ),
+      });
     } finally {
       setBusy(null);
     }
@@ -214,7 +287,7 @@ export function BucketManagerSection({
     try {
       await service.deleteBucket(selectedProvider.id);
       setPendingDelete(false);
-      await loadBuckets(selectedProvider.id);
+      await loadProviders();
       setNotice({ kind: 'success', text: t('admin.storage.bucketsAdmin.deleteSuccess', 'The configured bucket was removed.') });
     } catch (error) {
       setNotice({ kind: 'error', text: t('admin.storage.bucketsAdmin.deleteError', 'The configured bucket could not be removed.') });
@@ -227,10 +300,10 @@ export function BucketManagerSection({
   const configuredBucket = selectedProvider?.bucket ?? '';
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3">
-      <div className={`${CARD_CLASS} shrink-0 p-4`}>
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="flex min-w-[16rem] flex-col gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+    <div className={`${CARD_CLASS} flex h-full min-h-0 w-full flex-col overflow-hidden`}>
+      <div className="shrink-0 border-b border-slate-200 dark:border-white/10">
+        <div className="flex flex-col gap-3 p-3 md:flex-row md:items-end md:justify-between">
+          <label className="flex min-w-[16rem] flex-1 flex-col gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
             {t('admin.storage.bucketsAdmin.provider', 'Storage provider')}
             <select
               className={SELECT_CLASS}
@@ -263,13 +336,13 @@ export function BucketManagerSection({
               {t('admin.storage.reload', 'Reload')}
             </button>
             <button
-              className={SECONDARY_BUTTON_CLASS}
+              className={PRIMARY_BUTTON_CLASS}
               disabled={disabled || !selectedProvider}
               type="button"
-              onClick={() => void ensureConfiguredBucket()}
+              onClick={() => void initializeProviderContent()}
             >
-              <ShieldCheck className="h-4 w-4" />
-              {t('admin.storage.bucketsAdmin.ensureBucket', 'Create / verify bucket')}
+              {busy === 'initialize' ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+              {t('admin.storage.bucketsAdmin.initialize', 'Initialize provider')}
             </button>
             <button
               className={SECONDARY_BUTTON_CLASS}
@@ -296,107 +369,128 @@ export function BucketManagerSection({
             ) : null}
           </div>
         </div>
-        {configuredBucket ? (
-          <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-            {t('admin.storage.bucketsAdmin.configuredBucket', 'Configured bucket')}: <span className="font-mono">{configuredBucket}</span>
-          </p>
-        ) : null}
-        {notice ? (
-          <div
-            className={`mt-3 flex items-start gap-2 rounded-lg border px-3 py-2 text-sm ${
-              notice.kind === 'success'
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300'
-                : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300'
-            }`}
-            role={notice.kind === 'error' ? 'alert' : 'status'}
-          >
-            <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>{notice.text}</span>
-          </div>
-        ) : null}
-        {pendingDelete ? (
-          <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-            <p>{t('admin.storage.bucketsAdmin.deleteConfirm', 'Delete the configured bucket on the vendor? Objects inside it are not removed by this console.')}</p>
-            <div className="mt-2 flex gap-2">
-              <button
-                className={PRIMARY_BUTTON_CLASS}
-                disabled={busy !== null}
-                type="button"
-                onClick={() => void deleteConfiguredBucket()}
+        {configuredBucket || notice || pendingDelete ? (
+          <div className="border-t border-slate-200 dark:border-white/10">
+            {configuredBucket ? (
+              <div className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
+                {t('admin.storage.bucketsAdmin.configuredBucket', 'Configured bucket')}: <span className="font-mono">{configuredBucket}</span>
+              </div>
+            ) : null}
+            {notice ? (
+              <div
+                className={`flex items-start gap-2 border-t border-slate-200 px-3 py-2 text-sm first:border-t-0 dark:border-white/10 ${
+                  notice.kind === 'success'
+                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                    : 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300'
+                }`}
+                role={notice.kind === 'error' ? 'alert' : 'status'}
               >
-                {t('admin.storage.dialog.save', 'Confirm')}
-              </button>
-              <button
-                className={SECONDARY_BUTTON_CLASS}
-                disabled={busy !== null}
-                type="button"
-                onClick={() => setPendingDelete(false)}
-              >
-                {t('admin.storage.dialog.cancel', 'Cancel')}
-              </button>
-            </div>
+                <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{notice.text}</span>
+              </div>
+            ) : null}
+            {pendingDelete ? (
+              <div className="border-t border-slate-200 p-3 dark:border-white/10">
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                  <p>{t('admin.storage.bucketsAdmin.deleteConfirm', 'Delete the configured bucket on the vendor? Objects inside it are not removed by this console.')}</p>
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      className={PRIMARY_BUTTON_CLASS}
+                      disabled={busy !== null}
+                      type="button"
+                      onClick={() => void deleteConfiguredBucket()}
+                    >
+                      {t('admin.storage.dialog.save', 'Confirm')}
+                    </button>
+                    <button
+                      className={SECONDARY_BUTTON_CLASS}
+                      disabled={busy !== null}
+                      type="button"
+                      onClick={() => setPendingDelete(false)}
+                    >
+                      {t('admin.storage.dialog.cancel', 'Cancel')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>
 
-      <div className={`${CARD_CLASS} min-h-0 flex-1 overflow-auto`}>
-        {loadError ? (
-          <div className="flex items-center gap-2 p-6 text-sm text-slate-500 dark:text-slate-400" role="alert">
-            <CircleAlert className="h-4 w-4" />
-            {t('admin.storage.bucketsAdmin.loadError', 'Bucket data could not be loaded. Check the provider credentials and endpoint.')}
-          </div>
-        ) : loadingBuckets ? (
-          <div className="flex items-center gap-2 p-6 text-sm text-slate-500 dark:text-slate-400">
-            <LoaderCircle className="h-4 w-4 animate-spin" />
-            {t('admin.storage.form.bucketLoading', 'Loading buckets...')}
-          </div>
-        ) : buckets.length === 0 ? (
-          <div className="p-6 text-sm text-slate-500 dark:text-slate-400">
-            {t('admin.storage.bucketsAdmin.empty', 'No bucket is visible to this account yet. Create the configured bucket, or fix the credentials.')}
-          </div>
-        ) : (
-          <table className="w-full min-w-[44rem] border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:text-slate-400">
-                <th className="px-4 py-3 font-medium">{t('admin.storage.col.bucket', 'Bucket')}</th>
-                <th className="px-4 py-3 font-medium">{t('admin.storage.col.region', 'Region')}</th>
-                <th className="px-4 py-3 font-medium">{t('admin.storage.bucketsAdmin.createdAt', 'Created')}</th>
-                <th className="px-4 py-3 font-medium">{t('admin.storage.col.status', 'Status')}</th>
-                <th className="px-4 py-3 text-right font-medium">{t('admin.storage.action', 'Action')}</th>
-              </tr>
-            </thead>
-            <tbody>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className={`${TABLE_SHELL_CLASS} m-5 mt-4 ${browsingProvider ? 'flex-[2]' : 'flex-1'}`}>
+          <div className="min-h-0 flex-1 overflow-auto custom-scrollbar">
+          {loadError ? (
+            <div
+              className="flex items-start gap-2 border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+              role="alert"
+            >
+              <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+              {t('admin.storage.bucketsAdmin.loadError', 'Bucket data could not be loaded. Check the provider credentials and endpoint; the configured bucket stays listed so you can retry initialization.')}
+            </div>
+          ) : null}
+          {loadingBuckets ? (
+            <div className="flex min-h-[320px] items-center justify-center gap-2 p-6 text-sm text-slate-500 dark:text-slate-400">
+              <LoaderCircle className="h-4 w-4 animate-spin" />
+              {t('admin.storage.form.bucketLoading', 'Loading buckets...')}
+            </div>
+          ) : buckets.length === 0 ? (
+            <div className="flex min-h-[320px] flex-col items-center justify-center gap-2 p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+              <FolderOpen className="h-5 w-5" />
+              {t('admin.storage.bucketsAdmin.empty', 'No bucket is visible to this account yet. Configure the cloud account, then click “Initialize provider” to create the configured bucket and business routes.')}
+            </div>
+          ) : (
+            <table className="w-full min-w-[760px] text-left text-sm text-slate-600 dark:text-slate-400">
+              <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500 dark:border-white/10 dark:bg-[#121212] dark:text-slate-400">
+                <tr>
+                  <th className="px-6 py-4 font-semibold">{t('admin.storage.col.bucket', 'Bucket')}</th>
+                  <th className="px-6 py-4 font-semibold">{t('admin.storage.col.region', 'Region')}</th>
+                  <th className="px-6 py-4 font-semibold">{t('admin.storage.bucketsAdmin.createdAt', 'Created')}</th>
+                  <th className="px-6 py-4 font-semibold">{t('admin.storage.col.status', 'Status')}</th>
+                  <th className="px-6 py-4 text-right font-semibold">{t('admin.storage.action', 'Action')}</th>
+                </tr>
+              </thead>
+            <tbody className="divide-y divide-slate-200 dark:divide-white/5">
               {buckets.map((bucket) => {
                 const isConfigured = bucket.configured || bucket.bucket === configuredBucket;
+                const exists = bucket.exists !== false;
                 return (
-                  <tr key={bucket.bucket} className="border-b border-slate-100 last:border-0 dark:border-slate-800">
-                    <td className="px-4 py-3 font-mono text-xs text-slate-900 dark:text-white">{bucket.bucket}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{bucket.region || '-'}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                  <tr
+                    key={bucket.bucket}
+                    className="transition-colors hover:bg-slate-50 dark:hover:bg-white/5"
+                  >
+                    <td className="px-6 py-4 font-mono text-xs text-slate-900 dark:text-white">{bucket.bucket}</td>
+                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{bucket.region || '-'}</td>
+                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
                       {bucket.creationDateIso ? dateFormatter.format(new Date(bucket.creationDateIso)) : '-'}
                     </td>
-                    <td className="px-4 py-3">
-                      <span className={BADGE_CLASS}>
-                        {isConfigured
-                          ? t('admin.storage.bucketsAdmin.configured', 'Configured')
-                          : t('admin.storage.bucketsAdmin.available', 'Available')}
+                    <td className="px-6 py-4">
+                      <span className={`${BADGE_CLASS} ${isConfigured && !exists ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300' : ''}`}>
+                        {isConfigured && !exists
+                          ? t('admin.storage.bucketsAdmin.pendingInitialize', 'Pending initialization')
+                          : isConfigured
+                            ? t('admin.storage.bucketsAdmin.configured', 'Configured')
+                            : t('admin.storage.bucketsAdmin.available', 'Available')}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-6 py-4">
                       <div className="flex justify-end gap-2">
                         <button
-                          className={SECONDARY_BUTTON_CLASS}
+                          className={ROW_ACTION_CLASS}
                           disabled={disabled}
                           type="button"
-                          onClick={() => void useBucket(bucket.bucket)}
+                          onClick={() => void (isConfigured && !exists ? initializeProviderContent() : useBucket(bucket.bucket))}
                         >
-                          {isConfigured
-                            ? t('admin.storage.bucketsAdmin.reuse', 'Re-verify')
-                            : t('admin.storage.bucketsAdmin.useBucket', 'Use this bucket')}
+                          {isConfigured && !exists
+                            ? t('admin.storage.bucketsAdmin.initialize', 'Initialize provider')
+                            : isConfigured
+                              ? t('admin.storage.bucketsAdmin.reuse', 'Re-verify')
+                              : t('admin.storage.bucketsAdmin.useBucket', 'Use this bucket')}
                         </button>
                         <button
-                          className={PRIMARY_BUTTON_CLASS}
-                          disabled={!isConfigured || disabled}
+                          className={ROW_ACTION_PRIMARY_CLASS}
+                          disabled={!isConfigured || !exists || disabled}
                           type="button"
                           onClick={() => setBrowsingProvider(
                             selectedProvider ? { ...selectedProvider, bucket: bucket.bucket } : null,
@@ -413,11 +507,13 @@ export function BucketManagerSection({
             </tbody>
           </table>
         )}
+          </div>
+        </div>
       </div>
 
       {browsingProvider ? (
-        <div className={`${CARD_CLASS} flex min-h-0 flex-[2] flex-col`}>
-          <div className="flex items-center justify-between border-b border-slate-200 px-4 py-2 dark:border-slate-800">
+        <div className={`${TABLE_SHELL_CLASS} mx-5 mb-5 mt-0 flex-[3]`}>
+          <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-[#171717]">
             <p className="text-sm font-medium text-slate-900 dark:text-white">
               {providerDisplayName(t, browsingProvider)} · <span className="font-mono text-xs">{browsingProvider.bucket}</span>
             </p>

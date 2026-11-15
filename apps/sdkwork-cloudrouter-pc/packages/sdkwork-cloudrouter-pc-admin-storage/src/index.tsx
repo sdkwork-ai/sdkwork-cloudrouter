@@ -703,27 +703,19 @@ function StorageAdminSections({ sectionId, onSectionChange }: StorageAdminProps 
    * configured.
    */
   if (activeSectionId === 'buckets') {
+    /**
+     * No page-level header: the storage providers section renders its whole
+     * surface as one card inside the admin content viewport, and bucket
+     * management must share that same page background. The section title is
+     * already carried by the storage navigation, exactly as it is for
+     * providers.
+     */
     return (
-      <div className="flex h-full min-h-0 flex-col gap-3">
-        <header className="shrink-0 px-1">
-          <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
-            {t('admin.storage.bucketsAdmin.title', 'Bucket Management')}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {t(
-              'admin.storage.bucketsAdmin.desc',
-              'Buckets visible to the selected provider account. Switch the configured bucket, create or verify it on the vendor, and manage its objects.',
-            )}
-          </p>
-        </header>
-        <div className="min-h-0 flex-1 overflow-hidden">
-          <BucketManagerSection
-            service={getStorageProviderAdminService()}
-            initialProviderId={bucketProviderId}
-            onManageProviders={onSectionChange ? () => onSectionChange('providers') : undefined}
-          />
-        </div>
-      </div>
+      <BucketManagerSection
+        service={getStorageProviderAdminService()}
+        initialProviderId={bucketProviderId}
+        onManageProviders={onSectionChange ? () => onSectionChange('providers') : undefined}
+      />
     );
   }
 
