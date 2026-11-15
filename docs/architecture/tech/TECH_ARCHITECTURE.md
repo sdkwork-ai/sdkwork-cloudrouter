@@ -707,6 +707,7 @@ Each remains the detail authority for its topic; this index is the discoverabili
 | [TECH-2026-06-21-kernel-field-mapping-ai-to-agent.md](TECH-2026-06-21-kernel-field-mapping-ai-to-agent.md) | Superseded Kernel Chat Mapping Proposal |
 | [TECH-2026-06-21-memory-field-mapping-ai-to-mem.md](TECH-2026-06-21-memory-field-mapping-ai-to-mem.md) | TECH-2026-06-21-memory-field-mapping-ai-to-mem |
 | [TECH-2026-09-05-ai-routing-account-authorization.md](TECH-2026-09-05-ai-routing-account-authorization.md) | CloudRouter AI 路由与账号授权逻辑全景 |
+| [TECH-2026-11-15-model-catalog-sync-api.md](TECH-2026-11-15-model-catalog-sync-api.md) | Model Catalog Sync API And Local Copy-On-Write Standard |
 | [TECH-21-schema-compiler-postgres-ddl.md](TECH-21-schema-compiler-postgres-ddl.md) | TECH-21-schema-compiler-postgres-ddl |
 | [TECH-22-domain-type-generator.md](TECH-22-domain-type-generator.md) | TECH-22-domain-type-generator |
 | [TECH-23-schema-manifest.md](TECH-23-schema-manifest.md) | TECH-23-schema-manifest |
