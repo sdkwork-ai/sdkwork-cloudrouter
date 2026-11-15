@@ -68,6 +68,7 @@ import {
 
 export type AdminModuleId =
   | 'home'
+  | 'appCenter'
   | 'iam'
   | 'rtc'
   | 'membershipCenter'
@@ -155,6 +156,13 @@ export const ADMIN_MODULES: AdminModuleDef[] = [
       '/admin/agent',
       '/admin/memory',
     ],
+  }),
+  moduleBlock({
+    id: 'appCenter',
+    nameKey: 'admin.header.appCenter',
+    icon: Boxes,
+    defaultPath: '/admin/applications',
+    pathPrefixes: ['/admin/applications'],
   }),
   IAM_ADMIN_MODULE_DEF,
   RTC_ADMIN_MODULE_DEF,
@@ -285,6 +293,13 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
         ]),
       ]),
     ],
+  },
+  {
+    moduleId: 'appCenter',
+    items: [
+      itemBlock({ path: '/admin/applications', labelKey: 'admin.menu.appCenter.applications', icon: Boxes }),
+    ],
+    groups: [],
   },
   IAM_ADMIN_MENU,
   RTC_ADMIN_MENU,

@@ -79,6 +79,7 @@ const IamOrganizationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-
 const IamOrganizationStructureAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOrganizationStructureAdmin');
 const IamTenantApplicationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterTenantApplicationsPage');
 const IamOrganizationApplicationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterOrganizationApplicationsPage');
+const ApplicationCenterAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterApplicationCenterPage');
 const IamRolesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamRolesAdmin');
 const IamPermissionsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamPermissionsAdmin');
 const IamPoliciesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamPoliciesAdmin');
@@ -202,6 +203,11 @@ function SiteSettingsRoute() {
 
 export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRouteContribution[] = [
   route('dashboard', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-dashboard', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <DashboardAdmin />),
+  // Application Center: one tenant-wide catalog over the three application
+  // platforms (IAM, Deploy, App Store), with delegated access-token issuance.
+  // It is its own header module, so it gets a top-level route rather than
+  // living only under the IAM tenant drill-down.
+  route('applications', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-iam-backend-sdk', 'sdkwork-deployments-app-sdk', 'sdkwork-appstore-app-sdk'], 'cloudrouter.admin.access', <ApplicationCenterAdmin />),
   route('analytics', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-analytics', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <AnalyticsAdmin />),
   route('upstream', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-upstream', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <Navigate to="/admin/upstream/suppliers" replace />),
   route('upstream/suppliers', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-upstream', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <UpstreamSupplierAdmin />),

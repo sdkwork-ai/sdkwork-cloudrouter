@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   ADMIN_MODULES,
+  getActiveModuleFromPath,
   getActiveSidebarItemPaths,
   getAdminModuleMenu,
   getFilteredAdminModuleMenu,
@@ -10,6 +11,19 @@ import {
   isSidebarItemActive,
 } from "@sdkwork/cloudrouter-pc-admin-shell";
 import { ADMIN_MODULE_CATALOG, ADMIN_MODULE_IDS } from "./packages/sdkwork-cloudroutes-pc-commons/src/admin-modules.ts";
+
+test("application center is a header module with its own route and menu", () => {
+  const appCenter = ADMIN_MODULES.find((module) => module.id === "appCenter");
+
+  assert.ok(appCenter, "the application center must be a header module");
+  assert.equal(appCenter.defaultPath, "/admin/applications");
+  assert.deepEqual(appCenter.pathPrefixes, ["/admin/applications"]);
+  assert.equal(getActiveModuleFromPath("/admin/applications"), "appCenter");
+  assert.deepEqual(
+    getAdminModuleMenu("appCenter").items?.map((item) => item.path),
+    ["/admin/applications"],
+  );
+});
 
 test("admin module manager catalog mirrors the header registry order", () => {
   assert.deepEqual(
