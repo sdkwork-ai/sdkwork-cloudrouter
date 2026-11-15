@@ -133,6 +133,7 @@ describe('BucketManagerSection', () => {
       bucketVerified: true,
       defaultBindingCreated: false,
       logicalPlaneCreated: false,
+      routingSwitched: true,
       logicalBucketCount: '4',
       businessBindingCount: '12',
       objectWriteVerified: true,
@@ -261,7 +262,9 @@ describe('BucketManagerSection', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Initialize provider' })[0]!);
 
     await waitFor(() => {
-      expect(hoisted.service.initializeProvider).toHaveBeenCalledWith('provider-cos');
+      expect(hoisted.service.initializeProvider).toHaveBeenCalledWith('provider-cos', {
+        adoptAsDefault: true,
+      });
     });
     expect(
       await screen.findByText(/Storage is ready: bucket "sdkwork-drive-cos-1250000000", 4 logical buckets and 12 business bindings verified\./),

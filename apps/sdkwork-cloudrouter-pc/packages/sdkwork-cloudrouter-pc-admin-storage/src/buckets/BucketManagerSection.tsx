@@ -75,6 +75,7 @@ export function BucketManagerSection({
   const [loadingProviders, setLoadingProviders] = useState(true);
   const [loadingBuckets, setLoadingBuckets] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [adoptAsDefault, setAdoptAsDefault] = useState(true);
   const [busy, setBusy] = useState<BusyAction | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [pendingDelete, setPendingDelete] = useState(false);
@@ -225,12 +226,14 @@ export function BucketManagerSection({
     setBusy('initialize');
     setNotice(null);
     try {
-      const result = await service.initializeProvider(selectedProvider.id);
+      const result = await service.initializeProvider(selectedProvider.id, {
+        adoptAsDefault,
+      });
       await loadProviders();
       setNotice({
         kind: result.ready ? 'success' : 'error',
         text: result.ready
-          ? t(
+          ? `${t(
               'admin.storage.bucketsAdmin.initializeSuccess',
               'Storage is ready: bucket "{{bucket}}", {{logical}} logical buckets and {{business}} business bindings verified.',
               {
@@ -238,7 +241,14 @@ export function BucketManagerSection({
                 logical: result.logicalBucketCount,
                 business: result.businessBindingCount,
               },
-            )
+            )}${
+              result.routingSwitched
+                ? ` ${t(
+                    'admin.storage.bucketsAdmin.initializeAdopted',
+                    'All business now routes to this provider.',
+                  )}`
+                : ''
+            }`
           : t(
               'admin.storage.bucketsAdmin.initializeNotReady',
               'Provider initialized partially, but storage is not production-ready yet: {{detail}}',
@@ -335,6 +345,15 @@ export function BucketManagerSection({
               {busy === 'refresh' ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               {t('admin.storage.reload', 'Reload')}
             </button>
+            <label className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+              <input
+                type="checkbox"
+                checked={adoptAsDefault}
+                disabled={disabled}
+                onChange={(event) => setAdoptAsDefault(event.target.checked)}
+              />
+              {t('admin.storage.bucketsAdmin.initializeAdopt', 'Route default business to this provider')}
+            </label>
             <button
               className={PRIMARY_BUTTON_CLASS}
               disabled={disabled || !selectedProvider}
