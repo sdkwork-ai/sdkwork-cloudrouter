@@ -177,7 +177,6 @@ export function BucketManagerSection({
     setBusy('refresh');
     setNotice(null);
     await loadProviders();
-    if (selectedProvider) await loadBuckets(selectedProvider);
     setBusy(null);
   }, [loadBuckets, loadProviders, selectedProvider]);
 
@@ -190,7 +189,6 @@ export function BucketManagerSection({
       // 切桶后立即幂等确保该桶存在：厂商侧已存在则 changed=false，不重复创建。
       await service.initializeBucket(selectedProvider.id);
       await loadProviders();
-      await loadBuckets(selectedProvider);
       setNotice({ kind: 'success', text: t('admin.storage.bucketsAdmin.useSuccess', 'Bucket selected and verified.') });
     } catch (error) {
       setNotice({ kind: 'error', text: t('admin.storage.bucketsAdmin.useError', 'The bucket could not be selected.') });
@@ -206,7 +204,6 @@ export function BucketManagerSection({
     try {
       const result = await service.initializeProvider(selectedProvider.id);
       await loadProviders();
-      await loadBuckets(selectedProvider);
       setNotice({
         kind: result.ready ? 'success' : 'error',
         text: result.ready
@@ -267,7 +264,7 @@ export function BucketManagerSection({
     try {
       await service.deleteBucket(selectedProvider.id);
       setPendingDelete(false);
-      await loadBuckets(selectedProvider);
+      await loadProviders();
       setNotice({ kind: 'success', text: t('admin.storage.bucketsAdmin.deleteSuccess', 'The configured bucket was removed.') });
     } catch (error) {
       setNotice({ kind: 'error', text: t('admin.storage.bucketsAdmin.deleteError', 'The configured bucket could not be removed.') });
