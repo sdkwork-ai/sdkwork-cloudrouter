@@ -19,8 +19,10 @@ const hoisted = vi.hoisted(() => ({
   service: {
     listAllProviders: vi.fn(),
     listBuckets: vi.fn(),
+    getDefaultBinding: vi.fn(),
     updateProvider: vi.fn(),
     initializeBucket: vi.fn(),
+    initializeProvider: vi.fn(),
     headBucket: vi.fn(),
     deleteBucket: vi.fn(),
   },
@@ -83,12 +85,14 @@ const buckets = [
   {
     bucket: 'sdkwork-drive-cos-1250000000',
     configured: true,
+    exists: true,
     region: 'ap-guangzhou',
     creationDateIso: '2026-01-02T03:04:05.000Z',
   },
   {
     bucket: 'sdkwork-drive-cos-archive',
     configured: false,
+    exists: true,
     region: 'ap-guangzhou',
     creationDateIso: '2026-01-03T03:04:05.000Z',
   },
@@ -98,8 +102,10 @@ function service(): StorageProviderAdminService {
   return {
     listAllProviders: hoisted.service.listAllProviders,
     listBuckets: hoisted.service.listBuckets,
+    getDefaultBinding: hoisted.service.getDefaultBinding,
     updateProvider: hoisted.service.updateProvider,
     initializeBucket: hoisted.service.initializeBucket,
+    initializeProvider: hoisted.service.initializeProvider,
     headBucket: hoisted.service.headBucket,
     deleteBucket: hoisted.service.deleteBucket,
   } as unknown as StorageProviderAdminService;
@@ -109,11 +115,25 @@ describe('BucketManagerSection', () => {
   beforeEach(() => {
     hoisted.service.listAllProviders.mockResolvedValue(providers);
     hoisted.service.listBuckets.mockResolvedValue(buckets);
+    hoisted.service.getDefaultBinding.mockResolvedValue({
+      providerId: 'provider-cos',
+      bucket: 'sdkwork-drive-cos-1250000000',
+    });
     hoisted.service.updateProvider.mockResolvedValue(providers[0]);
     hoisted.service.initializeBucket.mockResolvedValue({
       providerId: 'provider-cos',
       bucket: 'sdkwork-drive-cos-archive',
       changed: false,
+    });
+    hoisted.service.initializeProvider.mockResolvedValue({
+      providerId: 'provider-cos',
+      bucket: 'sdkwork-drive-cos-1250000000',
+      bucketCreated: true,
+      bucketVerified: true,
+      defaultBindingCreated: false,
+      logicalPlaneCreated: false,
+      logicalBucketCount: '4',
+      businessBindingCount: '12',
     });
     hoisted.service.headBucket.mockResolvedValue({
       providerId: 'provider-cos',
@@ -158,8 +178,8 @@ describe('BucketManagerSection', () => {
         'provider-cos',
         { bucket: 'sdkwork-drive-cos-archive' },
       );
+      expect(hoisted.service.initializeBucket).toHaveBeenCalledWith('provider-cos');
     });
-    expect(hoisted.service.initializeBucket).toHaveBeenCalledWith('provider-cos');
     cleanup();
   });
 
@@ -192,6 +212,52 @@ describe('BucketManagerSection', () => {
     );
 
     expect(await screen.findByText('No active storage provider yet.')).toBeTruthy();
+    cleanup();
+  });
+
+  it('selects the tenant default provider before the first row', async () => {
+    hoisted.service.listAllProviders.mockResolvedValueOnce([providers[1], providers[0]]);
+
+    render(
+      <BucketManagerSection
+        service={service()}
+        renderObjectBrowser={() => <div data-testid="object-browser" />}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(hoisted.service.listBuckets).toHaveBeenCalledWith('provider-cos', expect.anything());
+    });
+    expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('provider-cos');
+    cleanup();
+  });
+
+  it('shows the configured bucket before it exists and initializes it in one click', async () => {
+    hoisted.service.listBuckets.mockResolvedValue([
+      {
+        bucket: 'sdkwork-drive-cos-1250000000',
+        configured: true,
+        exists: false,
+        region: 'ap-guangzhou',
+      },
+    ]);
+
+    render(
+      <BucketManagerSection
+        service={service()}
+        renderObjectBrowser={() => <div data-testid="object-browser" />}
+      />,
+    );
+
+    expect(await screen.findByText('Pending initialization')).toBeTruthy();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Initialize provider' })[0]!);
+
+    await waitFor(() => {
+      expect(hoisted.service.initializeProvider).toHaveBeenCalledWith('provider-cos');
+    });
+    expect(
+      await screen.findByText(/Provider initialized: bucket "sdkwork-drive-cos-1250000000", 4 logical buckets and 12 business bindings ready\./),
+    ).toBeTruthy();
     cleanup();
   });
 });

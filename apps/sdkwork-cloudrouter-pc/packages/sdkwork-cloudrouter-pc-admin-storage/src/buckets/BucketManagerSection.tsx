@@ -41,7 +41,7 @@ export interface BucketManagerSectionProps {
   initialProviderId?: string;
 }
 
-type BusyAction = 'refresh' | 'use' | 'ensure' | 'delete' | 'verify';
+type BusyAction = 'refresh' | 'use' | 'initialize' | 'delete' | 'verify';
 
 type Notice = { readonly kind: 'success' | 'error'; readonly text: string };
 
@@ -93,12 +93,23 @@ export function BucketManagerSection({
       setLoadingProviders(true);
       setLoadError(false);
       try {
-        const items = await service.listAllProviders({ status: 'active', signal });
+        const [items, tenantBinding] = await Promise.all([
+          service.listAllProviders({ status: 'active', signal }),
+          // The tenant default is the provider the install is meant to run on
+          // (Tencent COS for the seeded plane). Prefer it over the alphabetical
+          // first row so the bucket page opens on the operator's target.
+          service.getDefaultBinding(undefined, { signal }).catch(() => undefined),
+        ]);
         if (signal?.aborted) return;
         setProviders(items);
-        setSelectedProviderId((current) => (
-          items.some((provider) => provider.id === current) ? current : (items[0]?.id ?? '')
-        ));
+        setSelectedProviderId((current) => {
+          if (items.some((provider) => provider.id === current)) return current;
+          const preferred = tenantBinding?.providerId;
+          if (preferred && items.some((provider) => provider.id === preferred)) {
+            return preferred;
+          }
+          return items[0]?.id ?? '';
+        });
       } catch (error) {
         if (signal?.aborted) return;
         setLoadError(true);
@@ -174,21 +185,34 @@ export function BucketManagerSection({
     }
   }
 
-  async function ensureConfiguredBucket() {
+  async function initializeProviderContent() {
     if (!selectedProvider) return;
-    setBusy('ensure');
+    setBusy('initialize');
     setNotice(null);
     try {
-      const result = await service.initializeBucket(selectedProvider.id);
+      const result = await service.initializeProvider(selectedProvider.id);
+      await loadProviders();
+      await loadBuckets(selectedProvider.id);
       setNotice({
         kind: 'success',
-        text: result.changed
-          ? t('admin.storage.bucketsAdmin.ensureCreated', 'Bucket created.')
-          : t('admin.storage.bucketsAdmin.ensureExists', 'Bucket already exists.'),
+        text: t(
+          'admin.storage.bucketsAdmin.initializeSuccess',
+          'Provider initialized: bucket "{{bucket}}", {{logical}} logical buckets and {{business}} business bindings ready.',
+          {
+            bucket: result.bucket,
+            logical: result.logicalBucketCount,
+            business: result.businessBindingCount,
+          },
+        ),
       });
-      await loadBuckets(selectedProvider.id);
     } catch (error) {
-      setNotice({ kind: 'error', text: t('admin.storage.bucketsAdmin.ensureError', 'The bucket could not be created or verified.') });
+      setNotice({
+        kind: 'error',
+        text: t(
+          'admin.storage.bucketsAdmin.initializeError',
+          'Provider initialization failed. Check the cloud account credentials and bucket name, then retry.',
+        ),
+      });
     } finally {
       setBusy(null);
     }
@@ -272,10 +296,10 @@ export function BucketManagerSection({
               className={PRIMARY_BUTTON_CLASS}
               disabled={disabled || !selectedProvider}
               type="button"
-              onClick={() => void ensureConfiguredBucket()}
+              onClick={() => void initializeProviderContent()}
             >
-              <ShieldCheck className="h-4 w-4" />
-              {t('admin.storage.bucketsAdmin.ensureBucket', 'Create / verify bucket')}
+              {busy === 'initialize' ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+              {t('admin.storage.bucketsAdmin.initialize', 'Initialize provider')}
             </button>
             <button
               className={SECONDARY_BUTTON_CLASS}
@@ -370,7 +394,7 @@ export function BucketManagerSection({
           ) : buckets.length === 0 ? (
             <div className="flex min-h-[320px] flex-col items-center justify-center gap-2 p-6 text-center text-sm text-slate-500 dark:text-slate-400">
               <FolderOpen className="h-5 w-5" />
-              {t('admin.storage.bucketsAdmin.empty', 'No bucket is visible to this account yet. Create the configured bucket, or fix the credentials.')}
+              {t('admin.storage.bucketsAdmin.empty', 'No bucket is visible to this account yet. Configure the cloud account, then click “Initialize provider” to create the configured bucket and business routes.')}
             </div>
           ) : (
             <table className="w-full min-w-[760px] text-left text-sm text-slate-600 dark:text-slate-400">
@@ -386,6 +410,7 @@ export function BucketManagerSection({
             <tbody className="divide-y divide-slate-200 dark:divide-white/5">
               {buckets.map((bucket) => {
                 const isConfigured = bucket.configured || bucket.bucket === configuredBucket;
+                const exists = bucket.exists !== false;
                 return (
                   <tr
                     key={bucket.bucket}
@@ -397,10 +422,12 @@ export function BucketManagerSection({
                       {bucket.creationDateIso ? dateFormatter.format(new Date(bucket.creationDateIso)) : '-'}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={BADGE_CLASS}>
-                        {isConfigured
-                          ? t('admin.storage.bucketsAdmin.configured', 'Configured')
-                          : t('admin.storage.bucketsAdmin.available', 'Available')}
+                      <span className={`${BADGE_CLASS} ${isConfigured && !exists ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300' : ''}`}>
+                        {isConfigured && !exists
+                          ? t('admin.storage.bucketsAdmin.pendingInitialize', 'Pending initialization')
+                          : isConfigured
+                            ? t('admin.storage.bucketsAdmin.configured', 'Configured')
+                            : t('admin.storage.bucketsAdmin.available', 'Available')}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -409,15 +436,17 @@ export function BucketManagerSection({
                           className={ROW_ACTION_CLASS}
                           disabled={disabled}
                           type="button"
-                          onClick={() => void useBucket(bucket.bucket)}
+                          onClick={() => void (isConfigured && !exists ? initializeProviderContent() : useBucket(bucket.bucket))}
                         >
-                          {isConfigured
-                            ? t('admin.storage.bucketsAdmin.reuse', 'Re-verify')
-                            : t('admin.storage.bucketsAdmin.useBucket', 'Use this bucket')}
+                          {isConfigured && !exists
+                            ? t('admin.storage.bucketsAdmin.initialize', 'Initialize provider')
+                            : isConfigured
+                              ? t('admin.storage.bucketsAdmin.reuse', 'Re-verify')
+                              : t('admin.storage.bucketsAdmin.useBucket', 'Use this bucket')}
                         </button>
                         <button
                           className={ROW_ACTION_PRIMARY_CLASS}
-                          disabled={!isConfigured || disabled}
+                          disabled={!isConfigured || !exists || disabled}
                           type="button"
                           onClick={() => setBrowsingProvider(
                             selectedProvider ? { ...selectedProvider, bucket: bucket.bucket } : null,
