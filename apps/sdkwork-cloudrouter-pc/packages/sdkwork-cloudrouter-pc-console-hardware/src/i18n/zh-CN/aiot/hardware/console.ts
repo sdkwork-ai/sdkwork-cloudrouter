@@ -26,6 +26,9 @@ export const hardwareConsoleMessagesZh: Record<string, string> = {
   'console.hardware.common.count': '{{count}} 项',
   'console.hardware.common.noMatches': '当前检索条件下没有匹配项。',
   'console.hardware.common.selectPlaceholder': '请选择',
+  'console.hardware.common.justNow': '刚刚',
+  'console.hardware.common.neverConnected': '从未连接',
+  'console.hardware.common.productsLoading': '正在加载产品…',
 
   // ------------------------------------------------------------------- errors
   'console.hardware.error.conflict': '请求未能完成。',
@@ -117,5 +120,8 @@ export const hardwareConsoleMessagesZh: Record<string, string> = {
   'console.hardware.firmware.column.download': '下载',
   'console.hardware.firmware.download': '下载',
   'console.hardware.firmware.managedOnly': '受管下发',
+  'console.hardware.firmware.status.published': '已发布',
+  'console.hardware.firmware.status.draft': '草稿',
+  'console.hardware.firmware.status.deprecated': '已弃用',
   'console.hardware.firmware.hint': '刷写前请校验摘要。没有直链的固件将通过设备升级通道下发。',
 };

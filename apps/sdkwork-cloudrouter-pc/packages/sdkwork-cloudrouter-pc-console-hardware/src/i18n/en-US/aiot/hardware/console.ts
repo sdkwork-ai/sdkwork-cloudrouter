@@ -27,6 +27,9 @@ export const hardwareConsoleMessagesEn: Record<string, string> = {
   'console.hardware.common.count': '{{count}} item(s)',
   'console.hardware.common.noMatches': 'Nothing matches the current search.',
   'console.hardware.common.selectPlaceholder': 'Select an option',
+  'console.hardware.common.justNow': 'Just now',
+  'console.hardware.common.neverConnected': 'Never connected',
+  'console.hardware.common.productsLoading': 'Loading products...',
 
   // ------------------------------------------------------------------- errors
   'console.hardware.error.conflict': 'The request could not be completed.',
@@ -126,6 +129,9 @@ export const hardwareConsoleMessagesEn: Record<string, string> = {
   'console.hardware.firmware.column.download': 'Download',
   'console.hardware.firmware.download': 'Download',
   'console.hardware.firmware.managedOnly': 'Managed delivery',
+  'console.hardware.firmware.status.published': 'Published',
+  'console.hardware.firmware.status.draft': 'Draft',
+  'console.hardware.firmware.status.deprecated': 'Deprecated',
   'console.hardware.firmware.hint':
     'Verify the checksum before flashing. Artifacts without a direct link are delivered by the device update channel.',
 };
