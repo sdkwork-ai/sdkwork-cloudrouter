@@ -536,6 +536,19 @@ export const CloudRouterTenantApplicationsPage: ComponentType = function CloudRo
   return <ApplicationManagementPage backTo="/admin/iam/tenants" tenantId={tenantId} />;
 };
 
+/**
+ * Application Center: the current tenant's applications across IAM, Deploy and
+ * the App Store.
+ *
+ * Unlike the two entity-scoped pages above, this one is its own admin module
+ * (`appCenter`): the header entry opens the tenant-wide catalog so an operator
+ * can review every application the current tenant owns and issue delegated
+ * access tokens without going through the IAM tenant drill-down first.
+ */
+export const CloudRouterApplicationCenterPage: ComponentType = function CloudRouterApplicationCenterPageEntry() {
+  return <ApplicationManagementPage backTo="/admin/dashboard" />;
+};
+
 export const CloudRouterOrganizationApplicationsPage: ComponentType = function CloudRouterOrganizationApplicationsPageEntry() {
   const { organizationId } = useParams<{ organizationId: string }>();
   if (!organizationId) {

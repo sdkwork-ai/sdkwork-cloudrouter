@@ -1,5 +1,5 @@
 import { lazy, useEffect, useMemo, useState, type ComponentType, type LazyExoticComponent, type ReactElement } from 'react';
-import { Navigate, Route, useParams } from 'react-router-dom';
+import { Navigate, Route, useNavigate, useParams } from 'react-router-dom';
 import { IAM_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-iam/contribution';
 import { RTC_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-rtc/contribution';
 import { RTC_ADMIN_ROUTE_ELEMENTS } from '@sdkwork/cloudrouter-pc-admin-rtc';
@@ -68,7 +68,10 @@ const CourseAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-c
 const MarketingAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-marketing'), 'MarketingAdmin');
 const PartnerAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-partner'), 'CloudRouterPartnerAdmin');
 const PaymentsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-payments'), 'PaymentsAdmin');
-const StorageAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-storage'), 'StorageAdmin');
+const StorageAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-storage'), 'StorageAdmin') as LazyExoticComponent<ComponentType<{
+  sectionId?: string;
+  onSectionChange?: (sectionId: string) => void;
+}>>;
 const IamUsersAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamUsersAdmin');
 const IamTenantsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamTenantsAdmin');
 const IamApplicationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamApplicationsAdmin');
@@ -76,6 +79,7 @@ const IamOrganizationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-
 const IamOrganizationStructureAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOrganizationStructureAdmin');
 const IamTenantApplicationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterTenantApplicationsPage');
 const IamOrganizationApplicationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterOrganizationApplicationsPage');
+const ApplicationCenterAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterApplicationCenterPage');
 const IamRolesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamRolesAdmin');
 const IamPermissionsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamPermissionsAdmin');
 const IamPoliciesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamPoliciesAdmin');
@@ -199,6 +203,11 @@ function SiteSettingsRoute() {
 
 export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRouteContribution[] = [
   route('dashboard', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-dashboard', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <DashboardAdmin />),
+  // Application Center: one tenant-wide catalog over the three application
+  // platforms (IAM, Deploy, App Store), with delegated access-token issuance.
+  // It is its own header module, so it gets a top-level route rather than
+  // living only under the IAM tenant drill-down.
+  route('applications', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-iam-backend-sdk', 'sdkwork-deployments-app-sdk', 'sdkwork-appstore-app-sdk'], 'cloudrouter.admin.access', <ApplicationCenterAdmin />),
   route('analytics', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-analytics', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <AnalyticsAdmin />),
   route('upstream', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-upstream', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <Navigate to="/admin/upstream/suppliers" replace />),
   route('upstream/suppliers', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-upstream', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <UpstreamSupplierAdmin />),
@@ -239,7 +248,7 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   route('marketing/:sectionId?/:batchId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-marketing', ['sdkwork-promotion-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminMarketingRoute component={MarketingAdmin} />),
   route('partner/:sectionId?', 'sdkwork-partner', '@sdkwork/cloudrouter-pc-admin-partner', ['sdkwork-partner-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={PartnerAdmin} />),
   route('payments/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-payments', ['sdkwork-payment-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={PaymentsAdmin} />),
-  route('storage/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-storage', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={StorageAdmin} />),
+  route('storage/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-storage', ['cloudrouter-backend-sdk', 'sdkwork-drive-admin-storage-sdk', 'drive-backend-sdk'], 'cloudrouter.admin.access', <StorageAdminRoute />),
   // Document Center: pages and rich-text editor are owned by sdkwork-documents;
   // the portal supplies the generated documents app client through the port.
   route('documents', 'sdkwork-documents', '@sdkwork/documents-pc-admin-documents', ['sdkwork-documents-app-sdk'], 'cloudrouter.admin.access', <DocumentsAdminHostRoute />),
@@ -310,6 +319,26 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
 function AdminSectionRoute({ component: Component }: { component: ComponentType<{ sectionId?: string }> }) {
   const { sectionId } = useParams<{ sectionId?: string }>();
   return <Component sectionId={sectionId} />;
+}
+
+/**
+ * Storage center host route.
+ *
+ * Unlike the other `:sectionId` admins, the storage center hands operators from
+ * space governance to file governance. That handoff is a real route change
+ * (`/admin/storage/spaces` -> `/admin/storage/files`) so the browser back button
+ * and deep links keep working; the section navigation callback is injected here
+ * because the package must not depend on `react-router-dom` itself.
+ */
+function StorageAdminRoute() {
+  const { sectionId } = useParams<{ sectionId?: string }>();
+  const navigate = useNavigate();
+  return (
+    <StorageAdmin
+      sectionId={sectionId}
+      onSectionChange={(nextSectionId) => navigate(`/admin/storage/${nextSectionId}`)}
+    />
+  );
 }
 
 function useDocumentsAdminRuntimeValue() {

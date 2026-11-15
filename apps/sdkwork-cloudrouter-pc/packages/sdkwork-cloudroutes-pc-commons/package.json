@@ -188,6 +188,7 @@
     "@sdkwork/documents-app-sdk": "workspace:*",
     "@sdkwork/documents-pc-commons": "workspace:*",
     "@sdkwork/drive-admin-storage-sdk": "workspace:*",
+    "@sdkwork/drive-backend-sdk": "workspace:*",
     "@sdkwork/drive-app-sdk": "workspace:*",
     "@sdkwork/drive-sdk": "workspace:*",
     "@sdkwork/drive-upload-image-core": "workspace:*",

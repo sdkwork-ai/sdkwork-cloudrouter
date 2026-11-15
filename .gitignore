@@ -237,3 +237,9 @@ temp/
 
 # Derived SDK generation input (marker-stripped copy of *.sdkgen.json)
 sdks/*/openapi/*.sdkgen.generated.json
+
+# Root server host profile is generated/refreshed by
+# scripts/dev/cloud-router-application-env.mjs and is not committed
+# (specs/application-env-standard.md).
+/.env.standalone.production
+/.env.standalone.development

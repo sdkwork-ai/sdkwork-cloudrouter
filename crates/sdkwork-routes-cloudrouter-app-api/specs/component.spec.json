@@ -156,12 +156,13 @@
         "surface": "app-api",
         "apiPrefix": "/app/v3/api",
         "runtimeMode": "same-origin-mounted",
-        "profileCoverage": ["standalone"],
+        "profileCoverage": ["standalone", "cloud"],
         "cargoDependency": "sdkwork_api_memory_assembly",
         "embeddedExecutableExport": "sdkwork_api_memory_assembly::assemble_app_api_contribution_from_env",
         "coverageEvidence": [
           "src/memory_runtime.rs",
           "src/routes.rs",
+          "src/manifest_composition.rs#cloud_router_app_composed_route_manifest_for_platform_gateway",
           "../../../sdkwork-memory/crates/sdkwork-api-memory-assembly/assembly-manifest.json",
           "../../../sdkwork-memory/apis/app-api/memory-app-api.openapi.json"
         ]

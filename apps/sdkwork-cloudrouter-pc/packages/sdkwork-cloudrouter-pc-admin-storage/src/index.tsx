@@ -7,10 +7,12 @@ import {
   BarChart3,
   CheckCircle2,
   CloudCog,
+  Database,
   DatabaseZap,
   Eye,
   FolderOpen,
   Gauge,
+  Network,
   Pencil,
   Plus,
   Power,
@@ -21,21 +23,29 @@ import {
   X,
 } from 'lucide-react';
 import {
+  StorageBindingsAdminPage,
   StorageObjectBrowser,
+  StorageOverviewAdminPage,
   StorageProviderEditor,
+  StorageProviderKindsAdminPage,
   type StorageProviderView,
 } from 'sdkwork-drive-pc-admin-storage-providers';
+import {
+  FilesAdminPage,
+  SpacesAdminPage,
+} from 'sdkwork-drive-pc-admin-operations';
 import { LanguageProvider } from 'sdkwork-drive-pc-commons';
 import {
   AdminResourceCenter,
   type AdminResourceRecord,
   type AdminResourceSection,
 } from '@sdkwork/cloudroutes-pc-commons';
+import { BucketManagerSection } from './buckets/BucketManagerSection';
 import {
-  backendStorageDefaultBucketUpdate,
   backendStorageDefaultBucketsList,
   backendStorageGarbageCollectionJobCreate,
   backendStorageGarbageCollectionJobsList,
+  backendStorageInitializeProviderDefaults,
   backendStorageProviderAccountCreate,
   backendStorageProviderAccountsPage,
   backendStorageProviderCreate,
@@ -49,8 +59,10 @@ import {
   backendStorageReconciliationRunCreate,
   backendStorageReconciliationRunsList,
   backendStorageUsageList,
+  getDriveAdminBackendSdkClient,
+  getDriveAdminSession,
+  getDriveAdminStorageSdkClient,
   getStorageProviderAdminService,
-  type StorageDefaultBucketUpdateInput,
   type StorageGarbageCollectionCreateInput,
   type StorageProviderRecord,
   type StorageProviderUpdateInput,
@@ -59,8 +71,14 @@ import {
 } from './storageService';
 
 type StorageAdminSectionId =
+  | 'overview'
   | 'providers'
+  | 'kinds'
+  | 'buckets'
+  | 'bindings'
   | 'defaultBuckets'
+  | 'spaces'
+  | 'files'
   | 'quotas'
   | 'usage'
   | 'reconciliation'
@@ -73,11 +91,25 @@ type StorageAdminSectionId =
  * drive 属主的 `StorageProviderEditor`（见 `providerEditorOpen`）。把它排除在
  * 联合类型之外，任何「再用通用表单渲染服务商」的尝试都会变成编译错误，
  * 而不是悄悄分叉出第二套凭据 UI。
+ *
+ * `defaultBuckets` 同样被排除：它的写入口要求 cloudrouter 治理面的
+ * `storage_bucket` 主键，而治理面没有桶清单 API，旧表单只能把 drive 的
+ * provider id 当桶 id 提交（必然被后端拒绝）。该区段因此只读展示已播种的
+ * 逻辑作用域分配；真正的桶与业务绑定由 `buckets` / `bindings` 区段管理。
  */
-type StorageDialogKind = Exclude<StorageAdminSectionId, 'usage' | 'providers'>;
+type StorageDialogKind = Exclude<
+  StorageAdminSectionId,
+  'usage' | 'providers' | 'spaces' | 'files' | 'overview' | 'kinds' | 'buckets' | 'bindings' | 'defaultBuckets'
+>;
 
 type StorageAdminProps = {
   sectionId?: string;
+  /**
+   * Host-provided section navigation. The storage center hands operators from
+   * space governance to the file list for that space; the package stays
+   * router-agnostic and lets the admin host own the URL.
+   */
+  onSectionChange?: (sectionId: StorageAdminSectionId) => void;
 };
 
 /** 提示消息类型：成功与错误统一走 Toast 弹出，不再占用表格顶部空间。 */
@@ -103,7 +135,6 @@ const TOAST_ERROR_DURATION_MS = 6500;
  * 共享服务，因此这里没有服务商连接信息与凭据的影子字段。
  */
 type StorageFormState = {
-  logicalScope: StorageQuotaCreateInput['scopeType'] | 'tenant_private';
   bucketId: string;
   /** 对账运行的目标服务商（`reconciliation` 区段的下拉选择，非服务商表单字段）。 */
   providerId: string;
@@ -123,7 +154,6 @@ type StorageFormState = {
 };
 
 const DEFAULT_FORM_STATE: StorageFormState = {
-  logicalScope: 'tenant_private',
   bucketId: '',
   providerId: '',
   reason: '',
@@ -142,18 +172,24 @@ const DEFAULT_FORM_STATE: StorageFormState = {
 };
 
 const SECTION_IDS: readonly StorageAdminSectionId[] = [
+  'overview',
   'providers',
+  'kinds',
+  'buckets',
+  'bindings',
   'defaultBuckets',
+  'spaces',
+  'files',
   'quotas',
   'usage',
   'reconciliation',
   'garbageCollection',
 ];
 
-export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
+export function StorageAdmin({ sectionId, onSectionChange }: StorageAdminProps = {}) {
   return (
     <DriveLanguageBridge>
-      <StorageAdminSections sectionId={sectionId} />
+      <StorageAdminSections sectionId={sectionId} onSectionChange={onSectionChange} />
     </DriveLanguageBridge>
   );
 }
@@ -193,7 +229,7 @@ function DriveLanguageBridge({ children }: { children: ReactNode }) {
   );
 }
 
-function StorageAdminSections({ sectionId }: StorageAdminProps = {}) {
+function StorageAdminSections({ sectionId, onSectionChange }: StorageAdminProps = {}) {
   const { t } = useTranslation();
   const activeSectionId = resolveStorageSectionId(sectionId);
   const [dialogKind, setDialogKind] = useState<StorageDialogKind | null>(null);
@@ -212,6 +248,18 @@ function StorageAdminSections({ sectionId }: StorageAdminProps = {}) {
    */
   const knownProviderIdsRef = useRef<readonly string[]>([]);
   const [deletingProvider, setDeletingProvider] = useState<{ id: string; name: string; providerCode: string } | null>(null);
+  /**
+   * Space preselection handed from space governance to file governance. The
+   * drive page owns the filter UI; the storage center only carries the chosen
+   * space across the route change.
+   */
+  const [filesSpaceId, setFilesSpaceId] = useState<string | undefined>();
+  /**
+   * Provider preselection handed from the provider table to bucket management,
+   * so "Buckets" on a row opens that provider's inventory instead of the first
+   * active one.
+   */
+  const [bucketProviderId, setBucketProviderId] = useState<string | undefined>();
 
   // 定时器句柄集中登记，卸载时统一清理，避免卸载后 setState。
   const toastTimersRef = useRef<Set<number>>(new Set());
@@ -247,6 +295,19 @@ function StorageAdminSections({ sectionId }: StorageAdminProps = {}) {
       group: t('admin.menu.storage.configuration', 'Storage Configuration'),
       load: () => loadProviderResourceRecords(knownProviderIdsRef),
       action: createAction(t('admin.storage.providers.add', 'Add provider'), () => openProviderCreate()),
+      /**
+       * 补齐内置服务商配置（含腾讯云 COS）与租户默认绑定。
+       *
+       * 部署种子没跑到、或控制台租户与种子租户不同时，provider 列表会缺行；
+       * 该动作调用 drive 的幂等初始化，只补缺失项，不改已存在的配置与凭据。
+       * 放在工具栏而不是主操作位：主操作仍然是「新增」，避免误触大规模写入。
+       */
+      resolveToolbarActions: () => [
+        createAction(
+          t('admin.storage.providers.initialize', 'Initialize providers'),
+          () => void initializeProviderDefaults(),
+        ),
+      ],
       rowActions: [
         {
           label: t('admin.storage.providers.detail', 'Details'),
@@ -285,6 +346,26 @@ function StorageAdminSections({ sectionId }: StorageAdminProps = {}) {
           onClick: (record) => openProviderExplorer(record),
         },
         {
+          /**
+           * 从服务商直达它的桶清单：桶是服务商配置的一部分，运维排查「这个
+           * 服务商到底有哪些桶」不该先切区段再重新选一遍服务商。
+           */
+          label: t('admin.storage.providers.buckets', 'Buckets'),
+          icon: <Database className="h-3.5 w-3.5" />,
+          isVisible: () => Boolean(onSectionChange),
+          onClick: (record) => {
+            const id = readRecordId(record);
+            if (id) setBucketProviderId(id);
+            onSectionChange?.('buckets');
+          },
+        },
+        {
+          label: t('admin.storage.providers.bindings', 'Bindings'),
+          icon: <Network className="h-3.5 w-3.5" />,
+          isVisible: () => Boolean(onSectionChange),
+          onClick: () => onSectionChange?.('bindings'),
+        },
+        {
           label: t('admin.storage.providers.delete', 'Delete'),
           icon: <Trash2 className="h-3.5 w-3.5" />,
           tone: 'danger',
@@ -307,12 +388,14 @@ function StorageAdminSections({ sectionId }: StorageAdminProps = {}) {
     },
     {
       id: 'defaultBuckets',
-      title: t('admin.storage.defaultBuckets.title', 'Default Buckets'),
-      description: t('admin.storage.defaultBuckets.desc', 'Default bucket assignments for every application and system logical scope.'),
+      title: t('admin.storage.defaultBuckets.title', 'Logical Scope Defaults'),
+      description: t(
+        'admin.storage.defaultBuckets.desc',
+        'Deployment-provisioned bucket assignment per system logical scope. These rows are seeded with the storage center and are read-only here; operational buckets and business routing are managed in Buckets and Bindings.',
+      ),
       icon: <ShieldCheck className="h-4 w-4" />,
-      group: t('admin.menu.storage.configuration', 'Storage Configuration'),
+      group: t('admin.menu.storage.routing', 'Storage Routing'),
       load: () => backendStorageDefaultBucketsList(),
-      action: createAction(t('admin.storage.defaultBuckets.set', 'Set default'), () => openDialog('defaultBuckets')),
       columns: [
         { key: 'logicalScope', label: t('admin.storage.col.logicalScope', 'Logical Scope'), format: (value) => translateStorageValue(t, 'logicalScope', value) },
         { key: 'bucketName', label: t('admin.storage.col.bucket', 'Bucket') },
@@ -516,6 +599,32 @@ function StorageAdminSections({ sectionId }: StorageAdminProps = {}) {
     }
   }
 
+  /**
+   * 补齐内置服务商平面。
+   *
+   * 与 drive 运行时引导同源：先确保 kind 目录，再为每个内置云厂商创建缺失的
+   * provider 配置与账号中心账号（已存在的一概不动），并把配置的默认厂商
+   * （腾讯云 COS）绑为租户默认。控制台里可见的修复入口，避免运维只能重启服务
+   * 才能让腾讯云 COS 出现。
+   */
+  async function initializeProviderDefaults() {
+    try {
+      const items = await backendStorageInitializeProviderDefaults();
+      setRefreshKey((value) => value + 1);
+      pushToast('success', t(
+        'admin.storage.providers.initializeSuccess',
+        'Storage providers initialized ({{count}} built-in configurations reported).',
+        { count: items.length },
+      ));
+    } catch (error) {
+      pushToast('error', readError(
+        error,
+        t('admin.storage.providers.initializeError', 'Storage providers could not be initialized.'),
+        t,
+      ));
+    }
+  }
+
   async function submitDialog(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!dialogKind) return;
@@ -540,6 +649,140 @@ function StorageAdminSections({ sectionId }: StorageAdminProps = {}) {
     } finally {
       setSaving(false);
     }
+  }
+
+  /**
+   * Drive-owned storage-center pages (overview / provider kinds / business
+   * bindings) are mounted as-is.
+   *
+   * They already carry the authoritative behaviour — overview aggregates real
+   * usage and binding health, the kinds page owns the enable/disable switch that
+   * gates provider creation, and the bindings page owns the
+   * space → space-type → tenant routing model. Re-implementing any of them in
+   * Cloud Router is how the console drifted from drive in the first place, so
+   * the host only supplies chrome, i18n bridge, and cross-section handoffs.
+   */
+  if (activeSectionId === 'overview' || activeSectionId === 'kinds' || activeSectionId === 'bindings') {
+    const title = activeSectionId === 'overview'
+      ? t('admin.storage.overview.title', 'Storage Overview')
+      : activeSectionId === 'kinds'
+        ? t('admin.storage.kinds.title', 'Storage Provider Kinds')
+        : t('admin.storage.bindings.title', 'Business Storage Bindings');
+    const description = activeSectionId === 'overview'
+      ? t('admin.storage.overview.desc', 'Capacity, provider distribution, binding health, and usage trend for this tenant.')
+      : activeSectionId === 'kinds'
+        ? t('admin.storage.kinds.desc', 'Enable or disable a built-in storage vendor. A disabled kind cannot create new provider configurations.')
+        : t(
+          'admin.storage.bindings.desc',
+          'Which provider and bucket serve each business. Resolution order is space, then space type (personal, team, knowledge base, AI, git, deployment, app upload, IM, RTC, notary, website), then the tenant default.',
+        );
+    return (
+      <div className="flex h-full min-h-0 flex-col gap-3">
+        <header className="shrink-0 px-1">
+          <h1 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{description}</p>
+        </header>
+        <div className="min-h-0 flex-1 overflow-hidden">
+          {activeSectionId === 'overview' ? (
+            <StorageOverviewAdminPage
+              adminStorageSdkClient={getDriveAdminStorageSdkClient()}
+              getSession={getDriveAdminSession()}
+            />
+          ) : activeSectionId === 'kinds' ? (
+            <StorageProviderKindsAdminPage
+              adminStorageSdkClient={getDriveAdminStorageSdkClient()}
+              getSession={getDriveAdminSession()}
+            />
+          ) : (
+            <StorageBindingsAdminPage
+              adminStorageSdkClient={getDriveAdminStorageSdkClient()}
+              getSession={getDriveAdminSession()}
+              onManageProviders={onSectionChange ? () => onSectionChange('providers') : undefined}
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  /**
+   * Bucket management: provider account bucket inventory, switch the configured
+   * bucket, create/verify/delete it, and browse its objects. The data layer is
+   * drive's admin-storage service (same calls as drive's own bucket page), so
+   * the two consoles cannot disagree about what a bucket is or which one is
+   * configured.
+   */
+  if (activeSectionId === 'buckets') {
+    return (
+      <div className="flex h-full min-h-0 flex-col gap-3">
+        <header className="shrink-0 px-1">
+          <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
+            {t('admin.storage.bucketsAdmin.title', 'Bucket Management')}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            {t(
+              'admin.storage.bucketsAdmin.desc',
+              'Buckets visible to the selected provider account. Switch the configured bucket, create or verify it on the vendor, and manage its objects.',
+            )}
+          </p>
+        </header>
+        <div className="min-h-0 flex-1 overflow-hidden">
+          <BucketManagerSection
+            service={getStorageProviderAdminService()}
+            initialProviderId={bucketProviderId}
+            onManageProviders={onSectionChange ? () => onSectionChange('providers') : undefined}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (activeSectionId === 'spaces' || activeSectionId === 'files') {
+    /**
+     * Space and file governance is owned by sdkwork-drive's admin pages, not by
+     * a second Cloud Router read model. Rendering the drive page here keeps the
+     * filters, pagination, and permission semantics identical to drive's own
+     * admin console while the storage center supplies the host chrome, SDK
+     * transport, and the spaces -> files handoff.
+     */
+    const isSpaces = activeSectionId === 'spaces';
+    return (
+      <div className="flex h-full min-h-0 flex-col gap-3">
+        <header className="shrink-0 px-1">
+          <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
+            {isSpaces
+              ? t('admin.storage.spaces.title', 'Space Management')
+              : t('admin.storage.files.title', 'File Management')}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            {isSpaces
+              ? t('admin.storage.spaces.desc', 'Tenant-scoped Drive spaces, ownership, and lifecycle state. Open a space to inspect its files.')
+              : t('admin.storage.files.desc', 'Tenant-scoped Drive files with server-side filters, metadata, ownership, and lifecycle state.')}
+          </p>
+        </header>
+        <div className="min-h-0 flex-1 overflow-hidden">
+          {isSpaces ? (
+            <SpacesAdminPage
+              backendSdkClient={getDriveAdminBackendSdkClient()}
+              getSession={getDriveAdminSession()}
+              onOpenFiles={onSectionChange
+                ? (space) => {
+                  setFilesSpaceId(space.id);
+                  onSectionChange('files');
+                }
+                : undefined}
+            />
+          ) : (
+            <FilesAdminPage
+              key={filesSpaceId ?? 'all-files'}
+              backendSdkClient={getDriveAdminBackendSdkClient()}
+              getSession={getDriveAdminSession()}
+              initialSpaceId={filesSpaceId}
+            />
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -927,7 +1170,6 @@ function StorageDialog({
             {' '}{t('admin.storage.form.requiredLegend', 'Required fields are marked with an asterisk.')}
           </div>
           <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto p-5 md:grid-cols-2">
-            {kind === 'defaultBuckets' ? <DefaultBucketFields form={form} set={set} /> : null}
             {kind === 'quotas' ? <QuotaFields form={form} set={set} /> : null}
             {kind === 'reconciliation' ? <ReconciliationFields form={form} set={set} /> : null}
             {kind === 'garbageCollection' ? <GarbageCollectionFields form={form} set={set} /> : null}
@@ -988,31 +1230,6 @@ function useStorageSelectOptions<T>(
     return items.map(mapItem);
   }, [items, labels.empty, labels.error, labels.loading, mapItem, status]);
   return { items, options, status };
-}
-
-function DefaultBucketFields({ form, set }: { form: StorageFormState; set: FieldSetter }) {
-  const { t } = useTranslation();
-  const bucketSelect = useStorageSelectOptions(
-    () => backendStorageProvidersList().then((items) => ({ items })),
-    (provider) => ({ value: provider.id, label: `${provider.displayName} · ${provider.bucket}` }),
-    {
-      loading: t('admin.storage.form.bucketLoading', 'Loading buckets...'),
-      empty: t('admin.storage.form.bucketEmpty', 'No buckets available yet. Create one first.'),
-      error: t('admin.storage.form.bucketError', 'Buckets could not be loaded.'),
-    },
-  );
-  return <>
-    <SelectField label={t('admin.storage.form.logicalScope', 'Logical scope')} value={form.logicalScope} onChange={(value) => set('logicalScope', value as StorageFormState['logicalScope'])} options={storageSelectOptions(t, 'logicalScope', ['tenant_private', 'tenant_public_asset', 'system_temp', 'system_variant', 'system_archive', 'system_quarantine', 'migration_import'])} />
-    <SelectField
-      disabled={bucketSelect.status !== 'ready' || bucketSelect.options.length === 0}
-      label={t('admin.storage.form.bucketId', 'Bucket ID')}
-      options={bucketSelect.options}
-      required
-      value={form.bucketId}
-      onChange={(value) => set('bucketId', value)}
-    />
-    <div className="md:col-span-2"><TextField label={t('admin.storage.form.changeReason', 'Change reason')} required value={form.reason} onChange={(value) => set('reason', value)} /></div>
-  </>;
 }
 
 function QuotaFields({ form, set }: { form: StorageFormState; set: FieldSetter }) {
@@ -1101,10 +1318,6 @@ async function submitStorageForm(
   kind: StorageDialogKind,
   form: StorageFormState,
 ): Promise<unknown> {
-  if (kind === 'defaultBuckets') {
-    const body: StorageDefaultBucketUpdateInput = { bucketId: form.bucketId.trim(), reason: form.reason.trim() };
-    return backendStorageDefaultBucketUpdate(form.logicalScope, body);
-  }
   if (kind === 'quotas') {
     return backendStorageQuotaCreate({
       scopeType: form.scopeType, scopeId: form.scopeId.trim(), quotaLimitBytes: form.quotaLimitBytes.trim(),
@@ -1135,7 +1348,7 @@ function createAction(label: string, onClick: () => void) {
 
 function dialogTitle(kind: StorageDialogKind, t: ReturnType<typeof useTranslation>['t']): string {
   const titles: Record<StorageDialogKind, string> = {
-    defaultBuckets: t('admin.storage.defaultBuckets.set', 'Set default bucket'), quotas: t('admin.storage.quotas.add', 'Add quota'),
+    quotas: t('admin.storage.quotas.add', 'Add quota'),
     reconciliation: t('admin.storage.reconciliation.run', 'Start reconciliation'), garbageCollection: t('admin.storage.gc.add', 'Create garbage collection job'),
   };
   return titles[kind];

@@ -7,6 +7,7 @@
  */
 export {
   ApplicationManagementPage,
+  CloudRouterApplicationCenterPage,
   CloudRouterOrganizationApplicationsPage,
   CloudRouterTenantApplicationsPage,
 } from "./pages/ApplicationManagementPage";

@@ -141,12 +141,22 @@ const MOUNTED_APP_CAPABILITIES: &[MountedAppCapability] = &[
         platform_gateway_mounts_separately: false,
         included_in_cloud_assembly_manifest: false,
     },
+    // Memory is mounted in-process by this assembly
+    // (`memory_runtime::merge_federated_memory_app_router`), which also starts
+    // the dependency-owned Memory background plane, so the cloud assembly is
+    // its route owner. The platform gateway does NOT mount a Memory module of
+    // its own: the Memory whole-module factories republish the open-api roots
+    // (`/v1`) and the `/healthz`-`/readyz` process probes, which collide with
+    // the Cloud Router open surface and the gateway host routes. Excluding the
+    // manifest here left every `/app/v3/api/memory*` call (the console Memory
+    // space list) answering `404 route-not-in-manifest` in the cloud profile
+    // even though the capability data plane was running.
     MountedAppCapability {
         workspace: "sdkwork-memory",
         owner: "sdkwork-memory",
         manifest: sdkwork_api_memory_assembly::app_api_route_manifest,
         platform_gateway_mounts_separately: false,
-        included_in_cloud_assembly_manifest: false,
+        included_in_cloud_assembly_manifest: true,
     },
 ];
 
@@ -447,16 +457,35 @@ mod tests {
         );
         assert!(
             manifest
-                .match_route("GET", "/app/v3/api/memory/spaces")
-                .is_none(),
-            "cloud assembly manifest must not advertise external memory app routes"
-        );
-        assert!(
-            manifest
                 .match_route("GET", "/app/v3/api/ai/model_vendors")
                 .is_some(),
             "cloud assembly manifest must keep in-process models routes"
         );
+    }
+
+    #[test]
+    fn platform_gateway_manifest_includes_federated_memory_routes() {
+        // Regression: the cloud assembly merges the Memory app router in-process
+        // and starts its background plane, but the composed manifest omitted
+        // `sdkwork-memory`. The platform gateway's Web Framework therefore
+        // answered 404 `route-not-in-manifest` for `GET /app/v3/api/memory/spaces`
+        // and the console Memory space list failed against production.
+        let manifest = super::cloud_router_app_composed_route_manifest_for_platform_gateway();
+        for (method, path) in [
+            ("GET", "/app/v3/api/memory/spaces"),
+            ("POST", "/app/v3/api/memory/spaces"),
+            ("GET", "/app/v3/api/memory/memories"),
+            ("GET", "/app/v3/api/memory/learning_settings"),
+        ] {
+            let route = manifest.match_route(method, path).unwrap_or_else(|| {
+                panic!("{method} {path} must be registered by the federated memory mount")
+            });
+            assert_eq!(
+                RouteAuth::DualToken,
+                route.auth,
+                "{method} {path} must inherit dual-token auth from the memory app manifest"
+            );
+        }
     }
 
     #[test]
