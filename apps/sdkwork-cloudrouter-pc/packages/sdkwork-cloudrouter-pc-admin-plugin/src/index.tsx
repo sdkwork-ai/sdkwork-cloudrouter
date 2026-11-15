@@ -1,6 +1,9 @@
 import { PluginsPage as PluginsBlock, PluginCategoriesPage as PluginCategoriesBlock } from '@sdkwork/plugins-pc-admin';
 import { configurePluginsAdminRuntime } from '@sdkwork/plugins-pc-admin/pluginsAdminService';
-import { getPluginsBackendSdkClient } from '@sdkwork/cloudroutes-pc-commons/runtime';
+import {
+  getPluginsBackendSdkClient,
+  getSdkworkDriveAppSdkClient,
+} from '@sdkwork/cloudroutes-pc-commons/runtime';
 
 /**
  * Binds the host runtime once, as a side effect of loading this chunk.
@@ -18,6 +21,7 @@ import { getPluginsBackendSdkClient } from '@sdkwork/cloudroutes-pc-commons/runt
  */
 configurePluginsAdminRuntime({
   getBackendSdkClient: getPluginsBackendSdkClient,
+  getDriveSdkClient: getSdkworkDriveAppSdkClient,
 });
 
 export { PluginsBlock as PluginsAdminPage, PluginCategoriesBlock as PluginCategoriesAdminPage };
