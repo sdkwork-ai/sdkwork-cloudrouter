@@ -4,6 +4,7 @@ import {
   BadgePercent,
   Bell,
   BookOpen,
+  Boxes,
   ChevronDown,
   ChevronUp,
   CloudCog,
@@ -47,6 +48,7 @@ import { SectionDivider, ToggleSwitch } from './SiteSettingsControls';
  */
 const MODULE_ICONS: Record<AdminModuleId, LucideIcon> = {
   home: Home,
+  appCenter: Boxes,
   iam: ShieldCheck,
   rtc: Video,
   tradeCenter: ShoppingBag,
