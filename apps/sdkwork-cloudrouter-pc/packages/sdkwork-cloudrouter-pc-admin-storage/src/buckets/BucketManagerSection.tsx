@@ -352,7 +352,7 @@ export function BucketManagerSection({
                 disabled={disabled}
                 onChange={(event) => setAdoptAsDefault(event.target.checked)}
               />
-              {t('admin.storage.bucketsAdmin.initializeAdopt', 'Route all business to this provider')}
+              {t('admin.storage.bucketsAdmin.initializeAdopt', 'Route default business to this provider')}
             </label>
             <button
               className={PRIMARY_BUTTON_CLASS}
