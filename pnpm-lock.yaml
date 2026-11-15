@@ -2458,6 +2458,9 @@ importers:
       '@sdkwork/iam-contracts':
         specifier: workspace:*
         version: link:../sdkwork-iam-common/packages/sdkwork-iam-contracts
+      '@sdkwork/iam-credential-entry':
+        specifier: workspace:*
+        version: link:../sdkwork-iam-common/packages/sdkwork-iam-credential-entry
       '@sdkwork/iam-h5-account-binding':
         specifier: workspace:*
         version: link:packages/sdkwork-iam-h5-account-binding
