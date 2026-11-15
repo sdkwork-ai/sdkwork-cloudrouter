@@ -9,6 +9,10 @@ import {
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { hasPermissionInScope } from '@sdkwork/iam-contracts';
 import type { SdkworkIamService } from '@sdkwork/iam-service';
+// The deploy-application mini program inventory is owned by the application
+// center: every Deploy app already records the IAM mini program account it
+// links per environment. The custom-menu editor only needs that projection.
+import { loadDeployedMiniProgramApps } from '@sdkwork/cloudrouter-pc-admin-application/deploy-mini-program-apps';
 
 import { getCloudRouterIamAdminService } from './iamService';
 
@@ -440,6 +444,7 @@ const LazyIamOauthOfficialAccountsAdmin = lazy(async () => {
         <SdkworkIamOauthOfficialAccountsPage
           controller={controller}
           driveUploadImageService={driveUploadImageService}
+          loadDeployedMiniProgramApps={loadDeployedMiniProgramApps}
         />
       );
     },
@@ -460,6 +465,7 @@ const LazyIamOauthOfficialAccountCustomMenuAdmin = lazy(async () => {
       return (
         <SdkworkIamOauthOfficialAccountCustomMenuPage
           controller={controller}
+          loadDeployedMiniProgramApps={loadDeployedMiniProgramApps}
           onClose={() => navigate('/admin/iam/oauth/official-accounts')}
           resourceAccountId={resourceAccountId}
         />

@@ -165,6 +165,28 @@ is the migration source.
 
 Errors block saving; warnings are shown but can be saved.
 
+### Deployed mini program inventory for the official-account menu editor
+
+`loadDeployedMiniProgramApps` (also exported from the
+`./deploy-mini-program-apps` subpath) projects the Deploy inventory into the rows
+the IAM custom-menu editor offers when an operator configures the WeChat "open
+mini program" action:
+
+- Only `WECHAT_MINIPROGRAM` applications are offered, and `ARCHIVED` ones are
+  skipped — a WeChat official-account menu cannot open another platform's app.
+- Each row carries the AppID of the mini program account linked in
+  `metadata.integrations.environments.<env>.miniProgram`, one row per distinct
+  AppID so the environment is visible when an application links different
+  accounts per environment.
+- An application that links no account still appears, unselectable, so the
+  operator can see it is deployed and why it cannot be chosen.
+- The projection (`toDeployedMiniProgramApps`) is pure and tested without an SDK
+  client; `loadDeployedMiniProgramApps` only adds the paged `app.list` read.
+
+Cloud Router's admin and console hosts inject the loader into
+`@sdkwork/iam-pc-admin-oauth`'s custom-menu page, which fills the AppID field
+from the chosen row instead of asking for a retype.
+
 ## Access tokens
 
 Every row exposes a `访问令牌` action. It opens a drawer that issues a short-lived delegated access credential for the row through `iam.accessCredentials.create` (permission `iam.access_credentials.create`) and shows the token masked with reveal/copy, expiry, application id, tenant-application id, and session id. Tokens are re-issuable from the drawer and never cached in the page.

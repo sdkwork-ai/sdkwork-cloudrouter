@@ -85,6 +85,11 @@ export {
   getApplicationIntegrationService,
   resetApplicationIntegrationService,
 } from "./services/application-integrations";
+export {
+  loadDeployedMiniProgramApps,
+  toDeployedMiniProgramApps,
+} from "./services/deployed-mini-program-apps";
+export type { DeployedMiniProgramApp } from "./services/deployed-mini-program-apps";
 export type {
   ApplicationChannelAccountBinding,
   ApplicationChannelAccountOption,

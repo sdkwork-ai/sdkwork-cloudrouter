@@ -38,6 +38,11 @@
       "types": "./src/index.tsx",
       "import": "./src/index.tsx",
       "default": "./src/index.tsx"
+    },
+    "./deploy-mini-program-apps": {
+      "types": "./src/services/deployed-mini-program-apps.ts",
+      "import": "./src/services/deployed-mini-program-apps.ts",
+      "default": "./src/services/deployed-mini-program-apps.ts"
     }
   }
 }

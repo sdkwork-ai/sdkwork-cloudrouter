@@ -6,6 +6,10 @@ import {
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { createSdkworkIamService, type SdkworkIamService } from '@sdkwork/iam-service';
 import type { SdkworkIamOauthAdminController } from '@sdkwork/iam-pc-admin-oauth';
+// The console edits the same official-account menu; the deployed mini program
+// inventory projection is shared with the admin surface so both hosts fill the
+// menu's AppID from the application center instead of asking for a retype.
+import { loadDeployedMiniProgramApps } from '@sdkwork/cloudrouter-pc-admin-application/deploy-mini-program-apps';
 
 /**
  * Console surface host for the official account custom menu manager.
@@ -45,6 +49,7 @@ const ConsoleIamOauthMenuPage = lazy(async () => {
       return (
         <SdkworkIamOauthOfficialAccountCustomMenuPage
           controller={controller}
+          loadDeployedMiniProgramApps={loadDeployedMiniProgramApps}
           onClose={() => navigate('/console')}
           resourceAccountId={resourceAccountId}
         />

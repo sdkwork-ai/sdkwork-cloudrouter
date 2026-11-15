@@ -2660,6 +2660,9 @@ importers:
       '@sdkwork/ui-pc-react':
         specifier: workspace:*
         version: link:../../../../../sdkwork-ui/sdkwork-ui-pc-react
+      lucide-react:
+        specifier: ^1.7.0
+        version: 1.7.0(react@19.2.8)
       sdkwork-drive-pc-upload-image:
         specifier: workspace:*
         version: link:../../../../../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-upload-image
@@ -6492,6 +6495,9 @@ importers:
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-iam:
     dependencies:
+      '@sdkwork/cloudrouter-pc-admin-application':
+        specifier: workspace:*
+        version: link:../sdkwork-cloudrouter-pc-admin-application
       '@sdkwork/cloudroutes-pc-commons':
         specifier: workspace:*
         version: link:../sdkwork-cloudroutes-pc-commons
