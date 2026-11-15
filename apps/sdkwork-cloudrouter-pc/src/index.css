@@ -15,6 +15,7 @@
    entry fails silently, emitting a utility only when some other scanned source
    happens to use the same class. */
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-official-accounts/src";
+@source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-mini-program/src";
 @source "../../../../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-upload-image/src";
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-organization/src";
 @source "../../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-permission/src";
