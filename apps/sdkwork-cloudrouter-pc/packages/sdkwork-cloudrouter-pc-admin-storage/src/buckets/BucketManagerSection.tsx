@@ -182,6 +182,29 @@ export function BucketManagerSection({
 
   async function useBucket(bucket: string) {
     if (!selectedProvider) return;
+    const target = buckets.find((item) => item.bucket === bucket);
+    // A provider's signing region is part of the access path. Selecting a
+    // bucket from another region would make both the new bucket and every
+    // existing object (whose stored locator lacks a region) unreachable.
+    if (
+      target?.region
+      && selectedProvider.region
+      && target.region !== selectedProvider.region
+    ) {
+      setNotice({
+        kind: 'error',
+        text: t(
+          'admin.storage.bucketsAdmin.bucketRegionMismatch',
+          'Bucket "{{bucket}}" is in {{bucketRegion}}, but this provider is configured for {{providerRegion}}. Use a provider configuration in the same region, or migrate the existing objects before switching.',
+          {
+            bucket,
+            bucketRegion: target.region,
+            providerRegion: selectedProvider.region,
+          },
+        ),
+      });
+      return;
+    }
     setBusy('use');
     setNotice(null);
     try {

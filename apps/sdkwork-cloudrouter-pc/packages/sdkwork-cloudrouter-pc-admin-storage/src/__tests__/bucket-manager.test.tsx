@@ -113,6 +113,7 @@ function service(): StorageProviderAdminService {
 
 describe('BucketManagerSection', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     hoisted.service.listAllProviders.mockResolvedValue(providers);
     hoisted.service.listBuckets.mockResolvedValue(buckets);
     hoisted.service.getDefaultBinding.mockResolvedValue({
@@ -268,6 +269,37 @@ describe('BucketManagerSection', () => {
     cleanup();
   });
 
+  it('refuses to attach a bucket from another signing region', async () => {
+    hoisted.service.listBuckets.mockResolvedValue([
+      {
+        bucket: 'sdkwork-drive-cos-1250000000',
+        configured: true,
+        exists: true,
+        region: 'ap-guangzhou',
+      },
+      {
+        bucket: 'sdkwork-drive-cos-shanghai',
+        configured: false,
+        exists: true,
+        region: 'ap-shanghai',
+      },
+    ]);
+
+    render(
+      <BucketManagerSection
+        service={service()}
+        renderObjectBrowser={() => <div data-testid="object-browser" />}
+      />,
+    );
+
+    fireEvent.click(await screen.findByText('Use this bucket'));
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getAllByText(/ap-shanghai/).length).toBeGreaterThan(0);
+    expect(hoisted.service.updateProvider).not.toHaveBeenCalled();
+    cleanup();
+  });
+
   it('keeps the configured bucket visible when the vendor inventory fails', async () => {
     hoisted.service.listBuckets.mockRejectedValue(new Error('endpoint offline'));
 
@@ -280,7 +312,7 @@ describe('BucketManagerSection', () => {
 
     expect(await screen.findByText('Pending initialization')).toBeTruthy();
     expect(screen.getAllByText('sdkwork-drive-cos-1250000000').length).toBeGreaterThan(0);
-    expect(screen.getByRole('alert')).toBeTruthy();
+    expect(screen.getAllByRole('alert').length).toBeGreaterThan(0);
     cleanup();
   });
 });
