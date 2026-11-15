@@ -565,6 +565,7 @@ impl AdminModelStore for TestAdminModelStore {
                 description: command.description,
                 supported_protocols: "[]".to_owned(),
                 client_api_compatibility: "{}".to_owned(),
+                model_count: 0,
                 deleted_at: None,
             };
             self.vendors.lock().unwrap().push(item.clone());
