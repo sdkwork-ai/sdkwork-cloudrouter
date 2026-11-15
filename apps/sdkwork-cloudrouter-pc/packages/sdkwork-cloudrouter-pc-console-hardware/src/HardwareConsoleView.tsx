@@ -127,6 +127,7 @@ export function HardwareConsoleView({ service }: HardwareConsoleViewProps = {}) 
       register: t('console.hardware.list.register'),
       registerDescription: t('console.hardware.register.description'),
       registerTitle: t('console.hardware.register.title'),
+      registered: t('console.hardware.common.registered'),
       renameLabel: t('console.hardware.device.renameLabel'),
       renameSave: t('console.hardware.device.renameSave'),
       renamed: t('console.hardware.device.renamed'),
