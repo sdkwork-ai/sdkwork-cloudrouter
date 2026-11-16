@@ -22,6 +22,11 @@
       "types": "./src/routes.ts",
       "import": "./src/routes.ts",
       "default": "./src/routes.ts"
+    },
+    "./capabilityToken": {
+      "types": "./src/capabilityToken.ts",
+      "import": "./src/capabilityToken.ts",
+      "default": "./src/capabilityToken.ts"
     }
   },
   "scripts": {

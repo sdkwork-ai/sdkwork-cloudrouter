@@ -29,6 +29,10 @@ function urlSafeSecret(bytes = 48) {
   return randomBytes(bytes).toString("base64url");
 }
 
+function hexKey(bytes = 32) {
+  return randomBytes(bytes).toString("hex");
+}
+
 function keyRing(activeKeyId) {
   return JSON.stringify({
     activeKeyId,
@@ -44,6 +48,10 @@ const generatedSecrets = {
   CLOUDROUTER_INTERNAL_GATEWAY_SIGNING_SECRET: urlSafeSecret(48),
   CLOUDROUTER_TRUSTED_SUBJECT_SECRET: urlSafeSecret(48),
   CLOUDROUTER_APP_SESSION_SECRET: urlSafeSecret(48),
+  // Root key for anonymous-cashier capability tokens. The payment center stores
+  // only the per-tenant key epoch; this root secret stays in the deployment env
+  // and must never be committed or rotated together with the PSP master key.
+  CLOUDROUTER_COMMERCE_CASHIER_TOKEN_SECRET: hexKey(32),
 };
 
 const existingContent = existsSync(envPath) ? readFileSync(envPath, "utf8") : "";

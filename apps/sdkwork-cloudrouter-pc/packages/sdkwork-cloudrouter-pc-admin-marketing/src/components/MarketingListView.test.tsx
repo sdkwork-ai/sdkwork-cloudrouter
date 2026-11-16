@@ -187,6 +187,68 @@ describe('MarketingListView cell rendering', () => {
   });
 });
 
+describe('MarketingListView bottom pagination', () => {
+  it('renders the total, page controls, and page jump inside one footer row', async () => {
+    render(<MarketingListView title="Code Query" load={loadCodes} columns={columns} />);
+
+    expect(await screen.findByText(FULL_CODE)).toBeInTheDocument();
+
+    const footer = document.querySelector('[data-admin-table-shell-footer]');
+    expect(footer).not.toBeNull();
+    // 回归：跳页控件曾是分页条的兄弟节点，导致底部出现两行分页。
+    expect(footer?.children).toHaveLength(1);
+
+    const [row] = Array.from(footer?.children ?? []) as HTMLElement[];
+    expect(row).toHaveClass('flex');
+    expect(row).toHaveTextContent('3 rows in total');
+    expect(row).toHaveTextContent('Showing');
+    expect(row).toHaveTextContent('Rows');
+    expect(row).toHaveTextContent('Page 1 / 1');
+    expect(row).toHaveTextContent('Go to page');
+    expect(row.querySelector('form')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Go' })).toBeInTheDocument();
+  });
+
+  it('goes to the requested page through the inline page-jump control', async () => {
+    const loadSpy = vi.fn(loadCodes);
+    const multiPageInfo = { page: '1', pageSize: '20', totalItems: '100', totalPages: '5', hasMore: true };
+
+    loadSpy.mockImplementation((params: MarketingLoadParams): Promise<MarketingPageResult<CodeRow>> =>
+      Promise.resolve({
+        items: rows,
+        pageInfo: { ...multiPageInfo, page: String(params?.page ?? 1) },
+      }));
+
+    render(<MarketingListView title="Code Query" load={loadSpy} columns={columns} />);
+
+    const pageInput = await screen.findByLabelText('Go to page');
+    fireEvent.change(pageInput, { target: { value: '3' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Go' }));
+
+    await waitFor(() =>
+      expect(loadSpy.mock.calls.some(([params]) => (params as MarketingLoadParams).page === 3)).toBe(true));
+  });
+
+  it('keeps the page-jump validation message inside the same row', async () => {
+    const loadSpy = vi.fn(loadCodes);
+    loadSpy.mockResolvedValue({
+      items: rows,
+      pageInfo: { page: '1', pageSize: '20', totalItems: '100', totalPages: '5', hasMore: true },
+    });
+
+    render(<MarketingListView title="Code Query" load={loadSpy} columns={columns} />);
+
+    const pageInput = await screen.findByLabelText('Go to page');
+    fireEvent.change(pageInput, { target: { value: '9' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Go' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Enter a page between 1 and 5');
+    expect(alert.closest('form')).not.toBeNull();
+    expect(document.querySelectorAll('[data-admin-table-shell-footer] > *')).toHaveLength(1);
+  });
+});
+
 describe('MarketingListView search control', () => {
   it('renders the search input by default', async () => {
     render(<MarketingListView title="Code Query" load={loadCodes} columns={columns} />);

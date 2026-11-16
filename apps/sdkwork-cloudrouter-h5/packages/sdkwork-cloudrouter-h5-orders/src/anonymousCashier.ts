@@ -8,24 +8,10 @@ import type { PaymentEnvironment } from '@sdkwork/order-mobile-react-orders';
 
 import { requireCloudRouterOrderAppClient } from './runtime.js';
 
-/**
- * Wire prefix of a cashier capability token (`v1.<payload>.<signature>`).
- *
- * The token's presence in the deep link is the rollout switch: a legacy
- * `/cashier/{orderId}` link stays on the login-required cashier, while a token
- * link opens the anonymous cashier. Anything that is not a well-formed token must
- * never be treated as one — the legacy branch keeps its session gate.
- */
-export const CASHIER_TOKEN_PREFIX = 'v1.';
-
-/** True when `value` has the capability-token wire shape. */
-export function isCashierCapabilityToken(value: string | undefined | null): boolean {
-  if (!value) return false;
-  const trimmed = value.trim();
-  if (!trimmed.startsWith(CASHIER_TOKEN_PREFIX)) return false;
-  const parts = trimmed.split('.');
-  return parts.length === 3 && parts.every((part) => part.length > 0);
-}
+export {
+  CASHIER_TOKEN_PREFIX,
+  isCashierCapabilityToken,
+} from './capabilityToken.js';
 
 /**
  * Anonymous wire methods the cashier may request.
@@ -94,6 +80,31 @@ export function resolveAnonymousMethodOptions(
 export async function loadAnonymousCashier(token: string): Promise<CashierOrder> {
   const client: SdkworkAppClient = requireCloudRouterOrderAppClient();
   return client.orderCashier.cashier.retrieve(token);
+}
+
+/**
+ * Exchanges a legacy token-less cashier link for a capability token.
+ *
+ * Older QR codes carry `{base}/cashier/{orderId}?scene=..&outTradeNo=..`. The
+ * order service verifies that the trade number matches the order (or its latest
+ * payment attempt) and mints a short-lived token, so an already-issued link
+ * opens the no-login cashier instead of the login wall.
+ *
+ * @param orderId - order primary key from the legacy path segment.
+ * @param outTradeNo - merchant trade number from the legacy query string.
+ * @returns the signed capability token.
+ */
+export async function resolveLegacyCashierToken(
+  orderId: string,
+  outTradeNo: string,
+): Promise<string> {
+  const client: SdkworkAppClient = requireCloudRouterOrderAppClient();
+  const link = await client.orderCashier.cashier.links.create({ orderId, outTradeNo });
+  const token = link?.token?.trim();
+  if (!token) {
+    throw new Error('Cashier link exchange returned no capability token.');
+  }
+  return token;
 }
 
 /** Creates a payment for the anonymous cashier. */

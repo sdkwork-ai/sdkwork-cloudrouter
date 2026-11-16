@@ -47,6 +47,13 @@ const TECHNICAL_TOKENS = new Set([
   'stdio',
   'streamable_http',
   'sdkwork-drive',
+  // Agent implementation wire values (`ai_agent.implementation_type`): the
+  // console offers them as selectable options and stores them verbatim, so
+  // they are identifiers rather than copy awaiting translation.
+  'sdkwork-native',
+  'rig-rust',
+  'openai-agents',
+  'custom',
 ]);
 
 /** 承载用户可见文案的 JSX 属性 / 对象属性名。 */

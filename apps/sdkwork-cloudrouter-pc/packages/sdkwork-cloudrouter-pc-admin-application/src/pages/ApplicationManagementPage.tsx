@@ -545,7 +545,10 @@ export function ApplicationManagementPage({
             getRowId={(item) => `${item.groupId}:${item.id}`}
             loading={activeState?.status === "loading"}
             rowActions={(item) => (
-              <div className="flex flex-wrap items-center justify-end gap-1.5">
+              <div
+                className="flex min-w-max flex-nowrap items-center justify-end gap-1.5 whitespace-nowrap"
+                data-application-row-actions
+              >
                 <Button onClick={() => openAccessToken(item)} size="sm" type="button" variant="outline">
                   <KeyRound className="h-3.5 w-3.5" />
                   {messages.accessToken.action}

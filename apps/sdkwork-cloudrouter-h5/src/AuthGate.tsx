@@ -71,9 +71,11 @@ export interface AppAuthGateProps {
 
 /**
  * Session gate for stacked surfaces that render outside the console shell
- * (order center, order detail, and the unified cashier). It renders the shared
- * IAM login surface until a session exists; the runtime's session-commit bridge
- * flips `authenticated` and the gate then renders the deep-linked child.
+ * (order center, order detail, and the token-less cashier fallback). It renders
+ * the shared IAM login surface until a session exists; the runtime's
+ * session-commit bridge flips `authenticated` and the gate then renders the
+ * deep-linked child. Cashier links that carry a capability token (or a legacy
+ * pair that can be exchanged for one) never reach this gate.
  */
 export function AppAuthGate({ children }: AppAuthGateProps) {
   const runtime = useConsoleRuntime();

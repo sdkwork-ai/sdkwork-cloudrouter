@@ -226,4 +226,17 @@ describe("app center category management", () => {
     expect(screen.getByText("应用分类管理")).toBeTruthy();
     expect(document.querySelector("[data-application-group]")).toBeNull();
   });
+
+  it("keeps every category row action on one line", async () => {
+    const service = createCategoryService();
+    renderPage(service);
+
+    await openCategories();
+    await findCategoryName("AI 助手");
+    const actions = document.querySelector("[data-application-row-actions]");
+    expect(actions).not.toBeNull();
+    expect(actions?.className).toContain("flex-nowrap");
+    expect(actions?.className).toContain("min-w-max");
+    expect(within(actions as HTMLElement).getAllByRole("button")).toHaveLength(3);
+  });
 });

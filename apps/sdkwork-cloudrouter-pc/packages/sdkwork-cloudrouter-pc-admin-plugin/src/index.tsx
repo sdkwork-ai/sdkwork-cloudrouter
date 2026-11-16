@@ -3,6 +3,7 @@ import { configurePluginsAdminRuntime } from '@sdkwork/plugins-pc-admin/pluginsA
 import {
   getPluginsBackendSdkClient,
   getSdkworkDriveAppSdkClient,
+  readPortalRoleCodes,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 
 /**
@@ -24,4 +25,16 @@ configurePluginsAdminRuntime({
   getDriveSdkClient: getSdkworkDriveAppSdkClient,
 });
 
-export { PluginsBlock as PluginsAdminPage, PluginCategoriesBlock as PluginCategoriesAdminPage };
+/**
+ * Cloud Router admin-console entry for the plugin management page
+ * (`/admin/plugin`).
+ *
+ * The page owns its own catalog layout, category filter and role-scope switch;
+ * this adapter only supplies the operator's IAM role codes so "my roles" means
+ * the signed-in operator rather than a hard-coded list.
+ */
+export function PluginsAdminPage() {
+  return <PluginsBlock roleCodes={readPortalRoleCodes()} />;
+}
+
+export { PluginCategoriesBlock as PluginCategoriesAdminPage };

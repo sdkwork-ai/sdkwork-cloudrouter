@@ -215,6 +215,10 @@ PaymentIntent）；凭据为测试格式时 PSP 会返回其真实认证错误�
 - 用途：生成订单收银台深链与二维码内容
   （`{h5BaseUrl}/cashier/{orderId}?scene={scene}&outTradeNo={outTradeNo}`），并在支付宝
   WAP/PC 等跳转类支付缺少显式 `return_url` 时作为默认回跳地址。
+- 该旧链接不要求重新出码：配置 `SDKWORK_COMMERCE_CASHIER_TOKEN_SECRET` 后，H5 入口会
+  调用 `POST /app/v3/api/cashier/links` 用 `orderId + outTradeNo` 换取令牌，再渲染免登录
+  收银台；换取失败才回落登录态。新生成的链接则直接携带令牌
+  （`{h5BaseUrl}/cashier/{token}`）。
 - 保存后立即生效：新创建的支付意图 / 一分钱测试二维码使用该域名；已生成的二维码内容不变。
 - 解析顺序：本机构配置行 → 平台 `0` 配置行 → 部署环境
   `SDKWORK_COMMERCE_CASHIER_BASE_URL` → 平台默认 `https://platform.sdkwork.com`。
@@ -248,6 +252,22 @@ PaymentIntent）；凭据为测试格式时 PSP 会返回其真实认证错误�
 | 二维码使用配置域名 | 支付方式 → 一分钱测试 | 对话框显示按配置生成的 H5 收银台链接 |
 | 回调域名已配置 | 域名设置 → 回调域名 | 列表存在默认启用域名，回调地址可复制 |
 | PSP 回调可达 | PSP 后台 | 回调地址指向订单网关回调路径 |
+
+### 5.4 收银台密钥（免登录令牌）
+
+- 位置：支付中心 → **支付设置 → 收银台密钥**（域名设置页下方）。
+- 显示：当前租户密钥 **epoch**、生效范围（当前租户 / 平台兜底 / 安装默认）、最近轮换
+  时间与操作人。**不显示密钥原文**：根密钥只存在于部署环境。
+- 一键刷新：租户 epoch + 1。新令牌立即使用新 epoch；旧 epoch 已签发的链接在 15 分钟
+  有效期内仍可校验，因此不需要重启、宽限表或密钥传播。
+- 根密钥 `SDKWORK_COMMERCE_CASHIER_TOKEN_SECRET`（≥32 字节）由安装脚本
+  `node scripts/generate-dev-secrets.mjs` 生成到部署 `.env`；生产应使用独立密钥，**禁止
+  复用支付渠道凭据主密钥**。
+- 数据库：`commerce_payment_cashier_token_setting`（每租户一行，只存公开 epoch 与轮换
+  元数据；无行时回退平台 `0` 行，再回退 epoch 1）。
+- 管理 API：`GET|POST /backend/v3/api/payments/cashier_token_settings`
+  （`cashierTokenSettings.retrieve` / `cashierTokenSettings.rotate`），权限复用
+  `commerce.payments.domain_settings.read|update`。
 
 ## 6. 支付通知（notify）标准
 

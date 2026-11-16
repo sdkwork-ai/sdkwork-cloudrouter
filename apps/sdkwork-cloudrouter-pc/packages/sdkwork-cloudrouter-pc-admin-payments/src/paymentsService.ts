@@ -6,6 +6,7 @@ import {
 import { createIdempotencyParams } from '@sdkwork/cloudroutes-pc-commons/idempotency';
 import type { UpdatePaymentProviderRequest } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import type {
+  CashierTokenSetting,
   CheckAttemptStatusCommand,
   CheckAttemptStatusResult,
   CreatePaymentChannelCommand,
@@ -273,6 +274,25 @@ export async function backendPaymentDevCheckAttemptStatus(body: CheckAttemptStat
 /** Reads the tenant/organization H5 payment domain settings (never null). */
 export async function backendPaymentDomainSettingRetrieve(): Promise<PaymentDomainSetting> {
   return getSdkworkPaymentBackendSdkClient().payments.domainSettings.retrieve();
+}
+
+/**
+ * Reads the tenant anonymous-cashier key epoch (never key material).
+ *
+ * The epoch is public metadata: the signing secret stays a deployment secret.
+ */
+export async function backendPaymentCashierTokenSettingRetrieve(): Promise<CashierTokenSetting> {
+  return getSdkworkPaymentBackendSdkClient().payments.cashierTokenSettings.retrieve();
+}
+
+/**
+ * Rotates the tenant anonymous-cashier key epoch.
+ *
+ * New capability tokens use the new epoch; already-issued tokens keep verifying
+ * under the epoch in their claims until they expire (15 minutes).
+ */
+export async function backendPaymentCashierTokenSettingRotate(): Promise<CashierTokenSetting> {
+  return getSdkworkPaymentBackendSdkClient().payments.cashierTokenSettings.rotate();
 }
 
 /** Saves the H5 payment domain settings. */

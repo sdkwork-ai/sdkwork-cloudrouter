@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export interface BottomPaginationProps {
@@ -12,6 +13,18 @@ export interface BottomPaginationProps {
   totalItems?: number;
   /** Label rendered before `totalItems` (for example "Total"). */
   totalLabel?: string;
+  /**
+   * Extra phrase rendered first in the left summary cluster (for example a localized
+   * "{{total}} rows in total"). A slot keeps list-specific wording in the caller while
+   * the bar stays one row; it is never rendered on its own line.
+   */
+  summary?: ReactNode;
+  /**
+   * Extra controls rendered last in the right control cluster (for example a page-jump
+   * form). Callers append secondary pagination controls here so the bar keeps a single
+   * row instead of stacking a second footer bar underneath it.
+   */
+  extraControls?: ReactNode;
   previousLabel?: string;
   nextLabel?: string;
   pageSizeOptions?: number[];
@@ -36,6 +49,8 @@ export function BottomPagination({
   pageSizeLabel,
   totalItems,
   totalLabel,
+  summary,
+  extraControls,
   previousLabel = 'Previous page',
   nextLabel = 'Next page',
   pageSizeOptions = defaultPageSizeOptions,
@@ -60,6 +75,12 @@ export function BottomPagination({
       } border-t border-slate-200 px-4 py-3 text-sm text-slate-600 dark:border-white/10 dark:text-slate-300 ${className}`.trim()}
     >
       <div className="whitespace-nowrap text-xs font-medium text-slate-500 dark:text-slate-400">
+        {summary ? (
+          <>
+            {summary}
+            <span className="mx-2 text-slate-300 dark:text-white/20">·</span>
+          </>
+        ) : null}
         {totalItems !== undefined && totalLabel ? (
           <>
             {totalLabel}
@@ -114,6 +135,7 @@ export function BottomPagination({
         >
           <ChevronRight className="h-4 w-4" />
         </button>
+        {extraControls}
       </div>
     </div>
   );
