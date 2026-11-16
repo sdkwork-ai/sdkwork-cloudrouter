@@ -41,7 +41,7 @@ export function CashierEntryErrorPage({ message, onRetry }: CashierEntryErrorPag
       <h1 className="mb-4 text-center text-[17px] font-semibold text-text-main">
         {t('orders.cashier_title', '收银台')}
       </h1>
-      <div className="rounded-2xl bg-white p-5 shadow-sm">
+      <div className="rounded-2xl bg-surface p-5 shadow-sm">
         <p className="text-[15px] font-medium text-text-main">
           {t('orders.cashier_entry_error_title', '暂时无法打开收银台')}
         </p>
@@ -49,7 +49,7 @@ export function CashierEntryErrorPage({ message, onRetry }: CashierEntryErrorPag
         <button
           type="button"
           onClick={handleRetry}
-          className="mt-5 w-full rounded-xl bg-primary-blue py-3 text-[15px] font-medium text-white active:opacity-80"
+          className="mt-5 w-full rounded-xl bg-brand-fill py-3 text-[15px] font-medium text-on-brand active:opacity-80"
         >
           {t('orders.cashier_entry_error_retry', '重新加载')}
         </button>

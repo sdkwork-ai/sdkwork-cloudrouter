@@ -57,6 +57,7 @@ const ROOT_PARENT = "__root__";
 export function AppStoreCategoryFormDrawer({
   categories,
   category,
+  initialParentId,
   messages,
   onClose,
   onSaved,
@@ -64,6 +65,8 @@ export function AppStoreCategoryFormDrawer({
 }: {
   categories: readonly AppStoreCategory[];
   category?: AppStoreCategory;
+  /** Preselect a parent when creating a child from the cascade column. */
+  initialParentId?: string;
   messages: ApplicationCatalogMessages;
   onClose: () => void;
   onSaved: (category?: AppStoreCategory) => void;
@@ -71,8 +74,17 @@ export function AppStoreCategoryFormDrawer({
 }) {
   const copy = messages.categories.form;
   const editing = Boolean(category);
-  const [draft, setDraft] = useState<AppStoreCategoryDraft>(() =>
-    category ? createCategoryDraft(category) : createEmptyCategoryDraft(nextSortOrder(categories)));
+  const [draft, setDraft] = useState<AppStoreCategoryDraft>(() => {
+    if (category) {
+      return createCategoryDraft(category);
+    }
+    const parentId = initialParentId ?? "";
+    return {
+      ...createEmptyCategoryDraft(nextSortOrder(categories)),
+      parentId,
+      level: String(resolveDraftLevel(parentId, categories)),
+    };
+  });
   const [issues, setIssues] = useState<AppStoreCategoryDraftIssue[]>([]);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<unknown>();

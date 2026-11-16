@@ -1,15 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { FolderTree, Pencil, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
+import { FolderTree, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Button, ConfirmDialog, StatusNotice } from "@sdkwork/ui-pc-react";
 import {
-  Button,
-  ConfirmDialog,
-  DataTable,
-  type DataTableColumn,
-  Input,
-  StatusBadge,
-  StatusNotice,
-  type StatusBadgeVariant,
-} from "@sdkwork/ui-pc-react";
+  CascadeCategoryManager,
+  type CascadeCategoryNode,
+} from "@sdkwork/cloudroutes-pc-commons";
 
 import type { ApplicationCatalogMessages } from "../i18n";
 import { TemplateCategoryFormDrawer } from "./TemplateCategoryFormDrawer";
@@ -18,7 +13,6 @@ import {
   getDeployAppTemplateService,
   isDeployAppTemplateUnavailable,
 } from "../services/deploy-app-templates";
-import type { DeployAppTemplateService } from "../types/deploy-app-templates";
 import {
   DeployTemplateAdminServiceError,
   getDeployTemplateAdminService,
@@ -27,8 +21,21 @@ import {
   type DeployTemplateAdminService,
   type DeployTemplateCategory,
 } from "../services/deploy-template-admin";
+import type { DeployAppTemplateService } from "../types/deploy-app-templates";
 
-/** Template taxonomy with backend-admin CRUD. */
+interface CategoryNode extends CascadeCategoryNode {
+  id: string;
+  displayName: string;
+}
+
+/**
+ * Template taxonomy as a five-column cascade.
+ *
+ * The Deploy backend owns the hierarchy; the app-plane category list is used as
+ * a read-only fallback when that backend is unavailable. CRUD actions are
+ * injected per node and per column, so any category level can be created,
+ * edited, disabled, or deleted from the cascade.
+ */
 export function AppTemplateCategoryPanel({
   canWrite = isApplicationCenterActionAllowed("templateCategoryWrite"),
   fallbackService,
@@ -54,13 +61,11 @@ export function AppTemplateCategoryPanel({
     readOnly?: boolean;
   }>({ status: "loading", items: [] });
   const [reloadToken, setReloadToken] = useState(0);
-  const [query, setQuery] = useState("");
-  const [formTarget, setFormTarget] = useState<{ category?: DeployTemplateCategory }>();
+  const [formTarget, setFormTarget] = useState<{ category?: DeployTemplateCategory; parentId?: string }>();
   const [deleteTarget, setDeleteTarget] = useState<DeployTemplateCategory>();
   const [deleting, setDeleting] = useState(false);
   const [dialogError, setDialogError] = useState<unknown>();
   const [notice, setNotice] = useState<string>();
-  const writable = canWrite && !state.readOnly;
 
   useEffect(() => {
     let cancelled = false;
@@ -72,9 +77,6 @@ export function AppTemplateCategoryPanel({
         }
       },
       async (error: unknown) => {
-        // Keep the taxonomy readable when the Deploy backend URL is missing:
-        // the app-plane catalog still lists categories, so operators can
-        // classify templates even though maintenance is unavailable.
         if (isDeployTemplateAdminUnavailable(error)) {
           try {
             const fallback = fallbackService ?? getDeployAppTemplateService();
@@ -109,20 +111,16 @@ export function AppTemplateCategoryPanel({
     };
   }, [fallbackService, reloadToken, service]);
 
-  const filtered = useMemo(() => {
-    const needle = query.trim().toLocaleLowerCase();
-    if (!needle) {
-      return state.items;
-    }
-    return state.items.filter((item) =>
-      [item.displayName, item.categoryKey, item.id]
-        .some((value) => value.toLocaleLowerCase().includes(needle)));
-  }, [query, state.items]);
-
-  const byId = useMemo(
-    () => new Map(state.items.map((item) => [item.id, item])),
-    [state.items],
-  );
+  const writable = canWrite && !state.readOnly;
+  const byId = useMemo(() => new Map(state.items.map((item) => [item.id, item])), [state.items]);
+  const nodes = useMemo<CategoryNode[]>(() => state.items.map((item) => ({
+    id: item.id,
+    ...(item.parentId ? { parentId: item.parentId } : {}),
+    displayName: item.displayName,
+    secondary: `${item.categoryKey} · ${copy.statuses[item.status]}`,
+    sortOrder: item.sortOrder,
+    status: item.status,
+  })), [copy.statuses, state.items]);
 
   const failure = state.error ? resolveFailure(state.error, messages) : undefined;
 
@@ -144,96 +142,33 @@ export function AppTemplateCategoryPanel({
     }
   };
 
-  const columns = useMemo<DataTableColumn<DeployTemplateCategory>[]>(() => [
-    {
-      id: "category",
-      header: copy.columns.category,
-      cell: (item) => (
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-[var(--sdk-color-text-primary)]">
-            {item.displayName}
-          </p>
-          <p className="truncate font-mono text-xs text-[var(--sdk-color-text-muted)]">
-            {item.categoryKey}
-          </p>
-        </div>
-      ),
-    },
-    {
-      id: "parent",
-      header: copy.columns.parent,
-      cell: (item) => (item.parentId ? byId.get(item.parentId)?.displayName ?? item.parentId : copy.rootParent),
-    },
-    {
-      id: "status",
-      header: copy.columns.status,
-      cell: (item) => (
-        <StatusBadge
-          label={copy.statuses[item.status]}
-          status={item.status}
-          variant={statusVariant(item)}
-        />
-      ),
-    },
-    {
-      id: "sortOrder",
-      header: copy.columns.sortOrder,
-      cell: (item) => String(item.sortOrder ?? 0),
-    },
-  ], [byId, copy]);
+  const cascadeLabels = messages.categories.cascade;
 
   return (
-    <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+      <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-base font-semibold text-[var(--sdk-color-text-primary)]">{copy.title}</h2>
+          <h2 className="flex items-center gap-2 text-base font-semibold text-[var(--sdk-color-text-primary)]">
+            <FolderTree className="h-4 w-4" />
+            {copy.title}
+          </h2>
           <p className="text-sm text-[var(--sdk-color-text-muted)]">{copy.description}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            disabled={state.status === "loading"}
-            onClick={() => setReloadToken((token) => token + 1)}
-            type="button"
-            variant="outline"
-          >
-            <RefreshCw className={`h-4 w-4 ${state.status === "loading" ? "animate-spin" : ""}`} />
-            {messages.refresh}
-          </Button>
-          {writable ? (
-            <Button
-              onClick={() => {
-                setNotice(undefined);
-                setFormTarget({});
-              }}
-              type="button"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              {copy.create}
-            </Button>
-          ) : null}
-        </div>
-      </div>
+        <Button
+          disabled={state.status === "loading"}
+          onClick={() => setReloadToken((token) => token + 1)}
+          type="button"
+          variant="outline"
+        >
+          <RefreshCw className={`h-4 w-4 ${state.status === "loading" ? "animate-spin" : ""}`} />
+          {messages.refresh}
+        </Button>
+      </header>
+
+      <p className="text-xs text-[var(--sdk-color-text-muted)]">{cascadeLabels.depthHint}</p>
 
       {notice ? <StatusNotice tone="success">{notice}</StatusNotice> : null}
       {state.readOnly ? <StatusNotice tone="default">{copy.readonlyNotice}</StatusNotice> : null}
-
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="relative w-full max-w-72">
-          <span className="sr-only">{copy.columns.category}</span>
-          <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--sdk-color-text-muted)]" />
-          <Input
-            aria-label={copy.columns.category}
-            className="pl-9"
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={copy.columns.category}
-            value={query}
-          />
-        </label>
-        <p className="text-xs text-[var(--sdk-color-text-muted)]">
-          {copy.countTemplate.replace("{count}", String(filtered.length))}
-        </p>
-      </div>
-
       {failure ? (
         <StatusNotice tone="danger">
           <span className="flex flex-wrap items-center gap-3">
@@ -245,62 +180,107 @@ export function AppTemplateCategoryPanel({
         </StatusNotice>
       ) : null}
 
-      <DataTable
-        className="min-h-0 flex-1"
-        columns={columns}
-        emptyDescription={copy.emptyDescription}
-        emptyTitle={copy.emptyTitle}
-        getRowId={(item) => item.id}
-        loading={state.status === "loading"}
-        rowActions={writable ? (item) => (
-          <div className="flex min-w-max flex-nowrap items-center justify-end gap-1.5 whitespace-nowrap">
-            <Button
-              onClick={() => {
-                setNotice(undefined);
-                setFormTarget({ category: item });
-              }}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-              {copy.editAction}
-            </Button>
-            <Button
-              onClick={() => {
-                setDialogError(undefined);
-                setDeleteTarget(item);
-              }}
-              size="sm"
-              type="button"
-              variant="ghost"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              {copy.deleteAction}
-            </Button>
-          </div>
-        ) : undefined}
-        rowActionsLabel={copy.columns.actions}
-        rows={[...filtered]}
-        slotProps={{
-          footer: { className: "shrink-0" },
-          surface: { className: "flex min-h-0 flex-1 flex-col" },
-          viewport: { className: "min-h-0 flex-1" },
+      <CascadeCategoryManager
+        actions={{
+          create: (level, parent) => {
+            if (!writable) {
+              return null;
+            }
+            if (level === 1) {
+              return (
+                <Button onClick={() => setFormTarget({})} size="sm" type="button" variant="ghost">
+                  <Plus className="h-3.5 w-3.5" />
+                  {cascadeLabels.addRoot}
+                </Button>
+              );
+            }
+            if (!parent) {
+              return null;
+            }
+            return (
+              <Button
+                onClick={() => setFormTarget({ parentId: parent.id })}
+                size="sm"
+                type="button"
+                variant="ghost"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                {cascadeLabels.addChild}
+              </Button>
+            );
+          },
+          node: (node, level) => {
+            if (!writable) {
+              return null;
+            }
+            const category = byId.get(node.id);
+            if (!category) {
+              return null;
+            }
+            return (
+              <div className="flex items-center gap-0.5">
+                {level < 5 ? (
+                  <Button
+                    aria-label={`${cascadeLabels.addChild} ${node.displayName}`}
+                    onClick={() => setFormTarget({ parentId: category.id })}
+                    size="sm"
+                    title={cascadeLabels.addChild}
+                    type="button"
+                    variant="ghost"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </Button>
+                ) : null}
+                <Button
+                  aria-label={`${copy.form.editTitle} ${node.displayName}`}
+                  onClick={() => setFormTarget({ category })}
+                  size="sm"
+                  title={copy.form.editTitle}
+                  type="button"
+                  variant="ghost"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  aria-label={`${copy.deleteAction} ${node.displayName}`}
+                  onClick={() => {
+                    setDialogError(undefined);
+                    setDeleteTarget(category);
+                  }}
+                  size="sm"
+                  title={copy.deleteAction}
+                  type="button"
+                  variant="ghost"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            );
+          },
         }}
-        stickyHeader
+        items={nodes}
+        labels={{
+          columnTitles: [
+            cascadeLabels.level1,
+            cascadeLabels.level2,
+            cascadeLabels.level3,
+            cascadeLabels.level4,
+            cascadeLabels.level5,
+          ],
+          empty: cascadeLabels.empty,
+          emptyColumn: cascadeLabels.emptyColumn,
+          loading: cascadeLabels.loading,
+          selectHint: cascadeLabels.selectHint,
+        }}
+        loading={state.status === "loading"}
+        maxDepth={5}
       />
-
-      {filtered.length === 0 && state.status === "ready" ? (
-        <p className="flex items-center gap-2 text-xs text-[var(--sdk-color-text-muted)]">
-          <FolderTree className="h-3.5 w-3.5" />
-          {copy.emptyDescription}
-        </p>
-      ) : null}
 
       {formTarget ? (
         <TemplateCategoryFormDrawer
           categories={state.items}
           {...(formTarget.category ? { category: formTarget.category } : {})}
+          {...(formTarget.parentId ? { initialParentId: formTarget.parentId } : {})}
           messages={messages}
           onClose={() => setFormTarget(undefined)}
           onSaved={() => {
@@ -335,15 +315,11 @@ export function AppTemplateCategoryPanel({
           }
         }}
         open={Boolean(deleteTarget)}
-        title={copy.delete.title.replace("{name}", deleteTarget?.displayName ?? "")}
+        title={copy.delete.title}
         tone="danger"
       />
     </section>
   );
-}
-
-function statusVariant(category: DeployTemplateCategory): StatusBadgeVariant {
-  return category.status === "ACTIVE" ? "success" : "secondary";
 }
 
 function resolveFailure(error: unknown, messages: ApplicationCatalogMessages): string {

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState, type ComponentType, type LazyExoticComponent } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type ComponentType, type LazyExoticComponent } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 import type { SdkworkConsoleLocale } from '@sdkwork/cloudrouter-h5-i18n';
@@ -12,7 +12,7 @@ type OrderPageProps = { readonly locale: SdkworkConsoleLocale };
 type AnonymousCashierPageProps = {
   readonly locale: SdkworkConsoleLocale;
   readonly token: string;
-  readonly wechatAuthorizeUrl?: string;
+  readonly requestWechatAuthorizeUrl?: () => Promise<string>;
 };
 
 function lazyOrderPage(exportName: string): LazyExoticComponent<ComponentType<OrderPageProps>> {
@@ -200,6 +200,44 @@ export function CashierEntryRoute() {
   const { orderId } = useParams<{ orderId: string }>();
   const { locale, translate } = useConsoleRuntime();
   const resolution = useCashierEntryResolution(orderId);
+  const resolvedToken = resolution.kind === 'resolved' ? resolution.token : '';
+  const wechatOAuthStartUrl = useMemo(() => {
+    if (!resolvedToken) {
+      return '';
+    }
+    const oauthParams = new URLSearchParams({
+      cashierToken: resolvedToken,
+      redirect: `/cashier/${resolvedToken}`,
+    });
+    return `${resolveCloudRouterAppApiBaseUrl()}/app/v3/api/oauth/wechat/payment/cashier/start?${oauthParams.toString()}`;
+  }, [resolvedToken]);
+  /**
+   * The IAM start endpoint returns JSON `{ data: { authorizeUrl } }`; it must be
+   * fetched, never used as a navigation target. The page then navigates to the
+   * returned WeChat authorize URL, so the payer lands in WeChat instead of on the
+   * raw API response page.
+   */
+  const requestWechatAuthorizeUrl = useCallback(async () => {
+    if (!wechatOAuthStartUrl) {
+      throw new Error('WeChat payment authorization is not configured for this cashier');
+    }
+    const response = await fetch(wechatOAuthStartUrl, {
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      throw new Error(`WeChat payment authorization failed (${response.status})`);
+    }
+    const payload = (await response.json()) as {
+      data?: { authorizeUrl?: string; item?: { authorizeUrl?: string } };
+    };
+    const authorizeUrl = (payload.data?.authorizeUrl ?? payload.data?.item?.authorizeUrl ?? '').trim();
+    if (!/^https:\/\/open\.weixin\.qq\.com\/connect\/oauth2\/authorize\?/iu.test(authorizeUrl)) {
+      throw new Error('WeChat payment authorization returned an unexpected URL');
+    }
+    return authorizeUrl;
+  }, [wechatOAuthStartUrl]);
 
   if (resolution.kind === 'pending') {
     return (
@@ -224,17 +262,6 @@ export function CashierEntryRoute() {
   }
 
   const token = resolution.token;
-  // In-WeChat JSAPI needs the payer openid; the IAM anonymous payment OAuth
-  // issues it against this capability token and returns to the token URL. The
-  // redirect is a root-relative pathname, not a `#/` hash route: the renderer
-  // routes with the History API, so the payer comes back to the same clean
-  // `/cashier/{token}?openid=..` URL.
-  const oauthParams = new URLSearchParams({
-    cashierToken: token,
-    redirect: `/cashier/${token}`,
-  });
-  const wechatAuthorizeUrl =
-    `${resolveCloudRouterAppApiBaseUrl()}/app/v3/api/oauth/wechat/payment/cashier/start?${oauthParams.toString()}`;
   return (
     <Suspense
       fallback={(
@@ -246,7 +273,7 @@ export function CashierEntryRoute() {
       <CloudRouterAnonymousCashierPage
         locale={locale}
         token={token}
-        wechatAuthorizeUrl={wechatAuthorizeUrl}
+        requestWechatAuthorizeUrl={requestWechatAuthorizeUrl}
       />
     </Suspense>
   );

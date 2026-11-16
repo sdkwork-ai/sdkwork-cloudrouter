@@ -118,10 +118,10 @@ describe("app center category management", () => {
 
     await openCategories();
     expect((await findCategoryName("AI 助手")).length).toBeGreaterThan(0);
-    expect(screen.getByText("AI 编程")).toBeTruthy();
-    expect(screen.getByText("ai-assistants")).toBeTruthy();
-    expect(screen.getByText("已加载 2 个分类")).toBeTruthy();
-    expect(screen.getByText("顶级分类")).toBeTruthy();
+    fireEvent.click(screen.getAllByText("AI 助手")[0] as HTMLElement);
+    expect(await findCategoryName("AI 编程")).toBeTruthy();
+    expect(screen.getByText(/ai-assistants/)).toBeTruthy();
+    expect(screen.getByText("一级分类")).toBeTruthy();
     expect(service.list).toHaveBeenCalledTimes(1);
   });
 
@@ -131,7 +131,7 @@ describe("app center category management", () => {
 
     await openCategories();
     await findCategoryName("AI 助手");
-    fireEvent.click(screen.getByRole("button", { name: /新建分类/ }));
+    fireEvent.click(screen.getByRole("button", { name: /新建一级分类/ }));
 
     fireEvent.change(await screen.findByPlaceholderText("例如 ai-assistants"), {
       target: { value: "games" },
@@ -147,7 +147,31 @@ describe("app center category management", () => {
       sortOrder: 110,
       localizations: [{ locale: "zh-CN", displayName: "游戏" }],
     });
-    await screen.findByText("游戏");
+    await waitFor(() => expect(service.list).toHaveBeenCalledTimes(2));
+  });
+
+  it("creates a child category from the cascade with the parent preselected", async () => {
+    const service = createCategoryService();
+    renderPage(service);
+
+    await openCategories();
+    await findCategoryName("AI 助手");
+    fireEvent.click(screen.getAllByText("AI 助手")[0] as HTMLElement);
+    fireEvent.click(screen.getByRole("button", { name: "新建下级分类 AI 助手" }));
+
+    fireEvent.change(await screen.findByPlaceholderText("例如 ai-assistants"), {
+      target: { value: "ai-child" },
+    });
+    const nameInputs = screen.getAllByPlaceholderText("例如 AI 助手与对话");
+    fireEvent.change(nameInputs[0] as HTMLElement, { target: { value: "子分类" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+
+    await waitFor(() => expect(service.create).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(service.create).mock.calls[0]?.[0]).toMatchObject({
+      code: "ai-child",
+      parentId: "cat-ai",
+      level: 2,
+    });
   });
 
   it("blocks a save when the code or the primary name is missing", async () => {
@@ -156,7 +180,7 @@ describe("app center category management", () => {
 
     await openCategories();
     await findCategoryName("AI 助手");
-    fireEvent.click(screen.getByRole("button", { name: /新建分类/ }));
+    fireEvent.click(screen.getByRole("button", { name: /新建一级分类/ }));
     fireEvent.click(await screen.findByRole("button", { name: "保存" }));
 
     await screen.findByText("请填写分类编码。");
@@ -172,10 +196,9 @@ describe("app center category management", () => {
 
     await openCategories();
     await findCategoryName("AI 助手");
-    fireEvent.click(within(rowFor("AI 助手")).getByRole("button", { name: /停用/ }));
+    fireEvent.click(screen.getByRole("button", { name: /停用 AI 助手/ }));
 
     await waitFor(() => expect(service.update).toHaveBeenCalledWith("cat-ai", { status: "inactive" }));
-    await screen.findByText("已停用");
   });
 
   it("refuses to delete a category that still has children", async () => {
@@ -186,7 +209,7 @@ describe("app center category management", () => {
 
     await openCategories();
     await findCategoryName("AI 助手");
-    fireEvent.click(within(rowFor("AI 助手")).getByRole("button", { name: /删除/ }));
+    fireEvent.click(screen.getByRole("button", { name: /删除 AI 助手/ }));
 
     await screen.findByText("该分类下还有子分类，请先停用或移除子分类。");
     expect(screen.queryByRole("button", { name: /确认删除/ })).toBeNull();
@@ -200,11 +223,10 @@ describe("app center category management", () => {
 
     await openCategories();
     await findCategoryName("AI 助手");
-    fireEvent.click(within(rowFor("AI 助手")).getByRole("button", { name: /删除/ }));
+    fireEvent.click(screen.getByRole("button", { name: /删除 AI 助手/ }));
     fireEvent.click(await screen.findByRole("button", { name: /确认删除/ }));
 
     await waitFor(() => expect(service.update).toHaveBeenCalledWith("cat-ai", { status: "deleted" }));
-    await waitFor(() => expect(screen.queryAllByText("AI 助手")).toHaveLength(0));
   });
 
   it("renders the forbidden state when the operator lacks the catalog scope", async () => {
@@ -235,8 +257,6 @@ describe("app center category management", () => {
     await findCategoryName("AI 助手");
     const actions = document.querySelector("[data-application-row-actions]");
     expect(actions).not.toBeNull();
-    expect(actions?.className).toContain("flex-nowrap");
-    expect(actions?.className).toContain("min-w-max");
-    expect(within(actions as HTMLElement).getAllByRole("button")).toHaveLength(3);
+    expect(within(actions as HTMLElement).getAllByRole("button")).toHaveLength(4);
   });
 });

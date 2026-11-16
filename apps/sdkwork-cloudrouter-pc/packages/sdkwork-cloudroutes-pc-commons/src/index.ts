@@ -45,5 +45,6 @@ export * from './problem-message.ts';
 export * from './sdk-locale.ts';
 export * from './queryClient.tsx';
 export * from './components/ScopeResourcePickerDialog.tsx';
+export * from './components/CascadeCategoryManager.tsx';
 import './base-data-pc-react-config.ts';
 export * from './PortalErrorBoundary.tsx';
