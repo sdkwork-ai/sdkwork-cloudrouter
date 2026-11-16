@@ -4389,6 +4389,9 @@ importers:
 
   ../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin:
     dependencies:
+      '@sdkwork/drive-app-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript
       '@sdkwork/plugins-backend-sdk':
         specifier: workspace:*
         version: link:../../../../sdks/sdkwork-plugins-backend-sdk/sdkwork-plugins-backend-sdk-typescript
@@ -6314,6 +6317,9 @@ importers:
       '@sdkwork/agents-pc-admin':
         specifier: workspace:*
         version: link:../../../../../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin
+      '@sdkwork/agents-pc-core':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-core
       '@sdkwork/cloudroutes-pc-commons':
         specifier: workspace:*
         version: link:../sdkwork-cloudroutes-pc-commons

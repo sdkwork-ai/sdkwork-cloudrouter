@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@sdkwork/agents-pc-admin": "workspace:*",
+    "@sdkwork/agents-pc-core": "workspace:*",
     "@sdkwork/cloudroutes-pc-commons": "workspace:*"
   },
   "peerDependencies": {
