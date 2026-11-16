@@ -94,19 +94,24 @@ sdkwork_utils_rust::derive_cashier_token_key(secret, tenant_id) -> [u8; 32]
 
 实现：`sdkwork_utils_rust::derive_cashier_token_key_with_epoch`。
 
-- 根密钥仍是部署密钥 `SDKWORK_COMMERCE_CASHIER_TOKEN_SECRET`（≥32 字节；容器安装在
-  `scripts/generate-dev-secrets.mjs` 中自动生成 64 hex，不需要人工填写）。
-- 租户签名密钥 = `HKDF(根密钥, "tenant={tenant};[epoch={n};]purpose=cashier-token")`；
-  **epoch 1 保留原派生**，因此存量令牌不失效。
-- 令牌 claims 增加 `epoch`；校验方用**令牌里携带的 epoch** 派生密钥，所以 IAM/订单
-  校验令牌时不需要读 commerce 库。篡改 epoch 只会让验签失败。
-- **轮换 = 租户 epoch + 1**（支付中心 → 支付设置 → 收银台密钥，一键刷新）。新令牌立即
-  使用新 epoch；旧 epoch 已签发的令牌在 15 分钟 TTL 内继续校验，因此不需要宽限表、
-  不需要重启、多副本天然一致。
-- 解析顺序：租户行 → 平台 `0` 行 → epoch 1。表
-  `commerce_payment_cashier_token_setting` 只存**公开 epoch 与轮换元数据**，不存密钥；
-  数据库备份/只读账号无法伪造收银台令牌。
-- 管理面：`GET /backend/v3/api/payments/cashier_token_settings` 与
+- 第一把签名密钥来自支付中心首次启用：系统生成随机密钥、调用启用的密钥提供者
+  （`CashierSigningKeyCipher`）加密后落库；业务模块不直接读取部署根密钥。
+- 租户签名密钥 = `HKDF(签名密钥, "tenant={tenant};[epoch={n};]purpose=cashier-token")`；
+  **epoch 1 保留原派生**。
+- 令牌 claims 增加 `epoch`；校验方用**令牌里携带的 epoch** 派生密钥，并从支付库读取当前
+  （及轮换宽限内的上一把）签名密钥；篡改 epoch 只会让验签失败。
+- **轮换 = 生成新签名密钥 + 租户 epoch + 1**（支付中心 → 支付设置 → 收银台密钥，一键刷新）。
+  上一把密钥保留 1 小时；旧 epoch 已签发的令牌在 15 分钟 TTL 内继续校验。
+- **并发与幂等**：首次供给、轮换、启停都在数据库事务内用租户级 advisory lock 串行化；
+  轮换请求携带 `expectedEpoch`，过期 epoch 返回冲突，避免双击/重试覆盖宽限密钥。
+  换码接口无副作用，重复换取会生成新的 capability token（仍绑定同一订单）；创建支付以
+  `(capability token, paymentMethod)` 为幂等键，同一 token 的重试返回同一 attempt，订单行锁
+  与活动 attempt 复用保证并发双击不会产生两个 in-flight attempt。
+- **启用/停用**：停用后停止签发新令牌；已签发令牌在自身有效期内仍可校验。解析顺序：
+  租户行 → 平台 `0` 行；存在租户行时以租户行为准，不回退。
+- 表 `commerce_payment_cashier_token_setting` 存**加密后的当前/上一把签名密钥、启用状态与
+  公开轮换元数据**；没有部署 KEK 时，数据库备份/只读账号无法伪造收银台令牌。
+- 管理面：`GET|PATCH /backend/v3/api/payments/cashier_token_settings` 与
   `POST /backend/v3/api/payments/cashier_token_settings/rotate`；复用
   `commerce.payments.domain_settings.read|update` 权限，响应永不返回密钥。
 

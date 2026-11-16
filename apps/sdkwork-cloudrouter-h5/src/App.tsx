@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { HashRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
 import { AppAuthorizeEntryPage, AppLaunchPage, AppSignInPage } from './app-auth/AppAuthPages.js';
+import { APP_OAUTH_CALLBACK_PATH } from './app-auth/appAuthorizeEntry.js';
 import { AppAuthGate, ConsoleSignInRoute } from './AuthGate.js';
 import { CLOUDROUTER_H5_ORDER_ROUTES } from '@sdkwork/cloudrouter-h5-orders/routes';
 import { ConsoleRouteAssembly, MessagesDetailRoute, SettingsRoute } from './routes/consoleRoutes.js';
@@ -29,6 +30,12 @@ import {
  * serve a native application's browser login and must render without the
  * console authentication gate, which would otherwise capture the visitor
  * before the authorization hand-off can run.
+ *
+ * Routing uses the History API (`BrowserRouter`), the same mode as the PC
+ * renderer: the deployment serves both surfaces with an `/index.html` SPA
+ * fallback, and the cashier deep link the order/payment backend emits
+ * (`/cashier/{orderId}?scene=..&outTradeNo=..`) must render from that pathname
+ * instead of being folded into a `#/` route.
  */
 export function App() {
   const [configuration] = useState<ConsoleRuntimeConfiguration | null>(
@@ -38,7 +45,7 @@ export function App() {
     throw new Error('CloudRouter H5 console runtime was not configured before render.');
   }
   return (
-    <HashRouter>
+    <BrowserRouter>
       <ConsoleRuntimeProvider configuration={configuration}>
         <Routes>
           <Route path="/auth/app" element={<AppAuthorizeEntryPage />} />
@@ -47,9 +54,9 @@ export function App() {
           <Route path="/auth/login" element={<AppSignInPage />} />
           <Route path="/auth/desktop/launch" element={<AppLaunchPage />} />
           {/* Shared IAM H5 OAuth callback: the IAM login surface redirects the
-              browser to this real path, and the bootstrap adopts it into the hash
-              router so the same screen resumes the session exchange. */}
-          <Route path="/auth/oauth/callback" element={<IamOAuthCallbackRoute />} />
+              browser to this real path, which the history router renders
+              directly so the same screen resumes the session exchange. */}
+          <Route path={APP_OAUTH_CALLBACK_PATH} element={<IamOAuthCallbackRoute />} />
           {/* Order/cashier surfaces render outside the console shell: the
               unified cashier entry (`/cashier/:orderId`) is emitted by the
               order/payment backend, and `/me/orders/...` keeps the exact
@@ -86,6 +93,6 @@ export function App() {
           <Route path="*" element={<ConsoleRouteAssembly />} />
         </Routes>
       </ConsoleRuntimeProvider>
-    </HashRouter>
+    </BrowserRouter>
   );
 }

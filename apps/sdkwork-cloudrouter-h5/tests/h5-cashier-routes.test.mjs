@@ -53,22 +53,34 @@ test('the H5 app mounts every order/cashier route outside the console shell', ()
   }
 });
 
-test('a real cashier deep-link is folded into the hash router', async () => {
-  const { resolveOrderDeepLinkHash, adoptOrderDeepLinkHash } = await import(
-    '../src/commerce/entryRoute.ts'
+test('the cashier deep link keeps its real pathname (history routing)', () => {
+  const appSource = read('src/App.tsx');
+  assert.match(appSource, /<BrowserRouter>/u);
+  assert.doesNotMatch(appSource, /HashRouter/u);
+  const mainSource = read('src/main.tsx');
+  // A scanned QR code must render from `/cashier/{orderId}?scene=..`, so the
+  // bootstrap never folds the pathname into a `#/...` route.
+  assert.doesNotMatch(mainSource, /adoptOrderDeepLinkHash|adoptAppAuthHashEntry/u);
+  assert.match(mainSource, /adoptLegacyHashRoute\(\)/u);
+});
+
+test('a legacy hash cashier link is normalized to the real pathname', async () => {
+  const { resolveLegacyHashRoute, adoptLegacyHashRoute } = await import(
+    '../src/bootstrap/legacyHashRoute.ts'
   );
   const search = '?scene=recharge&outTradeNo=OT-1';
   assert.equal(
-    resolveOrderDeepLinkHash('/cashier/ORD-1', search),
-    `#/cashier/ORD-1${search}`,
+    resolveLegacyHashRoute(`#/cashier/ORD-1${search}`),
+    `/cashier/ORD-1${search}`,
   );
   assert.equal(
-    resolveOrderDeepLinkHash('/me/orders/ORD-1/cashier', ''),
-    '#/me/orders/ORD-1/cashier',
+    resolveLegacyHashRoute('#/me/orders/ORD-1/cashier'),
+    '/me/orders/ORD-1/cashier',
   );
-  // Unrelated console paths are never rewritten by the cashier adoption.
-  assert.equal(resolveOrderDeepLinkHash('/console/dashboard', ''), null);
-  assert.equal(resolveOrderDeepLinkHash('/dashboard', ''), null);
+  // In-page anchors and the empty hash route are never rewritten.
+  assert.equal(resolveLegacyHashRoute('#pay'), null);
+  assert.equal(resolveLegacyHashRoute('#/'), null);
+  assert.equal(resolveLegacyHashRoute(''), null);
 
   const replaced = [];
   const history = {
@@ -77,20 +89,21 @@ test('a real cashier deep-link is folded into the hash router', async () => {
       replaced.push(url);
     },
   };
-  const adopted = adoptOrderDeepLinkHash(
-    { pathname: '/cashier/ORD-1', search, hash: '' },
+  // The reported regression: a build that had already folded the deep link into
+  // `pathname#/pathname?...` is normalized back to one clean pathname, and the
+  // query string stays on the real URL instead of moving inside the hash.
+  const adopted = adoptLegacyHashRoute(
+    { pathname: '/cashier/ORD-1', search, hash: `#/cashier/ORD-1${search}` },
     history,
   );
-  assert.equal(adopted, `#/cashier/ORD-1${search}`);
-  assert.deepEqual(replaced, [`/cashier/ORD-1#/cashier/ORD-1${search}`]);
-  // A navigation that already carries a hash route is left untouched.
+  assert.equal(adopted, `/cashier/ORD-1${search}`);
+  assert.deepEqual(replaced, [`/cashier/ORD-1${search}`]);
+  // A real pathname navigation is left untouched.
   assert.equal(
-    adoptOrderDeepLinkHash(
-      { pathname: '/cashier/ORD-1', search, hash: '#/cashier/ORD-1' },
-      history,
-    ),
+    adoptLegacyHashRoute({ pathname: '/cashier/ORD-1', search, hash: '' }, history),
     null,
   );
+  assert.deepEqual(replaced, [`/cashier/ORD-1${search}`]);
 });
 
 test('the bootstrap injects the order App SDK client into the order runtime', () => {

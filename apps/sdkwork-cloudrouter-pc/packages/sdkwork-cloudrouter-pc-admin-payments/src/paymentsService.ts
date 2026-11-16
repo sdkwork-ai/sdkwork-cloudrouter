@@ -277,22 +277,38 @@ export async function backendPaymentDomainSettingRetrieve(): Promise<PaymentDoma
 }
 
 /**
- * Reads the tenant anonymous-cashier key epoch (never key material).
- *
- * The epoch is public metadata: the signing secret stays a deployment secret.
+ * Reads the tenant anonymous-cashier key metadata (epoch, rotation, enabled,
+ * provider). Key material never leaves the payment service.
  */
 export async function backendPaymentCashierTokenSettingRetrieve(): Promise<CashierTokenSetting> {
   return getSdkworkPaymentBackendSdkClient().payments.cashierTokenSettings.retrieve();
 }
 
 /**
- * Rotates the tenant anonymous-cashier key epoch.
+ * Enables or disables the anonymous cashier for the tenant.
  *
- * New capability tokens use the new epoch; already-issued tokens keep verifying
- * under the epoch in their claims until they expire (15 minutes).
+ * Disabling stops new capability-token minting immediately; links already issued
+ * remain valid only until their own expiry.
  */
-export async function backendPaymentCashierTokenSettingRotate(): Promise<CashierTokenSetting> {
-  return getSdkworkPaymentBackendSdkClient().payments.cashierTokenSettings.rotate();
+export async function backendPaymentCashierTokenSettingUpdate(
+  enabled: boolean,
+): Promise<CashierTokenSetting> {
+  return getSdkworkPaymentBackendSdkClient().payments.cashierTokenSettings.update({ enabled });
+}
+
+/**
+ * Rotates the tenant anonymous-cashier signing key.
+ *
+ * `expectedEpoch` is the epoch the operator saw. A stale value is rejected with
+ * a conflict instead of rotating twice (double-click / retried request) and
+ * overwriting the rotation grace secret.
+ */
+export async function backendPaymentCashierTokenSettingRotate(
+  expectedEpoch?: string,
+): Promise<CashierTokenSetting> {
+  return getSdkworkPaymentBackendSdkClient().payments.cashierTokenSettings.rotate(
+    expectedEpoch === undefined ? undefined : { expectedEpoch },
+  );
 }
 
 /** Saves the H5 payment domain settings. */

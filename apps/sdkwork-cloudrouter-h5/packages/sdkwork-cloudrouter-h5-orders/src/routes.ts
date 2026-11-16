@@ -61,9 +61,3 @@ export type CloudRouterH5OrderRouteKey = keyof typeof CLOUDROUTER_H5_ORDER_ROUTE
 /** Every order/cashier route this host mounts, in declaration order. */
 export const CLOUDROUTER_H5_ORDER_ROUTE_LIST: readonly CloudRouterH5OrderRouteDefinition[] =
   Object.values(CLOUDROUTER_H5_ORDER_ROUTES);
-
-/** Path prefixes adopted from a real navigation into the hash router. */
-export const CLOUDROUTER_H5_ORDER_DEEP_LINK_PREFIXES = [
-  '/cashier/',
-  '/me/orders',
-] as const;

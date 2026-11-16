@@ -127,18 +127,18 @@ export function CourseCatalogPage() {
         {list.items.length === 0 ? (
           <CourseEmptyState title={t('admin.course.courses.empty', 'No courses yet')} />
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[1180px] table-fixed text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-left dark:border-white/10">
-                <th className="px-4 py-2.5 font-medium text-slate-500">{t('admin.course.courses.column.course', 'Course')}</th>
-                <th className="px-4 py-2.5 font-medium text-slate-500">{t('admin.course.courses.column.code', 'Code')}</th>
-                <th className="px-4 py-2.5 font-medium text-slate-500">{t('admin.course.courses.column.category', 'Category')}</th>
-                <th className="px-4 py-2.5 font-medium text-slate-500">{t('admin.course.courses.column.instructor', 'Instructor')}</th>
-                <th className="px-4 py-2.5 font-medium text-slate-500">{t('admin.course.courses.column.students', 'Students')}</th>
-                <th className="px-4 py-2.5 font-medium text-slate-500">{t('admin.course.courses.column.lessons', 'Lessons')}</th>
-                <th className="px-4 py-2.5 font-medium text-slate-500">{t('admin.course.courses.column.updated', 'Updated')}</th>
-                <th className="px-4 py-2.5 font-medium text-slate-500">{t('admin.course.courses.column.status', 'Status')}</th>
-                <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.course.courses.column.actions', 'Actions')}</th>
+                <th className="w-[21%] px-4 py-2.5 font-medium text-slate-500">{t('admin.course.courses.column.course', 'Course')}</th>
+                <th className="w-[11%] px-4 py-2.5 font-medium text-slate-500">{t('admin.course.courses.column.code', 'Code')}</th>
+                <th className="w-[9%] px-4 py-2.5 font-medium text-slate-500">{t('admin.course.courses.column.category', 'Category')}</th>
+                <th className="w-[13%] px-4 py-2.5 font-medium text-slate-500">{t('admin.course.courses.column.instructor', 'Instructor')}</th>
+                <th className="w-[6%] px-4 py-2.5 font-medium text-slate-500">{t('admin.course.courses.column.students', 'Students')}</th>
+                <th className="w-[6%] px-4 py-2.5 font-medium text-slate-500">{t('admin.course.courses.column.lessons', 'Lessons')}</th>
+                <th className="w-[9%] px-4 py-2.5 font-medium text-slate-500">{t('admin.course.courses.column.updated', 'Updated')}</th>
+                <th className="w-[8%] px-4 py-2.5 font-medium text-slate-500">{t('admin.course.courses.column.status', 'Status')}</th>
+                <th className="w-[18%] px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.course.courses.column.actions', 'Actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -146,25 +146,35 @@ export function CourseCatalogPage() {
                 const isPublished = course.status.trim().toLowerCase() === 'published';
                 return (
                   <tr key={course.id} className="border-b border-slate-50 hover:bg-slate-50 dark:border-white/5 dark:hover:bg-white/5">
-                    <td className="px-4 py-2.5">
-                      <p className="font-medium text-slate-900 dark:text-white">{course.title}</p>
+                    <td className="px-4 py-2.5 align-top">
+                      <p className="line-clamp-2 font-medium text-slate-900 dark:text-white" title={course.title}>{course.title}</p>
                       {course.subtitle ? (
-                        <p className="truncate text-xs text-slate-400">{course.subtitle}</p>
+                        <p className="truncate text-xs text-slate-400" title={course.subtitle}>{course.subtitle}</p>
                       ) : null}
                     </td>
-                    <td className="px-4 py-2.5 text-slate-500">{course.courseCode || '-'}</td>
-                    <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{course.categoryName ?? '-'}</td>
-                    <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{course.instructorName ?? '-'}</td>
-                    <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{formatCourseCount(course.studentsCount)}</td>
-                    <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{formatCourseCount(course.lessonsCount)}</td>
-                    <td className="px-4 py-2.5 text-slate-500">{formatCourseDateTime(course.updatedAt, i18n.language)}</td>
-                    <td className="px-4 py-2.5"><CourseStatusBadge status={course.status} /></td>
-                    <td className="px-4 py-2.5">
+                    <td className="px-4 py-2.5 align-top text-slate-500 [overflow-wrap:anywhere]">{course.courseCode || '-'}</td>
+                    <td
+                      className="truncate px-4 py-2.5 align-top text-slate-600 dark:text-slate-300"
+                      title={course.categoryName}
+                    >
+                      {course.categoryName ?? '-'}
+                    </td>
+                    <td
+                      className="truncate px-4 py-2.5 align-top text-slate-600 dark:text-slate-300"
+                      title={course.instructorName}
+                    >
+                      {course.instructorName ?? '-'}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-2.5 align-top text-slate-600 dark:text-slate-300">{formatCourseCount(course.studentsCount)}</td>
+                    <td className="whitespace-nowrap px-4 py-2.5 align-top text-slate-600 dark:text-slate-300">{formatCourseCount(course.lessonsCount)}</td>
+                    <td className="whitespace-nowrap px-4 py-2.5 align-top text-slate-500">{formatCourseDateTime(course.updatedAt, i18n.language)}</td>
+                    <td className="whitespace-nowrap px-4 py-2.5 align-top"><CourseStatusBadge status={course.status} /></td>
+                    <td className="whitespace-nowrap px-4 py-2.5 align-top">
                       <CourseTableActions>
                         <button
                           type="button"
                           onClick={() => void handleTogglePublish(course)}
-                          className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+                          className="whitespace-nowrap rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
                         >
                           {isPublished
                             ? t('admin.course.courses.unpublish', 'Unpublish')

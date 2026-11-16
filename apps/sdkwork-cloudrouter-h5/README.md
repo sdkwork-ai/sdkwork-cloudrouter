@@ -60,7 +60,7 @@ The `build:h5:*` architecture axis is owned by the repository root; run it there
 
 A phone can receive a native SDKWork application's browser-login link, so this
 root serves the same hosted sign-in surface as the PC renderer. The pages live
-in `src/app-auth/` and are ordinary hash routes:
+in `src/app-auth/` and are ordinary routes:
 
 - `/iam/v3/oauth/authorize`, its versionless `/iam/oauth/authorize` alias, and
   the `/auth/app` alias validate the authorization-code request and hand the
@@ -73,9 +73,24 @@ Both authorize entries forward to the app-api origin's
 `/iam/v3/api/oauth/authorize`, the IAM open-api path the platform gateway
 classifies as public.
 
-`main.tsx` adopts a real navigation pathname (`/auth/login?...`,
-`/iam/v3/oauth/authorize?...`) into the hash router before the first render, so
-the IAM authorization server's return works even though the H5 renderer routes
-with `HashRouter`. These routes are siblings of the console shell: they must
-render without the console authentication gate, which would otherwise capture
-the visitor before the hand-off runs.
+These routes are siblings of the console shell: they must render without the
+console authentication gate, which would otherwise capture the visitor before
+the hand-off runs.
+
+## Routing Mode
+
+The renderer routes with the History API (`BrowserRouter`), the same mode as the
+PC renderer, so a deep link keeps the address bar it arrived on. The order and
+payment backends emit `{h5BaseUrl}/cashier/{orderId}?scene=..&outTradeNo=..`
+(`sdkwork-utils-rust::build_commerce_cashier_url`), and the IAM server returns to
+real pathnames such as `/auth/login?...` and `/auth/oauth/callback`; both render
+directly, without being rewritten into a `#/` route.
+
+Both browser surfaces are served with an `/index.html` SPA fallback (see
+`deployments/webserver/snippets/adaptive-web.named-locations.conf`), so a
+pathname navigation reloads into the same screen.
+
+Links written while the renderer still routed with `HashRouter` (`/#/cashier/..`,
+`/#/sign-in`) are normalized to their real pathname by
+`src/bootstrap/legacyHashRoute.ts` before the first render, so printed QR codes,
+bookmarks, and older mini-program builds keep working.
