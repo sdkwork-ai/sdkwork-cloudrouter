@@ -22,8 +22,9 @@ export interface CashierTokenSettingsPanelProps {
  * Anonymous-cashier key epoch panel (支付设置 → 收银台密钥).
  *
  * The panel intentionally shows only the public epoch and rotation metadata. The
- * root signing secret is a deployment secret and is never returned by the API, so
- * there is nothing sensitive to copy out of this screen.
+ * signing secret is generated here and stored encrypted in the payment database;
+ * the deployment key-encryption key is never returned by the API, so there is
+ * nothing sensitive to copy out of this screen.
  */
 export function CashierTokenSettingsPanel({ canRotate }: CashierTokenSettingsPanelProps) {
   const { t } = useTranslation();

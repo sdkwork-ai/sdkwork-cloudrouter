@@ -94,18 +94,19 @@ sdkwork_utils_rust::derive_cashier_token_key(secret, tenant_id) -> [u8; 32]
 
 实现：`sdkwork_utils_rust::derive_cashier_token_key_with_epoch`。
 
-- 根密钥仍是部署密钥 `SDKWORK_COMMERCE_CASHIER_TOKEN_SECRET`（≥32 字节；容器安装在
-  `scripts/generate-dev-secrets.mjs` 中自动生成 64 hex，不需要人工填写）。
-- 租户签名密钥 = `HKDF(根密钥, "tenant={tenant};[epoch={n};]purpose=cashier-token")`；
+- 签名密钥由支付中心生成，AES-256-GCM 加密后存 `commerce_payment_cashier_token_setting`。
+  部署主密钥 `SDKWORK_COMMERCE_CASHIER_TOKEN_SECRET`（≥32 字节）只作为 KEK 加解密该
+  密钥，不再直接签名；容器安装由入口脚本自动生成 KEK，不需要人工填写。
+- 租户签名密钥 = `HKDF(签名密钥, "tenant={tenant};[epoch={n};]purpose=cashier-token")`；
   **epoch 1 保留原派生**，因此存量令牌不失效。
-- 令牌 claims 增加 `epoch`；校验方用**令牌里携带的 epoch** 派生密钥，所以 IAM/订单
-  校验令牌时不需要读 commerce 库。篡改 epoch 只会让验签失败。
-- **轮换 = 租户 epoch + 1**（支付中心 → 支付设置 → 收银台密钥，一键刷新）。新令牌立即
-  使用新 epoch；旧 epoch 已签发的令牌在 15 分钟 TTL 内继续校验，因此不需要宽限表、
-  不需要重启、多副本天然一致。
-- 解析顺序：租户行 → 平台 `0` 行 → epoch 1。表
-  `commerce_payment_cashier_token_setting` 只存**公开 epoch 与轮换元数据**，不存密钥；
-  数据库备份/只读账号无法伪造收银台令牌。
+- 令牌 claims 增加 `epoch`；校验方用**令牌里携带的 epoch** 派生密钥，并从支付库读取当前
+  （及轮换宽限内的上一把）签名密钥；篡改 epoch 只会让验签失败。
+- **轮换 = 生成新签名密钥 + 租户 epoch + 1**（支付中心 → 支付设置 → 收银台密钥，一键刷新）。
+  上一把密钥保留 1 小时；旧 epoch 已签发的令牌在 15 分钟 TTL 内继续校验，因此不需要宽限表、
+  不需要重启，多副本通过数据库天然一致。
+- 解析顺序：租户行 → 平台 `0` 行 → 部署主密钥（仅当行内没有密钥时）。表
+  `commerce_payment_cashier_token_setting` 存**加密后的当前/上一把签名密钥与公开轮换
+  元数据**；没有部署 KEK 时，数据库备份/只读账号无法伪造收银台令牌。
 - 管理面：`GET /backend/v3/api/payments/cashier_token_settings` 与
   `POST /backend/v3/api/payments/cashier_token_settings/rotate`；复用
   `commerce.payments.domain_settings.read|update` 权限，响应永不返回密钥。
