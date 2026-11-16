@@ -299,11 +299,16 @@ export async function backendPaymentCashierTokenSettingUpdate(
 /**
  * Rotates the tenant anonymous-cashier signing key.
  *
- * A new secret is generated and stored encrypted; tokens issued under the
- * previous key keep verifying during the one-hour grace window.
+ * `expectedEpoch` is the epoch the operator saw. A stale value is rejected with
+ * a conflict instead of rotating twice (double-click / retried request) and
+ * overwriting the rotation grace secret.
  */
-export async function backendPaymentCashierTokenSettingRotate(): Promise<CashierTokenSetting> {
-  return getSdkworkPaymentBackendSdkClient().payments.cashierTokenSettings.rotate();
+export async function backendPaymentCashierTokenSettingRotate(
+  expectedEpoch?: string,
+): Promise<CashierTokenSetting> {
+  return getSdkworkPaymentBackendSdkClient().payments.cashierTokenSettings.rotate(
+    expectedEpoch === undefined ? undefined : { expectedEpoch },
+  );
 }
 
 /** Saves the H5 payment domain settings. */

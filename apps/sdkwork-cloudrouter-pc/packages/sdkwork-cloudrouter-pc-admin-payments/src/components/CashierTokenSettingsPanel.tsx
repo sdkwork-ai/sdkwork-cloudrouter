@@ -66,7 +66,7 @@ export function CashierTokenSettingsPanel({ canRotate }: CashierTokenSettingsPan
     setActionError(null);
     setNotice(null);
     try {
-      const next = await backendPaymentCashierTokenSettingRotate();
+      const next = await backendPaymentCashierTokenSettingRotate(setting?.keyEpoch);
       setSetting(next);
       setConfirmOpen(false);
       setNotice(t(
@@ -83,6 +83,9 @@ export function CashierTokenSettingsPanel({ canRotate }: CashierTokenSettingsPan
         t,
         t('admin.commerce.payments.cashierToken.rotateError', 'The cashier signing key could not be rotated.'),
       ));
+      // A conflict means the epoch moved (another admin or a retried request);
+      // refresh so the next attempt uses the current expected epoch.
+      void load();
     } finally {
       setRotating(false);
     }

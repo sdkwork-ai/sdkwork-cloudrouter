@@ -262,6 +262,9 @@ PaymentIntent）；凭据为测试格式时 PSP 会返回其真实认证错误�
 - 一键刷新：生成新的随机签名密钥（AES-256-GCM 加密后写入
   `commerce_payment_cashier_token_setting`）并把租户 epoch + 1。新令牌立即使用新密钥；
   上一把密钥保留 1 小时，旧链接在 15 分钟有效期内仍可校验，因此不需要重启或宽限表。
+- 轮换使用 `expectedEpoch` 乐观并发：请求携带管理员看到的 epoch，过期 epoch 返回冲突而非
+  再次轮换，避免双击/重试/并发管理员覆盖上一把宽限密钥。首次供给与轮换在数据库事务内使用
+  advisory lock 串行化，多副本不会生成竞争密钥。
 - 启用/停用：停用后立即停止签发新令牌；已签发令牌在各自 15 分钟有效期内仍可校验。
 - 密钥提供者：由 host 安装的 `CashierSigningKeyCipher` 负责加解密数据库中的签名密钥。
   当前默认 `local-file`（部署 KEK 由 entrypoint 自动生成到 secrets 卷）；后续可换

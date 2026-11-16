@@ -102,6 +102,11 @@ sdkwork_utils_rust::derive_cashier_token_key(secret, tenant_id) -> [u8; 32]
   （及轮换宽限内的上一把）签名密钥；篡改 epoch 只会让验签失败。
 - **轮换 = 生成新签名密钥 + 租户 epoch + 1**（支付中心 → 支付设置 → 收银台密钥，一键刷新）。
   上一把密钥保留 1 小时；旧 epoch 已签发的令牌在 15 分钟 TTL 内继续校验。
+- **并发与幂等**：首次供给、轮换、启停都在数据库事务内用租户级 advisory lock 串行化；
+  轮换请求携带 `expectedEpoch`，过期 epoch 返回冲突，避免双击/重试覆盖宽限密钥。
+  换码接口无副作用，重复换取会生成新的 capability token（仍绑定同一订单）；创建支付以
+  `(capability token, paymentMethod)` 为幂等键，同一 token 的重试返回同一 attempt，订单行锁
+  与活动 attempt 复用保证并发双击不会产生两个 in-flight attempt。
 - **启用/停用**：停用后停止签发新令牌；已签发令牌在自身有效期内仍可校验。解析顺序：
   租户行 → 平台 `0` 行；存在租户行时以租户行为准，不回退。
 - 表 `commerce_payment_cashier_token_setting` 存**加密后的当前/上一把签名密钥、启用状态与

@@ -70,7 +70,7 @@ test('callback domain defaults to the public API host, not the console host', ()
 test('cashier signing key is a payment settings menu destination', () => {
   const service = readSource('./packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts');
   assert.match(service, /payments\.cashierTokenSettings\.retrieve\(\)/);
-  assert.match(service, /payments\.cashierTokenSettings\.rotate\(\)/);
+  assert.match(service, /payments\.cashierTokenSettings\.rotate\(/);
   assert.match(service, /payments\.cashierTokenSettings\.update\(/);
 
   const index = readSource('./packages/sdkwork-cloudrouter-pc-admin-payments/src/index.tsx');
