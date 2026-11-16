@@ -1,4 +1,4 @@
-// Hosted app sign-in on the H5 surface: routes, hash-entry adoption, and copy.
+// Hosted app sign-in on the H5 surface: routes, history routing, and copy.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -41,14 +41,15 @@ describe('H5 hosted app sign-in', () => {
     assert.ok(app.includes('ConsoleRuntimeProvider'));
   });
 
-  it('adopts a real sign-in pathname into the hash router before the first render', () => {
-    const entry = readSource('src/app-auth/entryRoute.ts');
-    assert.match(entry, /resolveAppAuthEntryHash\(location\.pathname, location\.search\)/u);
-    assert.match(entry, /history\.replaceState\(/u);
+  it('serves the hosted sign-in paths as real pathnames (history routing)', () => {
+    const app = readSource('src/App.tsx');
+    assert.match(app, /<BrowserRouter>/u);
     const main = readSource('src/main.tsx');
-    assert.match(main, /adoptAppAuthHashEntry\(\)/u);
-    assert.ok(main.indexOf('adoptAppAuthHashEntry()') < main.indexOf('bootstrapH5Application()'),
-      'the hash entry must be adopted before the application boots');
+    assert.ok(main.includes('adoptLegacyHashRoute()'));
+    assert.ok(main.indexOf('adoptLegacyHashRoute()') < main.indexOf('bootstrapH5Application()'),
+      'the legacy hash entry must be normalized before the application boots');
+    // A sign-in pathname is rendered as-is; it is never folded into a hash route.
+    assert.doesNotMatch(main, /adoptAppAuthHashEntry/u);
   });
 
   it('declares the same authorization-request contract as the PC entry', () => {
@@ -57,7 +58,6 @@ describe('H5 hosted app sign-in', () => {
       "APP_AUTHORIZE_PATH = '/iam/v3/oauth/authorize'",
       "APP_AUTHORIZE_VERSIONLESS_PATH = '/iam/oauth/authorize'",
       "APP_AUTHORIZE_ENDPOINT_PATH = '/iam/v3/api/oauth/authorize'",
-      '...APP_AUTHORIZE_PATHS,',
       "AUTHORIZATION_STATE_PARAM = 'oauthAuthorizationStateId'",
       "code_challenge_method",
       'unsupported-challenge-method',

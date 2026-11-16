@@ -225,10 +225,13 @@ export function CashierEntryRoute() {
 
   const token = resolution.token;
   // In-WeChat JSAPI needs the payer openid; the IAM anonymous payment OAuth
-  // issues it against this capability token and returns to the token URL.
+  // issues it against this capability token and returns to the token URL. The
+  // redirect is a root-relative pathname, not a `#/` hash route: the renderer
+  // routes with the History API, so the payer comes back to the same clean
+  // `/cashier/{token}?openid=..` URL.
   const oauthParams = new URLSearchParams({
     cashierToken: token,
-    redirect: `/#/cashier/${token}`,
+    redirect: `/cashier/${token}`,
   });
   const wechatAuthorizeUrl =
     `${resolveCloudRouterAppApiBaseUrl()}/app/v3/api/oauth/wechat/payment/cashier/start?${oauthParams.toString()}`;

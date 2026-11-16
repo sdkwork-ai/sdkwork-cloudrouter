@@ -1,8 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { adoptAppAuthHashEntry } from './app-auth/entryRoute.js';
-import { adoptOrderDeepLinkHash } from './commerce/entryRoute.js';
+import { adoptLegacyHashRoute } from './bootstrap/legacyHashRoute.js';
 import { App } from './App.js';
 import { bootstrapH5Application } from './bootstrap/runtime.js';
 import { initializeThemePreferences } from './themePreference.js';
@@ -21,20 +20,16 @@ if (!container) {
 }
 
 /**
- * A navigation that arrived on a hosted app sign-in pathname is adopted into
- * the hash router before the first render, so ``#/auth/...`` and
- * ``/auth/...`` both reach the hosted pages and a deep link that opens the
- * application never renders the console shell first.
+ * The renderer routes with the History API, so a cashier deep link
+ * (`{h5BaseUrl}/cashier/{orderId}?scene=..&outTradeNo=..`) and the hosted app
+ * sign-in pathnames render from the URL the navigation arrived on — the address
+ * bar keeps the path the QR code or the IAM server opened.
+ *
+ * A legacy `#/...` link written while the renderer still used hash routing is
+ * normalized to its real pathname before the first render, so old QR codes,
+ * bookmarks, and mini-program builds still land on the same screen.
  */
-adoptAppAuthHashEntry();
-
-/**
- * The order cashier is emitted as a real pathname deep link
- * (`{h5BaseUrl}/cashier/{orderId}?scene=..&outTradeNo=..`). Fold it into the
- * hash router before the first render so the scanned QR code opens the cashier
- * instead of the console fallback.
- */
-adoptOrderDeepLinkHash();
+adoptLegacyHashRoute();
 
 /**
  * A bootstrap failure leaves ``#root`` empty, and because the console runtime is a

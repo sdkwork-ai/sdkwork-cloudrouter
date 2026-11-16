@@ -9,8 +9,8 @@
  * server, and (after the hosted login) fires the registered deep link back into
  * the application from `/auth/desktop/launch`.
  *
- * Everything here is pure so the request contract and the hash-entry mapping
- * can be tested without a browser.
+ * Everything here is pure so the request contract can be tested without a
+ * browser.
  */
 
 /** Authorize path native applications open on the platform origin. */
@@ -36,22 +36,13 @@ export const APP_AUTHORIZE_ALIAS_PATH = '/auth/app';
 export const APP_AUTHORIZE_LOGIN_PATH = '/auth/login';
 /** Hand-off page that fires the deep link after authorization completes. */
 export const APP_AUTHORIZE_LAUNCH_PATH = '/auth/desktop/launch';
-/** IAM H5 OAuth provider callback (WeChat web authorization) hash route. */
+/** IAM H5 OAuth provider callback (WeChat web authorization) route. */
 export const APP_OAUTH_CALLBACK_PATH = '/auth/oauth/callback';
 /** Canonical app-api prefix; its origin also serves the IAM open-api. */
 export const APP_API_PREFIX = '/app/v3/api';
 
 /** Query parameter the IAM authorization server hands to the hosted login. */
 export const AUTHORIZATION_STATE_PARAM = 'oauthAuthorizationStateId';
-
-/** Paths the H5 hash router must adopt from a real navigation pathname. */
-export const APP_AUTH_ENTRY_PATHS: readonly string[] = Object.freeze([
-  ...APP_AUTHORIZE_PATHS,
-  APP_AUTHORIZE_ALIAS_PATH,
-  APP_AUTHORIZE_LOGIN_PATH,
-  APP_AUTHORIZE_LAUNCH_PATH,
-  APP_OAUTH_CALLBACK_PATH,
-]);
 
 const SCOPE_PATTERN = /^[a-z][a-z0-9._-]{0,63}$/u;
 const CODE_CHALLENGE_PATTERN = /^[A-Za-z0-9\-._~]{43,128}$/u;
@@ -201,23 +192,6 @@ export function buildAppAuthorizeForwardUrl(
   plan: Extract<AppAuthorizeEntryPlan, { kind: 'forward' }>,
 ): string {
   return plan.search === '' ? plan.endpoint : `${plan.endpoint}?${plan.search}`;
-}
-
-/**
- * Map a real navigation pathname onto an H5 hash route.
- *
- * The H5 renderer routes with `HashRouter`, while the platform serves these
- * entry paths as ordinary pathnames (the application opens `/iam/v3/oauth/authorize`,
- * the IAM server returns to `/auth/login`). The bootstrap adopts such a
- * navigation into the hash router so both URL shapes reach the same page.
- * @param pathname - the real browser pathname.
- * @param search - the real browser search, including its leading `?`.
- * @returns the hash route to adopt, or null when the pathname is not an entry path.
- */
-export function resolveAppAuthEntryHash(pathname: string, search: string): string | null {
-  const normalized = pathname.replace(/\/+$/u, '') || '/';
-  if (!APP_AUTH_ENTRY_PATHS.includes(normalized)) return null;
-  return `#${normalized}${search}`;
 }
 
 /**

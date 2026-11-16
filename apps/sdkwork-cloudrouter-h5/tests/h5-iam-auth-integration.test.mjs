@@ -51,15 +51,14 @@ describe('H5 IAM auth integration', () => {
     assert.ok(!pages.includes('signInConsoleSession'), 'hosted app sign-in uses IAM, not the local session call');
   });
 
-  it('mounts the IAM OAuth callback and adopts its real pathname', () => {
+  it('mounts the IAM OAuth callback on its real pathname', () => {
     const app = read('src/App.tsx');
-    assert.ok(app.includes('path="/auth/oauth/callback"'), 'the IAM OAuth callback route is mounted');
+    assert.ok(app.includes('path={APP_OAUTH_CALLBACK_PATH}'), 'the IAM OAuth callback route is mounted');
     assert.ok(app.includes('IamOAuthCallbackRoute'));
     const route = read('src/routes/IamAuthRoutes.tsx');
     assert.ok(route.includes('SdkworkIamH5AuthCallbackSurface'));
     const entry = read('src/app-auth/appAuthorizeEntry.ts');
     assert.ok(entry.includes("APP_OAUTH_CALLBACK_PATH = '/auth/oauth/callback'"));
-    assert.ok(entry.includes('APP_OAUTH_CALLBACK_PATH,'));
   });
 
   it('declares the IAM H5 packages as workspace dependencies', () => {
