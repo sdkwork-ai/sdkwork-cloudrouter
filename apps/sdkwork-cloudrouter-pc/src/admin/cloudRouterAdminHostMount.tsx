@@ -94,8 +94,11 @@ const IamOauthOfficialAccountCustomMenuAdmin = lazyAdminRoute(() => import('@sdk
 const IamOauthScanLoginAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthScanLoginAdmin');
 const IamAccountBindingAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamAccountBindingAdmin');
 const IamAuditAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamAuditAdmin');
+const MessagingNotifyOverview = lazyAdminRoute(() => import('@sdkwork/messaging-pc-admin-notify'), 'NotificationDashboardPage');
 const MessagingNotifyEmailChannel = lazyAdminRoute(() => import('@sdkwork/messaging-pc-admin-notify'), 'EmailChannelPage');
 const MessagingNotifySmsChannel = lazyAdminRoute(() => import('@sdkwork/messaging-pc-admin-notify'), 'SmsChannelPage');
+const MessagingNotifyEmailRecords = lazyAdminRoute(() => import('@sdkwork/messaging-pc-admin-notify'), 'EmailSendRecordsPage');
+const MessagingNotifySmsRecords = lazyAdminRoute(() => import('@sdkwork/messaging-pc-admin-notify'), 'SmsSendRecordsPage');
 const MessagingNotifyEmailTemplates = lazyAdminRoute(() => import('@sdkwork/messaging-pc-admin-notify'), 'EmailTemplatesPage');
 const MessagingNotifySmsTemplates = lazyAdminRoute(() => import('@sdkwork/messaging-pc-admin-notify'), 'SmsTemplatesPage');
 const DocumentsAdminList = lazyAdminRoute(() => import('@sdkwork/documents-pc-admin-documents'), 'DocumentCenterPage');const DocumentsAdminEditor = lazyAdminRoute(
@@ -172,8 +175,11 @@ const IAM_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>> = {
  * `@sdkwork/messaging-pc-admin-notify` MESSAGING_ADMIN_ROUTE_RECORDS screens.
  */
 const MESSAGING_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>> = {
+  overview: <MessagingNotifyOverview />,
   'email-channel': <MessagingNotifyEmailChannel />,
   'sms-channel': <MessagingNotifySmsChannel />,
+  'email-records': <MessagingNotifyEmailRecords />,
+  'sms-records': <MessagingNotifySmsRecords />,
   'email-templates': <MessagingNotifyEmailTemplates />,
   'sms-templates': <MessagingNotifySmsTemplates />,
 };
