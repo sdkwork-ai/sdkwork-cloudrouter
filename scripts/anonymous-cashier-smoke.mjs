@@ -91,6 +91,34 @@ function itemOf(body) {
   return body?.data?.item;
 }
 
+/**
+ * Explains a failed exchange without guessing.
+ *
+ * The cashier endpoints collapse every failure into one 404, so an operator
+ * cannot tell an old deployment from a misconfigured one by status alone. This
+ * probes a deliberately invalid token: a registered route answers with the
+ * cashier operation id, while a stale deployment reports a missing manifest
+ * route.
+ */
+async function diagnoseExchangeFailure(exchange) {
+  const detail = exchange.body?.detail ?? '(no detail)';
+  console.log(`      exchange detail: ${detail}`);
+  const probe = await request('/app/v3/api/cashier/v1.smoke-check.invalid');
+  const probeDetail = probe.body?.detail ?? '';
+  const probeOperation = probe.body?.operationId ?? '';
+  if (probeOperation === 'cashier.retrieve') {
+    console.log('DIAG  cashier routes are deployed; the exchange rejected this order/trade pair.');
+    console.log('      likely causes: no SDKWORK_COMMERCE_CASHIER_TOKEN_SECRET in the gateway,');
+    console.log('      or outTradeNo does not match the order request_no / order_no / payment attempt.');
+    return;
+  }
+  if (/not registered in the gateway route manifest/u.test(probeDetail)) {
+    console.log('DIAG  this deployment predates the anonymous cashier routes (stale gateway image).');
+    return;
+  }
+  console.log(`DIAG  cashier route probe status=${probe.status} detail=${probeDetail || '(none)'}`);
+}
+
 async function main() {
   // 1. legacy pair -> capability token
   const exchange = await request('/app/v3/api/cashier/links', {
@@ -105,6 +133,7 @@ async function main() {
     `status=${exchange.status}`,
   );
   if (!token) {
+    await diagnoseExchangeFailure(exchange);
     summarize();
     return;
   }
