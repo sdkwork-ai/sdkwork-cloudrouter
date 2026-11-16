@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyRound, Loader2, RefreshCw } from 'lucide-react';
+import { KeyRound, Loader2, Power, PowerOff, RefreshCw } from 'lucide-react';
 import type { CashierTokenSetting } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 
 import {
   backendPaymentCashierTokenSettingRetrieve,
   backendPaymentCashierTokenSettingRotate,
+  backendPaymentCashierTokenSettingUpdate,
 } from '../paymentsService';
 import {
   FormError,
@@ -14,15 +15,15 @@ import {
 } from '../forms/PaymentMaintenanceDialogs';
 
 export interface CashierTokenSettingsPanelProps {
-  /** Whether the operator may rotate the epoch. */
+  /** Whether the operator may enable/disable or rotate the signing key. */
   readonly canRotate: boolean;
 }
 
 /**
- * Anonymous-cashier key epoch panel (支付设置 → 收银台密钥).
+ * Anonymous-cashier signing-key panel (支付设置 → 收银台密钥).
  *
- * The panel intentionally shows only the public epoch and rotation metadata. The
- * signing secret is generated here and stored encrypted in the payment database;
+ * The panel shows only public metadata (status, epoch, rotation, provider). The
+ * signing key is generated here and stored encrypted in the payment database;
  * the deployment key-encryption key is never returned by the API, so there is
  * nothing sensitive to copy out of this screen.
  */
@@ -33,8 +34,9 @@ export function CashierTokenSettingsPanel({ canRotate }: CashierTokenSettingsPan
   const [setting, setSetting] = useState<CashierTokenSetting | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [rotating, setRotating] = useState(false);
+  const [updating, setUpdating] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [rotateError, setRotateError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -61,7 +63,7 @@ export function CashierTokenSettingsPanel({ canRotate }: CashierTokenSettingsPan
       return;
     }
     setRotating(true);
-    setRotateError(null);
+    setActionError(null);
     setNotice(null);
     try {
       const next = await backendPaymentCashierTokenSettingRotate();
@@ -69,20 +71,49 @@ export function CashierTokenSettingsPanel({ canRotate }: CashierTokenSettingsPan
       setConfirmOpen(false);
       setNotice(t(
         'admin.commerce.payments.cashierToken.rotateSuccess',
-        'The key epoch is now {{epoch}}. New cashier links use it immediately.',
+        'The signing key is now epoch {{epoch}}. New cashier links use it immediately.',
         { epoch: next.keyEpoch },
       ));
     } catch (error) {
       // Close the dialog so the failure is visible in the panel body instead of
       // being hidden behind the confirm overlay.
       setConfirmOpen(false);
-      setRotateError(resolveProblemMessage(
+      setActionError(resolveProblemMessage(
         error,
         t,
-        t('admin.commerce.payments.cashierToken.rotateError', 'The key epoch could not be rotated.'),
+        t('admin.commerce.payments.cashierToken.rotateError', 'The cashier signing key could not be rotated.'),
       ));
     } finally {
       setRotating(false);
+    }
+  };
+
+  const toggleEnabled = async () => {
+    if (updating || !setting) {
+      return;
+    }
+    setUpdating(true);
+    setActionError(null);
+    setNotice(null);
+    try {
+      const next = await backendPaymentCashierTokenSettingUpdate(!setting.enabled);
+      setSetting(next);
+      const state = next.enabled
+        ? t('admin.commerce.payments.cashierToken.enabled', 'Enabled')
+        : t('admin.commerce.payments.cashierToken.disabled', 'Disabled');
+      setNotice(t(
+        'admin.commerce.payments.cashierToken.updateSuccess',
+        'The anonymous cashier is now {{state}}.',
+        { state },
+      ));
+    } catch (error) {
+      setActionError(resolveProblemMessage(
+        error,
+        t,
+        t('admin.commerce.payments.cashierToken.updateError', 'The anonymous cashier setting could not be updated.'),
+      ));
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -124,19 +155,38 @@ export function CashierTokenSettingsPanel({ canRotate }: CashierTokenSettingsPan
             </p>
           </div>
         </div>
-        <button
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5"
-          disabled={!canRotate || rotating || loading || !setting}
-          onClick={() => {
-            setNotice(null);
-            setRotateError(null);
-            setConfirmOpen(true);
-          }}
-          type="button"
-        >
-          {rotating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-          {t('admin.commerce.payments.cashierToken.rotate', 'Rotate key')}
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5"
+            disabled={!canRotate || updating || rotating || loading || !setting}
+            onClick={() => void toggleEnabled()}
+            type="button"
+          >
+            {updating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : setting?.enabled ? (
+              <PowerOff className="h-4 w-4" />
+            ) : (
+              <Power className="h-4 w-4" />
+            )}
+            {setting?.enabled
+              ? t('admin.commerce.payments.cashierToken.disable', 'Disable anonymous cashier')
+              : t('admin.commerce.payments.cashierToken.enable', 'Enable anonymous cashier')}
+          </button>
+          <button
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5"
+            disabled={!canRotate || rotating || updating || loading || !setting}
+            onClick={() => {
+              setNotice(null);
+              setActionError(null);
+              setConfirmOpen(true);
+            }}
+            type="button"
+          >
+            {rotating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            {t('admin.commerce.payments.cashierToken.rotate', 'Rotate key')}
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -161,6 +211,16 @@ export function CashierTokenSettingsPanel({ canRotate }: CashierTokenSettingsPan
           <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-lg border border-slate-200 p-3 dark:border-white/10">
               <p className="text-xs text-slate-500 dark:text-slate-400">
+                {t('admin.commerce.payments.cashierToken.status', 'Status')}
+              </p>
+              <p className={`mt-1 text-sm font-medium ${setting.enabled ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                {setting.enabled
+                  ? t('admin.commerce.payments.cashierToken.enabled', 'Enabled')
+                  : t('admin.commerce.payments.cashierToken.disabled', 'Disabled')}
+              </p>
+            </div>
+            <div className="rounded-lg border border-slate-200 p-3 dark:border-white/10">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 {t('admin.commerce.payments.cashierToken.epoch', 'Key epoch')}
               </p>
               <p className="mt-1 font-mono text-lg font-semibold text-slate-900 dark:text-white">
@@ -173,6 +233,24 @@ export function CashierTokenSettingsPanel({ canRotate }: CashierTokenSettingsPan
               </p>
               <p className="mt-1 text-sm font-medium text-slate-900 dark:text-white">
                 {sourceLabel(setting.source)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-slate-200 p-3 dark:border-white/10">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {t('admin.commerce.payments.cashierToken.signingKey', 'Signing key')}
+              </p>
+              <p className="mt-1 text-sm font-medium text-slate-900 dark:text-white">
+                {setting.signingKeyConfigured
+                  ? t('admin.commerce.payments.cashierToken.signingKeyConfigured', 'Configured (encrypted in the payment database)')
+                  : t('admin.commerce.payments.cashierToken.signingKeyMissing', 'Not configured yet (generated on first use or rotation)')}
+              </p>
+            </div>
+            <div className="rounded-lg border border-slate-200 p-3 dark:border-white/10">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {t('admin.commerce.payments.cashierToken.keyProvider', 'Key provider')}
+              </p>
+              <p className="mt-1 truncate text-sm font-medium text-slate-900 dark:text-white" title={setting.keyProvider || undefined}>
+                {setting.keyProvider || '—'}
               </p>
             </div>
             <div className="rounded-lg border border-slate-200 p-3 dark:border-white/10">
@@ -196,7 +274,7 @@ export function CashierTokenSettingsPanel({ canRotate }: CashierTokenSettingsPan
       ) : null}
 
       {notice ? <p className="mt-3 text-xs text-emerald-600 dark:text-emerald-400">{notice}</p> : null}
-      {rotateError ? <p className="mt-3 text-xs text-red-600 dark:text-red-400">{rotateError}</p> : null}
+      {actionError ? <p className="mt-3 text-xs text-red-600 dark:text-red-400">{actionError}</p> : null}
 
       {confirmOpen ? (
         <PaymentConfirmDialog

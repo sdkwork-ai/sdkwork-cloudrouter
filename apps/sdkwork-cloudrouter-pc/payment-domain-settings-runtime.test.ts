@@ -67,10 +67,11 @@ test('callback domain defaults to the public API host, not the console host', ()
   assert.match(page, /useState<CallbackDomainForm>\(defaultCallbackForm\)/);
 });
 
-test('cashier signing key epoch is a payment settings menu destination', () => {
+test('cashier signing key is a payment settings menu destination', () => {
   const service = readSource('./packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts');
   assert.match(service, /payments\.cashierTokenSettings\.retrieve\(\)/);
   assert.match(service, /payments\.cashierTokenSettings\.rotate\(\)/);
+  assert.match(service, /payments\.cashierTokenSettings\.update\(/);
 
   const index = readSource('./packages/sdkwork-cloudrouter-pc-admin-payments/src/index.tsx');
   assert.match(index, /sectionId === 'cashierToken'/);
@@ -88,6 +89,10 @@ test('cashier signing key epoch is a payment settings menu destination', () => {
   assert.match(panel, /cashierToken\.rotate/);
   assert.match(panel, /keyEpoch/);
   assert.match(panel, /cashierToken\.rotateConfirm/);
+  // Admin lifecycle: enable/disable plus the stored-key/provider status.
+  assert.match(panel, /cashierToken\.(enable|disable)/);
+  assert.match(panel, /signingKeyConfigured/);
+  assert.match(panel, /keyProvider/);
 
   // The panel lives on its own settings page, not inside the domain settings page.
   const domainSettings = readSource(

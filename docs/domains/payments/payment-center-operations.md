@@ -257,19 +257,24 @@ PaymentIntent）；凭据为测试格式时 PSP 会返回其真实认证错误�
 
 - 位置：支付中心 → **支付设置 → 收银台密钥**（独立菜单项，路由
   `/admin/payments/cashierToken`）。
-- 显示：当前租户密钥 **epoch**、生效范围（当前租户 / 平台兜底 / 安装默认）、最近轮换
-  时间与操作人。**不显示密钥原文**：签名密钥由支付中心生成并加密存储在支付数据库。
+- 显示：启用状态、当前租户密钥 **epoch**、生效范围（当前租户 / 平台兜底 / 安装默认）、
+  签名密钥是否已配置、密钥提供者、最近轮换时间与操作人。**不显示密钥原文**。
 - 一键刷新：生成新的随机签名密钥（AES-256-GCM 加密后写入
   `commerce_payment_cashier_token_setting`）并把租户 epoch + 1。新令牌立即使用新密钥；
   上一把密钥保留 1 小时，旧链接在 15 分钟有效期内仍可校验，因此不需要重启或宽限表。
+- 启用/停用：停用后立即停止签发新令牌；已签发令牌在各自 15 分钟有效期内仍可校验。
+- 密钥提供者：由 host 安装的 `CashierSigningKeyCipher` 负责加解密数据库中的签名密钥。
+  当前默认 `local-file`（部署 KEK 由 entrypoint 自动生成到 secrets 卷）；后续可换
+  Vault Transit / 云 KMS provider，业务代码不变。
 - 部署主密钥 `SDKWORK_COMMERCE_CASHIER_TOKEN_SECRET`（≥32 字节）是**密钥加密密钥
   （KEK）**，只用于加解密数据库中的签名密钥，不再直接作为签名密钥；安装脚本
   `scripts/generate-dev-secrets.mjs` 会生成到部署 `.env`。生产应使用独立密钥，**禁止
   复用支付渠道凭据主密钥**。
-- 数据库：`commerce_payment_cashier_token_setting`（每租户一行；存公开 epoch、轮换元数据
-  与加密后的当前/上一把签名密钥；无行时回退平台 `0` 行，再回退部署密钥）。
-- 管理 API：`GET|POST /backend/v3/api/payments/cashier_token_settings`
-  （`cashierTokenSettings.retrieve` / `cashierTokenSettings.rotate`），权限复用
+- 数据库：`commerce_payment_cashier_token_setting`（每租户一行；存公开 epoch、启用状态、
+  轮换元数据与加密后的当前/上一把签名密钥；无行时回退平台 `0` 行）。
+- 管理 API：`GET|PATCH /backend/v3/api/payments/cashier_token_settings` 与
+  `POST /backend/v3/api/payments/cashier_token_settings/rotate`
+  （`cashierTokenSettings.retrieve` / `update` / `rotate`），权限复用
   `commerce.payments.domain_settings.read|update`。
 
 ## 6. 支付通知（notify）标准
