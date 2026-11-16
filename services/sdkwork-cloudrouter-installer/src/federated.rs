@@ -429,7 +429,7 @@ mod tests {
         assert_eq!(applied.len(), 1, "one Messaging module is converged");
         let (module_id, _migrations, seeds) = &applied[0];
         assert_eq!(module_id, "messaging");
-        assert_eq!(*seeds, 4, "common provider seeds plus the zh-CN template seed");
+        assert_eq!(*seeds, 5, "common provider seeds plus the zh-CN template and binding seeds");
 
         let postgres = pool.as_postgres().expect("PostgreSQL pool");
         let row = sqlx::query(
@@ -440,7 +440,9 @@ mod tests {
                 (SELECT COUNT(*) FROM messaging_sms_account) AS sms_accounts, \
                 (SELECT COUNT(*) FROM messaging_sms_signature) AS sms_signatures, \
                 (SELECT COUNT(*) FROM messaging_sms_send_rule) AS sms_rules, \
-                (SELECT COUNT(*) FROM messaging_template) AS templates",
+                (SELECT COUNT(*) FROM messaging_template) AS templates, \
+                (SELECT COUNT(*) FROM messaging_template_provider) AS template_providers, \
+                (SELECT COUNT(*) FROM messaging_template_provider WHERE sync_status = 'pending_approval') AS pending_template_providers",
         )
         .fetch_one(postgres)
         .await
@@ -452,6 +454,16 @@ mod tests {
         assert_eq!(row.get::<i64, _>("sms_signatures"), 8);
         assert_eq!(row.get::<i64, _>("sms_rules"), 4);
         assert_eq!(row.get::<i64, _>("templates"), 20);
+        assert_eq!(
+            row.get::<i64, _>("template_providers"),
+            210,
+            "one locale x 10 email templates x 13 providers + 10 SMS templates x 8 providers"
+        );
+        assert_eq!(
+            row.get::<i64, _>("pending_template_providers"),
+            80,
+            "SMS bindings wait for the carrier-approved template id"
+        );
 
         let default_email: String = sqlx::query_scalar(
             "SELECT provider FROM messaging_email_account WHERE enabled AND receive_enabled",
