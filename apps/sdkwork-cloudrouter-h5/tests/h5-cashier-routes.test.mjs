@@ -125,12 +125,29 @@ test('a legacy cashier link is exchanged for a token instead of showing login', 
   );
   // A token that also carries a stale query parameter still wins.
   assert.equal(planCashierEntry('v1.a.b', 'OT-1').kind, 'token');
-  // A bare order id has no payable proof and keeps the session-gated flow.
+  // A bare order id cannot be exchanged, but it must never route to the login
+  // wall: the cashier reports the incomplete link and offers a reload instead.
   assert.deepEqual(planCashierEntry('69d1124a-4740-4631-baeb-5d63717e6eb8', null), {
-    kind: 'login',
+    kind: 'invalid',
+    reason: 'missing-trade-no',
   });
-  assert.deepEqual(planCashierEntry(undefined, 'OT-1'), { kind: 'login' });
-  assert.deepEqual(planCashierEntry('  ', '  '), { kind: 'login' });
+  assert.deepEqual(planCashierEntry(undefined, 'OT-1'), {
+    kind: 'invalid',
+    reason: 'missing-order',
+  });
+  assert.deepEqual(planCashierEntry('  ', '  '), {
+    kind: 'invalid',
+    reason: 'missing-order',
+  });
+});
+
+test('the cashier entry never falls back to the login gate', () => {
+  const routeSource = read('src/routes/OrderRoutes.tsx');
+  // The resolution union has no `login` kind at all; the failure state renders
+  // the cashier error shell.
+  assert.doesNotMatch(routeSource, /kind === 'login'/u);
+  assert.doesNotMatch(routeSource, /kind: 'login'/u);
+  assert.match(routeSource, /CloudRouterCashierEntryErrorPage/u);
 });
 
 test('the cashier entry exchanges legacy links through the generated Order SDK', () => {

@@ -16,13 +16,18 @@ import { isCashierCapabilityToken } from '@sdkwork/cloudrouter-h5-orders/capabil
 export type CashierEntryPlan =
   | { readonly kind: 'token'; readonly token: string }
   | { readonly kind: 'exchange'; readonly orderId: string; readonly outTradeNo: string }
-  | { readonly kind: 'login' };
+  | { readonly kind: 'invalid'; readonly reason: 'missing-order' | 'missing-trade-no' };
 
 /**
  * Decides how the cashier path segment resolves.
+ *
+ * An unusable segment is reported as `invalid` rather than routed to the login
+ * gate: a payer scanning a QR has no account context, and turning a payment page
+ * into a sign-in form is never the recovery they can act on.
+ *
  * @param segment - the `/cashier/:orderId` path parameter.
  * @param outTradeNo - the `outTradeNo` query parameter, if any.
- * @returns the token to render, the legacy pair to exchange, or the login gate.
+ * @returns the token to render, the legacy pair to exchange, or the invalid reason.
  */
 export function planCashierEntry(
   segment: string | undefined,
@@ -33,11 +38,11 @@ export function planCashierEntry(
     return { kind: 'token', token: value };
   }
   if (!value) {
-    return { kind: 'login' };
+    return { kind: 'invalid', reason: 'missing-order' };
   }
   const tradeNo = (outTradeNo ?? '').trim();
   if (!tradeNo) {
-    return { kind: 'login' };
+    return { kind: 'invalid', reason: 'missing-trade-no' };
   }
   return { kind: 'exchange', orderId: value, outTradeNo: tradeNo };
 }

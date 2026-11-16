@@ -7,6 +7,7 @@ import {
 import type { SdkworkConsoleLocale } from '@sdkwork/cloudrouter-h5-i18n';
 
 import { AnonymousCashierPage } from './AnonymousCashierPage.js';
+import { CashierEntryErrorPage } from './CashierEntryErrorPage.js';
 import { CloudRouterOrdersI18nProvider } from './OrdersI18nProvider.js';
 import { CLOUDROUTER_H5_ORDER_ROUTES } from './routes.js';
 
@@ -90,6 +91,30 @@ export function CloudRouterAnonymousCashierPage({
         signInPath="/sign-in"
         {...(wechatAuthorizeUrl ? { wechatAuthorizeUrl } : {})}
       />
+    </CloudRouterOrdersI18nProvider>
+  );
+}
+
+export interface CloudRouterCashierEntryErrorPageProps {
+  readonly locale: SdkworkConsoleLocale;
+  /** Failure detail already localized by the host. */
+  readonly message?: string;
+}
+
+/**
+ * Host adapter for the terminal cashier entry state.
+ *
+ * Rendered when a scanned link cannot be turned into a payable capability. It
+ * deliberately stays outside the auth gate: the payer gets the cashier chrome and
+ * a toast, never a sign-in form they cannot act on.
+ */
+export function CloudRouterCashierEntryErrorPage({
+  locale,
+  message,
+}: CloudRouterCashierEntryErrorPageProps) {
+  return (
+    <CloudRouterOrdersI18nProvider locale={locale}>
+      <CashierEntryErrorPage {...(message ? { message } : {})} />
     </CloudRouterOrdersI18nProvider>
   );
 }
