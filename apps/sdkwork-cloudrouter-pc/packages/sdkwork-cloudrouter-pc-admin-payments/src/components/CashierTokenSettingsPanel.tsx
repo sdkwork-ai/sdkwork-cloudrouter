@@ -56,6 +56,9 @@ export function CashierTokenSettingsPanel({ canRotate }: CashierTokenSettingsPan
   }, [load]);
 
   const rotate = async () => {
+    if (rotating) {
+      return;
+    }
     setRotating(true);
     setRotateError(null);
     setNotice(null);
@@ -69,6 +72,9 @@ export function CashierTokenSettingsPanel({ canRotate }: CashierTokenSettingsPan
         { epoch: next.keyEpoch },
       ));
     } catch (error) {
+      // Close the dialog so the failure is visible in the panel body instead of
+      // being hidden behind the confirm overlay.
+      setConfirmOpen(false);
       setRotateError(resolveProblemMessage(
         error,
         t,
@@ -119,7 +125,7 @@ export function CashierTokenSettingsPanel({ canRotate }: CashierTokenSettingsPan
         </div>
         <button
           className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5"
-          disabled={!canRotate || rotating}
+          disabled={!canRotate || rotating || loading || !setting}
           onClick={() => {
             setNotice(null);
             setRotateError(null);
@@ -140,6 +146,14 @@ export function CashierTokenSettingsPanel({ canRotate }: CashierTokenSettingsPan
       ) : loadError ? (
         <div className="mt-5">
           <FormError message={loadError} />
+          <button
+            className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-60 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5"
+            onClick={() => void load()}
+            type="button"
+          >
+            <RefreshCw className="h-4 w-4" />
+            {t('admin.commerce.payments.cashierToken.retry', 'Retry')}
+          </button>
         </div>
       ) : setting ? (
         <>
@@ -177,10 +191,11 @@ export function CashierTokenSettingsPanel({ canRotate }: CashierTokenSettingsPan
               </p>
             </div>
           </div>
-          {notice ? <p className="mt-3 text-xs text-emerald-600 dark:text-emerald-400">{notice}</p> : null}
-          {rotateError ? <p className="mt-3 text-xs text-red-600 dark:text-red-400">{rotateError}</p> : null}
         </>
       ) : null}
+
+      {notice ? <p className="mt-3 text-xs text-emerald-600 dark:text-emerald-400">{notice}</p> : null}
+      {rotateError ? <p className="mt-3 text-xs text-red-600 dark:text-red-400">{rotateError}</p> : null}
 
       {confirmOpen ? (
         <PaymentConfirmDialog

@@ -374,6 +374,7 @@ sdkwork-routes-iam-app-api = { path = "../sdkwork-iam/crates/sdkwork-routes-iam-
 sdkwork-routes-iam-backend-api = { path = "../sdkwork-iam/crates/sdkwork-routes-iam-backend-api" }
 sdkwork_api_iam_assembly = { package = "sdkwork-api-iam-assembly", path = "../sdkwork-iam/crates/sdkwork-api-iam-assembly" }
 sdkwork_api_messaging_assembly = { package = "sdkwork-api-messaging-assembly", path = "../sdkwork-messaging/crates/sdkwork-api-messaging-assembly" }
+sdkwork-messaging-database-host = { package = "sdkwork-messaging-database-host", path = "../sdkwork-messaging/crates/sdkwork-messaging-database-host" }
 
 # SDKWork appbase base-data capability
 sdkwork_base_data_service_host = { package = "sdkwork-base-data-service-host", path = "../sdkwork-appbase/crates/sdkwork-base-data-service-host" }

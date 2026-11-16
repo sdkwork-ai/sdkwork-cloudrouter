@@ -225,16 +225,25 @@ test("payment center exposes 支付设置 → 域名设置 as a sidebar entry", 
   assert.ok(settingsGroup, "payment settings group must exist");
   assert.deepEqual(
     settingsGroup.items.map((item) => item.path),
-    ["/admin/payments/domainSettings"],
+    ["/admin/payments/domainSettings", "/admin/payments/cashierToken"],
   );
   assert.equal(
     settingsGroup.items[0]?.labelKey,
     "admin.menu.payments.domainSettings",
     "the domain settings item must resolve its label through i18n",
   );
+  assert.equal(
+    settingsGroup.items[1]?.labelKey,
+    "admin.menu.payments.cashierToken",
+    "the cashier signing key item must resolve its label through i18n",
+  );
 
   assert.deepEqual(
     getActiveSidebarItemPaths("/admin/payments/domainSettings", paymentMenu),
     ["/admin/payments/domainSettings"],
+  );
+  assert.deepEqual(
+    getActiveSidebarItemPaths("/admin/payments/cashierToken", paymentMenu),
+    ["/admin/payments/cashierToken"],
   );
 });

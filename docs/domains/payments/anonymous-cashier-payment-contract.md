@@ -326,6 +326,26 @@ DB:       commerce_payment_attempt 已创建，status=pending
 
 ## 7. 验收（每条都要有自动化测试）
 
+### 7.0 可执行冒烟测试（运维/交付用）
+
+```bash
+node scripts/anonymous-cashier-smoke.mjs \
+  --api http://127.0.0.1 --host api-dev.birdcoder.com \
+  --order-id <uuid> --out-trade-no <流水号> [--create-payment] [--method alipay_wap]
+# 或：pnpm test:anonymous-cashier -- --api ... --order-id ... --out-trade-no ...
+```
+
+逐条打印 PASS/FAIL 并以非零码失败，覆盖：
+
+1. 旧链接对（orderId + outTradeNo）换到 `v1.` 令牌
+2. 篡改令牌被拒（404）
+3. 令牌在**无任何凭证头**的情况下读到收银台视图
+4. 视图只含白名单字段（显式检查 `ownerUserId`/`organizationId`/`userId`/`phone`/`address`/`balance` 等）
+5. 可选：从令牌建支付，且返回的 `cashierUrl` 仍是令牌形态
+6. 匿名状态接口可用
+
+自签名证书的 dev 环境加 `--insecure`（仅 dev）。
+
 **契约层（sdkwork-utils）**
 1. 令牌往返、篡改、跨租户密钥、过期、audience 不符、版本降级、空密钥 → 全部拒绝。
 2. 令牌 URL 不含裸 `orderId`、不含 `scene=`/`outTradeNo=` query。

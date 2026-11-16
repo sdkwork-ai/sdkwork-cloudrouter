@@ -24,6 +24,7 @@ import {
   GraduationCap,
   HardDrive,
   Home,
+  KeyRound,
   Layers3,
   LayoutDashboard,
   ListTree,
@@ -436,6 +437,7 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
     groups: [
       groupBlock('admin.menu.payments.settings', [
         itemBlock({ path: '/admin/payments/domainSettings', labelKey: 'admin.menu.payments.domainSettings', icon: Globe2 }),
+        itemBlock({ path: '/admin/payments/cashierToken', labelKey: 'admin.menu.payments.cashierToken', icon: KeyRound }),
       ]),
       groupBlock('admin.menu.payments.configuration', [
         itemBlock({ path: '/admin/payments/providers', labelKey: 'admin.menu.payments.providers', icon: CloudCog }),

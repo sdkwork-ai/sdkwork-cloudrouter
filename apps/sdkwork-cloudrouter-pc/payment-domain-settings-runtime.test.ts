@@ -67,15 +67,20 @@ test('callback domain defaults to the public API host, not the console host', ()
   assert.match(page, /useState<CallbackDomainForm>\(defaultCallbackForm\)/);
 });
 
-test('cashier signing key epoch is managed from the payment settings page', () => {
+test('cashier signing key epoch is a payment settings menu destination', () => {
   const service = readSource('./packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts');
   assert.match(service, /payments\.cashierTokenSettings\.retrieve\(\)/);
   assert.match(service, /payments\.cashierTokenSettings\.rotate\(\)/);
 
+  const index = readSource('./packages/sdkwork-cloudrouter-pc-admin-payments/src/index.tsx');
+  assert.match(index, /sectionId === 'cashierToken'/);
+  assert.match(index, /<CashierTokenSettingsAdmin \/>/);
+
   const page = readSource(
-    './packages/sdkwork-cloudrouter-pc-admin-payments/src/components/PaymentDomainSettingsAdmin.tsx',
+    './packages/sdkwork-cloudrouter-pc-admin-payments/src/CashierTokenSettingsAdmin.tsx',
   );
-  assert.match(page, /<CashierTokenSettingsPanel canRotate=\{canUpdate\} \/>/);
+  assert.match(page, /<CashierTokenSettingsPanel canRotate=\{canRotate\} \/>/);
+  assert.match(page, /commerce\.payments\.domain_settings\.update/);
 
   const panel = readSource(
     './packages/sdkwork-cloudrouter-pc-admin-payments/src/components/CashierTokenSettingsPanel.tsx',
@@ -83,4 +88,10 @@ test('cashier signing key epoch is managed from the payment settings page', () =
   assert.match(panel, /cashierToken\.rotate/);
   assert.match(panel, /keyEpoch/);
   assert.match(panel, /cashierToken\.rotateConfirm/);
+
+  // The panel lives on its own settings page, not inside the domain settings page.
+  const domainSettings = readSource(
+    './packages/sdkwork-cloudrouter-pc-admin-payments/src/components/PaymentDomainSettingsAdmin.tsx',
+  );
+  assert.doesNotMatch(domainSettings, /CashierTokenSettingsPanel/);
 });

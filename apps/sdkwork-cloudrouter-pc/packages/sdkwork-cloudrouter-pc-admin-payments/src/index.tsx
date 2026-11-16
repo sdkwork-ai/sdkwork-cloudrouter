@@ -131,11 +131,13 @@ import { RefundDetailDrawer } from './components/RefundDetailDrawer';
 import { PaymentRecordsSummary } from './components/PaymentRecordsSummary';
 import { PaymentTestDialog } from './components/PaymentTestDialog';
 import { PaymentDomainSettingsAdmin } from './components/PaymentDomainSettingsAdmin';
+import { CashierTokenSettingsAdmin } from './CashierTokenSettingsAdmin';
 
 type PaymentsAdminTab =
   | 'providers'
   | 'providerAccounts'
   | 'domainSettings'
+  | 'cashierToken'
   | 'methods'
   | 'channels'
   | 'routeRules'
@@ -145,7 +147,7 @@ type PaymentsAdminTab =
   | 'reconciliationRuns'
   | 'refunds';
 
-type PaymentResourceTab = Exclude<PaymentsAdminTab, 'providerAccounts' | 'domainSettings'>;
+type PaymentResourceTab = Exclude<PaymentsAdminTab, 'providerAccounts' | 'domainSettings' | 'cashierToken'>;
 type PaymentsAdminGroup = string;
 
 type PaymentsAdminProps = {
@@ -163,6 +165,7 @@ function resolvePaymentsSectionId(sectionId?: string): PaymentsAdminTab {
     sectionId === 'providers'
     || sectionId === 'providerAccounts'
     || sectionId === 'domainSettings'
+    || sectionId === 'cashierToken'
     || sectionId === 'methods'
     || sectionId === 'channels'
     || sectionId === 'routeRules'
@@ -184,6 +187,9 @@ export function PaymentsAdmin({ sectionId }: PaymentsAdminProps = {}) {
   }
   if (activeSectionId === 'domainSettings') {
     return <PaymentDomainSettingsAdmin />;
+  }
+  if (activeSectionId === 'cashierToken') {
+    return <CashierTokenSettingsAdmin />;
   }
   return <PaymentResourceAdmin activeSectionId={activeSectionId} />;
 }

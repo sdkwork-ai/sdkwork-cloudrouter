@@ -53,8 +53,9 @@ A brand-new database becomes an operable deployment in this order:
 | 2 | 119 application templates + enabled tenant applications (unique primary domain per identity) | same IAM bootstrap step, from `etc/iam/apps/*` |
 | 3 | Bootstrap admin/manager/operator users (password seeded from `SDKWORK_IAM_SUPER_ADMIN_PASSWORD`) | same IAM bootstrap step |
 | 4 | Federated commerce seed data (plans, payment methods, partner/promotion bootstrap rows) | `cloudrouterctl ensure` → `bootstrap_federated_commerce_modules` |
-| 5 | Cloud Router schema, model catalog, pricing projection, AI routing seed, service node, vendor upstream accounts + encrypted credentials | `cloudrouterctl ensure` |
-| 6 | Gateway serving traffic (startup re-runs the idempotent data bootstrap) | container entrypoint |
+| 5 | Notification channel initialization: 13 email provider accounts + sender identities + 4 routing rules, 8 SMS provider accounts + signatures + 4 routing rules, and 20 message templates (Tencent Enterprise Mail and Tencent Cloud SMS enabled by default) | `cloudrouterctl ensure` → `bootstrap_federated_messaging_module` |
+| 6 | Cloud Router schema, model catalog, pricing projection, AI routing seed, service node, vendor upstream accounts + encrypted credentials | `cloudrouterctl ensure` |
+| 7 | Gateway serving traffic (startup re-runs the idempotent data bootstrap) | container entrypoint |
 
 `bin/docker-deploy.sh` generates the three first-boot secrets into the
 per-environment env file when they are unset (and never rewrites configured
