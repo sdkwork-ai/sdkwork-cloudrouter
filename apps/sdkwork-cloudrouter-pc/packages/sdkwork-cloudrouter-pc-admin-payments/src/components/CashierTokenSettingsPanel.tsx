@@ -119,7 +119,7 @@ export function CashierTokenSettingsPanel({ canRotate }: CashierTokenSettingsPan
             <p className="mt-1 max-w-3xl text-sm text-slate-600 dark:text-slate-300">
               {t(
                 'admin.commerce.payments.cashierToken.desc',
-                'The anonymous cashier signs each QR link with a key derived from the deployment root secret and this tenant key epoch. Rotating changes the epoch for new links only; links issued under the previous epoch keep working until they expire (15 minutes). The secret itself is never stored in the payment database or shown here.',
+                'The anonymous cashier signs each QR link with a signing key that the payment center generates and stores encrypted in the payment database. Rotating creates a new key immediately; links issued under the previous key keep working until they expire (up to 15 minutes, and the previous key is kept for one hour). The deployment key-encryption key only protects the stored secret and is never shown here.',
               )}
             </p>
           </div>
@@ -203,7 +203,7 @@ export function CashierTokenSettingsPanel({ canRotate }: CashierTokenSettingsPan
           confirmLabel={t('admin.commerce.payments.cashierToken.rotate', 'Rotate key')}
           description={t(
             'admin.commerce.payments.cashierToken.rotateConfirm',
-            'Rotate the cashier signing key epoch? New links use the new epoch immediately; links issued under the previous epoch keep working until they expire (up to 15 minutes).',
+            'Rotate the cashier signing key? A new key is generated and stored immediately; links issued under the previous key keep working until they expire (up to 15 minutes, previous key retained for one hour).',
           )}
           onClose={() => setConfirmOpen(false)}
           onConfirm={() => void rotate()}
