@@ -89,6 +89,7 @@ export type AdminModuleId =
   | 'partnerCenter'
   | 'paymentCenter'
   | 'storageCenter'
+  | 'domainCenter'
   | 'tradeCenter'
   | 'notifyCenter'
   | 'documentCenter'
@@ -240,6 +241,13 @@ export const ADMIN_MODULES: AdminModuleDef[] = [
     icon: CloudCog,
     defaultPath: '/admin/storage/providers',
     pathPrefixes: ['/admin/storage'],
+  }),
+  moduleBlock({
+    id: 'domainCenter',
+    nameKey: 'admin.header.domainCenter',
+    icon: Globe2,
+    defaultPath: '/admin/domains',
+    pathPrefixes: ['/admin/domains'],
   }),
   moduleBlock({
     id: 'documentCenter',
@@ -538,6 +546,29 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
         itemBlock({ path: '/admin/storage/usage', labelKey: 'admin.menu.storage.usage', icon: BarChart3 }),
         itemBlock({ path: '/admin/storage/reconciliation', labelKey: 'admin.menu.storage.reconciliation', icon: RefreshCcw }),
         itemBlock({ path: '/admin/storage/garbageCollection', labelKey: 'admin.menu.storage.garbageCollection', icon: Recycle }),
+      ]),
+    ],
+  },
+  {
+    // Domain Center: one control plane over the deployments domain contract,
+    // laid out as the industry-standard chain an operator reasons about:
+    // root domain -> hostname -> resolution -> TLS, plus the credentials that
+    // publish DNS records.
+    moduleId: 'domainCenter',
+    items: [
+      itemBlock({ path: '/admin/domains', labelKey: 'admin.menu.domains.overview', icon: LayoutDashboard }),
+    ],
+    groups: [
+      groupBlock('admin.menu.domains.management', [
+        itemBlock({ path: '/admin/domains/zones', labelKey: 'admin.menu.domains.zones', icon: Globe2 }),
+        itemBlock({ path: '/admin/domains/hostnames', labelKey: 'admin.menu.domains.hostnames', icon: Server }),
+      ]),
+      groupBlock('admin.menu.domains.resolution', [
+        itemBlock({ path: '/admin/domains/dns', labelKey: 'admin.menu.domains.dns', icon: Network }),
+      ]),
+      groupBlock('admin.menu.domains.security', [
+        itemBlock({ path: '/admin/domains/certificates', labelKey: 'admin.menu.domains.certificates', icon: ShieldCheck }),
+        itemBlock({ path: '/admin/domains/accounts', labelKey: 'admin.menu.domains.accounts', icon: KeyRound }),
       ]),
     ],
   },

@@ -37,6 +37,7 @@ import { adminCoreColumnsMessages } from './admin/core-columns';
 import { adminCoreNavigationMessages } from './admin/core-navigation';
 import { adminDataCenterMessages } from './admin/data-center';
 import { adminDashboardMessages } from './admin/dashboard';
+import { adminDomainCenterMessages } from './admin/domain-center';
 import { adminMarketingMessages } from './admin/marketing';
 import { adminMarketingReferralsMessages } from './admin/marketing-referrals';
 import { adminPartnerMessages as adminPartnerShellMessages } from './admin/partner';
@@ -108,6 +109,7 @@ export const resources = mergeI18nBundles([
   adminCoreNavigationMessages,
   adminDataCenterMessages,
   adminDashboardMessages,
+  adminDomainCenterMessages,
   adminMarketingMessages,
   adminMarketingReferralsMessages,
   adminPartnerShellMessages,

@@ -1,5 +1,6 @@
 import { lazy, useEffect, useMemo, useState, type ComponentType, type LazyExoticComponent, type ReactElement } from 'react';
-import { Navigate, Route, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, Route, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import type { DomainCenterAdminProps, DomainCenterSectionId } from '@sdkwork/cloudrouter-pc-admin-domain';
 import { IAM_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-iam/contribution';
 import { RTC_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-rtc/contribution';
 import { RTC_ADMIN_ROUTE_ELEMENTS } from '@sdkwork/cloudrouter-pc-admin-rtc';
@@ -84,6 +85,15 @@ const StorageAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-
   sectionId?: string;
   onSectionChange?: (sectionId: string) => void;
 }>>;
+/**
+ * Domain Center screens. The deployments domain control plane answers every
+ * page; the host only lazily loads the UI and turns its section navigation into
+ * a real route change so deep links and the browser back button keep working.
+ */
+const DomainCenterAdmin = lazyAdminRoute(
+  () => import('@sdkwork/cloudrouter-pc-admin-domain'),
+  'DomainCenterAdmin',
+) as LazyExoticComponent<ComponentType<DomainCenterAdminProps>>;
 const IamUsersAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamUsersAdmin');
 const IamTenantsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamTenantsAdmin');
 const IamApplicationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamApplicationsAdmin');
@@ -297,6 +307,15 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   route('partner/:sectionId?', 'sdkwork-partner', '@sdkwork/cloudrouter-pc-admin-partner', ['sdkwork-partner-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={PartnerAdmin} />),
   route('payments/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-payments', ['sdkwork-payment-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={PaymentsAdmin} />),
   route('storage/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-storage', ['cloudrouter-backend-sdk', 'sdkwork-drive-admin-storage-sdk', 'drive-backend-sdk'], 'cloudrouter.admin.access', <StorageAdminRoute />),
+  // Domain Center: one module, six operator surfaces. Every operation is owned
+  // by the deployments domain control plane (`sdkwork-deployments-app-sdk`), so
+  // the admin surface can never drift from what the deployment engine enforces.
+  route('domains', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-domain', ['sdkwork-deployments-app-sdk'], 'cloudrouter.admin.access', <DomainCenterRoute sectionId="overview" />),
+  route('domains/zones', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-domain', ['sdkwork-deployments-app-sdk'], 'cloudrouter.admin.access', <DomainCenterRoute sectionId="zones" />),
+  route('domains/hostnames', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-domain', ['sdkwork-deployments-app-sdk'], 'cloudrouter.admin.access', <DomainCenterRoute sectionId="hostnames" />),
+  route('domains/dns', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-domain', ['sdkwork-deployments-app-sdk'], 'cloudrouter.admin.access', <DomainCenterRoute sectionId="dns" />),
+  route('domains/certificates', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-domain', ['sdkwork-deployments-app-sdk'], 'cloudrouter.admin.access', <DomainCenterRoute sectionId="certificates" />),
+  route('domains/accounts', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-domain', ['sdkwork-deployments-app-sdk'], 'cloudrouter.admin.access', <DomainCenterRoute sectionId="accounts" />),
   // Document Center: pages and rich-text editor are owned by sdkwork-documents;
   // the portal supplies the generated documents app client through the port.
   route('documents', 'sdkwork-documents', '@sdkwork/documents-pc-admin-documents', ['sdkwork-documents-app-sdk'], 'cloudrouter.admin.access', <DocumentsAdminHostRoute />),
@@ -385,6 +404,31 @@ function StorageAdminRoute() {
     <StorageAdmin
       sectionId={sectionId}
       onSectionChange={(nextSectionId) => navigate(`/admin/storage/${nextSectionId}`)}
+    />
+  );
+}
+
+/**
+ * Domain Center host route.
+ *
+ * The zone selected on the overview or in the zone table travels in the `zone`
+ * query string, so `/admin/domains/hostnames?zone=<id>` is a shareable deep link
+ * and a refresh keeps the operator on the same root domain. Section navigation
+ * is a route change, not internal state, for the same reason.
+ */
+function DomainCenterRoute({ sectionId }: { sectionId: DomainCenterSectionId }) {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const zoneId = searchParams.get('zone') ?? undefined;
+  return (
+    <DomainCenterAdmin
+      sectionId={sectionId}
+      initialZoneId={zoneId}
+      onSectionChange={(nextSection, nextZoneId) => {
+        const path = nextSection === 'overview' ? '/admin/domains' : `/admin/domains/${nextSection}`;
+        const query = nextZoneId ? `?zone=${encodeURIComponent(nextZoneId)}` : '';
+        navigate(`${path}${query}`);
+      }}
     />
   );
 }

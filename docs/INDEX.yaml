@@ -284,6 +284,12 @@ entries:
     status: draft
     owner: cloudrouter-frontend
     title: Admin data center (standalone data platform) design
+  - id: DOMAIN-DOMAINS-0001
+    path: docs/domains/domains/admin-domain-center-design.md
+    kind: domain-design
+    status: active
+    owner: cloudrouter-platform
+    title: Admin domain center (root domains, DNS resolution, certificates) design
 domains:
   - id: gateway
     name: Gateway

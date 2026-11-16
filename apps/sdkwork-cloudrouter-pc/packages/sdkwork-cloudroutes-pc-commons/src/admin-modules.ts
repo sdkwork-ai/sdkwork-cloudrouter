@@ -96,6 +96,11 @@ export const ADMIN_MODULE_CATALOG = [
     descriptionKey: 'admin.siteSettings.adminModules.items.storageCenter.description',
   },
   {
+    id: 'domainCenter',
+    labelKey: 'admin.siteSettings.adminModules.items.domainCenter.label',
+    descriptionKey: 'admin.siteSettings.adminModules.items.domainCenter.description',
+  },
+  {
     id: 'documentCenter',
     labelKey: 'admin.siteSettings.adminModules.items.documentCenter.label',
     descriptionKey: 'admin.siteSettings.adminModules.items.documentCenter.description',

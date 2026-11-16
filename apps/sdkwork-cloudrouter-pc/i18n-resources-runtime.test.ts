@@ -90,6 +90,7 @@ test('portal bootstrap composes Cloud Router and Agents catalogs through the SDK
 
   assert.match(resourcesSource, /@sdkwork\/cloudrouter-pc-admin-upstream\/i18n/);
   assert.match(resourcesSource, /@sdkwork\/cloudrouter-pc-admin-pricing\/i18n/);
+  assert.match(resourcesSource, /adminDomainCenterMessages/);
   assert.match(resourcesSource, /pricingAdminMessages/);
   assert.match(i18nSource, /defineSdkworkI18nRuntimeConfig/);
   assert.match(i18nSource, /defaultLocale: 'en-US'/);
@@ -98,6 +99,12 @@ test('portal bootstrap composes Cloud Router and Agents catalogs through the SDK
     assert.match(i18nSource, new RegExp(`['"]${locale}['"]`));
   }
   assert.match(i18nSource, /'zh-CN': resources\.zh\.translation/);
-  assert.match(mainSource, /catalogs=\{\[cloudRouterI18nCatalog, \.\.\.agentsWorkbenchI18nCatalogs\]\}/);
+  // The portal may compose more capability catalogs than these two; the
+  // assertion is that Cloud Router and Agents both reach the provider, not
+  // that the array has exactly two entries.
+  assert.match(
+    mainSource,
+    /catalogs=\{\[\s*cloudRouterI18nCatalog,\s*\.\.\.agentsWorkbenchI18nCatalogs,?/,
+  );
   assert.doesNotMatch(agentsI18nSource, /initReactI18next|createInstance|I18nextProvider/);
 });
