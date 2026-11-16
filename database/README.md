@@ -16,12 +16,13 @@ The product installer performs explicit lifecycle orchestration. It migrates `sd
 
 The installer also bootstraps the **federated commerce modules** (`sdkwork-payment`, `sdkwork-order`, `sdkwork-membership`, `sdkwork-promotion`, `sdkwork-partner`) on the shared pool for every explicit lifecycle command (`pnpm db:init`, `pnpm db:ensure`, `pnpm db:upgrade`, and the container/install-package `cloudrouterctl ensure` entrypoint): baseline + migrations + the `standard` seed profile (default locale `zh-CN`, overridable through `SDKWORK_DATABASE_SEED_LOCALE`). This applies the same commercial reference data that development seeds on gateway boot (`SDKWORK_DATABASE_SEED_ON_BOOT=true` in `config/host/postgres.env`) — subscription plans and plan groups (`membership_plan` / `membership_package_group`), payment method catalogs, and promotion/partner bootstrap rows — so packaged and deployed databases are initialized without boot-time seeding.
 
-Every explicit lifecycle command also applies the **Cloud Router module seed set** (`database/seeds/seed.manifest.json`, `standard` profile) and the **Drive storage module seed set**:
+Every explicit lifecycle command also applies the **Cloud Router module seed set** (`database/seeds/seed.manifest.json`, `standard` profile), the **Drive storage module seed set**, and the **Messaging notification module seed set**:
 
 - Cloud Router's `common/002_storage_center_defaults.sql` installs the storage-center governance reference data — one `storage_provider` row per mainstream cloud vendor, the Tencent Cloud COS `storage_bucket` rows, and the per-logical-scope `storage_default_bucket_policy` rows behind `/admin/storage/defaultBuckets`.
 - Drive's `common/002_storage_provider_catalog.sql` installs the storage provider configurations behind `/admin/storage/providers` — one row per mainstream cloud vendor plus the credential-free local fallback, with path-style/TLS/encryption defaults and an `env:` credential reference each — and the tenant default binding pointing at Tencent Cloud COS.
+- Messaging's `common/002_email_provider_defaults.sql`, `common/003_sms_provider_defaults.sql`, and `locales/{zh-CN,en-US}/001_message_templates.sql` install the notification configuration behind `/admin/notify/email` and `/admin/notify/sms` — 13 email provider accounts with one sender identity each, 8 SMS provider accounts with one `BirdCoder` signature each, four routing rules per channel, and ten email + ten SMS templates per active locale. Tencent Enterprise Mail (`enterprise_mail`, `smtp.exmail.qq.com`, `no-reply@birdcoder.com`) and Tencent Cloud SMS (`tencent`, `https://sms.tencentcloudapi.com`, `ap-guangzhou`) are the enabled defaults; every other provider stays disabled until configured.
 
-Both are idempotent (content-checksummed seed history, `ON CONFLICT DO NOTHING`), so an upgrade only adds what is missing and never rewrites an operator edit.
+All sets are idempotent (content-checksummed seed history, `ON CONFLICT DO NOTHING`), so an upgrade only adds what is missing and never rewrites an operator edit.
 
 | Dependency | Lifecycle owner | Runtime role |
 | --- | --- | --- |

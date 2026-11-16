@@ -142,6 +142,49 @@ pub async fn bootstrap_federated_storage_module(
         .map_err(|error| format!("bootstrap Drive storage database module failed: {error}"))
 }
 
+/// Bootstraps the Messaging notification database module on the installer pool.
+///
+/// The CloudRouter backend API mounts Messaging's admin surface
+/// (`/backend/v3/api/messaging/*`), which owns `/admin/notify/email` and
+/// `/admin/notify/sms`. The email/SMS provider accounts, sender identities,
+/// carrier signatures, per-scenario routing rules, and message templates are
+/// **seed-only** reference data (`database/seeds/common/002_*`, `003_*`, and
+/// `database/seeds/locales/*/001_message_templates.sql`): a schema migration
+/// alone never creates them.
+///
+/// Production keeps `SDKWORK_DATABASE_SEED_ON_BOOT` off and Messaging's own
+/// manifest also declares `seedOnBoot = false`, so nothing seeds the module at
+/// boot. Without this step a packaged `install`/`upgrade` leaves both notify
+/// pages empty while the installation still reports success — exactly the
+/// regression this module exists to close (the Drive storage module has the
+/// same shape and is converged the same way).
+///
+/// Host packages that do not stage the Messaging `database/` module keep the
+/// operator-managed path: there is nothing to converge, so this is a no-op.
+pub async fn bootstrap_federated_messaging_module(
+    pool: &DatabasePool,
+    seed_locale: Option<&str>,
+) -> Result<Vec<(String, usize, usize)>, String> {
+    let app_root = sdkwork_messaging_database_host::resolve_app_root();
+    if !app_root.join("database/database.manifest.json").is_file() {
+        return Ok(Vec::new());
+    }
+    let messaging_module = sdkwork_messaging_database_host::database_module()?;
+    let registry = DatabaseModuleRegistry::builder()
+        .register(messaging_module)
+        .map_err(|error| format!("register messaging database module failed: {error}"))?
+        .build();
+    let locale = match seed_locale {
+        Some(locale) => LocaleTag(locale.to_owned()),
+        None => LocaleTag(default_seed_locale(&registry)),
+    };
+    RegistryLifecycleOrchestrator::new(pool.clone(), registry)
+        .with_applied_by("cloudrouterctl-messaging")
+        .bootstrap_all(&locale, &SeedProfile(DEFAULT_SEED_PROFILE.to_owned()))
+        .await
+        .map_err(|error| format!("bootstrap Messaging database module failed: {error}"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -257,5 +300,190 @@ mod tests {
             body.contains(concat!("database/database.", "manifest.json")),
             "a host package without the staged Drive database module must remain a no-op"
         );
+    }
+
+    /// `/admin/notify/email` and `/admin/notify/sms` read seed-only reference
+    /// data (provider accounts, sender identities, signatures, routing rules,
+    /// and templates). The installer must register the Messaging module and
+    /// bootstrap it with the standard profile, or a packaged install reports
+    /// success with both pages empty.
+    #[test]
+    fn messaging_module_bootstrap_registers_the_module_and_applies_the_standard_seed() {
+        let source = include_str!("federated.rs");
+        let function = source
+            .find("pub async fn bootstrap_federated_messaging_module(")
+            .expect("installer must converge the Messaging notification module");
+        let body = &source[function..];
+
+        let registration = body
+            .find("sdkwork_messaging_database_host::database_module()")
+            .expect("the Messaging database module must be loaded for registration");
+        let bootstrap_all = body
+            .find(".bootstrap_all(&locale, &SeedProfile(DEFAULT_SEED_PROFILE.to_owned()))")
+            .expect("the Messaging module must be bootstrapped with the standard seed profile");
+        assert!(
+            registration < bootstrap_all,
+            "the module must be registered before the registry bootstraps it"
+        );
+        assert!(
+            body.contains(concat!("database/database.", "manifest.json")),
+            "a host package without the staged Messaging database module must remain a no-op"
+        );
+        assert!(
+            body.contains(concat!(
+                "\"",
+                "cloudrouterctl-messaging",
+                "\""
+            )),
+            "seed history must attribute Messaging initialization to the installer"
+        );
+    }
+
+    /// End-to-end regression for the installation path: running the installer's
+    /// Messaging bootstrap against an empty PostgreSQL schema must create the
+    /// provider/identity/rule/template reference data, and a second run must
+    /// apply nothing (checksummed seed history).
+    ///
+    /// Run:
+    /// `SDKWORK_CLOUDROUTER_TEST_PG_URL=postgres://... \
+    ///  cargo test -p sdkwork-cloudrouter-installer \
+    ///  messaging_bootstrap_converges_an_empty_schema -- --ignored --nocapture`
+    #[tokio::test]
+    #[ignore = "requires SDKWORK_CLOUDROUTER_TEST_PG_URL and the sibling sdkwork-messaging checkout"]
+    async fn messaging_bootstrap_converges_an_empty_schema() {
+        use sdkwork_database_config::{DatabaseConfig, DatabaseEngine, DeploymentMode};
+        use sdkwork_database_sqlx::{DatabasePool, PoolContext};
+        use sqlx::postgres::PgPoolOptions;
+        use sqlx::{Connection, PgConnection, Row};
+
+        let base_url = std::env::var("SDKWORK_CLOUDROUTER_TEST_PG_URL").unwrap_or_else(|_| {
+            "postgres://sdkwork_ai_dev:sdkworkdev123@127.0.0.1:5432/sdkwork_ai_dev".to_owned()
+        });
+        let mut admin = PgConnection::connect(&base_url)
+            .await
+            .expect("connect integration database");
+        let schema = format!(
+            "cloudrouter_messaging_init_{}_{}",
+            chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default(),
+            std::process::id(),
+        );
+        sqlx::raw_sql(sqlx::AssertSqlSafe(format!("CREATE SCHEMA {schema}")))
+            .execute(&mut admin)
+            .await
+            .expect("create throwaway schema");
+
+        let separator = if base_url.contains('?') { '&' } else { '?' };
+        let scoped_url = format!(
+            "{base_url}{separator}options=-c%20search_path%3D{schema}"
+        );
+        let config = DatabaseConfig {
+            engine: DatabaseEngine::Postgres,
+            url: scoped_url,
+            mode: DeploymentMode::Standalone,
+            max_connections: 2,
+            ..DatabaseConfig::default()
+        };
+        // `create_pool_from_config` normalizes the URL into the workspace
+        // structured fields and drops `options`, so build the pool directly and
+        // pin the throwaway schema on every connection.
+        let schema_for_connect = schema.clone();
+        let pg_pool = PgPoolOptions::new()
+            .max_connections(2)
+            .after_connect(move |connection, _metadata| {
+                let statement = format!("SET search_path TO {schema_for_connect}");
+                Box::pin(async move {
+                    sqlx::raw_sql(sqlx::AssertSqlSafe(statement.as_str()))
+                        .execute(connection)
+                        .await
+                        .map(|_| ())
+                })
+            })
+            .connect(&config.url)
+            .await
+            .expect("connect throwaway schema");
+        let pool = DatabasePool::Postgres(
+            pg_pool,
+            PoolContext {
+                config: config.clone(),
+            },
+        );
+
+        let messaging_root = std::fs::canonicalize(
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../sdkwork-messaging"),
+        )
+        .expect("resolve the sibling sdkwork-messaging checkout");
+        assert!(
+            messaging_root.join("database/database.manifest.json").is_file(),
+            "the sibling sdkwork-messaging checkout must stage database/ at {}",
+            messaging_root.display()
+        );
+        // SAFETY: ignored integration tests in this binary run sequentially;
+        // no other test reads this variable.
+        unsafe {
+            std::env::set_var("SDKWORK_MESSAGING_APP_ROOT", &messaging_root);
+        }
+
+        let applied = super::bootstrap_federated_messaging_module(&pool, Some("zh-CN"))
+            .await
+            .expect("bootstrap the Messaging database module");
+        assert_eq!(applied.len(), 1, "one Messaging module is converged");
+        let (module_id, _migrations, seeds) = &applied[0];
+        assert_eq!(module_id, "messaging");
+        assert_eq!(*seeds, 4, "common provider seeds plus the zh-CN template seed");
+
+        let postgres = pool.as_postgres().expect("PostgreSQL pool");
+        let row = sqlx::query(
+            "SELECT \
+                (SELECT COUNT(*) FROM messaging_email_account) AS email_accounts, \
+                (SELECT COUNT(*) FROM messaging_email_sender) AS email_senders, \
+                (SELECT COUNT(*) FROM messaging_email_send_rule) AS email_rules, \
+                (SELECT COUNT(*) FROM messaging_sms_account) AS sms_accounts, \
+                (SELECT COUNT(*) FROM messaging_sms_signature) AS sms_signatures, \
+                (SELECT COUNT(*) FROM messaging_sms_send_rule) AS sms_rules, \
+                (SELECT COUNT(*) FROM messaging_template) AS templates",
+        )
+        .fetch_one(postgres)
+        .await
+        .expect("count seeded notification data");
+        assert_eq!(row.get::<i64, _>("email_accounts"), 13);
+        assert_eq!(row.get::<i64, _>("email_senders"), 13);
+        assert_eq!(row.get::<i64, _>("email_rules"), 4);
+        assert_eq!(row.get::<i64, _>("sms_accounts"), 8);
+        assert_eq!(row.get::<i64, _>("sms_signatures"), 8);
+        assert_eq!(row.get::<i64, _>("sms_rules"), 4);
+        assert_eq!(row.get::<i64, _>("templates"), 20);
+
+        let default_email: String = sqlx::query_scalar(
+            "SELECT provider FROM messaging_email_account WHERE enabled AND receive_enabled",
+        )
+        .fetch_one(postgres)
+        .await
+        .expect("resolve the enabled email provider");
+        assert_eq!(default_email, "enterprise_mail");
+        let default_sms: String =
+            sqlx::query_scalar("SELECT provider FROM messaging_sms_account WHERE enabled")
+                .fetch_one(postgres)
+                .await
+                .expect("resolve the enabled sms provider");
+        assert_eq!(default_sms, "tencent");
+
+        let second = super::bootstrap_federated_messaging_module(&pool, Some("zh-CN"))
+            .await
+            .expect("re-bootstrap the Messaging database module");
+        assert_eq!(second.len(), 1);
+        assert_eq!(
+            second[0].1, 0,
+            "a repeat ensure must apply no migration (checksummed history)"
+        );
+        assert_eq!(
+            second[0].2, 0,
+            "a repeat ensure must apply no seed (checksummed history)"
+        );
+
+        pool.close().await;
+        sqlx::raw_sql(sqlx::AssertSqlSafe(format!("DROP SCHEMA {schema} CASCADE")))
+            .execute(&mut admin)
+            .await
+            .expect("drop throwaway schema");
     }
 }

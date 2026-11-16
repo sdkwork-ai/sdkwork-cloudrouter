@@ -5589,6 +5589,7 @@ dependencies = [
  "sdkwork-cloudrouter-config",
  "sdkwork-cloudrouter-database-host",
  "sdkwork-cloudrouter-router-service",
+ "sdkwork-database-config",
  "sdkwork-database-lifecycle",
  "sdkwork-database-spi",
  "sdkwork-database-sqlx",
@@ -5599,6 +5600,7 @@ dependencies = [
  "sdkwork-inventory-database-host",
  "sdkwork-membership-database-host",
  "sdkwork-merchandise-database-host",
+ "sdkwork-messaging-database-host",
  "sdkwork-models-catalog-repository-sqlx",
  "sdkwork-models-database-host",
  "sdkwork-partner-database-host",
@@ -9303,12 +9305,16 @@ dependencies = [
 name = "sdkwork-rtc-service-host"
 version = "0.1.0"
 dependencies = [
+ "aes-gcm 0.10.3",
+ "base64 0.22.1",
+ "rand_core 0.6.4",
  "sdkwork-communication-rtc-service",
  "sdkwork-drive-storage-contract",
  "sdkwork-drive-workspace-service",
  "sdkwork-routes-rtc-app-api",
  "sdkwork-routes-rtc-backend-api",
  "serde_json",
+ "sha2 0.10.9",
  "uuid",
 ]
 

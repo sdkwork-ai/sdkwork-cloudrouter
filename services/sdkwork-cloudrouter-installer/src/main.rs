@@ -209,6 +209,21 @@ async fn run_postgres(config: DatabaseConfig, command: InstallerCommand) -> anyh
                 "Drive storage database bootstrap failed: {error}"
             ))
         })?;
+        // Messaging's notification module seed set: the email/SMS provider
+        // accounts, sender identities, carrier signatures, routing rules, and
+        // message templates behind `/admin/notify/email` and `/admin/notify/sms`.
+        // Those rows exist only in `database/seeds/**`, and production keeps
+        // boot-time seeding off, so install/upgrade must apply them explicitly.
+        federated::bootstrap_federated_messaging_module(
+            &database_pool,
+            install_options.seed_locale.as_deref(),
+        )
+        .await
+        .map_err(|error| {
+            InstallerCliError::DatabaseConnection(format!(
+                "Messaging notification database bootstrap failed: {error}"
+            ))
+        })?;
     }
     // Commands that write runtime-ID-backed rows (official pricing sync)
     // need the database-leased Snowflake generator installed first, mirroring
@@ -1354,7 +1369,10 @@ mod tests {
             .find("if command.requires_schema_migration() {")
             .expect("explicit lifecycle gate");
         let cloudrouter_seed = source
-            .find(concat!("bootstrap_cloud_router_seed_", "set("))
+            .find(concat!(
+                "bootstrap_cloud_router_seed_",
+                "set(&database_pool"
+            ))
             .expect("Cloud Router module seed set must run on install/upgrade");
         let drive_seed = source
             .find(concat!(
@@ -1370,6 +1388,36 @@ mod tests {
         assert!(
             drive_seed > migration_gate,
             "Drive storage seed must run only for explicit schema lifecycle commands"
+        );
+    }
+
+    /// Install/upgrade must also converge the Messaging notification module.
+    /// Its provider accounts, sender identities, SMS signatures, routing rules,
+    /// and templates are seed-only data, so a packaged deployment that skips
+    /// this step reports success with empty `/admin/notify/email` and
+    /// `/admin/notify/sms` pages.
+    #[test]
+    fn schema_lifecycle_commands_seed_the_notification_module() {
+        let source = include_str!("main.rs");
+        let migration_gate = source
+            .find("if command.requires_schema_migration() {")
+            .expect("explicit lifecycle gate");
+        let messaging_seed = source
+            .find(concat!(
+                "federated::bootstrap_federated_",
+                "messaging_module("
+            ))
+            .expect("Messaging notification seed must run on install/upgrade");
+
+        assert!(
+            messaging_seed > migration_gate,
+            "Messaging seed must run only for explicit schema lifecycle commands"
+        );
+        assert!(
+            source.contains(concat!(
+                "bootstrap_federated_commerce_modules(\n            &database_pool,\n            install_options.seed_locale.as_deref(),"
+            )),
+            "every federated bootstrap must use the canonical seed locale override"
         );
     }
 
