@@ -41,6 +41,28 @@ function lazyAnonymousCashierPage(
 
 const CloudRouterCashierPage = lazyOrderPage('CloudRouterCashierPage');
 const CloudRouterAnonymousCashierPage = lazyAnonymousCashierPage('CloudRouterAnonymousCashierPage');
+
+type CashierEntryErrorPageProps = {
+  readonly locale: SdkworkConsoleLocale;
+  readonly message?: string;
+};
+
+function lazyCashierEntryErrorPage(
+  exportName: string,
+): LazyExoticComponent<ComponentType<CashierEntryErrorPageProps>> {
+  return lazy(async () => {
+    const module = await import('@sdkwork/cloudrouter-h5-orders');
+    const page = module[exportName as keyof typeof module];
+    if (!page) {
+      throw new Error(`CloudRouter order page ${exportName} is not exported.`);
+    }
+    return { default: page as ComponentType<CashierEntryErrorPageProps> };
+  });
+}
+
+const CloudRouterCashierEntryErrorPage = lazyCashierEntryErrorPage(
+  'CloudRouterCashierEntryErrorPage',
+);
 const CloudRouterOrderCenterPage = lazyOrderPage('CloudRouterOrderCenterPage');
 const CloudRouterOrderDetailPage = lazyOrderPage('CloudRouterOrderDetailPage');
 const CloudRouterRefundRequestsPage = lazyOrderPage('CloudRouterRefundRequestsPage');
@@ -83,14 +105,22 @@ export function OrderCashierRoute() {
 type CashierEntryResolution =
   | { readonly kind: 'resolved'; readonly token: string }
   | { readonly kind: 'pending' }
-  | { readonly kind: 'login' };
+  | { readonly kind: 'failed'; readonly message: string };
+
+const MISSING_TRADE_NO_MESSAGE =
+  '该收款链接缺少支付流水号，请重新扫码或向商家索取新的二维码。';
+const INCOMPLETE_LINK_MESSAGE =
+  '该收款链接不完整，请重新扫码或向商家索取新的二维码。';
+const EXCHANGE_FAILED_MESSAGE =
+  '暂时无法打开该笔支付，请稍后重试或重新扫码。';
 
 /**
  * Resolves the capability for the cashier entry path segment.
  *
  * A signed token is used as-is. A legacy pair (`orderId` + `outTradeNo`) is
- * exchanged for a token, so an already-printed QR no longer dead-ends on the
- * login screen. A bare order id cannot be proven payable and stays session-gated.
+ * exchanged for a token. Every failure ends in an explicit `failed` state — never
+ * the login gate: a payer scanning a QR has no account context, so turning the
+ * payment page into a sign-in form is not a recovery they can act on.
  */
 function useCashierEntryResolution(orderId: string | undefined): CashierEntryResolution {
   const [searchParams] = useSearchParams();
@@ -99,21 +129,29 @@ function useCashierEntryResolution(orderId: string | undefined): CashierEntryRes
     () => planCashierEntry(orderId, outTradeNo),
     [orderId, outTradeNo],
   );
-  const [resolution, setResolution] = useState<CashierEntryResolution>(() => (
-    plan.kind === 'token'
-      ? { kind: 'resolved', token: plan.token }
-      : plan.kind === 'exchange'
-        ? { kind: 'pending' }
-        : { kind: 'login' }
-  ));
+  const [resolution, setResolution] = useState<CashierEntryResolution>(() => {
+    if (plan.kind === 'token') return { kind: 'resolved', token: plan.token };
+    if (plan.kind === 'exchange') return { kind: 'pending' };
+    return {
+      kind: 'failed',
+      message: plan.reason === 'missing-trade-no'
+        ? MISSING_TRADE_NO_MESSAGE
+        : INCOMPLETE_LINK_MESSAGE,
+    };
+  });
 
   useEffect(() => {
     if (plan.kind === 'token') {
       setResolution({ kind: 'resolved', token: plan.token });
       return undefined;
     }
-    if (plan.kind === 'login') {
-      setResolution({ kind: 'login' });
+    if (plan.kind === 'invalid') {
+      setResolution({
+        kind: 'failed',
+        message: plan.reason === 'missing-trade-no'
+          ? MISSING_TRADE_NO_MESSAGE
+          : INCOMPLETE_LINK_MESSAGE,
+      });
       return undefined;
     }
     let cancelled = false;
@@ -129,9 +167,12 @@ function useCashierEntryResolution(orderId: string | undefined): CashierEntryRes
         },
         () => {
           // The exchange is the only proof a legacy pair is payable. When it fails
-          // (no deployment secret, wrong trade number, unknown order) fall back to
-          // the session-gated order flow instead of rendering a broken cashier.
-          if (!cancelled) setResolution({ kind: 'login' });
+          // (no deployment secret, wrong trade number, unknown order, transient
+          // outage) the payer still gets the cashier chrome plus a toast, so the
+          // failure is explained instead of silently becoming a login form.
+          if (!cancelled) {
+            setResolution({ kind: 'failed', message: EXCHANGE_FAILED_MESSAGE });
+          }
         },
       );
     return () => {
@@ -152,21 +193,33 @@ function useCashierEntryResolution(orderId: string | undefined): CashierEntryRes
  * - a legacy `{orderId}?outTradeNo=..` link exchanges the pair for a token and
  *   also opens the anonymous cashier, so QRs printed before tokens existed are
  *   not a login wall;
- * - a bare `{orderId}` link has no payable proof and keeps the session gate.
+ * - anything else renders the cashier error shell with a toast. It never routes
+ *   to sign-in.
  */
 export function CashierEntryRoute() {
   const { orderId } = useParams<{ orderId: string }>();
   const { locale, translate } = useConsoleRuntime();
   const resolution = useCashierEntryResolution(orderId);
 
-  if (resolution.kind === 'login') {
-    return <OrderRouteShell page={CloudRouterCashierPage} />;
-  }
   if (resolution.kind === 'pending') {
     return (
       <div className="flex h-screen items-center justify-center bg-[var(--cr-canvas)] text-sm text-[var(--cr-ink-muted)]">
         {translate('cloudrouter.console.shared.loading')}
       </div>
+    );
+  }
+
+  if (resolution.kind === 'failed') {
+    return (
+      <Suspense
+        fallback={(
+          <div className="flex h-screen items-center justify-center bg-[var(--cr-canvas)] text-sm text-[var(--cr-ink-muted)]">
+            {translate('cloudrouter.console.shared.loading')}
+          </div>
+        )}
+      >
+        <CloudRouterCashierEntryErrorPage locale={locale} message={resolution.message} />
+      </Suspense>
     );
   }
 

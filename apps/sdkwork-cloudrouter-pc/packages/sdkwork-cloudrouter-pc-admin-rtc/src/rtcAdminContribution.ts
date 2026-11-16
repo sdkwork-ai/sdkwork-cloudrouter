@@ -29,7 +29,7 @@ import {
  * wires it into the Cloud Router admin surface with an injected service.
  */
 
-export const RTC_ADMIN_DEFAULT_PATH = '/admin/rtc/media-sessions';
+export const RTC_ADMIN_DEFAULT_PATH = '/admin/rtc/dashboard';
 
 export interface CloudRouterRtcAdminModuleDef {
   id: 'rtc';

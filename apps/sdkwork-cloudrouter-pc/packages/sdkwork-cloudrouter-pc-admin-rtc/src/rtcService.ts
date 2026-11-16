@@ -1,5 +1,6 @@
 import {
   createBackendRtcClient,
+  type ProviderProfileVerifyResult,
   type RtcAdminCenterServices,
 } from '@sdkwork/rtc-pc-admin-core';
 import {
@@ -35,21 +36,37 @@ export function getCloudRouterRtcAdminService(): RtcAdminCenterServices {
     cloudRouterRtcAdminService = {
       accounts: {
         list: (params) => client.rtcProviderAccounts.rtc.providerAccounts.list({ page: params?.cursor ? undefined : 1, pageSize: params?.limit ?? 200, cursor: params?.cursor }).then(toListPage),
+        get: (id) => client.rtcProviderAccounts.rtc.providerAccounts.retrieve(id),
         create: (command) =>
           client.rtcProviderAccounts.rtc.providerAccounts.create(
             command as Parameters<typeof client.rtcProviderAccounts.rtc.providerAccounts.create>[0],
           ),
+        update: (id, command) =>
+          client.rtcProviderAccounts.rtc.providerAccounts.update(
+            id,
+            command as Parameters<typeof client.rtcProviderAccounts.rtc.providerAccounts.update>[1],
+          ),
+        disable: (id, reason) =>
+          client.rtcProviderAccounts.rtc.providerAccounts.disable(id, { reason: reason ?? null }),
       },
       applications: {
         list: (accountId, params) =>
           client.rtcProviderApplications.rtc.providerAccounts.applications
             .list(accountId, { pageSize: params?.limit ?? 200, cursor: params?.cursor })
             .then(toListPage),
+        get: (id) => client.rtcProviderApplications.rtc.providerApplications.retrieve(id),
         create: (accountId, command) =>
           client.rtcProviderApplications.rtc.providerAccounts.applications.create(
             accountId,
             command as Parameters<
               typeof client.rtcProviderApplications.rtc.providerAccounts.applications.create
+            >[1],
+          ),
+        update: (id, command) =>
+          client.rtcProviderApplications.rtc.providerApplications.update(
+            id,
+            command as Parameters<
+              typeof client.rtcProviderApplications.rtc.providerApplications.update
             >[1],
           ),
         disable: (id) => client.rtcProviderApplications.rtc.providerApplications.disable(id, {}),
@@ -59,6 +76,7 @@ export function getCloudRouterRtcAdminService(): RtcAdminCenterServices {
           client.rtcProviderCredentials.rtc.providerApplications.credentials
             .list(applicationId, { pageSize: params?.limit ?? 200, cursor: params?.cursor })
             .then(toListPage),
+        get: (id) => client.rtcProviderCredentials.rtc.providerCredentials.retrieve(id),
         create: (applicationId, command) =>
           client.rtcProviderCredentials.rtc.providerApplications.credentials.create(
             applicationId,
@@ -66,23 +84,34 @@ export function getCloudRouterRtcAdminService(): RtcAdminCenterServices {
               typeof client.rtcProviderCredentials.rtc.providerApplications.credentials.create
             >[1],
           ),
+        update: (id, command) =>
+          client.rtcProviderCredentials.rtc.providerCredentials.update(
+            id,
+            command as Parameters<
+              typeof client.rtcProviderCredentials.rtc.providerCredentials.update
+            >[1],
+          ),
         revoke: (id, reason) =>
           client.rtcProviderCredentials.rtc.providerCredentials.revoke(id, { reason: reason ?? null }),
       },
       profiles: {
         list: (params) => client.rtcProviderProfiles.rtc.providerProfiles.list({ pageSize: params?.limit ?? 200, cursor: params?.cursor }).then(toListPage),
+        get: (id) => client.rtcProviderProfiles.rtc.providerProfiles.retrieve(id),
         create: (command) =>
           client.rtcProviderProfiles.rtc.providerProfiles.create(
             command as Parameters<typeof client.rtcProviderProfiles.rtc.providerProfiles.create>[0],
           ),
+        update: (id, command) =>
+          client.rtcProviderProfiles.rtc.providerProfiles.update(
+            id,
+            command as Parameters<typeof client.rtcProviderProfiles.rtc.providerProfiles.update>[1],
+          ),
         disable: (id, reason) =>
           client.rtcProviderProfiles.rtc.providerProfiles.disable(id, { reason: reason ?? null }),
-        verify: (id, queryKind) =>
+        verify: (id, mode) =>
           client.rtcProviderProfiles.rtc.providerProfiles.verify(id, {
-            queryKind: queryKind as Parameters<
-              typeof client.rtcProviderProfiles.rtc.providerProfiles.verify
-            >[1]["queryKind"],
-          }),
+            queryKind: mode,
+          }) as Promise<ProviderProfileVerifyResult>,
         configureCapabilities: (id, enabled, disabled) =>
           client.rtcProviderProfiles.rtc.providerProfiles.capabilities.configure(id, {
             enabledCapabilities: enabled,
@@ -91,6 +120,10 @@ export function getCloudRouterRtcAdminService(): RtcAdminCenterServices {
       },
       routes: {
         list: (params) => client.rtcProviderRoutes.rtc.providerRoutes.list({ pageSize: params?.limit ?? 200, cursor: params?.cursor }).then(toListPage),
+        get: (id) => client.rtcProviderRoutes.rtc.providerRoutes.retrieve(id),
+        create: (command) => client.rtcProviderRoutes.rtc.providerRoutes.create(command),
+        update: (id, command) => client.rtcProviderRoutes.rtc.providerRoutes.update(id, command),
+        disable: (id) => client.rtcProviderRoutes.rtc.providerRoutes.disable(id, {}),
       },
       schemas: {
         listSchemas: () => client.rtcProviderSchemas.rtc.providerSchemas.list().then((response) => response.items),

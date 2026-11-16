@@ -4,3 +4,4 @@ export * from './anonymousCashier.js';
 export * from './i18n.js';
 export * from './OrdersI18nProvider.js';
 export * from './pages.js';
+export * from './CashierEntryErrorPage.js';
