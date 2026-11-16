@@ -81,9 +81,9 @@ sdkwork_utils_rust::derive_cashier_token_key(secret, tenant_id) -> [u8; 32]
 
 | 部署状态 | 链接形态 | 收银台行为 |
 |---|---|---|
-| 未配置 `SDKWORK_COMMERCE_CASHIER_TOKEN_SECRET` | `{base}/cashier/{orderId}?scene=..&outTradeNo=..` | 无法签发令牌；H5 换令牌 404，回落到登录态 |
+| 未配置 `SDKWORK_COMMERCE_CASHIER_TOKEN_SECRET` | `{base}/cashier/{orderId}?scene=..&outTradeNo=..` | 无法签发令牌；H5 换令牌 404 → **收银台错误提示，不跳登录** |
 | 已配置 | `{base}/cashier/{token}` | 免登录 |
-| 已配置（旧链接） | `{base}/cashier/{orderId}?scene=..&outTradeNo=..` | H5 调 `POST /cashier/links` 换取令牌后免登录；换取失败才回落登录态 |
+| 已配置（旧链接） | `{base}/cashier/{orderId}?scene=..&outTradeNo=..` | H5 调 `POST /cashier/links` 换取令牌后免登录；换取失败同样显示错误提示，**不跳登录** |
 
 - **令牌是否存在就是逐链接的灰度开关**，不需要额外的全局 feature flag。
 - 旧链接不要求重新出码：H5 入口用 `orderId + outTradeNo` 换取令牌（见 §4.4），
@@ -218,11 +218,34 @@ POST /app/v3/api/cashier/links
 - `orderId` 单独永远不够；任何不匹配（未知订单、流水号错误、未配置密钥）统一
   `404` / `40401`，不区分原因，避免被用作订单枚举或时序探测。
 - 令牌 TTL 15 分钟；订单终态由收银台视图的 `payable` 与建支付路由的 `409` 共同兜底。
-- H5 宿主只在路径段不是 `v1.` 令牌且 URL 带 `outTradeNo` 时调用；换取失败回落登录态。
+- H5 宿主只在路径段不是 `v1.` 令牌且 URL 带 `outTradeNo` 时调用；换取失败**显示收银台错误提示，不跳登录**（见 §4.5）。
 - **换令牌无支付副作用**：只签发短期令牌，不创建支付意图/尝试。刷新或多开页面会得到不同
   `tokenId`，但建支付仍由订单服务按「订单 + 支付方式 + 支付元数据」复用已有 pending
   attempt 兜底，同一设备/渠道在 attempt 有效期内不会重复建单；`wechat_h5` 的渠道交易按
   `client_ip` 绑定，换网络时重建 attempt 是该渠道的要求，不是幂等缺口。
+
+---
+
+### 4.5 前端永不跳登录（强制）
+
+收银台入口的解析结果**没有 login 分支**，只有 `resolved / pending / failed`：
+
+| 解析结果 | 渲染 |
+|---|---|
+| 令牌格式 | 免登录收银台 |
+| 旧链接（orderId + outTradeNo） | 换令牌中（loading）→ 成功即免登录收银台 |
+| 换令牌失败 / 缺流水号 / 缺订单号 | **收银台错误外壳** + toast 提示 + 「重新加载」 |
+
+理由：扫码的付款人没有账号上下文，把支付页变成登录表单一不能推进支付，二会让人以为必须注册。
+
+**禁止**以下实现（曾被误用，属回归）：
+
+- 解析失败后渲染 `OrderRouteShell`（会套 `AppAuthGate`）
+- 在解析结果里保留 `kind: 'login'`
+- 用 401/403 驱动跳转到 `/sign-in`
+
+回归测试：`apps/sdkwork-cloudrouter-h5/tests/h5-cashier-routes.test.mjs`
+断言源码中不存在 `kind: 'login'` 且未渲染 `AppAuthGate` 路径。
 
 ---
 
