@@ -159,6 +159,7 @@ jobs:
                     "SDKWORK_CORE_REF": "${{ vars.SDKWORK_CORE_REF }}",
                     "SDKWORK_COURSE_REF": "${{ vars.SDKWORK_COURSE_REF }}",
                     "SDKWORK_DATABASE_REF": "${{ vars.SDKWORK_DATABASE_REF }}",
+                    "SDKWORK_DEPLOYMENTS_REF": "${{ vars.SDKWORK_DEPLOYMENTS_REF }}",
                     "SDKWORK_DOCUMENTS_REF": "${{ vars.SDKWORK_DOCUMENTS_REF }}",
                     "SDKWORK_DRIVE_REF": "${{ vars.SDKWORK_DRIVE_REF }}",
                     "SDKWORK_FEEDS_REF": "${{ vars.SDKWORK_FEEDS_REF }}",

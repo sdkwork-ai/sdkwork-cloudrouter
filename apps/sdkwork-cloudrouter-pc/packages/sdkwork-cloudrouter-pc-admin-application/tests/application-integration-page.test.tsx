@@ -156,10 +156,12 @@ describe("application integration actions", () => {
     expect(screen.getByRole("button", { name: "关联公众号账号" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "支付配置" }));
-    expect(await screen.findByText("WeChat Pay Production")).toBeTruthy();
     expect(integrations.loadPaymentAccounts).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByRole("button", { name: "添加" }));
+    fireEvent.click(await screen.findByRole("button", { name: "添加支付账号" }));
+    fireEvent.click(await screen.findByRole("tab", { name: "租户" }));
+    fireEvent.click(await screen.findByRole("option", { name: /WeChat Pay Production/ }));
+    fireEvent.click(screen.getByRole("button", { name: "确认选择" }));
     fireEvent.click(screen.getByRole("button", { name: "保存配置" }));
 
     await waitFor(() => expect(integrations.save).toHaveBeenCalledTimes(1));
@@ -189,8 +191,10 @@ describe("application integration actions", () => {
     await screen.findAllByText("Storefront");
 
     fireEvent.click(screen.getByRole("button", { name: "关联公众号账号" }));
-    expect(await screen.findByText("Acme Official")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "关联此账号" }));
+    fireEvent.click(await screen.findByRole("button", { name: "选择账号" }));
+    fireEvent.click(await screen.findByRole("tab", { name: "租户" }));
+    fireEvent.click(await screen.findByRole("option", { name: /Acme Official/ }));
+    fireEvent.click(screen.getByRole("button", { name: "确认选择" }));
     fireEvent.click(screen.getByRole("button", { name: "保存配置" }));
     await waitFor(() => expect(integrations.save).toHaveBeenCalledTimes(1));
     const officialSave = vi.mocked(integrations.save).mock.calls[0]?.[0];
@@ -204,8 +208,10 @@ describe("application integration actions", () => {
     await screen.findAllByText("Storefront");
 
     fireEvent.click(screen.getByRole("button", { name: "关联小程序账号" }));
-    expect(await screen.findByText("Acme Mini")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "关联此账号" }));
+    fireEvent.click(await screen.findByRole("button", { name: "选择账号" }));
+    fireEvent.click(await screen.findByRole("tab", { name: "租户" }));
+    fireEvent.click(await screen.findByRole("option", { name: /Acme Mini/ }));
+    fireEvent.click(screen.getByRole("button", { name: "确认选择" }));
     fireEvent.click(screen.getByRole("button", { name: "保存配置" }));
     await waitFor(() => expect(secondService.save).toHaveBeenCalledTimes(1));
     const miniSave = vi.mocked(secondService.save).mock.calls[0]?.[0];

@@ -31,6 +31,17 @@ function lazyAdminRoute(
 
 const DashboardAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-dashboard'), 'DashboardAdmin');
 const AnalyticsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-analytics'), 'AnalyticsAdmin');
+/**
+ * Data Center screens. The module is a standalone data platform with its own
+ * backend; until that backend and SDK land, each page renders an explicit
+ * "backend not provisioned" state from the package's client port instead of
+ * fabricated data. No other admin module is read, migrated or redirected.
+ */
+const DataCenterOverviewAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-data'), 'DataCenterOverviewPage');
+const DataCenterSourcesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-data'), 'DataCenterSourcesPage');
+const DataCenterTablesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-data'), 'DataCenterTablesPage');
+const DataCenterExportsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-data'), 'DataCenterExportsPage');
+const DataCenterAuditsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-data'), 'DataCenterAuditsPage');
 const CacheAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-cache'), 'CacheAdmin');
 const UpstreamSupplierAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-upstream'), 'UpstreamSupplierAdmin');
 const UpstreamAccountAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-upstream'), 'UpstreamAccountAdmin');
@@ -81,6 +92,17 @@ const IamOrganizationStructureAdmin = lazyAdminRoute(() => import('@sdkwork/clou
 const IamTenantApplicationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterTenantApplicationsPage');
 const IamOrganizationApplicationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterOrganizationApplicationsPage');
 const ApplicationCenterAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterApplicationCenterPage');
+const AppCenterOverviewAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'AppCenterOverviewPage');
+const AppCenterAnalyticsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'AppCenterAnalyticsPage');
+const AppTemplateManagementAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'AppTemplateManagementPage');
+const AppTemplateCategoryAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'AppTemplateCategoryPage');
+const TemplateReviewQueueAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'TemplateReviewQueuePage');
+const AppModerationAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'AppModerationPage');
+const AppAppealsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'AppAppealsPage');
+const AppPublishersAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'AppPublishersPage');
+const AppFeaturedAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'AppFeaturedPage');
+const AppCollectionsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'AppCollectionsPage');
+const AppListingsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'AppListingsPage');
 const IamRolesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamRolesAdmin');
 const IamPermissionsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamPermissionsAdmin');
 const IamPoliciesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamPoliciesAdmin');
@@ -210,12 +232,28 @@ function SiteSettingsRoute() {
 
 export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRouteContribution[] = [
   route('dashboard', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-dashboard', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <DashboardAdmin />),
-  // Application Center: one tenant-wide catalog over the three application
-  // platforms (IAM, Deploy, App Store) plus the App Store category tree. The
-  // view lives in the URL (`/admin/applications/iam|deploy|app-store|categories`)
-  // so the admin shell sidebar is the single left menu; the wildcard route keeps
-  // one page instance mounted while the view changes.
-  route('applications', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-iam-backend-sdk', 'sdkwork-deployments-app-sdk', 'sdkwork-appstore-app-sdk', 'sdkwork-appstore-backend-sdk'], 'cloudrouter.admin.access', <Navigate to="/admin/applications/iam" replace />),
+  route('data', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-data', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <Navigate to="/admin/data/overview" replace />),
+  route('data/overview', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-data', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <DataCenterOverviewAdmin />),
+  route('data/sources', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-data', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <DataCenterSourcesAdmin />),
+  route('data/tables', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-data', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <DataCenterTablesAdmin />),
+  route('data/exports', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-data', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <DataCenterExportsAdmin />),
+  route('data/audits', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-data', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <DataCenterAuditsAdmin />),
+  // Application Center: one tenant-wide application factory. The overview is
+  // the module landing page; the per-source catalog views, App Store category
+  // governance, and the template library are separate routes so the admin shell
+  // sidebar is the single left menu. The wildcard keeps one catalog instance
+  // mounted while its view changes.
+  route('applications', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-iam-backend-sdk', 'sdkwork-deployments-app-sdk', 'sdkwork-appstore-app-sdk', 'sdkwork-appstore-backend-sdk'], 'cloudrouter.admin.access', <AppCenterOverviewAdmin />),
+  route('applications/templates', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-deployments-app-sdk'], 'cloudrouter.admin.access', <AppTemplateManagementAdmin />),
+  route('applications/template-reviews', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-deployments-app-sdk', 'sdkwork-deployments-backend-sdk'], 'cloudrouter.admin.access', <TemplateReviewQueueAdmin />),
+  route('applications/template-categories', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-deployments-app-sdk'], 'cloudrouter.admin.access', <AppTemplateCategoryAdmin />),
+  route('applications/moderation', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-appstore-backend-sdk'], 'cloudrouter.admin.access', <AppModerationAdmin />),
+  route('applications/appeals', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-appstore-backend-sdk'], 'cloudrouter.admin.access', <AppAppealsAdmin />),
+  route('applications/publishers', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-appstore-backend-sdk'], 'cloudrouter.admin.access', <AppPublishersAdmin />),
+  route('applications/featured', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-appstore-backend-sdk'], 'cloudrouter.admin.access', <AppFeaturedAdmin />),
+  route('applications/collections', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-appstore-backend-sdk'], 'cloudrouter.admin.access', <AppCollectionsAdmin />),
+  route('applications/listings', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-appstore-backend-sdk'], 'cloudrouter.admin.access', <AppListingsAdmin />),
+  route('applications/analytics', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-deployments-app-sdk', 'sdkwork-deployments-backend-sdk', 'sdkwork-appstore-backend-sdk'], 'cloudrouter.admin.access', <AppCenterAnalyticsAdmin />),
   route('applications/*', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-iam-backend-sdk', 'sdkwork-deployments-app-sdk', 'sdkwork-appstore-app-sdk', 'sdkwork-appstore-backend-sdk'], 'cloudrouter.admin.access', <ApplicationCenterAdmin />),
   route('analytics', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-analytics', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <AnalyticsAdmin />),
   route('upstream', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-upstream', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <Navigate to="/admin/upstream/suppliers" replace />),

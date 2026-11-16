@@ -12,33 +12,64 @@ import {
 } from "@sdkwork/cloudrouter-pc-admin-shell";
 import { ADMIN_MODULE_CATALOG, ADMIN_MODULE_IDS } from "./packages/sdkwork-cloudroutes-pc-commons/src/admin-modules.ts";
 
-test("application center is a header module with one sidebar entry per view", () => {
+test("application center is an app-factory header module with grouped views", () => {
   const appCenter = ADMIN_MODULES.find((module) => module.id === "appCenter");
 
   assert.ok(appCenter, "the application center must be a header module");
   assert.equal(appCenter.defaultPath, "/admin/applications");
   assert.deepEqual(appCenter.pathPrefixes, ["/admin/applications"]);
   assert.equal(getActiveModuleFromPath("/admin/applications"), "appCenter");
+  assert.equal(getActiveModuleFromPath("/admin/applications/templates"), "appCenter");
   assert.equal(getActiveModuleFromPath("/admin/applications/categories"), "appCenter");
 
   const appCenterMenu = getAdminModuleMenu("appCenter");
   assert.deepEqual(
     appCenterMenu.items?.map((item) => item.path),
+    ["/admin/applications"],
+    "the overview is the module landing item; the management surfaces live in groups",
+  );
+
+  const groups = new Map(appCenterMenu.groups.map((group) => [group.groupKey, group]));
+  assert.deepEqual(
+    groups.get("admin.menu.appCenter.applicationsGroup")?.items.map((item) => item.path),
+    ["/admin/applications/iam", "/admin/applications/deploy", "/admin/applications/app-store"],
+  );
+  assert.deepEqual(
+    groups.get("admin.menu.appCenter.storeGroup")?.items.map((item) => item.path),
     [
-      "/admin/applications/iam",
-      "/admin/applications/deploy",
-      "/admin/applications/app-store",
       "/admin/applications/categories",
+      "/admin/applications/listings",
+      "/admin/applications/collections",
+      "/admin/applications/featured",
     ],
-    "the shell sidebar is the only App Center menu, so every view needs its own entry",
+  );
+  assert.deepEqual(
+    groups.get("admin.menu.appCenter.governanceGroup")?.items.map((item) => item.path),
+    [
+      "/admin/applications/publishers",
+      "/admin/applications/moderation",
+      "/admin/applications/appeals",
+    ],
+  );
+  assert.deepEqual(
+    groups.get("admin.menu.appCenter.templatesGroup")?.items.map((item) => item.path),
+    [
+      "/admin/applications/templates",
+      "/admin/applications/template-reviews",
+      "/admin/applications/template-categories",
+    ],
+  );
+  assert.deepEqual(
+    groups.get("admin.menu.appCenter.analyticsGroup")?.items.map((item) => item.path),
+    ["/admin/applications/analytics"],
   );
 
   assert.deepEqual(
     getActiveSidebarItemPaths("/admin/applications/categories", appCenterMenu),
     ["/admin/applications/categories"],
   );
-  const categoriesItem = appCenterMenu.items?.find((item) => item.path === "/admin/applications/categories");
-  const iamItem = appCenterMenu.items?.find((item) => item.path === "/admin/applications/iam");
+  const categoriesItem = groups.get("admin.menu.appCenter.storeGroup")?.items[0];
+  const iamItem = groups.get("admin.menu.appCenter.applicationsGroup")?.items[0];
   assert.ok(categoriesItem, "category view entry must exist");
   assert.ok(iamItem, "IAM view entry must exist");
   assert.equal(isSidebarItemActive("/admin/applications/categories", categoriesItem, appCenterMenu), true);
@@ -247,3 +278,37 @@ test("payment center exposes 支付设置 → 域名设置 as a sidebar entry", 
     ["/admin/payments/cashierToken"],
   );
 });
+
+test("data center is an additive header module that owns only /admin/data", () => {
+  const dataCenter = ADMIN_MODULES.find((module) => module.id === "dataCenter");
+
+  assert.ok(dataCenter, "the data center must be a header module");
+  assert.equal(dataCenter.defaultPath, "/admin/data/overview");
+  assert.deepEqual(dataCenter.pathPrefixes, ["/admin/data"]);
+  assert.equal(getActiveModuleFromPath("/admin/data"), "dataCenter");
+  assert.equal(getActiveModuleFromPath("/admin/data/sources"), "dataCenter");
+
+  // Existing modules must keep their own prefixes: the data center is additive,
+  // never a replacement for the home module's data-management entries.
+  assert.equal(getActiveModuleFromPath("/admin/record"), "home");
+  assert.equal(getActiveModuleFromPath("/admin/request-log"), "home");
+  assert.equal(getActiveModuleFromPath("/admin/analytics"), "home");
+
+  const dataCenterMenu = getAdminModuleMenu("dataCenter");
+  assert.deepEqual(
+    dataCenterMenu.items?.map((item) => item.path),
+    ["/admin/data/overview"],
+  );
+
+  const groupPaths = dataCenterMenu.groups.flatMap((group) => group.items.map((item) => item.path));
+  assert.deepEqual(groupPaths, [
+    "/admin/data/sources",
+    "/admin/data/tables",
+    "/admin/data/exports",
+    "/admin/data/audits",
+  ]);
+
+  const visiblePaths = getFilteredAdminModuleMenu("dataCenter", ["cloudrouter.admin.access"]);
+  assert.equal(visiblePaths.groups.length, dataCenterMenu.groups.length);
+});
+

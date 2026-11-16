@@ -33,8 +33,10 @@ export function DownloadPanel({
   const { t } = useTranslation();
   const home = useHomeContent();
   // A pointer document names a catalog Deployments owns; fetching it here keeps
-  // the bundled catalog as the fallback for deployments that never migrated.
-  const deploymentsCatalog = useDeploymentsCatalog(home.downloadCatalog);
+  // the bundled catalog as the fallback for deployments that never migrated. The
+  // raw document is what carries the pointer — `home.downloadCatalog` is only
+  // ever a catalog, so passing it here skipped the request on every migrated site.
+  const deploymentsCatalog = useDeploymentsCatalog(home.downloadsDocument);
   const translateDownloadText = (
     key: string,
     fallback: string | {

@@ -67,11 +67,13 @@ test('callback domain defaults to the public API host, not the console host', ()
   assert.match(page, /useState<CallbackDomainForm>\(defaultCallbackForm\)/);
 });
 
-test('cashier signing key is a payment settings menu destination', () => {
+test('cashier signing key page manages view, set, rotate and disable on a full-width layout', () => {
   const service = readSource('./packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts');
   assert.match(service, /payments\.cashierTokenSettings\.retrieve\(\)/);
   assert.match(service, /payments\.cashierTokenSettings\.rotate\(/);
   assert.match(service, /payments\.cashierTokenSettings\.update\(/);
+  assert.match(service, /payments\.cashierTokenSettings\.key\.retrieve\(\)/);
+  assert.match(service, /payments\.cashierTokenSettings\.key\.update\(/);
 
   const index = readSource('./packages/sdkwork-cloudrouter-pc-admin-payments/src/index.tsx');
   assert.match(index, /sectionId === 'cashierToken'/);
@@ -80,19 +82,38 @@ test('cashier signing key is a payment settings menu destination', () => {
   const page = readSource(
     './packages/sdkwork-cloudrouter-pc-admin-payments/src/CashierTokenSettingsAdmin.tsx',
   );
-  assert.match(page, /<CashierTokenSettingsPanel canRotate=\{canRotate\} \/>/);
+  assert.match(page, /<CashierTokenSettingsPanel canManage=\{canManage\} \/>/);
   assert.match(page, /commerce\.payments\.domain_settings\.update/);
+  // The page body fills the available right-hand width; no centered max-width cap.
+  assert.match(page, /className="[^"]*\bw-full\b/);
+  assert.doesNotMatch(page, /max-w-/);
 
   const panel = readSource(
     './packages/sdkwork-cloudrouter-pc-admin-payments/src/components/CashierTokenSettingsPanel.tsx',
   );
-  assert.match(panel, /cashierToken\.rotate/);
-  assert.match(panel, /keyEpoch/);
+  assert.match(panel, /cashierToken\.overviewTitle/);
+  assert.match(panel, /cashierToken\.refresh/);
+  assert.match(panel, /cashierToken\.keyManagementTitle/);
+  assert.match(panel, /cashierToken\.reveal/);
+  assert.match(panel, /cashierToken\.set/);
+  assert.match(panel, /cashierToken\.disableConfirm/);
   assert.match(panel, /cashierToken\.rotateConfirm/);
-  // Admin lifecycle: enable/disable plus the stored-key/provider status.
-  assert.match(panel, /cashierToken\.(enable|disable)/);
+  assert.match(panel, /keyEpoch/);
   assert.match(panel, /signingKeyConfigured/);
+  assert.match(panel, /keyFingerprint/);
+  assert.match(panel, /fingerprint=\{setting\.keyFingerprint/);
   assert.match(panel, /keyProvider/);
+
+  // The view dialog translates the scope and no longer claims a deployment-key
+  // fallback; the set dialog validates the backend's key contract.
+  const dialogs = readSource(
+    './packages/sdkwork-cloudrouter-pc-admin-payments/src/components/CashierTokenKeyDialogs.tsx',
+  );
+  assert.match(dialogs, /revealNotConfigured/);
+  assert.match(dialogs, /sourceLabel/);
+  assert.match(dialogs, /revealFingerprint/);
+  assert.match(dialogs, /setTitle/);
+  assert.match(dialogs, /validateCashierTokenKey/);
 
   // The panel lives on its own settings page, not inside the domain settings page.
   const domainSettings = readSource(

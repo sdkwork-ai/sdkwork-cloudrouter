@@ -7,6 +7,7 @@ import { configureDriveAppSdkClientProvider } from '@sdkwork/agents-pc-core/sdk/
 import {
   getSdkworkAgentBackendSdkClient,
   getSdkworkDriveAppSdkClient,
+  readPortalRoleCodes,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 
 /**
@@ -29,8 +30,19 @@ configureAgentsAdminRuntime({
 });
 configureDriveAppSdkClientProvider(getSdkworkDriveAppSdkClient);
 
+/**
+ * Cloud Router admin-console entry for the agent management page
+ * (`/admin/agent`).
+ *
+ * The page owns its own catalog layout, category filter and role-scope switch;
+ * this adapter only supplies the operator's IAM role codes so "my roles" means
+ * the signed-in operator rather than a hard-coded list.
+ */
+export function AgentsAdminPage() {
+  return <AgentsAdminBlock roleCodes={readPortalRoleCodes()} />;
+}
+
 export {
-  AgentsAdminBlock as AgentsAdminPage,
   AgentCategoriesBlock as AgentCategoriesAdminPage,
-  AgentsAdminBlock as default,
+  AgentsAdminPage as default,
 };

@@ -10,6 +10,7 @@ import {
   HOME_MAX_LIST_ITEMS,
   HOME_SECTIONS,
   checkDownloadCatalog,
+  checkDownloadsPointer,
   createDefaultHomeContentForm,
   createEmptyDownloadCatalogAction,
   createEmptyDownloadCatalogCard,
@@ -27,6 +28,8 @@ import {
   toDownloadCatalogPayload,
   toDownloadCatalogText,
   toHomeContentPayload,
+  usesDelegatedDownloads,
+  deploymentsDownloadConsoleUrl,
   type DownloadCatalogActionFields,
   type DownloadCatalogCardFields,
   type DownloadCatalogForm,
@@ -746,4 +749,34 @@ test('HarmonyOS is available to the structured editor and survives the runtime r
   assert.equal(action?.disabled, false);
   // And the console reads its own authored row back unchanged.
   assert.deepEqual(readDownloadCatalogForm(payload), form);
+});
+
+test('the downloads tab only delegates when a Deployments console can own the catalog', () => {
+  const legacy = checkDownloadsPointer(JSON.stringify(cloudRouterDownloadCatalog));
+  assert.equal(legacy.legacyCatalog, true);
+  const pointer = checkDownloadsPointer(JSON.stringify({ catalogKey: 'cloudrouter-website' }));
+  assert.equal(pointer.catalogKey, 'cloudrouter-website');
+  const empty = checkDownloadsPointer('');
+
+  // No console and no pointer: the page must keep authoring the catalog itself, otherwise the
+  // homepage download section cannot be configured on a deployment that never adopted Deployments.
+  assert.equal(usesDelegatedDownloads(undefined, empty), false);
+  assert.equal(usesDelegatedDownloads('   ', empty), false);
+  // A console URL means the catalog is edited there; a stored pointer is already in force even
+  // without a configured URL, so neither may fall back to local authoring.
+  assert.equal(usesDelegatedDownloads('https://deploy.example.test', empty), true);
+  assert.equal(usesDelegatedDownloads('https://deploy.example.test', legacy), true);
+  assert.equal(usesDelegatedDownloads(undefined, pointer), true);
+
+  // The deep link keeps working for a console mounted on this origin (the platform shell case)
+  // instead of hiding the only way to publish a catalog.
+  assert.equal(deploymentsDownloadConsoleUrl(undefined), undefined);
+  assert.equal(
+    deploymentsDownloadConsoleUrl('https://deploy.example.test/'),
+    'https://deploy.example.test/admin/downloads/downloadCatalog',
+  );
+  assert.equal(
+    deploymentsDownloadConsoleUrl('/'),
+    '/admin/downloads/downloadCatalog',
+  );
 });

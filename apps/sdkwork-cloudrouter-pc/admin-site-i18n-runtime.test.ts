@@ -16,9 +16,10 @@ import { ADMIN_MODULE_CATALOG } from './packages/sdkwork-cloudroutes-pc-commons/
 const PORTAL_ROOT = path.dirname(new URL(import.meta.url).pathname).replace(/^\/([A-Za-z]:)/, '$1');
 const ADMIN_SITE_SOURCES = [
   path.join(PORTAL_ROOT, 'packages/sdkwork-cloudrouter-pc-admin-site/src/index.tsx'),
-  // The download catalog editor and the shared controls are separate modules of the same page;
-  // their t() calls are page copy and must pass the same existence check.
+  // The download catalog editor, the delegated pointer panel and the shared controls are separate
+  // modules of the same page; their t() calls are page copy and must pass the same existence check.
   path.join(PORTAL_ROOT, 'packages/sdkwork-cloudrouter-pc-admin-site/src/DownloadCatalogEditor.tsx'),
+  path.join(PORTAL_ROOT, 'packages/sdkwork-cloudrouter-pc-admin-site/src/SiteDownloadsPanel.tsx'),
   path.join(PORTAL_ROOT, 'packages/sdkwork-cloudrouter-pc-admin-site/src/AdminModuleSettingsEditor.tsx'),
   path.join(PORTAL_ROOT, 'packages/sdkwork-cloudrouter-pc-admin-site/src/SiteSettingsControls.tsx'),
 ];

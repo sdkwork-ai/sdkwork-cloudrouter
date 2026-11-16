@@ -16,6 +16,7 @@ export type AdminRoutePermissionHint = {
 export const ADMIN_ROUTE_PERMISSION_HINTS: readonly AdminRoutePermissionHint[] = [
   { pathPrefix: '/admin/dashboard', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/applications', requiredPermission: 'cloudrouter.admin.access' },
+  { pathPrefix: '/admin/data', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/upstream', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/pricing', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/settings', requiredPermission: 'cloudrouter.admin.access' },

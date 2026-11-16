@@ -39,7 +39,10 @@ vi.mock("../src/services/iam-service", () => ({
   getApplicationCatalogIamService: () => mocks.iam,
 }));
 
-const { createApplicationIntegrationService } = await import("../src/services/application-integrations");
+const {
+  createApplicationIntegrationService,
+  resolveIntegrationAccountScope,
+} = await import("../src/services/application-integrations");
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -257,5 +260,97 @@ describe("application integration transport", () => {
       environments: [],
     })).rejects.toThrow(/version is not supported/);
     expect(mocks.deployments.app.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("integration account scopes", () => {
+  it("resolves explicit scopes and ownership columns, defaulting to tenant", () => {
+    expect(resolveIntegrationAccountScope({ scope: "personal" })).toBe("personal");
+    expect(resolveIntegrationAccountScope({ ownerScope: "organization" })).toBe("organization");
+    expect(resolveIntegrationAccountScope({ ownerUserId: "user-1" })).toBe("personal");
+    expect(resolveIntegrationAccountScope({ organization_id: "org-1" })).toBe("organization");
+    expect(resolveIntegrationAccountScope({ metadata: { organizationId: "org-2" } })).toBe("organization");
+    expect(resolveIntegrationAccountScope({ tenant_id: "tenant-1", user_id: "creator" })).toBe("tenant");
+    expect(resolveIntegrationAccountScope({})).toBe("tenant");
+  });
+
+  it("pages the channel catalog by scope with server-side search", async () => {
+    mocks.iam.iam.oauth.resourceAccounts.list.mockResolvedValue({
+      items: [
+        {
+          id: "ra-tenant",
+          resourceAccountKind: "official_account",
+          displayName: "Tenant official",
+          providerCode: "wechat",
+          enabled: true,
+        },
+        {
+          id: "ra-org",
+          resourceAccountKind: "official_account",
+          displayName: "Organization official",
+          providerCode: "wechat",
+          enabled: true,
+          organizationId: "org-1",
+        },
+      ],
+      pageInfo: { hasMore: true },
+    });
+
+    const service = createApplicationIntegrationService();
+    const page = await service.loadChannelAccountPage?.("official-account", "organization", {
+      search: "acme",
+      pageSize: 10,
+    });
+
+    expect(mocks.iam.iam.oauth.resourceAccounts.list).toHaveBeenCalledWith({
+      page: 1,
+      page_size: 10,
+      q: "acme",
+    });
+    expect(page?.items.map((item) => item.id)).toEqual(["ra-org"]);
+    expect(page?.hasMore).toBe(true);
+    expect(page?.nextCursor).toBe("2");
+  });
+
+  it("pages the payment catalog by scope with server-side search", async () => {
+    mocks.payment.payments.providerAccounts.list.mockResolvedValue({
+      items: [
+        {
+          id: "pay-org",
+          accountNo: "acct-1",
+          accountName: "Org merchant",
+          providerCode: "wechat_pay",
+          environment: "production",
+          accountMode: "direct",
+          status: "active",
+          metadata: { organizationId: "org-1" },
+        },
+        {
+          id: "pay-tenant",
+          accountNo: "acct-2",
+          accountName: "Tenant merchant",
+          providerCode: "wechat_pay",
+          environment: "production",
+          accountMode: "direct",
+          status: "active",
+        },
+      ],
+      pageInfo: { hasMore: false },
+    });
+
+    const service = createApplicationIntegrationService();
+    const page = await service.loadPaymentAccountPage?.("organization", {
+      search: "merchant",
+      pageSize: 20,
+    });
+
+    expect(mocks.payment.payments.providerAccounts.list).toHaveBeenCalledWith({
+      page: 1,
+      pageSize: 20,
+      q: "merchant",
+    });
+    expect(page?.items.map((item) => item.id)).toEqual(["pay-org"]);
+    expect(page?.hasMore).toBe(false);
+    expect(page?.nextCursor).toBeUndefined();
   });
 });

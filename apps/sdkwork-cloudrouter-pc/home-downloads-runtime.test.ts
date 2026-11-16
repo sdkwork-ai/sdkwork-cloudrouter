@@ -547,6 +547,33 @@ test("the download panel prefers the published catalog and keeps the bundled one
   );
 });
 
+test("the pointer document reaches the Deployments resolver instead of the parsed catalog", () => {
+  const pointer = { catalogKey: "cloudrouter-website" };
+  const home = createHomeContentRuntime({ downloads: pointer, siteName: "Acme" });
+
+  // The parsed catalog stays undefined for a pointer — that is what keeps the bundled catalog
+  // rendering — while the raw document is what the resolver needs to find the key.
+  assert.equal(home.downloadCatalog, undefined);
+  assert.deepEqual(home.downloadsDocument, pointer);
+
+  const panelSource = readPortalSource(
+    './packages/sdkwork-cloudrouter-pc-home/src/components/DownloadSection.tsx',
+  );
+  assert.ok(
+    panelSource.includes("useDeploymentsCatalog(home.downloadsDocument)"),
+    'the panel must hand the raw document to the pointer resolver',
+  );
+  assert.ok(
+    !panelSource.includes("useDeploymentsCatalog(home.downloadCatalog)"),
+    'the parsed catalog never carries a pointer',
+  );
+  // A published full catalog is still exposed both ways, so local authoring keeps rendering.
+  const catalog = cloudRouterDownloadCatalog;
+  const localHome = createHomeContentRuntime({ downloads: catalog, siteName: "Acme" });
+  assert.notEqual(localHome.downloadCatalog, undefined);
+  assert.equal(localHome.downloadsDocument, catalog);
+});
+
 test("shipped release-edition titles are brand-neutral", () => {
   const i18nSource = readPortalSource("./packages/sdkwork-cloudrouter-pc-i18n/src/resources/shared/navigation.ts");
 

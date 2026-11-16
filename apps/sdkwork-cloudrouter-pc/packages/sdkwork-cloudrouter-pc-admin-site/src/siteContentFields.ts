@@ -1414,15 +1414,20 @@ export function isDownloadCatalogDriveHref(href: string): boolean {
 /**
  * The `downloads` site-settings document after the migration.
  *
- * Cloud Router no longer authors the download catalog: Deployments owns the
- * catalog, its cards, its installers and every installer's update configuration.
- * The site settings keep one pointer (`catalogKey`) so the rendering site can ask
- * Deployments for its own catalog without copying any installer facts here.
+ * Where a deployment has a Deployments console, Cloud Router no longer authors
+ * the download catalog: Deployments owns the catalog, its cards, its installers
+ * and every installer's update configuration, and the site settings keep one
+ * pointer (`catalogKey`) so the rendering site can ask Deployments for its own
+ * catalog without copying any installer facts here.
+ *
+ * Where it has none, the document stays a catalog this page authors (see
+ * `usesDelegatedDownloads`): the landing page keeps reading it directly, so a
+ * deployment that never migrated is still configurable.
  *
  * A stored legacy catalog (an object with `cards`) stays publishable: removing it
- * in this release would blank a live download section until the operator
- * reconfigures it, so the console flags it instead and lets the operator clear it
- * once the Deployments catalog is published.
+ * would blank a live download section until the operator reconfigures it, so the
+ * console flags it instead and lets the operator clear it once the Deployments
+ * catalog is published.
  */
 export interface DownloadsPointerCheck {
   /** Whether the document can be published. */
@@ -1480,4 +1485,41 @@ export function toDownloadsPayload(text: string): Record<string, unknown> {
     throw new Error('The downloads document must be a JSON object.');
   }
   return parsed;
+}
+
+/**
+ * Whether the downloads tab should delegate to the Deployments console instead of
+ * authoring the catalog here.
+ *
+ * The migration is opt-in per deployment: only a build that configures the
+ * Deployments console can publish a catalog there, so a deployment without one
+ * must keep editing its own catalog — otherwise the homepage download section
+ * becomes impossible to configure and the "legacy" warning has no way out.
+ *
+ * A stored pointer keeps the delegated tab even when no console URL is
+ * configured: the document in force is already a key, and replacing it with
+ * local authoring would silently republish a catalog the site no longer owns.
+ *
+ * @param consoleBaseUrl - Configured Deployments console origin, if any.
+ * @param check - Verdict for the stored `downloads` document.
+ */
+export function usesDelegatedDownloads(
+  consoleBaseUrl: string | undefined,
+  check: DownloadsPointerCheck,
+): boolean {
+  return check.catalogKey !== undefined || (consoleBaseUrl?.trim() ?? '') !== '';
+}
+
+/**
+ * Deep link to the Deployments console page that authors download catalogs.
+ *
+ * @param adminBaseUrl - Configured console origin, `'/'` when mounted on this origin.
+ * @returns The absolute (or root-relative) deep link, or `undefined` when unconfigured.
+ */
+export function deploymentsDownloadConsoleUrl(adminBaseUrl: string | undefined): string | undefined {
+  const configured = adminBaseUrl?.trim();
+  if (configured === undefined) {
+    return undefined;
+  }
+  return `${configured.replace(/\/+$/u, '')}/admin/downloads/downloadCatalog`;
 }

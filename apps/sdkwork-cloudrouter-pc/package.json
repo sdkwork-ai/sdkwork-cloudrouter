@@ -163,6 +163,7 @@
     "@sdkwork/cloudrouter-pc-admin-core": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-course": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-dashboard": "workspace:*",
+    "@sdkwork/cloudrouter-pc-admin-data": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-hardware": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-iam": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-marketing": "workspace:*",

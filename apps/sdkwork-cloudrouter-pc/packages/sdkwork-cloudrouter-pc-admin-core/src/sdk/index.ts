@@ -115,6 +115,8 @@ export type {
   VerifyUpstreamAccountRequest,
 } from '@sdkwork/cloudrouter-backend-sdk';
 export type {
+  CashierTokenKeySetCommand,
+  CashierTokenSecretReveal,
   CashierTokenSetting,
   CheckAttemptStatusCommand,
   CheckAttemptStatusResult,

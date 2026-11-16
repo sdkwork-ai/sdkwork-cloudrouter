@@ -27,6 +27,29 @@ export type PaymentAccountEnvironment = "development" | "sandbox" | "production"
 /** The two WeChat-style channel account kinds the application center binds. */
 export type ChannelAccountKind = "official-account" | "mini-program";
 
+/**
+ * Ownership scope an integration account belongs to.
+ *
+ * The platform exposes three catalog levels: the operator's own accounts, an
+ * organization-verified catalog, and the tenant-wide catalog. A picker may show
+ * all three; an account is always rendered under exactly one scope.
+ */
+export type IntegrationAccountScope = "personal" | "organization" | "tenant";
+
+/** One cursor page of integration account options. */
+export interface IntegrationAccountPage<T> {
+  items: readonly T[];
+  hasMore: boolean;
+  nextCursor?: string;
+}
+
+/** Server-side query the scope picker sends to a catalog. */
+export interface IntegrationAccountQuery {
+  search: string;
+  cursor?: string;
+  pageSize: number;
+}
+
 /** The three row actions the application list exposes. */
 export type ApplicationIntegrationKind = "payment" | ChannelAccountKind;
 
@@ -113,6 +136,10 @@ export interface ApplicationChannelAccountOption {
   enabled: boolean;
   status?: string;
   authorizationStatus?: string;
+  /** Ownership scope; absent legacy rows resolve to `tenant`. */
+  scope?: IntegrationAccountScope;
+  organizationId?: string;
+  ownerUserId?: string;
 }
 
 /** Normalized payment provider account option. */
@@ -128,6 +155,10 @@ export interface ApplicationPaymentAccountOption {
   countryCode?: string;
   capabilities: Readonly<Record<string, unknown>>;
   metadata: Readonly<Record<string, unknown>>;
+  /** Ownership scope; absent legacy rows resolve to `tenant`. */
+  scope?: IntegrationAccountScope;
+  organizationId?: string;
+  ownerUserId?: string;
 }
 
 /** Compact row summary derived from a binding document. */
@@ -183,6 +214,22 @@ export interface ApplicationIntegrationSaveResult {
 export interface ApplicationIntegrationService {
   loadChannelAccounts(kind: ChannelAccountKind): Promise<readonly ApplicationChannelAccountOption[]>;
   loadPaymentAccounts(): Promise<readonly ApplicationPaymentAccountOption[]>;
+  /**
+   * Cursor-paged scope-aware catalog used by the generic picker.
+   *
+   * Optional so existing test doubles remain valid; the drawer falls back to
+   * filtering the full catalog when a host does not implement it.
+   */
+  loadChannelAccountPage?(
+    kind: ChannelAccountKind,
+    scope: IntegrationAccountScope,
+    query: IntegrationAccountQuery,
+  ): Promise<IntegrationAccountPage<ApplicationChannelAccountOption>>;
+  /** Cursor-paged scope-aware payment catalog; see the channel counterpart. */
+  loadPaymentAccountPage?(
+    scope: IntegrationAccountScope,
+    query: IntegrationAccountQuery,
+  ): Promise<IntegrationAccountPage<ApplicationPaymentAccountOption>>;
   loadEnvironments(deployAppId: string, fallbackEnvironment?: string): Promise<readonly ApplicationEnvironmentOption[]>;
   save(input: ApplicationIntegrationSaveInput): Promise<ApplicationIntegrationSaveResult>;
 }
