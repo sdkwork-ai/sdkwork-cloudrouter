@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Check, Loader2, RefreshCw, Search, X } from "lucide-react";
 
 /**
@@ -118,6 +119,7 @@ export function ScopeResourcePickerDialog({
   const [reloadToken, setReloadToken] = useState(0);
   const [selected, setSelected] = useState<ReadonlyMap<string, ScopeResourcePickerItem>>(new Map());
   const requestSeq = useRef(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const selectionRef = useRef(initialSelection);
   selectionRef.current = initialSelection;
   const sourcesRef = useRef(sources);
@@ -152,6 +154,20 @@ export function ScopeResourcePickerDialog({
     const timer = setTimeout(() => setSearch(searchInput.trim()), searchDebounceMs);
     return () => clearTimeout(timer);
   }, [searchInput, searchDebounceMs]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    searchInputRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onOpenChange(false);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onOpenChange, open]);
 
   // A page load that yields no rows for the active scope continues to the next
   // page, so a scope filter applied after the API page never strands the user on
@@ -251,9 +267,13 @@ export function ScopeResourcePickerDialog({
     return null;
   }
 
-  return (
+  // The picker must be a viewport-centered modal, not a descendant of the
+  // integration Drawer: the drawer's translated surface creates a containing
+  // block, so `position: fixed` inside it would be drawer-relative. Portal to
+  // body keeps the overlay and sizing relative to the screen.
+  const dialog = (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm"
       onPointerDown={(event) => {
         if (event.target === event.currentTarget) {
           onOpenChange(false);
@@ -263,7 +283,7 @@ export function ScopeResourcePickerDialog({
       <div
         aria-label={labels.title}
         aria-modal="true"
-        className="flex h-[78vh] max-h-[78vh] w-[92vw] max-w-3xl flex-col overflow-hidden rounded-[var(--sdk-radius-card)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] shadow-2xl"
+        className="flex h-[60vh] max-h-[calc(100vh-2rem)] min-h-[min(420px,86vh)] w-[60vw] max-w-[calc(100vw-2rem)] min-w-[min(560px,92vw)] flex-col overflow-hidden rounded-[var(--sdk-radius-card)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] shadow-2xl"
         role="dialog"
       >
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--sdk-color-border-default)] p-5">
@@ -323,6 +343,7 @@ export function ScopeResourcePickerDialog({
               className="h-10 w-full rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel-muted)] pl-9 pr-3 text-sm text-[var(--sdk-color-text-primary)] outline-none placeholder:text-[var(--sdk-color-text-muted)] focus:border-[var(--sdk-color-brand-primary)]"
               onChange={(event) => setSearchInput(event.target.value)}
               placeholder={labels.searchPlaceholder}
+              ref={searchInputRef}
               type="search"
               value={searchInput}
             />
@@ -467,4 +488,6 @@ export function ScopeResourcePickerDialog({
       </div>
     </div>
   );
+
+  return typeof document === "undefined" ? dialog : createPortal(dialog, document.body);
 }

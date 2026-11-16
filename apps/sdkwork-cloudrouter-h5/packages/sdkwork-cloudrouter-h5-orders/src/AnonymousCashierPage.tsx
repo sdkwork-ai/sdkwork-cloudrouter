@@ -20,11 +20,38 @@ import {
   resolveCashierLaunch,
   type AnonymousWireMethod,
 } from './anonymousCashier.js';
+import { resolveAutoLaunchMethod } from './cashierAutoLaunch.js';
 
 /** Backend cashier TTL used when the order carries no explicit expiry. */
 const CASHIER_TTL_SECONDS = 15 * 60;
 /** Payment status poll cadence while the payer is on a provider page. */
 const POLL_INTERVAL_MS = 2000;
+/** Session marker preventing an automatic OAuth redirect loop. */
+const AUTO_OAUTH_ATTEMPT_PREFIX = 'cloudrouter.cashier.auto-oauth.';
+
+function autoOAuthAttempted(token: string): boolean {
+  try {
+    return window.sessionStorage.getItem(`${AUTO_OAUTH_ATTEMPT_PREFIX}${token}`) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function markAutoOAuthAttempted(token: string): void {
+  try {
+    window.sessionStorage.setItem(`${AUTO_OAUTH_ATTEMPT_PREFIX}${token}`, '1');
+  } catch {
+    // Storage can be unavailable in private mode; the payer can still retry.
+  }
+}
+
+function clearAutoOAuthAttempted(token: string): void {
+  try {
+    window.sessionStorage.removeItem(`${AUTO_OAUTH_ATTEMPT_PREFIX}${token}`);
+  } catch {
+    // Nothing to clear when storage is unavailable.
+  }
+}
 
 type CashierPhase =
   | 'loading'
@@ -45,12 +72,12 @@ export interface AnonymousCashierPageProps {
   /** Sign-in route the anonymous page offers after payment. */
   readonly signInPath?: string;
   /**
-   * IAM anonymous payment OAuth entry used inside WeChat.
-   *
-   * Built by the host because only the host knows the API origin; the page never
-   * constructs transport URLs itself.
+   * Requests the IAM anonymous-payment OAuth start and returns the WeChat
+   * authorize URL. The host owns the API base and the response envelope; the
+   * page must never navigate to the start endpoint itself (that would render
+   * the raw API JSON response instead of handing off to WeChat).
    */
-  readonly wechatAuthorizeUrl?: string;
+  readonly requestWechatAuthorizeUrl?: () => Promise<string>;
 }
 
 /**
@@ -65,7 +92,7 @@ export function AnonymousCashierPage({
   token,
   orderCenterPath = '/me/orders',
   signInPath = '/sign-in',
-  wechatAuthorizeUrl,
+  requestWechatAuthorizeUrl,
 }: AnonymousCashierPageProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -90,6 +117,8 @@ export function AnonymousCashierPage({
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const createInFlightRef = useRef(false);
+  /** One automatic provider launch per capability token / page load. */
+  const autoLaunchedForTokenRef = useRef<string | null>(null);
 
   const clearTimers = useCallback(() => {
     if (pollTimerRef.current) {
@@ -184,12 +213,27 @@ export function AnonymousCashierPage({
 
   const launch = useCallback(async (method: AnonymousWireMethod) => {
     if (createInFlightRef.current) return;
-    // Inside WeChat the JSAPI trade needs the payer openid. Without it, hand the
-    // payer to the anonymous payment OAuth first; the callback returns to this
-    // exact cashier URL with the openid and its token binding.
+    // Inside WeChat the JSAPI trade needs the payer openid. Fetch the IAM start
+    // result first, then hand the browser to the returned WeChat authorize URL.
+    // Navigating to the API endpoint directly would show the JSON response page.
     if (method === 'wechat_jsapi' && !openid) {
-      if (wechatAuthorizeUrl) {
-        window.location.assign(wechatAuthorizeUrl);
+      if (requestWechatAuthorizeUrl) {
+        if (createInFlightRef.current) {
+          return;
+        }
+        createInFlightRef.current = true;
+        setPhase('creating');
+        setNotice(null);
+        setErrorText(null);
+        try {
+          const authorizeUrl = await requestWechatAuthorizeUrl();
+          window.location.assign(authorizeUrl);
+        } catch {
+          setNotice(t('orders.cashier_wechat_authorize_failed', '微信支付授权失败，请重试'));
+          setPhase('ready');
+        } finally {
+          createInFlightRef.current = false;
+        }
         return;
       }
       setNotice(t('orders.cashier_wechat_authorize_unavailable', '微信支付授权暂不可用，请稍后重试'));
@@ -229,7 +273,39 @@ export function AnonymousCashierPage({
     } finally {
       createInFlightRef.current = false;
     }
-  }, [openid, openidBinding, startPolling, t, token, wechatAuthorizeUrl]);
+  }, [openid, openidBinding, requestWechatAuthorizeUrl, startPolling, t, token]);
+
+  // In WeChat/Alipay the host app is already running: wake its native payment
+  // sheet immediately. In a plain browser there is nothing to wake, so the
+  // method buttons stay manual. The buttons remain available in every case,
+  // including after a cancelled JSAPI sheet, as a manual retry.
+  useEffect(() => {
+    if (phase !== 'ready') {
+      return;
+    }
+    const method = resolveAutoLaunchMethod(environment, options);
+    if (!method || autoLaunchedForTokenRef.current === token) {
+      return;
+    }
+    autoLaunchedForTokenRef.current = token;
+    if (method === 'wechat_jsapi') {
+      if (!openid) {
+        // Prevent an auto-redirect loop when the OAuth callback came back
+        // without an openid. A manual tap can still retry the authorization.
+        if (autoOAuthAttempted(token)) {
+          setNotice(t(
+            'orders.cashier_wechat_authorize_retry',
+            '微信支付授权未完成，请点击下方微信支付重试',
+          ));
+          return;
+        }
+        markAutoOAuthAttempted(token);
+      } else {
+        clearAutoOAuthAttempted(token);
+      }
+    }
+    void launch(method);
+  }, [environment, launch, openid, options, phase, t, token]);
 
   const formatCountdown = (totalSeconds: number) => {
     const minutes = Math.floor(totalSeconds / 60);
@@ -255,7 +331,7 @@ export function AnonymousCashierPage({
   if (phase === 'paid') {
     return <Layout title={t('orders.cashier_paid_title', '支付成功')}>
       <p className="text-text-sub text-sm">{t('orders.cashier_paid_desc', '支付已完成，订单将尽快为您处理。')}</p>
-      <button onClick={goSignIn} className="mt-6 w-full bg-primary-blue text-white font-medium text-[15px] py-3 rounded-xl">
+      <button onClick={goSignIn} className="mt-6 w-full bg-brand-fill text-on-brand font-medium text-[15px] py-3 rounded-xl">
         {t('orders.cashier_anonymous_login', '登录后查看订单')}
       </button>
     </Layout>;
@@ -287,7 +363,7 @@ export function AnonymousCashierPage({
 
   return (
     <Layout title={t('orders.cashier_title', '收银台')}>
-      <div className="rounded-2xl bg-white p-5 shadow-sm">
+      <div className="rounded-2xl bg-surface p-5 shadow-sm">
         <p className="text-xs text-text-sub">{t('orders.cashier_amount_label', '支付金额')}</p>
         <p className="mt-1 text-3xl font-bold text-text-main">{formatAmount(amount, currencyCode)}</p>
         {subject ? <p className="mt-2 text-sm text-text-sub">{subject}</p> : null}
@@ -311,7 +387,7 @@ export function AnonymousCashierPage({
               key={option.method}
               disabled={phase === 'creating'}
               onClick={() => void launch(option.method)}
-              className="flex w-full items-center gap-3 rounded-xl border border-border-color bg-white px-4 py-4 text-left disabled:opacity-60"
+              className="flex w-full items-center gap-3 rounded-xl border border-border-color bg-surface px-4 py-4 text-left disabled:opacity-60"
             >
               <span className={`flex h-8 w-8 items-center justify-center rounded-full text-white text-sm ${option.badgeClass}`}>
                 {option.badge}

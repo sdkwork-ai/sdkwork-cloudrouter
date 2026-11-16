@@ -7549,6 +7549,7 @@ dependencies = [
 name = "sdkwork-order-integration-partner"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "sdkwork-commerce-partner-repository-sqlx",
  "sdkwork-commerce-partner-service",
  "sdkwork-contract-service",
@@ -7613,6 +7614,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "sdkwork-contract-service",
+ "sdkwork-order-integration-partner",
  "sdkwork-order-service",
  "sdkwork-payment-repository-sqlx",
  "sdkwork-payment-service",

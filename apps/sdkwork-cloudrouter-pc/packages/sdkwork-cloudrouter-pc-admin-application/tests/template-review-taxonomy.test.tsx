@@ -133,8 +133,8 @@ describe("App Center template review and taxonomy", () => {
       </SdkworkI18nProvider>,
     );
 
-    expect(await screen.findByText("还没有模板分类")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "新建分类" }));
+    expect(await screen.findByText("暂无分类，先新建一级分类。")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "新建一级分类" }));
     fireEvent.change(screen.getByLabelText("分类标识"), { target: { value: "productivity" } });
     fireEvent.change(screen.getByLabelText("显示名称"), { target: { value: "效率工具" } });
     fireEvent.click(screen.getByRole("button", { name: "保存分类" }));
@@ -167,7 +167,7 @@ describe("App Center template review and taxonomy", () => {
 
     expect(await screen.findByText("效率工具")).toBeTruthy();
     expect(fallbackService.listCategories).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole("button", { name: "新建分类" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "新建一级分类" })).toBeNull();
     expect(screen.getByText(/当前后台不可用/)).toBeTruthy();
   });
 });

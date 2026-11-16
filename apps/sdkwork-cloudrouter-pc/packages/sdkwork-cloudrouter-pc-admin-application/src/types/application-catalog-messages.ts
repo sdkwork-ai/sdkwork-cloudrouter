@@ -42,6 +42,20 @@ export interface ApplicationCatalogMessages {
       status: string;
       updatedAt: string;
     };
+    cascade: {
+      level1: string;
+      level2: string;
+      level3: string;
+      level4: string;
+      level5: string;
+      empty: string;
+      emptyColumn: string;
+      selectHint: string;
+      addRoot: string;
+      addChild: string;
+      depthHint: string;
+      loading: string;
+    };
     countTemplate: string;
     create: string;
     delete: {

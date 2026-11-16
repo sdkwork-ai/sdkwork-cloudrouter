@@ -492,6 +492,7 @@ export function ApplicationIntegrationDrawer({
 
   return (
     <Drawer
+      modal={false}
       onOpenChange={(open) => {
         if (!open && !saving) {
           onClose();

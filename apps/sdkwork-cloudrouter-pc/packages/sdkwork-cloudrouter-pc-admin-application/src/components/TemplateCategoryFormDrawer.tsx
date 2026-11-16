@@ -35,6 +35,7 @@ const ROOT_PARENT = "__root__";
 export interface TemplateCategoryFormDrawerProps {
   categories: readonly DeployTemplateCategory[];
   category?: DeployTemplateCategory;
+  initialParentId?: string;
   messages: ApplicationCatalogMessages;
   onClose: () => void;
   onSaved: () => void;
@@ -45,6 +46,7 @@ export interface TemplateCategoryFormDrawerProps {
 export function TemplateCategoryFormDrawer({
   categories,
   category,
+  initialParentId,
   messages,
   onClose,
   onSaved,
@@ -54,7 +56,7 @@ export function TemplateCategoryFormDrawer({
   const [categoryKey, setCategoryKey] = useState(category?.categoryKey ?? "");
   const [displayName, setDisplayName] = useState(category?.displayName ?? "");
   const [description, setDescription] = useState(category?.description ?? "");
-  const [parentId, setParentId] = useState(category?.parentId ?? ROOT_PARENT);
+  const [parentId, setParentId] = useState(category?.parentId ?? initialParentId ?? ROOT_PARENT);
   const [sortOrder, setSortOrder] = useState(
     category?.sortOrder === undefined ? "" : String(category.sortOrder),
   );

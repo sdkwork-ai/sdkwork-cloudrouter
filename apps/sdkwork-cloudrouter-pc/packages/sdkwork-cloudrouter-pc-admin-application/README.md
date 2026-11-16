@@ -10,7 +10,7 @@ the App Store's governance surfaces behind one information architecture.
 | --- | --- | --- |
 | Overview | `/admin/applications` | KPI snapshot, pending reviews, quick links, recent templates |
 | Applications | `/admin/applications/iam` · `/deploy` · `/app-store` | Unified application catalog, integration bindings (official account, mini program, payment) |
-| App Store · Categories | `/admin/applications/categories` | Store taxonomy CRUD |
+| App Store · Categories | `/admin/applications/categories` | Store taxonomy as a five-column cascade with per-level CRUD |
 | App Store · Visibility | `/admin/applications/listings` | Listing storefront visibility with audit reason |
 | App Store · Collections | `/admin/applications/collections` | Editorial collections and ordered listing sets |
 | App Store · Publishers | `/admin/applications/publishers` | Publisher profiles and verification reviews |
@@ -19,8 +19,23 @@ the App Store's governance surfaces behind one information architecture.
 | App Store · Appeals | `/admin/applications/appeals` | Moderation appeals with decision notes |
 | Templates · Library | `/admin/applications/templates` | Template list, create/edit/delete, versions, submit review |
 | Templates · Reviews | `/admin/applications/template-reviews` | Pending-review queue with backend-admin decisions |
-| Templates · Categories | `/admin/applications/template-categories` | Template taxonomy CRUD |
+| Templates · Categories | `/admin/applications/template-categories` | Template taxonomy as a five-column cascade with per-level CRUD |
 | Operations · Analytics | `/admin/applications/analytics` | Exact totals: pending reviews, publishers, listings, collections, categories |
+
+## Category cascade
+
+Both taxonomies render through the shared
+`@sdkwork/cloudroutes-pc-commons` `CascadeCategoryManager`:
+
+- five fixed columns (level 1 through level 5); selecting a node reveals its
+  children in the next column;
+- per-node action slot (edit / lifecycle / delete / add child) and per-column
+  create slot (new root or new child), so all CRUD lives in the page that owns
+  the domain service;
+- the App Store backend has no hard-delete operation, so “delete” is the
+  contract's soft-delete status transition;
+- template categories fall back to the app-plane read-only list when the Deploy
+  backend URL is unavailable.
 
 ## Data planes
 

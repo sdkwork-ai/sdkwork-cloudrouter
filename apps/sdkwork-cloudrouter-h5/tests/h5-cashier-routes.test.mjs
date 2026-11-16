@@ -117,6 +117,37 @@ test('the bootstrap injects the order App SDK client into the order runtime', ()
   );
 });
 
+test('cashier auto-launches only inside WeChat/Alipay and keeps manual buttons', async () => {
+  const { resolveAutoLaunchMethod, shouldAutoLaunchCashier } = await import(
+    '../packages/sdkwork-cloudrouter-h5-orders/src/cashierAutoLaunch.ts'
+  );
+
+  assert.equal(shouldAutoLaunchCashier('wechat'), true);
+  assert.equal(shouldAutoLaunchCashier('alipay'), true);
+  assert.equal(shouldAutoLaunchCashier('browser'), false);
+  assert.equal(resolveAutoLaunchMethod('wechat', [{ method: 'wechat_jsapi' }]), 'wechat_jsapi');
+  assert.equal(resolveAutoLaunchMethod('alipay', [{ method: 'alipay_wap' }]), 'alipay_wap');
+  assert.equal(resolveAutoLaunchMethod('browser', [{ method: 'wechat_h5' }]), null);
+  assert.equal(resolveAutoLaunchMethod('wechat', []), null);
+
+  const page = read('packages/sdkwork-cloudrouter-h5-orders/src/AnonymousCashierPage.tsx');
+  assert.match(page, /resolveAutoLaunchMethod/u);
+  assert.match(page, /autoLaunchedForTokenRef/u);
+  assert.match(page, /options\.map/u);
+  assert.match(page, /launch\(option\.method\)/u);
+  assert.match(page, /cashier_wechat_authorize_retry/u);
+  assert.match(page, /requestWechatAuthorizeUrl/u);
+  assert.match(page, /cashier_wechat_authorize_failed/u);
+  // The page must fetch the IAM start result; navigating to the start endpoint
+  // shows the API JSON page instead of the WeChat authorize hand-off.
+  assert.doesNotMatch(page, /window\.location\.assign\(wechatAuthorizeUrl\)/u);
+
+  const route = read('src/routes/OrderRoutes.tsx');
+  assert.match(route, /requestWechatAuthorizeUrl/u);
+  assert.match(route, /fetch\(wechatOAuthStartUrl/u);
+  assert.match(route, /authorizeUrl/u);
+});
+
 test('a legacy cashier link is exchanged for a token instead of showing login', async () => {
   const { planCashierEntry } = await import('../src/commerce/cashierEntry.ts');
   // Signed token links render the anonymous cashier directly.

@@ -65,6 +65,13 @@ describe('ScopeResourcePickerDialog', () => {
       />,
     );
 
+    const dialog = screen.getByRole('dialog', { name: 'Pick an account' });
+    expect(dialog.className).toContain('h-[60vh]');
+    expect(dialog.className).toContain('w-[60vw]');
+    // Portaled to the body: centered modal, not nested in a transformed drawer.
+    expect(dialog.parentElement?.className).toContain('fixed inset-0');
+    expect(dialog.parentElement?.parentElement).toBe(document.body);
+
     expect(await screen.findByRole('option', { name: /Personal account/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Confirm' })).toBeDisabled();
 
