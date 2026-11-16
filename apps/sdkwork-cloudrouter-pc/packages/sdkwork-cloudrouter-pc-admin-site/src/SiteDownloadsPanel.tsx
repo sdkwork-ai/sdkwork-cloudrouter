@@ -1,6 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { InlineWarning, TextField } from './SiteSettingsControls';
-import type { DownloadsPointerCheck } from './siteContentFields';
+import {
+  deploymentsDownloadConsoleUrl,
+  type DownloadsPointerCheck,
+} from './siteContentFields';
 
 export interface SiteDownloadsPanelProps {
   /** Canonical JSON text of the stored `downloads` document. */
@@ -30,12 +33,14 @@ function pointerText(catalogKey: string): string {
 }
 
 /**
- * The `/admin/site` body for the `downloads` category after the migration.
+ * The `/admin/site` body for the `downloads` category when the deployment delegates the catalog
+ * to the Deployments console (a configured console URL, or a pointer already stored).
  *
- * The catalog itself (cards, installers, per-installer update feeds) is authored
- * in the Deployments console. This panel only keeps the pointer the rendering
- * site resolves, so Cloud Router cannot drift into a second copy of an installer
- * list that the updater would then disagree with.
+ * The catalog itself (cards, installers, per-installer update feeds) is authored in the
+ * Deployments console. This panel only keeps the pointer the rendering site resolves, so Cloud
+ * Router cannot drift into a second copy of an installer list that the updater would then disagree
+ * with. Deployments without that console render `DownloadCatalogEditor` instead — see
+ * `usesDelegatedDownloads` — so the homepage download section always stays configurable.
  */
 export function SiteDownloadsPanel({
   value,
@@ -45,10 +50,7 @@ export function SiteDownloadsPanel({
 }: SiteDownloadsPanelProps) {
   const { t } = useTranslation();
   const catalogKey = readCatalogKey(value);
-  const base = adminBaseUrl?.trim().replace(/\/+$/u, '');
-  const consoleUrl = base === undefined || base === ''
-    ? undefined
-    : `${base}/admin/downloads/downloadCatalog`;
+  const consoleUrl = deploymentsDownloadConsoleUrl(adminBaseUrl);
 
   return (
     <div className="grid grid-cols-1 gap-3">

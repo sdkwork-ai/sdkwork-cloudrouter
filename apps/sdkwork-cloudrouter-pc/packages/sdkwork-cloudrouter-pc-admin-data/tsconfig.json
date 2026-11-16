@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {},
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "../sdkwork-cloudroutes-pc-commons/src/components/BusinessState.tsx"
+  ],
+  "exclude": [
+    "dist/**",
+    "node_modules/**"
+  ]
+}

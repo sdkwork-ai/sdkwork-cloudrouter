@@ -111,6 +111,7 @@ import {
   SdkworkDeployAppClient,
   type SdkworkAppConfig as SdkworkDeployAppConfig,
 } from '@sdkwork/deployments-app-sdk';
+import { SdkworkDeployBackendClient as DeployBackendClient } from '@sdkwork/deployments-backend-sdk';
 import {
   SdkworkAppstoreAppClient,
   type SdkworkAppConfig as SdkworkAppstoreAppConfig,
@@ -627,6 +628,7 @@ export type SdkworkDriveAppSdkClient = SdkworkDriveAppClient;
 export type SdkworkMembershipBackendSdkClient = MembershipBackendClient;
 export type SdkworkPaymentBackendSdkClient = PaymentBackendClient;
 export type SdkworkAppstoreBackendSdkClient = AppstoreBackendClient;
+export type SdkworkDeploymentsBackendSdkClient = DeployBackendClient;
 export type SdkworkBaseDataBackendSdkClient = BaseDataBackendClient;
 export type SdkworkPromotionBackendSdkClient = PromotionBackendClient;
 export type {
@@ -676,6 +678,7 @@ type CloudRouterSdkRuntimeHost = typeof globalThis & {
   __SDKWORK_APPBASE_APP_SDK_CLIENT__?: SdkworkAppbaseAppSdkClient | null;
   __SDKWORK_APPBASE_BACKEND_SDK_CLIENT__?: SdkworkAppbaseBackendSdkClient | null;
   __SDKWORK_APPSTORE_BACKEND_SDK_CLIENT__?: SdkworkAppstoreBackendSdkClient | null;
+  __SDKWORK_DEPLOYMENTS_BACKEND_SDK_CLIENT__?: SdkworkDeploymentsBackendSdkClient | null;
   __SDKWORK_MESSAGING_APP_SDK_CLIENT__?: SdkworkMessagingAppSdkClient | null;
   __SDKWORK_GENERATIONS_APP_SDK_CLIENT__?: SdkworkGenerationsAppSdkClient | null;
   __SDKWORK_MEMORY_APP_SDK_CLIENT__?: SdkworkMemoryAppSdkClient | null;
@@ -718,6 +721,7 @@ let appbaseAppClient: SdkworkAppbaseAppClient | null = null;
 let appbaseBackendClient: SdkworkAppbaseBackendClient | null = null;
 let messagingAppClient: MessagingAppClient | null = null;
 let appstoreBackendClient: AppstoreBackendClient | null = null;
+let deploymentsBackendClient: DeployBackendClient | null = null;
 let generationsAppClient: SdkworkGenerationsAppClient | null = null;
 let memoryAppClient: SdkworkMemoryAppClient | null = null;
 let communityAppClient: SdkworkCommunityAppClient | null = null;
@@ -889,6 +893,30 @@ export function getSdkworkAppstoreBackendSdkClient(
     appstoreBackendClient = createSdkworkAppstoreBackendSdkClient();
   }
   return appstoreBackendClient;
+}
+
+export type SdkworkDeploymentsBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
+
+export function createSdkworkDeploymentsBackendSdkClient(
+  options: SdkworkDeploymentsBackendSdkClientOptions = {},
+): DeployBackendClient {
+  return attachCloudRouterSdkSessionAuthBoundary(
+    new DeployBackendClient(
+      buildDependencyBackendConfig(options, 'VITE_SDKWORK_DEPLOYMENTS_BACKEND_API_BASE_URL'),
+    ),
+  );
+}
+
+export function getSdkworkDeploymentsBackendSdkClient(
+  options: SdkworkDeploymentsBackendSdkClientOptions = {},
+): DeployBackendClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkDeploymentsBackendSdkClient(options);
+  }
+  if (!deploymentsBackendClient) {
+    deploymentsBackendClient = createSdkworkDeploymentsBackendSdkClient();
+  }
+  return deploymentsBackendClient;
 }
 
 export function createSdkworkAgentBackendSdkClient(
@@ -1939,6 +1967,7 @@ function resetCloudRouterSdkClientCaches(): void {
   appbaseBackendClient = null;
   appstoreAppClient = null;
   appstoreBackendClient = null;
+  deploymentsBackendClient = null;
   deploymentsAppClient = null;
   messagingAppClient = null;
   generationsAppClient = null;

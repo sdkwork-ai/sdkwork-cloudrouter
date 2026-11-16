@@ -124,6 +124,11 @@ test('a legacy cashier link is exchanged for a token instead of showing login', 
     kind: 'token',
     token: 'v1.payload.signature',
   });
+  // Short links (`s1.<22>`) resolve server-side and behave exactly like a token.
+  assert.deepEqual(planCashierEntry('s1.9tK3mQ7xR2pL8sV4nB6yH1', null), {
+    kind: 'token',
+    token: 's1.9tK3mQ7xR2pL8sV4nB6yH1',
+  });
   // The reported legacy shape: orderId + outTradeNo from the printed QR.
   assert.deepEqual(
     planCashierEntry(

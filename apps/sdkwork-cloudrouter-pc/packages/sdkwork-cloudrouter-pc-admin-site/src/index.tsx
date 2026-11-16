@@ -23,9 +23,14 @@ import {
 import { useTranslation } from 'react-i18next';
 import { DriveUploadImage } from 'sdkwork-drive-pc-upload-image';
 import { AdminModuleSettingsEditor } from './AdminModuleSettingsEditor';
+import { DownloadCatalogEditor } from './DownloadCatalogEditor';
 import { SiteDownloadsPanel } from './SiteDownloadsPanel';
 import { InlineWarning, SectionDivider, TextArea, TextField, ToggleSwitch } from './SiteSettingsControls';
-import { getLoadErrorMessage, refreshSiteBranding } from '@sdkwork/cloudroutes-pc-commons/runtime';
+import {
+  getLoadErrorMessage,
+  readCloudRouterRuntimeEnv,
+  refreshSiteBranding,
+} from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { BusinessStatePanel } from '@sdkwork/cloudroutes-pc-commons';
 import { validateAdminModuleSettings, type AdminModuleSettings } from '@sdkwork/cloudroutes-pc-commons/admin-modules';
 import {
@@ -72,6 +77,8 @@ import {
   checkDownloadCatalog,
   checkDownloadsPointer,
   findIncompleteHomeContent,
+  usesDelegatedDownloads,
+  type DownloadCatalogCheck,
   type DownloadsPointerCheck,
   type HomeContentForm,
   type HomeContentWarningCode,
@@ -96,6 +103,7 @@ export {
   checkDownloadCatalog,
   checkDownloadsPointer,
   findIncompleteHomeContent,
+  usesDelegatedDownloads,
   readDownloadCatalogText,
   readHomeContentForm,
   toDownloadCatalogPayload,
@@ -103,6 +111,7 @@ export {
   toHomeContentPayload,
 } from './siteContentFields';
 export type {
+  DownloadCatalogCheck,
   DownloadsPointerCheck,
   HomeContentForm,
   HomeContentWarningCode,
@@ -215,12 +224,36 @@ if (SITE_SETTINGS_CATEGORIES.length !== SITE_SETTINGS_CATEGORY_IDS.length) {
   throw new Error('Every site-settings category needs exactly one tab definition.');
 }
 
-/** Deployments console origin, injected at build time; absent keeps the link hidden. */
-const DEPLOYMENTS_ADMIN_BASE_URL = (import.meta as ImportMeta & {
-  env?: Record<string, string | undefined>;
-}).env?.VITE_DEPLOYMENTS_ADMIN_BASE_URL;
+/**
+ * Deployments console origin, read from the runtime document first and the build-time env second.
+ *
+ * Unset is a supported state, not a broken one: a deployment without a Deployments console keeps
+ * authoring its download catalog in this page (see `usesDelegatedDownloads`), so the homepage's
+ * download section never becomes unconfigurable. When it is set, the tab keeps only the catalog
+ * pointer and links to the console that owns the catalog, installers and update feeds.
+ */
+const DEPLOYMENTS_ADMIN_BASE_URL = readDeploymentsConsoleBaseUrl();
+
+function readDeploymentsConsoleBaseUrl(): string | undefined {
+  const buildTimeEnv = (import.meta as ImportMeta & {
+    env?: Record<string, string | undefined>;
+  }).env;
+  const candidates = [
+    readCloudRouterRuntimeEnv('VITE_SDKWORK_DEPLOYMENTS_ADMIN_URL'),
+    buildTimeEnv?.VITE_SDKWORK_DEPLOYMENTS_ADMIN_URL,
+    buildTimeEnv?.VITE_DEPLOYMENTS_ADMIN_BASE_URL,
+  ];
+  for (const candidate of candidates) {
+    const trimmed = candidate?.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+  return undefined;
+}
 
 export function CloudRouterSiteSettingsPage({
+  bundledDownloadCatalog,
 }: {
   /**
    * The application's bundled download catalog, handed in by the composition layer so the
@@ -262,12 +295,28 @@ export function CloudRouterSiteSettingsPage({
     [form.adminModules],
   );
   /**
-   * The download catalog's verdict, derived from the text instead of cached in state.
+   * Both verdicts, derived from the text instead of cached in state.
    *
    * Derived because the tab body, the sidebar badge and the save guard all have to agree about
    * whether the document is publishable; a second copy of the answer is how they stop agreeing.
+   * Which one governs depends on the mode the page is in: a delegated tab stores a pointer, the
+   * local tab stores the catalog itself, and each has its own set of blocking problems.
    */
   const downloadsPointerCheck = useMemo(() => checkDownloadsPointer(form.downloads), [form.downloads]);
+  const downloadCatalogCheck = useMemo(() => checkDownloadCatalog(form.downloads), [form.downloads]);
+  /**
+   * Whether this page delegates the catalog to the Deployments console.
+   *
+   * `false` is what keeps the homepage download configuration complete on a deployment that has no
+   * Deployments console: the tab then renders the catalog editor and publishes the document the
+   * landing page already reads. A stored pointer keeps the delegated tab even without a configured
+   * console URL, so a migrated site can still edit the key that is in force.
+   */
+  const downloadsDelegated = useMemo(
+    () => usesDelegatedDownloads(DEPLOYMENTS_ADMIN_BASE_URL, downloadsPointerCheck),
+    [downloadsPointerCheck],
+  );
+  const downloadsCheck = downloadsDelegated ? downloadsPointerCheck : downloadCatalogCheck;
 
   const loadSettings = useCallback(async (isActive: () => boolean = () => true) => {
     setLoading(true);
@@ -337,7 +386,7 @@ export function CloudRouterSiteSettingsPage({
       if (category.id === 'adminModules' && adminModuleIssues.length > 0) {
         errors = adminModuleIssues.length;
       }
-      if (category.id === 'downloads' && !downloadsPointerCheck.ok) {
+      if (category.id === 'downloads' && !downloadsCheck.ok) {
         // An unparseable catalog cannot be sent at all, so this blocks saving rather than warning.
         errors = 1;
       }
@@ -347,7 +396,7 @@ export function CloudRouterSiteSettingsPage({
       status[category.id] = { changes, errors, warnings };
     }
     return status;
-  }, [adminModuleIssues, dirtyFields, downloadsPointerCheck, form, homepageWarnings, siteNameError]);
+  }, [adminModuleIssues, dirtyFields, downloadsCheck, form, homepageWarnings, siteNameError]);
 
   const dirtyCount = dirtyFields.size;
 
@@ -357,7 +406,7 @@ export function CloudRouterSiteSettingsPage({
       setSaveSuccess(null);
       return;
     }
-    if (!downloadsPointerCheck.ok) {
+    if (!downloadsCheck.ok) {
       // The button is disabled while the catalog is unparseable, so this is the second half of one
       // rule rather than a second rule: whichever path reaches a save, the document is checked.
       setSaveError(t('admin.siteSettings.errors.downloadsInvalid'));
@@ -547,7 +596,7 @@ export function CloudRouterSiteSettingsPage({
           </button>
           <button
             className="inline-flex items-center gap-2 rounded-lg bg-lobster-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-lobster-600 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={saving || Boolean(siteNameError) || !downloadsPointerCheck.ok || adminModuleIssues.length > 0 || dirtyCount === 0}
+            disabled={saving || Boolean(siteNameError) || !downloadsCheck.ok || adminModuleIssues.length > 0 || dirtyCount === 0}
             onClick={() => void saveSettings()}
             type="button"
           >
@@ -678,12 +727,21 @@ export function CloudRouterSiteSettingsPage({
             ) : null}
 
             {activeCategory === 'downloads' ? (
-              <SiteDownloadsPanel
-                adminBaseUrl={DEPLOYMENTS_ADMIN_BASE_URL}
-                check={downloadsPointerCheck}
-                onChange={updateDownloadCatalog}
-                value={form.downloads}
-              />
+              downloadsDelegated ? (
+                <SiteDownloadsPanel
+                  adminBaseUrl={DEPLOYMENTS_ADMIN_BASE_URL}
+                  check={downloadsPointerCheck}
+                  onChange={updateDownloadCatalog}
+                  value={form.downloads}
+                />
+              ) : (
+                <DownloadCatalogEditor
+                  check={downloadCatalogCheck}
+                  fallbackCatalog={bundledDownloadCatalog}
+                  onChange={updateDownloadCatalog}
+                  value={form.downloads}
+                />
+              )
             ) : null}
 
             {activeCategory === 'social' ? (

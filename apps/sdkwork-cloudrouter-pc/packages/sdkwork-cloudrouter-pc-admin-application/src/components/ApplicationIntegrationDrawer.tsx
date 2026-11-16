@@ -7,7 +7,6 @@ import {
   MessageCircle,
   Plus,
   RefreshCw,
-  Search,
   Smartphone,
   Trash2,
 } from "lucide-react";
@@ -20,7 +19,6 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  Input,
   Select,
   SelectContent,
   SelectItem,
@@ -28,6 +26,13 @@ import {
   SelectValue,
   StatusNotice,
 } from "@sdkwork/ui-pc-react";
+import {
+  ScopeResourcePickerDialog,
+  type ScopeResourcePickerItem,
+  type ScopeResourcePickerLabels,
+  type ScopeResourcePickerPage,
+  type ScopeResourcePickerSource,
+} from "@sdkwork/cloudroutes-pc-commons";
 
 import type { ApplicationCatalogMessages } from "../i18n";
 import {
@@ -51,6 +56,7 @@ import type {
   ApplicationIntegrationService,
   ApplicationPaymentAccountOption,
   ChannelAccountKind,
+  IntegrationAccountScope,
 } from "../types/application-integrations";
 import type { ApplicationRecord } from "../types/application-catalog";
 
@@ -109,8 +115,7 @@ export function ApplicationIntegrationDrawer({
   const [environmentKey, setEnvironmentKey] = useState("");
   const [drafts, setDrafts] = useState<Record<string, ApplicationEnvironmentIntegration>>({});
   const [baseline, setBaseline] = useState<Record<string, ApplicationEnvironmentIntegration>>({});
-  const [paymentQuery, setPaymentQuery] = useState("");
-  const [channelQuery, setChannelQuery] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string>();
   const [saveError, setSaveError] = useState<unknown>();
@@ -413,26 +418,77 @@ export function ApplicationIntegrationDrawer({
   const catalogLoading = relevantCatalog.status === "loading" || environmentsStatus === "loading";
   const catalogFailed = relevantCatalog.status === "error";
 
-  const boundPaymentIds = new Set(draft.paymentAccounts.map((account) => account.id));
-  const availablePayments = paymentCatalog.items
-    .filter((account) => !boundPaymentIds.has(account.id))
-    .filter((account) => matchesQuery(paymentQuery, [
-      account.accountName ?? "",
-      account.accountNo,
-      account.providerCode,
-      providerLabel(account.providerCode),
-    ]))
-    .sort((left, right) => paymentRank(right, environmentKey, environment?.level)
-      - paymentRank(left, environmentKey, environment?.level));
   const selectedChannel = kind === "official-account" ? draft.officialAccount : draft.miniProgram;
-  const availableChannels = (kind === "official-account" ? officialCatalog.items : miniProgramCatalog.items)
-    .filter((account) => account.id !== selectedChannel?.id)
-    .filter((account) => matchesQuery(channelQuery, [
-      account.displayName,
-      account.appId,
-      account.providerCode,
-      account.accountType ?? "",
-    ]));
+  const pickerCopy = copy.picker;
+  const pickerLabels = useMemo<ScopeResourcePickerLabels>(() => ({
+    title: pickerCopy.title[kindKey(kind)],
+    description: pickerCopy.description[kindKey(kind)],
+    searchPlaceholder: pickerCopy.searchPlaceholder,
+    empty: pickerCopy.empty,
+    emptySearch: pickerCopy.emptySearch,
+    loading: pickerCopy.loading,
+    error: pickerCopy.error,
+    retry: pickerCopy.retry,
+    cancel: pickerCopy.cancel,
+    confirm: pickerCopy.confirm,
+    loadMore: pickerCopy.loadMore,
+    scopeLabel: pickerCopy.scopeLabel,
+    listLabel: pickerCopy.listLabel,
+    close: pickerCopy.close,
+    selectedCount: (count) => pickerCopy.selectedCount.replace("{count}", String(count)),
+  }), [kind, pickerCopy]);
+
+  const pickerSources = useMemo<readonly ScopeResourcePickerSource[]>(() => buildPickerSources({
+    channelItems: kind === "official-account" ? officialCatalog.items : miniProgramCatalog.items,
+    kind,
+    messages,
+    paymentItems: paymentCatalog.items,
+    service,
+  }), [
+    kind,
+    messages,
+    miniProgramCatalog.items,
+    officialCatalog.items,
+    paymentCatalog.items,
+    service,
+  ]);
+
+  const pickerInitialSelection = useMemo<readonly ScopeResourcePickerItem[]>(() => (
+    kind === "payment"
+      ? draft.paymentAccounts.map((account) => paymentBindingToPickerItem(account, messages))
+      : selectedChannel
+        ? [channelBindingToPickerItem(selectedChannel, messages)]
+        : []
+  ), [draft.paymentAccounts, kind, messages, selectedChannel]);
+
+  const applyPickerSelection = (items: readonly ScopeResourcePickerItem[]) => {
+    if (kind === "payment") {
+      const existing = new Map(draft.paymentAccounts.map((account) => [account.id, account]));
+      const next: ApplicationEnvironmentIntegration["paymentAccounts"] = [];
+      for (const item of items) {
+        const prior = existing.get(item.id);
+        if (prior) {
+          next.push(prior);
+          continue;
+        }
+        const option = asPaymentOption(item.payload);
+        if (!option) {
+          continue;
+        }
+        const providerHasDefault = next.some(
+          (account) => account.providerCode === option.providerCode && account.isDefault,
+        );
+        next.push(toPaymentBinding(option, !providerHasDefault));
+      }
+      setDraft({ ...draft, paymentAccounts: next });
+    } else {
+      const option = asChannelOption(items[0]?.payload);
+      if (option) {
+        bindChannel(kind, option);
+      }
+    }
+    setPickerOpen(false);
+  };
 
   return (
     <Drawer
@@ -550,29 +606,23 @@ export function ApplicationIntegrationDrawer({
           {!catalogLoading && !catalogFailed && kind === "payment" ? (
             <PaymentSection
               boundAccounts={draft.paymentAccounts}
-              availableAccounts={availablePayments}
               copy={copy}
               environmentKey={environmentKey}
               environmentLevel={environment?.level}
               messages={messages}
-              onAdd={bindPayment}
               onMakeDefault={makePaymentDefault}
-              onQueryChange={setPaymentQuery}
+              onOpenPicker={() => setPickerOpen(true)}
               onRemove={removePayment}
-              query={paymentQuery}
             />
           ) : null}
 
           {!catalogLoading && !catalogFailed && kind !== "payment" ? (
             <ChannelSection
-              availableAccounts={availableChannels}
               channelKind={kind}
               copy={copy}
               messages={messages}
               onClear={clearChannel}
-              onQueryChange={setChannelQuery}
-              onSelect={bindChannel}
-              query={channelQuery}
+              onOpenPicker={() => setPickerOpen(true)}
               selected={selectedChannel}
             />
           ) : null}
@@ -606,314 +656,337 @@ export function ApplicationIntegrationDrawer({
             {saving ? copy.drawer.saving : copy.drawer.save}
           </Button>
         </DrawerFooter>
+        <ScopeResourcePickerDialog
+          initialSelection={pickerInitialSelection}
+          labels={pickerLabels}
+          mode={kind === "payment" ? "multiple" : "single"}
+          onConfirm={applyPickerSelection}
+          onOpenChange={setPickerOpen}
+          open={pickerOpen}
+          sources={pickerSources}
+        />
       </DrawerContent>
     </Drawer>
   );
 }
 
 function PaymentSection({
-  availableAccounts,
   boundAccounts,
   copy,
   environmentKey,
   environmentLevel,
   messages,
-  onAdd,
   onMakeDefault,
-  onQueryChange,
+  onOpenPicker,
   onRemove,
-  query,
 }: {
-  availableAccounts: readonly ApplicationPaymentAccountOption[];
   boundAccounts: ApplicationEnvironmentIntegration["paymentAccounts"];
   copy: ApplicationCatalogMessages["integrations"];
   environmentKey: string;
   environmentLevel?: string;
   messages: ApplicationCatalogMessages;
-  onAdd: (account: ApplicationPaymentAccountOption) => void;
   onMakeDefault: (accountId: string) => void;
-  onQueryChange: (value: string) => void;
+  onOpenPicker: () => void;
   onRemove: (accountId: string) => void;
-  query: string;
 }) {
   return (
-    <>
-      <section className="space-y-2">
-        <h3 className="flex items-center gap-2 text-sm font-medium text-[var(--sdk-color-text-primary)]">
-          <CreditCard className="h-4 w-4" />
-          {copy.payment.boundTitle}
-        </h3>
-        {boundAccounts.length === 0 ? (
-          <p className="text-sm text-[var(--sdk-color-text-muted)]">{copy.payment.emptyBound}</p>
-        ) : (
-          <ul className="space-y-2">
-            {boundAccounts.map((account) => (
-              <li
-                className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel-muted)] px-3 py-2"
-                key={account.id}
-              >
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="truncate text-sm font-medium text-[var(--sdk-color-text-primary)]">
-                      {account.accountName ?? account.accountNo}
+    <section className="space-y-3">
+      <h3 className="flex items-center gap-2 text-sm font-medium text-[var(--sdk-color-text-primary)]">
+        <CreditCard className="h-4 w-4" />
+        {copy.payment.boundTitle}
+      </h3>
+      {boundAccounts.length === 0 ? (
+        <p className="text-sm text-[var(--sdk-color-text-muted)]">{copy.payment.emptyBound}</p>
+      ) : (
+        <ul className="space-y-2">
+          {boundAccounts.map((account) => (
+            <li
+              className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel-muted)] px-3 py-2"
+              key={account.id}
+            >
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="truncate text-sm font-medium text-[var(--sdk-color-text-primary)]">
+                    {account.accountName ?? account.accountNo}
+                  </span>
+                  <span className="rounded-full border border-[var(--sdk-color-border-default)] px-2 py-0.5 text-[11px] text-[var(--sdk-color-text-muted)]">
+                    {providerLabel(account.providerCode)}
+                  </span>
+                  {account.isDefault ? (
+                    <span className="rounded-full bg-[var(--sdk-color-brand-primary-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--sdk-color-brand-primary)]">
+                      {copy.payment.defaultBadge}
                     </span>
-                    <span className="rounded-full border border-[var(--sdk-color-border-default)] px-2 py-0.5 text-[11px] text-[var(--sdk-color-text-muted)]">
-                      {providerLabel(account.providerCode)}
-                    </span>
-                    {account.isDefault ? (
-                      <span className="rounded-full bg-[var(--sdk-color-brand-primary-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--sdk-color-brand-primary)]">
-                        {copy.payment.defaultBadge}
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[var(--sdk-color-text-muted)]">
-                    <span>{copy.payment.accountNo}: {account.accountNo}</span>
-                    <span>{copy.payment.environment}: {paymentEnvironmentLabel(account.environment, messages)}</span>
-                    <span>{copy.payment.mode}: {account.accountMode === "partner" ? copy.payment.partnerMode : copy.payment.directMode}</span>
-                    {account.settlementCurrency ? (
-                      <span>{copy.payment.currency}: {account.settlementCurrency}</span>
-                    ) : null}
-                    {account.countryCode ? (
-                      <span>{copy.payment.country}: {account.countryCode}</span>
-                    ) : null}
-                    {!isPaymentAccountCompatible(account.environment, environmentKey, environmentLevel) ? (
-                      <span className="text-[var(--sdk-color-status-danger)]">
-                        {copy.payment.incompatible}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-                <div className="flex items-center gap-1">
-                  {!account.isDefault ? (
-                    <Button onClick={() => onMakeDefault(account.id)} size="sm" type="button" variant="outline">
-                      <Check className="h-3.5 w-3.5" />
-                      {copy.payment.makeDefault}
-                    </Button>
                   ) : null}
-                  <Button
-                    aria-label={`${copy.payment.remove} ${account.accountName ?? account.accountNo}`}
-                    onClick={() => onRemove(account.id)}
-                    size="sm"
-                    type="button"
-                    variant="ghost"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
                 </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className="space-y-2">
-        <h3 className="flex items-center gap-2 text-sm font-medium text-[var(--sdk-color-text-primary)]">
-          <Plus className="h-4 w-4" />
-          {copy.payment.availableTitle}
-        </h3>
-        <label className="relative block">
-          <span className="sr-only">{copy.payment.searchPlaceholder}</span>
-          <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--sdk-color-text-muted)]" />
-          <Input
-            aria-label={copy.payment.searchPlaceholder}
-            className="pl-9"
-            onChange={(event) => onQueryChange(event.target.value)}
-            placeholder={copy.payment.searchPlaceholder}
-            value={query}
-          />
-        </label>
-        {availableAccounts.length === 0 ? (
-          <p className="text-sm text-[var(--sdk-color-text-muted)]">{copy.payment.emptyAvailable}</p>
-        ) : (
-          <ul className="space-y-2">
-            {availableAccounts.map((account) => {
-              const eligible = account.status === "active"
-                && account.capabilities.pay !== false
-                && isPaymentAccountCompatible(account.environment, environmentKey, environmentLevel);
-              return (
-                <li
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-subtle)] px-3 py-2"
-                  key={account.id}
-                >
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="truncate text-sm text-[var(--sdk-color-text-primary)]">
-                        {account.accountName ?? account.accountNo}
-                      </span>
-                      <span className="rounded-full border border-[var(--sdk-color-border-default)] px-2 py-0.5 text-[11px] text-[var(--sdk-color-text-muted)]">
-                        {providerLabel(account.providerCode)}
-                      </span>
-                      {account.status !== "active" ? (
-                        <span className="text-[11px] text-[var(--sdk-color-status-danger)]">
-                          {paymentStatusLabel(account.status, messages)}
-                        </span>
-                      ) : null}
-                      {account.capabilities.pay === false ? (
-                        <span className="text-[11px] text-[var(--sdk-color-status-danger)]">
-                          {copy.payment.noPayCapability}
-                        </span>
-                      ) : null}
-                      {!isPaymentAccountCompatible(account.environment, environmentKey, environmentLevel) ? (
-                        <span className="text-[11px] text-[var(--sdk-color-status-danger)]">
-                          {copy.payment.incompatible}
-                        </span>
-                      ) : null}
-                    </div>
-                    <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[var(--sdk-color-text-muted)]">
-                      <span>{copy.payment.accountNo}: {account.accountNo}</span>
-                      <span>{copy.payment.environment}: {paymentEnvironmentLabel(account.environment, messages)}</span>
-                      <span>{copy.payment.mode}: {account.accountMode === "partner" ? copy.payment.partnerMode : copy.payment.directMode}</span>
-                      {account.settlementCurrency ? (
-                        <span>{copy.payment.currency}: {account.settlementCurrency}</span>
-                      ) : null}
-                      {account.countryCode ? (
-                        <span>{copy.payment.country}: {account.countryCode}</span>
-                      ) : null}
-                    </div>
-                  </div>
-                  <Button
-                    disabled={!eligible}
-                    onClick={() => onAdd(account)}
-                    size="sm"
-                    type="button"
-                    variant="outline"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    {copy.payment.add}
+                <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[var(--sdk-color-text-muted)]">
+                  <span>{copy.payment.accountNo}: {account.accountNo}</span>
+                  <span>{copy.payment.environment}: {paymentEnvironmentLabel(account.environment, messages)}</span>
+                  <span>{copy.payment.mode}: {account.accountMode === "partner" ? copy.payment.partnerMode : copy.payment.directMode}</span>
+                  {account.settlementCurrency ? (
+                    <span>{copy.payment.currency}: {account.settlementCurrency}</span>
+                  ) : null}
+                  {account.countryCode ? (
+                    <span>{copy.payment.country}: {account.countryCode}</span>
+                  ) : null}
+                  {!isPaymentAccountCompatible(account.environment, environmentKey, environmentLevel) ? (
+                    <span className="text-[var(--sdk-color-status-danger)]">
+                      {copy.payment.incompatible}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                {!account.isDefault ? (
+                  <Button onClick={() => onMakeDefault(account.id)} size="sm" type="button" variant="outline">
+                    <Check className="h-3.5 w-3.5" />
+                    {copy.payment.makeDefault}
                   </Button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-    </>
+                ) : null}
+                <Button
+                  aria-label={`${copy.payment.remove} ${account.accountName ?? account.accountNo}`}
+                  onClick={() => onRemove(account.id)}
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      <Button onClick={onOpenPicker} type="button" variant="outline">
+        <Plus className="h-3.5 w-3.5" />
+        {copy.picker.paymentOpen}
+      </Button>
+    </section>
   );
 }
 
 function ChannelSection({
-  availableAccounts,
   channelKind,
   copy,
   messages,
   onClear,
-  onQueryChange,
-  onSelect,
-  query,
+  onOpenPicker,
   selected,
 }: {
-  availableAccounts: readonly ApplicationChannelAccountOption[];
   channelKind: ChannelAccountKind;
   copy: ApplicationCatalogMessages["integrations"];
   messages: ApplicationCatalogMessages;
   onClear: (kind: ChannelAccountKind) => void;
-  onQueryChange: (value: string) => void;
-  onSelect: (kind: ChannelAccountKind, account: ApplicationChannelAccountOption) => void;
-  query: string;
+  onOpenPicker: () => void;
   selected: ApplicationEnvironmentIntegration["officialAccount"] | ApplicationEnvironmentIntegration["miniProgram"];
 }) {
   const Icon = channelKind === "official-account" ? MessageCircle : Smartphone;
   return (
-    <>
-      <section className="space-y-2">
-        <h3 className="flex items-center gap-2 text-sm font-medium text-[var(--sdk-color-text-primary)]">
-          <Icon className="h-4 w-4" />
-          {copy.channel.currentTitle}
-        </h3>
-        {!selected ? (
-          <p className="text-sm text-[var(--sdk-color-text-muted)]">{copy.channel.emptyCurrent}</p>
-        ) : (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel-muted)] px-3 py-2">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="truncate text-sm font-medium text-[var(--sdk-color-text-primary)]">
-                  {selected.displayName}
-                </span>
-                <span className="rounded-full border border-[var(--sdk-color-border-default)] px-2 py-0.5 text-[11px] text-[var(--sdk-color-text-muted)]">
-                  {providerLabel(selected.providerCode)}
-                </span>
-                <span className="rounded-full bg-[var(--sdk-color-brand-primary-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--sdk-color-brand-primary)]">
-                  {copy.channel.selected}
-                </span>
-              </div>
-              <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[var(--sdk-color-text-muted)]">
-                <span>{copy.channel.appId}: {selected.appId || "-"}</span>
-                {selected.accountType ? <span>{copy.channel.accountType}: {selected.accountType}</span> : null}
-                {selected.status ? <span>{copy.channel.status}: {statusLabel(selected.status, messages)}</span> : null}
-              </div>
+    <section className="space-y-3">
+      <h3 className="flex items-center gap-2 text-sm font-medium text-[var(--sdk-color-text-primary)]">
+        <Icon className="h-4 w-4" />
+        {copy.channel.currentTitle}
+      </h3>
+      {!selected ? (
+        <p className="text-sm text-[var(--sdk-color-text-muted)]">{copy.channel.emptyCurrent}</p>
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel-muted)] px-3 py-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="truncate text-sm font-medium text-[var(--sdk-color-text-primary)]">
+                {selected.displayName}
+              </span>
+              <span className="rounded-full border border-[var(--sdk-color-border-default)] px-2 py-0.5 text-[11px] text-[var(--sdk-color-text-muted)]">
+                {providerLabel(selected.providerCode)}
+              </span>
+              <span className="rounded-full bg-[var(--sdk-color-brand-primary-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--sdk-color-brand-primary)]">
+                {copy.channel.selected}
+              </span>
             </div>
-            <Button onClick={() => onClear(channelKind)} size="sm" type="button" variant="outline">
-              <Trash2 className="h-3.5 w-3.5" />
-              {copy.channel.clear}
-            </Button>
+            <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[var(--sdk-color-text-muted)]">
+              <span>{copy.channel.appId}: {selected.appId || "-"}</span>
+              {selected.accountType ? <span>{copy.channel.accountType}: {selected.accountType}</span> : null}
+              {selected.status ? <span>{copy.channel.status}: {statusLabel(selected.status, messages)}</span> : null}
+            </div>
           </div>
-        )}
-      </section>
-
-      <section className="space-y-2">
-        <h3 className="flex items-center gap-2 text-sm font-medium text-[var(--sdk-color-text-primary)]">
-          <Link2 className="h-4 w-4" />
-          {copy.channel.availableTitle}
-        </h3>
-        <label className="relative block">
-          <span className="sr-only">{copy.channel.searchPlaceholder}</span>
-          <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--sdk-color-text-muted)]" />
-          <Input
-            aria-label={copy.channel.searchPlaceholder}
-            className="pl-9"
-            onChange={(event) => onQueryChange(event.target.value)}
-            placeholder={copy.channel.searchPlaceholder}
-            value={query}
-          />
-        </label>
-        {availableAccounts.length === 0 ? (
-          <p className="text-sm text-[var(--sdk-color-text-muted)]">{copy.channel.emptyAvailable}</p>
-        ) : (
-          <ul className="space-y-2">
-            {availableAccounts.map((account) => (
-              <li
-                className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-subtle)] px-3 py-2"
-                key={account.id}
-              >
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="truncate text-sm text-[var(--sdk-color-text-primary)]">
-                      {account.displayName}
-                    </span>
-                    <span className="rounded-full border border-[var(--sdk-color-border-default)] px-2 py-0.5 text-[11px] text-[var(--sdk-color-text-muted)]">
-                      {providerLabel(account.providerCode)}
-                    </span>
-                    <span className={`text-[11px] ${account.enabled ? "text-[var(--sdk-color-text-muted)]" : "text-[var(--sdk-color-status-danger)]"}`}>
-                      {account.enabled ? copy.channel.enabled : copy.channel.disabled}
-                    </span>
-                    {account.authorizationStatus && account.authorizationStatus !== "authorized" ? (
-                      <span className="text-[11px] text-[var(--sdk-color-status-warning)]">
-                        {copy.channel.unauthorized}
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[var(--sdk-color-text-muted)]">
-                    <span>{copy.channel.appId}: {account.appId || "-"}</span>
-                    {account.accountType ? <span>{copy.channel.accountType}: {account.accountType}</span> : null}
-                    {account.status ? <span>{copy.channel.status}: {statusLabel(account.status, messages)}</span> : null}
-                  </div>
-                </div>
-                <Button
-                  disabled={!account.enabled}
-                  onClick={() => onSelect(channelKind, account)}
-                  size="sm"
-                  type="button"
-                  variant="outline"
-                >
-                  {copy.channel.select}
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </>
+          <Button onClick={() => onClear(channelKind)} size="sm" type="button" variant="outline">
+            <Trash2 className="h-3.5 w-3.5" />
+            {copy.channel.clear}
+          </Button>
+        </div>
+      )}
+      <Button onClick={onOpenPicker} type="button" variant="outline">
+        <Link2 className="h-3.5 w-3.5" />
+        {selected ? copy.picker.changeChannel : copy.picker.channelOpen}
+      </Button>
+    </section>
   );
+}
+
+/**
+ * Build the three ownership-scope tab loaders for the generic picker.
+ *
+ * When the integration service implements cursor pages the picker searches the
+ * backend directly; older test doubles fall back to a local page over the
+ * already-loaded catalog so the drawer keeps working without the new methods.
+ */
+function buildPickerSources(input: {
+  channelItems: readonly ApplicationChannelAccountOption[];
+  kind: ApplicationIntegrationKind;
+  messages: ApplicationCatalogMessages;
+  paymentItems: readonly ApplicationPaymentAccountOption[];
+  service: ApplicationIntegrationService;
+}): readonly ScopeResourcePickerSource[] {
+  const { channelItems, kind, messages, paymentItems, service } = input;
+  const copy = messages.integrations.picker;
+  const scopes: readonly IntegrationAccountScope[] = ["personal", "organization", "tenant"];
+  return scopes.map((scope) => ({
+    scope,
+    label: copy.scopes[scope],
+    description: copy.scopeDescriptions[scope],
+    load: async (query) => {
+      if (kind === "payment") {
+        if (service.loadPaymentAccountPage) {
+          const page = await service.loadPaymentAccountPage(scope, query);
+          return toPickerPage(page, (option) => paymentOptionToPickerItem(option, messages));
+        }
+        return localPickerPage(paymentItems, scope, query, (option) => paymentOptionToPickerItem(option, messages), (option) => [
+          option.accountName ?? "",
+          option.accountNo,
+          option.providerCode,
+        ]);
+      }
+      const channelKind = kind;
+      if (service.loadChannelAccountPage) {
+        const page = await service.loadChannelAccountPage(channelKind, scope, query);
+        return toPickerPage(page, (option) => channelOptionToPickerItem(option, messages));
+      }
+      return localPickerPage(channelItems, scope, query, (option) => channelOptionToPickerItem(option, messages), (option) => [
+        option.displayName,
+        option.appId,
+        option.providerCode,
+        option.accountType ?? "",
+      ]);
+    },
+  }));
+}
+
+function toPickerPage<T>(
+  page: { items: readonly T[]; hasMore: boolean; nextCursor?: string },
+  mapItem: (item: T) => ScopeResourcePickerItem,
+): ScopeResourcePickerPage {
+  return {
+    items: page.items.map(mapItem),
+    hasMore: page.hasMore,
+    ...(page.nextCursor ? { nextCursor: page.nextCursor } : {}),
+  };
+}
+
+function localPickerPage<T extends { scope?: IntegrationAccountScope }>(
+  items: readonly T[],
+  scope: IntegrationAccountScope,
+  query: { search: string; cursor?: string; pageSize: number },
+  mapItem: (item: T) => ScopeResourcePickerItem,
+  searchValues: (item: T) => readonly string[],
+): ScopeResourcePickerPage {
+  const offset = Math.max(0, Number(query.cursor ?? 0) || 0);
+  const needle = query.search.trim().toLowerCase();
+  const filtered = items.filter((item) => {
+    if ((item.scope ?? "tenant") !== scope) {
+      return false;
+    }
+    return !needle || searchValues(item).some((value) => value.toLowerCase().includes(needle));
+  });
+  const pageItems = filtered.slice(offset, offset + query.pageSize);
+  const nextOffset = offset + pageItems.length;
+  return {
+    items: pageItems.map(mapItem),
+    hasMore: nextOffset < filtered.length,
+    ...(nextOffset < filtered.length ? { nextCursor: String(nextOffset) } : {}),
+  };
+}
+
+function channelOptionToPickerItem(
+  option: ApplicationChannelAccountOption,
+  messages: ApplicationCatalogMessages,
+): ScopeResourcePickerItem {
+  return {
+    id: option.id,
+    scope: option.scope ?? "tenant",
+    label: option.displayName,
+    description: [providerLabel(option.providerCode), option.accountType].filter(Boolean).join(" · "),
+    meta: option.appId || option.id,
+    ...(option.enabled ? {} : { badge: messages.integrations.channel.disabled, badgeTone: "danger" as const }),
+    disabled: !option.enabled,
+    payload: option,
+  };
+}
+
+function channelBindingToPickerItem(
+  binding: NonNullable<ApplicationEnvironmentIntegration["officialAccount"]>,
+  messages: ApplicationCatalogMessages,
+): ScopeResourcePickerItem {
+  return {
+    id: binding.id,
+    scope: "tenant",
+    label: binding.displayName,
+    description: providerLabel(binding.providerCode),
+    meta: binding.appId || binding.id,
+    ...(binding.enabled ? {} : { badge: messages.integrations.channel.disabled, badgeTone: "danger" as const }),
+  };
+}
+
+function paymentOptionToPickerItem(
+  option: ApplicationPaymentAccountOption,
+  messages: ApplicationCatalogMessages,
+): ScopeResourcePickerItem {
+  return {
+    id: option.id,
+    scope: option.scope ?? "tenant",
+    label: option.accountName ?? option.accountNo,
+    description: [
+      providerLabel(option.providerCode),
+      paymentEnvironmentLabel(option.environment, messages),
+      option.accountMode === "partner" ? messages.integrations.payment.partnerMode : messages.integrations.payment.directMode,
+    ].join(" · "),
+    meta: option.accountNo,
+    badge: paymentStatusLabel(option.status, messages),
+    badgeTone: option.status === "active" ? "success" as const : "warning" as const,
+    payload: option,
+  };
+}
+
+function paymentBindingToPickerItem(
+  account: ApplicationEnvironmentIntegration["paymentAccounts"][number],
+  messages: ApplicationCatalogMessages,
+): ScopeResourcePickerItem {
+  return {
+    id: account.id,
+    scope: "tenant",
+    label: account.accountName ?? account.accountNo,
+    description: [providerLabel(account.providerCode), paymentEnvironmentLabel(account.environment, messages)].join(" · "),
+    meta: account.accountNo,
+    ...(account.isDefault ? { badge: messages.integrations.payment.defaultBadge, badgeTone: "success" as const } : {}),
+  };
+}
+
+function asChannelOption(value: unknown): ApplicationChannelAccountOption | undefined {
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  return typeof record.id === "string" && typeof record.appId === "string" && typeof record.kind === "string"
+    ? (value as ApplicationChannelAccountOption)
+    : undefined;
+}
+
+function asPaymentOption(value: unknown): ApplicationPaymentAccountOption | undefined {
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  return typeof record.id === "string" && typeof record.accountNo === "string" && typeof record.providerCode === "string"
+    ? (value as ApplicationPaymentAccountOption)
+    : undefined;
 }
 
 function ValidationNotice({
@@ -1072,24 +1145,6 @@ function providerLabel(providerCode: string): string {
     default:
       return providerCode || "-";
   }
-}
-
-function paymentRank(
-  account: ApplicationPaymentAccountOption,
-  environmentKey: string,
-  environmentLevel: string | undefined,
-): number {
-  return (account.status === "active" ? 4 : 0)
-    + (account.capabilities.pay === false ? 0 : 2)
-    + (isPaymentAccountCompatible(account.environment, environmentKey, environmentLevel) ? 1 : 0);
-}
-
-function matchesQuery(query: string, values: readonly string[]): boolean {
-  const normalized = query.trim().toLowerCase();
-  if (!normalized) {
-    return true;
-  }
-  return values.some((value) => value.toLowerCase().includes(normalized));
 }
 
 function kindKey(kind: ApplicationIntegrationKind): "miniProgram" | "officialAccount" | "payment" {

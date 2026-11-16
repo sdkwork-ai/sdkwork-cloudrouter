@@ -16,9 +16,13 @@ import {
   Crown,
   Database,
   DatabaseZap,
+  Download,
   FileText,
+  FileClock,
+  FolderHeart,
   FolderTree,
   Gauge,
+  Globe,
   Gift,
   Globe2,
   GraduationCap,
@@ -42,11 +46,13 @@ import {
   Server,
   Send,
   Settings,
+  Shapes,
   ShieldAlert,
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
   Store,
+  Table2,
   TicketPercent,
   TrendingUp,
   Undo2,
@@ -71,6 +77,7 @@ import {
 
 export type AdminModuleId =
   | 'home'
+  | 'dataCenter'
   | 'appCenter'
   | 'iam'
   | 'rtc'
@@ -159,6 +166,13 @@ export const ADMIN_MODULES: AdminModuleDef[] = [
       '/admin/agent',
       '/admin/memory',
     ],
+  }),
+  moduleBlock({
+    id: 'dataCenter',
+    nameKey: 'admin.header.dataCenter',
+    icon: Table2,
+    defaultPath: '/admin/data/overview',
+    pathPrefixes: ['/admin/data'],
   }),
   moduleBlock({
     id: 'appCenter',
@@ -299,14 +313,59 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
     ],
   },
   {
-    moduleId: 'appCenter',
+    moduleId: 'dataCenter',
     items: [
-      itemBlock({ path: '/admin/applications/iam', labelKey: 'admin.menu.appCenter.iam', icon: Boxes }),
-      itemBlock({ path: '/admin/applications/deploy', labelKey: 'admin.menu.appCenter.deploy', icon: Layers3 }),
-      itemBlock({ path: '/admin/applications/app-store', labelKey: 'admin.menu.appCenter.appStore', icon: Store }),
-      itemBlock({ path: '/admin/applications/categories', labelKey: 'admin.menu.appCenter.categories', icon: FolderTree }),
+      itemBlock({ path: '/admin/data/overview', labelKey: 'admin.menu.data.overview', icon: LayoutDashboard }),
     ],
-    groups: [],
+    groups: [
+      groupBlock('admin.menu.data.access', [
+        itemBlock({ path: '/admin/data/sources', labelKey: 'admin.menu.data.sources', icon: Cable }),
+      ]),
+      groupBlock('admin.menu.data.assets', [
+        itemBlock({ path: '/admin/data/tables', labelKey: 'admin.menu.data.tables', icon: Table2 }),
+      ]),
+      groupBlock('admin.menu.data.services', [
+        itemBlock({ path: '/admin/data/exports', labelKey: 'admin.menu.data.exports', icon: Download }),
+      ]),
+      groupBlock('admin.menu.data.governance', [
+        itemBlock({ path: '/admin/data/audits', labelKey: 'admin.menu.data.audits', icon: ScrollText }),
+      ]),
+    ],
+  },
+  {
+    moduleId: 'appCenter',
+    // App-factory information architecture: one overview, then the app,
+    // store-governance, and template groups. The groups keep the menu legible
+    // as more capabilities (reviews, publishers, analytics) are added.
+    items: [
+      itemBlock({ path: '/admin/applications', labelKey: 'admin.menu.appCenter.overview', icon: LayoutDashboard }),
+    ],
+    groups: [
+      groupBlock('admin.menu.appCenter.applicationsGroup', [
+        itemBlock({ path: '/admin/applications/iam', labelKey: 'admin.menu.appCenter.iam', icon: Boxes }),
+        itemBlock({ path: '/admin/applications/deploy', labelKey: 'admin.menu.appCenter.deploy', icon: Layers3 }),
+        itemBlock({ path: '/admin/applications/app-store', labelKey: 'admin.menu.appCenter.appStore', icon: Store }),
+      ]),
+      groupBlock('admin.menu.appCenter.storeGroup', [
+        itemBlock({ path: '/admin/applications/categories', labelKey: 'admin.menu.appCenter.categories', icon: FolderTree }),
+        itemBlock({ path: '/admin/applications/listings', labelKey: 'admin.menu.appCenter.listings', icon: Globe }),
+        itemBlock({ path: '/admin/applications/collections', labelKey: 'admin.menu.appCenter.collections', icon: FolderHeart }),
+        itemBlock({ path: '/admin/applications/featured', labelKey: 'admin.menu.appCenter.featured', icon: Sparkles }),
+      ]),
+      groupBlock('admin.menu.appCenter.governanceGroup', [
+        itemBlock({ path: '/admin/applications/publishers', labelKey: 'admin.menu.appCenter.publishers', icon: Building2 }),
+        itemBlock({ path: '/admin/applications/moderation', labelKey: 'admin.menu.appCenter.moderation', icon: ShieldCheck }),
+        itemBlock({ path: '/admin/applications/appeals', labelKey: 'admin.menu.appCenter.appeals', icon: FileClock }),
+      ]),
+      groupBlock('admin.menu.appCenter.templatesGroup', [
+        itemBlock({ path: '/admin/applications/templates', labelKey: 'admin.menu.appCenter.templates', icon: Shapes }),
+        itemBlock({ path: '/admin/applications/template-reviews', labelKey: 'admin.menu.appCenter.templateReviews', icon: ShieldCheck }),
+        itemBlock({ path: '/admin/applications/template-categories', labelKey: 'admin.menu.appCenter.templateCategories', icon: FolderTree }),
+      ]),
+      groupBlock('admin.menu.appCenter.analyticsGroup', [
+        itemBlock({ path: '/admin/applications/analytics', labelKey: 'admin.menu.appCenter.analytics', icon: BarChart3 }),
+      ]),
+    ],
   },
   IAM_ADMIN_MENU,
   RTC_ADMIN_MENU,

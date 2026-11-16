@@ -1537,6 +1537,44 @@ importers:
         specifier: workspace:*
         version: link:../../../../sdkwork-utils/packages/sdkwork-utils-typescript
 
+  ../sdkwork-deployments/sdks/sdkwork-deployments-app-sdk/sdkwork-deployments-app-sdk-typescript:
+    dependencies:
+      '@sdkwork/drive-app-sdk':
+        specifier: workspace:^
+        version: link:../../../../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript
+      '@sdkwork/sdk-common':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+      '@sdkwork/utils':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-utils/packages/sdkwork-utils-typescript
+    devDependencies:
+      rollup:
+        specifier: ^4.0.0
+        version: 4.62.4
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(tsx@4.23.12)
+
+  ../sdkwork-deployments/sdks/sdkwork-deployments-backend-sdk/sdkwork-deployments-backend-sdk-typescript:
+    dependencies:
+      '@sdkwork/sdk-common':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+      '@sdkwork/utils':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-utils/packages/sdkwork-utils-typescript
+    devDependencies:
+      rollup:
+        specifier: ^4.0.0
+        version: 4.62.4
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
   ../sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-admin-documents:
     dependencies:
       '@sdkwork/documents-pc-commons':
@@ -5773,6 +5811,9 @@ importers:
       '@sdkwork/cloudrouter-pc-admin-dashboard':
         specifier: workspace:*
         version: link:packages/sdkwork-cloudrouter-pc-admin-dashboard
+      '@sdkwork/cloudrouter-pc-admin-data':
+        specifier: workspace:*
+        version: link:packages/sdkwork-cloudrouter-pc-admin-data
       '@sdkwork/cloudrouter-pc-admin-hardware':
         specifier: workspace:*
         version: link:packages/sdkwork-cloudrouter-pc-admin-hardware
@@ -6479,6 +6520,25 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(tsx@4.23.12)
+
+  apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data:
+    dependencies:
+      '@sdkwork/cloudroutes-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-cloudroutes-pc-commons
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.31.0(react@19.2.8)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+      react-i18next:
+        specifier: 'catalog:'
+        version: 17.0.11(i18next@26.6.0(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3)
+    devDependencies:
       vitest:
         specifier: 'catalog:'
         version: 4.1.10(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(tsx@4.23.12)
@@ -7442,8 +7502,11 @@ importers:
         specifier: workspace:*
         version: link:../../../../../sdkwork-course/sdks/sdkwork-course-backend-sdk/sdkwork-course-backend-sdk-typescript
       '@sdkwork/deployments-app-sdk':
-        specifier: ^0.1.6
-        version: 0.1.6(@sdkwork/iam-app-sdk@sdkwork-iam+sdks+sdkwork-iam-app-sdk+sdkwork-iam-app-sdk-typescript)
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-deployments/sdks/sdkwork-deployments-app-sdk/sdkwork-deployments-app-sdk-typescript
+      '@sdkwork/deployments-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-deployments/sdks/sdkwork-deployments-backend-sdk/sdkwork-deployments-backend-sdk-typescript
       '@sdkwork/documents-app-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-documents/sdks/sdkwork-documents-app-sdk/sdkwork-documents-app-sdk-typescript
@@ -9626,17 +9689,6 @@ packages:
 
   '@sdkwork/appstore-app-sdk@0.1.6':
     resolution: {integrity: sha512-2RwOD09atP07K4vXL2K+RB0WKM2xJ6Vs7EDAfbTRhhkWDld06fartafsas0uYyolz2xEAzo2AXpgW3F6G4xl7Q==}
-
-  '@sdkwork/deployments-app-sdk@0.1.6':
-    resolution: {integrity: sha512-KLCYGwXk4lFN0FR+MSBPh/R5xIfwI27JXCFoJSXTnucjfDW9GCzjy07WcU0pHI75ftprlR9/IT+QOTvUpDG3oQ==}
-
-  '@sdkwork/drive-app-sdk@0.1.4':
-    resolution: {integrity: sha512-NsIdkyUSzWORcVD2J0iNeLQA7yg1q2isYHZfX+QKARtWWudZOiYuk653qZ9MkKLztacSRx/7IhGU+XMXSk3UhA==}
-    peerDependencies:
-      '@sdkwork/iam-app-sdk': ^0.1.4
-    peerDependenciesMeta:
-      '@sdkwork/iam-app-sdk':
-        optional: true
 
   '@sdkwork/sdk-generator@1.0.14':
     resolution: {integrity: sha512-AYo26NlP1U1atF4nb91GyuyjHn8o9fV3dRnbZi9qusEzZa5AkiMXLf1a6je6lexUXWtu3Aw56dGNOvG4hnAIAQ==}
@@ -15098,21 +15150,6 @@ snapshots:
       '@sdkwork/sdk-common': link:../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
       '@sdkwork/utils': link:../sdkwork-utils/packages/sdkwork-utils-typescript
 
-  '@sdkwork/deployments-app-sdk@0.1.6(@sdkwork/iam-app-sdk@sdkwork-iam+sdks+sdkwork-iam-app-sdk+sdkwork-iam-app-sdk-typescript)':
-    dependencies:
-      '@sdkwork/drive-app-sdk': 0.1.4(@sdkwork/iam-app-sdk@sdkwork-iam+sdks+sdkwork-iam-app-sdk+sdkwork-iam-app-sdk-typescript)
-      '@sdkwork/sdk-common': link:../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
-      '@sdkwork/utils': link:../sdkwork-utils/packages/sdkwork-utils-typescript
-    transitivePeerDependencies:
-      - '@sdkwork/iam-app-sdk'
-
-  '@sdkwork/drive-app-sdk@0.1.4(@sdkwork/iam-app-sdk@sdkwork-iam+sdks+sdkwork-iam-app-sdk+sdkwork-iam-app-sdk-typescript)':
-    dependencies:
-      '@sdkwork/sdk-common': link:../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
-      '@sdkwork/utils': link:../sdkwork-utils/packages/sdkwork-utils-typescript
-    optionalDependencies:
-      '@sdkwork/iam-app-sdk': link:../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-typescript
-
   '@sdkwork/sdk-generator@1.0.14':
     dependencies:
       '@sdkwork/sdk-common': link:../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
@@ -15957,21 +15994,21 @@ snapshots:
     optionalDependencies:
       vite: 6.4.3(@types/node@25.9.9)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.23.12)
 
-  '@vitest/mocker@4.1.10(vite@8.1.5(@types/node@25.9.4)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12))':
+  '@vitest/mocker@4.1.10(vite@8.3.5(@types/node@25.9.4)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12))':
     dependencies:
       '@vitest/spy': 4.1.10
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 8.1.5(@types/node@25.9.4)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12)
+      vite: 8.3.5(@types/node@25.9.4)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12)
 
-  '@vitest/mocker@4.1.10(vite@8.1.5(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12))':
+  '@vitest/mocker@4.1.10(vite@8.3.5(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12))':
     dependencies:
       '@vitest/spy': 4.1.10
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 8.1.5(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12)
+      vite: 8.3.5(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12)
 
   '@vitest/mocker@4.1.12(vite@8.1.5(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12))':
     dependencies:
@@ -16844,6 +16881,10 @@ snapshots:
   fdir@6.5.0(picomatch@4.0.4):
     optionalDependencies:
       picomatch: 4.0.4
+
+  fdir@6.5.0(picomatch@4.0.7):
+    optionalDependencies:
+      picomatch: 4.0.7
 
   fflate@0.8.3: {}
 
@@ -18830,8 +18871,8 @@ snapshots:
 
   tinyglobby@0.2.17:
     dependencies:
-      fdir: 6.5.0(picomatch@4.0.4)
-      picomatch: 4.0.4
+      fdir: 6.5.0(picomatch@4.0.7)
+      picomatch: 4.0.7
 
   tinypool@1.1.1: {}
 
@@ -19183,6 +19224,20 @@ snapshots:
       jiti: 2.7.0
       tsx: 4.23.12
 
+  vite@8.3.5(@types/node@25.9.4)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12):
+    dependencies:
+      lightningcss: 1.33.0
+      picomatch: 4.0.7
+      postcss: 8.5.32
+      rolldown: 1.2.16
+      tinyglobby: 0.2.17
+    optionalDependencies:
+      '@types/node': 25.9.4
+      esbuild: 0.28.1
+      fsevents: 2.3.3
+      jiti: 2.7.0
+      tsx: 4.23.12
+
   vite@8.3.5(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12):
     dependencies:
       lightningcss: 1.33.0
@@ -19292,7 +19347,7 @@ snapshots:
   vitest@4.1.10(@types/node@25.9.4)(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(tsx@4.23.12):
     dependencies:
       '@vitest/expect': 4.1.10
-      '@vitest/mocker': 4.1.10(vite@8.1.5(@types/node@25.9.4)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12))
+      '@vitest/mocker': 4.1.10(vite@8.3.5(@types/node@25.9.4)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12))
       '@vitest/pretty-format': 4.1.10
       '@vitest/runner': 4.1.10
       '@vitest/snapshot': 4.1.10
@@ -19303,13 +19358,13 @@ snapshots:
       magic-string: 0.30.21
       obug: 2.1.3
       pathe: 2.0.3
-      picomatch: 4.0.5
+      picomatch: 4.0.7
       std-env: 4.1.0
       tinybench: 2.9.0
       tinyexec: 1.2.4
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
-      vite: 8.1.5(@types/node@25.9.4)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12)
+      vite: 8.3.5(@types/node@25.9.4)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 25.9.4
@@ -19331,7 +19386,7 @@ snapshots:
   vitest@4.1.10(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(tsx@4.23.12):
     dependencies:
       '@vitest/expect': 4.1.10
-      '@vitest/mocker': 4.1.10(vite@8.1.5(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12))
+      '@vitest/mocker': 4.1.10(vite@8.3.5(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12))
       '@vitest/pretty-format': 4.1.10
       '@vitest/runner': 4.1.10
       '@vitest/snapshot': 4.1.10
@@ -19342,13 +19397,13 @@ snapshots:
       magic-string: 0.30.21
       obug: 2.1.3
       pathe: 2.0.3
-      picomatch: 4.0.5
+      picomatch: 4.0.7
       std-env: 4.1.0
       tinybench: 2.9.0
       tinyexec: 1.2.4
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
-      vite: 8.1.5(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12)
+      vite: 8.3.5(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 25.9.9
@@ -19381,7 +19436,7 @@ snapshots:
       magic-string: 0.30.21
       obug: 2.1.3
       pathe: 2.0.3
-      picomatch: 4.0.5
+      picomatch: 4.0.7
       std-env: 4.1.0
       tinybench: 2.9.0
       tinyexec: 1.2.4
@@ -19409,7 +19464,7 @@ snapshots:
       magic-string: 0.30.21
       obug: 2.1.3
       pathe: 2.0.3
-      picomatch: 4.0.5
+      picomatch: 4.0.7
       std-env: 4.1.0
       tinybench: 2.9.0
       tinyexec: 1.2.4

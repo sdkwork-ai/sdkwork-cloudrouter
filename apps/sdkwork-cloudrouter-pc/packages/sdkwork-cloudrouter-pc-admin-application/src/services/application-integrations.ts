@@ -28,6 +28,9 @@ import type {
   ApplicationIntegrationService,
   ApplicationPaymentAccountOption,
   ChannelAccountKind,
+  IntegrationAccountPage,
+  IntegrationAccountQuery,
+  IntegrationAccountScope,
 } from "../types/application-integrations";
 import {
   APPLICATION_INTEGRATION_METADATA_KEY,
@@ -85,6 +88,43 @@ export function createApplicationIntegrationService(): ApplicationIntegrationSer
         .map((item) => mapPaymentAccount(item))
         .filter((item): item is ApplicationPaymentAccountOption => item !== undefined)
         .sort(comparePaymentAccounts);
+    },
+
+    async loadChannelAccountPage(kind, scope, query) {
+      const service = getApplicationCatalogIamService();
+      const serverPage = cursorPage(query.cursor);
+      const payload = await service.iam.oauth.resourceAccounts.list({
+        page: serverPage,
+        page_size: query.pageSize,
+        ...(query.search ? { q: query.search } : {}),
+      });
+      const items = extractItems(payload)
+        .map((item) => mapChannelAccount(item, kind))
+        .filter((item): item is ApplicationChannelAccountOption => item !== undefined)
+        .filter((item) => scopeOf(item) === scope)
+        .sort(compareChannelAccounts);
+      return toAccountPage(items, payload, serverPage);
+    },
+
+    async loadPaymentAccountPage(scope, query) {
+      const client = getSdkworkPaymentBackendSdkClient();
+      const serverPage = cursorPage(query.cursor);
+      const page = await client.payments.providerAccounts.list({
+        page: serverPage,
+        pageSize: query.pageSize,
+        ...(query.search ? { q: query.search } : {}),
+      });
+      const items = (page.items ?? [])
+        .map((item) => mapPaymentAccount(item))
+        .filter((item): item is ApplicationPaymentAccountOption => item !== undefined)
+        .filter((item) => scopeOf(item) === scope)
+        .sort(comparePaymentAccounts);
+      const hasMore = Boolean(page.pageInfo?.hasMore);
+      return {
+        items,
+        hasMore,
+        ...(hasMore ? { nextCursor: String(serverPage + 1) } : {}),
+      } satisfies IntegrationAccountPage<ApplicationPaymentAccountOption>;
     },
 
     async loadEnvironments(deployAppId, fallbackEnvironment) {
@@ -205,6 +245,9 @@ function mapChannelAccount(
   const accountType = readString(record.providerAccountType ?? record.provider_account_type);
   const status = readString(record.status);
   const authorizationStatus = readString(record.authorizationStatus ?? record.authorization_status);
+  const scope = resolveIntegrationAccountScope(record);
+  const organizationId = readString(record.organizationId ?? record.organization_id);
+  const ownerUserId = readString(record.ownerUserId ?? record.owner_user_id);
   return {
     id,
     kind,
@@ -215,6 +258,9 @@ function mapChannelAccount(
     enabled: readBoolean(record.enabled) ?? false,
     ...(status === undefined ? {} : { status }),
     ...(authorizationStatus === undefined ? {} : { authorizationStatus }),
+    scope,
+    ...(organizationId === undefined ? {} : { organizationId }),
+    ...(ownerUserId === undefined ? {} : { ownerUserId }),
   };
 }
 
@@ -227,6 +273,13 @@ function mapPaymentAccount(value: unknown): ApplicationPaymentAccountOption | un
   const accountName = readString(record.accountName ?? record.account_name);
   const settlementCurrency = readString(record.settlementCurrency ?? record.settlement_currency);
   const countryCode = readString(record.countryCode ?? record.country_code);
+  const scope = resolveIntegrationAccountScope(record);
+  const organizationId = readString(
+    record.organizationId ?? record.organization_id ?? asRecord(record.metadata).organizationId,
+  );
+  const ownerUserId = readString(
+    record.ownerUserId ?? record.owner_user_id ?? asRecord(record.metadata).ownerUserId,
+  );
   return {
     id,
     accountNo: readString(record.accountNo ?? record.account_no) ?? id,
@@ -239,6 +292,9 @@ function mapPaymentAccount(value: unknown): ApplicationPaymentAccountOption | un
     ...(countryCode === undefined ? {} : { countryCode }),
     capabilities: asRecord(record.capabilities),
     metadata: asRecord(record.metadata),
+    scope,
+    ...(organizationId === undefined ? {} : { organizationId }),
+    ...(ownerUserId === undefined ? {} : { ownerUserId }),
   };
 }
 
@@ -255,6 +311,72 @@ function mapEnvironment(value: unknown): ApplicationEnvironmentOption | undefine
     ...(name === undefined ? {} : { name }),
     ...(level === undefined ? {} : { level }),
   };
+}
+
+/**
+ * Resolve the catalog scope of one integration account row.
+ *
+ * Explicit owner/scope fields win. Legacy rows that carry neither ownership
+ * column are tenant-wide, which is the only catalog level the existing
+ * contracts guarantee. `user_id`/`tenant_id` are intentionally ignored: they
+ * identify the creator/tenant, not the catalog level.
+ */
+export function resolveIntegrationAccountScope(
+  record: Record<string, unknown>,
+): IntegrationAccountScope {
+  const explicit = readString(
+    record.scope
+      ?? record.ownerScope
+      ?? record.owner_scope
+      ?? record.ownerType
+      ?? record.owner_type,
+  )?.toLowerCase();
+  if (explicit === "personal" || explicit === "user" || explicit === "individual") {
+    return "personal";
+  }
+  if (explicit === "organization" || explicit === "org" || explicit === "organization_verified") {
+    return "organization";
+  }
+  if (explicit === "tenant") {
+    return "tenant";
+  }
+  const metadata = asRecord(record.metadata);
+  if (readString(record.ownerUserId ?? record.owner_user_id ?? metadata.ownerUserId ?? metadata.owner_user_id)) {
+    return "personal";
+  }
+  if (readString(record.organizationId ?? record.organization_id ?? metadata.organizationId ?? metadata.organization_id)) {
+    return "organization";
+  }
+  return "tenant";
+}
+
+function scopeOf(option: { scope?: IntegrationAccountScope }): IntegrationAccountScope {
+  return option.scope ?? "tenant";
+}
+
+function cursorPage(cursor: string | undefined): number {
+  const value = Number(cursor);
+  return Number.isInteger(value) && value > 0 ? value : 1;
+}
+
+function toAccountPage<T>(
+  items: readonly T[],
+  payload: unknown,
+  serverPage: number,
+): IntegrationAccountPage<T> {
+  const hasMore = readHasMore(payload);
+  return {
+    items,
+    hasMore,
+    ...(hasMore ? { nextCursor: String(serverPage + 1) } : {}),
+  };
+}
+
+function readHasMore(payload: unknown): boolean {
+  const record = asRecord(payload);
+  const data = asRecord(record.data);
+  const pageInfo = asRecord(record.pageInfo ?? data.pageInfo);
+  return readBoolean(pageInfo.hasMore ?? pageInfo.has_more) ?? false;
 }
 
 function channelKindOf(value: string | undefined): ChannelAccountKind | undefined {

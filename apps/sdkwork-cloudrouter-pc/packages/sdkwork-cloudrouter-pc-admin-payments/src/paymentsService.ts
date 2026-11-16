@@ -6,6 +6,7 @@ import {
 import { createIdempotencyParams } from '@sdkwork/cloudroutes-pc-commons/idempotency';
 import type { UpdatePaymentProviderRequest } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import type {
+  CashierTokenSecretReveal,
   CashierTokenSetting,
   CheckAttemptStatusCommand,
   CheckAttemptStatusResult,
@@ -287,8 +288,9 @@ export async function backendPaymentCashierTokenSettingRetrieve(): Promise<Cashi
 /**
  * Enables or disables the anonymous cashier for the tenant.
  *
- * Disabling stops new capability-token minting immediately; links already issued
- * remain valid only until their own expiry.
+ * Disabling stops new short links immediately and makes existing short
+ * links/tokens stop resolving (resolution checks the enabled flag). Enabling
+ * again restores links that have not expired yet.
  */
 export async function backendPaymentCashierTokenSettingUpdate(
   enabled: boolean,
@@ -308,6 +310,33 @@ export async function backendPaymentCashierTokenSettingRotate(
 ): Promise<CashierTokenSetting> {
   return getSdkworkPaymentBackendSdkClient().payments.cashierTokenSettings.rotate(
     expectedEpoch === undefined ? undefined : { expectedEpoch },
+  );
+}
+
+/**
+ * Reveals the tenant's stored anonymous-cashier signing key.
+ *
+ * The response is the only place key material is returned; treat it as a secret
+ * (never log it, never persist it in client state beyond the dialog lifetime).
+ * `key` is `null` when no signing key is stored for the tenant yet; the
+ * deployment key-encryption key is not a signing-key fallback.
+ */
+export async function backendPaymentCashierTokenSettingRevealKey(): Promise<CashierTokenSecretReveal> {
+  return getSdkworkPaymentBackendSdkClient().payments.cashierTokenSettings.key.retrieve();
+}
+
+/**
+ * Stores an operator-supplied anonymous-cashier signing key.
+ *
+ * Behaves like a rotation: the epoch advances and the replaced key keeps
+ * verifying for the grace window.
+ */
+export async function backendPaymentCashierTokenSettingSetKey(
+  key: string,
+  expectedEpoch?: string,
+): Promise<CashierTokenSetting> {
+  return getSdkworkPaymentBackendSdkClient().payments.cashierTokenSettings.key.update(
+    expectedEpoch === undefined ? { key } : { key, expectedEpoch },
   );
 }
 

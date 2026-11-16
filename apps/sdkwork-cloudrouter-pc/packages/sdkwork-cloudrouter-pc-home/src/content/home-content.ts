@@ -443,6 +443,14 @@ export interface HomeContentRuntime {
    * repository, so an unconfigured deployment keeps the downloads it shipped with.
    */
   downloadCatalog: unknown;
+  /**
+   * The stored `downloads` document exactly as published — a catalog, or a Deployments pointer.
+   *
+   * `downloadCatalog` only ever holds a catalog, because `readRuntimeDownloadCatalog` rejects a
+   * `{ "catalogKey": … }` document. The pointer resolver therefore needs this raw value: passing
+   * it the parsed catalog made every migrated site fall back to the bundled release.
+   */
+  downloadsDocument: unknown;
   /** Resolves one copy field: override wins, else the bundled default, then brand tokens. */
   text(override: string | undefined, fallback: string): string;
 }
@@ -476,6 +484,7 @@ export function createHomeContentRuntime(source: HomeContentSource): HomeContent
   return {
     content,
     downloadCatalog,
+    downloadsDocument: source.downloads,
     productName,
     sections: resolveHomeSections(content.sections),
     text: (override, fallback) => resolveBrandText(override, fallback, variables),

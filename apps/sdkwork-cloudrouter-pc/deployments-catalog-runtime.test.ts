@@ -3,6 +3,7 @@ import test from 'node:test'
 
 import {
   deploymentsBaseUrl,
+  deploymentsOrigin,
   fetchDeploymentsCatalog,
   readDownloadsPointer,
 } from './packages/sdkwork-cloudrouter-pc-home/src/downloads/deploymentsCatalog.ts'
@@ -45,6 +46,29 @@ test('a published catalog returns the envelope data and encodes the key', async 
   assert.deepEqual(urls, [
     'https://deploy.example.com/app/v3/api/downloads/catalog/birdcoder%20desktop',
   ])
+})
+
+test('an authored surface URL is reduced to its origin, never doubled', async () => {
+  assert.equal(deploymentsOrigin('https://deploy.example.com/'), 'https://deploy.example.com')
+  assert.equal(
+    deploymentsOrigin('https://deploy.example.com/app/v3/api'),
+    'https://deploy.example.com',
+  )
+  assert.equal(deploymentsOrigin('  '), '')
+  // A same-origin relative prefix names this app's API, not another app's; there is nothing to
+  // fetch from, so the caller keeps the bundled catalog.
+  assert.equal(deploymentsOrigin('/app/v3/api'), '')
+
+  const urls: string[] = []
+  await fetchDeploymentsCatalog(
+    'https://deploy.example.com/app/v3/api',
+    'birdcoder',
+    (async (input: unknown) => {
+      urls.push(String(input))
+      return response({ data: {} })
+    }) as typeof fetch,
+  )
+  assert.deepEqual(urls, ['https://deploy.example.com/app/v3/api/downloads/catalog/birdcoder'])
 })
 
 test('rejections and unexpected payloads fall back to the bundled catalog', async () => {

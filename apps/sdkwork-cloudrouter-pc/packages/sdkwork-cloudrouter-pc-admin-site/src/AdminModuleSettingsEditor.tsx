@@ -19,6 +19,7 @@ import {
   RotateCcw,
   ShieldCheck,
   ShoppingBag,
+  Table2,
   Video,
   WalletCards,
   Wrench,
@@ -48,6 +49,7 @@ import { SectionDivider, ToggleSwitch } from './SiteSettingsControls';
  */
 const MODULE_ICONS: Record<AdminModuleId, LucideIcon> = {
   home: Home,
+  dataCenter: Table2,
   appCenter: Boxes,
   iam: ShieldCheck,
   rtc: Video,

@@ -14,6 +14,7 @@ import {
   getMcpBackendSdkClient,
   getSdkworkDriveAppSdkClient,
   getSdkworkMcpAppSdkClient,
+  readPortalRoleCodes,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 
 /**
@@ -61,7 +62,7 @@ export function McpServersAdminPage() {
   return (
     <McpAdminClientsProvider>
       <McpAdminRouteProvider serversBasePath={MCP_ADMIN_SERVERS_BASE_PATH}>
-        <AdminServersPage />
+        <AdminServersPage roleCodes={readPortalRoleCodes()} />
       </McpAdminRouteProvider>
     </McpAdminClientsProvider>
   );
