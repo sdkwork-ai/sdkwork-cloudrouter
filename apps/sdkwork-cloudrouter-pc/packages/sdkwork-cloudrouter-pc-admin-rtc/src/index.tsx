@@ -1,5 +1,6 @@
-import { lazy, Suspense, useMemo } from 'react';
+import { lazy, Suspense, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 import { getCloudRouterRtcAdminService } from './rtcService';
 
@@ -39,7 +40,26 @@ const LazyRtcAdminCenter = lazy(async () => {
   return {
     default: function CloudRouterRtcAdminCenterContent({ path }: { path: string }) {
       const services = useMemo(() => getCloudRouterRtcAdminService(), []);
-      return <RtcAdminCenterWorkspace services={services} route={toRtcWorkspaceRoute(path)} />;
+      const navigate = useNavigate();
+      // The workspace speaks its own `/admin/x` route space; the Cloud Router
+      // admin mounts the same pages under `/admin/rtc/x` and uses the browser
+      // router (not the hash strategy of the standalone RTC app).
+      const navigateTo = useCallback(
+        (workspacePath: string) => {
+          const cloudRouterPath = workspacePath.startsWith('/admin')
+            ? `/admin/rtc${workspacePath.slice('/admin'.length)}`
+            : workspacePath;
+          navigate(cloudRouterPath);
+        },
+        [navigate],
+      );
+      return (
+        <RtcAdminCenterWorkspace
+          services={services}
+          route={toRtcWorkspaceRoute(path)}
+          navigateTo={navigateTo}
+        />
+      );
     },
   };
 });
