@@ -1,31 +1,49 @@
+import { hasPermissionInScope } from "@sdkwork/iam-contracts";
 import { readPortalPermissionScope } from "@sdkwork/cloudroutes-pc-commons/runtime";
 
 /**
  * Action-level permission seam for the App Center.
  *
- * The current IAM catalog only defines the module gate
- * `cloudrouter.admin.access`; every action therefore maps to that code. The
- * mapping is centralized so a future backend catalog can introduce finer codes
- * without touching page components, and the UI gate can be tightened in one
- * place. The backend remains the authority: hiding a control is defense in
- * depth, never the security boundary.
+ * Template actions are gated on the Deploy permission codes the Deploy route
+ * manifests actually enforce
+ * (`sdks/_route-manifests/app-api/sdkwork-routes-deploy-app-api.route-manifest.json`,
+ * `sdks/_route-manifests/backend-api/sdkwork-routes-deploy-backend-api.route-manifest.json`):
+ *
+ * - authoring/review (`PATCH|POST|DELETE /app_templates`, backend
+ *   `PATCH /app_templates/{templateUuid}`) requires `deploy.appTemplates.write`;
+ * - template taxonomy maintenance (`POST|PATCH|DELETE /template_categories`)
+ *   requires `deploy.templateCategories.write`;
+ * - reads require the matching `*.read` codes.
+ *
+ * The remaining App Store actions keep the module gate because their IAM
+ * catalog still defines no finer code.
+ *
+ * `isApplicationCenterActionAllowed` accepts the deploy code OR the module
+ * gate: this application's declared `backend.accessTokenPermissionScope`
+ * (`agent.app.config.json`) carries only `cloudrouter.*` / `iam.*` /
+ * `community.*` codes, so gating solely on a deploy code would hide every
+ * template control from an operator the backend still authorizes. The Deploy
+ * backend stays the authority: it rejects the request without the deploy grant,
+ * and the UI gate is defense in depth only.
  */
+export const APPLICATION_CENTER_MODULE_PERMISSION = "cloudrouter.admin.access";
+
 export const APPLICATION_CENTER_ACTION_PERMISSIONS = {
-  templateReview: "cloudrouter.admin.access",
-  templateWrite: "cloudrouter.admin.access",
-  templateCategoryWrite: "cloudrouter.admin.access",
-  storeCategoryWrite: "cloudrouter.admin.access",
-  moderationDecide: "cloudrouter.admin.access",
-  publisherVerify: "cloudrouter.admin.access",
-  collectionWrite: "cloudrouter.admin.access",
-  featuredWrite: "cloudrouter.admin.access",
-  listingVisibility: "cloudrouter.admin.access",
-  integrationWrite: "cloudrouter.admin.access",
+  templateReview: "deploy.appTemplates.write",
+  templateWrite: "deploy.appTemplates.write",
+  templateCategoryWrite: "deploy.templateCategories.write",
+  storeCategoryWrite: APPLICATION_CENTER_MODULE_PERMISSION,
+  moderationDecide: APPLICATION_CENTER_MODULE_PERMISSION,
+  publisherVerify: APPLICATION_CENTER_MODULE_PERMISSION,
+  collectionWrite: APPLICATION_CENTER_MODULE_PERMISSION,
+  featuredWrite: APPLICATION_CENTER_MODULE_PERMISSION,
+  listingVisibility: APPLICATION_CENTER_MODULE_PERMISSION,
+  integrationWrite: APPLICATION_CENTER_MODULE_PERMISSION,
 } as const;
 
 export type ApplicationCenterAction = keyof typeof APPLICATION_CENTER_ACTION_PERMISSIONS;
 
-/** Resolve the permission code an action currently requires. */
+/** Resolve the permission code an action requires. */
 export function applicationCenterPermissionFor(action: ApplicationCenterAction): string {
   return APPLICATION_CENTER_ACTION_PERMISSIONS[action];
 }
@@ -34,11 +52,14 @@ export function applicationCenterPermissionFor(action: ApplicationCenterAction):
  * Whether the given session scope grants the action.
  *
  * Pass `permissionScope` in tests; production callers read the live portal
- * session scope, which the admin layout refreshes on session changes.
+ * session scope, which the admin layout refreshes on session changes. Wildcard
+ * grants (`*`, `deploy.*`) resolve through the shared IAM matcher.
  */
 export function isApplicationCenterActionAllowed(
   action: ApplicationCenterAction,
   permissionScope: readonly string[] = readPortalPermissionScope(),
 ): boolean {
-  return permissionScope.includes(applicationCenterPermissionFor(action));
+  const required = applicationCenterPermissionFor(action);
+  return hasPermissionInScope(permissionScope, required)
+    || hasPermissionInScope(permissionScope, APPLICATION_CENTER_MODULE_PERMISSION);
 }

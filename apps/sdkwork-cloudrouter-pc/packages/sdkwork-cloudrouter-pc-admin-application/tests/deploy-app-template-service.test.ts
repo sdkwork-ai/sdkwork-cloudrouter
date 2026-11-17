@@ -7,6 +7,7 @@ import {
   isDeployAppTemplateForbidden,
   isDeployAppTemplateUnavailable,
   mapTemplatePage,
+  mapVersion,
   type DeployAppTemplateTransport,
 } from "../src/services/deploy-app-templates";
 
@@ -192,5 +193,11 @@ describe("deploy app template service", () => {
     const page = mapTemplatePage({ items: [], pageInfo: {} });
     expect(page.items).toEqual([]);
     expect(page.total).toBe(0);
+  });
+
+  it("renders the semantic template version, not the record lock revision", () => {
+    expect(mapVersion({ id: "ver-1", templateVersion: "2.1.0", version: "7" })?.version).toBe("2.1.0");
+    expect(mapVersion({ id: "ver-2", version: "1.0.0" })?.version).toBe("1.0.0");
+    expect(mapVersion({})).toBeUndefined();
   });
 });

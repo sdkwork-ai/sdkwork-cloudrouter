@@ -17,8 +17,18 @@ import type {
  * Declared structurally so tests can pass a recorder while the default
  * implementation uses the generated `@sdkwork/deployments-app-sdk` client the
  * Cloud Router runtime already provides. The template authoring surface lives
- * on the Deploy app API (`/app/v3/api/app_templates`); the backend-admin
- * counterpart only moderates, so the App Center authors here.
+ * on the Deploy app API and the operation names come from
+ * `sdks/_route-manifests/app-api/sdkwork-routes-deploy-app-api.route-manifest.json`:
+ *
+ * - `/app/v3/api/app_templates` — `appTemplates.list|create|retrieve|update|delete|submit`
+ *   (`deploy.appTemplates.read|write`);
+ * - `/app/v3/api/app_templates/{templateUuid}/versions` —
+ *   `appTemplateVersions.list|create` (`deploy.appTemplateVersions.read|write`);
+ * - `/app/v3/api/template_categories` — `templateCategories.list` (read only here).
+ *
+ * `/app/v3/api/marketplace/templates` is the browse-only marketplace
+ * (`list|retrieve`, `deploy.marketplaceTemplates.read`) and is deliberately not
+ * used by the App Center: it exposes no authoring command.
  */
 export interface DeployAppTemplateTransport {
   app: {
@@ -378,7 +388,10 @@ export function mapVersion(value: unknown): DeployAppTemplateVersion | undefined
   return {
     id,
     templateUuid: readString(record, "templateUuid") || readString(record, "templateId"),
-    version: readString(record, "version", "templateVersion") || id,
+    // `templateVersion` is the semantic version the drawer renders; the wire
+    // `version` field is the record's optimistic-lock revision, so it is only a
+    // fallback when the generated payload predates the semantic field.
+    version: readString(record, "templateVersion", "version") || id,
     status: readString(record, "status") || "DRAFT",
     ...(readString(record, "changelog") ? { changelog: readString(record, "changelog") } : {}),
     ...(readString(record, "createdAt") ? { createdAt: readString(record, "createdAt") } : {}),
