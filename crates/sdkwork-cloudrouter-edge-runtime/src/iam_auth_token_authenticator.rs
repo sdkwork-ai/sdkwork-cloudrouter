@@ -1,29 +1,25 @@
-//! IAM-backed auth-token authenticator for the open-api chat completions route.
+//! IAM-backed auth-token authenticator for the open-api model routes.
 //!
-//! Resolves a single bearer credential that is not an API key (non `sk-`/`sp-`
-//! prefixed) into the upstream account route context: the credential is
-//! validated against the IAM database as an SDKWork login auth token, then the
-//! tenant's default upstream account group is selected so the existing
-//! account-pool routing pipeline applies unchanged.
+//! The open-api is deliberately independent of the application login chain: a
+//! single `Authorization: Bearer` credential that is not an API key
+//! (non `sk-`/`sp-` prefixed) is resolved against the IAM identity store into
+//! the bare session identity — `tenant_id`, `organization_id`, `user_id`.
 //!
-//! # Account group selection
+//! The account pool is **not** chosen here. The group depends on the modality
+//! of the request (`chat`/image/video/audio/music), which is only known after
+//! the invocation has been classified; `authenticated_context_from_auth_token_identity`
+//! selects the subject's default group for that modality afterwards. Resolving
+//! a group during authentication is what previously forced every signed-in user
+//! through one mixed pool and made per-modality pools impossible.
 //!
-//! A signed-in session names no group, so the group is resolved *semantically*:
-//! the group the tenant marked `is_default` wins, the installer's
-//! `default-group` code convention is the fallback, and a subject with exactly
-//! one group in scope uses it. The rule and its scope predicate live in
-//! `sdkwork_cloudrouter_router_service::domain::upstream_account_group_selection`
-//! so this channel and the API-key channel cannot drift apart.
+//! # Credential pair
 //!
-//! The chosen group is not cosmetic. The account-route selector requires an
-//! exact `account_group_binding.account_group_id == group_id` match, and the
-//! group's resource grants cap which vendor resources its accounts may serve
-//! (`matched_resource_scope` = group grant ∩ vendor resource). Resolving to a
-//! group that only grants the OpenAI resources — which is what a hard-coded
-//! `default-group` name lookup does on a deployment whose default group was
-//! renamed, or whose default group simply is not the OpenAI-shaped one —
-//! silently removes every other capability (video / image / music / voice /
-//! sound effects / digital human / motion mimicry) from every signed-in user.
+//! SDKWork login sessions issue a dual-token pair (auth + access) persisted on
+//! the `iam_session` row (`auth_token_hash` / `access_token_hash`). When the
+//! caller also presents `Access-Token`, the pair is verified together; when the
+//! pair is absent or fails, the auth token alone is still resolved through the
+//! single-token channel. A stale or unrelated access token must never fail an
+//! otherwise valid auth token.
 
 use std::sync::Arc;
 
@@ -32,11 +28,8 @@ use axum::response::IntoResponse;
 use sha2::Digest;
 
 use sdkwork_cloudrouter_router_service::api::{
-    OpenAiAuthTokenAuthenticator, OpenAiAuthTokenError, AUTH_TOKEN_SESSION_NAME_SNAPSHOT,
+    OpenAiAuthTokenAuthenticator, OpenAiAuthTokenError, OpenAiAuthTokenIdentity,
 };
-use sdkwork_cloudrouter_router_service::application::AuthenticatedApiKeyContext;
-use sdkwork_cloudrouter_router_service::domain::select_default_account_group_for_subject;
-use sdkwork_cloudrouter_router_service::ports::UpstreamAccountRouteCatalog;
 use sdkwork_database_sqlx::DatabasePool;
 use sdkwork_iam_web_adapter::{
     resolve_iam_app_context_from_auth_token, resolve_iam_app_context_from_dual_tokens_pool,
@@ -80,26 +73,22 @@ fn synthesize_numeric_user_id(user_id: &str) -> i64 {
         .unwrap_or(0)
 }
 
-/// Resolves SDKWork auth tokens against the IAM database and maps them to the
-/// tenant default upstream account group.
+/// Resolves SDKWork auth tokens against the IAM database into the session
+/// identity consumed by the open-api routing pipeline.
 ///
 /// The optional [`AuthTokenCache`] short-circuits the per-request IAM database
-/// round-trip for repeat sessions while the in-memory catalog group lookup
-/// still runs fresh on every request (`iam_auth_token_cache` module contract).
-pub struct IamAuthTokenAuthenticator<C> {
+/// round-trip for repeat sessions; only the identity is cached, so the
+/// modality-dependent group selection always runs against the fresh catalog
+/// snapshot (`iam_auth_token_cache` module contract).
+pub struct IamAuthTokenAuthenticator {
     iam_pool: DatabasePool,
-    catalog: Arc<C>,
     cache: Option<Arc<dyn AuthTokenCache>>,
 }
 
-impl<C> IamAuthTokenAuthenticator<C>
-where
-    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
-{
-    pub fn new(iam_pool: DatabasePool, catalog: Arc<C>) -> Self {
+impl IamAuthTokenAuthenticator {
+    pub fn new(iam_pool: DatabasePool) -> Self {
         Self {
             iam_pool,
-            catalog,
             cache: None,
         }
     }
@@ -111,18 +100,94 @@ where
         self.cache = cache;
         self
     }
+
+    /// Resolves the credential pair, preferring the dual-token channel when an
+    /// access token is present and falling back to the single auth token.
+    async fn resolve_context(
+        &self,
+        raw_bearer_token: &str,
+        access_token: Option<&str>,
+    ) -> Result<
+        Option<sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenIdentity>,
+        OpenAiAuthTokenError,
+    > {
+        let context = if let Some(access_token) = access_token {
+            if let Some(context) = resolve_iam_app_context_from_dual_tokens_pool(
+                &self.iam_pool,
+                raw_bearer_token,
+                access_token,
+            )
+            .await
+            {
+                Some(context)
+            } else if let Some(pg) = self.iam_pool.as_postgres() {
+                // Fall back to the auth token alone: the access token may be
+                // stale while the auth token is still valid. On non-PostgreSQL
+                // pools the single-token channel is unavailable, so the
+                // dual-token failure is authoritative.
+                resolve_iam_app_context_from_auth_token(pg, raw_bearer_token).await
+            } else {
+                None
+            }
+        } else {
+            let pg = self.iam_pool.as_postgres().ok_or_else(|| {
+                auth_token_error(
+                    "invalid_auth_token",
+                    "IAM database is not available for auth token resolution",
+                )
+            })?;
+            resolve_iam_app_context_from_auth_token(pg, raw_bearer_token).await
+        };
+        let Some(context) = context else {
+            return Ok(None);
+        };
+
+        let tenant_id = context.tenant_id.parse::<i64>().map_err(|_| {
+            auth_token_error("invalid_auth_token", "auth token tenant is not numeric")
+        })?;
+        let organization_id = context
+            .organization_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(|value| {
+                value.parse::<i64>().map_err(|_| {
+                    auth_token_error(
+                        "invalid_auth_token",
+                        "auth token organization is not numeric",
+                    )
+                })
+            })
+            .transpose()?
+            .unwrap_or(0);
+        // The verified session's `user_id` may be a non-numeric synthetic
+        // principal (e.g. the bootstrap `system` user issued by
+        // `issue_standalone_bootstrap_access_credential` for portal login). The
+        // auth-token channel has already vetted the session, so a non-numeric
+        // user id must not fail the whole login: fall back to a stable synthetic
+        // numeric id for audit/usage attribution, exactly like the
+        // `api_key_id == 0` precedent.
+        let user_id = context
+            .user_id
+            .parse::<i64>()
+            .unwrap_or_else(|_| synthesize_numeric_user_id(&context.user_id));
+        Ok(Some(
+            sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenIdentity {
+                tenant_id,
+                organization_id,
+                user_id,
+            },
+        ))
+    }
 }
 
 #[async_trait::async_trait]
-impl<C> OpenAiAuthTokenAuthenticator for IamAuthTokenAuthenticator<C>
-where
-    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
-{
+impl OpenAiAuthTokenAuthenticator for IamAuthTokenAuthenticator {
     async fn authenticate(
         &self,
         raw_bearer_token: &str,
         access_token: Option<&str>,
-    ) -> Result<AuthenticatedApiKeyContext, OpenAiAuthTokenError> {
+    ) -> Result<OpenAiAuthTokenIdentity, OpenAiAuthTokenError> {
         // Resolve the credential identity through the short-TTL cache first so
         // repeat sessions skip the IAM database round-trip. Only successful
         // resolutions are cached; a cache miss, expired entry, or Redis error
@@ -139,58 +204,12 @@ where
                 identity.user_id,
             ),
             None => {
-                // SDKWork login sessions issue a dual-token pair (auth +
-                // access) persisted on the `iam_session` row
-                // (`auth_token_hash` / `access_token_hash`). Resolve through
-                // the dual-token channel so the pair is verified together;
-                // without an access token, fall back to the single auth-token
-                // channel. The OAuth bearer pool channel must NOT be used
-                // here: it only recognizes access-token columns and OAuth
-                // JWTs, so a valid auth token always failed as "invalid or
-                // expired".
-                let context = match access_token {
-                    Some(access) => {
-                        resolve_iam_app_context_from_dual_tokens_pool(
-                            &self.iam_pool,
-                            raw_bearer_token,
-                            access,
-                        )
-                        .await
-                    }
-                    None => {
-                        let pg = self.iam_pool.as_postgres().ok_or_else(|| {
-                            auth_token_error(
-                                "invalid_auth_token",
-                                "IAM database is not available for auth token resolution",
-                            )
-                        })?;
-                        resolve_iam_app_context_from_auth_token(pg, raw_bearer_token).await
-                    }
-                }
-                .ok_or_else(|| {
-                    auth_token_error("invalid_auth_token", "invalid or expired auth token")
-                })?;
-
-                let tenant_id = context.tenant_id.parse::<i64>().map_err(|_| {
-                    auth_token_error("invalid_auth_token", "auth token tenant is not numeric")
-                })?;
-                let organization_id = context
-                    .organization_id
-                    .as_deref()
-                    .and_then(|value| value.parse::<i64>().ok())
-                    .unwrap_or(0);
-                // The verified session's `user_id` may be a non-numeric synthetic
-                // principal (e.g. the bootstrap `system` user issued by
-                // `issue_standalone_bootstrap_access_credential` for portal
-                // login). The auth-token channel has already vetted the session
-                // (signature + tenant/server binding), so a non-numeric user id
-                // must not fail the whole login: fall back to a stable synthetic
-                // numeric id for audit/usage attribution, exactly like the
-                // `organization_id` and `api_key_id == 0` precedents.
-                let user_id = context
-                    .user_id
-                    .parse::<i64>()
-                    .unwrap_or_else(|_| synthesize_numeric_user_id(&context.user_id));
+                let identity = self
+                    .resolve_context(raw_bearer_token, access_token)
+                    .await?
+                    .ok_or_else(|| {
+                        auth_token_error("invalid_auth_token", "invalid or expired auth token")
+                    })?;
 
                 if let Some(cache) = &self.cache {
                     cache
@@ -198,46 +217,25 @@ where
                             raw_bearer_token,
                             access_token,
                             &CachedAuthTokenIdentity {
-                                tenant_id,
-                                organization_id,
-                                user_id,
+                                tenant_id: identity.tenant_id,
+                                organization_id: identity.organization_id,
+                                user_id: identity.user_id,
                             },
                         )
                         .await;
                 }
-                (tenant_id, organization_id, user_id)
+                (
+                    identity.tenant_id,
+                    identity.organization_id,
+                    identity.user_id,
+                )
             }
         };
 
-        // A session carries no group, so resolve one semantically out of the
-        // fresh catalog listing: `is_default` first (the tenant's own
-        // declaration), then the `default-group` code convention, then "the
-        // only group in scope". A single listing call feeds all three steps —
-        // the previous shape called `list_upstream_account_groups()` once per
-        // step, which additionally let a catalog refresh between the two calls
-        // resolve the name and the flag against different snapshots.
-        let groups = self.catalog.list_upstream_account_groups();
-        let Some(selection) =
-            select_default_account_group_for_subject(&groups, tenant_id, organization_id)
-        else {
-            return Err(auth_token_error(
-                "account_group_unavailable",
-                "tenant default account group is not available",
-            ));
-        };
-        let group = selection.group;
-
-        Ok(AuthenticatedApiKeyContext {
-            // No gateway API key backs an auth-token session; 0 marks the
-            // synthetic identity used for audit/usage attribution.
-            api_key_id: 0,
+        Ok(OpenAiAuthTokenIdentity {
             tenant_id,
             organization_id,
             user_id,
-            api_key_name_snapshot: AUTH_TOKEN_SESSION_NAME_SNAPSHOT.to_string(),
-            group_id: group.id,
-            group_code: group.code,
-            pricing_plan_code: group.pricing_plan_code,
         })
     }
 }

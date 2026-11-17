@@ -21,6 +21,9 @@ pub struct InMemoryPricingCatalog {
     model_mappings: Vec<ModelMappingRule>,
     plans: Vec<PricingPlan>,
     upstream_account_groups: Vec<UpstreamAccountGroup>,
+    /// Modality scope (`group_type` / `modalities`) per account group id, used
+    /// by session (auth-token) default-group selection.
+    group_modality_scopes: HashMap<i64, crate::domain::AccountGroupModalityScope>,
     api_keys: Vec<GatewayApiKey>,
     access_policies: Vec<GatewayAccessPolicy>,
     quota_policies: Vec<QuotaPolicy>,
@@ -64,6 +67,18 @@ impl InMemoryPricingCatalog {
 
     pub fn add_upstream_account_group(&mut self, group: UpstreamAccountGroup) {
         self.upstream_account_groups.push(group);
+    }
+
+    /// Registers the modality scope of an already-added account group so
+    /// session traffic selects it as a per-modality default. Tests and
+    /// in-memory fixtures use this; the SQL catalog loads the real
+    /// `group_type` / `modalities` columns.
+    pub fn set_upstream_account_group_modality_scope(
+        &mut self,
+        group_id: i64,
+        scope: crate::domain::AccountGroupModalityScope,
+    ) {
+        self.group_modality_scopes.insert(group_id, scope);
     }
 
     pub fn update_group_sale_multiplier(
@@ -357,6 +372,21 @@ impl PricingCatalog for InMemoryPricingCatalog {
 impl UpstreamAccountRouteCatalog for InMemoryPricingCatalog {
     fn shared_upstream_account_routes(&self) -> Arc<[UpstreamAccountRoute]> {
         self.upstream_account_routes.clone().into()
+    }
+
+    fn list_session_account_groups(&self) -> Vec<crate::domain::SessionAccountGroup> {
+        self.upstream_account_groups
+            .iter()
+            .cloned()
+            .map(|group| {
+                let scope = self
+                    .group_modality_scopes
+                    .get(&group.id)
+                    .cloned()
+                    .unwrap_or_default();
+                crate::domain::SessionAccountGroup::new(group, scope)
+            })
+            .collect()
     }
 
     fn upstream_route_gate_diagnosis(&self) -> Option<UpstreamRouteGateDiagnosis> {

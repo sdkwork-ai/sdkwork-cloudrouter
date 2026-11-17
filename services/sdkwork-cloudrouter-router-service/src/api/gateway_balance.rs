@@ -23,13 +23,24 @@ use axum::{Json, Router};
 use sdkwork_cloudrouter_http::ApiKeyIdentity;
 use serde::{Deserialize, Serialize};
 
+use crate::api::openai_auth_token::OpenAiAuthTokenAuthenticator;
 use crate::api::openai_error::openai_error;
-use crate::application::{
-    ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
-};
+use crate::application::{ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery};
 use crate::ports::PricingCatalog;
+use sdkwork_web_core::{
+    default_open_api_bearer_classifier, DynOpenApiBearerCredentialClassifier, OpenApiCredentialKind,
+};
 
 type GatewayBalanceError = Box<Response>;
+
+/// Identity behind either credential shape. Balance is a tenant/org/user fact,
+/// not a modality/group fact, so no account group is resolved here.
+struct BalanceSubject {
+    tenant_id: i64,
+    organization_id: i64,
+    user_id: i64,
+    api_key_id: Option<i64>,
+}
 
 /// Token bank balance snapshot for the authenticated relay key owner.
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -83,6 +94,10 @@ struct GatewayBalanceState<C> {
     catalog: Arc<C>,
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
     store: Arc<dyn GatewayBalanceStore>,
+    /// Resolves non-API-key bearer credentials (SDKWork auth tokens) to the
+    /// session identity; `None` keeps the API-key-only behaviour.
+    auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator + Send + Sync>>,
+    bearer_classifier: DynOpenApiBearerCredentialClassifier,
 }
 
 impl<C> Clone for GatewayBalanceState<C> {
@@ -91,6 +106,8 @@ impl<C> Clone for GatewayBalanceState<C> {
             catalog: Arc::clone(&self.catalog),
             api_key_hasher: Arc::clone(&self.api_key_hasher),
             store: Arc::clone(&self.store),
+            auth_token_authenticator: self.auth_token_authenticator.clone(),
+            bearer_classifier: Arc::clone(&self.bearer_classifier),
         }
     }
 }
@@ -103,12 +120,35 @@ pub fn gateway_balance_router<C>(
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
+    gateway_balance_router_with_auth_extensions(
+        catalog,
+        api_key_hasher,
+        store,
+        None,
+        default_open_api_bearer_classifier(),
+    )
+}
+
+/// Like [`gateway_balance_router`], plus the auth-token channel so a signed-in
+/// session can read its own balance without a gateway API key.
+pub fn gateway_balance_router_with_auth_extensions<C>(
+    catalog: Arc<C>,
+    api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
+    store: Arc<dyn GatewayBalanceStore>,
+    auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator + Send + Sync>>,
+    bearer_classifier: DynOpenApiBearerCredentialClassifier,
+) -> Router
+where
+    C: PricingCatalog + Send + Sync + 'static,
+{
     Router::new()
         .route("/v1/user/balance", get(balance::<C>))
         .with_state(GatewayBalanceState {
             catalog,
             api_key_hasher,
             store,
+            auth_token_authenticator,
+            bearer_classifier,
         })
 }
 
@@ -151,33 +191,33 @@ where
         credential_source = ?identity.credential_source(),
         "gateway balance query: api key identity parsed"
     );
-    let context = match authenticate(&state, &identity) {
-        Ok(context) => context,
+    let subject = match resolve_balance_subject(&state, &identity, &headers).await {
+        Ok(subject) => subject,
         Err(error) => {
             tracing::warn!(
                 path = %uri.path(),
                 api_key_id = identity.api_key_id(),
-                "gateway balance query rejected: api key authentication failed"
+                "gateway balance query rejected: authentication failed"
             );
             return *error;
         }
     };
     tracing::info!(
-        tenant_id = context.tenant_id,
-        organization_id = context.organization_id,
-        user_id = context.user_id,
+        tenant_id = subject.tenant_id,
+        organization_id = subject.organization_id,
+        user_id = subject.user_id,
         "gateway balance query authenticated"
     );
     match state
         .store
-        .retrieve_token_bank_balance(context.tenant_id, context.organization_id, context.user_id)
+        .retrieve_token_bank_balance(subject.tenant_id, subject.organization_id, subject.user_id)
         .await
     {
         Ok(balance) => {
             tracing::info!(
-                tenant_id = context.tenant_id,
-                organization_id = context.organization_id,
-                user_id = context.user_id,
+                tenant_id = subject.tenant_id,
+                organization_id = subject.organization_id,
+                user_id = subject.user_id,
                 unit = %balance.unit,
                 available = %balance.available,
                 frozen = %balance.frozen,
@@ -193,9 +233,9 @@ where
         }
         Err(message) => {
             tracing::warn!(
-                tenant_id = context.tenant_id,
-                organization_id = context.organization_id,
-                user_id = context.user_id,
+                tenant_id = subject.tenant_id,
+                organization_id = subject.organization_id,
+                user_id = subject.user_id,
                 error = %message,
                 "gateway balance query failed: token bank wallet store error"
             );
@@ -210,10 +250,11 @@ where
     }
 }
 
-fn authenticate<C>(
+async fn resolve_balance_subject<C>(
     state: &GatewayBalanceState<C>,
     identity: &ApiKeyIdentity,
-) -> Result<AuthenticatedApiKeyContext, GatewayBalanceError>
+    headers: &HeaderMap,
+) -> Result<BalanceSubject, GatewayBalanceError>
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
@@ -225,10 +266,52 @@ where
             "missing api key credential",
         )));
     };
+    match state.bearer_classifier.classify(credential_secret) {
+        OpenApiCredentialKind::ApiKey => authenticate_api_key(state, credential_secret),
+        OpenApiCredentialKind::AuthToken => {
+            let Some(authenticator) = state.auth_token_authenticator.as_deref() else {
+                return Err(Box::new(openai_error(
+                    StatusCode::UNAUTHORIZED,
+                    "invalid_auth_token",
+                    "invalid_request_error",
+                    "auth token authentication is not configured",
+                )));
+            };
+            let access_token = headers
+                .get("Access-Token")
+                .and_then(|value| value.to_str().ok())
+                .map(str::trim)
+                .filter(|value| !value.is_empty());
+            let identity = authenticator
+                .authenticate(credential_secret, access_token)
+                .await?;
+            Ok(BalanceSubject {
+                tenant_id: identity.tenant_id,
+                organization_id: identity.organization_id,
+                user_id: identity.user_id,
+                api_key_id: None,
+            })
+        }
+    }
+}
+
+fn authenticate_api_key<C>(
+    state: &GatewayBalanceState<C>,
+    credential_secret: &str,
+) -> Result<BalanceSubject, GatewayBalanceError>
+where
+    C: PricingCatalog + Send + Sync + 'static,
+{
     let authenticator =
         ApiKeyAuthenticator::new(state.catalog.as_ref(), state.api_key_hasher.as_ref());
     authenticator
         .authenticate(AuthenticateApiKeyQuery { credential_secret })
+        .map(|context| BalanceSubject {
+            tenant_id: context.tenant_id,
+            organization_id: context.organization_id,
+            user_id: context.user_id,
+            api_key_id: Some(context.api_key_id),
+        })
         .map_err(|_| {
             Box::new(openai_error(
                 StatusCode::UNAUTHORIZED,

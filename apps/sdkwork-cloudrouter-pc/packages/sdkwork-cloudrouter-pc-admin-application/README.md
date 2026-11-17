@@ -34,16 +34,32 @@ Both taxonomies render through the shared
   the domain service;
 - the App Store backend has no hard-delete operation, so “delete” is the
   contract's soft-delete status transition;
-- template categories fall back to the app-plane read-only list when the Deploy
-  backend URL is unavailable.
+- template categories are maintained on the Deploy backend API
+  (`/backend/v3/api/template_categories`); the app-plane
+  `/app/v3/api/template_categories` list is a read-only fallback used when the
+  Deploy backend URL is unavailable, and the panel disables every write action
+  in that state.
 
 ## Data planes
 
 - **Deploy app SDK** — author-side templates, versions, categories and submission.
+  Confirmed surface (route manifest
+  `sdks/_route-manifests/app-api/sdkwork-routes-deploy-app-api.route-manifest.json`):
+  `template.appTemplates.list|create|retrieve|update|delete|submit` on
+  `/app/v3/api/app_templates`, `template.appTemplateVersions.list|create` on
+  `/app/v3/api/app_templates/{templateUuid}/versions`, and
+  `template.templateCategories.list` on `/app/v3/api/template_categories`.
+  `/app/v3/api/marketplace/templates` is browse-only (`marketplaceTemplates.list|retrieve`)
+  and is not used for authoring.
 - **Deploy backend SDK** — template approval/rejection/disable/feature and
-  template-category CRUD. Base URL: `VITE_SDKWORK_DEPLOYMENTS_BACKEND_API_BASE_URL`
-  (falls back to the shared backend base URL rules; configure it explicitly in
-  deployments).
+  template-category CRUD. Confirmed surface (route manifest
+  `sdks/_route-manifests/backend-api/sdkwork-routes-deploy-backend-api.route-manifest.json`):
+  `template.appTemplates.list|retrieve|update|delete` on
+  `/backend/v3/api/app_templates` and
+  `template.templateCategories.list|create|retrieve|update|delete` on
+  `/backend/v3/api/template_categories`. Base URL:
+  `VITE_SDKWORK_DEPLOYMENTS_BACKEND_API_BASE_URL` (falls back to the shared
+  backend base URL rules; configure it explicitly in deployments).
 - **App Store backend SDK** — categories, listings visibility, collections,
   publishers, featured slots, moderation.
 - **Payment / IAM backend SDKs** — integration account catalogs and
@@ -59,10 +75,20 @@ empty/error/permission state.
 
 - Module gate: `cloudrouter.admin.access` on every route.
 - Action seam: `src/permissions/application-center-actions.ts` maps each action
-  (template review, template-category write, moderation decide, publisher
-  verify, collection/featured/visibility writes, integration writes) to a
-  permission code. Today every action falls back to the module gate because the
-  IAM catalog has no finer codes; tighten the map once those codes exist.
+  to a permission code.
+  - Template actions require the Deploy codes the Deploy route manifests
+    enforce: template authoring and review → `deploy.appTemplates.write`,
+    template taxonomy maintenance → `deploy.templateCategories.write`
+    (reads → `deploy.appTemplates.read` / `deploy.templateCategories.read`).
+  - App Store actions (moderation decide, publisher verify, collection/featured/
+    visibility writes, store-category writes, integration writes) still fall
+    back to the module gate because the IAM catalog defines no finer code.
+- `isApplicationCenterActionAllowed` accepts the action's own code **or** the
+  module gate. The application's declared `backend.accessTokenPermissionScope`
+  carries only `cloudrouter.*` / `iam.*` / `community.*`, so a deploy-only gate
+  would hide template controls from operators the Deploy backend still
+  authorizes. Wildcard grants (`*`, `deploy.*`) resolve through the shared IAM
+  matcher.
 - UI gating is defense in depth; the backend remains the authority.
 
 ## Configuration & operational notes

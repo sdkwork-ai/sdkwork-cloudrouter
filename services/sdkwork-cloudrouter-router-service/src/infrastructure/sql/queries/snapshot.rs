@@ -1076,6 +1076,8 @@ SELECT
     COALESCE(NULLIF(account_group.group_name, ''), account_group.group_code) AS name,
     account_group.group_code AS code,
     COALESCE(account_group.is_default, FALSE) AS is_default,
+    COALESCE(account_group.group_type, 'mixed') AS group_type,
+    COALESCE(account_group.modalities::text, '[]') AS modalities,
     selected_plan.pricing_plan_tenant_id,
     selected_plan.pricing_plan_organization_id,
     selected_plan.pricing_plan_id,

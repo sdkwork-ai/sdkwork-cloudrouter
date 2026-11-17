@@ -258,7 +258,7 @@ export function AppCenterOverviewPage() {
           <p className="text-sm text-[var(--sdk-color-text-muted)]">{copy.quickDescription}</p>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <QuickLink icon={<Boxes className="h-4 w-4" />} label={copy.quick.applications} to="/admin/applications/iam" />
+          <QuickLink icon={<Boxes className="h-4 w-4" />} label={copy.quick.applications} to="/admin/applications/deploy" />
           <QuickLink icon={<ShieldCheck className="h-4 w-4" />} label={copy.quick.moderation} to="/admin/applications/moderation" />
           <QuickLink icon={<Store className="h-4 w-4" />} label={copy.quick.storeCategories} to="/admin/applications/categories" />
           <QuickLink icon={<Shapes className="h-4 w-4" />} label={copy.quick.templates} to="/admin/applications/templates" />

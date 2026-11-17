@@ -3149,7 +3149,9 @@ test('bootstrap token wrapper maps dev mode through postgres env and installer i
     settings,
     workspaceRoot,
     platform: 'linux',
-    env: {},
+    // The credential's app identity is the deploy application anchor, never
+    // `agent.app.config.json#backend.appId` (the retired IAM runtime app id).
+    env: { SDKWORK_DEPLOY_APPLICATION_ID: 'app-test-anchor' },
   });
 
   assert.equal(plan.mode, 'dev');
@@ -3157,7 +3159,8 @@ test('bootstrap token wrapper maps dev mode through postgres env and installer i
   const [step] = plan.steps;
   assert.equal(step.args.includes('issue-bootstrap-token'), true);
   assert.equal(step.args.includes('--app-id'), true);
-  assert.equal(step.args.includes('sdkwork-cloudrouter'), true);
+  assert.equal(step.args.includes('app-test-anchor'), true);
+  assert.equal(step.args.includes('sdkwork-cloudrouter'), false);
   assert.equal(step.env.SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT, 'development');
   assert.equal(step.env.SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT, 'development');
   assert.equal(step.env.SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_USERNAME, 'admin-dev');

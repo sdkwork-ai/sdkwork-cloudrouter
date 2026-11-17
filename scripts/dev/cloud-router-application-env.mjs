@@ -29,6 +29,8 @@ import {
   CLOUD_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_COMMENTS,
   CLOUD_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_ORDER,
   CLOUD_ROUTER_BROWSER_DEVELOPMENT_ENV_SECTIONS,
+  CLOUD_ROUTER_BROWSER_DEPLOY_APPLICATION_ID_KEY,
+  CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV,
   CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS,
   CLOUD_ROUTER_LIFECYCLE_ENV_KEYS,
   normalizeCloudRouterLifecycleEnvRecord,
@@ -50,6 +52,7 @@ import { DATABASE_SEED_LOCALE_ENV, REGION_CODE_ENV, resolveRegionDefaultLocale }
 import {
   buildBootstrapAccessTokenEnvRecord,
 } from '../../../sdkwork-iam/scripts/dev/create-dev-bootstrap-access-token-env.mjs';
+import { createApplicationAccessToken } from '../../../sdkwork-specs/tools/app-access-token.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -123,6 +126,51 @@ function completeReleaseEnvKeyOrder(mergedEnv, generatedEnv) {
 }
 
 export { completeReleaseEnvKeyOrder };
+
+/**
+ * Regenerate the profile's committed public application token from the deploy
+ * application anchor, when the build/dev process received one.
+ *
+ * `apps/sdkwork-cloudrouter-pc/.env.standalone.development` and
+ * `.env.standalone.production` are owned by this generator (they are excluded
+ * from `etc/client-env.materialization.json`), and the generator preserves an
+ * existing non-empty token. IAM makes the deploy application the identity of
+ * every access token, so preserving a compiled-in/placeholder token would ship
+ * a credential IAM suppresses. The token is therefore re-issued from
+ * `SDKWORK_DEPLOY_APPLICATION_ID` here; without the anchor the existing value is
+ * left untouched (`check-deploy-application-anchor.mjs` reports it as pending
+ * or unanchored, and the renderer fails closed at runtime).
+ * @returns the anchored token, or an empty string when no anchor is configured.
+ */
+function buildDeployAnchoredPublicApplicationToken({
+  env = process.env,
+  workspaceRoot,
+  environment,
+  deploymentProfile = 'standalone',
+  runtimeTarget = 'browser',
+} = {}) {
+  const appId = normalizeText(env[CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV]);
+  if (!appId) {
+    return '';
+  }
+  const manifest = readApplicationManifest(workspaceRoot);
+  const backend = manifest?.backend ?? {};
+  return createApplicationAccessToken({
+    appId,
+    tenantId: normalizeText(backend.tenantId) ?? '100001',
+    organizationId: normalizeText(backend.organizationId) ?? '0',
+    environment,
+    deploymentProfile,
+    runtimeTarget,
+    // The public application token carries only the pre-login isolation scope,
+    // matching `etc/client-env.materialization.json`'s `iam:self`; the manifest's
+    // `accessTokenPermissionScope` governs server-side IAM bootstrap, not this
+    // credential.
+    permissionScope: ['iam:self'],
+  });
+}
+
+export { buildDeployAnchoredPublicApplicationToken };
 
 /**
  * Persist the development bootstrap token in the user-private credential store.
@@ -240,6 +288,15 @@ export function buildCloudRouterBrowserDevelopmentGeneratedEnv({
     VITE_SDKWORK_APP_ID: manifestAppId,
   };
 
+  // The renderer's IAM app identity is the installation's deploy application
+  // anchor; the build projects it so no renderer carries a compiled-in id. The
+  // renderer fails closed when the projection is absent, so an unset anchor here
+  // is not repaired with the retired IAM runtime app id.
+  const deployApplicationId = normalizeText(env[CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV]);
+  if (deployApplicationId) {
+    generated[CLOUD_ROUTER_BROWSER_DEPLOY_APPLICATION_ID_KEY] = deployApplicationId;
+  }
+
   for (const key of Object.keys(CLOUD_ROUTER_BROWSER_DEVELOPMENT_DEFAULT_VITE_ENV)) {
     const value = normalizeText(pickedPortalRuntimeEnv[key]) ?? normalizeText(env[key]);
     if (value) {
@@ -351,6 +408,15 @@ export function ensureCloudRouterBrowserDevelopmentEnv({
         : undefined,
     },
   );
+  const anchoredPublicToken = buildDeployAnchoredPublicApplicationToken({
+    env,
+    workspaceRoot,
+    environment: 'development',
+    deploymentProfile,
+  });
+  if (anchoredPublicToken) {
+    alignedMergedEnv.SDKWORK_ACCESS_TOKEN = anchoredPublicToken;
+  }
   const formattedContent = formatEnvFileContent(alignedMergedEnv, {
     headerLines: [...BROWSER_DEVELOPMENT_ENV_HEADER],
     keyOrder: CLOUD_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_ORDER,
@@ -418,6 +484,15 @@ export function ensureCloudRouterBrowserProductionEnv({
       generatedEnv,
     ),
   );
+  const anchoredPublicToken = buildDeployAnchoredPublicApplicationToken({
+    env,
+    workspaceRoot,
+    environment: 'production',
+    deploymentProfile,
+  });
+  if (anchoredPublicToken) {
+    sanitizedMergedEnv.SDKWORK_ACCESS_TOKEN = anchoredPublicToken;
+  }
   const formattedContent = formatEnvFileContent(sanitizedMergedEnv, {
     headerLines: [...BROWSER_PRODUCTION_ENV_HEADER],
     keyOrder: CLOUD_ROUTER_BROWSER_PRODUCTION_ENV_KEY_ORDER,

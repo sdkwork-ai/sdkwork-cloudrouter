@@ -110,9 +110,13 @@ pub use app_settlements::app_settlements_dashboard_router_with_read_store;
 pub use app_usage_logs::app_usage_logs_router;
 pub use app_usage_logs::app_usage_logs_router_with_read_store;
 pub use gateway_balance::{
-    gateway_balance_router, GatewayBalanceStore, GatewayTokenBankBalance, ZeroGatewayBalanceStore,
+    gateway_balance_router, gateway_balance_router_with_auth_extensions, GatewayBalanceStore,
+    GatewayTokenBankBalance, ZeroGatewayBalanceStore,
 };
-pub use openai_auth_token::{OpenAiAuthTokenAuthenticator, OpenAiAuthTokenError};
+pub use openai_auth_token::{
+    authenticated_context_from_auth_token_identity, OpenAiAuthTokenAuthenticator,
+    OpenAiAuthTokenError, OpenAiAuthTokenIdentity,
+};
 pub use openai_chat::openai_chat_completions_router;
 pub use openai_chat::openai_chat_completions_router_with_auth_extensions;
 pub use openai_chat::openai_chat_completions_router_with_relay;

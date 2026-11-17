@@ -26,7 +26,9 @@ use std::process::ExitCode;
 use std::sync::Arc;
 
 mod backup;
+mod deploy_application;
 mod federated;
+mod iam_installation;
 
 const SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD_ENV: &str =
     "SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD";
@@ -167,6 +169,27 @@ async fn bootstrap_cloud_router_seed_set(
     Ok(())
 }
 
+/// Applies the models database seed set during an explicit lifecycle command.
+///
+/// The models module is embedded in this repository's database, and its seed
+/// set carries the catalog reference data the models console reads — most
+/// importantly `common/002_ai_model_frontend_defaults.sql`, which installs the
+/// per-modality front-end channel initialization rows behind
+/// `/admin/model/frontend`. Production runs with `SDKWORK_DATABASE_SEED_ON_BOOT`
+/// off and the models manifest keeps `seedOnBoot = false`, so
+/// `cloudrouterctl install|upgrade|ensure` owns this step. Without it a packaged
+/// install reports success with an empty front-end model configuration.
+async fn bootstrap_models_seed_set(
+    pool: &sdkwork_database_sqlx::DatabasePool,
+    seed_locale: Option<&str>,
+) -> anyhow::Result<()> {
+    let host = connect_models_database(pool.clone()).map_err(anyhow::Error::msg)?;
+    host.seed("cloudrouterctl:models", seed_locale)
+        .await
+        .map_err(|error| anyhow::anyhow!("models database seed bootstrap failed: {error}"))?;
+    Ok(())
+}
+
 async fn run_postgres(config: DatabaseConfig, command: InstallerCommand) -> anyhow::Result<()> {
     let database_pool = connect_installer_database_pool(&config).await?;
     apply_explicit_schema_lifecycle_if_required(&database_pool, &command).await?;
@@ -196,6 +219,12 @@ async fn run_postgres(config: DatabaseConfig, command: InstallerCommand) -> anyh
         // `SDKWORK_DATABASE_SEED_ON_BOOT` off.
         bootstrap_cloud_router_seed_set(&database_pool, install_options.seed_locale.as_deref())
             .await?;
+        // Models module seed set: the front-end channel initialization rows
+        // (one per modality, with default/initialization models) behind
+        // `/admin/model/frontend`. Those rows live only in the models module
+        // `database/seeds/**` and the module is embedded in this database, so
+        // the models manifest never seeds them on boot.
+        bootstrap_models_seed_set(&database_pool, install_options.seed_locale.as_deref()).await?;
         // Drive's admin-storage module seed set: the mainstream storage provider
         // catalog and the Tencent Cloud COS tenant default binding behind
         // `/admin/storage/providers`.
@@ -723,11 +752,55 @@ async fn run_issue_bootstrap_token_postgres(
         .tenant_id
         .as_deref()
         .unwrap_or(DEFAULT_IAM_TENANT_ID);
-    let app_id = options.app_id.as_deref().unwrap_or("sdkwork-cloudrouter");
-    let issued =
-        issue_standalone_bootstrap_access_credential(pool, tenant_id, app_id, options.ttl_seconds)
+    // The credential's app identity is the installation's deploy application
+    // anchor, never a built-in id: IAM resolves the installation by
+    // `deploy_application_id` and rejects the retired IAM runtime app id. An
+    // explicit `--app-id` stays an operator override; without it the anchor
+    // comes from the environment and a missing anchor fails here, naming
+    // `SDKWORK_DEPLOY_APPLICATION_ID`.
+    let configured_app_id;
+    let app_id = match options.app_id.as_deref() {
+        Some(app_id) => app_id,
+        None => {
+            configured_app_id = sdkwork_cloudrouter_config::resolve_deploy_application_id()?;
+            configured_app_id.as_str()
+        }
+    };
+    // Dual ensure, in this order, before a single byte is signed:
+    //
+    // 1. deploy side — the application the credential names must exist on the
+    //    deployment inventory. This is the half that was missing: issuance used to
+    //    resolve only the IAM row, so a credential could be signed for an
+    //    application that no deployment owns.
+    // 2. IAM side — the installation serving that application must exist and be
+    //    `enabled`, provisioned through IAM's own service on this pool.
+    // 3. issuance — only now is the credential minted.
+    //
+    // Each step fails closed and names the variable or interface that refused;
+    // there is no branch in which a token is signed while either side is missing.
+    let deploy_settings =
+        deploy_application::DeployBackendSettings::from_env().map_err(bootstrap_prerequisite)?;
+    let deploy_app =
+        deploy_application::ensure_deploy_application(&deploy_settings, tenant_id, app_id)
             .await
-            .map_err(InstallerCliError::InvalidState)?;
+            .map_err(bootstrap_prerequisite)?;
+    let app_root = iam_installation::resolve_installer_app_root();
+    let installation = iam_installation::ensure_iam_installation(
+        pool,
+        tenant_id,
+        deploy_app.app_id.as_str(),
+        app_root.as_path(),
+    )
+    .await
+    .map_err(bootstrap_prerequisite)?;
+    let issued = issue_standalone_bootstrap_access_credential(
+        pool,
+        tenant_id,
+        installation.anchor_id.as_str(),
+        options.ttl_seconds,
+    )
+    .await
+    .map_err(InstallerCliError::InvalidState)?;
 
     print_json(&IssueBootstrapTokenOutput {
         status: "issued",
@@ -737,6 +810,10 @@ async fn run_issue_bootstrap_token_postgres(
         session_id: issued.session_id,
         expires_at: issued.expires_at,
     })
+}
+
+fn bootstrap_prerequisite(error: impl std::fmt::Display) -> anyhow::Error {
+    InstallerCliError::BootstrapPrerequisite(error.to_string()).into()
 }
 
 #[derive(Debug, Serialize)]
@@ -841,6 +918,7 @@ fn installer_error_code(error: &(dyn std::error::Error + 'static), message: &str
             InstallerCliError::InvalidArgument(_) => "invalid_argument",
             InstallerCliError::InvalidState(_) => "invalid_state",
             InstallerCliError::DatabaseConnection(_) => "database_error",
+            InstallerCliError::BootstrapPrerequisite(_) => "bootstrap_prerequisite_missing",
         };
     }
     if let Some(installer_error) = error.downcast_ref::<DatabaseInstallError>() {
@@ -880,6 +958,8 @@ enum InstallerCliError {
     InvalidArgument(String),
     InvalidState(String),
     DatabaseConnection(String),
+    /// The dual ensure before bootstrap-token issuance refused.
+    BootstrapPrerequisite(String),
 }
 
 impl Display for InstallerCliError {
@@ -893,6 +973,7 @@ impl Display for InstallerCliError {
             Self::InvalidArgument(message) => write!(formatter, "{message}"),
             Self::InvalidState(message) => write!(formatter, "{message}"),
             Self::DatabaseConnection(message) => write!(formatter, "{message}"),
+            Self::BootstrapPrerequisite(message) => write!(formatter, "{message}"),
         }
     }
 }
@@ -1391,6 +1472,39 @@ mod tests {
         );
     }
 
+    /// Install/upgrade must apply the models module seed set, which carries the
+    /// front-end model configuration initialization rows behind
+    /// `/admin/model/frontend`. The models module is embedded in this database
+    /// and its manifest keeps `seedOnBoot = false`, so a packaged deployment
+    /// that skips this step reports success with an empty front-end model
+    /// configuration (no modality has initialization models).
+    #[test]
+    fn schema_lifecycle_commands_seed_the_models_frontend_defaults() {
+        let source = include_str!("main.rs");
+        let migration_gate = source
+            .find("if command.requires_schema_migration() {")
+            .expect("explicit lifecycle gate");
+        let models_seed = source
+            .find(concat!("bootstrap_models_seed_", "set(&database_pool"))
+            .expect("models module seed set must run on install/upgrade");
+
+        assert!(
+            models_seed > migration_gate,
+            "models seed set must run only for explicit schema lifecycle commands"
+        );
+
+        // The seed set is only applied when the manifest declares the file, so
+        // a dropped manifest entry would silently disable the initialization.
+        let manifest_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../sdkwork-models/database/seeds/seed.manifest.json");
+        let manifest = std::fs::read_to_string(&manifest_path)
+            .unwrap_or_else(|error| panic!("read {} failed: {error}", manifest_path.display()));
+        assert!(
+            manifest.contains("002_ai_model_frontend_defaults.sql"),
+            "models seed manifest must declare the front-end defaults seed"
+        );
+    }
+
     /// Install/upgrade must also converge the Messaging notification module.
     /// Its provider accounts, sender identities, SMS signatures, routing rules,
     /// and templates are seed-only data, so a packaged deployment that skips
@@ -1414,9 +1528,9 @@ mod tests {
             "Messaging seed must run only for explicit schema lifecycle commands"
         );
         assert!(
-            source.contains(concat!(
+            source.contains(
                 "bootstrap_federated_commerce_modules(\n            &database_pool,\n            install_options.seed_locale.as_deref(),"
-            )),
+            ),
             "every federated bootstrap must use the canonical seed locale override"
         );
     }
@@ -1488,6 +1602,55 @@ mod tests {
         assert_eq!(
             "database_error",
             installer_error_code(&error, &error.to_string())
+        );
+    }
+
+    #[test]
+    fn bootstrap_prerequisite_refusals_have_their_own_error_code() {
+        let error =
+            InstallerCliError::BootstrapPrerequisite("deploy application is missing".to_owned());
+
+        assert_eq!(
+            "bootstrap_prerequisite_missing",
+            installer_error_code(&error, &error.to_string())
+        );
+    }
+
+    /// The gap being fixed: issuance must be the **last** step, after both sides
+    /// were ensured. A regression that signs first and verifies later (or drops one
+    /// half) has to fail here.
+    #[test]
+    fn bootstrap_token_issuance_runs_after_both_sides_are_ensured() {
+        let source = include_str!("main.rs");
+        let body_start = source
+            .find("async fn run_issue_bootstrap_token_postgres(")
+            .expect("issuance handler");
+        let body_end = source
+            .find("struct ResetAdminOutput")
+            .expect("end of the issuance handler");
+        let body = &source[body_start..body_end];
+
+        let deploy_ensure = body
+            .find("ensure_deploy_application(&deploy_settings")
+            .expect("the deploy application must be ensured");
+        let iam_ensure = body
+            .find("ensure_iam_installation(")
+            .expect("the IAM installation must be ensured");
+        let issuance = body
+            .find("issue_standalone_bootstrap_access_credential(")
+            .expect("the credential must be issued");
+
+        assert!(
+            deploy_ensure < iam_ensure,
+            "the deploy application must be ensured before the IAM installation"
+        );
+        assert!(
+            iam_ensure < issuance,
+            "no credential may be signed before both sides are ensured"
+        );
+        assert!(
+            !body[issuance..].contains("ensure_"),
+            "issuance must be the final step; nothing may be ensured after it"
         );
     }
 

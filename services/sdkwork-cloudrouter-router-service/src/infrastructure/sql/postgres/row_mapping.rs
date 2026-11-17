@@ -191,6 +191,8 @@ pub async fn load_upstream_account_groups(
             name: row.try_get("name")?,
             code: row.try_get("code")?,
             is_default: row.try_get("is_default")?,
+            group_type: row.try_get("group_type")?,
+            modalities_json: row.try_get("modalities")?,
             pricing_plan_tenant_id: row.try_get("pricing_plan_tenant_id")?,
             pricing_plan_organization_id: row.try_get("pricing_plan_organization_id")?,
             pricing_plan_id: row.try_get("pricing_plan_id")?,

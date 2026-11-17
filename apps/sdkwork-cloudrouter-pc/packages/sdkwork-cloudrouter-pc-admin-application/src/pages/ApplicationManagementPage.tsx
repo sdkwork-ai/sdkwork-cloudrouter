@@ -2,12 +2,12 @@ import { useEffect, useMemo, useRef, useState, type ComponentType } from "react"
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
-  Boxes,
   Copy,
   CreditCard,
   Eye,
   EyeOff,
   FolderTree,
+  GitBranch,
   KeyRound,
   Layers,
   MessageCircle,
@@ -35,8 +35,10 @@ import {
 } from "@sdkwork/ui-pc-react";
 
 import { ApplicationIntegrationDrawer } from "../components/ApplicationIntegrationDrawer";
+import { AppSourceRemixDrawer } from "../components/AppSourceRemixDrawer";
 import { AppStoreCategoryPanel } from "../components/AppStoreCategoryPanel";
 import { useApplicationCatalogMessages, type ApplicationCatalogMessages } from "../i18n";
+import { isApplicationCenterActionAllowed } from "../permissions/application-center-actions";
 import {
   isApplicationSourceUnavailable,
   isApplicationTokenForbidden,
@@ -44,7 +46,6 @@ import {
   issueApplicationAccessToken,
   loadAppStoreApplications,
   loadDeployApplications,
-  loadIamApplications,
   resolveApplicationCatalogContext,
 } from "../services/application-catalog";
 import {
@@ -67,6 +68,7 @@ import type {
   ApplicationRecord,
 } from "../types/application-catalog";
 import type { AppStoreCategoryService } from "../types/appstore-categories";
+import type { DeployAppSourceService } from "../types/deploy-app-source";
 
 interface ApplicationGroupDefinition {
   id: ApplicationGroupId;
@@ -76,7 +78,6 @@ interface ApplicationGroupDefinition {
 }
 
 const APPLICATION_GROUPS: readonly ApplicationGroupDefinition[] = [
-  { id: "iam", icon: Boxes, loader: loadIamApplications, messageKey: "iam" },
   { id: "deploy", icon: Layers, loader: loadDeployApplications, messageKey: "deploy" },
   { id: "app-store", icon: Store, loader: loadAppStoreApplications, messageKey: "appStore" },
 ];
@@ -89,19 +90,18 @@ export type ApplicationCatalogView = ApplicationGroupId | "categories";
  *
  * The App Center module owns one route per view so the admin shell sidebar is
  * the only left navigation; the index route redirects to
- * `/admin/applications/iam`. Unknown subpaths fall back to IAM.
+ * `/admin/applications/deploy`. Unknown subpaths fall back to the deployment
+ * applications view. The IAM view is retired: an installation is one-to-one with
+ * a deployment application, so it is reviewed through that application.
  */
 export function resolveApplicationCatalogView(pathname: string): ApplicationCatalogView {
   if (/\/categories\/?$/u.test(pathname)) {
     return "categories";
   }
-  if (/\/deploy\/?$/u.test(pathname)) {
-    return "deploy";
-  }
   if (/\/app-store\/?$/u.test(pathname)) {
     return "app-store";
   }
-  return "iam";
+  return "deploy";
 }
 
 function createInitialGroupStates(): Record<ApplicationGroupId, ApplicationGroupState> {
@@ -115,10 +115,12 @@ function createInitialGroupStates(): Record<ApplicationGroupId, ApplicationGroup
 /**
  * Unified application management page.
  *
- * One entity (tenant or organization) owns applications in three independent
+ * One entity (tenant or organization) owns applications in two independent
  * platforms. The page keeps them in separate groups so each platform's own
  * identifier, environment, and lifecycle vocabulary stays intact, while the
- * layout gives operators one place to see every application the entity owns.
+ * layout gives operators one place to see every deployment and store listing
+ * the entity owns. The IAM view is retired: its installations are one-to-one
+ * with deployment applications.
  */
 export function ApplicationManagementPage({
   activeView: controlledView,
@@ -128,8 +130,10 @@ export function ApplicationManagementPage({
   issueToken,
   loaders,
   organizationId,
+  permissionScope,
   resolveContext,
   showViewNav = true,
+  sourceService,
   tenantId,
 }: {
   /** Controlled view used by the App Center routes (shell sidebar owns navigation). */
@@ -144,6 +148,14 @@ export function ApplicationManagementPage({
   /** Test/extension seam: override one or more group loaders. */
   loaders?: Partial<Record<ApplicationGroupId, ApplicationGroupDefinition["loader"]>>;
   organizationId?: string;
+  /**
+   * Test/host seam: the granted permission codes.
+   *
+   * Production callers omit it and the live portal session scope is read. A
+   * value here also decides whether the deploy rows expose the "Source & remix"
+   * entry (`deploy.apps.read`) and whether its write controls render.
+   */
+  permissionScope?: readonly string[];
   /** Test/extension seam: override context resolution. */
   resolveContext?: (input: { organizationId?: string; tenantId?: string }) => Promise<ApplicationCatalogContext>;
   /**
@@ -154,6 +166,8 @@ export function ApplicationManagementPage({
    * carry dynamic ownership ids the shell menu cannot express.
    */
   showViewNav?: boolean;
+  /** Test/extension seam: override the Deploy source/remix transport. */
+  sourceService?: DeployAppSourceService;
   tenantId?: string;
 }) {
   const messages = useApplicationCatalogMessages();
@@ -168,6 +182,8 @@ export function ApplicationManagementPage({
   issueTokenRef.current = issueToken;
   const integrationsRef = useRef(integrations);
   integrationsRef.current = integrations;
+  const sourceServiceRef = useRef(sourceService);
+  sourceServiceRef.current = sourceService;
   const [context, setContext] = useState<ApplicationCatalogContext>();
   const [groupStates, setGroupStates] = useState(createInitialGroupStates);
   const [internalView, setInternalView] = useState<ApplicationCatalogView>("iam");
@@ -186,6 +202,14 @@ export function ApplicationManagementPage({
     application: ApplicationRecord;
     kind: ApplicationIntegrationKind;
   }>();
+  const [sourceTarget, setSourceTarget] = useState<ApplicationRecord>();
+  // Both gates fall back to the live portal session scope when no seam is given.
+  const canReadSource = permissionScope
+    ? isApplicationCenterActionAllowed("sourceRead", permissionScope)
+    : isApplicationCenterActionAllowed("sourceRead");
+  const canWriteSource = permissionScope
+    ? isApplicationCenterActionAllowed("sourceWrite", permissionScope)
+    : isApplicationCenterActionAllowed("sourceWrite");
 
   const activeGroup = activeView === "categories"
     ? undefined
@@ -549,6 +573,18 @@ export function ApplicationManagementPage({
                 className="flex min-w-max flex-nowrap items-center justify-end gap-1.5 whitespace-nowrap"
                 data-application-row-actions
               >
+                {item.groupId === "deploy" && canReadSource ? (
+                  <Button
+                    onClick={() => setSourceTarget(item)}
+                    size="sm"
+                    title={messages.sourceRemix.title}
+                    type="button"
+                    variant="outline"
+                  >
+                    <GitBranch className="h-3.5 w-3.5" />
+                    {messages.sourceRemix.action}
+                  </Button>
+                ) : null}
                 <Button onClick={() => openAccessToken(item)} size="sm" type="button" variant="outline">
                   <KeyRound className="h-3.5 w-3.5" />
                   {messages.accessToken.action}
@@ -727,6 +763,17 @@ export function ApplicationManagementPage({
           service={integrationsRef.current ?? getApplicationIntegrationService()}
         />
       ) : null}
+
+      {sourceTarget ? (
+        <AppSourceRemixDrawer
+          application={sourceTarget}
+          canRead={canReadSource}
+          canWrite={canWriteSource}
+          messages={messages}
+          onClose={() => setSourceTarget(undefined)}
+          {...(sourceServiceRef.current ? { service: sourceServiceRef.current } : {})}
+        />
+      ) : null}
     </div>
   );
 }
@@ -740,17 +787,17 @@ export const CloudRouterTenantApplicationsPage: ComponentType = function CloudRo
 };
 
 /**
- * Application Center: the current tenant's applications across IAM, Deploy and
- * the App Store.
+ * Application Center: the current tenant's deployment applications and store
+ * listings.
  *
  * Unlike the two entity-scoped pages above, this one is its own admin module
  * (`appCenter`): the header entry opens the tenant-wide catalog so an operator
  * can review every application the current tenant owns and issue delegated
  * access tokens without going through the IAM tenant drill-down first.
  *
- * The module's views are shell-sidebar routes (`/admin/applications/iam`,
- * `/deploy`, `/app-store`, `/categories`), so this page renders no second
- * navigation: the admin shell sidebar is the single left menu.
+ * The module's views are shell-sidebar routes (`/admin/applications/deploy`,
+ * `/app-store`, `/categories`), so this page renders no second navigation: the
+ * admin shell sidebar is the single left menu.
  */
 export const CloudRouterApplicationCenterPage: ComponentType = function CloudRouterApplicationCenterPageEntry() {
   const location = useLocation();

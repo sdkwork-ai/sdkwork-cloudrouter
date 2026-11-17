@@ -157,6 +157,7 @@ pub(super) async fn save(
             &mut tx,
             &command.subject,
             command.group_code.trim(),
+            command.group_type.trim(),
             &command.requested_at,
         )
         .await?;
@@ -554,14 +555,16 @@ async fn update(
     Ok(account_group_id)
 }
 
-/// Clears the default flag on every account group in the scope except the one
-/// being promoted, so exactly one default group remains per tenant and
-/// organization. Versions advance on affected rows so stale If-Match editors
-/// observe the change through the optimistic lock instead of reverting it.
+/// Clears the default flag on every account group of the same modality in the
+/// scope except the one being promoted, so exactly one default group remains
+/// per `(tenant, organization, group_type)`. Other modalities keep their own
+/// default. Versions advance on affected rows so stale If-Match editors observe
+/// the change through the optimistic lock instead of reverting it.
 async fn clear_default_flag(
     tx: &mut Transaction<'_, Postgres>,
     subject: &AdminUpstreamSubject,
     exclude_group_code: &str,
+    group_type: &str,
     requested_at: &str,
 ) -> DomainResult<()> {
     sqlx::query(
@@ -572,13 +575,15 @@ async fn clear_default_flag(
             updated_at = $1::timestamptz
         WHERE tenant_id = $2 AND organization_id = $3
           AND is_default
-          AND group_code <> $4
+          AND group_type = $4
+          AND group_code <> $5
           AND deleted_at IS NULL
         "#,
     )
     .bind(requested_at)
     .bind(subject.tenant_id)
     .bind(subject.organization_id)
+    .bind(group_type)
     .bind(exclude_group_code)
     .execute(&mut **tx)
     .await

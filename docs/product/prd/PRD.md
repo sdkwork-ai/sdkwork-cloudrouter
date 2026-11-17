@@ -86,8 +86,12 @@ evidence.
 
 - OpenAI-compatible inference entrypoints under `/v1`.
 - Dual-channel bearer authentication: `sk-`/`sp-` prefixed gateway API keys or
-  product login auth tokens (auth-token sessions route through the tenant's
-  default account group, enabling API-key-free product chat).
+  product login auth tokens. The credential only establishes identity
+  (user/tenant/organization); API keys carry their bound account group, while
+  auth-token sessions resolve the tenant's default account group **for the
+  request modality** (llm/image/video/audio/music), falling back to the
+  deployment-wide `mixed` default — enabling API-key-free product chat with
+  per-modality account pools.
 - Tenant and organization resolution, entitlement checks, request
   normalization, route planning, adapter dispatch, streaming, usage capture,
   and normalized error handling.

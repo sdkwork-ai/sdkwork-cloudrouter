@@ -2653,10 +2653,25 @@ fn build_portal_runtime_env_script(runtime_env: &PortalRuntimeEnv) -> String {
     // payload-only JWT, which the IAM development authentication fallback
     // accepts and which carries no real session authority.
     if development_bootstrap_token_enabled() {
-        let bootstrap_access_token_json = json!(payload_only_bootstrap_access_token()).to_string();
-        script.push_str(&format!(
-            "window.__SDKWORK_CREDENTIAL_ENTRY_BOOTSTRAP_ACCESS_TOKEN__ = {bootstrap_access_token_json};\n"
-        ));
+        match payload_only_bootstrap_access_token() {
+            Some(token) => {
+                let bootstrap_access_token_json = json!(token).to_string();
+                script.push_str(&format!(
+                    "window.__SDKWORK_CREDENTIAL_ENTRY_BOOTSTRAP_ACCESS_TOKEN__ = {bootstrap_access_token_json};\n"
+                ));
+            }
+            None => {
+                // Fail closed by omission: a token whose app identity is unknown
+                // would carry the retired IAM runtime app id and be rejected by
+                // IAM anyway, so inject nothing and say which variable is missing.
+                tracing::warn!(
+                    "portal dev bootstrap token skipped: set {} (or the legacy \
+                     SDKWORK_WEB_FRAMEWORK_JWT_BOOTSTRAP_APP_ID payload override) to the deploy \
+                     application id of this installation",
+                    sdkwork_cloudrouter_config::DEPLOY_APPLICATION_ID_ENV,
+                );
+            }
+        }
     }
     script
 }
@@ -2674,20 +2689,26 @@ fn development_bootstrap_token_enabled() -> bool {
 }
 
 /// Builds a payload-only bootstrap Access-Token JWT for the credential-entry
-/// flow, scoped to the tenant runtime app provisioned by the installer
-/// (`iam_tenant_application.app_id`). Matches the IAM bootstrap fixture shape
-/// (`sdkwork-web-core::bootstrap_access_token_jwt`) so the standalone IAM
-/// resolver accepts it through the development authentication fallback.
-fn payload_only_bootstrap_access_token() -> String {
+/// flow, scoped to this installation's deploy application.
+///
+/// IAM makes the deploy application the identity of every access token, so the
+/// app scope is `SDKWORK_DEPLOY_APPLICATION_ID` (with the legacy
+/// `SDKWORK_WEB_FRAMEWORK_JWT_BOOTSTRAP_APP_ID` payload override still honoured
+/// for a handful of local fixtures). Neither configured means no token: the
+/// retired IAM runtime app id is never substituted.
+fn payload_only_bootstrap_access_token() -> Option<String> {
     let tenant_id = std::env::var("SDKWORK_WEB_FRAMEWORK_JWT_BOOTSTRAP_TENANT_ID")
         .ok()
         .filter(|value| !value.trim().is_empty())
         .unwrap_or_else(|| "100001".to_owned());
     let app_id = std::env::var("SDKWORK_WEB_FRAMEWORK_JWT_BOOTSTRAP_APP_ID")
         .ok()
-        .filter(|value| !value.trim().is_empty())
-        .unwrap_or_else(|| "sdkwork-cloudrouter".to_owned());
-    sdkwork_web_core::bootstrap_access_token_jwt(&tenant_id, &app_id)
+        .map(|value| value.trim().to_owned())
+        .filter(|value| !value.is_empty())
+        .or_else(|| sdkwork_cloudrouter_config::resolve_deploy_application_id().ok())?;
+    Some(sdkwork_web_core::bootstrap_access_token_jwt(
+        &tenant_id, &app_id,
+    ))
 }
 
 fn content_type_for_path(path: &Path) -> &'static str {

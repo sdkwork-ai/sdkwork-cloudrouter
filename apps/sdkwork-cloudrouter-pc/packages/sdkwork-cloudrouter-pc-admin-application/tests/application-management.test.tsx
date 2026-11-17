@@ -95,45 +95,48 @@ function expectText(text: string): void {
 }
 
 describe("application management page", () => {
-  it("groups the tenant applications by platform and shows the IAM group first", async () => {
+  it("groups the tenant applications by platform and shows the deployment group first", async () => {
     const loaders = createLoaders();
     const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
     renderPage({ loaders, resolveContext, tenantId: "tenant-1" });
 
-    expect((await screen.findAllByText("Console")).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("Storefront")).length).toBeGreaterThan(0);
     expectText("应用管理");
     expect(screen.getByText(/Acme/)).toBeTruthy();
-    expectText("共 1 个应用");
-    expect(loaders.iam).toHaveBeenCalledWith(expect.objectContaining({ tenantId: "tenant-1" }));
+    expect(loaders.deploy).toHaveBeenCalledWith(expect.objectContaining({ tenantId: "tenant-1" }));
+    // The IAM view is retired: an installation is reviewed through the
+    // deployment application it belongs to.
+    expect(loaders.iam).not.toHaveBeenCalled();
   });
 
-  it("switches to the Deploy and App Store groups without mixing their rows", async () => {
+  it("switches to the App Store group without mixing its rows", async () => {
     const loaders = createLoaders();
     const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
     renderPage({ loaders, resolveContext, tenantId: "tenant-1" });
 
-    await screen.findAllByText("Console");
-
-    clickGroup("deploy");
-    expect((await screen.findAllByText("Storefront")).length).toBeGreaterThan(0);
-    expect(screen.queryAllByText("Console").length).toBe(0);
+    await screen.findAllByText("Storefront");
+    // The deployment row is organization-scoped, so the scope tag belongs to it.
     expectText("组织级");
 
     clickGroup("app-store");
     expect((await screen.findAllByText("sdkwork-birdcoder")).length).toBeGreaterThan(0);
+    expect(screen.queryAllByText("Storefront").length).toBe(0);
     expectText("1.2.0");
   });
 
   it("filters the active group locally", async () => {
     const loaders = createLoaders();
-    loaders.iam.mockResolvedValue([iamApplication, { ...iamApplication, id: "iam-2", name: "Billing" }]);
+    loaders.deploy.mockResolvedValue([
+      deployApplication,
+      { ...deployApplication, id: "deploy-2", name: "Billing" },
+    ]);
     const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
     renderPage({ loaders, resolveContext, tenantId: "tenant-1" });
 
-    await screen.findAllByText("Console");
+    await screen.findAllByText("Storefront");
     fireEvent.change(screen.getByPlaceholderText("搜索应用名称、标识或域名"), { target: { value: "bill" } });
 
-    await waitFor(() => expect(screen.queryAllByText("Console").length).toBe(0));
+    await waitFor(() => expect(screen.queryAllByText("Storefront").length).toBe(0));
     expectText("Billing");
   });
 
@@ -147,7 +150,7 @@ describe("application management page", () => {
     });
     renderPage({ loaders, organizationId: "org-1", resolveContext, tenantId: "tenant-1" });
 
-    await screen.findAllByText("Console");
+    await screen.findAllByText("Storefront");
     clickGroup("app-store");
 
     await screen.findByText(/组织维度的授权清单待后端接口接入。/);
@@ -160,38 +163,10 @@ describe("application management page", () => {
     const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
     renderPage({ loaders, resolveContext, tenantId: "tenant-1" });
 
-    await screen.findAllByText("Console");
     clickGroup("deploy");
 
     await screen.findByText(/该应用体系在当前部署中未启用/);
     expect(screen.getByRole("button", { name: "重试" })).toBeTruthy();
-  });
-
-  it("issues an application access token from the row action and can reveal it", async () => {
-    const loaders = createLoaders();
-    const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
-    const issueToken = vi.fn().mockResolvedValue({
-      accessToken: "header.payload.signature",
-      appId: "app-console",
-      expiresAt: "2026-11-07T10:00:00Z",
-      tenantApplicationId: "iamapp-1",
-    });
-    renderPage({ issueToken, loaders, resolveContext, tenantId: "tenant-1" });
-
-    await screen.findAllByText("Console");
-    fireEvent.click(screen.getByRole("button", { name: "访问令牌" }));
-
-    expect(await screen.findByText("应用访问令牌")).toBeTruthy();
-    expect(issueToken).toHaveBeenCalledWith(
-      expect.objectContaining({ tenantId: "tenant-1" }),
-      expect.objectContaining({ groupId: "iam", id: "iam-1" }),
-    );
-    // The token is masked until the operator reveals it.
-    expect(screen.getByText(/\*{8}/)).toBeTruthy();
-    expect(screen.queryByText("header.payload.signature")).toBeNull();
-
-    fireEvent.click(screen.getByRole("button", { name: "显示令牌" }));
-    expect(screen.getByText("header.payload.signature")).toBeTruthy();
   });
 
   it("explains why a deploy application without an IAM registration cannot issue a token", async () => {
@@ -200,7 +175,7 @@ describe("application management page", () => {
     const issueToken = vi.fn().mockRejectedValue(Object.assign(new Error("tenant application was not found"), { status: 404 }));
     renderPage({ issueToken, loaders, resolveContext, tenantId: "tenant-1" });
 
-    await screen.findAllByText("Console");
+    await screen.findAllByText("Storefront");
     clickGroup("deploy");
     await screen.findAllByText("Storefront");
     fireEvent.click(screen.getByRole("button", { name: "访问令牌" }));
@@ -214,7 +189,7 @@ describe("application management page", () => {
     const issueToken = vi.fn().mockRejectedValue(Object.assign(new Error("forbidden"), { status: 403 }));
     renderPage({ issueToken, loaders, resolveContext, tenantId: "tenant-1" });
 
-    await screen.findAllByText("Console");
+    await screen.findAllByText("Storefront");
     fireEvent.click(screen.getByRole("button", { name: "访问令牌" }));
 
     await screen.findByText(/当前账号没有签发应用访问令牌的权限/);
@@ -225,7 +200,7 @@ describe("application management page", () => {
     const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
     renderPage({ loaders, resolveContext, tenantId: "tenant-1" });
 
-    await screen.findAllByText("Console");
+    await screen.findAllByText("Storefront");
     const actions = document.querySelector("[data-application-row-actions]");
     expect(actions).not.toBeNull();
     // The operations column must widen instead of stacking the four buttons.

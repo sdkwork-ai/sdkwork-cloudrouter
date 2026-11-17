@@ -26,6 +26,7 @@ import {
   readCredentialBundle,
   writeCredentialBundle,
 } from '@sdkwork/iam-credential-entry/node-bootstrap';
+import { resolveDeployApplicationId } from './lib/cloud-router-browser-env-contract.mjs';
 
 function readApplicationManifest(manifestPath) {
   return JSON.parse(readFileSync(manifestPath, 'utf8'));
@@ -131,7 +132,7 @@ function normalizeMode(value) {
   return mode;
 }
 
-function installerArgs(settings, manifest) {
+function installerArgs(settings, manifest, env = process.env) {
   const args = [
     'run',
     '-p',
@@ -140,7 +141,11 @@ function installerArgs(settings, manifest) {
     'issue-bootstrap-token',
   ];
   const tenantId = settings.tenantId ?? manifest?.backend?.tenantId;
-  const appId = settings.appId ?? manifest?.backend?.appId;
+  // The credential's app identity is the installation's deploy application
+  // anchor. `agent.app.config.json#backend.appId` is the retired IAM runtime app
+  // id, so it must never be forwarded as `--app-id`: IAM resolves the
+  // installation by deploy application and rejects the runtime app id.
+  const appId = settings.appId ?? resolveDeployApplicationId(env);
   if (tenantId) {
     args.push('--tenant-id', tenantId);
   }
@@ -246,7 +251,7 @@ export function createResetBootstrapAccessTokenPlan({
       {
         name: 'issue-bootstrap-token',
         command: cargoCommand(platform),
-        args: installerArgs(settings, manifest),
+        args: installerArgs(settings, manifest, env),
         cwd: root,
         env: stepEnv,
         shell: false,
@@ -298,11 +303,19 @@ Issue a signed bootstrap SDKWORK_ACCESS_TOKEN through the installer database lay
 Development mode expects a manually configured PostgreSQL profile (config/host/postgres.env).
 Release mode expects an initialized online deployment database and runtime config.
 
+The installer refuses to sign until the deploy application exists and its IAM
+installation is enabled (docs/installation/docker-deployment.md section 5.2.2). It
+needs SDKWORK_DEPLOY_BACKEND_API_BASE_URL, SDKWORK_DEPLOY_BACKEND_ACCESS_TOKEN and
+SDKWORK_DEPLOY_BACKEND_AUTH_TOKEN (optionally SDKWORK_DEPLOY_BACKEND_TIMEOUT_MS) in
+the environment; this script forwards its environment to the installer, so set them
+in the shell, the dev env file, or the release runtime config. A missing value is a
+named refusal, never a token issued for a nonexistent deploy application.
+
 Options:
   --mode <dev|release>          dev uses config/host/postgres.env; release uses PostgreSQL runtime config
   --environment <lifecycle>     development, test, staging, or production (default development)
   --tenant-id <tenantId>        IAM tenant override (default from agent.app.config.json)
-  --app-id <appId>              IAM app override (default from agent.app.config.json)
+  --app-id <appId>              Deploy application anchor override (default SDKWORK_DEPLOY_APPLICATION_ID)
   --ttl-seconds <seconds>       Optional token TTL override
   --config-file <path>          Release runtime TOML path
   --dev-env-file <path>         Dev PostgreSQL dotenv file such as config/host/postgres.env

@@ -8,8 +8,8 @@ use axum::response::{IntoResponse, Response};
 use sdkwork_cloudrouter_router_service::application::{
     model_access_forbidden_reason, BillingMode, DeferredStreamInvocation, DeferredStreamResponse,
     DispatchMode, GatewayInvocationPolicyViolation, Invocation, InvocationBody,
-    InvocationClassification, InvocationClassificationRequest, InvocationDispatchResponse,
-    InvocationError, InvocationErrorKind, InvocationPipelineExecution, InvocationRequest,
+    InvocationClassificationRequest, InvocationDispatchResponse, InvocationError,
+    InvocationErrorKind, InvocationPipelineExecution, InvocationRequest,
     InvocationResourceClassifier, InvocationSubject, InvocationSurface, OpenAiResourceClassifier,
     ProviderNativeResourceClassifier, ResourceType,
 };
@@ -38,8 +38,8 @@ where
         path = %parts.uri.path(),
         "invocation.http.request public channel entered"
     );
-    // 安全：先鉴权后分类——未认证请求不触发任何分类/解析逻辑，缩小信息暴露面
-    let auth_context = match authenticate_gateway_request_or_auth_token(
+    // 安全：先鉴权后分类——未认证请求不触发任何分类/解析逻辑，缩小信息暴露面。
+    let identity = match authenticate_gateway_request_or_auth_token(
         state.catalog.as_ref(),
         state.api_key_hasher.as_ref(),
         state.auth_token_authenticator.as_deref(),
@@ -49,17 +49,7 @@ where
     )
     .await
     {
-        Ok(context) => {
-            tracing::debug!(
-                api_key_id = context.api_key_id,
-                tenant_id = context.tenant_id,
-                organization_id = context.organization_id,
-                account_group_id = context.group_id,
-                account_group_code = %context.group_code,
-                "invocation.http authentication succeeded"
-            );
-            context
-        }
+        Ok(identity) => identity,
         Err(error) => {
             tracing::warn!(
                 method = %parts.method,
@@ -74,22 +64,7 @@ where
         Ok(uri) => uri,
         Err(error) => return error.into_response(),
     };
-    let preclassified_openai = if is_openai_prefixed_path(parts.uri.path()) {
-        match classify_request(&parts.method, &parts.uri) {
-            Ok(classified) => Some(classified),
-            Err(_) => return not_found_response(),
-        }
-    } else {
-        None
-    };
-    handle_authenticated_invocation(
-        state,
-        Request::from_parts(parts, body),
-        auth_context,
-        preclassified_openai,
-        false,
-    )
-    .await
+    handle_authenticated_invocation(state, Request::from_parts(parts, body), identity, false).await
 }
 
 pub(crate) async fn handle_internal_invocation<C>(
@@ -185,8 +160,7 @@ where
     handle_authenticated_invocation(
         state,
         Request::from_parts(parts, Body::from(body)),
-        auth_context,
-        None,
+        crate::gateway_api_key_auth::GatewayIdentity::ApiKey(auth_context),
         true,
     )
     .await
@@ -195,8 +169,7 @@ where
 async fn handle_authenticated_invocation<C>(
     state: InvocationRouterState<C>,
     request: Request<Body>,
-    auth_context: sdkwork_cloudrouter_router_service::application::AuthenticatedApiKeyContext,
-    preclassified_openai: Option<(InvocationClassification, String)>,
+    identity: crate::gateway_api_key_auth::GatewayIdentity,
     internal: bool,
 ) -> Response
 where
@@ -204,6 +177,42 @@ where
 {
     let (parts, body) = request.into_parts();
     let client_ip = extract_client_ip(&parts, false);
+    // Classify before resolving the session's account group: an auth-token
+    // session resolves to the subject's default group **for the request
+    // modality**, so the modality must be known first. Authentication has
+    // already run, so no classification work reaches unauthenticated callers.
+    let classified = match classify_request(&parts.method, &parts.uri) {
+        Ok(classified) => classified,
+        // Unknown `/v1` paths keep answering 404 (pre-modality behaviour)
+        // instead of surfacing a classification 400.
+        Err(_) if is_openai_prefixed_path(parts.uri.path()) => return not_found_response(),
+        Err(error) => return response_from_invocation_error(&error),
+    };
+    let (classification, invocation_path) = classified;
+    let (resource, billing, routing) = classification.into_parts();
+    let capability = resource.capability;
+    let auth_context = match identity {
+        crate::gateway_api_key_auth::GatewayIdentity::ApiKey(context) => context,
+        crate::gateway_api_key_auth::GatewayIdentity::Session(identity) => {
+            match sdkwork_cloudrouter_router_service::api::authenticated_context_from_auth_token_identity(
+                state.catalog.as_ref(),
+                identity,
+                Some(capability),
+            ) {
+                Ok(context) => context,
+                Err(response) => return *response,
+            }
+        }
+    };
+    tracing::debug!(
+        api_key_id = auth_context.api_key_id,
+        tenant_id = auth_context.tenant_id,
+        organization_id = auth_context.organization_id,
+        account_group_id = auth_context.group_id,
+        account_group_code = %auth_context.group_code,
+        capability = %capability_code(capability),
+        "invocation.http authentication succeeded"
+    );
     if let Err(violation) = state
         .invocation_policy_guard
         .enforce(state.catalog.as_ref(), &auth_context, client_ip.as_deref())
@@ -211,21 +220,11 @@ where
     {
         return response_from_policy_violation(&violation);
     }
-
     let body_limit = state.body_limit_bytes;
     let body = match invocation_body_from_http(&parts.headers, body, body_limit).await {
         Ok(body) => body,
         Err(error) => return response_from_invocation_error(&error),
     };
-    let classified = match preclassified_openai {
-        Some(classified) => classified,
-        None => match classify_request(&parts.method, &parts.uri) {
-            Ok(classified) => classified,
-            Err(error) => return response_from_invocation_error(&error),
-        },
-    };
-    let (classification, invocation_path) = classified;
-    let (resource, billing, routing) = classification.into_parts();
     let request = invocation_request_from_http(
         parts.method,
         invocation_path,
@@ -599,6 +598,23 @@ fn classify_request(
 
 fn is_openai_prefixed_path(path: &str) -> bool {
     path == "/v1" || path.starts_with("/v1/")
+}
+
+/// Stable machine label of the invocation capability, for diagnostics only.
+fn capability_code(
+    capability: sdkwork_cloudrouter_router_service::domain::RoutingCapability,
+) -> &'static str {
+    use sdkwork_cloudrouter_router_service::domain::RoutingCapability;
+    match capability {
+        RoutingCapability::Chat => "chat",
+        RoutingCapability::Image => "image",
+        RoutingCapability::Audio => "audio",
+        RoutingCapability::Music => "music",
+        RoutingCapability::Video => "video",
+        RoutingCapability::Embedding => "embedding",
+        RoutingCapability::Rerank => "rerank",
+        RoutingCapability::Network => "network",
+    }
 }
 
 fn provider_native_parts(path: &str) -> Option<(String, String)> {

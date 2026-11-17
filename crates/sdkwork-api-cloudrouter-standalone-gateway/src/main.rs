@@ -2,7 +2,9 @@ use std::sync::Arc;
 
 use axum::routing::get;
 use sdkwork_api_cloudrouter_standalone_gateway::portal::{mount_portal_static, PortalStaticConfig};
-use sdkwork_cloudrouter_config::RedisConfig;
+use sdkwork_cloudrouter_config::{
+    application_audience_allow_list, resolve_deploy_application_id, RedisConfig,
+};
 use sdkwork_cloudrouter_security::INTERNAL_GATEWAY_ROUTE_PREFIX;
 use sdkwork_iam_web_adapter::{
     build_web_framework_builder_with_open_api_prefixes,
@@ -14,7 +16,6 @@ use sdkwork_web_bootstrap::{
 };
 use sdkwork_web_core::{WebEnvironment, WebRequestContextProfile};
 
-const APPLICATION_ID: &str = "sdkwork-cloudrouter";
 // Every vendor prefix that carries a provider-native open-api route. A
 // prefix missing here makes `classify_api_surface` return `Unknown`, which the
 // web framework rejects with `missing_credentials` (401) *before* routing, so
@@ -126,9 +127,17 @@ async fn gateway_main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
     // anonymously readable script would publish a live credential to every
     // visitor. Development workstations may opt in to a payload-only token
     // through SDKWORK_CLOUDROUTER_PORTAL_DEV_BOOTSTRAP_TOKEN on the edge server.
-    let resolver =
-        iam_web_request_context_resolver_from_env_for_audiences(&[APPLICATION_ID, "cloudrouter"])
-            .await?;
+
+    // Application identity anchor (`SDKWORK_DEPLOY_APPLICATION_ID`). IAM makes
+    // the installation's deploy application the identity of every access
+    // token, so this host's audience allow-list and audit attribution must be
+    // that anchor. A missing anchor is a startup failure naming the variable:
+    // falling back to the retired IAM runtime app id would boot a gateway whose
+    // allow-list can never accept a deployment credential.
+    let deploy_application_id = resolve_deploy_application_id()?;
+    let audiences = application_audience_allow_list(&deploy_application_id);
+    let audience_refs = audiences.iter().map(String::as_str).collect::<Vec<_>>();
+    let resolver = iam_web_request_context_resolver_from_env_for_audiences(&audience_refs).await?;
     let environment = sdkwork_cloudrouter_http::resolve_cloud_web_environment_from_process_env();
     let open_api_prefixes = OPEN_API_PREFIXES
         .iter()
@@ -192,7 +201,7 @@ async fn gateway_main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
             )?)
             .audit_emitter(Arc::new(IamAuditEmitter::new(
                 postgres_pool.as_ref().clone(),
-                APPLICATION_ID,
+                deploy_application_id.clone(),
                 "production",
             )))
             .security_event_emitter(Arc::new(IamSecurityEventEmitter::new(

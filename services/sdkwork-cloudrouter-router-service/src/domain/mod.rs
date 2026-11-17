@@ -36,8 +36,10 @@ pub use sdkwork_models_catalog_service::domain::{
 };
 pub use sdkwork_models_contract_service::{DomainError, DomainResult};
 pub use upstream_account_group_selection::{
-    select_default_account_group_for_subject, upstream_account_group_in_subject_scope,
-    DefaultAccountGroupSelection, DefaultAccountGroupSelectionReason, DEFAULT_ACCOUNT_GROUP_CODE,
+    select_default_account_group_for_subject, select_default_session_account_group,
+    upstream_account_group_in_subject_scope, AccountGroupModalityScope,
+    DefaultAccountGroupSelection, DefaultAccountGroupSelectionReason, SessionAccountGroup,
+    SessionAccountGroupModality, DEFAULT_ACCOUNT_GROUP_CODE,
 };
 pub use upstream_auth::{
     canonical_upstream_runtime_auth_config, resolve_upstream_runtime_auth_profile,

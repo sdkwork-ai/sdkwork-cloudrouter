@@ -611,6 +611,11 @@ pub struct UpstreamAccountGroupRow {
     pub name: String,
     pub code: String,
     pub is_default: bool,
+    /// `ai_upstream_account_group.group_type` (`mixed`/`llm`/`image`/`video`/
+    /// `audio`/`music`/`other`); drives per-modality default-group selection.
+    pub group_type: String,
+    /// `ai_upstream_account_group.modalities` as the raw JSON text.
+    pub modalities_json: String,
     pub pricing_plan_tenant_id: i64,
     pub pricing_plan_organization_id: i64,
     pub pricing_plan_id: i64,
@@ -622,6 +627,30 @@ pub struct UpstreamAccountGroupRow {
     pub sale_multiplier: String,
     pub model_blacklist_json: String,
     pub model_whitelist_json: String,
+}
+
+impl UpstreamAccountGroupRow {
+    /// The modality scope declared by the row, for session default-group
+    /// selection. A malformed `modalities` payload degrades to "not explicitly
+    /// scoped" (group type only) instead of failing the whole catalog load: the
+    /// column is operator-authored free JSON and routing must stay available.
+    pub fn modality_scope(&self) -> crate::domain::AccountGroupModalityScope {
+        let modalities = serde_json::from_str::<Vec<String>>(&self.modalities_json)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|value| value.trim().to_owned())
+            .filter(|value| !value.is_empty())
+            .collect::<Vec<_>>();
+        let group_type = self.group_type.trim();
+        crate::domain::AccountGroupModalityScope::new(
+            if group_type.is_empty() {
+                "mixed"
+            } else {
+                group_type
+            },
+            modalities,
+        )
+    }
 }
 
 /// 供应商级模型黑白名单（从 ai_model_access_policy 聚合），JSON 列在快照构建时

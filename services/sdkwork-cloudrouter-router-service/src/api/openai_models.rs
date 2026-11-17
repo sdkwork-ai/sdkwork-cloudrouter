@@ -7,14 +7,16 @@ use axum::routing::get;
 use axum::{Json, Router};
 use sdkwork_cloudrouter_http::ApiKeyIdentity;
 
-use crate::api::openai_auth_token::OpenAiAuthTokenAuthenticator;
+use crate::api::openai_auth_token::{
+    authenticated_context_from_auth_token_identity, OpenAiAuthTokenAuthenticator,
+};
 use crate::api::openai_contract::{OpenAiModelListResponse, OpenAiModelResponse};
 use crate::api::openai_error::openai_error;
 use crate::application::{
     ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
 };
 use crate::domain::AiModel;
-use crate::ports::PricingCatalog;
+use crate::ports::{PricingCatalog, UpstreamAccountRouteCatalog};
 use sdkwork_web_core::{
     default_open_api_bearer_classifier, DynOpenApiBearerCredentialClassifier, OpenApiCredentialKind,
 };
@@ -48,7 +50,7 @@ pub fn openai_models_router<C>(
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     openai_models_router_with_auth_extensions(
         catalog,
@@ -68,7 +70,7 @@ pub fn openai_models_router_with_auth_extensions<C>(
     bearer_classifier: DynOpenApiBearerCredentialClassifier,
 ) -> Router
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     Router::new()
         .route("/v1/models", get(list_models::<C>))
@@ -87,7 +89,7 @@ async fn list_models<C>(
     uri: Uri,
 ) -> Response
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let identity = match ApiKeyIdentity::from_headers_and_uri(&headers, &uri) {
         Ok(identity) => identity,
@@ -123,7 +125,7 @@ async fn retrieve_model<C>(
     uri: Uri,
 ) -> Response
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let identity = match ApiKeyIdentity::from_headers_and_uri(&headers, &uri) {
         Ok(identity) => identity,
@@ -185,7 +187,7 @@ async fn authenticate<C>(
     headers: &HeaderMap,
 ) -> Result<AuthenticatedApiKeyContext, OpenAiResponseError>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let Some(credential_secret) = identity.credential_secret() else {
         return Err(Box::new(openai_error(
@@ -227,9 +229,12 @@ where
                 .and_then(|value| value.to_str().ok())
                 .map(str::trim)
                 .filter(|value| !value.is_empty());
-            authenticator
+            let identity = authenticator
                 .authenticate(credential_secret, access_token)
-                .await
+                .await?;
+            // The model list has no inference modality: resolve the subject's
+            // mixed/default group (same rule the balance query uses).
+            authenticated_context_from_auth_token_identity(state.catalog.as_ref(), identity, None)
         }
     }
 }

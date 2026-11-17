@@ -2667,10 +2667,13 @@ async fn import_postgres_default_admin_upstream_topology(
         let tags_json = serde_json::json!(&group.tags).to_string();
 
         if group.is_default {
-            // Clear the default flag on every other group in the same tenant and
-            // organization scope so the partial unique index keeps exactly one
-            // default group. Versions advance so concurrent optimistic-lock
-            // editors observe the change instead of silently reverting it.
+            // Clear the default flag on every other **mixed** group in the same
+            // tenant and organization scope so the partial unique index keeps
+            // exactly one mixed default. Per-modality defaults (`llm`, `image`,
+            // `video`, ...) belong to their own uniqueness slot and must
+            // survive a re-run of the installer seed. Versions advance so
+            // concurrent optimistic-lock editors observe the change instead of
+            // silently reverting it.
             sqlx::query(
                 r#"
                 UPDATE ai_upstream_account_group
@@ -2679,6 +2682,7 @@ async fn import_postgres_default_admin_upstream_topology(
                     updated_at = CURRENT_TIMESTAMP
                 WHERE tenant_id = $1 AND organization_id = $2
                   AND is_default
+                  AND group_type = 'mixed'
                   AND group_code <> $3
                   AND deleted_at IS NULL
                 "#,

@@ -25,6 +25,10 @@
     {
       "file": "crates/sdkwork-cloudrouter-edge-runtime/src/edge_server.rs",
       "reason": "Separate edge process (MODULE_SPEC.md §4.2.3 split-deployment exception), recorded file-scoped for the second detection mode: edge_server.rs is the proxy itself — it builds the outbound client and forwards /backend/v3/api and /app/v3/api to the upstreams parsed in edge_server_runtime_config.rs (four variables already allowlisted there). The edge runtime terminates public traffic in its own process, so it has no in-process sibling module to call."
+    },
+    {
+      "file": "services/sdkwork-cloudrouter-installer/src/deploy_application.rs",
+      "reason": "Installer/CLI tool, not a backend module, and a cross-repository boundary rather than a split deployment: the deploy inventory is owned by sdkwork-deployments, lives in its own schema, and Cloud Router cannot take a Cargo dependency on it (the dependency direction is deploy -> IAM, and this repository already depends on IAM). Issuing a bootstrap access credential must first prove the deploy application exists, because IAM's issuer can only resolve an installation that is already linked to one and IAM must not depend on deploy. The call is HTTP-only (GET /app/v3/api/apps/{appId}, POST /app/v3/api/apps), reads SDKWORK_DEPLOY_BACKEND_API_BASE_URL plus dedicated credentials, and fails closed — naming the variable and the route — when any of them is missing, when the deploy backend is unreachable, or when its answer does not prove the configured anchor exists. Recorded file-scoped so the second detection mode sees the deliberate exception."
     }
   ]
 }

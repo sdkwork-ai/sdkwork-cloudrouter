@@ -89,6 +89,7 @@ export type AdminModuleId =
   | 'partnerCenter'
   | 'paymentCenter'
   | 'storageCenter'
+  | 'domainCenter'
   | 'tradeCenter'
   | 'notifyCenter'
   | 'documentCenter'
@@ -242,6 +243,13 @@ export const ADMIN_MODULES: AdminModuleDef[] = [
     pathPrefixes: ['/admin/storage'],
   }),
   moduleBlock({
+    id: 'domainCenter',
+    nameKey: 'admin.header.domainCenter',
+    icon: Globe2,
+    defaultPath: '/admin/domains',
+    pathPrefixes: ['/admin/domains'],
+  }),
+  moduleBlock({
     id: 'documentCenter',
     nameKey: 'admin.header.documentCenter',
     icon: BookOpen,
@@ -342,11 +350,10 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
     ],
     groups: [
       groupBlock('admin.menu.appCenter.applicationsGroup', [
-        itemBlock({ path: '/admin/applications/iam', labelKey: 'admin.menu.appCenter.iam', icon: Boxes }),
         itemBlock({ path: '/admin/applications/deploy', labelKey: 'admin.menu.appCenter.deploy', icon: Layers3 }),
-        itemBlock({ path: '/admin/applications/app-store', labelKey: 'admin.menu.appCenter.appStore', icon: Store }),
       ]),
       groupBlock('admin.menu.appCenter.storeGroup', [
+        itemBlock({ path: '/admin/applications/app-store', labelKey: 'admin.menu.appCenter.appStore', icon: Store }),
         itemBlock({ path: '/admin/applications/categories', labelKey: 'admin.menu.appCenter.categories', icon: FolderTree }),
         itemBlock({ path: '/admin/applications/listings', labelKey: 'admin.menu.appCenter.listings', icon: Globe }),
         itemBlock({ path: '/admin/applications/collections', labelKey: 'admin.menu.appCenter.collections', icon: FolderHeart }),
@@ -538,6 +545,29 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
         itemBlock({ path: '/admin/storage/usage', labelKey: 'admin.menu.storage.usage', icon: BarChart3 }),
         itemBlock({ path: '/admin/storage/reconciliation', labelKey: 'admin.menu.storage.reconciliation', icon: RefreshCcw }),
         itemBlock({ path: '/admin/storage/garbageCollection', labelKey: 'admin.menu.storage.garbageCollection', icon: Recycle }),
+      ]),
+    ],
+  },
+  {
+    // Domain Center: one control plane over the deployments domain contract,
+    // laid out as the industry-standard chain an operator reasons about:
+    // root domain -> hostname -> resolution -> TLS, plus the credentials that
+    // publish DNS records.
+    moduleId: 'domainCenter',
+    items: [
+      itemBlock({ path: '/admin/domains', labelKey: 'admin.menu.domains.overview', icon: LayoutDashboard }),
+    ],
+    groups: [
+      groupBlock('admin.menu.domains.management', [
+        itemBlock({ path: '/admin/domains/zones', labelKey: 'admin.menu.domains.zones', icon: Globe2 }),
+        itemBlock({ path: '/admin/domains/hostnames', labelKey: 'admin.menu.domains.hostnames', icon: Server }),
+      ]),
+      groupBlock('admin.menu.domains.resolution', [
+        itemBlock({ path: '/admin/domains/dns', labelKey: 'admin.menu.domains.dns', icon: Network }),
+      ]),
+      groupBlock('admin.menu.domains.security', [
+        itemBlock({ path: '/admin/domains/certificates', labelKey: 'admin.menu.domains.certificates', icon: ShieldCheck }),
+        itemBlock({ path: '/admin/domains/accounts', labelKey: 'admin.menu.domains.accounts', icon: KeyRound }),
       ]),
     ],
   },

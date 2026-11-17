@@ -99,7 +99,15 @@
     ],
     "sdkClients": [],
     "events": [],
-    "configKeys": [],
+    "configKeys": [
+      "SDKWORK_DATABASE_URL",
+      "SDKWORK_DEPLOY_APPLICATION_ID",
+      "SDKWORK_DEPLOY_BACKEND_API_BASE_URL",
+      "SDKWORK_DEPLOY_BACKEND_ACCESS_TOKEN",
+      "SDKWORK_DEPLOY_BACKEND_AUTH_TOKEN",
+      "SDKWORK_DEPLOY_BACKEND_TIMEOUT_MS",
+      "SDKWORK_APP_ROOT"
+    ],
     "routeManifest": null
   },
   "integration": {

@@ -15,11 +15,9 @@ use axum::http::{Request, StatusCode};
 use axum::response::IntoResponse;
 use sdkwork_cloudrouter_router_service::api::{
     openai_models_router, openai_models_router_with_auth_extensions, OpenAiAuthTokenAuthenticator,
-    OpenAiAuthTokenError,
+    OpenAiAuthTokenError, OpenAiAuthTokenIdentity,
 };
-use sdkwork_cloudrouter_router_service::application::{
-    ApiKeySecretHasher, AuthenticatedApiKeyContext,
-};
+use sdkwork_cloudrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, DecimalValue, GatewayApiKey, ModelVendor, ModelVendorDefinition, UpstreamAccountGroup,
 };
@@ -90,7 +88,7 @@ impl OpenAiAuthTokenAuthenticator for CannedAuthTokenAuthenticator {
         &self,
         raw_bearer_token: &str,
         access_token: Option<&str>,
-    ) -> Result<AuthenticatedApiKeyContext, OpenAiAuthTokenError> {
+    ) -> Result<OpenAiAuthTokenIdentity, OpenAiAuthTokenError> {
         match (raw_bearer_token, access_token) {
             (LOGIN_AUTH_TOKEN, Some(SESSION_ACCESS_TOKEN)) => {}
             (LONE_LOGIN_AUTH_TOKEN, None) => {}
@@ -102,15 +100,12 @@ impl OpenAiAuthTokenAuthenticator for CannedAuthTokenAuthenticator {
             }
             _ => return Err(unauthorized("invalid_auth_token", "unknown auth token")),
         }
-        Ok(AuthenticatedApiKeyContext {
-            api_key_id: 0,
+        // Identity only; the models endpoint has no modality and resolves the
+        // subject's mixed/default group from the catalog.
+        Ok(OpenAiAuthTokenIdentity {
             tenant_id: 100_001,
             organization_id: 0,
             user_id: 3001,
-            api_key_name_snapshot: "auth-token-session".to_owned(),
-            group_id: 10,
-            group_code: "standard-group".to_owned(),
-            pricing_plan_code: "standard".to_owned(),
         })
     }
 }

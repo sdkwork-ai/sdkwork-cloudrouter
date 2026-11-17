@@ -30,9 +30,8 @@ use sdkwork_cloudrouter_config::AppSessionConfig;
 use sdkwork_cloudrouter_http::verify_app_session_token;
 use sdkwork_cloudrouter_router_service::api::{
     openai_chat_completions_router_with_auth_extensions, OpenAiAuthTokenAuthenticator,
-    OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig,
+    OpenAiAuthTokenIdentity, OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig,
 };
-use sdkwork_cloudrouter_router_service::application::AuthenticatedApiKeyContext;
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, ModelPrice, ModelUpstreamRoute, ModelVendor,
     ModelVendorDefinition, Money, PriceSide, PricingPlan, ProviderAuthProfile, ProviderRetryPolicy,
@@ -214,28 +213,6 @@ struct RealTestAuthTokenAuthenticator {
     now_unix_seconds: i64,
 }
 
-impl RealTestAuthTokenAuthenticator {
-    /// Resolve the upstream account group for a verified subject. In a real
-    /// deployment this would be an IAM lookup; here we map the canonical test
-    /// tenant to its seeded group so the downstream route planner can find a
-    /// group with id = DEFAULT_GROUP_ID.
-    fn resolve_group(&self, tenant_id: i64) -> (i64, String, String) {
-        // tenant_id → (group_id, group_code, pricing_plan_code)
-        match tenant_id {
-            TENANT_ID => (
-                DEFAULT_GROUP_ID,
-                DEFAULT_GROUP_CODE.to_owned(),
-                "standard".to_owned(),
-            ),
-            _ => (
-                DEFAULT_GROUP_ID,
-                DEFAULT_GROUP_CODE.to_owned(),
-                "standard".to_owned(),
-            ),
-        }
-    }
-}
-
 fn openai_auth_error(
     status: StatusCode,
     code: &str,
@@ -259,7 +236,7 @@ impl OpenAiAuthTokenAuthenticator for RealTestAuthTokenAuthenticator {
         raw_bearer_token: &str,
         access_token: Option<&str>,
     ) -> Result<
-        AuthenticatedApiKeyContext,
+        OpenAiAuthTokenIdentity,
         sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenError,
     > {
         // 1. Verify the bearer token signature and time window.
@@ -301,19 +278,12 @@ impl OpenAiAuthTokenAuthenticator for RealTestAuthTokenAuthenticator {
             }
         }
 
-        // 3. Map verified subject to an authenticated context.
-        let (group_id, group_code, pricing_plan_code) =
-            self.resolve_group(bearer_subject.tenant_id);
-
-        Ok(AuthenticatedApiKeyContext {
-            api_key_id: 0,
+        // 3. Identity only: the chat router selects the subject's default
+        //    account group for the chat modality from the catalog.
+        Ok(OpenAiAuthTokenIdentity {
             tenant_id: bearer_subject.tenant_id,
             organization_id: bearer_subject.organization_id,
             user_id: bearer_subject.user_id,
-            api_key_name_snapshot: "auth-token-session".to_owned(),
-            group_id,
-            group_code,
-            pricing_plan_code,
         })
     }
 }

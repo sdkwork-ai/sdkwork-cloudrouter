@@ -51,28 +51,29 @@ export interface DeployTemplateAdminService {
   deleteCategory(categoryId: string): Promise<void>;
 }
 
-/** Structural transport; the generated backend client satisfies it. */
+/**
+ * Transport derived from the generated Deploy backend client.
+ *
+ * Every method below is a subset of the real `TemplateApi` the SDK exposes, so
+ * the compiler — not a comment — proves the operation names and payload shapes
+ * match `/backend/v3/api/app_templates` and `/backend/v3/api/template_categories`
+ * (`deploy.appTemplates.read|write`, `deploy.templateCategories.read|write`).
+ */
+type DeployBackendSdkClient = ReturnType<typeof getSdkworkDeploymentsBackendSdkClient>;
+
 export interface DeployTemplateAdminTransport {
   template: {
-    appTemplates: {
-      update(
-        templateId: string,
-        body: Record<string, unknown>,
-        params: { idempotencyKey: string },
-      ): Promise<unknown>;
-    };
-    templateCategories: {
-      list(params?: { page?: number; pageSize?: number; includeDisabled?: boolean }): Promise<unknown>;
-      create(body: Record<string, unknown>, params: { idempotencyKey: string }): Promise<unknown>;
-      update(
-        categoryId: string,
-        body: Record<string, unknown>,
-        params: { idempotencyKey: string },
-      ): Promise<unknown>;
-      delete(categoryId: string): Promise<unknown>;
-    };
+    appTemplates: Pick<DeployBackendSdkClient["template"]["appTemplates"], "update">;
+    templateCategories: Pick<
+      DeployBackendSdkClient["template"]["templateCategories"],
+      "list" | "create" | "update" | "delete"
+    >;
   };
 }
+
+/** Generated request bodies, so a category write cannot drift from the contract. */
+type CreateCategoryBody = Parameters<DeployBackendSdkClient["template"]["templateCategories"]["create"]>[0];
+type UpdateCategoryBody = Parameters<DeployBackendSdkClient["template"]["templateCategories"]["update"]>[1];
 
 export type DeployTemplateAdminErrorKind =
   | "unauthorized"
@@ -135,23 +136,20 @@ export function createDeployTemplateAdminService(
     },
 
     async listCategories() {
-      const payload = await call("listCategories", () =>
+      const page = await call("listCategories", () =>
         template.templateCategories.list({ page: 1, pageSize: 200, includeDisabled: true }),
       );
-      const items = asRecord(payload).items;
-      return Array.isArray(items)
-        ? items
-          .map((item) => mapCategory(item))
-          .filter((item): item is DeployTemplateCategory => item !== undefined)
-          .sort((left, right) => left.sortOrder - right.sortOrder || left.displayName.localeCompare(right.displayName))
-        : [];
+      return page.items
+        .map((item) => mapCategory(item))
+        .filter((item): item is DeployTemplateCategory => item !== undefined)
+        .sort((left, right) => left.sortOrder - right.sortOrder || left.displayName.localeCompare(right.displayName));
     },
 
     async createCategory(input) {
       validateCategoryInput(input);
       const payload = await call("createCategory", () =>
         template.templateCategories.create(
-          categoryBody(input, true),
+          categoryCreateBody(input),
           { idempotencyKey: createIdempotencyKey() },
         ),
       );
@@ -168,7 +166,7 @@ export function createDeployTemplateAdminService(
       const payload = await call("updateCategory", () =>
         template.templateCategories.update(
           categoryId,
-          categoryBody(input, false),
+          categoryUpdateBody(input),
           { idempotencyKey: createIdempotencyKey() },
         ),
       );
@@ -188,9 +186,7 @@ let defaultService: DeployTemplateAdminService | null = null;
 
 export function getDeployTemplateAdminService(): DeployTemplateAdminService {
   if (!defaultService) {
-    defaultService = createDeployTemplateAdminService(
-      getSdkworkDeploymentsBackendSdkClient() as unknown as DeployTemplateAdminTransport,
-    );
+    defaultService = createDeployTemplateAdminService(getSdkworkDeploymentsBackendSdkClient());
   }
   return defaultService;
 }
@@ -208,14 +204,45 @@ function validateCategoryInput(input: DeployTemplateCategoryInput): void {
   }
 }
 
-function categoryBody(input: DeployTemplateCategoryInput, includeKey: boolean): Record<string, unknown> {
+/** Optional taxonomy fields shared by the create and update request bodies. */
+type CategoryOptionalFields = {
+  description?: string;
+  parentId?: string;
+  sortOrder?: number;
+  status?: "ACTIVE" | "DISABLED";
+};
+
+function optionalCategoryFields(input: DeployTemplateCategoryInput): CategoryOptionalFields {
+  const fields: CategoryOptionalFields = {};
+  if (input.description?.trim()) {
+    fields.description = input.description.trim();
+  }
+  if (input.parentId?.trim()) {
+    fields.parentId = input.parentId.trim();
+  }
+  if (input.sortOrder !== undefined) {
+    fields.sortOrder = input.sortOrder;
+  }
+  if (input.status) {
+    fields.status = input.status;
+  }
+  return fields;
+}
+
+/** `POST /backend/v3/api/template_categories` body (the key is write-once). */
+function categoryCreateBody(input: DeployTemplateCategoryInput): CreateCategoryBody {
   return {
-    ...(includeKey ? { categoryKey: input.categoryKey.trim() } : {}),
+    categoryKey: input.categoryKey.trim(),
     displayName: input.displayName.trim(),
-    ...(input.description?.trim() ? { description: input.description.trim() } : {}),
-    ...(input.parentId?.trim() ? { parentId: input.parentId.trim() } : {}),
-    ...(input.sortOrder === undefined ? {} : { sortOrder: input.sortOrder }),
-    ...(input.status ? { status: input.status } : {}),
+    ...optionalCategoryFields(input),
+  };
+}
+
+/** `PATCH /backend/v3/api/template_categories/{categoryUuid}` body. */
+function categoryUpdateBody(input: DeployTemplateCategoryInput): UpdateCategoryBody {
+  return {
+    displayName: input.displayName.trim(),
+    ...optionalCategoryFields(input),
   };
 }
 

@@ -1,3 +1,8 @@
+import type {
+  DeployAppSourceIssueCode,
+  DeployAppSourceReadinessReason,
+} from "./deploy-app-source";
+
 export interface ApplicationCatalogMessages {
   accessToken: {
     action: string;
@@ -677,6 +682,89 @@ export interface ApplicationCatalogMessages {
   retry: string;
   scopes: { organization: string; tenant: string };
   searchPlaceholder: string;
+  sourceRemix: {
+    action: string;
+    title: string;
+    description: string;
+    application: string;
+    close: string;
+    loading: string;
+    retry: string;
+    readiness: {
+      title: string;
+      ready: string;
+      missing: string;
+      reasonLabel: string;
+      reasons: Record<DeployAppSourceReadinessReason, string>;
+    };
+    kind: {
+      label: string;
+      git: string;
+      archive: string;
+      hint: string;
+    };
+    git: {
+      provider: string;
+      providerHint: string;
+      repoUrl: string;
+      repoUrlPlaceholder: string;
+      repoRef: string;
+      repoRefPlaceholder: string;
+      subPath: string;
+      subPathPlaceholder: string;
+      credentialSecretRef: string;
+      credentialSecretRefPlaceholder: string;
+      cloneMode: string;
+      cloneModeFull: string;
+      cloneModeShallow: string;
+      repoStatusTemplate: string;
+    };
+    archive: {
+      current: string;
+      currentEmpty: string;
+      artifactId: string;
+      artifactIdPlaceholder: string;
+      picker: string;
+      pickerPlaceholder: string;
+      pickerEmpty: string;
+      uploadHint: string;
+    };
+    remix: {
+      title: string;
+      description: string;
+      label: string;
+      enabled: string;
+      disabled: string;
+      /** Explains why the switch is off; `{reason}` is the readiness sentence. */
+      blockedTemplate: string;
+      /** Explains a refused enable; `{reason}` is the readiness sentence. */
+      conflictTemplate: string;
+    };
+    save: string;
+    saving: string;
+    saved: string;
+    delete: {
+      action: string;
+      title: string;
+      description: string;
+      confirm: string;
+      cancel: string;
+      deleting: string;
+    };
+    errors: {
+      unauthorized: string;
+      forbidden: string;
+      notFound: string;
+      conflict: string;
+      conflictTemplate: string;
+      validation: string;
+      unavailable: string;
+      network: string;
+      unknown: string;
+      writeDenied: string;
+    };
+    validation: Record<DeployAppSourceIssueCode, string>;
+  };
   statuses: {
     active: string;
     archived: string;
