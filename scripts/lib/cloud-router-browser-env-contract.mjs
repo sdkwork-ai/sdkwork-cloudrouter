@@ -45,6 +45,117 @@ export const selectBaseUrlForPageHost = selectBaseUrlForPageHostCanonical;
 
 export const CLOUD_ROUTER_BROWSER_DEVELOPMENT_FORBIDDEN_KEY_PREFIX = 'PORTAL_PUBLIC_';
 
+/** Environment variable carrying this installation's deploy application id. */
+export const CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV = 'SDKWORK_DEPLOY_APPLICATION_ID';
+
+/**
+ * Browser projection of the deploy application anchor.
+ *
+ * Vite only inlines `VITE_`-prefixed keys into a renderer bundle, so the build
+ * projects {@link CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV} onto this key. The
+ * value is public material (an application id, not a secret) and is the only
+ * app identity a Cloud Router renderer may present to IAM.
+ */
+export const CLOUD_ROUTER_BROWSER_DEPLOY_APPLICATION_ID_KEY =
+  'VITE_SDKWORK_DEPLOY_APPLICATION_ID';
+
+/**
+ * Resolve this installation's deploy application identity anchor.
+ *
+ * IAM makes the deploy application the identity of every access token
+ * (`app_id`/`aud`), and a host that still allows the retired IAM runtime app id
+ * can never accept a deployment credential. The anchor is therefore
+ * configuration: there is no built-in default, and a missing value throws an
+ * error that names the variable instead of silently falling back.
+ * @param env - process env bag or any record to read the variable from.
+ * @returns the trimmed deploy application id.
+ */
+export function resolveDeployApplicationId(env = {}) {
+  const raw = env?.[CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV];
+  const value = String(raw ?? '').trim();
+  if (!value) {
+    throw new Error(
+      `${CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV} is not configured: set `
+      + `${CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV} to the deploy application id of this `
+      + 'installation; an installation is one-to-one with a deploy application and must not run '
+      + 'on the retired IAM runtime app id',
+    );
+  }
+  return value;
+}
+
+/**
+ * Resolve the anchor a browser renderer received from its build.
+ *
+ * The renderer cannot read the process-only variable, so it reads the Vite
+ * projection and fails closed when the projection is empty (a build that never
+ * received the anchor).
+ * @param runtimeEnv - browser runtime env bag (`import.meta.env` projection).
+ * @returns the trimmed deploy application id.
+ */
+export function resolveBrowserDeployApplicationId(runtimeEnv = {}) {
+  const value = String(runtimeEnv?.[CLOUD_ROUTER_BROWSER_DEPLOY_APPLICATION_ID_KEY] ?? '').trim();
+  if (value) {
+    return value;
+  }
+  throw new Error(
+    `browser renderer has no deploy application identity: build with `
+    + `${CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV} set so `
+    + `${CLOUD_ROUTER_BROWSER_DEPLOY_APPLICATION_ID_KEY} is projected into the renderer`,
+  );
+}
+
+/**
+ * Host audience allow-list derived from the anchor.
+ *
+ * Mirrors the Rust `application_audience_allow_list`: the anchor is the only
+ * accepted application identity, so the retired IAM runtime app id never
+ * appears here.
+ * @param deployApplicationId - anchor from {@link resolveDeployApplicationId}.
+ * @returns the audience allow-list (single entry).
+ */
+export function deployApplicationAudienceAllowList(deployApplicationId) {
+  const anchor = String(deployApplicationId ?? '').trim();
+  if (!anchor) {
+    throw new Error(`${CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV} must not be blank`);
+  }
+  return [anchor];
+}
+
+/**
+ * Assert a public application access token is anchored to the deploy
+ * application.
+ *
+ * The committed public application token's `app_id` and `aud` are the
+ * installation's deploy application, so a profile built before the IAM hard cut
+ * still carries the retired IAM runtime app id and must fail the build instead
+ * of shipping a credential IAM suppresses.
+ * @param value - candidate public application token.
+ * @param deployApplicationId - anchor the token must carry.
+ * @returns the token when it is anchored.
+ */
+export function assertPublicApplicationAccessTokenAnchored(value, deployApplicationId) {
+  // Reuse the resolver so a blank anchor produces the same named error the
+  // build/dev preflight raises.
+  const anchor = resolveDeployApplicationId({
+    [CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV]: deployApplicationId,
+  });
+  const token = normalizeText(value);
+  if (!token || !isPublicApplicationAccessToken(token)) {
+    throw new Error('public application access token is missing or malformed');
+  }
+  const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString('utf8'));
+  const mismatched = ['app_id', 'aud'].filter((claim) => payload?.[claim] !== anchor);
+  if (mismatched.length > 0) {
+    throw new Error(
+      `public application access token is not anchored to `
+      + `${CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV} (${mismatched.join(', ')} must be ${anchor})`,
+    );
+  }
+  return token;
+}
+
+
 export const CLOUD_ROUTER_LIFECYCLE_ENV_KEYS = Object.freeze({
   configProfile: 'SDKWORK_CLOUDROUTER_ROUTER_CONFIG_PROFILE',
   environment: 'SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT',
@@ -182,6 +293,7 @@ export const CLOUD_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_ORDER = Object.freeze([
   CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.backendApi,
   CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.appApi,
   'VITE_SDKWORK_APP_ID',
+  CLOUD_ROUTER_BROWSER_DEPLOY_APPLICATION_ID_KEY,
   'VITE_API_BASE_URL',
   'VITE_CLOUDROUTER_OPEN_API_BASE_URL',
   'VITE_CLOUDROUTER_APP_API_BASE_URL',
@@ -239,6 +351,9 @@ export const CLOUD_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_COMMENTS = Object.freeze({
   [CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.appApi]:
     '# Upstream origin for /app/v3/api product SDK routes.',
   VITE_SDKWORK_APP_ID: '# SDKWork application key from agent.app.config.json.',
+  [CLOUD_ROUTER_BROWSER_DEPLOY_APPLICATION_ID_KEY]:
+    `# Browser projection of ${CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV}: the deploy application id IAM`
+    + ' uses as the identity of every access token (app_id/aud).',
   VITE_API_BASE_URL: '# Public API reference and generic SDK root path.',
   VITE_CLOUDROUTER_OPEN_API_BASE_URL: '# @sdkwork/cloudrouter-open-sdk base URL.',
   VITE_CLOUDROUTER_APP_API_BASE_URL: '# @sdkwork/cloudrouter-app-sdk base URL.',

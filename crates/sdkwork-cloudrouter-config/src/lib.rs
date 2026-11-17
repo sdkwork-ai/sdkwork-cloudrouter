@@ -1,6 +1,7 @@
 pub mod api_key;
 pub mod app_session;
 pub mod database;
+pub mod deploy_application_id;
 pub mod deployment;
 pub mod internal_gateway;
 pub mod provider_adapter;
@@ -19,6 +20,10 @@ pub use app_session::AppSessionConfig;
 pub use database::{
     DatabaseConfig, DatabaseEngine, RuntimeConfigInitializationAction,
     RuntimeConfigInitializationReport, RuntimeConfigLocation, RuntimeConfigProfile,
+};
+pub use deploy_application_id::{
+    DEPLOY_APPLICATION_ID_ENV, DeployApplicationIdNotConfigured, application_audience_allow_list,
+    deploy_application_id_from_configured_value, resolve_deploy_application_id,
 };
 pub use deployment::is_active_region_code;
 pub use deployment::{

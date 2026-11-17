@@ -989,8 +989,13 @@ test("sdk clients use a static IAM runtime reset dependency so Vite can chunk th
   );
   assert.match(
     iamRuntimeSource,
-    /CLOUD_ROUTER_IAM_RUNTIME_APP_ID[\s\S]*?readCloudRouterRuntimeEnv\('VITE_SDKWORK_APP_ID'\)[\s\S]*?\|\|\s*['"]sdkwork-cloudrouter['"]/u,
-    "Cloud Router IAM runtime must resolve app id from manifest-derived VITE_SDKWORK_APP_ID with manifest fallback.",
+    /appId:\s*resolveCloudRouterDeployApplicationId\(\)/u,
+    "Cloud Router IAM runtime must take its app identity from the deploy application anchor.",
+  );
+  assert.doesNotMatch(
+    iamRuntimeSource,
+    /sdkwork-cloudrouter/u,
+    "Cloud Router IAM runtime must not fall back to the retired IAM runtime app id.",
   );
 });
 

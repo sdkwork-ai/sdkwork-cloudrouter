@@ -2,6 +2,7 @@ import { readApiRecord } from './api-result.ts';
 import { parseJwtPayload } from './session-jwt-claims.ts';
 import { dispatchPortalSessionChange } from './portal-session-events.ts';
 import type { PortalIamBridgeSession, PortalSessionAppContext } from './portal-session-types.ts';
+import { resolveCloudRouterDeployApplicationId } from './deploy-application-id.ts';
 
 const APP_SESSION_STORAGE_KEY = 'sdkwork.cloudRouter.appSession.v1';
 const EXPIRY_SKEW_SECONDS = 30;
@@ -267,7 +268,9 @@ function isPortalSessionAppContext(value: unknown): value is PortalSessionAppCon
 
 function toPortalIamBridgeContext(context: PortalSessionAppContext): PortalIamBridgeSession['context'] {
   return {
-    appId: context.appId ?? 'sdkwork-cloudrouter',
+    // An IAM-issued session already carries the anchor; the fallback is the
+    // configured deploy application, never the retired IAM runtime app id.
+    appId: context.appId ?? resolveCloudRouterDeployApplicationId(),
     authLevel: toIamAuthLevel(context.authLevel),
     dataScope: [...(context.dataScope ?? [])],
     deploymentMode: normalizeIamDeploymentMode(context.deploymentMode),

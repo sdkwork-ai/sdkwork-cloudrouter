@@ -70,11 +70,21 @@ async fn wrap_feeds_open_router_with_web_framework(
     // The audiences variant mirrors the standalone gateway main: under the
     // production posture it wires the SaaS production claim policy, which the
     // framework's production assembly validation demands (TenantBoundSaaS).
+    // The allow-list is the installation's deploy application anchor — the
+    // identity IAM now puts on every access token's `app_id`/`aud` — and a
+    // missing anchor fails the federated surface instead of falling back to the
+    // retired IAM runtime app id.
+    let deploy_application_id = sdkwork_cloudrouter_config::resolve_deploy_application_id()
+        .map_err(|error| {
+            format!("resolve federated feeds deploy application anchor failed: {error}")
+        })?;
+    let audiences =
+        sdkwork_cloudrouter_config::application_audience_allow_list(&deploy_application_id);
+    let audience_refs = audiences.iter().map(String::as_str).collect::<Vec<_>>();
     let resolver =
-        sdkwork_iam_web_adapter::iam_web_request_context_resolver_from_env_for_audiences(&[
-            "sdkwork-cloudrouter",
-            "cloudrouter",
-        ])
+        sdkwork_iam_web_adapter::iam_web_request_context_resolver_from_env_for_audiences(
+            &audience_refs,
+        )
         .await
         .map_err(|error| format!("resolve federated feeds IAM resolver failed: {error}"))?;
     let open_api_prefixes = vec![FEEDS_OPEN_API_PREFIX.to_owned()];
@@ -115,7 +125,7 @@ async fn wrap_feeds_open_router_with_web_framework(
             .audit_emitter(std::sync::Arc::new(
                 sdkwork_iam_web_adapter::IamAuditEmitter::new(
                     postgres_pool.as_ref().clone(),
-                    "sdkwork-cloudrouter",
+                    deploy_application_id.clone(),
                     "production",
                 ),
             ))

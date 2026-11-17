@@ -314,6 +314,14 @@ can start a login without any manual step:
   `token_class:application`, `user_id:0`, and the server accepts it only on
   credential-entry routes for tenant/app/environment isolation — never as a user
   session and never for protected business operations.
+- Its `app_id` and `aud` are this installation's **deploy application id**, read
+  from `SDKWORK_DEPLOY_APPLICATION_ID`. IAM makes the deploy application the
+  identity of every access token, so a token carrying the retired IAM runtime app
+  id (`sdkwork-cloudrouter`) is suppressed by IAM. There is no built-in default:
+  a build without the anchor must fail and name
+  `SDKWORK_DEPLOY_APPLICATION_ID`, never fall back to the retired id. Verify a
+  built profile with
+  `node scripts/check-deploy-application-anchor.mjs`.
 - The Vite plugin fails the build closed when the profile token is missing or is
   not a public application token (`IAM_CREDENTIAL_ENTRY_SPEC.md` section 4,
   `IAM_APPLICATION_BOOTSTRAP_SPEC.md` section 5.4.5).
@@ -344,17 +352,19 @@ Development containers additionally handle the older private bootstrap flow:
    runtime-env script **only** when the explicit development switch
    `SDKWORK_CLOUDROUTER_PORTAL_DEV_BOOTSTRAP_TOKEN=true` is set. The injected
    value is a payload-only bootstrap JWT bound to the installer-provisioned
-   tenant runtime app (tenant `100001`, app `sdkwork-cloudrouter` — the
-   `iam_tenant_application` row `ensure` creates). It carries no real session
-   authority and is accepted only through the IAM development fallback.
+   tenant's deploy application (`SDKWORK_DEPLOY_APPLICATION_ID`, tenant `100001`).
+   It carries no real session authority and is accepted only through the IAM
+   development fallback. Without the anchor no token is injected at all — the
+   retired IAM runtime app id is never substituted.
 3. **Production posture** — `SDKWORK_CLOUDROUTER_PORTAL_DEV_BOOTSTRAP_TOKEN`
    must stay unset. Portal users sign in through the normal IAM login; IAM
    requires a production deployment posture (`SDKWORK_ENV` production value,
    `SDKWORK_IAM_SIGNING_MASTER_SECRET` configured) and fails closed otherwise.
-   The payload-only scope overrides remain available for development:
+   The payload-only scope overrides remain available for development, and the app
+   scope is the deploy application anchor:
    ```bash
    SDKWORK_WEB_FRAMEWORK_JWT_BOOTSTRAP_TENANT_ID=100001 # auto-gen tenant scope
-   SDKWORK_WEB_FRAMEWORK_JWT_BOOTSTRAP_APP_ID=sdkwork-cloudrouter # auto-gen app scope
+   SDKWORK_WEB_FRAMEWORK_JWT_BOOTSTRAP_APP_ID="$SDKWORK_DEPLOY_APPLICATION_ID" # deploy app scope
    ```
 
 The portal runtime script never carries a signed or session-bound token in any

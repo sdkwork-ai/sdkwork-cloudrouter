@@ -43,9 +43,7 @@ import { resetCloudRouterMessagingVerificationService } from './messaging-verifi
 import { clearDriveMediaCaches } from './drive-media.ts';
 import { normalizeGeneratedSdkBaseUrl, resolveSharedDependencySurfaceBaseUrl } from './sdk-base-url.ts';
 import { readCloudRouterRuntimeEnv } from './utils/env.ts';
-
-const CLOUD_ROUTER_IAM_RUNTIME_APP_ID =
-  readCloudRouterRuntimeEnv('VITE_SDKWORK_APP_ID')?.trim() || 'sdkwork-cloudrouter';
+import { resolveCloudRouterDeployApplicationId } from './deploy-application-id.ts';
 
 let runtimeComposition: SdkworkAppbasePcAuthRuntimeComposition | null = null;
 
@@ -57,7 +55,7 @@ export function createCloudRouterIamRuntimeComposition(): SdkworkAppbasePcAuthRu
   const tokenManager = getCloudRouterGlobalTokenManager();
   const composition = createSdkworkAppbasePcAuthRuntime({
     app: {
-      appId: CLOUD_ROUTER_IAM_RUNTIME_APP_ID,
+      appId: resolveCloudRouterDeployApplicationId(),
       deploymentMode: readIamDeploymentMode() ?? 'saas',
       environment: readIamEnvironment() ?? 'dev',
       platform: 'pc',

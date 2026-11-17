@@ -7,6 +7,7 @@ import {
   type StoredAppSessionToken,
 } from './app-session-token.ts';
 import type { PortalSessionAppContext } from './portal-session-types.ts';
+import { resolveCloudRouterDeployApplicationId } from './deploy-application-id.ts';
 
 type CloudRouterIamSessionLike = SdkworkAppbasePcAuthSessionBridgeSession & {
   accessToken?: string;
@@ -138,7 +139,10 @@ function toIamAppContext(context: PortalSessionAppContext | undefined): IamAppCo
   }
 
   return {
-    appId: context.appId ?? 'sdkwork-cloudrouter',
+    // An IAM-issued session already carries the anchor; a session stored before
+    // the IAM hard cut is re-projected onto the configured anchor instead of the
+    // retired IAM runtime app id.
+    appId: context.appId ?? resolveCloudRouterDeployApplicationId(),
     authLevel: toIamAuthLevel(context.authLevel),
     dataScope: [...(context.dataScope ?? [])],
     deploymentMode: normalizeIamDeploymentMode(context.deploymentMode),

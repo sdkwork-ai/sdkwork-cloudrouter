@@ -723,7 +723,20 @@ async fn run_issue_bootstrap_token_postgres(
         .tenant_id
         .as_deref()
         .unwrap_or(DEFAULT_IAM_TENANT_ID);
-    let app_id = options.app_id.as_deref().unwrap_or("sdkwork-cloudrouter");
+    // The credential's app identity is the installation's deploy application
+    // anchor, never a built-in id: IAM resolves the installation by
+    // `deploy_application_id` and rejects the retired IAM runtime app id. An
+    // explicit `--app-id` stays an operator override; without it the anchor
+    // comes from the environment and a missing anchor fails here, naming
+    // `SDKWORK_DEPLOY_APPLICATION_ID`.
+    let configured_app_id;
+    let app_id = match options.app_id.as_deref() {
+        Some(app_id) => app_id,
+        None => {
+            configured_app_id = sdkwork_cloudrouter_config::resolve_deploy_application_id()?;
+            configured_app_id.as_str()
+        }
+    };
     let issued =
         issue_standalone_bootstrap_access_credential(pool, tenant_id, app_id, options.ttl_seconds)
             .await

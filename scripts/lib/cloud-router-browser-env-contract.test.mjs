@@ -7,11 +7,17 @@ import { fileURLToPath } from 'node:url';
 import {
   alignStandaloneSameOriginBrowserSdkRuntimeEnv,
   assertBrowserDevRuntimeEnvDocument,
+  assertPublicApplicationAccessTokenAnchored,
   authorBrowserDevelopmentSdkBaseUrls,
   buildBrowserDevRuntimeEnvDocument,
   CLOUD_ROUTER_BROWSER_DEVELOPMENT_DEFAULT_VITE_ENV,
+  CLOUD_ROUTER_BROWSER_DEPLOY_APPLICATION_ID_KEY,
+  CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV,
+  deployApplicationAudienceAllowList,
   isLoopbackAbsoluteUrl,
+  resolveBrowserDeployApplicationId,
   resolveCloudRouterBaseUrl,
+  resolveDeployApplicationId,
   selectBaseUrlForPageHost,
   splitBaseUrls,
 } from './cloud-router-browser-env-contract.mjs';
@@ -326,4 +332,81 @@ test('multi-domain auto-selection maps module pages onto their same-brand gatewa
     'https://api-dev.sdkwork.cn',
   );
   assert.ok(splitBaseUrls(family.materialized).length === family.baseUrls.length);
+});
+
+// --------------------------------------------------------------------------
+// Deploy application identity anchor (`SDKWORK_DEPLOY_APPLICATION_ID`).
+//
+// IAM's hard cut makes the installation's deploy application the identity of
+// every access token (`app_id`/`aud`), so the anchor is configuration and the
+// retired IAM runtime app id must never stand in for it.
+// --------------------------------------------------------------------------
+
+function encodeTokenPart(value) {
+  return Buffer.from(JSON.stringify(value)).toString('base64url');
+}
+
+function publicApplicationToken({ appId, tenantId = '100001', environment = 'test' }) {
+  return `${encodeTokenPart({ alg: 'none', kid: 'public-app-token', typ: 'JWT' })}.${encodeTokenPart({
+    app_id: appId,
+    aud: appId,
+    token_class: 'application',
+    token_type: 'access',
+    tenant_id: tenantId,
+    environment,
+  })}.public`;
+}
+
+test('deploy application anchor is read from the configured variable', () => {
+  assert.equal(
+    resolveDeployApplicationId({ [CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV]: ' app-cy3d99 ' }),
+    'app-cy3d99',
+  );
+});
+
+test('missing or blank deploy application anchor fails closed and names the variable', () => {
+  for (const env of [{}, { [CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV]: '' }, { [CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV]: '   ' }]) {
+    assert.throws(
+      () => resolveDeployApplicationId(env),
+      (error) => error instanceof Error
+        && error.message.includes(CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV),
+    );
+  }
+});
+
+test('browser renderer resolves the projected anchor and fails closed without it', () => {
+  assert.equal(
+    resolveBrowserDeployApplicationId({ [CLOUD_ROUTER_BROWSER_DEPLOY_APPLICATION_ID_KEY]: 'app-cy3d99' }),
+    'app-cy3d99',
+  );
+  assert.throws(
+    () => resolveBrowserDeployApplicationId({}),
+    (error) => error instanceof Error
+      && error.message.includes(CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV),
+  );
+});
+
+test('host audience allow-list carries the anchor only', () => {
+  const allowList = deployApplicationAudienceAllowList(' app-cy3d99 ');
+  assert.deepEqual(allowList, ['app-cy3d99']);
+  assert.ok(allowList.includes('app-cy3d99'));
+  assert.ok(!allowList.includes('sdkwork-cloudrouter'));
+});
+
+test('public application token must be anchored to the deploy application', () => {
+  const anchored = publicApplicationToken({ appId: 'app-cy3d99' });
+  assert.equal(assertPublicApplicationAccessTokenAnchored(anchored, 'app-cy3d99'), anchored);
+
+  const retired = publicApplicationToken({ appId: 'sdkwork-cloudrouter' });
+  assert.throws(
+    () => assertPublicApplicationAccessTokenAnchored(retired, 'app-cy3d99'),
+    (error) => error instanceof Error
+      && error.message.includes(CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV),
+  );
+
+  assert.throws(
+    () => assertPublicApplicationAccessTokenAnchored(anchored, ''),
+    (error) => error instanceof Error
+      && error.message.includes(CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV),
+  );
 });

@@ -29,6 +29,8 @@ import {
   CLOUD_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_COMMENTS,
   CLOUD_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_ORDER,
   CLOUD_ROUTER_BROWSER_DEVELOPMENT_ENV_SECTIONS,
+  CLOUD_ROUTER_BROWSER_DEPLOY_APPLICATION_ID_KEY,
+  CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV,
   CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS,
   CLOUD_ROUTER_LIFECYCLE_ENV_KEYS,
   normalizeCloudRouterLifecycleEnvRecord,
@@ -239,6 +241,15 @@ export function buildCloudRouterBrowserDevelopmentGeneratedEnv({
     ...CLOUD_ROUTER_BROWSER_DEVELOPMENT_DEFAULT_VITE_ENV,
     VITE_SDKWORK_APP_ID: manifestAppId,
   };
+
+  // The renderer's IAM app identity is the installation's deploy application
+  // anchor; the build projects it so no renderer carries a compiled-in id. The
+  // renderer fails closed when the projection is absent, so an unset anchor here
+  // is not repaired with the retired IAM runtime app id.
+  const deployApplicationId = normalizeText(env[CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV]);
+  if (deployApplicationId) {
+    generated[CLOUD_ROUTER_BROWSER_DEPLOY_APPLICATION_ID_KEY] = deployApplicationId;
+  }
 
   for (const key of Object.keys(CLOUD_ROUTER_BROWSER_DEVELOPMENT_DEFAULT_VITE_ENV)) {
     const value = normalizeText(pickedPortalRuntimeEnv[key]) ?? normalizeText(env[key]);

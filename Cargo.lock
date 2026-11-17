@@ -4890,6 +4890,7 @@ dependencies = [
  "sdkwork-account-service-host",
  "sdkwork-api-feeds-assembly",
  "sdkwork-api-models-assembly",
+ "sdkwork-cloudrouter-config",
  "sdkwork-cloudrouter-edge-runtime",
  "sdkwork-cloudrouter-http",
  "sdkwork-cloudrouter-security",

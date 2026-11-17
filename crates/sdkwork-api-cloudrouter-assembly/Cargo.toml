@@ -20,6 +20,7 @@ tokio.workspace = true
 sdkwork-web-bootstrap = { workspace = true, features = ["redis"] }
 sdkwork-web-core.workspace = true
 anyhow.workspace = true
+sdkwork-cloudrouter-config.workspace = true
 sdkwork-cloudrouter-http.workspace = true
 sdkwork-cloudrouter-security.workspace = true
 sdkwork-cloudrouter-edge-runtime.workspace = true

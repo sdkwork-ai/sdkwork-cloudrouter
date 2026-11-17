@@ -26,6 +26,7 @@ import {
   readCredentialBundle,
   writeCredentialBundle,
 } from '@sdkwork/iam-credential-entry/node-bootstrap';
+import { resolveDeployApplicationId } from './lib/cloud-router-browser-env-contract.mjs';
 
 function readApplicationManifest(manifestPath) {
   return JSON.parse(readFileSync(manifestPath, 'utf8'));
@@ -131,7 +132,7 @@ function normalizeMode(value) {
   return mode;
 }
 
-function installerArgs(settings, manifest) {
+function installerArgs(settings, manifest, env = process.env) {
   const args = [
     'run',
     '-p',
@@ -140,7 +141,11 @@ function installerArgs(settings, manifest) {
     'issue-bootstrap-token',
   ];
   const tenantId = settings.tenantId ?? manifest?.backend?.tenantId;
-  const appId = settings.appId ?? manifest?.backend?.appId;
+  // The credential's app identity is the installation's deploy application
+  // anchor. `agent.app.config.json#backend.appId` is the retired IAM runtime app
+  // id, so it must never be forwarded as `--app-id`: IAM resolves the
+  // installation by deploy application and rejects the runtime app id.
+  const appId = settings.appId ?? resolveDeployApplicationId(env);
   if (tenantId) {
     args.push('--tenant-id', tenantId);
   }
@@ -246,7 +251,7 @@ export function createResetBootstrapAccessTokenPlan({
       {
         name: 'issue-bootstrap-token',
         command: cargoCommand(platform),
-        args: installerArgs(settings, manifest),
+        args: installerArgs(settings, manifest, env),
         cwd: root,
         env: stepEnv,
         shell: false,
