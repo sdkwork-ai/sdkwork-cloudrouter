@@ -4,7 +4,9 @@ use axum::Json;
 use sdkwork_cloudrouter_http::{
     sanitize_sensitive_query_in_uri, ApiKeyIdentity, QueryStringApiKeyPolicy,
 };
-use sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenAuthenticator;
+use sdkwork_cloudrouter_router_service::api::{
+    OpenAiAuthTokenAuthenticator, OpenAiAuthTokenIdentity,
+};
 use sdkwork_cloudrouter_router_service::application::{
     ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
 };
@@ -19,38 +21,76 @@ use sdkwork_cloudrouter_security::{
 use sdkwork_web_core::default_open_api_bearer_classifier;
 use serde_json::json;
 
-#[derive(Debug)]
-pub(crate) struct GatewayAuthError {
-    status: StatusCode,
-    code: &'static str,
-    error_type: &'static str,
-    message: String,
+/// Authenticated identity of one public invocation request.
+///
+/// An API key resolves to a full [`AuthenticatedApiKeyContext`] because the key
+/// names its account group. An SDKWork auth token resolves to the session
+/// identity only: the account group is the subject's default **for the request
+/// modality**, so it is selected after the invocation has been classified.
+pub(crate) enum GatewayIdentity {
+    ApiKey(AuthenticatedApiKeyContext),
+    Session(OpenAiAuthTokenIdentity),
+}
+
+pub(crate) enum GatewayAuthError {
+    Error {
+        status: StatusCode,
+        code: &'static str,
+        error_type: &'static str,
+        message: String,
+    },
+    /// Authentication produced its own response (for example the 503
+    /// `account_group_unavailable` body from the session channel). Forwarded
+    /// verbatim so the caller can branch on the real status/code instead of a
+    /// flattened `401 invalid_auth_token`.
+    Forward(Response),
 }
 
 impl std::fmt::Display for GatewayAuthError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            formatter,
-            "{} (code={}, type={})",
-            self.message, self.code, self.error_type
-        )
+        match self {
+            Self::Error {
+                status,
+                code,
+                error_type,
+                message,
+            } => write!(
+                formatter,
+                "{message} (status={status}, code={code}, type={error_type})"
+            ),
+            Self::Forward(response) => {
+                write!(
+                    formatter,
+                    "authentication response (status={})",
+                    response.status()
+                )
+            }
+        }
     }
 }
 
 impl IntoResponse for GatewayAuthError {
     fn into_response(self) -> Response {
-        (
-            self.status,
-            Json(json!({
-                "error": {
-                    "message": self.message,
-                    "type": self.error_type,
-                    "param": null,
-                    "code": self.code
-                }
-            })),
-        )
-            .into_response()
+        match self {
+            Self::Error {
+                status,
+                code,
+                error_type,
+                message,
+            } => (
+                status,
+                Json(json!({
+                    "error": {
+                        "message": message,
+                        "type": error_type,
+                        "param": null,
+                        "code": code
+                    }
+                })),
+            )
+                .into_response(),
+            Self::Forward(response) => response,
+        }
     }
 }
 
@@ -111,7 +151,7 @@ pub(crate) async fn authenticate_gateway_request_or_auth_token<C>(
     headers: &HeaderMap,
     uri: &Uri,
     query_string_api_key_policy: QueryStringApiKeyPolicy,
-) -> Result<AuthenticatedApiKeyContext, GatewayAuthError>
+) -> Result<GatewayIdentity, GatewayAuthError>
 where
     C: PricingCatalog,
 {
@@ -141,6 +181,7 @@ where
             let authenticator = ApiKeyAuthenticator::new(catalog, api_key_hasher);
             authenticator
                 .authenticate(AuthenticateApiKeyQuery { credential_secret })
+                .map(GatewayIdentity::ApiKey)
                 .map_err(|_| {
                     gateway_auth_error(
                         StatusCode::UNAUTHORIZED,
@@ -164,17 +205,14 @@ where
                 .and_then(|value| value.to_str().ok())
                 .map(str::trim)
                 .filter(|value| !value.is_empty());
-            authenticator
+            // Preserve the authenticator's own status/code (for example the
+            // 503 `account_group_unavailable` case) instead of flattening every
+            // failure into `401 invalid_auth_token`.
+            let identity = authenticator
                 .authenticate(credential_secret, access_token)
                 .await
-                .map_err(|_response| {
-                    gateway_auth_error(
-                        StatusCode::UNAUTHORIZED,
-                        "invalid_auth_token",
-                        "invalid_request_error",
-                        "auth token authentication failed",
-                    )
-                })
+                .map_err(|response| GatewayAuthError::Forward(*response))?;
+            Ok(GatewayIdentity::Session(identity))
         }
     }
 }
@@ -221,7 +259,7 @@ fn gateway_auth_error(
     error_type: &'static str,
     message: impl ToString,
 ) -> GatewayAuthError {
-    GatewayAuthError {
+    GatewayAuthError::Error {
         status,
         code,
         error_type,

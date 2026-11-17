@@ -39,7 +39,6 @@ use sdkwork_cloudrouter_router_service::api::{
     openai_chat_completions_router_with_auth_extensions, OpenAiAuthTokenAuthenticator,
     OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig,
 };
-use sdkwork_cloudrouter_router_service::application::AuthenticatedApiKeyContext;
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, DomainError, DomainResult, GatewayApiKey, ModelPrice,
     ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
@@ -131,7 +130,7 @@ impl OpenAiAuthTokenAuthenticator for RealTestAuthTokenAuthenticator {
         raw_bearer_token: &str,
         access_token: Option<&str>,
     ) -> Result<
-        AuthenticatedApiKeyContext,
+        sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenIdentity,
         sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenError,
     > {
         // Real HMAC-SHA256 signature + time-window verification.
@@ -175,17 +174,15 @@ impl OpenAiAuthTokenAuthenticator for RealTestAuthTokenAuthenticator {
             }
         }
 
-        // Map the verified subject to the tenant's default account group.
-        Ok(AuthenticatedApiKeyContext {
-            api_key_id: 0,
-            tenant_id: bearer_subject.tenant_id,
-            organization_id: bearer_subject.organization_id,
-            user_id: bearer_subject.user_id,
-            api_key_name_snapshot: "auth-token-session".to_owned(),
-            group_id: DEFAULT_GROUP_ID,
-            group_code: DEFAULT_GROUP_CODE.to_owned(),
-            pricing_plan_code: "standard".to_owned(),
-        })
+        // Identity only: the chat route resolves the modality default group
+        // from the shared catalog, so the admin CRUD loop can change it.
+        Ok(
+            sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenIdentity {
+                tenant_id: bearer_subject.tenant_id,
+                organization_id: bearer_subject.organization_id,
+                user_id: bearer_subject.user_id,
+            },
+        )
     }
 }
 

@@ -131,6 +131,9 @@ pub struct SqlPricingCatalogSnapshot {
     pricing_rules: Vec<PricingRule>,
     account_rate_cards: Vec<AccountRateCard>,
     upstream_account_groups: Vec<UpstreamAccountGroup>,
+    /// Modality scope (`group_type` / `modalities`) per account group id, used
+    /// by session (auth-token) default-group selection.
+    group_modality_scopes: HashMap<i64, crate::domain::AccountGroupModalityScope>,
     api_keys: Vec<GatewayApiKey>,
     access_policies: Vec<GatewayAccessPolicy>,
     quota_policies: Vec<QuotaPolicy>,
@@ -657,6 +660,12 @@ impl SqlPricingCatalogSnapshot {
         // 刷新期间会拿旧声明配新费率。
         let priced_video_tier_codes_by_model_meter = index_priced_video_tier_codes(&prices);
         let model_keys_by_endpoint_code = index_model_keys_by_endpoint(&rows.model_api_endpoints);
+        let mut group_modality_scopes = HashMap::with_capacity(rows.upstream_account_groups.len());
+        let mut upstream_account_groups = Vec::with_capacity(rows.upstream_account_groups.len());
+        for row in rows.upstream_account_groups {
+            group_modality_scopes.insert(row.id, row.modality_scope());
+            upstream_account_groups.push(row.try_into_domain()?);
+        }
         let mut snapshot = Self {
             vendors: map_rows(rows.vendors, ModelVendorRow::try_into_domain)?,
             models: map_rows(rows.models, AiModelRow::try_into_domain)?,
@@ -681,10 +690,8 @@ impl SqlPricingCatalogSnapshot {
                 .into_iter()
                 .map(|row| row.value)
                 .collect(),
-            upstream_account_groups: map_rows(
-                rows.upstream_account_groups,
-                UpstreamAccountGroupRow::try_into_domain,
-            )?,
+            upstream_account_groups,
+            group_modality_scopes,
             api_keys: map_rows(rows.api_keys, GatewayApiKeyRow::try_into_domain)?,
             access_policies: map_rows(
                 rows.access_policies,
@@ -971,6 +978,10 @@ impl RefreshableSqlPricingCatalog {
 impl UpstreamAccountRouteCatalog for RefreshableSqlPricingCatalog {
     fn shared_upstream_account_routes(&self) -> Arc<[UpstreamAccountRoute]> {
         Arc::clone(&self.current_snapshot().upstream_account_routes)
+    }
+
+    fn list_session_account_groups(&self) -> Vec<crate::domain::SessionAccountGroup> {
+        self.current_snapshot().list_session_account_groups()
     }
 
     fn video_pricing_tier(
@@ -1511,6 +1522,21 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
 impl UpstreamAccountRouteCatalog for SqlPricingCatalogSnapshot {
     fn shared_upstream_account_routes(&self) -> Arc<[UpstreamAccountRoute]> {
         Arc::clone(&self.upstream_account_routes)
+    }
+
+    fn list_session_account_groups(&self) -> Vec<crate::domain::SessionAccountGroup> {
+        self.upstream_account_groups
+            .iter()
+            .cloned()
+            .map(|group| {
+                let scope = self
+                    .group_modality_scopes
+                    .get(&group.id)
+                    .cloned()
+                    .unwrap_or_default();
+                crate::domain::SessionAccountGroup::new(group, scope)
+            })
+            .collect()
     }
 
     fn video_pricing_tier(

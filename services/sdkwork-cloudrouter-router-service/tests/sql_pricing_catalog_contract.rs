@@ -273,6 +273,8 @@ fn account_group_query_projects_routing_and_settlement_controls() {
         "priority",
         "cost_multiplier",
         "sale_multiplier",
+        "account_group.group_type",
+        "account_group.modalities",
     ] {
         assert!(
             sql.contains(field),
@@ -309,6 +311,8 @@ fn account_group_rows_use_decimal_cost_and_sale_multipliers() {
         name: "Primary Accounts".to_owned(),
         code: "primary-accounts".to_owned(),
         is_default: false,
+        group_type: "mixed".to_owned(),
+        modalities_json: "[]".to_owned(),
         pricing_plan_tenant_id: 10,
         pricing_plan_organization_id: 20,
         pricing_plan_id: 9001,
@@ -348,6 +352,8 @@ fn account_group_rows_use_decimal_cost_and_sale_multipliers() {
         name: "Invalid".to_owned(),
         code: "invalid".to_owned(),
         is_default: false,
+        group_type: "mixed".to_owned(),
+        modalities_json: "[]".to_owned(),
         pricing_plan_tenant_id: 10,
         pricing_plan_organization_id: 20,
         pricing_plan_id: 9001,

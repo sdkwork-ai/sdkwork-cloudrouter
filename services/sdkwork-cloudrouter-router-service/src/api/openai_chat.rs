@@ -16,7 +16,9 @@ use sdkwork_cloudrouter_http::ApiKeyIdentity;
 use sdkwork_cloudrouter_security::redact_error_message;
 use serde_json::Value;
 
-use crate::api::openai_auth_token::OpenAiAuthTokenAuthenticator;
+use crate::api::openai_auth_token::{
+    authenticated_context_from_auth_token_identity, OpenAiAuthTokenAuthenticator,
+};
 use crate::api::openai_contract::OpenAiChatCompletionRequest;
 use crate::api::openai_error::openai_error;
 use crate::api::openai_invocation::{
@@ -622,10 +624,18 @@ where
                 .and_then(|value| value.to_str().ok())
                 .map(|value| value.trim())
                 .filter(|value| !value.is_empty());
-            match authenticator
+            let identity = match authenticator
                 .authenticate(credential_secret, access_token)
                 .await
             {
+                Ok(identity) => identity,
+                Err(response) => return *response,
+            };
+            match authenticated_context_from_auth_token_identity(
+                state.catalog.as_ref(),
+                identity,
+                Some(RoutingCapability::Chat),
+            ) {
                 Ok(context) => context,
                 Err(response) => return *response,
             }

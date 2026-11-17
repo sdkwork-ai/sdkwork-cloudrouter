@@ -169,6 +169,27 @@ async fn bootstrap_cloud_router_seed_set(
     Ok(())
 }
 
+/// Applies the models database seed set during an explicit lifecycle command.
+///
+/// The models module is embedded in this repository's database, and its seed
+/// set carries the catalog reference data the models console reads — most
+/// importantly `common/002_ai_model_frontend_defaults.sql`, which installs the
+/// per-modality front-end channel initialization rows behind
+/// `/admin/model/frontend`. Production runs with `SDKWORK_DATABASE_SEED_ON_BOOT`
+/// off and the models manifest keeps `seedOnBoot = false`, so
+/// `cloudrouterctl install|upgrade|ensure` owns this step. Without it a packaged
+/// install reports success with an empty front-end model configuration.
+async fn bootstrap_models_seed_set(
+    pool: &sdkwork_database_sqlx::DatabasePool,
+    seed_locale: Option<&str>,
+) -> anyhow::Result<()> {
+    let host = connect_models_database(pool.clone()).map_err(anyhow::Error::msg)?;
+    host.seed("cloudrouterctl:models", seed_locale)
+        .await
+        .map_err(|error| anyhow::anyhow!("models database seed bootstrap failed: {error}"))?;
+    Ok(())
+}
+
 async fn run_postgres(config: DatabaseConfig, command: InstallerCommand) -> anyhow::Result<()> {
     let database_pool = connect_installer_database_pool(&config).await?;
     apply_explicit_schema_lifecycle_if_required(&database_pool, &command).await?;
@@ -198,6 +219,12 @@ async fn run_postgres(config: DatabaseConfig, command: InstallerCommand) -> anyh
         // `SDKWORK_DATABASE_SEED_ON_BOOT` off.
         bootstrap_cloud_router_seed_set(&database_pool, install_options.seed_locale.as_deref())
             .await?;
+        // Models module seed set: the front-end channel initialization rows
+        // (one per modality, with default/initialization models) behind
+        // `/admin/model/frontend`. Those rows live only in the models module
+        // `database/seeds/**` and the module is embedded in this database, so
+        // the models manifest never seeds them on boot.
+        bootstrap_models_seed_set(&database_pool, install_options.seed_locale.as_deref()).await?;
         // Drive's admin-storage module seed set: the mainstream storage provider
         // catalog and the Tencent Cloud COS tenant default binding behind
         // `/admin/storage/providers`.
@@ -1442,6 +1469,39 @@ mod tests {
         assert!(
             drive_seed > migration_gate,
             "Drive storage seed must run only for explicit schema lifecycle commands"
+        );
+    }
+
+    /// Install/upgrade must apply the models module seed set, which carries the
+    /// front-end model configuration initialization rows behind
+    /// `/admin/model/frontend`. The models module is embedded in this database
+    /// and its manifest keeps `seedOnBoot = false`, so a packaged deployment
+    /// that skips this step reports success with an empty front-end model
+    /// configuration (no modality has initialization models).
+    #[test]
+    fn schema_lifecycle_commands_seed_the_models_frontend_defaults() {
+        let source = include_str!("main.rs");
+        let migration_gate = source
+            .find("if command.requires_schema_migration() {")
+            .expect("explicit lifecycle gate");
+        let models_seed = source
+            .find(concat!("bootstrap_models_seed_", "set(&database_pool"))
+            .expect("models module seed set must run on install/upgrade");
+
+        assert!(
+            models_seed > migration_gate,
+            "models seed set must run only for explicit schema lifecycle commands"
+        );
+
+        // The seed set is only applied when the manifest declares the file, so
+        // a dropped manifest entry would silently disable the initialization.
+        let manifest_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../sdkwork-models/database/seeds/seed.manifest.json");
+        let manifest = std::fs::read_to_string(&manifest_path)
+            .unwrap_or_else(|error| panic!("read {} failed: {error}", manifest_path.display()));
+        assert!(
+            manifest.contains("002_ai_model_frontend_defaults.sql"),
+            "models seed manifest must declare the front-end defaults seed"
         );
     }
 

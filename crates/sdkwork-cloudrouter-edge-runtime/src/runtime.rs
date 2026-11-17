@@ -585,10 +585,12 @@ where
         Arc::new(sdkwork_cloudrouter_router_service::api::ZeroGatewayBalanceStore)
     });
     let router = router.merge(
-        sdkwork_cloudrouter_router_service::api::gateway_balance_router(
+        sdkwork_cloudrouter_router_service::api::gateway_balance_router_with_auth_extensions(
             Arc::clone(&catalog),
             Arc::clone(&api_key_hasher),
             gateway_balance_store,
+            auth_token_authenticator.clone(),
+            sdkwork_web_core::default_open_api_bearer_classifier(),
         ),
     );
     // Production/staging server postures must never silently mount the
@@ -1726,7 +1728,7 @@ async fn router_with_database_bootstrap(
             // database round-trip; it is absent on surfaces without Redis so
             // the authenticator keeps resolving per request (desktop fallback).
             auth_token_authenticator: Some(Arc::new(
-                IamAuthTokenAuthenticator::new(database_pool.clone(), catalog.clone())
+                IamAuthTokenAuthenticator::new(database_pool.clone())
                     .with_cache(resolve_auth_token_cache(runtime_toml).await),
             )),
             billing_subject_resolver: Some(billing_subject_resolver),
@@ -2617,17 +2619,14 @@ async fn build_gateway_router_from_all_in_one_context(
         billing_store,
         billing_subject_resolver: Some(billing_subject_resolver),
         // Resolves non-API-key bearer credentials (SDKWork login auth tokens)
-        // into the tenant default upstream account group so open-api chat
-        // completions accept the agents turn executor's auth-token channel
-        // (vendor compatibility surface, API_SPEC §4.5.2). Mirrors the
-        // database-runtime wiring in
+        // into the session identity so open-api model routes accept the agents
+        // turn executor's auth-token channel (vendor compatibility surface,
+        // API_SPEC §4.5.2). The account group is selected after classification,
+        // per modality. Mirrors the database-runtime wiring in
         // `router_with_database_api_key_and_provider_configs`.
         auth_token_authenticator: Some(Arc::new(
-            IamAuthTokenAuthenticator::new(
-                context.database_pool.clone(),
-                Arc::clone(&context.catalog),
-            )
-            .with_cache(resolve_auth_token_cache(runtime_toml.as_ref()).await),
+            IamAuthTokenAuthenticator::new(context.database_pool.clone())
+                .with_cache(resolve_auth_token_cache(runtime_toml.as_ref()).await),
         )),
     })
     .map_err(anyhow::Error::new)

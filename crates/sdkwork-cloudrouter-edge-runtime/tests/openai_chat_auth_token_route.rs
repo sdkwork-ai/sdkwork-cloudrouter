@@ -14,9 +14,8 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_cloudrouter_router_service::api::{
     openai_chat_completions_router_with_auth_extensions, OpenAiAuthTokenAuthenticator,
-    OpenAiAuthTokenError, OpenAiRuntimeRouteConfig,
+    OpenAiAuthTokenError, OpenAiAuthTokenIdentity, OpenAiRuntimeRouteConfig,
 };
-use sdkwork_cloudrouter_router_service::application::AuthenticatedApiKeyContext;
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, DomainResult, ModelPrice, ModelUpstreamRoute, ModelVendor,
     ModelVendorDefinition, Money, PriceSide, PricingPlan, ProviderRetryPolicy,
@@ -45,16 +44,13 @@ impl OpenAiAuthTokenAuthenticator for CannedAuthTokenAuthenticator {
         &self,
         _raw_bearer_token: &str,
         _access_token: Option<&str>,
-    ) -> Result<AuthenticatedApiKeyContext, OpenAiAuthTokenError> {
-        Ok(AuthenticatedApiKeyContext {
-            api_key_id: 0,
+    ) -> Result<OpenAiAuthTokenIdentity, OpenAiAuthTokenError> {
+        // Identity only: the router selects the subject's default group for the
+        // chat modality afterwards.
+        Ok(OpenAiAuthTokenIdentity {
             tenant_id: TENANT_ID,
             organization_id: 0,
             user_id: 30,
-            api_key_name_snapshot: "auth-token-session".to_owned(),
-            group_id: DEFAULT_GROUP_ID,
-            group_code: DEFAULT_GROUP_CODE.to_owned(),
-            pricing_plan_code: "standard".to_owned(),
         })
     }
 }
@@ -266,18 +262,17 @@ async fn auth_token_chat_completion_reaches_relay_when_default_group_and_account
     assert_eq!(SUPPLIER_CODE, request.supplier_code);
 }
 
-/// 复现用户报告的 503：默认分组 `default-group` 和账号都在，但分组行 id 与
-/// 账号绑定 / 鉴权上下文使用的 group_id 不一致（例如种子的分组 id 落到别的值，
-/// 或该租户下的默认分组 id ≠ 绑定里引用的 group_id）。此时选路器
-/// `find_upstream_account_group(group_id)` 取不到该分组 → 503
-/// `upstream_route_not_available`（detail: `upstream account group not found`）。
+/// 复现用户报告的 503：默认分组存在、账号也存在，但账号绑定引用的分组 id 与
+/// 目录里默认分组的真实 id 不一致（例如种子的分组 id 落到别的值，或该租户下的
+/// 默认分组 id ≠ 绑定里引用的 group_id）。
 ///
-/// 这正是「default group + accounts 都已添加，但整个流程仍报错」的最典型形态之一。
+/// 注意：鉴权通道现在只返回身份，分组由目录里的默认分组解析，因此「鉴权上下文
+/// 的 group_id 在目录里不存在」已不可能发生；同一数据错位表现为「默认分组存在，
+/// 但没有任何账号绑定到它」→ 选路器 503 `upstream_route_not_available`。
 #[tokio::test]
 async fn auth_token_chat_completion_returns_503_when_default_group_id_mismatches_binding() {
-    // 复用完整种子，但把唯一的默认分组行 id 改成与鉴权上下文/账号绑定不同的值，
-    // 以模拟库里分组 id 与绑定引用的 group_id 不一致（即没有 id=DEFAULT_GROUP_ID
-    // 的分组行，导致 find_upstream_account_group(2001) 落空）。
+    // 复用完整种子，但把唯一的默认分组行 id 改成与账号绑定不同的值，
+    // 以模拟库里分组 id 与绑定引用的 group_id 不一致。
     let catalog = catalog_with_default_group_and_account_for_group_id(DEFAULT_GROUP_ID + 999);
 
     let captured = Arc::new(Mutex::new(Vec::new()));
@@ -323,8 +318,8 @@ async fn auth_token_chat_completion_returns_503_when_default_group_id_mismatches
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
     assert_eq!("upstream_route_not_available", payload["error"]["code"]);
     assert!(
-        text.contains("upstream account group not found"),
-        "expected the route selector to flag the unresolved group, got: {text}"
+        text.contains("has no accounts bound for api="),
+        "expected the route selector to flag the account-group routing gap, got: {text}"
     );
     assert!(
         captured.lock().unwrap().is_empty(),

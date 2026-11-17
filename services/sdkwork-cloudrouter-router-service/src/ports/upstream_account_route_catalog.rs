@@ -245,6 +245,22 @@ fn join_tier_codes(codes: &[String]) -> String {
 pub trait UpstreamAccountRouteCatalog: PricingCatalog + PricingDefaultRegionProvider {
     fn shared_upstream_account_routes(&self) -> Arc<[UpstreamAccountRoute]>;
 
+    /// Returns every upstream account group together with the modality scope it
+    /// declares (`ai_upstream_account_group.group_type` / `modalities`).
+    ///
+    /// Session (auth-token) traffic uses this to pick the subject's default
+    /// account pool **for the requested modality**; the API-key channel keeps
+    /// using the key's own bound group. The default implementation degrades
+    /// every group to the `mixed` scope, which preserves the pre-modality
+    /// behaviour for catalogs that do not expose the columns (in-memory test
+    /// catalogs, compatibility wrappers).
+    fn list_session_account_groups(&self) -> Vec<crate::domain::SessionAccountGroup> {
+        self.list_upstream_account_groups()
+            .into_iter()
+            .map(crate::domain::SessionAccountGroup::from_group)
+            .collect()
+    }
+
     /// Returns the per-gate account-pool diagnosis captured while loading the
     /// snapshot when zero upstream account routes were loaded, so selection
     /// errors can state exactly which configuration gate blocks the pool.

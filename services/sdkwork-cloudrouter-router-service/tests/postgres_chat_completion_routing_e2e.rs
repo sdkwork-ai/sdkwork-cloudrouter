@@ -39,7 +39,6 @@ use sdkwork_cloudrouter_router_service::api::{
     openai_chat_completions_router_with_auth_extensions, OpenAiAuthTokenAuthenticator,
     OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig,
 };
-use sdkwork_cloudrouter_router_service::application::AuthenticatedApiKeyContext;
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::RingAeadCredentialSecretCodec;
 use sdkwork_cloudrouter_router_service::infrastructure::provider::{
@@ -250,8 +249,6 @@ fn openai_auth_error(
 struct RealTestAuthTokenAuthenticator {
     config: AppSessionConfig,
     now_unix_seconds: i64,
-    group_id: i64,
-    group_code: String,
 }
 
 #[async_trait]
@@ -261,7 +258,7 @@ impl OpenAiAuthTokenAuthenticator for RealTestAuthTokenAuthenticator {
         raw_bearer_token: &str,
         access_token: Option<&str>,
     ) -> Result<
-        AuthenticatedApiKeyContext,
+        sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenIdentity,
         sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenError,
     > {
         let bearer_subject =
@@ -301,16 +298,13 @@ impl OpenAiAuthTokenAuthenticator for RealTestAuthTokenAuthenticator {
                 }
             }
         }
-        Ok(AuthenticatedApiKeyContext {
-            api_key_id: 0,
-            tenant_id: bearer_subject.tenant_id,
-            organization_id: bearer_subject.organization_id,
-            user_id: bearer_subject.user_id,
-            api_key_name_snapshot: "auth-token-session".to_owned(),
-            group_id: self.group_id,
-            group_code: self.group_code.clone(),
-            pricing_plan_code: "standard".to_owned(),
-        })
+        Ok(
+            sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenIdentity {
+                tenant_id: bearer_subject.tenant_id,
+                organization_id: bearer_subject.organization_id,
+                user_id: bearer_subject.user_id,
+            },
+        )
     }
 }
 
@@ -1040,8 +1034,6 @@ async fn build_router(
         Arc::new(RealTestAuthTokenAuthenticator {
             config: app_session_config().expect("app session config must initialize"),
             now_unix_seconds: TEST_NOW_UNIX_SECONDS,
-            group_id,
-            group_code: DEFAULT_GROUP_CODE.to_owned(),
         });
     let runtime_config = OpenAiRuntimeRouteConfig::new(
         sdkwork_cloudrouter_router_service::domain::ProviderRetryPolicy::default(),

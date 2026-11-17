@@ -32023,9 +32023,19 @@
         "x-sdkwork-external-protocol-id": "openai-v1"
       },
       "post": {
-        "description": "Creates a chat completion through an OpenAI-compatible chat request.",
+        "description": "Creates a chat completion through an OpenAI-compatible chat request. The bearer credential may be a Cloud Router API key (`sk-`/`sp-` prefix) or an SDKWork IAM login auth token; an auth-token caller may also send the paired dual-token session access token in the optional `Access-Token` header.",
         "operationId": "createChatCompletion",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Optional dual-token session access token that pairs with an SDKWork IAM login auth token in `Authorization`. Cloud Router API key credentials do not need it.",
+            "in": "header",
+            "name": "Access-Token",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -34615,9 +34625,19 @@
     },
     "/v1/embeddings": {
       "post": {
-        "description": "Creates embeddings through an OpenAI-compatible embeddings request.",
+        "description": "Creates embeddings through an OpenAI-compatible embeddings request. The bearer credential may be a Cloud Router API key (`sk-`/`sp-` prefix) or an SDKWork IAM login auth token; an auth-token caller may also send the paired dual-token session access token in the optional `Access-Token` header.",
         "operationId": "createEmbedding",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Optional dual-token session access token that pairs with an SDKWork IAM login auth token in `Authorization`. Cloud Router API key credentials do not need it.",
+            "in": "header",
+            "name": "Access-Token",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -36750,9 +36770,19 @@
     },
     "/v1/responses": {
       "post": {
-        "description": "Creates a model response through an OpenAI-compatible Responses API request.",
+        "description": "Creates a model response through an OpenAI-compatible Responses API request. The bearer credential may be a Cloud Router API key (`sk-`/`sp-` prefix) or an SDKWork IAM login auth token; an auth-token caller may also send the paired dual-token session access token in the optional `Access-Token` header.",
         "operationId": "createResponse",
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "Optional dual-token session access token that pairs with an SDKWork IAM login auth token in `Authorization`. Cloud Router API key credentials do not need it.",
+            "in": "header",
+            "name": "Access-Token",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {

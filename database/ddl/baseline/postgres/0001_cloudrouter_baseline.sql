@@ -1154,7 +1154,7 @@ CREATE TABLE IF NOT EXISTS ai_upstream_account_group (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_uuid ON ai_upstream_account_group (uuid);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_tenant_code ON ai_upstream_account_group (tenant_id, organization_id, group_code);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_tags ON ai_upstream_account_group (tags);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_default_per_tenant ON ai_upstream_account_group (tenant_id, organization_id) WHERE is_default AND deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_default_per_modality ON ai_upstream_account_group (tenant_id, organization_id, group_type) WHERE is_default AND deleted_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_scope_id ON ai_upstream_account_group (tenant_id, organization_id, id);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_tenant_status_updated ON ai_upstream_account_group (tenant_id, organization_id, status, updated_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_pricing ON ai_upstream_account_group (tenant_id, organization_id, pricing_plan_id, status, updated_at, id);

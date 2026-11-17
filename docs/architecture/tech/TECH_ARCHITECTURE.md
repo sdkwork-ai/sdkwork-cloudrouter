@@ -314,10 +314,11 @@ The retired upstream aggregates are not valid production authorities:
 
 1. Authenticate the request through the dual-channel bearer credential
    (`sk-`/`sp-` prefixed gateway API key, or product login auth token resolved
-   through IAM) and resolve tenant, organization, identity, and the account
-   group context — API keys use their default/bound groups; auth-token sessions
-   use the tenant default group (`code="default"`). Auth-token identity
-   resolution is short-TTL cached in Redis (default 10s,
+   through IAM). Auth-token authentication yields identity only; after the
+   invocation is classified, the session resolves the tenant's default account
+   group **for the request modality** (llm/image/video/audio/music) and falls
+   back to the `mixed` default. API keys use their own default/bound groups.
+   Auth-token identity resolution is short-TTL cached in Redis (default 10s,
    `SDKWORK_CLOUDROUTER_AUTH_TOKEN_CACHE_TTL_SECONDS`, `0` disables) keyed by a
    credential hash so repeat sessions skip the per-request IAM database
    round-trip; only successful resolutions are cached, Redis errors fail open
