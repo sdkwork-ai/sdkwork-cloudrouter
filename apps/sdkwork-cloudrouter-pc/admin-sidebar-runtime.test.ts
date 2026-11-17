@@ -32,11 +32,12 @@ test("application center is an app-factory header module with grouped views", ()
   const groups = new Map(appCenterMenu.groups.map((group) => [group.groupKey, group]));
   assert.deepEqual(
     groups.get("admin.menu.appCenter.applicationsGroup")?.items.map((item) => item.path),
-    ["/admin/applications/iam", "/admin/applications/deploy", "/admin/applications/app-store"],
+    ["/admin/applications/deploy"],
   );
   assert.deepEqual(
     groups.get("admin.menu.appCenter.storeGroup")?.items.map((item) => item.path),
     [
+      "/admin/applications/app-store",
       "/admin/applications/categories",
       "/admin/applications/listings",
       "/admin/applications/collections",
@@ -68,12 +69,13 @@ test("application center is an app-factory header module with grouped views", ()
     getActiveSidebarItemPaths("/admin/applications/categories", appCenterMenu),
     ["/admin/applications/categories"],
   );
-  const categoriesItem = groups.get("admin.menu.appCenter.storeGroup")?.items[0];
-  const iamItem = groups.get("admin.menu.appCenter.applicationsGroup")?.items[0];
+  const storeGroupItems = groups.get("admin.menu.appCenter.storeGroup")?.items ?? [];
+  const categoriesItem = storeGroupItems.find((item) => item.path === "/admin/applications/categories");
+  const deployItem = groups.get("admin.menu.appCenter.applicationsGroup")?.items[0];
   assert.ok(categoriesItem, "category view entry must exist");
-  assert.ok(iamItem, "IAM view entry must exist");
+  assert.ok(deployItem, "deployment view entry must exist");
   assert.equal(isSidebarItemActive("/admin/applications/categories", categoriesItem, appCenterMenu), true);
-  assert.equal(isSidebarItemActive("/admin/applications/categories", iamItem, appCenterMenu), false);
+  assert.equal(isSidebarItemActive("/admin/applications/categories", deployItem, appCenterMenu), false);
 });
 
 test("admin module manager catalog mirrors the header registry order", () => {

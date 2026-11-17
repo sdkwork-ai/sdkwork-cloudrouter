@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState, type ComponentType } from "react"
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
-  Boxes,
   Copy,
   CreditCard,
   Eye,
@@ -44,7 +43,6 @@ import {
   issueApplicationAccessToken,
   loadAppStoreApplications,
   loadDeployApplications,
-  loadIamApplications,
   resolveApplicationCatalogContext,
 } from "../services/application-catalog";
 import {
@@ -76,7 +74,6 @@ interface ApplicationGroupDefinition {
 }
 
 const APPLICATION_GROUPS: readonly ApplicationGroupDefinition[] = [
-  { id: "iam", icon: Boxes, loader: loadIamApplications, messageKey: "iam" },
   { id: "deploy", icon: Layers, loader: loadDeployApplications, messageKey: "deploy" },
   { id: "app-store", icon: Store, loader: loadAppStoreApplications, messageKey: "appStore" },
 ];
@@ -89,19 +86,18 @@ export type ApplicationCatalogView = ApplicationGroupId | "categories";
  *
  * The App Center module owns one route per view so the admin shell sidebar is
  * the only left navigation; the index route redirects to
- * `/admin/applications/iam`. Unknown subpaths fall back to IAM.
+ * `/admin/applications/deploy`. Unknown subpaths fall back to the deployment
+ * applications view. The IAM view is retired: an installation is one-to-one with
+ * a deployment application, so it is reviewed through that application.
  */
 export function resolveApplicationCatalogView(pathname: string): ApplicationCatalogView {
   if (/\/categories\/?$/u.test(pathname)) {
     return "categories";
   }
-  if (/\/deploy\/?$/u.test(pathname)) {
-    return "deploy";
-  }
   if (/\/app-store\/?$/u.test(pathname)) {
     return "app-store";
   }
-  return "iam";
+  return "deploy";
 }
 
 function createInitialGroupStates(): Record<ApplicationGroupId, ApplicationGroupState> {
@@ -115,10 +111,12 @@ function createInitialGroupStates(): Record<ApplicationGroupId, ApplicationGroup
 /**
  * Unified application management page.
  *
- * One entity (tenant or organization) owns applications in three independent
+ * One entity (tenant or organization) owns applications in two independent
  * platforms. The page keeps them in separate groups so each platform's own
  * identifier, environment, and lifecycle vocabulary stays intact, while the
- * layout gives operators one place to see every application the entity owns.
+ * layout gives operators one place to see every deployment and store listing
+ * the entity owns. The IAM view is retired: its installations are one-to-one
+ * with deployment applications.
  */
 export function ApplicationManagementPage({
   activeView: controlledView,
@@ -740,17 +738,17 @@ export const CloudRouterTenantApplicationsPage: ComponentType = function CloudRo
 };
 
 /**
- * Application Center: the current tenant's applications across IAM, Deploy and
- * the App Store.
+ * Application Center: the current tenant's deployment applications and store
+ * listings.
  *
  * Unlike the two entity-scoped pages above, this one is its own admin module
  * (`appCenter`): the header entry opens the tenant-wide catalog so an operator
  * can review every application the current tenant owns and issue delegated
  * access tokens without going through the IAM tenant drill-down first.
  *
- * The module's views are shell-sidebar routes (`/admin/applications/iam`,
- * `/deploy`, `/app-store`, `/categories`), so this page renders no second
- * navigation: the admin shell sidebar is the single left menu.
+ * The module's views are shell-sidebar routes (`/admin/applications/deploy`,
+ * `/app-store`, `/categories`), so this page renders no second navigation: the
+ * admin shell sidebar is the single left menu.
  */
 export const CloudRouterApplicationCenterPage: ComponentType = function CloudRouterApplicationCenterPageEntry() {
   const location = useLocation();

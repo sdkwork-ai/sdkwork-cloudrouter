@@ -95,28 +95,30 @@ function expectText(text: string): void {
 }
 
 describe("application management page", () => {
-  it("groups the tenant applications by platform and shows the IAM group first", async () => {
+  it("groups the tenant applications by platform and shows the deployment group first", async () => {
     const loaders = createLoaders();
     const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
     renderPage({ loaders, resolveContext, tenantId: "tenant-1" });
 
-    expect((await screen.findAllByText("Console")).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("Storefront")).length).toBeGreaterThan(0);
     expectText("应用管理");
     expect(screen.getByText(/Acme/)).toBeTruthy();
-    expectText("共 1 个应用");
-    expect(loaders.iam).toHaveBeenCalledWith(expect.objectContaining({ tenantId: "tenant-1" }));
+    expect(loaders.deploy).toHaveBeenCalledWith(expect.objectContaining({ tenantId: "tenant-1" }));
+    // The IAM view is retired: an installation is reviewed through the
+    // deployment application it belongs to.
+    expect(loaders.iam).not.toHaveBeenCalled();
   });
 
-  it("switches to the Deploy and App Store groups without mixing their rows", async () => {
+  it("switches to the App Store group without mixing its rows", async () => {
     const loaders = createLoaders();
     const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
     renderPage({ loaders, resolveContext, tenantId: "tenant-1" });
 
-    await screen.findAllByText("Console");
+    await screen.findAllByText("Storefront");
 
-    clickGroup("deploy");
-    expect((await screen.findAllByText("Storefront")).length).toBeGreaterThan(0);
-    expect(screen.queryAllByText("Console").length).toBe(0);
+    clickGroup("app-store");
+    expect((await screen.findAllByText("sdkwork-birdcoder")).length).toBeGreaterThan(0);
+    expect(screen.queryAllByText("Storefront").length).toBe(0);
     expectText("组织级");
 
     clickGroup("app-store");
@@ -165,33 +167,6 @@ describe("application management page", () => {
 
     await screen.findByText(/该应用体系在当前部署中未启用/);
     expect(screen.getByRole("button", { name: "重试" })).toBeTruthy();
-  });
-
-  it("issues an application access token from the row action and can reveal it", async () => {
-    const loaders = createLoaders();
-    const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
-    const issueToken = vi.fn().mockResolvedValue({
-      accessToken: "header.payload.signature",
-      appId: "app-console",
-      expiresAt: "2026-11-07T10:00:00Z",
-      tenantApplicationId: "iamapp-1",
-    });
-    renderPage({ issueToken, loaders, resolveContext, tenantId: "tenant-1" });
-
-    await screen.findAllByText("Console");
-    fireEvent.click(screen.getByRole("button", { name: "访问令牌" }));
-
-    expect(await screen.findByText("应用访问令牌")).toBeTruthy();
-    expect(issueToken).toHaveBeenCalledWith(
-      expect.objectContaining({ tenantId: "tenant-1" }),
-      expect.objectContaining({ groupId: "iam", id: "iam-1" }),
-    );
-    // The token is masked until the operator reveals it.
-    expect(screen.getByText(/\*{8}/)).toBeTruthy();
-    expect(screen.queryByText("header.payload.signature")).toBeNull();
-
-    fireEvent.click(screen.getByRole("button", { name: "显示令牌" }));
-    expect(screen.getByText("header.payload.signature")).toBeTruthy();
   });
 
   it("explains why a deploy application without an IAM registration cannot issue a token", async () => {
