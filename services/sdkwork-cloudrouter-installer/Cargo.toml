@@ -40,6 +40,12 @@ sdkwork_models_catalog_repository_sqlx.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
 url.workspace = true
+# Deploy backend API client for the bootstrap-token dual ensure
+# (`src/deploy_application.rs`). The call is a deliberate, recorded exception to
+# MODULE_SPEC.md §4.2 in `specs/backend-module-call-boundary.allow.json`: this is
+# an installer/CLI tool, and the deploy inventory lives in another repository and
+# schema, reachable only through its HTTP surface.
+reqwest.workspace = true
 
 [dev-dependencies]
 chrono.workspace = true

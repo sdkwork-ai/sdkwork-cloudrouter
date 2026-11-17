@@ -89,6 +89,15 @@ services:
       # gateway, installer, and portal builds read it from this variable, and a
       # missing value fails startup/build closed. Set it in `.env`.
       SDKWORK_DEPLOY_APPLICATION_ID: ${SDKWORK_DEPLOY_APPLICATION_ID:?Required. Set this installation's deploy application id (app-xxxxxx) in .env}
+      # Deploy backend API used by `cloudrouterctl issue-bootstrap-token` to
+      # prove the deploy application exists before it signs a credential
+      # (docs/installation/docker-deployment.md §5.2.2). Empty by default: every
+      # other command ignores them, and the issue command fails closed naming the
+      # variable when they are unset. Set them in `.env` to issue a token.
+      SDKWORK_DEPLOY_BACKEND_API_BASE_URL: ${SDKWORK_DEPLOY_BACKEND_API_BASE_URL:-}
+      SDKWORK_DEPLOY_BACKEND_ACCESS_TOKEN: ${SDKWORK_DEPLOY_BACKEND_ACCESS_TOKEN:-}
+      SDKWORK_DEPLOY_BACKEND_AUTH_TOKEN: ${SDKWORK_DEPLOY_BACKEND_AUTH_TOKEN:-}
+      SDKWORK_DEPLOY_BACKEND_TIMEOUT_MS: ${SDKWORK_DEPLOY_BACKEND_TIMEOUT_MS:-10000}
       # IAM deployment posture: the standalone container runs in explicit
       # development mode so the IAM resolver accepts the payload-only
       # credential-entry bootstrap token through the development

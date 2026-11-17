@@ -375,6 +375,77 @@ A signed, session-bound Access-Token is **never** distributed to the browser: th
 gateway keeps refusing to inject `SDKWORK_ACCESS_TOKEN` into the portal runtime
 script, and the payload-only development fallback below remains dev-only.
 
+### 5.2.2 Bootstrap credential issuance requires both sides to exist
+
+`cloudrouterctl issue-bootstrap-token` — and every wrapper that plans it
+(`pnpm admin:token:*`, `node scripts/reset-bootstrap-access-token.mjs`, the local
+application runner) — signs nothing until **both** halves of the installation
+have been ensured, in this order:
+
+1. **Deploy side.** `GET /app/v3/api/apps/{SDKWORK_DEPLOY_APPLICATION_ID}` on the
+   deploy backend API proves the application exists, belongs to the installation's
+   tenant, and is not `ARCHIVED`. A `404` triggers exactly one idempotent create
+   (`POST /app/v3/api/apps` with `Idempotency-Key:
+   cloudrouter-bootstrap-app:<anchor>`); the created application's id must equal
+   the anchor or issuance is refused.
+   Routes: `apps.retrieve` / `apps.create` in
+   `sdkwork-deployments/crates/sdkwork-routes-deploy-app-api/src/http_route_manifest.rs`
+   (the deploy *backend* manifest declares only
+   `POST /backend/v3/api/apps/{appId}/identity_provision`, so the application
+   lifecycle routes are the `/app/v3/api` ones; both surfaces are served by the
+   same deploy service).
+2. **IAM side.** The installation linked to the anchor
+   (`iam_tenant_application.deploy_application_id`) is read back. When it is
+   missing it is provisioned from `agent.app.config.json` through IAM's own
+   `ensure_tenant_application_runtime`; when it exists but is not `enabled` it goes
+   through IAM's `enable_tenant_application`. The anchor overrides the manifest's
+   deploy link, because the deploy application is deployment configuration — the
+   manifest fallback would be the retired IAM runtime app id. The result must be
+   `enabled` and linked to the anchor.
+3. **Issuance.** Only now is the credential signed and persisted.
+
+Configuration (environment variables; a missing value refuses issuance and names
+itself):
+
+| Variable | Required | Meaning |
+| --- | --- | --- |
+| `SDKWORK_DEPLOY_APPLICATION_ID` | yes | This installation's deploy application anchor. |
+| `SDKWORK_DEPLOY_BACKEND_API_BASE_URL` | yes | Deploy backend API origin, for example `http://127.0.0.1:3902`. |
+| `SDKWORK_DEPLOY_BACKEND_ACCESS_TOKEN` | yes | `Access-Token` value for the deploy dual-token surface. |
+| `SDKWORK_DEPLOY_BACKEND_AUTH_TOKEN` | yes | `Authorization: Bearer` value for the same surface. |
+| `SDKWORK_DEPLOY_BACKEND_TIMEOUT_MS` | no | Per-call budget, 500..=30000 ms (default 10000). |
+| `SDKWORK_APP_ROOT` | no | Directory holding `agent.app.config.json`; defaults to the installer's workspace root. |
+
+The credentials must hold `deploy.apps.read` (and `deploy.apps.write` when the
+create branch has to run) for the installation's tenant. `apps.create` is
+`x-sdkwork-idempotent` and requires the `Idempotency-Key` header, which is why the
+installer derives a stable key from the anchor instead of inventing one per run:
+repeated runs replay the same row and never collide on
+`uk_deploy_app_tenant_slug`.
+
+Failure semantics: a missing variable, an unreachable deploy backend (connection
+error or timeout), a rejected request (401/403/409/5xx), a tenant mismatch, an
+`ARCHIVED` application, or an unreadable response envelope **all refuse issuance**
+and print `{"errorCode":"bootstrap_prerequisite_missing","message":"…"}`, naming
+the variable or interface to fix. There is no branch in which a token is signed
+while the deploy application is missing.
+
+Deployment caveat (cross-repository, verified): Deploy mints application ids
+server-side (`next_id` + `new_uuid` in
+`sdkwork-intelligence-deploy-repository-sqlx/src/apps.rs`) and its HTTP surface
+addresses applications by `deploy_app.uuid`; deploy's own IAM provisioning links
+installations with the decimal `deploy_app.id`. Because one configured anchor is
+used for both halves here, the anchor must be the id that the deploy surface
+resolves. When the create branch has to run and Deploy mints a different id, the
+installer refuses to sign and prints the minted id — set
+`SDKWORK_DEPLOY_APPLICATION_ID` to that value (the application then exists) and
+re-run; a retry only reads it.
+
+Issuance entry points that do **not** run this guard yet are listed in
+[bootstrap-token-dual-ensure.md](bootstrap-token-dual-ensure.md); the missory and
+webserver gateways issue their own credentials through `sdkwork-iam-web-adapter`
+and still call the IAM issuer directly.
+
 When a deployment lets IAM issue the bootstrap credential instead of configuring
 `SDKWORK_ACCESS_TOKEN` explicitly, that credential **never expires** by default
 (`exp: 0` and the session expiry sentinel `0`); operator-issued delegated

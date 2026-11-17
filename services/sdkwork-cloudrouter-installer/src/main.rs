@@ -26,7 +26,9 @@ use std::process::ExitCode;
 use std::sync::Arc;
 
 mod backup;
+mod deploy_application;
 mod federated;
+mod iam_installation;
 
 const SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD_ENV: &str =
     "SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD";
@@ -737,10 +739,41 @@ async fn run_issue_bootstrap_token_postgres(
             configured_app_id.as_str()
         }
     };
-    let issued =
-        issue_standalone_bootstrap_access_credential(pool, tenant_id, app_id, options.ttl_seconds)
+    // Dual ensure, in this order, before a single byte is signed:
+    //
+    // 1. deploy side — the application the credential names must exist on the
+    //    deployment inventory. This is the half that was missing: issuance used to
+    //    resolve only the IAM row, so a credential could be signed for an
+    //    application that no deployment owns.
+    // 2. IAM side — the installation serving that application must exist and be
+    //    `enabled`, provisioned through IAM's own service on this pool.
+    // 3. issuance — only now is the credential minted.
+    //
+    // Each step fails closed and names the variable or interface that refused;
+    // there is no branch in which a token is signed while either side is missing.
+    let deploy_settings =
+        deploy_application::DeployBackendSettings::from_env().map_err(bootstrap_prerequisite)?;
+    let deploy_app =
+        deploy_application::ensure_deploy_application(&deploy_settings, tenant_id, app_id)
             .await
-            .map_err(InstallerCliError::InvalidState)?;
+            .map_err(bootstrap_prerequisite)?;
+    let app_root = iam_installation::resolve_installer_app_root();
+    let installation = iam_installation::ensure_iam_installation(
+        pool,
+        tenant_id,
+        deploy_app.app_id.as_str(),
+        app_root.as_path(),
+    )
+    .await
+    .map_err(bootstrap_prerequisite)?;
+    let issued = issue_standalone_bootstrap_access_credential(
+        pool,
+        tenant_id,
+        installation.anchor_id.as_str(),
+        options.ttl_seconds,
+    )
+    .await
+    .map_err(InstallerCliError::InvalidState)?;
 
     print_json(&IssueBootstrapTokenOutput {
         status: "issued",
@@ -750,6 +783,10 @@ async fn run_issue_bootstrap_token_postgres(
         session_id: issued.session_id,
         expires_at: issued.expires_at,
     })
+}
+
+fn bootstrap_prerequisite(error: impl std::fmt::Display) -> anyhow::Error {
+    InstallerCliError::BootstrapPrerequisite(error.to_string()).into()
 }
 
 #[derive(Debug, Serialize)]
@@ -854,6 +891,7 @@ fn installer_error_code(error: &(dyn std::error::Error + 'static), message: &str
             InstallerCliError::InvalidArgument(_) => "invalid_argument",
             InstallerCliError::InvalidState(_) => "invalid_state",
             InstallerCliError::DatabaseConnection(_) => "database_error",
+            InstallerCliError::BootstrapPrerequisite(_) => "bootstrap_prerequisite_missing",
         };
     }
     if let Some(installer_error) = error.downcast_ref::<DatabaseInstallError>() {
@@ -893,6 +931,8 @@ enum InstallerCliError {
     InvalidArgument(String),
     InvalidState(String),
     DatabaseConnection(String),
+    /// The dual ensure before bootstrap-token issuance refused.
+    BootstrapPrerequisite(String),
 }
 
 impl Display for InstallerCliError {
@@ -906,6 +946,7 @@ impl Display for InstallerCliError {
             Self::InvalidArgument(message) => write!(formatter, "{message}"),
             Self::InvalidState(message) => write!(formatter, "{message}"),
             Self::DatabaseConnection(message) => write!(formatter, "{message}"),
+            Self::BootstrapPrerequisite(message) => write!(formatter, "{message}"),
         }
     }
 }
@@ -1427,9 +1468,9 @@ mod tests {
             "Messaging seed must run only for explicit schema lifecycle commands"
         );
         assert!(
-            source.contains(concat!(
+            source.contains(
                 "bootstrap_federated_commerce_modules(\n            &database_pool,\n            install_options.seed_locale.as_deref(),"
-            )),
+            ),
             "every federated bootstrap must use the canonical seed locale override"
         );
     }
@@ -1501,6 +1542,55 @@ mod tests {
         assert_eq!(
             "database_error",
             installer_error_code(&error, &error.to_string())
+        );
+    }
+
+    #[test]
+    fn bootstrap_prerequisite_refusals_have_their_own_error_code() {
+        let error =
+            InstallerCliError::BootstrapPrerequisite("deploy application is missing".to_owned());
+
+        assert_eq!(
+            "bootstrap_prerequisite_missing",
+            installer_error_code(&error, &error.to_string())
+        );
+    }
+
+    /// The gap being fixed: issuance must be the **last** step, after both sides
+    /// were ensured. A regression that signs first and verifies later (or drops one
+    /// half) has to fail here.
+    #[test]
+    fn bootstrap_token_issuance_runs_after_both_sides_are_ensured() {
+        let source = include_str!("main.rs");
+        let body_start = source
+            .find("async fn run_issue_bootstrap_token_postgres(")
+            .expect("issuance handler");
+        let body_end = source
+            .find("struct ResetAdminOutput")
+            .expect("end of the issuance handler");
+        let body = &source[body_start..body_end];
+
+        let deploy_ensure = body
+            .find("ensure_deploy_application(&deploy_settings")
+            .expect("the deploy application must be ensured");
+        let iam_ensure = body
+            .find("ensure_iam_installation(")
+            .expect("the IAM installation must be ensured");
+        let issuance = body
+            .find("issue_standalone_bootstrap_access_credential(")
+            .expect("the credential must be issued");
+
+        assert!(
+            deploy_ensure < iam_ensure,
+            "the deploy application must be ensured before the IAM installation"
+        );
+        assert!(
+            iam_ensure < issuance,
+            "no credential may be signed before both sides are ensured"
+        );
+        assert!(
+            !body[issuance..].contains("ensure_"),
+            "issuance must be the final step; nothing may be ensured after it"
         );
     }
 

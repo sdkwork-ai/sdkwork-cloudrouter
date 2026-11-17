@@ -5586,6 +5586,7 @@ dependencies = [
  "anyhow",
  "argon2",
  "chrono",
+ "reqwest 0.12.28",
  "sdkwork-api-order-assembly",
  "sdkwork-cloudrouter-config",
  "sdkwork-cloudrouter-database-host",
