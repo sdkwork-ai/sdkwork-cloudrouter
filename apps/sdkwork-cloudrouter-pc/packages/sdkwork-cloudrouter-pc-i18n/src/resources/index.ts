@@ -26,6 +26,7 @@ import { adminOrdersMessages } from '@sdkwork/order-pc-admin-orders/i18n';
 import { adminTradeMessages } from '@sdkwork/order-pc-admin-trade/i18n';
 import { messagingNotifyAdminMessages } from '@sdkwork/messaging-pc-admin-notify/i18n';
 import { hardwareAdminMessages } from '@sdkwork/cloudrouter-pc-admin-hardware/i18n';
+import { productCenterAdminMessages } from '@sdkwork/cloudrouter-pc-admin-product/i18n';
 import { hardwareConsoleMessages } from '@sdkwork/cloudrouter-pc-console-hardware/i18n';
 import { logAdminI18n } from '@sdkwork/log-pc-admin-request-log/i18n';
 import { mergeI18nBundles, withoutMessagePrefixes } from './merge';
@@ -100,6 +101,7 @@ const HOST_OWNED_MESSAGE_PREFIXES = ['orders.'] as const;
 export const resources = mergeI18nBundles([
   messagingNotifyAdminMessages,
   hardwareAdminMessages,
+  productCenterAdminMessages,
   hardwareConsoleMessages,
   adminAnalyticsRecordMessages,
   adminAuthSettingsMessages,

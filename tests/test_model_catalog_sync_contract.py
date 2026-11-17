@@ -6,8 +6,8 @@ from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "docs" / "architecture" / "tech" / "assets"
-OPEN_API = ASSETS / "model-catalog-sync.open-api.openapi.json"
-APP_API = ASSETS / "model-catalog-sync.app-api.openapi.json"
+OPEN_API = ASSETS / "model-catalog-sync.open-api.fragment.json"
+APP_API = ASSETS / "model-catalog-sync.app-api.fragment.json"
 STANDARD = ROOT / "docs" / "architecture" / "tech" / "TECH-2026-11-15-model-catalog-sync-api.md"
 
 HTTP_METHODS = {"get", "put", "post", "delete", "patch", "head", "options", "trace"}
@@ -92,7 +92,7 @@ class ModelCatalogSyncContractTest(unittest.TestCase):
                 self.assertEqual(operation_id, operation["operationId"])
 
         snapshot_ref = document["components"]["schemas"]["CatalogSnapshotEnvelope"]["allOf"][1]["properties"]["data"]["$ref"]
-        self.assertTrue(snapshot_ref.startswith("./model-catalog-sync.open-api.openapi.json"))
+        self.assertTrue(snapshot_ref.startswith("./model-catalog-sync.open-api.fragment.json"))
         self.assertEqual("model_catalog", resolve_ref(APP_API, snapshot_ref)["properties"]["object"]["const"])
 
     def test_operation_ids_and_security_are_complete(self) -> None:

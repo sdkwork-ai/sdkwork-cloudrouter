@@ -69,7 +69,9 @@ export function AppTemplateCategoryPanel({
 
   useEffect(() => {
     let cancelled = false;
-    setState({ status: "loading", items: [] });
+    // Preserve the current tree during reload so the cascade keeps its
+    // selected parent and the newly created child appears in the next column.
+    setState((current) => ({ ...current, status: "loading" }));
     void service.listCategories().then(
       (items) => {
         if (!cancelled) {

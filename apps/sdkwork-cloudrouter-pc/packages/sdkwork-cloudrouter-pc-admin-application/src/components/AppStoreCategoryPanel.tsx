@@ -71,7 +71,9 @@ export function AppStoreCategoryPanel({
 
   useEffect(() => {
     let cancelled = false;
-    setState({ status: "loading", items: [] });
+    // Keep the current tree while refreshing; clearing it would reset the
+    // cascade selection and hide a just-created child.
+    setState((current) => ({ ...current, status: "loading" }));
     void service.list({ pageSize: PAGE_SIZE }).then(
       (page) => {
         if (!cancelled) {
