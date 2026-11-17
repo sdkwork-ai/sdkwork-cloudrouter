@@ -84,6 +84,11 @@ services:
       # Deployment identity (DEPLOYMENT_SPEC §5.2).
       SDKWORK_CLOUDROUTER_DEPLOYMENT_PROFILE: standalone
       SDKWORK_CLOUDROUTER_RUNTIME_TARGET: container
+      # Deploy application identity anchor (MANDATORY). IAM makes the deploy
+      # application the identity of every access token (app_id/aud); the
+      # gateway, installer, and portal builds read it from this variable, and a
+      # missing value fails startup/build closed. Set it in `.env`.
+      SDKWORK_DEPLOY_APPLICATION_ID: ${SDKWORK_DEPLOY_APPLICATION_ID:?Required. Set this installation's deploy application id (app-xxxxxx) in .env}
       # IAM deployment posture: the standalone container runs in explicit
       # development mode so the IAM resolver accepts the payload-only
       # credential-entry bootstrap token through the development

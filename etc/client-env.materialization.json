@@ -80,7 +80,7 @@
         "standalone.production"
       ],
       "accessToken": {
-        "appId": "sdkwork-cloudrouter",
+        "appIdEnv": "SDKWORK_DEPLOY_APPLICATION_ID",
         "tenantId": "100001",
         "organizationId": "0",
         "permissionScope": [
@@ -111,7 +111,7 @@
         }
       },
       "accessToken": {
-        "appId": "sdkwork-cloudrouter",
+        "appIdEnv": "SDKWORK_DEPLOY_APPLICATION_ID",
         "tenantId": "100001",
         "organizationId": "0",
         "permissionScope": [
@@ -142,7 +142,7 @@
         }
       },
       "accessToken": {
-        "appId": "sdkwork-cloudrouter",
+        "appIdEnv": "SDKWORK_DEPLOY_APPLICATION_ID",
         "tenantId": "100001",
         "organizationId": "0",
         "permissionScope": [
@@ -157,7 +157,25 @@
       "runtimeTarget": "browser",
       "bindings": {},
       "accessToken": {
-        "appId": "sdkwork-cloudrouter",
+        "appIdEnv": "SDKWORK_DEPLOY_APPLICATION_ID",
+        "tenantId": "100001",
+        "organizationId": "0",
+        "permissionScope": [
+          "iam:self"
+        ]
+      }
+    },
+    {
+      "id": "sdkwork-cloudrouter-harmony-mobile",
+      "root": "apps/sdkwork-cloudrouter-harmony-mobile",
+      "format": "harmony-native",
+      "runtimeTarget": "harmony-native",
+      "identityPrefixes": [
+        "SDKWORK_CLOUDROUTER_ROUTER"
+      ],
+      "bindings": {},
+      "accessToken": {
+        "appIdEnv": "SDKWORK_DEPLOY_APPLICATION_ID",
         "tenantId": "100001",
         "organizationId": "0",
         "permissionScope": [

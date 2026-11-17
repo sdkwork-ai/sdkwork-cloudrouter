@@ -49,6 +49,20 @@ export const CLOUD_ROUTER_BROWSER_DEVELOPMENT_FORBIDDEN_KEY_PREFIX = 'PORTAL_PUB
 export const CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV = 'SDKWORK_DEPLOY_APPLICATION_ID';
 
 /**
+ * Sentinel app id committed into a profile that has not been materialized by a
+ * deployment yet.
+ *
+ * A repository cannot know its installation's deploy application id, so the
+ * committed profile matrix carries this marker instead of a fabricated id or
+ * the retired IAM runtime app id (`sdkwork-cloudrouter`). Deployment runs
+ * `materialize-client-env` with `SDKWORK_DEPLOY_APPLICATION_ID` set, which
+ * replaces the marker with the real anchor. `check-deploy-application-anchor.mjs`
+ * reports every profile that still carries it as "needs materialization".
+ */
+export const CLOUD_ROUTER_PENDING_DEPLOY_APPLICATION_ID =
+  '__SDKWORK_DEPLOY_APPLICATION_ID__';
+
+/**
  * Browser projection of the deploy application anchor.
  *
  * Vite only inlines `VITE_`-prefixed keys into a renderer bundle, so the build
