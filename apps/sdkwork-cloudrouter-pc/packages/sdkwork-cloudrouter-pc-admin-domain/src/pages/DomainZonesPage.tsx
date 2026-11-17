@@ -203,8 +203,8 @@ export function DomainZonesPage({
         className="min-h-0 flex-1 rounded-xl dark:bg-[#1a1a1a]"
         header={
           <div className="flex flex-col gap-3 border-b border-slate-200 p-3 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:items-center">
-              <div className="relative min-w-0 flex-1 md:max-w-md">
+            <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
+              <div className="relative min-w-0 flex-1 md:min-w-[200px] md:max-w-md">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
@@ -214,23 +214,27 @@ export function DomainZonesPage({
                   className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-800 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
                 />
               </div>
-              <DomainSelect
-                value={scopeFilter}
-                onChange={setScopeFilter}
-                options={[
-                  { value: 'USER', label: t('admin.domainCenter.zones.filter.operator', 'Operator domains') },
-                  { value: 'ALL', label: t('admin.domainCenter.zones.filter.allScopes', 'All scopes') },
-                ]}
-              />
-              <DomainSelect
-                value={statusFilter}
-                onChange={setStatusFilter}
-                options={[
-                  { value: 'ALL', label: t('admin.domainCenter.filters.allStatuses', 'All statuses') },
-                  { value: 'ACTIVE', label: t('admin.domainCenter.status.active', 'Active') },
-                  { value: 'PAUSED', label: t('admin.domainCenter.status.paused', 'Paused') },
-                ]}
-              />
+              <div className="w-full shrink-0 md:w-40">
+                <DomainSelect
+                  value={scopeFilter}
+                  onChange={setScopeFilter}
+                  options={[
+                    { value: 'USER', label: t('admin.domainCenter.zones.filter.operator', 'Operator domains') },
+                    { value: 'ALL', label: t('admin.domainCenter.zones.filter.allScopes', 'All scopes') },
+                  ]}
+                />
+              </div>
+              <div className="w-full shrink-0 md:w-40">
+                <DomainSelect
+                  value={statusFilter}
+                  onChange={setStatusFilter}
+                  options={[
+                    { value: 'ALL', label: t('admin.domainCenter.filters.allStatuses', 'All statuses') },
+                    { value: 'ACTIVE', label: t('admin.domainCenter.status.active', 'Active') },
+                    { value: 'PAUSED', label: t('admin.domainCenter.status.paused', 'Paused') },
+                  ]}
+                />
+              </div>
             </div>
             <div className="text-[11px] text-slate-500 dark:text-slate-400">
               {t('admin.domainCenter.zones.count', '{{count}} root domains', { count: filteredZones.length })}

@@ -235,8 +235,8 @@ export function DomainDnsRecordsPage({
         className="min-h-0 flex-1 rounded-xl dark:bg-[#1a1a1a]"
         header={
           <div className="flex flex-col gap-3 border-b border-slate-200 p-3 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:items-center">
-              <div className="md:w-64">
+            <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
+              <div className="w-full shrink-0 md:w-64">
                 <DomainSelect
                   value={selectedZoneId}
                   onChange={setSelectedZoneId}
@@ -247,15 +247,17 @@ export function DomainDnsRecordsPage({
                   }
                 />
               </div>
-              <DomainSelect
-                value={typeFilter}
-                onChange={setTypeFilter}
-                options={[
-                  { value: 'ALL', label: t('admin.domainCenter.dns.filter.allTypes', 'All record types') },
-                  ...DOMAIN_DNS_RECORD_TYPES.map((type) => ({ value: type, label: type })),
-                ]}
-              />
-              <div className="relative min-w-0 flex-1 md:max-w-sm">
+              <div className="w-full shrink-0 md:w-40">
+                <DomainSelect
+                  value={typeFilter}
+                  onChange={setTypeFilter}
+                  options={[
+                    { value: 'ALL', label: t('admin.domainCenter.dns.filter.allTypes', 'All record types') },
+                    ...DOMAIN_DNS_RECORD_TYPES.map((type) => ({ value: type, label: type })),
+                  ]}
+                />
+              </div>
+              <div className="relative min-w-0 flex-1 md:min-w-[200px] md:max-w-sm">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
