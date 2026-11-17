@@ -13,6 +13,7 @@
   "scripts": {
     "workflow:materialize-client-env": "node ../sdkwork-specs/tools/materialize-client-env.mjs --root .",
     "check:client-env": "node ../sdkwork-specs/tools/materialize-client-env.mjs --root . --check",
+    "check:deploy-application-anchor": "node scripts/check-deploy-application-anchor.mjs --require-materialized",
     "check:cors-standard": "node ../sdkwork-specs/tools/check-cors-standard.mjs --root .",
     "install:deps:ensure": "node scripts/lib/ensure-cloud-router-node-deps.mjs",
     "dev": "pnpm dev:standalone",
@@ -44,7 +45,7 @@
     "release:plan": "node scripts/lib/ensure-cloud-router-node-deps.mjs && pnpm exec sdkwork-app release:plan",
     "release:plan:standalone": "node scripts/lib/ensure-cloud-router-node-deps.mjs && pnpm exec sdkwork-app release:plan --deployment-profile standalone",
     "release:plan:cloud": "node scripts/lib/ensure-cloud-router-node-deps.mjs && pnpm exec sdkwork-app release:plan --deployment-profile cloud",
-    "release:package": "pnpm release:package:standalone",
+    "release:package": "pnpm run check:release-access-token:require-anchor && pnpm release:package:standalone",
     "release:package:check": "node scripts/build-cloud-router-install-package.mjs --check --dry-run --all",
     "release:native:package": "node scripts/build-cloud-router-native-installer.mjs",
     "release:native:check": "node scripts/build-cloud-router-native-installer.mjs --check --dry-run --all",
@@ -186,7 +187,7 @@
     "deploy:plan:cloud": "node scripts/lib/ensure-cloud-router-node-deps.mjs && pnpm exec sdkwork-app deploy:plan --profile cloud.production",
     "deploy:validate:standalone": "node scripts/lib/ensure-cloud-router-node-deps.mjs && pnpm exec sdkwork-app deploy:validate --profile standalone.production",
     "deploy:validate:cloud": "node scripts/lib/ensure-cloud-router-node-deps.mjs && pnpm exec sdkwork-app deploy:validate --profile cloud.production",
-    "_sdkwork:release:package": "node scripts/build-cloud-router-install-package.mjs",
+    "_sdkwork:release:package": "pnpm run check:release-access-token:require-anchor && node scripts/build-cloud-router-install-package.mjs",
     "build:offline": "node scripts/export-cloud-router-offline.mjs",
     "build:pc:dev": "node ../sdkwork-specs/tools/build-browser-client.mjs --root . --architecture pc --environment dev",
     "build:pc:test": "node ../sdkwork-specs/tools/build-browser-client.mjs --root . --architecture pc --environment test",
@@ -210,7 +211,8 @@
     "build:h5:demo:cloud": "node ../sdkwork-specs/tools/build-browser-client.mjs --root . --architecture h5 --environment demo --deployment-profile cloud",
     "build:h5:prod:cloud": "node ../sdkwork-specs/tools/build-browser-client.mjs --root . --architecture h5 --environment prod --deployment-profile cloud",
     "check:fresh-cluster-init": "node scripts/regression/fresh-cluster-init.mjs",
-    "test:fresh-cluster-init:db": "node scripts/regression/fresh-cluster-init.mjs --db"
+    "test:fresh-cluster-init:db": "node scripts/regression/fresh-cluster-init.mjs --db",
+    "check:release-access-token:require-anchor": "node ../sdkwork-specs/tools/check-release-access-token-env.mjs --root . --require-anchor"
   },
   "pnpm": {
     "overrides": {
