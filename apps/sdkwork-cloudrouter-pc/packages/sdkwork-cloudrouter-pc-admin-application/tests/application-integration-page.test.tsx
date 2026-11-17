@@ -147,7 +147,7 @@ describe("application integration actions", () => {
     const integrations = createIntegrationService();
     renderPage({ integrations, loaders: createLoaders() });
 
-    await screen.findAllByText("Console");
+    await screen.findAllByText("Storefront");
     clickGroup("deploy");
     await screen.findAllByText("Storefront");
 
@@ -186,7 +186,7 @@ describe("application integration actions", () => {
     const integrations = createIntegrationService();
     renderPage({ integrations, loaders: createLoaders() });
 
-    await screen.findAllByText("Console");
+    await screen.findAllByText("Storefront");
     clickGroup("deploy");
     await screen.findAllByText("Storefront");
 
@@ -203,7 +203,7 @@ describe("application integration actions", () => {
     cleanup();
     const secondService = createIntegrationService();
     renderPage({ integrations: secondService, loaders: createLoaders() });
-    await screen.findAllByText("Console");
+    await screen.findAllByText("Storefront");
     clickGroup("deploy");
     await screen.findAllByText("Storefront");
 
@@ -220,9 +220,23 @@ describe("application integration actions", () => {
 
   it("asks a non-Deploy row for its Deploy anchor before saving", async () => {
     const integrations = createIntegrationService();
-    renderPage({ integrations, loaders: createLoaders() });
+    const loaders = createLoaders();
+    loaders["app-store"].mockResolvedValue([
+      {
+        groupId: "app-store",
+        id: "store-1",
+        kind: "DESKTOP_WINDOWS",
+        name: "Store App",
+        status: "installed",
+        version: "1.0.0",
+      },
+    ]);
+    renderPage({ integrations, loaders });
 
-    await screen.findAllByText("Console");
+    await screen.findAllByText("Storefront");
+    // A store row has no deploy anchor of its own, so the drawer must ask for one.
+    clickGroup("app-store");
+    await screen.findAllByText("Store App");
     fireEvent.click(screen.getByRole("button", { name: "支付配置" }));
 
     expect(await screen.findByText("关联 Deploy 应用")).toBeTruthy();
@@ -265,7 +279,7 @@ describe("application integration actions", () => {
     const integrations = createIntegrationService();
     renderPage({ integrations, loaders: createLoaders({ deploy: [seeded] }) });
 
-    await screen.findAllByText("Console");
+    await screen.findAllByText("Storefront");
     clickGroup("deploy");
     await screen.findAllByText("Storefront");
 

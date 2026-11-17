@@ -115,27 +115,28 @@ describe("application management page", () => {
     renderPage({ loaders, resolveContext, tenantId: "tenant-1" });
 
     await screen.findAllByText("Storefront");
-
-    clickGroup("app-store");
-    expect((await screen.findAllByText("sdkwork-birdcoder")).length).toBeGreaterThan(0);
-    expect(screen.queryAllByText("Storefront").length).toBe(0);
+    // The deployment row is organization-scoped, so the scope tag belongs to it.
     expectText("组织级");
 
     clickGroup("app-store");
     expect((await screen.findAllByText("sdkwork-birdcoder")).length).toBeGreaterThan(0);
+    expect(screen.queryAllByText("Storefront").length).toBe(0);
     expectText("1.2.0");
   });
 
   it("filters the active group locally", async () => {
     const loaders = createLoaders();
-    loaders.iam.mockResolvedValue([iamApplication, { ...iamApplication, id: "iam-2", name: "Billing" }]);
+    loaders.deploy.mockResolvedValue([
+      deployApplication,
+      { ...deployApplication, id: "deploy-2", name: "Billing" },
+    ]);
     const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
     renderPage({ loaders, resolveContext, tenantId: "tenant-1" });
 
-    await screen.findAllByText("Console");
+    await screen.findAllByText("Storefront");
     fireEvent.change(screen.getByPlaceholderText("搜索应用名称、标识或域名"), { target: { value: "bill" } });
 
-    await waitFor(() => expect(screen.queryAllByText("Console").length).toBe(0));
+    await waitFor(() => expect(screen.queryAllByText("Storefront").length).toBe(0));
     expectText("Billing");
   });
 
@@ -149,7 +150,7 @@ describe("application management page", () => {
     });
     renderPage({ loaders, organizationId: "org-1", resolveContext, tenantId: "tenant-1" });
 
-    await screen.findAllByText("Console");
+    await screen.findAllByText("Storefront");
     clickGroup("app-store");
 
     await screen.findByText(/组织维度的授权清单待后端接口接入。/);
@@ -162,7 +163,6 @@ describe("application management page", () => {
     const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
     renderPage({ loaders, resolveContext, tenantId: "tenant-1" });
 
-    await screen.findAllByText("Console");
     clickGroup("deploy");
 
     await screen.findByText(/该应用体系在当前部署中未启用/);
@@ -175,7 +175,7 @@ describe("application management page", () => {
     const issueToken = vi.fn().mockRejectedValue(Object.assign(new Error("tenant application was not found"), { status: 404 }));
     renderPage({ issueToken, loaders, resolveContext, tenantId: "tenant-1" });
 
-    await screen.findAllByText("Console");
+    await screen.findAllByText("Storefront");
     clickGroup("deploy");
     await screen.findAllByText("Storefront");
     fireEvent.click(screen.getByRole("button", { name: "访问令牌" }));
@@ -189,7 +189,7 @@ describe("application management page", () => {
     const issueToken = vi.fn().mockRejectedValue(Object.assign(new Error("forbidden"), { status: 403 }));
     renderPage({ issueToken, loaders, resolveContext, tenantId: "tenant-1" });
 
-    await screen.findAllByText("Console");
+    await screen.findAllByText("Storefront");
     fireEvent.click(screen.getByRole("button", { name: "访问令牌" }));
 
     await screen.findByText(/当前账号没有签发应用访问令牌的权限/);
@@ -200,7 +200,7 @@ describe("application management page", () => {
     const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
     renderPage({ loaders, resolveContext, tenantId: "tenant-1" });
 
-    await screen.findAllByText("Console");
+    await screen.findAllByText("Storefront");
     const actions = document.querySelector("[data-application-row-actions]");
     expect(actions).not.toBeNull();
     // The operations column must widen instead of stacking the four buttons.
