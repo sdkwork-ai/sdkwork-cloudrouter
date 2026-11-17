@@ -7,6 +7,7 @@ import {
   Eye,
   EyeOff,
   FolderTree,
+  GitBranch,
   KeyRound,
   Layers,
   MessageCircle,
@@ -34,8 +35,10 @@ import {
 } from "@sdkwork/ui-pc-react";
 
 import { ApplicationIntegrationDrawer } from "../components/ApplicationIntegrationDrawer";
+import { AppSourceRemixDrawer } from "../components/AppSourceRemixDrawer";
 import { AppStoreCategoryPanel } from "../components/AppStoreCategoryPanel";
 import { useApplicationCatalogMessages, type ApplicationCatalogMessages } from "../i18n";
+import { isApplicationCenterActionAllowed } from "../permissions/application-center-actions";
 import {
   isApplicationSourceUnavailable,
   isApplicationTokenForbidden,
@@ -65,6 +68,7 @@ import type {
   ApplicationRecord,
 } from "../types/application-catalog";
 import type { AppStoreCategoryService } from "../types/appstore-categories";
+import type { DeployAppSourceService } from "../types/deploy-app-source";
 
 interface ApplicationGroupDefinition {
   id: ApplicationGroupId;
@@ -126,8 +130,10 @@ export function ApplicationManagementPage({
   issueToken,
   loaders,
   organizationId,
+  permissionScope,
   resolveContext,
   showViewNav = true,
+  sourceService,
   tenantId,
 }: {
   /** Controlled view used by the App Center routes (shell sidebar owns navigation). */
@@ -142,6 +148,14 @@ export function ApplicationManagementPage({
   /** Test/extension seam: override one or more group loaders. */
   loaders?: Partial<Record<ApplicationGroupId, ApplicationGroupDefinition["loader"]>>;
   organizationId?: string;
+  /**
+   * Test/host seam: the granted permission codes.
+   *
+   * Production callers omit it and the live portal session scope is read. A
+   * value here also decides whether the deploy rows expose the "Source & remix"
+   * entry (`deploy.apps.read`) and whether its write controls render.
+   */
+  permissionScope?: readonly string[];
   /** Test/extension seam: override context resolution. */
   resolveContext?: (input: { organizationId?: string; tenantId?: string }) => Promise<ApplicationCatalogContext>;
   /**
@@ -152,6 +166,8 @@ export function ApplicationManagementPage({
    * carry dynamic ownership ids the shell menu cannot express.
    */
   showViewNav?: boolean;
+  /** Test/extension seam: override the Deploy source/remix transport. */
+  sourceService?: DeployAppSourceService;
   tenantId?: string;
 }) {
   const messages = useApplicationCatalogMessages();
@@ -166,6 +182,8 @@ export function ApplicationManagementPage({
   issueTokenRef.current = issueToken;
   const integrationsRef = useRef(integrations);
   integrationsRef.current = integrations;
+  const sourceServiceRef = useRef(sourceService);
+  sourceServiceRef.current = sourceService;
   const [context, setContext] = useState<ApplicationCatalogContext>();
   const [groupStates, setGroupStates] = useState(createInitialGroupStates);
   const [internalView, setInternalView] = useState<ApplicationCatalogView>("iam");
@@ -184,6 +202,14 @@ export function ApplicationManagementPage({
     application: ApplicationRecord;
     kind: ApplicationIntegrationKind;
   }>();
+  const [sourceTarget, setSourceTarget] = useState<ApplicationRecord>();
+  // Both gates fall back to the live portal session scope when no seam is given.
+  const canReadSource = permissionScope
+    ? isApplicationCenterActionAllowed("sourceRead", permissionScope)
+    : isApplicationCenterActionAllowed("sourceRead");
+  const canWriteSource = permissionScope
+    ? isApplicationCenterActionAllowed("sourceWrite", permissionScope)
+    : isApplicationCenterActionAllowed("sourceWrite");
 
   const activeGroup = activeView === "categories"
     ? undefined
@@ -547,6 +573,18 @@ export function ApplicationManagementPage({
                 className="flex min-w-max flex-nowrap items-center justify-end gap-1.5 whitespace-nowrap"
                 data-application-row-actions
               >
+                {item.groupId === "deploy" && canReadSource ? (
+                  <Button
+                    onClick={() => setSourceTarget(item)}
+                    size="sm"
+                    title={messages.sourceRemix.title}
+                    type="button"
+                    variant="outline"
+                  >
+                    <GitBranch className="h-3.5 w-3.5" />
+                    {messages.sourceRemix.action}
+                  </Button>
+                ) : null}
                 <Button onClick={() => openAccessToken(item)} size="sm" type="button" variant="outline">
                   <KeyRound className="h-3.5 w-3.5" />
                   {messages.accessToken.action}
@@ -723,6 +761,17 @@ export function ApplicationManagementPage({
           onClose={() => setIntegrationTarget(undefined)}
           onSaved={handleIntegrationSaved}
           service={integrationsRef.current ?? getApplicationIntegrationService()}
+        />
+      ) : null}
+
+      {sourceTarget ? (
+        <AppSourceRemixDrawer
+          application={sourceTarget}
+          canRead={canReadSource}
+          canWrite={canWriteSource}
+          messages={messages}
+          onClose={() => setSourceTarget(undefined)}
+          {...(sourceServiceRef.current ? { service: sourceServiceRef.current } : {})}
         />
       ) : null}
     </div>

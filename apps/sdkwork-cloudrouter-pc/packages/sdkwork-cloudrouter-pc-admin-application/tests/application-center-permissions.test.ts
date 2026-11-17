@@ -25,6 +25,14 @@ describe("App Center action permissions", () => {
     expect(applicationCenterPermissionFor("moderationDecide")).toBe(APPLICATION_CENTER_MODULE_PERMISSION);
   });
 
+  it("maps the remix source surface to the deploy app codes", () => {
+    expect(applicationCenterPermissionFor("sourceRead")).toBe("deploy.apps.read");
+    expect(applicationCenterPermissionFor("sourceWrite")).toBe("deploy.apps.write");
+    expect(isApplicationCenterActionAllowed("sourceRead", ["deploy.apps.read"])).toBe(true);
+    expect(isApplicationCenterActionAllowed("sourceWrite", ["deploy.apps.read"])).toBe(false);
+    expect(isApplicationCenterActionAllowed("sourceWrite", ["deploy.apps.write"])).toBe(true);
+  });
+
   it("gates template actions on the deploy grant or the module gate", () => {
     expect(isApplicationCenterActionAllowed("templateReview", ["deploy.appTemplates.write"])).toBe(true);
     expect(isApplicationCenterActionAllowed("templateCategoryWrite", ["deploy.templateCategories.write"])).toBe(true);

@@ -13,6 +13,9 @@ import { readPortalPermissionScope } from "@sdkwork/cloudroutes-pc-commons/runti
  *   `PATCH /app_templates/{templateUuid}`) requires `deploy.appTemplates.write`;
  * - template taxonomy maintenance (`POST|PATCH|DELETE /template_categories`)
  *   requires `deploy.templateCategories.write`;
+ * - the remix source reads (`GET /apps/{appId}/source`, `GET /remix`) require
+ *   `deploy.apps.read`, and its writes (`PUT|DELETE /source`, `PUT /remix`)
+ *   require `deploy.apps.write`;
  * - reads require the matching `*.read` codes.
  *
  * The remaining App Store actions keep the module gate because their IAM
@@ -32,6 +35,13 @@ export const APPLICATION_CENTER_ACTION_PERMISSIONS = {
   templateReview: "deploy.appTemplates.write",
   templateWrite: "deploy.appTemplates.write",
   templateCategoryWrite: "deploy.templateCategories.write",
+  /**
+   * Remix source surface (`apps.source.*` / `apps.remix.*`). The route manifest
+   * gates every read on `deploy.apps.read` and every write on `deploy.apps.write`,
+   * and `artifacts.list` — the archive picker — on `deploy.artifacts.read`.
+   */
+  sourceRead: "deploy.apps.read",
+  sourceWrite: "deploy.apps.write",
   storeCategoryWrite: APPLICATION_CENTER_MODULE_PERMISSION,
   moderationDecide: APPLICATION_CENTER_MODULE_PERMISSION,
   publisherVerify: APPLICATION_CENTER_MODULE_PERMISSION,

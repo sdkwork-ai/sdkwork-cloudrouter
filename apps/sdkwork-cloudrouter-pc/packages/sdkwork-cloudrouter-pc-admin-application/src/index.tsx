@@ -25,6 +25,7 @@ export { AppTemplateManagementPage } from "./pages/AppTemplateManagementPage";
 export { TemplateReviewQueuePage } from "./pages/TemplateReviewQueuePage";
 export { TemplateReviewDrawer } from "./components/TemplateReviewDrawer";
 export { TemplateCategoryFormDrawer } from "./components/TemplateCategoryFormDrawer";
+export { AppSourceRemixDrawer } from "./components/AppSourceRemixDrawer";
 export { AppTemplatePanel } from "./components/AppTemplatePanel";
 export { AppTemplateCategoryPanel } from "./components/AppTemplateCategoryPanel";
 export {
@@ -272,6 +273,62 @@ export {
   resetDeployAppTemplateService,
 } from "./services/deploy-app-templates";
 export type { DeployAppTemplateTransport } from "./services/deploy-app-templates";
+export {
+  classifyDeployAppSourceError,
+  createDeployAppSourceService,
+  deployAppSourceErrorReason,
+  getDeployAppSourceService,
+  isDeployAppSourceConflict,
+  isDeployAppSourceForbidden,
+  isDeployAppSourceNetworkFailure,
+  isDeployAppSourceNotFound,
+  isDeployAppSourceUnauthorized,
+  isDeployAppSourceUnavailable,
+  mapArtifact as mapDeployArtifact,
+  mapRemixState as mapDeployAppRemixState,
+  mapSourceState as mapDeployAppSourceState,
+  resetDeployAppSourceService,
+} from "./services/deploy-app-source";
+export type { DeployAppSourceTransport } from "./services/deploy-app-source";
+export {
+  MAX_CREDENTIAL_SECRET_REF_LENGTH,
+  MAX_SOURCE_REF_LENGTH,
+  MAX_SOURCE_REPO_URL_LENGTH,
+  MAX_SOURCE_SUB_PATH_LENGTH,
+  DeployAppSourceFormError,
+  createSourceDraft,
+  isSupportedRepoProvider,
+  isValidSourceRepoUrl,
+  normalizeSourceRef,
+  normalizeSourceSubPath,
+  toSourceUpdatePayload,
+  validateSourceDraft,
+} from "./services/deploy-app-source-form";
+export type { SourceFieldResult } from "./services/deploy-app-source-form";
+export type {
+  DeployAppCloneMode,
+  DeployAppRemixState,
+  DeployAppRepoProvider,
+  DeployAppSourceArchive,
+  DeployAppSourceArchivePayload,
+  DeployAppSourceDraft,
+  DeployAppSourceGit,
+  DeployAppSourceGitPayload,
+  DeployAppSourceIssue,
+  DeployAppSourceIssueCode,
+  DeployAppSourceIssueField,
+  DeployAppSourceKind,
+  DeployAppSourceReadiness,
+  DeployAppSourceReadinessReason,
+  DeployAppSourceService,
+  DeployAppSourceState,
+  DeployAppSourceUpdatePayload,
+  DeployArtifactOption,
+} from "./types/deploy-app-source";
+export {
+  DEPLOY_APP_SOURCE_READINESS_REASONS,
+  DEPLOY_APP_SOURCE_REPO_PROVIDERS,
+} from "./types/deploy-app-source";
 export {
   DEPLOY_TEMPLATE_KEY_PATTERN,
   DEPLOY_TEMPLATE_VERSION_PATTERN,
