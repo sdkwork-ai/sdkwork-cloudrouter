@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams, useInRouterContext } from "react-router-dom";
-import { ArrowDown, ArrowUp, Download, FolderTree, Pencil, Plus, Power, RefreshCw, Search, Trash2 } from "lucide-react";
+import { Download, FolderTree, Plus, RefreshCw, Search } from "lucide-react";
 import {
   Button,
   ConfirmDialog,
@@ -15,6 +15,7 @@ import {
 
 import type { ApplicationCatalogMessages } from "../i18n";
 import { AppStoreCategoryFormDrawer } from "../components/AppStoreCategoryFormDrawer";
+import { CategoryItemActionsMenu } from "../components/CategoryItemActionsMenu";
 import {
   getAppStoreCategoryService,
   isAppStoreCategoryForbidden,
@@ -170,6 +171,17 @@ function AppStoreCategoryPanelContent({
 
   const hasChildren = (category: AppStoreCategory): boolean =>
     state.items.some((item) => item.parentId === category.id);
+
+  const requestDelete = (category: AppStoreCategory) => {
+    setActionError(undefined);
+    if (hasChildren(category)) {
+      setDeleteBlocked(true);
+      return;
+    }
+    setDeleteBlocked(false);
+    setDeleteError(undefined);
+    setDeletingCategory(category);
+  };
 
   const initialPathIds = useMemo(
     () => buildPathIds(selectedCategoryId, state.items),
@@ -556,87 +568,28 @@ function AppStoreCategoryPanelContent({
             if (!category) {
               return null;
             }
-            const rowBusy = busyId === category.id;
-            const inactive = category.status === "inactive";
             return (
-              <div className="flex items-center gap-0.5" data-application-row-actions>
-                <Button
-                  aria-label={`${copy.cascade.moveUp} ${node.displayName}`}
-                  disabled={rowBusy}
-                  onClick={() => void moveSibling(category, "up")}
-                  size="sm"
-                  title={copy.cascade.moveUp}
-                  type="button"
-                  variant="ghost"
-                >
-                  <ArrowUp className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  aria-label={`${copy.cascade.moveDown} ${node.displayName}`}
-                  disabled={rowBusy}
-                  onClick={() => void moveSibling(category, "down")}
-                  size="sm"
-                  title={copy.cascade.moveDown}
-                  type="button"
-                  variant="ghost"
-                >
-                  <ArrowDown className="h-3.5 w-3.5" />
-                </Button>
-                {level < 5 ? (
-                  <Button
-                    aria-label={`${copy.cascade.addChild} ${node.displayName}`}
-                    disabled={rowBusy}
-                    onClick={() => setFormTarget({ parentId: category.id })}
-                    size="sm"
-                    title={copy.cascade.addChild}
-                    type="button"
-                    variant="ghost"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </Button>
-                ) : null}
-                <Button
-                  aria-label={`${copy.actions.edit} ${node.displayName}`}
-                  disabled={rowBusy}
-                  onClick={() => setFormTarget({ category })}
-                  size="sm"
-                  title={copy.actions.edit}
-                  type="button"
-                  variant="ghost"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  aria-label={`${inactive ? copy.actions.activate : copy.actions.deactivate} ${node.displayName}`}
-                  disabled={rowBusy}
-                  onClick={() => void applyLifecycle(category)}
-                  size="sm"
-                  title={inactive ? copy.actions.activate : copy.actions.deactivate}
-                  type="button"
-                  variant="ghost"
-                >
-                  <Power className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  aria-label={`${copy.actions.delete} ${node.displayName}`}
-                  disabled={rowBusy}
-                  onClick={() => {
-                    setActionError(undefined);
-                    if (hasChildren(category)) {
-                      setDeleteBlocked(true);
-                      return;
-                    }
-                    setDeleteBlocked(false);
-                    setDeleteError(undefined);
-                    setDeletingCategory(category);
+              <div data-application-row-actions>
+                <CategoryItemActionsMenu
+                  canAddChild={level < 5}
+                  inactive={category.status === "inactive"}
+                  labels={{
+                    more: `${copy.cascade.moreActions} ${node.displayName}`,
+                    addChild: copy.cascade.addChild,
+                    edit: copy.actions.edit,
+                    moveUp: copy.cascade.moveUp,
+                    moveDown: copy.cascade.moveDown,
+                    activate: copy.actions.activate,
+                    deactivate: copy.actions.deactivate,
+                    delete: copy.actions.delete,
                   }}
-                  size="sm"
-                  title={copy.actions.delete}
-                  type="button"
-                  variant="ghost"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
+                  onAddChild={() => setFormTarget({ parentId: category.id })}
+                  onDelete={() => requestDelete(category)}
+                  onEdit={() => setFormTarget({ category })}
+                  onMoveDown={() => void moveSibling(category, "down")}
+                  onMoveUp={() => void moveSibling(category, "up")}
+                  onToggleStatus={() => void applyLifecycle(category)}
+                />
               </div>
             );
           },

@@ -56,6 +56,7 @@ export const en: ApplicationCatalogMessages = {
       selectHint: "Select a parent category on the left first.",
       addRoot: "New level-1 category",
       addChild: "New child category",
+      moreActions: "More actions",
       moveUp: "Move up",
       moveDown: "Move down",
       dragHint: "Drag to reorder siblings",

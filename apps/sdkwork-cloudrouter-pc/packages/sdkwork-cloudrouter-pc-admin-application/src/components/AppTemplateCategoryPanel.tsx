@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams, useInRouterContext } from "react-router-dom";
-import { ArrowDown, ArrowUp, Download, FolderTree, Pencil, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
+import { Download, FolderTree, Plus, RefreshCw, Search } from "lucide-react";
 import { Button, ConfirmDialog, Input, StatusNotice } from "@sdkwork/ui-pc-react";
 import {
   CascadeCategoryManager,
@@ -8,6 +8,7 @@ import {
 } from "@sdkwork/cloudroutes-pc-commons";
 
 import type { ApplicationCatalogMessages } from "../i18n";
+import { CategoryItemActionsMenu } from "./CategoryItemActionsMenu";
 import { TemplateCategoryFormDrawer } from "./TemplateCategoryFormDrawer";
 import { isApplicationCenterActionAllowed } from "../permissions/application-center-actions";
 import {
@@ -346,8 +347,21 @@ function AppTemplateCategoryPanelContent({
     }
   };
 
-  const reorderSiblings = async (
-    dragged: CategoryNode,
+  const toggleStatus = async (category: DeployTemplateCategory) => {
+    try {
+      await service.updateCategory(category.id, {
+        categoryKey: category.categoryKey,
+        displayName: category.displayName,
+        status: category.status === "ACTIVE" ? "DISABLED" : "ACTIVE",
+      });
+      setActionError(undefined);
+      setReloadToken((token) => token + 1);
+    } catch (error) {
+      setActionError(error);
+    }
+  };
+
+  const reorderSiblings = async (    dragged: CategoryNode,
     target: CategoryNode,
     position: "before" | "after",
   ) => {
@@ -531,62 +545,30 @@ function AppTemplateCategoryPanelContent({
               return null;
             }
             return (
-              <div className="flex items-center gap-0.5">
-                <Button
-                  aria-label={`${cascadeLabels.moveUp} ${node.displayName}`}
-                  onClick={() => void moveSibling(category, "up")}
-                  size="sm"
-                  title={cascadeLabels.moveUp}
-                  type="button"
-                  variant="ghost"
-                >
-                  <ArrowUp className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  aria-label={`${cascadeLabels.moveDown} ${node.displayName}`}
-                  onClick={() => void moveSibling(category, "down")}
-                  size="sm"
-                  title={cascadeLabels.moveDown}
-                  type="button"
-                  variant="ghost"
-                >
-                  <ArrowDown className="h-3.5 w-3.5" />
-                </Button>
-                {level < 5 ? (
-                  <Button
-                    aria-label={`${cascadeLabels.addChild} ${node.displayName}`}
-                    onClick={() => setFormTarget({ parentId: category.id })}
-                    size="sm"
-                    title={cascadeLabels.addChild}
-                    type="button"
-                    variant="ghost"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </Button>
-                ) : null}
-                <Button
-                  aria-label={`${copy.form.editTitle} ${node.displayName}`}
-                  onClick={() => setFormTarget({ category })}
-                  size="sm"
-                  title={copy.form.editTitle}
-                  type="button"
-                  variant="ghost"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  aria-label={`${copy.deleteAction} ${node.displayName}`}
-                  onClick={() => {
+              <div data-application-row-actions>
+                <CategoryItemActionsMenu
+                  canAddChild={level < 5}
+                  inactive={category.status !== "ACTIVE"}
+                  labels={{
+                    more: `${cascadeLabels.moreActions} ${node.displayName}`,
+                    addChild: cascadeLabels.addChild,
+                    edit: copy.form.editTitle,
+                    moveUp: cascadeLabels.moveUp,
+                    moveDown: cascadeLabels.moveDown,
+                    activate: messages.categories.actions.activate,
+                    deactivate: messages.categories.actions.deactivate,
+                    delete: copy.deleteAction,
+                  }}
+                  onAddChild={() => setFormTarget({ parentId: category.id })}
+                  onDelete={() => {
                     setDialogError(undefined);
                     setDeleteTarget(category);
                   }}
-                  size="sm"
-                  title={copy.deleteAction}
-                  type="button"
-                  variant="ghost"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
+                  onEdit={() => setFormTarget({ category })}
+                  onMoveDown={() => void moveSibling(category, "down")}
+                  onMoveUp={() => void moveSibling(category, "up")}
+                  onToggleStatus={() => void toggleStatus(category)}
+                />
               </div>
             );
           },

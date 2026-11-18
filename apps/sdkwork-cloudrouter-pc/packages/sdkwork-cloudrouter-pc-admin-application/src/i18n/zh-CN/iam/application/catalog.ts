@@ -56,6 +56,7 @@ export const zh: ApplicationCatalogMessages = {
       selectHint: "请先在左侧选择上级分类。",
       addRoot: "新建一级分类",
       addChild: "新建下级分类",
+      moreActions: "更多操作",
       moveUp: "上移",
       moveDown: "下移",
       dragHint: "拖拽调整同级顺序",

@@ -62,6 +62,7 @@ export interface ApplicationCatalogMessages {
       selectHint: string;
       addRoot: string;
       addChild: string;
+      moreActions: string;
       moveUp: string;
       moveDown: string;
       dragHint: string;

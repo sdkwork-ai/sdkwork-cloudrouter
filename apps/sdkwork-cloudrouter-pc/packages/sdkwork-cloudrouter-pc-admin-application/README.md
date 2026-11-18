@@ -29,9 +29,8 @@ Both taxonomies render through the shared
 
 - five fixed columns (level 1 through level 5); selecting a node reveals its
   children in the next column;
-- per-node action slot (edit / move up/down / lifecycle / delete / add child) and
-  per-column create slot (new root or new child), so all CRUD lives in the page
-  that owns the domain service;
+- per-node actions live in one dropdown trigger (add child / edit / move /
+  lifecycle / delete) so the category name keeps the row width;
 - siblings can be reordered with the accessible up/down buttons or by dragging a
   node onto a sibling; the page reindexes the sibling group and persists gaps;
 - a locate box jumps to a category by name/code and selects its ancestor path;
