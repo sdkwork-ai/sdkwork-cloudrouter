@@ -2,7 +2,7 @@
 
 mod iam;
 
-use std::{collections::BTreeMap, sync::Arc};
+use std::{collections::BTreeMap, collections::BTreeSet, sync::Arc};
 
 use anyhow::Context;
 use axum::{
@@ -22,7 +22,7 @@ use sdkwork_web_bootstrap::{
 };
 use sdkwork_web_contract::{
     build_openapi_document, enrich_owned_openapi_document, merge_openapi_documents,
-    route_inventory_from_routes, HttpRoute,
+    normalize_route_path, route_inventory_from_routes, HttpMethod, HttpRoute,
 };
 use sdkwork_web_core::HttpRouteManifest;
 use serde_json::{Map, Value};
@@ -232,6 +232,23 @@ fn assemble_api_router_with_in_process_upstreams(
         include_str!("../../../apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json"),
     )?;
     augment_openapi_with_missing_routes(&mut backend_openapi, backend_manifest.routes())?;
+    if !context.includes_dependency_apis() {
+        // The platform gateway mounts every separately-mounted capability as its own module
+        // contribution, so this contribution advertises only the routes its dispatcher manifest
+        // owns. The refreshed documents still describe the full standalone surface, therefore the
+        // published documents must be pruned to the bound manifest or composition rejects the
+        // contribution for advertising routes it does not dispatch.
+        prune_openapi_to_manifest_routes(
+            "sdkwork-cloudrouter-app-api",
+            &mut app_openapi,
+            app_manifest.routes(),
+        )?;
+        prune_openapi_to_manifest_routes(
+            "sdkwork-cloudrouter-backend-api",
+            &mut backend_openapi,
+            backend_manifest.routes(),
+        )?;
+    }
     let open_openapi = parse_openapi(
         "sdkwork-cloudrouter-open-api",
         include_str!("../../../apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"),
@@ -380,6 +397,52 @@ fn assemble_api_router_with_in_process_upstreams(
         contribution = contribution.with_public_document(path, document);
     }
     Ok(contribution)
+}
+
+fn prune_openapi_to_manifest_routes(
+    owner: &str,
+    document: &mut Value,
+    routes: &[HttpRoute],
+) -> Result<(), ApiAssemblyError> {
+    let allowed: BTreeSet<(String, String)> = routes
+        .iter()
+        .map(|route| {
+            (
+                normalize_route_path(route.path),
+                http_method_name(route.method).to_owned(),
+            )
+        })
+        .collect();
+    let Some(paths) = document.get_mut("paths").and_then(Value::as_object_mut) else {
+        return Err(anyhow::anyhow!(
+            "{owner} OpenAPI document has no paths object"
+        ));
+    };
+    paths.retain(|path, item| {
+        let normalized = normalize_route_path(path);
+        let Some(operations) = item.as_object_mut() else {
+            return true;
+        };
+        operations.retain(|method, _| {
+            let method = method.to_ascii_uppercase();
+            !matches!(
+                method.as_str(),
+                "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS" | "TRACE"
+            ) || allowed.contains(&(normalized.clone(), method))
+        });
+        !operations.is_empty()
+    });
+    Ok(())
+}
+
+fn http_method_name(method: HttpMethod) -> &'static str {
+    match method {
+        HttpMethod::Delete => "DELETE",
+        HttpMethod::Get => "GET",
+        HttpMethod::Patch => "PATCH",
+        HttpMethod::Post => "POST",
+        HttpMethod::Put => "PUT",
+    }
 }
 
 fn parse_reference_document(owner: &str, source: &str) -> Result<Arc<Value>, ApiAssemblyError> {

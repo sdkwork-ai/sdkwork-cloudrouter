@@ -1,9 +1,17 @@
 import type {
+  DocumentsAdminCategory,
   DocumentsAdminClient,
   DocumentsAdminDocument,
+  DocumentsAdminOverviewItem,
+  DocumentsAdminTag,
   DocumentsAdminTaxonomy,
 } from '@sdkwork/documents-pc-commons';
-import type { Document, DocumentTag, SdkworkDocumentsAppClient } from '@sdkwork/documents-app-sdk';
+import type {
+  Document,
+  DocumentCategory,
+  DocumentTag,
+  SdkworkDocumentsAppClient,
+} from '@sdkwork/documents-app-sdk';
 import { createIdempotencyParams } from './idempotency.ts';
 import { getDocumentsAppSdkClient } from './documents-reference-runtime-adapter.ts';
 
@@ -16,6 +24,24 @@ function toAdminDocument(document: Document): DocumentsAdminDocument {
   };
 }
 
+function toAdminTag(tag: DocumentTag): DocumentsAdminTag {
+  return { id: tag.id, slug: tag.slug, name: tag.name };
+}
+
+function toAdminCategory(category: DocumentCategory): DocumentsAdminCategory {
+  return {
+    id: category.id,
+    slug: category.slug,
+    name: category.name,
+    ...(category.nameEn !== undefined ? { nameEn: category.nameEn } : {}),
+    ...(category.description !== undefined ? { description: category.description } : {}),
+    sortOrder: category.sortOrder,
+    status: category.status,
+    createdAt: category.createdAt,
+    updatedAt: category.updatedAt,
+  };
+}
+
 /**
  * The generated taxonomy DTO treats `category` as optional while the admin port
  * (shared with the SDKWork Documents reference app) requires a string; an
@@ -25,15 +51,10 @@ function toAdminTaxonomy(taxonomy: {
   category?: string;
   tags: DocumentTag[];
 }): DocumentsAdminTaxonomy {
-  return { category: taxonomy.category ?? '', tags: taxonomy.tags };
-}
-
-/** Narrows the port's free-form status to the generated wire union. */
-function toCategoryStatus(status: string | undefined): 'active' | 'hidden' | undefined {
-  if (status === 'active' || status === 'hidden') {
-    return status;
-  }
-  return undefined;
+  return {
+    category: taxonomy.category ?? '',
+    tags: taxonomy.tags.map(toAdminTag),
+  };
 }
 
 /**
@@ -51,14 +72,14 @@ export function createCloudRouterDocumentsAdminClient(): DocumentsAdminClient {
     },
     async overview() {
       const page = await client.documentOverview.overview.list();
-      return page.items.map((item) => ({
+      return page.items.map((item): DocumentsAdminOverviewItem => ({
         id: item.id,
         title: item.title,
         status: item.status,
         locale: item.locale,
         slug: item.slug,
         category: item.category ?? '',
-        tags: item.tags ?? [],
+        tags: (item.tags ?? []).map(toAdminTag),
         updatedAt: item.updatedAt,
       }));
     },
@@ -137,47 +158,49 @@ export function createCloudRouterDocumentsAdminClient(): DocumentsAdminClient {
       return toAdminDocument(await client.revisions.restore(documentId, revisionId));
     },
     async listCategories() {
-      const result = await client.documentCategories.categories.list();
-      return result.items.map((item) => ({
-        id: item.id,
-        slug: item.slug,
-        name: item.name,
-        nameEn: item.nameEn,
-        description: item.description,
-        sortOrder: item.sortOrder,
-        status: item.status,
-        createdAt: item.createdAt,
-        updatedAt: item.updatedAt,
-      }));
+      const page = await client.documentCategories.categories.list();
+      return page.items.map(toAdminCategory);
     },
     async createCategory(input) {
-      return client.documentCategories.categories.create(input);
+      return toAdminCategory(
+        await client.documentCategories.categories.create({
+          slug: input.slug,
+          name: input.name,
+          ...(input.nameEn !== undefined ? { nameEn: input.nameEn } : {}),
+          ...(input.description !== undefined ? { description: input.description } : {}),
+          ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
+        }),
+      );
     },
     async updateCategory(categoryId, input) {
-      const status = toCategoryStatus(input.status);
-      return client.documentCategories.categories.update(categoryId, {
-        ...(input.name !== undefined ? { name: input.name } : {}),
-        ...(input.nameEn !== undefined ? { nameEn: input.nameEn } : {}),
-        ...(input.description !== undefined ? { description: input.description } : {}),
-        ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
-        ...(status !== undefined ? { status } : {}),
-      });
+      const status =
+        input.status === 'active' || input.status === 'hidden' ? input.status : undefined;
+      return toAdminCategory(
+        await client.documentCategories.categories.update(categoryId, {
+          ...(input.name !== undefined ? { name: input.name } : {}),
+          ...(input.nameEn !== undefined ? { nameEn: input.nameEn } : {}),
+          ...(input.description !== undefined ? { description: input.description } : {}),
+          ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
+          ...(status !== undefined ? { status } : {}),
+        }),
+      );
     },
     async deleteCategory(categoryId) {
       await client.documentCategories.categories.delete(categoryId);
     },
     async listTags() {
-      const result = await client.documentTags.tags.list();
-      return result.items;
+      const page = await client.documentTags.tags.list();
+      return page.items.map(toAdminTag);
     },
     async getTaxonomy(documentId) {
-      return toAdminTaxonomy(
-        await client.documentTaxonomy.taxonomy.retrieve(documentId),
-      );
+      return toAdminTaxonomy(await client.documentTaxonomy.taxonomy.retrieve(documentId));
     },
     async updateTaxonomy(documentId, input) {
       return toAdminTaxonomy(
-        await client.documentTaxonomy.taxonomy.update(documentId, input),
+        await client.documentTaxonomy.taxonomy.update(documentId, {
+          ...(input.category !== undefined ? { category: input.category } : {}),
+          ...(input.tags !== undefined ? { tags: input.tags } : {}),
+        }),
       );
     },
   };
