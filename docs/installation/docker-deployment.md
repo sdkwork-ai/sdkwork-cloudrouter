@@ -357,19 +357,31 @@ the portal build require it:
   production build. Without the anchor they keep the committed placeholder, so
   the renderer fails closed instead of presenting a retired identity.
 - `node scripts/check-deploy-application-anchor.mjs` reports the anchor state
-  without writing anything:
-  - no anchor configured: `skipped: SDKWORK_DEPLOY_APPLICATION_ID not set`, exit 0;
-  - anchor configured but the committed profiles still carry the placeholder:
+  without writing anything. Every declared surface resolves its own anchor,
+  highest precedence first: `SDKWORK_DEPLOY_APPLICATION_ID_<SURFACE>` in the
+  process environment, the same variable recorded in that profile's env layer
+  (`etc/topology/<profile>.<environment>.env`,
+  `etc/topology/overrides/<profile>.<environment>.env`, `.env.<environment>`,
+  `.env`), then the repository-level `SDKWORK_DEPLOY_APPLICATION_ID`. The result
+  is grouped by surface:
+  - no anchor at all: `skipped: SDKWORK_DEPLOY_APPLICATION_ID not set`, exit 0;
+  - anchor(s) resolved but the committed profiles still carry the placeholder:
     exit 0 and a `needs materialization: N profile file(s)` list;
-  - anchor configured and every profile materialized:
-    `anchor <id> verified for N profile files`, exit 0.
-  Add `--require-materialized` in packaging/release preflight: it requires the
-  anchor and turns any remaining placeholder into a failure.
+  - every profile of every checked surface verified:
+    `verified N profile file(s) across M surface(s)`, exit 0.
+  `--surface <id>[,<id>]` limits the check to surfaces materialized separately
+  (one anchor per surface, `APPLICATION_FACTORY_DEPLOYMENT_SPEC.md` §5), so a
+  multi-surface repository is no longer judged against one repository-wide
+  anchor. Add `--require-materialized` in packaging/release preflight: it
+  requires an anchor for every checked surface and turns any remaining
+  placeholder into a failure.
 - `node <sdkwork-specs>/tools/check-app-access-token-env.mjs --root .` resolves
-  the expected app id with the same logic. It prints the same
+  the repository-level `SDKWORK_DEPLOY_APPLICATION_ID` only (it does not read the
+  per-surface variables). It prints the same
   `skipped: SDKWORK_DEPLOY_APPLICATION_ID not set` line and exits 0 when the
   anchor is unavailable, and fails closed on a token that is not materialized
-  for a configured anchor.
+  for a configured anchor; for a per-surface registration use the Cloud Router
+  gate above.
 
 A signed, session-bound Access-Token is **never** distributed to the browser: the
 gateway keeps refusing to inject `SDKWORK_ACCESS_TOKEN` into the portal runtime
