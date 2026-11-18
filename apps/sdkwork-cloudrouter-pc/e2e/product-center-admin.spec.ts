@@ -111,7 +111,7 @@ const SHIPMENT = {
   fulfillmentId: 'f-1',
   carrierCode: 'sf',
   trackingNo: 'SF123456',
-  status: 'shipped',
+  status: 'created',
 };
 
 const CARRIER = {
@@ -327,6 +327,10 @@ async function mockProductCenterApi(page: Page): Promise<void> {
     }
     if (method === 'POST' && path === '/backend/v3/api/shipments') {
       await created(CREATED_SHIPMENT);
+      return;
+    }
+    if (method === 'POST' && path === '/backend/v3/api/shipments/sh-1/mark_shipped') {
+      await fulfill({ item: { ...SHIPMENT, status: 'shipped' } });
       return;
     }
     if (path === '/backend/v3/api/fulfillments') {
@@ -680,5 +684,27 @@ test.describe('product center admin', () => {
     expect(write.ifMatch).toBe('1');
     // The list reloads after the delete; the mock still returns the row.
     await expect(page.getByText('P-1-01')).toBeVisible();
+  });
+
+  test('marks a shipment shipped and advances the fulfillment chain', async ({ page }) => {
+    await seedAdminSession(page);
+    await mockProductCenterApi(page);
+    const writes = captureWrites(page);
+
+    await page.goto('/admin/products/shipments');
+    await expect(page.getByText('SH-2026-1')).toBeVisible();
+    await page.getByRole('button', { name: /标记已发货|Mark shipped/u }).first().click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByText(/标记发货单已发货|Mark shipment shipped/u)).toBeVisible();
+    await dialog.getByRole('button', { name: /标记已发货|Mark shipped/u }).click();
+
+    const write = await waitForWrite(
+      writes,
+      'POST',
+      '/backend/v3/api/shipments/sh-1/mark_shipped',
+    );
+    expect(write.idempotencyKey).not.toBe('');
+    // The list reloads after the advance.
+    await expect(page.getByText('SH-2026-1')).toBeVisible();
   });
 });

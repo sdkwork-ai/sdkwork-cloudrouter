@@ -456,6 +456,10 @@ function createStubPorts() {
       track('shipments.create', [body, params]);
       return shipment;
     },
+    markShipped: async (shipmentId: string, params: unknown) => {
+      track('shipments.markShipped', [shipmentId, params]);
+      return shipment;
+    },
     packages: {
       management: {
         list: async (shipmentId: string, params: unknown) => {
@@ -784,6 +788,13 @@ describe('Product Center service', () => {
     // The write must carry an idempotency key so a retry cannot create a second
     // shipment for the same fulfillment.
     expect(callFor(calls, 'shipments.create').args[1]).toMatchObject({
+      idempotencyKey: expect.any(String),
+    });
+
+    const shipped = await service.markShipmentShipped('sh-1');
+    expect(shipped.shipmentId).toBe('sh-1');
+    expect(callFor(calls, 'shipments.markShipped').args[0]).toBe('sh-1');
+    expect(callFor(calls, 'shipments.markShipped').args[1]).toMatchObject({
       idempotencyKey: expect.any(String),
     });
   });

@@ -12,10 +12,10 @@ module at `/admin/products`. It is a **composition host**, not a new domain
 implementation:
 
 ```
-catalog (products â†?SKUs â†?brands)
-  â†?taxonomy (categories â†?category attributes)
-    â†?inventory (stock levels â†?movements â†?reservations)
-      â†?fulfillment (shipments â†?logistics tracking)
+catalog (products Â· SKUs Â· brands)
+  â””â”€ taxonomy (categories Â· category attributes)
+    â””â”€ inventory (stock levels Â· movements Â· reservations)
+      â””â”€ fulfillment (shipments Â· logistics tracking)
 ```
 
 The 2026-06-30 retirement removed the Cloud Router portal's *legacy commerce
@@ -25,7 +25,7 @@ facades). This decision does not restore any of them. The Product Center is a
 new, narrower surface: it composes the **owning modules' generated backend
 SDKs** and keeps every domain rule in the module that owns it.
 
-## 2. Capability ownership (é«˜å†…è?
+## 2. Capability ownership (é«˜å†…èš)
 
 | Surface | Owning module | Authority | Backend surface |
 | --- | --- | --- | --- |
@@ -75,7 +75,7 @@ opens a raw HTTP path to compensate.
 | --- | --- |
 | `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-product/**` | new admin capability package |
 | `.../sdkwork-cloudrouter-pc-admin-shell/src/adminModuleRegistry.ts` | header module `productCenter` + sidebar tree |
-| `.../sdkwork-cloudrouter-pc-admin-shell/src/admin-route-permission-hints.ts` | `/admin/products` â†?`cloudrouter.admin.access` |
+| `.../sdkwork-cloudrouter-pc-admin-shell/src/admin-route-permission-hints.ts` | `/admin/products` â†’`cloudrouter.admin.access` |
 | `apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx` | 11 lazy routes with per-screen owning module + SDK family |
 | `.../sdkwork-cloudrouter-pc-i18n/src/resources/index.ts` | en/zh bundle registration |
 | `.../sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts` | shop / inventory / order backend client factories |
@@ -92,8 +92,8 @@ therefore carries a matching `PRODUCT_CENTER_DEPENDENCY_SDK_PATTERN` for
 `getSdkworkShopBackendSdkClient`, `getSdkworkInventoryBackendSdkClient`, and
 `getSdkworkOrderBackendSdkClient`.
 
-The alternative â€?declaring catalog/inventory/shipment tables in the Cloud
-Router contract â€?was rejected: the host does not serve those handlers, so the
+The alternative â€” declaring catalog/inventory/shipment tables in the Cloud
+Router contract â€” was rejected: the host does not serve those handlers, so the
 declaration would claim table ownership the application does not have and would
 falsify `required_tables`.
 
@@ -115,24 +115,24 @@ keeping every legacy prohibition:
 
 | Surface | Create | Read | Update | Lifecycle |
 | --- | --- | --- | --- | --- |
-| Product (SPU) | âœ?| âœ?list / âœ?detail | âœ?| publish, archive |
-| Product attributes (key / parameter) | â€?| âœ?(from detail) | âœ?replace whole set with `If-Match` | â€?|
-| Product media (main/gallery/detail/sku/video) | âœ?`external_url` + Drive image/video/document upload | âœ?| âœ?role/alt/order/status | delete |
-| SKU | âœ?single, âœ?variant matrix | âœ?| âœ?price/status/oversell | â€?|
-| Brand | âœ?| âœ?| âœ?| â€?|
-| Category | âœ?| âœ?| âœ?| â€?|
-| Category tree (cascade) | âœ?root/child | âœ?lazy per level | âœ?create/edit/lifecycle/delete | delete |
-| Attribute (dictionary) | âœ?| âœ?| âœ?name/unit/status | â€?|
-| Attribute enum values | âœ?| âœ?| âœ?| delete |
-| Category attribute binding | âœ?| âœ?| âœ?role/required/searchable/filterable/comparable | delete |
-| Price list | âœ?| âœ?| âœ?name/segment/status | â€?|
-| Price list item | âœ?| âœ?| âœ?price/min quantity/status | delete |
-| Stock | â€?| âœ?| âœ?available/safety/status | â€?|
-| Stock movement command (inbound / outbound / stocktake) | âœ?appends ledger row | â€?| â€?| â€?|
-| Stock movement / reservation | â€?| âœ?| â€?| â€?|
-| Shipment / package | shipment âœ?+ package âœ?| âœ?| package âœ? shipment âœ?| â€?|
-| Shipment tracking event | âœ?append | âœ?timeline | â€?| â€?|
-| Carrier registry | âœ?| âœ?| âœ?code/name/tracking URL/order/status | status toggle |
+| Product (SPU) | âœ“ | âœ“ list / âœ“ detail | âœ“ | publish, archive |
+| Product attributes (key / parameter) | â€” | âœ“ (from detail) | âœ“ replace whole set with `If-Match` | â€” |
+| Product media (main/gallery/detail/sku/video) | âœ“ `external_url` + Drive image/video/document upload | âœ“ | âœ“ role/alt/order/status | delete |
+| SKU | âœ“ single, âœ“ variant matrix | âœ“ | âœ“ price/status/oversell | delete |
+| Brand | âœ“ | âœ“ | âœ“ | delete |
+| Category | âœ“ | âœ“ | âœ“ | delete |
+| Category tree (cascade) | âœ“ root/child | âœ“ lazy per level | âœ“ create/edit/lifecycle/delete | delete |
+| Attribute (dictionary) | âœ“ | âœ“ | âœ“ name/unit/status | â€” |
+| Attribute enum values | âœ“ | âœ“ | âœ“ | delete |
+| Category attribute binding | âœ“ | âœ“ | âœ“ role/required/searchable/filterable/comparable | delete |
+| Price list | âœ“ | âœ“ | âœ“ name/segment/status | â€” |
+| Price list item | âœ“ | âœ“ | âœ“ price/min quantity/status | delete |
+| Stock | â€” | âœ“ | âœ“ available/safety/status | â€” |
+| Stock movement command (inbound / outbound / stocktake) | âœ“ appends ledger row | â€” | â€” | â€” |
+| Stock movement / reservation | â€” | âœ“ | â€” | â€” |
+| Shipment / package | shipment âœ“ + package âœ“ | âœ“ | package âœ“, shipment âœ“ | mark shipped |
+| Shipment tracking event | âœ“ append | âœ“ timeline | â€” | â€” |
+| Carrier registry | âœ“ | âœ“ | âœ“ code/name/tracking URL/order/status | status toggle |
 
 ## 8. Owned-module completion performed
 
@@ -148,7 +148,8 @@ organization guard, and without an idempotent command surface. Completed in
   columns the repository already selects (baseline-plus-migrations strategy, so
   existing deployments upgrade in place).
 - `PostgresCommerceInventoryStore::adjust_backend_stock` is a single transaction:
-  row lock â†?non-negative quantity checks â†?stock update with `version + 1` â†?  movement row with the before/after pair and direction â†?reload â†?commit.
+  row lock â†’ non-negative quantity checks â†’ stock update with `version + 1` â†’
+  movement row with the before/after pair and direction â†’ reload â†’ commit.
 - `POST /backend/v3/api/inventory/stocks/{stockId}/adjustments`
   (`inventory.stocks.adjustments.create`, permission `commerce.inventory.manage`)
   returns `201` with the updated stock; the request carries `quantityDelta` as an
@@ -157,7 +158,7 @@ organization guard, and without an idempotent command surface. Completed in
   header. The movement id is derived from the stock and that key, so a replayed
   adjustment finds the existing ledger row and returns the current stock instead
   of moving the quantity twice. The route manifest had been marked idempotent
-  while the handler ignored the key and used a random movement id â€?a real
+  while the handler ignored the key and used a random movement id â€” a real
   double-apply defect fixed in this change.
   (`inbound|outbound|stocktake`), `reason`, `requestNo`.
 - `stocks.update` now refuses to reset unspecified fields to zero, rejects a
@@ -221,7 +222,7 @@ validate a carrier nor render a tracking link. Completed in `sdkwork-order`:
   route manifest, service contract, OpenAPI authority, and regenerated
   `@sdkwork/order-backend-sdk` (`orderAdminShipments.carriers`).
 
-The Product Center composes it as Â«æ‰¿è¿å•†ç®¡ç†Â?and the logistics board now shows
+The Product Center composes it as Â«æ‰¿è¿å•†ç®¡ç†Â» and the logistics board now shows
 `Carrier name (code)` in the carrier group header, falling back to the raw code
 when the registry has no entry for it.
 
@@ -240,6 +241,13 @@ shipment belongs to, and no way to create one. Completed in `sdkwork-order`:
   shipment), generates `SHP-{requestNo}` and inserts the row with status
   `created`. Exposed as `POST /backend/v3/api/shipments` (`shipments.create`,
   `commerce.orders.manage`, idempotent).
+- `MarkShipmentShippedCommand` + `mark_management_shipment_shipped`: exposes the
+  lifecycle advance that package edits previously triggered only by typing the
+  exact status `shipped`. It marks the shipment, its fulfillment, and the owner
+  order as `shipped` (idempotent: rows already shipped/delivered are skipped) and
+  is exposed as
+  `POST /backend/v3/api/shipments/{shipmentId}/mark_shipped`
+  (`shipments.markShipped`, `commerce.orders.manage`, idempotent).
 - Route manifest, service contract, OpenAPI authority and
   `@sdkwork/order-backend-sdk` were regenerated. The first OpenAPI patch inserted
   a second `/backend/v3/api/shipments` object that shadowed the existing list
@@ -247,9 +255,11 @@ shipment belongs to, and no way to create one. Completed in `sdkwork-order`:
   SDK exposes `shipments.list`, `shipments.create`, `shipments.retrieve`, and
   `fulfillments.management.list`.
 
-The Product Center shipment page gained Â«æ–°å»ºå‘è´§å•Â? fulfillment and carrier are
+The Product Center shipment page gained Â«æ–°å»ºå‘è´§å•Â»: fulfillment and carrier are
 selects (falling back to text when the lookups are unavailable), the optional
-tracking number is recorded, and the write carries `Idempotency-Key`.
+tracking number is recorded, and the write carries `Idempotency-Key`. Shipments
+that are not yet shipped also expose Â«æ ‡è®°å·²å‘è´§Â», which calls the mark-shipped
+command and refreshes the list.
 
 ### Shop module (category tree root filter)
 
@@ -294,9 +304,9 @@ repository:
   `apps/sdkwork-cloudrouter-pc/specs/upload.declaration.json`
   (`commerce.product_media`, scenes `product-media`, `product-media-video`,
   `product-media-document`):
-  - `admin-product-media` â€?image profile, 5 MB, `main_image`
-  - `admin-product-video` â€?video profile, 100 MB, `video`
-  - `admin-product-document` â€?document profile, 20 MB, `manual`
+  - `admin-product-media` â€” image profile, 5 MB, `main_image`
+  - `admin-product-video` â€” video profile, 100 MB, `video`
+  - `admin-product-document` â€” document profile, 20 MB, `manual`
   All use the `public_asset` category with a read-only share link.
 - The product detail media panel gained Â«ä¸Šä¼ åª’ä½“Â»: a kind selector chooses the
   slot, images upload through the shared `DriveUploadImage` component while
@@ -308,34 +318,35 @@ repository:
 
 ## 9. Remaining gaps to commercial release
 
-1. **Carrier service levels / SLA metadata** â€?the registry stores code, display
+1. **Carrier service levels / SLA metadata** â€” the registry stores code, display
    name, tracking URL template, ordering, and enablement; per-service-level
    (express/standard) rates and SLA promises would need their own table and
    quote integration. Owner: `sdkwork-order`.
-2. **Granular write permissions** â€?pages are gated by
+2. **Granular write permissions** â€” pages are gated by
    `cloudrouter.admin.access`; per-capability codes (product/inventory/
    shipment write) belong to the IAM module manifest and the bootstrap role.
-3. **Catalog create replay semantics** â€?catalog creates carry no
+3. **Catalog create replay semantics** â€” catalog creates carry no
    `Idempotency-Key`, so a retried create is **not** replay-idempotent. It cannot
    duplicate the record (the baseline has unique `(tenant_id, spu_no)`,
    `(tenant_id, sku_no)` and category/attribute business-key indexes), but the
    retry answers `409` instead of replaying the original `201`. Making it match
    the order/inventory command semantics needs an idempotency-key table in the
    catalog module. Owner: `sdkwork-shop` catalog.
-4. **Inventory operation-id/tag naming** â€?every inventory operation uses the
+4. **Inventory operation-id/tag naming** â€” every inventory operation uses the
    `inventory` tag while its operationId starts with `inventory.` (for example
    `inventory.stocks.list`), which `check-api-operation-patterns` reports as
    `operation-id-tag-duplication`. Fixing it renames generated SDK classes or
    root client properties for every consumer, so it needs a coordinated SDK shape
    migration rather than an in-place edit. Owner: `sdkwork-inventory`.
-5. **Real-backend smoke** â€?the browser suite runs the real admin shell with the
+5. **Real-backend smoke** â€” the browser suite runs the real admin shell with the
    owning-module APIs mocked (this environment has no PostgreSQL); a deployment
    verification should replay the same flows against the live gateway.
-6. **Shipment / package status vocabulary** â€?the order admin contract types
-   `ShipmentSummary.status` and the package `status` as free strings (no enum or
-   CHECK in the schema), so the UI keeps text inputs for those two. Enumerating
-   the lifecycle belongs to `sdkwork-order`; reservation statuses and inventory
-   movement types are already selects because their owning module defines them.
+6. **Shipment / package status vocabulary** â€” the order admin contract still
+   types `ShipmentSummary.status` and the package `status` as free strings (no
+   enum or CHECK in the schema). The lifecycle is now reachable through the
+   explicit mark-shipped command instead of typing `shipped` into a package, and
+   the package dialog documents that behavior; enumerating the remaining states
+   belongs to `sdkwork-order`.
 
 ## 10. Verification
 
@@ -344,7 +355,7 @@ Commands run from the repository root unless stated otherwise:
 ```bash
 pnpm --filter @sdkwork/cloudrouter-pc-admin-product typecheck   # pass
 pnpm --filter @sdkwork/cloudrouter-pc-admin-product test        # 23/23 pass
-node ../sdkwork-specs/tools/check-i18n-standard.mjs --root .    # pass (8887 files)
+node ../sdkwork-specs/tools/check-i18n-standard.mjs --root .    # pass (8888 files)
 node ../sdkwork-specs/tools/check-workspace-member-protocol.mjs --root .   # pass
 node ../sdkwork-specs/tools/check-dependency-list-completeness.mjs --root . # ok
 node ../sdkwork-specs/tools/check-package-content-standard.mjs --workspace . # pass
@@ -362,7 +373,7 @@ python -B -m tools.frontend_contract_guardian                    # no product ro
 Browser-level smoke (real admin shell, owning-module APIs mocked):
 
 ```bash
-# terminal 1 â€?renderer only (standalone.development)
+# terminal 1 â€” renderer only (standalone.development)
 pnpm --dir apps/sdkwork-cloudrouter-pc dev
 # terminal 2
 PLAYWRIGHT_BASE_URL=http://127.0.0.1:4736 PLAYWRIGHT_WEBSERVER_DISABLED=1 \
@@ -387,65 +398,69 @@ renders its level columns. The product-center suite and this spec run together
 
 A follow-up audit of the delivered UI surfaced and fixed these defects:
 
-- **Drive media preview** â€?the media grid only rendered `url`/`publicUrl`, so
+- **Drive media preview** â€” the media grid only rendered `url`/`publicUrl`, so
   uploaded (Drive-backed) images showed `â€”`. Previews now resolve a short-lived
   URL through the shared drive media resolver; video/document rows render a kind
   icon instead of a broken `<img>`.
-- **Editing Drive media** â€?the edit dialog required a URL and would have
+- **Editing Drive media** â€” the edit dialog required a URL and would have
   rewritten a drive resource into `external_url`. The URL field is optional for
   Drive resources (blank keeps the uploaded file) and only an explicitly entered
   URL replaces the resource.
-- **Stale lists after edit dialogs** â€?product, SKU, brand, price-list and
+- **Stale lists after edit dialogs** â€” product, SKU, brand, price-list and
   inventory dialogs closed without reloading the table. All of them now capture
   the row action context's `reload` and refresh after a successful write.
-- **Tracking timeline truncation** â€?the dialog loaded only the first 100 events;
+- **Tracking timeline truncation** â€” the dialog loaded only the first 100 events;
   it now pages until the timeline is exhausted (bounded at 1,000).
-- **Safety stock validation** â€?the inventory update path rejected a negative
+- **Safety stock validation** â€” the inventory update path rejected a negative
   available quantity but accepted a negative safety stock; it now rejects both,
   with a Rust unit test.
-- **Stock status input** â€?the stock settings/status filter used free-text inputs;
+- **Stock status input** â€” the stock settings/status filter used free-text inputs;
   both are now `active | inactive` selects.
-- **Category delete guard** â€?deleting a non-leaf category now explains that its
+- **Category delete guard** â€” deleting a non-leaf category now explains that its
   children must be removed first instead of opening a confirmation the backend
   would reject (covered by the category-tree unit test).
-- **Overview full document reload** â€?the overview metric and chain cards used
+- **Overview full document reload** â€” the overview metric and chain cards used
   plain anchors, so every click reloaded the SPA. The host now injects
   `onNavigate` and the cards navigate client-side (covered by the E2E that clicks
   the products card and asserts the list renders).
-- **Inventory filter/enum drift** â€?movement-type and reservation-status filters
+- **Inventory filter/enum drift** â€” movement-type and reservation-status filters
   are now selects over the owning-module enums (`inbound|outbound|stocktake`,
   `reserved|consumed|released|expired`); the stock adjustment dialog seeds
   `stocktake` explicitly instead of showing an empty movement type.
-- **Price-list item SKU picker** â€?the item dialog lists the first 200 SKUs
+- **Price-list item SKU picker** â€” the item dialog lists the first 200 SKUs
   (`skuNo Â· title`) with a documented free-text fallback when the lookup fails,
   instead of requiring a pasted id.
-- **External media identity** â€?registering media by URL sent a
+- **External media identity** â€” registering media by URL sent a
   `media-<uuid>` resource id, but the catalog requires a positive int64
   (`MediaResource.id`, validated by `media_resource_identity`), so every
   external-URL media create was rejected. The id is now a deterministic 63-bit
   FNV-1a digest of the URL, inside the signed int64 range; the E2E asserts the
   submitted id is numeric and below 2^63.
-- **SKU product picker** â€?SKU creation only accepted a pasted product id; it now
+- **SKU product picker** â€” SKU creation only accepted a pasted product id; it now
   lists the first 200 products (`productNo Â· title`) with the same free-text
   fallback.
-- **Shipment list readability** â€?the shipment table now resolves
+- **Shipment list readability** â€” the shipment table now resolves
   `fulfillmentId` to the fulfillment number and `carrierCode` to
   Â«carrier name (code)Â» using the same lookups the create dialog loads; an
   unknown reference still falls back to the raw id/code.
-- **Regression coverage for shipment creation** â€?the service suite asserts the
+- **Regression coverage for shipment creation** â€” the service suite asserts the
   fulfillment query shape and the shipment write's idempotency key (24 tests),
   and the order service gained four unit tests for
   `CreateShipmentCommand` normalization/validation and
   `FulfillmentManagementListQuery` pagination (64 tests). The Application Center
   header spec now sets a 60s navigation timeout so a cold dev-server compile
   cannot fail it.
-- **Delete coverage for contract-supported records** â€?products, SKUs, and
+- **Delete coverage for contract-supported records** â€” products, SKUs, and
   brands expose a confirmation dialog that sends `If-Match` (the shared
   `ConfirmDeleteDialog` keeps the dialog open and shows the owning service's
   rejection). The service suite asserts the versioned delete calls, and the E2E
   deletes a SKU and verifies the `If-Match` version reaches the request. Category
   deletion stays on the taxonomy tree because that is where the leaf/depth guard
   lives.
+- **Shipment lifecycle action** â€” Â«æ ‡è®°å·²å‘è´§Â» calls the new mark-shipped command
+  with `Idempotency-Key` and refreshes the queue; the package status field now
+  documents that setting `shipped` also advances the chain. The E2E asserts the
+  request path and key.
 
 Owning-module verification (from `../sdkwork-inventory`):
 
@@ -531,11 +546,11 @@ they are not caused by, and are not fixed by, this work):
 | Category attributes & values | bindings, enum value dictionary, value dialogs | attribute e2e case 7, unit tests |
 | Price lists | list CRUD + items dialog | e2e case 7 |
 | Inventory (inbound / outbound / stocktake) | adjust command with int64-string delta + idempotency, safety stock settings, movements/reservations views | e2e case 10, inventory cargo tests |
-| Fulfillment & logistics | shipment creation from a fulfillment, shipment list, packages, tracking timeline, carrier registry + carrier label | e2e cases 4/5/12/15, order cargo tests |
+| Fulfillment & logistics | shipment creation from a fulfillment, mark shipped, shipment list, packages, tracking timeline, carrier registry + carrier label | e2e cases 4/5/12/15/17, order cargo tests |
 | Permissions | owning backends enforce `commerce.catalog/inventory/orders.*`; IAM `commerce` module grants `commerce.*` to `org_admin`/`org_operations`; host routes gated by `cloudrouter.admin.access` | route manifests, IAM manifests |
-| i18n | en-US + zh-CN bundles for every screen | `check-i18n-standard` pass (8887 files) |
-| Tests | owning-module Rust tests, package unit tests, browser E2E | order 19 routes + 64 service, inventory 3, merchandise 11, product 24, commons 12, e2e 16 |
-| Documentation | this document + superseded note | â€?|
+| i18n | en-US + zh-CN bundles for every screen | `check-i18n-standard` pass (8888 files) |
+| Tests | owning-module Rust tests, package unit tests, browser E2E | order 19 routes + 66 service, inventory 3, merchandise 11, product 24, commons 12, e2e 17 |
+| Documentation | this document + superseded note | â€”|
 
 Residual items are listed in section 9; none blocks the composed capability, and
 each names the owning module.

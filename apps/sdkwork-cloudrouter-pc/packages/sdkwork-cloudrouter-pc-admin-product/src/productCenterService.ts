@@ -382,6 +382,7 @@ export interface ProductCenterService {
 
   listFulfillments(query: FulfillmentListQuery): Promise<ProductCenterPage<FulfillmentSummary>>;
   createShipment(body: CreateShipmentRequest): Promise<ShipmentSummary>;
+  markShipmentShipped(shipmentId: string): Promise<ShipmentSummary>;
 
   loadOverview(): Promise<ProductCenterOverview>;
 }
@@ -889,6 +890,13 @@ export function createProductCenterService(
       return shipmentsPort().create(
         body,
         createIdempotencyParams('product-center-shipment'),
+      );
+    },
+
+    markShipmentShipped(shipmentId) {
+      return shipmentsPort().markShipped(
+        shipmentId,
+        createIdempotencyParams('product-center-shipment-shipped'),
       );
     },
 

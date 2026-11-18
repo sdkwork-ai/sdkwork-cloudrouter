@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pencil, Plus, RefreshCw, Route, Truck } from 'lucide-react';
+import { Pencil, Plus, RefreshCw, Route, Truck, CheckCircle2 } from 'lucide-react';
 
 import {
   Button,
@@ -52,6 +52,10 @@ function usePackageFields(): FormFieldSpec[] {
       name: 'status',
       label: t('admin.productCenter.shipments.package.field.status', 'Status'),
       kind: 'text',
+      help: t(
+        'admin.productCenter.shipments.package.field.statusHint',
+        'Setting this to shipped advances the shipment, fulfillment, and order.',
+      ),
     },
   ], [t]);
 }
@@ -464,6 +468,29 @@ export function ShipmentListPage({ service }: ProductCenterPageProps) {
     [carriers],
   );
 
+  const [marking, setMarking] = useState<{ shipment: ShipmentSummary; reload: () => void } | null>(null);
+  const [markBusy, setMarkBusy] = useState(false);
+  const [markError, setMarkError] = useState<string | null>(null);
+
+  const confirmMarkShipped = () => {
+    if (!marking) {
+      return;
+    }
+    setMarkBusy(true);
+    setMarkError(null);
+    resolved.markShipmentShipped(marking.shipment.shipmentId).then(
+      () => {
+        setMarkBusy(false);
+        marking.reload();
+        setMarking(null);
+      },
+      (markFailure: unknown) => {
+        setMarkBusy(false);
+        setMarkError(describeProductCenterError(markFailure).message);
+      },
+    );
+  };
+
   const filters = useMemo<FilterControl[]>(() => [
     { name: 'status', label: t('admin.productCenter.shipments.filter.status', 'Status'), kind: 'text' },
     { name: 'orderId', label: t('admin.productCenter.shipments.filter.order', 'Order id'), kind: 'text' },
@@ -576,7 +603,7 @@ export function ShipmentListPage({ service }: ProductCenterPageProps) {
         emptyLabel={t('admin.productCenter.state.empty', 'No records yet')}
         filters={filters}
         load={load}
-        rowActions={(row) => (
+        rowActions={(row, context) => (
           <>
             <Button onClick={() => setActiveShipment(row)} variant="ghost">
               <Truck aria-hidden="true" className="h-3.5 w-3.5" />
@@ -586,6 +613,18 @@ export function ShipmentListPage({ service }: ProductCenterPageProps) {
               <Route aria-hidden="true" className="h-3.5 w-3.5" />
               {t('admin.productCenter.shipments.action.tracking', 'Tracking')}
             </Button>
+            {row.status !== 'shipped' && row.status !== 'delivered' ? (
+              <Button
+                onClick={() => {
+                  setMarkError(null);
+                  setMarking({ shipment: row, reload: context.reload });
+                }}
+                variant="ghost"
+              >
+                <CheckCircle2 aria-hidden="true" className="h-3.5 w-3.5" />
+                {t('admin.productCenter.shipments.action.markShipped', 'Mark shipped')}
+              </Button>
+            ) : null}
           </>
         )}
         rowKey={(row) => row.shipmentId}
@@ -607,6 +646,34 @@ export function ShipmentListPage({ service }: ProductCenterPageProps) {
           shipment={trackingShipment}
         />
       ) : null}
+
+      <Dialog
+        footer={
+          <>
+            <Button onClick={() => setMarking(null)} variant="secondary">
+              {t('admin.productCenter.actions.cancel', 'Cancel')}
+            </Button>
+            <Button disabled={markBusy} onClick={confirmMarkShipped} variant="primary">
+              {markBusy
+                ? t('admin.productCenter.state.saving', 'Saving…')
+                : t('admin.productCenter.shipments.action.markShipped', 'Mark shipped')}
+            </Button>
+          </>
+        }
+        onClose={() => setMarking(null)}
+        open={marking !== null}
+        title={t('admin.productCenter.shipments.markShippedTitle', 'Mark shipment shipped')}
+      >
+        <div className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
+          <p>
+            {t(
+              'admin.productCenter.shipments.markShippedMessage',
+              'This marks the shipment, its fulfillment, and the linked order as shipped. Repeating the action does not advance them twice.',
+            )}
+          </p>
+          {markError ? <Notice tone="error">{markError}</Notice> : null}
+        </div>
+      </Dialog>
     </>
   );
 }
