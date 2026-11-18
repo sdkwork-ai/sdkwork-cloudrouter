@@ -7,9 +7,15 @@ import {
 import type {
   ApplicationAccessToken,
   ApplicationCatalogContext,
+  ApplicationCatalogQuery,
   ApplicationRecord,
+  DeployOrganizationOption,
 } from "../types/application-catalog";
 import { getApplicationCatalogIamService } from "./iam-service";
+import {
+  normalizeDeployOwnershipScope,
+  toDeployAppListQuery,
+} from "./deploy-application-filter";
 
 /**
  * Application source loaders.
@@ -50,13 +56,43 @@ export async function loadIamApplications(
 
 export async function loadDeployApplications(
   context: ApplicationCatalogContext,
+  query?: ApplicationCatalogQuery,
 ): Promise<readonly ApplicationRecord[]> {
   const client = getSdkworkDeploymentsAppSdkClient();
-  const page = await client.app.list({ page: 1, pageSize: CATALOG_PAGE_SIZE });
+  // Server-side filtering keeps the page honest: pagination and the total are
+  // computed on the whole filtered set rather than on a locally trimmed slice.
+  const page = await client.app.list({
+    page: 1,
+    pageSize: CATALOG_PAGE_SIZE,
+    ...toDeployAppListQuery(query?.deploy ?? { kindTab: "all", ownership: "all" }),
+  });
   return (page.items ?? [])
     .map((item) => mapDeployApplication(item))
     .filter((item): item is ApplicationRecord => item !== undefined)
     .filter((item) => matchesOrganization(item, context.organizationId));
+}
+
+/**
+ * Organization options for the deploy ownership filter.
+ *
+ * The deploy service owns no organization table, so the admin IAM directory is
+ * the only source of display names. A failure is not fatal: the page falls back
+ * to a validated numeric organization id input.
+ */
+export async function loadDeployOrganizationOptions(): Promise<readonly DeployOrganizationOption[]> {
+  const service = getApplicationCatalogIamService();
+  const payload = await service.iam.organizations.list({ page: 1, page_size: CATALOG_PAGE_SIZE });
+  return extractItems(payload)
+    .map((value): DeployOrganizationOption | undefined => {
+      const record = asRecord(value);
+      const id = optionalString(record.id) ?? optionalString(record.organizationId);
+      if (!id) {
+        return undefined;
+      }
+      const name = optionalString(record.name) ?? optionalString(record.displayName);
+      return name ? { id, name } : { id };
+    })
+    .filter((option): option is DeployOrganizationOption => option !== undefined);
 }
 
 export async function loadAppStoreApplications(
@@ -225,13 +261,20 @@ function mapDeployApplication(value: unknown): ApplicationRecord | undefined {
   if (!id) {
     return undefined;
   }
+  const organizationId = optionalString(record.organizationId);
+  const ownershipScope = normalizeDeployOwnershipScope(record.ownershipScope)
+    ?? normalizeDeployOwnershipScope(record.ownerType)
+    // Older payloads carried only the numeric organization: `0` is the tenant
+    // encoding, anything positive is an organization.
+    ?? (organizationId && organizationId !== "0" ? "ORGANIZATION" : "TENANT");
   return {
     environment: optionalString(record.defaultEnvironment),
     groupId: "deploy",
     id,
     kind: optionalString(record.appKind),
     name: optionalString(record.name) ?? optionalString(record.slug) ?? id,
-    organizationId: optionalString(record.organizationId),
+    organizationId,
+    ownershipScope,
     reference: optionalString(record.slug),
     status: optionalString(record.appStatus),
     updatedAt: optionalString(record.updatedAt),

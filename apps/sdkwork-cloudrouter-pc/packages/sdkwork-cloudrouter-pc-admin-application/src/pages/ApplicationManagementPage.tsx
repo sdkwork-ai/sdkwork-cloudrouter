@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigate, useParams, useLocation, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   Copy,
@@ -18,6 +18,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import {
+  Badge,
   Button,
   DataTable,
   type DataTableColumn,
@@ -34,6 +35,10 @@ import {
   type StatusBadgeVariant,
 } from "@sdkwork/ui-pc-react";
 
+import {
+  DeployApplicationFilters,
+  type DeployOrganizationLookup,
+} from "../components/DeployApplicationFilters";
 import { ApplicationIntegrationDrawer } from "../components/ApplicationIntegrationDrawer";
 import { AppSourceRemixDrawer } from "../components/AppSourceRemixDrawer";
 import { AppStoreCategoryPanel } from "../components/AppStoreCategoryPanel";
@@ -46,8 +51,19 @@ import {
   issueApplicationAccessToken,
   loadAppStoreApplications,
   loadDeployApplications,
+  loadDeployOrganizationOptions,
   resolveApplicationCatalogContext,
 } from "../services/application-catalog";
+import {
+  DEFAULT_DEPLOY_APP_LIST_FILTER,
+  deployAppKindMessageKey,
+  hasActiveDeployAppListFilter,
+  isDeployAppListQueryInvalid,
+  isValidDeployOrganizationId,
+  normalizeDeployOrganizationId,
+  parseDeployAppListFilter,
+  writeDeployAppListFilter,
+} from "../services/deploy-application-filter";
 import {
   resolveDeployApplicationForRecord,
   summarizeApplicationIntegration,
@@ -66,6 +82,10 @@ import type {
   ApplicationGroupId,
   ApplicationGroupState,
   ApplicationRecord,
+  DeployAppKindTabId,
+  DeployAppListFilter,
+  DeployOrganizationOption,
+  DeployOwnershipFilterId,
 } from "../types/application-catalog";
 import type { AppStoreCategoryService } from "../types/appstore-categories";
 import type { DeployAppSourceService } from "../types/deploy-app-source";
@@ -129,7 +149,9 @@ export function ApplicationManagementPage({
   integrations,
   issueToken,
   loaders,
+  loadOrganizations,
   organizationId,
+  organizations,
   permissionScope,
   resolveContext,
   showViewNav = true,
@@ -169,6 +191,15 @@ export function ApplicationManagementPage({
   /** Test/extension seam: override the Deploy source/remix transport. */
   sourceService?: DeployAppSourceService;
   tenantId?: string;
+  /**
+   * Organization directory for the deploy ownership filter.
+   *
+   * The host may pass an already-loaded list; when omitted the page asks IAM for
+   * it lazily and falls back to a validated numeric organization id input.
+   */
+  organizations?: readonly DeployOrganizationOption[];
+  /** Test/extension seam: override the organization directory transport. */
+  loadOrganizations?: () => Promise<readonly DeployOrganizationOption[]>;
 }) {
   const messages = useApplicationCatalogMessages();
   const navigate = useNavigate();
@@ -184,6 +215,11 @@ export function ApplicationManagementPage({
   integrationsRef.current = integrations;
   const sourceServiceRef = useRef(sourceService);
   sourceServiceRef.current = sourceService;
+  const organizationsRef = useRef(organizations);
+  organizationsRef.current = organizations;
+  const loadOrganizationsRef = useRef(loadOrganizations);
+  loadOrganizationsRef.current = loadOrganizations;
+  const [searchParams, setSearchParams] = useSearchParams();
   const [context, setContext] = useState<ApplicationCatalogContext>();
   const [groupStates, setGroupStates] = useState(createInitialGroupStates);
   const [internalView, setInternalView] = useState<ApplicationCatalogView>("iam");
@@ -203,6 +239,12 @@ export function ApplicationManagementPage({
     kind: ApplicationIntegrationKind;
   }>();
   const [sourceTarget, setSourceTarget] = useState<ApplicationRecord>();
+  const [organizationLookup, setOrganizationLookup] = useState<DeployOrganizationLookup>({
+    options: [],
+    status: "idle",
+  });
+  const [organizationDraft, setOrganizationDraft] = useState("");
+  const [organizationDraftError, setOrganizationDraftError] = useState(false);
   // Both gates fall back to the live portal session scope when no seam is given.
   const canReadSource = permissionScope
     ? isApplicationCenterActionAllowed("sourceRead", permissionScope)
@@ -217,17 +259,45 @@ export function ApplicationManagementPage({
   const activeState = activeGroup ? groupStates[activeGroup.id] : undefined;
   const deployApplications = groupStates.deploy.items;
 
+  // The deploy filter lives in the URL so a filtered list survives a refresh or
+  // a shared link. An organization drill-down already fixes the scope, so its
+  // ownership choice is coerced to "all" and the selector stays hidden.
+  const parsedDeployFilter = useMemo(
+    () => parseDeployAppListFilter(searchParams),
+    [searchParams],
+  );
+  const deployFilter = useMemo<DeployAppListFilter>(() => (
+    context?.organizationId
+      ? { kindTab: parsedDeployFilter.kindTab, ownership: "all" }
+      : parsedDeployFilter
+  ), [context?.organizationId, parsedDeployFilter]);
+  const deployFilterKey = [
+    deployFilter.kindTab,
+    deployFilter.ownership,
+    deployFilter.organizationId ?? "",
+  ].join("|");
+  const deployFilterRef = useRef(deployFilter);
+  deployFilterRef.current = deployFilter;
+  const deployFiltersActive = activeGroup?.id === "deploy"
+    && hasActiveDeployAppListFilter(deployFilter);
+
   useEffect(() => {
     let cancelled = false;
-    setGroupStates(createInitialGroupStates());
     setContext(undefined);
+    // Deploy is re-queried by its own effect (filters are server-side); reset
+    // only the groups that the context owns.
+    setGroupStates((current) => ({
+      ...current,
+      "app-store": { items: [], status: "loading" },
+      iam: { items: [], status: "loading" },
+    }));
     const resolve = resolveContextRef.current ?? resolveApplicationCatalogContext;
     void resolve({ organizationId, tenantId }).then(async (resolved) => {
       if (cancelled) {
         return;
       }
       setContext(resolved);
-      await Promise.all(APPLICATION_GROUPS.map(async (group) => {
+      await Promise.all(APPLICATION_GROUPS.filter((group) => group.id !== "deploy").map(async (group) => {
         try {
           const loader = loadersRef.current?.[group.id] ?? group.loader;
           const items = await loader(resolved);
@@ -251,6 +321,137 @@ export function ApplicationManagementPage({
       cancelled = true;
     };
   }, [organizationId, reloadToken, tenantId]);
+
+  // Deploy list: one server query per (context, filter, refresh) change. The
+  // hook keeps the previous rows while the new filtered page is loading.
+  useEffect(() => {
+    if (!context) {
+      return;
+    }
+    let cancelled = false;
+    setGroupStates((current) => ({
+      ...current,
+      deploy: { ...current.deploy, status: "loading" },
+    }));
+    void (async () => {
+      try {
+        const loader = loadersRef.current?.deploy ?? loadDeployApplications;
+        const items = await loader(context, { deploy: deployFilterRef.current });
+        if (!cancelled) {
+          setGroupStates((current) => ({
+            ...current,
+            deploy: { items, status: "ready" },
+          }));
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setGroupStates((current) => ({
+            ...current,
+            deploy: { error, items: [], status: "error" },
+          }));
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [context, deployFilterKey, reloadToken]);
+
+  // Keep the organization directory lookup lazy: it is only needed once the
+  // operator picks the organization ownership filter. `status` is deliberately
+  // not a dependency: the effect sets it, and depending on it would let React's
+  // cleanup cancel the in-flight lookup it just started.
+  useEffect(() => {
+    if (activeGroup?.id !== "deploy" || deployFilter.ownership !== "ORGANIZATION") {
+      return;
+    }
+    if (organizationsRef.current) {
+      setOrganizationLookup({ options: organizationsRef.current, status: "ready" });
+      return;
+    }
+    if (organizationLookup.status !== "idle") {
+      return;
+    }
+    let cancelled = false;
+    setOrganizationLookup({ options: [], status: "loading" });
+    const load = loadOrganizationsRef.current ?? loadDeployOrganizationOptions;
+    void load()
+      .then((options) => {
+        if (!cancelled) {
+          setOrganizationLookup({ options, status: "ready" });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setOrganizationLookup({ options: [], status: "failed" });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see comment above.
+  }, [activeGroup?.id, deployFilter.ownership]);
+
+  // Reflect URL changes (back/forward, shared link) back into the draft input.
+  useEffect(() => {
+    setOrganizationDraft(deployFilter.organizationId ?? "");
+    setOrganizationDraftError(false);
+  }, [deployFilter.organizationId, deployFilter.ownership]);
+
+  const updateDeployFilter = (patch: Partial<DeployAppListFilter>) => {
+    const next: DeployAppListFilter = { ...deployFilter, ...patch };
+    setSearchParams(
+      (current) => writeDeployAppListFilter(current, next),
+      { replace: true },
+    );
+  };
+
+  const handleKindTabChange = (kindTab: DeployAppKindTabId) => {
+    updateDeployFilter({ kindTab });
+  };
+
+  const handleOwnershipChange = (ownership: DeployOwnershipFilterId) => {
+    setOrganizationDraftError(false);
+    updateDeployFilter({
+      ownership,
+      ...(ownership === "ORGANIZATION" ? {} : { organizationId: undefined }),
+    });
+  };
+
+  const commitOrganizationDraft = () => {
+    const normalized = normalizeDeployOrganizationId(organizationDraft);
+    if (!normalized) {
+      if (organizationDraft.trim()) {
+        setOrganizationDraftError(true);
+        return;
+      }
+      setOrganizationDraftError(false);
+      updateDeployFilter({ organizationId: undefined });
+      return;
+    }
+    setOrganizationDraftError(false);
+    setOrganizationDraft(normalized);
+    if (normalized !== deployFilter.organizationId) {
+      updateDeployFilter({ organizationId: normalized });
+    }
+  };
+
+  const handleOrganizationSelect = (value: string) => {
+    setOrganizationDraftError(false);
+    setOrganizationDraft(value);
+    updateDeployFilter({
+      organizationId: isValidDeployOrganizationId(value) ? value : undefined,
+    });
+  };
+
+  const clearDeployFilters = () => {
+    setOrganizationDraft("");
+    setOrganizationDraftError(false);
+    setSearchParams(
+      (current) => writeDeployAppListFilter(current, DEFAULT_DEPLOY_APP_LIST_FILTER),
+      { replace: true },
+    );
+  };
 
   const loadAccessToken = async (application: ApplicationRecord) => {
     if (!context) {
@@ -409,11 +610,15 @@ export function ApplicationManagementPage({
     if (activeGroup.id === "deploy") {
       return [
         identity,
-        kind,
+        {
+          cell: (item) => <DeployAppKindBadge kind={item.kind} messages={messages} />,
+          header: messages.columns.type,
+          id: "type",
+        },
         environment,
         status,
         {
-          cell: (item) => (item.organizationId ? messages.scopes.organization : messages.scopes.tenant),
+          cell: (item) => <DeployOwnershipBadge item={item} messages={messages} />,
           header: messages.columns.scope,
           id: "scope",
         },
@@ -438,6 +643,16 @@ export function ApplicationManagementPage({
     : "";
   const activeCopy = activeGroup ? messages.groups[activeGroup.messageKey] : undefined;
   const busy = APPLICATION_GROUPS.some((group) => groupStates[group.id].status === "loading");
+  const deployQueryInvalid = activeGroup?.id === "deploy"
+    && isDeployAppListQueryInvalid(activeState?.error);
+  const listNarrowed = deployFiltersActive || query.trim().length > 0;
+
+  const handleOrganizationDraftChange = (value: string) => {
+    setOrganizationDraft(value);
+    if (organizationDraftError) {
+      setOrganizationDraftError(false);
+    }
+  };
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-5">
@@ -540,6 +755,24 @@ export function ApplicationManagementPage({
             </label>
           </div>
 
+          {activeGroup?.id === "deploy" ? (
+            <DeployApplicationFilters
+              filter={deployFilter}
+              filtersActive={deployFiltersActive}
+              lookup={organizationLookup}
+              messages={messages}
+              onClear={clearDeployFilters}
+              onKindTabChange={handleKindTabChange}
+              onOrganizationCommit={commitOrganizationDraft}
+              onOrganizationDraftChange={handleOrganizationDraftChange}
+              onOrganizationSelect={handleOrganizationSelect}
+              onOwnershipChange={handleOwnershipChange}
+              organizationDraft={organizationDraft}
+              organizationError={organizationDraftError}
+              showOwnership={!context?.organizationId}
+            />
+          ) : null}
+
           {context?.organizationId && activeGroup?.id === "app-store" ? (
             <StatusNotice tone="warning">{messages.organizationAppStoreNotice}</StatusNotice>
           ) : null}
@@ -548,10 +781,21 @@ export function ApplicationManagementPage({
             <StatusNotice tone="danger">
               <span className="flex flex-wrap items-center gap-3">
                 <span>
-                  {isApplicationSourceUnavailable(activeState?.error) ? messages.unavailable : messages.loadError}
+                  {deployQueryInvalid
+                    ? messages.deployFilters.invalidQuery
+                    : isApplicationSourceUnavailable(activeState?.error)
+                      ? messages.unavailable
+                      : messages.loadError}
                 </span>
-                <Button onClick={() => setReloadToken((token) => token + 1)} size="sm" type="button" variant="outline">
-                  {messages.retry}
+                <Button
+                  onClick={deployQueryInvalid
+                    ? clearDeployFilters
+                    : () => setReloadToken((token) => token + 1)}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  {deployQueryInvalid ? messages.deployFilters.clear : messages.retry}
                 </Button>
               </span>
             </StatusNotice>
@@ -564,8 +808,8 @@ export function ApplicationManagementPage({
           <DataTable
             className="min-h-0 flex-1"
             columns={columns}
-            emptyDescription={messages.emptyDescription}
-            emptyTitle={messages.emptyTitle}
+            emptyDescription={listNarrowed ? messages.deployFilters.emptyDescription : messages.emptyDescription}
+            emptyTitle={listNarrowed ? messages.deployFilters.emptyTitle : messages.emptyTitle}
             getRowId={(item) => `${item.groupId}:${item.id}`}
             loading={activeState?.status === "loading"}
             rowActions={(item) => (
@@ -851,6 +1095,65 @@ function IntegrationSummaryChips({
         <span className="inline-flex items-center gap-1 rounded-full border border-[var(--sdk-color-border-default)] px-2 py-0.5 text-[var(--sdk-color-text-secondary)]">
           <Smartphone className="h-3 w-3" />
           {copy.miniProgram}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function DeployAppKindBadge({
+  kind,
+  messages,
+}: {
+  kind?: string;
+  messages: ApplicationCatalogMessages;
+}) {
+  const messageKey = deployAppKindMessageKey(kind);
+  const label = messageKey ? messages.deployFilters.kinds[messageKey] : kind;
+  if (!label) {
+    return <>-</>;
+  }
+  return (
+    <Badge data-deploy-kind={kind ?? "unknown"} variant="outline">
+      {label}
+    </Badge>
+  );
+}
+
+function DeployOwnershipBadge({
+  item,
+  messages,
+}: {
+  item: ApplicationRecord;
+  messages: ApplicationCatalogMessages;
+}) {
+  const scope = item.ownershipScope;
+  const label = scope === "ORGANIZATION"
+    ? messages.scopes.organization
+    : scope === "TENANT"
+      ? messages.scopes.tenant
+      : scope === "USER"
+        ? messages.deployFilters.ownerships.user
+        : scope === "PLATFORM"
+          ? messages.deployFilters.ownerships.platform
+          : item.organizationId && item.organizationId !== "0"
+            ? messages.scopes.organization
+            : messages.scopes.tenant;
+  // `0` is the tenant encoding of owner_organization_id, so only a positive id
+  // is worth showing next to the ownership badge.
+  const organizationId = normalizeDeployOrganizationId(item.organizationId);
+  return (
+    <div
+      className="flex flex-wrap items-center gap-1.5"
+      data-deploy-ownership={scope ?? "UNKNOWN"}
+    >
+      <Badge variant="secondary">{label}</Badge>
+      {organizationId ? (
+        <span
+          className="text-xs text-[var(--sdk-color-text-muted)]"
+          data-deploy-organization-id={organizationId}
+        >
+          {template(messages.deployFilters.organizationIdTemplate, { id: organizationId })}
         </span>
       ) : null}
     </div>

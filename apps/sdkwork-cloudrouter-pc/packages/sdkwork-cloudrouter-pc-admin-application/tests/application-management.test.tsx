@@ -103,7 +103,12 @@ describe("application management page", () => {
     expect((await screen.findAllByText("Storefront")).length).toBeGreaterThan(0);
     expectText("应用管理");
     expect(screen.getByText(/Acme/)).toBeTruthy();
-    expect(loaders.deploy).toHaveBeenCalledWith(expect.objectContaining({ tenantId: "tenant-1" }));
+    expect(loaders.deploy).toHaveBeenCalledWith(
+      expect.objectContaining({ tenantId: "tenant-1" }),
+      expect.objectContaining({
+        deploy: expect.objectContaining({ kindTab: "all", ownership: "all" }),
+      }),
+    );
     // The IAM view is retired: an installation is reviewed through the
     // deployment application it belongs to.
     expect(loaders.iam).not.toHaveBeenCalled();

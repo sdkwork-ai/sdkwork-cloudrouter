@@ -69,6 +69,7 @@ export {
   issueApplicationAccessToken,
   loadAppStoreApplications,
   loadDeployApplications,
+  loadDeployOrganizationOptions,
   loadIamApplications,
   resolveApplicationCatalogContext,
 } from "./services/application-catalog";
@@ -76,10 +77,42 @@ export type {
   ApplicationAccessToken,
   ApplicationAccessTokenIssuer,
   ApplicationCatalogContext,
+  ApplicationCatalogQuery,
   ApplicationGroupId,
+  ApplicationGroupLoader,
   ApplicationGroupState,
   ApplicationRecord,
+  DeployAppKind,
+  DeployAppKindTabId,
+  DeployAppListFilter,
+  DeployAppListQuery,
+  DeployKindMessageKey,
+  DeployOrganizationOption,
+  DeployOwnershipFilterId,
+  DeployOwnershipMessageKey,
+  DeployOwnershipScope,
 } from "./types/application-catalog";
+export {
+  DEFAULT_DEPLOY_APP_LIST_FILTER,
+  DEPLOY_APP_KIND_MESSAGE_KEYS,
+  DEPLOY_APP_KIND_TABS,
+  DEPLOY_FILTER_PARAMS,
+  DEPLOY_OWNERSHIP_FILTERS,
+  deployAppKindMessageKey,
+  deployAppKindTab,
+  deployOwnershipMessageKey,
+  hasActiveDeployAppListFilter,
+  isDeployAppListQueryInvalid,
+  isValidDeployOrganizationId,
+  normalizeDeployOrganizationId,
+  normalizeDeployOwnershipScope,
+  parseDeployAppListFilter,
+  toDeployAppListQuery,
+  writeDeployAppListFilter,
+} from "./services/deploy-application-filter";
+export { DeployApplicationFilters } from "./components/DeployApplicationFilters";
+export type { DeployOrganizationLookup } from "./components/DeployApplicationFilters";
+export { DEPLOY_APP_KINDS, DEPLOY_OWNERSHIP_SCOPES } from "./types/application-catalog";
 export { AppModerationPanel } from "./components/AppModerationPanel";
 export { AppModerationDecisionDrawer } from "./components/AppModerationDecisionDrawer";
 export { AppModerationReviewDrawer } from "./components/AppModerationReviewDrawer";

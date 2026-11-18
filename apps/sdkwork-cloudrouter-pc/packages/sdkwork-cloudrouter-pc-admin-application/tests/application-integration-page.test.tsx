@@ -284,7 +284,10 @@ describe("application integration actions", () => {
     await screen.findAllByText("Storefront");
 
     expect(await screen.findByText("1 个支付账号")).toBeTruthy();
-    expect(screen.getByText("小程序")).toBeTruthy();
+    // The deploy kind tab also reads "小程序"; the summary chip is the one on
+    // the application row.
+    expect(document.querySelector("[data-application-integration-summary]")?.textContent)
+      .toContain("小程序");
 
     fireEvent.click(screen.getByRole("button", { name: "支付配置" }));
     expect(await screen.findByText("已绑定支付账号")).toBeTruthy();

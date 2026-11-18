@@ -1,4 +1,8 @@
 import type {
+  DeployAppKindTabId,
+  DeployOwnershipMessageKey,
+} from "./application-catalog";
+import type {
   DeployAppSourceIssueCode,
   DeployAppSourceReadinessReason,
 } from "./deploy-app-source";
@@ -154,6 +158,25 @@ export interface ApplicationCatalogMessages {
     type: string;
     updatedAt: string;
     version: string;
+  };
+  /** Deploy list filters: endpoint kind tabs, ownership, and their states. */
+  deployFilters: {
+    allOrganizations: string;
+    clear: string;
+    emptyDescription: string;
+    emptyTitle: string;
+    invalidQuery: string;
+    kindLabel: string;
+    kinds: Record<DeployAppKindTabId, string>;
+    organizationHint: string;
+    organizationIdTemplate: string;
+    organizationInvalid: string;
+    organizationLabel: string;
+    organizationLoading: string;
+    organizationPlaceholder: string;
+    organizationUnavailable: string;
+    ownershipLabel: string;
+    ownerships: Record<DeployOwnershipMessageKey, string>;
   };
   countTemplate: string;
   emptyDescription: string;
