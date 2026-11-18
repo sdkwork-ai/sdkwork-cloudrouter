@@ -21,6 +21,8 @@ import { ResourcePageFrame, requireString, type ProductCenterPageProps } from '.
 import {
   describeProductCenterError,
   getProductCenterService,
+  type CarrierSummary,
+  type FulfillmentSummary,
   type ProductCenterService,
   type ShipmentPackageSummary,
   type ShipmentSummary,
@@ -218,6 +220,8 @@ function ShipmentPackagesDialog({ shipment, service, onClose }: ShipmentPackages
 }
 
 const TRACKING_EVENT_TYPES = ['picked_up', 'in_transit', 'out_for_delivery', 'delivered', 'exception'] as const;
+/** Upper bound for one timeline query; a longer shipment is truncated on purpose. */
+const TRACKING_EVENT_LIMIT = 1000;
 
 interface ShipmentTrackingDialogProps {
   shipment: ShipmentSummary;
@@ -246,10 +250,28 @@ function ShipmentTrackingDialog({ shipment, service, onClose }: ShipmentTracking
     let active = true;
     setLoading(true);
     setError(null);
-    service.listShipmentTrackingEvents({ shipmentId: shipment.shipmentId, page: 1, pageSize: 100 }).then(
-      (page) => {
+    const loadAllEvents = async (): Promise<ShipmentTrackingEventSummary[]> => {
+      const collected: ShipmentTrackingEventSummary[] = [];
+      let page = 1;
+      for (;;) {
+        const result = await service.listShipmentTrackingEvents({
+          shipmentId: shipment.shipmentId,
+          page,
+          pageSize: 200,
+        });
+        collected.push(...result.items);
+        // The timeline is append-only and usually short, but a long-running
+        // shipment must not lose its early carrier scans to the first page.
+        if (!result.pageInfo.hasNextPage || collected.length >= TRACKING_EVENT_LIMIT) {
+          return collected;
+        }
+        page += 1;
+      }
+    };
+    loadAllEvents().then(
+      (events) => {
         if (active) {
-          setItems(page.items);
+          setItems(events);
           setLoading(false);
         }
       },
@@ -385,6 +407,62 @@ export function ShipmentListPage({ service }: ProductCenterPageProps) {
   const resolved = useMemo(() => service ?? getProductCenterService(), [service]);
   const [activeShipment, setActiveShipment] = useState<ShipmentSummary | null>(null);
   const [trackingShipment, setTrackingShipment] = useState<ShipmentSummary | null>(null);
+  const [fulfillments, setFulfillments] = useState<readonly FulfillmentSummary[]>([]);
+  const [carriers, setCarriers] = useState<readonly CarrierSummary[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    resolved.listFulfillments({ page: 1, pageSize: 200 }).then(
+      (page) => {
+        if (active) {
+          setFulfillments(page.items);
+        }
+      },
+      () => {
+        if (active) {
+          setFulfillments([]);
+        }
+      },
+    );
+    resolved.listCarriers({ page: 1, pageSize: 200 }).then(
+      (page) => {
+        if (active) {
+          setCarriers(page.items);
+        }
+      },
+      () => {
+        if (active) {
+          setCarriers([]);
+        }
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [resolved]);
+
+  const fulfillmentOptions = useMemo(
+    () => fulfillments.map((fulfillment) => ({
+      value: fulfillment.fulfillmentId,
+      label: `${fulfillment.fulfillmentNo} · ${fulfillment.orderId}`,
+    })),
+    [fulfillments],
+  );
+  const carrierOptions = useMemo(
+    () => carriers.map((carrier) => ({
+      value: carrier.carrierCode,
+      label: `${carrier.carrierName} (${carrier.carrierCode})`,
+    })),
+    [carriers],
+  );
+  const fulfillmentById = useMemo(
+    () => new Map(fulfillments.map((fulfillment) => [fulfillment.fulfillmentId, fulfillment])),
+    [fulfillments],
+  );
+  const carrierByCode = useMemo(
+    () => new Map(carriers.map((carrier) => [carrier.carrierCode, carrier])),
+    [carriers],
+  );
 
   const filters = useMemo<FilterControl[]>(() => [
     { name: 'status', label: t('admin.productCenter.shipments.filter.status', 'Status'), kind: 'text' },
@@ -413,12 +491,20 @@ export function ShipmentListPage({ service }: ProductCenterPageProps) {
     {
       key: 'fulfillmentId',
       header: t('admin.productCenter.shipments.column.fulfillmentId', 'Fulfillment id'),
-      cell: (row) => <span className="font-mono text-xs">{row.fulfillmentId}</span>,
+      cell: (row) => {
+        const fulfillment = fulfillmentById.get(row.fulfillmentId);
+        return fulfillment
+          ? <span className="text-xs">{fulfillment.fulfillmentNo}</span>
+          : <span className="font-mono text-xs">{row.fulfillmentId}</span>;
+      },
     },
     {
       key: 'carrier',
       header: t('admin.productCenter.shipments.column.carrier', 'Carrier'),
-      cell: (row) => row.carrierCode,
+      cell: (row) => {
+        const carrier = carrierByCode.get(row.carrierCode);
+        return carrier ? `${carrier.carrierName} (${row.carrierCode})` : row.carrierCode;
+      },
     },
     {
       key: 'trackingNo',
@@ -434,12 +520,58 @@ export function ShipmentListPage({ service }: ProductCenterPageProps) {
         <StatusBadge label={t(`admin.productCenter.status.${row.status}`, row.status)} value={row.status} />
       ),
     },
-  ], [t]);
+  ], [carrierByCode, fulfillmentById, t]);
 
   return (
     <>
       <ResourcePageFrame<ShipmentSummary>
         columns={columns}
+        create={{
+          label: t('admin.productCenter.actions.create', 'Create'),
+          title: t('admin.productCenter.shipments.createTitle', 'Create shipment'),
+          fields: [
+            fulfillmentOptions.length > 0
+              ? {
+                name: 'fulfillmentId',
+                label: t('admin.productCenter.shipments.createField.fulfillment', 'Fulfillment'),
+                kind: 'select' as const,
+                required: true,
+                options: fulfillmentOptions,
+              }
+              : {
+                name: 'fulfillmentId',
+                label: t('admin.productCenter.shipments.createField.fulfillmentId', 'Fulfillment id'),
+                kind: 'text' as const,
+                required: true,
+                help: t('admin.productCenter.shipments.createField.fulfillmentHint', 'No fulfillment list was available; enter the fulfillment id.'),
+              },
+            carrierOptions.length > 0
+              ? {
+                name: 'carrierCode',
+                label: t('admin.productCenter.shipments.createField.carrier', 'Carrier'),
+                kind: 'select' as const,
+                required: true,
+                options: carrierOptions,
+              }
+              : {
+                name: 'carrierCode',
+                label: t('admin.productCenter.shipments.createField.carrierCode', 'Carrier code'),
+                kind: 'text' as const,
+                required: true,
+                help: t('admin.productCenter.shipments.createField.carrierHint', 'No carrier registry entry was available; enter the carrier code.'),
+              },
+            {
+              name: 'trackingNo',
+              label: t('admin.productCenter.shipments.createField.trackingNo', 'Tracking no.'),
+              kind: 'text' as const,
+            },
+          ],
+          onSubmit: (values) => resolved.createShipment({
+            fulfillmentId: requireString(values, 'fulfillmentId'),
+            carrierCode: requireString(values, 'carrierCode'),
+            ...(optionalString(values, 'trackingNo') ? { trackingNo: optionalString(values, 'trackingNo') } : {}),
+          }).then(() => undefined),
+        }}
         description={t('admin.productCenter.shipments.description', '')}
         emptyLabel={t('admin.productCenter.state.empty', 'No records yet')}
         filters={filters}

@@ -746,6 +746,10 @@ Each remains the detail authority for its topic; this index is the discoverabili
 | [TECH-verification-code-delivery.md](TECH-verification-code-delivery.md) | TECH-verification-code-delivery |
 | [TECH-version.md](TECH-version.md) | TECH-version |
 
+| [TECH-2026-11-14-payment-records-query-capability.md](TECH-2026-11-14-payment-records-query-capability.md) | Payment Records Query Capability |
+| [TECH-2026-11-18-admin-enterprise-center.md](TECH-2026-11-18-admin-enterprise-center.md) | Admin Enterprise Center (sdkwork-company composition) |
+| [TECH-2026-11-18-admin-product-center-reinstatement.md](TECH-2026-11-18-admin-product-center-reinstatement.md) | Admin Product Center Reinstatement |
+
 ## 11. Verification
 
 The narrowest changed-surface checks run first. Cross-boundary changes also

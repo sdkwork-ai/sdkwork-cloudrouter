@@ -209,6 +209,7 @@
     "@sdkwork/iam-runtime": "workspace:*",
     "@sdkwork/iam-service": "workspace:*",
     "@sdkwork/inventory-backend-sdk": "workspace:*",
+    "@sdkwork/company-backend-sdk": "workspace:*",
     "@sdkwork/mcp-app-sdk": "workspace:*",
     "@sdkwork/mcp-backend-sdk": "workspace:*",
     "@sdkwork/memory-backend-sdk": "workspace:*",

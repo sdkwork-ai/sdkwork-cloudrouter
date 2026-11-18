@@ -12,10 +12,10 @@ module at `/admin/products`. It is a **composition host**, not a new domain
 implementation:
 
 ```
-catalog (products ‚Üí SKUs ‚Üí brands)
-  ‚Üí taxonomy (categories ‚Üí category attributes)
-    ‚Üí inventory (stock levels ‚Üí movements ‚Üí reservations)
-      ‚Üí fulfillment (shipments ‚Üí logistics tracking)
+catalog (products ‚Ü?SKUs ‚Ü?brands)
+  ‚Ü?taxonomy (categories ‚Ü?category attributes)
+    ‚Ü?inventory (stock levels ‚Ü?movements ‚Ü?reservations)
+      ‚Ü?fulfillment (shipments ‚Ü?logistics tracking)
 ```
 
 The 2026-06-30 retirement removed the Cloud Router portal's *legacy commerce
@@ -25,7 +25,7 @@ facades). This decision does not restore any of them. The Product Center is a
 new, narrower surface: it composes the **owning modules' generated backend
 SDKs** and keeps every domain rule in the module that owns it.
 
-## 2. Capability ownership (È´òÂÜÖËÅö)
+## 2. Capability ownership (È´òÂÜÖËÅ?
 
 | Surface | Owning module | Authority | Backend surface |
 | --- | --- | --- | --- |
@@ -75,7 +75,7 @@ opens a raw HTTP path to compensate.
 | --- | --- |
 | `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-product/**` | new admin capability package |
 | `.../sdkwork-cloudrouter-pc-admin-shell/src/adminModuleRegistry.ts` | header module `productCenter` + sidebar tree |
-| `.../sdkwork-cloudrouter-pc-admin-shell/src/admin-route-permission-hints.ts` | `/admin/products` ‚Üí `cloudrouter.admin.access` |
+| `.../sdkwork-cloudrouter-pc-admin-shell/src/admin-route-permission-hints.ts` | `/admin/products` ‚Ü?`cloudrouter.admin.access` |
 | `apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx` | 11 lazy routes with per-screen owning module + SDK family |
 | `.../sdkwork-cloudrouter-pc-i18n/src/resources/index.ts` | en/zh bundle registration |
 | `.../sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts` | shop / inventory / order backend client factories |
@@ -92,8 +92,8 @@ therefore carries a matching `PRODUCT_CENTER_DEPENDENCY_SDK_PATTERN` for
 `getSdkworkShopBackendSdkClient`, `getSdkworkInventoryBackendSdkClient`, and
 `getSdkworkOrderBackendSdkClient`.
 
-The alternative ‚Äî declaring catalog/inventory/shipment tables in the Cloud
-Router contract ‚Äî was rejected: the host does not serve those handlers, so the
+The alternative ‚Ä?declaring catalog/inventory/shipment tables in the Cloud
+Router contract ‚Ä?was rejected: the host does not serve those handlers, so the
 declaration would claim table ownership the application does not have and would
 falsify `required_tables`.
 
@@ -115,24 +115,24 @@ keeping every legacy prohibition:
 
 | Surface | Create | Read | Update | Lifecycle |
 | --- | --- | --- | --- | --- |
-| Product (SPU) | ‚úì | ‚úì list / ‚úì detail | ‚úì | publish, archive |
-| Product attributes (key / parameter) | ‚Äî | ‚úì (from detail) | ‚úì replace whole set with `If-Match` | ‚Äî |
-| Product media (main/gallery/detail/sku/video) | ‚úì `external_url` + Drive image upload | ‚úì | ‚úì role/alt/order/status | delete |
-| SKU | ‚úì single, ‚úì variant matrix | ‚úì | ‚úì price/status/oversell | ‚Äî |
-| Brand | ‚úì | ‚úì | ‚úì | ‚Äî |
-| Category | ‚úì | ‚úì | ‚úì | ‚Äî |
-| Category tree (cascade) | ‚úì root/child | ‚úì lazy per level | ‚úì create/edit/delete | delete |
-| Attribute (dictionary) | ‚úì | ‚úì | ‚úì name/unit/status | ‚Äî |
-| Attribute enum values | ‚úì | ‚úì | ‚úì | delete |
-| Category attribute binding | ‚úì | ‚úì | ‚úì role/required/searchable/filterable/comparable | delete |
-| Price list | ‚úì | ‚úì | ‚úì name/segment/status | ‚Äî |
-| Price list item | ‚úì | ‚úì | ‚úì price/min quantity/status | delete |
-| Stock | ‚Äî | ‚úì | ‚úì available/safety/status | ‚Äî |
-| Stock movement command (inbound / outbound / stocktake) | ‚úì appends ledger row | ‚Äî | ‚Äî | ‚Äî |
-| Stock movement / reservation | ‚Äî | ‚úì | ‚Äî | ‚Äî |
-| Shipment / package | package ‚úì | ‚úì | package ‚úì | ‚Äî |
-| Shipment tracking event | ‚úì append | ‚úì timeline | ‚Äî | ‚Äî |
-| Carrier registry | ‚úì | ‚úì | ‚úì code/name/tracking URL/order/status | status toggle |
+| Product (SPU) | ‚ú?| ‚ú?list / ‚ú?detail | ‚ú?| publish, archive |
+| Product attributes (key / parameter) | ‚Ä?| ‚ú?(from detail) | ‚ú?replace whole set with `If-Match` | ‚Ä?|
+| Product media (main/gallery/detail/sku/video) | ‚ú?`external_url` + Drive image/video/document upload | ‚ú?| ‚ú?role/alt/order/status | delete |
+| SKU | ‚ú?single, ‚ú?variant matrix | ‚ú?| ‚ú?price/status/oversell | ‚Ä?|
+| Brand | ‚ú?| ‚ú?| ‚ú?| ‚Ä?|
+| Category | ‚ú?| ‚ú?| ‚ú?| ‚Ä?|
+| Category tree (cascade) | ‚ú?root/child | ‚ú?lazy per level | ‚ú?create/edit/lifecycle/delete | delete |
+| Attribute (dictionary) | ‚ú?| ‚ú?| ‚ú?name/unit/status | ‚Ä?|
+| Attribute enum values | ‚ú?| ‚ú?| ‚ú?| delete |
+| Category attribute binding | ‚ú?| ‚ú?| ‚ú?role/required/searchable/filterable/comparable | delete |
+| Price list | ‚ú?| ‚ú?| ‚ú?name/segment/status | ‚Ä?|
+| Price list item | ‚ú?| ‚ú?| ‚ú?price/min quantity/status | delete |
+| Stock | ‚Ä?| ‚ú?| ‚ú?available/safety/status | ‚Ä?|
+| Stock movement command (inbound / outbound / stocktake) | ‚ú?appends ledger row | ‚Ä?| ‚Ä?| ‚Ä?|
+| Stock movement / reservation | ‚Ä?| ‚ú?| ‚Ä?| ‚Ä?|
+| Shipment / package | shipment ‚ú?+ package ‚ú?| ‚ú?| package ‚ú? shipment ‚ú?| ‚Ä?|
+| Shipment tracking event | ‚ú?append | ‚ú?timeline | ‚Ä?| ‚Ä?|
+| Carrier registry | ‚ú?| ‚ú?| ‚ú?code/name/tracking URL/order/status | status toggle |
 
 ## 8. Owned-module completion performed
 
@@ -148,8 +148,7 @@ organization guard, and without an idempotent command surface. Completed in
   columns the repository already selects (baseline-plus-migrations strategy, so
   existing deployments upgrade in place).
 - `PostgresCommerceInventoryStore::adjust_backend_stock` is a single transaction:
-  row lock ‚Üí non-negative quantity checks ‚Üí stock update with `version + 1` ‚Üí
-  movement row with the before/after pair and direction ‚Üí reload ‚Üí commit.
+  row lock ‚Ü?non-negative quantity checks ‚Ü?stock update with `version + 1` ‚Ü?  movement row with the before/after pair and direction ‚Ü?reload ‚Ü?commit.
 - `POST /backend/v3/api/inventory/stocks/{stockId}/adjustments`
   (`inventory.stocks.adjustments.create`, permission `commerce.inventory.manage`)
   returns `201` with the updated stock; the request carries `quantityDelta` as an
@@ -158,7 +157,7 @@ organization guard, and without an idempotent command surface. Completed in
   header. The movement id is derived from the stock and that key, so a replayed
   adjustment finds the existing ledger row and returns the current stock instead
   of moving the quantity twice. The route manifest had been marked idempotent
-  while the handler ignored the key and used a random movement id ‚Äî a real
+  while the handler ignored the key and used a random movement id ‚Ä?a real
   double-apply defect fixed in this change.
   (`inbound|outbound|stocktake`), `reason`, `requestNo`.
 - `stocks.update` now refuses to reset unspecified fields to zero, rejects a
@@ -222,9 +221,35 @@ validate a carrier nor render a tracking link. Completed in `sdkwork-order`:
   route manifest, service contract, OpenAPI authority, and regenerated
   `@sdkwork/order-backend-sdk` (`orderAdminShipments.carriers`).
 
-The Product Center composes it as ¬´ÊâøËøêÂïÜÁÆ°ÁêÜ¬ª and the logistics board now shows
+The Product Center composes it as ¬´ÊâøËøêÂïÜÁÆ°ÁêÜ¬?and the logistics board now shows
 `Carrier name (code)` in the carrier group header, falling back to the raw code
 when the registry has no entry for it.
+
+### Order module (admin fulfillment list and shipment creation)
+
+The admin surface could list shipments but had no way to read the fulfillment a
+shipment belongs to, and no way to create one. Completed in `sdkwork-order`:
+
+- `FulfillmentManagementListQuery` + `PostgresCommerceOrderStore::list_management_fulfillments`
+  (tenant/organization scope, optional order/status filters, DB pagination) and
+  `GET /backend/v3/api/fulfillments` (`fulfillments.management.list`,
+  `commerce.orders.read`).
+- `CreateShipmentCommand` + `create_management_shipment`: verifies the
+  fulfillment exists inside the caller's organization, derives the shipment id
+  from tenant/fulfillment/idempotency key (a replay returns the existing
+  shipment), generates `SHP-{requestNo}` and inserts the row with status
+  `created`. Exposed as `POST /backend/v3/api/shipments` (`shipments.create`,
+  `commerce.orders.manage`, idempotent).
+- Route manifest, service contract, OpenAPI authority and
+  `@sdkwork/order-backend-sdk` were regenerated. The first OpenAPI patch inserted
+  a second `/backend/v3/api/shipments` object that shadowed the existing list
+  operation; the two operations are now merged into one path, and the regenerated
+  SDK exposes `shipments.list`, `shipments.create`, `shipments.retrieve`, and
+  `fulfillments.management.list`.
+
+The Product Center shipment page gained ¬´Êñ∞Âª∫ÂèëË¥ßÂçï¬? fulfillment and carrier are
+selects (falling back to text when the lookups are unavailable), the optional
+tracking number is recorded, and the write carries `Idempotency-Key`.
 
 ### Shop module (category tree root filter)
 
@@ -242,10 +267,21 @@ catalog backend):
   (`tools/merchandise_openapi_export.mjs`) and `@sdkwork/shop-backend-sdk` was
   regenerated (`sdks/sdkwork-shop-backend-sdk`, `rootOnly?: boolean`).
 
-The Product Center then replaced its full-taxonomy load with a lazy ladder: the
-first column is `root_only=true`, and each deeper column is one `parent_id`
-query issued when the operator opens a branch. Each level is capped by the
-contract's 200-row page and the UI states when a level was truncated.
+The Product Center renders the taxonomy with the same **`CascadeCategoryManager`**
+component the Application Center uses (five columns, per-column create actions,
+per-row create/edit/lifecycle/delete actions, `code ¬∑ status` secondary line,
+empty/selection hints). Data stays lazy: the first column is `root_only=true`,
+and a deeper column is fetched with `parent_id` the first time its branch is
+opened, so a large catalog never ships the whole taxonomy to the browser. Row
+actions are compact icon buttons, so the category name keeps its column width.
+
+### UI alignment with the Application Center
+
+The Application Center's category tab rendered two headers and two refresh
+buttons: `ApplicationManagementPage` always rendered its page header while the
+embedded `AppStoreCategoryPanel` rendered its own category header. The page
+header is now omitted on the `categories` view, so the category panel owns the
+header there (verified by `e2e/application-category-header.spec.ts`).
 
 ### Media upload (Drive)
 
@@ -254,52 +290,52 @@ The catalog media contract already accepts a full `MediaResource`, including
 files belong in the catalog without a schema change. Delivered in this
 repository:
 
-- New upload slot `admin-product-media` in
-  `@sdkwork/cloudroutes-pc-commons` (`public_asset`, `image` profile, 5 MB,
-  read-only share link) and its mirror entry in
+- Three upload slots in `@sdkwork/cloudroutes-pc-commons`, each mirrored in
   `apps/sdkwork-cloudrouter-pc/specs/upload.declaration.json`
-  (`commerce.product_media`, scene `product-media`).
-- The product detail media panel gained ¬´‰∏ä‰º†ÂõæÁâá¬ª: the shared
-  `DriveUploadImage` component (same one the community/admin-site upload fields
-  use) uploads through `drive-app-sdk`, and the resulting Drive resource is
-  registered as catalog media (`POST /catalog/media`, `mediaRole: main_image`)
-  with the Drive reference, never an expiring signed URL.
-- External-URL registration stays available for video/document/legacy assets.
+  (`commerce.product_media`, scenes `product-media`, `product-media-video`,
+  `product-media-document`):
+  - `admin-product-media` ‚Ä?image profile, 5 MB, `main_image`
+  - `admin-product-video` ‚Ä?video profile, 100 MB, `video`
+  - `admin-product-document` ‚Ä?document profile, 20 MB, `manual`
+  All use the `public_asset` category with a read-only share link.
+- The product detail media panel gained ¬´‰∏ä‰º†Â™í‰Ωì¬ª: a kind selector chooses the
+  slot, images upload through the shared `DriveUploadImage` component while
+  video/document upload through the commons `useCloudRouterUpload` hook (MIME and
+  size validation included). The resulting Drive resource is registered as
+  catalog media (`POST /catalog/media`) with the Drive reference, never an
+  expiring signed URL.
+- External-URL registration stays available for legacy assets.
 
 ## 9. Remaining gaps to commercial release
 
-1. **Carrier service levels / SLA metadata** ‚Äî the registry stores code, display
+1. **Carrier service levels / SLA metadata** ‚Ä?the registry stores code, display
    name, tracking URL template, ordering, and enablement; per-service-level
    (express/standard) rates and SLA promises would need their own table and
    quote integration. Owner: `sdkwork-order`.
-2. **Granular write permissions** ‚Äî pages are gated by
+2. **Granular write permissions** ‚Ä?pages are gated by
    `cloudrouter.admin.access`; per-capability codes (product/inventory/
    shipment write) belong to the IAM module manifest and the bootstrap role.
-3. **Catalog create replay semantics** ‚Äî catalog creates carry no
+3. **Catalog create replay semantics** ‚Ä?catalog creates carry no
    `Idempotency-Key`, so a retried create is **not** replay-idempotent. It cannot
    duplicate the record (the baseline has unique `(tenant_id, spu_no)`,
    `(tenant_id, sku_no)` and category/attribute business-key indexes), but the
    retry answers `409` instead of replaying the original `201`. Making it match
    the order/inventory command semantics needs an idempotency-key table in the
    catalog module. Owner: `sdkwork-shop` catalog.
-4. **Admin shipment creation** ‚Äî the order backend admin surface exposes no
-   `POST /shipments` (shipments are created by the buyer/fulfillment flow), so the
-   Product Center lists shipments and manages packages/tracking/carriers but
-   cannot create one. Adding it is an owning-module feature. Owner:
-   `sdkwork-order`.
-5. **Inventory operation-id/tag naming** ‚Äî every inventory operation uses the
+4. **Inventory operation-id/tag naming** ‚Ä?every inventory operation uses the
    `inventory` tag while its operationId starts with `inventory.` (for example
    `inventory.stocks.list`), which `check-api-operation-patterns` reports as
    `operation-id-tag-duplication`. Fixing it renames generated SDK classes or
    root client properties for every consumer, so it needs a coordinated SDK shape
    migration rather than an in-place edit. Owner: `sdkwork-inventory`.
-5. **Video / document media upload** ‚Äî the Drive upload slot is image-only
-   (`uploadProfileCode: image`, 5 MB); video and document attachments are still
-   registered by URL. A video slot needs a streaming/presigned-playback design
-   decision plus its own declaration entry.
-6. **Real-backend smoke** ‚Äî the browser suite runs the real admin shell with the
+5. **Real-backend smoke** ‚Ä?the browser suite runs the real admin shell with the
    owning-module APIs mocked (this environment has no PostgreSQL); a deployment
    verification should replay the same flows against the live gateway.
+6. **Shipment / package status vocabulary** ‚Ä?the order admin contract types
+   `ShipmentSummary.status` and the package `status` as free strings (no enum or
+   CHECK in the schema), so the UI keeps text inputs for those two. Enumerating
+   the lifecycle belongs to `sdkwork-order`; reservation statuses and inventory
+   movement types are already selects because their owning module defines them.
 
 ## 10. Verification
 
@@ -308,7 +344,7 @@ Commands run from the repository root unless stated otherwise:
 ```bash
 pnpm --filter @sdkwork/cloudrouter-pc-admin-product typecheck   # pass
 pnpm --filter @sdkwork/cloudrouter-pc-admin-product test        # 23/23 pass
-node ../sdkwork-specs/tools/check-i18n-standard.mjs --root .    # pass (8878 files)
+node ../sdkwork-specs/tools/check-i18n-standard.mjs --root .    # pass (8887 files)
 node ../sdkwork-specs/tools/check-workspace-member-protocol.mjs --root .   # pass
 node ../sdkwork-specs/tools/check-dependency-list-completeness.mjs --root . # ok
 node ../sdkwork-specs/tools/check-package-content-standard.mjs --workspace . # pass
@@ -326,29 +362,96 @@ python -B -m tools.frontend_contract_guardian                    # no product ro
 Browser-level smoke (real admin shell, owning-module APIs mocked):
 
 ```bash
-# terminal 1 ‚Äî renderer only (standalone.development)
+# terminal 1 ‚Ä?renderer only (standalone.development)
 pnpm --dir apps/sdkwork-cloudrouter-pc dev
 # terminal 2
 PLAYWRIGHT_BASE_URL=http://127.0.0.1:4736 PLAYWRIGHT_WEBSERVER_DISABLED=1 \
   pnpm --dir apps/sdkwork-cloudrouter-pc exec playwright test e2e/product-center-admin.spec.ts
-# 12/12 pass: header module entry, catalog list, one-level-at-a-time category tree
-# (root_only first, parent_id only after a branch opens), carrier registry + logistics
-# carrier label, shipment tracking timeline dialog, product detail (SPU attributes +
-# SKU matrix), price lists, attribute dictionary, inventory stocks, and the write
-# paths (product create, stock movement with an int64-string delta and
-# Idempotency-Key, tracking event, carrier create).
+# 15/15 pass: header module entry, overview SPA navigation, catalog list,
+# five-column category cascade
+# (root_only first, parent_id only after a branch opens, column/depth/action
+# assertions), carrier registry + logistics carrier label, shipment tracking
+# timeline dialog, product detail (SPU attributes + SKU matrix), price lists,
+# attribute dictionary, inventory stocks, and the write paths (product create,
+# stock movement with an int64-string delta and Idempotency-Key, tracking event,
+# carrier create).
 ```
 
-The same spec also covers the product detail page (SPU attributes + SKU matrix),
-the price-list page, the attribute dictionary, and the inventory overview, and
-runs 8/8 cases against the real admin shell with the owning-module APIs mocked
-(the mock seam exists only because this environment has no PostgreSQL backend).
+A separate browser spec covers the Application Center taxonomy header:
+`e2e/application-category-header.spec.ts` asserts the categories view renders the
+category panel header exactly once (one refresh action) and the shared cascade
+renders its level columns. The product-center suite and this spec run together
+(16/16).
+
+### Review round fixes (self-audit)
+
+A follow-up audit of the delivered UI surfaced and fixed these defects:
+
+- **Drive media preview** ‚Ä?the media grid only rendered `url`/`publicUrl`, so
+  uploaded (Drive-backed) images showed `‚Äî`. Previews now resolve a short-lived
+  URL through the shared drive media resolver; video/document rows render a kind
+  icon instead of a broken `<img>`.
+- **Editing Drive media** ‚Ä?the edit dialog required a URL and would have
+  rewritten a drive resource into `external_url`. The URL field is optional for
+  Drive resources (blank keeps the uploaded file) and only an explicitly entered
+  URL replaces the resource.
+- **Stale lists after edit dialogs** ‚Ä?product, SKU, brand, price-list and
+  inventory dialogs closed without reloading the table. All of them now capture
+  the row action context's `reload` and refresh after a successful write.
+- **Tracking timeline truncation** ‚Ä?the dialog loaded only the first 100 events;
+  it now pages until the timeline is exhausted (bounded at 1,000).
+- **Safety stock validation** ‚Ä?the inventory update path rejected a negative
+  available quantity but accepted a negative safety stock; it now rejects both,
+  with a Rust unit test.
+- **Stock status input** ‚Ä?the stock settings/status filter used free-text inputs;
+  both are now `active | inactive` selects.
+- **Category delete guard** ‚Ä?deleting a non-leaf category now explains that its
+  children must be removed first instead of opening a confirmation the backend
+  would reject (covered by the category-tree unit test).
+- **Overview full document reload** ‚Ä?the overview metric and chain cards used
+  plain anchors, so every click reloaded the SPA. The host now injects
+  `onNavigate` and the cards navigate client-side (covered by the E2E that clicks
+  the products card and asserts the list renders).
+- **Inventory filter/enum drift** ‚Ä?movement-type and reservation-status filters
+  are now selects over the owning-module enums (`inbound|outbound|stocktake`,
+  `reserved|consumed|released|expired`); the stock adjustment dialog seeds
+  `stocktake` explicitly instead of showing an empty movement type.
+- **Price-list item SKU picker** ‚Ä?the item dialog lists the first 200 SKUs
+  (`skuNo ¬∑ title`) with a documented free-text fallback when the lookup fails,
+  instead of requiring a pasted id.
+- **External media identity** ‚Ä?registering media by URL sent a
+  `media-<uuid>` resource id, but the catalog requires a positive int64
+  (`MediaResource.id`, validated by `media_resource_identity`), so every
+  external-URL media create was rejected. The id is now a deterministic 63-bit
+  FNV-1a digest of the URL, inside the signed int64 range; the E2E asserts the
+  submitted id is numeric and below 2^63.
+- **SKU product picker** ‚Ä?SKU creation only accepted a pasted product id; it now
+  lists the first 200 products (`productNo ¬∑ title`) with the same free-text
+  fallback.
+- **Shipment list readability** ‚Ä?the shipment table now resolves
+  `fulfillmentId` to the fulfillment number and `carrierCode` to
+  ¬´carrier name (code)¬ª using the same lookups the create dialog loads; an
+  unknown reference still falls back to the raw id/code.
+- **Regression coverage for shipment creation** ‚Ä?the service suite asserts the
+  fulfillment query shape and the shipment write's idempotency key (24 tests),
+  and the order service gained four unit tests for
+  `CreateShipmentCommand` normalization/validation and
+  `FulfillmentManagementListQuery` pagination (64 tests). The Application Center
+  header spec now sets a 60s navigation timeout so a cold dev-server compile
+  cannot fail it.
+- **Delete coverage for contract-supported records** ‚Ä?products, SKUs, and
+  brands expose a confirmation dialog that sends `If-Match` (the shared
+  `ConfirmDeleteDialog` keeps the dialog open and shows the owning service's
+  rejection). The service suite asserts the versioned delete calls, and the E2E
+  deletes a SKU and verifies the `If-Match` version reaches the request. Category
+  deletion stays on the taxonomy tree because that is where the leaf/depth guard
+  lives.
 
 Owning-module verification (from `../sdkwork-inventory`):
 
 ```bash
 cargo check -p sdkwork-inventory-repository-sqlx -p sdkwork-routes-inventory-backend-api  # pass
-cargo test  -p sdkwork-inventory-repository-sqlx                                          # 2/2 pass
+cargo test  -p sdkwork-inventory-repository-sqlx                                          # 3/3 pass
 node tools/inventory_api_sdk_generate.mjs --check                                         # pass (backend: 5 ops)
 node ../sdkwork-specs/tools/check-database-framework-standard.mjs --root .                # pass
 node ../sdkwork-specs/tools/check-api-operation-patterns.mjs --workspace .                # int64 clean; tag-duplication debt remains
@@ -387,10 +490,12 @@ declared `sdkwork-shop` and `sdkwork-inventory` for CI checkout.
 Pre-existing failures observed at this revision (reproduced without this change;
 they are not caused by, and are not fixed by, this work):
 
-- `apps/sdkwork-cloudrouter-pc/scripts/typecheck-owned-sources.mjs`: 10
-  diagnostics, all in `packages/sdkwork-cloudroutes-pc-commons/src/documents-admin-client.ts`
+- `apps/sdkwork-cloudrouter-pc/scripts/typecheck-owned-sources.mjs`: reported 10
+  diagnostics earlier in this revision, all in
+  `packages/sdkwork-cloudroutes-pc-commons/src/documents-admin-client.ts`
   (`DocumentCategoriesApi`/`DocumentTagsApi`/`DocumentTaxonomyApi` drift against
-  the sibling `sdkwork-documents` generated SDK).
+  the sibling `sdkwork-documents` generated SDK). The owning module has since
+  aligned that SDK; the current run passes with 0 diagnostics.
 - `sdk-composition-standard.test.mjs`: literal `route('...')` count expects 43
   while the host mount has had 70 since before this change; plus the payments
   source regex and the owner-only backend-SDK assertion.
@@ -408,22 +513,29 @@ they are not caused by, and are not fixed by, this work):
   and browser E2E run normally; this is an environment constraint, not a product
   center defect. One `frontend_contract_guardian` finding against this module (API
   path literals inside a JSDoc comment) was fixed by rewording the comment.
+- **Concurrent `enterpriseCenter` work** (not part of this module): it briefly
+  left `AdminLayout`/`AdminRoutePermissionGuard` type errors and one
+  `admin-sidebar-runtime` failure because the new module id was not yet part of
+  the admin-module union, and its `@sdkwork/company-backend-sdk` import was
+  missing the workspace link. The sibling work has since completed: `pnpm
+  install` restored the link, `typecheck-owned-sources` passes with 0
+  diagnostics, and `admin-sidebar-runtime` passes 8/8.
 
 ## 11. Commercial readiness sign-off
 
 | Objective capability | Delivered | Evidence |
 | --- | --- | --- |
-| Products / SPU attributes / media | product list+detail CRUD, SPU attribute editing, media register/edit/delete and Drive image upload | 23 unit tests, e2e cases 2/6, media upload typecheck + commons tests |
+| Products / SPU attributes / media | product list+detail CRUD, SPU attribute editing, media register/edit/delete and Drive image upload | 24 unit tests, e2e cases 2/6, media upload typecheck + commons tests |
 | SKU variant matrix | SKU list CRUD + combination matrix dialog from key attributes | e2e case 6 (`P-1-01`), unit tests |
-| Category tree | lazy per-level ladder over `root_only`/`parent_id` | e2e case 3 (request assertions), category-tree unit test |
+| Category tree | five-column cascade (shared `CascadeCategoryManager`) with lazy per-level loading | e2e case 3 (request assertions + column/action assertions), category-tree unit test |
 | Category attributes & values | bindings, enum value dictionary, value dialogs | attribute e2e case 7, unit tests |
 | Price lists | list CRUD + items dialog | e2e case 7 |
 | Inventory (inbound / outbound / stocktake) | adjust command with int64-string delta + idempotency, safety stock settings, movements/reservations views | e2e case 10, inventory cargo tests |
-| Fulfillment & logistics | shipments, packages, tracking timeline, carrier registry + carrier label | e2e cases 4/5/12, order cargo tests |
+| Fulfillment & logistics | shipment creation from a fulfillment, shipment list, packages, tracking timeline, carrier registry + carrier label | e2e cases 4/5/12/15, order cargo tests |
 | Permissions | owning backends enforce `commerce.catalog/inventory/orders.*`; IAM `commerce` module grants `commerce.*` to `org_admin`/`org_operations`; host routes gated by `cloudrouter.admin.access` | route manifests, IAM manifests |
-| i18n | en-US + zh-CN bundles for every screen | `check-i18n-standard` pass (8878 files) |
-| Tests | owning-module Rust tests, package unit tests, browser E2E | order 19, inventory 2, merchandise 11, product 23, commons 12, e2e 12 |
-| Documentation | this document + superseded note | ‚Äî |
+| i18n | en-US + zh-CN bundles for every screen | `check-i18n-standard` pass (8887 files) |
+| Tests | owning-module Rust tests, package unit tests, browser E2E | order 19 routes + 64 service, inventory 3, merchandise 11, product 24, commons 12, e2e 16 |
+| Documentation | this document + superseded note | ‚Ä?|
 
 Residual items are listed in section 9; none blocks the composed capability, and
 each names the owning module.

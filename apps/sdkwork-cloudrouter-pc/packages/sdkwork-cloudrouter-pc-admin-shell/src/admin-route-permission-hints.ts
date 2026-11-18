@@ -8,6 +8,7 @@ import { RTC_ADMIN_PERMISSION_HINTS } from '@sdkwork/cloudrouter-pc-admin-rtc/co
 import { TRADE_ADMIN_PERMISSION_HINTS } from '@sdkwork/order-pc-admin-trade/contribution';
 import { PRODUCT_CENTER_ADMIN_PERMISSION_HINTS } from '@sdkwork/cloudrouter-pc-admin-product/contribution';
 import { HARDWARE_ADMIN_PERMISSION_HINTS } from '@sdkwork/cloudrouter-pc-admin-hardware/contribution';
+import { ENTERPRISE_ADMIN_PERMISSION_HINTS } from '@sdkwork/company-pc-admin-enterprise/contribution';
 
 export type AdminRoutePermissionHint = {
   pathPrefix: string;
@@ -51,6 +52,7 @@ export const ADMIN_ROUTE_PERMISSION_HINTS: readonly AdminRoutePermissionHint[] =
   ...PRODUCT_CENTER_ADMIN_PERMISSION_HINTS,
   ...TRADE_ADMIN_PERMISSION_HINTS,
   ...HARDWARE_ADMIN_PERMISSION_HINTS,
+  ...ENTERPRISE_ADMIN_PERMISSION_HINTS,
   { pathPrefix: '/admin/relay', requiredPermission: 'cloudrouter.gateway.read' },
 ];
 

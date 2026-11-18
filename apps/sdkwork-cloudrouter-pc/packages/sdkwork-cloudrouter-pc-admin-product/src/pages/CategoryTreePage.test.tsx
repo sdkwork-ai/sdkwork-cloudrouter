@@ -70,7 +70,7 @@ beforeAll(async () => {
 });
 
 describe('CategoryTreePage', () => {
-  it('loads roots first and fetches one level per opened branch', async () => {
+  it('renders the five-column cascade and loads one level per opened branch', async () => {
     const listCategories = vi.fn(async (query: ListQuery) => {
       if (query.rootOnly) {
         return pageOf(rootsPage);
@@ -89,17 +89,20 @@ describe('CategoryTreePage', () => {
 
     expect(await screen.findByText('Routers')).toBeTruthy();
     expect(screen.getByText('Accessories')).toBeTruthy();
+    expect(screen.getByText('Level 1')).toBeTruthy();
+    expect(screen.getByText('Level 5')).toBeTruthy();
     expect(listCategories).toHaveBeenCalledTimes(1);
     expect(listCategories.mock.calls[0]?.[0]).toMatchObject({ rootOnly: true, page: 1 });
 
     fireEvent.click(screen.getByText('Routers'));
-    const child = await screen.findByText('Mesh routers');
-    expect(child).toBeTruthy();
+    expect(await screen.findByText('Mesh routers')).toBeTruthy();
     expect(listCategories).toHaveBeenCalledTimes(2);
     expect(listCategories.mock.calls[1]?.[0]).toMatchObject({ parentId: 'c-1' });
     expect(listCategories.mock.calls[1]?.[0].rootOnly).toBeUndefined();
 
-    fireEvent.click(child);
-    expect(await screen.findByText('Routers / Mesh routers')).toBeTruthy();
+    // A non-leaf category cannot be deleted; the page explains why instead of
+    // opening a confirmation that the backend would reject.
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Routers' }));
+    expect(await screen.findByText(/still has children/u)).toBeTruthy();
   });
 });

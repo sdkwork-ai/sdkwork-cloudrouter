@@ -9,6 +9,7 @@ import {
   type CarrierSummary,
   type Category,
   type CategoryAttribute,
+  type FulfillmentSummary,
   type InventoryMovement,
   type InventoryReservation,
   type InventoryStock,
@@ -18,6 +19,7 @@ import {
   type Product,
   type ProductCenterCatalogPort,
   type ProductCenterCarriersPort,
+  type ProductCenterFulfillmentsPort,
   type ProductCenterInventoryPort,
   type ProductCenterShipmentsPort,
   type ShipmentPackageSummary,
@@ -249,6 +251,9 @@ function createStubPorts() {
         track('products.archive', [productId, params]);
         return product;
       },
+      delete: async (productId: string, params: unknown) => {
+        track('products.delete', [productId, params]);
+      },
     },
     skus: {
       list: async (params: unknown) => {
@@ -262,6 +267,9 @@ function createStubPorts() {
       update: async (skuId: string, params: unknown, body: unknown) => {
         track('skus.update', [skuId, params, body]);
         return sku;
+      },
+      delete: async (skuId: string, params: unknown) => {
+        track('skus.delete', [skuId, params]);
       },
     },
     categories: {
@@ -328,6 +336,9 @@ function createStubPorts() {
       update: async (brandId: string, params: unknown, body: unknown) => {
         track('brands.update', [brandId, params, body]);
         return brand;
+      },
+      delete: async (brandId: string, params: unknown) => {
+        track('brands.delete', [brandId, params]);
       },
     },
     attributeValues: {
@@ -441,6 +452,10 @@ function createStubPorts() {
       track('shipments.retrieve', [shipmentId]);
       return shipment;
     },
+    create: async (body: unknown, params: unknown) => {
+      track('shipments.create', [body, params]);
+      return shipment;
+    },
     packages: {
       management: {
         list: async (shipmentId: string, params: unknown) => {
@@ -486,7 +501,24 @@ function createStubPorts() {
     },
   } as unknown as ProductCenterCarriersPort;
 
-  return { calls, catalog, inventory, shipments, carriers };
+  const fulfillment = {
+    fulfillmentId: 'f-1',
+    fulfillmentNo: 'FUL-1',
+    orderId: 'order-1',
+    fulfillmentType: 'physical_shipment',
+    status: 'awaiting_shipment',
+  } as unknown as FulfillmentSummary;
+
+  const fulfillments = {
+    management: {
+      list: async (params: unknown) => {
+        track('fulfillments.list', [params]);
+        return pageOf([fulfillment], '1');
+      },
+    },
+  } as unknown as ProductCenterFulfillmentsPort;
+
+  return { calls, catalog, inventory, shipments, carriers, fulfillments };
 }
 
 function callFor(calls: RecordedCall[], method: string): RecordedCall {
@@ -549,6 +581,13 @@ describe('Product Center service', () => {
 
     await service.deleteCategoryAttribute('ca-1', '4');
     expect(callFor(calls, 'categoryAttributes.delete').args).toEqual(['ca-1', { ifMatch: '4' }]);
+
+    await service.deleteProduct('p-1', '5');
+    expect(callFor(calls, 'products.delete').args).toEqual(['p-1', { ifMatch: '5' }]);
+    await service.deleteSku('sku-1', '2');
+    expect(callFor(calls, 'skus.delete').args).toEqual(['sku-1', { ifMatch: '2' }]);
+    await service.deleteBrand('b-1', '1');
+    expect(callFor(calls, 'brands.delete').args).toEqual(['b-1', { ifMatch: '1' }]);
   });
 
   it('maps inventory reads and the guarded stock adjustment', async () => {
@@ -711,6 +750,42 @@ describe('Product Center service', () => {
     await service.updateCarrier('car-1', { carrierName: 'SF Express (updated)' });
     expect(callFor(calls, 'carriers.update').args[0]).toBe('car-1');
     expect(typeof callFor(calls, 'carriers.update').args[2]).toBe('object');
+  });
+
+  it('creates a shipment from a fulfillment with an idempotency key', async () => {
+    const { calls, fulfillments, shipments } = createStubPorts();
+    const service = createProductCenterService({ fulfillments, shipments });
+
+    const page = await service.listFulfillments({
+      page: 1,
+      pageSize: 20,
+      orderId: 'order-1',
+      status: 'awaiting_shipment',
+    });
+    expect(page.items[0]?.fulfillmentNo).toBe('FUL-1');
+    expect(callFor(calls, 'fulfillments.list').args[0]).toMatchObject({
+      orderId: 'order-1',
+      status: 'awaiting_shipment',
+      page: '1',
+      pageSize: '20',
+    });
+
+    const created = await service.createShipment({
+      fulfillmentId: 'f-1',
+      carrierCode: 'sf',
+      trackingNo: 'SF-1',
+    });
+    expect(created.shipmentNo).toBe('SH-1');
+    expect(callFor(calls, 'shipments.create').args[0]).toMatchObject({
+      fulfillmentId: 'f-1',
+      carrierCode: 'sf',
+      trackingNo: 'SF-1',
+    });
+    // The write must carry an idempotency key so a retry cannot create a second
+    // shipment for the same fulfillment.
+    expect(callFor(calls, 'shipments.create').args[1]).toMatchObject({
+      idempotencyKey: expect.any(String),
+    });
   });
 
   it('aggregates the overview and names the sources it could not read', async () => {

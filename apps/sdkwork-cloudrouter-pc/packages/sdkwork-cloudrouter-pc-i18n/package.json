@@ -30,6 +30,7 @@
     "@sdkwork/messaging-pc-admin-notify": "workspace:*",
     "@sdkwork/order-pc-admin-orders": "workspace:*",
     "@sdkwork/order-pc-admin-trade": "workspace:*",
+    "@sdkwork/company-pc-admin-enterprise": "workspace:*",
     "@sdkwork/partner-pc-admin-commission": "workspace:*",
     "@sdkwork/partner-pc-admin-partner": "workspace:*",
     "@sdkwork/partner-pc-admin-stats": "workspace:*",

@@ -1491,6 +1491,43 @@ importers:
         specifier: workspace:*
         version: link:../../../../sdkwork-utils/packages/sdkwork-utils-typescript
 
+  ../sdkwork-company/apps/sdkwork-company-pc/packages/sdkwork-company-pc-admin-enterprise:
+    dependencies:
+      '@sdkwork/company-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../../sdks/sdkwork-company-backend-sdk/sdkwork-company-backend-sdk-typescript
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.31.0(react@19.2.8)
+    devDependencies:
+      '@sdkwork/ui-pc-react':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-ui/sdkwork-ui-pc-react
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.8(react@19.2.8)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
+  ../sdkwork-company/sdks/sdkwork-company-backend-sdk/sdkwork-company-backend-sdk-typescript:
+    dependencies:
+      '@sdkwork/sdk-common':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+      '@sdkwork/utils':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-utils/packages/sdkwork-utils-typescript
+
   ../sdkwork-core/sdkwork-core-pc-react:
     dependencies:
       '@sdkwork/sdk-common':
@@ -5973,6 +6010,9 @@ importers:
       '@sdkwork/community-backend-sdk':
         specifier: workspace:*
         version: link:../../../sdkwork-community/sdks/sdkwork-community-backend-sdk/sdkwork-community-backend-sdk-typescript
+      '@sdkwork/company-pc-admin-enterprise':
+        specifier: workspace:*
+        version: link:../../../sdkwork-company/apps/sdkwork-company-pc/packages/sdkwork-company-pc-admin-enterprise
       '@sdkwork/core-pc-react':
         specifier: workspace:*
         version: link:../../../sdkwork-core/sdkwork-core-pc-react
@@ -6976,6 +7016,9 @@ importers:
       '@sdkwork/cloudroutes-pc-commons':
         specifier: workspace:*
         version: link:../sdkwork-cloudroutes-pc-commons
+      '@sdkwork/company-pc-admin-enterprise':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-company/apps/sdkwork-company-pc/packages/sdkwork-company-pc-admin-enterprise
       '@sdkwork/iam-contracts':
         specifier: workspace:*
         version: link:../../../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-contracts
@@ -7389,6 +7432,9 @@ importers:
       '@sdkwork/cloudrouter-pc-pricing':
         specifier: workspace:*
         version: link:../sdkwork-cloudrouter-pc-pricing
+      '@sdkwork/company-pc-admin-enterprise':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-company/apps/sdkwork-company-pc/packages/sdkwork-company-pc-admin-enterprise
       '@sdkwork/i18n-pc-react':
         specifier: workspace:*
         version: link:../../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-i18n-pc-react
@@ -7599,6 +7645,9 @@ importers:
       '@sdkwork/community-backend-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-community/sdks/sdkwork-community-backend-sdk/sdkwork-community-backend-sdk-typescript
+      '@sdkwork/company-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-company/sdks/sdkwork-company-backend-sdk/sdkwork-company-backend-sdk-typescript
       '@sdkwork/course-backend-sdk':
         specifier: workspace:*
         version: link:../../../../../sdkwork-course/sdks/sdkwork-course-backend-sdk/sdkwork-course-backend-sdk-typescript

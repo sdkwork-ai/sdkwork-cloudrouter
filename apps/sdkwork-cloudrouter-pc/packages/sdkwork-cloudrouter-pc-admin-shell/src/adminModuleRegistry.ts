@@ -78,6 +78,10 @@ import {
   HARDWARE_ADMIN_MENU,
   HARDWARE_ADMIN_MODULE_DEF,
 } from '@sdkwork/cloudrouter-pc-admin-hardware/contribution';
+import {
+  ENTERPRISE_ADMIN_MENU,
+  ENTERPRISE_ADMIN_MODULE_DEF,
+} from '@sdkwork/company-pc-admin-enterprise/contribution';
 
 export type AdminModuleId =
   | 'home'
@@ -96,6 +100,7 @@ export type AdminModuleId =
   | 'domainCenter'
   | 'productCenter'
   | 'tradeCenter'
+  | 'enterpriseCenter'
   | 'notifyCenter'
   | 'documentCenter'
   | 'hardwareCenter'
@@ -191,6 +196,7 @@ export const ADMIN_MODULES: AdminModuleDef[] = [
   RTC_ADMIN_MODULE_DEF,
   PRODUCT_CENTER_ADMIN_MODULE_DEF,
   TRADE_ADMIN_MODULE_DEF,
+  ENTERPRISE_ADMIN_MODULE_DEF,
   MESSAGING_ADMIN_MODULE_DEF,
   moduleBlock({
     id: 'membershipCenter',
@@ -384,6 +390,7 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
   RTC_ADMIN_MENU,
   PRODUCT_CENTER_ADMIN_MENU,
   TRADE_ADMIN_MENU,
+  ENTERPRISE_ADMIN_MENU,
   MESSAGING_ADMIN_MENU,
   {
     moduleId: 'membershipCenter',

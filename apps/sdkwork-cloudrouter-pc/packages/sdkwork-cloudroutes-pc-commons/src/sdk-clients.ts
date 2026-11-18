@@ -48,6 +48,7 @@ import { SdkworkBackendClient as MessagingBackendClient } from '@sdkwork/messagi
 import { SdkworkBackendClient as AiotBackendClient } from '@sdkwork/aiot-backend-sdk';
 import { SdkworkAppClient as AiotAppClient } from '@sdkwork/aiot-app-sdk';
 import { SdkworkBackendClient as ShopBackendClient } from '@sdkwork/shop-backend-sdk';
+import { SdkworkBackendClient as CompanyBackendClient } from '@sdkwork/company-backend-sdk';
 import { SdkworkBackendClient as InventoryBackendClient } from '@sdkwork/inventory-backend-sdk';
 import { SdkworkOrderBackendClient } from '@sdkwork/order-backend-sdk';
 import { SdkworkAiClient, type SdkworkAiConfig } from '@sdkwork/cloudrouter-open-sdk';
@@ -614,6 +615,14 @@ export interface SdkworkShopBackendSdkClientOptions {
   timeout?: number;
 }
 
+/** Company (企业中心) backend client options: enterprise and recruitment admin. */
+export interface SdkworkCompanyBackendSdkClientOptions {
+  backendBaseUrl?: string;
+  platform?: string;
+  tokenManager?: AuthTokenManager;
+  timeout?: number;
+}
+
 /** Inventory backend client options (stock levels, movements, reservations). */
 export interface SdkworkInventoryBackendSdkClientOptions {
   backendBaseUrl?: string;
@@ -661,6 +670,7 @@ export type SdkworkDriveAppSdkClient = SdkworkDriveAppClient;
 export type SdkworkMembershipBackendSdkClient = MembershipBackendClient;
 export type SdkworkPaymentBackendSdkClient = PaymentBackendClient;
 export type SdkworkShopBackendSdkClient = ShopBackendClient;
+export type SdkworkCompanyBackendSdkClient = CompanyBackendClient;
 export type SdkworkInventoryBackendSdkClient = InventoryBackendClient;
 export type SdkworkOrderBackendSdkClient = SdkworkOrderBackendClient;
 export type SdkworkAppstoreBackendSdkClient = AppstoreBackendClient;
@@ -782,6 +792,7 @@ let messagingBackendClient: MessagingBackendClient | null = null;
 let aiotBackendClient: AiotBackendClient | null = null;
 let aiotAppClient: AiotAppClient | null = null;
 let shopBackendClient: ShopBackendClient | null = null;
+let companyBackendClient: CompanyBackendClient | null = null;
 let inventoryBackendClient: InventoryBackendClient | null = null;
 let orderBackendClient: SdkworkOrderBackendClient | null = null;
 let partnerAppClient: PartnerAppClient | null = null;
@@ -1013,6 +1024,36 @@ export function getSdkworkShopBackendSdkClient(
     shopBackendClient = createSdkworkShopBackendSdkClient();
   }
   return shopBackendClient;
+}
+
+/**
+ * Company (enterprise center) backend client.
+ *
+ * The enterprise center's company management, classification dictionary,
+ * industry dictionary, recruitment moderation, and application funnel read and
+ * write through this port, so the admin surface can never drift from the
+ * company module's own contract.
+ */
+export function createSdkworkCompanyBackendSdkClient(
+  options: SdkworkCompanyBackendSdkClientOptions = {},
+): CompanyBackendClient {
+  return attachCloudRouterSdkSessionAuthBoundary(
+    new CompanyBackendClient(
+      buildDependencyBackendConfig(options, 'VITE_SDKWORK_COMPANY_BACKEND_API_BASE_URL'),
+    ),
+  );
+}
+
+export function getSdkworkCompanyBackendSdkClient(
+  options: SdkworkCompanyBackendSdkClientOptions = {},
+): CompanyBackendClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkCompanyBackendSdkClient(options);
+  }
+  if (!companyBackendClient) {
+    companyBackendClient = createSdkworkCompanyBackendSdkClient();
+  }
+  return companyBackendClient;
 }
 
 /** Inventory backend client: stock levels, movements, and reservations. */

@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, ImagePlus, RefreshCw, Sparkles, Trash2, Upload } from 'lucide-react';
+import { ArrowLeft, FileText, Film, ImagePlus, RefreshCw, Sparkles, Trash2, Upload } from 'lucide-react';
 import { DriveUploadImage } from 'sdkwork-drive-pc-upload-image';
 import {
   driveUploadImageValueToCloudRouterMediaResource,
   getCloudRouterDriveImageService,
+  useCloudRouterUpload,
+  useResolvedMediaResourceUrl,
   type CloudRouterMediaResource,
+  type CloudRouterUploadSlotCode,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 
 import {
@@ -57,14 +60,24 @@ const FULFILLMENT_BY_PRODUCT_TYPE: Record<Product['productType'], Sku['fulfillme
   points: 'points_topup',
 };
 
-let mediaIdSequence = 0;
-
-function createMediaResourceId(): string {
-  mediaIdSequence += 1;
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return `media-${crypto.randomUUID()}`;
+/**
+ * Catalog media identity for an external URL.
+ *
+ * `MediaResource.id` must be a positive int64 (the owning module rejects any
+ * other shape: `resource.id must be a positive snowflake id`), so an external
+ * asset gets a deterministic 63-bit FNV-1a digest of its URL: the same URL keeps
+ * one identity instead of a fresh random value, and the digest stays inside the
+ * signed 64-bit range.
+ */
+function externalMediaResourceId(url: string): string {
+  const prime = 0x100000001b3n;
+  const mask = 0x7fffffffffffffffn;
+  let hash = 0xcbf29ce484222325n;
+  for (const character of url.trim()) {
+    hash ^= BigInt(character.codePointAt(0) ?? 0);
+    hash = (hash * prime) & mask;
   }
-  return `media-${Date.now().toString(36)}-${mediaIdSequence.toString(36)}`;
+  return (hash === 0n ? 1n : hash).toString();
 }
 
 function combinationKey(entries: readonly { attributeId: string; attributeValueId: string }[]): string {
@@ -331,8 +344,15 @@ export function ProductDetailPage({ productId, service, onBack }: ProductDetailP
   const [variantOpen, setVariantOpen] = useState(false);
   const [mediaForm, setMediaForm] = useState<MediaFormState>({ editing: null, open: false });
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadKind, setUploadKind] = useState<'image' | 'video' | 'document'>('image');
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const uploadSlot: CloudRouterUploadSlotCode = uploadKind === 'video'
+    ? 'admin-product-video'
+    : uploadKind === 'document'
+      ? 'admin-product-document'
+      : 'admin-product-media';
+  const fileUpload = useCloudRouterUpload({ slot: uploadSlot });
   const [savingAttributes, setSavingAttributes] = useState(false);
 
   const reload = useCallback(() => setReloadToken((token) => token + 1), []);
@@ -496,7 +516,7 @@ export function ProductDetailPage({ productId, service, onBack }: ProductDetailP
    * with a read-only share token, so the storefront resolves a fresh URL instead
    * of the admin persisting an expiring signed link.
    */
-  const registerUploadedMedia = (media: CloudRouterMediaResource | undefined) => {
+  const registerUploadedMedia = (media: CloudRouterMediaResource | undefined, role: Media['mediaRole']) => {
     if (!media || !product || !media.id) {
       setUploading(false);
       return;
@@ -514,13 +534,14 @@ export function ProductDetailPage({ productId, service, onBack }: ProductDetailP
     resolved.createMedia({
       ownerType: 'spu',
       ownerId: product.id,
-      mediaRole: 'main_image',
+      mediaRole: role,
       resource,
     }).then(
       () => {
         setUploading(false);
         setUploadOpen(false);
-        setNotice(t('admin.productCenter.media.uploaded', 'Image uploaded'));
+        fileUpload.reset();
+        setNotice(t('admin.productCenter.media.uploaded', 'Uploaded'));
         reload();
       },
       (uploadCreateError: unknown) => {
@@ -530,29 +551,40 @@ export function ProductDetailPage({ productId, service, onBack }: ProductDetailP
     );
   };
 
-  const mediaFields = useMemo<FormFieldSpec[]>(() => [
-    {
-      name: 'url',
-      label: t('admin.productCenter.media.field.url', 'Resource URL'),
-      kind: 'text',
-      required: true,
-      placeholder: 'https://cdn.example.com/product/main.jpg',
-    },
-    {
-      name: 'kind',
-      label: t('admin.productCenter.media.field.kind', 'Resource kind'),
-      kind: 'select',
-      options: MEDIA_KINDS.map((kind) => ({ value: kind, label: t(`admin.productCenter.media.kind.${kind}`, kind) })),
-    },
-    {
-      name: 'role',
-      label: t('admin.productCenter.media.field.role', 'Media role'),
-      kind: 'select',
-      options: MEDIA_ROLES.map((role) => ({ value: role, label: t(`admin.productCenter.media.role.${role}`, role) })),
-    },
-    { name: 'alt', label: t('admin.productCenter.media.field.alt', 'Alt text'), kind: 'text' },
-    { name: 'sort', label: t('admin.productCenter.media.field.sort', 'Sort order'), kind: 'number' },
-  ], [t]);
+  const uploadRole: Media['mediaRole'] = uploadKind === 'video'
+    ? 'video'
+    : uploadKind === 'document'
+      ? 'manual'
+      : 'main_image';
+
+  const mediaFields = useMemo<FormFieldSpec[]>(() => {
+    const editingDriveResource = mediaForm.editing?.resourceSnapshot.source === 'drive';
+    return [
+      {
+        name: 'url',
+        label: t('admin.productCenter.media.field.url', 'Resource URL'),
+        kind: 'text',
+        required: !editingDriveResource,
+        ...(editingDriveResource
+          ? { help: t('admin.productCenter.media.field.driveKeep', 'Leave blank to keep the uploaded Drive file; enter a URL to replace it with an external link.') }
+          : { placeholder: 'https://cdn.example.com/product/main.jpg' }),
+      },
+      {
+        name: 'kind',
+        label: t('admin.productCenter.media.field.kind', 'Resource kind'),
+        kind: 'select',
+        options: MEDIA_KINDS.map((kind) => ({ value: kind, label: t(`admin.productCenter.media.kind.${kind}`, kind) })),
+      },
+      {
+        name: 'role',
+        label: t('admin.productCenter.media.field.role', 'Media role'),
+        kind: 'select',
+        options: MEDIA_ROLES.map((role) => ({ value: role, label: t(`admin.productCenter.media.role.${role}`, role) })),
+      },
+      { name: 'alt', label: t('admin.productCenter.media.field.alt', 'Alt text'), kind: 'text' },
+      { name: 'sort', label: t('admin.productCenter.media.field.sort', 'Sort order'), kind: 'number' },
+    ];
+  }, [mediaForm.editing?.resourceSnapshot.source, t]);
 
   if (loading) {
     return <LoadingState label={t('admin.productCenter.state.loading', 'Loading…')} />;
@@ -757,15 +789,7 @@ export function ProductDetailPage({ productId, service, onBack }: ProductDetailP
                 key={entry.id}
               >
                 <div className="flex h-28 items-center justify-center bg-slate-100 dark:bg-white/5">
-                  {entry.resourceSnapshot.url || entry.resourceSnapshot.publicUrl ? (
-                    <img
-                      alt={entry.altText ?? ''}
-                      className="h-full w-full object-cover"
-                      src={entry.resourceSnapshot.publicUrl ?? entry.resourceSnapshot.url}
-                    />
-                  ) : (
-                    <span className="text-xs text-slate-400">—</span>
-                  )}
+                  <MediaThumbnail alt={entry.altText ?? ''} resource={entry.resourceSnapshot} />
                 </div>
                 <figcaption className="flex items-center justify-between gap-1 px-2 py-1 text-[11px] text-slate-500 dark:text-slate-400">
                   <span className="truncate">{t(`admin.productCenter.media.role.${entry.mediaRole}`, entry.mediaRole)}</span>
@@ -874,35 +898,43 @@ export function ProductDetailPage({ productId, service, onBack }: ProductDetailP
           const alt = typeof values.alt === 'string' ? values.alt.trim() : '';
           const sort = typeof values.sort === 'string' ? values.sort.trim() : '';
           if (mediaForm.editing) {
+            const existing = mediaForm.editing.resourceSnapshot;
+            const replacesResource = url !== '' && url !== existing.url;
             return resolved.updateMedia(mediaForm.editing.id, mediaForm.editing.version, {
               mediaRole: role as Media['mediaRole'],
               ...(alt ? { altText: alt } : {}),
               ...(sort ? { sortOrder: sort } : {}),
-              ...(mediaForm.editing.resourceSnapshot.url !== url
+              ...(replacesResource
                 ? {
                   resource: {
-                    ...mediaForm.editing.resourceSnapshot,
+                    id: externalMediaResourceId(url),
                     kind: kind as MediaResource['kind'],
                     source: 'external_url',
                     url,
                   },
                 }
                 : {}),
-            }).then(() => undefined);
+            }).then(() => {
+              setNotice(t('admin.productCenter.toast.saved', 'Saved'));
+              reload();
+            });
           }
           return resolved.createMedia({
             ownerType: 'spu',
             ownerId: product.id,
             mediaRole: role as Media['mediaRole'],
             resource: {
-              id: createMediaResourceId(),
+              id: externalMediaResourceId(url),
               kind: kind as MediaResource['kind'],
               source: 'external_url',
               url,
             },
             ...(alt ? { altText: alt } : {}),
             ...(sort ? { sortOrder: sort } : {}),
-          }).then(() => undefined);
+          }).then(() => {
+            setNotice(t('admin.productCenter.toast.created', 'Created'));
+            reload();
+          });
         }}
         open={mediaForm.open}
         title={mediaForm.editing
@@ -918,42 +950,100 @@ export function ProductDetailPage({ productId, service, onBack }: ProductDetailP
         }
         onClose={() => setUploadOpen(false)}
         open={uploadOpen}
-        title={t('admin.productCenter.media.uploadTitle', 'Upload product image')}
+        title={t('admin.productCenter.media.uploadTitle', 'Upload product media')}
       >
         <div className="flex flex-col gap-3">
-          {uploadError ? (
-            <Notice onDismiss={() => setUploadError(null)} tone="error">{uploadError}</Notice>
+          <label className="flex flex-col gap-1 text-sm text-slate-700 dark:text-slate-300">
+            <span>{t('admin.productCenter.media.field.kind', 'Resource kind')}</span>
+            <SelectLike
+              onChange={(value) => setUploadKind(
+                value === 'video' ? 'video' : value === 'document' ? 'document' : 'image',
+              )}
+              options={[
+                { value: 'image', label: t('admin.productCenter.media.kind.image', 'Image') },
+                { value: 'video', label: t('admin.productCenter.media.kind.video', 'Video') },
+                { value: 'document', label: t('admin.productCenter.media.kind.document', 'Document') },
+              ]}
+              value={uploadKind}
+            />
+          </label>
+          {uploadError ?? fileUpload.error ? (
+            <Notice
+              onDismiss={() => {
+                setUploadError(null);
+                fileUpload.reset();
+              }}
+              tone="error"
+            >
+              {uploadError ?? fileUpload.error}
+            </Notice>
           ) : null}
-          <DriveUploadImage
-            appResourceId={product.id}
-            copy={{
-              pickImage: t('admin.productCenter.media.pickImage', 'Choose image'),
-              removeImage: t('admin.productCenter.media.removeImage', 'Remove image'),
-              retryUpload: t('admin.productCenter.media.retryUpload', 'Retry upload'),
-              uploading: t('admin.productCenter.media.uploading', 'Uploading…'),
-              uploadFailed: t('admin.productCenter.media.uploadFailed', 'Upload failed'),
-            }}
-            maxSizeBytes={5 * 1024 * 1024}
-            onChange={(next) => {
-              setUploadError(null);
-              if (!next) {
-                return;
-              }
-              setUploading(true);
-              registerUploadedMedia(driveUploadImageValueToCloudRouterMediaResource(next, 'image'));
-            }}
-            onUploadError={(error) => {
-              setUploading(false);
-              setUploadError(error.message);
-            }}
-            service={getCloudRouterDriveImageService('admin-product-media')}
-            sizePx={96}
-            value={null}
-          />
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            {t('admin.productCenter.media.uploadHint', 'JPG or PNG up to 5 MB. The file is stored in Drive and the catalog keeps only the reference.')}
-          </p>
-          {uploading ? (
+          {uploadKind === 'image' ? (
+            <DriveUploadImage
+              appResourceId={product.id}
+              copy={{
+                pickImage: t('admin.productCenter.media.pickImage', 'Choose image'),
+                removeImage: t('admin.productCenter.media.removeImage', 'Remove image'),
+                retryUpload: t('admin.productCenter.media.retryUpload', 'Retry upload'),
+                uploading: t('admin.productCenter.media.uploading', 'Uploading…'),
+                uploadFailed: t('admin.productCenter.media.uploadFailed', 'Upload failed'),
+              }}
+              maxSizeBytes={5 * 1024 * 1024}
+              onChange={(next) => {
+                setUploadError(null);
+                if (!next) {
+                  return;
+                }
+                setUploading(true);
+                registerUploadedMedia(
+                  driveUploadImageValueToCloudRouterMediaResource(next, 'image'),
+                  uploadRole,
+                );
+              }}
+              onUploadError={(error) => {
+                setUploading(false);
+                setUploadError(error.message);
+              }}
+              service={getCloudRouterDriveImageService('admin-product-media')}
+              sizePx={96}
+              value={null}
+            />
+          ) : (
+            <div className="flex flex-col gap-2">
+              <input
+                accept={uploadKind === 'video' ? 'video/*' : '.pdf,.doc,.docx,application/pdf'}
+                className="block w-full text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-700 dark:text-slate-300 dark:file:bg-white/10 dark:file:text-slate-200"
+                onChange={async (event) => {
+                  const input = event.currentTarget;
+                  const file = input.files?.[0];
+                  input.value = '';
+                  if (!file) {
+                    return;
+                  }
+                  setUploadError(null);
+                  setUploading(true);
+                  const uploaded = await fileUpload.upload(file);
+                  if (uploaded?.media) {
+                    registerUploadedMedia(uploaded.media, uploadRole);
+                  } else {
+                    setUploading(false);
+                  }
+                }}
+                type="file"
+              />
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {uploadKind === 'video'
+                  ? t('admin.productCenter.media.uploadHintVideo', 'MP4/WebM up to 100 MB. Stored in Drive; the catalog keeps the reference.')
+                  : t('admin.productCenter.media.uploadHintDocument', 'PDF/DOC/DOCX up to 20 MB. Stored in Drive; the catalog keeps the reference.')}
+              </p>
+            </div>
+          )}
+          {uploadKind === 'image' ? (
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {t('admin.productCenter.media.uploadHint', 'JPG or PNG up to 5 MB. The file is stored in Drive and the catalog keeps only the reference.')}
+            </p>
+          ) : null}
+          {uploading || fileUpload.isUploading ? (
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {t('admin.productCenter.media.uploading', 'Uploading…')}
             </p>
@@ -962,4 +1052,33 @@ export function ProductDetailPage({ productId, service, onBack }: ProductDetailP
       </Dialog>
     </div>
   );
+}
+
+/**
+ * Renders one catalog media resource.
+ *
+ * Drive-backed media has no durable URL (`uri` is a `drive://` reference), so the
+ * preview resolves a short-lived download URL through the shared drive media
+ * resolver. Non-image resources are represented by their kind icon instead of an
+ * `<img>` tag, which would otherwise show a broken image.
+ */
+function MediaThumbnail({ alt, resource }: { alt: string; resource: MediaResource }) {
+  const resolved = useResolvedMediaResourceUrl(resource as unknown as CloudRouterMediaResource);
+  const src = resolved || resource.publicUrl || resource.url || '';
+  if (resource.kind !== 'image') {
+    return (
+      <span className="flex flex-col items-center gap-1 text-slate-400" title={resource.fileName ?? resource.kind}>
+        {resource.kind === 'video' ? (
+          <Film aria-hidden="true" className="h-6 w-6" />
+        ) : (
+          <FileText aria-hidden="true" className="h-6 w-6" />
+        )}
+        <span className="text-[11px]">{resource.kind}</span>
+      </span>
+    );
+  }
+  if (!src) {
+    return <span className="text-xs text-slate-400">—</span>;
+  }
+  return <img alt={alt} className="h-full w-full object-cover" src={src} />;
 }

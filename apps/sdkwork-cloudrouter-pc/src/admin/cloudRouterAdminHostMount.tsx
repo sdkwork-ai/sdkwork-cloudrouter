@@ -8,13 +8,15 @@ import { TRADE_ADMIN_ROUTE_RECORDS } from '@sdkwork/order-pc-admin-trade/contrib
 import { MESSAGING_ADMIN_ROUTE_RECORDS } from '@sdkwork/messaging-pc-admin-notify/contribution';
 import { HARDWARE_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-hardware/contribution';
 import { PRODUCT_CENTER_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-product/contribution';
+import { ENTERPRISE_ADMIN_ROUTE_RECORDS } from '@sdkwork/company-pc-admin-enterprise/contribution';
 import { TradeCenterHostElement } from './tradeCenterHostElement.tsx';
+import { EnterpriseCenterHostElement } from './enterpriseCenterHostElement.tsx';
 import { DocumentsAdminRuntimeProvider } from '@sdkwork/documents-pc-admin-documents';
 import { createCloudRouterDocumentsAdminClient } from '@sdkwork/cloudroutes-pc-commons';
 
 export type CloudRouterAdminRouteContribution = {
   path: string;
-  owner: 'sdkwork-cloudrouter' | 'sdkwork-models' | 'sdkwork-log' | 'sdkwork-partner' | 'sdkwork-rtc' | 'sdkwork-order' | 'sdkwork-messaging' | 'sdkwork-course' | 'sdkwork-skills' | 'sdkwork-mcp' | 'sdkwork-agents' | 'sdkwork-plugins' | 'sdkwork-documents' | 'sdkwork-memory'| 'sdkwork-aiot' | 'sdkwork-shop' | 'sdkwork-inventory';
+  owner: 'sdkwork-cloudrouter' | 'sdkwork-models' | 'sdkwork-log' | 'sdkwork-partner' | 'sdkwork-rtc' | 'sdkwork-order' | 'sdkwork-messaging' | 'sdkwork-course' | 'sdkwork-skills' | 'sdkwork-mcp' | 'sdkwork-agents' | 'sdkwork-plugins' | 'sdkwork-documents' | 'sdkwork-memory'| 'sdkwork-aiot' | 'sdkwork-shop' | 'sdkwork-inventory' | 'sdkwork-company';
   adminPackage: `@sdkwork/${string}`;
   backendSdkFamilies: readonly string[];
   requiredPermission: string;
@@ -166,7 +168,7 @@ const HardwareRuntimeAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-p
  * are deliberately separate routes (not one `:sectionId` switch) so a deep link
  * to a stock ledger or a shipment queue survives a refresh.
  */
-const ProductCenterOverviewAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-product'), 'ProductCenterOverviewPage');
+const ProductCenterOverviewAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-product'), 'ProductCenterOverviewPage') as LazyExoticComponent<ComponentType<{ onNavigate?: (path: string) => void }>>;
 const ProductListAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-product'), 'ProductListPage') as LazyExoticComponent<ComponentType<{ onOpenProduct?: (productId: string) => void }>>;
 const ProductDetailAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-product'), 'ProductDetailPage') as LazyExoticComponent<ComponentType<{ productId: string; onBack?: () => void }>>;
 const ProductPriceListsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-product'), 'PriceListPage');
@@ -184,7 +186,7 @@ const ProductCarrierListAdmin = lazyAdminRoute(() => import('@sdkwork/cloudroute
 
 /** Screen key to element, mirroring `PRODUCT_CENTER_ADMIN_ROUTE_RECORDS[].screen`. */
 const PRODUCT_CENTER_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>> = {
-  overview: <ProductCenterOverviewAdmin />,
+  overview: <ProductOverviewHostRoute />,
   products: <ProductListHostRoute />,
   'product-detail': <ProductDetailHostRoute />,
   skus: <ProductSkuListAdmin />,
@@ -208,6 +210,11 @@ const PRODUCT_CENTER_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>
  * into the two interactions that need it: opening a product detail route from
  * the list, and returning from that detail page.
  */
+function ProductOverviewHostRoute() {
+  const navigate = useNavigate();
+  return <ProductCenterOverviewAdmin onNavigate={(path) => navigate(path)} />;
+}
+
 function ProductListHostRoute() {
   const navigate = useNavigate();
   return <ProductListAdmin onOpenProduct={(productId) => navigate(`/admin/products/${productId}`)} />;
@@ -441,6 +448,18 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
       record.redirectTo
         ? <Navigate to={record.redirectTo} replace />
         : <TradeCenterHostElement />,
+    ),
+  ),
+  ...ENTERPRISE_ADMIN_ROUTE_RECORDS.map((record) =>
+    route(
+      record.path,
+      'sdkwork-company',
+      '@sdkwork/company-pc-admin-enterprise',
+      ['sdkwork-company-backend-sdk'],
+      record.requiredPermission,
+      record.redirectTo
+        ? <Navigate to={record.redirectTo} replace />
+        : <EnterpriseCenterHostElement />,
     ),
   ),
   ...MESSAGING_ADMIN_ROUTE_RECORDS.map((record) =>

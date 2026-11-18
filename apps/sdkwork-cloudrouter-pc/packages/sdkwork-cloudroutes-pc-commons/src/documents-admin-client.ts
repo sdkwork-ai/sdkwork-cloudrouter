@@ -1,8 +1,9 @@
 import type {
   DocumentsAdminClient,
   DocumentsAdminDocument,
+  DocumentsAdminTaxonomy,
 } from '@sdkwork/documents-pc-commons';
-import type { Document, SdkworkDocumentsAppClient } from '@sdkwork/documents-app-sdk';
+import type { Document, DocumentTag, SdkworkDocumentsAppClient } from '@sdkwork/documents-app-sdk';
 import { createIdempotencyParams } from './idempotency.ts';
 import { getDocumentsAppSdkClient } from './documents-reference-runtime-adapter.ts';
 
@@ -13,6 +14,26 @@ function toAdminDocument(document: Document): DocumentsAdminDocument {
     status: document.status,
     body: document.body ?? '',
   };
+}
+
+/**
+ * The generated taxonomy DTO treats `category` as optional while the admin port
+ * (shared with the SDKWork Documents reference app) requires a string; an
+ * unclassified document therefore projects the empty category.
+ */
+function toAdminTaxonomy(taxonomy: {
+  category?: string;
+  tags: DocumentTag[];
+}): DocumentsAdminTaxonomy {
+  return { category: taxonomy.category ?? '', tags: taxonomy.tags };
+}
+
+/** Narrows the port's free-form status to the generated wire union. */
+function toCategoryStatus(status: string | undefined): 'active' | 'hidden' | undefined {
+  if (status === 'active' || status === 'hidden') {
+    return status;
+  }
+  return undefined;
 }
 
 /**
@@ -29,15 +50,15 @@ export function createCloudRouterDocumentsAdminClient(): DocumentsAdminClient {
       return page.items.map(toAdminDocument);
     },
     async overview() {
-      const page = await client.documentOverview.list();
+      const page = await client.documentOverview.overview.list();
       return page.items.map((item) => ({
         id: item.id,
         title: item.title,
         status: item.status,
         locale: item.locale,
         slug: item.slug,
-        category: item.category,
-        tags: item.tags,
+        category: item.category ?? '',
+        tags: item.tags ?? [],
         updatedAt: item.updatedAt,
       }));
     },
@@ -116,7 +137,7 @@ export function createCloudRouterDocumentsAdminClient(): DocumentsAdminClient {
       return toAdminDocument(await client.revisions.restore(documentId, revisionId));
     },
     async listCategories() {
-      const result = await client.documentCategories.list();
+      const result = await client.documentCategories.categories.list();
       return result.items.map((item) => ({
         id: item.id,
         slug: item.slug,
@@ -130,23 +151,34 @@ export function createCloudRouterDocumentsAdminClient(): DocumentsAdminClient {
       }));
     },
     async createCategory(input) {
-      return client.documentCategories.create(input);
+      return client.documentCategories.categories.create(input);
     },
     async updateCategory(categoryId, input) {
-      return client.documentCategories.update(categoryId, input);
+      const status = toCategoryStatus(input.status);
+      return client.documentCategories.categories.update(categoryId, {
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.nameEn !== undefined ? { nameEn: input.nameEn } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
+        ...(status !== undefined ? { status } : {}),
+      });
     },
     async deleteCategory(categoryId) {
-      await client.documentCategories.delete(categoryId);
+      await client.documentCategories.categories.delete(categoryId);
     },
     async listTags() {
-      const result = await client.documentTags.list();
+      const result = await client.documentTags.tags.list();
       return result.items;
     },
     async getTaxonomy(documentId) {
-      return client.documentTaxonomy.retrieve(documentId);
+      return toAdminTaxonomy(
+        await client.documentTaxonomy.taxonomy.retrieve(documentId),
+      );
     },
     async updateTaxonomy(documentId, input) {
-      return client.documentTaxonomy.update(documentId, input);
+      return toAdminTaxonomy(
+        await client.documentTaxonomy.taxonomy.update(documentId, input),
+      );
     },
   };
 }

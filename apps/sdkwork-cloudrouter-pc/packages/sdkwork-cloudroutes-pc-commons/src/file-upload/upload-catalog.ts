@@ -126,7 +126,9 @@ export type CloudRouterUploadSlotCode =
   | 'admin-membership-icon'
   | 'admin-oauth-account-logo'
   | 'admin-organization-logo'
+  | 'admin-product-document'
   | 'admin-product-media'
+  | 'admin-product-video'
   | 'admin-provider-logo'
   | 'admin-tenant-logo'
   | 'admin-user-avatar'
@@ -513,6 +515,36 @@ const SLOTS: readonly CloudRouterUploadSlot[] = [
     maxSizeBytes: 5 * 1024 * 1024,
     shareLink: 'reader',
     mediaKind: 'image',
+  },
+  {
+    code: 'admin-product-video',
+    category: 'public_asset',
+    label: '商品视频',
+    description: '商品详情视频，公开展示。',
+    uploadProfileCode: 'video',
+    scene: 'product-media-video',
+    appResourceType: 'commerce.product_media',
+    appResourceId: 'product-media',
+    source: `${SOURCE_PREFIX}-admin-product-video-upload`,
+    accept: ['video/'],
+    maxSizeBytes: 100 * 1024 * 1024,
+    shareLink: 'reader',
+    mediaKind: 'video',
+  },
+  {
+    code: 'admin-product-document',
+    category: 'public_asset',
+    label: '商品文档',
+    description: '商品说明书、证书与规格文档，公开展示。',
+    uploadProfileCode: 'document',
+    scene: 'product-media-document',
+    appResourceType: 'commerce.product_media',
+    appResourceId: 'product-media',
+    source: `${SOURCE_PREFIX}-admin-product-document-upload`,
+    accept: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+    maxSizeBytes: 20 * 1024 * 1024,
+    shareLink: 'reader',
+    mediaKind: 'document',
   },
 ];
 

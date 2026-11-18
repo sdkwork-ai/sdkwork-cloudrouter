@@ -200,6 +200,24 @@
       "uploadProfileCode": "image",
       "retention": "long_term",
       "purpose": "Product catalog main image or gallery image uploaded from the Product Center."
+    },
+    {
+      "appResourceType": "commerce.product_media",
+      "appResourceIdKind": "entity",
+      "scene": "product-media-video",
+      "source": "cloudrouter-pc-admin-product-video-upload",
+      "uploadProfileCode": "video",
+      "retention": "long_term",
+      "purpose": "Product detail video uploaded from the Product Center."
+    },
+    {
+      "appResourceType": "commerce.product_media",
+      "appResourceIdKind": "entity",
+      "scene": "product-media-document",
+      "source": "cloudrouter-pc-admin-product-document-upload",
+      "uploadProfileCode": "document",
+      "retention": "long_term",
+      "purpose": "Product manual, certificate or specification document uploaded from the Product Center."
     }
   ]
 }

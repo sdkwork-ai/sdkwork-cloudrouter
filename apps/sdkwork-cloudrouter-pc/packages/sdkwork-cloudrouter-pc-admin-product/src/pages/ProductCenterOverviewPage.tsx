@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ArrowLeftRight,
@@ -114,13 +114,30 @@ const METRICS: readonly MetricEntry[] = [
   },
 ];
 
-export function ProductCenterOverviewPage({ service }: ProductCenterPageProps) {
+export interface ProductCenterOverviewPageProps extends ProductCenterPageProps {
+  /**
+   * Host-injected client-side navigation. Without it the anchors stay real links
+   * (the package deliberately does not import a router); with it every metric and
+   * chain card navigates inside the SPA instead of reloading the document.
+   */
+  onNavigate?: (path: string) => void;
+}
+
+export function ProductCenterOverviewPage({ service, onNavigate }: ProductCenterOverviewPageProps) {
   const { t } = useTranslation();
   const resolved = useMemo(() => service ?? getProductCenterService(), [service]);
   const [overview, setOverview] = useState<ProductCenterOverview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [reloadToken, setReloadToken] = useState(0);
+
+  const navigate = (event: MouseEvent<HTMLAnchorElement>, to: string) => {
+    if (!onNavigate) {
+      return;
+    }
+    event.preventDefault();
+    onNavigate(to);
+  };
 
   const reload = useCallback(() => setReloadToken((token) => token + 1), []);
 
@@ -181,6 +198,7 @@ export function ProductCenterOverviewPage({ service }: ProductCenterPageProps) {
               className="group rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm transition-colors hover:border-lobster-400 dark:border-white/10 dark:bg-[#171717]"
               href={metric.to}
               key={metric.key}
+              onClick={(event) => navigate(event, metric.to)}
             >
               <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                 <Icon aria-hidden="true" className="h-3.5 w-3.5" />
@@ -203,6 +221,7 @@ export function ProductCenterOverviewPage({ service }: ProductCenterPageProps) {
                 className="group flex items-start gap-3 rounded-md border border-slate-200 p-3 transition-colors hover:border-lobster-400 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/5"
                 href={entry.to}
                 key={entry.key}
+                onClick={(event) => navigate(event, entry.to)}
               >
                 <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-lobster-500/15 text-lobster-500">
                   <Icon aria-hidden="true" className="h-4 w-4" />

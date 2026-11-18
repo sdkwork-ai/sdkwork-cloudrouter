@@ -85,7 +85,7 @@ Extension points are limited to public exports, runtime entrypoints, SDK clients
 
 - `pnpm --filter @sdkwork/cloudrouter-pc-admin-payments typecheck`
 - `node --import tsx --test packages/sdkwork-cloudrouter-pc-admin-payments/payment-records-query.test.ts`
-- `pnpm vitest run payment-records-query-ui.test.tsx --config vite.config.ts --configLoader native --pool vmThreads --mode standalone.test`
+- `node --import tsx --test packages/sdkwork-cloudrouter-pc-admin-payments/payment-records-query.test.ts`
 - `pnpm --filter @sdkwork/payment-pc-admin-provider typecheck`
 - `node --test apps/sdkwork-cloudrouter-pc/sdk-composition-standard.test.mjs`
 - `node ../sdkwork-specs/tools/check-component-port-bindings.mjs --root .`

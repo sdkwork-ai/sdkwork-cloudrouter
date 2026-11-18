@@ -62,6 +62,30 @@ function PriceItemsDialog({ list, service, onClose }: PriceItemsDialogProps) {
   const [reloadToken, setReloadToken] = useState(0);
   const [form, setForm] = useState<{ mode: 'create' | 'edit'; item: PriceListItem | null } | null>(null);
   const [deleting, setDeleting] = useState<PriceListItem | null>(null);
+  const [skuOptions, setSkuOptions] = useState<readonly { value: string; label: string }[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    service.listSkus({ page: 1, pageSize: 200 }).then(
+      (page) => {
+        if (active) {
+          setSkuOptions(page.items.map((sku) => ({
+            value: sku.id,
+            label: `${sku.skuNo} · ${sku.title ?? sku.name ?? sku.id}`,
+          })));
+        }
+      },
+      () => {
+        // A failed lookup keeps the free-text fallback so the dialog stays usable.
+        if (active) {
+          setSkuOptions([]);
+        }
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [service]);
 
   useEffect(() => {
     let active = true;
@@ -89,35 +113,54 @@ function PriceItemsDialog({ list, service, onClose }: PriceItemsDialogProps) {
 
   const reload = () => setReloadToken((token) => token + 1);
 
-  const fields = useMemo<FormFieldSpec[]>(() => [
-    {
-      name: 'skuId',
-      label: t('admin.productCenter.priceLists.items.field.sku', 'SKU id'),
-      kind: 'text',
-      required: true,
-      readOnly: form?.mode === 'edit',
-    },
-    {
-      name: 'priceMinor',
-      label: t('admin.productCenter.priceLists.items.field.price', 'Price (minor units)'),
-      kind: 'number',
-      required: true,
-    },
-    {
-      name: 'minQuantity',
-      label: t('admin.productCenter.priceLists.items.field.minQuantity', 'Min quantity'),
-      kind: 'number',
-    },
-    {
-      name: 'status',
-      label: t('admin.productCenter.priceLists.items.field.status', 'Status'),
-      kind: 'select',
-      options: PRICE_STATUSES.map((status) => ({
-        value: status,
-        label: t(`admin.productCenter.status.${status}`, status),
-      })),
-    },
-  ], [form?.mode, t]);
+  const fields = useMemo<FormFieldSpec[]>(() => {
+    const skuField: FormFieldSpec = form?.mode === 'edit'
+      ? {
+        name: 'skuId',
+        label: t('admin.productCenter.priceLists.items.field.sku', 'SKU id'),
+        kind: 'text',
+        required: true,
+        readOnly: true,
+      }
+      : skuOptions.length > 0
+        ? {
+          name: 'skuId',
+          label: t('admin.productCenter.priceLists.items.field.sku', 'SKU'),
+          kind: 'select',
+          required: true,
+          options: skuOptions,
+        }
+        : {
+          name: 'skuId',
+          label: t('admin.productCenter.priceLists.items.field.sku', 'SKU id'),
+          kind: 'text',
+          required: true,
+          help: t('admin.productCenter.priceLists.items.field.skuHint', 'No SKU list was available; enter the SKU id.'),
+        };
+    return [
+      skuField,
+      {
+        name: 'priceMinor',
+        label: t('admin.productCenter.priceLists.items.field.price', 'Price (minor units)'),
+        kind: 'number',
+        required: true,
+      },
+      {
+        name: 'minQuantity',
+        label: t('admin.productCenter.priceLists.items.field.minQuantity', 'Min quantity'),
+        kind: 'number',
+      },
+      {
+        name: 'status',
+        label: t('admin.productCenter.priceLists.items.field.status', 'Status'),
+        kind: 'select',
+        options: PRICE_STATUSES.map((status) => ({
+          value: status,
+          label: t(`admin.productCenter.status.${status}`, status),
+        })),
+      },
+    ];
+  }, [form?.mode, skuOptions, t]);
 
   const columns = useMemo<DataColumn<PriceListItem>[]>(() => [
     {
@@ -281,7 +324,7 @@ export function PriceListPage({ service }: ProductCenterPageProps) {
   const { t } = useTranslation();
   const resolved = useMemo(() => service ?? getProductCenterService(), [service]);
   const [itemsList, setItemsList] = useState<PriceList | null>(null);
-  const [editing, setEditing] = useState<PriceList | null>(null);
+  const [editing, setEditing] = useState<{ row: PriceList; reload: () => void } | null>(null);
 
   const filters = useMemo<FilterControl[]>(() => [
     {
@@ -393,13 +436,13 @@ export function PriceListPage({ service }: ProductCenterPageProps) {
         emptyLabel={t('admin.productCenter.state.empty', 'No records yet')}
         filters={filters}
         load={load}
-        rowActions={(row) => (
+        rowActions={(row, context) => (
           <>
             <Button onClick={() => setItemsList(row)} variant="ghost">
               <Coins aria-hidden="true" className="h-3.5 w-3.5" />
               {t('admin.productCenter.priceLists.items', 'Items')}
             </Button>
-            <Button onClick={() => setEditing(row)} variant="ghost">
+            <Button onClick={() => setEditing({ row, reload: context.reload })} variant="ghost">
               <Pencil aria-hidden="true" className="h-3.5 w-3.5" />
               {t('admin.productCenter.actions.edit', 'Edit')}
             </Button>
@@ -416,20 +459,21 @@ export function PriceListPage({ service }: ProductCenterPageProps) {
       <RecordFormDialog
         fields={editFields}
         initialValues={editing ? {
-          name: editing.name,
-          customerSegment: editing.customerSegment ?? '',
-          status: editing.status,
+          name: editing.row.name,
+          customerSegment: editing.row.customerSegment ?? '',
+          status: editing.row.status,
         } : {}}
         onClose={() => setEditing(null)}
         onSubmit={(values) => {
           if (!editing) {
             return Promise.resolve();
           }
-          return resolved.updatePriceList(editing.id, editing.version, {
+          const target = editing;
+          return resolved.updatePriceList(target.row.id, target.row.version, {
             name: requireString(values, 'name'),
             customerSegment: optionalString(values, 'customerSegment') ?? null,
             status: narrow(PRICE_STATUSES, values.status),
-          }).then(() => undefined);
+          }).then(() => target.reload());
         }}
         open={editing !== null}
         title={t('admin.productCenter.priceLists.editTitle', 'Edit price list')}

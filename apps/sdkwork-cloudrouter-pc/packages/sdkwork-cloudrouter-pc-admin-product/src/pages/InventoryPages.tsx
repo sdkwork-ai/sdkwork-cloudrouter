@@ -19,6 +19,10 @@ import {
   type InventoryStock,
 } from '../productCenterService.ts';
 
+const STOCK_STATUSES = ['active', 'inactive'] as const;
+const MOVEMENT_TYPES = ['inbound', 'outbound', 'stocktake'] as const;
+const RESERVATION_STATUSES = ['reserved', 'consumed', 'released', 'expired'] as const;
+
 function optionalString(values: Record<string, string | boolean>, name: string): string | undefined {
   const value = values[name];
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
@@ -27,13 +31,24 @@ function optionalString(values: Record<string, string | boolean>, name: string):
 export function StockListPage({ service }: ProductCenterPageProps) {
   const { t } = useTranslation();
   const resolved = useMemo(() => service ?? getProductCenterService(), [service]);
-  const [adjusting, setAdjusting] = useState<InventoryStock | null>(null);
-  const [settings, setSettings] = useState<InventoryStock | null>(null);
+  const [adjusting, setAdjusting] = useState<{ stock: InventoryStock; reload: () => void } | null>(null);
+  const [settings, setSettings] = useState<{ stock: InventoryStock; reload: () => void } | null>(null);
 
   const filters = useMemo<FilterControl[]>(() => [
     { name: 'skuId', label: t('admin.productCenter.stocks.filter.sku', 'SKU id'), kind: 'text' },
     { name: 'warehouseId', label: t('admin.productCenter.stocks.filter.warehouse', 'Warehouse id'), kind: 'text' },
-    { name: 'status', label: t('admin.productCenter.stocks.filter.status', 'Status'), kind: 'text' },
+    {
+      name: 'status',
+      label: t('admin.productCenter.stocks.filter.status', 'Status'),
+      kind: 'select',
+      options: [
+        { value: '', label: t('admin.productCenter.common.all', 'All') },
+        ...STOCK_STATUSES.map((status) => ({
+          value: status,
+          label: t(`admin.productCenter.status.${status}`, status),
+        })),
+      ],
+    },
   ], [t]);
 
   const load = useCallback(
@@ -124,11 +139,16 @@ export function StockListPage({ service }: ProductCenterPageProps) {
       name: 'safetyStockQuantity',
       label: t('admin.productCenter.stocks.field.safetyStockQuantity', 'Safety stock quantity'),
       kind: 'number',
+      help: t('admin.productCenter.stocks.field.safetyStockHint', 'Must be zero or greater.'),
     },
     {
       name: 'status',
       label: t('admin.productCenter.stocks.field.status', 'Status'),
-      kind: 'text',
+      kind: 'select',
+      options: STOCK_STATUSES.map((status) => ({
+        value: status,
+        label: t(`admin.productCenter.status.${status}`, status),
+      })),
     },
   ], [t]);
 
@@ -179,13 +199,13 @@ export function StockListPage({ service }: ProductCenterPageProps) {
         emptyLabel={t('admin.productCenter.state.empty', 'No records yet')}
         filters={filters}
         load={load}
-        rowActions={(row) => (
+        rowActions={(row, context) => (
           <>
-            <Button onClick={() => setAdjusting(row)} variant="ghost">
+            <Button onClick={() => setAdjusting({ stock: row, reload: context.reload })} variant="ghost">
               <ArrowLeftRight aria-hidden="true" className="h-3.5 w-3.5" />
               {t('admin.productCenter.stocks.action.adjust', 'Stock movement')}
             </Button>
-            <Button onClick={() => setSettings(row)} variant="ghost">
+            <Button onClick={() => setSettings({ stock: row, reload: context.reload })} variant="ghost">
               <Pencil aria-hidden="true" className="h-3.5 w-3.5" />
               {t('admin.productCenter.stocks.action.settings', 'Safety stock')}
             </Button>
@@ -197,13 +217,14 @@ export function StockListPage({ service }: ProductCenterPageProps) {
 
       <RecordFormDialog
         fields={adjustmentFields}
-        initialValues={{}}
+        initialValues={{ movementType: 'stocktake' }}
         onClose={() => setAdjusting(null)}
         onSubmit={(values) => {
           if (!adjusting) {
             return Promise.resolve();
           }
-          return submitAdjustment(adjusting, values).then(() => undefined);
+          const target = adjusting;
+          return submitAdjustment(target.stock, values).then(() => target.reload());
         }}
         open={adjusting !== null}
         title={t('admin.productCenter.stocks.movement.title', 'Record stock movement')}
@@ -212,20 +233,21 @@ export function StockListPage({ service }: ProductCenterPageProps) {
       <RecordFormDialog
         fields={settingsFields}
         initialValues={settings ? {
-          safetyStockQuantity: settings.safetyStockQuantity ?? '',
-          status: settings.status,
+          safetyStockQuantity: settings.stock.safetyStockQuantity ?? '',
+          status: settings.stock.status,
         } : {}}
         onClose={() => setSettings(null)}
         onSubmit={(values) => {
           if (!settings) {
             return Promise.resolve();
           }
-          return resolved.updateStock(settings.id, {
+          const target = settings;
+          return resolved.updateStock(target.stock.id, {
             ...(optionalString(values, 'safetyStockQuantity')
               ? { safetyStockQuantity: optionalString(values, 'safetyStockQuantity') }
               : {}),
             ...(optionalString(values, 'status') ? { status: optionalString(values, 'status') } : {}),
-          }).then(() => undefined);
+          }).then(() => target.reload());
         }}
         open={settings !== null}
         title={t('admin.productCenter.stocks.settingsTitle', 'Stock settings')}
@@ -240,7 +262,18 @@ export function MovementListPage({ service }: ProductCenterPageProps) {
 
   const filters = useMemo<FilterControl[]>(() => [
     { name: 'skuId', label: t('admin.productCenter.movements.filter.sku', 'SKU id'), kind: 'text' },
-    { name: 'movementType', label: t('admin.productCenter.movements.filter.type', 'Movement type'), kind: 'text' },
+    {
+      name: 'movementType',
+      label: t('admin.productCenter.movements.filter.type', 'Movement type'),
+      kind: 'select',
+      options: [
+        { value: '', label: t('admin.productCenter.common.all', 'All') },
+        ...MOVEMENT_TYPES.map((type) => ({
+          value: type,
+          label: t(`admin.productCenter.stocks.movement.${type}`, type),
+        })),
+      ],
+    },
   ], [t]);
 
   const load = useCallback(
@@ -309,7 +342,18 @@ export function ReservationListPage({ service }: ProductCenterPageProps) {
   const filters = useMemo<FilterControl[]>(() => [
     { name: 'skuId', label: t('admin.productCenter.reservations.filter.sku', 'SKU id'), kind: 'text' },
     { name: 'orderId', label: t('admin.productCenter.reservations.filter.order', 'Order id'), kind: 'text' },
-    { name: 'status', label: t('admin.productCenter.reservations.filter.status', 'Status'), kind: 'text' },
+    {
+      name: 'status',
+      label: t('admin.productCenter.reservations.filter.status', 'Status'),
+      kind: 'select',
+      options: [
+        { value: '', label: t('admin.productCenter.common.all', 'All') },
+        ...RESERVATION_STATUSES.map((status) => ({
+          value: status,
+          label: t(`admin.productCenter.reservations.status.${status}`, status),
+        })),
+      ],
+    },
   ], [t]);
 
   const load = useCallback(

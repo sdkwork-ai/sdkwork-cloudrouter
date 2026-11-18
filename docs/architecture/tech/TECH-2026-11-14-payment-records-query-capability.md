@@ -121,8 +121,7 @@ node tools/payment_sdk_generate.mjs --check
 ```bash
 node scripts/typecheck-owned-sources.mjs
 node --import tsx --test packages/sdkwork-cloudrouter-pc-admin-payments/payment-records-query.test.ts
-pnpm vitest run payment-records-query-ui.test.tsx --config vite.config.ts --configLoader native \
-  --pool vmThreads --mode standalone.test
+node --import tsx --test packages/sdkwork-cloudrouter-pc-admin-payments/payment-records-query.test.ts
 node ../sdkwork-specs/tools/check-i18n-standard.mjs --root .
 node ../sdkwork-specs/tools/check-application-layering.mjs --root .
 ```

@@ -203,6 +203,39 @@ const PRICE_LIST = {
   version: '1',
 };
 
+const FULFILLMENT = {
+  fulfillmentId: 'f-1',
+  fulfillmentNo: 'FUL-2026-1',
+  orderId: 'order-1',
+  fulfillmentType: 'physical_shipment',
+  status: 'awaiting_shipment',
+};
+
+const CREATED_SHIPMENT = {
+  shipmentId: 'sh-2',
+  shipmentNo: 'SHP-E2E',
+  fulfillmentId: 'f-1',
+  carrierCode: 'sf',
+  trackingNo: 'SF-E2E-1',
+  status: 'created',
+};
+
+const MEDIA_ITEM = {
+  id: 'media-1',
+  ownerType: 'spu',
+  ownerId: 'p-1',
+  mediaRole: 'main_image',
+  resourceSnapshot: {
+    id: '1234567890123456789',
+    kind: 'image',
+    source: 'external_url',
+    url: 'https://cdn.example.com/p.jpg',
+  },
+  sortOrder: '0',
+  status: 'active',
+  version: '1',
+};
+
 function pageInfo(pageSize = 20, totalItems = 0) {
   return { mode: 'offset', page: 1, pageSize, totalItems, totalPages: totalItems > 0 ? 1 : 0 };
 }
@@ -211,6 +244,7 @@ interface CapturedWrite {
   method: string;
   path: string;
   idempotencyKey: string;
+  ifMatch: string;
   body: string;
 }
 
@@ -225,6 +259,7 @@ function captureWrites(page: Page): CapturedWrite[] {
       method: request.method(),
       path: requestUrl.pathname,
       idempotencyKey: request.headers()['idempotency-key'] ?? '',
+      ifMatch: request.headers()['if-match'] ?? '',
       body: request.postData() ?? '',
     });
   });
@@ -286,6 +321,18 @@ async function mockProductCenterApi(page: Page): Promise<void> {
       await created(TRACKING_EVENT);
       return;
     }
+    if (method === 'POST' && path === '/backend/v3/api/catalog/media') {
+      await created(MEDIA_ITEM);
+      return;
+    }
+    if (method === 'POST' && path === '/backend/v3/api/shipments') {
+      await created(CREATED_SHIPMENT);
+      return;
+    }
+    if (path === '/backend/v3/api/fulfillments') {
+      await fulfill({ items: [FULFILLMENT], pageInfo: pageInfo(200, 1) });
+      return;
+    }
 
     if (path === '/app/v3/api/auth/sessions/current') {
       await fulfill(buildAdminSession());
@@ -329,6 +376,10 @@ async function mockProductCenterApi(page: Page): Promise<void> {
     }
     if (path === '/backend/v3/api/catalog/media') {
       await emptyPage();
+      return;
+    }
+    if (method === 'DELETE' && path === '/backend/v3/api/catalog/skus/sku-1') {
+      await route.fulfill({ status: 204, body: '' });
       return;
     }
     if (path === '/backend/v3/api/catalog/brands') {
@@ -376,6 +427,11 @@ test.describe('product center admin', () => {
     const header = page.locator('header');
     await expect(header.getByRole('button', { name: /商品中心|Product Center/u })).toBeVisible();
     await expect(page.getByRole('heading').first()).toBeVisible();
+
+    // Metric cards navigate inside the SPA through the host-injected router.
+    await page.locator('a[href="/admin/products/list"]').first().click();
+    await expect(page).toHaveURL(/\/admin\/products\/list$/u);
+    await expect(page.getByText('P-1')).toBeVisible();
   });
 
   test('lists catalog products from the owning module', async ({ page }) => {
@@ -400,8 +456,15 @@ test.describe('product center admin', () => {
     });
 
     await page.goto('/admin/products/category-tree');
+    await expect(page.getByRole('heading', { name: /分类树|Category Tree/u })).toBeVisible();
     await expect(page.getByText('Routers', { exact: true })).toBeVisible();
     await expect(page.getByText('Accessories', { exact: true })).toBeVisible();
+    // Aligned with the Application Center taxonomy manager: five columns, a
+    // depth hint and per-level create actions.
+    await expect(page.getByText('一级分类', { exact: true })).toBeVisible();
+    await expect(page.getByText('最多支持 5 级分类。')).toBeVisible();
+    await expect(page.getByRole('button', { name: '新建一级分类' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '新建下级分类 Routers' })).toBeVisible();
     expect(categoryRequests.some((url) => url.searchParams.get('root_only') === 'true')).toBe(true);
     expect(categoryRequests.some((url) => url.searchParams.has('parent_id'))).toBe(false);
 
@@ -446,9 +509,9 @@ test.describe('product center admin', () => {
 
     // The Drive upload entry renders inside the media panel; the upload itself
     // calls Drive, which this environment does not run.
-    await page.getByRole('button', { name: /上传图片|Upload image/u }).first().click();
+    await page.getByRole('button', { name: /上传媒体|上传图片|Upload media|Upload image/u }).first().click();
     await expect(
-      page.getByRole('dialog').filter({ hasText: /上传商品图片|Upload product image/u }),
+      page.getByRole('dialog').filter({ hasText: /上传商品媒体|Upload product media/u }),
     ).toBeVisible();
   });
 
@@ -471,7 +534,7 @@ test.describe('product center admin', () => {
     await expect(page.getByText('sku-1').first()).toBeVisible();
   });
 
-  test('creates a product through the generated catalog SDK with an idempotency key', async ({ page }) => {
+  test('creates a product through the generated catalog SDK', async ({ page }) => {
     await seedAdminSession(page);
     await mockProductCenterApi(page);
     const writes = captureWrites(page);
@@ -549,5 +612,73 @@ test.describe('product center admin', () => {
     expect(write.body).toContain('"carrierCode":"sf-e2e"');
     expect(write.body).toContain('"carrierName":"E2E Express"');
     expect(write.idempotencyKey).not.toBe('');
+  });
+
+  test('registers external media with a numeric int64 resource identity', async ({ page }) => {
+    await seedAdminSession(page);
+    await mockProductCenterApi(page);
+    const writes = captureWrites(page);
+
+    await page.goto('/admin/products/p-1');
+    await expect(page.getByText('Router Pro').first()).toBeVisible();
+    await page.getByRole('button', { name: /新增媒体|Add media/u }).first().click();
+    const dialog = page.getByRole('dialog').last();
+    await dialog.locator('input').first().fill('https://cdn.example.com/product/main.jpg');
+    await dialog.getByRole('button', { name: /保存|Save/u }).click();
+
+    const write = await waitForWrite(writes, 'POST', '/backend/v3/api/catalog/media');
+    const body = JSON.parse(write.body) as {
+      resource?: { id?: string; source?: string; url?: string };
+      ownerType?: string;
+    };
+    expect(body.ownerType).toBe('spu');
+    expect(body.resource?.source).toBe('external_url');
+    // The owning module requires MediaResource.id to be a positive int64 string.
+    expect(body.resource?.id).toMatch(/^[0-9]+$/u);
+    expect(BigInt(body.resource?.id ?? '0') < 9223372036854775808n).toBe(true);
+  });
+
+  test('creates a shipment from a fulfillment with an idempotency key', async ({ page }) => {
+    await seedAdminSession(page);
+    await mockProductCenterApi(page);
+    const writes = captureWrites(page);
+
+    await page.goto('/admin/products/shipments');
+    await expect(page.getByText('SH-2026-1')).toBeVisible();
+    await page.getByRole('button', { name: /新建|新增|Create/u }).first().click();
+    const dialog = page.getByRole('dialog');
+    // Fulfillment and carrier are selects once their lookups have loaded.
+    await expect(dialog.locator('select')).toHaveCount(2);
+    await dialog.locator('input').last().fill('SF-E2E-1');
+    await dialog.getByRole('button', { name: /保存|Save/u }).click();
+
+    const write = await waitForWrite(writes, 'POST', '/backend/v3/api/shipments');
+    const body = JSON.parse(write.body) as {
+      fulfillmentId?: string;
+      carrierCode?: string;
+      trackingNo?: string;
+    };
+    expect(body.fulfillmentId).toBe('f-1');
+    expect(body.carrierCode).toBe('sf');
+    expect(body.trackingNo).toBe('SF-E2E-1');
+    expect(write.idempotencyKey).not.toBe('');
+  });
+
+  test('deletes a SKU after confirmation with the If-Match version', async ({ page }) => {
+    await seedAdminSession(page);
+    await mockProductCenterApi(page);
+    const writes = captureWrites(page);
+
+    await page.goto('/admin/products/skus');
+    await expect(page.getByText('P-1-01')).toBeVisible();
+    await page.getByRole('button', { name: /^删除$|^Delete$/u }).first().click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByText(/删除 SKU|Delete SKU/u)).toBeVisible();
+    await dialog.getByRole('button', { name: /^删除$|^Delete$/u }).click();
+
+    const write = await waitForWrite(writes, 'DELETE', '/backend/v3/api/catalog/skus/sku-1');
+    expect(write.ifMatch).toBe('1');
+    // The list reloads after the delete; the mock still returns the row.
+    await expect(page.getByText('P-1-01')).toBeVisible();
   });
 });

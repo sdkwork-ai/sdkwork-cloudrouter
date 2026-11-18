@@ -45,7 +45,9 @@ import type {
   CarrierSummary,
   CreateCarrierRequest,
   CreateShipmentPackageRequest,
+  CreateShipmentRequest,
   CreateShipmentTrackingEventRequest,
+  FulfillmentSummary,
   SdkworkOrderBackendClient,
   ShipmentPackageSummary,
   ShipmentSummary,
@@ -97,6 +99,7 @@ export type {
 export type {
   CarrierSummary,
   CreateCarrierRequest,
+  FulfillmentSummary,
   ShipmentPackageSummary,
   ShipmentSummary,
   ShipmentTrackingEventSummary,
@@ -107,6 +110,7 @@ type CatalogPort = ShopBackendClient['catalog'];
 type InventoryPort = InventoryBackendClient['inventory'];
 type ShipmentsPort = SdkworkOrderBackendClient['orderAdminShipments']['shipments'];
 type CarriersPort = SdkworkOrderBackendClient['orderAdminShipments']['carriers'];
+type FulfillmentsPort = SdkworkOrderBackendClient['orderAdminShipments']['fulfillments'];
 
 /**
  * Generated-SDK port shapes the Product Center consumes. Exported so a test or
@@ -116,6 +120,7 @@ export type ProductCenterCatalogPort = CatalogPort;
 export type ProductCenterInventoryPort = InventoryPort;
 export type ProductCenterShipmentsPort = ShipmentsPort;
 export type ProductCenterCarriersPort = CarriersPort;
+export type ProductCenterFulfillmentsPort = FulfillmentsPort;
 
 export interface ProductCenterPageInfo {
   page: number;
@@ -227,6 +232,12 @@ export interface CarrierListQuery extends ProductCenterPageQuery {
   status?: string;
 }
 
+/** Fulfillment page used when creating a shipment. */
+export interface FulfillmentListQuery extends ProductCenterPageQuery {
+  orderId?: string;
+  status?: string;
+}
+
 export interface ProductCenterOverview {
   products?: number;
   categories?: number;
@@ -255,6 +266,8 @@ export interface ProductCenterServiceDeps {
   shipments?: ShipmentsPort;
   /** Test/consumer seam: a carriers port bound to another transport. */
   carriers?: CarriersPort;
+  /** Test/consumer seam: a fulfillments port bound to another transport. */
+  fulfillments?: FulfillmentsPort;
 }
 
 export interface ProductCenterService {
@@ -262,6 +275,7 @@ export interface ProductCenterService {
   getInventoryPort(): InventoryPort;
   getShipmentsPort(): ShipmentsPort;
   getCarriersPort(): CarriersPort;
+  getFulfillmentsPort(): FulfillmentsPort;
 
   listProducts(query: ProductListQuery): Promise<ProductCenterPage<Product>>;
   createProduct(input: CreateProductRequest): Promise<Product>;
@@ -277,6 +291,9 @@ export interface ProductCenterService {
   createCategory(input: CreateCategoryRequest): Promise<Category>;
   updateCategory(categoryId: string, version: string, input: UpdateCategoryRequest): Promise<Category>;
   deleteCategory(categoryId: string, version: string): Promise<void>;
+  deleteProduct(productId: string, version: string): Promise<void>;
+  deleteSku(skuId: string, version: string): Promise<void>;
+  deleteBrand(brandId: string, version: string): Promise<void>;
 
   listAttributes(query: AttributeListQuery): Promise<ProductCenterPage<Attribute>>;
   createAttribute(input: CreateAttributeRequest): Promise<Attribute>;
@@ -362,6 +379,9 @@ export interface ProductCenterService {
   listCarriers(query: CarrierListQuery): Promise<ProductCenterPage<CarrierSummary>>;
   createCarrier(body: CreateCarrierRequest): Promise<CarrierSummary>;
   updateCarrier(carrierId: string, body: UpdateCarrierRequest): Promise<CarrierSummary>;
+
+  listFulfillments(query: FulfillmentListQuery): Promise<ProductCenterPage<FulfillmentSummary>>;
+  createShipment(body: CreateShipmentRequest): Promise<ShipmentSummary>;
 
   loadOverview(): Promise<ProductCenterOverview>;
 }
@@ -459,6 +479,9 @@ export function createProductCenterService(
   const carriersPort = (): CarriersPort => (
     deps.carriers ?? getSdkworkOrderBackendSdkClient().orderAdminShipments.carriers
   );
+  const fulfillmentsPort = (): FulfillmentsPort => (
+    deps.fulfillments ?? getSdkworkOrderBackendSdkClient().orderAdminShipments.fulfillments
+  );
 
   const countOf = async (
     loader: () => Promise<GeneratedPageShape<unknown>>,
@@ -476,6 +499,7 @@ export function createProductCenterService(
     getInventoryPort: inventoryPort,
     getShipmentsPort: shipmentsPort,
     getCarriersPort: carriersPort,
+    getFulfillmentsPort: fulfillmentsPort,
 
     async listProducts(query) {
       const result = await catalogPort().products.management.list(compactQuery({
@@ -545,6 +569,18 @@ export function createProductCenterService(
 
     async deleteCategory(categoryId, version) {
       await catalogPort().categories.delete(categoryId, { ifMatch: version });
+    },
+
+    async deleteProduct(productId, version) {
+      await catalogPort().products.delete(productId, { ifMatch: version });
+    },
+
+    async deleteSku(skuId, version) {
+      await catalogPort().skus.delete(skuId, { ifMatch: version });
+    },
+
+    async deleteBrand(brandId, version) {
+      await catalogPort().brands.delete(brandId, { ifMatch: version });
     },
 
     async listAttributes(query) {
@@ -836,6 +872,23 @@ export function createProductCenterService(
         carrierId,
         body,
         createIdempotencyParams('product-center-carrier-update'),
+      );
+    },
+
+    async listFulfillments(query) {
+      const result = await fulfillmentsPort().management.list(compactQuery({
+        orderId: query.orderId,
+        status: query.status,
+        page: String(query.page),
+        pageSize: String(query.pageSize),
+      }));
+      return normalizePage(result, query);
+    },
+
+    createShipment(body) {
+      return shipmentsPort().create(
+        body,
+        createIdempotencyParams('product-center-shipment'),
       );
     },
 

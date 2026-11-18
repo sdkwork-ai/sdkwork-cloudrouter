@@ -13,11 +13,11 @@ on:
       tag:
         description: Release tag or source ref to package.
         required: true
-        default: v0.4.12
+        default: v0.4.13
       package_version:
         description: Package version used in artifact names and manifests.
         required: true
-        default: 0.4.12
+        default: 0.4.13
       deployment_profile:
         description: Deployment profile filter.
         required: true
@@ -156,6 +156,7 @@ jobs:
                     "SDKWORK_CATALOG_REF": "${{ vars.SDKWORK_CATALOG_REF }}",
                     "SDKWORK_CLOUDROUTER_REF": "${{ vars.SDKWORK_CLOUDROUTER_REF }}",
                     "SDKWORK_COMMUNITY_REF": "${{ vars.SDKWORK_COMMUNITY_REF }}",
+                    "SDKWORK_COMPANY_REF": "${{ vars.SDKWORK_COMPANY_REF }}",
                     "SDKWORK_CORE_REF": "${{ vars.SDKWORK_CORE_REF }}",
                     "SDKWORK_COURSE_REF": "${{ vars.SDKWORK_COURSE_REF }}",
                     "SDKWORK_DATABASE_REF": "${{ vars.SDKWORK_DATABASE_REF }}",

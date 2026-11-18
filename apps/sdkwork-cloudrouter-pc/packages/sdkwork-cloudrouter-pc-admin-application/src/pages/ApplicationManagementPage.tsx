@@ -656,6 +656,7 @@ export function ApplicationManagementPage({
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-5">
+      {activeView === "categories" ? null : (
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <Button aria-label={messages.back} onClick={() => navigate(backTo)} size="sm" type="button" variant="ghost">
@@ -671,6 +672,7 @@ export function ApplicationManagementPage({
           {messages.refresh}
         </Button>
       </header>
+      )}
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
         {showViewNav ? (
