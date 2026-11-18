@@ -24,9 +24,12 @@ import {
 
 import type { ApplicationCatalogMessages } from "../i18n";
 import {
+  addCategoryDraftLocale,
+  APP_STORE_CATEGORY_EXTRA_LOCALES,
   createCategoryDraft,
   createEmptyCategoryDraft,
   listEligibleParents,
+  removeCategoryDraftLocale,
   resolveDraftLevel,
   toCategoryCreateInput,
   toCategoryUpdateInput,
@@ -80,7 +83,7 @@ export function AppStoreCategoryFormDrawer({
     }
     const parentId = initialParentId ?? "";
     return {
-      ...createEmptyCategoryDraft(nextSortOrder(categories)),
+      ...createEmptyCategoryDraft(nextSortOrder(categories, parentId)),
       parentId,
       level: String(resolveDraftLevel(parentId, categories)),
     };
@@ -89,6 +92,16 @@ export function AppStoreCategoryFormDrawer({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<unknown>();
   const [saved, setSaved] = useState(false);
+  const [localeToAdd, setLocaleToAdd] = useState("");
+
+  const availableLocales: readonly string[] = APP_STORE_CATEGORY_EXTRA_LOCALES.filter(
+    (locale) => !draft.localizations.some(
+      (entry) => entry.locale.toLowerCase() === locale.toLowerCase(),
+    ),
+  );
+  const pendingLocale = availableLocales.includes(localeToAdd)
+    ? localeToAdd
+    : availableLocales[0] ?? "";
 
   const eligibleParents = useMemo(
     () => listEligibleParents(categories, category?.id),
@@ -285,11 +298,41 @@ export function AppStoreCategoryFormDrawer({
           </div>
 
           <div className="space-y-4">
-            <div>
-              <h3 className="text-sm font-semibold text-[var(--sdk-color-text-primary)]">
-                {copy.name}
-              </h3>
-              <p className="text-xs text-[var(--sdk-color-text-muted)]">{copy.localeHint}</p>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-[var(--sdk-color-text-primary)]">
+                  {copy.name}
+                </h3>
+                <p className="text-xs text-[var(--sdk-color-text-muted)]">{copy.localeHint}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select
+                  disabled={saving || availableLocales.length === 0}
+                  onValueChange={setLocaleToAdd}
+                  value={pendingLocale}
+                >
+                  <SelectTrigger aria-label={copy.addLocale} className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableLocales.map((locale) => (
+                      <SelectItem key={locale} value={locale}>{locale}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  disabled={saving || !pendingLocale}
+                  onClick={() => {
+                    setSaved(false);
+                    setDraft((current) => addCategoryDraftLocale(current, pendingLocale));
+                  }}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  {copy.addLocale}
+                </Button>
+              </div>
             </div>
             {draft.localizations.map((localization) => {
               const nameIssue = findIssue(issues, "locale", localization.locale);
@@ -301,9 +344,26 @@ export function AppStoreCategoryFormDrawer({
                   className="space-y-3 rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-default)] p-4"
                   key={localization.locale}
                 >
-                  <p className="text-xs font-medium text-[var(--sdk-color-text-secondary)]">
-                    {localeLabel(localization.locale, messages)}
-                  </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-medium text-[var(--sdk-color-text-secondary)]">
+                      {localeLabel(localization.locale, messages)}
+                    </p>
+                    {!localization.existing && localization.locale !== "zh-CN" ? (
+                      <Button
+                        aria-label={`${copy.removeLocale} ${localization.locale}`}
+                        disabled={saving}
+                        onClick={() => {
+                          setSaved(false);
+                          setDraft((current) => removeCategoryDraftLocale(current, localization.locale));
+                        }}
+                        size="sm"
+                        type="button"
+                        variant="ghost"
+                      >
+                        {copy.removeLocale}
+                      </Button>
+                    ) : null}
+                  </div>
                   <Field invalid={Boolean(nameIssue)} required={localization.locale === "zh-CN"}>
                     <FieldLabel htmlFor={`appstore-category-name-${localization.locale}`}>
                       {copy.name}
@@ -397,9 +457,10 @@ function saveFailureMessage(
   return messages.categories.form.saveError;
 }
 
-function nextSortOrder(categories: readonly AppStoreCategory[]): number {
-  if (categories.length === 0) {
+function nextSortOrder(categories: readonly AppStoreCategory[], parentId = ""): number {
+  const siblings = categories.filter((category) => (category.parentId ?? "") === parentId);
+  if (siblings.length === 0) {
     return 10;
   }
-  return Math.max(...categories.map((category) => category.sortOrder)) + 10;
+  return Math.max(...siblings.map((category) => category.sortOrder)) + 10;
 }

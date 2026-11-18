@@ -136,10 +136,28 @@ export function createDeployTemplateAdminService(
     },
 
     async listCategories() {
-      const page = await call("listCategories", () =>
-        template.templateCategories.list({ page: 1, pageSize: 200, includeDisabled: true }),
-      );
-      return page.items
+      const records: unknown[] = [];
+      for (let pageNumber = 1; pageNumber <= 10; pageNumber += 1) {
+        const payload = await call("listCategories", () =>
+          template.templateCategories.list({ page: pageNumber, pageSize: 200, includeDisabled: true }),
+        );
+        const record = asRecord(payload);
+        const data = asRecord(record.data);
+        const items = Array.isArray(record.items)
+          ? record.items
+          : Array.isArray(data.items)
+            ? data.items
+            : [];
+        records.push(...items);
+        const pageInfo = asRecord(record.pageInfo ?? data.pageInfo);
+        const totalPages = readNumber(pageInfo.totalPages ?? pageInfo.total_pages);
+        const hasMore = readBoolean(pageInfo.hasMore ?? pageInfo.has_more)
+          ?? (totalPages === undefined ? items.length >= 200 : pageNumber < totalPages);
+        if (!hasMore || items.length === 0) {
+          break;
+        }
+      }
+      return records
         .map((item) => mapCategory(item))
         .filter((item): item is DeployTemplateCategory => item !== undefined)
         .sort((left, right) => left.sortOrder - right.sortOrder || left.displayName.localeCompare(right.displayName));
@@ -309,4 +327,22 @@ function asRecord(value: unknown): Record<string, unknown> {
 
 function readString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+function readNumber(value: unknown): number | undefined {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function readBoolean(value: unknown): boolean | undefined {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (value === 1 || value === "1" || value === "true") {
+    return true;
+  }
+  if (value === 0 || value === "0" || value === "false") {
+    return false;
+  }
+  return undefined;
 }

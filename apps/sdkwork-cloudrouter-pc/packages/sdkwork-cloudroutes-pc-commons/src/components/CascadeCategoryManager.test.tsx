@@ -72,6 +72,7 @@ describe('CascadeCategoryManager', () => {
 
     expect(screen.getAllByRole('listbox')).toHaveLength(3);
     expect(screen.getByRole('button', { name: 'create L1' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'create L3' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'create L4' })).toBeNull();
   });
 
@@ -93,6 +94,50 @@ describe('CascadeCategoryManager', () => {
     expect(screen.getByText('Level one!')).toBeInTheDocument();
     expect(screen.getByText('Level two!')).toBeInTheDocument();
     expect(screen.getByText('Level three!')).toBeInTheDocument();
+  });
+
+  it('reports drag-and-drop reordering among siblings', () => {
+    const reorder = vi.fn();
+    const roots: CascadeCategoryNode[] = [
+      node('a', undefined, 'Root A'),
+      node('b', undefined, 'Root B'),
+    ];
+    render(
+      <CascadeCategoryManager
+        actions={{ reorder }}
+        items={roots}
+        labels={{ ...labels, dragHint: 'Drag to reorder' }}
+      />,
+    );
+
+    const dataTransfer = {
+      dropEffect: 'move',
+      effectAllowed: 'move',
+      setData: vi.fn(),
+    };
+    const rowA = screen.getByText('Root A').closest('[draggable="true"]') as HTMLElement;
+    const rowB = screen.getByText('Root B').closest('[draggable="true"]') as HTMLElement;
+    fireEvent.dragStart(rowA, { dataTransfer });
+    fireEvent.dragOver(rowB, { clientY: 10, dataTransfer });
+    fireEvent.drop(rowB, { dataTransfer });
+
+    expect(reorder).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'a' }),
+      expect.objectContaining({ id: 'b' }),
+      'after',
+    );
+  });
+
+  it('applies an initial path that arrives after the tree loads', () => {
+    const { rerender } = render(
+      <CascadeCategoryManager initialPathIds={['l1', 'l2']} items={[]} labels={labels} />,
+    );
+    rerender(
+      <CascadeCategoryManager initialPathIds={['l1', 'l2']} items={items} labels={labels} />,
+    );
+
+    expect(screen.getByText('Level two')).toBeInTheDocument();
+    expect(screen.getByText('Level three')).toBeInTheDocument();
   });
 
   it('does not clear the selection during a transient empty reload', () => {

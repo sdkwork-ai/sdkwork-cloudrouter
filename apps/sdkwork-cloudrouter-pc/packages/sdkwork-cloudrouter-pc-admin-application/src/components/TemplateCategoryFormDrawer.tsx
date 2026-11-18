@@ -58,7 +58,9 @@ export function TemplateCategoryFormDrawer({
   const [description, setDescription] = useState(category?.description ?? "");
   const [parentId, setParentId] = useState(category?.parentId ?? initialParentId ?? ROOT_PARENT);
   const [sortOrder, setSortOrder] = useState(
-    category?.sortOrder === undefined ? "" : String(category.sortOrder),
+    category
+      ? String(category.sortOrder)
+      : String(nextSiblingSortOrder(categories, initialParentId ?? ROOT_PARENT)),
   );
   const [status, setStatus] = useState<"ACTIVE" | "DISABLED">(category?.status ?? "ACTIVE");
   const [submitting, setSubmitting] = useState(false);
@@ -66,7 +68,9 @@ export function TemplateCategoryFormDrawer({
   const [validationError, setValidationError] = useState<string>();
 
   const parentOptions = useMemo(
-    () => categories.filter((candidate) => !isSelfOrDescendant(candidate, category, categories)),
+    () => categories.filter((candidate) =>
+      !isSelfOrDescendant(candidate, category, categories)
+      && categoryDepth(candidate, categories) + (category ? subtreeHeight(category, categories) : 1) <= 5),
     [categories, category],
   );
 
@@ -82,6 +86,21 @@ export function TemplateCategoryFormDrawer({
     }
     if (!displayName.trim()) {
       setValidationError(copy.validation["display-name-required"]);
+      return;
+    }
+    const parent = parentId && parentId !== ROOT_PARENT
+      ? categories.find((candidate) => candidate.id === parentId)
+      : undefined;
+    if (parent && categoryDepth(parent, categories) >= 5) {
+      setValidationError(messages.categories.cascade.depthHint);
+      return;
+    }
+    if (
+      parent
+      && category
+      && categoryDepth(parent, categories) + subtreeHeight(category, categories) > 5
+    ) {
+      setValidationError(messages.categories.cascade.depthHint);
       return;
     }
     setValidationError(undefined);
@@ -259,4 +278,53 @@ function isSelfOrDescendant(
     current = byId.get(current.parentId);
   }
   return false;
+}
+
+/** Depth of a template category (root = 1) for the five-level cap. */
+function categoryDepth(
+  category: DeployTemplateCategory,
+  categories: readonly DeployTemplateCategory[],
+): number {
+  const byId = new Map(categories.map((item) => [item.id, item]));
+  let depth = 1;
+  let current = category;
+  while (current.parentId && depth < 10) {
+    depth += 1;
+    const parent = byId.get(current.parentId);
+    if (!parent) {
+      break;
+    }
+    current = parent;
+  }
+  return depth;
+}
+
+/** Next sort order among siblings, so new categories append at the end. */
+function nextSiblingSortOrder(
+  categories: readonly DeployTemplateCategory[],
+  parentId: string,
+): number {
+  const siblings = categories.filter((item) => (item.parentId ?? ROOT_PARENT) === parentId);
+  return siblings.length === 0 ? 10 : Math.max(...siblings.map((item) => item.sortOrder)) + 10;
+}
+
+/** Height of a category subtree (a leaf has height 1). */
+function subtreeHeight(
+  root: DeployTemplateCategory,
+  categories: readonly DeployTemplateCategory[],
+): number {
+  const children = new Map<string, DeployTemplateCategory[]>();
+  for (const item of categories) {
+    if (!item.parentId) {
+      continue;
+    }
+    const list = children.get(item.parentId) ?? [];
+    list.push(item);
+    children.set(item.parentId, list);
+  }
+  const visit = (id: string): number => {
+    const kids = children.get(id) ?? [];
+    return 1 + Math.max(0, ...kids.map((kid) => visit(kid.id)));
+  };
+  return visit(root.id);
 }

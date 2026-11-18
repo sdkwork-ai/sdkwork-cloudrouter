@@ -71,13 +71,13 @@ function createLoaders() {
 
 function renderPage(
   service: AppStoreCategoryService,
-  options: { activeView?: ApplicationCatalogView; showViewNav?: boolean } = {},
+  options: { activeView?: ApplicationCatalogView; showViewNav?: boolean; initialPath?: string } = {},
 ) {
   const resolveContext = vi.fn<() => Promise<ApplicationCatalogContext>>()
     .mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
   render(
     <SdkworkI18nProvider locale="zh-CN">
-      <MemoryRouter>
+      <MemoryRouter initialEntries={options.initialPath ? [options.initialPath] : undefined}>
         <ApplicationManagementPage
           activeView={options.activeView}
           backTo="/admin/dashboard"
@@ -282,6 +282,54 @@ describe("app center category management", () => {
     expect(document.querySelector("[data-application-group]")).toBeNull();
   });
 
+  it("restores the selected category from the URL", async () => {
+    const service = createCategoryService({
+      list: vi.fn().mockResolvedValue({ items: [category, childCategory], hasMore: false }),
+    });
+    renderPage(service, { initialPath: "/?category=cat-child" });
+
+    await openCategories();
+    expect(await screen.findByText("AI 编程")).toBeTruthy();
+  });
+
+  it("locates a nested category by name", async () => {
+    const service = createCategoryService({
+      list: vi.fn().mockResolvedValue({ items: [category, childCategory], hasMore: false }),
+    });
+    renderPage(service);
+
+    await openCategories();
+    await findCategoryName("AI 助手");
+    fireEvent.change(screen.getByPlaceholderText("按名称或编码定位分类"), {
+      target: { value: "AI 编程" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "定位" }));
+
+    expect(await screen.findByText("AI 编程")).toBeTruthy();
+  });
+
+  it("reorders sibling categories by swapping sortOrder", async () => {
+    const second: AppStoreCategory = {
+      ...category,
+      id: "cat-second",
+      code: "second",
+      sortOrder: 110,
+      localizations: [{ locale: "zh-CN", displayName: "第二分类" }],
+    };
+    const service = createCategoryService({
+      list: vi.fn().mockResolvedValue({ items: [category, second], hasMore: false }),
+    });
+    renderPage(service);
+
+    await openCategories();
+    await findCategoryName("AI 助手");
+    fireEvent.click(screen.getByRole("button", { name: "下移 AI 助手" }));
+
+    await waitFor(() => expect(service.update).toHaveBeenCalledTimes(2));
+    expect(service.update).toHaveBeenNthCalledWith(1, "cat-ai", { sortOrder: 110 });
+    expect(service.update).toHaveBeenNthCalledWith(2, "cat-second", { sortOrder: 100 });
+  });
+
   it("keeps every category row action on one line", async () => {
     const service = createCategoryService();
     renderPage(service);
@@ -290,6 +338,6 @@ describe("app center category management", () => {
     await findCategoryName("AI 助手");
     const actions = document.querySelector("[data-application-row-actions]");
     expect(actions).not.toBeNull();
-    expect(within(actions as HTMLElement).getAllByRole("button")).toHaveLength(4);
+    expect(within(actions as HTMLElement).getAllByRole("button")).toHaveLength(6);
   });
 });

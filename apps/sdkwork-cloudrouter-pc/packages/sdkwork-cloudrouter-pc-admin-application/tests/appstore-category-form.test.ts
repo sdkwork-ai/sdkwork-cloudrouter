@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  addCategoryDraftLocale,
   APP_STORE_CATEGORY_CODE_PATTERN,
   createCategoryDraft,
   createEmptyCategoryDraft,
   isDescendantOrSelf,
   listEligibleParents,
+  removeCategoryDraftLocale,
   resolveDraftLevel,
   sortCategories,
   toCategoryCreateInput,
@@ -57,6 +59,42 @@ const grandChildCategory = category({
 });
 
 describe("app store category draft validation", () => {
+  it("adds optional locales and only removes unsaved slots", () => {
+    const draft = createEmptyCategoryDraft();
+    const withJapanese = addCategoryDraftLocale(draft, "ja-JP");
+    expect(withJapanese.localizations.some((entry) => entry.locale === "ja-JP")).toBe(true);
+    expect(addCategoryDraftLocale(withJapanese, "ja-JP")).toBe(withJapanese);
+
+    const removed = removeCategoryDraftLocale(withJapanese, "ja-JP");
+    expect(removed.localizations.some((entry) => entry.locale === "ja-JP")).toBe(false);
+    expect(removeCategoryDraftLocale(withJapanese, "zh-CN")).toBe(withJapanese);
+
+    const editing = createCategoryDraft({
+      ...rootCategory,
+      localizations: [
+        ...rootCategory.localizations,
+        { locale: "ja-JP", displayName: "AI アシスタント" },
+      ],
+    });
+    expect(editing.localizations.some((entry) => entry.locale === "ja-JP")).toBe(true);
+    expect(removeCategoryDraftLocale(editing, "ja-JP")).toBe(editing);
+  });
+
+  it("caps the taxonomy at five levels", () => {
+    const levelFive = category({ id: "cat-l5", code: "level-five", level: 5 });
+    const draft = {
+      ...createEmptyCategoryDraft(),
+      code: "level-six",
+      parentId: "cat-l5",
+      level: "6",
+      localizations: createEmptyCategoryDraft().localizations.map((entry) =>
+        entry.locale === "zh-CN" ? { ...entry, displayName: "第六级" } : entry),
+    };
+    expect(validateCategoryDraft(draft, [levelFive]).map((issue) => issue.code))
+      .toContain("parent-level-invalid");
+    expect(listEligibleParents([levelFive])).toEqual([]);
+  });
+
   it("requires a code and the Simplified Chinese name on a new category", () => {
     const issues = validateCategoryDraft(createEmptyCategoryDraft(), []);
     expect(issues.map((issue) => issue.code)).toEqual(["code-required", "name-required"]);
@@ -101,7 +139,7 @@ describe("app store category draft validation", () => {
     expect(resolveDraftLevel("cat-child", [rootCategory, childCategory])).toBe(3);
     const draft = { ...createCategoryDraft(rootCategory), parentId: "cat-child", level: "1" };
     expect(validateCategoryDraft(draft, [rootCategory, childCategory], rootCategory.id))
-      .toContainEqual({ field: "parent", code: "parent-level-invalid" });
+      .toContainEqual({ field: "parent", code: "parent-cycle" });
   });
 
   it("does not let an existing translation be silently emptied", () => {

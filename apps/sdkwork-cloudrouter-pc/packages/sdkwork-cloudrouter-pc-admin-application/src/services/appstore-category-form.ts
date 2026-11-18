@@ -34,6 +34,7 @@ export interface AppStoreCategoryDraft {
 export type AppStoreCategoryDraftField =
   | "code"
   | "parent"
+  | "level"
   | "sortOrder"
   | "icon"
   | "locale";
@@ -58,14 +59,27 @@ export interface AppStoreCategoryDraftIssue {
 }
 
 export const APP_STORE_CATEGORY_LOCALES = ["zh-CN", "en-US"] as const;
+/** Additional storefront locales an operator may add on demand. */
+export const APP_STORE_CATEGORY_EXTRA_LOCALES = [
+  "zh-TW",
+  "ja-JP",
+  "ko-KR",
+  "fr-FR",
+  "de-DE",
+  "es-ES",
+  "pt-BR",
+  "ru-RU",
+  "ar-SA",
+] as const;
 export const APP_STORE_CATEGORY_CODE_PATTERN = /^[a-z0-9][a-z0-9._-]{0,63}$/u;
 export const APP_STORE_CATEGORY_NAME_MAX_LENGTH = 80;
 export const APP_STORE_CATEGORY_DESCRIPTION_MAX_LENGTH = 500;
 export const APP_STORE_CATEGORY_SORT_ORDER_MAX = 999_999;
+/** The App Center taxonomy allows at most five levels. */
+export const APP_STORE_CATEGORY_MAX_DEPTH = 5;
 
 /** Empty create draft with both locale slots present. */
-export function createEmptyCategoryDraft(sortOrder = 0): AppStoreCategoryDraft {
-  return {
+export function createEmptyCategoryDraft(sortOrder = 0): AppStoreCategoryDraft {  return {
     code: "",
     parentId: "",
     level: "1",
@@ -83,6 +97,17 @@ export function createEmptyCategoryDraft(sortOrder = 0): AppStoreCategoryDraft {
 
 /** Project a saved category into the editable draft. */
 export function createCategoryDraft(category: AppStoreCategory): AppStoreCategoryDraft {
+  const savedByLocale = new Map(
+    category.localizations.map((entry) => [entry.locale.trim().toLowerCase(), entry]),
+  );
+  const locales = [
+    ...APP_STORE_CATEGORY_LOCALES,
+    ...category.localizations
+      .map((entry) => entry.locale)
+      .filter((locale) => !APP_STORE_CATEGORY_LOCALES.some(
+        (fixed) => fixed.toLowerCase() === locale.toLowerCase(),
+      )),
+  ];
   return {
     code: category.code,
     parentId: category.parentId ?? "",
@@ -90,10 +115,8 @@ export function createCategoryDraft(category: AppStoreCategory): AppStoreCategor
     sortOrder: String(category.sortOrder),
     iconMediaResourceId: category.iconMediaResourceId ?? "",
     status: category.status === "unknown" ? "inactive" : category.status,
-    localizations: APP_STORE_CATEGORY_LOCALES.map((locale) => {
-      const saved = category.localizations.find(
-        (entry) => entry.locale.trim().toLowerCase() === locale.toLowerCase(),
-      );
+    localizations: locales.map((locale) => {
+      const saved = savedByLocale.get(locale.toLowerCase());
       return {
         locale,
         displayName: saved?.displayName ?? "",
@@ -101,6 +124,45 @@ export function createCategoryDraft(category: AppStoreCategory): AppStoreCategor
         existing: Boolean(saved),
       };
     }),
+  };
+}
+
+/** Append an optional localization slot; duplicate locales are ignored. */
+export function addCategoryDraftLocale(
+  draft: AppStoreCategoryDraft,
+  locale: string,
+): AppStoreCategoryDraft {
+  const normalized = locale.trim();
+  if (
+    !normalized
+    || draft.localizations.some((entry) => entry.locale.toLowerCase() === normalized.toLowerCase())
+  ) {
+    return draft;
+  }
+  return {
+    ...draft,
+    localizations: [
+      ...draft.localizations,
+      { locale: normalized, displayName: "", description: "", existing: false },
+    ],
+  };
+}
+
+/**
+ * Remove an unsaved locale slot. Saved locales and the zh-CN primary cannot be
+ * removed because the backend upserts localizations and never deletes them.
+ */
+export function removeCategoryDraftLocale(
+  draft: AppStoreCategoryDraft,
+  locale: string,
+): AppStoreCategoryDraft {
+  const target = draft.localizations.find((entry) => entry.locale === locale);
+  if (!target || target.existing || target.locale === "zh-CN") {
+    return draft;
+  }
+  return {
+    ...draft,
+    localizations: draft.localizations.filter((entry) => entry.locale !== locale),
   };
 }
 
@@ -157,13 +219,22 @@ export function validateCategoryDraft(
   const parentId = draft.parentId.trim();
   if (parentId) {
     const parent = categories.find((category) => category.id === parentId);
+    const level = parseLevel(draft.level);
     if (!parent) {
       issues.push({ field: "parent", code: "parent-missing" });
+      if (level !== undefined && level > APP_STORE_CATEGORY_MAX_DEPTH) {
+        issues.push({ field: "level", code: "parent-level-invalid" });
+      }
     } else if (editingId && isDescendantOrSelf(parentId, editingId, categories)) {
       issues.push({ field: "parent", code: "parent-cycle" });
-    }
-    const level = parseLevel(draft.level);
-    if (parent && level !== parent.level + 1) {
+    } else if (parent.level >= APP_STORE_CATEGORY_MAX_DEPTH) {
+      issues.push({ field: "parent", code: "parent-level-invalid" });
+    } else if (
+      editingId
+      && parent.level + subtreeHeight(editingId, categories) > APP_STORE_CATEGORY_MAX_DEPTH
+    ) {
+      issues.push({ field: "parent", code: "parent-level-invalid" });
+    } else if (level !== parent.level + 1) {
       issues.push({ field: "parent", code: "parent-level-invalid" });
     }
   }
@@ -236,10 +307,37 @@ export function listEligibleParents(
   categories: readonly AppStoreCategory[],
   editingId?: string,
 ): readonly AppStoreCategory[] {
+  const eligible = categories.filter(
+    (category) => category.level < APP_STORE_CATEGORY_MAX_DEPTH,
+  );
   if (!editingId) {
-    return categories;
+    return eligible;
   }
-  return categories.filter((category) => !isDescendantOrSelf(category.id, editingId, categories));
+  const movingHeight = subtreeHeight(editingId, categories);
+  return eligible.filter((category) =>
+    !isDescendantOrSelf(category.id, editingId, categories)
+    && category.level + movingHeight <= APP_STORE_CATEGORY_MAX_DEPTH);
+}
+
+/** Height of the subtree rooted at `rootId` (a leaf has height 1). */
+export function subtreeHeight(
+  rootId: string,
+  categories: readonly AppStoreCategory[],
+): number {
+  const children = new Map<string, AppStoreCategory[]>();
+  for (const category of categories) {
+    if (!category.parentId) {
+      continue;
+    }
+    const list = children.get(category.parentId) ?? [];
+    list.push(category);
+    children.set(category.parentId, list);
+  }
+  const visit = (id: string): number => {
+    const kids = children.get(id) ?? [];
+    return 1 + Math.max(0, ...kids.map((kid) => visit(kid.id)));
+  };
+  return visit(rootId);
 }
 
 /** `true` when `candidateId` is `rootId` or lives below it. */

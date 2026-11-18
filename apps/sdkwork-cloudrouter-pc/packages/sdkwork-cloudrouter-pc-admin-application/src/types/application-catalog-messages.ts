@@ -62,10 +62,32 @@ export interface ApplicationCatalogMessages {
       selectHint: string;
       addRoot: string;
       addChild: string;
+      moveUp: string;
+      moveDown: string;
+      dragHint: string;
+      locatePlaceholder: string;
+      locateAction: string;
+      locateEmpty: string;
       depthHint: string;
       loading: string;
     };
     countTemplate: string;
+    exportAction: string;
+    importAction: string;
+    importTitle: string;
+    importDescription: string;
+    importConfirm: string;
+    importing: string;
+    importSuccess: string;
+    importFailed: string;
+    importInvalid: string;
+    importErrors: {
+      "invalid-document": string;
+      "invalid-category": string;
+      "duplicate-code": string;
+      "existing-code": string;
+      "depth-exceeded": string;
+    };
     create: string;
     delete: {
       blockedChildren: string;
@@ -82,6 +104,8 @@ export interface ApplicationCatalogMessages {
     filterAll: string;
     forbidden: string;
     form: {
+      addLocale: string;
+      removeLocale: string;
       cancel: string;
       close: string;
       code: string;

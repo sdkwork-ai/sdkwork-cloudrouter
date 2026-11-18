@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { SdkworkI18nProvider } from "@sdkwork/i18n-pc-react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -87,12 +88,14 @@ function CategoryHarness({ fallbackService, service }: {
 }) {
   const messages = useApplicationCatalogMessages();
   return (
-    <AppTemplateCategoryPanel
-      canWrite
-      {...(fallbackService ? { fallbackService: fallbackService as never } : {})}
-      messages={messages}
-      service={service}
-    />
+    <MemoryRouter>
+      <AppTemplateCategoryPanel
+        canWrite
+        {...(fallbackService ? { fallbackService: fallbackService as never } : {})}
+        messages={messages}
+        service={service}
+      />
+    </MemoryRouter>
   );
 }
 

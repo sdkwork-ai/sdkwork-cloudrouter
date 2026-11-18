@@ -29,11 +29,19 @@ Both taxonomies render through the shared
 
 - five fixed columns (level 1 through level 5); selecting a node reveals its
   children in the next column;
-- per-node action slot (edit / lifecycle / delete / add child) and per-column
-  create slot (new root or new child), so all CRUD lives in the page that owns
-  the domain service;
+- per-node action slot (edit / move up/down / lifecycle / delete / add child) and
+  per-column create slot (new root or new child), so all CRUD lives in the page
+  that owns the domain service;
+- siblings can be reordered with the accessible up/down buttons or by dragging a
+  node onto a sibling; the page reindexes the sibling group and persists gaps;
+- a locate box jumps to a category by name/code and selects its ancestor path;
+- the depth cap is enforced in the UI (column create hidden at level 5, forms
+  reject a parent whose subtree would exceed five levels);
 - the App Store backend has no hard-delete operation, so “delete” is the
   contract's soft-delete status transition;
+- category forms start with zh-CN/en-US slots and can add optional storefront
+  locales (for example ja-JP, ko-KR, fr-FR); saved locales are preserved and
+  cannot be removed because the backend only upserts localizations;
 - template categories are maintained on the Deploy backend API
   (`/backend/v3/api/template_categories`); the app-plane
   `/app/v3/api/template_categories` list is a read-only fallback used when the

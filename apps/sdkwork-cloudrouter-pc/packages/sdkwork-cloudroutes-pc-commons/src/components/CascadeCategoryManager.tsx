@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { ChevronRight, Loader2 } from "lucide-react";
 
 /**
@@ -28,6 +28,7 @@ export interface CascadeCategoryManagerLabels {
   empty: string;
   emptyColumn: string;
   selectHint: string;
+  dragHint?: string;
 }
 
 export interface CascadeCategoryManagerProps<T extends CascadeCategoryNode> {
@@ -44,6 +45,8 @@ export interface CascadeCategoryManagerProps<T extends CascadeCategoryNode> {
     node?: (node: T, level: number) => ReactNode;
     /** Column-level create action, e.g. "new root" or "new child". */
     create?: (level: number, parent: T | undefined) => ReactNode;
+    /** Drag-and-drop reordering among siblings (same parent only). */
+    reorder?: (dragged: T, target: T, position: "before" | "after") => void;
   };
 }
 
@@ -61,6 +64,9 @@ export function CascadeCategoryManager<T extends CascadeCategoryNode>({
   const depth = Math.min(5, Math.max(1, maxDepth));
   const [selectedPath, setSelectedPath] = useState<readonly T[]>(() =>
     resolveInitialPath(items, initialPathIds));
+  const appliedInitialPath = useRef(false);
+  const [draggingId, setDraggingId] = useState<string>();
+  const [dropTarget, setDropTarget] = useState<{ id: string; position: "before" | "after" }>();
 
   // Re-resolve the path after a reload (create/delete/rename) without losing
   // the operator's position when the nodes still exist.
@@ -74,6 +80,23 @@ export function CascadeCategoryManager<T extends CascadeCategoryNode>({
       return resolvePathByIds(items, previous.map((node) => node.id));
     });
   }, [items]);
+
+  // `initialPathIds` can arrive after the async category load (deep link). Apply
+  // it once the tree exists, and notify the caller so the URL/breadcrumb sync.
+  useEffect(() => {
+    if (appliedInitialPath.current || items.length === 0 || !initialPathIds?.length) {
+      return;
+    }
+    const path = resolvePathByIds(items, initialPathIds);
+    // The target may be on a later page than the currently loaded nodes; retry
+    // when more items arrive instead of permanently dropping the deep link.
+    if (path.length === 0) {
+      return;
+    }
+    appliedInitialPath.current = true;
+    setSelectedPath(path);
+    onSelect?.(path[path.length - 1] as T, path);
+  }, [initialPathIds, items, onSelect]);
 
   const byParent = useMemo(() => groupByParent(items), [items]);
   const roots = useMemo(
@@ -122,7 +145,7 @@ export function CascadeCategoryManager<T extends CascadeCategoryNode>({
                   <h3 className="truncate text-xs font-semibold uppercase tracking-wide text-[var(--sdk-color-text-muted)]">
                     {labels.columnTitles[level] ?? `L${level + 1}`}
                   </h3>
-                  {actions?.create ? actions.create(level + 1, parent) : null}
+                  {actions?.create && level + 1 < depth ? actions.create(level + 1, parent) : null}
                 </header>
 
                 <div className="min-h-0 flex-1 overflow-y-auto p-1.5" role="listbox">
@@ -144,8 +167,70 @@ export function CascadeCategoryManager<T extends CascadeCategoryNode>({
                       <div
                         className={`group flex items-stretch gap-1 rounded-[var(--sdk-radius-control)] ${
                           active ? "bg-[var(--sdk-color-brand-primary-soft)]" : "hover:bg-[var(--sdk-color-surface-panel-muted)]"
+                        } ${
+                          dropTarget?.id === node.id
+                            ? dropTarget.position === "before"
+                              ? "border-t-2 border-[var(--sdk-color-brand-primary)]"
+                              : "border-b-2 border-[var(--sdk-color-brand-primary)]"
+                            : ""
+                        } ${draggingId === node.id ? "opacity-50" : ""} ${
+                          actions?.reorder ? "cursor-grab" : ""
                         }`}
+                        draggable={Boolean(actions?.reorder)}
                         key={node.id}
+                        onDragEnd={() => {
+                          setDraggingId(undefined);
+                          setDropTarget(undefined);
+                        }}
+                        onDragOver={(event: DragEvent<HTMLDivElement>) => {
+                          if (!actions?.reorder || !draggingId || draggingId === node.id) {
+                            return;
+                          }
+                          const dragged = items.find((item) => item.id === draggingId);
+                          if (!dragged || (dragged.parentId ?? "") !== (node.parentId ?? "")) {
+                            return;
+                          }
+                          event.preventDefault();
+                          if (event.dataTransfer) {
+                            event.dataTransfer.dropEffect = "move";
+                          }
+                          const rect = event.currentTarget.getBoundingClientRect();
+                          setDropTarget({
+                            id: node.id,
+                            position: event.clientY < rect.top + rect.height / 2 ? "before" : "after",
+                          });
+                        }}
+                        onDragStart={(event: DragEvent<HTMLDivElement>) => {
+                          if (!actions?.reorder) {
+                            return;
+                          }
+                          setDraggingId(node.id);
+                          if (event.dataTransfer) {
+                            event.dataTransfer.effectAllowed = "move";
+                            event.dataTransfer.setData("text/plain", node.id);
+                          }
+                        }}
+                        onDrop={(event: DragEvent<HTMLDivElement>) => {
+                          if (!actions?.reorder || !draggingId) {
+                            return;
+                          }
+                          event.preventDefault();
+                          const dragged = items.find((item) => item.id === draggingId);
+                          if (
+                            dragged
+                            && dragged.id !== node.id
+                            && (dragged.parentId ?? "") === (node.parentId ?? "")
+                          ) {
+                            actions.reorder(
+                              dragged,
+                              node,
+                              dropTarget?.id === node.id ? dropTarget.position : "before",
+                            );
+                          }
+                          setDraggingId(undefined);
+                          setDropTarget(undefined);
+                        }}
+                        title={actions?.reorder ? labels.dragHint : undefined}
                       >
                         <button
                           aria-selected={active}
