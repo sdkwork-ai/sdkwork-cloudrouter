@@ -100,8 +100,10 @@ test('cloudrouter admin mounts standalone business control centers without legac
   assert.match(registrySource, /id:\s*'marketingCenter'/);
   assert.match(registrySource, /id:\s*'paymentCenter'/);
   assert.match(registrySource, /id:\s*'storageCenter'/);
-  assert.doesNotMatch(registrySource, /driveCenter|productCenter|transactionCenter|financeCenter|serviceProviderCenter|messagingCenter|appCenter|\/admin\/inventory/);
+  assert.match(registrySource, /id:\s*'productCenter'/);
+  assert.doesNotMatch(registrySource, /driveCenter|transactionCenter|financeCenter|serviceProviderCenter|messagingCenter/);
   assert.doesNotMatch(permissionSource, /\/admin\/inventory|\/admin\/drive|\/admin\/catalog|\/admin\/orders|\/admin\/finance|\/admin\/wallet|\/admin\/oauth|\/admin\/service-providers|commerce\./);
+  assert.match(permissionSource, /\/admin\/products/);
   assert.match(registrySource, /id:\s*'home'/);
   assert.match(registrySource, /id:\s*'operations'/);
   assert.doesNotMatch(sdkInventorySource, /commerce-backend-sdk|commerce-app-sdk/);
@@ -171,6 +173,54 @@ test('cloudrouter portal no longer declares legacy commerce facade packages', ()
 
   assert.equal(packageJson.dependencies['@sdkwork/account-pc-wallet'], 'workspace:*');
   assert.equal(packageJson.dependencies['@sdkwork/promotion-pc-coupon'], 'workspace:*');
+});
+
+test('product center composes the owning modules instead of legacy commerce facades', () => {
+  const packageJson = JSON.parse(readPortalFile('./package.json')) as { dependencies: Record<string, string> };
+  const hostMountSource = readPortalFile('./src/admin/cloudRouterAdminHostMount.tsx');
+  const registrySource = readPortalFile('./packages/sdkwork-cloudrouter-pc-admin-shell/src/adminModuleRegistry.ts');
+  const serviceSource = readPortalFile(
+    './packages/sdkwork-cloudrouter-pc-admin-product/src/productCenterService.ts',
+  );
+  const contributionSource = readPortalFile(
+    './packages/sdkwork-cloudrouter-pc-admin-product/src/contribution.ts',
+  );
+
+  assert.equal(
+    packageJson.dependencies['@sdkwork/cloudrouter-pc-admin-product'],
+    'workspace:*',
+    'the product center must be composed as a first-party admin package',
+  );
+  assert.equal(
+    packageJson.dependencies['@sdkwork/shop-backend-sdk'],
+    'workspace:*',
+    'catalog management is owned by the storefront backend SDK',
+  );
+  assert.equal(
+    packageJson.dependencies['@sdkwork/inventory-backend-sdk'],
+    'workspace:*',
+    'stock management is owned by the inventory backend SDK',
+  );
+  assert.equal(
+    packageJson.dependencies['@sdkwork/order-backend-sdk'],
+    'workspace:*',
+    'shipment management is owned by the order backend SDK',
+  );
+
+  assert.match(registrySource, /PRODUCT_CENTER_ADMIN_MODULE_DEF/);
+  assert.match(registrySource, /PRODUCT_CENTER_ADMIN_MENU/);
+  assert.match(hostMountSource, /PRODUCT_CENTER_ADMIN_ROUTE_RECORDS/);
+  assert.match(hostMountSource, /PRODUCT_CENTER_SCREEN_OWNER/);
+  assert.match(contributionSource, /id:\s*'productCenter'/);
+  assert.match(contributionSource, /'admin\.header\.productCenter'/);
+
+  // The service is the only data entry point and it must go through the
+  // generated dependency clients, never through raw HTTP.
+  assert.match(serviceSource, /getSdkworkShopBackendSdkClient/);
+  assert.match(serviceSource, /getSdkworkInventoryBackendSdkClient/);
+  assert.match(serviceSource, /getSdkworkOrderBackendSdkClient/);
+  assert.doesNotMatch(serviceSource, /\bfetch\s*\(|axios|XMLHttpRequest/);
+  assert.doesNotMatch(serviceSource, /commerce-backend-sdk|commerce-app-sdk/);
 });
 
 test('workspace commerce debt scan script exists', () => {

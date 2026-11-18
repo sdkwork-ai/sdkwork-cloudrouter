@@ -191,6 +191,15 @@
       "retention": "temporary",
       "purpose": "Temporary asset uploaded from the console and not meant to be retained.",
       "retentionTtlSeconds": 86400
+    },
+    {
+      "appResourceType": "commerce.product_media",
+      "appResourceIdKind": "entity",
+      "scene": "product-media",
+      "source": "cloudrouter-pc-admin-product-media-upload",
+      "uploadProfileCode": "image",
+      "retention": "long_term",
+      "purpose": "Product catalog main image or gallery image uploaded from the Product Center."
     }
   ]
 }

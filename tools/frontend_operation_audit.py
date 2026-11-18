@@ -250,6 +250,16 @@ class FrontendOperationAudit:
         r"getSdkworkPromotionBackendSdkClient|getSdkworkBaseDataBackendSdkClient|"
         r"getSdkworkCommerceService)\s*\("
     )
+    # Product Center dependency SDKs. The Product Center is a composition host:
+    # catalog (storefront shop), inventory, and order-shipment operations are
+    # owned by those modules' OpenAPI authorities and generated SDK contracts
+    # (see docs/architecture/tech/TECH-2026-11-18-admin-product-center-reinstatement.md),
+    # so the Cloud Router contract does not redeclare them. Same rule as the
+    # composed commerce capability clients above.
+    PRODUCT_CENTER_DEPENDENCY_SDK_PATTERN = re.compile(
+        r"\b(?:getSdkworkShopBackendSdkClient|getSdkworkInventoryBackendSdkClient|"
+        r"getSdkworkOrderBackendSdkClient)\s*\("
+    )
     ADMIN_APP_API_SURFACE_ROUTES = frozenset(
         {
             "/admin/drive/spaces",
@@ -620,6 +630,7 @@ class FrontendOperationAudit:
                     or self.PLUGINS_BACKEND_SDK_PATTERN.search(source_text) is not None
                     or self.DRIVE_APP_SDK_PATTERN.search(source_text) is not None
                     or self.COMPOSED_COMMERCE_SDK_PATTERN.search(source_text) is not None
+                    or self.PRODUCT_CENTER_DEPENDENCY_SDK_PATTERN.search(source_text) is not None
                 )
             ):
                 # Operations dispatched through external capability SDKs

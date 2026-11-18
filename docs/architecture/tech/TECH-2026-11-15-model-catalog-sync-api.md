@@ -32,8 +32,8 @@ app-api routes `/app/v3/api/ai/model_vendors`, `/app/v3/api/ai/models`, and
 This document defines the contract, the version model, the synchronization
 protocol, the precedence rule, and the local copy-on-write (COW) update
 strategy. It is the authority for the OpenAPI fragments in
-[`assets/model-catalog-sync.open-api.openapi.json`](assets/model-catalog-sync.open-api.openapi.json)
-and [`assets/model-catalog-sync.app-api.openapi.json`](assets/model-catalog-sync.app-api.openapi.json).
+[`assets/model-catalog-sync.open-api.fragment.json`](assets/model-catalog-sync.open-api.fragment.json)
+and [`assets/model-catalog-sync.app-api.fragment.json`](assets/model-catalog-sync.app-api.fragment.json).
 
 ## 2. Design Goals
 

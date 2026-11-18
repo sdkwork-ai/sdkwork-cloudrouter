@@ -65,7 +65,14 @@ export function CascadeCategoryManager<T extends CascadeCategoryNode>({
   // Re-resolve the path after a reload (create/delete/rename) without losing
   // the operator's position when the nodes still exist.
   useEffect(() => {
-    setSelectedPath((previous) => resolvePathByIds(items, previous.map((node) => node.id)));
+    setSelectedPath((previous) => {
+      // A transient empty list during reload must not erase the operator's
+      // selection; re-resolve only when nodes are available again.
+      if (items.length === 0 && previous.length > 0) {
+        return previous;
+      }
+      return resolvePathByIds(items, previous.map((node) => node.id));
+    });
   }, [items]);
 
   const byParent = useMemo(() => groupByParent(items), [items]);

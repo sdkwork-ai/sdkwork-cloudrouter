@@ -20,6 +20,7 @@
   "dependencies": {
     "@sdkwork/cloudrouter-pc-admin-hardware": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-iam": "workspace:*",
+    "@sdkwork/cloudrouter-pc-admin-product": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-rtc": "workspace:*",
     "@sdkwork/cloudroutes-pc-commons": "workspace:*",
     "@sdkwork/iam-contracts": "workspace:*",

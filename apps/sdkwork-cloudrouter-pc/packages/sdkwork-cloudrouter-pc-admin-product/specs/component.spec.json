@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "component": {
+    "name": "sdkwork-cloudrouter-pc-admin-product",
+    "package": "@sdkwork/cloudrouter-pc-admin-product",
+    "owner": "sdkwork-cloudrouter",
+    "surface": "backend-admin"
+  },
+  "contracts": {
+    "backendSdkFamilies": [
+      "shop-backend-sdk",
+      "inventory-backend-sdk",
+      "order-backend-sdk"
+    ],
+    "apiSurface": "backend",
+    "routes": [
+      "/admin/products",
+      "/admin/products/list",
+      "/admin/products/:productId",
+      "/admin/products/skus",
+      "/admin/products/brands",
+      "/admin/products/categories",
+      "/admin/products/category-tree",
+      "/admin/products/attributes",
+      "/admin/products/pricing",
+      "/admin/products/inventory",
+      "/admin/products/inventory/movements",
+      "/admin/products/inventory/reservations",
+      "/admin/products/shipments",
+      "/admin/products/logistics",
+      "/admin/products/carriers"
+    ],
+    "permissions": ["cloudrouter.admin.access"]
+  }
+}

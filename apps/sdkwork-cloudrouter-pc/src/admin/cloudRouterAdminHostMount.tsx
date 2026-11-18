@@ -7,13 +7,14 @@ import { RTC_ADMIN_ROUTE_ELEMENTS } from '@sdkwork/cloudrouter-pc-admin-rtc';
 import { TRADE_ADMIN_ROUTE_RECORDS } from '@sdkwork/order-pc-admin-trade/contribution';
 import { MESSAGING_ADMIN_ROUTE_RECORDS } from '@sdkwork/messaging-pc-admin-notify/contribution';
 import { HARDWARE_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-hardware/contribution';
+import { PRODUCT_CENTER_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-product/contribution';
 import { TradeCenterHostElement } from './tradeCenterHostElement.tsx';
 import { DocumentsAdminRuntimeProvider } from '@sdkwork/documents-pc-admin-documents';
 import { createCloudRouterDocumentsAdminClient } from '@sdkwork/cloudroutes-pc-commons';
 
 export type CloudRouterAdminRouteContribution = {
   path: string;
-  owner: 'sdkwork-cloudrouter' | 'sdkwork-models' | 'sdkwork-log' | 'sdkwork-partner' | 'sdkwork-rtc' | 'sdkwork-order' | 'sdkwork-messaging' | 'sdkwork-course' | 'sdkwork-skills' | 'sdkwork-mcp' | 'sdkwork-agents' | 'sdkwork-plugins' | 'sdkwork-documents' | 'sdkwork-memory'| 'sdkwork-aiot';
+  owner: 'sdkwork-cloudrouter' | 'sdkwork-models' | 'sdkwork-log' | 'sdkwork-partner' | 'sdkwork-rtc' | 'sdkwork-order' | 'sdkwork-messaging' | 'sdkwork-course' | 'sdkwork-skills' | 'sdkwork-mcp' | 'sdkwork-agents' | 'sdkwork-plugins' | 'sdkwork-documents' | 'sdkwork-memory'| 'sdkwork-aiot' | 'sdkwork-shop' | 'sdkwork-inventory';
   adminPackage: `@sdkwork/${string}`;
   backendSdkFamilies: readonly string[];
   requiredPermission: string;
@@ -156,6 +157,91 @@ const HardwareFirmwareRolloutsAdmin = lazyAdminRoute(() => import('@sdkwork/clou
 const HardwareEventsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-hardware'), 'HardwareEventsPage');
 const HardwareProtocolAdaptersAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-hardware'), 'HardwareProtocolAdaptersPage');
 const HardwareRuntimeAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-hardware'), 'HardwareRuntimePage');
+
+/**
+ * Product Center screens.
+ *
+ * The catalog, inventory, and order modules answer these pages through their
+ * generated backend SDKs; the host only lazy-loads the UI blocks. The screens
+ * are deliberately separate routes (not one `:sectionId` switch) so a deep link
+ * to a stock ledger or a shipment queue survives a refresh.
+ */
+const ProductCenterOverviewAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-product'), 'ProductCenterOverviewPage');
+const ProductListAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-product'), 'ProductListPage') as LazyExoticComponent<ComponentType<{ onOpenProduct?: (productId: string) => void }>>;
+const ProductDetailAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-product'), 'ProductDetailPage') as LazyExoticComponent<ComponentType<{ productId: string; onBack?: () => void }>>;
+const ProductPriceListsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-product'), 'PriceListPage');
+const ProductSkuListAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-product'), 'SkuListPage');
+const ProductBrandListAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-product'), 'BrandListPage');
+const ProductCategoryListAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-product'), 'CategoryListPage');
+const ProductCategoryTreeAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-product'), 'CategoryTreePage');
+const ProductAttributeListAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-product'), 'AttributeListPage');
+const ProductStockListAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-product'), 'StockListPage');
+const ProductMovementListAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-product'), 'MovementListPage');
+const ProductReservationListAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-product'), 'ReservationListPage');
+const ProductShipmentListAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-product'), 'ShipmentListPage');
+const ProductLogisticsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-product'), 'LogisticsTrackingPage');
+const ProductCarrierListAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-product'), 'CarrierListPage');
+
+/** Screen key to element, mirroring `PRODUCT_CENTER_ADMIN_ROUTE_RECORDS[].screen`. */
+const PRODUCT_CENTER_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>> = {
+  overview: <ProductCenterOverviewAdmin />,
+  products: <ProductListHostRoute />,
+  'product-detail': <ProductDetailHostRoute />,
+  skus: <ProductSkuListAdmin />,
+  brands: <ProductBrandListAdmin />,
+  categories: <ProductCategoryListAdmin />,
+  'category-tree': <ProductCategoryTreeAdmin />,
+  attributes: <ProductAttributeListAdmin />,
+  'price-lists': <ProductPriceListsAdmin />,
+  stocks: <ProductStockListAdmin />,
+  movements: <ProductMovementListAdmin />,
+  reservations: <ProductReservationListAdmin />,
+  shipments: <ProductShipmentListAdmin />,
+  logistics: <ProductLogisticsAdmin />,
+  carriers: <ProductCarrierListAdmin />,
+};
+
+/**
+ * Product Center host navigation.
+ *
+ * The package owns no router dependency, so the host projects SPA navigation
+ * into the two interactions that need it: opening a product detail route from
+ * the list, and returning from that detail page.
+ */
+function ProductListHostRoute() {
+  const navigate = useNavigate();
+  return <ProductListAdmin onOpenProduct={(productId) => navigate(`/admin/products/${productId}`)} />;
+}
+
+function ProductDetailHostRoute() {
+  const { productId } = useParams<{ productId?: string }>();
+  const navigate = useNavigate();
+  if (!productId) {
+    return <Navigate replace to="/admin/products/list" />;
+  }
+  return <ProductDetailAdmin onBack={() => navigate('/admin/products/list')} productId={productId} />;
+}
+
+const PRODUCT_CENTER_SCREEN_OWNER: Readonly<Record<string, {
+  owner: CloudRouterAdminRouteContribution['owner'];
+  backendSdkFamilies: readonly string[];
+}>> = {
+  overview: { owner: 'sdkwork-shop', backendSdkFamilies: ['shop-backend-sdk', 'inventory-backend-sdk', 'order-backend-sdk'] },
+  products: { owner: 'sdkwork-shop', backendSdkFamilies: ['shop-backend-sdk'] },
+  'product-detail': { owner: 'sdkwork-shop', backendSdkFamilies: ['shop-backend-sdk'] },
+  skus: { owner: 'sdkwork-shop', backendSdkFamilies: ['shop-backend-sdk'] },
+  brands: { owner: 'sdkwork-shop', backendSdkFamilies: ['shop-backend-sdk'] },
+  categories: { owner: 'sdkwork-shop', backendSdkFamilies: ['shop-backend-sdk'] },
+  'category-tree': { owner: 'sdkwork-shop', backendSdkFamilies: ['shop-backend-sdk'] },
+  attributes: { owner: 'sdkwork-shop', backendSdkFamilies: ['shop-backend-sdk'] },
+  'price-lists': { owner: 'sdkwork-shop', backendSdkFamilies: ['shop-backend-sdk'] },
+  stocks: { owner: 'sdkwork-inventory', backendSdkFamilies: ['inventory-backend-sdk'] },
+  movements: { owner: 'sdkwork-inventory', backendSdkFamilies: ['inventory-backend-sdk'] },
+  reservations: { owner: 'sdkwork-inventory', backendSdkFamilies: ['inventory-backend-sdk'] },
+  shipments: { owner: 'sdkwork-order', backendSdkFamilies: ['order-backend-sdk'] },
+  logistics: { owner: 'sdkwork-order', backendSdkFamilies: ['order-backend-sdk'] },
+  carriers: { owner: 'sdkwork-order', backendSdkFamilies: ['order-backend-sdk'] },
+};
 
 /** Screen key to element, mirroring `HARDWARE_ADMIN_ROUTE_RECORDS[].screen`. */
 const HARDWARE_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>> = {
@@ -381,6 +467,23 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
         : HARDWARE_ADMIN_ROUTE_ELEMENTS[record.screen]!,
     ),
   ),
+  // Product Center: one header module over three owning-module backend SDKs.
+  // Each record declares the module that actually answers it so a dependency
+  // audit can trace a screen back to `shop`/`inventory`/`order` without reading
+  // the page implementation.
+  ...PRODUCT_CENTER_ADMIN_ROUTE_RECORDS.map((record) => {
+    const meta = PRODUCT_CENTER_SCREEN_OWNER[record.screen];
+    return route(
+      record.path,
+      meta?.owner ?? 'sdkwork-shop',
+      '@sdkwork/cloudrouter-pc-admin-product',
+      meta?.backendSdkFamilies ?? ['shop-backend-sdk'],
+      record.requiredPermission,
+      record.redirectTo
+        ? <Navigate to={record.redirectTo} replace />
+        : PRODUCT_CENTER_ADMIN_ROUTE_ELEMENTS[record.screen]!,
+    );
+  }),
 ];
 
 function AdminSectionRoute({ component: Component }: { component: ComponentType<{ sectionId?: string }> }) {

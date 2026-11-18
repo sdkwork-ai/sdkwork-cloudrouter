@@ -21,15 +21,6 @@ export const adminDomainCenterMessages: I18nMessageBundle = {
     'admin.menu.domains.certificates': 'Certificates',
     'admin.menu.domains.accounts': 'DNS accounts',
 
-    // Tabs
-    'admin.domainCenter.tabs.label': 'Domain Center sections',
-    'admin.domainCenter.tabs.overview': 'Overview',
-    'admin.domainCenter.tabs.zones': 'Root domains',
-    'admin.domainCenter.tabs.hostnames': 'Hostnames',
-    'admin.domainCenter.tabs.dns': 'DNS resolution',
-    'admin.domainCenter.tabs.certificates': 'Certificates',
-    'admin.domainCenter.tabs.accounts': 'DNS accounts',
-
     // Shared controls
     'admin.domainCenter.actions.refresh': 'Refresh',
     'admin.domainCenter.actions.addZone': 'Register root domain',
@@ -461,15 +452,6 @@ export const adminDomainCenterMessages: I18nMessageBundle = {
     'admin.menu.domains.security': '证书与账号',
     'admin.menu.domains.certificates': '证书管理',
     'admin.menu.domains.accounts': 'DNS 云账号',
-
-    // Tabs
-    'admin.domainCenter.tabs.label': '域名中心分区',
-    'admin.domainCenter.tabs.overview': '总览',
-    'admin.domainCenter.tabs.zones': '根域名',
-    'admin.domainCenter.tabs.hostnames': '主机名',
-    'admin.domainCenter.tabs.dns': '域名解析',
-    'admin.domainCenter.tabs.certificates': '证书管理',
-    'admin.domainCenter.tabs.accounts': 'DNS 云账号',
 
     // Shared controls
     'admin.domainCenter.actions.refresh': '刷新',

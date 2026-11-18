@@ -26,8 +26,8 @@ import { fileURLToPath } from 'node:url'
 const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const assetsDir = resolve(workspaceRoot, 'docs', 'architecture', 'tech', 'assets')
 const FRAGMENTS = [
-  resolve(assetsDir, 'model-catalog-sync.open-api.openapi.json'),
-  resolve(assetsDir, 'model-catalog-sync.app-api.openapi.json'),
+  resolve(assetsDir, 'model-catalog-sync.open-api.fragment.json'),
+  resolve(assetsDir, 'model-catalog-sync.app-api.fragment.json'),
 ]
 const SEMVER = /^\d+\.\d+\.\d+$/
 const HTTP_METHODS = new Set(['get', 'put', 'post', 'delete', 'patch', 'head', 'options', 'trace'])
@@ -186,7 +186,7 @@ function main() {
       findings.add(file, '/info/x-sdkwork-api-surface', 'must name the API surface')
     }
     checkOperations(file, document, findings)
-    if (file.endsWith('open-api.openapi.json')) checkOpenApi(file, document, findings)
+    if (file.endsWith('open-api.fragment.json')) checkOpenApi(file, document, findings)
     else checkAppApi(file, document, findings)
   }
 

@@ -67,6 +67,12 @@
       "require": "./src/components/BottomPagination.tsx",
       "default": "./src/components/BottomPagination.tsx"
     },
+    "./components/CascadeCategoryManager": {
+      "types": "./src/components/CascadeCategoryManager.tsx",
+      "import": "./src/components/CascadeCategoryManager.tsx",
+      "require": "./src/components/CascadeCategoryManager.tsx",
+      "default": "./src/components/CascadeCategoryManager.tsx"
+    },
     "./components/AiResourceSelectorModal": {
       "types": "./src/components/AiResourceSelectorModal.tsx",
       "import": "./src/components/AiResourceSelectorModal.tsx",
@@ -202,6 +208,7 @@
     "@sdkwork/iam-credential-entry": "workspace:*",
     "@sdkwork/iam-runtime": "workspace:*",
     "@sdkwork/iam-service": "workspace:*",
+    "@sdkwork/inventory-backend-sdk": "workspace:*",
     "@sdkwork/mcp-app-sdk": "workspace:*",
     "@sdkwork/mcp-backend-sdk": "workspace:*",
     "@sdkwork/memory-backend-sdk": "workspace:*",
@@ -216,6 +223,7 @@
     "@sdkwork/models-backend-sdk": "workspace:*",
     "@sdkwork/notification-pc-react": "workspace:*",
     "@sdkwork/order-app-sdk": "workspace:*",
+    "@sdkwork/order-backend-sdk": "workspace:*",
     "@sdkwork/order-service": "workspace:*",
     "@sdkwork/partner-app-sdk": "workspace:*",
     "@sdkwork/partner-backend-sdk": "workspace:*",
@@ -231,6 +239,7 @@
     "@sdkwork/prompts-app-sdk": "workspace:*",
     "@sdkwork/prompts-backend-sdk": "workspace:*",
     "@sdkwork/sdk-common": "workspace:*",
+    "@sdkwork/shop-backend-sdk": "workspace:*",
     "@sdkwork/skills-app-sdk": "workspace:*",
     "@sdkwork/skills-backend-sdk": "workspace:*",
     "@sdkwork/utils": "workspace:*",

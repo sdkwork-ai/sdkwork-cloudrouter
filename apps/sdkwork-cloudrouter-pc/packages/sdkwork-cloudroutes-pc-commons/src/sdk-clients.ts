@@ -47,6 +47,9 @@ import { SdkworkBackendClient as PartnerBackendClient } from '@sdkwork/partner-b
 import { SdkworkBackendClient as MessagingBackendClient } from '@sdkwork/messaging-backend-sdk';
 import { SdkworkBackendClient as AiotBackendClient } from '@sdkwork/aiot-backend-sdk';
 import { SdkworkAppClient as AiotAppClient } from '@sdkwork/aiot-app-sdk';
+import { SdkworkBackendClient as ShopBackendClient } from '@sdkwork/shop-backend-sdk';
+import { SdkworkBackendClient as InventoryBackendClient } from '@sdkwork/inventory-backend-sdk';
+import { SdkworkOrderBackendClient } from '@sdkwork/order-backend-sdk';
 import { SdkworkAiClient, type SdkworkAiConfig } from '@sdkwork/cloudrouter-open-sdk';
 import {
   createClient as createSdkworkDriveOpenClient,
@@ -597,6 +600,36 @@ export interface SdkworkAppbaseBackendSdkClientOptions {
   timeout?: number;
 }
 
+/**
+ * Shop (merchandise catalog) backend client options.
+ *
+ * The catalog management surface — products, SKUs, categories, category
+ * attributes, attribute values, brands, price lists, media — is owned by the
+ * storefront module and served under the shared backend API prefix.
+ */
+export interface SdkworkShopBackendSdkClientOptions {
+  backendBaseUrl?: string;
+  platform?: string;
+  tokenManager?: AuthTokenManager;
+  timeout?: number;
+}
+
+/** Inventory backend client options (stock levels, movements, reservations). */
+export interface SdkworkInventoryBackendSdkClientOptions {
+  backendBaseUrl?: string;
+  platform?: string;
+  tokenManager?: AuthTokenManager;
+  timeout?: number;
+}
+
+/** Order backend client options (shipments and shipment packages). */
+export interface SdkworkOrderBackendSdkClientOptions {
+  backendBaseUrl?: string;
+  platform?: string;
+  tokenManager?: AuthTokenManager;
+  timeout?: number;
+}
+
 export interface CloudRouterAiSdkClientOptions {
   aiBaseUrl?: string;
   apiKey?: string;
@@ -627,6 +660,9 @@ export type SdkworkPromptsBackendSdkClient = SdkworkPromptsBackendClient;
 export type SdkworkDriveAppSdkClient = SdkworkDriveAppClient;
 export type SdkworkMembershipBackendSdkClient = MembershipBackendClient;
 export type SdkworkPaymentBackendSdkClient = PaymentBackendClient;
+export type SdkworkShopBackendSdkClient = ShopBackendClient;
+export type SdkworkInventoryBackendSdkClient = InventoryBackendClient;
+export type SdkworkOrderBackendSdkClient = SdkworkOrderBackendClient;
 export type SdkworkAppstoreBackendSdkClient = AppstoreBackendClient;
 export type SdkworkDeploymentsBackendSdkClient = DeployBackendClient;
 export type SdkworkBaseDataBackendSdkClient = BaseDataBackendClient;
@@ -745,6 +781,9 @@ let partnerBackendClient: PartnerBackendClient | null = null;
 let messagingBackendClient: MessagingBackendClient | null = null;
 let aiotBackendClient: AiotBackendClient | null = null;
 let aiotAppClient: AiotAppClient | null = null;
+let shopBackendClient: ShopBackendClient | null = null;
+let inventoryBackendClient: InventoryBackendClient | null = null;
+let orderBackendClient: SdkworkOrderBackendClient | null = null;
 let partnerAppClient: PartnerAppClient | null = null;
 let accountAppClient: AccountAppClient | null = null;
 let catalogAppClient: CatalogAppClient | null = null;
@@ -947,6 +986,75 @@ export function createSdkworkCommunityBackendSdkClient(
   return attachCloudRouterSdkSessionAuthBoundary(
     new CommunityBackendClient(buildDependencyBackendConfig(options, 'VITE_SDKWORK_COMMUNITY_BACKEND_API_BASE_URL')),
   );
+}
+
+/**
+ * Shop (merchandise catalog) backend client.
+ *
+ * The Product Center reads and writes the catalog through this port so the
+ * admin surface can never drift from the storefront's own product, SKU,
+ * category, attribute, and brand contract.
+ */
+export function createSdkworkShopBackendSdkClient(
+  options: SdkworkShopBackendSdkClientOptions = {},
+): ShopBackendClient {
+  return attachCloudRouterSdkSessionAuthBoundary(
+    new ShopBackendClient(buildDependencyBackendConfig(options, 'VITE_SDKWORK_SHOP_BACKEND_API_BASE_URL')),
+  );
+}
+
+export function getSdkworkShopBackendSdkClient(
+  options: SdkworkShopBackendSdkClientOptions = {},
+): ShopBackendClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkShopBackendSdkClient(options);
+  }
+  if (!shopBackendClient) {
+    shopBackendClient = createSdkworkShopBackendSdkClient();
+  }
+  return shopBackendClient;
+}
+
+/** Inventory backend client: stock levels, movements, and reservations. */
+export function createSdkworkInventoryBackendSdkClient(
+  options: SdkworkInventoryBackendSdkClientOptions = {},
+): InventoryBackendClient {
+  return attachCloudRouterSdkSessionAuthBoundary(
+    new InventoryBackendClient(buildDependencyBackendConfig(options, 'VITE_SDKWORK_INVENTORY_BACKEND_API_BASE_URL')),
+  );
+}
+
+export function getSdkworkInventoryBackendSdkClient(
+  options: SdkworkInventoryBackendSdkClientOptions = {},
+): InventoryBackendClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkInventoryBackendSdkClient(options);
+  }
+  if (!inventoryBackendClient) {
+    inventoryBackendClient = createSdkworkInventoryBackendSdkClient();
+  }
+  return inventoryBackendClient;
+}
+
+/** Order backend client: shipment and shipment-package management. */
+export function createSdkworkOrderBackendSdkClient(
+  options: SdkworkOrderBackendSdkClientOptions = {},
+): SdkworkOrderBackendClient {
+  return attachCloudRouterSdkSessionAuthBoundary(
+    new SdkworkOrderBackendClient(buildDependencyBackendConfig(options, 'VITE_SDKWORK_ORDER_BACKEND_API_BASE_URL')),
+  );
+}
+
+export function getSdkworkOrderBackendSdkClient(
+  options: SdkworkOrderBackendSdkClientOptions = {},
+): SdkworkOrderBackendClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkOrderBackendSdkClient(options);
+  }
+  if (!orderBackendClient) {
+    orderBackendClient = createSdkworkOrderBackendSdkClient();
+  }
+  return orderBackendClient;
 }
 
 export type SdkworkCourseBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;

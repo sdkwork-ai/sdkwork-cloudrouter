@@ -174,6 +174,39 @@ describe("app center category management", () => {
     });
   });
 
+  it("shows a newly created child in the next cascade column", async () => {
+    const createdChild: AppStoreCategory = {
+      ...category,
+      id: "cat-child-new",
+      code: "ai-child",
+      level: 2,
+      parentId: "cat-ai",
+      localizations: [{ locale: "zh-CN", displayName: "新增子分类" }],
+      sortOrder: 120,
+    };
+    const service = createCategoryService({
+      list: vi.fn()
+        .mockResolvedValueOnce({ items: [category], hasMore: false })
+        .mockResolvedValueOnce({ items: [category, createdChild], hasMore: false }),
+    });
+    renderPage(service);
+
+    await openCategories();
+    await findCategoryName("AI 助手");
+    fireEvent.click(screen.getAllByText("AI 助手")[0] as HTMLElement);
+    fireEvent.click(screen.getByRole("button", { name: "新建下级分类 AI 助手" }));
+
+    fireEvent.change(await screen.findByPlaceholderText("例如 ai-assistants"), {
+      target: { value: "ai-child" },
+    });
+    const nameInputs = screen.getAllByPlaceholderText("例如 AI 助手与对话");
+    fireEvent.change(nameInputs[0] as HTMLElement, { target: { value: "新增子分类" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+
+    await waitFor(() => expect(service.list).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText("新增子分类")).toBeTruthy();
+  });
+
   it("blocks a save when the code or the primary name is missing", async () => {
     const service = createCategoryService();
     renderPage(service);

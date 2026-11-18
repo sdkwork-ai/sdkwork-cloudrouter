@@ -2,6 +2,11 @@
 > Owner: SDKWork maintainers
 >
 > **Cloud Router status (2026-06-30): Retired from portal.** Commerce catalog/inventory admin packages removed; relay-only admin. See [TECH-2026-06-10-admin-product-center-commercial.md](./TECH-2026-06-10-admin-product-center-commercial.md).
+>
+> **Superseded (2026-11-18): the Product Center is reinstated as a composition
+> host over the owning modules' generated backend SDKs.** See
+> [TECH-2026-11-18-admin-product-center-reinstatement.md](./TECH-2026-11-18-admin-product-center-reinstatement.md).
+> The retired legacy packages named below stay retired.
 
 # Admin Product Center Implementation Plan (Archive)
 

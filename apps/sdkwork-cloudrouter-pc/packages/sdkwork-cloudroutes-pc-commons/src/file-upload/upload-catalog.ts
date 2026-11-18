@@ -126,6 +126,7 @@ export type CloudRouterUploadSlotCode =
   | 'admin-membership-icon'
   | 'admin-oauth-account-logo'
   | 'admin-organization-logo'
+  | 'admin-product-media'
   | 'admin-provider-logo'
   | 'admin-tenant-logo'
   | 'admin-user-avatar'
@@ -497,6 +498,21 @@ const SLOTS: readonly CloudRouterUploadSlot[] = [
     maxSizeBytes: 50 * 1024 * 1024,
     shareLink: 'none',
     mediaKind: 'document',
+  },
+  {
+    code: 'admin-product-media',
+    category: 'public_asset',
+    label: '商品媒体',
+    description: '商品目录的主图与图库图片，公开展示。',
+    uploadProfileCode: 'image',
+    scene: 'product-media',
+    appResourceType: 'commerce.product_media',
+    appResourceId: 'product-media',
+    source: `${SOURCE_PREFIX}-admin-product-media-upload`,
+    accept: ['image/'],
+    maxSizeBytes: 5 * 1024 * 1024,
+    shareLink: 'reader',
+    mediaKind: 'image',
   },
 ];
 

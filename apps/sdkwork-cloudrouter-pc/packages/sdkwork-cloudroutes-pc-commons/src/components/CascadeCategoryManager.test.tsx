@@ -94,4 +94,18 @@ describe('CascadeCategoryManager', () => {
     expect(screen.getByText('Level two!')).toBeInTheDocument();
     expect(screen.getByText('Level three!')).toBeInTheDocument();
   });
+
+  it('does not clear the selection during a transient empty reload', () => {
+    const { rerender } = render(
+      <CascadeCategoryManager items={items} labels={labels} />,
+    );
+    fireEvent.click(screen.getByText('Level one'));
+    expect(screen.getByText('Level two')).toBeInTheDocument();
+
+    rerender(<CascadeCategoryManager items={[]} labels={labels} />);
+    rerender(<CascadeCategoryManager items={items} labels={labels} />);
+
+    expect(screen.getByText('Level one')).toBeInTheDocument();
+    expect(screen.getByText('Level two')).toBeInTheDocument();
+  });
 });
