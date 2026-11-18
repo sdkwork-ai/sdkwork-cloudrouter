@@ -360,16 +360,18 @@ fn resolve_provider_secret(
     else {
         return Ok(None);
     };
+    // The dispatch attempt loop rebuilds the provider request for every retry
+    // and every candidate that resolves to the same credential. Reuse the value
+    // already resolved for this invocation instead of resolving it again: a
+    // retry on the same account must present the same credential, and a remote
+    // resolver would otherwise add a lookup to each attempt.
+    if let Some(reused) = current_secret.filter(|secret| secret.secret_ref == secret_ref) {
+        return Ok(Some(reused.clone()));
+    }
     let Some(secret_resolver) = secret_resolver else {
-        return match current_secret
-            .filter(|secret| secret.secret_ref == secret_ref)
-            .cloned()
-        {
-            Some(secret) => Ok(Some(secret)),
-            None => Err(dispatch_error(format!(
-                "provider secret resolver is not available for secret_ref {secret_ref}",
-            ))),
-        };
+        return Err(dispatch_error(format!(
+            "provider secret resolver is not available for secret_ref {secret_ref}",
+        )));
     };
     let value = secret_resolver
         .resolve_secret_value(secret_ref)

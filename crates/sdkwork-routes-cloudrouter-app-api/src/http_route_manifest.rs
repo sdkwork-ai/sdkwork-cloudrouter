@@ -16,13 +16,13 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "ai",
         "gateway.traces.list",
     ),
-    HttpRoute::public(
+    HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/ai/pricing/rates",
         "ai",
         "pricing.rates.list",
     ),
-    HttpRoute::dual_token_or_anonymous(
+    HttpRoute::dual_token(
         HttpMethod::Get,
         "/app/v3/api/ai/routing/account_groups",
         "ai",

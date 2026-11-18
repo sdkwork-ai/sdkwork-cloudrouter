@@ -4,6 +4,7 @@ use axum::routing::get;
 use sdkwork_api_cloudrouter_standalone_gateway::portal::{mount_portal_static, PortalStaticConfig};
 use sdkwork_cloudrouter_config::{
     application_audience_allow_list, resolve_deploy_application_id, RedisConfig,
+    RequestLimitsConfig,
 };
 use sdkwork_cloudrouter_security::INTERNAL_GATEWAY_ROUTE_PREFIX;
 use sdkwork_iam_web_adapter::{
@@ -160,12 +161,25 @@ async fn gateway_main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
     // carries.
     let mut public_path_prefixes = infra_public_path_prefixes();
     public_path_prefixes.push(INTERNAL_GATEWAY_ROUTE_PREFIX.to_owned());
+    // The framework's production default request timeout (30 s) is tighter than
+    // this gateway's own provider budget (60 s per hop plus retries, failover
+    // and the settlement after-chain). Without an explicit value every long
+    // non-streaming completion is terminated by the transport layer with a
+    // generic 408 while the provider keeps generating, and the usage/settlement
+    // stages never run.
+    let request_limits = RequestLimitsConfig::from_env_or_runtime_toml(runtime_toml.as_ref())
+        .map_err(|error| {
+            std::io::Error::other(format!("invalid request limits configuration: {error}"))
+        })?;
     let mut framework = build_web_framework_builder_with_open_api_prefixes(
         resolver,
         assembly.route_manifest.clone(),
         public_path_prefixes.clone(),
         open_api_prefixes.clone(),
     )
+    .request_timeout(std::time::Duration::from_millis(
+        request_limits.gateway_request_timeout_millis(),
+    ))
     .profile(WebRequestContextProfile {
         open_api_prefixes,
         public_path_prefixes,

@@ -22,8 +22,8 @@ pub use database::{
     RuntimeConfigInitializationReport, RuntimeConfigLocation, RuntimeConfigProfile,
 };
 pub use deploy_application_id::{
-    DEPLOY_APPLICATION_ID_ENV, DeployApplicationIdNotConfigured, application_audience_allow_list,
-    deploy_application_id_from_configured_value, resolve_deploy_application_id,
+    application_audience_allow_list, deploy_application_id_from_configured_value,
+    resolve_deploy_application_id, DeployApplicationIdNotConfigured, DEPLOY_APPLICATION_ID_ENV,
 };
 pub use deployment::is_active_region_code;
 pub use deployment::{

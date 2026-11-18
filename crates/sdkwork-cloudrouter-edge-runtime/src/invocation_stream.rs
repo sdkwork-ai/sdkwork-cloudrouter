@@ -294,6 +294,13 @@ async fn run_stream_producer(
 ) {
     let mut state =
         StreamProducerState::new(body, usage_format, timeouts, suppress_usage_only_events);
+    // Accounting is best-effort relative to delivery: one frame that the usage
+    // accumulator cannot process (a single event above its 256 KiB bound, for
+    // example an image or a long tool-argument payload) must not truncate a
+    // stream the provider is serving normally. After such a frame the
+    // accumulator is retired and the remainder is forwarded unmeasured; the
+    // terminal settlement still bills the usage frames observed so far.
+    let mut usage_accounting_active = true;
     loop {
         let demand_result = tokio::select! {
             biased;
@@ -357,15 +364,15 @@ async fn run_stream_producer(
                 Ok(Some(Ok(bytes))) => {
                     if !bytes.is_empty() {
                         state.record_frame_received();
-                        if let Err(error) = state.usage.observe(&bytes) {
-                            tracing::warn!(error_kind = ?error.kind, "stream usage accumulator rejected provider data");
-                            let partial_usage = state.usage.partial_usage_body();
-                            completion.complete(StreamTerminalOutcome::UpstreamError {
-                                message: "stream usage accounting failed".to_owned(),
-                                ttft_ms: state.ttft_ms(),
-                                partial_usage,
-                            });
-                            return;
+                        if usage_accounting_active {
+                            if let Err(error) = state.usage.observe(&bytes) {
+                                usage_accounting_active = false;
+                                tracing::warn!(
+                                    error_kind = ?error.kind,
+                                    "stream usage accumulator rejected provider data; \
+                                     forwarding the remainder of the stream unmetered"
+                                );
+                            }
                         }
                     }
                     let Some(forward) = state.forward_frame(bytes) else {
@@ -644,5 +651,74 @@ mod tests {
             ),
             stripped(input)
         );
+    }
+
+    /// One frame the usage accumulator cannot process must not truncate a stream
+    /// the provider is serving normally.
+    #[tokio::test]
+    async fn a_frame_the_usage_accumulator_rejects_does_not_truncate_the_stream() {
+        use axum::http::Method;
+
+        // A single SSE line above the accumulator's per-line bound (64 KiB).
+        let oversized = format!(
+            "data: {{\"choices\":[{{\"delta\":{{\"content\":\"{}\"}}}}]}}\n\n",
+            "x".repeat(96 * 1024)
+        );
+        let normal = "data: {\"choices\":[{\"delta\":{\"content\":\"hi\"}}]}\n\n";
+        let frames: Vec<Result<bytes::Bytes, std::io::Error>> = vec![
+            Ok(bytes::Bytes::from(oversized)),
+            Ok(bytes::Bytes::from_static(normal.as_bytes())),
+        ];
+        let body = Body::from_stream(futures_util::stream::iter(frames));
+
+        let timeouts =
+            InvocationStreamTimeouts::from_account_timeout(None, Duration::from_secs(30));
+        let (demand_sender, demand_receiver) = mpsc::channel(4);
+        let (completion, mut terminal_receiver) = StreamCompletion::new();
+        let cancellation = sdkwork_cloudrouter_router_service::application::InvocationRequest::new(
+            Method::POST,
+            "/v1/chat/completions",
+        )
+        .cancellation_signal();
+
+        tokio::spawn(run_stream_producer(
+            body,
+            StreamingUsageFormat::ServerSentEvents,
+            timeouts,
+            demand_receiver,
+            completion,
+            cancellation,
+            false,
+        ));
+
+        for expected in ["xxxx", "hi"] {
+            let (sender, receiver) = oneshot::channel();
+            demand_sender.send(sender).await.expect("demand");
+            match receiver.await.expect("producer reply") {
+                StreamEvent::Data(bytes) => {
+                    let text = String::from_utf8(bytes.to_vec()).expect("utf-8 frame");
+                    assert!(
+                        text.contains(expected),
+                        "expected `{expected}` in the delivered frame"
+                    );
+                }
+                other => panic!("expected data, got {}", event_kind(&other)),
+            }
+        }
+
+        drop(demand_sender);
+        let outcome = terminal_receiver.recv().await.expect("terminal outcome");
+        assert!(
+            matches!(outcome, StreamTerminalOutcome::Cancelled { .. }),
+            "an accounting rejection must not fail the stream: {outcome:?}"
+        );
+    }
+
+    fn event_kind(event: &StreamEvent) -> &'static str {
+        match event {
+            StreamEvent::Data(_) => "data",
+            StreamEvent::Failure { .. } => "failure",
+            StreamEvent::Terminal(_) => "terminal",
+        }
     }
 }

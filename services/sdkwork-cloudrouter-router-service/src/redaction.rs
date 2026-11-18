@@ -13,16 +13,31 @@ use sdkwork_cloudrouter_security::REDACTED;
 /// keys issued through the same gateway key authority.
 const GATEWAY_KEY_PREFIXES: [&str; 2] = ["sk-", "sp-"];
 
+/// Upstream provider credential prefixes that providers echo back in their own
+/// error messages.
+///
+/// Redacting only the gateway's own key families leaves a shared upstream
+/// credential visible to the calling tenant whenever a provider rejects a
+/// request and repeats the key it was given (`API key not valid. Please pass a
+/// valid API key.` from Google, `Invalid API Key` from Groq, and so on). These
+/// are the documented stable prefixes of the vendor key families this gateway
+/// dials; the token scan requires at least eight further token characters, so
+/// ordinary prose is not rewritten.
+const PROVIDER_KEY_PREFIXES: [&str; 5] = ["AIza", "gsk_", "xai-", "hf_", "r8_"];
+
 /// Redact credential-like material from error messages before they are
 /// returned to API clients.
 ///
-/// Scans for common credential patterns — `sk-`/`sp-` prefixed gateway API
-/// keys and `Bearer` authorization tokens — and replaces the secret portion
-/// with the `[REDACTED]` sentinel so that no raw credential material leaks
-/// through error responses, audit records, or traces.
+/// Scans for common credential patterns — gateway and provider API key
+/// prefixes, labeled secrets, and `Bearer` authorization tokens — and replaces
+/// the secret portion with the `[REDACTED]` sentinel so that no raw credential
+/// material leaks through error responses, audit records, or traces.
 pub fn redact_sensitive_tokens(message: &str) -> String {
     let mut result = redact_labeled_secrets(message);
-    for prefix in GATEWAY_KEY_PREFIXES {
+    for prefix in GATEWAY_KEY_PREFIXES
+        .into_iter()
+        .chain(PROVIDER_KEY_PREFIXES)
+    {
         result = redact_prefixed_tokens(&result, prefix);
     }
     redact_bearer_tokens(&result)
@@ -265,6 +280,64 @@ mod tests {
         assert_eq!(message, redact_sensitive_tokens(message));
         let japanese = "エラー：認証に失敗しました";
         assert_eq!(japanese, redact_sensitive_tokens(japanese));
+    }
+
+    #[test]
+    fn redacts_provider_key_families_echoed_by_upstreams() {
+        // Google rejects with `API key not valid. Please pass a valid API key.`
+        // and providers commonly repeat the key they were given. A shared
+        // upstream credential must never reach the calling tenant.
+        let google = redact_sensitive_tokens(
+            "API key not valid: AIzaSyD-ExampleKeyMaterial1234567890abcdef",
+        );
+        assert!(
+            !google.contains("ExampleKeyMaterial1234567890"),
+            "google key body must never survive redaction: {google}"
+        );
+        assert!(google.contains("AIza[REDACTED]"), "{google}");
+
+        for (message, leaked, sentinel) in [
+            (
+                "Invalid API Key gsk_abcdefghijklmnopqrst",
+                "abcdefghijklmnopqrst",
+                "gsk_[REDACTED]",
+            ),
+            (
+                "bad key xai-abcdefghijklmnopqrst",
+                "abcdefghijklmnopqrst",
+                "xai-[REDACTED]",
+            ),
+            (
+                "token hf_abcdefghijklmnopqrst rejected",
+                "abcdefghijklmnopqrst",
+                "hf_[REDACTED]",
+            ),
+            (
+                "token r8_abcdefghijklmnopqrst rejected",
+                "abcdefghijklmnopqrst",
+                "r8_[REDACTED]",
+            ),
+        ] {
+            let redacted = redact_sensitive_tokens(message);
+            assert!(
+                !redacted.contains(leaked),
+                "{message} leaked its token body: {redacted}"
+            );
+            assert!(redacted.contains(sentinel), "{message} -> {redacted}");
+        }
+    }
+
+    #[test]
+    fn provider_prefixes_do_not_rewrite_ordinary_prose() {
+        // Short fragments and prose that merely contains the letters survive.
+        assert_eq!(
+            "the AIza prefix is reserved",
+            redact_sensitive_tokens("the AIza prefix is reserved")
+        );
+        assert_eq!(
+            "status 500 from hf_ upstream",
+            redact_sensitive_tokens("status 500 from hf_ upstream")
+        );
     }
 
     #[test]

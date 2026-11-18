@@ -182,9 +182,13 @@ fn pending_async_task(
     let api_code = invocation.resource.api_code.as_str();
     let kind = match (api_code, path) {
         ("openai.batches", "/v1/batches") => AsyncUsageTaskKind::OpenAiBatch,
-        ("anthropic.batches", "/anthropic/v1/messages/batches") => {
-            AsyncUsageTaskKind::AnthropicBatch
-        }
+        // `invocation.request.path` is the vendor-namespace-stripped standard
+        // path (`/anthropic/v1/messages/batches` arrives as
+        // `/v1/messages/batches`). Matching the published path here made the
+        // Anthropic batch arm unreachable: creation was neither refused (the
+        // pricing guard was fixed separately) nor registered, so a batch that
+        // the gateway accepted was never reconciled and ran unbilled.
+        ("anthropic.batches", "/v1/messages/batches") => AsyncUsageTaskKind::AnthropicBatch,
         ("openai.vector_stores", path) if vector_store_file_batch_id(path).is_some() => {
             // File-batch ingestion has no byte count in its create response; the
             // completion carries per-file usage_bytes, so it reconciles as an
@@ -614,5 +618,32 @@ mod tests {
             error.message.contains("thread id"),
             "unexpected error: {error}"
         );
+    }
+
+    /// Anthropic batch creation must register against the namespace-stripped path
+    /// the runtime actually stores on the invocation.
+    ///
+    /// Matching the published `/anthropic/v1/messages/batches` never fired in
+    /// production, so an accepted batch was never reconciled — the submission was
+    /// billed as nothing at all once asynchronous settlement was enabled.
+    #[tokio::test]
+    async fn registers_a_namespace_stripped_anthropic_batch_creation() {
+        let store = Arc::new(InMemoryAsyncUsageTaskStore::new());
+        let mut invocation = async_creation(
+            "/v1/messages/batches",
+            "anthropic.batches",
+            serde_json::json!({"requests": []}),
+        );
+        invocation.dispatch =
+            InvocationDispatch::json_response(200, serde_json::json!({"id": "msgbatch_1"}));
+
+        AsyncUsageRegistrationInterceptor::new(store.clone())
+            .after(&mut invocation)
+            .await
+            .expect("register");
+
+        let task = registered_task(&store).await;
+        assert_eq!(AsyncUsageTaskKind::AnthropicBatch, task.task_kind);
+        assert_eq!("msgbatch_1", task.upstream_id);
     }
 }

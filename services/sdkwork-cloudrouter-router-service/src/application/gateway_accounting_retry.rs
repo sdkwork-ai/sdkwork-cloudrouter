@@ -185,7 +185,7 @@ impl RetryingGatewayUsageRecorder {
                     readiness_degraded = true,
                     "gateway accounting primary write failed and retry envelope was rejected"
                 );
-                return Ok(());
+                return Err(unrecorded_accounting_error(record_type));
             }
         };
         let event_id = envelope.event_id.clone();
@@ -221,7 +221,7 @@ impl RetryingGatewayUsageRecorder {
                     readiness_degraded = true,
                     "critical gateway accounting database and retry queue failure"
                 );
-                Ok(())
+                Err(unrecorded_accounting_error(record_type))
             }
             Err(_) => {
                 self.health.mark_dual_failure();
@@ -239,7 +239,7 @@ impl RetryingGatewayUsageRecorder {
                     readiness_degraded = true,
                     "gateway accounting retry queue timed out after primary write failure"
                 );
-                Ok(())
+                Err(unrecorded_accounting_error(record_type))
             }
         }
     }
@@ -1174,8 +1174,16 @@ mod tests {
         }
     }
 
+    /// A dual outage must be *reported*, not swallowed.
+    ///
+    /// Returning `Ok(())` here made the caller believe the fact was durable. The
+    /// settlement guard only keeps a reservation while
+    /// `usage_recording_failure_count > 0`, so swallowing the failure captured
+    /// the precharge and marked the usage settled while no usage fact existed
+    /// anywhere. The recorder now fails closed; readiness still degrades so the
+    /// outage stays visible in operations.
     #[tokio::test]
-    async fn primary_and_queue_failure_remains_fail_open_but_degrades_readiness() {
+    async fn primary_and_queue_failure_reports_the_lost_record_and_degrades_readiness() {
         let primary = Arc::new(TestRecorder::failing());
         let queue = Arc::new(TestRetryQueue::failing_enqueue());
         let health = GatewayAccountingRetryHealth::default();
@@ -1184,11 +1192,15 @@ mod tests {
         let command = trace_command("req-dual-failure");
         let context = trace_context(&command);
 
-        recorder
+        let error = recorder
             .record_gateway_trace_with_context(command.clone(), context.clone())
             .await
-            .expect("provider success must survive a database and retry queue outage");
+            .expect_err("a record that was neither written nor queued must surface as an error");
 
+        assert!(
+            error.to_string().contains("durable retry queue"),
+            "the error must name the lost accounting record: {error}"
+        );
         assert!(health.is_degraded());
         assert_eq!(1, health.dual_failure_count());
         assert!(!(health.readiness_check())().await);
@@ -1438,4 +1450,19 @@ mod tests {
         assert_eq!(first.event_id, deliveries[0].envelope.event_id);
         assert_eq!(first_context, deliveries[0].envelope.context);
     }
+}
+
+/// Error returned when neither the primary write nor the durable retry path
+/// accepted an accounting record.
+///
+/// Returning `Ok(())` here told the caller the fact was durable: the
+/// usage-recording interceptor only counts `Err` outcomes, and billing
+/// settlement keeps a reservation only while that count is non-zero. Swallowing
+/// the failure therefore captured the precharge and flipped the usage row to
+/// settled while no usage fact existed anywhere — a charged call with no
+/// business record to reconcile against.
+fn unrecorded_accounting_error(record_type: &'static str) -> DomainError {
+    DomainError::new(format!(
+        "gateway accounting record ({record_type}) was neither written nor accepted by the durable retry queue"
+    ))
 }

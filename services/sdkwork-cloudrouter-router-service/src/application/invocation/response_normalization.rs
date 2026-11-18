@@ -9,6 +9,7 @@ use super::{
     DispatchMode, Invocation, InvocationDispatchResponse, InvocationError, InvocationFuture,
     InvocationInterceptor, InvocationNormalizedResponse, InvocationSurface,
 };
+use crate::domain::provider_native_model_id;
 
 #[derive(Debug, Clone, Default)]
 pub struct ResponseNormalizationInterceptor;
@@ -59,6 +60,17 @@ impl InvocationInterceptor for ResponseNormalizationInterceptor {
         error: &'a InvocationError,
     ) -> InvocationFuture<'a, ()> {
         Box::pin(async move {
+            // The dispatch already produced a real provider response — the
+            // vendor's own status and error body, or a completed stream — and a
+            // later `after` hook (accounting, settlement, trace) failed. That
+            // failure is the gateway's, not the caller's: rewriting the vendor
+            // response into a generic problem body would report a vendor 400/429
+            // as a gateway 502 and hide the `error.type`/`retry-after` the SDK
+            // branches on. Only synthesise a problem body when no response has
+            // been normalised yet (routing, pricing, dispatch or config errors).
+            if invocation.telemetry.normalized_response.is_some() {
+                return Ok(());
+            }
             let status_code = status_code_for_error(error);
             invocation.telemetry.normalized_response = Some(InvocationNormalizedResponse {
                 status_code,
@@ -240,10 +252,39 @@ fn restore_streaming_model(invocation: &Invocation, stream: Body) -> Body {
     else {
         return stream;
     };
-    let requested_model = requested_model.to_owned();
+    let provider_model = invocation
+        .account
+        .as_ref()
+        .and_then(|account| account.provider_model.as_deref());
+    let Some(requested_model) = streaming_model_restore_target(provider_model, requested_model)
+    else {
+        return stream;
+    };
     let state = SseModelRestoreState::new(stream, requested_model);
     let restored = futures_util::stream::unfold(state, next_sse_model_restore_frame);
     Body::from_stream(restored)
+}
+
+/// Returns the client-facing model a stream must be rewritten back to, or
+/// `None` when no rewrite is necessary.
+///
+/// The outbound request writes the provider-native model id into the body, and
+/// providers echo that id in every frame. When the provider-native id already
+/// equals the client-requested id the frames are correct as they arrive, so the
+/// transformer is skipped entirely instead of JSON-decoding and re-encoding
+/// every `data:` line on a latency-sensitive path.
+fn streaming_model_restore_target(
+    provider_model: Option<&str>,
+    requested_model: &str,
+) -> Option<String> {
+    let provider_model = provider_model
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(provider_native_model_id);
+    if provider_model.as_deref() == Some(requested_model) {
+        return None;
+    }
+    Some(requested_model.to_owned())
 }
 
 /// Line-buffered SSE transformer: rewrites `model` inside `data: {json}` lines
@@ -251,23 +292,53 @@ fn restore_streaming_model(invocation: &Invocation, stream: Body) -> Body {
 async fn next_sse_model_restore_frame(
     mut state: SseModelRestoreState,
 ) -> Option<(Result<Bytes, axum::Error>, SseModelRestoreState)> {
+    if state.terminated {
+        return None;
+    }
     // Pull one upstream frame and flush every complete line it contains. The
     // per-frame output is concatenated so downstream receives the same framing
     // cadence as upstream.
-    let frame = state.upstream.next().await?;
+    let Some(frame) = state.upstream.next().await else {
+        // EOF. SSE allows a final event whose last line is terminated by the
+        // end of the stream instead of by `\n`; dropping `pending_line` here
+        // would silently truncate that line (typically the `[DONE]` sentinel or
+        // the usage-bearing tail) from the client's view.
+        if state.pending_line.is_empty() {
+            return None;
+        }
+        let line = take_sse_line(&mut state.pending_line);
+        return Some((
+            Ok(Bytes::from(rewrite_sse_model_line(
+                &line,
+                &state.requested_model,
+            ))),
+            state,
+        ));
+    };
     let mut output: Vec<u8> = Vec::new();
     match frame {
         Ok(bytes) => {
             for byte in bytes.iter().copied() {
                 if byte == b'\n' {
-                    let mut line = std::mem::take(&mut state.pending_line);
-                    if line.last() == Some(&b'\r') {
-                        line.pop();
-                    }
+                    let line = take_sse_line(&mut state.pending_line);
                     output
                         .extend_from_slice(&rewrite_sse_model_line(&line, &state.requested_model));
                     output.push(b'\n');
                     continue;
+                }
+                if state.pending_line.len() >= MAX_SSE_LINE_BYTES {
+                    // A provider frame that never terminates a line would grow
+                    // this buffer without bound. Real SSE lines are a few KiB;
+                    // stop the stream instead of buffering the rest.
+                    state.terminated = true;
+                    state.pending_line.clear();
+                    return Some((
+                        Err(axum::Error::new(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "provider stream line exceeds the gateway SSE line limit",
+                        ))),
+                        state,
+                    ));
                 }
                 state.pending_line.push(byte);
             }
@@ -275,6 +346,24 @@ async fn next_sse_model_restore_frame(
         }
         Err(error) => Some((Err(error), state)),
     }
+}
+
+/// Hard cap for one buffered SSE line.
+///
+/// The largest legitimate frame the gateway forwards is a chat completion chunk
+/// (provider usage frames included), far below this bound. The cap exists so a
+/// malformed or hostile upstream cannot make the transformer buffer an unbounded
+/// line: the stream is terminated with an error instead.
+const MAX_SSE_LINE_BYTES: usize = 256 * 1024;
+
+/// Moves the buffered line out of the state, dropping the SSE `\r` of a CRLF
+/// terminator so the rewritten line is re-emitted with LF framing.
+fn take_sse_line(pending: &mut Vec<u8>) -> Vec<u8> {
+    let mut line = std::mem::take(pending);
+    if line.last() == Some(&b'\r') {
+        line.pop();
+    }
+    line
 }
 
 /// Rewrites a single SSE line's `model` field if it is a `data: {json}` line
@@ -313,6 +402,7 @@ struct SseModelRestoreState {
     upstream: axum::body::BodyDataStream,
     pending_line: Vec<u8>,
     requested_model: String,
+    terminated: bool,
 }
 
 impl SseModelRestoreState {
@@ -321,6 +411,7 @@ impl SseModelRestoreState {
             upstream: stream.into_data_stream(),
             pending_line: Vec::new(),
             requested_model,
+            terminated: false,
         }
     }
 }
@@ -398,23 +489,24 @@ pub(crate) fn effective_dispatch_status_code(
 /// Reports whether the provider call completed successfully (2xx).
 ///
 /// Prefers the normalized response status when response normalization has
-/// already run, then falls back to the raw dispatch response status. Used by
-/// billing settlement and usage recording so both agree on what counts as a
-/// billable success.
+/// already run, then falls back to the effective dispatch status — the raw
+/// dispatch response status for direct HTTP passthrough, and the in-band
+/// adapter status for internal provider adapters. Using
+/// [`effective_dispatch_status_code`] here is required: `usage_recording` and
+/// `billing_settlement` run their `after` hooks *before* response
+/// normalization, so reading only the transport status would treat an adapter
+/// body reporting 4xx/5xx as a billable success, keep a precharge hold that
+/// should be released, and log a successful charge for a failed provider call.
 pub(crate) fn provider_response_succeeded(invocation: &Invocation) -> bool {
+    if let Some(response) = invocation.telemetry.normalized_response.as_ref() {
+        return (200..300).contains(&response.status_code);
+    }
     invocation
-        .telemetry
-        .normalized_response
+        .dispatch
+        .response
         .as_ref()
-        .map(|response| (200..300).contains(&response.status_code))
-        .or_else(|| {
-            invocation
-                .dispatch
-                .response
-                .as_ref()
-                .map(|response| (200..300).contains(&response.status_code))
-        })
-        .unwrap_or(false)
+        .and_then(|response| effective_dispatch_status_code(invocation, response))
+        .is_some_and(|status_code| (200..300).contains(&status_code))
 }
 
 #[cfg(test)]
@@ -470,10 +562,154 @@ mod tests {
         }
     }
 
+    /// The per-frame rewrite is pure overhead when the provider already echoes
+    /// the requested model id.
+    #[test]
+    fn streaming_restore_is_skipped_when_the_provider_echoes_the_requested_model() {
+        assert_eq!(
+            None,
+            super::streaming_model_restore_target(Some("gpt-4o-mini"), "gpt-4o-mini")
+        );
+        assert_eq!(
+            Some("gpt-4o-mini".to_owned()),
+            super::streaming_model_restore_target(Some("gpt-4o-mini-2024-07-18"), "gpt-4o-mini")
+        );
+        // No provider model on the invocation: keep the conservative rewrite.
+        assert_eq!(
+            Some("gpt-4o-mini".to_owned()),
+            super::streaming_model_restore_target(None, "gpt-4o-mini")
+        );
+        assert_eq!(
+            Some("gpt-4o-mini".to_owned()),
+            super::streaming_model_restore_target(Some("   "), "gpt-4o-mini")
+        );
+    }
+
+    /// SSE permits the last event's line to be terminated by the end of the
+    /// stream instead of by `\n`; dropping it truncates the client's tail.
+    #[tokio::test]
+    async fn final_sse_line_terminated_by_eof_is_flushed_and_rewritten() {
+        let upstream = axum::body::Body::from(
+            r#"data: {"model":"provider-native-9","choices":[]}"#.to_owned(),
+        );
+        let state = super::SseModelRestoreState::new(upstream, "gpt-4o-mini".to_owned());
+
+        let (first, state) = super::next_sse_model_restore_frame(state)
+            .await
+            .expect("upstream frame");
+        assert!(
+            first.expect("no transport error").is_empty(),
+            "an unterminated line must not be emitted early"
+        );
+
+        let (second, state) = super::next_sse_model_restore_frame(state)
+            .await
+            .expect("EOF must flush the pending line");
+        let text =
+            String::from_utf8(second.expect("no transport error").to_vec()).expect("utf8 SSE line");
+        assert!(text.starts_with("data: "), "{text}");
+        assert!(text.contains(r#""model":"gpt-4o-mini""#), "{text}");
+        assert!(!text.contains("provider-native-9"), "{text}");
+        assert!(
+            !text.ends_with('\n'),
+            "the flush must not invent framing upstream did not send: {text}"
+        );
+
+        assert!(super::next_sse_model_restore_frame(state).await.is_none());
+    }
+
+    /// A frame that never terminates a line must not be buffered without bound.
+    #[tokio::test]
+    async fn oversized_sse_line_terminates_the_stream_instead_of_buffering() {
+        let oversized = "x".repeat(super::MAX_SSE_LINE_BYTES + 1);
+        let upstream = axum::body::Body::from(oversized);
+        let state = super::SseModelRestoreState::new(upstream, "gpt-4o-mini".to_owned());
+
+        let (frame, state) = super::next_sse_model_restore_frame(state)
+            .await
+            .expect("oversized frame");
+        assert!(
+            frame.is_err(),
+            "a line beyond the SSE bound must fail the stream"
+        );
+        assert!(super::next_sse_model_restore_frame(state).await.is_none());
+    }
+
     #[test]
     fn sse_line_without_model_field_is_unchanged() {
         let line = r#"data: {"id":"x","type":"response.output_text.delta","delta":"hi"}"#;
         let rewritten = rewrite_sse_model_line(line.as_bytes(), "gpt-4o-mini");
         assert_eq!(line.as_bytes(), rewritten.as_slice());
+    }
+
+    fn dispatch_test_invocation() -> super::Invocation {
+        use super::super::{
+            Invocation, InvocationAuthType, InvocationBilling, InvocationRequest,
+            InvocationResource, InvocationSubject,
+        };
+        use crate::domain::{BillingOwnerKind, RoutingCapability};
+
+        let request = InvocationRequest::new(axum::http::Method::POST, "/v1/chat/completions")
+            .with_request_id("provider-response-succeeded-test");
+        Invocation::new(
+            request,
+            InvocationSubject {
+                auth_type: InvocationAuthType::GatewayApiKey,
+                api_key_id: Some(1),
+                api_key_name_snapshot: None,
+                tenant_id: 10,
+                organization_id: 20,
+                user_id: 30,
+                billing_organization_id: 0,
+                billing_owner: BillingOwnerKind::Personal,
+                account_group_id: None,
+                account_group_code: None,
+                pricing_plan_code: None,
+                roles: Vec::new(),
+                scopes: Vec::new(),
+            },
+            InvocationResource::api_resource(
+                "openai/chat/completions",
+                "openai.chat.completions",
+                RoutingCapability::Chat,
+            ),
+            InvocationBilling::free(),
+        )
+    }
+
+    /// `usage_recording` and `billing_settlement` run their `after` hooks before
+    /// response normalization, so the in-band adapter status is the only
+    /// success signal available to them.
+    #[test]
+    fn adapter_in_band_status_decides_provider_success_before_normalization() {
+        use super::super::{DispatchMode, InvocationDispatchResponse};
+
+        let mut failed = dispatch_test_invocation();
+        failed.dispatch.mode = DispatchMode::InternalProviderAdapter;
+        failed.dispatch.response = Some(InvocationDispatchResponse::json(
+            200,
+            serde_json::json!({ "statusCode": 502, "body": { "error": "upstream failed" } }),
+        ));
+        assert!(
+            !super::provider_response_succeeded(&failed),
+            "a 200 transport status with an in-band 502 adapter status is not a success"
+        );
+
+        let mut succeeded = dispatch_test_invocation();
+        succeeded.dispatch.mode = DispatchMode::InternalProviderAdapter;
+        succeeded.dispatch.response = Some(InvocationDispatchResponse::json(
+            200,
+            serde_json::json!({ "statusCode": 200, "body": { "ok": true } }),
+        ));
+        assert!(super::provider_response_succeeded(&succeeded));
+
+        // Direct passthrough keeps the transport status authoritative.
+        let mut passthrough = dispatch_test_invocation();
+        passthrough.dispatch.mode = DispatchMode::DirectHttpPassthrough;
+        passthrough.dispatch.response = Some(InvocationDispatchResponse::json(
+            400,
+            serde_json::json!({ "statusCode": 200 }),
+        ));
+        assert!(!super::provider_response_succeeded(&passthrough));
     }
 }

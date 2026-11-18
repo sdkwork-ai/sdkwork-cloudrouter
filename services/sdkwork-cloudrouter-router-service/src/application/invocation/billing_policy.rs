@@ -269,23 +269,28 @@ fn provider_native_non_streaming_policy(invocation: &Invocation) -> InvocationBi
 fn provider_native_management_is_free(invocation: &Invocation) -> bool {
     // 用路径而不是 api code：模板化的 `{file_id}` 在真实请求里是任意 id，分类器
     // 会把它拼成 `anthropic.file.1` 这类实例化 code，按 code 匹配会漏。
+    //
+    // 关键约定：`invocation.request.path` 是**已剥离 vendor 命名空间**的标准路径
+    // （`/anthropic/v1/files` 进来后是 `/v1/files`）。这里若拿 `"/anthropic/…"`
+    // 之类带命名空间的字面量比较，生产上永不命中——管理面会被当成计费路由，
+    // 预检找不到 `api_request` 费率后直接拒单。
     let path = invocation.request.path.as_str();
     let method = invocation.request.method.as_str();
-    if path.starts_with("/anthropic/v1/files")
-        || path.starts_with("/google/v1beta/files")
-        || path.starts_with("/google/v1beta/cachedContents")
+    if path.starts_with("/v1/files")
+        || path.starts_with("/v1beta/files")
+        || path.starts_with("/v1beta/cachedContents")
     {
         return true;
     }
-    if path == "/anthropic/v1/messages/count_tokens" || path.ends_with(":countTokens") {
+    if path == "/v1/messages/count_tokens" || path.ends_with(":countTokens") {
         return true;
     }
-    if path.starts_with("/anthropic/v1/messages/batches") {
+    if path.starts_with("/v1/messages/batches") {
         // 查询 / 取详情 / 取消免费；创建同样只在异步对账开启时免费。
         return method == "GET"
             || path.ends_with("/cancel")
             || (method == "POST"
-                && path == "/anthropic/v1/messages/batches"
+                && path == "/v1/messages/batches"
                 && super::pricing::async_usage_reconciliation_is_enabled());
     }
     false

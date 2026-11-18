@@ -5,8 +5,8 @@ use super::usage_extraction::{
     VIDEO_SECOND_FIELDS,
 };
 use super::{
-    is_token_meter, provider_response_succeeded, AccountBillingMode, BillingMode, Invocation,
-    InvocationError, InvocationErrorKind, InvocationFuture, InvocationInterceptor,
+    is_token_meter, provider_response_succeeded, AccountBillingMode, BillingMode, DispatchMode,
+    Invocation, InvocationError, InvocationErrorKind, InvocationFuture, InvocationInterceptor,
 };
 use crate::domain::{BillingMeter, BillingOwnerKind, DecimalValue, DomainError};
 use crate::ports::{
@@ -41,6 +41,16 @@ impl InvocationInterceptor for BillingTransactionInterceptor {
             {
                 return Ok(());
             }
+            // A locally synthesised response never left the gateway: the
+            // idempotency replays and the catalogue endpoints answer from local
+            // state. `PricingPreflightInterceptor` skips them, so there is no
+            // quote to derive a conservative reservation from — reserving here
+            // used to reject every idempotent replay on a prepaid wallet with
+            // "unable to establish a conservative precharge" (502) before the
+            // cached response could be returned.
+            if invocation.dispatch.mode == DispatchMode::SyntheticLocalResponse {
+                return Ok(());
+            }
             if !single_pricing_plan(invocation) {
                 return Err(billing_error(
                     "invocation pricing quotes contain multiple pricing plans",
@@ -52,16 +62,13 @@ impl InvocationInterceptor for BillingTransactionInterceptor {
                 ));
             }
             let context = billing_context(invocation);
-            invocation.charging.settlement_mode = self
+            let (settlement_mode, charge_mode) = self
                 .store
-                .customer_settlement_mode(context.clone())
+                .customer_plan_modes(context.clone())
                 .await
                 .map_err(billing_error)?;
-            invocation.charging.charge_mode = self
-                .store
-                .customer_charge_mode(context.clone())
-                .await
-                .map_err(billing_error)?;
+            invocation.charging.settlement_mode = settlement_mode;
+            invocation.charging.charge_mode = charge_mode;
             // Resolve the configured cash→Token-Bank exchange settings once and
             // stash them on the invocation so the pricing settlement layer can
             // record a `debit_points` consistent with wallet debit (which uses
@@ -256,6 +263,10 @@ impl InvocationInterceptor for BillingSettlementInterceptor {
             if invocation.charging.settled
                 || invocation.billing.mode == BillingMode::Free
                 || !invocation.billing.settlement_required
+                // A replay of a previously settled response owes nothing: the
+                // original call was already charged and the body carries no new
+                // usage to price.
+                || invocation.dispatch.mode == DispatchMode::SyntheticLocalResponse
             {
                 return Ok(());
             }
@@ -300,9 +311,25 @@ impl InvocationInterceptor for BillingSettlementInterceptor {
             // outcome while credentials are still placeholders. Reporting the
             // rejection is both accurate and actionable.
             if !provider_response_succeeded(invocation) {
-                return Err(billing_error(
-                    "provider response was not successful; billable reservation will be refunded",
-                ));
+                // A vendor rejection is a commercial outcome, not a gateway
+                // failure: the caller must receive the vendor's own status and
+                // error body. Returning a pipeline error here made
+                // `ResponseNormalizationInterceptor::on_error` replace that
+                // response with a generic 502 while the same response still
+                // carried `x-sdkwork-route-stage: provider_http_400`, so every
+                // SDK saw a gateway outage instead of the documented vendor
+                // rejection (4xx/429 status vocabulary, `error.type`,
+                // `retry-after`). A rejected call has nothing billable, so
+                // release whatever the precharge reserved and let the vendor
+                // response flow through unchanged.
+                tracing::debug!(
+                    stage = "billing_settlement",
+                    charge_mode = ?invocation.charging.charge_mode,
+                    request_id = %invocation.request.request_id,
+                    trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+                    "provider rejected the call; releasing the reservation without a charge"
+                );
+                return release_without_charge(self.store.as_ref(), invocation, &context).await;
             }
             let Some(actual) = actual_amount(invocation, &settings) else {
                 tracing::warn!(

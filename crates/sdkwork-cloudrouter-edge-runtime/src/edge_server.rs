@@ -729,7 +729,30 @@ impl EdgeServerConfig {
         // Merge the infrastructure response headers browser clients read back
         // (`WEB_FRAMEWORK_SPEC.md` §12 requires `X-Request-Id` *and*
         // `X-SDKWork-Trace-Id`); assigning here would drop the trace header.
-        for header in ["x-request-id", "x-sdkwork-trace-id"] {
+        // The gateway forwards a documented subset of upstream headers
+        // (`preserve_safe_upstream_headers`). Without naming them here the
+        // browser client cannot read any of them, so the OpenAI SDK's
+        // retry/backoff (`retry-after`, `x-ratelimit-*`) and latency telemetry
+        // (`openai-processing-ms`) silently stop working in the browser while
+        // still working for server-side SDKs.
+        for header in [
+            "x-request-id",
+            "x-sdkwork-trace-id",
+            "retry-after",
+            "request-id",
+            "openai-organization",
+            "openai-version",
+            "openai-processing-ms",
+            "x-ratelimit-limit-requests",
+            "x-ratelimit-limit-tokens",
+            "x-ratelimit-remaining-requests",
+            "x-ratelimit-remaining-tokens",
+            "x-ratelimit-reset-requests",
+            "x-ratelimit-reset-tokens",
+            "x-ratelimit-request-ids",
+            "x-goog-request-id",
+            "x-goog-ratelimit-last-update-time",
+        ] {
             if !policy.expose_headers.iter().any(|value| value == header) {
                 policy.expose_headers.push(header.to_owned());
             }

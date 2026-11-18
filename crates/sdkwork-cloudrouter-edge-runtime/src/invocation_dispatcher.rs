@@ -316,18 +316,39 @@ impl InvocationDispatcher for InvocationHttpDispatcher {
                 return Ok(response);
             }
             if response_body_should_parse_json(content_type.as_deref(), &body) {
-                let body = serde_json::from_slice::<serde_json::Value>(&body).map_err(|error| {
-                    dispatch_error(
-                        "provider_json_invalid",
-                        format!("provider JSON response is invalid: {error}"),
-                        Some(status_code),
-                        false,
-                    )
-                })?;
-                let mut response = InvocationDispatchResponse::json(status_code, body);
-                response.content_type = content_type;
-                response.headers = preserved_headers;
-                return Ok(response.with_memory_guard(memory_guard));
+                match serde_json::from_slice::<serde_json::Value>(&body) {
+                    Ok(parsed) => {
+                        let mut response = InvocationDispatchResponse::json(status_code, parsed);
+                        response.content_type = content_type;
+                        response.headers = preserved_headers;
+                        return Ok(response.with_memory_guard(memory_guard));
+                    }
+                    // A vendor rejection is the caller's answer: keep its status
+                    // and body verbatim. Providers routinely answer 4xx with an
+                    // HTML page, a plain-text message, or a truncated body while
+                    // the content-type still claims `application/json`; failing
+                    // the dispatch there replaced both the vendor status and the
+                    // body with a gateway 502 (`provider_json_invalid`), so SDKs
+                    // could not see the documented rejection.
+                    Err(_) if !(200..300).contains(&status_code) => {
+                        let mut response = InvocationDispatchResponse::bytes(
+                            status_code,
+                            body.to_vec(),
+                            content_type,
+                        )
+                        .with_memory_guard(memory_guard);
+                        response.headers = preserved_headers;
+                        return Ok(response);
+                    }
+                    Err(error) => {
+                        return Err(dispatch_error(
+                            "provider_json_invalid",
+                            format!("provider JSON response is invalid: {error}"),
+                            Some(status_code),
+                            false,
+                        ));
+                    }
+                }
             }
 
             let mut response =
@@ -783,8 +804,44 @@ fn response_body_should_parse_json(content_type: Option<&str>, bytes: &[u8]) -> 
 fn should_forward_header(name: &HeaderName, connection_header_names: &HashSet<String>) -> bool {
     !is_hop_by_hop_header(name)
         && !connection_header_names.contains(name.as_str())
+        && !is_gateway_owned_request_header(name)
         && name != header::HOST
         && name != header::CONTENT_LENGTH
+}
+
+/// Inbound request headers the gateway must terminate instead of relaying.
+///
+/// The invocation egress client is a plain hyper client (`Client<…>`, built
+/// without any compression feature) and nothing between the provider response
+/// and `serde_json` decodes a body. Relaying the caller's `accept-encoding`
+/// therefore makes a provider answer with `gzip`/`br` bytes that are parsed as
+/// JSON, which surfaces as `provider_json_invalid` / 502 for ordinary
+/// non-streaming calls and corrupts streamed frames. The legacy passthrough
+/// transport already strips the same header for the same reason
+/// (`provider_passthrough_transport.rs`); the metered pipeline was missing it.
+///
+/// The remaining entries are gateway-edge identity material: a caller's session
+/// cookie and the proxy/forwarding chain belong to this gateway, not to a
+/// third-party provider, and must not be replayed upstream.
+fn is_gateway_owned_request_header(name: &HeaderName) -> bool {
+    let name = name.as_str();
+    // `forwarded`/`x-forwarded-*`/`x-real-ip`/`x-scheme` describe the edge that
+    // received the request. Replaying them upstream would let a caller forge the
+    // provider's view of the original client and protocol. `x-sdkwork-*` carries
+    // this platform's internal identity/projection metadata, which a third-party
+    // provider has no use for.
+    matches!(
+        name,
+        "accept-encoding"
+            | "cookie"
+            | "forwarded"
+            | "x-forwarded-for"
+            | "x-forwarded-host"
+            | "x-forwarded-port"
+            | "x-forwarded-proto"
+            | "x-real-ip"
+            | "x-scheme"
+    ) || name.starts_with("x-sdkwork-")
 }
 
 fn connection_header_names(headers: &axum::http::HeaderMap) -> HashSet<String> {
@@ -1116,6 +1173,78 @@ mod tests {
         assert!(preserved.get(header::CONNECTION).is_none());
         assert!(preserved.get("set-cookie").is_none());
         assert!(preserved.get("x-secret").is_none());
+    }
+
+    /// The egress client cannot decode a compressed body, so negotiating one on
+    /// the caller's behalf turns every compressed provider answer into a 502.
+    #[test]
+    fn gateway_owned_request_headers_are_not_relayed_to_the_provider() {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            header::ACCEPT_ENCODING,
+            HeaderValue::from_static("gzip, br"),
+        );
+        headers.insert(header::COOKIE, HeaderValue::from_static("session=abc"));
+        headers.insert("forwarded", HeaderValue::from_static("for=203.0.113.7"));
+        headers.insert("x-forwarded-for", HeaderValue::from_static("203.0.113.7"));
+        headers.insert(
+            "x-forwarded-host",
+            HeaderValue::from_static("edge.example.com"),
+        );
+        headers.insert("x-forwarded-proto", HeaderValue::from_static("https"));
+        headers.insert("x-scheme", HeaderValue::from_static("https"));
+        headers.insert("x-real-ip", HeaderValue::from_static("203.0.113.7"));
+        headers.insert("x-sdkwork-tenant-id", HeaderValue::from_static("100001"));
+        headers.insert(
+            header::AUTHORIZATION,
+            HeaderValue::from_static("Bearer sk-provider"),
+        );
+        headers.insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static("application/json"),
+        );
+        headers.insert(header::HOST, HeaderValue::from_static("api.openai.com"));
+        headers.insert(header::CONTENT_LENGTH, HeaderValue::from_static("12"));
+        headers.insert(
+            header::CONNECTION,
+            HeaderValue::from_static("keep-alive, x-drop-me"),
+        );
+        headers.insert(
+            HeaderName::from_static("x-drop-me"),
+            HeaderValue::from_static("1"),
+        );
+
+        let connection_header_names = connection_header_names(&headers);
+        let forwarded: Vec<&str> = headers
+            .iter()
+            .filter(|(name, _)| should_forward_header(name, &connection_header_names))
+            .map(|(name, _)| name.as_str())
+            .collect();
+
+        for terminated in [
+            "accept-encoding",
+            "cookie",
+            "forwarded",
+            "x-forwarded-for",
+            "x-forwarded-host",
+            "x-forwarded-proto",
+            "x-real-ip",
+            "x-scheme",
+            "x-sdkwork-tenant-id",
+            "host",
+            "content-length",
+            "connection",
+            "x-drop-me",
+        ] {
+            assert!(
+                !forwarded.contains(&terminated),
+                "{terminated} must stay on the gateway edge: {forwarded:?}"
+            );
+        }
+        // Provider credentials are injected by the request builder and must
+        // still reach the provider.
+        assert!(forwarded.contains(&"authorization"), "{forwarded:?}");
+        assert!(forwarded.contains(&"content-type"), "{forwarded:?}");
     }
 
     #[test]

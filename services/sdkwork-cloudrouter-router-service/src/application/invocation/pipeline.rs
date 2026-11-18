@@ -334,13 +334,11 @@ impl DeferredStreamInvocation {
     /// usage-only chunk 应在转发给客户端前剔除，避免改变未主动开启该选项的
     /// 客户端可见的流形状。
     pub fn suppress_usage_only_chunks(&self) -> bool {
-        self.invocation.resource.surface == InvocationSurface::OpenAiCompatible
-            && self.invocation.resource.api_code == "openai.chat_completions"
-            && matches!(
-                &self.invocation.request.body,
-                InvocationBody::Json(body)
-                    if body.get("stream").and_then(Value::as_bool) == Some(true)
-            )
+        should_suppress_gateway_usage_chunk(
+            &self.invocation.resource.surface,
+            &self.invocation.resource.api_code,
+            &self.invocation.request.body,
+        )
     }
 
     /// Returns the selected provider account's stream-body timeout when the
@@ -569,6 +567,32 @@ fn stream_lifecycle_error(message: impl Into<String>) -> InvocationError {
     InvocationError::new(InvocationErrorKind::Usage, message)
 }
 
+/// Whether the provider's usage-only chunk must be hidden from the client.
+///
+/// The gateway forces `stream_options.include_usage` on OpenAI-compatible chat
+/// streams so it can meter input tokens. Providers then emit one extra
+/// `choices: []` chunk carrying `usage`; that chunk changes the client-visible
+/// stream shape, so it is removed again — but only when the gateway itself
+/// introduced the option. A client that asked for `include_usage` explicitly
+/// must still receive the chunk it requested.
+fn should_suppress_gateway_usage_chunk(
+    surface: &InvocationSurface,
+    api_code: &str,
+    body: &InvocationBody,
+) -> bool {
+    if *surface != InvocationSurface::OpenAiCompatible || api_code != "openai.chat_completions" {
+        return false;
+    }
+    let InvocationBody::Json(value) = body else {
+        return false;
+    };
+    value.get("stream").and_then(Value::as_bool) == Some(true)
+        && value
+            .pointer("/stream_options/include_usage")
+            .and_then(Value::as_bool)
+            != Some(true)
+}
+
 #[cfg(test)]
 mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
@@ -681,5 +705,48 @@ mod tests {
         assert_eq!(InvocationErrorKind::RateLimit, error.kind);
         assert_eq!(0, later_before_calls.load(Ordering::SeqCst));
         assert_eq!(1, error_notifications.load(Ordering::SeqCst));
+    }
+
+    /// The gateway hides the usage-only chunk it forced the provider to emit, but
+    /// never one the client asked for.
+    #[test]
+    fn usage_only_chunk_is_suppressed_only_when_the_gateway_introduced_the_option() {
+        let surface = InvocationSurface::OpenAiCompatible;
+        let body = |value: Value| InvocationBody::Json(value);
+
+        // Stream without include_usage: the gateway injects it, so it hides the
+        // extra chunk again.
+        assert!(should_suppress_gateway_usage_chunk(
+            &surface,
+            "openai.chat_completions",
+            &body(serde_json::json!({"stream": true}))
+        ));
+        assert!(should_suppress_gateway_usage_chunk(
+            &surface,
+            "openai.chat_completions",
+            &body(serde_json::json!({"stream": true, "stream_options": {"include_usage": false}}))
+        ));
+        // The client asked for usage: forwarding it is part of the contract.
+        assert!(!should_suppress_gateway_usage_chunk(
+            &surface,
+            "openai.chat_completions",
+            &body(serde_json::json!({"stream": true, "stream_options": {"include_usage": true}}))
+        ));
+        // Non-streaming, other surfaces and other api codes are never rewritten.
+        assert!(!should_suppress_gateway_usage_chunk(
+            &surface,
+            "openai.chat_completions",
+            &body(serde_json::json!({"stream": false}))
+        ));
+        assert!(!should_suppress_gateway_usage_chunk(
+            &InvocationSurface::ProviderNative,
+            "openai.chat_completions",
+            &body(serde_json::json!({"stream": true}))
+        ));
+        assert!(!should_suppress_gateway_usage_chunk(
+            &surface,
+            "openai.responses",
+            &body(serde_json::json!({"stream": true}))
+        ));
     }
 }

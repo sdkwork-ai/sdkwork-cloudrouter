@@ -108,20 +108,33 @@ fn meter_name(meter: &Option<BillingMeter>) -> String {
 }
 
 /// 生产口径：先按路径前缀判定计费面，再交给该面的分类器。
+///
+/// `Invocation.request.path` 必须是**运行时真实路径**：vendor 原生面在
+/// `classify_request` 里已被剥离命名空间（`/anthropic/v1/files` →
+/// `/v1/files`）。此前夹具直接塞入契约里的发布路径，于是计费策略看到的
+/// 路径与生产不一致——免费管理面规则按 `/anthropic/...` 匹配、夹具按同样
+/// 的字符串断言，两边一起把"生产不命中"的缺陷盖住了。
 async fn shape_of(method: Method, path: &str) -> Result<BillingShape, InvocationError> {
     let request = InvocationClassificationRequest::new(method.clone(), path);
-    let classification = if path == "/v1" || path.starts_with("/v1/") {
-        OpenAiResourceClassifier.classify(&request)
+    let (classification, invocation_path) = if path == "/v1" || path.starts_with("/v1/") {
+        (
+            OpenAiResourceClassifier.classify(&request)?,
+            path.to_owned(),
+        )
     } else {
         let (vendor, rest) = vendor_prefix(path).ok_or_else(|| unsupported(path))?;
-        ProviderNativeResourceClassifier.classify(
-            &InvocationClassificationRequest::new(method.clone(), rest).with_supplier_code(vendor),
+        (
+            ProviderNativeResourceClassifier.classify(
+                &InvocationClassificationRequest::new(method.clone(), rest.clone())
+                    .with_supplier_code(vendor),
+            )?,
+            rest,
         )
-    }?;
+    };
 
     let (resource, billing, routing) = classification.into_parts();
     let mut invocation = Invocation::new(
-        InvocationRequest::new(method.clone(), path).with_request_id("billing-matrix"),
+        InvocationRequest::new(method.clone(), invocation_path).with_request_id("billing-matrix"),
         subject(),
         resource.clone(),
         billing.clone(),

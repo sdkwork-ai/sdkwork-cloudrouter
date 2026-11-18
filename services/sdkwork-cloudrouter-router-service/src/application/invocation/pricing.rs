@@ -988,7 +988,13 @@ fn unmetered_batch_submission(invocation: &Invocation) -> bool {
             invocation.resource.api_code.as_str(),
             invocation.request.path.as_str()
         ),
-        ("openai.batches", "/v1/batches") | ("anthropic.batches", "/anthropic/v1/messages/batches")
+        // `invocation.request.path` is the vendor-namespace-stripped standard
+        // path (`/anthropic/v1/messages/batches` arrives as
+        // `/v1/messages/batches`), so the Anthropic arm must match the stripped
+        // form. Matching the published path made this refusal unreachable in
+        // production: the batch submission was accepted and its usage was never
+        // reconciled, i.e. it ran unbilled.
+        ("openai.batches", "/v1/batches") | ("anthropic.batches", "/v1/messages/batches")
     ) && !async_usage_reconciliation_enabled()
 }
 

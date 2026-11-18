@@ -115,11 +115,24 @@ fn is_public_outbound_ip(address: IpAddr) -> bool {
                 || (first == 169 && second == 254 && third == 169 && fourth == 254))
         }
         IpAddr::V6(address) => {
-            if let Some(address) = address.to_ipv4_mapped() {
+            // `to_ipv4` covers both the mapped (`::ffff:a.b.c.d`) and the
+            // deprecated IPv4-compatible (`::a.b.c.d`) forms, so the embedded
+            // IPv4 address is validated with the IPv4 rules.
+            if let Some(address) = address.to_ipv4() {
                 return is_public_outbound_ip(IpAddr::V4(address));
             }
             let segments = address.segments();
-            !(address.is_unspecified()
+            // Transitional prefixes tunnel IPv4 inside an IPv6 literal: 6to4
+            // (`2002::/16`), Teredo (`2001:0000::/32`) and NAT64
+            // (`64:ff9b::/96`). They are never needed to reach a modern public
+            // provider, and a checked prefix would still let an internal IPv4
+            // target hide behind a public-looking IPv6 literal, so the whole
+            // prefix is treated as non-public.
+            let transitional = segments[0] == 0x2002
+                || (segments[0] == 0x2001 && segments[1] == 0x0000)
+                || (segments[0] == 0x0064 && segments[1] == 0xff9b);
+            !(transitional
+                || address.is_unspecified()
                 || address.is_loopback()
                 || address.is_multicast()
                 || (segments[0] & 0xfe00) == 0xfc00
@@ -275,6 +288,12 @@ mod tests {
             "fe80::1",
             "2001:db8::1",
             "::ffff:127.0.0.1",
+            // IPv4-compatible form of an internal address.
+            "::127.0.0.1",
+            // Transitional prefixes that tunnel an IPv4 target.
+            "64:ff9b::10.0.0.1",
+            "2002:0a00:0001::1",
+            "2001:0000:4136:e378:8000:63bf:3fff:fdd2",
         ] {
             let address = value.parse().expect("test address must be valid");
             assert_eq!(

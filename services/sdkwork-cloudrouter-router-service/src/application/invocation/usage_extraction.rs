@@ -21,6 +21,11 @@ impl InvocationInterceptor for UsageExtractionInterceptor {
         Box::pin(async move {
             if invocation.billing.mode == BillingMode::Free
                 || invocation.billing.quantity_source == BillingQuantitySource::None
+                // A locally synthesised response (idempotency replay, catalogue
+                // endpoints) produced no upstream usage. Extracting from the
+                // cached body would price the same completion twice and write a
+                // second usage fact for a call that was already billed.
+                || invocation.dispatch.mode == DispatchMode::SyntheticLocalResponse
                 || !provider_response_is_success(invocation)
             {
                 return Ok(());
@@ -616,6 +621,14 @@ impl StreamingUsageAccumulator {
         if let Some(choices) = event.get("choices").and_then(Value::as_array) {
             for choice in choices {
                 let Some(delta) = choice.get("delta") else {
+                    // Legacy `/v1/completions` streams carry the incremental
+                    // text under `choices[].text` instead of
+                    // `choices[].delta`. That face cannot request
+                    // `stream_options.include_usage`, so an unrecognised shape
+                    // left a completed stream with no measurable output at all.
+                    if let Some(text) = choice.get("text").and_then(Value::as_str) {
+                        self.observe_output_text(text);
+                    }
                     continue;
                 };
                 for key in ["content", "reasoning_content", "reasoning"] {
@@ -1974,10 +1987,12 @@ fn audio_line(
     invocation: &Invocation,
 ) -> Result<InvocationUsageLine, InvocationError> {
     // Response first (it states what was actually produced), then the request
-    // (music vendors take a `duration`/`seconds` hint), then a single unit so a
-    // served call is never left unmetered.
+    // (music vendors take a `duration`/`seconds` hint), then the transcript /
+    // uploaded container for STT, then a single unit so a served call is never
+    // left unmetered.
     let quantity = reported_audio_seconds(invocation)
-        .or_else(|| request_seconds_field(invocation, AUDIO_SECOND_FIELDS));
+        .or_else(|| request_seconds_field(invocation, AUDIO_SECOND_FIELDS))
+        .or_else(|| stt_seconds_from_transcript_or_upload(meter, invocation));
     let quantity = match quantity {
         Some(quantity) => duration_in_meter_unit(meter, quantity)?,
         None => {
@@ -2008,6 +2023,130 @@ fn fallback_duration_seconds(meter: &BillingMeter) -> &'static str {
         | BillingMeter::SttAudioMinute => "60",
         _ => "1",
     }
+}
+
+/// Audio seconds for a transcription whose response carries no `duration`.
+///
+/// Official STT billing is per audio minute, and the default `response_format`
+/// (`json`) answers `{"text": …}` with no duration at all. The previous fallback
+/// charged the minimum billable minute for every such call, which undercharged a
+/// 30-minute recording by 30×. Two deterministic sources are available before
+/// falling back:
+///
+/// * `srt` / `vtt` responses carry the last cue's end timestamp — the transcript
+///   itself states how much audio was processed;
+/// * the uploaded container states its own length when it is a WAV (RIFF
+///   `fmt ` chunk byte rate and `data` chunk size).
+///
+/// Everything else keeps the existing minimum-unit fallback: guessing from
+/// compressed bitrates would trade a known undercharge for an unknown one.
+fn stt_seconds_from_transcript_or_upload(
+    meter: &BillingMeter,
+    invocation: &Invocation,
+) -> Option<String> {
+    if *meter != BillingMeter::SttAudioMinute {
+        return None;
+    }
+    response_raw_text(invocation)
+        .and_then(|text| transcript_end_seconds(&text))
+        .or_else(|| uploaded_audio_seconds(invocation))
+}
+
+/// Raw response payload as text, including non-JSON bodies (SRT/VTT transcripts,
+/// which `response_body` rejects because they are not JSON).
+fn response_raw_text(invocation: &Invocation) -> Option<String> {
+    let response = invocation.dispatch.response.as_ref()?;
+    if let Some(bytes) = response.body_bytes.as_ref() {
+        return String::from_utf8(bytes.clone()).ok();
+    }
+    response.body.as_ref().map(|body| body.to_string())
+}
+
+/// End of the last cue in an SRT or WebVTT transcript, normalised to seconds.
+fn transcript_end_seconds(text: &str) -> Option<String> {
+    let mut latest: Option<f64> = None;
+    for line in text.lines() {
+        let Some((_, end)) = line.split_once("-->") else {
+            continue;
+        };
+        let Some(seconds) = parse_timestamp(end.trim()) else {
+            continue;
+        };
+        latest = Some(latest.map_or(seconds, |current: f64| current.max(seconds)));
+    }
+    latest
+        .filter(|seconds| seconds.is_finite() && *seconds > 0.0)
+        .map(|seconds| format!("{seconds:.3}"))
+}
+
+/// `HH:MM:SS,mmm` / `HH:MM:SS.mmm` / `MM:SS.mmm` → seconds.
+fn parse_timestamp(value: &str) -> Option<f64> {
+    let token = value.split_whitespace().next()?.replace(',', ".");
+    let parts: Vec<&str> = token.split(':').collect();
+    let (hours, minutes, seconds) = match parts.as_slice() {
+        [hours, minutes, seconds] => (*hours, *minutes, *seconds),
+        [minutes, seconds] => ("0", *minutes, *seconds),
+        _ => return None,
+    };
+    let hours: f64 = hours.parse().ok()?;
+    let minutes: f64 = minutes.parse().ok()?;
+    let seconds: f64 = seconds.parse().ok()?;
+    Some(hours * 3600.0 + minutes * 60.0 + seconds)
+}
+
+/// Length of the uploaded WAV payload, when the request carries one.
+fn uploaded_audio_seconds(invocation: &Invocation) -> Option<String> {
+    let InvocationBody::Bytes(bytes) = &invocation.request.body else {
+        return None;
+    };
+    wav_seconds(bytes)
+}
+
+/// Exact duration of a RIFF/WAVE payload embedded in the request body.
+///
+/// Multipart uploads keep the file bytes verbatim between the part headers, so
+/// the container can be measured in place without decoding the audio.
+fn wav_seconds(bytes: &[u8]) -> Option<String> {
+    let riff = find_subslice(bytes, b"RIFF")?;
+    if bytes.get(riff + 8..riff + 12)? != b"WAVE" {
+        return None;
+    }
+    let mut offset = riff + 12;
+    let mut byte_rate: Option<u32> = None;
+    while offset + 8 <= bytes.len() {
+        let id = bytes.get(offset..offset + 4)?;
+        let size = u32::from_le_bytes(bytes.get(offset + 4..offset + 8)?.try_into().ok()?) as usize;
+        let chunk_start = offset + 8;
+        if id == b"fmt " {
+            // audioFormat(2) channels(2) sampleRate(4) byteRate(4)
+            byte_rate = Some(u32::from_le_bytes(
+                bytes
+                    .get(chunk_start + 8..chunk_start + 12)?
+                    .try_into()
+                    .ok()?,
+            ));
+        } else if id == b"data" {
+            let rate = byte_rate?;
+            if rate == 0 {
+                return None;
+            }
+            let available = bytes.len().saturating_sub(chunk_start).min(size);
+            let seconds = available as f64 / f64::from(rate);
+            return (seconds > 0.0).then(|| format!("{seconds:.3}"));
+        }
+        // Chunks are word aligned: an odd payload is followed by one pad byte.
+        offset = chunk_start + size + (size & 1);
+    }
+    None
+}
+
+fn find_subslice(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+    if needle.is_empty() || haystack.len() < needle.len() {
+        return None;
+    }
+    haystack
+        .windows(needle.len())
+        .position(|window| window == needle)
 }
 
 /// Billable audio seconds the provider reported, normalised to **seconds**.
@@ -2265,12 +2404,13 @@ pub(super) const VIDEO_SECOND_FIELDS: &[&str] = &[
     "seconds",
 ];
 /// Duration spellings a vendor reports in **milliseconds** (MiniMax music,
-/// several aggregators). Never mix these into the second-field lists: 30000 ms
-/// read as seconds is 8 hours.
+/// ElevenLabs `music_length_ms`, several aggregators). Never mix these into the
+/// second-field lists: 30000 ms read as seconds is 8 hours.
 const MILLISECOND_DURATION_FIELDS: &[&str] = &[
     "duration_ms",
     "duration_milliseconds",
     "audio_duration_ms",
+    "music_length_ms",
     "music_duration",
 ];
 /// Response objects that nest the measured quantity one level down instead of
@@ -2338,15 +2478,51 @@ fn request_character_count(invocation: &Invocation) -> Option<i64> {
 
 /// 请求体里可合成文本的字符数（`request_character_count` 的纯函数版本，
 /// 供预扣估算复用同一套字段语义）。
+///
+/// 三条请求形状到达 TTS 路由：OpenAI/Anthropic 的扁平拼写（`{"input": "…"}` /
+/// `{"text": "…"}`）、Ark 的对象包装（`{"input": {"text": "…"}}`），以及
+/// **ByteDance Ark 的 `req_params` 包装**——契约明确「nests every synthesis
+/// field under `req_params`」，只读扁平拼写会把 200 字的合成记成 **1 个字符**。
+/// `ssml` 按去标签后的可读文本计字符，避免把标记算成内容。
 pub(super) fn character_count_in(body: &Value) -> Option<i64> {
-    ["input", "text"].iter().find_map(|name| {
-        let value = body.get(*name)?;
-        let text = value
-            .as_str()
-            .or_else(|| value.get("text").and_then(Value::as_str))?;
-        let count = text.chars().count() as i64;
-        (count > 0).then_some(count)
-    })
+    ["input", "text"]
+        .iter()
+        .find_map(|name| body.get(*name).and_then(text_char_count))
+        .or_else(|| {
+            body.get("req_params").and_then(|params| {
+                ["text", "ssml"]
+                    .iter()
+                    .find_map(|name| params.get(*name).and_then(text_char_count))
+            })
+        })
+}
+
+fn text_char_count(value: &Value) -> Option<i64> {
+    let text = value
+        .as_str()
+        .or_else(|| value.get("text").and_then(Value::as_str))?;
+    let text = strip_ssml_markup(text);
+    let count = text.chars().count() as i64;
+    (count > 0).then_some(count)
+}
+
+/// Removes `<tag …>` spans so an SSML request is billed for the spoken text
+/// instead of its markup.
+fn strip_ssml_markup(text: &str) -> std::borrow::Cow<'_, str> {
+    if !text.contains('<') {
+        return std::borrow::Cow::Borrowed(text);
+    }
+    let mut result = String::with_capacity(text.len());
+    let mut in_tag = false;
+    for character in text.chars() {
+        match character {
+            '<' => in_tag = true,
+            '>' if in_tag => in_tag = false,
+            _ if !in_tag => result.push(character),
+            _ => {}
+        }
+    }
+    std::borrow::Cow::Owned(result)
 }
 
 fn array_length_field(value: &Value, names: &[&str]) -> Option<i64> {
@@ -2516,8 +2692,10 @@ mod tests {
 
     use super::{
         anthropic_web_search_count, augment_missing_prompt_tokens, cached_tokens,
-        composite_usage_components, normalized_input_tokens, token_line, tool_call_counts,
-        InvocationBody, StreamingUsageAccumulator, StreamingUsageFormat,
+        character_count_in, composite_usage_components, nested_media_seconds,
+        normalized_input_tokens, parse_timestamp, token_line, tool_call_counts,
+        transcript_end_seconds, wav_seconds, InvocationBody, StreamingUsageAccumulator,
+        StreamingUsageFormat, AUDIO_SECOND_FIELDS,
     };
     use crate::domain::BillingMeter;
 
@@ -3093,5 +3271,130 @@ mod tests {
         )
         .expect_err("missing usage must fail");
         assert!(error.to_string().contains("missing token count"));
+    }
+
+    /// TTS characters are counted in every request shape the routes accept.
+    ///
+    /// ByteDance Ark nests the synthesis text under `req_params`; reading only
+    /// the flat spelling billed a 200-character synthesis as one character.
+    #[test]
+    fn character_count_reads_flat_nested_and_ssml_request_shapes() {
+        assert_eq!(Some(5), character_count_in(&json!({ "input": "hello" })));
+        assert_eq!(Some(5), character_count_in(&json!({ "text": "hello" })));
+        assert_eq!(
+            Some(5),
+            character_count_in(&json!({ "input": { "text": "hello" } }))
+        );
+        assert_eq!(
+            Some(5),
+            character_count_in(&json!({ "req_params": { "text": "hello" } }))
+        );
+        // SSML markup is not spoken text.
+        assert_eq!(
+            Some(5),
+            character_count_in(&json!({
+                "req_params": { "ssml": "<speak>hello</speak>" }
+            }))
+        );
+        assert_eq!(None, character_count_in(&json!({ "req_params": {} })));
+        assert_eq!(None, character_count_in(&json!({ "input": "" })));
+    }
+
+    /// ElevenLabs states music length in milliseconds; reading it as seconds
+    /// would bill 30000 as eight hours of audio.
+    #[test]
+    fn elevenlabs_music_length_is_read_as_milliseconds() {
+        let seconds =
+            nested_media_seconds(&json!({ "music_length_ms": 30000 }), AUDIO_SECOND_FIELDS)
+                .expect("music length");
+        assert_eq!(30.0, seconds.parse::<f64>().expect("numeric seconds"));
+        assert!(!seconds.starts_with("30000"), "milliseconds must be scaled");
+    }
+
+    /// Legacy `/v1/completions` streams put the delta in `choices[].text`; the
+    /// estimator only knew `choices[].delta`, so a completed legacy stream had
+    /// no measurable output.
+    #[test]
+    fn legacy_completion_stream_text_counts_toward_the_output_estimate() {
+        let mut accumulator =
+            StreamingUsageAccumulator::new(StreamingUsageFormat::ServerSentEvents);
+        accumulator
+            .observe(
+                b"data: {\"object\":\"text_completion\",\"choices\":[{\"text\":\"hello\"}]}\n\n",
+            )
+            .expect("observe");
+        let usage = accumulator
+            .partial_usage_body()
+            .expect("an estimated usage body");
+        assert!(
+            usage
+                .pointer("/usage/completion_tokens")
+                .and_then(Value::as_i64)
+                .unwrap_or(0)
+                > 0,
+            "legacy completion text must be measured: {usage}"
+        );
+    }
+
+    /// Official STT billing is per audio minute. `response_format=srt|vtt`
+    /// answers a timestamped transcript that states exactly how much audio was
+    /// processed; the previous code ignored it and charged one minute.
+    #[test]
+    fn transcript_timestamps_state_the_billed_audio_length() {
+        let srt =
+            "1\n00:00:00,000 --> 00:00:12,500\nhello\n\n2\n00:00:12,500 --> 00:05:03,250\nworld\n";
+        assert_eq!(
+            303.25,
+            transcript_end_seconds(srt)
+                .expect("srt end")
+                .parse::<f64>()
+                .expect("numeric")
+        );
+        let vtt = "WEBVTT\n\n00:00.000 --> 00:01.500\nhi\n";
+        assert_eq!(
+            1.5,
+            transcript_end_seconds(vtt)
+                .expect("vtt end")
+                .parse::<f64>()
+                .expect("numeric")
+        );
+        // A plain-text transcript carries no timing: the caller keeps its
+        // minimum-unit fallback instead of inventing a duration.
+        assert_eq!(None, transcript_end_seconds("just a flat transcript"));
+        assert_eq!(Some(90.5), parse_timestamp("00:01:30,500"));
+        assert_eq!(Some(90.5), parse_timestamp("01:30.500"));
+        assert_eq!(None, parse_timestamp("abc"));
+    }
+
+    /// A WAV upload states its own duration; multipart keeps the file bytes
+    /// verbatim, so the container can be measured without decoding audio.
+    #[test]
+    fn wav_upload_states_its_audio_length() {
+        let byte_rate: u32 = 16_000;
+        let data_len: u32 = byte_rate * 7; // seven seconds of payload
+        let mut wav = Vec::new();
+        wav.extend_from_slice(b"RIFF");
+        wav.extend_from_slice(&(36 + data_len).to_le_bytes());
+        wav.extend_from_slice(b"WAVE");
+        wav.extend_from_slice(b"fmt ");
+        wav.extend_from_slice(&16u32.to_le_bytes());
+        wav.extend_from_slice(&1u16.to_le_bytes()); // PCM
+        wav.extend_from_slice(&1u16.to_le_bytes()); // mono
+        wav.extend_from_slice(&8_000u32.to_le_bytes()); // sample rate
+        wav.extend_from_slice(&byte_rate.to_le_bytes());
+        wav.extend_from_slice(&2u16.to_le_bytes()); // block align
+        wav.extend_from_slice(&16u16.to_le_bytes()); // bits per sample
+        wav.extend_from_slice(b"data");
+        wav.extend_from_slice(&data_len.to_le_bytes());
+        wav.resize(wav.len() + data_len as usize, 0);
+
+        assert_eq!(
+            7.0,
+            wav_seconds(&wav)
+                .expect("wav duration")
+                .parse::<f64>()
+                .expect("numeric")
+        );
+        assert_eq!(None, wav_seconds(b"not a wav payload"));
     }
 }

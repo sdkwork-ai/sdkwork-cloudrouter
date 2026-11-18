@@ -37,6 +37,14 @@ pub enum OpenApiCapability {
 struct OwnedOperation {
     method: Method,
     path_pattern: String,
+    /// Literal path segments before the first `{parameter}` in `path_pattern`.
+    ///
+    /// A necessary condition for a match, precomputed once so the per-request
+    /// capability lookup can reject almost every operation by comparing a
+    /// handful of segments instead of calling `matches_path_pattern`, which
+    /// splits both the pattern and the request path into freshly allocated
+    /// segment vectors on every attempt.
+    static_segments: Vec<String>,
     capability: OpenApiCapability,
 }
 
@@ -59,6 +67,7 @@ pub fn open_api_capability_for_request(method: &Method, path: &str) -> Option<Op
             .iter()
             .find(|operation| {
                 operation.method == *method
+                    && path_carries_static_segments(path, &operation.static_segments)
                     && sdkwork_cloudrouter_contract::matches_path_pattern(
                         operation.path_pattern.as_str(),
                         path,
@@ -151,11 +160,48 @@ fn append_operations(
             }
             operations.push(OwnedOperation {
                 method,
+                static_segments: static_path_segments(path),
                 path_pattern: path.clone(),
                 capability: capability(operation),
             });
         }
     }
+}
+
+/// Returns the literal text before the first `{parameter}` placeholder.
+fn static_path_prefix(pattern: &str) -> &str {
+    match pattern.find('{') {
+        Some(index) => &pattern[..index],
+        None => pattern,
+    }
+}
+
+/// Splits a pattern's literal leading text into segments the same way
+/// [`sdkwork_cloudrouter_contract::matches_path_pattern`] splits a path.
+fn static_path_segments(pattern: &str) -> Vec<String> {
+    static_path_prefix(pattern)
+        .trim_matches('/')
+        .split('/')
+        .filter(|segment| !segment.is_empty())
+        .map(str::to_owned)
+        .collect()
+}
+
+/// Sound fast reject for the capability lookup.
+///
+/// `matches_path_pattern` requires every literal pattern segment to equal the
+/// corresponding request segment, so a mismatch inside this prefix can never
+/// match. Comparing *segments* rather than raw text keeps the outcome identical
+/// to the matcher for paths carrying empty segments, which its `split_path`
+/// drops (`/v1//chat/completions` still matches `/v1/chat/completions`).
+fn path_carries_static_segments(path: &str, expected: &[String]) -> bool {
+    let mut segments = path
+        .trim_matches('/')
+        .split('/')
+        .filter(|segment| !segment.is_empty());
+    expected
+        .iter()
+        .all(|want| segments.next() == Some(want.as_str()))
 }
 
 fn capability_from_tag(tag: &str) -> OpenApiCapability {
@@ -255,6 +301,16 @@ mod tests {
     }
 
     #[test]
+    fn empty_segments_do_not_change_capability_resolution() {
+        // `matches_path_pattern` drops empty segments, so the precomputed
+        // literal guard must never prune a path the matcher would have accepted.
+        assert_eq!(
+            Some(OpenApiCapability::Llm),
+            open_api_capability_for_request(&Method::POST, "/v1//chat/completions")
+        );
+    }
+
+    #[test]
     fn does_not_claim_unknown_or_wrong_method_routes() {
         assert_eq!(
             None,
@@ -269,6 +325,16 @@ mod tests {
         assert_eq!(
             None,
             open_api_capability_for_request(&Method::GET, "/v1/user/balance")
+        );
+        // Near misses of a declared path must stay unclaimed: the precomputed
+        // literal prefix is only a fast reject, never the whole decision.
+        assert_eq!(
+            None,
+            open_api_capability_for_request(&Method::POST, "/v1/assistantsX")
+        );
+        assert_eq!(
+            None,
+            open_api_capability_for_request(&Method::POST, "/v2/assistants")
         );
         // The TypeSafe door is method-specific: the contract publishes only
         // `POST /typesafe/v1/systemone`, so a GET must not be claimed by any

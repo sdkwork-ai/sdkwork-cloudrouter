@@ -5,7 +5,7 @@ use sdkwork_utils_rust::is_blank;
 use crate::application::{
     AuthenticatedApiKeyContext, GatewayInvocationRateLimiter, GatewayRateLimitSpec,
 };
-use crate::domain::{DecimalValue, GatewayRiskRule};
+use crate::domain::{DecimalValue, GatewayRiskRule, RoutingCapability};
 use crate::ports::PricingCatalog;
 
 const RULE_TYPE_DENY: i32 = 2;
@@ -84,6 +84,7 @@ impl GatewayInvocationPolicyGuard {
         &self,
         catalog: &C,
         auth: &AuthenticatedApiKeyContext,
+        capability: RoutingCapability,
         client_ip: Option<&str>,
     ) -> Result<(), GatewayInvocationPolicyViolation> {
         // The auth-token channel (agents turn executor) carries
@@ -108,6 +109,17 @@ impl GatewayInvocationPolicyGuard {
                 {
                     return Err(GatewayInvocationPolicyViolation::Forbidden(
                         "client IP is not allowed by gateway access policy".to_owned(),
+                    ));
+                }
+                // Per-key modality restriction. `allowed_capabilities` is the
+                // vocabulary the console writes when an operator restricts a
+                // key to a subset of modalities; an empty list is the
+                // unrestricted default. The request is rejected before the body
+                // is read and before any route is planned, so a restricted key
+                // cannot reach a capability it is not scoped for.
+                if !capability_allowed_by_policy(&policy.allowed_capabilities, capability) {
+                    return Err(GatewayInvocationPolicyViolation::Forbidden(
+                        "api key is not allowed to invoke this capability".to_owned(),
                     ));
                 }
             }
@@ -241,6 +253,44 @@ pub fn client_ip_allowed_by_allowlist(client_ip: Option<&str>, allowlist: &[Stri
         .any(|entry| ip_matches_entry(client_ip, entry, MATCH_MODE_EXACT))
 }
 
+/// Whether an access policy's modality restriction admits this capability.
+///
+/// `allowed_capabilities` is stored in the API-key modality vocabulary the
+/// console exposes (`text` / `image` / `video` / `audio` / `music`). An empty
+/// list is the unrestricted default and admits every capability.
+pub(crate) fn capability_allowed_by_policy(
+    allowed_capabilities: &[String],
+    capability: RoutingCapability,
+) -> bool {
+    if allowed_capabilities.is_empty() {
+        return true;
+    }
+    let Some(required) = required_modality(capability) else {
+        // A capability with no media modality of its own must not slip past a
+        // restricted key just because there is nothing to compare against.
+        return false;
+    };
+    allowed_capabilities
+        .iter()
+        .any(|allowed| allowed.trim().eq_ignore_ascii_case(required))
+}
+
+/// The key modality a routing capability is routed, priced and billed under.
+fn required_modality(capability: RoutingCapability) -> Option<&'static str> {
+    match capability {
+        RoutingCapability::Chat | RoutingCapability::Embedding | RoutingCapability::Rerank => {
+            Some("text")
+        }
+        RoutingCapability::Image => Some("image"),
+        RoutingCapability::Video => Some("video"),
+        RoutingCapability::Audio => Some("audio"),
+        RoutingCapability::Music => Some("music"),
+        // `Network` routes carry no media modality; a key restricted to a
+        // modality list is not implicitly entitled to them.
+        RoutingCapability::Network => None,
+    }
+}
+
 fn ip_matches_entry(client_ip: &str, entry: &str, match_mode: i32) -> bool {
     let entry = entry.trim();
     if is_blank(Some(entry)) {
@@ -303,5 +353,71 @@ mod tests {
             &allowlist
         ));
         assert!(!client_ip_allowed_by_allowlist(Some("8.8.8.8"), &allowlist));
+    }
+
+    #[test]
+    fn modality_restriction_admits_only_the_scoped_capability() {
+        let text_only = vec!["text".to_owned()];
+        for allowed in [
+            RoutingCapability::Chat,
+            RoutingCapability::Embedding,
+            RoutingCapability::Rerank,
+        ] {
+            assert!(
+                capability_allowed_by_policy(&text_only, allowed),
+                "{allowed:?} is a text capability"
+            );
+        }
+        for denied in [
+            RoutingCapability::Image,
+            RoutingCapability::Video,
+            RoutingCapability::Audio,
+            RoutingCapability::Music,
+            // No media modality of its own: fail closed for a restricted key.
+            RoutingCapability::Network,
+        ] {
+            assert!(
+                !capability_allowed_by_policy(&text_only, denied),
+                "{denied:?} must not be reachable by a text-only key"
+            );
+        }
+
+        let media = vec!["image".to_owned(), "video".to_owned()];
+        assert!(capability_allowed_by_policy(
+            &media,
+            RoutingCapability::Image
+        ));
+        assert!(capability_allowed_by_policy(
+            &media,
+            RoutingCapability::Video
+        ));
+        assert!(!capability_allowed_by_policy(
+            &media,
+            RoutingCapability::Chat
+        ));
+
+        // Stored vocabulary casing/whitespace must not weaken the check.
+        let padded = vec![" IMAGE ".to_owned()];
+        assert!(capability_allowed_by_policy(
+            &padded,
+            RoutingCapability::Image
+        ));
+    }
+
+    #[test]
+    fn empty_modality_restriction_is_unrestricted() {
+        let unrestricted: Vec<String> = Vec::new();
+        for capability in [
+            RoutingCapability::Chat,
+            RoutingCapability::Image,
+            RoutingCapability::Audio,
+            RoutingCapability::Music,
+            RoutingCapability::Video,
+            RoutingCapability::Embedding,
+            RoutingCapability::Rerank,
+            RoutingCapability::Network,
+        ] {
+            assert!(capability_allowed_by_policy(&unrestricted, capability));
+        }
     }
 }

@@ -3,6 +3,7 @@ pub struct RequestLimitsConfig {
     admin_app_json_body_max_bytes: usize,
     admin_skill_json_body_max_bytes: usize,
     gateway_invocation_body_max_bytes: usize,
+    gateway_request_timeout_millis: u64,
 }
 
 impl RequestLimitsConfig {
@@ -12,6 +13,8 @@ impl RequestLimitsConfig {
         "SDKWORK_CLOUDROUTER_ADMIN_SKILL_JSON_BODY_MAX_BYTES";
     pub const ENV_GATEWAY_INVOCATION_BODY_MAX_BYTES: &'static str =
         "SDKWORK_CLOUDROUTER_GATEWAY_INVOCATION_BODY_MAX_BYTES";
+    pub const ENV_GATEWAY_REQUEST_TIMEOUT_MILLIS: &'static str =
+        "SDKWORK_CLOUDROUTER_GATEWAY_REQUEST_TIMEOUT_MILLIS";
 
     pub const DEFAULT_ADMIN_APP_JSON_BODY_MAX_BYTES: usize = 128 * 1024;
     pub const DEFAULT_ADMIN_SKILL_JSON_BODY_MAX_BYTES: usize = 64 * 1024;
@@ -25,6 +28,20 @@ impl RequestLimitsConfig {
     /// `SDKWORK_CLOUDROUTER_GATEWAY_INVOCATION_BODY_MAX_BYTES` / runtime.toml
     /// when serving very large image edits.
     pub const DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES: usize = 25 * 1024 * 1024;
+    /// Default outer HTTP backstop for one gateway request.
+    ///
+    /// The web framework's production default is 30 s, while the provider
+    /// egress allows 60 s per hop plus retries and account failover. A backstop
+    /// tighter than the inner budget turns every long non-streaming completion
+    /// into a framework 408: the provider keeps generating (and bills) while the
+    /// client sees an empty gateway error and the settlement after-chain never
+    /// runs. 120 s clears one full provider hop plus the surrounding billing,
+    /// usage and settlement stages for the common single-account case; raise it
+    /// via `SDKWORK_CLOUDROUTER_GATEWAY_REQUEST_TIMEOUT_MILLIS` / runtime.toml
+    /// when routing across many failover candidates. Streamed responses are not
+    /// bound by this value: their headers are produced long before the body
+    /// finishes.
+    pub const DEFAULT_GATEWAY_REQUEST_TIMEOUT_MILLIS: u64 = 120_000;
 
     pub fn from_env() -> Result<Self, String> {
         Self::from_env_or_runtime_toml(None)
@@ -51,6 +68,12 @@ impl RequestLimitsConfig {
                     .and_then(|config| config.request_limits.gateway_invocation_body_max_bytes),
                 Self::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
             )?,
+            gateway_request_timeout_millis: configured_u64_limit(
+                Self::ENV_GATEWAY_REQUEST_TIMEOUT_MILLIS,
+                runtime_toml
+                    .and_then(|config| config.request_limits.gateway_request_timeout_millis),
+                Self::DEFAULT_GATEWAY_REQUEST_TIMEOUT_MILLIS,
+            )?,
         })
     }
 
@@ -65,6 +88,10 @@ impl RequestLimitsConfig {
     pub fn gateway_invocation_body_max_bytes(&self) -> usize {
         self.gateway_invocation_body_max_bytes
     }
+
+    pub fn gateway_request_timeout_millis(&self) -> u64 {
+        self.gateway_request_timeout_millis
+    }
 }
 
 impl Default for RequestLimitsConfig {
@@ -73,6 +100,7 @@ impl Default for RequestLimitsConfig {
             admin_app_json_body_max_bytes: Self::DEFAULT_ADMIN_APP_JSON_BODY_MAX_BYTES,
             admin_skill_json_body_max_bytes: Self::DEFAULT_ADMIN_SKILL_JSON_BODY_MAX_BYTES,
             gateway_invocation_body_max_bytes: Self::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
+            gateway_request_timeout_millis: Self::DEFAULT_GATEWAY_REQUEST_TIMEOUT_MILLIS,
         }
     }
 }
@@ -85,6 +113,18 @@ fn configured_usize_limit(
     let value = crate::runtime::config_u64(name, config_value)?.unwrap_or(default_value as u64);
     let value = usize::try_from(value)
         .map_err(|_| format!("{name} must fit in the current platform pointer size"))?;
+    if value == 0 {
+        return Err(format!("{name} must be a positive integer"));
+    }
+    Ok(value)
+}
+
+fn configured_u64_limit(
+    name: &str,
+    config_value: Option<u64>,
+    default_value: u64,
+) -> Result<u64, String> {
+    let value = crate::runtime::config_u64(name, config_value)?.unwrap_or(default_value);
     if value == 0 {
         return Err(format!("{name} must be a positive integer"));
     }

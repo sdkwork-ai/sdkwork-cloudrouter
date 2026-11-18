@@ -45,24 +45,36 @@ fn subject() -> InvocationSubject {
 }
 
 async fn invocation(method: Method, path: &str, supplier: &str) -> Invocation {
-    let classification = if path.starts_with("/v1/") {
-        OpenAiResourceClassifier
-            .classify(&InvocationClassificationRequest::new(method.clone(), path))
+    let (classification, invocation_path) = if path.starts_with("/v1/") {
+        (
+            OpenAiResourceClassifier
+                .classify(&InvocationClassificationRequest::new(method.clone(), path))
+                .expect("classification"),
+            path.to_owned(),
+        )
     } else {
         let rest = path
             .trim_start_matches('/')
             .split_once('/')
             .map(|(_, tail)| format!("/{tail}"))
             .expect("vendor-prefixed path");
-        ProviderNativeResourceClassifier.classify(
-            &InvocationClassificationRequest::new(method.clone(), rest)
-                .with_supplier_code(supplier),
+        (
+            ProviderNativeResourceClassifier
+                .classify(
+                    &InvocationClassificationRequest::new(method.clone(), rest.clone())
+                        .with_supplier_code(supplier),
+                )
+                .expect("classification"),
+            rest,
         )
-    }
-    .expect("classification");
+    };
     let (resource, billing, routing) = classification.into_parts();
+    // Production strips the vendor namespace before the invocation exists
+    // (`/anthropic/v1/messages/batches` → `/v1/messages/batches`). Building the
+    // fixture with the published path made the guard look correct while it never
+    // matched at runtime.
     let mut invocation = Invocation::new(
-        InvocationRequest::new(method, path)
+        InvocationRequest::new(method, invocation_path)
             .with_request_id("req-unmetered-batch")
             .with_body(InvocationBody::json(json!({"input_file_id": "file-1"}))),
         subject(),

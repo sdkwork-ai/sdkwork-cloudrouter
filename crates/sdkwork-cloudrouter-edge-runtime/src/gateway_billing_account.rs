@@ -330,6 +330,42 @@ impl GatewayBillingStore for PostgresGatewayBillingStore {
         })
     }
 
+    /// Projects both plan modes from one `cloudrouter_pricing_plan` lookup.
+    ///
+    /// `customer_settlement_mode` and `customer_charge_mode` select the same row
+    /// with the same predicate and ordering; only the projected JSON field
+    /// differs. The precharge interceptor asks for both back to back on every
+    /// billable open-api call, so resolving them together removes one round trip
+    /// from the serial path before dispatch.
+    fn customer_plan_modes<'a>(
+        &'a self,
+        context: GatewayBillingContext,
+    ) -> GatewayBillingFuture<'a, (GatewayBillingSettlementMode, CustomerChargeMode)> {
+        Box::pin(async move {
+            let (settlement, charge) = sqlx::query_as::<_, (Option<String>, Option<String>)>(
+                "SELECT metadata->>'settlementMode', metadata->>'chargeMode' FROM cloudrouter_pricing_plan WHERE tenant_id IN ($1, 0) AND organization_id IN ($2, 0) AND plan_code = $3 AND deleted_at IS NULL ORDER BY (tenant_id = $1) DESC, (organization_id = $2) DESC, effective_from DESC, id DESC LIMIT 1",
+            )
+            .bind(context.tenant_id)
+            .bind(context.organization_id)
+            .bind(&context.pricing_plan_code)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|error| DomainError::new(error.to_string()))?
+            .unwrap_or((None, None));
+            let settlement_mode =
+                parse_settlement_mode(settlement.as_deref(), self.settlement_mode)?;
+            if settlement_mode == GatewayBillingSettlementMode::Asynchronous
+                && !self.settlement_worker_enabled
+            {
+                return Err(DomainError::new(
+                    "asynchronous billing requires an enabled usage settlement worker",
+                ));
+            }
+            let charge_mode = parse_charge_mode(charge.as_deref())?;
+            Ok((settlement_mode, charge_mode))
+        })
+    }
+
     fn load_cash_to_points_settings<'a>(
         &'a self,
         context: GatewayBillingContext,

@@ -47,13 +47,18 @@ async fn invocation(method: Method, path: &str, supplier: &str) -> Invocation {
         .expect("vendor-prefixed path");
     let classification = ProviderNativeResourceClassifier
         .classify(
-            &InvocationClassificationRequest::new(method.clone(), rest)
+            &InvocationClassificationRequest::new(method.clone(), rest.clone())
                 .with_supplier_code(supplier),
         )
         .expect("classification");
     let (resource, billing, routing) = classification.into_parts();
+    // Production strips the vendor namespace before the invocation is created:
+    // `/anthropic/v1/files` becomes `request.path == "/v1/files"`. Building the
+    // fixture with the published namespaced path made these assertions pass
+    // against a path the runtime never sees, hiding the fact that the free
+    // management rules never matched.
     let mut invocation = Invocation::new(
-        InvocationRequest::new(method, path)
+        InvocationRequest::new(method, rest)
             .with_request_id("req-unmetered-management")
             .with_body(InvocationBody::json(json!({"input": "hello"}))),
         subject(),

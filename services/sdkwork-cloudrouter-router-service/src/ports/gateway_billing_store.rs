@@ -82,6 +82,24 @@ pub trait GatewayBillingStore: Send + Sync {
         context: GatewayBillingContext,
     ) -> GatewayBillingFuture<'a, CustomerChargeMode>;
 
+    /// Resolves the plan-level settlement mode and charge mode together.
+    ///
+    /// Both live in the same `cloudrouter_pricing_plan` row, so a store that can
+    /// read them in one statement must override this: the precharge path of
+    /// every billable open-api call otherwise issues two identical lookups that
+    /// differ only in the JSON field they project. The default keeps stores that
+    /// hold no shared row (in-memory and test doubles) working unchanged.
+    fn customer_plan_modes<'a>(
+        &'a self,
+        context: GatewayBillingContext,
+    ) -> GatewayBillingFuture<'a, (GatewayBillingSettlementMode, CustomerChargeMode)> {
+        Box::pin(async move {
+            let settlement_mode = self.customer_settlement_mode(context.clone()).await?;
+            let charge_mode = self.customer_charge_mode(context).await?;
+            Ok((settlement_mode, charge_mode))
+        })
+    }
+
     /// Loads the active cash-to-points exchange settings (Token Bank points
     /// per pricing currency) used to convert a priced charge into the integer
     /// Token Bank units the ledger debits. Tenant-scoped rule first, then the

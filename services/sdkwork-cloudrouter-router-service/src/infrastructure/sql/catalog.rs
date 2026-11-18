@@ -1026,6 +1026,17 @@ impl UpstreamAccountRouteCatalog for RefreshableSqlPricingCatalog {
             .model_catalog_keys_by_name(model_name)
     }
 
+    /// Forwards to the snapshot's name index.
+    ///
+    /// Without this override the trait default runs `visit_models` over the
+    /// whole catalog and allocates a `format!("{model_name}/")` probe per
+    /// model, and it sits on the mandatory route-planning path of every
+    /// model-scoped open-api call (`route_planning` step 2).
+    fn model_vendor_codes_by_name(&self, model_name: &str) -> Vec<String> {
+        self.current_snapshot()
+            .model_vendor_codes_by_name(model_name)
+    }
+
     fn model_catalog_keys_for_endpoint(&self, endpoint_code: &str) -> Vec<String> {
         self.current_snapshot()
             .model_catalog_keys_for_endpoint(endpoint_code)

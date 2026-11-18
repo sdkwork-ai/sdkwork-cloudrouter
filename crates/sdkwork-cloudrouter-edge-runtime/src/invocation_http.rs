@@ -176,7 +176,12 @@ where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let (parts, body) = request.into_parts();
-    let client_ip = extract_client_ip(&parts, false);
+    // `[server] trust_forwarded_headers` (default false) decides whether the
+    // caller-supplied `x-forwarded-for` chain may define the client IP used by
+    // the access-policy allowlist, the call-chain IP stage and the risk rules.
+    // The router state carries the resolved flag; ignoring it here made the
+    // setting silently inert for every deployment.
+    let client_ip = extract_client_ip(&parts, state.trust_forwarded_headers);
     // Classify before resolving the session's account group: an auth-token
     // session resolves to the subject's default group **for the request
     // modality**, so the modality must be known first. Authentication has
@@ -215,7 +220,12 @@ where
     );
     if let Err(violation) = state
         .invocation_policy_guard
-        .enforce(state.catalog.as_ref(), &auth_context, client_ip.as_deref())
+        .enforce(
+            state.catalog.as_ref(),
+            &auth_context,
+            capability,
+            client_ip.as_deref(),
+        )
         .await
     {
         return response_from_policy_violation(&violation);
@@ -446,9 +456,40 @@ fn attach_trace_response_headers(
             response.headers_mut().insert("x-sdkwork-trace-id", value);
         }
     }
-    if let Ok(value) = HeaderValue::from_str(&format!("00-{trace_id}-0000000000000000-01")) {
+    // OpenAI SDKs surface the server request id from `x-request-id` and print it
+    // in client-side errors. The gateway preserved the upstream header when the
+    // provider sent one, but never emitted its own, so a request that failed
+    // before reaching the provider had no correlating id at all.
+    if !response.headers().contains_key("x-request-id") {
+        if let Ok(value) = HeaderValue::from_str(request_id) {
+            response.headers_mut().insert("x-request-id", value);
+        }
+    }
+    if let Ok(value) = HeaderValue::from_str(&format!(
+        "00-{trace_id}-{}-01",
+        span_id_for_trace(request_id)
+    )) {
         response.headers_mut().insert("traceparent", value);
     }
+}
+
+/// Derives a stable, non-zero 16-hex parent-id for the `traceparent` header.
+///
+/// W3C Trace Context forbids an all-zero parent-id; emitting one makes strict
+/// collectors drop the whole trace, which is exactly the correlation this
+/// header exists to carry. The value is derived from the request id (FNV-1a) so
+/// a retried read of the same request keeps the same span identity without
+/// pulling in an RNG dependency.
+fn span_id_for_trace(request_id: &str) -> String {
+    let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+    for byte in request_id.as_bytes() {
+        hash ^= u64::from(*byte);
+        hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+    }
+    if hash == 0 {
+        hash = 1;
+    }
+    format!("{hash:016x}")
 }
 
 /// Extracts the 32-hex W3C trace id from a `traceparent` value
@@ -515,6 +556,13 @@ fn deferred_stream_response_to_http(
             .insert(header::CONTENT_TYPE, content_type);
     }
     response.headers_mut().extend(headers);
+    // A streamed answer is per-request and must not be cached by an
+    // intermediary. The upstream's own `cache-control` is not part of the
+    // preserved upstream-header allowlist, so without this the SSE response
+    // travels with no cache directive at all.
+    response
+        .headers_mut()
+        .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-cache"));
     response
 }
 
@@ -899,8 +947,15 @@ fn normalized_response_to_http(
     // scrubbed so a provider that echoes the outbound credential (e.g.
     // `sk-...` or `Bearer ...` in a rejection reason) cannot leak it to the
     // gateway client across tenants.
+    //
+    // Only real text is scrubbed: `from_utf8_lossy` replaces every non-UTF-8
+    // byte with U+FFFD, which corrupts a binary provider error page or a
+    // truncated frame that is otherwise forwarded verbatim.
     let body = if !status.is_success() {
-        redact_sensitive_tokens(&String::from_utf8_lossy(&body)).into_bytes()
+        match std::str::from_utf8(&body) {
+            Ok(text) => redact_sensitive_tokens(text).into_bytes(),
+            Err(_) => body,
+        }
     } else {
         body
     };
@@ -1436,5 +1491,70 @@ mod billing_unavailable_tests {
         let body: serde_json::Value = serde_json::from_slice(&bytes).expect("json error");
         assert_eq!("billing_unavailable", body["error"]["code"]);
         assert_eq!("server_error", body["error"]["type"]);
+    }
+}
+
+#[cfg(test)]
+mod trace_header_tests {
+    use axum::body::Body;
+    use axum::http::{HeaderValue, StatusCode};
+    use axum::response::Response;
+
+    use super::attach_trace_response_headers;
+
+    fn empty_response() -> Response {
+        let mut response = Response::new(Body::empty());
+        *response.status_mut() = StatusCode::OK;
+        response
+    }
+
+    /// OpenAI SDKs read the server request id from `x-request-id`; the gateway
+    /// must provide its own when the provider did not send one, and must never
+    /// overwrite the provider's.
+    #[test]
+    fn gateway_request_id_is_exposed_unless_the_provider_sent_one() {
+        let mut response = empty_response();
+        attach_trace_response_headers(
+            &mut response,
+            "req-gateway",
+            Some("4bf92f3577b34da6a3ce929d0e0e4736"),
+        );
+        assert_eq!(
+            Some("req-gateway"),
+            response
+                .headers()
+                .get("x-request-id")
+                .and_then(|value| value.to_str().ok())
+        );
+        assert_eq!(
+            Some("4bf92f3577b34da6a3ce929d0e0e4736"),
+            response
+                .headers()
+                .get("x-sdkwork-trace-id")
+                .and_then(|value| value.to_str().ok())
+        );
+        // The W3C parent-id must be non-zero or strict collectors drop the trace.
+        let traceparent = response
+            .headers()
+            .get("traceparent")
+            .and_then(|value| value.to_str().ok())
+            .expect("traceparent");
+        assert!(
+            !traceparent.contains("-0000000000000000-"),
+            "all-zero parent-id is invalid: {traceparent}"
+        );
+
+        let mut upstream_named = empty_response();
+        upstream_named
+            .headers_mut()
+            .insert("x-request-id", HeaderValue::from_static("req_upstream"));
+        attach_trace_response_headers(&mut upstream_named, "req-gateway", None);
+        assert_eq!(
+            Some("req_upstream"),
+            upstream_named
+                .headers()
+                .get("x-request-id")
+                .and_then(|value| value.to_str().ok())
+        );
     }
 }

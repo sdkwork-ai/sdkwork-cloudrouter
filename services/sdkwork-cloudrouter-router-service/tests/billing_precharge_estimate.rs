@@ -17,9 +17,10 @@ use std::sync::{Arc, Mutex};
 use axum::http::Method;
 use sdkwork_cloudrouter_router_service::application::{
     AccountBillingMode, AuthenticatedApiKeyContext, BillingMode, BillingPolicyInterceptor,
-    BillingQuantitySource, BillingTransactionInterceptor, Invocation, InvocationAccount,
-    InvocationBody, InvocationClassificationRequest, InvocationInterceptor, InvocationPricingQuote,
-    InvocationRequest, InvocationResourceClassifier, InvocationSubject, OpenAiResourceClassifier,
+    BillingQuantitySource, BillingSettlementInterceptor, BillingTransactionInterceptor,
+    DispatchMode, Invocation, InvocationAccount, InvocationBody, InvocationClassificationRequest,
+    InvocationDispatchResponse, InvocationInterceptor, InvocationPricingQuote, InvocationRequest,
+    InvocationResourceClassifier, InvocationSubject, OpenAiResourceClassifier,
     PriceResolutionStatus, PricingAuditSnapshot, ProviderNativeResourceClassifier,
     ResourceBillability,
 };
@@ -528,5 +529,50 @@ fn assert_same_amount(expected: &str, actual: &str, message: &str) {
     assert_eq!(
         expected, actual,
         "{message}: expected {expected:?}, got {actual:?}"
+    );
+}
+
+/// 幂等重放（本地合成响应）既不预扣也不结算。
+///
+/// 重放走的是上一次请求的缓存响应，没有任何新的上游用量；预检也按
+/// `SyntheticLocalResponse` 跳过，因此手上没有报价。此前预扣阶段会拿空
+/// 报价去估算，直接以 "unable to establish a conservative precharge" 失败——
+/// 默认预付费部署下**每一次带 `Idempotency-Key` 的重放都 502**，缓存响应
+/// 根本到不了客户端。结算阶段同样会因"没有可计费金额"失败。
+#[tokio::test]
+async fn synthetic_local_response_never_reserves_or_settles() {
+    let store = Arc::new(RecordingBillingStore::default());
+    let mut invocation = invocation_with_quote(
+        Method::POST,
+        "/v1/chat/completions",
+        json!({"model": "gpt-4o-mini", "messages": []}),
+        BillingMeter::ApiRequest,
+    )
+    .await;
+    invocation.dispatch.mode = DispatchMode::SyntheticLocalResponse;
+    invocation.dispatch.response = Some(InvocationDispatchResponse::json(
+        200,
+        json!({"id": "chatcmpl-cached"}),
+    ));
+    // The pricing preflight never ran for a replay, so no quote exists.
+    invocation.usage.pricing_quotes.clear();
+
+    BillingTransactionInterceptor::new(store.clone())
+        .before(&mut invocation)
+        .await
+        .expect("a replay has nothing to reserve and must not fail the request");
+    assert!(
+        store.reserved().is_empty(),
+        "a replay must not freeze a new reservation: {:?}",
+        store.reserved()
+    );
+
+    BillingSettlementInterceptor::new(store.clone())
+        .after(&mut invocation)
+        .await
+        .expect("a replay owes no settlement");
+    assert!(
+        !invocation.charging.settled,
+        "a replay must not book a second settlement"
     );
 }
