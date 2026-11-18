@@ -247,3 +247,6 @@ sdks/*/openapi/*.sdkgen.generated.json
 # Local docker bundle environment (generated at deploy time, contains secrets;
 # see bin/docker-deploy.sh - never commit the materialized bundle env)
 deployments/docker/bundle/env/
+
+# Bundle env templates stay tracked; only the materialized local bundle is ignored
+!deployments/docker/bundle/env/*.env.example
