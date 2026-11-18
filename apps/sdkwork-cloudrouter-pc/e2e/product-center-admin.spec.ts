@@ -535,7 +535,8 @@ test.describe('product center admin', () => {
     await mockProductCenterApi(page);
 
     await page.goto('/admin/products/inventory');
-    await expect(page.getByText('sku-1').first()).toBeVisible();
+    // The stock row resolves its SKU id to the catalog SKU number.
+    await expect(page.getByText('P-1-01').first()).toBeVisible();
   });
 
   test('creates a product through the generated catalog SDK', async ({ page }) => {

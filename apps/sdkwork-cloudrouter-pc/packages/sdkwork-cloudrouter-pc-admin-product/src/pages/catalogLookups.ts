@@ -1,10 +1,103 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import type { Brand, Category, ProductCenterService } from '../productCenterService.ts';
+import type { Brand, Category, ProductCenterService, Sku } from '../productCenterService.ts';
 
 export interface CatalogLookupOption {
   value: string;
   label: string;
+}
+
+const SKU_LOOKUP_PAGE_SIZE = 200;
+const SKU_LOOKUP_MAX_PAGES = 25;
+
+/**
+ * Demo catalogs hold thousands of SKUs, so inventory/movement/reservation and
+ * price-item rows cannot show raw numeric ids. The lookup pages through the
+ * bounded catalog once per service instance and caches the result, so every
+ * inventory surface renders `skuNo` instead of an opaque id without issuing the
+ * same 13 requests per page mount.
+ */
+const skuCache = new WeakMap<ProductCenterService, Promise<readonly Sku[]>>();
+
+function loadAllSkus(service: ProductCenterService): Promise<readonly Sku[]> {
+  const cached = skuCache.get(service);
+  if (cached) {
+    return cached;
+  }
+  const promise = (async () => {
+    const collected: Sku[] = [];
+    for (let page = 1; page <= SKU_LOOKUP_MAX_PAGES; page += 1) {
+      const result = await service.listSkus({ page, pageSize: SKU_LOOKUP_PAGE_SIZE });
+      collected.push(...result.items);
+      if (!result.pageInfo.hasNextPage) {
+        break;
+      }
+    }
+    return collected;
+  })();
+  skuCache.set(service, promise);
+  promise.catch(() => {
+    skuCache.delete(service);
+  });
+  return promise;
+}
+
+export interface SkuLabels {
+  label: (skuId: string | null | undefined) => string;
+  title: (skuId: string | null | undefined) => string;
+  loading: boolean;
+}
+
+/** Stable `skuNo`/title resolution for inventory and price-item rows. */
+export function useSkuLabels(service: ProductCenterService): SkuLabels {
+  const [skus, setSkus] = useState<readonly Sku[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    loadAllSkus(service).then(
+      (items) => {
+        if (active) {
+          setSkus(items);
+          setLoading(false);
+        }
+      },
+      () => {
+        if (active) {
+          setSkus([]);
+          setLoading(false);
+        }
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [service]);
+
+  const byId = useMemo(() => new Map(skus.map((sku) => [sku.id, sku])), [skus]);
+
+  const label = useCallback(
+    (skuId: string | null | undefined) => {
+      if (!skuId) {
+        return '';
+      }
+      return byId.get(skuId)?.skuNo ?? skuId;
+    },
+    [byId],
+  );
+
+  const title = useCallback(
+    (skuId: string | null | undefined) => {
+      if (!skuId) {
+        return '';
+      }
+      const sku = byId.get(skuId);
+      return sku?.title ?? sku?.name ?? skuId;
+    },
+    [byId],
+  );
+
+  return useMemo(() => ({ label, title, loading }), [label, title, loading]);
 }
 
 export interface CatalogLookups {

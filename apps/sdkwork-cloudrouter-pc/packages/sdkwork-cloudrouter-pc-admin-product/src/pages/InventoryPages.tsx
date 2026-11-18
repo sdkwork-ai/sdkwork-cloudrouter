@@ -11,6 +11,7 @@ import {
   type FormFieldSpec,
 } from '../components/ui.tsx';
 import { RecordFormDialog } from '../components/RecordFormDialog.tsx';
+import { useSkuLabels } from './catalogLookups.ts';
 import { ResourcePageFrame, requireString, type ProductCenterPageProps } from './resourcePage.tsx';
 import {
   getProductCenterService,
@@ -31,6 +32,7 @@ function optionalString(values: Record<string, string | boolean>, name: string):
 export function StockListPage({ service }: ProductCenterPageProps) {
   const { t } = useTranslation();
   const resolved = useMemo(() => service ?? getProductCenterService(), [service]);
+  const skuLabels = useSkuLabels(resolved);
   const [adjusting, setAdjusting] = useState<{ stock: InventoryStock; reload: () => void } | null>(null);
   const [settings, setSettings] = useState<{ stock: InventoryStock; reload: () => void } | null>(null);
 
@@ -66,8 +68,10 @@ export function StockListPage({ service }: ProductCenterPageProps) {
   const columns = useMemo<DataColumn<InventoryStock>[]>(() => [
     {
       key: 'skuId',
-      header: t('admin.productCenter.stocks.column.skuId', 'SKU id'),
-      cell: (row) => <span className="font-mono text-xs">{row.skuId}</span>,
+      header: t('admin.productCenter.stocks.column.skuId', 'SKU'),
+      cell: (row) => (
+        <span className="text-xs" title={skuLabels.title(row.skuId)}>{skuLabels.label(row.skuId)}</span>
+      ),
     },
     {
       key: 'warehouse',
@@ -103,7 +107,7 @@ export function StockListPage({ service }: ProductCenterPageProps) {
         <StatusBadge label={t(`admin.productCenter.status.${row.status}`, row.status)} value={row.status} />
       ),
     },
-  ], [t]);
+  ], [skuLabels, t]);
 
   const adjustmentFields = useMemo<FormFieldSpec[]>(() => [
     {
@@ -259,6 +263,7 @@ export function StockListPage({ service }: ProductCenterPageProps) {
 export function MovementListPage({ service }: ProductCenterPageProps) {
   const { t } = useTranslation();
   const resolved = useMemo(() => service ?? getProductCenterService(), [service]);
+  const skuLabels = useSkuLabels(resolved);
 
   const filters = useMemo<FilterControl[]>(() => [
     { name: 'skuId', label: t('admin.productCenter.movements.filter.sku', 'SKU id'), kind: 'text' },
@@ -295,13 +300,15 @@ export function MovementListPage({ service }: ProductCenterPageProps) {
     },
     {
       key: 'skuId',
-      header: t('admin.productCenter.movements.column.skuId', 'SKU id'),
-      cell: (row) => <span className="font-mono text-xs">{row.skuId}</span>,
+      header: t('admin.productCenter.movements.column.skuId', 'SKU'),
+      cell: (row) => (
+        <span className="text-xs" title={skuLabels.title(row.skuId)}>{skuLabels.label(row.skuId)}</span>
+      ),
     },
     {
       key: 'type',
       header: t('admin.productCenter.movements.column.type', 'Type'),
-      cell: (row) => row.movementType,
+      cell: (row) => t(`admin.productCenter.stocks.movement.${row.movementType}`, row.movementType),
     },
     {
       key: 'quantity',
@@ -320,7 +327,7 @@ export function MovementListPage({ service }: ProductCenterPageProps) {
         <span className="whitespace-nowrap text-xs">{formatTimestamp(row.occurredAt ?? row.createdAt)}</span>
       ),
     },
-  ], [t]);
+  ], [skuLabels, t]);
 
   return (
     <ResourcePageFrame<InventoryMovement>
@@ -338,6 +345,7 @@ export function MovementListPage({ service }: ProductCenterPageProps) {
 export function ReservationListPage({ service }: ProductCenterPageProps) {
   const { t } = useTranslation();
   const resolved = useMemo(() => service ?? getProductCenterService(), [service]);
+  const skuLabels = useSkuLabels(resolved);
 
   const filters = useMemo<FilterControl[]>(() => [
     { name: 'skuId', label: t('admin.productCenter.reservations.filter.sku', 'SKU id'), kind: 'text' },
@@ -381,8 +389,10 @@ export function ReservationListPage({ service }: ProductCenterPageProps) {
     },
     {
       key: 'skuId',
-      header: t('admin.productCenter.reservations.column.skuId', 'SKU id'),
-      cell: (row) => <span className="font-mono text-xs">{row.skuId}</span>,
+      header: t('admin.productCenter.reservations.column.skuId', 'SKU'),
+      cell: (row) => (
+        <span className="text-xs" title={skuLabels.title(row.skuId)}>{skuLabels.label(row.skuId)}</span>
+      ),
     },
     {
       key: 'quantity',
@@ -396,7 +406,7 @@ export function ReservationListPage({ service }: ProductCenterPageProps) {
         <StatusBadge label={t(`admin.productCenter.status.${row.status}`, row.status)} value={row.status} />
       ),
     },
-  ], [t]);
+  ], [skuLabels, t]);
 
   return (
     <ResourcePageFrame<InventoryReservation>

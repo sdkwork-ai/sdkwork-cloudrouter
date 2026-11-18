@@ -7,6 +7,7 @@ import {
   DataTable,
   Dialog,
   Notice,
+  Pagination,
   StatusBadge,
   formatMinorAmount,
   type DataColumn,
@@ -24,6 +25,9 @@ import {
 } from '../productCenterService.ts';
 
 const PRICE_STATUSES = ['active', 'inactive'] as const;
+const ITEMS_PAGE_SIZE = 50;
+const SKU_OPTION_PAGE_SIZE = 200;
+const SKU_OPTION_MAX_PAGES = 25;
 
 function optionalString(values: Record<string, string | boolean>, name: string): string | undefined {
   const value = values[name];
@@ -63,25 +67,36 @@ function PriceItemsDialog({ list, service, onClose }: PriceItemsDialogProps) {
   const [form, setForm] = useState<{ mode: 'create' | 'edit'; item: PriceListItem | null } | null>(null);
   const [deleting, setDeleting] = useState<PriceListItem | null>(null);
   const [skuOptions, setSkuOptions] = useState<readonly { value: string; label: string }[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(ITEMS_PAGE_SIZE);
+  const [totalItems, setTotalItems] = useState(0);
 
   useEffect(() => {
     let active = true;
-    service.listSkus({ page: 1, pageSize: 200 }).then(
-      (page) => {
-        if (active) {
-          setSkuOptions(page.items.map((sku) => ({
-            value: sku.id,
-            label: `${sku.skuNo} · ${sku.title ?? sku.name ?? sku.id}`,
-          })));
+    // The catalog can hold thousands of SKUs; page through the bounded lookup
+    // instead of silently offering only the first page in the picker.
+    (async () => {
+      const collected: { value: string; label: string }[] = [];
+      let currentPage = 1;
+      for (; currentPage <= SKU_OPTION_MAX_PAGES && active; currentPage += 1) {
+        const result = await service.listSkus({ page: currentPage, pageSize: SKU_OPTION_PAGE_SIZE });
+        collected.push(...result.items.map((sku) => ({
+          value: sku.id,
+          label: `${sku.skuNo} · ${sku.title ?? sku.name ?? sku.id}`,
+        })));
+        if (!result.pageInfo.hasNextPage) {
+          break;
         }
-      },
-      () => {
-        // A failed lookup keeps the free-text fallback so the dialog stays usable.
-        if (active) {
-          setSkuOptions([]);
-        }
-      },
-    );
+      }
+      if (active) {
+        setSkuOptions(collected);
+      }
+    })().catch(() => {
+      // A failed lookup keeps the free-text fallback so the dialog stays usable.
+      if (active) {
+        setSkuOptions([]);
+      }
+    });
     return () => {
       active = false;
     };
@@ -91,11 +106,16 @@ function PriceItemsDialog({ list, service, onClose }: PriceItemsDialogProps) {
     let active = true;
     setLoading(true);
     setError(null);
-    service.listPriceListItems({ listId: list.id, page: 1, pageSize: 100 }).then(
-      (page) => {
-        if (active) {
-          setItems(page.items);
-          setLoading(false);
+    service.listPriceListItems({ listId: list.id, page, pageSize }).then(
+      (result) => {
+        if (!active) {
+          return;
+        }
+        setItems(result.items);
+        setTotalItems(result.pageInfo.totalItems ?? 0);
+        setLoading(false);
+        if (result.items.length === 0 && page > 1) {
+          setPage(page - 1);
         }
       },
       (loadError: unknown) => {
@@ -109,7 +129,7 @@ function PriceItemsDialog({ list, service, onClose }: PriceItemsDialogProps) {
     return () => {
       active = false;
     };
-  }, [list.id, reloadToken, service]);
+  }, [list.id, page, pageSize, reloadToken, service]);
 
   const reload = () => setReloadToken((token) => token + 1);
 
@@ -162,11 +182,20 @@ function PriceItemsDialog({ list, service, onClose }: PriceItemsDialogProps) {
     ];
   }, [form?.mode, skuOptions, t]);
 
+  const skuLabelById = useMemo(
+    () => new Map(skuOptions.map((option) => [option.value, option.label])),
+    [skuOptions],
+  );
+
   const columns = useMemo<DataColumn<PriceListItem>[]>(() => [
     {
       key: 'sku',
-      header: t('admin.productCenter.priceLists.items.column.sku', 'SKU id'),
-      cell: (row) => <span className="font-mono text-xs">{row.skuId}</span>,
+      header: t('admin.productCenter.priceLists.items.column.sku', 'SKU'),
+      cell: (row) => (
+        <span className="text-xs" title={skuLabelById.get(row.skuId)}>
+          {skuLabelById.get(row.skuId) ?? row.skuId}
+        </span>
+      ),
     },
     {
       key: 'price',
@@ -203,7 +232,7 @@ function PriceItemsDialog({ list, service, onClose }: PriceItemsDialogProps) {
         </span>
       ),
     },
-  ], [t]);
+  ], [skuLabelById, t]);
 
   return (
     <Dialog
@@ -234,12 +263,35 @@ function PriceItemsDialog({ list, service, onClose }: PriceItemsDialogProps) {
             {t('admin.productCenter.state.loading', 'Loading…')}
           </p>
         ) : (
-          <DataTable
-            columns={columns}
-            emptyLabel={t('admin.productCenter.priceLists.items.empty', 'No price item yet')}
-            rowKey={(row) => row.id}
-            rows={items}
-          />
+          <>
+            <DataTable
+              columns={columns}
+              emptyLabel={t('admin.productCenter.priceLists.items.empty', 'No price item yet')}
+              rowKey={(row) => row.id}
+              rows={items}
+            />
+            <Pagination
+              hasNextPage={page * pageSize < totalItems}
+              itemCount={items.length}
+              labels={{
+                next: t('admin.productCenter.actions.next', 'Next'),
+                page: t('admin.productCenter.common.page', 'Page'),
+                pageSize: t('admin.productCenter.common.pageSize', 'Rows'),
+                previous: t('admin.productCenter.actions.previous', 'Previous'),
+                showing: t('admin.productCenter.common.showing', 'Showing'),
+                total: t('admin.productCenter.common.total', 'Total'),
+              }}
+              onNextPage={() => setPage(page + 1)}
+              onPageSizeChange={(nextPageSize) => {
+                setPageSize(nextPageSize);
+                setPage(1);
+              }}
+              onPreviousPage={() => setPage(Math.max(1, page - 1))}
+              page={page}
+              pageSize={pageSize}
+              totalItems={totalItems}
+            />
+          </>
         )}
       </div>
 

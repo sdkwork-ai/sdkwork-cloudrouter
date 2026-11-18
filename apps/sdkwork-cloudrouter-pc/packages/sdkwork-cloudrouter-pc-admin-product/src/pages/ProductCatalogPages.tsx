@@ -99,6 +99,20 @@ export function ProductListPage({ service, onOpenProduct }: ProductListPageProps
     [lookups.categoryOptions, t],
   );
 
+  const leafCategoryOptions = useMemo(() => {
+    const options = lookups.categories
+      .filter((category) => category.isLeaf !== false)
+      .map((category) => ({ value: category.id, label: category.name }));
+    const editingCategoryId = editing?.row.categoryId;
+    if (editingCategoryId && !options.some((option) => option.value === editingCategoryId)) {
+      const current = lookups.categories.find((category) => category.id === editingCategoryId);
+      if (current) {
+        options.unshift({ value: current.id, label: current.name });
+      }
+    }
+    return options;
+  }, [editing?.row.categoryId, lookups.categories]);
+
   const filters = useMemo<FilterControl[]>(() => [
     {
       name: 'q',
@@ -195,7 +209,7 @@ export function ProductListPage({ service, onOpenProduct }: ProductListPageProps
       label: t('admin.productCenter.products.field.category', 'Category'),
       kind: 'select',
       required: true,
-      options: lookups.categoryOptions,
+      options: leafCategoryOptions,
     },
     {
       name: 'brandId',
@@ -215,7 +229,7 @@ export function ProductListPage({ service, onOpenProduct }: ProductListPageProps
     },
     { name: 'barcode', label: t('admin.productCenter.products.field.barcode', 'Barcode'), kind: 'text' },
     { name: 'weightGram', label: t('admin.productCenter.products.field.weightGram', 'Weight (g)'), kind: 'number' },
-  ], [lookups.brandOptions, lookups.categoryOptions, t]);
+  ], [leafCategoryOptions, lookups.brandOptions, t]);
 
   const editFields = useMemo<FormFieldSpec[]>(() => [
     { name: 'title', label: t('admin.productCenter.products.field.title', 'Title'), kind: 'text', required: true },
@@ -224,7 +238,7 @@ export function ProductListPage({ service, onOpenProduct }: ProductListPageProps
       label: t('admin.productCenter.products.field.category', 'Category'),
       kind: 'select',
       required: true,
-      options: lookups.categoryOptions,
+      options: leafCategoryOptions,
     },
     {
       name: 'brandId',
@@ -244,7 +258,7 @@ export function ProductListPage({ service, onOpenProduct }: ProductListPageProps
     { name: 'modelNo', label: t('admin.productCenter.products.field.modelNo', 'Model number'), kind: 'text' },
     { name: 'barcode', label: t('admin.productCenter.products.field.barcode', 'Barcode'), kind: 'text' },
     { name: 'weightGram', label: t('admin.productCenter.products.field.weightGram', 'Weight (g)'), kind: 'number' },
-  ], [lookups.brandOptions, lookups.categoryOptions, t]);
+  ], [leafCategoryOptions, lookups.brandOptions, t]);
 
   const runTransition = (
     row: Product,
@@ -404,22 +418,28 @@ export function SkuListPage({ service }: ProductCenterPageProps) {
 
   useEffect(() => {
     let active = true;
-    resolved.listProducts({ page: 1, pageSize: 200 }).then(
-      (page) => {
-        if (active) {
-          setProductOptions(page.items.map((product) => ({
-            value: product.id,
-            label: `${product.productNo} · ${product.title ?? product.name ?? product.id}`,
-          })));
+    (async () => {
+      const collected: CatalogLookupOption[] = [];
+      let currentPage = 1;
+      for (; currentPage <= 25 && active; currentPage += 1) {
+        const page = await resolved.listProducts({ page: currentPage, pageSize: 200 });
+        collected.push(...page.items.map((product) => ({
+          value: product.id,
+          label: `${product.productNo} · ${product.title ?? product.name ?? product.id}`,
+        })));
+        if (!page.pageInfo.hasNextPage) {
+          break;
         }
-      },
-      () => {
-        // A failed lookup keeps the free-text fallback so SKU creation still works.
-        if (active) {
-          setProductOptions([]);
-        }
-      },
-    );
+      }
+      if (active) {
+        setProductOptions(collected);
+      }
+    })().catch(() => {
+      // A failed lookup keeps the free-text fallback so SKU creation still works.
+      if (active) {
+        setProductOptions([]);
+      }
+    });
     return () => {
       active = false;
     };
