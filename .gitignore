@@ -243,3 +243,7 @@ sdks/*/openapi/*.sdkgen.generated.json
 # (specs/application-env-standard.md).
 /.env.standalone.production
 /.env.standalone.development
+
+# Local docker bundle environment (generated at deploy time, contains secrets;
+# see bin/docker-deploy.sh - never commit the materialized bundle env)
+deployments/docker/bundle/env/
