@@ -91,6 +91,24 @@ assert.ok(
   existsSync(path.join(deploy, "deployments/kubernetes/refund-revocation-worker.yaml")),
   "missing refund revocation Kubernetes manifest",
 );
+assert.ok(
+  existsSync(
+    path.join(
+      deploy,
+      "crates/sdkwork-deploy-refund-revocation-worker/tests/refund_revocation_postgres.rs",
+    ),
+  ),
+  "missing refund revocation real-SQL test",
+);
+assert.ok(
+  existsSync(
+    path.join(
+      deploy,
+      "crates/sdkwork-deploy-app-token/tests/refund_revocation_postgres.rs",
+    ),
+  ),
+  "missing app-token refund real-SQL test",
+);
 
 // 6. Docs still name the remaining external blockers.
 contains("docs/architecture/tech/TECH-app-factory-blockers.md", "IAM runtime", root);
