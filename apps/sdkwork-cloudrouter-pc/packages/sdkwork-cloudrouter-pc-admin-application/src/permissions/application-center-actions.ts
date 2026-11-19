@@ -42,6 +42,8 @@ export const APPLICATION_CENTER_ACTION_PERMISSIONS = {
    */
   sourceRead: "deploy.apps.read",
   sourceWrite: "deploy.apps.write",
+  /** `apps.identityProvision` is a Deploy write command. */
+  identityProvision: "deploy.apps.write",
   storeCategoryWrite: APPLICATION_CENTER_MODULE_PERMISSION,
   moderationDecide: APPLICATION_CENTER_MODULE_PERMISSION,
   publisherVerify: APPLICATION_CENTER_MODULE_PERMISSION,

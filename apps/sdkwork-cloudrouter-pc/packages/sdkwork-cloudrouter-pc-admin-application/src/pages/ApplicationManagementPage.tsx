@@ -44,6 +44,7 @@ import { AppSourceRemixDrawer } from "../components/AppSourceRemixDrawer";
 import { AppStoreCategoryPanel } from "../components/AppStoreCategoryPanel";
 import { useApplicationCatalogMessages, type ApplicationCatalogMessages } from "../i18n";
 import { isApplicationCenterActionAllowed } from "../permissions/application-center-actions";
+import { createApplicationIdentityService } from "../services/application-identity";
 import {
   isApplicationSourceUnavailable,
   isApplicationTokenForbidden,
@@ -262,6 +263,13 @@ export function ApplicationManagementPage({
   const canWriteSource = permissionScope
     ? isApplicationCenterActionAllowed("sourceWrite", permissionScope)
     : isApplicationCenterActionAllowed("sourceWrite");
+  const canProvisionIdentity = permissionScope
+    ? isApplicationCenterActionAllowed("identityProvision", permissionScope)
+    : isApplicationCenterActionAllowed("identityProvision");
+  const [identityNotice, setIdentityNotice] = useState<
+    { tone: "danger" | "success"; text: string } | null
+  >(null);
+  const [identityBusyId, setIdentityBusyId] = useState<string | null>(null);
 
   const activeGroup = activeView === "categories"
     ? undefined
@@ -475,6 +483,26 @@ export function ApplicationManagementPage({
       setTokenState({ status: "ready", value });
     } catch (error) {
       setTokenState({ error, status: "error" });
+    }
+  };
+
+  const retryIdentity = async (application: ApplicationRecord) => {
+    if (!canProvisionIdentity || identityBusyId !== null) {
+      return;
+    }
+    setIdentityBusyId(application.id);
+    setIdentityNotice(null);
+    try {
+      const status = await createApplicationIdentityService().provision(application.id);
+      setIdentityNotice({
+        text: messages.identity.success.replace("{status}", status),
+        tone: "success",
+      });
+      setReloadToken((token) => token + 1);
+    } catch {
+      setIdentityNotice({ text: messages.identity.failed, tone: "danger" });
+    } finally {
+      setIdentityBusyId(null);
     }
   };
 
@@ -885,6 +913,10 @@ export function ApplicationManagementPage({
             {template(messages.countTemplate, { count: String(filteredItems.length) })}
           </p>
 
+          {identityNotice ? (
+            <StatusNotice tone={identityNotice.tone}>{identityNotice.text}</StatusNotice>
+          ) : null}
+
           <DataTable
             className="min-h-0 flex-1"
             columns={columns}
@@ -898,10 +930,13 @@ export function ApplicationManagementPage({
                 <div data-application-row-actions>
                   <ApplicationRowActionsMenu
                     appKind={item.groupId === "deploy" ? item.kind : deployApplication?.kind}
+                    canProvisionIdentity={item.groupId === "deploy" && canProvisionIdentity}
                     canReadSource={item.groupId === "deploy" && canReadSource}
+                    identityStatus={item.identityStatus}
                     messages={messages}
                     onAccessToken={() => openAccessToken(item)}
                     onIntegration={(kind) => openIntegration(item, kind)}
+                    onRetryIdentity={() => void retryIdentity(item)}
                     onSource={() => setSourceTarget(item)}
                   />
                 </div>

@@ -222,6 +222,12 @@ export const en: ApplicationCatalogMessages = {
     deploy: { description: "Applications owned by this tenant in the Deploy application platform.", label: "Deploy apps" },
     iam: { description: "Application instances registered for this tenant in the IAM application registry.", label: "IAM apps" },
   },
+  identity: {
+    retryAction: "Retry IAM identity",
+    retrying: "Provisioning the IAM identity…",
+    success: "IAM identity status is now {status}.",
+    failed: "The IAM identity could not be provisioned. Please retry.",
+  },
   integrations: {
     actions: {
       config: "App configuration",

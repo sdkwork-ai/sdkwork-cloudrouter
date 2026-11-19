@@ -1,4 +1,4 @@
-import { CreditCard, GitBranch, KeyRound, MessageCircle, Settings2, Smartphone } from "lucide-react";
+import { CreditCard, GitBranch, KeyRound, MessageCircle, RefreshCw, Settings2, Smartphone } from "lucide-react";
 import {
   Button,
   DropdownMenu,
@@ -24,17 +24,23 @@ import type { ApplicationIntegrationKind } from "../types/application-integratio
  */
 export function ApplicationRowActionsMenu({
   appKind,
+  canProvisionIdentity,
   canReadSource,
+  identityStatus,
   messages,
   onAccessToken,
   onIntegration,
+  onRetryIdentity,
   onSource,
 }: {
   appKind?: string;
+  canProvisionIdentity: boolean;
   canReadSource: boolean;
+  identityStatus?: string;
   messages: ApplicationCatalogMessages;
   onAccessToken: () => void;
   onIntegration: (kind: ApplicationIntegrationKind) => void;
+  onRetryIdentity: () => void;
   onSource: () => void;
 }) {
   const surface = resolveApplicationIntegrationSurface(appKind);
@@ -42,6 +48,9 @@ export function ApplicationRowActionsMenu({
   const showMiniProgram = surface.channelKinds.includes("mini-program");
   const showPayment = surface.paymentApplies;
   const hasIntegrationActions = showOfficialAccount || showMiniProgram || showPayment;
+  const showIdentityRetry = canProvisionIdentity
+    && identityStatus !== undefined
+    && identityStatus !== "active";
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
@@ -69,7 +78,13 @@ export function ApplicationRowActionsMenu({
             {messages.integrations.actions.payment}
           </DropdownMenuItem>
         ) : null}
-        {hasIntegrationActions ? <DropdownMenuSeparator /> : null}
+        {showIdentityRetry ? (
+          <DropdownMenuItem onSelect={onRetryIdentity}>
+            <RefreshCw className="h-4 w-4" />
+            {messages.identity.retryAction}
+          </DropdownMenuItem>
+        ) : null}
+        {hasIntegrationActions || showIdentityRetry ? <DropdownMenuSeparator /> : null}
         <DropdownMenuItem onSelect={onAccessToken}>
           <KeyRound className="h-4 w-4" />
           {messages.accessToken.action}

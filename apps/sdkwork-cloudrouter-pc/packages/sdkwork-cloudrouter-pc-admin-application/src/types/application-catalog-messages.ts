@@ -211,6 +211,12 @@ export interface ApplicationCatalogMessages {
     deploy: { description: string; label: string };
     iam: { description: string; label: string };
   };
+  identity: {
+    retryAction: string;
+    retrying: string;
+    success: string;
+    failed: string;
+  };
   integrations: {
     actions: {
       config: string;

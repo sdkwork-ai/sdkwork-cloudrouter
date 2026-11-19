@@ -222,6 +222,12 @@ export const zh: ApplicationCatalogMessages = {
     deploy: { description: "Deploy 应用平台中该租户的应用。", label: "Deploy 应用" },
     iam: { description: "IAM 应用注册表中该租户已注册的应用实例。", label: "IAM 应用" },
   },
+  identity: {
+    retryAction: "重新同步 IAM 身份",
+    retrying: "正在同步 IAM 身份…",
+    success: "IAM 身份已同步为 {status}。",
+    failed: "IAM 身份同步失败，请稍后重试。",
+  },
   integrations: {
     actions: {
       config: "应用配置",
