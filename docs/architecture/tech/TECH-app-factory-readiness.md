@@ -98,6 +98,8 @@ Electron, Tauri, Qt, Rust, Node, Go, Python.
 ## 5. Verified commands
 
 ```bash
+# Cross-repository app-factory capability gate
+node scripts/check-app-factory-readiness.mjs
 # Deploy full workspace (green 2026-11-20)
 CARGO_TARGET_DIR=D:\crt cargo test --workspace
 # Deploy identity mapping + service
