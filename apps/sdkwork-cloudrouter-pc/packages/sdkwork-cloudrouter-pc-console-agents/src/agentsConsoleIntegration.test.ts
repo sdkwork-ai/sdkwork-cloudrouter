@@ -264,7 +264,7 @@ describe('console integration wiring', () => {
     // Without this the block's `common` namespace is empty and every tab renders
     // its raw key, so the registration is part of the integration contract.
     expect(readPortalFile('src/main.tsx')).toMatch(
-      /catalogs=\{\[cloudRouterI18nCatalog,\s*\.\.\.agentsWorkbenchI18nCatalogs\s*\]\}/u,
+      /catalogs=\{\s*\[\s*cloudRouterI18nCatalog,\s*\.\.\.agentsWorkbenchI18nCatalogs,[\s\S]*?\]\s*\}/u,
     );
   });
 
