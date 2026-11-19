@@ -75,7 +75,8 @@ Electron, Tauri, Qt, Rust, Node, Go, Python.
   and browse/authoring routes exist. `install_count` increments once per
   installed application (the `app.template.install` audit entry keys the
   idempotent replay), and the installed app records its template provenance in
-  `metadata.template`.
+  `metadata.template`. A PostgreSQL integration test covers artifact-clone
+  replay.
 - **Still missing:** paid template installation (needs order/payment
   entitlement at install time). Git install remixes the source app's current
   Git declaration; pinning to the published template version needs a
