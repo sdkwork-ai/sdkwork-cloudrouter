@@ -22,10 +22,10 @@ count.
 
 **Remaining:** a refund/chargeback stops **app-token issuance** (`PgDeployApplicationLookup`
 checks the recorded order and returns no application when payment is
-refunded/reversed). `cloudrouterctl revoke-refunded-apps` prints the apps whose
-recorded order is refunded and, only with `--apply`, archives them (status
-`ARCHIVED`, `archived_at` set). No background revocation worker runs
-automatically yet.
+refunded/reversed). `cloudrouterctl revoke-refunded-apps` archives manually, and
+`sdkwork-deploy-refund-revocation-worker` performs the same sweep on an
+interval. The deployment descriptor/scheduler that runs the worker is still not
+wired.
 
 ## 2. Version-pinned Git template source
 
