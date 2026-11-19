@@ -992,6 +992,10 @@ export const zh: ApplicationCatalogMessages = {
     actions: {
       edit: "编辑",
       versions: "版本",
+      install: "使用模板创建",
+      installing: "创建中…",
+      installSucceeded: "已从模板创建应用「{name}」。",
+      installError: "从模板创建应用失败，请重试。",
       submit: "提交审核",
       submitting: "提交中…",
       submitted: "已提交审核。",

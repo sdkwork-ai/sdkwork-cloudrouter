@@ -954,6 +954,10 @@ export interface ApplicationCatalogMessages {
     actions: {
       edit: string;
       versions: string;
+      install: string;
+      installing: string;
+      installSucceeded: string;
+      installError: string;
       submit: string;
       submitting: string;
       submitted: string;

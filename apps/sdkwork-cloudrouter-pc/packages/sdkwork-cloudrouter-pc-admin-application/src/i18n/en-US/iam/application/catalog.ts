@@ -992,6 +992,10 @@ export const en: ApplicationCatalogMessages = {
     actions: {
       edit: "Edit",
       versions: "Versions",
+      install: "Create from template",
+      installing: "Creating…",
+      installSucceeded: "Created application “{name}” from the template.",
+      installError: "The application could not be created from the template. Please retry.",
       submit: "Submit for review",
       submitting: "Submitting…",
       submitted: "Submitted for review.",

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  Download,
   History,
   Pencil,
   Plus,
@@ -114,6 +115,9 @@ export function AppTemplatePanel({
   const [submitTarget, setSubmitTarget] = useState<DeployAppTemplate>();
   const [pending, setPending] = useState(false);
   const [dialogError, setDialogError] = useState<unknown>();
+  const [installBusyId, setInstallBusyId] = useState<string>();
+  const [installNotice, setInstallNotice] = useState<string>();
+  const [installError, setInstallError] = useState<unknown>();
 
   useEffect(() => {
     let cancelled = false;
@@ -238,6 +242,34 @@ export function AppTemplatePanel({
   const canSubmit = (template: DeployAppTemplate): boolean =>
     template.status === "DRAFT" || template.status === "REJECTED";
 
+  // The install command is deliberately limited to free, published APP
+  // templates: paid templates need the order/payment entitlement flow and
+  // archive-backed templates need artifact sharing.
+  const canInstall = (template: DeployAppTemplate): boolean =>
+    template.templateType === "APP"
+    && template.pricingModel === "FREE"
+    && template.status === "PUBLISHED";
+
+  const installTemplate = async (template: DeployAppTemplate) => {
+    if (installBusyId !== undefined || !canInstall(template)) {
+      return;
+    }
+    setInstallBusyId(template.id);
+    setInstallNotice(undefined);
+    setInstallError(undefined);
+    try {
+      const result = await service.install(template.id, {
+        name: `${template.displayName} copy`,
+      });
+      setInstallNotice(copy.actions.installSucceeded.replace("{name}", result.appName));
+      setReloadToken((token) => token + 1);
+    } catch (error) {
+      setInstallError(error);
+    } finally {
+      setInstallBusyId(undefined);
+    }
+  };
+
   const confirmDelete = async () => {
     if (!deleteTarget || pending) {
       return;
@@ -333,6 +365,13 @@ export function AppTemplatePanel({
         </p>
       </div>
 
+      {installNotice ? <StatusNotice tone="success">{installNotice}</StatusNotice> : null}
+      {installError ? (
+        <StatusNotice tone="danger">
+          {copy.actions.installError}
+        </StatusNotice>
+      ) : null}
+
       {loadFailure ? (
         <StatusNotice tone="danger">
           <span className="flex flex-wrap items-center gap-3">
@@ -376,6 +415,18 @@ export function AppTemplatePanel({
                 <Pencil className="h-3.5 w-3.5" />
                 {copy.actions.edit}
               </Button>
+              {canInstall(item) ? (
+                <Button
+                  disabled={pending || installBusyId !== undefined}
+                  onClick={() => { void installTemplate(item); }}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  {installBusyId === item.id ? copy.actions.installing : copy.actions.install}
+                </Button>
+              ) : null}
               <Button
                 disabled={pending}
                 onClick={() => setVersionsTarget(item)}
