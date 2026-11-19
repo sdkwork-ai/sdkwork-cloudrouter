@@ -788,6 +788,7 @@ async fn run_issue_bootstrap_token_postgres(
     let installation = iam_installation::ensure_iam_installation(
         pool,
         tenant_id,
+        deploy_app.deploy_application_id.as_str(),
         deploy_app.app_id.as_str(),
         app_root.as_path(),
     )

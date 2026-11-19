@@ -71,24 +71,31 @@ pub struct EnsuredInstallation {
     pub created: bool,
 }
 
-/// Ensures the IAM installation of `anchor` for `tenant_id` exists and is enabled.
+/// Ensures the IAM installation of a deploy application exists and is enabled.
 ///
-/// The returned installation is guaranteed to carry
-/// `deploy_application_id == anchor` and `status == "enabled"`; anything else is an
-/// error that names what is wrong, never a value the caller could mistake for a
-/// working installation.
+/// `deploy_application_id` is the canonical decimal anchor deploy's
+/// `apps.create` provisioning writes; `deploy_application_uuid` is the public
+/// deploy id, checked only as a legacy fallback so an older uuid-anchored
+/// installation is reused instead of duplicated. The returned installation is
+/// guaranteed to be `enabled` and linked to the resolved anchor; anything else
+/// is an error that names what is wrong, never a value the caller could mistake
+/// for a working installation.
 pub async fn ensure_iam_installation(
     pg: &PgPool,
     tenant_id: &str,
-    anchor: &str,
+    deploy_application_id: &str,
+    deploy_application_uuid: &str,
     app_root: &Path,
 ) -> Result<EnsuredInstallation, String> {
-    validate_identity_before_provisioning(tenant_id, anchor)?;
+    validate_identity_before_provisioning(tenant_id, deploy_application_id)?;
     let tenant_id = tenant_id.trim();
-    let anchor = anchor.trim();
-
+    // The decimal `deploy_app.id` is the canonical IAM anchor: deploy's
+    // `apps.create` identity provisioning writes it, so reusing it is what keeps
+    // one installation per deploy application. Older installer runs used the
+    // public uuid, so fall back to that row instead of minting a second one.
+    let canonical_anchor = deploy_application_id.trim();
     if let Some(existing) =
-        resolve_tenant_application_by_deploy_application_id(pg, tenant_id, anchor).await?
+        resolve_tenant_application_by_deploy_application_id(pg, tenant_id, canonical_anchor).await?
     {
         let application = if existing.status == "enabled" {
             existing
@@ -98,8 +105,28 @@ pub async fn ensure_iam_installation(
             // the write.
             enable_tenant_application(pg, tenant_id, existing.id.as_str()).await?
         };
-        return finish_installation(application, anchor, false);
+        return finish_installation(application, canonical_anchor, false);
     }
+
+    let legacy_anchor = deploy_application_uuid.trim();
+    if !legacy_anchor.is_empty() {
+        if let Some(existing) =
+            resolve_tenant_application_by_deploy_application_id(pg, tenant_id, legacy_anchor).await?
+        {
+            let application = if existing.status == "enabled" {
+                existing
+            } else {
+                enable_tenant_application(pg, tenant_id, existing.id.as_str()).await?
+            };
+            return finish_installation(application, legacy_anchor, false);
+        }
+    }
+    let anchor = canonical_anchor;
+    let instance_anchor = if legacy_anchor.is_empty() {
+        canonical_anchor
+    } else {
+        legacy_anchor
+    };
 
     let manifest = load_manifest_from_app_root(app_root).map_err(|error| {
         format!(
@@ -129,7 +156,7 @@ pub async fn ensure_iam_installation(
     // Anchor-scoped instance key: a manifest instance key derived from the runtime
     // app id could match an installation that belongs to a different deploy
     // application, and adopting that row would move another deployment's identity.
-    command.instance_key = tenant_application_instance_key(anchor, environment.as_str());
+    command.instance_key = tenant_application_instance_key(instance_anchor, environment.as_str());
 
     let application = ensure_tenant_application_runtime(pg, &command)
         .await
