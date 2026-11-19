@@ -20,11 +20,10 @@ The order id is also the app-create idempotency key, so one purchase creates one
 application. The order fulfillment remains the only writer of the paid install
 count.
 
-**Remaining:** a refund/chargeback cannot revoke an installed app; that needs a
-Deploy-side entitlement row (or an order-center revocation event) and is a
-separate lifecycle feature. The read is also a deliberate cross-module table
-read, not an API call; it is guarded by `to_regclass` so a schema without the
-order tables refuses paid install instead of failing.
+**Remaining:** a refund/chargeback stops **app-token issuance** (`PgDeployApplicationLookup`
+checks the recorded order and returns no application when payment is
+refunded/reversed), but the app row is not disabled or deleted. A Deploy
+revocation worker or an order-center event is still needed for cleanup.
 
 ## 2. Version-pinned Git template source
 

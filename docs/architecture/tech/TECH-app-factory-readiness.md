@@ -85,9 +85,9 @@ Electron, Tauri, Qt, Rust, Node, Go, Python.
   subject, template UUID) and uses the order id as the app-create idempotency
   key, so one purchase creates one app. The order fulfillment remains the only
   writer of the paid install count.
-- **Still missing:** refund/chargeback revocation of a paid install, and a
-  durable consumption ledger (the current guarantee is order-id idempotency,
-  not a revocable entitlement row).
+- **Still missing:** refund/chargeback **cleanup** of the installed app. App-token
+  issuance already refuses an app whose recorded order is refunded/reversed,
+  but the app row is not disabled or deleted by a revocation worker.
 
 ## 5. Verified commands
 
