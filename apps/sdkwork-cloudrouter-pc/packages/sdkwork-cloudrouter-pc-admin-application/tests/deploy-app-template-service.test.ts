@@ -89,6 +89,13 @@ function createTransport(overrides: Partial<DeployAppTemplateTransport["template
         },
         ...overrides.appTemplateVersions,
       },
+      marketplaceTemplates: {
+        install: async (id, body, params) => {
+          calls.push({ operation: "marketplaceTemplates.install", args: [id, body, params] });
+          return { app: { id: "app-installed", name: "Installed app" }, templateUuid: id };
+        },
+        ...overrides.marketplaceTemplates,
+      },
     },
   };
   return { transport, calls };
@@ -187,6 +194,20 @@ describe("deploy app template service", () => {
     const error = new DeployAppTemplateServiceError("conflict", "duplicate", 409);
     expect(isDeployAppTemplateConflict(error)).toBe(true);
     expect(isDeployAppTemplateUnavailable(new DeployAppTemplateServiceError("unavailable", "x", 404))).toBe(true);
+  });
+
+  it("installs a template through the marketplace command and returns the app", async () => {
+    const { transport, calls } = createTransport();
+    const service = createDeployAppTemplateService(transport);
+    const result = await service.install("tpl-1", { name: " My copy ", slug: " my-copy " });
+
+    expect(result).toEqual({
+      appId: "app-installed",
+      appName: "Installed app",
+      templateUuid: "tpl-1",
+    });
+    expect(calls.find((call) => call.operation === "marketplaceTemplates.install")?.args[1])
+      .toMatchObject({ name: "My copy", slug: "my-copy" });
   });
 
   it("maps an empty page safely", () => {

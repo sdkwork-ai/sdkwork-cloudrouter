@@ -189,12 +189,20 @@ describe("app-kind-aware validation", () => {
     ]));
   });
 
-  it("rejects payment on an API service and a non-lifecycle environment", () => {
+  it("rejects payment and channel bindings on an API service and a non-lifecycle environment", () => {
     const issues = validateApplicationIntegration({
       appKind: "API_SERVICE",
-      channelAccounts: [],
+      channelAccounts: [wechatOfficial],
       environment: "custom-prod",
       integration: {
+        officialAccount: {
+          appId: "wx-official",
+          displayName: "Official",
+          enabled: true,
+          id: "ra-official",
+          providerCode: "wechat",
+          resourceAccountKind: "official-account",
+        },
         paymentAccounts: [{
           accountMode: "direct",
           accountNo: "wechat-prod",
@@ -209,6 +217,7 @@ describe("app-kind-aware validation", () => {
     expect(issues).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: "environment-not-bindable", severity: "error" }),
       expect.objectContaining({ code: "payment-not-used-by-app-kind", severity: "error" }),
+      expect.objectContaining({ code: "account-not-used-by-app-kind", severity: "error" }),
     ]));
   });
 
@@ -231,8 +240,59 @@ describe("app-kind-aware validation", () => {
     });
     expect(issues).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: "auto-login-not-configured", severity: "warning" }),
+      expect.objectContaining({ code: "wechat-channel-missing", severity: "warning" }),
     ]));
     expect(issues.some((issue) => issue.severity === "error")).toBe(false);
+  });
+
+  it("warns when the official account's web domain is not verified", () => {
+    const issues = validateApplicationIntegration({
+      appKind: "H5_WEB",
+      channelAccounts: [{ ...wechatOfficial, domainVerifyStatus: "pending" }],
+      environment: "production",
+      integration: {
+        officialAccount: {
+          appId: "wx-official",
+          displayName: "Official",
+          enabled: true,
+          id: "ra-official",
+          providerCode: "wechat",
+          resourceAccountKind: "official-account",
+        },
+        paymentAccounts: [],
+      },
+      paymentAccounts: [],
+    });
+    expect(issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "channel-domain-unverified",
+        params: expect.objectContaining({ status: "pending" }),
+        severity: "warning",
+      }),
+    ]));
+  });
+
+  it("does not require a JSAPI channel for PC native WeChat Pay", () => {
+    const issues = validateApplicationIntegration({
+      appKind: "PC_WEB",
+      channelAccounts: [],
+      environment: "production",
+      integration: {
+        paymentAccounts: [{
+          accountMode: "direct",
+          accountNo: "wechat-prod",
+          environment: "production",
+          id: "pay-wechat",
+          isDefault: true,
+          providerCode: "wechat_pay",
+        }],
+      },
+      paymentAccounts: [wechatPay],
+    });
+    // PC WeChat Pay uses the merchant open-platform AppID, not the official
+    // account AppID used for scan sign-in.
+    expect(issues.some((issue) => issue.code === "wechat-channel-missing")).toBe(false);
+    expect(issues.some((issue) => issue.code === "wechat-app-id-mismatch")).toBe(false);
   });
 
   it("warns when the IAM installation type disagrees with the Deploy app kind", () => {

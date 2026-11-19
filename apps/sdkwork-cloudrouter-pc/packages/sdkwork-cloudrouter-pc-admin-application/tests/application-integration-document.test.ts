@@ -223,13 +223,14 @@ describe("application integration document", () => {
       reference: "acme-console",
     };
     const anchored: ApplicationRecord = {
+      deployApplicationId: "410000000000000001",
       groupId: "deploy",
       id: "deploy-anchored",
       name: "Something else",
       reference: "other-console",
     };
     const iamApplication: ApplicationRecord = {
-      deployApplicationId: "deploy-anchored",
+      deployApplicationId: "410000000000000001",
       groupId: "iam",
       id: "iam-1",
       name: "Console",

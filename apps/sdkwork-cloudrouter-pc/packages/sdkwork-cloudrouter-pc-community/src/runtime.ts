@@ -23,6 +23,7 @@ import {
 } from '@sdkwork/cloudroutes-pc-commons/sdk-clients';
 import { getCurrentAppSession } from '@sdkwork/cloudroutes-pc-commons/session-service';
 import { CLOUDROUTER_PC_COMMUNITY_POST_UPLOAD } from './uploadDeclaration.ts';
+import { isPaidCircleOrderStatus } from './orderStatus.ts';
 
 /**
  * Community host wiring for the PC portal.
@@ -132,7 +133,7 @@ export async function createCircleMembershipOrder(
 export async function isCircleOrderPaid(orderId: string): Promise<boolean> {
   const result = await getSdkworkOrderAppSdkClient().orders.status.retrieve(orderId);
   const status = typeof result.status === 'string' ? result.status : '';
-  return status === 'paid' || status === 'completed';
+  return isPaidCircleOrderStatus(status);
 }
 
 export async function activateCircleMembership(

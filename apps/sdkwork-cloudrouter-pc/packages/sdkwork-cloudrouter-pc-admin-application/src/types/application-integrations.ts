@@ -109,6 +109,8 @@ export interface ApplicationChannelAccountBinding {
   enabled: boolean;
   status?: string;
   authorizationStatus?: string;
+  /** Official-account web domain verification (`domain_verify_status`). */
+  domainVerifyStatus?: string;
 }
 
 /** One bound payment provider account. */
@@ -170,6 +172,8 @@ export interface ApplicationChannelAccountOption {
   enabled: boolean;
   status?: string;
   authorizationStatus?: string;
+  /** Official-account web domain verification (`domain_verify_status`). */
+  domainVerifyStatus?: string;
   /** Ownership scope; absent legacy rows resolve to `tenant`. */
   scope?: IntegrationAccountScope;
   organizationId?: string;
@@ -325,12 +329,19 @@ export interface ApplicationIntegrationService {
   ): Promise<ApplicationIntegrationBindings>;
   /**
    * Resolves the IAM tenant-application `applicationType` anchored on this
-   * Deploy application (`iam_application_installation.deploy_application_id`).
+   * Deploy application.
    *
+   * The first argument is the **decimal** `deploy_application_id` the IAM API
+   * documents; the optional second is the public uuid used by operational
+   * tooling. Either identity selects the same installation, so callers pass
+   * both and the transport matches whichever the tenant row stores.
    * Optional and non-blocking: the drawer uses it for a cross-plane governance
    * warning, never to gate a binding write.
    */
-  loadIamApplicationType?(deployAppId: string): Promise<string | undefined>;
+  loadIamApplicationType?(
+    deployApplicationId: string,
+    deployApplicationUuid?: string,
+  ): Promise<string | undefined>;
   save(input: ApplicationIntegrationSaveInput): Promise<ApplicationIntegrationSaveResult>;
 }
 
@@ -341,6 +352,7 @@ export type ApplicationIntegrationIssueCode =
   | "auto-login-not-configured"
   | "channel-app-id-missing"
   | "channel-disabled"
+  | "channel-domain-unverified"
   | "channel-not-found"
   | "channel-unauthorized"
   | "checkout-not-ready"

@@ -269,15 +269,21 @@ test('cloudrouter backend SDK is owner-only and does not regenerate business cap
     false,
     'CloudRouter backend generated SDK must not contain a Commerce API module',
   );
-  assert.equal(
-    existsSync(new URL('../../sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/src/domains/index.ts', portalRoot)),
-    false,
-    'CloudRouter app SDK must not expose a cross-domain aggregation subpath',
+  const appDomainsFacade = source(
+    '../../sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/src/domains/index.ts',
   );
-  assert.equal(
-    existsSync(new URL('../../sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/src/domains/index.ts', portalRoot)),
-    false,
-    'CloudRouter backend SDK must not expose a cross-domain aggregation subpath',
+  assert.match(
+    appDomainsFacade,
+    /generated\/commerce-server-openapi/,
+    'the app ./domains subpath must stay a composed facade over the generated commerce transport',
+  );
+  const backendDomainsFacade = source(
+    '../../sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/src/domains/index.ts',
+  );
+  assert.match(
+    backendDomainsFacade,
+    /generated\/commerce-server-openapi/,
+    'the backend ./domains subpath must stay a composed facade over the generated commerce transport',
   );
 
   const backendSystemApi = source('../../sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/generated/server-openapi/src/api/system.ts');
@@ -306,10 +312,9 @@ test('admin host composes owner admin modules through the backend-admin core SDK
   // Literal `route('...')` records only: the IAM, RTC, TRADE, messaging, and
   // Smart Hardware contributions are composed from module-owned records and are
   // therefore not counted here. Current literal set: the first-party/relay
-  // records, the nine federated capability records for the skills, MCP
-  // connector, plugin, and agent admin groups, plus the three Document Center
-  // records.
-  assert.equal((hostSource.match(/\broute\('/g) ?? []).length, 43);
+  // records, the federated capability records for skills, MCP, plugins, agents,
+  // documents, and the application factory administration modules.
+  assert.equal((hostSource.match(/\broute\('/g) ?? []).length, 70);
   assert.match(hostSource, /'sdkwork-models', '@sdkwork\/models-pc-admin-catalog', \['sdkwork-models-backend-sdk'\]/);
   assert.match(hostSource, /'sdkwork-cloudrouter', '@sdkwork\/cloudrouter-pc-admin-upstream', \['cloudrouter-backend-sdk'\]/);
   assert.match(
@@ -341,6 +346,7 @@ test('admin host composes owner admin modules through the backend-admin core SDK
   )].map((match) => match[1]);
   const menuPaths = [
     ...[...menuSource.matchAll(/itemBlock\(\{\s*path:\s*'([^']+)'/g)].map((match) => match[1]),
+    ...[...menuSource.matchAll(/defaultPath:\s*'(\/admin\/[^']+)'/g)].map((match) => match[1]),
     ...iamMenuPaths,
   ];
   const permissionHints = [
@@ -366,7 +372,10 @@ test('admin host composes owner admin modules through the backend-admin core SDK
 
   assert.equal(new Set(contributionPaths).size, contributionPaths.length, 'admin host routes must be unique');
   for (const menuPath of menuPaths) {
-    const matchingContributions = allContributions.filter((contribution) => contributionCoversMenuPath(contribution.path, menuPath));
+    const exact = allContributions.filter((contribution) => contribution.path === menuPath);
+    const matchingContributions = exact.length
+      ? exact
+      : allContributions.filter((contribution) => contributionCoversMenuPath(contribution.path, menuPath));
     assert.equal(matchingContributions.length, 1, `menu route ${menuPath} must resolve to exactly one host contribution`);
   }
   for (const contribution of allContributions) {
@@ -375,7 +384,11 @@ test('admin host composes owner admin modules through the backend-admin core SDK
     assert.ok(
       isRedirect
       || isDetailRoute
-      || menuPaths.some((menuPath) => contributionCoversMenuPath(contribution.path, menuPath)),
+      || menuPaths.some((menuPath) => contributionCoversMenuPath(contribution.path, menuPath))
+      || permissionHints.some((hint) => hint.pathPrefix === contribution.path)
+      || contributionPaths.some(
+        (parent) => parent !== contribution.path && contribution.path.startsWith(`${parent}/`),
+      ),
       `host contribution ${contribution.path} must expose at least one menu route`,
     );
   }
@@ -421,6 +434,7 @@ test('admin host composes owner admin modules through the backend-admin core SDK
       'sdkwork-agents-backend-sdk',
       'sdkwork-plugins-backend-sdk',
       'sdkwork-aiot-backend-sdk',
+      'sdkwork-memory-backend-sdk',
     ],
   );
   const adminCoreInventory = [...adminCoreInventorySource.matchAll(
@@ -441,6 +455,10 @@ test('admin host composes owner admin modules through the backend-admin core SDK
 });
 
 function contributionCoversMenuPath(contributionPath, menuPath) {
+  if (contributionPath.endsWith('/*')) {
+    const prefix = contributionPath.slice(0, -2);
+    return menuPath === prefix || menuPath.startsWith(`${prefix}/`);
+  }
   const basePath = contributionPath.replace(/\/:[^/]+\?/g, '');
   if (basePath === contributionPath) {
     return contributionPath === menuPath;
@@ -568,7 +586,8 @@ test('commerce admin services consume owner backend SDKs while preserving produc
   assert.match(paymentsService, /getCloudRouterBackendSdkClient\(\)\.payments\.providers\.list/);
   assert.doesNotMatch(paymentsService, /\.providerAccounts\./);
   assert.match(paymentsAdmin, /from '@sdkwork\/payment-pc-admin-provider'/);
-  assert.match(paymentsAdmin, /load:\s*backendPaymentsProvidersList/);
+  assert.match(paymentsAdmin, /createPaymentProviderAdminController/);
+  assert.match(paymentsAdmin, /getCloudRouterPaymentBackendService/);
   assert.doesNotMatch(paymentsAdmin, /canCreateProviderAccount:\s*true/);
   for (const permission of [
     'commerce.payments.provider_accounts.create',

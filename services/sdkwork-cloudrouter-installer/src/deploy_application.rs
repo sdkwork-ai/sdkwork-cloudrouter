@@ -37,25 +37,30 @@
 //! - `crates/sdkwork-intelligence-deploy-repository-sqlx/src/apps.rs:614-616`
 //!   links IAM with the BIGINT `deploy_app.id` as a decimal string, while the same
 //!   file's public API addresses applications by `uuid`. The two identifiers are
-//!   different facts; this installer keeps **one** configured anchor and requires
-//!   the deploy surface to resolve that exact value.
+//!   different facts; this installer accepts either as the configured anchor and
+//!   canonicalizes IAM to the **decimal** `deployApplicationId` that `apps.create`
+//!   already provisioned with. That is what keeps the IAM installation one-to-one.
 //!
 //! # Semantics
 //!
 //! `ensure` is get-or-create with a hard identity invariant:
 //!
 //! 1. `GET /app/v3/api/apps/{anchor}` — a `200` proves the application exists.
+//!    The Deploy app API accepts the public uuid and (for this bootstrap path) the
+//!    decimal `deployApplicationId`.
 //! 2. `404` — create with a deterministic `Idempotency-Key` and a deterministic
-//!    body, then require the created application's id to equal the anchor.
+//!    body, then require the resolved anchor to be the created application's uuid or
+//!    decimal `deployApplicationId`.
 //! 3. Anything else — refuse. No bootstrap token is ever issued when the deploy
 //!    application cannot be proven to exist.
 //!
 //! Because Deploy mints ids server-side, step 2 cannot preserve a *pre-chosen*
-//! anchor: the created application carries a newly minted id. When that happens the
-//! install refuses to sign and reports the minted id, which is then the value to
-//! configure as `SDKWORK_DEPLOY_APPLICATION_ID`. A retry with that value is a pure
-//! `GET`, and the deterministic `Idempotency-Key` means repeated runs never create a
-//! second application.
+//! anchor: the created application carries a newly minted decimal id. When that
+//! happens the install refuses to sign and reports the minted **decimal**
+//! `deployApplicationId`, which is then the value to configure as
+//! `SDKWORK_DEPLOY_APPLICATION_ID`. A retry with that value is a pure `GET`, and the
+//! deterministic `Idempotency-Key` means repeated runs never create a second
+//! application.
 
 use std::fmt::{Display, Formatter};
 use std::time::Duration;
@@ -189,8 +194,14 @@ fn resolve_timeout() -> Result<Duration, DeployApplicationEnsureError> {
 /// One deploy application, as far as the bootstrap credential depends on it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EnsuredDeployApplication {
-    /// The application id the deploy surface resolved — equal to the anchor.
+    /// The public deploy application id (`deploy_app.uuid`) the Deploy API uses
+    /// in its own paths — equal to the anchor.
     pub app_id: String,
+    /// The **decimal** `deploy_app.id`, which is the IAM installation anchor the
+    /// deploy plane provisions (`apps.create` → `identity_provision`). The IAM
+    /// bootstrap credential must name this value, not the uuid, or the installer
+    /// would mint a second installation for the same application.
+    pub deploy_application_id: String,
     /// Tenant that owns the deploy application; must equal the IAM tenant.
     pub tenant_id: String,
     /// `deploy_app.app_status` at the time of the check.
@@ -342,6 +353,7 @@ pub async fn ensure_deploy_application(
             verify_deploy_app(&item, anchor, tenant_id)?;
             Ok(EnsuredDeployApplication {
                 app_id: item.id,
+                deploy_application_id: item.deploy_application_id,
                 tenant_id: item.tenant_id,
                 app_status: item.app_status,
                 created: false,
@@ -355,6 +367,7 @@ pub async fn ensure_deploy_application(
             verify_deploy_app(&item, anchor, tenant_id)?;
             Ok(EnsuredDeployApplication {
                 app_id: item.id,
+                deploy_application_id: item.deploy_application_id,
                 tenant_id: item.tenant_id,
                 app_status: item.app_status,
                 created: true,
@@ -367,6 +380,8 @@ pub async fn ensure_deploy_application(
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct DeployAppItem {
     id: String,
+    /// Decimal `deploy_app.id`: the IAM installation anchor.
+    deploy_application_id: String,
     tenant_id: String,
     app_status: String,
 }
@@ -521,6 +536,20 @@ fn parse_app_item(path: &str, body: &str) -> Result<DeployAppItem, DeployApplica
         path: path.to_owned(),
         reason: "data.item.id is missing".to_owned(),
     })?;
+    let deploy_application_id = match item.get("deployApplicationId") {
+        // `int64` travels as a decimal string (`API_SPEC` §13.6); accept a JSON
+        // number too because older deployments serialize it numerically.
+        Some(serde_json::Value::String(value)) if !value.trim().is_empty() => {
+            value.trim().to_owned()
+        }
+        Some(serde_json::Value::Number(value)) => value.to_string(),
+        _ => {
+            return Err(DeployApplicationEnsureError::UnreadableResponse {
+                path: path.to_owned(),
+                reason: "data.item.deployApplicationId is missing".to_owned(),
+            })
+        }
+    };
     let tenant_id = match item.get("tenantId") {
         // `int64` travels as a decimal string (API_SPEC §13.6); a number is
         // tolerated because the deploy contract also serializes some int64 fields
@@ -543,6 +572,7 @@ fn parse_app_item(path: &str, body: &str) -> Result<DeployAppItem, DeployApplica
         })?;
     Ok(DeployAppItem {
         id,
+        deploy_application_id,
         tenant_id,
         app_status,
     })
@@ -553,10 +583,14 @@ fn verify_deploy_app(
     anchor: &str,
     tenant_id: &str,
 ) -> Result<(), DeployApplicationEnsureError> {
-    if item.id != anchor {
+    let canonical = item.deploy_application_id.trim();
+    // The configured anchor may be the public uuid (the documented bootstrap
+    // value) or the decimal IAM anchor; both name the same application. Anything
+    // else is a real identity mismatch.
+    if item.id != anchor && canonical != anchor {
         return Err(DeployApplicationEnsureError::IdentityMismatch {
             expected: anchor.to_owned(),
-            actual: item.id.clone(),
+            actual: canonical.to_owned(),
         });
     }
     if item.tenant_id != tenant_id.trim() {
@@ -702,7 +736,7 @@ mod tests {
 
     fn app_envelope(id: &str, tenant_id: &str, status: &str) -> String {
         format!(
-            r#"{{"code":0,"data":{{"item":{{"id":"{id}","tenantId":"{tenant_id}","appStatus":"{status}","name":"SDKWork Cloud Router","appKind":"API_SERVICE"}}}},"traceId":"trace"}}"#
+            r#"{{"code":0,"data":{{"item":{{"id":"{id}","deployApplicationId":"1845123456789012345","tenantId":"{tenant_id}","appStatus":"{status}","name":"SDKWork Cloud Router","appKind":"API_SERVICE"}}}},"traceId":"trace"}}"#
         )
     }
 
@@ -793,6 +827,7 @@ mod tests {
     fn identity_mismatch_names_the_anchor_and_the_minted_application() {
         let item = DeployAppItem {
             id: "minted-uuid".to_owned(),
+            deploy_application_id: "1845123456789012345".to_owned(),
             tenant_id: "100001".to_owned(),
             app_status: "DRAFT".to_owned(),
         };
@@ -800,17 +835,32 @@ mod tests {
             .expect_err("a different application must be refused");
         let message = error.to_string();
         assert!(message.contains("app-anchor-1"), "got: {message}");
-        assert!(message.contains("minted-uuid"), "got: {message}");
+        assert!(message.contains("1845123456789012345"), "got: {message}");
         assert!(
-            message.contains("SDKWORK_DEPLOY_APPLICATION_ID=minted-uuid"),
-            "the remediation must name the variable, got: {message}"
+            message.contains("SDKWORK_DEPLOY_APPLICATION_ID=1845123456789012345"),
+            "the remediation must name the canonical decimal anchor, got: {message}"
         );
+    }
+
+    #[test]
+    fn decimal_anchor_is_the_canonical_iam_identity() {
+        let item = DeployAppItem {
+            id: "0f8b7f26-2d7c-4f43-8a4b-0c5a51e1f0aa".to_owned(),
+            deploy_application_id: "1845123456789012345".to_owned(),
+            tenant_id: "100001".to_owned(),
+            app_status: "DRAFT".to_owned(),
+        };
+        verify_deploy_app(&item, "1845123456789012345", "100001")
+            .expect("the decimal anchor must be accepted");
+        verify_deploy_app(&item, "0f8b7f26-2d7c-4f43-8a4b-0c5a51e1f0aa", "100001")
+            .expect("the public uuid must stay accepted for legacy configuration");
     }
 
     #[test]
     fn archived_and_foreign_tenants_are_refused() {
         let archived = DeployAppItem {
             id: "app-anchor-1".to_owned(),
+            deploy_application_id: "1845123456789012345".to_owned(),
             tenant_id: "100001".to_owned(),
             app_status: "ARCHIVED".to_owned(),
         };
@@ -821,6 +871,7 @@ mod tests {
 
         let foreign = DeployAppItem {
             id: "app-anchor-1".to_owned(),
+            deploy_application_id: "1845123456789012345".to_owned(),
             tenant_id: "200002".to_owned(),
             app_status: "DRAFT".to_owned(),
         };
@@ -838,6 +889,7 @@ mod tests {
             .await
             .expect("an existing application must be accepted");
         assert_eq!(ensured.app_id, "app-anchor-1");
+        assert_eq!(ensured.deploy_application_id, "1845123456789012345");
         assert!(!ensured.created);
         let requests = recorded.lock().await;
         assert_eq!(

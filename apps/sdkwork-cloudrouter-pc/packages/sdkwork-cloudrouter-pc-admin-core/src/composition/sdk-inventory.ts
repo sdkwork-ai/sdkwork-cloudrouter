@@ -17,6 +17,9 @@ export function listSdkworkAdminCoreSdkInventory(): readonly SdkworkSdkInventory
     // AIoT management API: owned by sdkwork-aiot, mounted same-origin by the
     // host, and consumed by the Smart Hardware Center module.
     { workspace: 'sdkwork-aiot-backend-sdk', surface: 'backend-api', credentialMode: 'authenticated-backend-admin' },
+    // Memory management API: owned by sdkwork-memory and consumed by the
+    // Memory admin module through its control-plane packages.
+    { workspace: 'sdkwork-memory-backend-sdk', surface: 'backend-api', credentialMode: 'authenticated-backend-admin' },
   ] as const;
 }
 

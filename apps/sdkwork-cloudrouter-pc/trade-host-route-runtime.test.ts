@@ -6,7 +6,9 @@ import { TRADE_ADMIN_ROUTE_RECORDS } from "@sdkwork/order-pc-admin-trade/contrib
 
 test("host mount registers every trading center route record under sdkwork-order", () => {
   const tradeContributions = CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS.filter(
-    (contribution) => contribution.owner === "sdkwork-order",
+    (contribution) =>
+      contribution.owner === "sdkwork-order" &&
+      contribution.adminPackage === "@sdkwork/order-pc-admin-trade",
   );
 
   assert.equal(tradeContributions.length, TRADE_ADMIN_ROUTE_RECORDS.length);

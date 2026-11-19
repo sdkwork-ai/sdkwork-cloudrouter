@@ -12,6 +12,7 @@ import {
   MessageCircle,
   RefreshCw,
   Search,
+  ShieldCheck,
   Smartphone,
   Store,
   type LucideIcon,
@@ -44,6 +45,7 @@ import { AppSourceRemixDrawer } from "../components/AppSourceRemixDrawer";
 import { AppStoreCategoryPanel } from "../components/AppStoreCategoryPanel";
 import { useApplicationCatalogMessages, type ApplicationCatalogMessages } from "../i18n";
 import { isApplicationCenterActionAllowed } from "../permissions/application-center-actions";
+import { createApplicationIdentityService } from "../services/application-identity";
 import {
   isApplicationSourceUnavailable,
   isApplicationTokenForbidden,
@@ -262,12 +264,23 @@ export function ApplicationManagementPage({
   const canWriteSource = permissionScope
     ? isApplicationCenterActionAllowed("sourceWrite", permissionScope)
     : isApplicationCenterActionAllowed("sourceWrite");
+  const canProvisionIdentity = permissionScope
+    ? isApplicationCenterActionAllowed("identityProvision", permissionScope)
+    : isApplicationCenterActionAllowed("identityProvision");
+  const [identityNotice, setIdentityNotice] = useState<
+    { tone: "danger" | "success"; text: string } | null
+  >(null);
+  const [identityBusyId, setIdentityBusyId] = useState<string | null>(null);
+  const [identityBulkBusy, setIdentityBulkBusy] = useState(false);
 
   const activeGroup = activeView === "categories"
     ? undefined
     : (APPLICATION_GROUPS.find((group) => group.id === activeView) ?? APPLICATION_GROUPS[0]);
   const activeState = activeGroup ? groupStates[activeGroup.id] : undefined;
   const deployApplications = groupStates.deploy.items;
+  const identityRepairCandidates = deployApplications.filter(
+    (application) => application.identityStatus !== undefined && application.identityStatus !== "active",
+  );
 
   // The deploy filter lives in the URL so a filtered list survives a refresh or
   // a shared link. An organization drill-down already fixes the scope, so its
@@ -478,6 +491,61 @@ export function ApplicationManagementPage({
     }
   };
 
+  const retryIdentity = async (application: ApplicationRecord) => {
+    if (!canProvisionIdentity || identityBusyId !== null) {
+      return;
+    }
+    setIdentityBusyId(application.id);
+    setIdentityNotice(null);
+    try {
+      const status = await createApplicationIdentityService().provision(application.id);
+      setIdentityNotice({
+        text: messages.identity.success.replace("{status}", status),
+        tone: "success",
+      });
+      setReloadToken((token) => token + 1);
+    } catch {
+      setIdentityNotice({ text: messages.identity.failed, tone: "danger" });
+    } finally {
+      setIdentityBusyId(null);
+    }
+  };
+
+  const retryAllIdentities = async () => {
+    if (!canProvisionIdentity || identityBulkBusy || identityBusyId !== null) {
+      return;
+    }
+    const candidates = identityRepairCandidates;
+    if (candidates.length === 0) {
+      return;
+    }
+    setIdentityBulkBusy(true);
+    setIdentityNotice(null);
+    const service = createApplicationIdentityService();
+    let repaired = 0;
+    try {
+      for (const application of candidates) {
+        await service.provision(application.id);
+        repaired += 1;
+      }
+      setIdentityNotice({
+        text: messages.identity.retryAllSuccess.replace("{count}", String(repaired)),
+        tone: "success",
+      });
+      setReloadToken((token) => token + 1);
+    } catch {
+      setIdentityNotice({
+        text: messages.identity.retryAllFailed,
+        tone: "danger",
+      });
+      if (repaired > 0) {
+        setReloadToken((token) => token + 1);
+      }
+    } finally {
+      setIdentityBulkBusy(false);
+    }
+  };
+
   const openAccessToken = (application: ApplicationRecord) => {
     setTokenTarget(application);
     void loadAccessToken(application);
@@ -656,16 +724,25 @@ export function ApplicationManagementPage({
       id: "environment",
     };
     const status: DataTableColumn<ApplicationRecord> = {
-      cell: (item) => item.status
-        ? (
-          <StatusBadge
-            label={statusLabel(messages, item.status)}
-            showIcon
-            status={normalizeStatus(item.status)}
-            variant={statusVariant(item.status)}
-          />
-        )
-        : "-",
+      cell: (item) => (
+        <div className="flex flex-col gap-1">
+          {item.status ? (
+            <StatusBadge
+              label={statusLabel(messages, item.status)}
+              showIcon
+              status={normalizeStatus(item.status)}
+              variant={statusVariant(item.status)}
+            />
+          ) : (
+            <span>-</span>
+          )}
+          {item.groupId === "deploy" && item.identityStatus && item.identityStatus !== "active" ? (
+            <span className="text-[11px] text-[var(--sdk-color-text-muted)]">
+              {messages.identity.notReady}
+            </span>
+          ) : null}
+        </div>
+      ),
       header: messages.columns.status,
       id: "status",
     };
@@ -745,10 +822,23 @@ export function ApplicationManagementPage({
             {subtitle ? <p className="truncate text-sm text-[var(--sdk-color-text-muted)]">{subtitle}</p> : null}
           </div>
         </div>
-        <Button disabled={busy} onClick={() => setReloadToken((token) => token + 1)} type="button" variant="outline">
-          <RefreshCw className={`h-4 w-4 ${busy ? "animate-spin" : ""}`} />
-          {messages.refresh}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {canProvisionIdentity && identityRepairCandidates.length > 0 ? (
+            <Button
+              disabled={busy || identityBulkBusy || identityBusyId !== null}
+              onClick={() => { void retryAllIdentities(); }}
+              type="button"
+              variant="outline"
+            >
+              <ShieldCheck className={`h-4 w-4 ${identityBulkBusy ? "animate-pulse" : ""}`} />
+              {identityBulkBusy ? messages.identity.retryAllBusy : messages.identity.retryAll}
+            </Button>
+          ) : null}
+          <Button disabled={busy} onClick={() => setReloadToken((token) => token + 1)} type="button" variant="outline">
+            <RefreshCw className={`h-4 w-4 ${busy ? "animate-spin" : ""}`} />
+            {messages.refresh}
+          </Button>
+        </div>
       </header>
       )}
 
@@ -885,6 +975,10 @@ export function ApplicationManagementPage({
             {template(messages.countTemplate, { count: String(filteredItems.length) })}
           </p>
 
+          {identityNotice ? (
+            <StatusNotice tone={identityNotice.tone}>{identityNotice.text}</StatusNotice>
+          ) : null}
+
           <DataTable
             className="min-h-0 flex-1"
             columns={columns}
@@ -892,17 +986,24 @@ export function ApplicationManagementPage({
             emptyTitle={listNarrowed ? messages.deployFilters.emptyTitle : messages.emptyTitle}
             getRowId={(item) => `${item.groupId}:${item.id}`}
             loading={activeState?.status === "loading"}
-            rowActions={(item) => (
-              <div data-application-row-actions>
-                <ApplicationRowActionsMenu
-                  canReadSource={item.groupId === "deploy" && canReadSource}
-                  messages={messages}
-                  onAccessToken={() => openAccessToken(item)}
-                  onIntegration={(kind) => openIntegration(item, kind)}
-                  onSource={() => setSourceTarget(item)}
-                />
-              </div>
-            )}
+            rowActions={(item) => {
+              const deployApplication = resolveDeployApplicationForRecord(item, deployApplications);
+              return (
+                <div data-application-row-actions>
+                  <ApplicationRowActionsMenu
+                    appKind={item.groupId === "deploy" ? item.kind : deployApplication?.kind}
+                    canProvisionIdentity={item.groupId === "deploy" && canProvisionIdentity}
+                    canReadSource={item.groupId === "deploy" && canReadSource}
+                    identityStatus={item.identityStatus}
+                    messages={messages}
+                    onAccessToken={() => openAccessToken(item)}
+                    onIntegration={(kind) => openIntegration(item, kind)}
+                    onRetryIdentity={() => void retryIdentity(item)}
+                    onSource={() => setSourceTarget(item)}
+                  />
+                </div>
+              );
+            }}
             rowActionsLabel={messages.columns.actions}
             rows={[...filteredItems]}
             slotProps={{

@@ -73,7 +73,7 @@ export function readApplicationIntegrationDocument(metadata: unknown): Applicati
   const environments: Record<string, ApplicationEnvironmentIntegration> = {};
   const rawEnvironments = asRecord(raw.environments);
   for (const [key, value] of Object.entries(rawEnvironments)) {
-    const normalizedKey = key.trim();
+    const normalizedKey = key.trim().toLowerCase();
     if (!normalizedKey) {
       continue;
     }
@@ -470,6 +470,9 @@ function channelUpsert(
       ...(binding.authorizationStatus === undefined
         ? {}
         : { authorizationStatus: binding.authorizationStatus }),
+      ...(binding.domainVerifyStatus === undefined
+        ? {}
+        : { domainVerifyStatus: binding.domainVerifyStatus }),
       source: "sdkwork-application-center",
     },
     providerCode: binding.providerCode,
@@ -524,6 +527,9 @@ function channelBindingFromResourceLink(
     ...(readString(metadata.authorizationStatus) === undefined
       ? {}
       : { authorizationStatus: readString(metadata.authorizationStatus) }),
+    ...(readString(metadata.domainVerifyStatus) === undefined
+      ? {}
+      : { domainVerifyStatus: readString(metadata.domainVerifyStatus) }),
   };
 }
 
@@ -565,10 +571,14 @@ export function resolveDeployApplicationForRecord(
     return deployApplications.find((application) => application.id === record.id) ?? record;
   }
   // IAM installs one tenant application per deploy application and stores the
-  // anchor itself (`iam_application_installation.deploy_application_id`), so the
-  // row's own field is authoritative over any name or metadata heuristic.
+  // anchor itself. `iam_application_installation.deploy_application_id` is the
+  // **decimal** `deploy_app.id`, not the public uuid, so compare it with the
+  // Deploy row's decimal identity first and keep the uuid as a tolerant
+  // fallback for hosts that mirror the public id.
   if (record.deployApplicationId) {
     const anchored = deployApplications.find(
+      (application) => application.deployApplicationId === record.deployApplicationId,
+    ) ?? deployApplications.find(
       (application) => application.id === record.deployApplicationId,
     );
     if (anchored) {
@@ -765,10 +775,16 @@ export function validateApplicationIntegration(
     .filter((channel): channel is ApplicationChannelAccountBinding => channel !== undefined);
   for (const channel of channels) {
     if (surface.channelKinds.length === 0) {
-      issues.push(issue("account-not-used-by-app-kind", "warning", {
-        account: channel.displayName || channel.appId,
-        surface: surface.id,
-      }));
+      issues.push(issue(
+        "account-not-used-by-app-kind",
+        // An API service can never act as a channel account; a native app with
+        // a stale channel binding is only a warning because it is harmless.
+        surface.id === "api" ? "error" : "warning",
+        {
+          account: channel.displayName || channel.appId,
+          surface: surface.id,
+        },
+      ));
     } else if (!surface.channelKinds.includes(channel.resourceAccountKind)) {
       issues.push(issue("account-not-used-by-app-kind", "error", {
         account: channel.displayName || channel.appId,
@@ -798,6 +814,23 @@ export function validateApplicationIntegration(
     if (account.authorizationStatus !== undefined && account.authorizationStatus !== "authorized") {
       issues.push(issue("channel-unauthorized", "warning", { channel: channel.displayName }));
     }
+    // The WeChat web OAuth callback (H5 login / PC scan / cashier) must land on
+    // a domain the official account has verified. A mini program signs in with
+    // `wx.login` and does not use the web callback domain, so it is excluded.
+    const domainExpectation = surface.id === "unknown"
+      || surface.id === "h5"
+      || surface.id === "pc"
+      || surface.id === "web-legacy";
+    if (
+      domainExpectation
+      && account.domainVerifyStatus !== undefined
+      && account.domainVerifyStatus.trim().toLowerCase() !== "verified"
+    ) {
+      issues.push(issue("channel-domain-unverified", "warning", {
+        channel: channel.displayName,
+        status: account.domainVerifyStatus,
+      }));
+    }
   }
 
   const wechatChannels = channels.filter((channel) => isWechatProvider(channel.providerCode));
@@ -808,15 +841,25 @@ export function validateApplicationIntegration(
   const hasWechatPaymentCatalog = input.paymentAccounts.some(
     (account) => account.providerCode === "wechat_pay" && account.status === "active",
   );
-  if (wechatChannels.length > 0 && hasWechatPaymentCatalog && wechatPayAccounts.length === 0) {
+  // WeChat Pay only needs an openid-bearing channel (official account / mini
+  // program AppID) on the JSAPI surfaces. PC uses native/QR pay and the native
+  // mobile kinds use App pay, so their merchant AppID is an open-platform
+  // identity and must not be compared with the channel AppID. An unknown or
+  // legacy kind keeps the stricter check so legacy rows are not silently
+  // under-reported.
+  const wechatJsapiChannelExpected = surface.id === "unknown"
+    || surface.id === "h5"
+    || surface.id === "wechat-mini-program"
+    || surface.id === "web-legacy";
+  if (wechatJsapiChannelExpected && wechatChannels.length > 0 && hasWechatPaymentCatalog && wechatPayAccounts.length === 0) {
     issues.push(issue("wechat-payment-missing", "warning", {
       channel: wechatChannels.map((channel) => channel.displayName).join(" / "),
     }));
   }
-  if (wechatChannels.length === 0 && wechatPayAccounts.length > 0) {
+  if (wechatJsapiChannelExpected && wechatChannels.length === 0 && wechatPayAccounts.length > 0) {
     issues.push(issue("wechat-channel-missing", "warning", { provider: "wechat_pay" }));
   }
-  if (wechatChannels.length > 0) {
+  if (wechatJsapiChannelExpected && wechatChannels.length > 0) {
     const channelAppIds = new Set(wechatChannels.map((channel) => channel.appId));
     for (const account of wechatPayAccounts) {
       const providerAppId = readString(account.metadata.appId);
@@ -941,6 +984,7 @@ export function toChannelBinding(
     enabled: option.enabled,
     ...(option.status === undefined ? {} : { status: option.status }),
     ...(option.authorizationStatus === undefined ? {} : { authorizationStatus: option.authorizationStatus }),
+    ...(option.domainVerifyStatus === undefined ? {} : { domainVerifyStatus: option.domainVerifyStatus }),
   };
 }
 
@@ -1049,6 +1093,9 @@ function normalizeChannelBinding(
     ...(readString(record.authorizationStatus ?? record.authorization_status) === undefined
       ? {}
       : { authorizationStatus: readString(record.authorizationStatus ?? record.authorization_status) }),
+    ...(readString(record.domainVerifyStatus ?? record.domain_verify_status) === undefined
+      ? {}
+      : { domainVerifyStatus: readString(record.domainVerifyStatus ?? record.domain_verify_status) }),
   };
 }
 
@@ -1152,6 +1199,9 @@ function serializeChannelBinding(binding: ApplicationChannelAccountBinding): Rec
     ...(binding.authorizationStatus === undefined
       ? {}
       : { authorizationStatus: binding.authorizationStatus }),
+    ...(binding.domainVerifyStatus === undefined
+      ? {}
+      : { domainVerifyStatus: binding.domainVerifyStatus }),
   };
 }
 

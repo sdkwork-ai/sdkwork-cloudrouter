@@ -449,6 +449,13 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  sdkwork_drive_app_sdk_generated_flutter:
+    dependency: transitive
+    description:
+      path: "../../../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-flutter/generated/server-openapi"
+      relative: true
+    source: path
+    version: "0.1.0"
   sdkwork_iam_app_sdk:
     dependency: transitive
     description:

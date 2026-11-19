@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import QRCode from 'qrcode';
 
 import {
   detectPaymentEnvironment,
   invokeWechatJsapiPayment,
+  isMobileDevice,
   isWechatJsapiResultCancelled,
   isWechatJsapiResultOk,
   type PaymentEnvironment,
@@ -98,6 +100,7 @@ export function AnonymousCashierPage({
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const environment = useMemo<PaymentEnvironment>(() => detectPaymentEnvironment(), []);
+  const isMobile = useMemo(() => isMobileDevice(), []);
   /** Payer openid returned by the anonymous payment OAuth, bound to this token. */
   const openid = searchParams.get('openid');
   const openidBinding = searchParams.get('openidBinding');
@@ -111,6 +114,8 @@ export function AnonymousCashierPage({
   const [notice, setNotice] = useState<string | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<AnonymousWireMethod | null>(null);
+  /** QR data URL for a desktop native trade (`wechat_pay` / `alipay`). */
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
   const phaseRef = useRef<CashierPhase>('loading');
   phaseRef.current = phase;
@@ -207,8 +212,8 @@ export function AnonymousCashierPage({
   useEffect(() => () => clearTimers(), [clearTimers]);
 
   const options = useMemo(
-    () => resolveAnonymousMethodOptions(environment, allowedMethods),
-    [allowedMethods, environment],
+    () => resolveAnonymousMethodOptions(environment, allowedMethods, isMobile),
+    [allowedMethods, environment, isMobile],
   );
 
   const launch = useCallback(async (method: AnonymousWireMethod) => {
@@ -244,6 +249,7 @@ export function AnonymousCashierPage({
     setPhase('creating');
     setNotice(null);
     setErrorText(null);
+    setQrDataUrl(null);
     try {
       const authorization =
         method === 'wechat_jsapi' && openid && openidBinding
@@ -253,6 +259,15 @@ export function AnonymousCashierPage({
       const target = resolveCashierLaunch(payment);
       setPhase('pending');
       startPolling();
+      if (target.kind === 'qr') {
+        // Desktop native trade: the provider payload is what the phone scans.
+        try {
+          setQrDataUrl(await QRCode.toDataURL(target.payload, { width: 220, margin: 1 }));
+        } catch {
+          setNotice(t('orders.cashier_qr_failed', '二维码生成失败，请重试'));
+        }
+        return;
+      }
       if (target.kind === 'jsapi') {
         const result = await invokeWechatJsapiPayment(target.payload);
         if (isWechatJsapiResultCancelled(result)) {
@@ -375,6 +390,19 @@ export function AnonymousCashierPage({
           </p>
         ) : null}
       </div>
+
+      {qrDataUrl ? (
+        <div className="mt-4 flex flex-col items-center gap-2 rounded-2xl bg-surface p-5 shadow-sm">
+          <img
+            src={qrDataUrl}
+            alt={t('orders.cashier_qr_alt', '收银台二维码')}
+            className="h-[220px] w-[220px]"
+          />
+          <p className="text-center text-xs text-text-sub">
+            {t('orders.cashier_scan_pay', '请使用微信或支付宝扫一扫完成支付')}
+          </p>
+        </div>
+      ) : null}
 
       <div className="mt-4 space-y-3">
         {options.length === 0 ? (

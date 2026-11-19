@@ -51,6 +51,7 @@ import {
   evaluateApplicationIntegrationReadiness,
   INTEGRATION_REQUIREMENT_ORDER,
   isBindableEnvironmentKey,
+  matchesProviderPrefix,
   resolveApplicationIntegrationSurface,
   type ApplicationIntegrationReadiness,
   type ApplicationIntegrationReadinessStatus,
@@ -207,7 +208,7 @@ export function ApplicationIntegrationDrawer({
         loaded = await service.loadEnvironments(deployApplication.id, deployApplication.environment);
       } catch {
         environmentsFailed = true;
-        const fallback = deployApplication.environment?.trim();
+        const fallback = deployApplication.environment?.trim().toLowerCase();
         loaded = fallback ? [{ key: fallback }] : [];
       }
       let bindings: ApplicationIntegrationBindings | undefined;
@@ -231,7 +232,7 @@ export function ApplicationIntegrationDrawer({
         ...Object.keys(seedSource),
       ]);
       if (deployApplication.environment?.trim()) {
-        keys.add(deployApplication.environment.trim());
+        keys.add(deployApplication.environment.trim().toLowerCase());
       }
       const options = [...keys]
         .map((key) => loaded.find((environment) => environment.key === key) ?? { key })
@@ -259,13 +260,17 @@ export function ApplicationIntegrationDrawer({
   // the same endpoint. The lookup is optional and never blocks the drawer; a
   // missing installation simply omits the governance warning.
   useEffect(() => {
-    if (!service.loadIamApplicationType || !selectedDeployAppId) {
+    const deployApplication = deployApplications.find(
+      (candidate) => candidate.id === selectedDeployAppId,
+    );
+    const deployApplicationId = deployApplication?.deployApplicationId ?? deployApplication?.id;
+    if (!service.loadIamApplicationType || !selectedDeployAppId || !deployApplicationId) {
       setIamApplicationType(undefined);
       return;
     }
     let cancelled = false;
     setIamApplicationType(undefined);
-    void service.loadIamApplicationType(selectedDeployAppId)
+    void service.loadIamApplicationType(deployApplicationId, deployApplication?.id)
       .then((value) => {
         if (!cancelled) {
           setIamApplicationType(value);
@@ -279,7 +284,7 @@ export function ApplicationIntegrationDrawer({
     return () => {
       cancelled = true;
     };
-  }, [selectedDeployAppId, service]);
+  }, [deployApplications, selectedDeployAppId, service]);
 
   const selectedDeployApplication = deployApplications.find(
     (candidate) => candidate.id === selectedDeployAppId,
@@ -306,6 +311,9 @@ export function ApplicationIntegrationDrawer({
   );
   const environmentBindable = isBindableEnvironmentKey(environmentKey);
   const currentValidation = useMemo(() => {
+    if (!selectedDeployAppId) {
+      return [];
+    }
     if (!allCatalogsReady(paymentCatalog, officialCatalog, miniProgramCatalog, bindingsStatus)) {
       return [];
     }
@@ -328,6 +336,7 @@ export function ApplicationIntegrationDrawer({
     miniProgramCatalog,
     officialCatalog,
     paymentCatalog,
+    selectedDeployAppId,
   ]);
 
   const changedEnvironmentKeys = useMemo(
@@ -489,7 +498,11 @@ export function ApplicationIntegrationDrawer({
       onSaved(result);
       onClose();
     } catch (error: unknown) {
-      setSaveError(error);
+      if (error instanceof Error && error.message === "application-integration-anchor-conflict") {
+        setFormError(copy.drawer.anchor.conflict);
+      } else {
+        setSaveError(error);
+      }
       setSaving(false);
     }
   };
@@ -526,10 +539,14 @@ export function ApplicationIntegrationDrawer({
   }), [kind, pickerCopy]);
 
   const pickerSources = useMemo<readonly ScopeResourcePickerSource[]>(() => buildPickerSources({
-    channelItems: kind === "official-account" ? officialCatalog.items : miniProgramCatalog.items,
+    // A Douyin surface must not offer the tenant's WeChat mini programs only to
+    // reject them on save; the picker keeps the accounts the kind can act as.
+    channelItems: (kind === "official-account" ? officialCatalog.items : miniProgramCatalog.items)
+      .filter((item) => matchesProviderPrefix(item.providerCode, surface.channelProviderPrefixes)),
     kind,
     messages,
-    paymentItems: paymentCatalog.items,
+    paymentItems: paymentCatalog.items
+      .filter((item) => matchesProviderPrefix(item.providerCode, surface.paymentProviderPrefixes)),
     service,
   }), [
     kind,
@@ -538,6 +555,8 @@ export function ApplicationIntegrationDrawer({
     officialCatalog.items,
     paymentCatalog.items,
     service,
+    surface.channelProviderPrefixes,
+    surface.paymentProviderPrefixes,
   ]);
 
   const pickerInitialSelection = useMemo<readonly ScopeResourcePickerItem[]>(() => (
@@ -928,6 +947,9 @@ function ChannelSection({
               <span>{copy.channel.appId}: {selected.appId || "-"}</span>
               {selected.accountType ? <span>{copy.channel.accountType}: {selected.accountType}</span> : null}
               {selected.status ? <span>{copy.channel.status}: {statusLabel(selected.status, messages)}</span> : null}
+              {selected.domainVerifyStatus ? (
+                <span>{copy.channel.domainStatus}: {selected.domainVerifyStatus}</span>
+              ) : null}
             </div>
           </div>
           <Button disabled={disabled} onClick={() => onClear(channelKind)} size="sm" type="button" variant="outline">
@@ -1347,7 +1369,7 @@ function preferredEnvironmentKey(
   if (current && environments.some((environment) => environment.key === current)) {
     return current;
   }
-  const normalizedFallback = fallback?.trim();
+  const normalizedFallback = fallback?.trim().toLowerCase();
   if (normalizedFallback && environments.some((environment) => environment.key === normalizedFallback)) {
     return normalizedFallback;
   }

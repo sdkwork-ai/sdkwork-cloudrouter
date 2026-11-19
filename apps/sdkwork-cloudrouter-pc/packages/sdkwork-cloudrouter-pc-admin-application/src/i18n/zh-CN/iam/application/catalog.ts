@@ -222,6 +222,17 @@ export const zh: ApplicationCatalogMessages = {
     deploy: { description: "Deploy 应用平台中该租户的应用。", label: "Deploy 应用" },
     iam: { description: "IAM 应用注册表中该租户已注册的应用实例。", label: "IAM 应用" },
   },
+  identity: {
+    notReady: "IAM 身份未就绪",
+    retryAction: "重新同步 IAM 身份",
+    retrying: "正在同步 IAM 身份…",
+    retryAll: "批量修复 IAM 身份",
+    retryAllBusy: "正在批量同步…",
+    retryAllSuccess: "已修复 {count} 个应用的 IAM 身份。",
+    retryAllFailed: "批量同步中有应用失败，请检查后重试。",
+    success: "IAM 身份已同步为 {status}。",
+    failed: "IAM 身份同步失败，请稍后重试。",
+  },
   integrations: {
     actions: {
       config: "应用配置",
@@ -250,6 +261,7 @@ export const zh: ApplicationCatalogMessages = {
       clear: "取消关联",
       currentTitle: "当前关联",
       disabled: "已停用",
+      domainStatus: "授权域名",
       emptyAvailable: "没有可用的账号。请先在 IAM OAuth 中创建并启用资源账号。",
       emptyCurrent: "尚未关联任何账号。",
       enabled: "已启用",
@@ -262,6 +274,7 @@ export const zh: ApplicationCatalogMessages = {
     },
     drawer: {
       anchor: {
+        conflict: "该 Deploy 应用已被同一应用体系的另一行占用，已有一对一关联。请刷新后改选其他 Deploy 应用。",
         description: "支付与渠道账号配置保存在 Deploy 应用上。请先为该应用选择一个 Deploy 应用作为配置载体。",
         linked: "已关联 Deploy 应用",
         noDeployApps: "当前没有可用的 Deploy 应用。请先加载 Deploy 应用分组或创建应用。",
@@ -410,6 +423,7 @@ export const zh: ApplicationCatalogMessages = {
       "auto-login-not-configured": "{surface}的自动登录依赖{requirement}，当前尚未配置。",
       "channel-app-id-missing": "「{channel}」缺少 AppID，无法完成渠道接入。",
       "channel-disabled": "「{channel}」已停用或未激活。",
+      "channel-domain-unverified": "「{channel}」的网页授权域名状态为 {status}，未验证的域名会导致微信登录与收银台回调失败。",
       "channel-not-found": "「{channel}」不在当前账号目录中，可能已删除。",
       "channel-unauthorized": "「{channel}」尚未完成授权，支付与登录能力可能不可用。",
       "checkout-not-ready": "{surface}的收银台尚未就绪：请先补齐渠道账号，再绑定支付账号。",
@@ -982,6 +996,10 @@ export const zh: ApplicationCatalogMessages = {
     actions: {
       edit: "编辑",
       versions: "版本",
+      install: "使用模板创建",
+      installing: "创建中…",
+      installSucceeded: "已从模板创建应用「{name}」。",
+      installError: "从模板创建应用失败，请重试。",
       submit: "提交审核",
       submitting: "提交中…",
       submitted: "已提交审核。",

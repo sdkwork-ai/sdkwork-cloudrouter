@@ -222,6 +222,17 @@ export const en: ApplicationCatalogMessages = {
     deploy: { description: "Applications owned by this tenant in the Deploy application platform.", label: "Deploy apps" },
     iam: { description: "Application instances registered for this tenant in the IAM application registry.", label: "IAM apps" },
   },
+  identity: {
+    notReady: "IAM identity not ready",
+    retryAction: "Retry IAM identity",
+    retrying: "Provisioning the IAM identity…",
+    retryAll: "Repair all IAM identities",
+    retryAllBusy: "Repairing identities…",
+    retryAllSuccess: "Repaired the IAM identity of {count} application(s).",
+    retryAllFailed: "Some identities could not be repaired. Review and retry.",
+    success: "IAM identity status is now {status}.",
+    failed: "The IAM identity could not be provisioned. Please retry.",
+  },
   integrations: {
     actions: {
       config: "App configuration",
@@ -250,6 +261,7 @@ export const en: ApplicationCatalogMessages = {
       clear: "Unlink",
       currentTitle: "Linked account",
       disabled: "Disabled",
+      domainStatus: "Authorized domain",
       emptyAvailable: "No account is available. Create and enable a resource account in IAM OAuth first.",
       emptyCurrent: "No account is linked yet.",
       enabled: "Enabled",
@@ -262,6 +274,7 @@ export const en: ApplicationCatalogMessages = {
     },
     drawer: {
       anchor: {
+        conflict: "This Deploy application is already anchored to another row of the same application system. Refresh and choose a different Deploy application.",
         description: "Channel and payment bindings live on the Deploy application. Choose the Deploy application that should carry this application's configuration.",
         linked: "Deploy application linked",
         noDeployApps: "No Deploy application is available. Load the Deploy apps group or create an application first.",
@@ -410,6 +423,7 @@ export const en: ApplicationCatalogMessages = {
       "auto-login-not-configured": "Auto-login for a {surface} depends on a {requirement}, which is not configured.",
       "channel-app-id-missing": "“{channel}” has no AppID and cannot be used as a channel integration.",
       "channel-disabled": "“{channel}” is disabled or inactive.",
+      "channel-domain-unverified": "“{channel}” has web-domain status {status}; an unverified domain breaks WeChat sign-in and cashier callbacks.",
       "channel-not-found": "“{channel}” is missing from the current account catalog; it may have been deleted.",
       "channel-unauthorized": "“{channel}” is not authorized yet; sign-in and payment may fail.",
       "checkout-not-ready": "The {surface} cashier is not ready: configure the channel account before binding payment accounts.",
@@ -982,6 +996,10 @@ export const en: ApplicationCatalogMessages = {
     actions: {
       edit: "Edit",
       versions: "Versions",
+      install: "Create from template",
+      installing: "Creating…",
+      installSucceeded: "Created application “{name}” from the template.",
+      installError: "The application could not be created from the template. Please retry.",
       submit: "Submit for review",
       submitting: "Submitting…",
       submitted: "Submitted for review.",

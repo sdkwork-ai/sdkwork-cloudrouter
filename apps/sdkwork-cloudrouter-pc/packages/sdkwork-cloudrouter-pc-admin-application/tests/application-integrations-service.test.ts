@@ -74,6 +74,7 @@ describe("application integration transport", () => {
           enabled: true,
           status: "active",
           authorizationStatus: "authorized",
+          domainVerifyStatus: "pending",
         },
         {
           id: "ra-mini",
@@ -96,6 +97,7 @@ describe("application integration transport", () => {
       id: "ra-official",
       appId: "wx-official",
       displayName: "Official",
+      domainVerifyStatus: "pending",
       kind: "official-account",
       enabled: true,
     })]);
@@ -280,6 +282,27 @@ describe("application integration transport", () => {
     }));
   });
 
+  it("refuses to link a Deploy app that another row of the same group already anchors", async () => {
+    mocks.deployments.app.retrieve.mockResolvedValue({
+      metadata: {
+        integrations: {
+          schema: APPLICATION_INTEGRATION_SCHEMA,
+          linkedApplications: [{ groupId: "iam", id: "iam-other" }],
+          environments: {},
+        },
+      },
+    });
+
+    const service = createApplicationIntegrationService();
+    await expect(service.save({
+      deployAppId: "deploy-1",
+      linkedApplication: { groupId: "iam", id: "iam-1" },
+      environments: [],
+    })).rejects.toThrow(/application-integration-anchor-conflict/);
+    expect(mocks.deployments.app.update).not.toHaveBeenCalled();
+    expect(mocks.deployments.app.resourceLinks.update).not.toHaveBeenCalled();
+  });
+
   it("refuses to overwrite an unknown future document version when linking", async () => {
     mocks.deployments.app.retrieve.mockResolvedValue({
       metadata: { integrations: { schema: "future/v9" } },
@@ -439,6 +462,56 @@ describe("authoritative resource-link transport", () => {
     expect(mocks.deployments.app.update).not.toHaveBeenCalled();
   });
 
+  it("does not record a migration when the authoritative binding write fails", async () => {
+    mocks.deployments.app.retrieve.mockResolvedValue({
+      metadata: {
+        integrations: {
+          schema: APPLICATION_INTEGRATION_SCHEMA,
+          linkedApplications: [],
+          environments: {
+            production: {
+              paymentAccounts: [{
+                id: "pay-1",
+                accountNo: "wechat-prod",
+                providerCode: "wechat_pay",
+                environment: "production",
+                accountMode: "direct",
+                isDefault: true,
+              }],
+            },
+          },
+        },
+      },
+    });
+    mocks.deployments.app.resourceLinks.list.mockResolvedValue({
+      items: [],
+      pageInfo: { hasMore: false },
+    });
+    mocks.deployments.app.resourceLinks.update.mockRejectedValue(new Error("service unavailable"));
+
+    const service = createApplicationIntegrationService();
+    await expect(service.save({
+      deployAppId: "deploy-1",
+      environments: [{
+        key: "production",
+        integration: {
+          paymentAccounts: [{
+            id: "pay-1",
+            accountNo: "wechat-prod",
+            providerCode: "wechat_pay",
+            environment: "production",
+            accountMode: "direct",
+            isDefault: true,
+          }],
+        },
+      }],
+    })).rejects.toThrow(/service unavailable/);
+
+    // The ledger must not hide the legacy row when the authority did not take
+    // the binding; a retry has to be able to seed it again.
+    expect(mocks.deployments.app.update).not.toHaveBeenCalled();
+  });
+
   it("does not resurrect a legacy environment after its bindings were cleared", async () => {
     const legacyDocument = {
       schema: APPLICATION_INTEGRATION_SCHEMA,
@@ -533,8 +606,12 @@ describe("authoritative resource-link transport", () => {
     });
 
     const service = createApplicationIntegrationService();
-    await expect(service.loadIamApplicationType?.("deploy-1")).resolves.toBe("miniprogram");
-    await expect(service.loadIamApplicationType?.("deploy-missing")).resolves.toBeUndefined();
+    await expect(
+      service.loadIamApplicationType?.("410000000000000001", "deploy-1"),
+    ).resolves.toBe("miniprogram");
+    await expect(
+      service.loadIamApplicationType?.("410000000000000001", "deploy-missing"),
+    ).resolves.toBeUndefined();
     expect(mocks.iam.iam.tenantApplications.list).toHaveBeenCalledWith("tenant-1", {
       page: 1,
       page_size: 200,

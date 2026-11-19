@@ -211,6 +211,17 @@ export interface ApplicationCatalogMessages {
     deploy: { description: string; label: string };
     iam: { description: string; label: string };
   };
+  identity: {
+    notReady: string;
+    retryAction: string;
+    retrying: string;
+    retryAll: string;
+    retryAllBusy: string;
+    retryAllSuccess: string;
+    retryAllFailed: string;
+    success: string;
+    failed: string;
+  };
   integrations: {
     actions: {
       config: string;
@@ -239,6 +250,7 @@ export interface ApplicationCatalogMessages {
       clear: string;
       currentTitle: string;
       disabled: string;
+      domainStatus: string;
       emptyAvailable: string;
       emptyCurrent: string;
       enabled: string;
@@ -251,6 +263,7 @@ export interface ApplicationCatalogMessages {
     };
     drawer: {
       anchor: {
+        conflict: string;
         description: string;
         linked: string;
         noDeployApps: string;
@@ -387,6 +400,7 @@ export interface ApplicationCatalogMessages {
       "auto-login-not-configured": string;
       "channel-app-id-missing": string;
       "channel-disabled": string;
+      "channel-domain-unverified": string;
       "channel-not-found": string;
       "channel-unauthorized": string;
       "checkout-not-ready": string;
@@ -944,6 +958,10 @@ export interface ApplicationCatalogMessages {
     actions: {
       edit: string;
       versions: string;
+      install: string;
+      installing: string;
+      installSucceeded: string;
+      installError: string;
       submit: string;
       submitting: string;
       submitted: string;

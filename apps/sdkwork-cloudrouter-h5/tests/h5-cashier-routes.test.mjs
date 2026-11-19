@@ -53,6 +53,37 @@ test('the H5 app mounts every order/cashier route outside the console shell', ()
   }
 });
 
+test('the logged-in cashier composes the IAM WeChat payment OAuth channel', () => {
+  const iamAuth = read('src/bootstrap/iamAuth.ts');
+  assert.match(iamAuth, /configureCloudRouterOrderWechatPaymentOAuth/u);
+  // The start sets HttpOnly OAuth cookies; cross-origin same-site fetches need
+  // `credentials: include` or the callback loses its state/tenant context.
+  assert.match(iamAuth, /credentials: 'include'/u);
+  assert.match(iamAuth, /\/app\/v3\/api\/oauth\/wechat\/payment\/start/u);
+
+  const ordersRuntime = read(
+    'packages/sdkwork-cloudrouter-h5-orders/src/runtime.ts',
+  );
+  assert.match(ordersRuntime, /wechatPaymentOAuth/u);
+  assert.match(ordersRuntime, /configureCloudRouterOrderWechatPaymentOAuth/u);
+});
+
+test('the anonymous desktop cashier renders native QR trades', () => {
+  const matrix = read(
+    'packages/sdkwork-cloudrouter-h5-orders/src/anonymousPaymentLaunch.ts',
+  );
+  assert.match(matrix, /if \(!isMobile\)/u);
+  assert.match(matrix, /allowed\.has\('wechat_pay'\)/u);
+  assert.match(matrix, /allowed\.has\('alipay'\)/u);
+  assert.match(matrix, /kind: 'qr'/u);
+
+  const page = read(
+    'packages/sdkwork-cloudrouter-h5-orders/src/AnonymousCashierPage.tsx',
+  );
+  assert.match(page, /QRCode\.toDataURL/u);
+  assert.match(page, /orders\.cashier_scan_pay/u);
+});
+
 test('the cashier deep link keeps its real pathname (history routing)', () => {
   const appSource = read('src/App.tsx');
   assert.match(appSource, /<BrowserRouter>/u);

@@ -27,6 +27,7 @@ afterEach(() => {
 });
 
 const deployApplication: ApplicationRecord = {
+  deployApplicationId: "410000000000000001",
   environment: "production",
   groupId: "deploy",
   id: "deploy-1",
@@ -298,8 +299,33 @@ describe("application integration actions", () => {
     expect(miniRequirement?.getAttribute("data-requirement-level")).toBe("required");
     expect(miniRequirement?.getAttribute("data-requirement-configured")).toBe("false");
     // The IAM installation is registered as `pc`; the drawer must surface the
-    // cross-plane mismatch instead of silently trusting one side.
+    // cross-plane mismatch instead of silently trusting one side. The lookup is
+    // keyed by the decimal `deploy_application_id`, not the public uuid.
+    expect(integrations.loadIamApplicationType).toHaveBeenCalledWith(
+      "410000000000000001",
+      "deploy-mini",
+    );
     expect(await screen.findByText(/IAM 安装注册的应用类型是 pc/)).toBeTruthy();
+  });
+
+  it("offers only the bindings an iOS app can use", async () => {
+    const iosApplication: ApplicationRecord = {
+      ...deployApplication,
+      id: "deploy-ios",
+      kind: "IOS_APP",
+      name: "iOS Storefront",
+      reference: "ios-storefront",
+    };
+    renderPage({ integrations: createIntegrationService(), loaders: createLoaders({ deploy: [iosApplication] }) });
+
+    await screen.findAllByText("iOS Storefront");
+    clickGroup("deploy");
+    await screen.findAllByText("iOS Storefront");
+    openAppConfigMenu();
+
+    expect(screen.getByRole("menuitem", { name: "支付配置" })).toBeTruthy();
+    expect(screen.queryByRole("menuitem", { name: "关联公众号账号" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "关联小程序账号" })).toBeNull();
   });
 
   it("shows the environments from the Deploy app and the current binding status", async () => {

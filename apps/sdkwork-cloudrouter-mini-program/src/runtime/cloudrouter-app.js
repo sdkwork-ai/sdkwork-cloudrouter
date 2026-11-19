@@ -1884,11 +1884,11 @@ var Encoding;
     return new TextDecoder().decode(input);
   }
   _Encoding.utf8Decode = utf8Decode;
-  function hexEncode2(input) {
+  function hexEncode3(input) {
     const bytes = typeof input === "string" ? utf8Encode(input) : input;
     return Array.from(bytes).map((byte) => byte.toString(16).padStart(2, "0")).join("");
   }
-  _Encoding.hexEncode = hexEncode2;
+  _Encoding.hexEncode = hexEncode3;
   function hexDecode2(input) {
     const bytes = new Uint8Array(input.length / 2);
     for (let i = 0; i < input.length; i += 2) bytes[i / 2] = parseInt(input.substr(i, 2), 16);
@@ -3265,9 +3265,103 @@ var SHA256_INITIAL_STATE = new Uint32Array([
   528734635,
   1541459225
 ]);
+var Sha256Hasher = class {
+  constructor() {
+    __publicField(this, "state", new Uint32Array(SHA256_INITIAL_STATE));
+    __publicField(this, "buffer", new Uint8Array(BLOCK_SIZE));
+    __publicField(this, "bufferLength", 0);
+    __publicField(this, "totalLength", 0);
+  }
+  update(chunk) {
+    if (chunk.length === 0) {
+      return;
+    }
+    this.totalLength += chunk.length;
+    let offset = 0;
+    if (this.bufferLength > 0) {
+      const remaining = BLOCK_SIZE - this.bufferLength;
+      if (chunk.length < remaining) {
+        this.buffer.set(chunk, this.bufferLength);
+        this.bufferLength += chunk.length;
+        return;
+      }
+      this.buffer.set(chunk.subarray(0, remaining), this.bufferLength);
+      sha256Block(this.state, this.buffer, 0);
+      offset = remaining;
+      this.bufferLength = 0;
+    }
+    while (offset + BLOCK_SIZE <= chunk.length) {
+      sha256Block(this.state, chunk, offset);
+      offset += BLOCK_SIZE;
+    }
+    if (offset < chunk.length) {
+      const tail = chunk.subarray(offset);
+      this.buffer.set(tail);
+      this.bufferLength = tail.length;
+    }
+  }
+  digest() {
+    const bitLength = this.totalLength * 8;
+    const paddingLength = (BLOCK_SIZE - (this.bufferLength + 9) % BLOCK_SIZE) % BLOCK_SIZE + 9;
+    const padded = new Uint8Array(this.bufferLength + paddingLength);
+    padded.set(this.buffer.subarray(0, this.bufferLength));
+    padded[this.bufferLength] = 128;
+    const view = new DataView(padded.buffer);
+    view.setUint32(padded.length - 4, bitLength >>> 0, false);
+    view.setUint32(padded.length - 8, Math.floor(bitLength / 4294967296), false);
+    for (let offset = 0; offset < padded.length; offset += BLOCK_SIZE) {
+      sha256Block(this.state, padded, offset);
+    }
+    const digest = new Uint8Array(32);
+    const digestView = new DataView(digest.buffer);
+    for (let index = 0; index < this.state.length; index += 1) {
+      digestView.setUint32(index * 4, this.state[index], false);
+    }
+    return digest;
+  }
+};
 function sha256Hex(value) {
   const bytes = typeof value === "string" ? toUtf8(value) : value;
   return hexEncode(sha256Digest(bytes));
+}
+
+// ../../../sdkwork-utils/packages/sdkwork-utils-typescript/src/runtime/random.js
+function getCrypto2() {
+  const crypto = globalThis.crypto;
+  if (!(crypto == null ? void 0 : crypto.getRandomValues)) {
+    throw new Error("Web Crypto API is not available in this environment.");
+  }
+  return crypto;
+}
+function randomBytes2(length) {
+  const bytes = new Uint8Array(length);
+  getCrypto2().getRandomValues(bytes);
+  return bytes;
+}
+function randomUuid2() {
+  var _a, _b;
+  const crypto = getCrypto2();
+  if (typeof crypto.randomUUID === "function") {
+    try {
+      return crypto.randomUUID.call(crypto);
+    } catch {
+    }
+  }
+  const bytes = randomBytes2(16);
+  bytes[6] = ((_a = bytes[6]) != null ? _a : 0) & 15 | 64;
+  bytes[8] = ((_b = bytes[8]) != null ? _b : 0) & 63 | 128;
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+// ../../../sdkwork-utils/packages/sdkwork-utils-typescript/src/id.js
+function uuid2() {
+  return randomUuid2();
+}
+
+// ../../../sdkwork-utils/packages/sdkwork-utils-typescript/src/encoding.js
+function hexEncode2(value) {
+  return hexEncode(value);
 }
 
 // ../../../sdkwork-utils/packages/sdkwork-utils-typescript/src/crypto.js
@@ -5791,10 +5885,10 @@ var CommunityFeedApi = class {
   /** Community feed.list (deprecated: use the standard feeds stream system) */
   async list(params, requestOptions) {
     const query = buildQueryString2([
-      { name: "categoryId", value: params == null ? void 0 : params.categoryId, style: "form", explode: true, allowReserved: false },
+      { name: "category_id", value: params == null ? void 0 : params.categoryId, style: "form", explode: true, allowReserved: false },
       { name: "kind", value: params == null ? void 0 : params.kind, style: "form", explode: true, allowReserved: false },
       { name: "q", value: params == null ? void 0 : params.q, style: "form", explode: true, allowReserved: false },
-      { name: "reviewState", value: params == null ? void 0 : params.reviewState, style: "form", explode: true, allowReserved: false },
+      { name: "review_state", value: params == null ? void 0 : params.reviewState, style: "form", explode: true, allowReserved: false },
       { name: "tag", value: params == null ? void 0 : params.tag, style: "form", explode: true, allowReserved: false },
       { name: "page", value: params == null ? void 0 : params.page, style: "form", explode: true, allowReserved: false },
       { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false }
@@ -5832,7 +5926,7 @@ var CommunityTiersApi = class {
   /** Community tiers.list */
   async list(categoryId, params, requestOptions) {
     const query = buildQueryString2([
-      { name: "includeDisabled", value: params == null ? void 0 : params.includeDisabled, style: "form", explode: true, allowReserved: false }
+      { name: "include_disabled", value: params == null ? void 0 : params.includeDisabled, style: "form", explode: true, allowReserved: false }
     ]);
     return this.client.request(appendQueryString2(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}/tiers`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
   }
@@ -6196,6 +6290,2236 @@ function createCloudRouterMpConsolePorts(appApiBaseUrl) {
   };
 }
 
+// ../../../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript/generated/server-openapi/src/http/client.ts
+var _HttpClient3 = class _HttpClient3 extends BaseHttpClient {
+  constructor(config) {
+    super(config);
+  }
+  static normalizeCredential(value) {
+    return typeof value === "string" && value.trim().length > 0 ? value.trim() : void 0;
+  }
+  getInternalAuthConfig() {
+    const self = this;
+    self.authConfig = self.authConfig || {};
+    return self.authConfig;
+  }
+  getInternalHeaders() {
+    const self = this;
+    self.config = self.config || {};
+    self.config.headers = self.config.headers || {};
+    return self.config.headers;
+  }
+  buildRequestHeaders(headers, contentType) {
+    const mergedHeaders = {
+      ...headers != null ? headers : {}
+    };
+    if (contentType && contentType.toLowerCase() !== "multipart/form-data") {
+      mergedHeaders["Content-Type"] = contentType;
+    }
+    return Object.keys(mergedHeaders).length > 0 ? mergedHeaders : void 0;
+  }
+  async applySdkworkRequestBodyFingerprint(headers, body) {
+    if (!_HttpClient3.SDKWORK_V3_REQUEST_FINGERPRINTS || body == null || !this.hasNonEmptyHeader(headers, "Idempotency-Key") || this.hasNonEmptyHeader(headers, "X-Content-SHA256") || this.hasNonEmptyHeader(headers, "X-Idempotency-Fingerprint")) {
+      return headers;
+    }
+    const fingerprint = await this.createSdkworkRequestBodyFingerprint(body);
+    if (!fingerprint) {
+      return headers;
+    }
+    const normalizedFingerprintHeader = fingerprint.header.toLowerCase();
+    const preparedHeaders = Object.fromEntries(
+      Object.entries(headers != null ? headers : {}).filter(
+        ([headerName]) => headerName.toLowerCase() !== normalizedFingerprintHeader
+      )
+    );
+    return {
+      ...preparedHeaders,
+      [fingerprint.header]: fingerprint.value
+    };
+  }
+  hasNonEmptyHeader(headers, name) {
+    const normalizedName = name.toLowerCase();
+    return Object.entries(headers != null ? headers : {}).some(
+      ([headerName, value]) => headerName.toLowerCase() === normalizedName && value.trim().length > 0
+    );
+  }
+  async createSdkworkRequestBodyFingerprint(body) {
+    if (typeof FormData !== "undefined" && body instanceof FormData) {
+      const canonicalForm = await this.serializeSdkworkFormData(body);
+      return {
+        header: "X-Idempotency-Fingerprint",
+        value: await this.sha256Hex(new TextEncoder().encode(canonicalForm))
+      };
+    }
+    const bytes = await this.serializeSdkworkRequestBodyBytes(body);
+    if (!bytes) {
+      return void 0;
+    }
+    return {
+      header: "X-Content-SHA256",
+      value: await this.sha256Hex(bytes)
+    };
+  }
+  async serializeSdkworkRequestBodyBytes(body) {
+    if (typeof URLSearchParams !== "undefined" && body instanceof URLSearchParams) {
+      return new TextEncoder().encode(body.toString());
+    }
+    if (typeof Blob !== "undefined" && body instanceof Blob) {
+      return new Uint8Array(await body.arrayBuffer());
+    }
+    if (typeof ArrayBuffer !== "undefined" && body instanceof ArrayBuffer) {
+      return new Uint8Array(body.slice(0));
+    }
+    if (typeof ArrayBuffer !== "undefined" && ArrayBuffer.isView(body)) {
+      return new Uint8Array(new Uint8Array(body.buffer, body.byteOffset, body.byteLength));
+    }
+    if (typeof body === "string") {
+      return new TextEncoder().encode(body);
+    }
+    const serialized = JSON.stringify(body);
+    return serialized === void 0 ? void 0 : new TextEncoder().encode(serialized);
+  }
+  async serializeSdkworkFormData(body) {
+    const parts = [];
+    for (const [name, value] of body.entries()) {
+      if (typeof value === "string") {
+        parts.push({ kind: "field", name, value });
+        continue;
+      }
+      const bytes = new Uint8Array(await value.arrayBuffer());
+      parts.push({
+        kind: "file",
+        name,
+        fileName: "name" in value ? String(value.name) : "",
+        contentType: value.type,
+        size: value.size,
+        contentSha256: await this.sha256Hex(bytes)
+      });
+    }
+    return JSON.stringify(parts);
+  }
+  async sha256Hex(bytes) {
+    return sha256Hash(bytes);
+  }
+  buildHeaders(config, skipAuth = false) {
+    const headers = super.buildHeaders(config, skipAuth);
+    if (config == null ? void 0 : config.accessTokenOnly) {
+      this.stripCredentialHeaders(headers, true);
+      return headers;
+    }
+    if (!skipAuth && !(config == null ? void 0 : config.skipAuth)) {
+      return headers;
+    }
+    this.stripCredentialHeaders(headers, false);
+    return headers;
+  }
+  stripCredentialHeaders(headers, preserveAccessToken) {
+    [
+      ...preserveAccessToken ? [] : [_HttpClient3.ACCESS_TOKEN_HEADER, "Access-Token"],
+      "Authorization",
+      ["X", "API", "Key"].join("-"),
+      "X-Tenant-Id",
+      "X-App-Id",
+      "X-Organization-Id",
+      "X-Platform",
+      "X-User-Id",
+      "X-Sdkwork-Tenant-Id",
+      "X-Sdkwork-App-Id",
+      "X-Sdkwork-User-Id",
+      "X-Sdkwork-Organization-Id",
+      "X-Sdkwork-Actor-Id",
+      "X-Sdkwork-Actor-Kind",
+      "X-Sdkwork-Session-Id",
+      "X-Sdkwork-Environment",
+      "X-Sdkwork-Deployment-Profile",
+      "X-Sdkwork-Deployment-Mode",
+      "X-Sdkwork-Runtime-Target",
+      "X-Sdkwork-Auth-Level",
+      "X-Sdkwork-Data-Scope",
+      "X-Sdkwork-Permission-Scope",
+      "X-Sdkwork-Device-Id",
+      "X-Sdkwork-Context-Signature",
+      "X-Sdkwork-Operation-Id",
+      "X-Sdkwork-Subject-Tenant-Id",
+      "X-Sdkwork-Subject-Organization-Id",
+      "X-Sdkwork-Subject-User-Id",
+      "X-Sdkwork-Subject-Timestamp",
+      "X-Sdkwork-Subject-Signature"
+    ].forEach((key) => {
+      delete headers[key];
+    });
+  }
+  buildRequestBody(body, contentType) {
+    if (body == null) {
+      return body;
+    }
+    const normalizedContentType = (contentType != null ? contentType : "").toLowerCase();
+    if (normalizedContentType === "application/x-www-form-urlencoded") {
+      return this.encodeFormBody(body);
+    }
+    if (normalizedContentType === "multipart/form-data") {
+      return this.encodeMultipartBody(body);
+    }
+    return body;
+  }
+  encodeMultipartBody(body) {
+    if (body instanceof FormData) {
+      return body;
+    }
+    const formData = new FormData();
+    if (body instanceof Map) {
+      for (const [key, value] of body.entries()) {
+        this.appendMultipartValue(formData, String(key), value);
+      }
+      return formData;
+    }
+    if (typeof body === "object") {
+      const record = body;
+      for (const [key, value] of Object.entries(record)) {
+        if (this.isMultipartMetadataField(key)) {
+          continue;
+        }
+        this.appendMultipartValue(formData, key, value, this.resolveMultipartFileName(record, key));
+      }
+      return formData;
+    }
+    this.appendMultipartValue(formData, "value", body);
+    return formData;
+  }
+  appendMultipartValue(formData, key, value, fileName) {
+    if (value == null) {
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach((item) => this.appendMultipartValue(formData, key, item, fileName));
+      return;
+    }
+    if (value instanceof Blob) {
+      if (fileName) {
+        formData.append(key, value, fileName);
+        return;
+      }
+      formData.append(key, value);
+      return;
+    }
+    if (value instanceof Date) {
+      formData.append(key, value.toISOString());
+      return;
+    }
+    if (typeof value === "object") {
+      formData.append(key, JSON.stringify(value));
+      return;
+    }
+    formData.append(key, String(value));
+  }
+  resolveMultipartFileName(record, key) {
+    const fieldSpecificName = record[`${key}FileName`];
+    if (typeof fieldSpecificName === "string" && fieldSpecificName.trim()) {
+      return fieldSpecificName.trim();
+    }
+    const genericName = record.fileName;
+    if (key === "file" && typeof genericName === "string" && genericName.trim()) {
+      return genericName.trim();
+    }
+    return void 0;
+  }
+  isMultipartMetadataField(key) {
+    return key === "fileName" || key.endsWith("FileName");
+  }
+  encodeFormBody(body) {
+    if (body instanceof URLSearchParams) {
+      return body.toString();
+    }
+    if (typeof body === "string") {
+      return body;
+    }
+    const params = new URLSearchParams();
+    if (body instanceof Map) {
+      for (const [key, value] of body.entries()) {
+        this.appendFormValue(params, String(key), value);
+      }
+      return params.toString();
+    }
+    if (typeof body === "object") {
+      for (const [key, value] of Object.entries(body)) {
+        this.appendFormValue(params, key, value);
+      }
+      return params.toString();
+    }
+    params.append("value", String(body));
+    return params.toString();
+  }
+  appendFormValue(params, key, value) {
+    if (value == null) {
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach((item) => this.appendFormValue(params, key, item));
+      return;
+    }
+    if (value instanceof Date) {
+      params.append(key, value.toISOString());
+      return;
+    }
+    if (typeof value === "object") {
+      params.append(key, JSON.stringify(value));
+      return;
+    }
+    params.append(key, String(value));
+  }
+  setAuthToken(token) {
+    super.setAuthToken(token);
+  }
+  setAccessToken(token) {
+    const headers = this.getInternalHeaders();
+    headers[_HttpClient3.ACCESS_TOKEN_HEADER] = token;
+    super.setAccessToken(token);
+  }
+  setTokenManager(manager) {
+    const baseProto = Object.getPrototypeOf(_HttpClient3.prototype);
+    if (typeof baseProto.setTokenManager === "function") {
+      baseProto.setTokenManager.call(this, manager);
+      return;
+    }
+    this.getInternalAuthConfig().tokenManager = manager;
+  }
+  applyAccessTokenOnlyHeaders(headers) {
+    var _a;
+    const authConfig = this.getInternalAuthConfig();
+    const tokenManager2 = authConfig.tokenManager;
+    const accessToken = (_a = tokenManager2 == null ? void 0 : tokenManager2.getAccessToken) == null ? void 0 : _a.call(tokenManager2);
+    if (typeof accessToken !== "string" || accessToken.trim().length === 0) {
+      throw new Error(
+        "access-token-only request requires Access-Token before request dispatch"
+      );
+    }
+    const result = { ...headers != null ? headers : {} };
+    this.stripCredentialHeaders(result, false);
+    result[_HttpClient3.ACCESS_TOKEN_HEADER] = accessToken.trim();
+    return result;
+  }
+  applySdkworkAuthHeaders(headers) {
+    var _a, _b;
+    const authConfig = this.getInternalAuthConfig();
+    const tokenManager2 = authConfig.tokenManager;
+    const accessToken = _HttpClient3.normalizeCredential((_a = tokenManager2 == null ? void 0 : tokenManager2.getAccessToken) == null ? void 0 : _a.call(tokenManager2));
+    const authToken = _HttpClient3.normalizeCredential((_b = tokenManager2 == null ? void 0 : tokenManager2.getAuthToken) == null ? void 0 : _b.call(tokenManager2));
+    if (_HttpClient3.REQUIRES_SDKWORK_ACCESS_TOKEN && (typeof accessToken !== "string" || accessToken.trim().length === 0)) {
+      throw new Error("non-open-api request requires Access-Token before request dispatch");
+    }
+    if (!accessToken && !authToken) {
+      return headers;
+    }
+    const authHeaders = buildAuthHeaders("dual-token", void 0, tokenManager2);
+    return Object.keys(authHeaders).length > 0 ? { ...headers != null ? headers : {}, ...authHeaders } : headers;
+  }
+  unwrapSdkworkV3Payload(payload, unwrapKind = "data") {
+    if (!_HttpClient3.SDKWORK_V3_UNWRAP || payload == null || typeof payload !== "object") {
+      return payload;
+    }
+    const record = payload;
+    if (record.code !== 0 || !("data" in record)) {
+      return this.unwrapSdkworkV3Data(record, unwrapKind);
+    }
+    const data = record.data;
+    if (!data || typeof data !== "object") {
+      return data;
+    }
+    return this.unwrapSdkworkV3Data(data, unwrapKind);
+  }
+  unwrapSdkworkV3Data(data, unwrapKind) {
+    if (unwrapKind === "void") {
+      return void 0;
+    }
+    if (unwrapKind === "item" && "item" in data) {
+      return data.item;
+    }
+    return data;
+  }
+  async request(path, options = {}) {
+    const execute = this.execute;
+    if (typeof execute !== "function") {
+      throw new Error("BaseHttpClient execute method is not available");
+    }
+    const {
+      body,
+      headers,
+      contentType,
+      method = "GET",
+      skipAuth,
+      accessTokenOnly,
+      sdkworkUnwrapKind = "data",
+      ...rest
+    } = options;
+    const requestHeaders = accessTokenOnly ? this.applyAccessTokenOnlyHeaders(headers) : skipAuth ? headers : this.applySdkworkAuthHeaders(headers);
+    const requestBody = this.buildRequestBody(body, contentType);
+    const preparedHeaders = await this.applySdkworkRequestBodyFingerprint(
+      this.buildRequestHeaders(requestHeaders, body == null ? void 0 : contentType),
+      requestBody
+    );
+    const payload = await withRetry(
+      () => execute.call(this, {
+        url: path,
+        method,
+        ...rest,
+        ...skipAuth !== void 0 ? { skipAuth } : {},
+        ...accessTokenOnly !== void 0 ? { accessTokenOnly } : {},
+        ...requestBody !== void 0 ? { body: requestBody } : {},
+        ...preparedHeaders !== void 0 ? { headers: preparedHeaders } : {}
+      }),
+      // Per-request retry overrides (e.g. disabling 5xx retries for
+      // idempotent-terminal operations like turn execution) flow through
+      // options.retry; the default keeps maxRetries: 3.
+      { maxRetries: 3, ...options.retry }
+    );
+    return this.unwrapSdkworkV3Payload(payload, sdkworkUnwrapKind);
+  }
+  async *streamJson(path, options = {}) {
+    const stream = BaseHttpClient.prototype.stream;
+    if (typeof stream !== "function") {
+      throw new Error("BaseHttpClient stream method is not available");
+    }
+    const {
+      body,
+      headers,
+      contentType,
+      method = "GET",
+      skipAuth,
+      accessTokenOnly,
+      ...rest
+    } = options;
+    const authHeaders = accessTokenOnly ? this.applyAccessTokenOnlyHeaders(headers) : skipAuth ? headers : this.applySdkworkAuthHeaders(headers);
+    const requestBody = this.buildRequestBody(body, contentType);
+    const requestHeaders = await this.applySdkworkRequestBodyFingerprint(
+      this.buildRequestHeaders(
+        { Accept: "text/event-stream", ...authHeaders != null ? authHeaders : {} },
+        body == null ? void 0 : contentType
+      ),
+      requestBody
+    );
+    for await (const data of stream.call(this, path, {
+      method,
+      ...rest,
+      ...skipAuth !== void 0 ? { skipAuth } : {},
+      ...accessTokenOnly !== void 0 ? { accessTokenOnly } : {},
+      ...requestBody !== void 0 ? { body: requestBody } : {},
+      ...requestHeaders !== void 0 ? { headers: requestHeaders } : {}
+    })) {
+      if (data === "[DONE]") {
+        return;
+      }
+      if (typeof data !== "string" || data.trim().length === 0) {
+        continue;
+      }
+      yield JSON.parse(data);
+    }
+  }
+  async get(path, params, headers) {
+    return this.request(path, {
+      method: "GET",
+      ...params !== void 0 ? { params } : {},
+      ...headers !== void 0 ? { headers } : {}
+    });
+  }
+  async post(path, body, params, headers, contentType) {
+    return this.request(path, {
+      method: "POST",
+      ...body !== void 0 ? { body } : {},
+      ...params !== void 0 ? { params } : {},
+      ...headers !== void 0 ? { headers } : {},
+      ...contentType !== void 0 ? { contentType } : {}
+    });
+  }
+  async put(path, body, params, headers, contentType) {
+    return this.request(path, {
+      method: "PUT",
+      ...body !== void 0 ? { body } : {},
+      ...params !== void 0 ? { params } : {},
+      ...headers !== void 0 ? { headers } : {},
+      ...contentType !== void 0 ? { contentType } : {}
+    });
+  }
+  async delete(path, params, headers) {
+    return this.request(path, {
+      method: "DELETE",
+      ...params !== void 0 ? { params } : {},
+      ...headers !== void 0 ? { headers } : {}
+    });
+  }
+  async patch(path, body, params, headers, contentType) {
+    return this.request(path, {
+      method: "PATCH",
+      ...body !== void 0 ? { body } : {},
+      ...params !== void 0 ? { params } : {},
+      ...headers !== void 0 ? { headers } : {},
+      ...contentType !== void 0 ? { contentType } : {}
+    });
+  }
+};
+__publicField(_HttpClient3, "ACCESS_TOKEN_HEADER", "Access-Token");
+__publicField(_HttpClient3, "SDKWORK_V3_UNWRAP", true);
+__publicField(_HttpClient3, "SDKWORK_V3_REQUEST_FINGERPRINTS", true);
+__publicField(_HttpClient3, "REQUIRES_SDKWORK_ACCESS_TOKEN", true);
+var HttpClient4 = _HttpClient3;
+function createHttpClient3(config) {
+  return new HttpClient4(config);
+}
+
+// ../../../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript/generated/server-openapi/src/api/paths.ts
+var APP_API_PREFIX3 = "/app/v3/api";
+function appApiPath3(path) {
+  if (!path) {
+    return APP_API_PREFIX3;
+  }
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+  const normalizedPrefixRaw = (APP_API_PREFIX3 || "").trim();
+  const normalizedPrefix = normalizedPrefixRaw ? `/${normalizedPrefixRaw.replace(/^\/+|\/+$/g, "")}` : "";
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  if (!normalizedPrefix || normalizedPrefix === "/") {
+    return normalizedPath;
+  }
+  if (normalizedPath === normalizedPrefix || normalizedPath.startsWith(`${normalizedPrefix}/`)) {
+    return normalizedPath;
+  }
+  return `${normalizedPrefix}${normalizedPath}`;
+}
+
+// ../../../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript/generated/server-openapi/src/api/drive.ts
+var DriveWatchChannelsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  /** List Drive watch channels */
+  async list(params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "resourceType", value: params == null ? void 0 : params.resourceType, style: "form", explode: true, allowReserved: false },
+      { name: "lifecycleStatus", value: params == null ? void 0 : params.lifecycleStatus, style: "form", explode: true, allowReserved: false },
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params == null ? void 0 : params.cursor, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/watch_channels`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+  /** Get a Drive watch channel */
+  async retrieve(channelId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/watch_channels/${serializePathParameter3(channelId, { name: "channelId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "item" });
+  }
+  /** Stop a Drive watch channel */
+  async stop(channelId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/watch_channels/${serializePathParameter3(channelId, { name: "channelId", style: "simple", explode: false })}/stop`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "data" });
+  }
+};
+var DriveUploaderUploadsPartsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async update(uploadItemId, partNo, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/uploader/uploads/${serializePathParameter3(uploadItemId, { name: "uploadItemId", style: "simple", explode: false })}/parts/${serializePathParameter3(partNo, { name: "partNo", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "PUT", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+};
+var DriveUploaderUploadsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    __publicField(this, "parts");
+    this.client = client;
+    this.parts = new DriveUploaderUploadsPartsApi(client);
+  }
+  async create(body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/uploader/uploads`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "data" });
+  }
+};
+var DriveUploaderApi = class {
+  constructor(client) {
+    __publicField(this, "uploads");
+    this.uploads = new DriveUploaderUploadsApi(client);
+  }
+};
+var DriveUploadSessionsPartsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async update(uploadSessionId, partNo, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/upload_sessions/${serializePathParameter3(uploadSessionId, { name: "uploadSessionId", style: "simple", explode: false })}/parts/${serializePathParameter3(partNo, { name: "partNo", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "PUT", body, contentType: "application/json", sdkworkUnwrapKind: "data" });
+  }
+};
+var DriveUploadSessionsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    __publicField(this, "parts");
+    this.client = client;
+    this.parts = new DriveUploadSessionsPartsApi(client);
+  }
+  async create(body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/upload_sessions`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  async retrieve(uploadSessionId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/upload_sessions/${serializePathParameter3(uploadSessionId, { name: "uploadSessionId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "item" });
+  }
+  async abort(uploadSessionId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/upload_sessions/${serializePathParameter3(uploadSessionId, { name: "uploadSessionId", style: "simple", explode: false })}/abort`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  async complete(uploadSessionId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/upload_sessions/${serializePathParameter3(uploadSessionId, { name: "uploadSessionId", style: "simple", explode: false })}/complete`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+};
+var DriveWebsiteRootsSyncsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  /** Create an isolated atomic website synchronization */
+  async create(rootUuid, body, params, requestOptions) {
+    const requestHeaders = buildRequestHeaders2(
+      {
+        "Idempotency-Key": { value: params.idempotencyKey, style: "simple", explode: false }
+      },
+      {}
+    );
+    return this.client.request(appApiPath3(`/drive/website_roots/${serializePathParameter3(rootUuid, { name: "rootUuid", style: "simple", explode: false })}/syncs`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", ...requestHeaders !== void 0 ? { headers: requestHeaders } : {}, sdkworkUnwrapKind: "item" });
+  }
+  /** Retrieve an atomic website synchronization */
+  async retrieve(rootUuid, syncId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/website_roots/${serializePathParameter3(rootUuid, { name: "rootUuid", style: "simple", explode: false })}/syncs/${serializePathParameter3(syncId, { name: "syncId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "item" });
+  }
+  /** Abort an unactivated website synchronization */
+  async abort(rootUuid, syncId, body, params, requestOptions) {
+    const requestHeaders = buildRequestHeaders2(
+      {
+        "Idempotency-Key": { value: params.idempotencyKey, style: "simple", explode: false }
+      },
+      {}
+    );
+    return this.client.request(appApiPath3(`/drive/website_roots/${serializePathParameter3(rootUuid, { name: "rootUuid", style: "simple", explode: false })}/syncs/${serializePathParameter3(syncId, { name: "syncId", style: "simple", explode: false })}/abort`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", ...requestHeaders !== void 0 ? { headers: requestHeaders } : {}, sdkworkUnwrapKind: "item" });
+  }
+  /** Validate and atomically activate a complete website tree */
+  async finalize(rootUuid, syncId, body, params, requestOptions) {
+    const requestHeaders = buildRequestHeaders2(
+      {
+        "Idempotency-Key": { value: params.idempotencyKey, style: "simple", explode: false }
+      },
+      {}
+    );
+    return this.client.request(appApiPath3(`/drive/website_roots/${serializePathParameter3(rootUuid, { name: "rootUuid", style: "simple", explode: false })}/syncs/${serializePathParameter3(syncId, { name: "syncId", style: "simple", explode: false })}/finalize`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", ...requestHeaders !== void 0 ? { headers: requestHeaders } : {}, sdkworkUnwrapKind: "item" });
+  }
+};
+var DriveWebsiteRootsGenerationsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  /** Activate a retained website generation as a new logical generation */
+  async activate(rootUuid, generation, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/website_roots/${serializePathParameter3(rootUuid, { name: "rootUuid", style: "simple", explode: false })}/generations/${serializePathParameter3(generation, { name: "generation", style: "simple", explode: false })}/activate`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+};
+var DriveWebsiteRootsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    __publicField(this, "generations");
+    __publicField(this, "syncs");
+    this.client = client;
+    this.generations = new DriveWebsiteRootsGenerationsApi(client);
+    this.syncs = new DriveWebsiteRootsSyncsApi(client);
+  }
+  async list(spaceId, params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params == null ? void 0 : params.cursor, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/spaces/${serializePathParameter3(spaceId, { name: "spaceId", style: "simple", explode: false })}/website_roots`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+  async create(spaceId, body, params, requestOptions) {
+    const requestHeaders = buildRequestHeaders2(
+      {
+        "Idempotency-Key": { value: params.idempotencyKey, style: "simple", explode: false }
+      },
+      {}
+    );
+    return this.client.request(appApiPath3(`/drive/spaces/${serializePathParameter3(spaceId, { name: "spaceId", style: "simple", explode: false })}/website_roots`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", ...requestHeaders !== void 0 ? { headers: requestHeaders } : {}, sdkworkUnwrapKind: "item" });
+  }
+  async retrieve(rootUuid, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/website_roots/${serializePathParameter3(rootUuid, { name: "rootUuid", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "item" });
+  }
+};
+var DriveMoveDestinationsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async list(spaceId, params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "excludeNodeIds", value: params == null ? void 0 : params.excludeNodeIds, style: "form", explode: true, allowReserved: false },
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params == null ? void 0 : params.cursor, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/spaces/${serializePathParameter3(spaceId, { name: "spaceId", style: "simple", explode: false })}/move_destinations`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+};
+var DriveSpacesApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async list(params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "spaceType", value: params == null ? void 0 : params.spaceType, style: "form", explode: true, allowReserved: false },
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params == null ? void 0 : params.cursor, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/spaces`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+  async create(body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/spaces`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  async retrieve(spaceId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/spaces/${serializePathParameter3(spaceId, { name: "spaceId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "item" });
+  }
+  async update(spaceId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/spaces/${serializePathParameter3(spaceId, { name: "spaceId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "PATCH", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  async delete(spaceId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/spaces/${serializePathParameter3(spaceId, { name: "spaceId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "DELETE" });
+  }
+};
+var DriveSharedWithMeApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async list(params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "spaceId", value: params == null ? void 0 : params.spaceId, style: "form", explode: true, allowReserved: false },
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params == null ? void 0 : params.cursor, style: "form", explode: true, allowReserved: false },
+      { name: "sortBy", value: params == null ? void 0 : params.sortBy, style: "form", explode: true, allowReserved: false },
+      { name: "sortOrder", value: params == null ? void 0 : params.sortOrder, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/shared_with_me`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+};
+var DriveSearchApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async list(params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "q", value: params == null ? void 0 : params.q, style: "form", explode: true, allowReserved: false },
+      { name: "spaceId", value: params == null ? void 0 : params.spaceId, style: "form", explode: true, allowReserved: false },
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params == null ? void 0 : params.cursor, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/search`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+};
+var DriveSandboxFileContentsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async retrieve(sandboxId, entryId, params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "logical_path", value: params.logicalPath, style: "form", explode: true, allowReserved: false },
+      { name: "encoding", value: params.encoding, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/sandboxes/${serializePathParameter3(sandboxId, { name: "sandboxId", style: "simple", explode: false })}/files/${serializePathParameter3(entryId, { name: "entryId", style: "simple", explode: false })}/content`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "item" });
+  }
+  async update(sandboxId, entryId, body, params, requestOptions) {
+    const requestHeaders = buildRequestHeaders2(
+      {
+        "If-Match": { value: params.ifMatch, style: "simple", explode: false },
+        "Idempotency-Key": { value: params.idempotencyKey, style: "simple", explode: false }
+      },
+      {}
+    );
+    return this.client.request(appApiPath3(`/drive/sandboxes/${serializePathParameter3(sandboxId, { name: "sandboxId", style: "simple", explode: false })}/files/${serializePathParameter3(entryId, { name: "entryId", style: "simple", explode: false })}/content`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "PUT", body, contentType: "application/json", ...requestHeaders !== void 0 ? { headers: requestHeaders } : {}, sdkworkUnwrapKind: "item" });
+  }
+};
+var DriveSandboxFilesApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async create(sandboxId, body, params, requestOptions) {
+    const requestHeaders = buildRequestHeaders2(
+      {
+        "Idempotency-Key": { value: params.idempotencyKey, style: "simple", explode: false }
+      },
+      {}
+    );
+    return this.client.request(appApiPath3(`/drive/sandboxes/${serializePathParameter3(sandboxId, { name: "sandboxId", style: "simple", explode: false })}/files`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", ...requestHeaders !== void 0 ? { headers: requestHeaders } : {}, sdkworkUnwrapKind: "item" });
+  }
+};
+var DriveSandboxEntriesApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async list(sandboxId, params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "parent_path", value: params == null ? void 0 : params.parentPath, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params == null ? void 0 : params.cursor, style: "form", explode: true, allowReserved: false },
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/sandboxes/${serializePathParameter3(sandboxId, { name: "sandboxId", style: "simple", explode: false })}/entries`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+  async update(sandboxId, entryId, body, params, requestOptions) {
+    const requestHeaders = buildRequestHeaders2(
+      {
+        "If-Match": { value: params.ifMatch, style: "simple", explode: false },
+        "Idempotency-Key": { value: params.idempotencyKey, style: "simple", explode: false }
+      },
+      {}
+    );
+    return this.client.request(appApiPath3(`/drive/sandboxes/${serializePathParameter3(sandboxId, { name: "sandboxId", style: "simple", explode: false })}/entries/${serializePathParameter3(entryId, { name: "entryId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "PATCH", body, contentType: "application/json", ...requestHeaders !== void 0 ? { headers: requestHeaders } : {}, sdkworkUnwrapKind: "item" });
+  }
+  async purge(sandboxId, entryId, body, params, requestOptions) {
+    const requestHeaders = buildRequestHeaders2(
+      {
+        "If-Match": { value: params.ifMatch, style: "simple", explode: false },
+        "Idempotency-Key": { value: params.idempotencyKey, style: "simple", explode: false }
+      },
+      {}
+    );
+    return this.client.request(appApiPath3(`/drive/sandboxes/${serializePathParameter3(sandboxId, { name: "sandboxId", style: "simple", explode: false })}/entries/${serializePathParameter3(entryId, { name: "entryId", style: "simple", explode: false })}/purge`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", ...requestHeaders !== void 0 ? { headers: requestHeaders } : {}, sdkworkUnwrapKind: "command" });
+  }
+};
+var DriveSandboxDirectoriesApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async create(sandboxId, body, params, requestOptions) {
+    const requestHeaders = buildRequestHeaders2(
+      {
+        "Idempotency-Key": { value: params.idempotencyKey, style: "simple", explode: false }
+      },
+      {}
+    );
+    return this.client.request(appApiPath3(`/drive/sandboxes/${serializePathParameter3(sandboxId, { name: "sandboxId", style: "simple", explode: false })}/directories`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", ...requestHeaders !== void 0 ? { headers: requestHeaders } : {}, sdkworkUnwrapKind: "item" });
+  }
+};
+var DriveSandboxesApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async list(params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "page", value: params == null ? void 0 : params.page, style: "form", explode: true, allowReserved: false },
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/sandboxes`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+};
+var DriveRecentApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async list(params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "spaceId", value: params == null ? void 0 : params.spaceId, style: "form", explode: true, allowReserved: false },
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params == null ? void 0 : params.cursor, style: "form", explode: true, allowReserved: false },
+      { name: "sortBy", value: params == null ? void 0 : params.sortBy, style: "form", explode: true, allowReserved: false },
+      { name: "sortOrder", value: params == null ? void 0 : params.sortOrder, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/recent`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+};
+var DriveQuotasApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async retrieve(requestOptions) {
+    return this.client.request(appApiPath3(`/drive/quotas/summary`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "item" });
+  }
+};
+var DrivePropertyNodesApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  /** List nodes carrying an app_public property */
+  async list(propertyKey, params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params == null ? void 0 : params.cursor, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/properties/${serializePathParameter3(propertyKey, { name: "propertyKey", style: "simple", explode: false })}/nodes`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+};
+var DriveVersionsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async list(nodeId, params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params == null ? void 0 : params.cursor, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/versions`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+  async delete(nodeId, versionId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/versions/${serializePathParameter3(versionId, { name: "versionId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "DELETE" });
+  }
+  async retrieve(nodeId, versionId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/versions/${serializePathParameter3(versionId, { name: "versionId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "item" });
+  }
+  async restore(nodeId, versionId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/versions/${serializePathParameter3(versionId, { name: "versionId", style: "simple", explode: false })}/restore`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+};
+var DriveTrashApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async create(nodeId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/trash`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  async list(params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "spaceId", value: params == null ? void 0 : params.spaceId, style: "form", explode: true, allowReserved: false },
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params == null ? void 0 : params.cursor, style: "form", explode: true, allowReserved: false },
+      { name: "parentNodeId", value: params == null ? void 0 : params.parentNodeId, style: "form", explode: true, allowReserved: false },
+      { name: "sortBy", value: params == null ? void 0 : params.sortBy, style: "form", explode: true, allowReserved: false },
+      { name: "sortOrder", value: params == null ? void 0 : params.sortOrder, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/trash`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+  async empty(body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/trash/empty`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "data" });
+  }
+  async restore(nodeId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/trash/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/restore`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+};
+var DriveShareLinksApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async create(nodeId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/share_links`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "data" });
+  }
+  async list(nodeId, params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params == null ? void 0 : params.cursor, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/share_links`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+  async delete(shareLinkId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/share_links/${serializePathParameter3(shareLinkId, { name: "shareLinkId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "DELETE" });
+  }
+  async update(shareLinkId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/share_links/${serializePathParameter3(shareLinkId, { name: "shareLinkId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "PATCH", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  async retrieve(shareLinkId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/share_links/${serializePathParameter3(shareLinkId, { name: "shareLinkId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "item" });
+  }
+  async claim(token, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/share_links/${serializePathParameter3(token, { name: "token", style: "simple", explode: false })}/claim`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", sdkworkUnwrapKind: "data" });
+  }
+};
+var DriveNodePropertiesApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  /** List node custom properties */
+  async list(nodeId, params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "visibility", value: params == null ? void 0 : params.visibility, style: "form", explode: true, allowReserved: false },
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params == null ? void 0 : params.cursor, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/properties`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+  /** Create or update a node custom property */
+  async update(nodeId, propertyKey, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/properties/${serializePathParameter3(propertyKey, { name: "propertyKey", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "PUT", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  /** Delete a node custom property */
+  async delete(nodeId, propertyKey, params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "visibility", value: params == null ? void 0 : params.visibility, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/properties/${serializePathParameter3(propertyKey, { name: "propertyKey", style: "simple", explode: false })}`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "DELETE" });
+  }
+};
+var DrivePermissionsEffectiveApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async list(nodeId, params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params == null ? void 0 : params.cursor, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/permissions/effective`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+};
+var DrivePermissionsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    __publicField(this, "effective");
+    this.client = client;
+    this.effective = new DrivePermissionsEffectiveApi(client);
+  }
+  async list(nodeId, params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params == null ? void 0 : params.cursor, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/permissions`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+  async create(nodeId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/permissions`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  async delete(nodeId, permissionId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/permissions/${serializePathParameter3(permissionId, { name: "permissionId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "DELETE" });
+  }
+  async update(nodeId, permissionId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/permissions/${serializePathParameter3(permissionId, { name: "permissionId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "PATCH", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  async retrieve(nodeId, permissionId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/permissions/${serializePathParameter3(permissionId, { name: "permissionId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "item" });
+  }
+};
+var DriveNodeLabelsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  /** List labels applied to a node */
+  async list(nodeId, params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "labelKey", value: params == null ? void 0 : params.labelKey, style: "form", explode: true, allowReserved: false },
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params == null ? void 0 : params.cursor, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/labels`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+  /** Apply a label to a node */
+  async update(nodeId, labelId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/labels/${serializePathParameter3(labelId, { name: "labelId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "PUT", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  /** Remove a label from a node */
+  async delete(nodeId, labelId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/labels/${serializePathParameter3(labelId, { name: "labelId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "DELETE" });
+  }
+};
+var DriveDownloadGrantsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async create(nodeId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/download_grants`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", ...body !== void 0 ? { body, contentType: "application/json" } : {}, sdkworkUnwrapKind: "data" });
+  }
+};
+var DriveCommentRepliesApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async list(nodeId, commentId, params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params == null ? void 0 : params.cursor, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/comments/${serializePathParameter3(commentId, { name: "commentId", style: "simple", explode: false })}/replies`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+  async create(nodeId, commentId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/comments/${serializePathParameter3(commentId, { name: "commentId", style: "simple", explode: false })}/replies`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  async retrieve(nodeId, commentId, replyId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/comments/${serializePathParameter3(commentId, { name: "commentId", style: "simple", explode: false })}/replies/${serializePathParameter3(replyId, { name: "replyId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "item" });
+  }
+  async update(nodeId, commentId, replyId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/comments/${serializePathParameter3(commentId, { name: "commentId", style: "simple", explode: false })}/replies/${serializePathParameter3(replyId, { name: "replyId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "PATCH", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  async delete(nodeId, commentId, replyId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/comments/${serializePathParameter3(commentId, { name: "commentId", style: "simple", explode: false })}/replies/${serializePathParameter3(replyId, { name: "replyId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "DELETE" });
+  }
+};
+var DriveCommentsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async list(nodeId, params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params == null ? void 0 : params.cursor, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/comments`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+  async create(nodeId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/comments`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  async retrieve(nodeId, commentId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/comments/${serializePathParameter3(commentId, { name: "commentId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "item" });
+  }
+  async update(nodeId, commentId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/comments/${serializePathParameter3(commentId, { name: "commentId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "PATCH", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  async delete(nodeId, commentId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/comments/${serializePathParameter3(commentId, { name: "commentId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "DELETE" });
+  }
+};
+var DriveArchiveEntriesApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async list(nodeId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/archive_entries`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+  async extract(nodeId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/archive_entries/extract`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "data" });
+  }
+};
+var DriveNodesPathApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async retrieve(nodeId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/path`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "data" });
+  }
+};
+var DriveNodesDownloadUrlsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async retrieve(nodeId, params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "requestedTtlSeconds", value: params == null ? void 0 : params.requestedTtlSeconds, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/download_url`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "data" });
+  }
+};
+var DriveNodesContentApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  /** Read active Drive node content on the same origin */
+  async retrieve(nodeId, params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "maxBytes", value: params == null ? void 0 : params.maxBytes, style: "form", explode: true, allowReserved: false },
+      { name: "byteRangeStart", value: params == null ? void 0 : params.byteRangeStart, style: "form", explode: true, allowReserved: false },
+      { name: "byteRangeLength", value: params == null ? void 0 : params.byteRangeLength, style: "form", explode: true, allowReserved: false },
+      { name: "encoding", value: params == null ? void 0 : params.encoding, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/content`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "item" });
+  }
+};
+var DriveNodesCapabilitiesApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async list(nodeId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/capabilities`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "item" });
+  }
+};
+var DriveNodesShortcutsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  /** Create a shortcut node */
+  async create(body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/shortcuts`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+};
+var DriveNodesFoldersApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async create(body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/folders`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+};
+var DriveNodesFilesApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async create(body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/files`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "data" });
+  }
+};
+var DriveNodesApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    __publicField(this, "files");
+    __publicField(this, "folders");
+    __publicField(this, "shortcuts");
+    __publicField(this, "capabilities");
+    __publicField(this, "content");
+    __publicField(this, "downloadUrls");
+    __publicField(this, "path");
+    this.client = client;
+    this.files = new DriveNodesFilesApi(client);
+    this.folders = new DriveNodesFoldersApi(client);
+    this.shortcuts = new DriveNodesShortcutsApi(client);
+    this.capabilities = new DriveNodesCapabilitiesApi(client);
+    this.content = new DriveNodesContentApi(client);
+    this.downloadUrls = new DriveNodesDownloadUrlsApi(client);
+    this.path = new DriveNodesPathApi(client);
+  }
+  async update(nodeId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "PATCH", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  async retrieve(nodeId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "item" });
+  }
+  async delete(nodeId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "DELETE" });
+  }
+  async copy(nodeId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/copy`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  async move(nodeId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/move`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  /** Create a push notification channel for a Drive node */
+  async watch(nodeId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/watch`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  async list(spaceId, params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "parentNodeId", value: params == null ? void 0 : params.parentNodeId, style: "form", explode: true, allowReserved: false },
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params == null ? void 0 : params.cursor, style: "form", explode: true, allowReserved: false },
+      { name: "sortBy", value: params == null ? void 0 : params.sortBy, style: "form", explode: true, allowReserved: false },
+      { name: "sortOrder", value: params == null ? void 0 : params.sortOrder, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/spaces/${serializePathParameter3(spaceId, { name: "spaceId", style: "simple", explode: false })}/nodes`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+};
+var DriveFavoritesApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async list(params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "spaceId", value: params == null ? void 0 : params.spaceId, style: "form", explode: true, allowReserved: false },
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params == null ? void 0 : params.cursor, style: "form", explode: true, allowReserved: false },
+      { name: "sortBy", value: params == null ? void 0 : params.sortBy, style: "form", explode: true, allowReserved: false },
+      { name: "sortOrder", value: params == null ? void 0 : params.sortOrder, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/favorites`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+  async check(body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/favorites/check`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "data" });
+  }
+  async update(nodeId, body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/favorite`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "PUT", body, contentType: "application/json", sdkworkUnwrapKind: "data" });
+  }
+  async delete(nodeId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/nodes/${serializePathParameter3(nodeId, { name: "nodeId", style: "simple", explode: false })}/favorite`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "DELETE" });
+  }
+};
+var DriveDownloadUrlsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async create(body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/download_urls`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "data" });
+  }
+};
+var DriveDownloadTokensApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async retrieve(token, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/download_tokens/${serializePathParameter3(token, { name: "token", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "data" });
+  }
+};
+var DriveDownloadPackagesDownloadUrlsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async retrieve(packageId, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/download_packages/${serializePathParameter3(packageId, { name: "packageId", style: "simple", explode: false })}/download_url`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "data" });
+  }
+};
+var DriveDownloadPackagesApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    __publicField(this, "downloadUrls");
+    this.client = client;
+    this.downloadUrls = new DriveDownloadPackagesDownloadUrlsApi(client);
+  }
+  async create(body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/download_packages`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "data" });
+  }
+};
+var DriveChangesStartPageTokenApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  async retrieve(params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "spaceId", value: params.spaceId, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/changes/start_page_token`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "data" });
+  }
+};
+var DriveChangesApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    __publicField(this, "startPageToken");
+    this.client = client;
+    this.startPageToken = new DriveChangesStartPageTokenApi(client);
+  }
+  async list(params, requestOptions) {
+    const query = buildQueryString3([
+      { name: "spaceId", value: params.spaceId, style: "form", explode: true, allowReserved: false },
+      { name: "cursor", value: params.cursor, style: "form", explode: true, allowReserved: false },
+      { name: "page_size", value: params.pageSize, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString3(appApiPath3(`/drive/changes`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+  /** Create a push notification channel for Drive changes */
+  async watch(body, requestOptions) {
+    return this.client.request(appApiPath3(`/drive/changes/watch`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+};
+var DriveApi = class {
+  constructor(client) {
+    __publicField(this, "changes");
+    __publicField(this, "downloadPackages");
+    __publicField(this, "downloadTokens");
+    __publicField(this, "downloadUrls");
+    __publicField(this, "favorites");
+    __publicField(this, "nodes");
+    __publicField(this, "archiveEntries");
+    __publicField(this, "comments");
+    __publicField(this, "commentReplies");
+    __publicField(this, "downloadGrants");
+    __publicField(this, "nodeLabels");
+    __publicField(this, "permissions");
+    __publicField(this, "nodeProperties");
+    __publicField(this, "shareLinks");
+    __publicField(this, "trash");
+    __publicField(this, "versions");
+    __publicField(this, "propertyNodes");
+    __publicField(this, "quotas");
+    __publicField(this, "recent");
+    __publicField(this, "sandboxes");
+    __publicField(this, "sandboxDirectories");
+    __publicField(this, "sandboxEntries");
+    __publicField(this, "sandboxFiles");
+    __publicField(this, "sandboxFileContents");
+    __publicField(this, "search");
+    __publicField(this, "sharedWithMe");
+    __publicField(this, "spaces");
+    __publicField(this, "moveDestinations");
+    __publicField(this, "websiteRoots");
+    __publicField(this, "uploadSessions");
+    __publicField(this, "uploader");
+    __publicField(this, "watchChannels");
+    this.changes = new DriveChangesApi(client);
+    this.downloadPackages = new DriveDownloadPackagesApi(client);
+    this.downloadTokens = new DriveDownloadTokensApi(client);
+    this.downloadUrls = new DriveDownloadUrlsApi(client);
+    this.favorites = new DriveFavoritesApi(client);
+    this.nodes = new DriveNodesApi(client);
+    this.archiveEntries = new DriveArchiveEntriesApi(client);
+    this.comments = new DriveCommentsApi(client);
+    this.commentReplies = new DriveCommentRepliesApi(client);
+    this.downloadGrants = new DriveDownloadGrantsApi(client);
+    this.nodeLabels = new DriveNodeLabelsApi(client);
+    this.permissions = new DrivePermissionsApi(client);
+    this.nodeProperties = new DriveNodePropertiesApi(client);
+    this.shareLinks = new DriveShareLinksApi(client);
+    this.trash = new DriveTrashApi(client);
+    this.versions = new DriveVersionsApi(client);
+    this.propertyNodes = new DrivePropertyNodesApi(client);
+    this.quotas = new DriveQuotasApi(client);
+    this.recent = new DriveRecentApi(client);
+    this.sandboxes = new DriveSandboxesApi(client);
+    this.sandboxDirectories = new DriveSandboxDirectoriesApi(client);
+    this.sandboxEntries = new DriveSandboxEntriesApi(client);
+    this.sandboxFiles = new DriveSandboxFilesApi(client);
+    this.sandboxFileContents = new DriveSandboxFileContentsApi(client);
+    this.search = new DriveSearchApi(client);
+    this.sharedWithMe = new DriveSharedWithMeApi(client);
+    this.spaces = new DriveSpacesApi(client);
+    this.moveDestinations = new DriveMoveDestinationsApi(client);
+    this.websiteRoots = new DriveWebsiteRootsApi(client);
+    this.uploadSessions = new DriveUploadSessionsApi(client);
+    this.uploader = new DriveUploaderApi(client);
+    this.watchChannels = new DriveWatchChannelsApi(client);
+  }
+};
+function createDriveApi(client) {
+  return new DriveApi(client);
+}
+function appendQueryString3(path, rawQueryString) {
+  const query = rawQueryString.replace(/^\?+/, "");
+  if (!query) {
+    return path;
+  }
+  return path.includes("?") ? `${path}&${query}` : `${path}?${query}`;
+}
+function serializePathParameter3(value, spec) {
+  if (value === void 0 || value === null) {
+    return "";
+  }
+  const style = spec.style || "simple";
+  if (Array.isArray(value)) {
+    return serializePathArray3(spec.name, value, style, spec.explode);
+  }
+  if (typeof value === "object") {
+    return serializePathObject3(spec.name, value, style, spec.explode);
+  }
+  return pathPrefix3(spec.name, style, false) + encodePathValue3(serializePathPrimitive3(value));
+}
+function serializePathArray3(name, values, style, explode) {
+  const serialized = values.filter((item) => item !== void 0 && item !== null).map((item) => encodePathValue3(serializePathPrimitive3(item)));
+  if (serialized.length === 0) {
+    return pathPrefix3(name, style, false);
+  }
+  if (style === "matrix") {
+    return explode ? serialized.map((item) => `;${name}=${item}`).join("") : `;${name}=${serialized.join(",")}`;
+  }
+  return pathPrefix3(name, style, false) + serialized.join(explode ? "." : ",");
+}
+function serializePathObject3(name, value, style, explode) {
+  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== void 0 && entryValue !== null);
+  if (entries.length === 0) {
+    return pathPrefix3(name, style, true);
+  }
+  if (style === "matrix") {
+    return explode ? entries.map(([key, entryValue]) => `;${encodePathValue3(key)}=${encodePathValue3(serializePathPrimitive3(entryValue))}`).join("") : `;${name}=${entries.flatMap(([key, entryValue]) => [encodePathValue3(key), encodePathValue3(serializePathPrimitive3(entryValue))]).join(",")}`;
+  }
+  const serialized = explode ? entries.map(([key, entryValue]) => `${encodePathValue3(key)}=${encodePathValue3(serializePathPrimitive3(entryValue))}`).join(style === "label" ? "." : ",") : entries.flatMap(([key, entryValue]) => [encodePathValue3(key), encodePathValue3(serializePathPrimitive3(entryValue))]).join(",");
+  return pathPrefix3(name, style, true) + serialized;
+}
+function pathPrefix3(name, style, _objectValue) {
+  if (style === "label") return ".";
+  if (style === "matrix") return `;${name}`;
+  return "";
+}
+function encodePathValue3(value) {
+  return encodeURIComponent(value);
+}
+function serializePathPrimitive3(value) {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+function buildQueryString3(parameters) {
+  const pairs = [];
+  for (const parameter of parameters) {
+    appendSerializedParameter3(pairs, parameter);
+  }
+  return pairs.join("&");
+}
+function appendSerializedParameter3(pairs, parameter) {
+  if (parameter.value === void 0 || parameter.value === null) {
+    return;
+  }
+  if (parameter.contentType) {
+    pairs.push(`${encodeQueryComponent3(parameter.name)}=${encodeQueryValue3(JSON.stringify(parameter.value), parameter.allowReserved)}`);
+    return;
+  }
+  const style = parameter.style || "form";
+  if (style === "deepObject") {
+    appendDeepObjectParameter3(pairs, parameter.name, parameter.value, parameter.allowReserved);
+    return;
+  }
+  if (Array.isArray(parameter.value)) {
+    appendArrayParameter3(pairs, parameter.name, parameter.value, style, parameter.explode, parameter.allowReserved);
+    return;
+  }
+  if (typeof parameter.value === "object") {
+    appendObjectParameter3(pairs, parameter.name, parameter.value, style, parameter.explode, parameter.allowReserved);
+    return;
+  }
+  pairs.push(`${encodeQueryComponent3(parameter.name)}=${encodeQueryValue3(serializePrimitive3(parameter.value), parameter.allowReserved)}`);
+}
+function appendArrayParameter3(pairs, name, value, style, explode, allowReserved) {
+  const values = value.filter((item) => item !== void 0 && item !== null).map((item) => serializePrimitive3(item));
+  if (values.length === 0) {
+    return;
+  }
+  if (style === "form" && explode) {
+    for (const item of values) {
+      pairs.push(`${encodeQueryComponent3(name)}=${encodeQueryValue3(item, allowReserved)}`);
+    }
+    return;
+  }
+  pairs.push(`${encodeQueryComponent3(name)}=${encodeQueryValue3(values.join(","), allowReserved)}`);
+}
+function appendObjectParameter3(pairs, name, value, style, explode, allowReserved) {
+  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== void 0 && entryValue !== null);
+  if (entries.length === 0) {
+    return;
+  }
+  if (style === "form" && explode) {
+    for (const [key, entryValue] of entries) {
+      pairs.push(`${encodeQueryComponent3(key)}=${encodeQueryValue3(serializePrimitive3(entryValue), allowReserved)}`);
+    }
+    return;
+  }
+  const serialized = entries.flatMap(([key, entryValue]) => [key, serializePrimitive3(entryValue)]).join(",");
+  pairs.push(`${encodeQueryComponent3(name)}=${encodeQueryValue3(serialized, allowReserved)}`);
+}
+function appendDeepObjectParameter3(pairs, name, value, allowReserved) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    pairs.push(`${encodeQueryComponent3(name)}=${encodeQueryValue3(serializePrimitive3(value), allowReserved)}`);
+    return;
+  }
+  for (const [key, entryValue] of Object.entries(value)) {
+    if (entryValue === void 0 || entryValue === null) {
+      continue;
+    }
+    pairs.push(`${encodeQueryComponent3(`${name}[${key}]`)}=${encodeQueryValue3(serializePrimitive3(entryValue), allowReserved)}`);
+  }
+}
+function serializePrimitive3(value) {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+function encodeQueryComponent3(value) {
+  return encodeURIComponent(value);
+}
+function encodeQueryValue3(value, allowReserved) {
+  const encoded = encodeURIComponent(value);
+  if (!allowReserved) {
+    return encoded;
+  }
+  return encoded.replace(/%3A/gi, ":").replace(/%2F/gi, "/").replace(/%3F/gi, "?").replace(/%23/gi, "#").replace(/%5B/gi, "[").replace(/%5D/gi, "]").replace(/%40/gi, "@").replace(/%21/gi, "!").replace(/%24/gi, "$").replace(/%26/gi, "&").replace(/%27/gi, "'").replace(/%28/gi, "(").replace(/%29/gi, ")").replace(/%2A/gi, "*").replace(/%2B/gi, "+").replace(/%2C/gi, ",").replace(/%3B/gi, ";").replace(/%3D/gi, "=");
+}
+function buildRequestHeaders2(headers, cookies = {}) {
+  const requestHeaders = {};
+  for (const [name, parameter] of Object.entries(headers)) {
+    const serialized = serializeParameterValue2(parameter);
+    if (serialized !== void 0) {
+      requestHeaders[name] = serialized;
+    }
+  }
+  const cookieHeader = buildCookieHeader2(cookies);
+  if (cookieHeader) {
+    requestHeaders.Cookie = requestHeaders.Cookie ? `${requestHeaders.Cookie}; ${cookieHeader}` : cookieHeader;
+  }
+  return Object.keys(requestHeaders).length > 0 ? requestHeaders : void 0;
+}
+function buildCookieHeader2(cookies) {
+  const pairs = [];
+  for (const [name, parameter] of Object.entries(cookies)) {
+    const serialized = serializeParameterValue2(parameter);
+    if (serialized !== void 0) {
+      pairs.push(`${encodeURIComponent(name)}=${encodeURIComponent(serialized)}`);
+    }
+  }
+  return pairs.length > 0 ? pairs.join("; ") : void 0;
+}
+function serializeParameterValue2(parameter) {
+  const value = parameter == null ? void 0 : parameter.value;
+  if (value === void 0 || value === null) {
+    return void 0;
+  }
+  if (parameter == null ? void 0 : parameter.contentType) {
+    return JSON.stringify(value);
+  }
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => serializeHeaderPrimitive2(item)).join(",");
+  }
+  if (typeof value === "object" && value !== null) {
+    return serializeHeaderObject2(value, (parameter == null ? void 0 : parameter.explode) === true);
+  }
+  return serializeHeaderPrimitive2(value);
+}
+function serializeHeaderObject2(value, explode) {
+  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== void 0 && entryValue !== null);
+  if (explode) {
+    return entries.map(([key, entryValue]) => `${key}=${serializeHeaderPrimitive2(entryValue)}`).join(",");
+  }
+  return entries.flatMap(([key, entryValue]) => [key, serializeHeaderPrimitive2(entryValue)]).join(",");
+}
+function serializeHeaderPrimitive2(value) {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  return String(value);
+}
+
+// ../../../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript/generated/server-openapi/src/sdk.ts
+var SdkworkAppClient3 = class {
+  constructor(config) {
+    __publicField(this, "httpClient");
+    __publicField(this, "drive");
+    this.httpClient = createHttpClient3(config);
+    this.drive = createDriveApi(this.httpClient);
+  }
+  setAuthToken(token) {
+    this.httpClient.setAuthToken(token);
+    return this;
+  }
+  setAccessToken(token) {
+    this.httpClient.setAccessToken(token);
+    return this;
+  }
+  setTokenManager(manager) {
+    this.httpClient.setTokenManager(manager);
+    return this;
+  }
+  get http() {
+    return this.httpClient;
+  }
+};
+function createClient3(config) {
+  return new SdkworkAppClient3(config);
+}
+
+// ../../../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript/composed/uploader/uploadPlanner.ts
+var DEFAULT_UPLOADER_CHUNK_SIZE_BYTES = 8 * 1024 * 1024;
+function planUploaderParts(file, chunkSizeBytes = DEFAULT_UPLOADER_CHUNK_SIZE_BYTES) {
+  if (!Number.isFinite(file.size) || file.size < 0) {
+    throw new Error("Drive uploader file size must be a non-negative finite number.");
+  }
+  if (!Number.isFinite(chunkSizeBytes) || chunkSizeBytes <= 0) {
+    throw new Error("Drive uploader chunk size must be a positive finite number.");
+  }
+  if (file.size === 0) {
+    return [
+      {
+        partNo: 1,
+        offsetBytes: 0,
+        sizeBytes: 0
+      }
+    ];
+  }
+  const parts = [];
+  let partNo = 1;
+  for (let offsetBytes = 0; offsetBytes < file.size; offsetBytes += chunkSizeBytes) {
+    parts.push({
+      partNo,
+      offsetBytes,
+      sizeBytes: Math.min(chunkSizeBytes, file.size - offsetBytes)
+    });
+    partNo += 1;
+  }
+  return parts;
+}
+function inferUploaderContentType(file, fallback = "application/octet-stream") {
+  var _a, _b;
+  const explicitType = (_a = file.type) == null ? void 0 : _a.trim();
+  if (explicitType) {
+    return explicitType;
+  }
+  const name = ((_b = file.name) == null ? void 0 : _b.toLowerCase()) || "";
+  if (name.endsWith(".png")) return "image/png";
+  if (name.endsWith(".jpg") || name.endsWith(".jpeg")) return "image/jpeg";
+  if (name.endsWith(".webp")) return "image/webp";
+  if (name.endsWith(".gif")) return "image/gif";
+  if (name.endsWith(".mp4")) return "video/mp4";
+  if (name.endsWith(".mov")) return "video/quicktime";
+  if (name.endsWith(".mp3")) return "audio/mpeg";
+  if (name.endsWith(".wav")) return "audio/wav";
+  if (name.endsWith(".pdf")) return "application/pdf";
+  if (name.endsWith(".zip")) return "application/zip";
+  if (name.endsWith(".txt")) return "text/plain";
+  if (name.endsWith(".md")) return "text/markdown";
+  return fallback;
+}
+function inferUploaderFileName(file) {
+  var _a;
+  return ((_a = file.name) == null ? void 0 : _a.trim()) || "upload.bin";
+}
+
+// ../../../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript/composed/uploader/uploadStateStore.ts
+var InMemoryUploaderStateStore = class {
+  constructor() {
+    __publicField(this, "snapshots", /* @__PURE__ */ new Map());
+  }
+  async get(taskId) {
+    return this.snapshots.get(taskId);
+  }
+  async put(snapshot) {
+    this.snapshots.set(snapshot.taskId, {
+      ...snapshot,
+      uploadedParts: snapshot.uploadedParts.map((part) => ({ ...part }))
+    });
+  }
+  async clear(taskId) {
+    this.snapshots.delete(taskId);
+  }
+};
+function createInMemoryUploaderStateStore() {
+  return new InMemoryUploaderStateStore();
+}
+
+// ../../../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript/composed/uploader/uploaderClient.ts
+function makeUploaderId(prefix) {
+  return `${prefix}-${uuid2()}`;
+}
+function defaultFileFingerprint(fileName, contentType, contentLength) {
+  const normalizedName = fileName.trim().replace(/[^A-Za-z0-9._:@-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 96);
+  return `name:${normalizedName || "file"}:size:${contentLength}:type:${contentType.replace("/", ".")}`;
+}
+function defaultReplacementIdempotencyKey(nodeId, sessionId) {
+  return `drive-node-content-${nodeId}-${sessionId}`;
+}
+function defaultReplacementExpiryEpochMs(nowEpochMs) {
+  const now = nowEpochMs ? Number(nowEpochMs) : Date.now();
+  return String(now + 60 * 60 * 1e3);
+}
+function transportOptions(signal) {
+  return signal !== void 0 ? { signal } : {};
+}
+async function readUploadPartBody(file, offsetBytes, sizeBytes, contentType) {
+  if (file.readRange) {
+    const bytes = await file.readRange(offsetBytes, sizeBytes);
+    return readableBlob(new Blob([bytes], { type: contentType }));
+  }
+  const slice = file.slice;
+  if (!slice) {
+    throw new Error(
+      "Drive uploader file source supports neither readRange nor slice."
+    );
+  }
+  return readableBlob(slice.call(file, offsetBytes, offsetBytes + sizeBytes, contentType));
+}
+var UPLOADER_CHECKSUM_CHUNK_BYTES = 4 * 1024 * 1024;
+function arrayBufferFromView(view) {
+  const buffer = new ArrayBuffer(view.byteLength);
+  new Uint8Array(buffer).set(view);
+  return buffer;
+}
+async function readBlobByRuntimeFallback(blob) {
+  if (typeof blob.bytes === "function") {
+    return arrayBufferFromView(await blob.bytes());
+  }
+  if (typeof FileReader === "function") {
+    return new Promise((resolve2, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (reader.result && typeof reader.result !== "string") {
+          resolve2(reader.result);
+          return;
+        }
+        reject(new Error("Drive uploader Blob reader did not return binary data."));
+      };
+      reader.onerror = () => reject(reader.error || new Error("Drive uploader Blob read failed."));
+      reader.onabort = () => reject(new Error("Drive uploader Blob read was aborted."));
+      reader.readAsArrayBuffer(blob);
+    });
+  }
+  throw new Error("Drive uploader runtime cannot read Blob data.");
+}
+async function blobToArrayBuffer(blob) {
+  const readable = blob;
+  if (typeof readable.arrayBuffer === "function") {
+    return readable.arrayBuffer();
+  }
+  return readBlobByRuntimeFallback(readable);
+}
+function readableBlob(blob) {
+  const readable = blob;
+  if (typeof readable.arrayBuffer === "function") {
+    return blob;
+  }
+  Object.defineProperty(readable, "arrayBuffer", {
+    configurable: true,
+    enumerable: false,
+    value: () => readBlobByRuntimeFallback(readable)
+  });
+  return blob;
+}
+async function sha256Checksum(file) {
+  const hasher = new Sha256Hasher();
+  if (file.size === 0) {
+    return `sha256:${hexEncode2(hasher.digest())}`;
+  }
+  for (let offset = 0; offset < file.size; offset += UPLOADER_CHECKSUM_CHUNK_BYTES) {
+    const length = Math.min(UPLOADER_CHECKSUM_CHUNK_BYTES, file.size - offset);
+    if (file.readRange) {
+      const bytes = await file.readRange(offset, length);
+      hasher.update(new Uint8Array(bytes));
+      continue;
+    }
+    const slice = file.slice;
+    if (!slice) {
+      throw new Error(
+        "Drive uploader file source supports neither readRange nor slice."
+      );
+    }
+    const blob = slice.call(file, offset, offset + length, file.type);
+    hasher.update(new Uint8Array(await blobToArrayBuffer(blob)));
+  }
+  return `sha256:${hexEncode2(hasher.digest())}`;
+}
+function etagFromResponse(response) {
+  const etag = response.headers.get("ETag") || response.headers.get("etag");
+  if (!etag) {
+    throw new Error("Drive uploader signed upload response did not return an ETag.");
+  }
+  return etag;
+}
+function emitProgress(request, snapshot, progress) {
+  var _a;
+  (_a = request.onProgress) == null ? void 0 : _a.call(request, {
+    taskId: request.taskId,
+    uploadItemId: snapshot.uploadItemId,
+    uploadSessionId: snapshot.uploadSessionId,
+    totalBytes: request.file.size,
+    ...progress,
+    ...snapshot.nodeId !== void 0 ? { nodeId: snapshot.nodeId } : {}
+  });
+}
+function completedPartsByPartNo(parts) {
+  return new Map(parts.map((part) => [part.partNo, part]));
+}
+function sortedCompletedParts(parts) {
+  return [...completedPartsByPartNo(parts).values()].sort((left, right) => left.partNo - right.partNo);
+}
+async function uploadPresignedPart({
+  uploadFetch,
+  url,
+  method,
+  headers,
+  body,
+  signal
+}) {
+  const response = await uploadFetch(url, {
+    method,
+    body,
+    ...headers !== void 0 ? { headers } : {},
+    ...signal !== void 0 ? { signal } : {}
+  });
+  if (!response.ok) {
+    throw new Error(`Drive uploader signed upload failed with HTTP ${response.status}.`);
+  }
+  return response;
+}
+var DriveUploaderClient = class {
+  constructor({
+    transport,
+    stateStore = createInMemoryUploaderStateStore(),
+    uploadFetch = fetch,
+    defaultChunkSizeBytes = DEFAULT_UPLOADER_CHUNK_SIZE_BYTES
+  }) {
+    __publicField(this, "transport");
+    __publicField(this, "stateStore");
+    __publicField(this, "uploadFetch");
+    __publicField(this, "defaultChunkSizeBytes");
+    this.transport = transport;
+    this.stateStore = stateStore;
+    this.uploadFetch = uploadFetch;
+    this.defaultChunkSizeBytes = defaultChunkSizeBytes;
+  }
+  async upload(request) {
+    return this.uploadByProfile("generic", request);
+  }
+  async uploadVideo(request) {
+    return this.uploadByProfile("video", request);
+  }
+  async uploadImage(request) {
+    return this.uploadByProfile("image", request);
+  }
+  async uploadAudio(request) {
+    return this.uploadByProfile("audio", request);
+  }
+  async uploadDocument(request) {
+    return this.uploadByProfile("document", request);
+  }
+  async uploadArchive(request) {
+    return this.uploadByProfile("archive", request);
+  }
+  async uploadText(request) {
+    return this.uploadByProfile("text", request);
+  }
+  async uploadDataset(request) {
+    return this.uploadByProfile("dataset", request);
+  }
+  async uploadAttachment(request) {
+    return this.uploadByProfile("attachment", request);
+  }
+  async uploadAvatar(request) {
+    return this.uploadByProfile("avatar", request);
+  }
+  async uploadThumbnail(request) {
+    return this.uploadByProfile("thumbnail", request);
+  }
+  async uploadByProfile(profile, request) {
+    const normalized = await this.normalizeRequest(profile, request);
+    const parts = planUploaderParts(normalized.file, normalized.chunkSizeBytes);
+    const prepared = await this.transport.drive.uploader.uploads.create({
+      id: normalized.id,
+      taskId: normalized.taskId,
+      appResourceType: normalized.appResourceType,
+      appResourceId: normalized.appResourceId,
+      uploadProfileCode: normalized.uploadProfileCode,
+      fileFingerprint: normalized.fileFingerprint,
+      originalFileName: normalized.originalFileName,
+      contentType: normalized.contentType,
+      contentLength: String(normalized.file.size),
+      chunkSizeBytes: String(normalized.chunkSizeBytes),
+      ...normalized.scene !== void 0 ? { scene: normalized.scene } : {},
+      ...normalized.source !== void 0 ? { source: normalized.source } : {},
+      ...normalized.spaceId !== void 0 ? { spaceId: normalized.spaceId } : {},
+      ...normalized.parentNodeId !== void 0 ? { parentNodeId: normalized.parentNodeId } : {},
+      ...normalized.shareToken !== void 0 ? { shareToken: normalized.shareToken } : {},
+      ...normalized.retention !== void 0 ? { retention: normalized.retention } : {},
+      ...normalized.nowEpochMs !== void 0 ? { nowEpochMs: normalized.nowEpochMs } : {}
+    }, transportOptions(normalized.signal));
+    const uploadItem = prepared.uploadItem;
+    const uploadSession = prepared.uploadSession;
+    const uploadSessionId = uploadItem.uploadSessionId || uploadSession.id;
+    const storageUploadId = uploadItem.storageUploadId || uploadSession.storageUploadId;
+    const preparedNodeId = uploadItem.nodeId;
+    const previousState = await this.stateStore.get(normalized.taskId);
+    const carryUploadedParts = (previousState == null ? void 0 : previousState.uploadSessionId) === uploadSessionId ? sortedCompletedParts(previousState.uploadedParts) : [];
+    const baseState = {
+      taskId: normalized.taskId,
+      uploadItemId: uploadItem.id,
+      uploadSessionId,
+      storageUploadId,
+      uploadedParts: carryUploadedParts,
+      updatedAtEpochMs: Date.now()
+    };
+    const progressSnapshot = {
+      uploadItemId: baseState.uploadItemId,
+      uploadSessionId: baseState.uploadSessionId,
+      nodeId: preparedNodeId
+    };
+    emitProgress(normalized, progressSnapshot, {
+      uploadedBytes: baseState.uploadedParts.reduce((sum, part) => sum + part.sizeBytes, 0),
+      uploadedPartsCount: baseState.uploadedParts.length,
+      totalParts: parts.length,
+      status: "prepared"
+    });
+    const completedParts = completedPartsByPartNo(baseState.uploadedParts);
+    try {
+      for (const part of parts) {
+        if (completedParts.has(part.partNo)) {
+          continue;
+        }
+        emitProgress(normalized, progressSnapshot, {
+          partNo: part.partNo,
+          uploadedBytes: [...completedParts.values()].reduce((sum, item) => sum + item.sizeBytes, 0),
+          uploadedPartsCount: completedParts.size,
+          totalParts: parts.length,
+          status: "uploading"
+        });
+        const presigned = await this.transport.drive.uploadSessions.parts.update(uploadSessionId, part.partNo, {
+          uploadId: storageUploadId,
+          ...normalized.requestedPartTtlSeconds !== void 0 ? { requestedTtlSeconds: normalized.requestedPartTtlSeconds } : {}
+        }, transportOptions(normalized.signal));
+        const body = await readUploadPartBody(
+          normalized.file,
+          part.offsetBytes,
+          part.sizeBytes,
+          normalized.contentType
+        );
+        const response = await uploadPresignedPart({
+          uploadFetch: normalized.uploadFetch || this.uploadFetch,
+          url: presigned.uploadUrl,
+          method: presigned.method || "PUT",
+          headers: presigned.headers,
+          body,
+          ...normalized.signal !== void 0 ? { signal: normalized.signal } : {}
+        });
+        const completedPart = {
+          partNo: part.partNo,
+          etag: etagFromResponse(response),
+          offsetBytes: part.offsetBytes,
+          sizeBytes: part.sizeBytes
+        };
+        await this.transport.drive.uploader.uploads.parts.update(uploadItem.id, part.partNo, {
+          uploadSessionId,
+          offsetBytes: String(part.offsetBytes),
+          sizeBytes: String(part.sizeBytes),
+          etag: completedPart.etag
+        }, transportOptions(normalized.signal));
+        completedParts.set(part.partNo, completedPart);
+        await this.stateStore.put({
+          ...baseState,
+          uploadedParts: sortedCompletedParts([...completedParts.values()]),
+          updatedAtEpochMs: Date.now()
+        });
+        emitProgress(normalized, progressSnapshot, {
+          partNo: part.partNo,
+          uploadedBytes: [...completedParts.values()].reduce((sum, item) => sum + item.sizeBytes, 0),
+          uploadedPartsCount: completedParts.size,
+          totalParts: parts.length,
+          status: "part_uploaded"
+        });
+      }
+      const finalParts = sortedCompletedParts([...completedParts.values()]);
+      emitProgress(normalized, progressSnapshot, {
+        uploadedBytes: finalParts.reduce((sum, part) => sum + part.sizeBytes, 0),
+        uploadedPartsCount: finalParts.length,
+        totalParts: parts.length,
+        status: "completing"
+      });
+      const completedSession = await this.transport.drive.uploadSessions.complete(uploadSessionId, {
+        uploadId: storageUploadId,
+        contentType: normalized.contentType,
+        contentLength: String(normalized.file.size),
+        checksumSha256Hex: normalized.checksumSha256Hex,
+        parts: finalParts.map((part) => ({
+          partNo: part.partNo,
+          etag: part.etag
+        }))
+      }, transportOptions(normalized.signal));
+      await this.stateStore.clear(normalized.taskId);
+      emitProgress(normalized, progressSnapshot, {
+        uploadedBytes: normalized.file.size,
+        uploadedPartsCount: finalParts.length,
+        totalParts: parts.length,
+        status: "completed"
+      });
+      return {
+        uploadItem,
+        uploadSession: completedSession,
+        parts: finalParts
+      };
+    } catch (error) {
+      await this.stateStore.put({
+        ...baseState,
+        uploadedParts: sortedCompletedParts([...completedParts.values()]),
+        updatedAtEpochMs: Date.now()
+      });
+      if (error instanceof DOMException && error.name === "AbortError") {
+        await this.abortUploadSession(
+          transportOptions(normalized.signal),
+          uploadSessionId
+        );
+      }
+      throw error;
+    }
+  }
+  async replaceNodeContent(request) {
+    const normalized = await this.normalizeReplaceNodeContentRequest(request);
+    const uploadSession = await this.transport.drive.uploadSessions.create({
+      sessionId: normalized.sessionId,
+      spaceId: normalized.spaceId,
+      nodeId: normalized.nodeId,
+      idempotencyKey: normalized.idempotencyKey,
+      expiresAtEpochMs: normalized.expiresAtEpochMs
+    }, transportOptions(normalized.signal));
+    const uploadSessionId = uploadSession.id || normalized.sessionId;
+    const storageUploadId = uploadSession.storageUploadId;
+    const parts = planUploaderParts(normalized.file, normalized.chunkSizeBytes);
+    try {
+      const completedParts = [];
+      for (const part of parts) {
+        const presigned = await this.transport.drive.uploadSessions.parts.update(
+          uploadSessionId,
+          part.partNo,
+          {
+            uploadId: storageUploadId,
+            ...normalized.requestedPartTtlSeconds !== void 0 ? { requestedTtlSeconds: normalized.requestedPartTtlSeconds } : {}
+          },
+          transportOptions(normalized.signal)
+        );
+        const response = await uploadPresignedPart({
+          uploadFetch: normalized.uploadFetch || this.uploadFetch,
+          url: presigned.uploadUrl,
+          method: presigned.method || "PUT",
+          headers: presigned.headers,
+          body: await readUploadPartBody(
+            normalized.file,
+            part.offsetBytes,
+            part.sizeBytes,
+            normalized.contentType
+          ),
+          ...normalized.signal !== void 0 ? { signal: normalized.signal } : {}
+        });
+        completedParts.push({
+          partNo: presigned.partNo || part.partNo,
+          etag: etagFromResponse(response),
+          offsetBytes: part.offsetBytes,
+          sizeBytes: part.sizeBytes
+        });
+      }
+      const completedSession = await this.transport.drive.uploadSessions.complete(uploadSessionId, {
+        uploadId: storageUploadId,
+        contentType: normalized.contentType,
+        contentLength: String(normalized.file.size),
+        checksumSha256Hex: normalized.checksumSha256Hex,
+        parts: completedParts.map((part) => ({
+          partNo: part.partNo,
+          etag: part.etag
+        }))
+      }, transportOptions(normalized.signal));
+      return {
+        uploadSession: completedSession,
+        parts: completedParts
+      };
+    } catch (error) {
+      await this.abortUploadSession(
+        transportOptions(normalized.signal),
+        uploadSessionId
+      );
+      throw error;
+    }
+  }
+  async normalizeRequest(profile, request) {
+    const originalFileName = request.originalFileName || inferUploaderFileName(request.file);
+    const contentType = request.contentType || inferUploaderContentType(request.file);
+    const uploadProfileCode = request.uploadProfileCode || profile;
+    const chunkSizeBytes = request.chunkSizeBytes || this.defaultChunkSizeBytes;
+    const fileFingerprint = request.fileFingerprint || defaultFileFingerprint(originalFileName, contentType, request.file.size);
+    const taskId = request.taskId || `uploader-${fileFingerprint}`;
+    return {
+      ...request,
+      id: request.id || makeUploaderId("upload-item"),
+      taskId,
+      uploadProfileCode,
+      fileFingerprint,
+      originalFileName,
+      contentType,
+      chunkSizeBytes,
+      checksumSha256Hex: request.checksumSha256Hex || await sha256Checksum(request.file)
+    };
+  }
+  async normalizeReplaceNodeContentRequest(request) {
+    const sessionId = request.sessionId || makeUploaderId("upload");
+    return {
+      ...request,
+      sessionId,
+      idempotencyKey: request.idempotencyKey || defaultReplacementIdempotencyKey(request.nodeId, sessionId),
+      originalFileName: request.originalFileName || inferUploaderFileName(request.file),
+      contentType: request.contentType || inferUploaderContentType(request.file),
+      chunkSizeBytes: request.chunkSizeBytes || this.defaultChunkSizeBytes,
+      checksumSha256Hex: request.checksumSha256Hex || await sha256Checksum(request.file),
+      expiresAtEpochMs: request.expiresAtEpochMs || defaultReplacementExpiryEpochMs(request.nowEpochMs)
+    };
+  }
+  async abortUploadSession(request, uploadSessionId) {
+    if (!this.transport.drive.uploadSessions.abort) {
+      return;
+    }
+    try {
+      await this.transport.drive.uploadSessions.abort(uploadSessionId, {}, transportOptions(request.signal));
+    } catch {
+    }
+  }
+};
+function createDriveUploaderClient(options) {
+  return new DriveUploaderClient(options);
+}
+
+// ../../../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript/src/index.ts
+function typedSdkResponse(response) {
+  return response;
+}
+function createDriveUploaderTransport(client) {
+  return {
+    drive: {
+      uploader: {
+        uploads: {
+          create: (body) => typedSdkResponse(
+            client.drive.uploader.uploads.create(body)
+          ),
+          parts: {
+            update: (uploadItemId, partNo, body) => typedSdkResponse(
+              client.drive.uploader.uploads.parts.update(uploadItemId, partNo, body)
+            )
+          }
+        }
+      },
+      uploadSessions: {
+        create: (body) => typedSdkResponse(client.drive.uploadSessions.create(body)),
+        parts: {
+          update: (uploadSessionId, partNo, body) => typedSdkResponse(
+            client.drive.uploadSessions.parts.update(
+              uploadSessionId,
+              partNo,
+              body
+            )
+          )
+        },
+        complete: (uploadSessionId, body) => typedSdkResponse(
+          client.drive.uploadSessions.complete(uploadSessionId, body)
+        ),
+        abort: (uploadSessionId, body) => typedSdkResponse(
+          client.drive.uploadSessions.abort(uploadSessionId, body)
+        )
+      }
+    }
+  };
+}
+function attachDriveUploader(client, options = {}) {
+  var _a;
+  const driveClient = client;
+  driveClient.uploader = createDriveUploaderClient({
+    ...(_a = options.uploader) != null ? _a : {},
+    transport: createDriveUploaderTransport(client)
+  });
+  return driveClient;
+}
+function createDriveAppClient(config, options = {}) {
+  return attachDriveUploader(createClient3(config), options);
+}
+function createClient4(config, options = {}) {
+  return createDriveAppClient(config, options);
+}
+
+// packages/sdkwork-cloudrouter-mp-core/src/sdk/driveAppSdkClient.ts
+function createCloudRouterMpDriveAppSdkClient(baseUrl) {
+  return createClient4({
+    baseUrl,
+    platform: "mp-weixin",
+    tokenManager: getCloudRouterTokenManager()
+  });
+}
+async function resolveCloudRouterDriveMediaUrl(client, uri) {
+  var _a, _b;
+  if (!uri.startsWith("drive://")) return uri;
+  const matched = /^drive:\/\/spaces\/([^/]+)\/nodes\/([^/?#]+)/u.exec(uri);
+  const nodeId = matched == null ? void 0 : matched[2];
+  if (!nodeId) return null;
+  const grant = await client.drive.downloadGrants.create(nodeId, {
+    requestedTtlSeconds: 900
+  });
+  const record = grant;
+  const downloadUrl = (_b = record.downloadUrl) != null ? _b : (_a = record.data) == null ? void 0 : _a.downloadUrl;
+  return typeof downloadUrl === "string" && downloadUrl.startsWith("http") ? downloadUrl : null;
+}
+
 // packages/sdkwork-cloudrouter-mp-community/src/index.ts
 function asRecord(value) {
   return value && typeof value === "object" ? value : {};
@@ -6241,7 +8565,7 @@ function mapCircle(record) {
   };
 }
 function mapPost(record) {
-  var _a, _b, _c, _d;
+  var _a, _b, _c, _d, _e;
   const author = asRecord(record.author);
   const stats = asRecord(record.stats);
   return {
@@ -6255,7 +8579,8 @@ function mapPost(record) {
     likes: number(stats.reactionCount),
     comments: number(stats.commentCount),
     reviewState: text(record.reviewState) || "approved",
-    tags: stringList(record.tags)
+    tags: stringList(record.tags),
+    firstTag: (_e = stringList(record.tags)[0]) != null ? _e : ""
   };
 }
 function mapComment(record) {
@@ -6268,10 +8593,9 @@ function mapComment(record) {
   };
 }
 function mapMember(record) {
-  const user = asRecord(record.user);
   return {
     id: text(record.id),
-    name: text(user.name),
+    name: text(record.userName),
     role: text(record.role) || "member",
     status: text(record.status) || "active",
     tierName: text(record.tierName)
@@ -6311,17 +8635,47 @@ function mergePending(categoryId, posts, tag) {
   return [...pending.filter((post) => !ids.has(post.id)), ...posts];
 }
 function createCloudRouterMpCommunityApi(options) {
-  var _a;
+  var _a, _b;
   const client = (_a = options.client) != null ? _a : createCloudRouterMpCommunityAppSdkClient(options.appApiBaseUrl);
+  const driveClient = (_b = options.driveClient) != null ? _b : createCloudRouterMpDriveAppSdkClient(options.appApiBaseUrl);
+  const mediaCache = /* @__PURE__ */ new Map();
+  function resolveMedia(uri) {
+    if (!uri) return Promise.resolve(null);
+    if (!uri.startsWith("drive://")) return Promise.resolve(uri);
+    const cached = mediaCache.get(uri);
+    if (cached) return cached;
+    const pending = resolveCloudRouterDriveMediaUrl(driveClient, uri).catch(() => null);
+    mediaCache.set(uri, pending);
+    return pending;
+  }
+  async function resolveCircleMedia(circle) {
+    const [avatar, coverImage] = await Promise.all([
+      resolveMedia(circle.avatar),
+      resolveMedia(circle.coverImage)
+    ]);
+    return {
+      ...circle,
+      avatar: avatar != null ? avatar : "",
+      coverImage: coverImage != null ? coverImage : ""
+    };
+  }
+  async function resolvePostMedia(post) {
+    const images = await Promise.all(post.images.map((uri) => resolveMedia(uri)));
+    return {
+      ...post,
+      images: images.filter((uri) => Boolean(uri))
+    };
+  }
   return {
+    resolveMedia,
     async listCircles() {
       const page = await client.community.categories.list();
-      return pageItems(page).map(mapCircle);
+      return Promise.all(pageItems(page).map(mapCircle).map(resolveCircleMedia));
     },
     async getCircle(categoryId) {
       try {
         const record = await client.community.categories.retrieve(categoryId);
-        return mapCircle(itemRecord(record));
+        return await resolveCircleMedia(mapCircle(itemRecord(record)));
       } catch {
         return null;
       }
@@ -6345,7 +8699,7 @@ function createCloudRouterMpCommunityApi(options) {
         tags: input.tags,
         tabs: input.tabs
       });
-      return mapCircle(itemRecord(created));
+      return await resolveCircleMedia(mapCircle(itemRecord(created)));
     },
     async updateCircle(categoryId, input) {
       await client.community.categories.update(categoryId, {
@@ -6363,15 +8717,17 @@ function createCloudRouterMpCommunityApi(options) {
     async listPosts(categoryId) {
       const page = await client.community.feed.list({ categoryId });
       const posts = pageItems(page).map(mapPost).filter((post) => !post.tags.includes("resource"));
-      return mergePending(categoryId, posts);
+      const resolved = await Promise.all(posts.map(resolvePostMedia));
+      return mergePending(categoryId, resolved);
     },
     async listTabPosts(categoryId, tag) {
       const page = await client.community.feed.list({ categoryId, tag });
-      return mergePending(categoryId, pageItems(page).map(mapPost), tag);
+      const resolved = await Promise.all(pageItems(page).map(mapPost).map(resolvePostMedia));
+      return mergePending(categoryId, resolved, tag);
     },
     async listResources(categoryId) {
       const page = await client.community.feed.list({ categoryId, kind: "resource" });
-      return pageItems(page).map(mapPost);
+      return Promise.all(pageItems(page).map(mapPost).map(resolvePostMedia));
     },
     async listComments(entryId) {
       const page = await client.community.comments.list(entryId);

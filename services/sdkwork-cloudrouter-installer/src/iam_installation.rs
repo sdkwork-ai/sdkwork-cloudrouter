@@ -45,9 +45,9 @@ use std::path::{Path, PathBuf};
 
 use sdkwork_iam_web_adapter::{
     enable_tenant_application, ensure_tenant_application_runtime, load_manifest_from_app_root,
-    manifest_to_ensure_command, resolve_bootstrap_environment,
-    resolve_tenant_application_by_deploy_application_id, tenant_application_instance_key,
-    EmbeddedApplicationBootstrapOptions, TenantApplication,
+    manifest_to_ensure_command, relink_tenant_application_deploy_application_id,
+    resolve_bootstrap_environment, resolve_tenant_application_by_deploy_application_id,
+    tenant_application_instance_key, EmbeddedApplicationBootstrapOptions, TenantApplication,
 };
 use sqlx::PgPool;
 
@@ -71,24 +71,295 @@ pub struct EnsuredInstallation {
     pub created: bool,
 }
 
-/// Ensures the IAM installation of `anchor` for `tenant_id` exists and is enabled.
+/// One legacy IAM installation whose anchor is still the deploy uuid.
+#[derive(Clone, Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LegacyIdentityLink {
+    pub tenant_id: String,
+    pub iam_application_id: String,
+    pub instance_key: String,
+    pub legacy_anchor: String,
+    pub deploy_uuid: String,
+    pub canonical_anchor: String,
+    pub canonical_iam_application_id: Option<String>,
+}
+
+/// One anchor that no deploy application resolves.
+#[derive(Clone, Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OrphanIdentityLink {
+    pub tenant_id: String,
+    pub iam_application_id: String,
+    pub instance_key: String,
+    pub anchor: String,
+}
+
+/// Read-only IAM ↔ Deploy identity reconciliation report.
+#[derive(Clone, Debug, Default, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IdentityLinkAudit {
+    pub legacy_links: Vec<LegacyIdentityLink>,
+    pub duplicate_links: Vec<LegacyIdentityLink>,
+    pub orphan_links: Vec<OrphanIdentityLink>,
+}
+
+/// The installation table in this schema.
 ///
-/// The returned installation is guaranteed to carry
-/// `deploy_application_id == anchor` and `status == "enabled"`; anything else is an
-/// error that names what is wrong, never a value the caller could mistake for a
-/// working installation.
+/// The current IAM schema names it `iam_application_installation`; older
+/// databases still carry `iam_tenant_application`. The audit supports both so
+/// it cannot silently fail on a renamed table.
+async fn identity_installation_table(pg: &PgPool) -> anyhow::Result<&'static str> {
+    let current: Option<String> =
+        sqlx::query_scalar("SELECT to_regclass('iam_application_installation')::text")
+            .fetch_one(pg)
+            .await?;
+    if current.is_some() {
+        return Ok("iam_application_installation");
+    }
+    let legacy: Option<String> =
+        sqlx::query_scalar("SELECT to_regclass('iam_tenant_application')::text")
+            .fetch_one(pg)
+            .await?;
+    if legacy.is_some() {
+        return Ok("iam_tenant_application");
+    }
+    Err(anyhow::Error::msg(
+        "neither iam_application_installation nor iam_tenant_application is visible",
+    ))
+}
+
+/// Audits legacy uuid-anchored IAM installations against the deploy app table.
+///
+/// Read-only by contract: the installer prints the pairs and an operator
+/// decides whether to relink. It never deletes an installation, because the
+/// duplicate rows carry OAuth clients and audit history.
+pub async fn audit_identity_links(pg: &PgPool) -> anyhow::Result<IdentityLinkAudit> {
+    let table = identity_installation_table(pg).await?;
+    let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
+        "SELECT t.tenant_id, t.app_id AS iam_application_id, t.instance_key,
+                t.deploy_application_id AS legacy_anchor,
+                d.uuid AS deploy_uuid, d.id::text AS canonical_anchor,
+                c.app_id AS canonical_iam_application_id
+         FROM {table} t
+         JOIN deploy_app d
+           ON d.uuid = t.deploy_application_id
+          AND d.tenant_id::text = t.tenant_id
+          AND d.deleted_at IS NULL
+         LEFT JOIN {table} c
+           ON c.tenant_id = t.tenant_id
+          AND c.deploy_application_id = d.id::text
+         WHERE t.deploy_application_id IS NOT NULL
+           AND TRIM(t.deploy_application_id) <> ''
+           AND t.deploy_application_id !~ '^[0-9]+$'
+         ORDER BY t.tenant_id, d.uuid"
+    )))
+    .fetch_all(pg)
+    .await?;
+
+    let mut report = IdentityLinkAudit::default();
+    for row in rows {
+        use sqlx::Row;
+        let link = LegacyIdentityLink {
+            tenant_id: row.get("tenant_id"),
+            iam_application_id: row.get("iam_application_id"),
+            instance_key: row.get("instance_key"),
+            legacy_anchor: row.get("legacy_anchor"),
+            deploy_uuid: row.get("deploy_uuid"),
+            canonical_anchor: row.get("canonical_anchor"),
+            canonical_iam_application_id: row.get("canonical_iam_application_id"),
+        };
+        if link.canonical_iam_application_id.is_some() {
+            report.duplicate_links.push(link);
+        } else {
+            report.legacy_links.push(link);
+        }
+    }
+
+    let orphan_rows = sqlx::query(sqlx::AssertSqlSafe(format!(
+        "SELECT t.tenant_id, t.app_id AS iam_application_id, t.instance_key,
+                t.deploy_application_id AS anchor
+         FROM {table} t
+         LEFT JOIN deploy_app d
+           ON d.uuid = t.deploy_application_id
+          AND d.tenant_id::text = t.tenant_id
+          AND d.deleted_at IS NULL
+         WHERE t.deploy_application_id IS NOT NULL
+           AND TRIM(t.deploy_application_id) <> ''
+           AND t.deploy_application_id !~ '^[0-9]+$'
+           AND d.id IS NULL
+         ORDER BY t.tenant_id, t.app_id"
+    )))
+    .fetch_all(pg)
+    .await?;
+    for row in orphan_rows {
+        use sqlx::Row;
+        report.orphan_links.push(OrphanIdentityLink {
+            tenant_id: row.get("tenant_id"),
+            iam_application_id: row.get("iam_application_id"),
+            instance_key: row.get("instance_key"),
+            anchor: row.get("anchor"),
+        });
+    }
+
+    let decimal_orphans = sqlx::query(sqlx::AssertSqlSafe(format!(
+        "SELECT t.tenant_id, t.app_id AS iam_application_id, t.instance_key,
+                t.deploy_application_id AS anchor
+         FROM {table} t
+         WHERE t.deploy_application_id IS NOT NULL
+           AND TRIM(t.deploy_application_id) <> ''
+           AND t.deploy_application_id ~ '^[0-9]+$'
+           AND NOT EXISTS (
+             SELECT 1 FROM deploy_app d
+             WHERE d.id::text = t.deploy_application_id
+               AND d.tenant_id::text = t.tenant_id
+               AND d.deleted_at IS NULL
+           )
+         ORDER BY t.tenant_id, t.app_id"
+    )))
+    .fetch_all(pg)
+    .await?;
+    for row in decimal_orphans {
+        use sqlx::Row;
+        report.orphan_links.push(OrphanIdentityLink {
+            tenant_id: row.get("tenant_id"),
+            iam_application_id: row.get("iam_application_id"),
+            instance_key: row.get("instance_key"),
+            anchor: row.get("anchor"),
+        });
+    }
+    Ok(report)
+}
+
+/// Result of a legacy-anchor reconciliation pass.
+#[derive(Clone, Debug, Default, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IdentityReconcileReport {
+    pub applied: bool,
+    pub candidates: Vec<LegacyIdentityLink>,
+    pub relinked: Vec<String>,
+}
+
+/// Relinks legacy uuid-anchored installations to their canonical decimal anchor.
+///
+/// Only the unambiguous `legacyLinks` are eligible: a duplicate (uuid + decimal
+/// both present) is never guessed at. Dry-run by default; `apply` calls the same
+/// guarded IAM relink used by `ensure_iam_installation`.
+pub async fn reconcile_legacy_identity_links(
+    pg: &PgPool,
+    apply: bool,
+) -> anyhow::Result<IdentityReconcileReport> {
+    let audit = audit_identity_links(pg).await?;
+    let mut report = IdentityReconcileReport {
+        applied: apply,
+        candidates: audit.legacy_links,
+        relinked: Vec::new(),
+    };
+    if !apply {
+        return Ok(report);
+    }
+    for link in &report.candidates {
+        match relink_tenant_application_deploy_application_id(
+            pg,
+            link.tenant_id.as_str(),
+            link.legacy_anchor.as_str(),
+            link.canonical_anchor.as_str(),
+        )
+        .await
+        {
+            Ok(Some(_)) => report
+                .relinked
+                .push(format!("{}:{}", link.tenant_id, link.deploy_uuid)),
+            Ok(None) => {}
+            Err(error) => {
+                return Err(anyhow::Error::msg(format!(
+                    "relink {}:{} failed: {error}",
+                    link.tenant_id, link.deploy_uuid
+                )))
+            }
+        }
+    }
+    Ok(report)
+}
+
+///
+/// `deploy_application_id` is the canonical decimal anchor deploy's
+/// `apps.create` provisioning writes; `deploy_application_uuid` is the public
+/// deploy id, checked only as a legacy fallback so an older uuid-anchored
+/// Result of cleaning ambiguous duplicate installations.
+#[derive(Clone, Debug, Default, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IdentityDuplicateCleanupReport {
+    pub applied: bool,
+    pub candidates: Vec<LegacyIdentityLink>,
+    pub disabled: Vec<String>,
+}
+
+/// Disables the legacy uuid installation when a canonical decimal installation
+/// already exists for the same deploy app.
+///
+/// This is the true duplicate case, so it is a separate explicit command. It
+/// never deletes a row: `status = 'disabled'` keeps the OAuth client and audit
+/// history for review, and the canonical installation stays enabled.
+pub async fn cleanup_duplicate_identity_links(
+    pg: &PgPool,
+    apply: bool,
+) -> anyhow::Result<IdentityDuplicateCleanupReport> {
+    let audit = audit_identity_links(pg).await?;
+    let mut report = IdentityDuplicateCleanupReport {
+        applied: apply,
+        candidates: audit.duplicate_links,
+        disabled: Vec::new(),
+    };
+    if !apply {
+        return Ok(report);
+    }
+    let table = identity_installation_table(pg).await?;
+    for link in &report.candidates {
+        let affected = sqlx::query(sqlx::AssertSqlSafe(format!(
+            "UPDATE {table}
+             SET status = 'disabled', updated_at = NOW()
+             WHERE tenant_id = $1 AND app_id = $2
+               AND deploy_application_id = $3"
+        )))
+        .bind(&link.tenant_id)
+        .bind(&link.iam_application_id)
+        .bind(&link.legacy_anchor)
+        .execute(pg)
+        .await?
+        .rows_affected();
+        if affected > 0 {
+            report.disabled.push(format!(
+                "{}:{}",
+                link.tenant_id, link.iam_application_id
+            ));
+        }
+    }
+    Ok(report)
+}
+
+///
+/// installation is reused instead of duplicated. The returned installation is
+/// Ensures the IAM installation of a deploy application exists and is enabled.
+///
+/// guaranteed to be `enabled` and linked to the resolved anchor; anything else
+/// is an error that names what is wrong, never a value the caller could mistake
+/// for a working installation.
 pub async fn ensure_iam_installation(
     pg: &PgPool,
     tenant_id: &str,
-    anchor: &str,
+    deploy_application_id: &str,
+    deploy_application_uuid: &str,
     app_root: &Path,
 ) -> Result<EnsuredInstallation, String> {
-    validate_identity_before_provisioning(tenant_id, anchor)?;
+    validate_identity_before_provisioning(tenant_id, deploy_application_id)?;
     let tenant_id = tenant_id.trim();
-    let anchor = anchor.trim();
-
+    // The decimal `deploy_app.id` is the canonical IAM anchor: deploy's
+    // `apps.create` identity provisioning writes it, so reusing it is what keeps
+    // one installation per deploy application. Older installer runs used the
+    // public uuid, so fall back to that row instead of minting a second one.
+    let canonical_anchor = deploy_application_id.trim();
     if let Some(existing) =
-        resolve_tenant_application_by_deploy_application_id(pg, tenant_id, anchor).await?
+        resolve_tenant_application_by_deploy_application_id(pg, tenant_id, canonical_anchor).await?
     {
         let application = if existing.status == "enabled" {
             existing
@@ -98,8 +369,43 @@ pub async fn ensure_iam_installation(
             // the write.
             enable_tenant_application(pg, tenant_id, existing.id.as_str()).await?
         };
-        return finish_installation(application, anchor, false);
+        return finish_installation(application, canonical_anchor, false);
     }
+
+    let legacy_anchor = deploy_application_uuid.trim();
+    if !legacy_anchor.is_empty() {
+        if let Some(existing) =
+            resolve_tenant_application_by_deploy_application_id(pg, tenant_id, legacy_anchor)
+                .await?
+        {
+            // Heal the legacy uuid anchor onto the canonical decimal one when the
+            // installation's instance key proves it belongs to this deploy app.
+            // A failed relink is not fatal: the legacy row is still a valid
+            // one-installation identity and is reused as-is.
+            if let Ok(Some(relinked)) = relink_tenant_application_deploy_application_id(
+                pg,
+                tenant_id,
+                legacy_anchor,
+                canonical_anchor,
+            )
+            .await
+            {
+                return finish_installation(relinked, canonical_anchor, false);
+            }
+            let application = if existing.status == "enabled" {
+                existing
+            } else {
+                enable_tenant_application(pg, tenant_id, existing.id.as_str()).await?
+            };
+            return finish_installation(application, legacy_anchor, false);
+        }
+    }
+    let anchor = canonical_anchor;
+    let instance_anchor = if legacy_anchor.is_empty() {
+        canonical_anchor
+    } else {
+        legacy_anchor
+    };
 
     let manifest = load_manifest_from_app_root(app_root).map_err(|error| {
         format!(
@@ -129,7 +435,7 @@ pub async fn ensure_iam_installation(
     // Anchor-scoped instance key: a manifest instance key derived from the runtime
     // app id could match an installation that belongs to a different deploy
     // application, and adopting that row would move another deployment's identity.
-    command.instance_key = tenant_application_instance_key(anchor, environment.as_str());
+    command.instance_key = tenant_application_instance_key(instance_anchor, environment.as_str());
 
     let application = ensure_tenant_application_runtime(pg, &command)
         .await

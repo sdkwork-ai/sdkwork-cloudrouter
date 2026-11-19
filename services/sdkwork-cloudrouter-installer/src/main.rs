@@ -29,6 +29,7 @@ mod backup;
 mod deploy_application;
 mod federated;
 mod iam_installation;
+mod refund_revocation;
 
 const SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD_ENV: &str =
     "SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD";
@@ -409,6 +410,54 @@ async fn run_command(
     database_config: &DatabaseConfig,
 ) -> anyhow::Result<()> {
     match command {
+        InstallerCommand::AuditIdentities => {
+            let database_pool = connect_installer_database_pool(database_config).await?;
+            let sdkwork_database_sqlx::DatabasePool::Postgres(pg, _) = &database_pool else {
+                return Err(InstallerCliError::InvalidArgument(
+                    "audit-identities requires the PostgreSQL installer database".to_owned(),
+                )
+                .into());
+            };
+            let report = iam_installation::audit_identity_links(pg).await?;
+            print_json(&report)?;
+        }
+        InstallerCommand::ReconcileIdentities { apply } => {
+            let database_pool = connect_installer_database_pool(database_config).await?;
+            let sdkwork_database_sqlx::DatabasePool::Postgres(pg, _) = &database_pool else {
+                return Err(InstallerCliError::InvalidArgument(
+                    "reconcile-identities requires the PostgreSQL installer database"
+                        .to_owned(),
+                )
+                .into());
+            };
+            let report =
+                iam_installation::reconcile_legacy_identity_links(pg, apply).await?;
+            print_json(&report)?;
+        }
+        InstallerCommand::CleanupIdentityDuplicates { apply } => {
+            let database_pool = connect_installer_database_pool(database_config).await?;
+            let sdkwork_database_sqlx::DatabasePool::Postgres(pg, _) = &database_pool else {
+                return Err(InstallerCliError::InvalidArgument(
+                    "cleanup-identity-duplicates requires the PostgreSQL installer database"
+                        .to_owned(),
+                )
+                .into());
+            };
+            let report = iam_installation::cleanup_duplicate_identity_links(pg, apply).await?;
+            print_json(&report)?;
+        }
+        InstallerCommand::RevokeRefundedApps { apply } => {
+            let database_pool = connect_installer_database_pool(database_config).await?;
+            let sdkwork_database_sqlx::DatabasePool::Postgres(pg, _) = &database_pool else {
+                return Err(InstallerCliError::InvalidArgument(
+                    "revoke-refunded-apps requires the PostgreSQL installer database"
+                        .to_owned(),
+                )
+                .into());
+            };
+            let report = refund_revocation::revoke_refunded_applications(pg, apply).await?;
+            print_json(&report)?;
+        }
         InstallerCommand::Status => {
             let report = installer.status_report().await?;
             print_json(&InstallationStatusOutput::from(report))?;
@@ -469,6 +518,10 @@ enum InstallerCommand {
     Restore(backup::RestoreOptions),
     ResetAdmin(ResetAdminOptions),
     IssueBootstrapToken(IssueBootstrapTokenOptions),
+    AuditIdentities,
+    ReconcileIdentities { apply: bool },
+    CleanupIdentityDuplicates { apply: bool },
+    RevokeRefundedApps { apply: bool },
 }
 
 #[derive(Debug, Default)]
@@ -514,6 +567,55 @@ where
         "reset-admin" => InstallerCommand::ResetAdmin(parse_reset_admin_options(args)?),
         "issue-bootstrap-token" => {
             InstallerCommand::IssueBootstrapToken(parse_issue_bootstrap_token_options(args)?)
+        }
+        "audit-identities" => {
+            reject_extra_args("audit-identities", args)?;
+            InstallerCommand::AuditIdentities
+        }
+        "reconcile-identities" => {
+            let mut apply = false;
+            for arg in args {
+                match arg.as_str() {
+                    "--apply" => apply = true,
+                    other => {
+                        return Err(InstallerCliError::InvalidArgument(format!(
+                            "unknown reconcile-identities option: {other}"
+                        ))
+                        .into())
+                    }
+                }
+            }
+            InstallerCommand::ReconcileIdentities { apply }
+        }
+        "cleanup-identity-duplicates" => {
+            let mut apply = false;
+            for arg in args {
+                match arg.as_str() {
+                    "--apply" => apply = true,
+                    other => {
+                        return Err(InstallerCliError::InvalidArgument(format!(
+                            "unknown cleanup-identity-duplicates option: {other}"
+                        ))
+                        .into())
+                    }
+                }
+            }
+            InstallerCommand::CleanupIdentityDuplicates { apply }
+        }
+        "revoke-refunded-apps" => {
+            let mut apply = false;
+            for arg in args {
+                match arg.as_str() {
+                    "--apply" => apply = true,
+                    other => {
+                        return Err(InstallerCliError::InvalidArgument(format!(
+                            "unknown revoke-refunded-apps option: {other}"
+                        ))
+                        .into())
+                    }
+                }
+            }
+            InstallerCommand::RevokeRefundedApps { apply }
         }
         other => {
             return Err(InstallerCliError::InvalidArgument(format!(
@@ -788,6 +890,7 @@ async fn run_issue_bootstrap_token_postgres(
     let installation = iam_installation::ensure_iam_installation(
         pool,
         tenant_id,
+        deploy_app.deploy_application_id.as_str(),
         deploy_app.app_id.as_str(),
         app_root.as_path(),
     )
@@ -1001,7 +1104,11 @@ impl InstallerCommand {
             | Self::Backup(_)
             | Self::Restore(_)
             | Self::ResetAdmin(_)
-            | Self::IssueBootstrapToken(_) => false,
+            | Self::IssueBootstrapToken(_)
+            | Self::AuditIdentities
+            | Self::ReconcileIdentities { .. }
+            | Self::CleanupIdentityDuplicates { .. }
+            | Self::RevokeRefundedApps { .. } => false,
         }
     }
 }

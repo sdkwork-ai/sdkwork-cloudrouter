@@ -6,7 +6,10 @@ import 'package:sdkwork_cloudrouter_flutter_mobile_core/sdkwork_cloudrouter_flut
 /// its responses into the views the native screens render. Hosts never build
 /// raw HTTP requests or manual auth headers here.
 class CommunityRepository {
-  CommunityRepository(this._client);
+  CommunityRepository(
+    this._client, {
+    CloudRouterDriveAppSdkClient? drive,
+  }) : _drive = drive;
 
   factory CommunityRepository.forSession({
     required String appApiBaseUrl,
@@ -19,12 +22,38 @@ class CommunityRepository {
         accessToken: accessToken,
         authToken: authToken,
       ),
+      drive: createCloudRouterDriveAppSdkClient(
+        appApiBaseUrl: appApiBaseUrl,
+        accessToken: accessToken,
+        authToken: authToken,
+      ),
     );
   }
 
   final CloudRouterCommunityAppSdkClient _client;
+  final CloudRouterDriveAppSdkClient? _drive;
+  final Map<String, Future<String?>> _mediaCache = <String, Future<String?>>{};
 
   SdkworkAppClient get _sdk => _client.client;
+
+  /// Resolves a community media reference (`drive://...`) to a short-lived
+  /// download URL. Non-drive URLs pass through; failures render a placeholder
+  /// rather than a broken image.
+  Future<String?> resolveMediaUrl(String uri) {
+    if (uri.isEmpty) return Future<String?>.value();
+    if (!uri.startsWith('drive://')) return Future<String?>.value(uri);
+    return _mediaCache.putIfAbsent(uri, () async {
+      final matched =
+          RegExp(r'^drive://spaces/([^/]+)/nodes/([^/?#]+)').firstMatch(uri);
+      final nodeId = matched?.group(2);
+      if (nodeId == null || _drive == null) return null;
+      try {
+        return await _drive.resolveDownloadUrl(nodeId);
+      } catch (_) {
+        return null;
+      }
+    });
+  }
 
   Future<List<CommunityCategory>> listCircles() async {
     final response = await _sdk.community.categoriesList();

@@ -58,6 +58,8 @@ const CHANNEL_PAGE_SIZE = 200;
 const RESOURCE_LINK_PAGE_SIZE = 200;
 /** Hard bound on the page walk so a broken cursor cannot spin forever. */
 const RESOURCE_LINK_MAX_PAGES = 20;
+/** Bound on the IAM installation page walk used for the cross-plane type check. */
+const IAM_APP_TYPE_MAX_PAGES = 5;
 
 let defaultIntegrationService: ApplicationIntegrationService | null = null;
 
@@ -152,7 +154,7 @@ export function createApplicationIntegrationService(): ApplicationIntegrationSer
         // An app that has not declared environments yet still has its default
         // environment; the fallback keeps the drawer usable.
       }
-      return fallbackEnvironment?.trim() ? [{ key: fallbackEnvironment.trim() }] : [];
+      return fallbackEnvironment?.trim() ? [{ key: fallbackEnvironment.trim().toLowerCase() }] : [];
     },
 
     async loadBindings(deployAppId, legacyMetadata) {
@@ -161,20 +163,32 @@ export function createApplicationIntegrationService(): ApplicationIntegrationSer
       return applicationIntegrationBindingsFromResourceLinks(links, legacyMetadata);
     },
 
-    async loadIamApplicationType(deployAppId) {
+    async loadIamApplicationType(deployApplicationId, deployApplicationUuid) {
       const tenantId = resolveStoredPortalTenantId();
       if (!tenantId) {
         return undefined;
       }
       const service = getApplicationCatalogIamService();
-      const payload = await service.iam.tenantApplications.list(tenantId, {
-        page: 1,
-        page_size: CHANNEL_PAGE_SIZE,
-      });
-      const match = extractItems(payload)
-        .map((item) => asRecord(item))
-        .find((item) => readString(item.deployApplicationId) === deployAppId);
-      return match ? readString(match.applicationType) : undefined;
+      for (let page = 1; page <= IAM_APP_TYPE_MAX_PAGES; page += 1) {
+        const payload = await service.iam.tenantApplications.list(tenantId, {
+          page,
+          page_size: CHANNEL_PAGE_SIZE,
+        });
+        const match = extractItems(payload)
+          .map((item) => asRecord(item))
+          .find((item) => {
+            const anchored = readString(item.deployApplicationId ?? item.deploy_application_id);
+            return anchored === deployApplicationId
+              || (deployApplicationUuid !== undefined && anchored === deployApplicationUuid);
+          });
+        if (match) {
+          return readString(match.applicationType ?? match.application_type);
+        }
+        if (!readHasMore(payload)) {
+          break;
+        }
+      }
+      return undefined;
     },
 
     async save(input) {
@@ -204,20 +218,30 @@ async function saveApplicationIntegration(
   let metadata = currentMetadata;
   let updatedAt = current.updatedAt;
   const currentDocument = readApplicationIntegrationDocument(currentMetadata);
+  const linkedApplication = input.linkedApplication;
+  if (linkedApplication) {
+    // The drawer filters candidates, but two operators can still race. A fresh
+    // read is the last point at which the one-to-one relation can be enforced
+    // before the link is written, so a conflicting row is refused instead of
+    // silently turning the anchor into a one-to-many.
+    const conflict = currentDocument.linkedApplications.find((link) => (
+      link.groupId === linkedApplication.groupId && link.id !== linkedApplication.id
+    ));
+    if (conflict) {
+      throw new Error("application-integration-anchor-conflict");
+    }
+  }
   const migrated = new Set(currentDocument.migratedEnvironments ?? []);
   const pendingMigration = input.environments
-    .map((environment) => environment.key)
+    .map((environment) => environment.key.toLowerCase())
     .filter((key) => (
-      !migrated.has(key.toLowerCase())
+      !migrated.has(key)
       && Object.prototype.hasOwnProperty.call(currentDocument.environments, key)
     ));
   let nextMetadata = currentMetadata;
   if (input.linkedApplication) {
     const document = linkApplication(currentDocument, input.linkedApplication);
     nextMetadata = writeApplicationIntegrationAnchor(nextMetadata, document.linkedApplications);
-  }
-  if (pendingMigration.length > 0) {
-    nextMetadata = writeApplicationIntegrationMigration(nextMetadata, pendingMigration);
   }
   if (!sameMetadata(currentMetadata, nextMetadata)) {
     const updated = await client.app.update(input.deployAppId, { metadata: nextMetadata });
@@ -240,6 +264,18 @@ async function saveApplicationIntegration(
     }
     for (const deletion of changes.deletes) {
       await client.app.resourceLinks.delete(input.deployAppId, deletion.id);
+    }
+  }
+
+  // Record the migration only after the authoritative rows are durable. If a
+  // binding write failed above, the legacy row must stay seeded so the operator
+  // can retry instead of silently losing the configuration.
+  if (pendingMigration.length > 0) {
+    const withLedger = writeApplicationIntegrationMigration(metadata, pendingMigration);
+    if (!sameMetadata(metadata, withLedger)) {
+      const updated = await client.app.update(input.deployAppId, { metadata: withLedger });
+      metadata = asRecord(updated.metadata ?? withLedger);
+      updatedAt = updated.updatedAt;
     }
   }
 
@@ -375,6 +411,7 @@ function mapChannelAccount(
   const accountType = readString(record.providerAccountType ?? record.provider_account_type);
   const status = readString(record.status);
   const authorizationStatus = readString(record.authorizationStatus ?? record.authorization_status);
+  const domainVerifyStatus = readString(record.domainVerifyStatus ?? record.domain_verify_status);
   const scope = resolveIntegrationAccountScope(record);
   const organizationId = readString(record.organizationId ?? record.organization_id);
   const ownerUserId = readString(record.ownerUserId ?? record.owner_user_id);
@@ -388,6 +425,7 @@ function mapChannelAccount(
     enabled: readBoolean(record.enabled) ?? false,
     ...(status === undefined ? {} : { status }),
     ...(authorizationStatus === undefined ? {} : { authorizationStatus }),
+    ...(domainVerifyStatus === undefined ? {} : { domainVerifyStatus }),
     scope,
     ...(organizationId === undefined ? {} : { organizationId }),
     ...(ownerUserId === undefined ? {} : { ownerUserId }),
@@ -430,7 +468,7 @@ function mapPaymentAccount(value: unknown): ApplicationPaymentAccountOption | un
 
 function mapEnvironment(value: unknown): ApplicationEnvironmentOption | undefined {
   const record = asRecord(value);
-  const key = readString(record.envKey ?? record.env_key);
+  const key = readString(record.envKey ?? record.env_key)?.toLowerCase();
   if (!key) {
     return undefined;
   }

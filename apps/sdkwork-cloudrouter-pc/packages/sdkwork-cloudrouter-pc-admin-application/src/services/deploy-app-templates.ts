@@ -63,6 +63,13 @@ export interface DeployAppTemplateTransport {
         params: { idempotencyKey: string },
       ): Promise<unknown>;
     };
+    marketplaceTemplates: {
+      install(
+        templateUuid: string,
+        body: object,
+        params: { idempotencyKey: string },
+      ): Promise<unknown>;
+    };
   };
 }
 
@@ -178,6 +185,29 @@ export function createDeployAppTemplateService(
         throw new DeployAppTemplateServiceError("unknown", "version response is missing");
       }
       return version;
+    },
+
+    async install(templateId, input) {
+      const payload = await call("install", () =>
+        templateApi.marketplaceTemplates.install(
+          templateId,
+          cleanRecord({
+            name: input?.name?.trim() || undefined,
+            slug: input?.slug?.trim() || undefined,
+          }),
+          idempotencyParams(),
+        ));
+      const record = asRecord(payload);
+      const app = asRecord(record.app);
+      const appId = readString(app, "id");
+      if (!appId) {
+        throw new DeployAppTemplateServiceError("unknown", "installed application is missing an id");
+      }
+      return {
+        appId,
+        appName: readString(app, "name") || appId,
+        templateUuid: readString(record, "templateUuid") || templateId,
+      };
     },
   };
 }

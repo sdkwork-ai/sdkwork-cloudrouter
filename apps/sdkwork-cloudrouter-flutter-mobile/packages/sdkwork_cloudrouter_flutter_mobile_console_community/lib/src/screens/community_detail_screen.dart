@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sdkwork_cloudrouter_flutter_mobile_core/sdkwork_cloudrouter_flutter_mobile_core.dart';
 
 import '../community_repository.dart';
+import '../widgets/community_network_image.dart';
 import 'community_post_screen.dart';
 
 /// Native circle workspace: feed, resources, members, groups, custom tabs, and
@@ -279,7 +280,11 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
                       child: ListView(
                         padding: const EdgeInsets.only(bottom: 96),
                         children: <Widget>[
-                          _Header(circle: circle, onJoin: _join),
+                          _Header(
+                            circle: circle,
+                            onJoin: _join,
+                            repository: widget.repository,
+                          ),
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             padding: const EdgeInsets.symmetric(
@@ -378,6 +383,7 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
           (entry) => _PostCard(
             entry: entry,
             currentUserId: widget.currentUserId,
+            repository: widget.repository,
             onLike: () => _toggleLike(entry),
             onComment: () => _openComments(entry),
             onDelete: () => _deletePost(entry),
@@ -388,10 +394,15 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.circle, required this.onJoin});
+  const _Header({
+    required this.circle,
+    required this.onJoin,
+    required this.repository,
+  });
 
   final CommunityCategory circle;
   final VoidCallback onJoin;
+  final CommunityRepository repository;
 
   @override
   Widget build(BuildContext context) {
@@ -400,11 +411,10 @@ class _Header extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         if (circle.coverImage != null && circle.coverImage!.isNotEmpty)
-          Image.network(
-            circle.coverImage!,
+          CommunityNetworkImage(
+            repository: repository,
+            uri: circle.coverImage!,
             height: 160,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => const SizedBox(height: 160),
           )
         else
           Container(height: 160, color: theme.colorScheme.primaryContainer),
@@ -449,6 +459,7 @@ class _Header extends StatelessWidget {
 class _PostCard extends StatelessWidget {
   const _PostCard({
     required this.entry,
+    required this.repository,
     required this.onLike,
     required this.onComment,
     required this.onDelete,
@@ -456,6 +467,7 @@ class _PostCard extends StatelessWidget {
   });
 
   final CommunityEntry entry;
+  final CommunityRepository repository;
   final String? currentUserId;
   final VoidCallback onLike;
   final VoidCallback onComment;
@@ -509,13 +521,12 @@ class _PostCard extends StatelessWidget {
                   children: media
                       .take(3)
                       .map(
-                        (uri) => Image.network(
-                          uri,
+                        (uri) => CommunityNetworkImage(
+                          repository: repository,
+                          uri: uri,
                           width: 96,
                           height: 96,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              const SizedBox(width: 96, height: 96),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       )
                       .toList(growable: false),

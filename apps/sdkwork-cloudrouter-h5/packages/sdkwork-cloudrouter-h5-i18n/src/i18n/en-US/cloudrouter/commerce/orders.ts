@@ -91,6 +91,7 @@ export const ordersMessages: Record<string, string> = {
   'orders.cashier_go_pay': "Pay now",
   'orders.cashier_auto_close': "Closes automatically in {{countdown}}",
   'orders.cashier_qr_alt': "Cashier QR code",
+  'orders.cashier_qr_failed': "The QR code could not be generated. Please retry.",
   'orders.cashier_jumping': "Opening cashier…",
   'orders.cashier_jump_fallback': "Not redirected? Tap to continue",
   'orders.cashier_mobile_open_app': "Open this page in WeChat or Alipay to pay",

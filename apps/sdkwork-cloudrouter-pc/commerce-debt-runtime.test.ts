@@ -70,7 +70,6 @@ test('cloudrouter admin mounts standalone business control centers without legac
     '@sdkwork/cloudrouter-pc-admin-wallet',
     '@sdkwork/cloudrouter-pc-admin-messaging',
     '@sdkwork/cloudrouter-pc-admin-agents',
-    '@sdkwork/cloudrouter-pc-admin-skill',
     '@sdkwork/cloudrouter-pc-admin-prompts',
     '@sdkwork/cloudrouter-pc-admin-mcp',
     '@sdkwork/cloudrouter-pc-admin-announcement',
@@ -100,10 +99,11 @@ test('cloudrouter admin mounts standalone business control centers without legac
   assert.match(registrySource, /id:\s*'marketingCenter'/);
   assert.match(registrySource, /id:\s*'paymentCenter'/);
   assert.match(registrySource, /id:\s*'storageCenter'/);
-  assert.match(registrySource, /id:\s*'productCenter'/);
+  assert.match(registrySource, /PRODUCT_CENTER_ADMIN_MODULE_DEF/);
+  assert.match(registrySource, /from '@sdkwork\/cloudrouter-pc-admin-product\/contribution'/);
   assert.doesNotMatch(registrySource, /driveCenter|transactionCenter|financeCenter|serviceProviderCenter|messagingCenter/);
   assert.doesNotMatch(permissionSource, /\/admin\/inventory|\/admin\/drive|\/admin\/catalog|\/admin\/orders|\/admin\/finance|\/admin\/wallet|\/admin\/oauth|\/admin\/service-providers|commerce\./);
-  assert.match(permissionSource, /\/admin\/products/);
+  assert.match(permissionSource, /PRODUCT_CENTER_ADMIN_PERMISSION_HINTS/);
   assert.match(registrySource, /id:\s*'home'/);
   assert.match(registrySource, /id:\s*'operations'/);
   assert.doesNotMatch(sdkInventorySource, /commerce-backend-sdk|commerce-app-sdk/);
@@ -242,15 +242,15 @@ test('legacy sdkwork-commerce SDK family directories are removed', () => {
   }
 });
 
-test('cloudrouter SDKs remain owner-only without cross-domain transport subpaths', () => {
-  assert.equal(
-    existsSync(new URL('../../sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/src/domains/index.ts', import.meta.url)),
-    false,
+test('cloudrouter SDKs compose owner transports only through the ./domains facade', () => {
+  const appDomains = readRepoFile(
+    'sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/src/domains/index.ts',
   );
-  assert.equal(
-    existsSync(new URL('../../sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/src/domains/index.ts', import.meta.url)),
-    false,
+  assert.match(appDomains, /generated\/commerce-server-openapi/);
+  const backendDomains = readRepoFile(
+    'sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/src/domains/index.ts',
   );
+  assert.match(backendDomains, /generated\/commerce-server-openapi/);
 
   const externalClientsSource = readPortalFile('./packages/sdkwork-cloudrouter-pc-core/src/sdk/external-dependency-clients.ts');
   for (const ownerPackage of ['account', 'catalog', 'membership', 'order', 'payment', 'promotion']) {

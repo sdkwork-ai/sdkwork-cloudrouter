@@ -2,6 +2,7 @@ import type { SdkworkAppClient } from '@sdkwork/order-app-sdk';
 import {
   configureOrderMobileRuntime,
   type PaymentRegion,
+  type WechatPaymentOAuthChannel,
 } from '@sdkwork/order-mobile-react-orders';
 
 /**
@@ -16,6 +17,11 @@ export const CLOUDROUTER_ORDER_PAYMENT_REGION: PaymentRegion = 'cn';
 export interface ConfigureCloudRouterOrderRuntimeInput {
   readonly client: SdkworkAppClient;
   readonly paymentRegion?: PaymentRegion;
+  /**
+   * IAM-backed WeChat payment OAuth channel used by the logged-in cashier to
+   * obtain the payer openid for `wechat_jsapi`.
+   */
+  readonly wechatPaymentOAuth?: WechatPaymentOAuthChannel;
 }
 
 /**
@@ -26,6 +32,7 @@ export interface ConfigureCloudRouterOrderRuntimeInput {
  * packages creating SDK clients or raw HTTP transports.
  */
 let orderAppClient: SdkworkAppClient | null = null;
+let orderPaymentRegion: PaymentRegion = CLOUDROUTER_ORDER_PAYMENT_REGION;
 
 /**
  * Injects the bootstrap-built Order App SDK client into the order-owned mobile
@@ -37,9 +44,40 @@ let orderAppClient: SdkworkAppClient | null = null;
 export function configureCloudRouterOrderRuntime({
   client,
   paymentRegion = CLOUDROUTER_ORDER_PAYMENT_REGION,
+  wechatPaymentOAuth,
 }: ConfigureCloudRouterOrderRuntimeInput): void {
   orderAppClient = client;
-  configureOrderMobileRuntime({ client, paymentRegion });
+  orderPaymentRegion = paymentRegion;
+  configureOrderMobileRuntime({
+    client,
+    paymentRegion,
+    ...(wechatPaymentOAuth ? { wechatPaymentOAuth } : {}),
+  });
+}
+
+/**
+ * Attaches the IAM-backed WeChat payment OAuth channel after the IAM runtime
+ * exists.
+ *
+ * The order runtime is configured before React mounts (it only needs the order
+ * SDK), while the IAM client is built by the auth provider. Re-configuring with
+ * the same order client preserves the session while adding the channel the
+ * logged-in WeChat cashier needs.
+ *
+ * @returns `false` when the order runtime has not been bootstrapped yet.
+ */
+export function configureCloudRouterOrderWechatPaymentOAuth(
+  channel: WechatPaymentOAuthChannel,
+): boolean {
+  if (!orderAppClient) {
+    return false;
+  }
+  configureOrderMobileRuntime({
+    client: orderAppClient,
+    paymentRegion: orderPaymentRegion,
+    wechatPaymentOAuth: channel,
+  });
+  return true;
 }
 
 /**

@@ -33,4 +33,13 @@ void main() {
     expect(find.text('内容'), findsOneWidget);
     expect(find.text('标签（逗号或空格分隔）'), findsOneWidget);
   });
+
+  test('passes through non-drive media and rejects empty media', () async {
+    final repo = repository();
+    expect(
+      await repo.resolveMediaUrl('https://cdn.example.com/circle.png'),
+      'https://cdn.example.com/circle.png',
+    );
+    expect(await repo.resolveMediaUrl(''), isNull);
+  });
 }
