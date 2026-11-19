@@ -87,12 +87,13 @@ Electron, Tauri, Qt, Rust, Node, Go, Python.
   marketplace first and falls back to the legacy template catalog, so a
   storefront listing can actually be purchased. The order fulfillment remains
   the only writer of the paid install count.
-- **Still missing:** automatic refund/chargeback **deployment wiring**. App-token
+- **Still missing:** a real deployment run of the refund sweep. App-token
   issuance refuses a refunded order, `cloudrouterctl revoke-refunded-apps
   --apply` archives it manually, and the
-  `sdkwork-deploy-refund-revocation-worker` binary performs the same sweep on an
-  interval; the deployment descriptor/scheduler that runs that worker is not
-  wired in this workspace.
+  `sdkwork-deploy-refund-revocation-worker` binary runs on an interval; the
+  worker is wired into `deployments/docker/docker-compose.yml` and
+  `deployments/kubernetes/refund-revocation-worker.yaml`, but no target
+  environment has executed it yet.
 
 ## 5. Verified commands
 

@@ -24,8 +24,8 @@ count.
 checks the recorded order and returns no application when payment is
 refunded/reversed). `cloudrouterctl revoke-refunded-apps` archives manually, and
 `sdkwork-deploy-refund-revocation-worker` performs the same sweep on an
-interval. The deployment descriptor/scheduler that runs the worker is still not
-wired.
+interval. The worker is wired into the compose stack and the Kubernetes
+manifest; only a real deployment execution remains unverified.
 
 ## 2. Version-pinned Git template source
 
