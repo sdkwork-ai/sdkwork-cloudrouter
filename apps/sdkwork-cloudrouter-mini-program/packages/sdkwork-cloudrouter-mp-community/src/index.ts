@@ -94,9 +94,17 @@ function asRecord(value: unknown): WireRecord {
 }
 
 function pageItems(data: unknown): WireRecord[] {
-  const record = asRecord(data);
-  const items = record.items;
+  const envelope = asRecord(data);
+  const payload = envelope.data ? asRecord(envelope.data) : envelope;
+  const items = payload.items ?? envelope.items;
   return Array.isArray(items) ? items.map(asRecord) : [];
+}
+
+function itemRecord(data: unknown): WireRecord {
+  const envelope = asRecord(data);
+  const payload = envelope.data ? asRecord(envelope.data) : envelope;
+  const item = payload.item ?? envelope.item;
+  return item ? asRecord(item) : payload;
 }
 
 function text(value: unknown): string {
@@ -256,7 +264,7 @@ export function createCloudRouterMpCommunityApi(
     async getCircle(categoryId) {
       try {
         const record = await client.community.categories.retrieve(categoryId);
-        return mapCircle(asRecord(record));
+        return mapCircle(itemRecord(record));
       } catch {
         return null;
       }
@@ -268,8 +276,7 @@ export function createCloudRouterMpCommunityApi(
 
     async leaveCircle(categoryId) {
       const current = await client.community.members.retrieve(categoryId);
-      const record = asRecord(current);
-      const memberId = text(record.id);
+      const memberId = text(itemRecord(current).id);
       if (memberId) {
         await client.community.members.delete(categoryId, memberId);
       }
@@ -284,7 +291,7 @@ export function createCloudRouterMpCommunityApi(
         tags: input.tags,
         tabs: input.tabs,
       });
-      return mapCircle(asRecord(created));
+      return mapCircle(itemRecord(created));
     },
 
     async updateCircle(categoryId, input) {
@@ -334,7 +341,7 @@ export function createCloudRouterMpCommunityApi(
         body: input.body,
         tags: input.tags,
       });
-      const post = mapPost(asRecord(created));
+      const post = mapPost(itemRecord(created));
       if (post.reviewState !== 'approved') {
         PENDING_POSTS.set(categoryId, [
           post,
