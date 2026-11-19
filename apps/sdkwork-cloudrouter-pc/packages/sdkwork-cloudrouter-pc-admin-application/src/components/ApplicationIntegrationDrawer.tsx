@@ -263,14 +263,14 @@ export function ApplicationIntegrationDrawer({
     const deployApplication = deployApplications.find(
       (candidate) => candidate.id === selectedDeployAppId,
     );
-    const deployApplicationId = deployApplication?.deployApplicationId;
+    const deployApplicationId = deployApplication?.deployApplicationId ?? deployApplication?.id;
     if (!service.loadIamApplicationType || !selectedDeployAppId || !deployApplicationId) {
       setIamApplicationType(undefined);
       return;
     }
     let cancelled = false;
     setIamApplicationType(undefined);
-    void service.loadIamApplicationType(deployApplicationId)
+    void service.loadIamApplicationType(deployApplicationId, deployApplication?.id)
       .then((value) => {
         if (!cancelled) {
           setIamApplicationType(value);

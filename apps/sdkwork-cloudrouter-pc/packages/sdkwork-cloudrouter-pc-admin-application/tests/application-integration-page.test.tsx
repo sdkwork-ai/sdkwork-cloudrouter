@@ -301,7 +301,10 @@ describe("application integration actions", () => {
     // The IAM installation is registered as `pc`; the drawer must surface the
     // cross-plane mismatch instead of silently trusting one side. The lookup is
     // keyed by the decimal `deploy_application_id`, not the public uuid.
-    expect(integrations.loadIamApplicationType).toHaveBeenCalledWith("410000000000000001");
+    expect(integrations.loadIamApplicationType).toHaveBeenCalledWith(
+      "410000000000000001",
+      "deploy-mini",
+    );
     expect(await screen.findByText(/IAM 安装注册的应用类型是 pc/)).toBeTruthy();
   });
 

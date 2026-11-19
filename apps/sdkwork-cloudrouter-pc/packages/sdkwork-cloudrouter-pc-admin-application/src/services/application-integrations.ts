@@ -163,7 +163,7 @@ export function createApplicationIntegrationService(): ApplicationIntegrationSer
       return applicationIntegrationBindingsFromResourceLinks(links, legacyMetadata);
     },
 
-    async loadIamApplicationType(deployApplicationId) {
+    async loadIamApplicationType(deployApplicationId, deployApplicationUuid) {
       const tenantId = resolveStoredPortalTenantId();
       if (!tenantId) {
         return undefined;
@@ -176,9 +176,13 @@ export function createApplicationIntegrationService(): ApplicationIntegrationSer
         });
         const match = extractItems(payload)
           .map((item) => asRecord(item))
-          .find((item) => readString(item.deployApplicationId) === deployApplicationId);
+          .find((item) => {
+            const anchored = readString(item.deployApplicationId ?? item.deploy_application_id);
+            return anchored === deployApplicationId
+              || (deployApplicationUuid !== undefined && anchored === deployApplicationUuid);
+          });
         if (match) {
-          return readString(match.applicationType);
+          return readString(match.applicationType ?? match.application_type);
         }
         if (!readHasMore(payload)) {
           break;

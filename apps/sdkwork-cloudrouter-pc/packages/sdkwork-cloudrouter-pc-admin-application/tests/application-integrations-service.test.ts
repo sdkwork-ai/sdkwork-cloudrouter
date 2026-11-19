@@ -606,8 +606,12 @@ describe("authoritative resource-link transport", () => {
     });
 
     const service = createApplicationIntegrationService();
-    await expect(service.loadIamApplicationType?.("deploy-1")).resolves.toBe("miniprogram");
-    await expect(service.loadIamApplicationType?.("deploy-missing")).resolves.toBeUndefined();
+    await expect(
+      service.loadIamApplicationType?.("410000000000000001", "deploy-1"),
+    ).resolves.toBe("miniprogram");
+    await expect(
+      service.loadIamApplicationType?.("410000000000000001", "deploy-missing"),
+    ).resolves.toBeUndefined();
     expect(mocks.iam.iam.tenantApplications.list).toHaveBeenCalledWith("tenant-1", {
       page: 1,
       page_size: 200,
