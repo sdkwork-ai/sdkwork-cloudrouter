@@ -60,6 +60,14 @@ impl PipelineAsyncPollTransport {
             resource,
             InvocationBilling::free(),
         );
+        // Vendors whose task read takes the id as a query parameter
+        // (`GET /v1/query/video_generation?task_id=…`) carry it here.
+        invocation.request.query = request
+            .query
+            .as_deref()
+            .map(str::trim)
+            .filter(|query| !query.is_empty())
+            .map(str::to_owned);
         invocation.routing = routing;
         Ok(invocation)
     }
@@ -209,6 +217,7 @@ mod tests {
             secret_ref: secret.map(|_| "managed://upstream-account-credential/1".to_owned()),
             secret: secret.map(str::to_owned),
             path: "/v1/responses/resp_1".to_owned(),
+            query: None,
         }
     }
 

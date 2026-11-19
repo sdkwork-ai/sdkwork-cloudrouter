@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "component": {
+    "name": "sdkwork-cloudrouter-pc-console-vm-instances",
+    "package": "@sdkwork/cloudrouter-pc-console-vm-instances",
+    "owner": "sdkwork-cloudrouter",
+    "surface": "console"
+  },
+  "contracts": {
+    "backendSdkFamilies": [],
+    "apiSurface": "app",
+    "routes": ["/console/vm-instances"],
+    "permissions": []
+  }
+}

@@ -52,7 +52,7 @@ pub use batch_usage::{
     BatchUsageTotals,
 };
 pub use billing::{BillingMode, BillingQuantitySource, BillingResultGate, InvocationBilling};
-pub use billing_policy::BillingPolicyInterceptor;
+pub use billing_policy::{media_completion_billing, BillingPolicyInterceptor};
 pub use billing_transaction::{BillingSettlementInterceptor, BillingTransactionInterceptor};
 pub use body::InvocationBody;
 pub use circuit_breaker::{
@@ -89,6 +89,7 @@ pub(crate) use pricing::{
     add_meter_dimensions, billing_region_prefers_china, catalog_vendor_code,
     deployment_billing_region,
 };
+pub use pricing::{catalog_tier_code_available, BATCH_TIER_CODE};
 pub(crate) use pricing_identity::catalog_pricing_meters;
 pub(crate) use pricing_identity::measurement_profile_for_catalog_meter;
 pub use pricing_identity::{
@@ -129,8 +130,8 @@ pub use usage::{
     InvocationUsageLineRole,
 };
 pub use usage_extraction::{
-    record_streaming_usage_body, StreamingUsageAccumulator, StreamingUsageFormat,
-    UsageExtractionInterceptor,
+    record_streaming_usage_body, requested_media_seconds, StreamingUsageAccumulator,
+    StreamingUsageFormat, UsageExtractionInterceptor,
 };
 pub use usage_recording::UsageRecordingInterceptor;
 pub use web_tool_billing::{result_gate_for_api_code, result_gate_satisfied, waived_reason};

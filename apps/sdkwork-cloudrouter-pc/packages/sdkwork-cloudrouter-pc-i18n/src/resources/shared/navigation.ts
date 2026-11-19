@@ -4,6 +4,7 @@ export const sharedNavigationMessages = {
   en: {
     "nav.home": "Home",
     "nav.models": "Models",
+    "nav.hardwareMarket": "Hardware Market",
     "nav.pricing": "Pricing",
     "nav.rankings": "Rankings",
     "nav.apps": "App Center",
@@ -147,6 +148,7 @@ export const sharedNavigationMessages = {
   zh: {
     "nav.home": "首页",
     "nav.models": "模型库",
+    "nav.hardwareMarket": "智能硬件市场",
     "nav.pricing": "价格",
     "nav.rankings": "模型排行",
     "nav.apps": "应用中心",

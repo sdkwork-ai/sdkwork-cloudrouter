@@ -24,6 +24,7 @@
     "@sdkwork/cloudrouter-pc-admin-rtc": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-upstream": "workspace:*",
     "@sdkwork/cloudrouter-pc-console-hardware": "workspace:*",
+    "@sdkwork/cloudrouter-pc-console-vm-instances": "workspace:*",
     "@sdkwork/cloudrouter-pc-pricing": "workspace:*",
     "@sdkwork/i18n-pc-react": "workspace:*",
     "@sdkwork/log-pc-admin-request-log": "workspace:*",

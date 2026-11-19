@@ -393,6 +393,53 @@ async fn anthropic_cache_reads_use_the_cache_read_rate() {
     assert_eq!("0.000150000000", amount(&commands, "llm_cache_read_token"));
 }
 
+/// 混合 TTL：上游 usage 已按 TTL 拆行时，两档必须各按各的价结算。
+///
+/// 调用级 `tier_code` 只能二选一（按请求是否声明 1h），所以整段写入会按 1h 价
+/// （2×）收，把实际只缓存 5 分钟的 token 多收 60%。
+#[tokio::test]
+async fn a_mixed_ttl_usage_splits_cache_writes_across_both_rates() {
+    let (_, lines, commands) = settle(
+        anthropic_rates(),
+        Some("1h"),
+        json!({
+            "input_tokens": 100,
+            "cache_creation_input_tokens": 1000,
+            "cache_creation": {
+                "ephemeral_5m_input_tokens": 400,
+                "ephemeral_1h_input_tokens": 600
+            },
+            "cache_read_input_tokens": 0,
+            "output_tokens": 10
+        }),
+    )
+    .await;
+
+    let mut quantities = lines
+        .iter()
+        .filter(|(meter, _)| meter == "llm_cache_write_token")
+        .map(|(_, quantity)| quantity.clone())
+        .collect::<Vec<_>>();
+    quantities.sort();
+    assert_eq!(
+        vec!["400".to_owned(), "600".to_owned()],
+        quantities,
+        "each TTL band must be its own line: {lines:?}"
+    );
+
+    let charged: f64 = commands
+        .iter()
+        .filter(|(meter, _, _)| meter == "llm_cache_write_token")
+        .map(|(_, _, amount)| amount.parse::<f64>().expect("amount"))
+        .sum();
+    // 400 tok × $3.75/M (5m) + 600 tok × $6/M (1h)
+    let expected = 400.0 / 1_000_000.0 * 3.75 + 600.0 / 1_000_000.0 * 6.0;
+    assert!(
+        (charged - expected).abs() < 1e-12,
+        "mixed TTL charge {charged} != {expected}"
+    );
+}
+
 /// 对照：目录只给一条无条件缓存写入费率时，TTL 不参与选档。
 #[tokio::test]
 async fn an_unconditional_cache_write_rate_ignores_ttl() {

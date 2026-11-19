@@ -91,6 +91,7 @@ where
         account: &UpstreamAccountRoute,
         secret: Option<String>,
         path: String,
+        query: Option<String>,
     ) -> DomainResult<AsyncPollResponse> {
         self.transport
             .get(AsyncPollRequest {
@@ -103,6 +104,7 @@ where
                 secret_ref: account.secret_ref.clone(),
                 secret,
                 path,
+                query,
             })
             .await
     }
@@ -152,6 +154,7 @@ where
                 account,
                 secret,
                 format!("/v1/vector_stores/{store_id}/file_batches/{batch_id}/files"),
+                None,
             )
             .await?;
         if let Some(poll) = transport_terminal_poll(task, list.status_code) {
@@ -225,6 +228,7 @@ where
                 account,
                 secret,
                 format!("/v1/files/{output_file_id}/content"),
+                None,
             )
             .await?;
         if let Some(poll) = transport_terminal_poll(task, file.status_code) {
@@ -285,7 +289,7 @@ where
                 ))
             })?;
         let file = self
-            .get(account, secret, path_from_url(results_url))
+            .get(account, secret, path_from_url(results_url), None)
             .await?;
         if let Some(poll) = transport_terminal_poll(task, file.status_code) {
             return Ok(poll);
@@ -374,9 +378,12 @@ where
     fn poll<'a>(&'a self, task: &'a AsyncUsageTask) -> AsyncUsagePollFuture<'a> {
         Box::pin(async move {
             let path = poll_path(task)?;
+            let query = poll_query(task);
             let account = self.route_for(task)?;
             let secret = self.resolve_secret(&account)?;
-            let response = self.get(&account, secret.clone(), path.clone()).await?;
+            let response = self
+                .get(&account, secret.clone(), path.clone(), query)
+                .await?;
             match task.task_kind {
                 AsyncUsageTaskKind::OpenAiBatch => match vector_store_file_batch_target(&path) {
                     Some((store_id, batch_id)) => {
@@ -445,6 +452,18 @@ fn poll_path(task: &AsyncUsageTask) -> DomainResult<String> {
         })
 }
 
+/// Query string stored with the task, for vendors whose task read is a
+/// collection plus a task parameter (`GET /v1/query/video_generation?task_id=…`).
+fn poll_query(task: &AsyncUsageTask) -> Option<String> {
+    task.metadata
+        .as_ref()
+        .and_then(|metadata| metadata.get("pollQuery"))
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|query| !query.is_empty())
+        .map(str::to_owned)
+}
+
 fn interpret_poll(
     task: &AsyncUsageTask,
     status_code: u16,
@@ -506,6 +525,85 @@ fn interpret_poll(
                 "batch usage reconciliation requires reading the result file and is not implemented",
             ))
         }
+        // A media job reports its outcome in the vendor's own status field. The
+        // completed body is kept whole: the ordinary media extraction reads the
+        // produced duration/artifact count out of it (`data.task_result.videos[]`
+        // for Kling, flat `data[]` for Suno-style vendors).
+        AsyncUsageTaskKind::MediaTask => match media_task_status(&body) {
+            MediaTaskStatus::Succeeded => Ok(AsyncUsagePoll::Completed {
+                usage_snapshot: body,
+                billing_request_id: task.billing_request_id(),
+            }),
+            MediaTaskStatus::Failed => Ok(AsyncUsagePoll::Failed(format!(
+                "media task {} finished with a provider failure",
+                task.upstream_id
+            ))),
+            MediaTaskStatus::Pending => Ok(AsyncUsagePoll::Pending),
+        },
+    }
+}
+
+enum MediaTaskStatus {
+    Succeeded,
+    Failed,
+    Pending,
+}
+
+/// Reads the vendor's task status from a media poll response.
+///
+/// Kling answers `{"code":0,"data":{"task_status":"succeed"}}`; compatible
+/// doors answer a top-level `task_status`/`status`. Anything unrecognised stays
+/// pending — a wrong "succeeded" would charge for an unfinished job.
+fn media_task_status(body: &Value) -> MediaTaskStatus {
+    let code_rejected = body
+        .get("code")
+        .and_then(Value::as_i64)
+        .is_some_and(|code| code != 0)
+        || body
+            .get("ErrCode")
+            .and_then(Value::as_i64)
+            .is_some_and(|code| code != 0)
+        // MiniMax wraps its own result code in `base_resp.status_code`.
+        || body
+            .pointer("/base_resp/status_code")
+            .and_then(Value::as_i64)
+            .is_some_and(|code| code != 0);
+    if code_rejected {
+        return MediaTaskStatus::Failed;
+    }
+    // PixVerse answers a numeric status inside `Resp`: 1 completed, 5 still
+    // generating, 7/8 moderation/generation failure.
+    if let Some(status) = body
+        .pointer("/Resp/status")
+        .or_else(|| body.pointer("/resp/status"))
+        .or_else(|| body.get("status"))
+        .filter(|value| value.is_i64() || value.is_u64())
+        .and_then(Value::as_i64)
+    {
+        return match status {
+            1 => MediaTaskStatus::Succeeded,
+            7 | 8 => MediaTaskStatus::Failed,
+            _ => MediaTaskStatus::Pending,
+        };
+    }
+    let status = body
+        .pointer("/data/task_status")
+        .or_else(|| body.get("task_status"))
+        .or_else(|| body.get("status"))
+        // Vidu reports `state` next to the produced `creations[]`.
+        .or_else(|| body.get("state"))
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .trim()
+        .to_ascii_lowercase();
+    match status.as_str() {
+        "succeed" | "succeeded" | "success" | "completed" | "finished" => {
+            MediaTaskStatus::Succeeded
+        }
+        "failed" | "failure" | "fail" | "error" | "cancelled" | "canceled" => {
+            MediaTaskStatus::Failed
+        }
+        _ => MediaTaskStatus::Pending,
     }
 }
 
@@ -899,6 +997,97 @@ mod tests {
         assert!(matches!(
             executor.poll(&task).await.expect("poll"),
             AsyncUsagePoll::Failed(_)
+        ));
+    }
+
+    /// Media jobs report completion in the vendor's own status field; a wrong
+    /// "succeeded" would charge for an unfinished job, a missed "succeeded"
+    /// would leave it unbilled.
+    #[test]
+    fn media_task_status_reads_the_vendor_status_fields() {
+        assert!(matches!(
+            media_task_status(&serde_json::json!({
+                "code": 0,
+                "data": { "task_status": "succeed" }
+            })),
+            MediaTaskStatus::Succeeded
+        ));
+        assert!(matches!(
+            media_task_status(&serde_json::json!({ "data": { "task_status": "running" } })),
+            MediaTaskStatus::Pending
+        ));
+        assert!(matches!(
+            media_task_status(&serde_json::json!({ "code": 500, "message": "quota" })),
+            MediaTaskStatus::Failed
+        ));
+        assert!(matches!(
+            media_task_status(&serde_json::json!({ "status": "FAILED" })),
+            MediaTaskStatus::Failed
+        ));
+        // An unknown status must stay pending rather than complete.
+        assert!(matches!(
+            media_task_status(&serde_json::json!({ "data": {} })),
+            MediaTaskStatus::Pending
+        ));
+        // Vidu reports `state` next to the produced `creations[]`.
+        assert!(matches!(
+            media_task_status(&serde_json::json!({
+                "state": "success",
+                "creations": [{ "duration": 5 }]
+            })),
+            MediaTaskStatus::Succeeded
+        ));
+        assert!(matches!(
+            media_task_status(&serde_json::json!({ "state": "processing" })),
+            MediaTaskStatus::Pending
+        ));
+        assert!(matches!(
+            media_task_status(&serde_json::json!({ "state": "failed" })),
+            MediaTaskStatus::Failed
+        ));
+        // Luma spells completion `completed`.
+        assert!(matches!(
+            media_task_status(&serde_json::json!({ "state": "completed" })),
+            MediaTaskStatus::Succeeded
+        ));
+        // PixVerse answers numeric statuses inside `Resp`: 1 done, 5 running,
+        // 7/8 failed, and a non-zero `ErrCode` is a failure regardless.
+        assert!(matches!(
+            media_task_status(&serde_json::json!({ "ErrCode": 0, "Resp": { "status": 1 } })),
+            MediaTaskStatus::Succeeded
+        ));
+        assert!(matches!(
+            media_task_status(&serde_json::json!({ "ErrCode": 0, "Resp": { "status": 5 } })),
+            MediaTaskStatus::Pending
+        ));
+        assert!(matches!(
+            media_task_status(&serde_json::json!({ "ErrCode": 0, "Resp": { "status": 8 } })),
+            MediaTaskStatus::Failed
+        ));
+        assert!(matches!(
+            media_task_status(&serde_json::json!({ "ErrCode": 50001, "ErrMsg": "quota" })),
+            MediaTaskStatus::Failed
+        ));
+        // MiniMax spells completion `Success` / failure `Fail` and wraps an
+        // error code in `base_resp`.
+        assert!(matches!(
+            media_task_status(&serde_json::json!({ "status": "Success", "file_id": "f1" })),
+            MediaTaskStatus::Succeeded
+        ));
+        assert!(matches!(
+            media_task_status(&serde_json::json!({ "status": "Processing" })),
+            MediaTaskStatus::Pending
+        ));
+        assert!(matches!(
+            media_task_status(&serde_json::json!({ "status": "Fail" })),
+            MediaTaskStatus::Failed
+        ));
+        assert!(matches!(
+            media_task_status(&serde_json::json!({
+                "status": "Processing",
+                "base_resp": { "status_code": 1004 }
+            })),
+            MediaTaskStatus::Failed
         ));
     }
 }

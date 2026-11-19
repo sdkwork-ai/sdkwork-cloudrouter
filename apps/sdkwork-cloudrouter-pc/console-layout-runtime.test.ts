@@ -34,6 +34,7 @@ test("every console route is covered by the shared content gutter contract", () 
     "agents",
     "memory",
     "hardware",
+    "vm-instances",
     "account",
     "wallet",
     "coupons",
@@ -98,6 +99,30 @@ test("console sidebar highlights exactly one entry for nested routes", () => {
     resolveConsoleSidebarActivePath('/console/wallet', paths),
     null,
     "routes outside the sidebar must not activate any entry",
+  );
+});
+
+test("console sidebar renders the virtual machines group directly below smart hardware", () => {
+  const shellSource = readPortalFile(
+    "./packages/sdkwork-cloudrouter-pc-console-shell/src/ConsoleLayout.tsx",
+  );
+
+  const hardwareIndex = shellSource.indexOf('consoleHardwareGroup,');
+  const vmInstancesIndex = shellSource.indexOf('consoleVmInstancesGroup,');
+  const businessIndex = shellSource.indexOf("groupBlock('console.menu.group.accountBusiness'");
+
+  assert.ok(hardwareIndex > -1, "the smart hardware group must stay declared in the console sidebar");
+  assert.ok(
+    vmInstancesIndex > -1,
+    "the virtual machines group must be composed from its contribution",
+  );
+  assert.ok(
+    vmInstancesIndex > hardwareIndex,
+    "virtual machines must render below the smart hardware group",
+  );
+  assert.ok(
+    businessIndex > vmInstancesIndex,
+    "virtual machines must render above the account and commerce group",
   );
 });
 

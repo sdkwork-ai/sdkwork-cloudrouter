@@ -18,11 +18,13 @@ import {
   configureSdkworkOrderSessionTokenProvider,
   createSdkworkMembershipCheckoutService,
   createSdkworkCouponRechargeService,
+  createSdkworkPhysicalPurchaseService,
   createSdkworkPointsRechargeService,
   createSdkworkTokenBankRechargeService,
   createSdkworkOrderAppService,
   type SdkworkMembershipCheckoutService,
   type SdkworkCouponRechargeService,
+  type SdkworkPhysicalPurchaseService,
   type SdkworkPointsRechargeService,
 } from '@sdkwork/order-service';
 import type { PaymentAppSdkClient } from '@sdkwork/payment-sdk-ports';
@@ -59,6 +61,7 @@ let pointsRechargeService: SdkworkPointsRechargeService | null = null;
 let tokenBankRechargeService: SdkworkPointsRechargeService | null = null;
 let membershipCheckoutService: SdkworkMembershipCheckoutService | null = null;
 let couponRechargeService: SdkworkCouponRechargeService | null = null;
+let physicalPurchaseService: SdkworkPhysicalPurchaseService | null = null;
 
 function readCloudRouterDomainSessionTokens() {
   const session = loadStoredAppSessionToken();
@@ -137,6 +140,13 @@ export function configureCloudRouterDomainServiceProviders(): void {
     appService: orderAppService,
   });
   couponRechargeService = createSdkworkCouponRechargeService({
+    appService: orderAppService,
+  });
+  // Physical-goods checkout for the Smart Hardware Market: the storefront
+  // sells catalog SKUs, but the session, quote, and order belong to the order
+  // module. Binding it here keeps the buyer flow on the same provider the rest
+  // of the console already uses.
+  physicalPurchaseService = createSdkworkPhysicalPurchaseService({
     appService: orderAppService,
   });
   configureSdkworkPromotionAppServiceProvider(() => createSdkworkPromotionAppService({
@@ -220,4 +230,19 @@ export function getCloudRouterCouponRechargeService(): SdkworkCouponRechargeServ
     throw new Error('Cloud Router coupon recharge service is not configured.');
   }
   return couponRechargeService;
+}
+
+/**
+ * Physical-goods purchase service for catalog SKUs.
+ *
+ * The Smart Hardware Market prepares a checkout session (SKU lines + shipping
+ * address), reads the server quote, and places the order through this service.
+ * Payment is not part of it: the placed order is handed to the shared cashier
+ * route, which owns the payment protocol.
+ */
+export function getCloudRouterPhysicalPurchaseService(): SdkworkPhysicalPurchaseService {
+  if (!physicalPurchaseService) {
+    throw new Error('Cloud Router physical purchase service is not configured.');
+  }
+  return physicalPurchaseService;
 }

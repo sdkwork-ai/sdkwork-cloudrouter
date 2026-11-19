@@ -1064,7 +1064,24 @@ where
     })
 }
 
+/// Mounts every OpenAI/vendor runtime route, then guarantees that every response
+/// leaving the router carries a correlation id.
+///
+/// The invocation pipeline attaches its own ids deep inside the dispatch path,
+/// but the early-exit answers (authentication rejection, unknown route,
+/// malformed query) are built before the pipeline exists. A client reporting one
+/// of those had no id to quote, so the id is filled in here for the whole router
+/// instead of at each return site.
 fn router_with_openai_runtime_routes<C>(input: OpenAiRuntimeRoutesInput<C>) -> Router
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    router_with_openai_runtime_routes_inner(input).layer(axum::middleware::from_fn(
+        crate::invocation_http::ensure_response_correlation_id,
+    ))
+}
+
+fn router_with_openai_runtime_routes_inner<C>(input: OpenAiRuntimeRoutesInput<C>) -> Router
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {

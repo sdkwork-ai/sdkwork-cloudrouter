@@ -27,8 +27,10 @@ import { adminTradeMessages } from '@sdkwork/order-pc-admin-trade/i18n';
 import { messagingNotifyAdminMessages } from '@sdkwork/messaging-pc-admin-notify/i18n';
 import { hardwareAdminMessages } from '@sdkwork/cloudrouter-pc-admin-hardware/i18n';
 import { productCenterAdminMessages } from '@sdkwork/cloudrouter-pc-admin-product/i18n';
+import { hardwareMarketMessages } from '@sdkwork/cloudrouter-pc-hardware-market/i18n';
 import { enterpriseAdminMessages } from '@sdkwork/company-pc-admin-enterprise/i18n';
 import { hardwareConsoleMessages } from '@sdkwork/cloudrouter-pc-console-hardware/i18n';
+import { vmInstancesConsoleMessages } from '@sdkwork/cloudrouter-pc-console-vm-instances/i18n';
 import { logAdminI18n } from '@sdkwork/log-pc-admin-request-log/i18n';
 import { mergeI18nBundles, withoutMessagePrefixes } from './merge';
 import { adminAnalyticsRecordMessages } from './admin/analytics-record';
@@ -103,8 +105,10 @@ export const resources = mergeI18nBundles([
   messagingNotifyAdminMessages,
   hardwareAdminMessages,
   productCenterAdminMessages,
+  hardwareMarketMessages,
   enterpriseAdminMessages,
   hardwareConsoleMessages,
+  vmInstancesConsoleMessages,
   adminAnalyticsRecordMessages,
   adminAuthSettingsMessages,
   adminBusinessManagementMessages,

@@ -10,6 +10,9 @@ pub enum AsyncUsageTaskKind {
     AnthropicBatch,
     BackgroundResponse,
     ThreadRun,
+    /// Media generation job (video / music / effects) whose produced quantity
+    /// (seconds or artifacts) is only known when the task completes.
+    MediaTask,
 }
 
 impl AsyncUsageTaskKind {
@@ -19,6 +22,7 @@ impl AsyncUsageTaskKind {
             Self::AnthropicBatch => "anthropic_batch",
             Self::BackgroundResponse => "background_response",
             Self::ThreadRun => "thread_run",
+            Self::MediaTask => "media_task",
         }
     }
 
@@ -28,6 +32,7 @@ impl AsyncUsageTaskKind {
             "anthropic_batch" => Ok(Self::AnthropicBatch),
             "background_response" => Ok(Self::BackgroundResponse),
             "thread_run" => Ok(Self::ThreadRun),
+            "media_task" => Ok(Self::MediaTask),
             other => Err(DomainError::new(format!(
                 "unknown async usage task kind: {other}"
             ))),

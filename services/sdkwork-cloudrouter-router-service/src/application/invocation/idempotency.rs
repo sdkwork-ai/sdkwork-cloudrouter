@@ -1090,6 +1090,34 @@ struct CachedResponsePayload {
     body: Option<serde_json::Value>,
     body_bytes: Option<Vec<u8>>,
     content_type: Option<String>,
+    /// Replayable response headers (lowercase name, value).
+    ///
+    /// A replayed idempotent response must answer like the first one. Without
+    /// these the client lost the provider's `retry-after`, rate-limit budget and
+    /// request id on exactly the retry path where they matter most.
+    #[serde(default)]
+    headers: Vec<(String, String)>,
+}
+
+/// Upstream response headers worth replaying with a cached response.
+///
+/// Deliberately narrow: hop-by-hop framing (`content-length`,
+/// `transfer-encoding`, `connection`) belongs to the transport and is rebuilt
+/// per response, and `set-cookie` is not replayed because the gateway does not
+/// mint session state on provider responses.
+const REPLAYABLE_RESPONSE_HEADERS: &[&str] = &[
+    "retry-after",
+    "request-id",
+    "x-request-id",
+    "x-goog-request-id",
+    "openai-organization",
+    "openai-version",
+    "openai-processing-ms",
+];
+
+fn replayable_response_header(name: &str) -> bool {
+    let name = name.to_ascii_lowercase();
+    REPLAYABLE_RESPONSE_HEADERS.contains(&name.as_str()) || name.starts_with("x-ratelimit-")
 }
 
 /// Upper bound for one cached idempotent response. Caching full multi-megabyte
@@ -1111,6 +1139,17 @@ impl CachedResponsePayload {
             body: response.body.clone(),
             body_bytes: response.body_bytes.clone(),
             content_type: response.content_type.clone(),
+            headers: response
+                .headers
+                .iter()
+                .filter(|(name, _)| replayable_response_header(name.as_str()))
+                .filter_map(|(name, value)| {
+                    value
+                        .to_str()
+                        .ok()
+                        .map(|value| (name.as_str().to_ascii_lowercase(), value.to_owned()))
+                })
+                .collect(),
         };
         if payload.encoded_size() > MAX_CACHED_RESPONSE_BYTES {
             return None;
@@ -1129,12 +1168,21 @@ impl CachedResponsePayload {
     }
 
     fn to_dispatch_response(&self) -> InvocationDispatchResponse {
+        let mut headers = axum::http::HeaderMap::new();
+        for (name, value) in &self.headers {
+            if let (Ok(name), Ok(value)) = (
+                axum::http::HeaderName::try_from(name.as_str()),
+                axum::http::HeaderValue::try_from(value.as_str()),
+            ) {
+                headers.insert(name, value);
+            }
+        }
         InvocationDispatchResponse {
             status_code: self.status_code,
             body: self.body.clone(),
             body_bytes: self.body_bytes.clone(),
             content_type: self.content_type.clone(),
-            headers: axum::http::HeaderMap::new(),
+            headers,
             stream_body: Mutex::new(None),
             memory_guard: None,
         }
@@ -1474,5 +1522,93 @@ mod tests {
         assert!(complete.contains("record.request_fingerprint ~= ARGV[2]"));
         assert!(release.contains("record.owner_token ~= ARGV[1]"));
         assert!(release.contains("redis.call('DEL', KEYS[1])"));
+    }
+
+    /// A replay must answer like the original, including the provider headers
+    /// clients actually act on (`retry-after`, rate-limit budget, processing
+    /// time). Transport framing headers are rebuilt per response and must not be
+    /// replayed.
+    #[tokio::test]
+    async fn replays_the_provider_response_headers_with_the_cached_body() {
+        let interceptor = IdempotencyInterceptor::default();
+        let mut first = invocation(
+            "req-first",
+            100,
+            200,
+            300,
+            400,
+            "replay-headers",
+            json!({"model": "gpt-4o-mini"}),
+        );
+        interceptor
+            .before(&mut first)
+            .await
+            .expect("acquire idempotency lease");
+        let mut dispatched = response(200, "first");
+        for (name, value) in [
+            ("retry-after", "7"),
+            ("x-ratelimit-remaining-requests", "42"),
+            ("openai-processing-ms", "123"),
+            ("content-length", "999"),
+            ("set-cookie", "session=abc"),
+        ] {
+            dispatched.headers.insert(
+                axum::http::HeaderName::try_from(name).expect("header name"),
+                axum::http::HeaderValue::from_static(value),
+            );
+        }
+        first.dispatch.response = Some(dispatched);
+        interceptor
+            .after(&mut first)
+            .await
+            .expect("commit idempotency response");
+
+        let mut replayed = invocation(
+            "req-second",
+            100,
+            200,
+            300,
+            400,
+            "replay-headers",
+            json!({"model": "gpt-4o-mini"}),
+        );
+        interceptor
+            .before(&mut replayed)
+            .await
+            .expect("replay cached response");
+        assert_eq!(DispatchMode::SyntheticLocalResponse, replayed.dispatch.mode);
+
+        let headers = &replayed
+            .dispatch
+            .response
+            .as_ref()
+            .expect("replayed response")
+            .headers;
+        assert_eq!(
+            Some("7"),
+            headers
+                .get("retry-after")
+                .and_then(|value| value.to_str().ok())
+        );
+        assert_eq!(
+            Some("42"),
+            headers
+                .get("x-ratelimit-remaining-requests")
+                .and_then(|value| value.to_str().ok())
+        );
+        assert_eq!(
+            Some("123"),
+            headers
+                .get("openai-processing-ms")
+                .and_then(|value| value.to_str().ok())
+        );
+        assert!(
+            headers.get("content-length").is_none(),
+            "transport framing headers must not be replayed"
+        );
+        assert!(
+            headers.get("set-cookie").is_none(),
+            "cookies must not be replayed"
+        );
     }
 }

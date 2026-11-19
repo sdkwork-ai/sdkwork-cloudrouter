@@ -32,10 +32,35 @@ pub(crate) async fn handle_invocation<C>(
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
-    let (mut parts, body) = request.into_parts();
+    let (parts, body) = request.into_parts();
+    // Every response needs a correlation id, including the ones that never reach
+    // the pipeline (authentication rejection, malformed query, unroutable path).
+    // Those paths used to return a bare body, so a client reporting a failure had
+    // no id to quote and no way to find the matching gateway log line.
+    let request_id = generate_server_request_id();
+    let mut response = handle_public_invocation(state, parts, body, request_id.as_str()).await;
+    // The pipeline attaches the invocation's own trace ids; only fill in the
+    // paths that produced none, so a dispatched response keeps correlating with
+    // the invocation log instead of the outer fallback id.
+    if !response.headers().contains_key("x-sdkwork-trace-id") {
+        attach_trace_response_headers(&mut response, request_id.as_str(), None);
+    }
+    response
+}
+
+async fn handle_public_invocation<C>(
+    state: InvocationRouterState<C>,
+    mut parts: axum::http::request::Parts,
+    body: Body,
+    request_id: &str,
+) -> Response
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
     tracing::debug!(
         method = %parts.method,
         path = %parts.uri.path(),
+        request_id = %request_id,
         "invocation.http.request public channel entered"
     );
     // 安全：先鉴权后分类——未认证请求不触发任何分类/解析逻辑，缩小信息暴露面。
@@ -54,6 +79,7 @@ where
             tracing::warn!(
                 method = %parts.method,
                 path = %parts.uri.path(),
+                request_id = %request_id,
                 %error,
                 "invocation.http authentication failed"
             );
@@ -62,7 +88,15 @@ where
     };
     parts.uri = match sanitize_authenticated_gateway_uri(&parts.uri) {
         Ok(uri) => uri,
-        Err(error) => return error.into_response(),
+        Err(error) => {
+            tracing::warn!(
+                path = %parts.uri.path(),
+                request_id = %request_id,
+                %error,
+                "invocation.http request uri rejected"
+            );
+            return error.into_response();
+        }
     };
     handle_authenticated_invocation(state, Request::from_parts(parts, body), identity, false).await
 }
@@ -95,6 +129,20 @@ where
         return response_from_invocation_error(&InvocationError::new(
             InvocationErrorKind::Authentication,
             "internal gateway requests must not contain public API key credentials",
+        ));
+    }
+    // Reject before reading the body. The internal channel authenticates with an
+    // HMAC over the payload, so the body must be read before the signature can
+    // be verified; but a request that does not even carry the internal auth
+    // headers can never authenticate, and buffering up to the body limit for it
+    // is pure amplification on an unauthenticated surface.
+    if !INTERNAL_GATEWAY_AUTH_HEADERS
+        .iter()
+        .any(|name| parts.headers.contains_key(*name))
+    {
+        return response_from_invocation_error(&InvocationError::new(
+            InvocationErrorKind::Authentication,
+            "internal gateway request is missing its authentication headers",
         ));
     }
     if content_length_from_headers(&parts.headers)
@@ -420,6 +468,7 @@ fn attach_route_failure_headers(
         .unwrap_or("dispatch_failed");
     let reason: String = error_message_masked
         .filter(|value| !value.is_empty())
+        .map(sanitized_route_reason)
         .unwrap_or("upstream invocation failed")
         .chars()
         .take(512)
@@ -434,6 +483,76 @@ fn attach_route_failure_headers(
             .headers_mut()
             .insert("x-sdkwork-route-reason", value);
     }
+}
+
+/// Axum middleware that guarantees a correlation id on every response.
+///
+/// Applied to the whole router because the early-exit answers — authentication
+/// rejection, unknown path, malformed query, CORS preflight rejection — are
+/// produced before any invocation exists. The pipeline's own ids are preserved
+/// when present, so a dispatched response still correlates with its invocation
+/// log rather than this fallback.
+pub(crate) async fn ensure_response_correlation_id(
+    request: Request<Body>,
+    next: axum::middleware::Next,
+) -> Response {
+    let mut response = next.run(request).await;
+    if !response.headers().contains_key("x-sdkwork-trace-id") {
+        let request_id = response
+            .headers()
+            .get("x-request-id")
+            .and_then(|value| value.to_str().ok())
+            .filter(|value| !value.is_empty())
+            .map(str::to_owned)
+            .unwrap_or_else(generate_server_request_id);
+        attach_trace_response_headers(&mut response, request_id.as_str(), None);
+    } else if !response.headers().contains_key("x-request-id") {
+        if let Some(trace_id) = response
+            .headers()
+            .get("x-sdkwork-trace-id")
+            .and_then(|value| value.to_str().ok())
+            .map(str::to_owned)
+        {
+            if let Ok(value) = HeaderValue::from_str(trace_id.as_str()) {
+                response.headers_mut().insert("x-request-id", value);
+            }
+        }
+    }
+    response
+}
+
+/// Replaces a failure reason that carries gateway-internal detail.
+///
+/// The header is genuinely useful when it describes the *provider* answer
+/// ("provider_http_429"), but the dispatch layer also folds in gateway-side
+/// failures — database errors, connection strings, panic locations, file paths.
+/// Those describe our infrastructure, not the caller's request, and a response
+/// header is readable by any browser client.
+fn sanitized_route_reason(reason: &str) -> &str {
+    const INTERNAL_MARKERS: &[&str] = &[
+        "postgres://",
+        "postgresql://",
+        "redis://",
+        "sqlx",
+        "sql state",
+        "pool timed out",
+        "database error",
+        "panicked at",
+        "backtrace",
+        "os error",
+        "no such file",
+        "permission denied",
+        "connection refused",
+        ".rs:",
+    ];
+    let lowered = reason.to_ascii_lowercase();
+    if INTERNAL_MARKERS
+        .iter()
+        .any(|marker| lowered.contains(marker))
+    {
+        return "upstream invocation failed";
+    }
+    reason
 }
 
 /// Attaches `x-sdkwork-trace-id` and a W3C `traceparent` to gateway responses
@@ -1112,7 +1231,21 @@ pub(crate) fn response_from_invocation_error(error: &InvocationError) -> Respons
     };
     let body = json!({
         "error": {
-            "message": redact_sensitive_tokens(&error.message),
+            // Client-caused rejections keep their authored reason; server-side
+            // failures expose a flat message so internal detail (database
+            // errors, connection strings, file paths) never reaches the caller.
+            // The full reason is logged above with the same machine `code`.
+            "message": if error.kind.exposes_message() {
+                redact_sensitive_tokens(&error.message)
+            } else {
+                tracing::error!(
+                    error_kind = ?error.kind,
+                    error_code = error.kind.code(),
+                    internal_message = %error.message,
+                    "suppressing internal error detail from the client response"
+                );
+                error.kind.public_message().to_owned()
+            },
             // Official OpenAI error type for SDK/client compatibility; the
             // detailed internal reason stays in `code`.
             "type": error.kind.openai_error_type(),
@@ -1491,6 +1624,97 @@ mod billing_unavailable_tests {
         let body: serde_json::Value = serde_json::from_slice(&bytes).expect("json error");
         assert_eq!("billing_unavailable", body["error"]["code"]);
         assert_eq!("server_error", body["error"]["type"]);
+    }
+}
+
+#[cfg(test)]
+mod error_sanitization_tests {
+    use axum::http::StatusCode;
+    use sdkwork_cloudrouter_router_service::application::{InvocationError, InvocationErrorKind};
+
+    use super::{attach_route_failure_headers, response_from_invocation_error};
+
+    async fn body_json(response: axum::response::Response) -> serde_json::Value {
+        let bytes = axum::body::to_bytes(response.into_body(), 8192)
+            .await
+            .expect("error body");
+        serde_json::from_slice(&bytes).expect("json error")
+    }
+
+    /// A server-side failure must not echo database or infrastructure text.
+    #[tokio::test]
+    async fn internal_error_detail_is_not_returned_to_the_client() {
+        let error = InvocationError::new(
+            InvocationErrorKind::Internal,
+            "postgres://sdkwork_ai_dev:secret@127.0.0.1:5432/db pool timed out while waiting for an open connection",
+        );
+        let response = response_from_invocation_error(&error);
+        assert_eq!(StatusCode::BAD_GATEWAY, response.status());
+        let body = body_json(response).await;
+        let message = body["error"]["message"].as_str().expect("message");
+        assert_eq!(
+            InvocationErrorKind::Internal.public_message(),
+            message,
+            "internal detail must be replaced: {body}"
+        );
+        assert!(!message.contains("postgres"));
+        assert!(body["error"]["message"]
+            .as_str()
+            .is_some_and(|value| !value.contains("secret")));
+        // The machine code still tells the caller which stage failed.
+        assert_eq!(
+            "internal_error",
+            body["error"]["code"].as_str().unwrap_or("")
+        );
+    }
+
+    /// Client-caused rejections keep their authored, actionable reason.
+    #[tokio::test]
+    async fn client_errors_keep_their_message() {
+        let error = InvocationError::new(
+            InvocationErrorKind::InvalidRequest,
+            "model `gpt-9` does not exist",
+        );
+        let body = body_json(response_from_invocation_error(&error)).await;
+        assert_eq!(
+            Some("model `gpt-9` does not exist"),
+            body["error"]["message"].as_str()
+        );
+    }
+
+    /// The route-reason header is browser-readable, so internal detail must not
+    /// ride on it; a provider-side reason stays useful.
+    #[test]
+    fn route_reason_drops_internal_detail_but_keeps_provider_reasons() {
+        let mut response = axum::response::Response::new(axum::body::Body::empty());
+        attach_route_failure_headers(
+            &mut response,
+            502,
+            Some("dispatch_failed"),
+            Some("pool timed out while waiting for an open connection"),
+        );
+        assert_eq!(
+            Some("upstream invocation failed"),
+            response
+                .headers()
+                .get("x-sdkwork-route-reason")
+                .and_then(|value| value.to_str().ok())
+        );
+
+        let mut provider_response = axum::response::Response::new(axum::body::Body::empty());
+        attach_route_failure_headers(
+            &mut provider_response,
+            429,
+            Some("provider_http_429"),
+            Some("provider rate limit reached; retry later"),
+        );
+        assert_eq!(
+            Some("provider rate limit reached; retry later"),
+            provider_response
+                .headers()
+                .get("x-sdkwork-route-reason")
+                .and_then(|value| value.to_str().ok())
+        );
     }
 }
 

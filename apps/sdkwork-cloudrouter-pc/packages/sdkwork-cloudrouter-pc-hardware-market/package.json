@@ -1,0 +1,49 @@
+{
+  "name": "@sdkwork/cloudrouter-pc-hardware-market",
+  "version": "0.1.0",
+  "private": true,
+  "license": "SEE LICENSE IN ../../../../LICENSE",
+  "type": "module",
+  "description": "SDKWork Cloud Router PC Smart Hardware Market: a storefront mall that browses and sells the Product Center catalog.",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./i18n": {
+      "types": "./src/i18n/index.ts",
+      "import": "./src/i18n/index.ts",
+      "default": "./src/i18n/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "node ../../node_modules/typescript/bin/tsc --noEmit",
+    "test": "node ../../node_modules/vitest/vitest.mjs run --config vitest.config.ts"
+  },
+  "dependencies": {
+    "@sdkwork/cloudroutes-pc-commons": "workspace:*"
+  },
+  "peerDependencies": {
+    "lucide-react": ">=0.500.0 <2.0.0",
+    "react": ">=19.0.0 <20.0.0",
+    "react-dom": ">=19.0.0 <20.0.0",
+    "react-i18next": ">=17.0.0 <18.0.0",
+    "react-router-dom": ">=7.0.0 <8.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "typescript": "catalog:"
+  },
+  "sdkwork": {
+    "workspace": "sdkwork-cloudrouter",
+    "architecture": "pc-react",
+    "domain": "commerce",
+    "capability": "hardware-market",
+    "surface": "app",
+    "status": "ready"
+  }
+}

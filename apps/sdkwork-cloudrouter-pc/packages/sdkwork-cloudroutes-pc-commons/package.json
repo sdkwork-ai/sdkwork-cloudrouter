@@ -43,6 +43,12 @@
       "require": "./src/sdk-request-boundary.ts",
       "default": "./src/sdk-request-boundary.ts"
     },
+    "./sandbox-instances-client": {
+      "types": "./src/sandbox-instances-client.ts",
+      "import": "./src/sandbox-instances-client.ts",
+      "require": "./src/sandbox-instances-client.ts",
+      "default": "./src/sandbox-instances-client.ts"
+    },
     "./model-catalog-identity": {
       "types": "./src/model-catalog-identity.ts",
       "import": "./src/model-catalog-identity.ts",

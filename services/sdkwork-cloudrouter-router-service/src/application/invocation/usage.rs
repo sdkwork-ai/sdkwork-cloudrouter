@@ -110,6 +110,13 @@ pub struct InvocationUsageLine {
     /// 模态"的行必须自带维度，否则条件把候选过滤干净、抽取层再把缓存命中
     /// 折进输入按全价收。
     pub pricing_media_type: Option<String>,
+    /// 该行自己的 `tier_code` 定价维度（`cache_write_5m` / `cache_write_1h` 等）。
+    ///
+    /// 缓存写入的 5 分钟与 1 小时 TTL 是**两个不同费率**（Anthropic 1.25× / 2×）。
+    /// 调用级 `tier_code` 只能二选一（按请求是否声明 1h 整段取一档），混合 TTL
+    /// 的请求就会把 5m 那部分按 1h 价收。上游 usage 已按 TTL 拆分明细时，行必须
+    /// 自带档位才能各按各的价结算。
+    pub pricing_tier_code: Option<String>,
     pub pricing_quote: Option<InvocationPricingQuote>,
     pub pricing_resolution: Option<PriceResolution>,
 }
@@ -122,9 +129,15 @@ impl InvocationUsageLine {
             quantity,
             requested_model_catalog_key: None,
             pricing_media_type: None,
+            pricing_tier_code: None,
             pricing_quote: None,
             pricing_resolution: None,
         }
+    }
+
+    pub fn with_pricing_tier_code(mut self, tier_code: impl Into<String>) -> Self {
+        self.pricing_tier_code = Some(tier_code.into());
+        self
     }
 
     pub fn with_pricing_media_type(mut self, media_type: impl Into<String>) -> Self {

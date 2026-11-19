@@ -167,6 +167,10 @@ import {
   type SdkworkAppConfig as PartnerAppConfig,
 } from '@sdkwork/partner-app-sdk';
 import {
+  createSandboxAppClient,
+  type SandboxAppClient,
+} from './sandbox-instances-client.ts';
+import {
   clearStoredAppSessionToken,
   loadStoredAppSessionToken,
   subscribeStoredAppSessionChange,
@@ -677,6 +681,25 @@ export type SdkworkAppstoreBackendSdkClient = AppstoreBackendClient;
 export type SdkworkDeploymentsBackendSdkClient = DeployBackendClient;
 export type SdkworkBaseDataBackendSdkClient = BaseDataBackendClient;
 export type SdkworkPromotionBackendSdkClient = PromotionBackendClient;
+/**
+ * Buyer-facing catalog contracts.
+ *
+ * Re-exported so a storefront package resolves the Product Center read model
+ * (products, SKUs, categories, attributes) through this commons port instead of
+ * declaring a second dependency on the generated SDK. The generated catalog app
+ * SDK remains the authority; these aliases only name its wire types.
+ */
+export type {
+  CatalogAttribute,
+  CatalogAttributePageData,
+  CatalogCategory,
+  CatalogCategoryPageData,
+  CatalogProduct,
+  CatalogProductPageData,
+  CatalogSku,
+  CatalogSkuPageData,
+  PageInfo as CatalogPageInfo,
+} from '@sdkwork/catalog-app-sdk';
 export type {
   CouponStock as SdkworkPromotionCouponStock,
   CouponStockRequest as SdkworkPromotionCouponStockRequest,
@@ -791,6 +814,7 @@ let partnerBackendClient: PartnerBackendClient | null = null;
 let messagingBackendClient: MessagingBackendClient | null = null;
 let aiotBackendClient: AiotBackendClient | null = null;
 let aiotAppClient: AiotAppClient | null = null;
+let sandboxAppClient: SandboxAppClient | null = null;
 let shopBackendClient: ShopBackendClient | null = null;
 let companyBackendClient: CompanyBackendClient | null = null;
 let inventoryBackendClient: InventoryBackendClient | null = null;
@@ -1206,6 +1230,49 @@ export function getSdkworkAiotAppSdkClient(
     aiotAppClient = createSdkworkAiotAppSdkClient();
   }
   return aiotAppClient;
+}
+
+export type CloudRouterSandboxAppClientOptions = CloudRouterAppSdkClientOptions;
+
+/**
+ * VM instance client used by the console's Virtual Machines group.
+ *
+ * `sandbox_instance` is the per-user VM registry owned by sdkwork-sandbox and
+ * served on that module's app-api face (`/app/v3/api/sandbox/...`). The client
+ * follows the dependency-app base-url chain (explicit override,
+ * `VITE_SDKWORK_SANDBOX_APP_API_BASE_URL`, portal app key, the shared public SDK
+ * root, then the same-origin `/app/v3/api` prefix) and carries the portal
+ * session auth, locale, and projection boundaries, so a revoked session signs
+ * the operator out instead of painting a wall of failed reads.
+ *
+ * The transport itself lives in `./sandbox-instances-client.ts` because
+ * sdkwork-sandbox has no active generated SDK family (see that module's header).
+ */
+export function createCloudRouterSandboxAppClient(
+  options: CloudRouterSandboxAppClientOptions = {},
+): SandboxAppClient {
+  const baseUrl = normalizeGeneratedSdkBaseUrl(
+    resolveDependencyAppSurfaceBaseUrl(options, 'VITE_SDKWORK_SANDBOX_APP_API_BASE_URL'),
+    APP_API_PREFIX,
+  );
+  const client = createSandboxAppClient(
+    baseUrl,
+    resolveCloudRouterSdkTokenManager(options.tokenManager),
+    options.timeout,
+  );
+  return attachCloudRouterSdkSessionAuthBoundary(client);
+}
+
+export function getCloudRouterSandboxAppClient(
+  options: CloudRouterSandboxAppClientOptions = {},
+): SandboxAppClient {
+  if (hasRuntimeOverrides(options)) {
+    return createCloudRouterSandboxAppClient(options);
+  }
+  if (!sandboxAppClient) {
+    sandboxAppClient = createCloudRouterSandboxAppClient();
+  }
+  return sandboxAppClient;
 }
 
 export function createSdkworkPartnerAppSdkClient(
@@ -2142,6 +2209,7 @@ function resetCloudRouterSdkClientCaches(): void {
   messagingBackendClient = null;
   aiotBackendClient = null;
   aiotAppClient = null;
+  sandboxAppClient = null;
   accountAppClient = null;
   catalogAppClient = null;
   membershipAppClient = null;

@@ -197,6 +197,15 @@ fn provider_native_non_streaming_policy(invocation: &Invocation) -> InvocationBi
     if provider_native_management_is_free(invocation) {
         return InvocationBilling::free();
     }
+    // A reconciled media job is charged from its **completion**, not from the
+    // create response: the create only carries a task id, so the produced
+    // seconds/artifacts are unknown at that point. Billing a placeholder unit at
+    // create *and* the reconciled amount at completion would charge the same job
+    // twice, so creation is free in that mode (exactly like a batch submission)
+    // and the completion charge is the only one.
+    if media_creation_is_reconciled(invocation) {
+        return InvocationBilling::free();
+    }
     // Gemini `:batchEmbedContents` returns embeddings without a usage frame.
     // Google bills embedding input tokens; estimate them from the request's
     // text parts before dispatch so the request is precharged and settled on
@@ -266,6 +275,52 @@ fn provider_native_non_streaming_policy(invocation: &Invocation) -> InvocationBi
 ///
 /// 只认三类：文件与缓存管理面、批量任务的查询/取消、上游免费的计数工具。
 /// 批量**创建**（`POST .../batches`）刻意排除，保持"无结果回收则拒单"的守卫。
+/// Completion-phase billing for a reconciled media task.
+///
+/// The async settler re-prices a finished job from its completion body, running
+/// the ordinary extraction/pricing/settlement stages against a synthetic
+/// invocation. That invocation looks exactly like the original create (same
+/// method, path and api code), so the create-only "free while reconciling" rule
+/// would suppress the completion charge entirely. This entry point produces the
+/// real media policy instead, leaving the create rule untouched.
+pub fn media_completion_billing(invocation: &Invocation) -> Option<InvocationBilling> {
+    declared_media_meter_policy(invocation)
+}
+
+/// Media creation routes whose completion the async usage worker reconciles.
+///
+/// Membership is deliberate and per vendor: the completion body must carry the
+/// produced quantity in a shape the extraction stage reads, and the poll path
+/// must be `<create path>/{task id}`. Adding a vendor here without both is how a
+/// job ends up charged twice (create placeholder + completion) or charged for
+/// nothing.
+const RECONCILED_MEDIA_CREATE_CODES: &[&str] = &[
+    "kling.text_to_video",
+    "kling.avatar",
+    "kling.motion_control",
+    "vidu.text_to_video",
+    "vidu.image_to_video",
+    "vidu.start_end_to_video",
+    "vidu.reference_to_video",
+    "vidu.motion_sync",
+    "runway.text_to_video",
+    "runway.image_to_video",
+    "luma_ai.video_generation",
+    "pixverse.video_generation",
+    "minimax.video_generation",
+];
+
+/// Whether this invocation is a media create whose charge belongs to completion.
+fn media_creation_is_reconciled(invocation: &Invocation) -> bool {
+    if invocation.request.method.as_str() != "POST" {
+        return false;
+    }
+    if !RECONCILED_MEDIA_CREATE_CODES.contains(&invocation.resource.api_code.as_str()) {
+        return false;
+    }
+    super::pricing::async_usage_reconciliation_is_enabled()
+}
+
 fn provider_native_management_is_free(invocation: &Invocation) -> bool {
     // 用路径而不是 api code：模板化的 `{file_id}` 在真实请求里是任意 id，分类器
     // 会把它拼成 `anthropic.file.1` 这类实例化 code，按 code 匹配会漏。

@@ -4256,4 +4256,72 @@ mod tests {
              endpoint is a model that can never reach it"
         );
     }
+
+    /// 真实目录里的官方批量价必须能导入，而不是被 `PricingRateVariant::from_code`
+    /// 的白名单 `continue` 掉。
+    ///
+    /// 批量价是厂商公开规则（OpenAI / Anthropic 为标准价的 50%），由
+    /// `sdkwork-models` 的 `tools/materialize-batch-rates.mjs` 物化成
+    /// `tier_code = batch` 条件行。该用例钉住「数据 → 导入 → 行」这条链路。
+    ///
+    /// 兄弟仓库未 checkout 时该用例不适用（直接返回），不让环境缺失变成误报。
+    #[test]
+    fn real_catalog_imports_official_batch_rates() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../sdkwork-models");
+        if !root.join("models").is_dir() {
+            return;
+        }
+        let root = root.to_string_lossy().to_string();
+        let catalog = super::load_catalog_root_with_pin(Some(root.as_str()), None)
+            .expect("load the real sdkwork-models catalog");
+        let rows = super::bundled_pricing_dictionary_rows(&catalog);
+        let catalog_key = super::pricing_catalog_key("anthropic", "claude-opus-5");
+        let input = rows
+            .prices
+            .iter()
+            .filter(|row| {
+                row.catalog_key == catalog_key && row.billing_meter_code == "llm_input_token"
+            })
+            .collect::<Vec<_>>();
+        let rows_for = input
+            .iter()
+            .map(|row| {
+                (
+                    row.unit_price.clone(),
+                    row.rate_metadata
+                        .as_ref()
+                        .map(|metadata| metadata.conditions.len()),
+                )
+            })
+            .collect::<Vec<_>>();
+        assert!(
+            input.len() >= 2,
+            "expected a standard and a batch row for {catalog_key}: {rows_for:?}",
+        );
+        let standard = input
+            .iter()
+            .find(|row| {
+                row.rate_metadata
+                    .as_ref()
+                    .is_none_or(|metadata| metadata.conditions.is_empty())
+            })
+            .expect("unconditioned standard row");
+        let batch = input
+            .iter()
+            .find(|row| {
+                row.rate_metadata.as_ref().is_some_and(|metadata| {
+                    metadata.conditions.iter().any(|condition| {
+                        condition.dimension_code == "tier_code"
+                            && condition.value == serde_json::json!("batch")
+                    })
+                })
+            })
+            .expect("batch-conditioned row");
+        let standard_price: f64 = standard.unit_price.parse().expect("standard price");
+        let batch_price: f64 = batch.unit_price.parse().expect("batch price");
+        assert!(
+            (batch_price - standard_price * 0.5).abs() < 1e-9,
+            "official batch rate must be 50% of standard: {batch_price} vs {standard_price}"
+        );
+    }
 }

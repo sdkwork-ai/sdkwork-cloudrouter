@@ -227,11 +227,35 @@ fn extract_composite_usage_from_body(
         invocation.usage.add_line(line);
     }
     if cache_write_tokens > 0 {
-        invocation.usage.add_line(InvocationUsageLine::new(
-            BillingMeter::LlmCacheWriteToken,
-            GatewayUsageQuantity::tokens(cache_write_tokens)
-                .map_err(|error| usage_error(error.to_string()))?,
-        ));
+        // Anthropic reports the cache-write split per TTL band. The two bands
+        // are separate rates (1.25× for 5m, 2× for 1h); billing the whole write
+        // under one band overcharges the other band's tokens.
+        let (five_minute, one_hour) = cache_creation_ttl_tokens(usage);
+        let split = five_minute.saturating_add(one_hour);
+        for (tokens, tier_code) in [
+            (five_minute, "cache_write_5m"),
+            (one_hour, "cache_write_1h"),
+        ] {
+            if tokens > 0 {
+                invocation.usage.add_line(
+                    InvocationUsageLine::new(
+                        BillingMeter::LlmCacheWriteToken,
+                        GatewayUsageQuantity::tokens(tokens)
+                            .map_err(|error| usage_error(error.to_string()))?,
+                    )
+                    .with_pricing_tier_code(tier_code),
+                );
+            }
+        }
+        // Whatever the provider did not split keeps the request-derived band.
+        let remainder = cache_write_tokens.saturating_sub(split);
+        if remainder > 0 {
+            invocation.usage.add_line(InvocationUsageLine::new(
+                BillingMeter::LlmCacheWriteToken,
+                GatewayUsageQuantity::tokens(remainder)
+                    .map_err(|error| usage_error(error.to_string()))?,
+            ));
+        }
     }
     if output_tokens > 0 {
         invocation.usage.add_line(InvocationUsageLine::new(
@@ -2164,7 +2188,9 @@ fn find_subslice(haystack: &[u8], needle: &[u8]) -> Option<usize> {
 /// a 30-second track.
 fn reported_audio_seconds(invocation: &Invocation) -> Option<String> {
     let body = optional_response_body(invocation)?;
-    nested_media_seconds(&body, AUDIO_SECOND_FIELDS).or_else(|| summed_item_seconds(&body))
+    // Same precedence as `video_line`: every produced artifact is billed, then
+    // an aggregate duration, so a multi-clip response cannot undercount.
+    summed_item_seconds(&body).or_else(|| nested_media_seconds(&body, AUDIO_SECOND_FIELDS))
 }
 
 /// 在响应体里按 **0 / 1 / 2 层**深度找时长。
@@ -2215,6 +2241,35 @@ pub(super) fn milliseconds_as_seconds(value: &Value) -> Option<String> {
 /// Sums the durations of every generated clip in the first media array that
 /// carries them (`data[].duration`, `clips[].duration`, ...).
 fn summed_item_seconds(body: &Value) -> Option<String> {
+    // Top level first (Suno/MiniMax answer `{"data":[...]}`), then the nested
+    // task-result shapes vendors return for asynchronous jobs
+    // (`{"data":{"task_result":{"videos":[{"duration":"5"}]}}}` for Kling,
+    // `{"result":{"videos":[…]}}` for others). Returning the first non-zero sum
+    // keeps alias containers from double counting the same list.
+    if let Some(total) = summed_array_seconds(body) {
+        return Some(total);
+    }
+    for key in MEDIA_CONTAINER_KEYS {
+        let Some(container) = body.get(*key) else {
+            continue;
+        };
+        if let Some(total) = summed_array_seconds(container) {
+            return Some(total);
+        }
+        let Some(nested) = container.as_object() else {
+            continue;
+        };
+        for inner in nested.values() {
+            if let Some(total) = summed_array_seconds(inner) {
+                return Some(total);
+            }
+        }
+    }
+    None
+}
+
+/// Sums the per-item durations of whichever known media array the value holds.
+fn summed_array_seconds(body: &Value) -> Option<String> {
     for key in MEDIA_ITEM_ARRAYS {
         let Some(items) = body.get(*key).and_then(Value::as_array) else {
             continue;
@@ -2276,21 +2331,80 @@ fn duration_in_meter_unit(
     Ok(minutes.to_fixed_string(12))
 }
 
+/// Requested media seconds from a create body.
+///
+/// Asynchronous media jobs often answer a task id only, and some vendors'
+/// completion read carries no duration at all (Runway answers `output[]` URLs).
+/// The create request is then the only place the ordered length exists, so
+/// registration captures it for the completion settlement.
+pub fn requested_media_seconds(body: &Value) -> Option<String> {
+    seconds_field(body, VIDEO_SECOND_FIELDS).or_else(|| seconds_field(body, AUDIO_SECOND_FIELDS))
+}
+
+/// Multiplies an ordered per-clip duration by the number of artifacts the
+/// completed response lists.
+///
+/// Runway answers `{status, output: [url, …]}` with no duration anywhere; the
+/// ordered `duration` describes one clip and the customer received every listed
+/// output. Scaling only when the response actually lists more than one artifact
+/// keeps a single-clip job at exactly its ordered length.
+fn scale_seconds_by_artifacts(invocation: &Invocation, seconds: String) -> String {
+    let Some(count) =
+        optional_response_body(invocation).and_then(|body| media_artifact_count(&body))
+    else {
+        return seconds;
+    };
+    if count <= 1 {
+        return seconds;
+    }
+    let Ok(value) = DecimalValue::parse(&seconds) else {
+        return seconds;
+    };
+    match value.multiply_i64(count) {
+        Ok(scaled) => scaled.to_fixed_string(12),
+        Err(_) => seconds,
+    }
+}
+
+/// Number of produced artifacts the response lists, from the known media arrays.
+fn media_artifact_count(body: &Value) -> Option<i64> {
+    MEDIA_ITEM_ARRAYS.iter().find_map(|key| {
+        body.get(*key)
+            .and_then(Value::as_array)
+            .map(|items| items.len() as i64)
+            .filter(|count| *count > 0)
+    })
+}
+
 fn video_line(
     meter: &BillingMeter,
     invocation: &Invocation,
 ) -> Result<InvocationUsageLine, InvocationError> {
-    let reported = optional_response_body(invocation)
-        .as_ref()
-        .map(|body| body.get("usage").unwrap_or(body))
-        .and_then(|usage| seconds_field(usage, VIDEO_SECOND_FIELDS));
+    // Produced artifacts come first: a completed media task states how long each
+    // generated clip is (`data.task_result.videos[]` for Kling, `creations[]`
+    // for Vidu), and the customer received every one of them — billing a single
+    // aggregate duration undercharges a multi-clip job. A single aggregate
+    // duration (`usage.duration`) is the next best shape.
+    let reported = optional_response_body(invocation).and_then(|body| {
+        summed_item_seconds(&body)
+            .or_else(|| nested_media_seconds(&body, VIDEO_SECOND_FIELDS))
+            .or_else(|| {
+                body.get("usage")
+                    .and_then(|usage| seconds_field(usage, VIDEO_SECOND_FIELDS))
+            })
+    });
     // A generation call answers with a job object *before* any video exists, so
     // the response usually carries no duration. The request states what was
     // ordered (`seconds` on the OpenAI video face, `duration` on vendor bodies);
     // billing one second for a ten-second render undercharges the relay by an
     // order of magnitude, so the requested duration is the fallback, and only a
     // request that states none falls back to a single second.
-    let requested = request_seconds_field(invocation, VIDEO_SECOND_FIELDS);
+    //
+    // When the completed response only lists produced artifacts
+    // (`"output": [url, …]`) the ordered duration applies to **each** of them, so
+    // the quantity scales with the artifact count.
+    let requested = request_seconds_field(invocation, VIDEO_SECOND_FIELDS)
+        .map(|seconds| scale_seconds_by_artifacts(invocation, seconds));
     let quantity = match reported.or(requested) {
         Some(quantity) => quantity,
         None => {
@@ -2423,6 +2537,11 @@ pub(super) const MEDIA_CONTAINER_KEYS: &[&str] = &[
     "metadata",
     "result",
     "audio",
+    // Vendors that echo or wrap the produced quantity in their own envelope:
+    // Luma echoes `request.duration`, PixVerse answers `Resp.duration`.
+    "request",
+    "Resp",
+    "resp",
     // `data` 在 OpenAI 图像面是**数组**（`data[]`，由 `MEDIA_ITEM_ARRAYS`
     // 处理），在 MiniMax 音乐面是**对象**（`data.extra_info.music_duration`）。
     // 两处都要能进去：这里只处理对象形态，数组形态查不到键会自然跳过。
@@ -2432,7 +2551,17 @@ pub(super) const MEDIA_CONTAINER_KEYS: &[&str] = &[
 /// Arrays where **each element is one produced artifact** carrying its own
 /// duration (Suno clips, MiniMax songs, video task lists).
 const MEDIA_ITEM_ARRAYS: &[&str] = &[
-    "data", "clips", "songs", "audios", "tracks", "videos", "items",
+    "data",
+    "clips",
+    "songs",
+    "audios",
+    "tracks",
+    "videos",
+    "items",
+    // Vidu publishes one entry per produced clip under `creations`; Runway
+    // lists the produced files under `output`.
+    "creations",
+    "output",
 ];
 
 fn measured_line(
@@ -2525,6 +2654,24 @@ fn strip_ssml_markup(text: &str) -> std::borrow::Cow<'_, str> {
     std::borrow::Cow::Owned(result)
 }
 
+/// Cache-write tokens split by TTL band, as Anthropic reports them.
+///
+/// `{"usage":{"cache_creation":{"ephemeral_5m_input_tokens":N,
+/// "ephemeral_1h_input_tokens":M}}}`. A provider that reports only the total
+/// leaves both at zero and the caller bills the total under one band.
+fn cache_creation_ttl_tokens(usage: &serde_json::Value) -> (i64, i64) {
+    let Some(creation) = usage.get("cache_creation") else {
+        return (0, 0);
+    };
+    let five_minute = integer_field(creation, &["ephemeral_5m_input_tokens"])
+        .unwrap_or(0)
+        .max(0);
+    let one_hour = integer_field(creation, &["ephemeral_1h_input_tokens"])
+        .unwrap_or(0)
+        .max(0);
+    (five_minute, one_hour)
+}
+
 fn array_length_field(value: &Value, names: &[&str]) -> Option<i64> {
     names.iter().find_map(|name| {
         value
@@ -2547,6 +2694,16 @@ pub(super) fn seconds_field(value: &Value, names: &[&str]) -> Option<String> {
     number_field_as_string(value, names)
         // Some adapters stringify the duration.
         .or_else(|| text_field(value, names))
+        .map(|seconds| seconds.trim().to_owned())
+        // Vendors spell the unit into the value: Luma answers `"5s"` / `"9s"`,
+        // several bodies answer `"10 seconds"` or `"10sec"`. Parsing the raw
+        // text failed and silently fell back to a single unit.
+        .map(|seconds| {
+            let without_unit = seconds
+                .trim_end_matches(|c: char| c.is_ascii_alphabetic() || c.is_whitespace())
+                .to_owned();
+            without_unit
+        })
         .filter(|seconds| seconds.trim().parse::<f64>().is_ok_and(|value| value > 0.0))
 }
 
@@ -2692,10 +2849,10 @@ mod tests {
 
     use super::{
         anthropic_web_search_count, augment_missing_prompt_tokens, cached_tokens,
-        character_count_in, composite_usage_components, nested_media_seconds,
-        normalized_input_tokens, parse_timestamp, token_line, tool_call_counts,
-        transcript_end_seconds, wav_seconds, InvocationBody, StreamingUsageAccumulator,
-        StreamingUsageFormat, AUDIO_SECOND_FIELDS,
+        character_count_in, composite_usage_components, media_artifact_count, nested_media_seconds,
+        normalized_input_tokens, parse_timestamp, requested_media_seconds, summed_item_seconds,
+        token_line, tool_call_counts, transcript_end_seconds, wav_seconds, InvocationBody,
+        StreamingUsageAccumulator, StreamingUsageFormat, AUDIO_SECOND_FIELDS,
     };
     use crate::domain::BillingMeter;
 
@@ -3367,8 +3524,7 @@ mod tests {
     }
 
     /// A WAV upload states its own duration; multipart keeps the file bytes
-    /// verbatim, so the container can be measured without decoding audio.
-    #[test]
+    /// verbatim, so the container can be measured without decoding audio.    #[test]
     fn wav_upload_states_its_audio_length() {
         let byte_rate: u32 = 16_000;
         let data_len: u32 = byte_rate * 7; // seven seconds of payload
@@ -3396,5 +3552,103 @@ mod tests {
                 .expect("numeric")
         );
         assert_eq!(None, wav_seconds(b"not a wav payload"));
+    }
+
+    /// Asynchronous media jobs state their produced duration inside a nested
+    /// task-result object. Scanning only top-level arrays metered those
+    /// completions as one unit.
+    #[test]
+    fn nested_task_result_arrays_are_summed_by_produced_duration() {
+        // Kling: `data.task_result.videos[].duration` (seconds as strings).
+        let kling = json!({
+            "code": 0,
+            "data": {
+                "task_status": "succeed",
+                "task_result": { "videos": [{ "duration": "5" }, { "duration": "5" }] }
+            }
+        });
+        assert_eq!(
+            10.0,
+            summed_item_seconds(&kling)
+                .expect("kling duration")
+                .parse::<f64>()
+                .expect("numeric")
+        );
+
+        // Top-level arrays keep working (Suno `data[]`).
+        let suno = json!({ "data": [{ "duration": 118.4 }] });
+        assert_eq!(
+            118.4,
+            summed_item_seconds(&suno)
+                .expect("suno duration")
+                .parse::<f64>()
+                .expect("numeric")
+        );
+
+        // No media array at all must stay `None` instead of inventing a length.
+        assert_eq!(
+            None,
+            summed_item_seconds(&json!({ "data": { "status": "running" } }))
+        );
+
+        // Vidu publishes one entry per produced clip under `creations`.
+        let vidu = json!({
+            "state": "success",
+            "creations": [{ "duration": 5 }, { "duration": 5 }]
+        });
+        assert_eq!(
+            10.0,
+            summed_item_seconds(&vidu)
+                .expect("vidu duration")
+                .parse::<f64>()
+                .expect("numeric")
+        );
+
+        // Artifact counting scales an ordered per-clip duration (Runway lists
+        // `output[]` URLs and states no duration anywhere).
+        assert_eq!(
+            Some(3),
+            media_artifact_count(&json!({ "output": ["a.mp4", "b.mp4", "c.mp4"] }))
+        );
+        assert_eq!(None, media_artifact_count(&json!({ "output": [] })));
+        assert_eq!(
+            Some("10"),
+            requested_media_seconds(&json!({ "model": "gen4.5", "duration": 10 })).as_deref()
+        );
+
+        // Vendors spell units into the value; Luma answers `"5s"`, some bodies
+        // answer `"10 seconds"`. Without normalisation these fell back to one
+        // unit.
+        assert_eq!(
+            Some("5"),
+            requested_media_seconds(&json!({ "model": "ray-2", "duration": "5s" })).as_deref()
+        );
+        assert_eq!(
+            Some("10"),
+            requested_media_seconds(&json!({ "duration": "10 seconds" })).as_deref()
+        );
+
+        // Luma echoes the ordered duration in `request`; PixVerse wraps the
+        // produced duration in `Resp`.
+        assert_eq!(
+            9.0,
+            nested_media_seconds(
+                &json!({ "state": "completed", "request": { "duration": "9s" } }),
+                AUDIO_SECOND_FIELDS,
+            )
+            .expect("luma echoed duration")
+            .parse::<f64>()
+            .expect("numeric")
+        );
+        assert_eq!(
+            5.0,
+            nested_media_seconds(
+                &json!({ "ErrCode": 0, "Resp": { "status": 1, "duration": 5 } }),
+                AUDIO_SECOND_FIELDS,
+            )
+            .expect("pixverse duration")
+            .parse::<f64>()
+            .expect("numeric")
+        );
     }
 }

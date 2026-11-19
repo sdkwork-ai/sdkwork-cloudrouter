@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@sdkwork/cloudrouter-pc-console-hardware": "workspace:*",
+    "@sdkwork/cloudrouter-pc-console-vm-instances": "workspace:*",
     "@sdkwork/cloudroutes-pc-commons": "workspace:*"
   },
   "peerDependencies": {

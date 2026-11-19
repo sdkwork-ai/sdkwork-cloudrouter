@@ -17,8 +17,8 @@ use sdkwork_cloudrouter_router_service::application::{AsyncUsageSettler, ReplayA
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, AsyncUsageTask, AsyncUsageTaskKind, AsyncUsageTaskStatus, BillingMeter, DecimalValue,
     GatewayApiKey, ModelPrice, ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money,
-    PriceSide, PricingPlan, PricingRateMetadata, PricingRateVariant, UpstreamAccountGroup,
-    UpstreamAccountRoute,
+    PriceSide, PricingPlan, PricingRateCondition, PricingRateMetadata, PricingRateVariant,
+    UpstreamAccountGroup, UpstreamAccountRoute,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use sdkwork_cloudrouter_router_service::ports::{
@@ -371,6 +371,64 @@ async fn a_completed_batch_settles_one_charge_per_model_and_endpoint_row() {
         ],
         store.settled_requests()
     );
+}
+
+/// 批量价由目录提供：目录给出 `tier_code=batch` 价行时按批量价结算（官方批量价
+/// 为标准价的 50%）；没有该价行时保持标准价（上一个用例覆盖）。
+#[tokio::test]
+async fn a_batch_rate_from_the_catalog_halves_the_row_charge() {
+    let mut batch_catalog = catalog();
+    for (meter, price) in [
+        (BillingMeter::LlmInputToken, "5.000000"),
+        (BillingMeter::LlmOutputToken, "15.000000"),
+    ] {
+        let rate_hash = format!("hash-batch-{meter:?}");
+        let mut metadata = rate_metadata(&rate_hash);
+        metadata.conditions = vec![PricingRateCondition {
+            dimension_code: "tier_code".to_owned(),
+            operator_code: "eq".to_owned(),
+            value: json!("batch"),
+        }];
+        batch_catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                CATALOG_KEY,
+                "gpt-4o",
+                PriceSide::OfficialReference,
+                meter,
+                Money::usd(price).unwrap(),
+            )
+            .with_rate_metadata(metadata),
+        );
+    }
+    let catalog = Arc::new(batch_catalog);
+    let store = Arc::new(RecordingBillingStore::default());
+    let settler = ReplayAsyncUsageSettler::new(Arc::clone(&catalog), store.clone());
+
+    let mut task = task();
+    task.task_kind = AsyncUsageTaskKind::OpenAiBatch;
+    task.upstream_id = "batch_9".to_owned();
+    task.metadata = Some(json!({
+        "method": "POST",
+        "path": "/v1/batches",
+        "model": "gpt-4o",
+        "accountGroupId": ACCOUNT_GROUP_ID,
+        "pricingPlanCode": "standard"
+    }));
+    let snapshot = json!({
+        "batchUsage": [
+            {"model": "gpt-4o", "kind": "chat.completion", "requestCount": 1, "inputTokens": 100, "outputTokens": 50}
+        ]
+    });
+
+    settler
+        .settle(&task, &snapshot)
+        .await
+        .expect("batch settlement");
+
+    let postpaid = store.postpaid();
+    assert_eq!(1, postpaid.len());
+    // 100×$5/1M + 50×$15/1M = $0.00125 → 87500 micro，是标准价的一半。
+    assert_eq!("87500", postpaid[0].amount.as_str());
 }
 
 /// 完成态没有任何可计量用量：必须失败关闭，让 worker 重新调度/过期，而不是

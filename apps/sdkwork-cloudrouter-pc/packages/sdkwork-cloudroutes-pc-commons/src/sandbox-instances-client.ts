@@ -1,0 +1,315 @@
+import { createBaseHttpClient, type AuthTokenManager, type BaseHttpClient } from '@sdkwork/sdk-common';
+
+/**
+ * VM instance transport.
+ *
+ * `sandbox_instance` is the per-user virtual machine (VM) registry owned by
+ * sdkwork-sandbox and served by that module's app-api console face:
+ *
+ *   GET    {base}/app/v3/api/sandbox/sandbox_instances
+ *   POST   {base}/app/v3/api/sandbox/sandbox_instances
+ *   GET    {base}/app/v3/api/sandbox/sandbox_instances/{sandboxInstanceId}
+ *   PATCH  {base}/app/v3/api/sandbox/sandbox_instances/{sandboxInstanceId}
+ *   DELETE {base}/app/v3/api/sandbox/sandbox_instances/{sandboxInstanceId}
+ *
+ * The listing is always narrowed server-side to the verified caller — there is
+ * no owner parameter on the face — so this client cannot ask for another
+ * account's rows even by accident. Tenant and owner are therefore never sent:
+ * they are derived from the dual token by the gateway (`API_SPEC.md` §10.2).
+ *
+ * This transport lives in the shared commons package because the feature
+ * packages must consume generated SDK clients or approved composed wrappers
+ * rather than own a transport (`FRONTEND_CODE_SPEC.md`,
+ * `APP_PC_ARCHITECTURE_SPEC.md`). The Cloud Router console binds it through
+ * {@link createCloudRouterSandboxAppClient} in `./sdk-clients.ts`, which adds the
+ * session-auth, locale, and projection-sanitization boundaries exactly as every
+ * generated client gets them.
+ *
+ * Why hand-written rather than a generated SDK: sdkwork-sandbox declares its SDK
+ * family inactive (`sdks/README.md`: "Verification: inactive in Phase 0"), so no
+ * `@sdkwork/sandbox-app-sdk` exists to compose against. The operations are
+ * small, fully specified by the app-api authority
+ * (`apis/app-api/sandbox/sandbox-app-api-authority.openapi.json` in the owning
+ * repository), and exercised end-to-end. When that family is activated, this
+ * file is the single call site to replace.
+ *
+ * `createBaseHttpClient` is the shared platform transport: it speaks the SDKWork
+ * response envelope (`{ code, data, traceId }` — it unwraps `data` and raises on
+ * a non-success `code`), attaches the IAM dual token from the manager
+ * (`Access-Token` plus `Authorization: Bearer`), and strips client-projected
+ * identity headers before sending.
+ *
+ * Query vocabulary is `lower_snake_case` (`PAGINATION_SPEC.md` §0): `page` /
+ * `page_size` are the only pagination parameters, and `pageSize` as a GET query
+ * alias is a contract violation.
+ */
+
+/** Route collection path, relative to the injected app-api base URL. */
+export const SANDBOX_INSTANCES_PATH = '/app/v3/api/sandbox/sandbox_instances';
+
+/** Lifecycle states the provisioning service admits. */
+export type SandboxInstanceState =
+  | 'requested'
+  | 'active'
+  | 'suspended'
+  | 'terminated'
+  | 'failed';
+
+/** Resource shapes a request may ask for. */
+export type SandboxInstanceProfile =
+  | 'standard'
+  | 'memory_optimized'
+  | 'compute_optimized';
+
+/** Runtime capabilities an instance may require. */
+export type SandboxRuntimeCapability =
+  | 'build'
+  | 'browser'
+  | 'environment'
+  | 'filesystem'
+  | 'git'
+  | 'mcp_transport'
+  | 'port_forward'
+  | 'terminal';
+
+/** Minimum isolation the instance must be placed under. */
+export type SandboxIsolationAssurance =
+  | 'host_user'
+  | 'container'
+  | 'user_space_kernel'
+  | 'micro_vm'
+  | 'dedicated_vm';
+
+export const SANDBOX_INSTANCE_STATES: readonly SandboxInstanceState[] = [
+  'requested',
+  'active',
+  'suspended',
+  'terminated',
+  'failed',
+];
+
+export const SANDBOX_INSTANCE_PROFILES: readonly SandboxInstanceProfile[] = [
+  'standard',
+  'memory_optimized',
+  'compute_optimized',
+];
+
+export const SANDBOX_RUNTIME_CAPABILITIES: readonly SandboxRuntimeCapability[] = [
+  'build',
+  'browser',
+  'environment',
+  'filesystem',
+  'git',
+  'mcp_transport',
+  'port_forward',
+  'terminal',
+];
+
+export const SANDBOX_ISOLATION_ASSURANCES: readonly SandboxIsolationAssurance[] = [
+  'host_user',
+  'container',
+  'user_space_kernel',
+  'micro_vm',
+  'dedicated_vm',
+];
+
+/**
+ * One VM instance, exactly as the app-api serializes it (`camelCase`, no rename
+ * layer).
+ *
+ * `sandboxVersion` is a `string` on purpose: it is an `int64` on the wire
+ * (`API_SPEC.md` §13.6) and a JavaScript number would round it, which would
+ * either lose the optimistic-concurrency comparison or, worse, win it by
+ * accident. The version is read-only on this face: the server pairs every update
+ * with its own read of the current row and CAS-writes the expected version.
+ */
+export interface SandboxInstance {
+  sandboxInstanceId: string;
+  sandboxInstanceOwnerId: string;
+  sandboxInstanceName: string;
+  sandboxInstanceState: SandboxInstanceState;
+  sandboxInstanceProfile: SandboxInstanceProfile;
+  sandboxInstanceBaseImage: string;
+  sandboxInstanceVcpuCount: number;
+  sandboxInstanceMemoryMb: number;
+  sandboxInstanceDiskMb: number;
+  sandboxInstanceRequiredCapabilities: readonly SandboxRuntimeCapability[];
+  sandboxInstanceMinimumAssurance: SandboxIsolationAssurance;
+  sandboxInstanceAutoStart: boolean;
+  sandboxInstanceExpiresAt?: string;
+  sandboxWorkspaceId?: string;
+  sandboxVersion: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** The `pageInfo` half of an offset page (`PAGINATION_SPEC.md`). */
+export interface SandboxInstancePageInfo {
+  mode?: 'cursor' | 'offset';
+  page?: number;
+  pageSize?: number;
+  /** `int64` on the wire: a decimal string, never a rounded number. */
+  totalItems?: string;
+  totalPages?: number;
+  nextCursor?: string;
+  hasMore?: boolean;
+}
+
+export interface SandboxInstancePage {
+  items: readonly SandboxInstance[];
+  pageInfo?: SandboxInstancePageInfo;
+}
+
+/** Query accepted by the collection listing. */
+export interface SandboxInstanceListQuery {
+  /** 1-based; the server rejects — never clamps — values above 10000. */
+  page?: number;
+  /** GET wire name is `page_size`; the server rejects outside `1..200`. */
+  pageSize?: number;
+  sandboxInstanceState?: SandboxInstanceState;
+}
+
+/** Body accepted by `POST` — the owner and tenant are never client-supplied. */
+export interface CreateSandboxInstanceInput {
+  sandboxInstanceName: string;
+  sandboxInstanceProfile: SandboxInstanceProfile;
+  sandboxInstanceBaseImage: string;
+  sandboxInstanceVcpuCount: number;
+  sandboxInstanceMemoryMb: number;
+  sandboxInstanceDiskMb: number;
+  sandboxInstanceRequiredCapabilities?: readonly SandboxRuntimeCapability[];
+  sandboxInstanceMinimumAssurance: SandboxIsolationAssurance;
+  sandboxInstanceAutoStart?: boolean;
+  sandboxInstanceExpiresAt?: string;
+  sandboxWorkspaceId?: string;
+}
+
+/**
+ * Body accepted by `PATCH`.
+ *
+ * Every key is optional and absent means "leave the stored value alone" — which
+ * is why `sandboxInstanceExpiresAt` is three-way: the key omitted keeps the
+ * expiry, `null` clears it, and a timestamp sets it. The server distinguishes
+ * those three cases explicitly, so collapsing "absent" and "null" here would
+ * silently make clearing an expiry impossible.
+ */
+export interface UpdateSandboxInstanceInput {
+  sandboxInstanceName?: string;
+  sandboxInstanceProfile?: SandboxInstanceProfile;
+  sandboxInstanceVcpuCount?: number;
+  sandboxInstanceMemoryMb?: number;
+  sandboxInstanceDiskMb?: number;
+  sandboxInstanceAutoStart?: boolean;
+  sandboxInstanceExpiresAt?: string | null;
+  sandboxWorkspaceId?: string;
+  sandboxInstanceState?: SandboxInstanceState;
+}
+
+/**
+ * The four operations the console needs, declared as an interface so the page
+ * can be exercised against a stub without a network transport.
+ */
+export interface SandboxInstancesClient {
+  list(query?: SandboxInstanceListQuery): Promise<SandboxInstancePage>;
+  create(body: CreateSandboxInstanceInput): Promise<SandboxInstance>;
+  retrieve(sandboxInstanceId: string): Promise<SandboxInstance>;
+  update(sandboxInstanceId: string, body: UpdateSandboxInstanceInput): Promise<SandboxInstance>;
+  remove(sandboxInstanceId: string): Promise<void>;
+}
+
+/** One resource as the envelope wraps it. */
+interface SandboxItemEnvelope<T> {
+  item: T;
+}
+
+function dropUndefined<T extends object>(source: T): Record<string, unknown> {
+  const body: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(source)) {
+    if (value !== undefined) body[key] = value;
+  }
+  return body;
+}
+
+/**
+ * One instance's path.
+ *
+ * The identifier is percent-encoded: it is a server-issued opaque handle, and a
+ * value that reached this function with a slash in it must not be able to
+ * address a different route.
+ */
+function sandboxInstancePath(sandboxInstanceId: string): string {
+  return `${SANDBOX_INSTANCES_PATH}/${encodeURIComponent(sandboxInstanceId)}`;
+}
+
+export class SandboxAppClient implements SandboxInstancesClient {
+  /**
+   * The shared request boundary, exposed so the host can register it with the
+   * IAM session-auth boundary: that integration wraps `http.request`, which is
+   * exactly how a 401 from this plane clears the session like a 401 from any
+   * generated client.
+   */
+  readonly http: BaseHttpClient;
+
+  constructor(baseUrl: string, tokenManager: AuthTokenManager, timeout?: number) {
+    this.http = createBaseHttpClient({
+      baseUrl,
+      tokenManager,
+      ...(timeout !== undefined ? { timeout } : {}),
+    });
+  }
+
+  async list(query: SandboxInstanceListQuery = {}): Promise<SandboxInstancePage> {
+    const params: Record<string, string> = {};
+    if (query.page !== undefined) params.page = String(query.page);
+    if (query.pageSize !== undefined) params.page_size = String(query.pageSize);
+    if (query.sandboxInstanceState) {
+      params.sandbox_instance_state = query.sandboxInstanceState;
+    }
+    return this.http.get<SandboxInstancePage>(SANDBOX_INSTANCES_PATH, params);
+  }
+
+  async create(body: CreateSandboxInstanceInput): Promise<SandboxInstance> {
+    const created = await this.http.post<SandboxItemEnvelope<SandboxInstance>>(
+      SANDBOX_INSTANCES_PATH,
+      dropUndefined(body),
+    );
+    return created.item;
+  }
+
+  async retrieve(sandboxInstanceId: string): Promise<SandboxInstance> {
+    const found = await this.http.get<SandboxItemEnvelope<SandboxInstance>>(
+      sandboxInstancePath(sandboxInstanceId),
+    );
+    return found.item;
+  }
+
+  async update(
+    sandboxInstanceId: string,
+    body: UpdateSandboxInstanceInput,
+  ): Promise<SandboxInstance> {
+    const updated = await this.http.patch<SandboxItemEnvelope<SandboxInstance>>(
+      sandboxInstancePath(sandboxInstanceId),
+      dropUndefined(body),
+    );
+    return updated.item;
+  }
+
+  /**
+   * Retires one of the caller's instances.
+   *
+   * The face answers `204` with no JSON body (`API_SPEC.md` §15.4), so there is
+   * nothing to unwrap and no report to fabricate: a resolved promise *is* the
+   * deletion, and a refusal (404 absent row, 409 live instance) raises instead.
+   */
+  async remove(sandboxInstanceId: string): Promise<void> {
+    await this.http.delete<void>(sandboxInstancePath(sandboxInstanceId));
+  }
+}
+
+export function createSandboxAppClient(
+  baseUrl: string,
+  tokenManager: AuthTokenManager,
+  timeout?: number,
+): SandboxAppClient {
+  return new SandboxAppClient(baseUrl, tokenManager, timeout);
+}

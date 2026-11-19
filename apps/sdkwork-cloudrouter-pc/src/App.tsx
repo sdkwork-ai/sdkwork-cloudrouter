@@ -30,6 +30,18 @@ import { CloudRouterAdminHostRoutes } from './admin/cloudRouterAdminHostMount';
 import { LEGAL_DOCUMENT_PATHS } from '@sdkwork/documents-pc-legal/paths';
 
 const Home = lazyRoute(() => import('@sdkwork/cloudrouter-pc-home'), 'Home');
+// Smart Hardware Market: the public storefront of the Product Center. It reads
+// the buyer-facing catalog (categories, products, SKUs) and hands checkout to
+// the shared order cashier, so the package stays a lazy route like every other
+// portal page.
+const HardwareMarketPage = lazyRoute(
+  () => import('@sdkwork/cloudrouter-pc-hardware-market'),
+  'HardwareMarketPage',
+);
+const HardwareMarketProductPage = lazyRoute(
+  () => import('@sdkwork/cloudrouter-pc-hardware-market'),
+  'HardwareMarketProductPage',
+);
 const Models = lazyRoute(() => import('@sdkwork/cloudrouter-pc-models/models'), 'Models');
 const ModelDetails = lazyRoute(() => import('@sdkwork/cloudrouter-pc-models/details'), 'ModelDetails');
 const Rankings = lazyRoute(() => import('@sdkwork/cloudrouter-pc-rankings'), 'Rankings');
@@ -100,6 +112,14 @@ const MemoryView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-memor
 const HardwareConsoleView = lazyRoute(
   () => import('@sdkwork/cloudrouter-pc-console-hardware'),
   'HardwareConsoleView',
+);
+// Virtual machines group (「虚拟机」, directly below Smart Hardware): the
+// caller's sandbox VM instances, provisioned and retired from the console. The
+// page reads the sdkwork-sandbox app-api face through the shared composed
+// client; lazy-loaded for the same portal lazy-route rule.
+const VmInstancesConsoleView = lazyRoute(
+  () => import('@sdkwork/cloudrouter-pc-console-vm-instances'),
+  'VmInstancesConsoleView',
 );
 
 // The api-keys service layer resolves clients through the injectable seam
@@ -173,6 +193,10 @@ function MainLayout({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () 
       TokenPlan={CloudRouterTokenPlanPage}
       extraRoutes={
         <>
+          {/* Smart Hardware Market (智能硬件市场) — public storefront driven by
+              the Product Center catalog; the detail route is deep-linkable. */}
+          <Route path="/hardware-market" element={<HardwareMarketPage />} />
+          <Route path="/hardware-market/product/:productId" element={<HardwareMarketProductPage />} />
           {/* Partner join (伙伴计划) — public portal marketing module outside console/admin. */}
           <Route path="/partner-join" element={<PartnerJoinLanding />} />
           <Route path="/partner-join/apply" element={<PartnerJoinApply />} />
@@ -311,6 +335,9 @@ export default function App() {
               <Route path="hardware/devices" element={<HardwareConsoleView />} />
               <Route path="hardware/firmware" element={<HardwareConsoleView />} />
               <Route path="hardware/*" element={<HardwareConsoleView />} />
+              {/* Virtual machines console: the group's single page. `*` keeps
+                  older deep links usable without a second screen. */}
+              <Route path="vm-instances/*" element={<VmInstancesConsoleView />} />
               <Route path="iam/oauth/official-accounts" element={<CloudRouterConsoleIamOfficialAccountsRoute />} />
               <Route path="iam/oauth/official-accounts/:resourceAccountId/custom-menus" element={<CloudRouterConsoleIamOauthMenuRoute />} />
               <Route path="account" element={<AccountView />} />

@@ -80,6 +80,54 @@ impl InvocationErrorKind {
             | Self::Internal => "server_error",
         }
     }
+
+    /// Whether this kind's `message` is authored for the caller.
+    ///
+    /// Client-caused rejections carry an actionable reason ("model not found",
+    /// "insufficient balance", "idempotency key reused with a different body").
+    /// Server-side failures do not: their message is assembled from internal
+    /// detail — database error text, connection strings, file paths, stack
+    /// notes — and echoing it to the caller is a disclosure, not a courtesy.
+    /// Those kinds get [`public_message`](Self::public_message) instead, and the
+    /// real reason stays in the gateway logs keyed by the request id.
+    pub fn exposes_message(self) -> bool {
+        match self {
+            Self::InvalidRequest
+            | Self::ResourceClassification
+            | Self::Authentication
+            | Self::Authorization
+            | Self::ModelForbidden
+            | Self::Idempotency
+            | Self::RateLimit
+            | Self::InsufficientBalance
+            | Self::Routing
+            // A published-but-unimplemented billing mode is a deliberate
+            // gateway answer, not a failure that could leak internals.
+            | Self::BillingUnavailable => true,
+            Self::Pricing
+            | Self::Dispatch
+            | Self::ProviderPassthroughFailed
+            | Self::Usage
+            | Self::Telemetry
+            | Self::Internal => false,
+        }
+    }
+
+    /// Caller-safe message for a server-side failure.
+    ///
+    /// Deliberately flat: the machine `code` and the `x-request-id` header are
+    /// what let a client (or support) correlate with the gateway log, so the
+    /// body does not need to guess at a cause it cannot see.
+    pub fn public_message(self) -> &'static str {
+        match self {
+            Self::Pricing => "pricing is temporarily unavailable for this model",
+            Self::Dispatch => "the upstream provider could not be reached",
+            Self::ProviderPassthroughFailed => "the upstream provider rejected the request",
+            Self::Usage | Self::Telemetry => "usage accounting failed for this request",
+            Self::Internal => "the gateway could not complete the request",
+            _ => "the request could not be completed",
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

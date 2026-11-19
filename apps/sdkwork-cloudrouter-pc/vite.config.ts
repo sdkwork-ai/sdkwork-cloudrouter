@@ -38,7 +38,7 @@ const RUNTIME_ENV_SCRIPT_PATH = '/runtime-env.js';
 // (SDKWORK_CLOUDROUTER_ROUTER_PC_INTERNAL_DEV_PORT, etc/topology/*.env).
 const DEFAULT_PORTAL_DEV_PORT = 4736;
 const LOCAL_ROUTE_PACKAGE_PATTERN =
-  /\/packages\/(sdkwork-cloudrouter-pc-(?:(?:admin|console)-(?!core(?:\/|$)|shell(?:\/|$))[^/]+|downloads|home|models|playground|pricing|rankings))\//u;
+  /\/packages\/(sdkwork-cloudrouter-pc-(?:(?:admin|console)-(?!core(?:\/|$)|shell(?:\/|$))[^/]+|downloads|hardware-market|home|models|playground|pricing|rankings))\//u;
 const BROWSER_DEV_PROXY_ENV_KEYS = {
   openApi: 'SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_OPEN_API_ORIGIN',
   backendApi: 'SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_BACKEND_API_ORIGIN',

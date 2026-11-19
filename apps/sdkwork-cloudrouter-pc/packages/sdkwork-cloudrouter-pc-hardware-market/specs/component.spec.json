@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "@sdkwork/cloudrouter-pc-hardware-market",
+    "displayName": "SDKWork Cloud Router Smart Hardware Market",
+    "version": "0.1.0",
+    "type": "node-package",
+    "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-hardware-market",
+    "domain": "commerce",
+    "declaredDomain": "commerce",
+    "capability": "hardware-market",
+    "status": "ready",
+    "languages": ["typescript"],
+    "generated": false,
+    "private": true,
+    "manifests": ["package.json"]
+  },
+  "contracts": {
+    "publicExports": [".", "./i18n"],
+    "routes": [
+      "/hardware-market",
+      "/hardware-market/product/:productId"
+    ],
+    "apiSurface": "app",
+    "sdkFamilies": ["catalog-app-sdk", "order-service"],
+    "sdkClients": [
+      "@sdkwork/cloudroutes-pc-commons/sdk-clients#getSdkworkCatalogAppSdkClient",
+      "@sdkwork/cloudroutes-pc-commons/domain-service-providers#getCloudRouterPhysicalPurchaseService"
+    ],
+    "events": [],
+    "configKeys": []
+  },
+  "integration": {
+    "authority": "Root SDKWork specs remain authoritative. This local spec only narrows the component contract.",
+    "dependencyPolicy": "Consume the Product Center and order checkout through the commons ports; never issue raw HTTP or create SDK clients inside a page.",
+    "sdkPolicy": "The generated catalog app SDK and the order physical-purchase service are the only data ports.",
+    "languagePolicy": "TypeScript + React 19, strict typecheck, en/zh i18n bundles."
+  },
+  "verification": {
+    "commands": [
+      "pnpm --filter @sdkwork/cloudrouter-pc-hardware-market typecheck",
+      "pnpm --filter @sdkwork/cloudrouter-pc-hardware-market test"
+    ]
+  },
+  "metadata": {
+    "standardVersion": "2026-05-13"
+  }
+}

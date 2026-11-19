@@ -2511,6 +2511,41 @@ test("app-surface services do not supply client auth context selectors", () => {
   }
 });
 
+test("portal header exposes the Smart Hardware Market and mounts its storefront routes", () => {
+  const navbarSource = readPortalSource("./packages/sdkwork-cloudroutes-pc-commons/src/components/Navbar.tsx");
+  const appSource = readPortalSource("./src/App.tsx");
+  const navigationSource = readPortalSource(
+    "./packages/sdkwork-cloudrouter-pc-i18n/src/resources/shared/navigation.ts",
+  );
+  const resourcesSource = readPortalSource("./packages/sdkwork-cloudrouter-pc-i18n/src/resources/index.ts");
+  const domainServiceSource = readPortalSource(
+    "./packages/sdkwork-cloudroutes-pc-commons/src/domain-service-providers.ts",
+  );
+  const purchaseDialogSource = readPortalSource(
+    "./packages/sdkwork-cloudrouter-pc-hardware-market/src/components/HardwareMarketPurchaseDialog.tsx",
+  );
+
+  // Header entry: one link, localized in both required locales.
+  assert.ok(navbarSource.includes("t('nav.hardwareMarket')"));
+  assert.ok(navbarSource.includes("href: '/hardware-market'"));
+  assert.ok(navigationSource.includes('"nav.hardwareMarket": "Hardware Market"'));
+  assert.ok(navigationSource.includes('"nav.hardwareMarket": "智能硬件市场"'));
+
+  // Storefront routes stay lazy and deep-linkable inside the portal shell.
+  assert.ok(appSource.includes("path=\"/hardware-market\""));
+  assert.ok(appSource.includes("path=\"/hardware-market/product/:productId\""));
+  assert.match(appSource, /import\('@sdkwork\/cloudrouter-pc-hardware-market'\)/u);
+
+  // Product Center capability: the market catalog bundle is composed by the host
+  // i18n catalog, and checkout flows through the shared order service port.
+  assert.ok(resourcesSource.includes('@sdkwork/cloudrouter-pc-hardware-market/i18n'));
+  assert.ok(resourcesSource.includes('hardwareMarketMessages'));
+  assert.ok(domainServiceSource.includes('createSdkworkPhysicalPurchaseService'));
+  assert.ok(domainServiceSource.includes('getCloudRouterPhysicalPurchaseService'));
+  assert.ok(purchaseDialogSource.includes('getCloudRouterPhysicalPurchaseService'));
+  assert.ok(purchaseDialogSource.includes('hasStoredPortalSession'));
+});
+
 function readPackageSource(relativePath: string): string {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8");
 }

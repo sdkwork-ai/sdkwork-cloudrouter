@@ -254,4 +254,21 @@ async fn gateway_vendors_route_rejects_missing_credentials() {
         .unwrap();
 
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
+    // A rejected request must still carry a correlation id: it is the only
+    // handle the caller has for a support question, and these early-exit paths
+    // never reach the invocation pipeline that would add one.
+    assert!(
+        response
+            .headers()
+            .get("x-request-id")
+            .and_then(|value| value.to_str().ok())
+            .is_some_and(|value| !value.is_empty()),
+        "an authentication rejection must expose x-request-id: {:?}",
+        response.headers()
+    );
+    assert!(
+        response.headers().get("x-sdkwork-trace-id").is_some(),
+        "an authentication rejection must expose x-sdkwork-trace-id: {:?}",
+        response.headers()
+    );
 }

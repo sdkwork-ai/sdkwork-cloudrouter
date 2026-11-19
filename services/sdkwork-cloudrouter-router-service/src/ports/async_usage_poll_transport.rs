@@ -23,6 +23,10 @@ pub struct AsyncPollRequest {
     pub secret: Option<String>,
     /// The pollable path stored on the task (`metadata.pollPath`).
     pub path: String,
+    /// Query string stored on the task (`metadata.pollQuery`), for vendors
+    /// whose task read is `GET <collection>?<task parameter>=<id>` rather than
+    /// a path segment (MiniMax).
+    pub query: Option<String>,
 }
 
 /// Normalized upstream read result.

@@ -115,7 +115,19 @@ where
 
         let body = model
             .clone()
-            .map(|model| json!({ "model": model }))
+            .map(|model| {
+                let mut body = json!({ "model": model });
+                // A media completion may carry no duration (Runway lists output
+                // URLs only); the ordered length captured at create is what the
+                // per-second meter bills against.
+                if let Some(seconds) = metadata_string(metadata, "durationSeconds")
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                {
+                    body["duration"] = json!(seconds);
+                }
+                body
+            })
             .unwrap_or_else(|| json!({}));
         let request_id = target
             .map(|target| target.request_id.clone())
@@ -187,7 +199,8 @@ where
                 return self.settle_storage(task, bytes).await;
             }
             let invocation = self.invocation(task, None)?;
-            self.settle_invocation(invocation, snapshot).await
+            self.settle_invocation(invocation, snapshot, task.task_kind)
+                .await
         })
     }
 }
@@ -210,11 +223,23 @@ where
         &self,
         mut invocation: Invocation,
         snapshot: &Value,
+        task_kind: AsyncUsageTaskKind,
     ) -> DomainResult<()> {
         BillingPolicyInterceptor
             .before(&mut invocation)
             .await
             .map_err(settlement_error)?;
+        // A reconciled media create is deliberately free while the job runs, so
+        // the policy above reports Free for this shape. The completion is the
+        // one and only charge, so the media policy replaces that verdict here.
+        if task_kind == AsyncUsageTaskKind::MediaTask {
+            invocation.billing = crate::application::invocation::media_completion_billing(
+                &invocation,
+            )
+            .ok_or_else(|| {
+                DomainError::new("media completion has no billable media meter to settle on")
+            })?;
+        }
         let identity = resolve_pricing_identity(self.catalog.as_ref(), &invocation);
         apply_pricing_identity(&mut invocation, &identity);
         PricingPreflightInterceptor::new(Arc::clone(&self.catalog))
@@ -227,6 +252,36 @@ where
             .after(&mut invocation)
             .await
             .map_err(settlement_error)?;
+        // Batch work is billed at the vendor's batch rate (OpenAI publishes 50%
+        // of the standard rate). The tier is applied only when the catalog
+        // actually carries that tier's rate for the meter: injecting
+        // `tier_code=batch` without a matching rate would turn a priced row into
+        // an "unpriced" rejection, so the data side gates the behaviour.
+        if matches!(
+            task_kind,
+            AsyncUsageTaskKind::OpenAiBatch | AsyncUsageTaskKind::AnthropicBatch
+        ) {
+            for line in invocation.usage.lines.iter_mut() {
+                let catalog_key = line
+                    .requested_model_catalog_key
+                    .clone()
+                    .or_else(|| invocation.resource.requested_model_catalog_key.clone());
+                let Some(catalog_key) = catalog_key else {
+                    continue;
+                };
+                if crate::application::invocation::catalog_tier_code_available(
+                    self.catalog.as_ref(),
+                    invocation.subject.tenant_id,
+                    invocation.subject.organization_id,
+                    &catalog_key,
+                    &line.meter,
+                    crate::application::invocation::BATCH_TIER_CODE,
+                ) {
+                    line.pricing_tier_code =
+                        Some(crate::application::invocation::BATCH_TIER_CODE.to_owned());
+                }
+            }
+        }
         if invocation.usage.lines.is_empty() {
             // A waived completion (zero results) has nothing to charge. A
             // completion with no measurable usage at all is an accounting
@@ -319,7 +374,8 @@ where
                 request_id: format!("{}:{}:{}", task.billing_request_id(), model, kind.as_str()),
             };
             let invocation = self.invocation(task, Some(&target))?;
-            self.settle_invocation(invocation, &shaped).await?;
+            self.settle_invocation(invocation, &shaped, AsyncUsageTaskKind::OpenAiBatch)
+                .await?;
         }
         Ok(())
     }
@@ -347,8 +403,12 @@ where
             request_id: format!("{}:storage", task.billing_request_id()),
         };
         let invocation = self.invocation(task, Some(&target))?;
-        self.settle_invocation(invocation, &json!({ "usage_bytes": bytes }))
-            .await
+        self.settle_invocation(
+            invocation,
+            &json!({ "usage_bytes": bytes }),
+            AsyncUsageTaskKind::OpenAiBatch,
+        )
+        .await
     }
 }
 
@@ -445,6 +505,12 @@ fn default_poll_path(task: &AsyncUsageTask) -> String {
         AsyncUsageTaskKind::ThreadRun => "/v1/threads/runs".to_owned(),
         AsyncUsageTaskKind::OpenAiBatch => "/v1/batches".to_owned(),
         AsyncUsageTaskKind::AnthropicBatch => "/anthropic/v1/messages/batches".to_owned(),
+        // A media task's create path is vendor-specific; registration always
+        // stores it in the task metadata, so fall back to that before a generic
+        // placeholder.
+        AsyncUsageTaskKind::MediaTask => metadata_string(task.metadata.as_ref(), "path")
+            .map(str::to_owned)
+            .unwrap_or_else(|| "/".to_owned()),
     }
 }
 

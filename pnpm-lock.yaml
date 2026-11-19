@@ -6817,12 +6817,18 @@ importers:
       '@sdkwork/cloudrouter-pc-console-user':
         specifier: workspace:*
         version: link:packages/sdkwork-cloudrouter-pc-console-user
+      '@sdkwork/cloudrouter-pc-console-vm-instances':
+        specifier: workspace:*
+        version: link:packages/sdkwork-cloudrouter-pc-console-vm-instances
       '@sdkwork/cloudrouter-pc-core':
         specifier: workspace:*
         version: link:packages/sdkwork-cloudrouter-pc-core
       '@sdkwork/cloudrouter-pc-downloads':
         specifier: workspace:*
         version: link:packages/sdkwork-cloudrouter-pc-downloads
+      '@sdkwork/cloudrouter-pc-hardware-market':
+        specifier: workspace:*
+        version: link:packages/sdkwork-cloudrouter-pc-hardware-market
       '@sdkwork/cloudrouter-pc-home':
         specifier: workspace:*
         version: link:packages/sdkwork-cloudrouter-pc-home
@@ -8171,6 +8177,9 @@ importers:
       '@sdkwork/cloudrouter-pc-console-hardware':
         specifier: workspace:*
         version: link:../sdkwork-cloudrouter-pc-console-hardware
+      '@sdkwork/cloudrouter-pc-console-vm-instances':
+        specifier: workspace:*
+        version: link:../sdkwork-cloudrouter-pc-console-vm-instances
       '@sdkwork/cloudroutes-pc-commons':
         specifier: workspace:*
         version: link:../sdkwork-cloudroutes-pc-commons
@@ -8189,6 +8198,19 @@ importers:
       '@sdkwork/cloudroutes-pc-commons':
         specifier: workspace:*
         version: link:../sdkwork-cloudroutes-pc-commons
+
+  apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-vm-instances:
+    dependencies:
+      '@sdkwork/cloudroutes-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-cloudroutes-pc-commons
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-core:
     dependencies:
@@ -8233,6 +8255,19 @@ importers:
         specifier: workspace:*
         version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
 
+  apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-hardware-market:
+    dependencies:
+      '@sdkwork/cloudroutes-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-cloudroutes-pc-commons
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-home:
     dependencies:
       '@sdkwork/cloudrouter-pc-downloads':
@@ -8272,6 +8307,9 @@ importers:
       '@sdkwork/cloudrouter-pc-console-hardware':
         specifier: workspace:*
         version: link:../sdkwork-cloudrouter-pc-console-hardware
+      '@sdkwork/cloudrouter-pc-console-vm-instances':
+        specifier: workspace:*
+        version: link:../sdkwork-cloudrouter-pc-console-vm-instances
       '@sdkwork/cloudrouter-pc-pricing':
         specifier: workspace:*
         version: link:../sdkwork-cloudrouter-pc-pricing

@@ -489,9 +489,9 @@ where
     // 视频档位只覆盖视频计量单位。图像模型有一批费率同样条件化在 `tier_code`
     // 上，而请求 schema 不暴露档位；当目录对该计量单位只有**一个**档位时，
     // 注入它不会改变价格（见 `single_catalog_tier_code` 的边界）。
-    let tier_code = pricing_tier_decision
-        .tier_code()
-        .map(str::to_owned)
+    let tier_code = usage_line
+        .and_then(|line| line.pricing_tier_code.clone())
+        .or_else(|| pricing_tier_decision.tier_code().map(str::to_owned))
         .or_else(|| cache_write_tier_code(catalog, invocation, &catalog_key, &meter))
         .or_else(|| cache_read_tier_code(catalog, invocation, &catalog_key, &meter))
         .or_else(|| image_mode_tier_code(catalog, invocation, &catalog_key, &meter))
@@ -823,6 +823,11 @@ fn pricing_dimensions(
     // 目录声明的计价档位优先于请求体里的 `tier_code`：请求体里的值由调用方
     // 自行填写，目录声明才是计费依据；两者一致时无差别，不一致时以目录为准。
     if let Some(tier_code) = pricing_tier_code.map(str::trim).filter(|v| !v.is_empty()) {
+        dimensions.insert("tier_code", serde_json::json!(tier_code));
+    }
+    // 逐行档位优先于"调用级档位"：同一个请求里可以同时存在 5m 与 1h 两档缓存
+    // 写入（上游 usage 已按 TTL 拆行），调用级只能二选一。
+    if let Some(tier_code) = usage_line.and_then(|line| line.pricing_tier_code.as_deref()) {
         dimensions.insert("tier_code", serde_json::json!(tier_code));
     }
     add_meter_dimensions(&mut dimensions, meter, usage_line);
@@ -1208,6 +1213,45 @@ fn request_image_mode(invocation: &Invocation) -> &'static str {
 /// 只在目录**同时**提供这两个档位时返回；其他档位词汇
 /// （`long_context` / `explicit_cache_write`）不猜，交给
 /// `single_catalog_tier_code` 或"无价则并入输入"兜底。
+/// Whether the catalog publishes a rate for `meter` conditioned on `tier_code`.
+///
+/// Used as the activation switch for a pricing tier the data side may not have
+/// shipped yet: injecting the dimension without a matching rate turns a priced
+/// call into an "unpriced" rejection, so the dimension is only applied when a
+/// rate for that exact tier exists.
+pub fn catalog_tier_code_available<C>(
+    catalog: &C,
+    tenant_id: i64,
+    organization_id: i64,
+    catalog_key: &str,
+    meter: &BillingMeter,
+    tier_code: &str,
+) -> bool
+where
+    C: PricingCatalog,
+{
+    catalog
+        .list_model_prices_for_scope_side(
+            tenant_id,
+            organization_id,
+            catalog_key,
+            PriceSide::OfficialReference,
+        )
+        .iter()
+        .filter(|price| &price.billing_meter == meter)
+        .filter_map(|price| price.rate_metadata.as_ref())
+        .any(|metadata| {
+            metadata.conditions.iter().any(|condition| {
+                condition.dimension_code == "tier_code"
+                    && condition.operator_code == "eq"
+                    && condition.value == tier_code
+            })
+        })
+}
+
+/// `tier_code` the vendor publishes for batch (off-peak) work.
+pub const BATCH_TIER_CODE: &str = "batch";
+
 fn cache_write_tier_code<C>(
     catalog: &C,
     invocation: &Invocation,

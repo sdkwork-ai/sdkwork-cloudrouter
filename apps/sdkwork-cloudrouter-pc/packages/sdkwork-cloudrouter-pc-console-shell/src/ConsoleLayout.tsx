@@ -24,6 +24,7 @@ import {
 import { Navbar } from '@sdkwork/cloudroutes-pc-commons';
 import { revokeAppSession } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { HARDWARE_CONSOLE_NAV_GROUP } from '@sdkwork/cloudrouter-pc-console-hardware/contribution';
+import { VM_INSTANCES_CONSOLE_NAV_GROUP } from '@sdkwork/cloudrouter-pc-console-vm-instances/contribution';
 
 import { useTranslation } from 'react-i18next';
 
@@ -73,6 +74,26 @@ const consoleHardwareGroup = groupBlock(
   })),
 );
 
+/**
+ * Virtual Machines group, declared by
+ * `@sdkwork/cloudrouter-pc-console-vm-instances/contribution` and rendered
+ * directly below the Smart Hardware group. The feature package owns the path,
+ * label, and icon; the shell only places the group in the sidebar order.
+ *
+ * The group's page reads the caller's `sandbox_instance` rows from the
+ * sdkwork-sandbox app-api face; the console shell never touches that transport.
+ */
+const consoleVmInstancesGroup = groupBlock(
+  VM_INSTANCES_CONSOLE_NAV_GROUP.groupKey,
+  VM_INSTANCES_CONSOLE_NAV_GROUP.fallbackLabel,
+  VM_INSTANCES_CONSOLE_NAV_GROUP.items.map((item) => itemBlock({
+    path: item.path,
+    labelKey: item.labelKey,
+    fallbackLabel: item.fallbackLabel,
+    icon: item.icon,
+  })),
+);
+
 const consoleSidebarGroups = [
   groupBlock('console.menu.group.integration', 'Access & Routing', [
     itemBlock({ path: '/console/api-keys', labelKey: 'console.menu.apiKeys', fallbackLabel: 'Token management', icon: Key }),
@@ -88,6 +109,7 @@ const consoleSidebarGroups = [
     itemBlock({ path: '/console/memory', labelKey: 'console.menu.memory', fallbackLabel: 'Memory console', icon: Brain }),
   ]),
   consoleHardwareGroup,
+  consoleVmInstancesGroup,
   groupBlock('console.menu.group.accountBusiness', 'Account & Commerce', [
     itemBlock({ path: '/console/account', labelKey: 'console.menu.account', fallbackLabel: 'Account overview', icon: CreditCard }),
     itemBlock({ path: '/console/wallet', labelKey: 'console.menu.wallet', fallbackLabel: 'Wallet & top-up', icon: Wallet }),
