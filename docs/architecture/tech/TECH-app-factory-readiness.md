@@ -143,7 +143,7 @@ None is introduced by the factory changes.
    resolve IAM-owned OAuth integrations).
 3. Real target-environment publish/deploy verification and mobile
    signing/store-delivery pipeline.
-4. Legacy duplicate IAM rows (uuid + decimal) cleanup; the installer only heals
-   the unambiguous single-row case. `cloudrouterctl audit-identities` reports
-   the pairs and `reconcile-identities --apply` relinks the safe legacy links;
-   true duplicates still need a reviewed maintenance action.
+4. Legacy duplicate IAM rows (uuid + decimal) cleanup; `audit-identities`
+   reports them, `reconcile-identities --apply` relinks unambiguous links, and
+   `cleanup-identity-duplicates --apply` disables the legacy uuid installation
+   (never deletes it).

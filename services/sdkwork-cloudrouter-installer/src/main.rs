@@ -434,6 +434,18 @@ async fn run_command(
                 iam_installation::reconcile_legacy_identity_links(pg, apply).await?;
             print_json(&report)?;
         }
+        InstallerCommand::CleanupIdentityDuplicates { apply } => {
+            let database_pool = connect_installer_database_pool(database_config).await?;
+            let sdkwork_database_sqlx::DatabasePool::Postgres(pg, _) = &database_pool else {
+                return Err(InstallerCliError::InvalidArgument(
+                    "cleanup-identity-duplicates requires the PostgreSQL installer database"
+                        .to_owned(),
+                )
+                .into());
+            };
+            let report = iam_installation::cleanup_duplicate_identity_links(pg, apply).await?;
+            print_json(&report)?;
+        }
         InstallerCommand::RevokeRefundedApps { apply } => {
             let database_pool = connect_installer_database_pool(database_config).await?;
             let sdkwork_database_sqlx::DatabasePool::Postgres(pg, _) = &database_pool else {
@@ -508,6 +520,7 @@ enum InstallerCommand {
     IssueBootstrapToken(IssueBootstrapTokenOptions),
     AuditIdentities,
     ReconcileIdentities { apply: bool },
+    CleanupIdentityDuplicates { apply: bool },
     RevokeRefundedApps { apply: bool },
 }
 
@@ -573,6 +586,21 @@ where
                 }
             }
             InstallerCommand::ReconcileIdentities { apply }
+        }
+        "cleanup-identity-duplicates" => {
+            let mut apply = false;
+            for arg in args {
+                match arg.as_str() {
+                    "--apply" => apply = true,
+                    other => {
+                        return Err(InstallerCliError::InvalidArgument(format!(
+                            "unknown cleanup-identity-duplicates option: {other}"
+                        ))
+                        .into())
+                    }
+                }
+            }
+            InstallerCommand::CleanupIdentityDuplicates { apply }
         }
         "revoke-refunded-apps" => {
             let mut apply = false;
@@ -1079,6 +1107,7 @@ impl InstallerCommand {
             | Self::IssueBootstrapToken(_)
             | Self::AuditIdentities
             | Self::ReconcileIdentities { .. }
+            | Self::CleanupIdentityDuplicates { .. }
             | Self::RevokeRefundedApps { .. } => false,
         }
     }

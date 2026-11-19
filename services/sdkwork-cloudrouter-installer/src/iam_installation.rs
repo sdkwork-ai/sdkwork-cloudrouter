@@ -259,9 +259,61 @@ pub async fn reconcile_legacy_identity_links(
 /// `deploy_application_id` is the canonical decimal anchor deploy's
 /// `apps.create` provisioning writes; `deploy_application_uuid` is the public
 /// deploy id, checked only as a legacy fallback so an older uuid-anchored
-/// Ensures the IAM installation of a deploy application exists and is enabled.
+/// Result of cleaning ambiguous duplicate installations.
+#[derive(Clone, Debug, Default, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IdentityDuplicateCleanupReport {
+    pub applied: bool,
+    pub candidates: Vec<LegacyIdentityLink>,
+    pub disabled: Vec<String>,
+}
+
+/// Disables the legacy uuid installation when a canonical decimal installation
+/// already exists for the same deploy app.
+///
+/// This is the true duplicate case, so it is a separate explicit command. It
+/// never deletes a row: `status = 'disabled'` keeps the OAuth client and audit
+/// history for review, and the canonical installation stays enabled.
+pub async fn cleanup_duplicate_identity_links(
+    pg: &PgPool,
+    apply: bool,
+) -> anyhow::Result<IdentityDuplicateCleanupReport> {
+    let audit = audit_identity_links(pg).await?;
+    let mut report = IdentityDuplicateCleanupReport {
+        applied: apply,
+        candidates: audit.duplicate_links,
+        disabled: Vec::new(),
+    };
+    if !apply {
+        return Ok(report);
+    }
+    for link in &report.candidates {
+        let affected = sqlx::query(
+            "UPDATE iam_tenant_application
+             SET status = 'disabled', updated_at = NOW()
+             WHERE tenant_id = $1 AND app_id = $2
+               AND deploy_application_id = $3",
+        )
+        .bind(&link.tenant_id)
+        .bind(&link.iam_application_id)
+        .bind(&link.legacy_anchor)
+        .execute(pg)
+        .await?
+        .rows_affected();
+        if affected > 0 {
+            report.disabled.push(format!(
+                "{}:{}",
+                link.tenant_id, link.iam_application_id
+            ));
+        }
+    }
+    Ok(report)
+}
+
 ///
 /// installation is reused instead of duplicated. The returned installation is
+/// Ensures the IAM installation of a deploy application exists and is enabled.
+///
 /// guaranteed to be `enabled` and linked to the resolved anchor; anything else
 /// is an error that names what is wrong, never a value the caller could mistake
 /// for a working installation.

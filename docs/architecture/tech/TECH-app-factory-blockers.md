@@ -77,9 +77,13 @@ deploy app).
 
 **Safe reconciliation available.** `cloudrouterctl reconcile-identities`
 defaults to a dry-run of the unambiguous `legacyLinks`; `--apply` calls the
-same guarded IAM relink as `ensure_iam_installation`. Ambiguous
-`duplicateLinks` are never guessed at and still need a reviewed maintenance
-action.
+same guarded IAM relink as `ensure_iam_installation`.
+
+**Duplicate cleanup available.** `cloudrouterctl cleanup-identity-duplicates`
+defaults to a dry-run of `duplicateLinks`; `--apply` sets the **legacy uuid
+installation** to `status = 'disabled'` and leaves the canonical decimal
+installation enabled. It never deletes a row, so the OAuth client and audit
+history remain available for review.
 
 **Required contract.** An operator-run audit that enumerates the duplicate
 pairs and a reviewed cleanup (disable/remove the uuid orphan) with an audit
