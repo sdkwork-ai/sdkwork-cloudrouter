@@ -31,6 +31,9 @@ const mocks = vi.hoisted(() => ({
           list: vi.fn(),
         },
       },
+      tenantApplications: {
+        list: vi.fn(),
+      },
     },
   },
 }));
@@ -38,6 +41,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@sdkwork/cloudroutes-pc-commons/runtime", () => ({
   getSdkworkDeploymentsAppSdkClient: () => mocks.deployments,
   getSdkworkPaymentBackendSdkClient: () => mocks.payment,
+  resolveStoredPortalTenantId: () => "tenant-1",
 }));
 
 vi.mock("../src/services/iam-service", () => ({
@@ -518,6 +522,23 @@ describe("authoritative resource-link transport", () => {
     expect(afterClear?.legacySeed).toBe(false);
     expect(afterClear?.environments.production).toBeUndefined();
     expect(afterClear?.environments.development?.paymentAccounts).toHaveLength(1);
+  });
+
+  it("resolves the IAM application type anchored on the deploy application", async () => {
+    mocks.iam.iam.tenantApplications.list.mockResolvedValue({
+      items: [
+        { applicationType: "pc", deployApplicationId: "deploy-other" },
+        { applicationType: "miniprogram", deployApplicationId: "deploy-1" },
+      ],
+    });
+
+    const service = createApplicationIntegrationService();
+    await expect(service.loadIamApplicationType?.("deploy-1")).resolves.toBe("miniprogram");
+    await expect(service.loadIamApplicationType?.("deploy-missing")).resolves.toBeUndefined();
+    expect(mocks.iam.iam.tenantApplications.list).toHaveBeenCalledWith("tenant-1", {
+      page: 1,
+      page_size: 200,
+    });
   });
 
   it("refuses to send a non-lifecycle environment to the Deploy API", async () => {

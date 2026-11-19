@@ -518,7 +518,9 @@ function channelBindingFromResourceLink(
       : { accountType: readString(metadata.accountType) }),
     resourceAccountKind: kind,
     enabled: link.bindingStatus.trim().toUpperCase() === "ACTIVE",
-    ...(readString(metadata.status) === undefined ? {} : { status: readString(metadata.status) }),
+    ...(readString(metadata.status ?? metadata.accountStatus) === undefined
+      ? {}
+      : { status: readString(metadata.status ?? metadata.accountStatus) }),
     ...(readString(metadata.authorizationStatus) === undefined
       ? {}
       : { authorizationStatus: readString(metadata.authorizationStatus) }),
@@ -534,7 +536,9 @@ function paymentBindingFromResourceLink(link: ApplicationResourceLinkRecord): Ap
       ? {}
       : { accountName: readString(metadata.accountName) }),
     providerCode: link.providerCode ?? readString(metadata.providerCode) ?? "unknown",
-    environment: readString(metadata.environment) ?? link.environment,
+    // The backfill stores the provider environment under `paymentEnvironment`;
+    // new console writes use `environment`.
+    environment: readString(metadata.paymentEnvironment ?? metadata.environment) ?? link.environment,
     accountMode: readString(metadata.accountMode) ?? "direct",
     ...(readString(metadata.settlementCurrency) === undefined
       ? {}
@@ -675,6 +679,25 @@ export function validateApplicationIntegration(
     // exists on a fleet lifecycle value. Explaining the limit is better than a
     // 400 from the write.
     issues.push(issue("environment-not-bindable", "error", { environment: input.environment || "-" }));
+  }
+
+  // The IAM installation and the Deploy app describe the same endpoint through
+  // two different vocabularies. `deploy_application_id` makes them comparable,
+  // and a silent disagreement is exactly the kind of governance defect this
+  // screen exists to surface.
+  const expectedIamType = expectedIamApplicationType(surface.id);
+  const registeredIamType = input.iamApplicationType?.trim().toLowerCase();
+  if (
+    expectedIamType
+    && registeredIamType
+    && registeredIamType !== "other"
+    && registeredIamType !== expectedIamType
+  ) {
+    issues.push(issue("application-type-mismatch", "warning", {
+      expected: expectedIamType,
+      registered: registeredIamType,
+      surface: surface.id,
+    }));
   }
 
   for (const binding of input.integration.paymentAccounts) {
@@ -867,6 +890,39 @@ function requirementPresent(
       return Boolean(integration.miniProgram);
     case "payment-account":
       return integration.paymentAccounts.length > 0;
+  }
+}
+
+/** The IAM `applicationType` that corresponds to one Deploy surface. */
+export function expectedIamApplicationType(
+  surfaceId: ReturnType<typeof resolveApplicationIntegrationSurface>["id"],
+): string | undefined {
+  switch (surfaceId) {
+    case "api":
+      return "api";
+    case "h5":
+      return "h5";
+    case "pc":
+      return "pc";
+    case "web-legacy":
+      // A legacy static/SPA kind can be either the PC or the H5 surface, so it
+      // cannot contradict an IAM registration without a false positive.
+      return undefined;
+    case "wechat-mini-program":
+    case "douyin-mini-program":
+      return "miniprogram";
+    case "flutter":
+      return "flutter";
+    case "ios":
+      return "ios";
+    case "android":
+      return "android";
+    case "harmonyos":
+      return "harmonyos";
+    case "desktop":
+      return "desktop";
+    case "unknown":
+      return undefined;
   }
 }
 

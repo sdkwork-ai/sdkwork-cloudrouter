@@ -273,6 +273,7 @@ describe("application integration actions", () => {
         legacySeed: false,
         links: [],
       })),
+      loadIamApplicationType: vi.fn(async () => "pc"),
     };
     renderPage({ integrations, loaders: createLoaders({ deploy: [miniProgramApplication] }) });
 
@@ -296,6 +297,9 @@ describe("application integration actions", () => {
     const miniRequirement = readiness.querySelector("[data-requirement='mini-program']");
     expect(miniRequirement?.getAttribute("data-requirement-level")).toBe("required");
     expect(miniRequirement?.getAttribute("data-requirement-configured")).toBe("false");
+    // The IAM installation is registered as `pc`; the drawer must surface the
+    // cross-plane mismatch instead of silently trusting one side.
+    expect(await screen.findByText(/IAM 安装注册的应用类型是 pc/)).toBeTruthy();
   });
 
   it("shows the environments from the Deploy app and the current binding status", async () => {

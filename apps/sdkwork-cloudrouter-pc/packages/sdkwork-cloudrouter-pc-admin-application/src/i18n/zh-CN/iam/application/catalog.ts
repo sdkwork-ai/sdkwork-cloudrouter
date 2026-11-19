@@ -406,6 +406,7 @@ export const zh: ApplicationCatalogMessages = {
     },
     validation: {
       "account-not-used-by-app-kind": "「{account}」不适用于{surface}，请解绑或更换为匹配的账号。",
+      "application-type-mismatch": "IAM 安装注册的应用类型是 {registered}，但 Deploy 应用的类型对应 {expected}；请修正 IAM 应用类型，避免登录与收银台按错误类型解析。",
       "auto-login-not-configured": "{surface}的自动登录依赖{requirement}，当前尚未配置。",
       "channel-app-id-missing": "「{channel}」缺少 AppID，无法完成渠道接入。",
       "channel-disabled": "「{channel}」已停用或未激活。",

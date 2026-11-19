@@ -406,6 +406,7 @@ export const en: ApplicationCatalogMessages = {
     },
     validation: {
       "account-not-used-by-app-kind": "“{account}” is not used by a {surface}; unlink it or choose a matching account.",
+      "application-type-mismatch": "The IAM installation is registered as {registered}, but the Deploy app resolves to {expected}. Correct the IAM application type so sign-in and the cashier resolve against the right kind.",
       "auto-login-not-configured": "Auto-login for a {surface} depends on a {requirement}, which is not configured.",
       "channel-app-id-missing": "“{channel}” has no AppID and cannot be used as a channel integration.",
       "channel-disabled": "“{channel}” is disabled or inactive.",

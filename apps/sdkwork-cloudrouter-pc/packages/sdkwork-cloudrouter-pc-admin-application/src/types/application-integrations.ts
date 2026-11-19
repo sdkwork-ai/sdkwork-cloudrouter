@@ -323,12 +323,21 @@ export interface ApplicationIntegrationService {
     deployAppId: string,
     legacyMetadata?: Record<string, unknown>,
   ): Promise<ApplicationIntegrationBindings>;
+  /**
+   * Resolves the IAM tenant-application `applicationType` anchored on this
+   * Deploy application (`iam_application_installation.deploy_application_id`).
+   *
+   * Optional and non-blocking: the drawer uses it for a cross-plane governance
+   * warning, never to gate a binding write.
+   */
+  loadIamApplicationType?(deployAppId: string): Promise<string | undefined>;
   save(input: ApplicationIntegrationSaveInput): Promise<ApplicationIntegrationSaveResult>;
 }
 
 /** Machine-readable validation issue; the page localizes it. */
 export type ApplicationIntegrationIssueCode =
   | "account-not-used-by-app-kind"
+  | "application-type-mismatch"
   | "auto-login-not-configured"
   | "channel-app-id-missing"
   | "channel-disabled"
@@ -362,6 +371,12 @@ export interface ApplicationIntegrationIssue {
 export interface ApplicationIntegrationValidationInput {
   /** Deploy application kind (`appKind`), e.g. `WECHAT_MINIPROGRAM`. */
   appKind?: string;
+  /**
+   * IAM tenant-application `applicationType` of the same Deploy app, when the
+   * caller could resolve it through `deploy_application_id`. A difference is a
+   * governance warning, not a binding error.
+   */
+  iamApplicationType?: string;
   environment: string;
   environmentLevel?: string;
   integration: ApplicationEnvironmentIntegration;

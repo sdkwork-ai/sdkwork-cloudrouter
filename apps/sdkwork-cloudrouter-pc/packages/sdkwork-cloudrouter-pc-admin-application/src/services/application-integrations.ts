@@ -20,6 +20,7 @@
 import {
   getSdkworkDeploymentsAppSdkClient,
   getSdkworkPaymentBackendSdkClient,
+  resolveStoredPortalTenantId,
 } from "@sdkwork/cloudroutes-pc-commons/runtime";
 
 import type {
@@ -158,6 +159,22 @@ export function createApplicationIntegrationService(): ApplicationIntegrationSer
       const client = getSdkworkDeploymentsAppSdkClient();
       const links = await listAllResourceLinks(client, deployAppId);
       return applicationIntegrationBindingsFromResourceLinks(links, legacyMetadata);
+    },
+
+    async loadIamApplicationType(deployAppId) {
+      const tenantId = resolveStoredPortalTenantId();
+      if (!tenantId) {
+        return undefined;
+      }
+      const service = getApplicationCatalogIamService();
+      const payload = await service.iam.tenantApplications.list(tenantId, {
+        page: 1,
+        page_size: CHANNEL_PAGE_SIZE,
+      });
+      const match = extractItems(payload)
+        .map((item) => asRecord(item))
+        .find((item) => readString(item.deployApplicationId) === deployAppId);
+      return match ? readString(match.applicationType) : undefined;
     },
 
     async save(input) {

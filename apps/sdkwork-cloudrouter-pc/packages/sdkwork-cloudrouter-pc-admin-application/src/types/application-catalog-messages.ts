@@ -383,6 +383,7 @@ export interface ApplicationCatalogMessages {
     };
     validation: {
       "account-not-used-by-app-kind": string;
+      "application-type-mismatch": string;
       "auto-login-not-configured": string;
       "channel-app-id-missing": string;
       "channel-disabled": string;

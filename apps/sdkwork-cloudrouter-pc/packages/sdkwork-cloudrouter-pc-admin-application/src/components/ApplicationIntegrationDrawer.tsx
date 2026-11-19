@@ -127,6 +127,7 @@ export function ApplicationIntegrationDrawer({
   const [environmentsStatus, setEnvironmentsStatus] = useState<"loading" | "ready" | "error">("loading");
   const [bindingsStatus, setBindingsStatus] = useState<"loading" | "ready" | "error">("loading");
   const [legacySeed, setLegacySeed] = useState(false);
+  const [iamApplicationType, setIamApplicationType] = useState<string>();
   const [environmentKey, setEnvironmentKey] = useState("");
   const [drafts, setDrafts] = useState<Record<string, ApplicationEnvironmentIntegration>>({});
   const [baseline, setBaseline] = useState<Record<string, ApplicationEnvironmentIntegration>>({});
@@ -254,6 +255,32 @@ export function ApplicationIntegrationDrawer({
     };
   }, [catalogReloadToken, deployApplications, selectedDeployAppId, service]);
 
+  // Cross-plane consistency: the IAM installation and the Deploy app describe
+  // the same endpoint. The lookup is optional and never blocks the drawer; a
+  // missing installation simply omits the governance warning.
+  useEffect(() => {
+    if (!service.loadIamApplicationType || !selectedDeployAppId) {
+      setIamApplicationType(undefined);
+      return;
+    }
+    let cancelled = false;
+    setIamApplicationType(undefined);
+    void service.loadIamApplicationType(selectedDeployAppId)
+      .then((value) => {
+        if (!cancelled) {
+          setIamApplicationType(value);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setIamApplicationType(undefined);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDeployAppId, service]);
+
   const selectedDeployApplication = deployApplications.find(
     (candidate) => candidate.id === selectedDeployAppId,
   );
@@ -284,13 +311,24 @@ export function ApplicationIntegrationDrawer({
     }
     return validateApplicationIntegration({
       ...(appKind ? { appKind } : {}),
+      ...(iamApplicationType ? { iamApplicationType } : {}),
       environment: environmentKey,
       ...(environment?.level === undefined ? {} : { environmentLevel: environment.level }),
       integration: draft,
       paymentAccounts: paymentCatalog.items,
       channelAccounts: [...officialCatalog.items, ...miniProgramCatalog.items],
     });
-  }, [appKind, bindingsStatus, draft, environment?.level, environmentKey, miniProgramCatalog, officialCatalog, paymentCatalog]);
+  }, [
+    appKind,
+    bindingsStatus,
+    draft,
+    environment?.level,
+    environmentKey,
+    iamApplicationType,
+    miniProgramCatalog,
+    officialCatalog,
+    paymentCatalog,
+  ]);
 
   const changedEnvironmentKeys = useMemo(
     () => Object.keys(drafts).filter(
@@ -311,6 +349,7 @@ export function ApplicationIntegrationDrawer({
       const option = environments.find((candidate) => candidate.key === key);
       issuesByEnvironment.set(key, validateApplicationIntegration({
         ...(appKind ? { appKind } : {}),
+        ...(iamApplicationType ? { iamApplicationType } : {}),
         environment: key,
         ...(option?.level === undefined ? {} : { environmentLevel: option.level }),
         integration: drafts[key] ?? emptyEnvironmentIntegration(),
@@ -325,6 +364,7 @@ export function ApplicationIntegrationDrawer({
     changedEnvironmentKeys,
     drafts,
     environments,
+    iamApplicationType,
     miniProgramCatalog,
     officialCatalog,
     paymentCatalog,

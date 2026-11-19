@@ -234,6 +234,24 @@ describe("app-kind-aware validation", () => {
     ]));
     expect(issues.some((issue) => issue.severity === "error")).toBe(false);
   });
+
+  it("warns when the IAM installation type disagrees with the Deploy app kind", () => {
+    const issues = validateApplicationIntegration({
+      appKind: "WECHAT_MINIPROGRAM",
+      iamApplicationType: "pc",
+      channelAccounts: [],
+      environment: "production",
+      integration: { paymentAccounts: [] },
+      paymentAccounts: [],
+    });
+    expect(issues).toEqual([
+      expect.objectContaining({
+        code: "application-type-mismatch",
+        params: expect.objectContaining({ expected: "miniprogram", registered: "pc" }),
+        severity: "warning",
+      }),
+    ]);
+  });
 });
 
 describe("resource link document conversion", () => {
@@ -241,7 +259,7 @@ describe("resource link document conversion", () => {
     const environments = environmentIntegrationsFromResourceLinks([
       link({
         id: "link-official",
-        metadata: { accountId: "ra-official", displayName: "Official" },
+        metadata: { accountStatus: "active", sourceAccountId: "ra-official", displayName: "Official" },
         resourceKind: "official_account",
         resourceRef: "wx-official",
       }),
@@ -255,7 +273,8 @@ describe("resource link document conversion", () => {
       link({
         id: "link-pay",
         isDefault: true,
-        metadata: { accountId: "pay-wechat", accountMode: "direct", environment: "production" },
+        // Backfilled rows store the provider environment under a distinct key.
+        metadata: { accountId: "pay-wechat", accountMode: "direct", paymentEnvironment: "sandbox" },
         providerCode: "wechat_pay",
         resourceKind: "payment_account",
         resourceRef: "wechat-prod",
@@ -263,9 +282,15 @@ describe("resource link document conversion", () => {
     ]);
 
     expect(environments.production.officialAccount?.id).toBe("ra-official");
+    expect(environments.production.officialAccount?.status).toBe("active");
     expect(environments.production.miniProgram?.id).toBe("ra-mini");
     expect(environments.production.paymentAccounts).toEqual([
-      expect.objectContaining({ accountNo: "wechat-prod", id: "pay-wechat", isDefault: true }),
+      expect.objectContaining({
+        accountNo: "wechat-prod",
+        environment: "sandbox",
+        id: "pay-wechat",
+        isDefault: true,
+      }),
     ]);
   });
 
