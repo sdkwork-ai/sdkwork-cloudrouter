@@ -33,6 +33,7 @@
     "@sdkwork/cloudrouter-mp-console-catalog": "workspace:*",
     "@sdkwork/cloudrouter-mp-console-dashboard": "workspace:*",
     "@sdkwork/cloudrouter-mp-console-usage": "workspace:*",
+    "@sdkwork/cloudrouter-mp-community": "workspace:*",
     "@sdkwork/cloudrouter-mp-core": "workspace:*",
     "@sdkwork/cloudrouter-mp-i18n": "workspace:*",
     "@sdkwork/cloudrouter-mp-shell": "workspace:*",

@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "@sdkwork/cloudrouter-mp-community",
+    "displayName": "SDKWork CloudRouter Mini Program Community",
+    "version": "0.1.0",
+    "type": "node-package",
+    "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-community",
+    "domain": "community",
+    "declaredDomain": "community",
+    "capability": "community",
+    "surface": "mini-program",
+    "status": "ready",
+    "languages": [
+      "typescript"
+    ],
+    "generated": false,
+    "private": true,
+    "manifests": [
+      "package.json"
+    ]
+  },
+  "contracts": {
+    "publicExports": [
+      "."
+    ],
+    "runtimeEntrypoints": [
+      "package.json#scripts.typecheck"
+    ],
+    "sdkClients": [],
+    "events": [],
+    "configKeys": [],
+    "sdkDependencies": [],
+    "routeManifest": null
+  },
+  "integration": {
+    "authority": "sdkwork-community owns the community domain contract. This package maps the generated community App SDK responses to WXML-safe objects for the mini program.",
+    "dependencyPolicy": "The generated SDK is constructed in this package with the shared mini program TokenManager; pages consume the injected communityApi.",
+    "sdkPolicy": "No page performs raw HTTP; the generated client owns transport and auth."
+  },
+  "verification": {
+    "commands": [
+      "pnpm --dir apps/sdkwork-cloudrouter-mini-program typecheck"
+    ]
+  },
+  "canonicalSpecs": [
+    {
+      "file": "COMPONENT_SPEC.md",
+      "path": "../../../../../sdkwork-specs/COMPONENT_SPEC.md",
+      "purpose": "Component-local contract and discovery rules."
+    },
+    {
+      "file": "MINI_PROGRAM_APP_ARCHITECTURE_SPEC.md",
+      "path": "../../../../../sdkwork-specs/MINI_PROGRAM_APP_ARCHITECTURE_SPEC.md",
+      "purpose": "Mini program page, package, and runtime composition rules."
+    },
+    {
+      "file": "I18N_SPEC.md",
+      "path": "../../../../../sdkwork-specs/I18N_SPEC.md",
+      "purpose": "User-facing copy and locale rules."
+    }
+  ]
+}

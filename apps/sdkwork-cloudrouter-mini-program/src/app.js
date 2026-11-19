@@ -18,6 +18,100 @@
 const runtimeEnv = require('./runtime/runtime-env.js');
 const { bootstrapMiniProgramApplication } = require('./runtime/cloudrouter-app.js');
 
+/**
+ * The generated SDKs use the standard fetch/AbortController surface. WeChat
+ * exposes `wx.request` instead, so bind the two globals before the bundle
+ * constructs any generated client. This keeps every community read/write on the
+ * generated SDK transport rather than hand-rolled page HTTP.
+ */
+function installMiniProgramTransportPolyfills() {
+  if (typeof globalThis.AbortController !== 'function') {
+    class MiniAbortSignal {
+      constructor() {
+        this.aborted = false;
+        this.listeners = [];
+      }
+
+      addEventListener(type, listener) {
+        if (type === 'abort') this.listeners.push(listener);
+      }
+
+      removeEventListener(type, listener) {
+        if (type === 'abort') {
+          this.listeners = this.listeners.filter((entry) => entry !== listener);
+        }
+      }
+
+      abort() {
+        this.aborted = true;
+        for (const listener of this.listeners) {
+          try {
+            listener();
+          } catch {}
+        }
+        this.listeners = [];
+      }
+    }
+
+    class MiniAbortController {
+      constructor() {
+        this.signal = new MiniAbortSignal();
+      }
+
+      abort() {
+        this.signal.abort();
+      }
+    }
+
+    globalThis.AbortController = MiniAbortController;
+  }
+
+  if (typeof globalThis.fetch !== 'function') {
+    globalThis.fetch = function miniProgramFetch(url, options) {
+      const request = options || {};
+      const headers = request.headers || {};
+      return new Promise((resolve, reject) => {
+        wx.request({
+          url: String(url),
+          method: request.method || 'GET',
+          header: headers,
+          data: request.body,
+          dataType: 'text',
+          success(response) {
+            const responseHeaders = response.header || {};
+            resolve({
+              status: response.statusCode,
+              ok: response.statusCode >= 200 && response.statusCode < 300,
+              headers: {
+                get(name) {
+                  const lower = String(name).toLowerCase();
+                  for (const key of Object.keys(responseHeaders)) {
+                    if (key.toLowerCase() === lower) return responseHeaders[key];
+                  }
+                  return null;
+                },
+              },
+              text: async () =>
+                typeof response.data === 'string'
+                  ? response.data
+                  : JSON.stringify(response.data ?? ''),
+              json: async () =>
+                typeof response.data === 'string'
+                  ? JSON.parse(response.data)
+                  : response.data,
+            });
+          },
+          fail(error) {
+            reject(new Error(error && error.errMsg ? error.errMsg : 'network error'));
+          },
+        });
+      });
+    };
+  }
+}
+
+installMiniProgramTransportPolyfills();
+
 // `resolveRuntimeEnv()` falls back to `globalThis`, which is the only channel a
 // mini program has for build-time configuration.
 Object.assign(globalThis, runtimeEnv);
@@ -26,6 +120,7 @@ App({
   globalData: {
     profileId: runtimeEnv.SDKWORK_PROFILE_ID,
     consolePorts: null,
+    communityApi: null,
     webPublicHttpUrl: '',
     settingsBinding: null,
     settingsRuntime: null,
@@ -39,6 +134,7 @@ App({
     try {
       const runtime = bootstrapMiniProgramApplication();
       this.globalData.consolePorts = runtime.consolePorts;
+      this.globalData.communityApi = runtime.communityApi;
       this.globalData.webPublicHttpUrl = runtime.webPublicHttpUrl;
       this.globalData.settingsBinding = runtime.settingsBinding;
       this.globalData.settingsRuntime = runtime.settingsRuntime;

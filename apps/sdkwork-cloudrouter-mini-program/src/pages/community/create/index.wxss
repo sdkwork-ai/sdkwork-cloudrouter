@@ -1,0 +1,17 @@
+@import "../post/index.wxss";
+
+.cr-form__switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 24rpx;
+  border-radius: 16rpx;
+  background: #ffffff;
+  border: 1rpx solid #e2e8f0;
+  font-size: 28rpx;
+}
+
+.theme-dark .cr-form__switch {
+  background: #1e293b;
+  border-color: #334155;
+}

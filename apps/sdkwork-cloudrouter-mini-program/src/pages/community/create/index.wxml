@@ -1,0 +1,19 @@
+<view class="cr-form {{themeClass}}">
+  <view wx:if="{{error}}" class="cr-form__error">{{error}}</view>
+
+  <input class="cr-form__input" placeholder="圈子名称" value="{{title}}" bindinput="onTitle" />
+  <textarea class="cr-form__textarea" placeholder="圈子简介" value="{{description}}" bindinput="onDescription" maxlength="1000" />
+  <input class="cr-form__input" placeholder="标签（逗号或空格分隔）" value="{{tags}}" bindinput="onTags" />
+
+  <view class="cr-form__switch">
+    <text>付费圈子</text>
+    <switch checked="{{isPaid}}" bindchange="onPaid" />
+  </view>
+
+  <input wx:if="{{isPaid}}" class="cr-form__input" type="digit" placeholder="价格（元）" value="{{price}}" bindinput="onPrice" />
+
+  <button class="cr-form__submit" bindtap="onSubmit" loading="{{submitting}}" disabled="{{submitting}}">
+    {{submitting ? '创建中…' : '创建'}}
+  </button>
+  <text class="cr-form__hint">封面、头像、标签页和会员等级可在创建后到完整工作区继续配置。</text>
+</view>

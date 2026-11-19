@@ -5778,6 +5778,9 @@ importers:
       '@sdkwork/cloudrouter-mp-commons':
         specifier: workspace:*
         version: link:packages/sdkwork-cloudrouter-mp-commons
+      '@sdkwork/cloudrouter-mp-community':
+        specifier: workspace:*
+        version: link:packages/sdkwork-cloudrouter-mp-community
       '@sdkwork/cloudrouter-mp-console-api-keys':
         specifier: workspace:*
         version: link:packages/sdkwork-cloudrouter-mp-console-api-keys
@@ -5840,6 +5843,16 @@ importers:
       vite:
         specifier: 'catalog:'
         version: 8.1.5(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12)
+
+  apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-community:
+    dependencies:
+      '@sdkwork/cloudrouter-mp-core':
+        specifier: workspace:*
+        version: link:../sdkwork-cloudrouter-mp-core
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
 
   apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-console-api-keys:
     dependencies:
@@ -5943,6 +5956,9 @@ importers:
       '@sdkwork/cloudrouter-service':
         specifier: workspace:*
         version: link:../../../sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-service
+      '@sdkwork/community-app-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-community/sdks/sdkwork-community-app-sdk/sdkwork-community-app-sdk-typescript
       '@sdkwork/sdk-common':
         specifier: workspace:*
         version: link:../../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript

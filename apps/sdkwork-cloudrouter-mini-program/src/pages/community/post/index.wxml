@@ -1,0 +1,12 @@
+<view class="cr-form {{themeClass}}">
+  <view wx:if="{{error}}" class="cr-form__error">{{error}}</view>
+
+  <input class="cr-form__input" placeholder="标题（可选）" value="{{title}}" bindinput="onTitle" />
+  <textarea class="cr-form__textarea" placeholder="写下内容…" value="{{body}}" bindinput="onBody" maxlength="5000" />
+  <input class="cr-form__input" placeholder="标签（逗号或空格分隔）" value="{{tags}}" bindinput="onTags" />
+
+  <button class="cr-form__submit" bindtap="onSubmit" loading="{{submitting}}" disabled="{{submitting}}">
+    {{submitting ? '发布中…' : '发布'}}
+  </button>
+  <text class="cr-form__hint">新动态会提交审核，审核通过后对其他成员展示。</text>
+</view>

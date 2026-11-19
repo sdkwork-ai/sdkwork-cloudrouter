@@ -1347,8 +1347,8 @@ var StringUtils;
     return 1 - levenshteinDistance(a, b) / Math.max(a.length, b.length);
   }
   _StringUtils.similarity = similarity;
-  function fuzzyMatch(text, pattern, threshold = 0.6) {
-    return similarity(text, pattern) >= threshold;
+  function fuzzyMatch(text2, pattern, threshold = 0.6) {
+    return similarity(text2, pattern) >= threshold;
   }
   _StringUtils.fuzzyMatch = fuzzyMatch;
   function equals(a, b, ignoreCase = false) {
@@ -5216,6 +5216,918 @@ function getCloudRouterMpAppSdkClient(baseUrl) {
   return appSdkClient;
 }
 
+// ../../../sdkwork-community/sdks/sdkwork-community-app-sdk/sdkwork-community-app-sdk-typescript/generated/server-openapi/src/http/client.ts
+var _HttpClient2 = class _HttpClient2 extends BaseHttpClient {
+  constructor(config) {
+    super(config);
+  }
+  static normalizeCredential(value) {
+    return typeof value === "string" && value.trim().length > 0 ? value.trim() : void 0;
+  }
+  getInternalAuthConfig() {
+    const self = this;
+    self.authConfig = self.authConfig || {};
+    return self.authConfig;
+  }
+  getInternalHeaders() {
+    const self = this;
+    self.config = self.config || {};
+    self.config.headers = self.config.headers || {};
+    return self.config.headers;
+  }
+  buildRequestHeaders(headers, contentType) {
+    const mergedHeaders = {
+      ...headers != null ? headers : {}
+    };
+    if (contentType && contentType.toLowerCase() !== "multipart/form-data") {
+      mergedHeaders["Content-Type"] = contentType;
+    }
+    return Object.keys(mergedHeaders).length > 0 ? mergedHeaders : void 0;
+  }
+  async applySdkworkRequestBodyFingerprint(headers, body) {
+    if (!_HttpClient2.SDKWORK_V3_REQUEST_FINGERPRINTS || body == null || !this.hasNonEmptyHeader(headers, "Idempotency-Key") || this.hasNonEmptyHeader(headers, "X-Content-SHA256") || this.hasNonEmptyHeader(headers, "X-Idempotency-Fingerprint")) {
+      return headers;
+    }
+    const fingerprint = await this.createSdkworkRequestBodyFingerprint(body);
+    if (!fingerprint) {
+      return headers;
+    }
+    const normalizedFingerprintHeader = fingerprint.header.toLowerCase();
+    const preparedHeaders = Object.fromEntries(
+      Object.entries(headers != null ? headers : {}).filter(
+        ([headerName]) => headerName.toLowerCase() !== normalizedFingerprintHeader
+      )
+    );
+    return {
+      ...preparedHeaders,
+      [fingerprint.header]: fingerprint.value
+    };
+  }
+  hasNonEmptyHeader(headers, name) {
+    const normalizedName = name.toLowerCase();
+    return Object.entries(headers != null ? headers : {}).some(
+      ([headerName, value]) => headerName.toLowerCase() === normalizedName && value.trim().length > 0
+    );
+  }
+  async createSdkworkRequestBodyFingerprint(body) {
+    if (typeof FormData !== "undefined" && body instanceof FormData) {
+      const canonicalForm = await this.serializeSdkworkFormData(body);
+      return {
+        header: "X-Idempotency-Fingerprint",
+        value: await this.sha256Hex(new TextEncoder().encode(canonicalForm))
+      };
+    }
+    const bytes = await this.serializeSdkworkRequestBodyBytes(body);
+    if (!bytes) {
+      return void 0;
+    }
+    return {
+      header: "X-Content-SHA256",
+      value: await this.sha256Hex(bytes)
+    };
+  }
+  async serializeSdkworkRequestBodyBytes(body) {
+    if (typeof URLSearchParams !== "undefined" && body instanceof URLSearchParams) {
+      return new TextEncoder().encode(body.toString());
+    }
+    if (typeof Blob !== "undefined" && body instanceof Blob) {
+      return new Uint8Array(await body.arrayBuffer());
+    }
+    if (typeof ArrayBuffer !== "undefined" && body instanceof ArrayBuffer) {
+      return new Uint8Array(body.slice(0));
+    }
+    if (typeof ArrayBuffer !== "undefined" && ArrayBuffer.isView(body)) {
+      return new Uint8Array(new Uint8Array(body.buffer, body.byteOffset, body.byteLength));
+    }
+    if (typeof body === "string") {
+      return new TextEncoder().encode(body);
+    }
+    const serialized = JSON.stringify(body);
+    return serialized === void 0 ? void 0 : new TextEncoder().encode(serialized);
+  }
+  async serializeSdkworkFormData(body) {
+    const parts = [];
+    for (const [name, value] of body.entries()) {
+      if (typeof value === "string") {
+        parts.push({ kind: "field", name, value });
+        continue;
+      }
+      const bytes = new Uint8Array(await value.arrayBuffer());
+      parts.push({
+        kind: "file",
+        name,
+        fileName: "name" in value ? String(value.name) : "",
+        contentType: value.type,
+        size: value.size,
+        contentSha256: await this.sha256Hex(bytes)
+      });
+    }
+    return JSON.stringify(parts);
+  }
+  async sha256Hex(bytes) {
+    return sha256Hash(bytes);
+  }
+  buildHeaders(config, skipAuth = false) {
+    const headers = super.buildHeaders(config, skipAuth);
+    if (config == null ? void 0 : config.accessTokenOnly) {
+      this.stripCredentialHeaders(headers, true);
+      return headers;
+    }
+    if (!skipAuth && !(config == null ? void 0 : config.skipAuth)) {
+      return headers;
+    }
+    this.stripCredentialHeaders(headers, false);
+    return headers;
+  }
+  stripCredentialHeaders(headers, preserveAccessToken) {
+    [
+      ...preserveAccessToken ? [] : [_HttpClient2.ACCESS_TOKEN_HEADER, "Access-Token"],
+      "Authorization",
+      ["X", "API", "Key"].join("-"),
+      "X-Tenant-Id",
+      "X-App-Id",
+      "X-Organization-Id",
+      "X-Platform",
+      "X-User-Id",
+      "X-Sdkwork-Tenant-Id",
+      "X-Sdkwork-App-Id",
+      "X-Sdkwork-User-Id",
+      "X-Sdkwork-Organization-Id",
+      "X-Sdkwork-Actor-Id",
+      "X-Sdkwork-Actor-Kind",
+      "X-Sdkwork-Session-Id",
+      "X-Sdkwork-Environment",
+      "X-Sdkwork-Deployment-Profile",
+      "X-Sdkwork-Deployment-Mode",
+      "X-Sdkwork-Runtime-Target",
+      "X-Sdkwork-Auth-Level",
+      "X-Sdkwork-Data-Scope",
+      "X-Sdkwork-Permission-Scope",
+      "X-Sdkwork-Device-Id",
+      "X-Sdkwork-Context-Signature",
+      "X-Sdkwork-Operation-Id",
+      "X-Sdkwork-Subject-Tenant-Id",
+      "X-Sdkwork-Subject-Organization-Id",
+      "X-Sdkwork-Subject-User-Id",
+      "X-Sdkwork-Subject-Timestamp",
+      "X-Sdkwork-Subject-Signature"
+    ].forEach((key) => {
+      delete headers[key];
+    });
+  }
+  buildRequestBody(body, contentType) {
+    if (body == null) {
+      return body;
+    }
+    const normalizedContentType = (contentType != null ? contentType : "").toLowerCase();
+    if (normalizedContentType === "application/x-www-form-urlencoded") {
+      return this.encodeFormBody(body);
+    }
+    if (normalizedContentType === "multipart/form-data") {
+      return this.encodeMultipartBody(body);
+    }
+    return body;
+  }
+  encodeMultipartBody(body) {
+    if (body instanceof FormData) {
+      return body;
+    }
+    const formData = new FormData();
+    if (body instanceof Map) {
+      for (const [key, value] of body.entries()) {
+        this.appendMultipartValue(formData, String(key), value);
+      }
+      return formData;
+    }
+    if (typeof body === "object") {
+      const record = body;
+      for (const [key, value] of Object.entries(record)) {
+        if (this.isMultipartMetadataField(key)) {
+          continue;
+        }
+        this.appendMultipartValue(formData, key, value, this.resolveMultipartFileName(record, key));
+      }
+      return formData;
+    }
+    this.appendMultipartValue(formData, "value", body);
+    return formData;
+  }
+  appendMultipartValue(formData, key, value, fileName) {
+    if (value == null) {
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach((item) => this.appendMultipartValue(formData, key, item, fileName));
+      return;
+    }
+    if (value instanceof Blob) {
+      if (fileName) {
+        formData.append(key, value, fileName);
+        return;
+      }
+      formData.append(key, value);
+      return;
+    }
+    if (value instanceof Date) {
+      formData.append(key, value.toISOString());
+      return;
+    }
+    if (typeof value === "object") {
+      formData.append(key, JSON.stringify(value));
+      return;
+    }
+    formData.append(key, String(value));
+  }
+  resolveMultipartFileName(record, key) {
+    const fieldSpecificName = record[`${key}FileName`];
+    if (typeof fieldSpecificName === "string" && fieldSpecificName.trim()) {
+      return fieldSpecificName.trim();
+    }
+    const genericName = record.fileName;
+    if (key === "file" && typeof genericName === "string" && genericName.trim()) {
+      return genericName.trim();
+    }
+    return void 0;
+  }
+  isMultipartMetadataField(key) {
+    return key === "fileName" || key.endsWith("FileName");
+  }
+  encodeFormBody(body) {
+    if (body instanceof URLSearchParams) {
+      return body.toString();
+    }
+    if (typeof body === "string") {
+      return body;
+    }
+    const params = new URLSearchParams();
+    if (body instanceof Map) {
+      for (const [key, value] of body.entries()) {
+        this.appendFormValue(params, String(key), value);
+      }
+      return params.toString();
+    }
+    if (typeof body === "object") {
+      for (const [key, value] of Object.entries(body)) {
+        this.appendFormValue(params, key, value);
+      }
+      return params.toString();
+    }
+    params.append("value", String(body));
+    return params.toString();
+  }
+  appendFormValue(params, key, value) {
+    if (value == null) {
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach((item) => this.appendFormValue(params, key, item));
+      return;
+    }
+    if (value instanceof Date) {
+      params.append(key, value.toISOString());
+      return;
+    }
+    if (typeof value === "object") {
+      params.append(key, JSON.stringify(value));
+      return;
+    }
+    params.append(key, String(value));
+  }
+  setAuthToken(token) {
+    super.setAuthToken(token);
+  }
+  setAccessToken(token) {
+    const headers = this.getInternalHeaders();
+    headers[_HttpClient2.ACCESS_TOKEN_HEADER] = token;
+    super.setAccessToken(token);
+  }
+  setTokenManager(manager) {
+    const baseProto = Object.getPrototypeOf(_HttpClient2.prototype);
+    if (typeof baseProto.setTokenManager === "function") {
+      baseProto.setTokenManager.call(this, manager);
+      return;
+    }
+    this.getInternalAuthConfig().tokenManager = manager;
+  }
+  applyAccessTokenOnlyHeaders(headers) {
+    var _a;
+    const authConfig = this.getInternalAuthConfig();
+    const tokenManager2 = authConfig.tokenManager;
+    const accessToken = (_a = tokenManager2 == null ? void 0 : tokenManager2.getAccessToken) == null ? void 0 : _a.call(tokenManager2);
+    if (typeof accessToken !== "string" || accessToken.trim().length === 0) {
+      throw new Error(
+        "access-token-only request requires Access-Token before request dispatch"
+      );
+    }
+    const result = { ...headers != null ? headers : {} };
+    this.stripCredentialHeaders(result, false);
+    result[_HttpClient2.ACCESS_TOKEN_HEADER] = accessToken.trim();
+    return result;
+  }
+  applySdkworkAuthHeaders(headers) {
+    var _a, _b;
+    const authConfig = this.getInternalAuthConfig();
+    const tokenManager2 = authConfig.tokenManager;
+    const accessToken = _HttpClient2.normalizeCredential((_a = tokenManager2 == null ? void 0 : tokenManager2.getAccessToken) == null ? void 0 : _a.call(tokenManager2));
+    const authToken = _HttpClient2.normalizeCredential((_b = tokenManager2 == null ? void 0 : tokenManager2.getAuthToken) == null ? void 0 : _b.call(tokenManager2));
+    if (_HttpClient2.REQUIRES_SDKWORK_ACCESS_TOKEN && (typeof accessToken !== "string" || accessToken.trim().length === 0)) {
+      throw new Error("non-open-api request requires Access-Token before request dispatch");
+    }
+    if (!accessToken && !authToken) {
+      return headers;
+    }
+    const authHeaders = buildAuthHeaders("dual-token", void 0, tokenManager2);
+    return Object.keys(authHeaders).length > 0 ? { ...headers != null ? headers : {}, ...authHeaders } : headers;
+  }
+  unwrapSdkworkV3Payload(payload, unwrapKind = "data") {
+    if (!_HttpClient2.SDKWORK_V3_UNWRAP || payload == null || typeof payload !== "object") {
+      return payload;
+    }
+    const record = payload;
+    if (record.code !== 0 || !("data" in record)) {
+      return this.unwrapSdkworkV3Data(record, unwrapKind);
+    }
+    const data = record.data;
+    if (!data || typeof data !== "object") {
+      return data;
+    }
+    return this.unwrapSdkworkV3Data(data, unwrapKind);
+  }
+  unwrapSdkworkV3Data(data, unwrapKind) {
+    if (unwrapKind === "void") {
+      return void 0;
+    }
+    if (unwrapKind === "item" && "item" in data) {
+      return data.item;
+    }
+    return data;
+  }
+  async request(path, options = {}) {
+    const execute = this.execute;
+    if (typeof execute !== "function") {
+      throw new Error("BaseHttpClient execute method is not available");
+    }
+    const {
+      body,
+      headers,
+      contentType,
+      method = "GET",
+      skipAuth,
+      accessTokenOnly,
+      sdkworkUnwrapKind = "data",
+      ...rest
+    } = options;
+    const requestHeaders = accessTokenOnly ? this.applyAccessTokenOnlyHeaders(headers) : skipAuth ? headers : this.applySdkworkAuthHeaders(headers);
+    const requestBody = this.buildRequestBody(body, contentType);
+    const preparedHeaders = await this.applySdkworkRequestBodyFingerprint(
+      this.buildRequestHeaders(requestHeaders, body == null ? void 0 : contentType),
+      requestBody
+    );
+    const payload = await withRetry(
+      () => execute.call(this, {
+        url: path,
+        method,
+        ...rest,
+        ...skipAuth !== void 0 ? { skipAuth } : {},
+        ...accessTokenOnly !== void 0 ? { accessTokenOnly } : {},
+        ...requestBody !== void 0 ? { body: requestBody } : {},
+        ...preparedHeaders !== void 0 ? { headers: preparedHeaders } : {}
+      }),
+      // Per-request retry overrides (e.g. disabling 5xx retries for
+      // idempotent-terminal operations like turn execution) flow through
+      // options.retry; the default keeps maxRetries: 3.
+      { maxRetries: 3, ...options.retry }
+    );
+    return this.unwrapSdkworkV3Payload(payload, sdkworkUnwrapKind);
+  }
+  async *streamJson(path, options = {}) {
+    const stream = BaseHttpClient.prototype.stream;
+    if (typeof stream !== "function") {
+      throw new Error("BaseHttpClient stream method is not available");
+    }
+    const {
+      body,
+      headers,
+      contentType,
+      method = "GET",
+      skipAuth,
+      accessTokenOnly,
+      ...rest
+    } = options;
+    const authHeaders = accessTokenOnly ? this.applyAccessTokenOnlyHeaders(headers) : skipAuth ? headers : this.applySdkworkAuthHeaders(headers);
+    const requestBody = this.buildRequestBody(body, contentType);
+    const requestHeaders = await this.applySdkworkRequestBodyFingerprint(
+      this.buildRequestHeaders(
+        { Accept: "text/event-stream", ...authHeaders != null ? authHeaders : {} },
+        body == null ? void 0 : contentType
+      ),
+      requestBody
+    );
+    for await (const data of stream.call(this, path, {
+      method,
+      ...rest,
+      ...skipAuth !== void 0 ? { skipAuth } : {},
+      ...accessTokenOnly !== void 0 ? { accessTokenOnly } : {},
+      ...requestBody !== void 0 ? { body: requestBody } : {},
+      ...requestHeaders !== void 0 ? { headers: requestHeaders } : {}
+    })) {
+      if (data === "[DONE]") {
+        return;
+      }
+      if (typeof data !== "string" || data.trim().length === 0) {
+        continue;
+      }
+      yield JSON.parse(data);
+    }
+  }
+  async get(path, params, headers) {
+    return this.request(path, {
+      method: "GET",
+      ...params !== void 0 ? { params } : {},
+      ...headers !== void 0 ? { headers } : {}
+    });
+  }
+  async post(path, body, params, headers, contentType) {
+    return this.request(path, {
+      method: "POST",
+      ...body !== void 0 ? { body } : {},
+      ...params !== void 0 ? { params } : {},
+      ...headers !== void 0 ? { headers } : {},
+      ...contentType !== void 0 ? { contentType } : {}
+    });
+  }
+  async put(path, body, params, headers, contentType) {
+    return this.request(path, {
+      method: "PUT",
+      ...body !== void 0 ? { body } : {},
+      ...params !== void 0 ? { params } : {},
+      ...headers !== void 0 ? { headers } : {},
+      ...contentType !== void 0 ? { contentType } : {}
+    });
+  }
+  async delete(path, params, headers) {
+    return this.request(path, {
+      method: "DELETE",
+      ...params !== void 0 ? { params } : {},
+      ...headers !== void 0 ? { headers } : {}
+    });
+  }
+  async patch(path, body, params, headers, contentType) {
+    return this.request(path, {
+      method: "PATCH",
+      ...body !== void 0 ? { body } : {},
+      ...params !== void 0 ? { params } : {},
+      ...headers !== void 0 ? { headers } : {},
+      ...contentType !== void 0 ? { contentType } : {}
+    });
+  }
+};
+__publicField(_HttpClient2, "ACCESS_TOKEN_HEADER", "Access-Token");
+__publicField(_HttpClient2, "SDKWORK_V3_UNWRAP", true);
+__publicField(_HttpClient2, "SDKWORK_V3_REQUEST_FINGERPRINTS", true);
+__publicField(_HttpClient2, "REQUIRES_SDKWORK_ACCESS_TOKEN", true);
+var HttpClient2 = _HttpClient2;
+function createHttpClient2(config) {
+  return new HttpClient2(config);
+}
+
+// ../../../sdkwork-community/sdks/sdkwork-community-app-sdk/sdkwork-community-app-sdk-typescript/generated/server-openapi/src/api/paths.ts
+var APP_API_PREFIX2 = "/app/v3/api";
+function appApiPath2(path) {
+  if (!path) {
+    return APP_API_PREFIX2;
+  }
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+  const normalizedPrefixRaw = (APP_API_PREFIX2 || "").trim();
+  const normalizedPrefix = normalizedPrefixRaw ? `/${normalizedPrefixRaw.replace(/^\/+|\/+$/g, "")}` : "";
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  if (!normalizedPrefix || normalizedPrefix === "/") {
+    return normalizedPath;
+  }
+  if (normalizedPath === normalizedPrefix || normalizedPath.startsWith(`${normalizedPrefix}/`)) {
+    return normalizedPath;
+  }
+  return `${normalizedPrefix}${normalizedPath}`;
+}
+
+// ../../../sdkwork-community/sdks/sdkwork-community-app-sdk/sdkwork-community-app-sdk-typescript/generated/server-openapi/src/api/community.ts
+var CommunityCommentsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  /** Community comments.list */
+  async list(entryId, requestOptions) {
+    return this.client.request(appApiPath2(`/community/entries/${serializePathParameter2(entryId, { name: "entryId", style: "simple", explode: false })}/comments`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+  /** Community comments.create */
+  async create(entryId, body, requestOptions) {
+    return this.client.request(appApiPath2(`/community/entries/${serializePathParameter2(entryId, { name: "entryId", style: "simple", explode: false })}/comments`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+};
+var CommunityReactionsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  /** Community reactions.set */
+  async create(entryId, body, requestOptions) {
+    return this.client.request(appApiPath2(`/community/entries/${serializePathParameter2(entryId, { name: "entryId", style: "simple", explode: false })}/reactions`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+};
+var CommunityEntriesPublicationReadinessApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  /** Community entries.publicationReadiness.retrieve */
+  async retrieve(entryId, requestOptions) {
+    return this.client.request(appApiPath2(`/community/entries/${serializePathParameter2(entryId, { name: "entryId", style: "simple", explode: false })}/publication_readiness`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "item" });
+  }
+};
+var CommunityEntriesRecommendationsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  /** Community entries.recommendations.list */
+  async list(entryId, requestOptions) {
+    return this.client.request(appApiPath2(`/community/entries/${serializePathParameter2(entryId, { name: "entryId", style: "simple", explode: false })}/recommendations`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+};
+var CommunityEntriesApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    __publicField(this, "recommendations");
+    __publicField(this, "publicationReadiness");
+    this.client = client;
+    this.recommendations = new CommunityEntriesRecommendationsApi(client);
+    this.publicationReadiness = new CommunityEntriesPublicationReadinessApi(client);
+  }
+  /** Community entries.retrieve */
+  async retrieve(entryId, requestOptions) {
+    return this.client.request(appApiPath2(`/community/entries/${serializePathParameter2(entryId, { name: "entryId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "item" });
+  }
+  /** Community entries.update */
+  async update(entryId, body, requestOptions) {
+    return this.client.request(appApiPath2(`/community/entries/${serializePathParameter2(entryId, { name: "entryId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "PATCH", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  /** Community entries.delete */
+  async delete(entryId, requestOptions) {
+    return this.client.request(appApiPath2(`/community/entries/${serializePathParameter2(entryId, { name: "entryId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "DELETE" });
+  }
+  /** Community entries.create */
+  async create(body, requestOptions) {
+    return this.client.request(appApiPath2(`/community/entries`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+};
+var CommunityFeedApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  /** Community feed.list (deprecated: use the standard feeds stream system) */
+  async list(params, requestOptions) {
+    const query = buildQueryString2([
+      { name: "categoryId", value: params == null ? void 0 : params.categoryId, style: "form", explode: true, allowReserved: false },
+      { name: "kind", value: params == null ? void 0 : params.kind, style: "form", explode: true, allowReserved: false },
+      { name: "q", value: params == null ? void 0 : params.q, style: "form", explode: true, allowReserved: false },
+      { name: "reviewState", value: params == null ? void 0 : params.reviewState, style: "form", explode: true, allowReserved: false },
+      { name: "tag", value: params == null ? void 0 : params.tag, style: "form", explode: true, allowReserved: false },
+      { name: "page", value: params == null ? void 0 : params.page, style: "form", explode: true, allowReserved: false },
+      { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString2(appApiPath2(`/community/feed`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", skipAuth: true, sdkworkUnwrapKind: "page" });
+  }
+};
+var CommunityGroupsApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  /** Community groups.list */
+  async list(categoryId, requestOptions) {
+    return this.client.request(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}/groups`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+  /** Community groups.create */
+  async create(categoryId, body, requestOptions) {
+    return this.client.request(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}/groups`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  /** Community groups.update */
+  async update(categoryId, groupId, body, requestOptions) {
+    return this.client.request(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}/groups/${serializePathParameter2(groupId, { name: "groupId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "PATCH", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  /** Community groups.remove */
+  async delete(categoryId, groupId, requestOptions) {
+    return this.client.request(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}/groups/${serializePathParameter2(groupId, { name: "groupId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "DELETE" });
+  }
+};
+var CommunityTiersApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  /** Community tiers.list */
+  async list(categoryId, params, requestOptions) {
+    const query = buildQueryString2([
+      { name: "includeDisabled", value: params == null ? void 0 : params.includeDisabled, style: "form", explode: true, allowReserved: false }
+    ]);
+    return this.client.request(appendQueryString2(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}/tiers`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+  /** Community tiers.create */
+  async create(categoryId, body, requestOptions) {
+    return this.client.request(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}/tiers`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  /** Community tiers.update */
+  async update(categoryId, tierId, body, requestOptions) {
+    return this.client.request(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}/tiers/${serializePathParameter2(tierId, { name: "tierId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "PATCH", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  /** Community tiers.delete */
+  async delete(categoryId, tierId, requestOptions) {
+    return this.client.request(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}/tiers/${serializePathParameter2(tierId, { name: "tierId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "DELETE" });
+  }
+  /** Community tiers.publish */
+  async publish(categoryId, tierId, requestOptions) {
+    return this.client.request(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}/tiers/${serializePathParameter2(tierId, { name: "tierId", style: "simple", explode: false })}/publish`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", sdkworkUnwrapKind: "item" });
+  }
+  /** Community tiers.unpublish */
+  async unpublish(categoryId, tierId, requestOptions) {
+    return this.client.request(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}/tiers/${serializePathParameter2(tierId, { name: "tierId", style: "simple", explode: false })}/unpublish`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", sdkworkUnwrapKind: "item" });
+  }
+};
+var CommunityMembersApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  /** Community members.list */
+  async list(categoryId, requestOptions) {
+    return this.client.request(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}/members`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+  /** Community members.current */
+  async retrieve(categoryId, requestOptions) {
+    return this.client.request(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}/members/current`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "item" });
+  }
+  /** Community members.update */
+  async update(categoryId, memberId, body, requestOptions) {
+    return this.client.request(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}/members/${serializePathParameter2(memberId, { name: "memberId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "PATCH", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  /** Community members.remove */
+  async delete(categoryId, memberId, requestOptions) {
+    return this.client.request(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}/members/${serializePathParameter2(memberId, { name: "memberId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "DELETE" });
+  }
+  /** Community members.activate */
+  async activate(categoryId, body, requestOptions) {
+    return this.client.request(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}/members/activate`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+};
+var CommunityCategoriesApi = class {
+  constructor(client) {
+    __publicField(this, "client");
+    this.client = client;
+  }
+  /** Community categories.list */
+  async list(requestOptions) {
+    return this.client.request(appApiPath2(`/community/categories`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
+  }
+  /** Community categories.create */
+  async create(body, requestOptions) {
+    return this.client.request(appApiPath2(`/community/categories`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  /** Community categories.retrieve */
+  async retrieve(categoryId, requestOptions) {
+    return this.client.request(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "item" });
+  }
+  /** Community categories.update */
+  async update(categoryId, body, requestOptions) {
+    return this.client.request(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "PATCH", body, contentType: "application/json", sdkworkUnwrapKind: "item" });
+  }
+  /** Community categories.delete */
+  async delete(categoryId, requestOptions) {
+    return this.client.request(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "DELETE" });
+  }
+  /** Community categories.join */
+  async join(categoryId, requestOptions) {
+    return this.client.request(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}/join`), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "POST", sdkworkUnwrapKind: "item" });
+  }
+};
+var CommunityApi = class {
+  constructor(client) {
+    __publicField(this, "categories");
+    __publicField(this, "members");
+    __publicField(this, "tiers");
+    __publicField(this, "groups");
+    __publicField(this, "feed");
+    __publicField(this, "entries");
+    __publicField(this, "reactions");
+    __publicField(this, "comments");
+    this.categories = new CommunityCategoriesApi(client);
+    this.members = new CommunityMembersApi(client);
+    this.tiers = new CommunityTiersApi(client);
+    this.groups = new CommunityGroupsApi(client);
+    this.feed = new CommunityFeedApi(client);
+    this.entries = new CommunityEntriesApi(client);
+    this.reactions = new CommunityReactionsApi(client);
+    this.comments = new CommunityCommentsApi(client);
+  }
+};
+function createCommunityApi(client) {
+  return new CommunityApi(client);
+}
+function appendQueryString2(path, rawQueryString) {
+  const query = rawQueryString.replace(/^\?+/, "");
+  if (!query) {
+    return path;
+  }
+  return path.includes("?") ? `${path}&${query}` : `${path}?${query}`;
+}
+function serializePathParameter2(value, spec) {
+  if (value === void 0 || value === null) {
+    return "";
+  }
+  const style = spec.style || "simple";
+  if (Array.isArray(value)) {
+    return serializePathArray2(spec.name, value, style, spec.explode);
+  }
+  if (typeof value === "object") {
+    return serializePathObject2(spec.name, value, style, spec.explode);
+  }
+  return pathPrefix2(spec.name, style, false) + encodePathValue2(serializePathPrimitive2(value));
+}
+function serializePathArray2(name, values, style, explode) {
+  const serialized = values.filter((item) => item !== void 0 && item !== null).map((item) => encodePathValue2(serializePathPrimitive2(item)));
+  if (serialized.length === 0) {
+    return pathPrefix2(name, style, false);
+  }
+  if (style === "matrix") {
+    return explode ? serialized.map((item) => `;${name}=${item}`).join("") : `;${name}=${serialized.join(",")}`;
+  }
+  return pathPrefix2(name, style, false) + serialized.join(explode ? "." : ",");
+}
+function serializePathObject2(name, value, style, explode) {
+  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== void 0 && entryValue !== null);
+  if (entries.length === 0) {
+    return pathPrefix2(name, style, true);
+  }
+  if (style === "matrix") {
+    return explode ? entries.map(([key, entryValue]) => `;${encodePathValue2(key)}=${encodePathValue2(serializePathPrimitive2(entryValue))}`).join("") : `;${name}=${entries.flatMap(([key, entryValue]) => [encodePathValue2(key), encodePathValue2(serializePathPrimitive2(entryValue))]).join(",")}`;
+  }
+  const serialized = explode ? entries.map(([key, entryValue]) => `${encodePathValue2(key)}=${encodePathValue2(serializePathPrimitive2(entryValue))}`).join(style === "label" ? "." : ",") : entries.flatMap(([key, entryValue]) => [encodePathValue2(key), encodePathValue2(serializePathPrimitive2(entryValue))]).join(",");
+  return pathPrefix2(name, style, true) + serialized;
+}
+function pathPrefix2(name, style, _objectValue) {
+  if (style === "label") return ".";
+  if (style === "matrix") return `;${name}`;
+  return "";
+}
+function encodePathValue2(value) {
+  return encodeURIComponent(value);
+}
+function serializePathPrimitive2(value) {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+function buildQueryString2(parameters) {
+  const pairs = [];
+  for (const parameter of parameters) {
+    appendSerializedParameter2(pairs, parameter);
+  }
+  return pairs.join("&");
+}
+function appendSerializedParameter2(pairs, parameter) {
+  if (parameter.value === void 0 || parameter.value === null) {
+    return;
+  }
+  if (parameter.contentType) {
+    pairs.push(`${encodeQueryComponent2(parameter.name)}=${encodeQueryValue2(JSON.stringify(parameter.value), parameter.allowReserved)}`);
+    return;
+  }
+  const style = parameter.style || "form";
+  if (style === "deepObject") {
+    appendDeepObjectParameter2(pairs, parameter.name, parameter.value, parameter.allowReserved);
+    return;
+  }
+  if (Array.isArray(parameter.value)) {
+    appendArrayParameter2(pairs, parameter.name, parameter.value, style, parameter.explode, parameter.allowReserved);
+    return;
+  }
+  if (typeof parameter.value === "object") {
+    appendObjectParameter2(pairs, parameter.name, parameter.value, style, parameter.explode, parameter.allowReserved);
+    return;
+  }
+  pairs.push(`${encodeQueryComponent2(parameter.name)}=${encodeQueryValue2(serializePrimitive2(parameter.value), parameter.allowReserved)}`);
+}
+function appendArrayParameter2(pairs, name, value, style, explode, allowReserved) {
+  const values = value.filter((item) => item !== void 0 && item !== null).map((item) => serializePrimitive2(item));
+  if (values.length === 0) {
+    return;
+  }
+  if (style === "form" && explode) {
+    for (const item of values) {
+      pairs.push(`${encodeQueryComponent2(name)}=${encodeQueryValue2(item, allowReserved)}`);
+    }
+    return;
+  }
+  pairs.push(`${encodeQueryComponent2(name)}=${encodeQueryValue2(values.join(","), allowReserved)}`);
+}
+function appendObjectParameter2(pairs, name, value, style, explode, allowReserved) {
+  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== void 0 && entryValue !== null);
+  if (entries.length === 0) {
+    return;
+  }
+  if (style === "form" && explode) {
+    for (const [key, entryValue] of entries) {
+      pairs.push(`${encodeQueryComponent2(key)}=${encodeQueryValue2(serializePrimitive2(entryValue), allowReserved)}`);
+    }
+    return;
+  }
+  const serialized = entries.flatMap(([key, entryValue]) => [key, serializePrimitive2(entryValue)]).join(",");
+  pairs.push(`${encodeQueryComponent2(name)}=${encodeQueryValue2(serialized, allowReserved)}`);
+}
+function appendDeepObjectParameter2(pairs, name, value, allowReserved) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    pairs.push(`${encodeQueryComponent2(name)}=${encodeQueryValue2(serializePrimitive2(value), allowReserved)}`);
+    return;
+  }
+  for (const [key, entryValue] of Object.entries(value)) {
+    if (entryValue === void 0 || entryValue === null) {
+      continue;
+    }
+    pairs.push(`${encodeQueryComponent2(`${name}[${key}]`)}=${encodeQueryValue2(serializePrimitive2(entryValue), allowReserved)}`);
+  }
+}
+function serializePrimitive2(value) {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+function encodeQueryComponent2(value) {
+  return encodeURIComponent(value);
+}
+function encodeQueryValue2(value, allowReserved) {
+  const encoded = encodeURIComponent(value);
+  if (!allowReserved) {
+    return encoded;
+  }
+  return encoded.replace(/%3A/gi, ":").replace(/%2F/gi, "/").replace(/%3F/gi, "?").replace(/%23/gi, "#").replace(/%5B/gi, "[").replace(/%5D/gi, "]").replace(/%40/gi, "@").replace(/%21/gi, "!").replace(/%24/gi, "$").replace(/%26/gi, "&").replace(/%27/gi, "'").replace(/%28/gi, "(").replace(/%29/gi, ")").replace(/%2A/gi, "*").replace(/%2B/gi, "+").replace(/%2C/gi, ",").replace(/%3B/gi, ";").replace(/%3D/gi, "=");
+}
+
+// ../../../sdkwork-community/sdks/sdkwork-community-app-sdk/sdkwork-community-app-sdk-typescript/generated/server-openapi/src/sdk.ts
+var SdkworkAppClient2 = class {
+  constructor(config) {
+    __publicField(this, "httpClient");
+    __publicField(this, "community");
+    this.httpClient = createHttpClient2(config);
+    this.community = createCommunityApi(this.httpClient);
+  }
+  setAuthToken(token) {
+    this.httpClient.setAuthToken(token);
+    return this;
+  }
+  setAccessToken(token) {
+    this.httpClient.setAccessToken(token);
+    return this;
+  }
+  setTokenManager(manager) {
+    this.httpClient.setTokenManager(manager);
+    return this;
+  }
+  get http() {
+    return this.httpClient;
+  }
+};
+function createClient(config) {
+  return new SdkworkAppClient2(config);
+}
+
+// ../../../sdkwork-community/sdks/sdkwork-community-app-sdk/sdkwork-community-app-sdk-typescript/src/index.ts
+function createCommunityAppClient(config) {
+  return createClient(config);
+}
+function createClient2(config) {
+  return createCommunityAppClient(config);
+}
+
+// packages/sdkwork-cloudrouter-mp-core/src/sdk/communityAppSdkClient.ts
+function createCloudRouterMpCommunityAppSdkClient(baseUrl) {
+  return createClient2({
+    baseUrl,
+    platform: "mp-weixin",
+    tokenManager: getCloudRouterTokenManager()
+  });
+}
+
 // packages/sdkwork-cloudrouter-mp-core/src/sdk/consolePorts.ts
 var DEFAULT_API_KEY_QUOTA = "0.000000";
 var DEFAULT_API_KEY_IP_LIMIT = "unrestricted";
@@ -5280,6 +6192,234 @@ function createCloudRouterMpConsolePorts(appApiBaseUrl) {
       readSession: readCloudRouterSession,
       saveSession: writeCloudRouterSession,
       clearSession: clearCloudRouterSession
+    }
+  };
+}
+
+// packages/sdkwork-cloudrouter-mp-community/src/index.ts
+function asRecord(value) {
+  return value && typeof value === "object" ? value : {};
+}
+function pageItems(data) {
+  const record = asRecord(data);
+  const items = record.items;
+  return Array.isArray(items) ? items.map(asRecord) : [];
+}
+function text(value) {
+  return value === null || value === void 0 ? "" : String(value);
+}
+function number(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+function stringList(value) {
+  return Array.isArray(value) ? value.map(text).filter(Boolean) : [];
+}
+function mapCircle(record) {
+  return {
+    id: text(record.id),
+    name: text(record.title),
+    description: text(record.description),
+    coverImage: text(record.coverImage),
+    avatar: text(record.avatar),
+    memberCount: number(record.memberCount),
+    postCount: number(record.postCount),
+    isJoined: Boolean(record.isJoined),
+    isPaid: Boolean(record.isPaid),
+    price: number(record.price),
+    tabs: stringList(record.tabs),
+    tags: stringList(record.tags)
+  };
+}
+function mapPost(record) {
+  var _a, _b, _c, _d;
+  const author = asRecord(record.author);
+  const stats = asRecord(record.stats);
+  return {
+    id: text(record.id),
+    authorId: text(author.id),
+    authorName: text(author.name),
+    authorAvatar: text(author.avatarUrl),
+    content: text((_b = (_a = record.body) != null ? _a : record.excerpt) != null ? _b : record.title),
+    images: stringList(record.media),
+    createdAt: text((_d = (_c = record.publishedAt) != null ? _c : record.lastActivityAt) != null ? _d : record.createdAt),
+    likes: number(stats.reactionCount),
+    comments: number(stats.commentCount),
+    reviewState: text(record.reviewState) || "approved",
+    tags: stringList(record.tags)
+  };
+}
+function mapComment(record) {
+  const author = asRecord(record.author);
+  return {
+    id: text(record.id),
+    authorName: text(author.name),
+    content: text(record.body),
+    createdAt: text(record.createdAt)
+  };
+}
+function mapMember(record) {
+  const user = asRecord(record.user);
+  return {
+    id: text(record.id),
+    name: text(user.name),
+    role: text(record.role) || "member",
+    status: text(record.status) || "active",
+    tierName: text(record.tierName)
+  };
+}
+function mapGroup(record) {
+  const qrCodes = Array.isArray(record.qrCodes) ? record.qrCodes : [];
+  return {
+    id: text(record.id),
+    name: text(record.name),
+    platform: text(record.platform),
+    description: text(record.description),
+    memberCount: number(record.memberCount),
+    qrCodeCount: qrCodes.length || (record.qrCodeUrl ? 1 : 0)
+  };
+}
+function mapTier(record) {
+  return {
+    id: text(record.id),
+    name: text(record.name),
+    price: number(record.price),
+    durationDays: number(record.durationDays),
+    lifetimePrice: number(record.lifetimePrice),
+    enabled: Boolean(record.enabled)
+  };
+}
+var PENDING_POSTS = /* @__PURE__ */ new Map();
+function mergePending(categoryId, posts, tag) {
+  var _a;
+  const pending = ((_a = PENDING_POSTS.get(categoryId)) != null ? _a : []).filter(
+    (post) => !tag || post.tags.includes(tag)
+  );
+  if (pending.length === 0) {
+    return posts;
+  }
+  const ids = new Set(posts.map((post) => post.id));
+  return [...pending.filter((post) => !ids.has(post.id)), ...posts];
+}
+function createCloudRouterMpCommunityApi(options) {
+  var _a;
+  const client = (_a = options.client) != null ? _a : createCloudRouterMpCommunityAppSdkClient(options.appApiBaseUrl);
+  return {
+    async listCircles() {
+      const page = await client.community.categories.list();
+      return pageItems(page).map(mapCircle);
+    },
+    async getCircle(categoryId) {
+      try {
+        const record = await client.community.categories.retrieve(categoryId);
+        return mapCircle(asRecord(record));
+      } catch {
+        return null;
+      }
+    },
+    async joinCircle(categoryId) {
+      await client.community.categories.join(categoryId);
+    },
+    async leaveCircle(categoryId) {
+      const current = await client.community.members.retrieve(categoryId);
+      const record = asRecord(current);
+      const memberId = text(record.id);
+      if (memberId) {
+        await client.community.members.delete(categoryId, memberId);
+      }
+    },
+    async createCircle(input) {
+      const created = await client.community.categories.create({
+        title: input.title,
+        description: input.description,
+        isPaid: input.isPaid,
+        price: input.price,
+        tags: input.tags,
+        tabs: input.tabs
+      });
+      return mapCircle(asRecord(created));
+    },
+    async updateCircle(categoryId, input) {
+      await client.community.categories.update(categoryId, {
+        ...input.title !== void 0 ? { title: input.title } : { title: "" },
+        ...input.description !== void 0 ? { description: input.description } : {},
+        ...input.isPaid !== void 0 ? { isPaid: input.isPaid } : {},
+        ...input.price !== void 0 ? { price: input.price } : {},
+        ...input.tags !== void 0 ? { tags: input.tags } : {},
+        ...input.tabs !== void 0 ? { tabs: input.tabs } : {}
+      });
+    },
+    async deleteCircle(categoryId) {
+      await client.community.categories.delete(categoryId);
+    },
+    async listPosts(categoryId) {
+      const page = await client.community.feed.list({ categoryId });
+      const posts = pageItems(page).map(mapPost).filter((post) => !post.tags.includes("resource"));
+      return mergePending(categoryId, posts);
+    },
+    async listTabPosts(categoryId, tag) {
+      const page = await client.community.feed.list({ categoryId, tag });
+      return mergePending(categoryId, pageItems(page).map(mapPost), tag);
+    },
+    async listResources(categoryId) {
+      const page = await client.community.feed.list({ categoryId, kind: "resource" });
+      return pageItems(page).map(mapPost);
+    },
+    async listComments(entryId) {
+      const page = await client.community.comments.list(entryId);
+      return pageItems(page).map(mapComment);
+    },
+    async createPost(categoryId, input) {
+      var _a2;
+      const created = await client.community.entries.create({
+        categoryId,
+        kind: "discussion",
+        title: input.title,
+        excerpt: input.body.slice(0, 240),
+        body: input.body,
+        tags: input.tags
+      });
+      const post = mapPost(asRecord(created));
+      if (post.reviewState !== "approved") {
+        PENDING_POSTS.set(categoryId, [
+          post,
+          ...((_a2 = PENDING_POSTS.get(categoryId)) != null ? _a2 : []).filter((item) => item.id !== post.id)
+        ]);
+      }
+      return post;
+    },
+    async deletePost(entryId) {
+      await client.community.entries.delete(entryId);
+      for (const [categoryId, posts] of PENDING_POSTS.entries()) {
+        PENDING_POSTS.set(categoryId, posts.filter((post) => post.id !== entryId));
+      }
+    },
+    async addComment(entryId, body) {
+      await client.community.comments.create(entryId, { body });
+    },
+    async setReaction(entryId, active) {
+      await client.community.reactions.create(entryId, { active, reactionType: "like" });
+    },
+    async listMembers(categoryId) {
+      const page = await client.community.members.list(categoryId);
+      return pageItems(page).map(mapMember);
+    },
+    async updateMemberRole(categoryId, memberId, role) {
+      await client.community.members.update(categoryId, memberId, { role });
+    },
+    async updateMemberStatus(categoryId, memberId, status) {
+      await client.community.members.update(categoryId, memberId, { status });
+    },
+    async removeMember(categoryId, memberId) {
+      await client.community.members.delete(categoryId, memberId);
+    },
+    async listGroups(categoryId) {
+      const page = await client.community.groups.list(categoryId);
+      return pageItems(page).map(mapGroup);
+    },
+    async listTiers(categoryId) {
+      const page = await client.community.tiers.list(categoryId);
+      return pageItems(page).map(mapTier);
     }
   };
 }
@@ -7530,6 +8670,9 @@ function bootstrapMiniProgramApplication() {
     locale,
     translate: createConsoleTranslator(locale),
     consolePorts: createCloudRouterMpConsolePorts(environment.appApiBaseUrl),
+    communityApi: createCloudRouterMpCommunityApi({
+      appApiBaseUrl: environment.appApiBaseUrl
+    }),
     webPublicHttpUrl: environment.webPublicHttpUrl,
     settingsBinding: createSdkworkMiniProgramSettingsBinding(settingsRuntime, {
       catalog: settingsCatalog,

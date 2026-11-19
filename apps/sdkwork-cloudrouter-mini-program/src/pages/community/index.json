@@ -1,3 +1,4 @@
 {
-  "navigationBarTitleText": "圈子社群"
+  "navigationBarTitleText": "圈子社群",
+  "enablePullDownRefresh": true
 }

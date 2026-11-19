@@ -208,6 +208,36 @@ describe('cloudrouter mini program application root', () => {
     }
   });
 
+  it('ships native community pages on the generated community App SDK', () => {
+    for (const page of [
+      'pages/community/index',
+      'pages/community/detail/index',
+      'pages/community/post/index',
+      'pages/community/create/index',
+      'pages/community/web/index',
+    ]) {
+      assert.ok(appJson.pages.includes(page), `${page} is registered`);
+    }
+
+    const list = readText('src/pages/community/index.js');
+    assert.ok(list.includes('communityApi'), 'the list page uses the injected community API');
+    assert.ok(!readText('src/pages/community/index.wxml').includes('<web-view'), 'the native list is not a web-view');
+    assert.ok(readText('src/pages/community/detail/index.js').includes('listComments'));
+    assert.ok(readText('src/pages/community/post/index.js').includes('createPost'));
+    assert.ok(readText('src/pages/community/create/index.js').includes('createCircle'));
+    assert.ok(readText('src/pages/community/web/index.wxml').includes('<web-view'), 'the full workspace stays available through the bridge');
+
+    const runtime = readText('src/bootstrap/runtime.ts');
+    assert.ok(runtime.includes('createCloudRouterMpCommunityApi'));
+    assert.ok(runtime.includes('communityApi'));
+    const api = readText('packages/sdkwork-cloudrouter-mp-community/src/index.ts');
+    assert.ok(api.includes('createCloudRouterMpCommunityAppSdkClient'));
+    assert.ok(!api.includes('wx.request'), 'the community adapter does not hand-roll HTTP');
+    const coreClient = readText('packages/sdkwork-cloudrouter-mp-core/src/sdk/communityAppSdkClient.ts');
+    assert.ok(coreClient.includes('@sdkwork/community-app-sdk'));
+    assert.ok(coreClient.includes('getCloudRouterTokenManager'));
+  });
+
   it('derives the shell tab bar from the shared console tab descriptors', () => {
     const navigation = readText('packages/sdkwork-cloudrouter-mp-shell/src/navigation/consoleNavigation.ts');
     assert.ok(navigation.includes('CLOUDROUTER_CONSOLE_TABS'), 'tab bar derives from the tab authority');

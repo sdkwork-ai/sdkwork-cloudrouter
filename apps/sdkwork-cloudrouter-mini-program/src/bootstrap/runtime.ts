@@ -3,6 +3,10 @@ import {
   resolveRuntimeEnv,
 } from '@sdkwork/cloudrouter-mp-core';
 import {
+  createCloudRouterMpCommunityApi,
+  type MpCommunityApi,
+} from '@sdkwork/cloudrouter-mp-community';
+import {
   createConsoleTranslator,
   resolveConsoleLocale,
   type SdkworkConsoleLocale,
@@ -102,6 +106,7 @@ export interface CloudRouterMpRuntime {
   readonly locale: SdkworkConsoleLocale;
   readonly translate: (key: string) => string;
   readonly consolePorts: ReturnType<typeof createCloudRouterMpConsolePorts>;
+  readonly communityApi: MpCommunityApi;
   readonly webPublicHttpUrl: string;
   readonly settingsBinding: SdkworkMiniProgramSettingsBinding;
   readonly settingsRuntime: SdkworkSettingsRuntime;
@@ -125,6 +130,9 @@ export function bootstrapMiniProgramApplication(): CloudRouterMpRuntime {
     locale,
     translate: createConsoleTranslator(locale),
     consolePorts: createCloudRouterMpConsolePorts(environment.appApiBaseUrl),
+    communityApi: createCloudRouterMpCommunityApi({
+      appApiBaseUrl: environment.appApiBaseUrl,
+    }),
     webPublicHttpUrl: environment.webPublicHttpUrl,
     settingsBinding: createSdkworkMiniProgramSettingsBinding(settingsRuntime, {
       catalog: settingsCatalog,

@@ -19,6 +19,7 @@
   "include": [
     "src",
     "packages/sdkwork-cloudrouter-mp-core/src",
+    "packages/sdkwork-cloudrouter-mp-community/src",
     "packages/sdkwork-cloudrouter-mp-commons/src",
     "packages/sdkwork-cloudrouter-mp-shell/src",
     "packages/sdkwork-cloudrouter-mp-i18n/src",

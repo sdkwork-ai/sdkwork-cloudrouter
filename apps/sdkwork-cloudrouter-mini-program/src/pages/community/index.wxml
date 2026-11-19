@@ -1,4 +1,58 @@
-<web-view wx:if="{{src}}" src="{{src}}"></web-view>
-<view wx:else class="cr-webview-empty">
-  <text>页面地址未配置</text>
+<view class="cr-community {{themeClass}}">
+  <view class="cr-community__toolbar">
+    <input
+      class="cr-community__search"
+      placeholder="搜索圈子"
+      value="{{query}}"
+      bindinput="onSearch"
+    />
+    <view class="cr-community__full" bindtap="onOpenFull">完整工作区</view>
+  </view>
+
+  <view class="cr-community__scopes">
+    <view
+      class="cr-community__scope {{scope === 'discover' ? 'is-active' : ''}}"
+      data-scope="discover"
+      bindtap="onScope"
+    >发现</view>
+    <view
+      class="cr-community__scope {{scope === 'mine' ? 'is-active' : ''}}"
+      data-scope="mine"
+      bindtap="onScope"
+    >我加入的</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="cr-community__state">加载中…</view>
+  <view wx:elif="{{error}}" class="cr-community__state">{{error}}</view>
+  <view wx:elif="{{visible.length === 0}}" class="cr-community__state">暂无可展示的圈子</view>
+
+  <view
+    wx:for="{{visible}}"
+    wx:key="id"
+    class="cr-community__card"
+    data-id="{{item.id}}"
+    bindtap="onOpen"
+  >
+    <view class="cr-community__avatar">
+      <image wx:if="{{item.avatar}}" src="{{item.avatar}}" mode="aspectFill" />
+      <text wx:else>{{item.initial}}</text>
+    </view>
+    <view class="cr-community__body">
+      <view class="cr-community__title-row">
+        <text class="cr-community__title">{{item.name}}</text>
+        <text wx:if="{{item.isJoined}}" class="cr-community__badge">已加入</text>
+      </view>
+      <text class="cr-community__desc">{{item.description || '暂无简介'}}</text>
+      <text class="cr-community__meta">{{item.memberCount}} 成员 · {{item.postCount}} 动态{{item.isPaid ? ' · 付费' : ''}}</text>
+    </view>
+    <button
+      wx:if="{{!item.isJoined}}"
+      class="cr-community__join"
+      size="mini"
+      data-id="{{item.id}}"
+      catchtap="onJoin"
+    >加入</button>
+  </view>
+
+  <view class="cr-community__fab" bindtap="onCreate">＋</view>
 </view>

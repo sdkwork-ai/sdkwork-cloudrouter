@@ -8,7 +8,7 @@
   "bundle": "src/runtime/cloudrouter-app.js",
   "runtimeEnv": "src/runtime/runtime-env.js",
   "appJson": {
-    "pages": 10,
+    "pages": 14,
     "subPackages": 0,
     "tabBar": true
   }
