@@ -69,11 +69,13 @@ Electron, Tauri, Qt, Rust, Node, Go, Python.
   template** for `APP` + `FREE` + `PUBLISHED` listings; the marketplace
   storefront (Deploy console) calls it after a free acquire order is paid.
 - The template marketplace schema/repository (`deploy_application_scaffold*`)
-  and browse/authoring routes exist. `install_count` increments on install.
+  and browse/authoring routes exist. `install_count` increments once per
+  installed application (the `app.template.install` audit entry keys the
+  idempotent replay), and the installed app records its template provenance in
+  `metadata.template`.
 - **Still missing:** archive-backed template install (needs artifact sharing /
-  re-attribution), paid template installation (needs order/payment entitlement
-  at install time), and an idempotent install-count ledger (a retried install
-  currently increments the counter again even though the app create replays).
+  re-attribution) and paid template installation (needs order/payment
+  entitlement at install time).
 
 ## 5. Verified commands
 
