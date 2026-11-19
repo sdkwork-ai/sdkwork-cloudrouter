@@ -11,9 +11,10 @@
 //! 2. within the same specificity, `user` beats `organization` beats `tenant`;
 //! 3. fields are inherited field by field, so a user override can change only
 //!    `delivery_mode` while inheriting the organization's Drive target;
-//! 4. when nothing matches, the system default applies: download to Drive,
-//!    keep a remote reference on expiry, delete the remote copy after a
-//!    successful download.
+//! 4. when nothing matches, the system default applies: **keep the generated
+//!    media remote** (no Drive download — the cost-saving default), retain the
+//!    vendor reference when it expires, and copy into Drive only when a policy
+//!    explicitly opts into `to_drive`.
 
 use crate::domain::DomainError;
 
@@ -202,7 +203,7 @@ pub struct ResolvedGenerationDelivery {
 impl Default for ResolvedGenerationDelivery {
     fn default() -> Self {
         Self {
-            delivery_mode: GenerationDeliveryMode::ToDrive,
+            delivery_mode: GenerationDeliveryMode::RemoteOnly,
             drive_space_id: None,
             drive_folder_node_id: None,
             download_deadline_seconds: None,
@@ -458,9 +459,13 @@ mod tests {
     }
 
     #[test]
-    fn system_default_delivers_to_drive_and_keeps_reference() {
+    fn system_default_keeps_generated_media_remote_to_save_cost() {
         let resolved = resolve_generation_delivery(&[], &subject(), GenerationMediaKind::Video);
-        assert_eq!(resolved.delivery_mode, GenerationDeliveryMode::ToDrive);
+        assert_eq!(
+            resolved.delivery_mode,
+            GenerationDeliveryMode::RemoteOnly,
+            "the default must not copy generated media into Drive (cost-saving default)"
+        );
         assert_eq!(
             resolved.vendor_expiry_action,
             VendorExpiryAction::KeepReference
@@ -560,7 +565,7 @@ mod tests {
             ),
         ];
         let resolved = resolve_generation_delivery(&rows, &subject(), GenerationMediaKind::Image);
-        assert_eq!(resolved.delivery_mode, GenerationDeliveryMode::ToDrive);
+        assert_eq!(resolved.delivery_mode, GenerationDeliveryMode::RemoteOnly);
         assert!(resolved.applied_scopes.is_empty());
     }
 
