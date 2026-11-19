@@ -11,6 +11,8 @@ dependencies:
     sdk: flutter
   cloudrouter_app_sdk:
     path: ../../../../sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-flutter/generated/server-openapi
+  sdkwork_community_app_sdk_generated_flutter:
+    path: ../../../../../sdkwork-community/sdks/sdkwork-community-app-sdk/sdkwork-community-app-sdk-flutter/generated/server-openapi
   sdkwork_iam_app_sdk:
     path: ../../../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-flutter/generated/server-openapi
   sdkwork_common_flutter:

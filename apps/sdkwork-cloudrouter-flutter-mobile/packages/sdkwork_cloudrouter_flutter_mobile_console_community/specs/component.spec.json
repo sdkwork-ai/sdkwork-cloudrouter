@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "sdkwork_cloudrouter_flutter_mobile_console_community",
+    "displayName": "SDKWork CloudRouter Flutter Community",
+    "version": "0.1.0",
+    "type": "flutter-package",
+    "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-flutter-mobile/packages/sdkwork_cloudrouter_flutter_mobile_console_community",
+    "domain": "community",
+    "declaredDomain": "community",
+    "capability": "community",
+    "surface": "flutter-mobile",
+    "status": "ready",
+    "languages": [
+      "dart"
+    ],
+    "generated": false,
+    "private": true,
+    "manifests": [
+      "pubspec.yaml"
+    ]
+  },
+  "contracts": {
+    "layerRole": "frontend-feature",
+    "sdkClients": [],
+    "sdkDependencies": [],
+    "permissionComposition": null,
+    "routeManifest": null
+  },
+  "integration": {
+    "authority": "sdkwork-community owns the community domain contract. This package renders the native Flutter list/detail/composer screens on top of the generated community app SDK; management and paid membership continue in the shared H5 workspace.",
+    "dependencyPolicy": "The generated Flutter SDK owns transport; screens never construct raw HTTP requests or auth headers.",
+    "sdkPolicy": "The repository receives a generated client constructed by the app shell."
+  },
+  "verification": {
+    "commands": [
+      "flutter analyze",
+      "flutter test"
+    ]
+  },
+  "canonicalSpecs": [
+    {
+      "file": "COMPONENT_SPEC.md",
+      "path": "../../../../../sdkwork-specs/COMPONENT_SPEC.md",
+      "purpose": "Component-local contract and discovery rules."
+    },
+    {
+      "file": "DART_CODE_SPEC.md",
+      "path": "../../../../../sdkwork-specs/DART_CODE_SPEC.md",
+      "purpose": "Dart language rules."
+    },
+    {
+      "file": "FLUTTER_APP_MOBILE_ARCHITECTURE_SPEC.md",
+      "path": "../../../../../sdkwork-specs/FLUTTER_APP_MOBILE_ARCHITECTURE_SPEC.md",
+      "purpose": "Flutter application architecture and package composition."
+    },
+    {
+      "file": "I18N_SPEC.md",
+      "path": "../../../../../sdkwork-specs/I18N_SPEC.md",
+      "purpose": "User-facing copy and locale rules."
+    }
+  ]
+}

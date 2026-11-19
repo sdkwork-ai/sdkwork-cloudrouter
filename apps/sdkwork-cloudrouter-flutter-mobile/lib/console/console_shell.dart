@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sdkwork_cloudrouter_flutter_mobile_commons/sdkwork_cloudrouter_flutter_mobile_commons.dart';
 import 'package:sdkwork_cloudrouter_flutter_mobile_console_api_keys/sdkwork_cloudrouter_flutter_mobile_console_api_keys.dart';
 import 'package:sdkwork_cloudrouter_flutter_mobile_console_catalog/sdkwork_cloudrouter_flutter_mobile_console_catalog.dart';
+import 'package:sdkwork_cloudrouter_flutter_mobile_console_community/sdkwork_cloudrouter_flutter_mobile_console_community.dart';
 import 'package:sdkwork_cloudrouter_flutter_mobile_console_dashboard/sdkwork_cloudrouter_flutter_mobile_console_dashboard.dart';
 import 'package:sdkwork_cloudrouter_flutter_mobile_console_messages/sdkwork_cloudrouter_flutter_mobile_console_messages.dart';
 import 'package:sdkwork_cloudrouter_flutter_mobile_console_playground/sdkwork_cloudrouter_flutter_mobile_console_playground.dart';
@@ -12,7 +13,6 @@ import 'package:sdkwork_cloudrouter_flutter_mobile_shell/sdkwork_cloudrouter_flu
 
 import '../runtime_scope.dart';
 import '../bootstrap/sdk_clients.dart';
-import 'community_h5_screen.dart';
 import 'h5_bridge_page.dart';
 
 /// Console tab host for the H5-aligned mobile sequence:
@@ -168,7 +168,7 @@ class _ConsoleShellState extends State<ConsoleShell> {
       case 'orders':
         _openH5(webBaseUrl, 'orders', '订单中心');
       case 'community':
-        _openCommunityH5(webBaseUrl);
+        _openCommunity(webBaseUrl);
     }
   }
 
@@ -184,11 +184,32 @@ class _ConsoleShellState extends State<ConsoleShell> {
     );
   }
 
-  void _openCommunityH5(String baseUrl) {
+  void _openCommunity(String baseUrl) {
+    final runtime = CloudRouterRuntimeScope.of(context);
+    final repository = CommunityRepository.forSession(
+      appApiBaseUrl: runtime.sdkClients.appApiBaseUrl,
+      accessToken: widget.session.accessToken,
+      authToken: widget.session.authToken,
+    );
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => CommunityListScreen(
+          repository: repository,
+          currentUserId: widget.session.subject,
+          onOpenWeb: (path) => _openH5Path(baseUrl, path, '圈子社群'),
+        ),
+      ),
+    );
+  }
+
+  void _openH5Path(String baseUrl, String path, String title) {
     final base = baseUrl.replaceFirst(RegExp(r'/+$'), '');
     Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => CommunityH5Screen(url: '$base/community'),
+        builder: (_) => ConsoleH5BridgePage(
+          url: '$base$path',
+          title: title,
+        ),
       ),
     );
   }

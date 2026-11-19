@@ -8,10 +8,10 @@ and generated SDKs remain owned by `sdkwork-community`.
 
 | Capability | PC portal | H5 | Mini program | Flutter |
 | --- | --- | --- | --- | --- |
-| Discover / search circles, recommended, my circles | native | native | shared H5 | shared H5 |
-| Circle detail: feed, resources, members, groups, about | native | native | shared H5 | shared H5 |
-| Create / edit circle, cover and avatar media | native | native | shared H5 | shared H5 |
-| Posts, comments, reactions | native | native | shared H5 | shared H5 |
+| Discover / search circles, recommended, my circles | native | native | shared H5 | native |
+| Circle detail: feed, resources, members, groups, about | native | native | shared H5 | native |
+| Create / edit circle, cover and avatar media | native | native | shared H5 | create native; edit in H5 |
+| Posts, comments, reactions | native | native | shared H5 | native |
 | Group management and join QR codes | native | native | shared H5 | shared H5 |
 | Member roles and moderation | native | native | shared H5 | shared H5 |
 | Paid membership tiers and order settlement | native | native | shared H5 | shared H5 |
@@ -19,9 +19,11 @@ and generated SDKs remain owned by `sdkwork-community`.
 
 "shared H5" means the surface opens the H5 community workspace at `/community`.
 That workspace is the canonical complete implementation; the mini program
-(`pages/community/index`) and Flutter (`CommunityH5Screen`) embed it so the
-capability does not diverge. This is the same pattern the commerce surfaces use
-for membership, recharge, and orders.
+(`pages/community/index`) embeds it so the capability does not diverge. The
+Flutter app renders the native discovery/detail/composer screens and opens the
+H5 workspace for management, groups, members, tiers, and paid checkout.
+This is the same pattern the commerce surfaces use for membership, recharge,
+and orders.
 
 ## Routes
 
@@ -86,12 +88,20 @@ pnpm --dir apps/sdkwork-cloudrouter-mini-program build:mini-program
 
 # Flutter
 flutter analyze
+flutter test packages/sdkwork_cloudrouter_flutter_mobile_console_community/test
+node --test apps/sdkwork-cloudrouter-flutter-mobile/tests/flutter-mobile-surface-contract.test.mjs
 ```
 
 ## Known gaps
 
-- Native mini program and Flutter community page packages are not implemented;
-  both surfaces render the complete H5 workspace. Adding native packages later
-  only replaces the embedding screen and keeps the same `/community` routes.
+- Native mini program community pages are not implemented; the mini program
+  renders the complete H5 workspace. Adding native pages later only replaces
+  the embedding screen and keeps the same `/community` routes.
+- Flutter management and paid checkout intentionally use the H5 workspace;
+  native discovery, detail, posting, comments, reactions, and circle creation
+  are implemented in `sdkwork_cloudrouter_flutter_mobile_console_community`.
 - PC circle media upload covers cover/avatar and post images; group QR code
   uploads continue to be managed by the existing admin community workspace.
+- New posts are submitted for moderation (`pending-review`) and appear to their
+  author immediately with a pending badge; other members see them after an
+  administrator approves them in the admin community moderation queue.
