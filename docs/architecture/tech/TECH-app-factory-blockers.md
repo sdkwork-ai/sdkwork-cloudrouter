@@ -83,7 +83,10 @@ same guarded IAM relink as `ensure_iam_installation`.
 defaults to a dry-run of `duplicateLinks`; `--apply` sets the **legacy uuid
 installation** to `status = 'disabled'` and leaves the canonical decimal
 installation enabled. It never deletes a row, so the OAuth client and audit
-history remain available for review.
+history remain available for review. Both the relink and the duplicate
+cleanup were exercised against the local canonical IAM database: relink moved
+the legacy anchor to the decimal id, and cleanup left the canonical row
+`enabled` while the duplicate became `disabled`.
 
 **Required contract.** An operator-run audit that enumerates the duplicate
 pairs and a reviewed cleanup (disable/remove the uuid orphan) with an audit

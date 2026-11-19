@@ -120,6 +120,10 @@ cargo test -p sdkwork-iam-web-adapter --lib
 SDKWORK_DATABASE_URL=postgres://sdkwork_ai_test:test@127.0.0.1:55432/sdkwork_ai_test \
   cargo test -p sdkwork-iam-web-adapter \
   --test installation_ownership_scope_postgres -- --ignored
+# Identity audit / relink / duplicate cleanup (real DB, dry-run by default)
+cargo run -p sdkwork-cloudrouter-installer -- audit-identities
+cargo run -p sdkwork-cloudrouter-installer -- reconcile-identities --apply
+cargo run -p sdkwork-cloudrouter-installer -- cleanup-identity-duplicates --apply
 # Deploy create/publish service
 pnpm --dir apps/sdkwork-deployments-pc exec vitest run --maxWorkers=1 \
   packages/sdkwork-deployments-pc-console-publishing/tests/deploy-app-publishing.spec.ts \
