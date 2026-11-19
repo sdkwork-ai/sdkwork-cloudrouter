@@ -112,6 +112,10 @@ CARGO_TARGET_DIR=D:\crt cargo test -p sdkwork-deploy-identity-provisioning-port 
 CARGO_TARGET_DIR=D:\crt cargo test -p sdkwork-cloudrouter-installer
 # IAM installation registry
 cargo test -p sdkwork-iam-web-adapter --lib
+# IAM real-DB identity scope (local canonical test database)
+SDKWORK_DATABASE_URL=postgres://sdkwork_ai_test:test@127.0.0.1:55432/sdkwork_ai_test \
+  cargo test -p sdkwork-iam-web-adapter \
+  --test installation_ownership_scope_postgres -- --ignored
 # Deploy create/publish service
 pnpm --dir apps/sdkwork-deployments-pc exec vitest run --maxWorkers=1 \
   packages/sdkwork-deployments-pc-console-publishing/tests/deploy-app-publishing.spec.ts \
