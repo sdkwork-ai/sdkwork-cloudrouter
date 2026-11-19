@@ -97,6 +97,19 @@ Electron, Tauri, Qt, Rust, Node, Go, Python.
 
 ## 5. Verified commands
 
+Evidence captured on 2026-11-20 from this workspace:
+
+| Gate | Result |
+|---|---|
+| `cargo test --workspace` (Deploy) | green |
+| `pnpm test:postgres` (Deploy, local PostgreSQL 17) | 36/36 binaries |
+| `pnpm test` (CloudRouter) | green |
+| IAM installation ownership (real DB) | 7 passed |
+| IAM audit writer parity (real DB) | 4 passed |
+| App-token refund gate (real DB) | 1 passed |
+| Refund sweep (real DB) | 1 passed |
+| Identity audit / relink / duplicate cleanup | executed on real DB |
+
 ```bash
 # Cross-repository app-factory capability gate
 node scripts/check-app-factory-readiness.mjs
