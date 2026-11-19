@@ -77,10 +77,12 @@ Electron, Tauri, Qt, Rust, Node, Go, Python.
   idempotent replay), and the installed app records its template provenance in
   `metadata.template`. A PostgreSQL integration test covers artifact-clone
   replay.
-- **Still missing:** paid template installation (needs order/payment
-  entitlement at install time). Git install remixes the source app's current
-  Git declaration; pinning to the published template version needs a
-  version-owned source snapshot.
+- **Still missing:** paid template **application creation**. A paid order now
+  updates both the legacy template counter and the scaffold marketplace counter,
+  but Deploy has no verified entitlement at install time; the marketplace shows
+  the paid state instead of creating the app. Git install remixes the source
+  app's current Git declaration; pinning to the published template version needs
+  a version-owned source snapshot.
 
 ## 5. Verified commands
 
