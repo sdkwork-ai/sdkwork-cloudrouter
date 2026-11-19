@@ -105,6 +105,10 @@ CARGO_TARGET_DIR=D:\crt cargo test --workspace
 # Deploy PostgreSQL integration gate (local cluster; green 2026-11-20)
 SDKWORK_DATABASE_TEST_POSTGRES_URL=postgres://postgres@127.0.0.1:55432/sdkwork_test \
   pnpm test:postgres
+# Refund sweep against real SQL
+SDKWORK_DATABASE_TEST_POSTGRES_URL=postgres://postgres@127.0.0.1:55432/sdkwork_test \
+  cargo test -p sdkwork-deploy-refund-revocation-worker \
+  --test refund_revocation_postgres -- --ignored
 # Deploy identity mapping + service
 CARGO_TARGET_DIR=D:\crt cargo test -p sdkwork-deploy-identity-provisioning-port \
   -p sdkwork-intelligence-deploy-service --lib
