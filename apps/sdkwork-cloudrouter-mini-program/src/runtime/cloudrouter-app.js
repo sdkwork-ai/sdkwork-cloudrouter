@@ -5885,10 +5885,10 @@ var CommunityFeedApi = class {
   /** Community feed.list (deprecated: use the standard feeds stream system) */
   async list(params, requestOptions) {
     const query = buildQueryString2([
-      { name: "categoryId", value: params == null ? void 0 : params.categoryId, style: "form", explode: true, allowReserved: false },
+      { name: "category_id", value: params == null ? void 0 : params.categoryId, style: "form", explode: true, allowReserved: false },
       { name: "kind", value: params == null ? void 0 : params.kind, style: "form", explode: true, allowReserved: false },
       { name: "q", value: params == null ? void 0 : params.q, style: "form", explode: true, allowReserved: false },
-      { name: "reviewState", value: params == null ? void 0 : params.reviewState, style: "form", explode: true, allowReserved: false },
+      { name: "review_state", value: params == null ? void 0 : params.reviewState, style: "form", explode: true, allowReserved: false },
       { name: "tag", value: params == null ? void 0 : params.tag, style: "form", explode: true, allowReserved: false },
       { name: "page", value: params == null ? void 0 : params.page, style: "form", explode: true, allowReserved: false },
       { name: "page_size", value: params == null ? void 0 : params.pageSize, style: "form", explode: true, allowReserved: false }
@@ -5926,7 +5926,7 @@ var CommunityTiersApi = class {
   /** Community tiers.list */
   async list(categoryId, params, requestOptions) {
     const query = buildQueryString2([
-      { name: "includeDisabled", value: params == null ? void 0 : params.includeDisabled, style: "form", explode: true, allowReserved: false }
+      { name: "include_disabled", value: params == null ? void 0 : params.includeDisabled, style: "form", explode: true, allowReserved: false }
     ]);
     return this.client.request(appendQueryString2(appApiPath2(`/community/categories/${serializePathParameter2(categoryId, { name: "categoryId", style: "simple", explode: false })}/tiers`), query), { ...(requestOptions == null ? void 0 : requestOptions.signal) !== void 0 ? { signal: requestOptions.signal } : {}, ...(requestOptions == null ? void 0 : requestOptions.timeout) !== void 0 ? { timeout: requestOptions.timeout } : {}, method: "GET", sdkworkUnwrapKind: "page" });
   }
