@@ -56,7 +56,7 @@
       <view wx:if="{{resources.length === 0}}" class="cr-detail__state">暂无资源</view>
       <view wx:for="{{resources}}" wx:key="id" class="cr-resource">
         <text class="cr-resource__title">{{item.content}}</text>
-        <text class="cr-resource__meta">{{item.tags[0] || 'link'}}</text>
+        <text class="cr-resource__meta">{{item.firstTag || 'link'}}</text>
       </view>
     </block>
 

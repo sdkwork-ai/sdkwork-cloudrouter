@@ -122,7 +122,8 @@ class _CommunityListScreenState extends State<CommunityListScreen> {
                 prefixIcon: const Icon(Icons.search),
                 hintText: '搜索圈子',
                 isDense: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),
@@ -134,7 +135,8 @@ class _CommunityListScreenState extends State<CommunityListScreen> {
                 ButtonSegment<bool>(value: true, label: Text('我加入的')),
               ],
               selected: <bool>{_mineOnly},
-              onSelectionChanged: (selection) => setState(() => _mineOnly = selection.first),
+              onSelectionChanged: (selection) =>
+                  setState(() => _mineOnly = selection.first),
             ),
           ),
           Expanded(
@@ -149,25 +151,36 @@ class _CommunityListScreenState extends State<CommunityListScreen> {
                             child: ListView.separated(
                               padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
                               itemCount: _visible.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 10),
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 10),
                               itemBuilder: (context, index) {
                                 final circle = _visible[index];
                                 return Card(
                                   clipBehavior: Clip.antiAlias,
                                   child: ListTile(
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 10),
                                     leading: _CircleAvatar(circle: circle),
                                     title: Row(
                                       children: <Widget>[
-                                        Expanded(child: Text(circle.title, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                                        Expanded(
+                                            child: Text(circle.title,
+                                                maxLines: 1,
+                                                overflow:
+                                                    TextOverflow.ellipsis)),
                                         if (circle.isJoined)
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 8, vertical: 2),
                                             decoration: BoxDecoration(
-                                              color: theme.colorScheme.primaryContainer,
-                                              borderRadius: BorderRadius.circular(20),
+                                              color: theme
+                                                  .colorScheme.primaryContainer,
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
                                             ),
-                                            child: Text('已加入', style: theme.textTheme.labelSmall),
+                                            child: Text('已加入',
+                                                style:
+                                                    theme.textTheme.labelSmall),
                                           ),
                                       ],
                                     ),
@@ -212,7 +225,9 @@ class _CircleAvatar extends StatelessWidget {
       radius: 24,
       backgroundColor: Theme.of(context).colorScheme.primaryContainer,
       backgroundImage: url != null && url.isNotEmpty ? NetworkImage(url) : null,
-      child: url == null || url.isEmpty ? Text(circle.title.isEmpty ? '圈' : circle.title.substring(0, 1)) : null,
+      child: url == null || url.isEmpty
+          ? Text(circle.title.isEmpty ? '圈' : circle.title.substring(0, 1))
+          : null,
     );
   }
 }
@@ -242,4 +257,3 @@ class _ErrorState extends StatelessWidget {
     );
   }
 }
-

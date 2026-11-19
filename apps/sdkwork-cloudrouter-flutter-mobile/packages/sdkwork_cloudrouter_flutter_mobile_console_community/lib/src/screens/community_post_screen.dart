@@ -90,11 +90,13 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
           if (_error != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              child: Text(_error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ),
           TextField(
             controller: _title,
-            decoration: const InputDecoration(labelText: '标题（可选）', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+                labelText: '标题（可选）', border: OutlineInputBorder()),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -110,7 +112,8 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
           const SizedBox(height: 12),
           TextField(
             controller: _tags,
-            decoration: const InputDecoration(labelText: '标签（逗号或空格分隔）', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+                labelText: '标签（逗号或空格分隔）', border: OutlineInputBorder()),
           ),
         ],
       ),

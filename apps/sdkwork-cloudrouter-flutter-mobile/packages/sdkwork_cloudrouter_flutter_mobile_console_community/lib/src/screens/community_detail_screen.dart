@@ -77,7 +77,8 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
   }
 
   List<({String id, String label})> get _tabs {
-    final configured = _circle?.tabs ?? const <String>['feeds', 'resources', 'groups'];
+    final configured =
+        _circle?.tabs ?? const <String>['feeds', 'resources', 'groups'];
     final ids = <String>[];
     for (final id in configured) {
       if (id == 'resources' ||
@@ -103,14 +104,17 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
       'members': '成员',
       'about': '关于',
     };
-    return ids.map((id) => (id: id, label: labels[id] ?? id)).toList(growable: false);
+    return ids
+        .map((id) => (id: id, label: labels[id] ?? id))
+        .toList(growable: false);
   }
 
   Future<void> _selectTab(String tab) async {
     setState(() => _tab = tab);
     if (tab == 'news' || tab == 'docs' || tab == 'repos' || tab == 'software') {
       try {
-        final posts = await widget.repository.listTabPosts(widget.circleId, tab);
+        final posts =
+            await widget.repository.listTabPosts(widget.circleId, tab);
         if (mounted) setState(() => _tabPosts = posts);
       } catch (_) {
         if (mounted) setState(() => _tabPosts = const <CommunityEntry>[]);
@@ -132,7 +136,8 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                Text('选择会员等级', style: Theme.of(sheetContext).textTheme.titleMedium),
+                Text('选择会员等级',
+                    style: Theme.of(sheetContext).textTheme.titleMedium),
                 const SizedBox(height: 8),
                 ..._tiers.map(
                   (tier) => ListTile(
@@ -162,7 +167,8 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
       await _load();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('加入失败：$error')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('加入失败：$error')));
     }
   }
 
@@ -208,8 +214,12 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
         title: const Text('删除动态'),
         content: const Text('确定删除这条动态吗？'),
         actions: <Widget>[
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('取消')),
-          FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('删除')),
+          TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('取消')),
+          FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('删除')),
         ],
       ),
     );
@@ -229,7 +239,8 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
           if (circle != null && circle.isJoined)
             IconButton(
               tooltip: '管理圈子',
-              onPressed: () => widget.onOpenWeb('/community/${circle.id}/profile'),
+              onPressed: () =>
+                  widget.onOpenWeb('/community/${circle.id}/profile'),
               icon: const Icon(Icons.settings_outlined),
             ),
           IconButton(
@@ -271,7 +282,8 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
                           _Header(circle: circle, onJoin: _join),
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
                             child: Row(
                               children: _tabs
                                   .map(
@@ -309,7 +321,8 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
                 title: Text(entry.title),
                 subtitle: Text((entry.tags ?? const <String>[]).join(' · ')),
                 trailing: const Icon(Icons.open_in_new),
-                onTap: () => widget.onOpenWeb('/community/${widget.circleId}?tab=resources'),
+                onTap: () => widget
+                    .onOpenWeb('/community/${widget.circleId}?tab=resources'),
               ),
             ),
           )
@@ -415,7 +428,8 @@ class _Header extends StatelessWidget {
               if (!circle.isJoined)
                 FilledButton(
                   onPressed: onJoin,
-                  child: Text(circle.isPaid ? '¥${circle.price ?? 0} 加入' : '加入圈子'),
+                  child:
+                      Text(circle.isPaid ? '¥${circle.price ?? 0} 加入' : '加入圈子'),
                 )
               else
                 const Chip(label: Text('已加入')),
@@ -462,10 +476,13 @@ class _PostCard extends StatelessWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
-                Expanded(child: Text(entry.author.name, style: theme.textTheme.titleSmall)),
+                Expanded(
+                    child: Text(entry.author.name,
+                        style: theme.textTheme.titleSmall)),
                 if (isPending)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.amber.shade100,
                       borderRadius: BorderRadius.circular(20),
@@ -481,7 +498,8 @@ class _PostCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 6),
-            Text(entry.body ?? entry.excerpt ?? entry.title, style: theme.textTheme.bodyMedium),
+            Text(entry.body ?? entry.excerpt ?? entry.title,
+                style: theme.textTheme.bodyMedium),
             if (media.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
@@ -496,7 +514,8 @@ class _PostCard extends StatelessWidget {
                           width: 96,
                           height: 96,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const SizedBox(width: 96, height: 96),
+                          errorBuilder: (_, __, ___) =>
+                              const SizedBox(width: 96, height: 96),
                         ),
                       )
                       .toList(growable: false),
@@ -582,7 +601,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: SizedBox(
         height: 420,
         child: Column(
@@ -616,11 +636,14 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                     Expanded(
                       child: TextField(
                         controller: _controller,
-                        decoration: const InputDecoration(hintText: '写评论…', isDense: true),
+                        decoration: const InputDecoration(
+                            hintText: '写评论…', isDense: true),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    FilledButton(onPressed: _sending ? null : _send, child: const Text('发送')),
+                    FilledButton(
+                        onPressed: _sending ? null : _send,
+                        child: const Text('发送')),
                   ],
                 ),
               ),
@@ -645,4 +668,3 @@ class _Empty extends StatelessWidget {
     );
   }
 }
-

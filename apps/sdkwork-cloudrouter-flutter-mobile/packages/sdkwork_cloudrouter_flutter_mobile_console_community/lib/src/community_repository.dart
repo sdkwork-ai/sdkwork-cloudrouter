@@ -1,4 +1,4 @@
-﻿import 'package:sdkwork_cloudrouter_flutter_mobile_core/sdkwork_cloudrouter_flutter_mobile_core.dart';
+import 'package:sdkwork_cloudrouter_flutter_mobile_core/sdkwork_cloudrouter_flutter_mobile_core.dart';
 
 /// Read/write surface for the community App API.
 ///
@@ -95,7 +95,8 @@ class CommunityRepository {
     await _sdk.community.categoriesDelete(categoryId);
   }
 
-  Future<List<CommunityEntry>> listPosts(String categoryId, {String? tag}) async {
+  Future<List<CommunityEntry>> listPosts(String categoryId,
+      {String? tag}) async {
     final response = await _sdk.community.feedList(
       categoryId,
       null,
@@ -111,7 +112,8 @@ class CommunityRepository {
         .toList(growable: false);
   }
 
-  Future<List<CommunityEntry>> listTabPosts(String categoryId, String tag) async {
+  Future<List<CommunityEntry>> listTabPosts(
+      String categoryId, String tag) async {
     final response = await _sdk.community.feedList(
       categoryId,
       null,
@@ -173,7 +175,8 @@ class CommunityRepository {
   }
 
   Future<void> addComment(String entryId, String body) async {
-    await _sdk.community.commentsCreate(entryId, CommunityCommentCommand(body: body));
+    await _sdk.community
+        .commentsCreate(entryId, CommunityCommentCommand(body: body));
   }
 
   Future<void> setReaction(String entryId, {required bool active}) async {
@@ -190,7 +193,8 @@ class CommunityRepository {
         .toList(growable: false);
   }
 
-  Future<void> updateMemberRole(String categoryId, String memberId, String role) async {
+  Future<void> updateMemberRole(
+      String categoryId, String memberId, String role) async {
     await _sdk.community.membersUpdate(
       categoryId,
       memberId,
@@ -198,7 +202,8 @@ class CommunityRepository {
     );
   }
 
-  Future<void> updateMemberStatus(String categoryId, String memberId, String status) async {
+  Future<void> updateMemberStatus(
+      String categoryId, String memberId, String status) async {
     await _sdk.community.membersUpdate(
       categoryId,
       memberId,
@@ -241,7 +246,8 @@ class CommunityRepository {
     String categoryId, {
     bool includeDisabled = false,
   }) async {
-    final response = await _sdk.community.tiersList(categoryId, includeDisabled);
+    final response =
+        await _sdk.community.tiersList(categoryId, includeDisabled);
     return _listItems(response?.data)
         .map(CommunityMembershipTier.fromJson)
         .toList(growable: false);
@@ -265,7 +271,8 @@ class CommunityRepository {
     if (items is! List) return const <Map<String, dynamic>>[];
     return items
         .whereType<Map>()
-        .map((item) => item.map((key, value) => MapEntry(key.toString(), value)))
+        .map(
+            (item) => item.map((key, value) => MapEntry(key.toString(), value)))
         .toList(growable: false);
   }
 
@@ -288,9 +295,4 @@ class CommunityRepository {
     }
     return null;
   }
-
-
 }
-
-
-

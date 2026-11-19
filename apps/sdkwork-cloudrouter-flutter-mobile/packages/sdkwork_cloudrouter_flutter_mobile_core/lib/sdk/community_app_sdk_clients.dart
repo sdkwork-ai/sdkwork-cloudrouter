@@ -15,7 +15,6 @@ class CloudRouterCommunityAppSdkClient {
   final SdkworkAppClient client;
 }
 
-
 CloudRouterCommunityAppSdkClient createCloudRouterCommunityAppSdkClient({
   required String appApiBaseUrl,
   String? accessToken,

@@ -37,6 +37,7 @@ export interface MpCommunityPost {
   comments: number;
   reviewState: string;
   tags: string[];
+  firstTag: string;
 }
 
 export interface MpCommunityComment {
@@ -152,6 +153,7 @@ function mapPost(record: WireRecord): MpCommunityPost {
     comments: number(stats.commentCount),
     reviewState: text(record.reviewState) || 'approved',
     tags: stringList(record.tags),
+    firstTag: stringList(record.tags)[0] ?? '',
   };
 }
 

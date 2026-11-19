@@ -72,23 +72,27 @@ class _CommunityCreateScreenState extends State<CommunityCreateScreen> {
           if (_error != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              child: Text(_error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ),
           TextField(
             controller: _title,
-            decoration: const InputDecoration(labelText: '圈子名称', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+                labelText: '圈子名称', border: OutlineInputBorder()),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _description,
             minLines: 3,
             maxLines: 6,
-            decoration: const InputDecoration(labelText: '圈子简介', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+                labelText: '圈子简介', border: OutlineInputBorder()),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _tags,
-            decoration: const InputDecoration(labelText: '标签（逗号或空格分隔）', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+                labelText: '标签（逗号或空格分隔）', border: OutlineInputBorder()),
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
@@ -99,8 +103,10 @@ class _CommunityCreateScreenState extends State<CommunityCreateScreen> {
           if (_isPaid)
             TextField(
               controller: _price,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: '价格（元）', border: OutlineInputBorder()),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                  labelText: '价格（元）', border: OutlineInputBorder()),
             ),
           const SizedBox(height: 20),
           FilledButton(
@@ -112,4 +118,3 @@ class _CommunityCreateScreenState extends State<CommunityCreateScreen> {
     );
   }
 }
-
