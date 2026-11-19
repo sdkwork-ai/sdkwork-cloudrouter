@@ -273,6 +273,7 @@ function mapDeployApplication(value: unknown): ApplicationRecord | undefined {
     environment: optionalString(record.defaultEnvironment),
     groupId: "deploy",
     id,
+    identityStatus: optionalString(record.identityStatus),
     kind: optionalString(record.appKind),
     name: optionalString(record.name) ?? optionalString(record.slug) ?? id,
     organizationId,

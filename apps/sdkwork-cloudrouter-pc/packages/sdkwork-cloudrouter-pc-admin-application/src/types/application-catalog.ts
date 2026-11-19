@@ -118,6 +118,14 @@ export interface ApplicationRecord {
   deployApplicationId?: string;
   environment?: string;
   status?: string;
+  /**
+   * Deploy's `identity_status` for the IAM installation this app provisions.
+   *
+   * Deploy apps are one-to-one with an IAM installation; `active` means the
+   * installation exists, while `pending_identity`/`failed` means the app cannot
+   * issue an application access token yet.
+   */
+  identityStatus?: string;
   /** Organization owning the application; absent means tenant-level. */
   organizationId?: string;
   /**
