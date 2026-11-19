@@ -100,8 +100,11 @@ Latest verified gates:
   (101/101) pass.
 - PC: `pnpm typecheck`, `pnpm build:test`, and the community portal suite
   (6/6) pass. The admin community suite passes 18/18; the wider admin/test
-  suites pass 230 checks, with one unrelated trade-route count assertion
-  outside the community surface.
+  suites pass 230 checks. The remaining PC full-suite failure is the unrelated
+  commerce payment-composition assertion in `sdk-composition-standard.test.mjs`.
+- Shared mobile package: 22/22 vitest cases pass, including resource review
+  state, media runtime fallbacks, moderation-visible pending entries, and
+  payment-sheet login behavior.
 - Mini program: `pnpm _sdkwork:check`, 20 contract tests, 4 App API mapping
   tests, and the 14-page runtime build pass.
 - Flutter: `flutter analyze` reports no errors, the community widget/media
@@ -118,9 +121,9 @@ Known delivery debt outside the circle flow:
   parameters (`category_id`, `review_state`, `include_disabled`,
   `enabled_only`); the route extractors keep camelCase aliases so already
   deployed clients continue to work during the migration window.
-- The community mobile package's vitest suite requires that repository's
-  devDependencies to be installed; this workspace currently verifies it through
-  the H5 typecheck and runtime build instead.
+- The community mobile package's vitest suite passes after the community
+  workspace gained the missing appbase component-core and IAM desktop-auth
+  packages; keep those workspace entries when syncing `pnpm-workspace.yaml`.
 - Post moderation is an administrator operation in the CloudRouter PC admin
   community workspace (`/admin/community`); the portal/H5/native surfaces show
   the author's pending state but do not grant platform review authority. The

@@ -4,6 +4,8 @@ Status: **active** (2026-11-20). This document is the delivery checklist for the
 multi-tenant SDKWork application factory. It records what is implemented, the
 identity contract, the verified commands, and the remaining external
 dependencies. It is not a claim that the factory is commercially complete.
+Cross-repository blockers and their required contracts are tracked in
+[TECH-app-factory-blockers.md](./TECH-app-factory-blockers.md).
 
 ## 1. Identity contract (IAM ↔ Deploy)
 
@@ -58,7 +60,6 @@ Electron, Tauri, Qt, Rust, Node, Go, Python.
    `owner_type`, and `user_id`; `ACTIVE_APPS` quota is enforced before create.
 
 ## 4. Scaffold status
-
 - A local scaffold can be published today: any framework/language directory is
   detected, its build-output path is recorded in `metadata`, and the normal
   release/deploy path applies.
