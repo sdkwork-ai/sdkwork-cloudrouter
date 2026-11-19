@@ -105,6 +105,8 @@ Latest verified gates:
 - Shared mobile package: 22/22 vitest cases pass, including resource review
   state, media runtime fallbacks, moderation-visible pending entries, and
   payment-sheet login behavior.
+- Community route crates: 12 tests pass, including canonical snake_case query
+  names and legacy camelCase aliases.
 - Mini program: `pnpm _sdkwork:check`, 20 contract tests, 4 App API mapping
   tests, and the 14-page runtime build pass.
 - Flutter: `flutter analyze` reports no errors, the community widget/media
