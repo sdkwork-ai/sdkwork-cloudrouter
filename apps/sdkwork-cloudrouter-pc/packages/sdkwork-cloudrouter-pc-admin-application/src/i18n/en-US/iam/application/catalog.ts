@@ -223,6 +223,7 @@ export const en: ApplicationCatalogMessages = {
     iam: { description: "Application instances registered for this tenant in the IAM application registry.", label: "IAM apps" },
   },
   identity: {
+    notReady: "IAM identity not ready",
     retryAction: "Retry IAM identity",
     retrying: "Provisioning the IAM identity…",
     success: "IAM identity status is now {status}.",

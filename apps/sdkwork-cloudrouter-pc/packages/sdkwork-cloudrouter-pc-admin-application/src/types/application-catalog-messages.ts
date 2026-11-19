@@ -212,6 +212,7 @@ export interface ApplicationCatalogMessages {
     iam: { description: string; label: string };
   };
   identity: {
+    notReady: string;
     retryAction: string;
     retrying: string;
     success: string;

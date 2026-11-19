@@ -684,16 +684,25 @@ export function ApplicationManagementPage({
       id: "environment",
     };
     const status: DataTableColumn<ApplicationRecord> = {
-      cell: (item) => item.status
-        ? (
-          <StatusBadge
-            label={statusLabel(messages, item.status)}
-            showIcon
-            status={normalizeStatus(item.status)}
-            variant={statusVariant(item.status)}
-          />
-        )
-        : "-",
+      cell: (item) => (
+        <div className="flex flex-col gap-1">
+          {item.status ? (
+            <StatusBadge
+              label={statusLabel(messages, item.status)}
+              showIcon
+              status={normalizeStatus(item.status)}
+              variant={statusVariant(item.status)}
+            />
+          ) : (
+            <span>-</span>
+          )}
+          {item.groupId === "deploy" && item.identityStatus && item.identityStatus !== "active" ? (
+            <span className="text-[11px] text-[var(--sdk-color-text-muted)]">
+              {messages.identity.notReady}
+            </span>
+          ) : null}
+        </div>
+      ),
       header: messages.columns.status,
       id: "status",
     };

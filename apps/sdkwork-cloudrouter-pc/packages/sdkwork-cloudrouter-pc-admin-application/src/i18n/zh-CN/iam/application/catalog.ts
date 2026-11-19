@@ -223,6 +223,7 @@ export const zh: ApplicationCatalogMessages = {
     iam: { description: "IAM 应用注册表中该租户已注册的应用实例。", label: "IAM 应用" },
   },
   identity: {
+    notReady: "IAM 身份未就绪",
     retryAction: "重新同步 IAM 身份",
     retrying: "正在同步 IAM 身份…",
     success: "IAM 身份已同步为 {status}。",
