@@ -98,10 +98,9 @@ Latest verified gates:
 
 - H5: `pnpm typecheck`, `pnpm build:dev`, and the full `pnpm test` suite
   (101/101) pass.
-- PC: `pnpm typecheck`, `pnpm build:test`, and the community portal suite
-  (6/6) pass. The admin community suite passes 18/18; the wider admin/test
-  suites pass 230 checks. The remaining PC full-suite failure is the unrelated
-  commerce payment-composition assertion in `sdk-composition-standard.test.mjs`.
+- PC: `pnpm typecheck`, `pnpm build:test`, and the full `pnpm test` suite pass
+  when the test profile environment is loaded (`.env.standalone.test`); the
+  community portal suite is 6/6 and the admin community suite is 18/18.
 - Shared mobile package: 22/22 vitest cases pass, including resource review
   state, media runtime fallbacks, moderation-visible pending entries, and
   payment-sheet login behavior.
