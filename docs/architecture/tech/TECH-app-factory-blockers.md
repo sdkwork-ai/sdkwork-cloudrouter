@@ -22,8 +22,10 @@ count.
 
 **Remaining:** a refund/chargeback stops **app-token issuance** (`PgDeployApplicationLookup`
 checks the recorded order and returns no application when payment is
-refunded/reversed), but the app row is not disabled or deleted. A Deploy
-revocation worker or an order-center event is still needed for cleanup.
+refunded/reversed). `cloudrouterctl revoke-refunded-apps` prints the apps whose
+recorded order is refunded and, only with `--apply`, archives them (status
+`ARCHIVED`, `archived_at` set). No background revocation worker runs
+automatically yet.
 
 ## 2. Version-pinned Git template source
 

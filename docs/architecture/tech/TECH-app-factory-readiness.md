@@ -85,9 +85,10 @@ Electron, Tauri, Qt, Rust, Node, Go, Python.
   subject, template UUID) and uses the order id as the app-create idempotency
   key, so one purchase creates one app. The order fulfillment remains the only
   writer of the paid install count.
-- **Still missing:** refund/chargeback **cleanup** of the installed app. App-token
-  issuance already refuses an app whose recorded order is refunded/reversed,
-  but the app row is not disabled or deleted by a revocation worker.
+- **Still missing:** automatic refund/chargeback **cleanup** of the installed
+  app. App-token issuance already refuses an app whose recorded order is
+  refunded/reversed, and `cloudrouterctl revoke-refunded-apps --apply` archives
+  it, but no background worker triggers the archive on the payment event.
 
 ## 5. Verified commands
 

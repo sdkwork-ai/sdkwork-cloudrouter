@@ -29,6 +29,7 @@ mod backup;
 mod deploy_application;
 mod federated;
 mod iam_installation;
+mod refund_revocation;
 
 const SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD_ENV: &str =
     "SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD";
@@ -420,6 +421,18 @@ async fn run_command(
             let report = iam_installation::audit_identity_links(pg).await?;
             print_json(&report)?;
         }
+        InstallerCommand::RevokeRefundedApps { apply } => {
+            let database_pool = connect_installer_database_pool(database_config).await?;
+            let sdkwork_database_sqlx::DatabasePool::Postgres(pg, _) = &database_pool else {
+                return Err(InstallerCliError::InvalidArgument(
+                    "revoke-refunded-apps requires the PostgreSQL installer database"
+                        .to_owned(),
+                )
+                .into());
+            };
+            let report = refund_revocation::revoke_refunded_applications(pg, apply).await?;
+            print_json(&report)?;
+        }
         InstallerCommand::Status => {
             let report = installer.status_report().await?;
             print_json(&InstallationStatusOutput::from(report))?;
@@ -481,6 +494,7 @@ enum InstallerCommand {
     ResetAdmin(ResetAdminOptions),
     IssueBootstrapToken(IssueBootstrapTokenOptions),
     AuditIdentities,
+    RevokeRefundedApps { apply: bool },
 }
 
 #[derive(Debug, Default)]
@@ -530,6 +544,21 @@ where
         "audit-identities" => {
             reject_extra_args("audit-identities", args)?;
             InstallerCommand::AuditIdentities
+        }
+        "revoke-refunded-apps" => {
+            let mut apply = false;
+            for arg in args {
+                match arg.as_str() {
+                    "--apply" => apply = true,
+                    other => {
+                        return Err(InstallerCliError::InvalidArgument(format!(
+                            "unknown revoke-refunded-apps option: {other}"
+                        ))
+                        .into())
+                    }
+                }
+            }
+            InstallerCommand::RevokeRefundedApps { apply }
         }
         other => {
             return Err(InstallerCliError::InvalidArgument(format!(
@@ -1019,7 +1048,8 @@ impl InstallerCommand {
             | Self::Restore(_)
             | Self::ResetAdmin(_)
             | Self::IssueBootstrapToken(_)
-            | Self::AuditIdentities => false,
+            | Self::AuditIdentities
+            | Self::RevokeRefundedApps { .. } => false,
         }
     }
 }
