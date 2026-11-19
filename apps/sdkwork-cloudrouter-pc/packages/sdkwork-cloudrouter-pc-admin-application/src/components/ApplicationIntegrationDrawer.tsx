@@ -943,6 +943,9 @@ function ChannelSection({
               <span>{copy.channel.appId}: {selected.appId || "-"}</span>
               {selected.accountType ? <span>{copy.channel.accountType}: {selected.accountType}</span> : null}
               {selected.status ? <span>{copy.channel.status}: {statusLabel(selected.status, messages)}</span> : null}
+              {selected.domainVerifyStatus ? (
+                <span>{copy.channel.domainStatus}: {selected.domainVerifyStatus}</span>
+              ) : null}
             </div>
           </div>
           <Button disabled={disabled} onClick={() => onClear(channelKind)} size="sm" type="button" variant="outline">

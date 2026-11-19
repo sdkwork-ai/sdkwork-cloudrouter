@@ -245,6 +245,33 @@ describe("app-kind-aware validation", () => {
     expect(issues.some((issue) => issue.severity === "error")).toBe(false);
   });
 
+  it("warns when the official account's web domain is not verified", () => {
+    const issues = validateApplicationIntegration({
+      appKind: "H5_WEB",
+      channelAccounts: [{ ...wechatOfficial, domainVerifyStatus: "pending" }],
+      environment: "production",
+      integration: {
+        officialAccount: {
+          appId: "wx-official",
+          displayName: "Official",
+          enabled: true,
+          id: "ra-official",
+          providerCode: "wechat",
+          resourceAccountKind: "official-account",
+        },
+        paymentAccounts: [],
+      },
+      paymentAccounts: [],
+    });
+    expect(issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "channel-domain-unverified",
+        params: expect.objectContaining({ status: "pending" }),
+        severity: "warning",
+      }),
+    ]));
+  });
+
   it("does not require a JSAPI channel for PC native WeChat Pay", () => {
     const issues = validateApplicationIntegration({
       appKind: "PC_WEB",

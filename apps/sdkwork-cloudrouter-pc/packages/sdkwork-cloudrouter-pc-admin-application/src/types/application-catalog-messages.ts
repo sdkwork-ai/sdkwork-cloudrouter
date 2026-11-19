@@ -239,6 +239,7 @@ export interface ApplicationCatalogMessages {
       clear: string;
       currentTitle: string;
       disabled: string;
+      domainStatus: string;
       emptyAvailable: string;
       emptyCurrent: string;
       enabled: string;
@@ -388,6 +389,7 @@ export interface ApplicationCatalogMessages {
       "auto-login-not-configured": string;
       "channel-app-id-missing": string;
       "channel-disabled": string;
+      "channel-domain-unverified": string;
       "channel-not-found": string;
       "channel-unauthorized": string;
       "checkout-not-ready": string;

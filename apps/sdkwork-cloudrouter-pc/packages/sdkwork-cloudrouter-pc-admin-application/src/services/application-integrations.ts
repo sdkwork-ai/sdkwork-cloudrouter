@@ -397,6 +397,7 @@ function mapChannelAccount(
   const accountType = readString(record.providerAccountType ?? record.provider_account_type);
   const status = readString(record.status);
   const authorizationStatus = readString(record.authorizationStatus ?? record.authorization_status);
+  const domainVerifyStatus = readString(record.domainVerifyStatus ?? record.domain_verify_status);
   const scope = resolveIntegrationAccountScope(record);
   const organizationId = readString(record.organizationId ?? record.organization_id);
   const ownerUserId = readString(record.ownerUserId ?? record.owner_user_id);
@@ -410,6 +411,7 @@ function mapChannelAccount(
     enabled: readBoolean(record.enabled) ?? false,
     ...(status === undefined ? {} : { status }),
     ...(authorizationStatus === undefined ? {} : { authorizationStatus }),
+    ...(domainVerifyStatus === undefined ? {} : { domainVerifyStatus }),
     scope,
     ...(organizationId === undefined ? {} : { organizationId }),
     ...(ownerUserId === undefined ? {} : { ownerUserId }),

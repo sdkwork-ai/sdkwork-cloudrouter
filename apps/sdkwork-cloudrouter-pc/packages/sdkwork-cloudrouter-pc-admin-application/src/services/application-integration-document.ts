@@ -470,6 +470,9 @@ function channelUpsert(
       ...(binding.authorizationStatus === undefined
         ? {}
         : { authorizationStatus: binding.authorizationStatus }),
+      ...(binding.domainVerifyStatus === undefined
+        ? {}
+        : { domainVerifyStatus: binding.domainVerifyStatus }),
       source: "sdkwork-application-center",
     },
     providerCode: binding.providerCode,
@@ -524,6 +527,9 @@ function channelBindingFromResourceLink(
     ...(readString(metadata.authorizationStatus) === undefined
       ? {}
       : { authorizationStatus: readString(metadata.authorizationStatus) }),
+    ...(readString(metadata.domainVerifyStatus) === undefined
+      ? {}
+      : { domainVerifyStatus: readString(metadata.domainVerifyStatus) }),
   };
 }
 
@@ -808,6 +814,25 @@ export function validateApplicationIntegration(
     if (account.authorizationStatus !== undefined && account.authorizationStatus !== "authorized") {
       issues.push(issue("channel-unauthorized", "warning", { channel: channel.displayName }));
     }
+    // The WeChat web OAuth callback (H5 login / PC scan / cashier) must land on
+    // a domain the official account has verified. The IAM catalog carries the
+    // verification state; a pending or failed domain breaks the callback even
+    // though the AppID/secret are correct.
+    const domainExpectation = surface.id === "unknown"
+      || surface.id === "h5"
+      || surface.id === "pc"
+      || surface.id === "wechat-mini-program"
+      || surface.id === "web-legacy";
+    if (
+      domainExpectation
+      && account.domainVerifyStatus !== undefined
+      && account.domainVerifyStatus.trim().toLowerCase() !== "verified"
+    ) {
+      issues.push(issue("channel-domain-unverified", "warning", {
+        channel: channel.displayName,
+        status: account.domainVerifyStatus,
+      }));
+    }
   }
 
   const wechatChannels = channels.filter((channel) => isWechatProvider(channel.providerCode));
@@ -961,6 +986,7 @@ export function toChannelBinding(
     enabled: option.enabled,
     ...(option.status === undefined ? {} : { status: option.status }),
     ...(option.authorizationStatus === undefined ? {} : { authorizationStatus: option.authorizationStatus }),
+    ...(option.domainVerifyStatus === undefined ? {} : { domainVerifyStatus: option.domainVerifyStatus }),
   };
 }
 
@@ -1069,6 +1095,9 @@ function normalizeChannelBinding(
     ...(readString(record.authorizationStatus ?? record.authorization_status) === undefined
       ? {}
       : { authorizationStatus: readString(record.authorizationStatus ?? record.authorization_status) }),
+    ...(readString(record.domainVerifyStatus ?? record.domain_verify_status) === undefined
+      ? {}
+      : { domainVerifyStatus: readString(record.domainVerifyStatus ?? record.domain_verify_status) }),
   };
 }
 
@@ -1172,6 +1201,9 @@ function serializeChannelBinding(binding: ApplicationChannelAccountBinding): Rec
     ...(binding.authorizationStatus === undefined
       ? {}
       : { authorizationStatus: binding.authorizationStatus }),
+    ...(binding.domainVerifyStatus === undefined
+      ? {}
+      : { domainVerifyStatus: binding.domainVerifyStatus }),
   };
 }
 

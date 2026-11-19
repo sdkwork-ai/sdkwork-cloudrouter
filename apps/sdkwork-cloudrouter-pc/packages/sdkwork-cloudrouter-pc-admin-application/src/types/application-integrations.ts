@@ -109,6 +109,8 @@ export interface ApplicationChannelAccountBinding {
   enabled: boolean;
   status?: string;
   authorizationStatus?: string;
+  /** Official-account web domain verification (`domain_verify_status`). */
+  domainVerifyStatus?: string;
 }
 
 /** One bound payment provider account. */
@@ -170,6 +172,8 @@ export interface ApplicationChannelAccountOption {
   enabled: boolean;
   status?: string;
   authorizationStatus?: string;
+  /** Official-account web domain verification (`domain_verify_status`). */
+  domainVerifyStatus?: string;
   /** Ownership scope; absent legacy rows resolve to `tenant`. */
   scope?: IntegrationAccountScope;
   organizationId?: string;
@@ -342,6 +346,7 @@ export type ApplicationIntegrationIssueCode =
   | "auto-login-not-configured"
   | "channel-app-id-missing"
   | "channel-disabled"
+  | "channel-domain-unverified"
   | "channel-not-found"
   | "channel-unauthorized"
   | "checkout-not-ready"

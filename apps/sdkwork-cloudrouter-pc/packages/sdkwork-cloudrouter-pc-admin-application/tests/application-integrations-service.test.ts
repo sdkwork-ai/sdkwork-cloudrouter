@@ -74,6 +74,7 @@ describe("application integration transport", () => {
           enabled: true,
           status: "active",
           authorizationStatus: "authorized",
+          domainVerifyStatus: "pending",
         },
         {
           id: "ra-mini",
@@ -96,6 +97,7 @@ describe("application integration transport", () => {
       id: "ra-official",
       appId: "wx-official",
       displayName: "Official",
+      domainVerifyStatus: "pending",
       kind: "official-account",
       enabled: true,
     })]);
