@@ -5,37 +5,26 @@ alone, the contract each item needs, and the verification that will close it.
 It is the hand-off surface for the remaining commercial gaps; the readiness
 matrix is [TECH-app-factory-readiness.md](./TECH-app-factory-readiness.md).
 
-## 1. Paid template installation (entitlement projection)
+## 1. Paid template installation (read-only order verification)
 
-**State.** Free templates install end to end (Git remix or archive artifact
-clone). A paid order is recorded by the order center and the order
-fulfillment updates both template counters, but Deploy refuses to create the
-app because it cannot verify that the caller owns a paid order.
+**Implemented.** `apps.marketplaceTemplates.install` requires the settled
+`orderId` for a `PAID` listing and verifies it read-only against
+`commerce_order` / `commerce_order_item`:
 
-**Why it is not in Deploy.** The order/payment domain owns the entitlement
-(`commerce_order` paid + fulfilled). Deploy must not infer it from a
-client-supplied `orderId`, and it has no order API client or service
-credential today.
+- same tenant and buyer (`owner_user_id`);
+- `payment_status` paid/success/succeeded;
+- `subject = app_template`;
+- order item's template UUID equals the listing.
 
-**Required contract (one of):**
+The order id is also the app-create idempotency key, so one purchase creates one
+application. The order fulfillment remains the only writer of the paid install
+count.
 
-1. **Entitlement projection** — a Deploy-owned table
-   `deploy_app_template_entitlement` (`tenant_id`, `user_id`,
-   `template_uuid`, `order_id`, `status=GRANTED|CONSUMED`, `app_uuid`),
-   written by the order fulfillment in the same transaction that settles the
-   order, consumed by `apps.marketplaceTemplates.install` for `PAID` listings.
-   This needs a PostgreSQL migration and a database-contract review.
-2. **Signed service call** — order fulfillment calls a Deploy service
-   endpoint after settlement with a service credential and
-   `{orderId, tenantId, buyerUserId, templateUuid}`; Deploy verifies the
-   signature and installs. Needs service-auth contract and network policy.
-
-Either path must make paid install idempotent (same order/application) and
-must not double-count the purchase already counted by fulfillment.
-
-**Verification to close:** a PostgreSQL test that pays an order, installs,
-replays the install, and asserts one app, one consumed entitlement, and one
-install count.
+**Remaining:** a refund/chargeback cannot revoke an installed app; that needs a
+Deploy-side entitlement row (or an order-center revocation event) and is a
+separate lifecycle feature. The read is also a deliberate cross-module table
+read, not an API call; it is guarded by `to_regclass` so a schema without the
+order tables refuses paid install instead of failing.
 
 ## 2. Version-pinned Git template source
 

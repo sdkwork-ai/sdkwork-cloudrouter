@@ -80,10 +80,14 @@ Electron, Tauri, Qt, Rust, Node, Go, Python.
   idempotent replay), and the installed app records its template provenance in
   `metadata.template`. A PostgreSQL integration test covers artifact-clone
   replay.
-- **Still missing:** paid template **application creation**. A paid order now
-  updates both the legacy template counter and the scaffold marketplace counter,
-  but Deploy has no verified entitlement at install time; the marketplace shows
-  the paid state instead of creating the app.
+- A **paid** template install requires the settled `orderId`; Deploy verifies the
+  order read-only against `commerce_order` (buyer, paid state, `app_template`
+  subject, template UUID) and uses the order id as the app-create idempotency
+  key, so one purchase creates one app. The order fulfillment remains the only
+  writer of the paid install count.
+- **Still missing:** refund/chargeback revocation of a paid install, and a
+  durable consumption ledger (the current guarantee is order-id idempotency,
+  not a revocable entitlement row).
 
 ## 5. Verified commands
 
