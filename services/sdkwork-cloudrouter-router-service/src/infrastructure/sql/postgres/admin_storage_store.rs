@@ -814,16 +814,14 @@ async fn list_vendor_asset_ttls(
         WHERE t.tenant_id = $1
           AND t.organization_id = $2
           AND ($3::text IS NULL OR {status_label} = $3)
-          AND ($4::text IS NULL OR t.media_kind = $4)
-          AND ($5::bigint IS NULL OR t.id < $5)
+          AND ($4::bigint IS NULL OR t.id < $4)
         ORDER BY t.id DESC
-        LIMIT $6
+        LIMIT $5
         "#
     )))
     .bind(query.subject.tenant_id)
     .bind(query.subject.organization_id)
     .bind(query.status.as_deref())
-    .bind(query.scope_type.as_deref())
     .bind(query.cursor.map(AdminStorageCursor::id))
     .bind(query.limit + 1)
     .fetch_all(pool)

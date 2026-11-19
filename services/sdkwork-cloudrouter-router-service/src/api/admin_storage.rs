@@ -4,7 +4,7 @@ use axum::extract::rejection::QueryRejection;
 use axum::extract::{Path, Query, State};
 use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
-use axum::routing::{get, patch};
+use axum::routing::{get, patch, put};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
@@ -23,7 +23,8 @@ use crate::ports::{
     AdminStorageCollection, AdminStorageCursor, AdminStorageJsonRecord, AdminStorageStore,
     CreateStorageGarbageCollectionJobCommand, CreateStorageQuotaPolicyCommand,
     CreateStorageReconciliationRunCommand, ListAdminStorageRecordsQuery,
-    SetStorageDefaultBucketCommand,
+    SetStorageDefaultBucketCommand, UpsertStorageGenerationDeliveryPolicyCommand,
+    UpsertStorageVendorAssetTtlCommand,
 };
 use sdkwork_utils_rust::http_api::cursor_window_page_info;
 use sdkwork_utils_rust::{base64url_decode, base64url_encode, SdkWorkResultCode};
@@ -57,6 +58,12 @@ const USAGE_SCOPE_TYPES: &[&str] = &[
 ];
 const RESOURCE_STATUSES: &[&str] = &["active", "archived", "disabled"];
 const JOB_STATUSES: &[&str] = &["canceled", "completed", "created", "failed", "running"];
+const GENERATION_DELIVERY_SCOPE_TYPES: &[&str] = &["organization", "tenant", "user"];
+const GENERATION_MEDIA_KINDS: &[&str] = &["all", "audio", "image", "video"];
+const GENERATION_VENDOR_MEDIA_KINDS: &[&str] = &["audio", "image", "video"];
+const GENERATION_DELIVERY_MODES: &[&str] = &["remote_only", "to_drive"];
+const GENERATION_VENDOR_EXPIRY_ACTIONS: &[&str] = &["delete_remote", "fail_job", "keep_reference"];
+const GENERATION_VENDOR_TTL_SOURCES: &[&str] = &["default", "operator", "upstream"];
 #[derive(Clone)]
 struct AdminStorageState {
     store: Arc<dyn AdminStorageStore + Send + Sync>,
@@ -121,6 +128,27 @@ struct CreateStorageGarbageCollectionJobRequest {
     criteria: Option<serde_json::Value>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct UpsertGenerationDeliveryPolicyRequest {
+    media_kind: Option<String>,
+    delivery_mode: String,
+    drive_space_id: Option<String>,
+    drive_folder_node_id: Option<String>,
+    download_deadline_seconds: Option<i32>,
+    vendor_expiry_action: Option<String>,
+    delete_remote_after_download: Option<bool>,
+    reason: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct UpsertVendorAssetTtlRequest {
+    ttl_seconds: i32,
+    source: Option<String>,
+    reason: Option<String>,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct StorageDefaultBucketMutationResponse {
@@ -149,6 +177,20 @@ struct StorageGarbageCollectionJobMutationResponse {
     request_id: String,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct StorageGenerationDeliveryPolicyMutationResponse {
+    generation_delivery_policy: AdminStorageJsonRecord,
+    request_id: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct StorageVendorAssetTtlMutationResponse {
+    vendor_asset_ttl: AdminStorageJsonRecord,
+    request_id: String,
+}
+
 pub fn admin_storage_router_with_store(store: Arc<dyn AdminStorageStore + Send + Sync>) -> Router {
     Router::new()
         .route(
@@ -171,6 +213,22 @@ pub fn admin_storage_router_with_store(store: Arc<dyn AdminStorageStore + Send +
         .route(
             "/backend/v3/api/storage/gc_jobs",
             get(list_gc_jobs).post(create_gc_job),
+        )
+        .route(
+            "/backend/v3/api/storage/generation_delivery_policies",
+            get(list_generation_delivery_policies),
+        )
+        .route(
+            "/backend/v3/api/storage/generation_delivery_policies/{scope_type}/{scope_id}",
+            put(upsert_generation_delivery_policy),
+        )
+        .route(
+            "/backend/v3/api/storage/vendor_asset_ttls",
+            get(list_vendor_asset_ttls),
+        )
+        .route(
+            "/backend/v3/api/storage/vendor_asset_ttls/{vendor_code}/{media_kind}",
+            put(upsert_vendor_asset_ttl),
         )
         .with_state(AdminStorageState { store })
 }
@@ -330,6 +388,89 @@ async fn create_gc_job(
         ),
         Err(error) => {
             storage_error_response("storage garbage collection create is unavailable", error)
+        }
+    }
+}
+
+async fn list_generation_delivery_policies(
+    State(state): State<AdminStorageState>,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+    query: AdminStorageQueryResult,
+) -> Response {
+    list_response(
+        scoped,
+        query,
+        |query| state.store.list_generation_delivery_policies(query),
+        Some(GENERATION_DELIVERY_SCOPE_TYPES),
+    )
+    .await
+}
+
+async fn upsert_generation_delivery_policy(
+    State(state): State<AdminStorageState>,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+    Path((scope_type, scope_id)): Path<(String, String)>,
+    Json(request): Json<UpsertGenerationDeliveryPolicyRequest>,
+) -> Response {
+    let command =
+        match validated_generation_delivery_upsert_command(scoped, scope_type, scope_id, request) {
+            Ok(command) => command,
+            Err(error) => return error.into_response(),
+        };
+    let request_id = response_request_id(command.request_id.as_deref());
+    match state.store.upsert_generation_delivery_policy(command).await {
+        Ok(generation_delivery_policy) => Json(success_envelope(
+            StorageGenerationDeliveryPolicyMutationResponse {
+                generation_delivery_policy,
+                request_id,
+            },
+        ))
+        .into_response(),
+        Err(error) => storage_error_response(
+            "storage generation delivery policy update is unavailable",
+            error,
+        ),
+    }
+}
+
+async fn list_vendor_asset_ttls(
+    State(state): State<AdminStorageState>,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+    query: AdminStorageQueryResult,
+) -> Response {
+    list_response(
+        scoped,
+        query,
+        |query| state.store.list_vendor_asset_ttls(query),
+        None,
+    )
+    .await
+}
+
+async fn upsert_vendor_asset_ttl(
+    State(state): State<AdminStorageState>,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+    Path((vendor_code, media_kind)): Path<(String, String)>,
+    Json(request): Json<UpsertVendorAssetTtlRequest>,
+) -> Response {
+    let command =
+        match validated_vendor_asset_ttl_upsert_command(scoped, vendor_code, media_kind, request) {
+            Ok(command) => command,
+            Err(error) => return error.into_response(),
+        };
+    let request_id = response_request_id(command.request_id.as_deref());
+    match state.store.upsert_vendor_asset_ttl(command).await {
+        Ok(vendor_asset_ttl) => Json(success_envelope(StorageVendorAssetTtlMutationResponse {
+            vendor_asset_ttl,
+            request_id,
+        }))
+        .into_response(),
+        Err(error) => {
+            storage_error_response("storage vendor asset ttl update is unavailable", error)
         }
     }
 }
@@ -551,6 +692,95 @@ fn validated_gc_create_command(
         )?,
         criteria: request.criteria,
         idempotency_key: required_header(headers, IDEMPOTENCY_KEY_HEADER)?,
+        request_id: Some(server_request_id()?),
+    })
+}
+
+fn validated_generation_delivery_upsert_command(
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    scope_type: String,
+    scope_id: String,
+    request: UpsertGenerationDeliveryPolicyRequest,
+) -> Result<UpsertStorageGenerationDeliveryPolicyCommand, ApiResponseError> {
+    let scope_type = normalize_required_text(scope_type, "scopeType", MAX_TYPE_LEN)?;
+    ensure_enum(&scope_type, GENERATION_DELIVERY_SCOPE_TYPES, "scopeType")?;
+    let scope_id = normalize_required_text(scope_id, "scopeId", MAX_ID_LEN)?;
+    let media_kind = normalize_optional_text(request.media_kind, "mediaKind", MAX_TYPE_LEN)?
+        .map(|value| value.to_ascii_lowercase())
+        .unwrap_or_else(|| "all".to_owned());
+    ensure_enum(&media_kind, GENERATION_MEDIA_KINDS, "mediaKind")?;
+    let delivery_mode =
+        normalize_required_text(request.delivery_mode, "deliveryMode", MAX_TYPE_LEN)?
+            .to_ascii_lowercase();
+    ensure_enum(&delivery_mode, GENERATION_DELIVERY_MODES, "deliveryMode")?;
+    let vendor_expiry_action = normalize_optional_text(
+        request.vendor_expiry_action,
+        "vendorExpiryAction",
+        MAX_TYPE_LEN,
+    )?
+    .map(|value| value.to_ascii_lowercase())
+    .unwrap_or_else(|| "keep_reference".to_owned());
+    ensure_enum(
+        &vendor_expiry_action,
+        GENERATION_VENDOR_EXPIRY_ACTIONS,
+        "vendorExpiryAction",
+    )?;
+    if request
+        .download_deadline_seconds
+        .is_some_and(|seconds| seconds <= 0)
+    {
+        return Err(bad_request("downloadDeadlineSeconds must be positive when set").into());
+    }
+    Ok(UpsertStorageGenerationDeliveryPolicyCommand {
+        subject: scoped.into(),
+        scope_type,
+        scope_id,
+        media_kind,
+        delivery_mode,
+        drive_space_id: normalize_optional_text(
+            request.drive_space_id,
+            "driveSpaceId",
+            MAX_ID_LEN,
+        )?,
+        drive_folder_node_id: normalize_optional_text(
+            request.drive_folder_node_id,
+            "driveFolderNodeId",
+            MAX_ID_LEN,
+        )?,
+        download_deadline_seconds: request.download_deadline_seconds,
+        vendor_expiry_action,
+        delete_remote_after_download: request.delete_remote_after_download.unwrap_or(true),
+        reason: normalize_optional_text(request.reason, "reason", MAX_REASON_LEN)?
+            .unwrap_or_default(),
+        request_id: Some(server_request_id()?),
+    })
+}
+
+fn validated_vendor_asset_ttl_upsert_command(
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    vendor_code: String,
+    media_kind: String,
+    request: UpsertVendorAssetTtlRequest,
+) -> Result<UpsertStorageVendorAssetTtlCommand, ApiResponseError> {
+    let vendor_code =
+        normalize_required_text(vendor_code, "vendorCode", MAX_TYPE_LEN)?.to_ascii_lowercase();
+    let media_kind =
+        normalize_required_text(media_kind, "mediaKind", MAX_TYPE_LEN)?.to_ascii_lowercase();
+    ensure_enum(&media_kind, GENERATION_VENDOR_MEDIA_KINDS, "mediaKind")?;
+    if request.ttl_seconds <= 0 {
+        return Err(bad_request("ttlSeconds must be positive").into());
+    }
+    let source = normalize_optional_text(request.source, "source", MAX_TYPE_LEN)?
+        .map(|value| value.to_ascii_lowercase())
+        .unwrap_or_else(|| "operator".to_owned());
+    ensure_enum(&source, GENERATION_VENDOR_TTL_SOURCES, "source")?;
+    Ok(UpsertStorageVendorAssetTtlCommand {
+        subject: scoped.into(),
+        vendor_code,
+        media_kind,
+        ttl_seconds: request.ttl_seconds,
+        source,
+        reason: normalize_optional_text(request.reason, "reason", MAX_REASON_LEN)?,
         request_id: Some(server_request_id()?),
     })
 }

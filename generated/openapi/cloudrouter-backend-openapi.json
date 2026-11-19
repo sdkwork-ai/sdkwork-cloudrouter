@@ -34188,6 +34188,564 @@
         "x-sdkwork-permission": "cloudrouter.site_settings.manage",
         "x-sdkwork-required-surface": "organizationMember"
       }
+    },
+    "/backend/v3/api/storage/generation_delivery_policies": {
+      "get": {
+        "tags": [
+          "storage"
+        ],
+        "operationId": "generationDelivery.list",
+        "summary": "/backend/v3/api/storage/generation_delivery_policies",
+        "description": "Backend storage generation delivery policy list. Reads storage. Writes none.",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Cursor query parameter.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "description": "Page size query parameter.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Status query parameter.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope_type",
+            "in": "query",
+            "required": false,
+            "description": "Scope type query parameter (tenant, organization, user).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope_id",
+            "in": "query",
+            "required": false,
+            "description": "Scope id query parameter.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SdkWorkListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-route-scope": "admin",
+        "x-contract-kind": "read",
+        "x-read-sources": [
+          "storage_generation_delivery_policy"
+        ],
+        "x-write-tables": [],
+        "x-file-targets": [],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
+        "x-ui-route": "/admin/storage/generationDelivery",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
+    },
+    "/backend/v3/api/storage/generation_delivery_policies/{scopeType}/{scopeId}": {
+      "put": {
+        "tags": [
+          "storage"
+        ],
+        "operationId": "generationDelivery.update",
+        "summary": "/backend/v3/api/storage/generation_delivery_policies/{scopeType}/{scopeId}",
+        "description": "Backend storage generation delivery policy upsert. Reads none. Writes storage_generation_delivery_policy and ops_audit_log.",
+        "parameters": [
+          {
+            "name": "scopeType",
+            "in": "path",
+            "required": true,
+            "description": "Policy scope type: tenant, organization or user.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scopeId",
+            "in": "path",
+            "required": true,
+            "description": "Tenant, organization or user id the policy applies to.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Typed request payload for generationDelivery.update.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "deliveryMode"
+                ],
+                "properties": {
+                  "mediaKind": {
+                    "type": "string",
+                    "enum": [
+                      "all",
+                      "audio",
+                      "image",
+                      "video"
+                    ],
+                    "default": "all",
+                    "description": "Media kind the policy applies to; `all` inherits to every kind."
+                  },
+                  "deliveryMode": {
+                    "type": "string",
+                    "enum": [
+                      "remote_only",
+                      "to_drive"
+                    ],
+                    "description": "Whether a finished generation is copied into SDKWork Drive. `remote_only` keeps the vendor reference only (cost-saving default)."
+                  },
+                  "driveSpaceId": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "description": "Target Drive space; omitted falls back to the requester's default space."
+                  },
+                  "driveFolderNodeId": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "description": "Target Drive folder node; omitted falls back to the space root."
+                  },
+                  "downloadDeadlineSeconds": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 1,
+                    "description": "Download deadline override; never exceeds the vendor asset TTL."
+                  },
+                  "vendorExpiryAction": {
+                    "type": "string",
+                    "enum": [
+                      "delete_remote",
+                      "fail_job",
+                      "keep_reference"
+                    ],
+                    "default": "keep_reference",
+                    "description": "What happens when a vendor asset expires before it was downloaded."
+                  },
+                  "deleteRemoteAfterDownload": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Delete the vendor copy after a successful Drive download."
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 512
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SdkWorkCommandResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-route-scope": "admin",
+        "x-contract-kind": "action",
+        "x-read-sources": [],
+        "x-write-tables": [
+          "storage_generation_delivery_policy",
+          "ops_audit_log"
+        ],
+        "x-file-targets": [],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
+        "x-ui-route": "/admin/storage/generationDelivery",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
+    },
+    "/backend/v3/api/storage/vendor_asset_ttls": {
+      "get": {
+        "tags": [
+          "storage"
+        ],
+        "operationId": "vendorAssetTtl.list",
+        "summary": "/backend/v3/api/storage/vendor_asset_ttls",
+        "description": "Backend storage vendor asset TTL list. Reads storage. Writes none.",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Cursor query parameter.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "description": "Page size query parameter.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Status query parameter.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SdkWorkListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-route-scope": "admin",
+        "x-contract-kind": "read",
+        "x-read-sources": [
+          "storage_vendor_asset_ttl"
+        ],
+        "x-write-tables": [],
+        "x-file-targets": [],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
+        "x-ui-route": "/admin/storage/generationDelivery",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
+    },
+    "/backend/v3/api/storage/vendor_asset_ttls/{vendorCode}/{mediaKind}": {
+      "put": {
+        "tags": [
+          "storage"
+        ],
+        "operationId": "vendorAssetTtl.update",
+        "summary": "/backend/v3/api/storage/vendor_asset_ttls/{vendorCode}/{mediaKind}",
+        "description": "Backend storage vendor asset TTL upsert. Reads none. Writes storage_vendor_asset_ttl and ops_audit_log.",
+        "parameters": [
+          {
+            "name": "vendorCode",
+            "in": "path",
+            "required": true,
+            "description": "Cloud-router provider vendor code, for example vidu or openai.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "mediaKind",
+            "in": "path",
+            "required": true,
+            "description": "Media kind: image, video or audio.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Typed request payload for vendorAssetTtl.update.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "ttlSeconds"
+                ],
+                "properties": {
+                  "ttlSeconds": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 1,
+                    "description": "Lifetime of generated assets for this vendor and media kind."
+                  },
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "default",
+                      "operator",
+                      "upstream"
+                    ],
+                    "default": "operator",
+                    "description": "Where the TTL came from; `operator` marks an explicit override."
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 512
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SdkWorkCommandResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-route-scope": "admin",
+        "x-contract-kind": "action",
+        "x-read-sources": [],
+        "x-write-tables": [
+          "storage_vendor_asset_ttl",
+          "ops_audit_log"
+        ],
+        "x-file-targets": [],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
+        "x-ui-route": "/admin/storage/generationDelivery",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
     }
   },
   "security": [
