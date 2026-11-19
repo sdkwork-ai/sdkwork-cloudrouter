@@ -11,3 +11,22 @@ include = ["snippets/adaptive-web.named-locations.conf", "snippets/gateway-api-l
 match = "/"
 include = ["snippets/adaptive-web.dispatch.conf"]
 
+# Development preview of the router console under the platform-dev.<brand>
+# family (tests/nginx/edge-parity battery contract). Served by the same
+# Adaptive Web named locations and dispatch as the router-dev family; TLS uses
+# the entrypoint-bootstrapped per-domain inventory certificate.
+[[http.server]]
+listen = ["80", "443 ssl"]
+serverName = ["platform-dev.birdcoder.com"]
+include = ["snippets/adaptive-web.named-locations.conf"]
+
+[http.server.tls]
+certFile = "/etc/sdkwork/certs/letsencrypt/platform-dev.birdcoder.com/fullchain.pem"
+certKeyFile = "/etc/sdkwork/certs/letsencrypt/platform-dev.birdcoder.com/privkey.pem"
+chainFile = "/etc/sdkwork/certs/letsencrypt/platform-dev.birdcoder.com/chain.pem"
+protocols = ["TLSv1.2", "TLSv1.3"]
+
+[[http.server.location]]
+match = "/"
+include = ["snippets/adaptive-web.dispatch.conf"]
+
