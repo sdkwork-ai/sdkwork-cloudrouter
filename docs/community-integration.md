@@ -107,6 +107,10 @@ Latest verified gates:
   payment-sheet login behavior.
 - Community route crates: 12 tests pass, including canonical snake_case query
   names and legacy camelCase aliases.
+- Paid join: PC accepts every settled sdkwork-order status
+  (`paid/succeeded/success/completed/fulfilled/finished`), and a pending order
+  is persisted in session storage so closing and reopening the dialog resumes
+  the same order instead of creating a duplicate.
 - Mini program: `pnpm _sdkwork:check`, 20 contract tests, 4 App API mapping
   tests, and the 14-page runtime build pass.
 - Flutter: `flutter analyze` reports no errors, the community widget/media
