@@ -174,6 +174,33 @@ pub async fn audit_identity_links(pg: &PgPool) -> anyhow::Result<IdentityLinkAud
             anchor: row.get("anchor"),
         });
     }
+
+    let decimal_orphans = sqlx::query(
+        "SELECT t.tenant_id, t.app_id AS iam_application_id, t.instance_key,
+                t.deploy_application_id AS anchor
+         FROM iam_tenant_application t
+         WHERE t.deploy_application_id IS NOT NULL
+           AND TRIM(t.deploy_application_id) <> ''
+           AND t.deploy_application_id ~ '^[0-9]+$'
+           AND NOT EXISTS (
+             SELECT 1 FROM deploy_app d
+             WHERE d.id::text = t.deploy_application_id
+               AND d.tenant_id::text = t.tenant_id
+               AND d.deleted_at IS NULL
+           )
+         ORDER BY t.tenant_id, t.app_id",
+    )
+    .fetch_all(pg)
+    .await?;
+    for row in decimal_orphans {
+        use sqlx::Row;
+        report.orphan_links.push(OrphanIdentityLink {
+            tenant_id: row.get("tenant_id"),
+            iam_application_id: row.get("iam_application_id"),
+            instance_key: row.get("instance_key"),
+            anchor: row.get("anchor"),
+        });
+    }
     Ok(report)
 }
 

@@ -72,7 +72,8 @@ both a decimal and a uuid installation for the same app are not cleaned.
 
 **Read-only audit available.** `cloudrouterctl audit-identities` prints
 `legacyLinks` (uuid anchor, no decimal duplicate yet), `duplicateLinks` (both
-anchors exist) and `orphanLinks` (anchor resolves to no deploy app).
+anchors exist) and `orphanLinks` (uuid **or** decimal anchor resolves to no
+deploy app).
 
 **Safe reconciliation available.** `cloudrouterctl reconcile-identities`
 defaults to a dry-run of the unambiguous `legacyLinks`; `--apply` calls the
