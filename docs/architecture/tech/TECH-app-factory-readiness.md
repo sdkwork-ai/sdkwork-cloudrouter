@@ -109,6 +109,10 @@ SDKWORK_DATABASE_TEST_POSTGRES_URL=postgres://postgres@127.0.0.1:55432/sdkwork_t
 SDKWORK_DATABASE_TEST_POSTGRES_URL=postgres://postgres@127.0.0.1:55432/sdkwork_test \
   cargo test -p sdkwork-deploy-refund-revocation-worker \
   --test refund_revocation_postgres -- --ignored
+# App-token refund gate against real SQL
+SDKWORK_DATABASE_TEST_POSTGRES_URL=postgres://postgres@127.0.0.1:55432/sdkwork_test \
+  cargo test -p sdkwork-deploy-app-token \
+  --test refund_revocation_postgres -- --ignored
 # Deploy identity mapping + service
 CARGO_TARGET_DIR=D:\crt cargo test -p sdkwork-deploy-identity-provisioning-port \
   -p sdkwork-intelligence-deploy-service --lib
