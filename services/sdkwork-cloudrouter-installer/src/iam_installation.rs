@@ -111,7 +111,8 @@ pub async fn ensure_iam_installation(
     let legacy_anchor = deploy_application_uuid.trim();
     if !legacy_anchor.is_empty() {
         if let Some(existing) =
-            resolve_tenant_application_by_deploy_application_id(pg, tenant_id, legacy_anchor).await?
+            resolve_tenant_application_by_deploy_application_id(pg, tenant_id, legacy_anchor)
+                .await?
         {
             let application = if existing.status == "enabled" {
                 existing
