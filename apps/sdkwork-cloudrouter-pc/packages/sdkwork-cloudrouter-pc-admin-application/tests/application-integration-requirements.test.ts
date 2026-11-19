@@ -189,12 +189,20 @@ describe("app-kind-aware validation", () => {
     ]));
   });
 
-  it("rejects payment on an API service and a non-lifecycle environment", () => {
+  it("rejects payment and channel bindings on an API service and a non-lifecycle environment", () => {
     const issues = validateApplicationIntegration({
       appKind: "API_SERVICE",
-      channelAccounts: [],
+      channelAccounts: [wechatOfficial],
       environment: "custom-prod",
       integration: {
+        officialAccount: {
+          appId: "wx-official",
+          displayName: "Official",
+          enabled: true,
+          id: "ra-official",
+          providerCode: "wechat",
+          resourceAccountKind: "official-account",
+        },
         paymentAccounts: [{
           accountMode: "direct",
           accountNo: "wechat-prod",
@@ -209,6 +217,7 @@ describe("app-kind-aware validation", () => {
     expect(issues).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: "environment-not-bindable", severity: "error" }),
       expect.objectContaining({ code: "payment-not-used-by-app-kind", severity: "error" }),
+      expect.objectContaining({ code: "account-not-used-by-app-kind", severity: "error" }),
     ]));
   });
 

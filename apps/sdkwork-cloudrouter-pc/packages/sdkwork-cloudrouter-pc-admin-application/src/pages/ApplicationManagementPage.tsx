@@ -892,17 +892,21 @@ export function ApplicationManagementPage({
             emptyTitle={listNarrowed ? messages.deployFilters.emptyTitle : messages.emptyTitle}
             getRowId={(item) => `${item.groupId}:${item.id}`}
             loading={activeState?.status === "loading"}
-            rowActions={(item) => (
-              <div data-application-row-actions>
-                <ApplicationRowActionsMenu
-                  canReadSource={item.groupId === "deploy" && canReadSource}
-                  messages={messages}
-                  onAccessToken={() => openAccessToken(item)}
-                  onIntegration={(kind) => openIntegration(item, kind)}
-                  onSource={() => setSourceTarget(item)}
-                />
-              </div>
-            )}
+            rowActions={(item) => {
+              const deployApplication = resolveDeployApplicationForRecord(item, deployApplications);
+              return (
+                <div data-application-row-actions>
+                  <ApplicationRowActionsMenu
+                    appKind={item.groupId === "deploy" ? item.kind : deployApplication?.kind}
+                    canReadSource={item.groupId === "deploy" && canReadSource}
+                    messages={messages}
+                    onAccessToken={() => openAccessToken(item)}
+                    onIntegration={(kind) => openIntegration(item, kind)}
+                    onSource={() => setSourceTarget(item)}
+                  />
+                </div>
+              );
+            }}
             rowActionsLabel={messages.columns.actions}
             rows={[...filteredItems]}
             slotProps={{

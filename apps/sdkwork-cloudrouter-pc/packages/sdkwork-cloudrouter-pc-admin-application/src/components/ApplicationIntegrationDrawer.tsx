@@ -51,6 +51,7 @@ import {
   evaluateApplicationIntegrationReadiness,
   INTEGRATION_REQUIREMENT_ORDER,
   isBindableEnvironmentKey,
+  matchesProviderPrefix,
   resolveApplicationIntegrationSurface,
   type ApplicationIntegrationReadiness,
   type ApplicationIntegrationReadinessStatus,
@@ -534,10 +535,14 @@ export function ApplicationIntegrationDrawer({
   }), [kind, pickerCopy]);
 
   const pickerSources = useMemo<readonly ScopeResourcePickerSource[]>(() => buildPickerSources({
-    channelItems: kind === "official-account" ? officialCatalog.items : miniProgramCatalog.items,
+    // A Douyin surface must not offer the tenant's WeChat mini programs only to
+    // reject them on save; the picker keeps the accounts the kind can act as.
+    channelItems: (kind === "official-account" ? officialCatalog.items : miniProgramCatalog.items)
+      .filter((item) => matchesProviderPrefix(item.providerCode, surface.channelProviderPrefixes)),
     kind,
     messages,
-    paymentItems: paymentCatalog.items,
+    paymentItems: paymentCatalog.items
+      .filter((item) => matchesProviderPrefix(item.providerCode, surface.paymentProviderPrefixes)),
     service,
   }), [
     kind,
@@ -546,6 +551,8 @@ export function ApplicationIntegrationDrawer({
     officialCatalog.items,
     paymentCatalog.items,
     service,
+    surface.channelProviderPrefixes,
+    surface.paymentProviderPrefixes,
   ]);
 
   const pickerInitialSelection = useMemo<readonly ScopeResourcePickerItem[]>(() => (

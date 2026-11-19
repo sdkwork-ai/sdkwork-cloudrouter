@@ -769,10 +769,16 @@ export function validateApplicationIntegration(
     .filter((channel): channel is ApplicationChannelAccountBinding => channel !== undefined);
   for (const channel of channels) {
     if (surface.channelKinds.length === 0) {
-      issues.push(issue("account-not-used-by-app-kind", "warning", {
-        account: channel.displayName || channel.appId,
-        surface: surface.id,
-      }));
+      issues.push(issue(
+        "account-not-used-by-app-kind",
+        // An API service can never act as a channel account; a native app with
+        // a stale channel binding is only a warning because it is harmless.
+        surface.id === "api" ? "error" : "warning",
+        {
+          account: channel.displayName || channel.appId,
+          surface: surface.id,
+        },
+      ));
     } else if (!surface.channelKinds.includes(channel.resourceAccountKind)) {
       issues.push(issue("account-not-used-by-app-kind", "error", {
         account: channel.displayName || channel.appId,

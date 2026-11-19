@@ -305,6 +305,26 @@ describe("application integration actions", () => {
     expect(await screen.findByText(/IAM 安装注册的应用类型是 pc/)).toBeTruthy();
   });
 
+  it("offers only the bindings an iOS app can use", async () => {
+    const iosApplication: ApplicationRecord = {
+      ...deployApplication,
+      id: "deploy-ios",
+      kind: "IOS_APP",
+      name: "iOS Storefront",
+      reference: "ios-storefront",
+    };
+    renderPage({ integrations: createIntegrationService(), loaders: createLoaders({ deploy: [iosApplication] }) });
+
+    await screen.findAllByText("iOS Storefront");
+    clickGroup("deploy");
+    await screen.findAllByText("iOS Storefront");
+    openAppConfigMenu();
+
+    expect(screen.getByRole("menuitem", { name: "支付配置" })).toBeTruthy();
+    expect(screen.queryByRole("menuitem", { name: "关联公众号账号" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "关联小程序账号" })).toBeNull();
+  });
+
   it("shows the environments from the Deploy app and the current binding status", async () => {
     const seeded: ApplicationRecord = {
       ...deployApplication,
