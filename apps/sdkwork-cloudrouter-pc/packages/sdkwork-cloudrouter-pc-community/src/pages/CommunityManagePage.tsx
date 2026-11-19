@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Copy, Loader2, Plus, Trash2 } from 'lucide-react';
@@ -14,6 +14,7 @@ import {
 import {
   CommunityService,
   ensureCommunityPcRuntime,
+  uploadCommunityImages,
   type Community,
   type CommunityGroup,
   type CommunityMember,
@@ -237,8 +238,14 @@ function ProfilePanel({ circle, onSaved }: { readonly circle: Community; readonl
       <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('communityUi.name')}</span><input value={name} onChange={(event) => setName(event.target.value)} className={inputClass} /></label>
       <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('communityUi.description')}</span><textarea rows={4} value={description} onChange={(event) => setDescription(event.target.value)} className={inputClass} /></label>
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('communityUi.cover')}</span><input value={coverImage} onChange={(event) => setCoverImage(event.target.value)} className={inputClass} /></label>
-        <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('communityUi.avatar')}</span><input value={avatar} onChange={(event) => setAvatar(event.target.value)} className={inputClass} /></label>
+        <div>
+          <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('communityUi.cover')}</span><input value={coverImage} onChange={(event) => setCoverImage(event.target.value)} className={inputClass} /></label>
+          <input type="file" accept="image/*" aria-label={t('communityUi.addImages')} className="mt-2 block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold dark:text-slate-400 dark:file:bg-slate-800 dark:file:text-slate-200" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadCommunityImages([file]).then(([uri]) => { if (uri) setCoverImage(uri); }); }} />
+        </div>
+        <div>
+          <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('communityUi.avatar')}</span><input value={avatar} onChange={(event) => setAvatar(event.target.value)} className={inputClass} /></label>
+          <input type="file" accept="image/*" aria-label={t('communityUi.addImages')} className="mt-2 block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold dark:text-slate-400 dark:file:bg-slate-800 dark:file:text-slate-200" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadCommunityImages([file]).then(([uri]) => { if (uri) setAvatar(uri); }); }} />
+        </div>
         <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('communityUi.tags')}</span><input value={tags} onChange={(event) => setTags(event.target.value)} className={inputClass} /></label>
         <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('communityUi.tabs')}</span><input value={tabs} onChange={(event) => setTabs(event.target.value)} className={inputClass} /></label>
         <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><input type="checkbox" checked={isPaid} onChange={(event) => setIsPaid(event.target.checked)} className="h-4 w-4" />{t('communityUi.paid')}</label>

@@ -255,7 +255,7 @@ export function CommunityDetailPage() {
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
               <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800">
                 <ImagePlus className="h-4 w-4" aria-hidden="true" />
-                {files.length > 0 ? `${files.length} / 4` : t('communityUi.cover')}
+                {files.length > 0 ? `${files.length} / 4` : t('communityUi.addImages')}
                 <input
                   type="file"
                   accept="image/*"

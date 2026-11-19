@@ -4,6 +4,7 @@ import {
   configureCommunityFeedsPort,
   configureCommunityMediaRuntimePort,
   configureCommunityRuntimePort,
+  getCommunityMediaRuntime,
   type Community,
   type CommunityGroup,
   type CommunityMember,
@@ -141,6 +142,12 @@ export async function activateCircleMembership(
   packageId: string,
 ): Promise<void> {
   await CommunityService.activateMembership(circleId, orderId, tierId, packageId);
+}
+
+/** Uploads circle/post images through the configured Drive media port. */
+export async function uploadCommunityImages(files: File[]): Promise<string[]> {
+  ensureCommunityPcRuntime();
+  return getCommunityMediaRuntime().uploadImages(files);
 }
 
 function createIdempotencyKey(): string {

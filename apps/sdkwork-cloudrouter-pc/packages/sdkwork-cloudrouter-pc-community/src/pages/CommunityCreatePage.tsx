@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { CommunityPage, CommunityPageHeader } from '../components/CommunityShell.tsx';
-import { CommunityService, ensureCommunityPcRuntime } from '../runtime.ts';
+import { CommunityService, ensureCommunityPcRuntime, uploadCommunityImages } from '../runtime.ts';
 
 function splitList(value: string): string[] {
   return value.split(/[,，]/u).map((item) => item.trim()).filter(Boolean);
@@ -93,6 +93,18 @@ export function CommunityCreatePage() {
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('communityUi.cover')}</span>
             <input value={coverImage} onChange={(event) => setCoverImage(event.target.value)} className={inputClass} />
+            <input
+              type="file"
+              accept="image/*"
+              className="mt-2 block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold dark:text-slate-400 dark:file:bg-slate-800 dark:file:text-slate-200"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                void uploadCommunityImages([file]).then(([uri]) => {
+                  if (uri) setCoverImage(uri);
+                });
+              }}
+            />
           </label>
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('communityUi.avatar')}</span>
