@@ -83,8 +83,10 @@ Electron, Tauri, Qt, Rust, Node, Go, Python.
 - A **paid** template install requires the settled `orderId`; Deploy verifies the
   order read-only against `commerce_order` (buyer, paid state, `app_template`
   subject, template UUID) and uses the order id as the app-create idempotency
-  key, so one purchase creates one app. The order fulfillment remains the only
-  writer of the paid install count.
+  key, so one purchase creates one app. The order center reads the scaffold
+  marketplace first and falls back to the legacy template catalog, so a
+  storefront listing can actually be purchased. The order fulfillment remains
+  the only writer of the paid install count.
 - **Still missing:** automatic refund/chargeback **cleanup** of the installed
   app. App-token issuance already refuses an app whose recorded order is
   refunded/reversed, and `cloudrouterctl revoke-refunded-apps --apply` archives
