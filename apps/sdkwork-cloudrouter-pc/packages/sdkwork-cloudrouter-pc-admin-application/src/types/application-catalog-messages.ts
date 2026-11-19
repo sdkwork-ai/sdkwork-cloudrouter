@@ -215,6 +215,10 @@ export interface ApplicationCatalogMessages {
     notReady: string;
     retryAction: string;
     retrying: string;
+    retryAll: string;
+    retryAllBusy: string;
+    retryAllSuccess: string;
+    retryAllFailed: string;
     success: string;
     failed: string;
   };

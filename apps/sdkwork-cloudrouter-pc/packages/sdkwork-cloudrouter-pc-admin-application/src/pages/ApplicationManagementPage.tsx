@@ -12,6 +12,7 @@ import {
   MessageCircle,
   RefreshCw,
   Search,
+  ShieldCheck,
   Smartphone,
   Store,
   type LucideIcon,
@@ -270,12 +271,16 @@ export function ApplicationManagementPage({
     { tone: "danger" | "success"; text: string } | null
   >(null);
   const [identityBusyId, setIdentityBusyId] = useState<string | null>(null);
+  const [identityBulkBusy, setIdentityBulkBusy] = useState(false);
 
   const activeGroup = activeView === "categories"
     ? undefined
     : (APPLICATION_GROUPS.find((group) => group.id === activeView) ?? APPLICATION_GROUPS[0]);
   const activeState = activeGroup ? groupStates[activeGroup.id] : undefined;
   const deployApplications = groupStates.deploy.items;
+  const identityRepairCandidates = deployApplications.filter(
+    (application) => application.identityStatus !== undefined && application.identityStatus !== "active",
+  );
 
   // The deploy filter lives in the URL so a filtered list survives a refresh or
   // a shared link. An organization drill-down already fixes the scope, so its
@@ -503,6 +508,41 @@ export function ApplicationManagementPage({
       setIdentityNotice({ text: messages.identity.failed, tone: "danger" });
     } finally {
       setIdentityBusyId(null);
+    }
+  };
+
+  const retryAllIdentities = async () => {
+    if (!canProvisionIdentity || identityBulkBusy || identityBusyId !== null) {
+      return;
+    }
+    const candidates = identityRepairCandidates;
+    if (candidates.length === 0) {
+      return;
+    }
+    setIdentityBulkBusy(true);
+    setIdentityNotice(null);
+    const service = createApplicationIdentityService();
+    let repaired = 0;
+    try {
+      for (const application of candidates) {
+        await service.provision(application.id);
+        repaired += 1;
+      }
+      setIdentityNotice({
+        text: messages.identity.retryAllSuccess.replace("{count}", String(repaired)),
+        tone: "success",
+      });
+      setReloadToken((token) => token + 1);
+    } catch {
+      setIdentityNotice({
+        text: messages.identity.retryAllFailed,
+        tone: "danger",
+      });
+      if (repaired > 0) {
+        setReloadToken((token) => token + 1);
+      }
+    } finally {
+      setIdentityBulkBusy(false);
     }
   };
 
@@ -782,10 +822,23 @@ export function ApplicationManagementPage({
             {subtitle ? <p className="truncate text-sm text-[var(--sdk-color-text-muted)]">{subtitle}</p> : null}
           </div>
         </div>
-        <Button disabled={busy} onClick={() => setReloadToken((token) => token + 1)} type="button" variant="outline">
-          <RefreshCw className={`h-4 w-4 ${busy ? "animate-spin" : ""}`} />
-          {messages.refresh}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {canProvisionIdentity && identityRepairCandidates.length > 0 ? (
+            <Button
+              disabled={busy || identityBulkBusy || identityBusyId !== null}
+              onClick={() => { void retryAllIdentities(); }}
+              type="button"
+              variant="outline"
+            >
+              <ShieldCheck className={`h-4 w-4 ${identityBulkBusy ? "animate-pulse" : ""}`} />
+              {identityBulkBusy ? messages.identity.retryAllBusy : messages.identity.retryAll}
+            </Button>
+          ) : null}
+          <Button disabled={busy} onClick={() => setReloadToken((token) => token + 1)} type="button" variant="outline">
+            <RefreshCw className={`h-4 w-4 ${busy ? "animate-spin" : ""}`} />
+            {messages.refresh}
+          </Button>
+        </div>
       </header>
       )}
 
