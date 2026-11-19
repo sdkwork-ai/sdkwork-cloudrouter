@@ -95,6 +95,8 @@ Electron, Tauri, Qt, Rust, Node, Go, Python.
 ## 5. Verified commands
 
 ```bash
+# Deploy full workspace (green 2026-11-20)
+CARGO_TARGET_DIR=D:\crt cargo test --workspace
 # Deploy identity mapping + service
 CARGO_TARGET_DIR=D:\crt cargo test -p sdkwork-deploy-identity-provisioning-port \
   -p sdkwork-intelligence-deploy-service --lib
