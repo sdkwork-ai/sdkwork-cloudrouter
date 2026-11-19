@@ -166,6 +166,13 @@ export type DeployAppTemplateIssueField =
   | "version"
   | "changelog";
 
+/** Result of installing one free, Git-backed template. */
+export interface DeployAppTemplateInstallResult {
+  appId: string;
+  appName: string;
+  templateUuid: string;
+}
+
 export interface DeployAppTemplateService {
   list(input?: {
     page?: number;
@@ -185,4 +192,13 @@ export interface DeployAppTemplateService {
     templateId: string,
     input: { version: string; changelog?: string },
   ): Promise<DeployAppTemplateVersion>;
+  /**
+   * Installs a free, Git-backed template as a new application.
+   * @param templateId - marketplace listing id.
+   * @param input - optional name/slug overrides.
+   */
+  install(
+    templateId: string,
+    input?: { name?: string; slug?: string },
+  ): Promise<DeployAppTemplateInstallResult>;
 }
