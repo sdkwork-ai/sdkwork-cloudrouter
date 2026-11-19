@@ -75,7 +75,9 @@ Electron, Tauri, Qt, Rust, Node, Go, Python.
   `metadata.template`.
 - **Still missing:** archive-backed template install (needs artifact sharing /
   re-attribution) and paid template installation (needs order/payment
-  entitlement at install time).
+  entitlement at install time). The Git install remixes the source app's
+  **current** Git declaration; pinning to the published template version needs
+  a version-owned source snapshot.
 
 ## 5. Verified commands
 
