@@ -24,6 +24,7 @@ import { readGenerationAssetConfigStubReplacement } from './scripts/lib/portal-g
 import { alignStandaloneSameOriginBrowserSdkRuntimeEnv, authorBrowserDevelopmentSdkBaseUrls, resolveCredentialEntryLifecycleFromMode } from '../../scripts/lib/cloud-router-browser-env-contract.mjs';
 import { WORKSPACE_SOURCE_RESOLVE_EXTENSIONS } from '../../scripts/lib/workspace-source-resolution.mjs';
 import { loadEnvFile } from '../../scripts/lib/merge-env-file.mjs';
+import { resolveCloudRouterBrowserDeployApplicationId } from '../../scripts/dev/cloud-router-application-env.mjs';
 
 const TYPESCRIPT_SOURCE_PATTERN = /\.(?:ts|tsx|mts|cts)$/;
 const SOURCE_MAP_PATTERN = /\n?\/\/# sourceMappingURL=.*$/;
@@ -723,18 +724,6 @@ function readPortalProfilePublicApplicationAccessToken(
   return processToken || undefined;
 }
 
-function readPortalManifestApplicationId(configDir: string): string | undefined {
-  try {
-    const manifest = JSON.parse(fs.readFileSync(path.join(configDir, 'agent.app.config.json'), 'utf8')) as {
-      backend?: { appId?: string };
-    };
-    const appId = manifest.backend?.appId?.trim();
-    return appId || undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 /**
  * Credential-entry handoff for one Vite mode.
  *
@@ -766,7 +755,17 @@ function createPortalCredentialEntryPlugins(
   return [
     createSdkworkPublicApplicationAccessTokenVitePlugin({
       accessToken: readPortalProfilePublicApplicationAccessToken(configDir, mode),
-      applicationId: readPortalManifestApplicationId(configDir),
+      // IAM makes the deploy application the identity of every access token
+      // (APP_ACCESS_TOKEN_SPEC.md): the token's `app_id`/`aud` is the per-surface
+      // deploy anchor (`SDKWORK_DEPLOY_APPLICATION_ID[_<SURFACE>]`), not the
+      // retired `backend.appId` slug. Resolve the same anchor the token generator
+      // uses (surface-scoped process env → override layer → profile layer) so
+      // this cross-check can never disagree with the issued token.
+      applicationId:
+        resolveCloudRouterBrowserDeployApplicationId({
+          deploymentProfile: mode.startsWith('cloud.') ? 'cloud' : 'standalone',
+          environment: lifecycle,
+        }) || undefined,
       environment: lifecycle,
       profileId: mode,
     }),

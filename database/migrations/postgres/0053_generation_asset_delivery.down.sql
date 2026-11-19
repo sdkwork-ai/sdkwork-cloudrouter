@@ -1,5 +1,5 @@
 -- sdkwork:migration
--- id: 0052_generation_asset_delivery
+-- id: 0053_generation_asset_delivery
 -- engine: postgres
 -- module: sdkwork-cloudrouter
 -- purpose: Reverse 0052_generation_asset_delivery.up.sql.
