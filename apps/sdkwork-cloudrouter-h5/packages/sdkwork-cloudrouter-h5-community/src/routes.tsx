@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import type { SdkworkConsoleLocale } from '@sdkwork/cloudrouter-h5-i18n';
 import { CLOUDROUTER_H5_ORDER_ROUTES } from '@sdkwork/cloudrouter-h5-orders/routes';
+import { CloudRouterOrdersI18nProvider } from '@sdkwork/cloudrouter-h5-orders';
 
 import { CommunityI18nProvider } from './i18n.js';
 
@@ -98,10 +99,12 @@ export function CommunityRoutes({ locale }: CommunityRoutesProps) {
           <Route
             path=":id/cashier/:orderId"
             element={
-              <CircleCashierBridge
-                orderCenterPath={CLOUDROUTER_H5_ORDER_ROUTES.orderCenter.path}
-                orderDetailPath={CLOUDROUTER_H5_ORDER_ROUTES.orderDetail.path}
-              />
+              <CloudRouterOrdersI18nProvider locale={locale}>
+                <CircleCashierBridge
+                  orderCenterPath={CLOUDROUTER_H5_ORDER_ROUTES.orderCenter.path}
+                  orderDetailPath={CLOUDROUTER_H5_ORDER_ROUTES.orderDetail.path}
+                />
+              </CloudRouterOrdersI18nProvider>
             }
           />
         </Routes>

@@ -21,6 +21,7 @@
   "dependencies": {
     "@sdkwork/cloudrouter-h5-core": "workspace:*",
     "@sdkwork/cloudrouter-h5-i18n": "workspace:*",
+    "@sdkwork/cloudrouter-h5-orders": "workspace:*",
     "@sdkwork/community-contracts": "workspace:*",
     "@sdkwork/community-mobile-react-community": "workspace:*",
     "@sdkwork/community-runtime": "workspace:*",
