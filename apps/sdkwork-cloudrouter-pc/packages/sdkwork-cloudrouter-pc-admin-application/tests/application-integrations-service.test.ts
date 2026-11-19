@@ -460,6 +460,56 @@ describe("authoritative resource-link transport", () => {
     expect(mocks.deployments.app.update).not.toHaveBeenCalled();
   });
 
+  it("does not record a migration when the authoritative binding write fails", async () => {
+    mocks.deployments.app.retrieve.mockResolvedValue({
+      metadata: {
+        integrations: {
+          schema: APPLICATION_INTEGRATION_SCHEMA,
+          linkedApplications: [],
+          environments: {
+            production: {
+              paymentAccounts: [{
+                id: "pay-1",
+                accountNo: "wechat-prod",
+                providerCode: "wechat_pay",
+                environment: "production",
+                accountMode: "direct",
+                isDefault: true,
+              }],
+            },
+          },
+        },
+      },
+    });
+    mocks.deployments.app.resourceLinks.list.mockResolvedValue({
+      items: [],
+      pageInfo: { hasMore: false },
+    });
+    mocks.deployments.app.resourceLinks.update.mockRejectedValue(new Error("service unavailable"));
+
+    const service = createApplicationIntegrationService();
+    await expect(service.save({
+      deployAppId: "deploy-1",
+      environments: [{
+        key: "production",
+        integration: {
+          paymentAccounts: [{
+            id: "pay-1",
+            accountNo: "wechat-prod",
+            providerCode: "wechat_pay",
+            environment: "production",
+            accountMode: "direct",
+            isDefault: true,
+          }],
+        },
+      }],
+    })).rejects.toThrow(/service unavailable/);
+
+    // The ledger must not hide the legacy row when the authority did not take
+    // the binding; a retry has to be able to seed it again.
+    expect(mocks.deployments.app.update).not.toHaveBeenCalled();
+  });
+
   it("does not resurrect a legacy environment after its bindings were cleared", async () => {
     const legacyDocument = {
       schema: APPLICATION_INTEGRATION_SCHEMA,

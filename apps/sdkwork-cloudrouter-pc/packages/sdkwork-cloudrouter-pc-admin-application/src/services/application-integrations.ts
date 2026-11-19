@@ -219,18 +219,15 @@ async function saveApplicationIntegration(
   }
   const migrated = new Set(currentDocument.migratedEnvironments ?? []);
   const pendingMigration = input.environments
-    .map((environment) => environment.key)
+    .map((environment) => environment.key.toLowerCase())
     .filter((key) => (
-      !migrated.has(key.toLowerCase())
+      !migrated.has(key)
       && Object.prototype.hasOwnProperty.call(currentDocument.environments, key)
     ));
   let nextMetadata = currentMetadata;
   if (input.linkedApplication) {
     const document = linkApplication(currentDocument, input.linkedApplication);
     nextMetadata = writeApplicationIntegrationAnchor(nextMetadata, document.linkedApplications);
-  }
-  if (pendingMigration.length > 0) {
-    nextMetadata = writeApplicationIntegrationMigration(nextMetadata, pendingMigration);
   }
   if (!sameMetadata(currentMetadata, nextMetadata)) {
     const updated = await client.app.update(input.deployAppId, { metadata: nextMetadata });
@@ -253,6 +250,18 @@ async function saveApplicationIntegration(
     }
     for (const deletion of changes.deletes) {
       await client.app.resourceLinks.delete(input.deployAppId, deletion.id);
+    }
+  }
+
+  // Record the migration only after the authoritative rows are durable. If a
+  // binding write failed above, the legacy row must stay seeded so the operator
+  // can retry instead of silently losing the configuration.
+  if (pendingMigration.length > 0) {
+    const withLedger = writeApplicationIntegrationMigration(metadata, pendingMigration);
+    if (!sameMetadata(metadata, withLedger)) {
+      const updated = await client.app.update(input.deployAppId, { metadata: withLedger });
+      metadata = asRecord(updated.metadata ?? withLedger);
+      updatedAt = updated.updatedAt;
     }
   }
 
