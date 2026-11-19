@@ -66,13 +66,14 @@ Electron, Tauri, Qt, Rust, Node, Go, Python.
   `POST /app/v3/api/marketplace/templates/{templateUuid}/install` creates an app
   of the template's source kind and copies the source app's Git remix
   declaration. The App Center template panel exposes it as **Create from
-  template** for `APP` + `FREE` + `PUBLISHED` listings.
+  template** for `APP` + `FREE` + `PUBLISHED` listings; the marketplace
+  storefront (Deploy console) calls it after a free acquire order is paid.
 - The template marketplace schema/repository (`deploy_application_scaffold*`)
-  and browse/authoring routes exist.
+  and browse/authoring routes exist. `install_count` increments on install.
 - **Still missing:** archive-backed template install (needs artifact sharing /
-  re-attribution), paid template installation (needs order/payment entitlement),
-  and install-count accounting. The install command refuses these cases rather
-  than creating an app it cannot deliver.
+  re-attribution), paid template installation (needs order/payment entitlement
+  at install time), and an idempotent install-count ledger (a retried install
+  currently increments the counter again even though the app create replays).
 
 ## 5. Verified commands
 
