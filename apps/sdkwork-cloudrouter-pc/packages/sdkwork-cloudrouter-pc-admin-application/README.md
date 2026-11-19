@@ -123,6 +123,12 @@ empty/error/permission state.
 
 ## Configuration & operational notes
 
+- Auto-login readiness validates the account a surface depends on (official
+  account for H5/PC, mini program for `wx.login`). The tenant-level URL-login and
+  scan-login switches remain in the IAM OAuth admin surface; they are not
+  per-application account bindings.
+- The list-row readiness chips sample the first configured environment; the
+  drawer evaluates the environment currently selected.
 - `VITE_SDKWORK_DEPLOYMENTS_BACKEND_API_BASE_URL` is required for template
   review and template-category writes. Missing configuration surfaces an
   explicit "service unavailable — verify the Deploy backend URL" message.
