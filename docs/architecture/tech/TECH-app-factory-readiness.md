@@ -62,12 +62,17 @@ Electron, Tauri, Qt, Rust, Node, Go, Python.
 - A local scaffold can be published today: any framework/language directory is
   detected, its build-output path is recorded in `metadata`, and the normal
   release/deploy path applies.
+- A **free, Git-backed template** can be installed as a new app:
+  `POST /app/v3/api/marketplace/templates/{templateUuid}/install` creates an app
+  of the template's source kind and copies the source app's Git remix
+  declaration. The App Center template panel exposes it as **Create from
+  template** for `APP` + `FREE` + `PUBLISHED` listings.
 - The template marketplace schema/repository (`deploy_application_scaffold*`)
   and browse/authoring routes exist.
-- **Missing:** an install/create-from-template write route and UI that creates a
-  new app from a template/version (source artifact or source app), handles
-  visibility/pricing entitlement, and increments `install_count`. This is a
-  blocker for the "one-click scaffold" commercial requirement.
+- **Still missing:** archive-backed template install (needs artifact sharing /
+  re-attribution), paid template installation (needs order/payment entitlement),
+  and install-count accounting. The install command refuses these cases rather
+  than creating an app it cannot deliver.
 
 ## 5. Verified commands
 
