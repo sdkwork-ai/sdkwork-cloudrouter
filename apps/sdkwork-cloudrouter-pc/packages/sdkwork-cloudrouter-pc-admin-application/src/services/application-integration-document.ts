@@ -815,13 +815,11 @@ export function validateApplicationIntegration(
       issues.push(issue("channel-unauthorized", "warning", { channel: channel.displayName }));
     }
     // The WeChat web OAuth callback (H5 login / PC scan / cashier) must land on
-    // a domain the official account has verified. The IAM catalog carries the
-    // verification state; a pending or failed domain breaks the callback even
-    // though the AppID/secret are correct.
+    // a domain the official account has verified. A mini program signs in with
+    // `wx.login` and does not use the web callback domain, so it is excluded.
     const domainExpectation = surface.id === "unknown"
       || surface.id === "h5"
       || surface.id === "pc"
-      || surface.id === "wechat-mini-program"
       || surface.id === "web-legacy";
     if (
       domainExpectation
