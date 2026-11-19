@@ -325,12 +325,13 @@ export interface ApplicationIntegrationService {
   ): Promise<ApplicationIntegrationBindings>;
   /**
    * Resolves the IAM tenant-application `applicationType` anchored on this
-   * Deploy application (`iam_application_installation.deploy_application_id`).
+   * Deploy application.
    *
-   * Optional and non-blocking: the drawer uses it for a cross-plane governance
-   * warning, never to gate a binding write.
+   * The argument is the **decimal** `deploy_application_id` IAM stores, not the
+   * public uuid. Optional and non-blocking: the drawer uses it for a
+   * cross-plane governance warning, never to gate a binding write.
    */
-  loadIamApplicationType?(deployAppId: string): Promise<string | undefined>;
+  loadIamApplicationType?(deployApplicationId: string): Promise<string | undefined>;
   save(input: ApplicationIntegrationSaveInput): Promise<ApplicationIntegrationSaveResult>;
 }
 

@@ -269,6 +269,7 @@ function mapDeployApplication(value: unknown): ApplicationRecord | undefined {
     // encoding, anything positive is an organization.
     ?? (organizationId && organizationId !== "0" ? "ORGANIZATION" : "TENANT");
   return {
+    deployApplicationId: optionalString(record.deployApplicationId),
     environment: optionalString(record.defaultEnvironment),
     groupId: "deploy",
     id,

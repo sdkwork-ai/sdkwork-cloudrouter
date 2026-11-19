@@ -231,8 +231,32 @@ describe("app-kind-aware validation", () => {
     });
     expect(issues).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: "auto-login-not-configured", severity: "warning" }),
+      expect.objectContaining({ code: "wechat-channel-missing", severity: "warning" }),
     ]));
     expect(issues.some((issue) => issue.severity === "error")).toBe(false);
+  });
+
+  it("does not require a JSAPI channel for PC native WeChat Pay", () => {
+    const issues = validateApplicationIntegration({
+      appKind: "PC_WEB",
+      channelAccounts: [],
+      environment: "production",
+      integration: {
+        paymentAccounts: [{
+          accountMode: "direct",
+          accountNo: "wechat-prod",
+          environment: "production",
+          id: "pay-wechat",
+          isDefault: true,
+          providerCode: "wechat_pay",
+        }],
+      },
+      paymentAccounts: [wechatPay],
+    });
+    // PC WeChat Pay uses the merchant open-platform AppID, not the official
+    // account AppID used for scan sign-in.
+    expect(issues.some((issue) => issue.code === "wechat-channel-missing")).toBe(false);
+    expect(issues.some((issue) => issue.code === "wechat-app-id-mismatch")).toBe(false);
   });
 
   it("warns when the IAM installation type disagrees with the Deploy app kind", () => {

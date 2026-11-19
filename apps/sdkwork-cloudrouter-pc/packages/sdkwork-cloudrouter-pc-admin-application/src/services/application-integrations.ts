@@ -152,7 +152,7 @@ export function createApplicationIntegrationService(): ApplicationIntegrationSer
         // An app that has not declared environments yet still has its default
         // environment; the fallback keeps the drawer usable.
       }
-      return fallbackEnvironment?.trim() ? [{ key: fallbackEnvironment.trim() }] : [];
+      return fallbackEnvironment?.trim() ? [{ key: fallbackEnvironment.trim().toLowerCase() }] : [];
     },
 
     async loadBindings(deployAppId, legacyMetadata) {
@@ -161,7 +161,7 @@ export function createApplicationIntegrationService(): ApplicationIntegrationSer
       return applicationIntegrationBindingsFromResourceLinks(links, legacyMetadata);
     },
 
-    async loadIamApplicationType(deployAppId) {
+    async loadIamApplicationType(deployApplicationId) {
       const tenantId = resolveStoredPortalTenantId();
       if (!tenantId) {
         return undefined;
@@ -173,7 +173,7 @@ export function createApplicationIntegrationService(): ApplicationIntegrationSer
       });
       const match = extractItems(payload)
         .map((item) => asRecord(item))
-        .find((item) => readString(item.deployApplicationId) === deployAppId);
+        .find((item) => readString(item.deployApplicationId) === deployApplicationId);
       return match ? readString(match.applicationType) : undefined;
     },
 
@@ -204,6 +204,19 @@ async function saveApplicationIntegration(
   let metadata = currentMetadata;
   let updatedAt = current.updatedAt;
   const currentDocument = readApplicationIntegrationDocument(currentMetadata);
+  const linkedApplication = input.linkedApplication;
+  if (linkedApplication) {
+    // The drawer filters candidates, but two operators can still race. A fresh
+    // read is the last point at which the one-to-one relation can be enforced
+    // before the link is written, so a conflicting row is refused instead of
+    // silently turning the anchor into a one-to-many.
+    const conflict = currentDocument.linkedApplications.find((link) => (
+      link.groupId === linkedApplication.groupId && link.id !== linkedApplication.id
+    ));
+    if (conflict) {
+      throw new Error("application-integration-anchor-conflict");
+    }
+  }
   const migrated = new Set(currentDocument.migratedEnvironments ?? []);
   const pendingMigration = input.environments
     .map((environment) => environment.key)
@@ -430,7 +443,7 @@ function mapPaymentAccount(value: unknown): ApplicationPaymentAccountOption | un
 
 function mapEnvironment(value: unknown): ApplicationEnvironmentOption | undefined {
   const record = asRecord(value);
-  const key = readString(record.envKey ?? record.env_key);
+  const key = readString(record.envKey ?? record.env_key)?.toLowerCase();
   if (!key) {
     return undefined;
   }

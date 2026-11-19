@@ -207,7 +207,7 @@ export function ApplicationIntegrationDrawer({
         loaded = await service.loadEnvironments(deployApplication.id, deployApplication.environment);
       } catch {
         environmentsFailed = true;
-        const fallback = deployApplication.environment?.trim();
+        const fallback = deployApplication.environment?.trim().toLowerCase();
         loaded = fallback ? [{ key: fallback }] : [];
       }
       let bindings: ApplicationIntegrationBindings | undefined;
@@ -231,7 +231,7 @@ export function ApplicationIntegrationDrawer({
         ...Object.keys(seedSource),
       ]);
       if (deployApplication.environment?.trim()) {
-        keys.add(deployApplication.environment.trim());
+        keys.add(deployApplication.environment.trim().toLowerCase());
       }
       const options = [...keys]
         .map((key) => loaded.find((environment) => environment.key === key) ?? { key })
@@ -259,13 +259,17 @@ export function ApplicationIntegrationDrawer({
   // the same endpoint. The lookup is optional and never blocks the drawer; a
   // missing installation simply omits the governance warning.
   useEffect(() => {
-    if (!service.loadIamApplicationType || !selectedDeployAppId) {
+    const deployApplication = deployApplications.find(
+      (candidate) => candidate.id === selectedDeployAppId,
+    );
+    const deployApplicationId = deployApplication?.deployApplicationId;
+    if (!service.loadIamApplicationType || !selectedDeployAppId || !deployApplicationId) {
       setIamApplicationType(undefined);
       return;
     }
     let cancelled = false;
     setIamApplicationType(undefined);
-    void service.loadIamApplicationType(selectedDeployAppId)
+    void service.loadIamApplicationType(deployApplicationId)
       .then((value) => {
         if (!cancelled) {
           setIamApplicationType(value);
@@ -279,7 +283,7 @@ export function ApplicationIntegrationDrawer({
     return () => {
       cancelled = true;
     };
-  }, [selectedDeployAppId, service]);
+  }, [deployApplications, selectedDeployAppId, service]);
 
   const selectedDeployApplication = deployApplications.find(
     (candidate) => candidate.id === selectedDeployAppId,
@@ -489,7 +493,11 @@ export function ApplicationIntegrationDrawer({
       onSaved(result);
       onClose();
     } catch (error: unknown) {
-      setSaveError(error);
+      if (error instanceof Error && error.message === "application-integration-anchor-conflict") {
+        setFormError(copy.drawer.anchor.conflict);
+      } else {
+        setSaveError(error);
+      }
       setSaving(false);
     }
   };
@@ -1347,7 +1355,7 @@ function preferredEnvironmentKey(
   if (current && environments.some((environment) => environment.key === current)) {
     return current;
   }
-  const normalizedFallback = fallback?.trim();
+  const normalizedFallback = fallback?.trim().toLowerCase();
   if (normalizedFallback && environments.some((environment) => environment.key === normalizedFallback)) {
     return normalizedFallback;
   }

@@ -251,6 +251,7 @@ export interface ApplicationCatalogMessages {
     };
     drawer: {
       anchor: {
+        conflict: string;
         description: string;
         linked: string;
         noDeployApps: string;

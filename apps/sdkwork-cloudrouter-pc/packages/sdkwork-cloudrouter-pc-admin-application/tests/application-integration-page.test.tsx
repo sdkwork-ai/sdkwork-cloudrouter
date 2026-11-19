@@ -27,6 +27,7 @@ afterEach(() => {
 });
 
 const deployApplication: ApplicationRecord = {
+  deployApplicationId: "410000000000000001",
   environment: "production",
   groupId: "deploy",
   id: "deploy-1",
@@ -298,7 +299,9 @@ describe("application integration actions", () => {
     expect(miniRequirement?.getAttribute("data-requirement-level")).toBe("required");
     expect(miniRequirement?.getAttribute("data-requirement-configured")).toBe("false");
     // The IAM installation is registered as `pc`; the drawer must surface the
-    // cross-plane mismatch instead of silently trusting one side.
+    // cross-plane mismatch instead of silently trusting one side. The lookup is
+    // keyed by the decimal `deploy_application_id`, not the public uuid.
+    expect(integrations.loadIamApplicationType).toHaveBeenCalledWith("410000000000000001");
     expect(await screen.findByText(/IAM 安装注册的应用类型是 pc/)).toBeTruthy();
   });
 

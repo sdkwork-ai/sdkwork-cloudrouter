@@ -280,6 +280,27 @@ describe("application integration transport", () => {
     }));
   });
 
+  it("refuses to link a Deploy app that another row of the same group already anchors", async () => {
+    mocks.deployments.app.retrieve.mockResolvedValue({
+      metadata: {
+        integrations: {
+          schema: APPLICATION_INTEGRATION_SCHEMA,
+          linkedApplications: [{ groupId: "iam", id: "iam-other" }],
+          environments: {},
+        },
+      },
+    });
+
+    const service = createApplicationIntegrationService();
+    await expect(service.save({
+      deployAppId: "deploy-1",
+      linkedApplication: { groupId: "iam", id: "iam-1" },
+      environments: [],
+    })).rejects.toThrow(/application-integration-anchor-conflict/);
+    expect(mocks.deployments.app.update).not.toHaveBeenCalled();
+    expect(mocks.deployments.app.resourceLinks.update).not.toHaveBeenCalled();
+  });
+
   it("refuses to overwrite an unknown future document version when linking", async () => {
     mocks.deployments.app.retrieve.mockResolvedValue({
       metadata: { integrations: { schema: "future/v9" } },

@@ -262,6 +262,7 @@ export const zh: ApplicationCatalogMessages = {
     },
     drawer: {
       anchor: {
+        conflict: "该 Deploy 应用已被同一应用体系的另一行占用，已有一对一关联。请刷新后改选其他 Deploy 应用。",
         description: "支付与渠道账号配置保存在 Deploy 应用上。请先为该应用选择一个 Deploy 应用作为配置载体。",
         linked: "已关联 Deploy 应用",
         noDeployApps: "当前没有可用的 Deploy 应用。请先加载 Deploy 应用分组或创建应用。",

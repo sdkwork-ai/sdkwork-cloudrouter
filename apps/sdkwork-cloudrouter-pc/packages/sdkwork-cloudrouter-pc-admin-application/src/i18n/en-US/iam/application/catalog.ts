@@ -262,6 +262,7 @@ export const en: ApplicationCatalogMessages = {
     },
     drawer: {
       anchor: {
+        conflict: "This Deploy application is already anchored to another row of the same application system. Refresh and choose a different Deploy application.",
         description: "Channel and payment bindings live on the Deploy application. Choose the Deploy application that should carry this application's configuration.",
         linked: "Deploy application linked",
         noDeployApps: "No Deploy application is available. Load the Deploy apps group or create an application first.",
