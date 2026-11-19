@@ -103,30 +103,56 @@ pub struct IdentityLinkAudit {
     pub orphan_links: Vec<OrphanIdentityLink>,
 }
 
+/// The installation table in this schema.
+///
+/// The current IAM schema names it `iam_application_installation`; older
+/// databases still carry `iam_tenant_application`. The audit supports both so
+/// it cannot silently fail on a renamed table.
+async fn identity_installation_table(pg: &PgPool) -> anyhow::Result<&'static str> {
+    let current: Option<String> =
+        sqlx::query_scalar("SELECT to_regclass('iam_application_installation')::text")
+            .fetch_one(pg)
+            .await?;
+    if current.is_some() {
+        return Ok("iam_application_installation");
+    }
+    let legacy: Option<String> =
+        sqlx::query_scalar("SELECT to_regclass('iam_tenant_application')::text")
+            .fetch_one(pg)
+            .await?;
+    if legacy.is_some() {
+        return Ok("iam_tenant_application");
+    }
+    Err(anyhow::Error::msg(
+        "neither iam_application_installation nor iam_tenant_application is visible",
+    ))
+}
+
 /// Audits legacy uuid-anchored IAM installations against the deploy app table.
 ///
 /// Read-only by contract: the installer prints the pairs and an operator
 /// decides whether to relink. It never deletes an installation, because the
 /// duplicate rows carry OAuth clients and audit history.
 pub async fn audit_identity_links(pg: &PgPool) -> anyhow::Result<IdentityLinkAudit> {
-    let rows = sqlx::query(
+    let table = identity_installation_table(pg).await?;
+    let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT t.tenant_id, t.app_id AS iam_application_id, t.instance_key,
                 t.deploy_application_id AS legacy_anchor,
                 d.uuid AS deploy_uuid, d.id::text AS canonical_anchor,
                 c.app_id AS canonical_iam_application_id
-         FROM iam_tenant_application t
+         FROM {table} t
          JOIN deploy_app d
            ON d.uuid = t.deploy_application_id
           AND d.tenant_id::text = t.tenant_id
           AND d.deleted_at IS NULL
-         LEFT JOIN iam_tenant_application c
+         LEFT JOIN {table} c
            ON c.tenant_id = t.tenant_id
           AND c.deploy_application_id = d.id::text
          WHERE t.deploy_application_id IS NOT NULL
            AND TRIM(t.deploy_application_id) <> ''
            AND t.deploy_application_id !~ '^[0-9]+$'
-         ORDER BY t.tenant_id, d.uuid",
-    )
+         ORDER BY t.tenant_id, d.uuid"
+    )))
     .fetch_all(pg)
     .await?;
 
@@ -149,10 +175,10 @@ pub async fn audit_identity_links(pg: &PgPool) -> anyhow::Result<IdentityLinkAud
         }
     }
 
-    let orphan_rows = sqlx::query(
+    let orphan_rows = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT t.tenant_id, t.app_id AS iam_application_id, t.instance_key,
                 t.deploy_application_id AS anchor
-         FROM iam_tenant_application t
+         FROM {table} t
          LEFT JOIN deploy_app d
            ON d.uuid = t.deploy_application_id
           AND d.tenant_id::text = t.tenant_id
@@ -161,8 +187,8 @@ pub async fn audit_identity_links(pg: &PgPool) -> anyhow::Result<IdentityLinkAud
            AND TRIM(t.deploy_application_id) <> ''
            AND t.deploy_application_id !~ '^[0-9]+$'
            AND d.id IS NULL
-         ORDER BY t.tenant_id, t.app_id",
-    )
+         ORDER BY t.tenant_id, t.app_id"
+    )))
     .fetch_all(pg)
     .await?;
     for row in orphan_rows {
@@ -175,10 +201,10 @@ pub async fn audit_identity_links(pg: &PgPool) -> anyhow::Result<IdentityLinkAud
         });
     }
 
-    let decimal_orphans = sqlx::query(
+    let decimal_orphans = sqlx::query(sqlx::AssertSqlSafe(format!(
         "SELECT t.tenant_id, t.app_id AS iam_application_id, t.instance_key,
                 t.deploy_application_id AS anchor
-         FROM iam_tenant_application t
+         FROM {table} t
          WHERE t.deploy_application_id IS NOT NULL
            AND TRIM(t.deploy_application_id) <> ''
            AND t.deploy_application_id ~ '^[0-9]+$'
@@ -188,8 +214,8 @@ pub async fn audit_identity_links(pg: &PgPool) -> anyhow::Result<IdentityLinkAud
                AND d.tenant_id::text = t.tenant_id
                AND d.deleted_at IS NULL
            )
-         ORDER BY t.tenant_id, t.app_id",
-    )
+         ORDER BY t.tenant_id, t.app_id"
+    )))
     .fetch_all(pg)
     .await?;
     for row in decimal_orphans {
@@ -287,13 +313,14 @@ pub async fn cleanup_duplicate_identity_links(
     if !apply {
         return Ok(report);
     }
+    let table = identity_installation_table(pg).await?;
     for link in &report.candidates {
-        let affected = sqlx::query(
-            "UPDATE iam_tenant_application
+        let affected = sqlx::query(sqlx::AssertSqlSafe(format!(
+            "UPDATE {table}
              SET status = 'disabled', updated_at = NOW()
              WHERE tenant_id = $1 AND app_id = $2
-               AND deploy_application_id = $3",
-        )
+               AND deploy_application_id = $3"
+        )))
         .bind(&link.tenant_id)
         .bind(&link.iam_application_id)
         .bind(&link.legacy_anchor)
