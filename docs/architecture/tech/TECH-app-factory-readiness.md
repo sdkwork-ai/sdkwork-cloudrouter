@@ -62,22 +62,24 @@ Electron, Tauri, Qt, Rust, Node, Go, Python.
 - A local scaffold can be published today: any framework/language directory is
   detected, its build-output path is recorded in `metadata`, and the normal
   release/deploy path applies.
-- A **free, Git-backed template** can be installed as a new app:
+- A **free template** can be installed as a new app:
   `POST /app/v3/api/marketplace/templates/{templateUuid}/install` creates an app
-  of the template's source kind and copies the source app's Git remix
-  declaration. The App Center template panel exposes it as **Create from
-  template** for `APP` + `FREE` + `PUBLISHED` listings; the marketplace
-  storefront (Deploy console) calls it after a free acquire order is paid.
+  of the template's source kind and copies the source. Git sources are remixed
+  as the source app's current declaration; archive sources use the published
+  version artifact, cloned under the installed app (same Drive node/checksum)
+  so the source belongs to that app. The App Center template panel exposes it
+  as **Create from template** for `APP` + `FREE` + `PUBLISHED` listings; the
+  marketplace storefront (Deploy console) calls it after a free acquire order
+  is paid.
 - The template marketplace schema/repository (`deploy_application_scaffold*`)
   and browse/authoring routes exist. `install_count` increments once per
   installed application (the `app.template.install` audit entry keys the
   idempotent replay), and the installed app records its template provenance in
   `metadata.template`.
-- **Still missing:** archive-backed template install (needs artifact sharing /
-  re-attribution) and paid template installation (needs order/payment
-  entitlement at install time). The Git install remixes the source app's
-  **current** Git declaration; pinning to the published template version needs
-  a version-owned source snapshot.
+- **Still missing:** paid template installation (needs order/payment
+  entitlement at install time). Git install remixes the source app's current
+  Git declaration; pinning to the published template version needs a
+  version-owned source snapshot.
 
 ## 5. Verified commands
 
