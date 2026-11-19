@@ -3,11 +3,16 @@ import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Loader2, X } from 'lucide-react';
 
 import {
+  clearPendingCircleOrder,
+  readPendingCircleOrder,
+  savePendingCircleOrder,
+  type PendingCircleOrder,
+} from '../pendingOrder.ts';
+import {
   CommunityService,
   activateCircleMembership,
   createCircleMembershipOrder,
   isCircleOrderPaid,
-  type CircleMembershipOrderResult,
   type Community,
   type MembershipTier,
 } from '../runtime.ts';
@@ -45,7 +50,7 @@ export function JoinCircleDialog({
   const [selectedTierId, setSelectedTierId] = useState(tiers[0]?.id ?? '');
   const [lifetime, setLifetime] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string>(PAYMENT_METHODS[0].id);
-  const [order, setOrder] = useState<CircleMembershipOrderResult | null>(null);
+  const [pendingOrder, setPendingOrder] = useState<PendingCircleOrder | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const activatedRef = useRef(false);
@@ -58,28 +63,50 @@ export function JoinCircleDialog({
     : selectedTier?.catalogPackageId;
   const price = useLifetime ? selectedTier?.lifetimePrice : selectedTier?.price;
 
-  const finishActivation = async (currentOrder: CircleMembershipOrderResult) => {
-    if (!selectedTier || !packageId || activatedRef.current) {
+  const finishActivation = async (current: PendingCircleOrder) => {
+    if (activatedRef.current) {
       return;
     }
-    if (!(await isCircleOrderPaid(currentOrder.orderId))) {
+    if (!(await isCircleOrderPaid(current.order.orderId))) {
       return;
     }
     activatedRef.current = true;
-    await activateCircleMembership(circle.id, currentOrder.orderId, selectedTier.id, packageId);
+    await activateCircleMembership(
+      circle.id,
+      current.order.orderId,
+      current.tierId,
+      current.packageId,
+    );
+    clearPendingCircleOrder(circle.id);
     onJoined();
   };
+
+  // A paid join can outlive the dialog (cashier opened in another tab). Resume
+  // the same order and its tier/package when the dialog reopens instead of
+  // creating a second order and leaving the first payment unclaimed.
+  useEffect(() => {
+    if (!open || pendingOrder) {
+      return;
+    }
+    const stored = readPendingCircleOrder(circle.id);
+    if (!stored) {
+      return;
+    }
+    setPendingOrder(stored);
+    setSelectedTierId(stored.tierId);
+    setLifetime(stored.lifetime);
+  }, [circle.id, open, pendingOrder]);
 
   // Poll the order while the dialog stays open so a cashier opened in another
   // tab completes the membership as soon as the payment settles.
   useEffect(() => {
-    if (!order || !open) {
+    if (!pendingOrder || !open) {
       return undefined;
     }
     let cancelled = false;
     const tick = () => {
       if (cancelled || activatedRef.current) return;
-      void finishActivation(order).catch(() => {
+      void finishActivation(pendingOrder).catch(() => {
         if (!cancelled) setError(t('communityUi.activateFailed'));
       });
     };
@@ -90,7 +117,7 @@ export function JoinCircleDialog({
       clearInterval(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [order, open, selectedTierId, lifetime]);
+  }, [pendingOrder, open, selectedTierId, lifetime]);
 
   useEffect(() => {
     if (!supportsLifetime) setLifetime(false);
@@ -128,7 +155,14 @@ export function JoinCircleDialog({
         isLifetime: useLifetime,
         paymentMethod,
       });
-      setOrder(created);
+      const pending: PendingCircleOrder = {
+        order: created,
+        tierId: selectedTier.id,
+        packageId,
+        lifetime: useLifetime,
+      };
+      savePendingCircleOrder(circle.id, pending);
+      setPendingOrder(pending);
     } catch {
       setError(t('communityUi.orderFailed'));
     } finally {
@@ -137,11 +171,11 @@ export function JoinCircleDialog({
   };
 
   const confirmPayment = async () => {
-    if (!order) return;
+    if (!pendingOrder) return;
     setBusy(true);
     setError('');
     try {
-      await finishActivation(order);
+      await finishActivation(pendingOrder);
       if (!activatedRef.current) {
         setError(t('communityUi.activateFailed'));
       }
@@ -178,13 +212,13 @@ export function JoinCircleDialog({
               {busy ? <Loader2 className="mx-auto h-4 w-4 animate-spin" aria-hidden="true" /> : t('communityUi.join')}
             </button>
           </div>
-        ) : order ? (
+        ) : pendingOrder ? (
           <div className="space-y-4">
             <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-              {t('communityUi.orderCreated', { orderNo: order.orderNo })}
+              {t('communityUi.orderCreated', { orderNo: pendingOrder.order.orderNo })}
             </p>
             <div className="flex flex-wrap gap-2">
-              <a href={order.cashierUrl || `/cashier/${encodeURIComponent(order.orderId)}`} className="inline-flex items-center justify-center rounded-xl bg-lobster-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-lobster-600">
+              <a href={pendingOrder.order.cashierUrl || `/cashier/${encodeURIComponent(pendingOrder.order.orderId)}`} className="inline-flex items-center justify-center rounded-xl bg-lobster-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-lobster-600">
                 {t('communityUi.openCashier')}
               </a>
               <button type="button" onClick={() => void confirmPayment()} disabled={busy} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">

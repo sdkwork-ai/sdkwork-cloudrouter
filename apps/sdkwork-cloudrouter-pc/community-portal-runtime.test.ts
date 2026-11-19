@@ -65,6 +65,7 @@ test('the community runtime uses generated SDK ports and never raw HTTP', () => 
   assert.match(runtime, /memberships\.orders\.create/u);
   assert.match(runtime, /createDriveUploadImageService/u);
   assert.match(runtime, /isCircleOrderPaid/u);
+  assert.match(runtime, /isPaidCircleOrderStatus/u);
   assert.match(runtime, /resolveCommunityResourceUrl/u);
   assert.doesNotMatch(runtime, /\bfetch\s*\(/u);
   assert.doesNotMatch(runtime, /axios/u);
@@ -84,6 +85,8 @@ test('the portal exposes the complete publish, moderation, and group flows', () 
   assert.match(join, /isCircleOrderPaid/u);
   assert.match(join, /lifetime/u);
   assert.match(join, /PAYMENT_POLL_INTERVAL_MS/u);
+  assert.match(join, /readPendingCircleOrder/u);
+  assert.match(join, /savePendingCircleOrder/u);
 
   const manage = readPackage('src/pages/CommunityManagePage.tsx');
   assert.match(manage, /QRCode\.toDataURL/u);
