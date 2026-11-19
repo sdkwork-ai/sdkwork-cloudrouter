@@ -203,8 +203,12 @@ function MainLayout({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () 
           <Route path="/partner-join/apply" element={<PartnerJoinApply />} />
           <Route path="/partner-join/status" element={<PartnerJoinStatus />} />
           {/* Community (圈子社群) — public discovery plus signed-in circle
-              workspace and owner management pages. */}
-          <CommunityPortalRoutes />
+              workspace and owner management pages. Invoked, not rendered: its
+              `<Route>` children must be literal children of this `<Routes>`
+              block, and React Router rejects any other element type here
+              ("is not a <Route> component"). Same contract as
+              `CloudRouterConsoleBusinessHostRoutes()` below. */}
+          {CommunityPortalRoutes()}
           <Route
             path="/docs"
             element={

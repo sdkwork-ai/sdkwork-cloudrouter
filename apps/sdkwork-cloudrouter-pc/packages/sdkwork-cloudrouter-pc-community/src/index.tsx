@@ -9,8 +9,15 @@ import { CommunityManagePage } from './pages/CommunityManagePage.tsx';
 /**
  * Portal route contributions for the community workspace.
  *
- * Rendered inside the portal shell's `<Routes>` block (see
- * `AppShellLayout` `extraRoutes`), so every path is absolute and deep-linkable.
+ * Contributed as `<Route>` children of the portal shell's `<Routes>` block
+ * (see `AppShellLayout` `extraRoutes`), so every path is absolute and
+ * deep-linkable.
+ *
+ * The host mounts these as `{CommunityPortalRoutes()}`, NOT as
+ * `<CommunityPortalRoutes />`: React Router only accepts `<Route>` and
+ * `<React.Fragment>` element children, so a component wrapper is rejected at
+ * render time ("is not a <Route> component"). For the same reason this
+ * function must stay hook-free — it is called during the host's render.
  */
 export function CommunityPortalRoutes() {
   return (

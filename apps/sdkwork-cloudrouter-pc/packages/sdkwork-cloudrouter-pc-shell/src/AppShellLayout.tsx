@@ -22,7 +22,16 @@ export type AppShellLayoutProps = AppShellRouteProps & {
   Playground: ComponentType;
   TokenPlan: ComponentType;
   navbarAuthenticatedActionsStart?: ReactNode;
-  /** Host-owned extra portal routes rendered inside the shell layout. */
+  /**
+   * Host-owned extra portal routes rendered inside the shell layout.
+   *
+   * These land inside the shell's `<Routes>`, which only accepts `<Route>` and
+   * `<React.Fragment>` element children — React Router throws
+   * "[X] is not a <Route> component" for anything else. A route package that
+   * returns route elements therefore has to be invoked
+   * (`{CommunityPortalRoutes()}`) or inlined, never mounted as
+   * `<RouteContributions />`.
+   */
   extraRoutes?: ReactNode;
 };
 

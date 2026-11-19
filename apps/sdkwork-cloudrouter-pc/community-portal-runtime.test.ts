@@ -21,7 +21,12 @@ function readPackage(relativePath) {
 test('the portal mounts the complete community route workspace', () => {
   const app = read('src/App.tsx');
   assert.match(app, /@sdkwork\/cloudrouter-pc-community/u);
-  assert.match(app, /<CommunityPortalRoutes \/>/u);
+  // React Router's `createRoutesFromChildren` only accepts `<Route>` and
+  // `<React.Fragment>` element children, so the contribution is invoked as a
+  // function; rendering it as `<CommunityPortalRoutes />` throws
+  // "[CommunityPortalRoutes] is not a <Route> component" for every portal page.
+  assert.match(app, /\{CommunityPortalRoutes\(\)\}/u);
+  assert.doesNotMatch(app, /<CommunityPortalRoutes\s*\/>/u);
 
   const routes = readPackage('src/index.tsx');
   for (const route of [
@@ -34,6 +39,29 @@ test('the portal mounts the complete community route workspace', () => {
   ]) {
     assert.ok(routes.includes(route), `portal route ${route} is mounted`);
   }
+});
+
+test('React Router accepts the community contribution as <Routes> children', async () => {
+  // The shell places `extraRoutes` inside its `<Routes>` block, and
+  // `createRoutesFromChildren` rejects every child that is not a `<Route>` or
+  // `<React.Fragment>`. This pins the router contract itself, so a regression
+  // cannot hide behind a passing source-shape assertion.
+  const { createRoutesFromChildren } = await import('react-router-dom');
+  const { CommunityPortalRoutes } = await import('@sdkwork/cloudrouter-pc-community');
+
+  const routes = createRoutesFromChildren(CommunityPortalRoutes());
+
+  assert.deepEqual(
+    routes.map((route) => route.path),
+    [
+      '/community',
+      '/community/new',
+      '/community/mine',
+      '/community/:circleId',
+      '/community/:circleId/manage',
+      '/community/:circleId/post/:entryId',
+    ],
+  );
 });
 
 test('the portal navigation exposes the community entry', () => {
