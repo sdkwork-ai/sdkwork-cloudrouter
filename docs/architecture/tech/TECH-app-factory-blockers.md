@@ -81,6 +81,12 @@ endpoint, and record the image/release ids.
 uuid only when it is the single installation. Databases that already contain
 both a decimal and a uuid installation for the same app are not cleaned.
 
+**Read-only audit available.** `cloudrouterctl audit-identities` prints
+`legacyLinks` (uuid anchor, no decimal duplicate yet), `duplicateLinks` (both
+anchors exist) and `orphanLinks` (anchor resolves to no deploy app). It never
+writes. Operators collect that report first; the cleanup itself still needs a
+reviewed maintenance action.
+
 **Required contract.** An operator-run audit that enumerates the duplicate
 pairs and a reviewed cleanup (disable/remove the uuid orphan) with an audit
 trail. This needs a database review and a maintenance window policy.

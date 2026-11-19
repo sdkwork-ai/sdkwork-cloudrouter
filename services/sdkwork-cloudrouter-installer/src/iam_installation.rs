@@ -71,6 +71,112 @@ pub struct EnsuredInstallation {
     pub created: bool,
 }
 
+/// One legacy IAM installation whose anchor is still the deploy uuid.
+#[derive(Clone, Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LegacyIdentityLink {
+    pub tenant_id: String,
+    pub iam_application_id: String,
+    pub instance_key: String,
+    pub legacy_anchor: String,
+    pub deploy_uuid: String,
+    pub canonical_anchor: String,
+    pub canonical_iam_application_id: Option<String>,
+}
+
+/// One anchor that no deploy application resolves.
+#[derive(Clone, Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OrphanIdentityLink {
+    pub tenant_id: String,
+    pub iam_application_id: String,
+    pub instance_key: String,
+    pub anchor: String,
+}
+
+/// Read-only IAM ↔ Deploy identity reconciliation report.
+#[derive(Clone, Debug, Default, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IdentityLinkAudit {
+    pub legacy_links: Vec<LegacyIdentityLink>,
+    pub duplicate_links: Vec<LegacyIdentityLink>,
+    pub orphan_links: Vec<OrphanIdentityLink>,
+}
+
+/// Audits legacy uuid-anchored IAM installations against the deploy app table.
+///
+/// Read-only by contract: the installer prints the pairs and an operator
+/// decides whether to relink. It never deletes an installation, because the
+/// duplicate rows carry OAuth clients and audit history.
+pub async fn audit_identity_links(pg: &PgPool) -> anyhow::Result<IdentityLinkAudit> {
+    let rows = sqlx::query(
+        "SELECT t.tenant_id, t.app_id AS iam_application_id, t.instance_key,
+                t.deploy_application_id AS legacy_anchor,
+                d.uuid AS deploy_uuid, d.id::text AS canonical_anchor,
+                c.app_id AS canonical_iam_application_id
+         FROM iam_tenant_application t
+         JOIN deploy_app d
+           ON d.uuid = t.deploy_application_id
+          AND d.tenant_id::text = t.tenant_id
+          AND d.deleted_at IS NULL
+         LEFT JOIN iam_tenant_application c
+           ON c.tenant_id = t.tenant_id
+          AND c.deploy_application_id = d.id::text
+         WHERE t.deploy_application_id IS NOT NULL
+           AND TRIM(t.deploy_application_id) <> ''
+           AND t.deploy_application_id !~ '^[0-9]+$'
+         ORDER BY t.tenant_id, d.uuid",
+    )
+    .fetch_all(pg)
+    .await?;
+
+    let mut report = IdentityLinkAudit::default();
+    for row in rows {
+        use sqlx::Row;
+        let link = LegacyIdentityLink {
+            tenant_id: row.get("tenant_id"),
+            iam_application_id: row.get("iam_application_id"),
+            instance_key: row.get("instance_key"),
+            legacy_anchor: row.get("legacy_anchor"),
+            deploy_uuid: row.get("deploy_uuid"),
+            canonical_anchor: row.get("canonical_anchor"),
+            canonical_iam_application_id: row.get("canonical_iam_application_id"),
+        };
+        if link.canonical_iam_application_id.is_some() {
+            report.duplicate_links.push(link);
+        } else {
+            report.legacy_links.push(link);
+        }
+    }
+
+    let orphan_rows = sqlx::query(
+        "SELECT t.tenant_id, t.app_id AS iam_application_id, t.instance_key,
+                t.deploy_application_id AS anchor
+         FROM iam_tenant_application t
+         LEFT JOIN deploy_app d
+           ON d.uuid = t.deploy_application_id
+          AND d.tenant_id::text = t.tenant_id
+          AND d.deleted_at IS NULL
+         WHERE t.deploy_application_id IS NOT NULL
+           AND TRIM(t.deploy_application_id) <> ''
+           AND t.deploy_application_id !~ '^[0-9]+$'
+           AND d.id IS NULL
+         ORDER BY t.tenant_id, t.app_id",
+    )
+    .fetch_all(pg)
+    .await?;
+    for row in orphan_rows {
+        use sqlx::Row;
+        report.orphan_links.push(OrphanIdentityLink {
+            tenant_id: row.get("tenant_id"),
+            iam_application_id: row.get("iam_application_id"),
+            instance_key: row.get("instance_key"),
+            anchor: row.get("anchor"),
+        });
+    }
+    Ok(report)
+}
+
 /// Ensures the IAM installation of a deploy application exists and is enabled.
 ///
 /// `deploy_application_id` is the canonical decimal anchor deploy's

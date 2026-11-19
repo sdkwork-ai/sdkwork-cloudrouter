@@ -409,6 +409,17 @@ async fn run_command(
     database_config: &DatabaseConfig,
 ) -> anyhow::Result<()> {
     match command {
+        InstallerCommand::AuditIdentities => {
+            let database_pool = connect_installer_database_pool(database_config).await?;
+            let sdkwork_database_sqlx::DatabasePool::Postgres(pg, _) = &database_pool else {
+                return Err(InstallerCliError::InvalidArgument(
+                    "audit-identities requires the PostgreSQL installer database".to_owned(),
+                )
+                .into());
+            };
+            let report = iam_installation::audit_identity_links(pg).await?;
+            print_json(&report)?;
+        }
         InstallerCommand::Status => {
             let report = installer.status_report().await?;
             print_json(&InstallationStatusOutput::from(report))?;
@@ -469,6 +480,7 @@ enum InstallerCommand {
     Restore(backup::RestoreOptions),
     ResetAdmin(ResetAdminOptions),
     IssueBootstrapToken(IssueBootstrapTokenOptions),
+    AuditIdentities,
 }
 
 #[derive(Debug, Default)]
@@ -514,6 +526,10 @@ where
         "reset-admin" => InstallerCommand::ResetAdmin(parse_reset_admin_options(args)?),
         "issue-bootstrap-token" => {
             InstallerCommand::IssueBootstrapToken(parse_issue_bootstrap_token_options(args)?)
+        }
+        "audit-identities" => {
+            reject_extra_args("audit-identities", args)?;
+            InstallerCommand::AuditIdentities
         }
         other => {
             return Err(InstallerCliError::InvalidArgument(format!(
@@ -1002,7 +1018,8 @@ impl InstallerCommand {
             | Self::Backup(_)
             | Self::Restore(_)
             | Self::ResetAdmin(_)
-            | Self::IssueBootstrapToken(_) => false,
+            | Self::IssueBootstrapToken(_)
+            | Self::AuditIdentities => false,
         }
     }
 }
