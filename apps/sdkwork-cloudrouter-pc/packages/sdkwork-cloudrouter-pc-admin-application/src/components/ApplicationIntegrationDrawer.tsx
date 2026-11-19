@@ -311,6 +311,9 @@ export function ApplicationIntegrationDrawer({
   );
   const environmentBindable = isBindableEnvironmentKey(environmentKey);
   const currentValidation = useMemo(() => {
+    if (!selectedDeployAppId) {
+      return [];
+    }
     if (!allCatalogsReady(paymentCatalog, officialCatalog, miniProgramCatalog, bindingsStatus)) {
       return [];
     }
@@ -333,6 +336,7 @@ export function ApplicationIntegrationDrawer({
     miniProgramCatalog,
     officialCatalog,
     paymentCatalog,
+    selectedDeployAppId,
   ]);
 
   const changedEnvironmentKeys = useMemo(

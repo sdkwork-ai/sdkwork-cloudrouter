@@ -58,6 +58,8 @@ const CHANNEL_PAGE_SIZE = 200;
 const RESOURCE_LINK_PAGE_SIZE = 200;
 /** Hard bound on the page walk so a broken cursor cannot spin forever. */
 const RESOURCE_LINK_MAX_PAGES = 20;
+/** Bound on the IAM installation page walk used for the cross-plane type check. */
+const IAM_APP_TYPE_MAX_PAGES = 5;
 
 let defaultIntegrationService: ApplicationIntegrationService | null = null;
 
@@ -167,14 +169,22 @@ export function createApplicationIntegrationService(): ApplicationIntegrationSer
         return undefined;
       }
       const service = getApplicationCatalogIamService();
-      const payload = await service.iam.tenantApplications.list(tenantId, {
-        page: 1,
-        page_size: CHANNEL_PAGE_SIZE,
-      });
-      const match = extractItems(payload)
-        .map((item) => asRecord(item))
-        .find((item) => readString(item.deployApplicationId) === deployApplicationId);
-      return match ? readString(match.applicationType) : undefined;
+      for (let page = 1; page <= IAM_APP_TYPE_MAX_PAGES; page += 1) {
+        const payload = await service.iam.tenantApplications.list(tenantId, {
+          page,
+          page_size: CHANNEL_PAGE_SIZE,
+        });
+        const match = extractItems(payload)
+          .map((item) => asRecord(item))
+          .find((item) => readString(item.deployApplicationId) === deployApplicationId);
+        if (match) {
+          return readString(match.applicationType);
+        }
+        if (!readHasMore(payload)) {
+          break;
+        }
+      }
+      return undefined;
     },
 
     async save(input) {
