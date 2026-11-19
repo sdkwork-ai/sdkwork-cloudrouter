@@ -574,6 +574,26 @@ fn build_portal_runtime_env_script(
     if let Some(value) = &runtime_env.appbase_backend_api_base_url {
         payload["VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL"] = json!(value);
     }
+    // The browser renderer presents this installation's deploy application as its
+    // IAM app identity (`resolveCloudRouterDeployApplicationId` in
+    // packages/sdkwork-cloudroutes-pc-commons), and it fails closed when the
+    // document omits the key. A packaged build cannot carry the id (it is
+    // assigned per installation), so the runtime document is the only carrier
+    // (APP_ACCESS_TOKEN_SPEC.md section 5, APPLICATION_FACTORY_DEPLOYMENT_SPEC.md
+    // section 11). Fail closed by omission: the retired IAM runtime app id is
+    // never substituted.
+    match sdkwork_cloudrouter_config::resolve_deploy_application_id() {
+        Ok(deploy_application_id) => {
+            payload["VITE_SDKWORK_DEPLOY_APPLICATION_ID"] = json!(deploy_application_id);
+        }
+        Err(_) => {
+            tracing::warn!(
+                "portal runtime env omits VITE_SDKWORK_DEPLOY_APPLICATION_ID: set {} to this \
+                 installation's deploy application id so the renderer can present it to IAM",
+                sdkwork_cloudrouter_config::DEPLOY_APPLICATION_ID_ENV,
+            );
+        }
+    }
     let serialized = payload
         .to_string()
         .replace('<', "\\u003C")

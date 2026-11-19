@@ -142,6 +142,17 @@ function clickGroup(groupId: ApplicationGroupId): void {
   fireEvent.click(element as Element);
 }
 
+function openAppConfigMenu(): void {
+  const trigger = screen.getAllByRole("button", { name: "应用配置" })[0];
+  fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false, pointerType: "mouse" });
+  fireEvent.click(trigger);
+}
+
+function chooseAppConfigAction(action: string): void {
+  openAppConfigMenu();
+  fireEvent.click(screen.getByRole("menuitem", { name: action }));
+}
+
 describe("application integration actions", () => {
   it("binds a payment account from the Deploy row and shows the summary chip", async () => {
     const integrations = createIntegrationService();
@@ -151,11 +162,13 @@ describe("application integration actions", () => {
     clickGroup("deploy");
     await screen.findAllByText("Storefront");
 
-    expect(screen.getByRole("button", { name: "支付配置" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "关联小程序账号" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "关联公众号账号" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "应用配置" })).toBeTruthy();
+    openAppConfigMenu();
+    expect(screen.getByRole("menuitem", { name: "支付配置" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "关联小程序账号" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "关联公众号账号" })).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "支付配置" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "支付配置" }));
     expect(integrations.loadPaymentAccounts).toHaveBeenCalledTimes(1);
 
     fireEvent.click(await screen.findByRole("button", { name: "添加支付账号" }));
@@ -190,7 +203,7 @@ describe("application integration actions", () => {
     clickGroup("deploy");
     await screen.findAllByText("Storefront");
 
-    fireEvent.click(screen.getByRole("button", { name: "关联公众号账号" }));
+    chooseAppConfigAction("关联公众号账号");
     fireEvent.click(await screen.findByRole("button", { name: "选择账号" }));
     fireEvent.click(await screen.findByRole("tab", { name: "租户" }));
     fireEvent.click(await screen.findByRole("option", { name: /Acme Official/ }));
@@ -207,7 +220,7 @@ describe("application integration actions", () => {
     clickGroup("deploy");
     await screen.findAllByText("Storefront");
 
-    fireEvent.click(screen.getByRole("button", { name: "关联小程序账号" }));
+    chooseAppConfigAction("关联小程序账号");
     fireEvent.click(await screen.findByRole("button", { name: "选择账号" }));
     fireEvent.click(await screen.findByRole("tab", { name: "租户" }));
     fireEvent.click(await screen.findByRole("option", { name: /Acme Mini/ }));
@@ -237,7 +250,7 @@ describe("application integration actions", () => {
     // A store row has no deploy anchor of its own, so the drawer must ask for one.
     clickGroup("app-store");
     await screen.findAllByText("Store App");
-    fireEvent.click(screen.getByRole("button", { name: "支付配置" }));
+    chooseAppConfigAction("支付配置");
 
     expect(await screen.findByText("关联 Deploy 应用")).toBeTruthy();
     expect(screen.getByText("选择 Deploy 应用")).toBeTruthy();
@@ -289,7 +302,7 @@ describe("application integration actions", () => {
     expect(document.querySelector("[data-application-integration-summary]")?.textContent)
       .toContain("小程序");
 
-    fireEvent.click(screen.getByRole("button", { name: "支付配置" }));
+    chooseAppConfigAction("支付配置");
     expect(await screen.findByText("已绑定支付账号")).toBeTruthy();
     expect(screen.getByText("WeChat Pay Production")).toBeTruthy();
     expect(screen.getByText("默认")).toBeTruthy();

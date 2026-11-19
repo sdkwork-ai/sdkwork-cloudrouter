@@ -113,4 +113,38 @@ cargo test -p router-service --lib     # 732 passed
 **已闭环（2026-11-19 第 25 轮）**：新增 `real_catalog_imports_official_batch_rates` 用例，直接以 `load_catalog_root_with_pin(Some("../sdkwork-models"))` 加载**真实目录**，断言
 `anthropic/claude-opus-5` 的 `llm_input_token` 同时存在「无条件标准行」与「`tier_code = batch` 条件行」，且批量价恰为标准价的 50%。这钉住了「目录数据 → 导入链路 → 价行」整条链路（此前风险点是 `PricingRateVariant::from_code` 对未知词表 `continue` 会静默丢弃批量行）。兄弟仓库未 checkout 时用例自动跳过，不产生环境性误报。
 
+## 7. 官方价格确认结果（2026-11-19 第 26 轮，联网核对）
 
+| 项 | 官方数值 | 来源 |
+| --- | --- | --- |
+| Runway 默认时长 | `duration` 可选，**默认 5 秒** | <https://replicate.com/runwayml/gen-4.5>（模型 schema `duration` — "Default - 5"） |
+| Gemini 上下文缓存存储 | **\$0.50 / 1M tokens·小时**（2026-12-31 前），2027-01-01 起 \$1.00；部分 Pro 档为 \$1.80 / \$4.50 | <https://ai.google.dev/gemini-api/docs/pricing> |
+| 火山方舟 Seedance 视频（按 token） | 元/百万 token：seedance-1.0-pro 15.00；1.0-pro-fast 4.20；1-0-lite 10.00；1.5-pro 有声 16.00 / 无声 8.00；2.0 含视频输入 28.00 / 不含 46.00 | <https://github.com/arcreel/arcreel/blob/5c7c36c04f4b26ab7a9d32bff3018966d3838b3f/docs/ark-docs/%E7%81%AB%E5%B1%B1%E6%96%B9%E8%88%9F%E8%B4%B9%E7%94%A8%E5%8F%82%E8%80%83.md> |
+
+**本轮已落地**：Runway 未声明 `duration` 时，媒体任务登记按官方默认 **5 秒**记录（此前回落 1 秒占位，5 秒成片少收 80%）。实现为 `MEDIA_DEFAULT_DURATION_SECONDS` 白名单 + 单测 `a_runway_create_without_a_duration_uses_the_documented_default`。
+
+**待落地（需各自的结构性改动）**：
+
+1. **Gemini 缓存存储**：计价 schema 需支持「时间」维度（金额 = token × 小时 × 单价），并需要一个按小时累计的 worker；仅加价行无法生效。
+2. **Seedance 视频按 token**：需新增 `video_output_token` 抽取分支（读 `usage.total_tokens`）与 CNY 价行（`bytedance/cn` region）。价格数据已确认，等待与抽取分支同批上线，避免「有价无量」或「有量无价」的半成品。
+
+
+
+
+## 8. Ark（火山/Seedance）完成态回补与 token 计费（第 30 轮）
+
+| 环节 | 结论 |
+| --- | --- |
+| 创建面 | `bytedance.video_generation` / `volcengine.video_generation`（`POST /api/v3/contents/generations/tasks`），响应顶层 `id` |
+| 轮询 | 同一集合路径 + 任务号（`/api/v3/contents/generations/tasks/{id}`），状态字段 `status`（`queued`/`running`/`succeeded`/`failed`），由统一 `media_task_status` 处理 |
+| 计费量 | 完成体 `usage.total_tokens` → `video_output_token` 抽取链（`output_tokens → completion_tokens → candidatesTokenCount → total_tokens`） |
+| 防双收 | 两个 api_code 已加入 `RECONCILED_MEDIA_CREATE_CODES`，仅异步对账开启时创建免单 |
+
+新增回归（可复现）：
+
+- `registers_a_bytedance_media_task_polled_on_the_tasks_collection` —— 任务号、poll 路径、任务类型；
+- `ark_video_completion_bills_the_reported_output_tokens` —— `{"completion_tokens":108900,"total_tokens":108900}` → `video_output_token = 108900`；仅 `total_tokens` 的形态同样命中；**只有 `prompt_tokens` 时返回 `None`**（不回落到输入侧，避免视频按输入价计费）。
+
+验证：`cargo fmt --check` exit 0；`router-service --lib` 744 passed；35 个 `billing_*` 套件 0 失败。
+
+**仍待人工决策**：2.0/2.0-fast 的 `video_output_second` → `video_output_token` 替换式发布（同一模型不得同时存在两种基准；关闭对账 worker 时只有 token 价会导致创建期无价，故需与 worker 开启同批）；Gemini 缓存存储的时间维度与按小时累计。

@@ -48,7 +48,7 @@ export function CategoryItemActionsMenu({
   onToggleStatus: () => void;
 }) {
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           aria-label={labels.more}

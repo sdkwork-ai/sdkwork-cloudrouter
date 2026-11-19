@@ -7,8 +7,6 @@ import {
   Eye,
   EyeOff,
   FolderTree,
-  GitBranch,
-  KeyRound,
   Layers,
   MessageCircle,
   RefreshCw,
@@ -40,6 +38,7 @@ import {
   type DeployOrganizationLookup,
 } from "../components/DeployApplicationFilters";
 import { ApplicationIntegrationDrawer } from "../components/ApplicationIntegrationDrawer";
+import { ApplicationRowActionsMenu } from "../components/ApplicationRowActionsMenu";
 import { AppSourceRemixDrawer } from "../components/AppSourceRemixDrawer";
 import { AppStoreCategoryPanel } from "../components/AppStoreCategoryPanel";
 import { useApplicationCatalogMessages, type ApplicationCatalogMessages } from "../i18n";
@@ -815,56 +814,14 @@ export function ApplicationManagementPage({
             getRowId={(item) => `${item.groupId}:${item.id}`}
             loading={activeState?.status === "loading"}
             rowActions={(item) => (
-              <div
-                className="flex min-w-max flex-nowrap items-center justify-end gap-1.5 whitespace-nowrap"
-                data-application-row-actions
-              >
-                {item.groupId === "deploy" && canReadSource ? (
-                  <Button
-                    onClick={() => setSourceTarget(item)}
-                    size="sm"
-                    title={messages.sourceRemix.title}
-                    type="button"
-                    variant="outline"
-                  >
-                    <GitBranch className="h-3.5 w-3.5" />
-                    {messages.sourceRemix.action}
-                  </Button>
-                ) : null}
-                <Button onClick={() => openAccessToken(item)} size="sm" type="button" variant="outline">
-                  <KeyRound className="h-3.5 w-3.5" />
-                  {messages.accessToken.action}
-                </Button>
-                <Button
-                  onClick={() => openIntegration(item, "payment")}
-                  size="sm"
-                  title={messages.integrations.drawer.titles.payment}
-                  type="button"
-                  variant="outline"
-                >
-                  <CreditCard className="h-3.5 w-3.5" />
-                  {messages.integrations.actions.payment}
-                </Button>
-                <Button
-                  onClick={() => openIntegration(item, "mini-program")}
-                  size="sm"
-                  title={messages.integrations.drawer.titles.miniProgram}
-                  type="button"
-                  variant="outline"
-                >
-                  <Smartphone className="h-3.5 w-3.5" />
-                  {messages.integrations.actions.miniProgram}
-                </Button>
-                <Button
-                  onClick={() => openIntegration(item, "official-account")}
-                  size="sm"
-                  title={messages.integrations.drawer.titles.officialAccount}
-                  type="button"
-                  variant="outline"
-                >
-                  <MessageCircle className="h-3.5 w-3.5" />
-                  {messages.integrations.actions.officialAccount}
-                </Button>
+              <div data-application-row-actions>
+                <ApplicationRowActionsMenu
+                  canReadSource={item.groupId === "deploy" && canReadSource}
+                  messages={messages}
+                  onAccessToken={() => openAccessToken(item)}
+                  onIntegration={(kind) => openIntegration(item, kind)}
+                  onSource={() => setSourceTarget(item)}
+                />
               </div>
             )}
             rowActionsLabel={messages.columns.actions}

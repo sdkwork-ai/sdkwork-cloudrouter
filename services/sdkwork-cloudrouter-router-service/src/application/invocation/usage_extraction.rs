@@ -3651,4 +3651,29 @@ mod tests {
             .expect("numeric")
         );
     }
+
+    /// Ark video tasks report the billed token count as `usage.total_tokens`
+    /// (the completion body also carries `completion_tokens`). The
+    /// `video_output_token` meter must read exactly that, and must never fall
+    /// back to the prompt side — that would bill the video at input rates.
+    #[test]
+    fn ark_video_completion_bills_the_reported_output_tokens() {
+        let both = json!({"completion_tokens": 108900, "total_tokens": 108900});
+        assert_eq!(
+            Some(108900),
+            super::token_count(&BillingMeter::VideoOutputToken, &both)
+        );
+        // Only-total shape (documented fallback order).
+        let only_total = json!({"total_tokens": 5000});
+        assert_eq!(
+            Some(5000),
+            super::token_count(&BillingMeter::VideoOutputToken, &only_total)
+        );
+        // Input-only body must not satisfy an output-token meter.
+        let prompt_only = json!({"prompt_tokens": 777});
+        assert_eq!(
+            None,
+            super::token_count(&BillingMeter::VideoOutputToken, &prompt_only)
+        );
+    }
 }

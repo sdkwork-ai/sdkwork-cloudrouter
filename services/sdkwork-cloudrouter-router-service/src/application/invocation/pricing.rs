@@ -515,7 +515,14 @@ where
                 &meter,
             )
         });
-    let dimensions = pricing_dimensions(invocation, &meter, usage_line, tier_code.as_deref());
+    let video_input_type = video_input_type_code(catalog, invocation, &catalog_key, &meter);
+    let dimensions = pricing_dimensions(
+        invocation,
+        &meter,
+        usage_line,
+        tier_code.as_deref(),
+        video_input_type.as_deref(),
+    );
     // 账号未显式指定 region（空或 global）时，回退到该模型配置的默认计费
     // region，使多 region 模型仍按正确的地域价格计费；未配置默认 region 则
     // 保持账号原值，历史行为不变。默认 region 同时挂到资源上，作为价格解析
@@ -779,11 +786,142 @@ pub(crate) fn catalog_vendor_code(catalog_key: &str) -> &str {
         .unwrap_or("")
 }
 
+/// `input_type` the catalog models for a video meter, derived from the request.
+///
+/// Official video pricing splits by what the request feeds the model. Ark
+/// Seedance charges 28 ¥/M tokens when a video is part of the input and 46 ¥/M
+/// when it is not; other vendors split text from image input. The catalog
+/// declares such a split with `input_type` conditions, and this derives the
+/// value from the request shape — injecting it only when the catalog actually
+/// models the dimension, so a catalog without the split keeps its previous
+/// resolution byte for byte.
+///
+/// Extensible by construction: a new split is a catalog condition set, not a new
+/// code path here.
+fn video_input_type_code<C>(
+    catalog: &C,
+    invocation: &Invocation,
+    catalog_key: &str,
+    meter: &BillingMeter,
+) -> Option<String>
+where
+    C: PricingCatalog,
+{
+    if !matches!(
+        meter,
+        BillingMeter::VideoResult
+            | BillingMeter::VideoOutputToken
+            | BillingMeter::VideoOutputSecond
+    ) {
+        return None;
+    }
+    let modelled = catalog
+        .list_model_prices_for_scope_side(
+            invocation.subject.tenant_id,
+            invocation.subject.organization_id,
+            catalog_key,
+            PriceSide::OfficialReference,
+        )
+        .iter()
+        .filter(|price| &price.billing_meter == meter)
+        .filter_map(|price| price.rate_metadata.as_ref())
+        .any(|metadata| {
+            metadata
+                .conditions
+                .iter()
+                .any(|condition| condition.dimension_code == "input_type")
+        });
+    modelled.then(|| request_video_input_type(invocation).to_owned())
+}
+
+/// What the request feeds the model: `video`, `image` or `text`.
+fn request_video_input_type(invocation: &Invocation) -> &'static str {
+    let body = match &invocation.request.body {
+        crate::application::InvocationBody::Json(body) => body,
+        _ => return "text",
+    };
+    video_input_type_for_body(body)
+}
+
+fn video_input_type_for_body(body: &serde_json::Value) -> &'static str {
+    const VIDEO_MARKERS: &[&str] = &[
+        "video",
+        "videos",
+        "video_url",
+        "videoUrl",
+        "video_urls",
+        "videoUrls",
+        "reference_video",
+        "referenceVideo",
+        "video_input",
+        "videoInput",
+    ];
+    const IMAGE_MARKERS: &[&str] = &[
+        "image",
+        "images",
+        "image_url",
+        "imageUrl",
+        "image_urls",
+        "imageUrls",
+        "first_frame",
+        "firstFrame",
+        "first_frame_image",
+        "firstFrameImage",
+        "last_frame",
+        "lastFrame",
+        "reference_image",
+        "referenceImage",
+        "reference_images",
+        "referenceImages",
+    ];
+    if request_carries_any(body, VIDEO_MARKERS, 0) {
+        "video"
+    } else if request_carries_any(body, IMAGE_MARKERS, 0) {
+        "image"
+    } else {
+        "text"
+    }
+}
+
+/// Whether the request carries one of the marker fields with a non-empty value.
+///
+/// Depth-bounded (the request body is caller-controlled JSON) and value-checked:
+/// a `null`/empty/`false` marker does not change the input type.
+fn request_carries_any(node: &serde_json::Value, markers: &[&str], depth: usize) -> bool {
+    if depth > 4 {
+        return false;
+    }
+    match node {
+        serde_json::Value::Object(map) => map.iter().any(|(key, value)| {
+            if markers.contains(&key.as_str()) && value_is_present(value) {
+                return true;
+            }
+            request_carries_any(value, markers, depth + 1)
+        }),
+        serde_json::Value::Array(items) => items
+            .iter()
+            .any(|item| request_carries_any(item, markers, depth + 1)),
+        _ => false,
+    }
+}
+
+fn value_is_present(value: &serde_json::Value) -> bool {
+    match value {
+        serde_json::Value::Null => false,
+        serde_json::Value::Bool(present) => *present,
+        serde_json::Value::String(text) => !text.trim().is_empty(),
+        serde_json::Value::Array(items) => !items.is_empty(),
+        serde_json::Value::Number(_) => true,
+        serde_json::Value::Object(map) => !map.is_empty(),
+    }
+}
+
 fn pricing_dimensions(
     invocation: &Invocation,
     meter: &BillingMeter,
     usage_line: Option<&InvocationUsageLine>,
     pricing_tier_code: Option<&str>,
+    video_input_type: Option<&str>,
 ) -> PricingDimensionContext {
     let mut dimensions = PricingDimensionContext::new()
         .with_value(
@@ -794,6 +932,12 @@ fn pricing_dimensions(
             "operation_id",
             serde_json::json!(invocation.resource.operation_id.as_deref()),
         );
+    // Video input type derived from the request shape, injected only when the
+    // catalog models the split (see `video_input_type_code`). Placed before the
+    // request-pointer loop below so an explicit `input_type` in the body wins.
+    if let Some(input_type) = video_input_type {
+        dimensions = dimensions.with_value("input_type", serde_json::json!(input_type));
+    }
     if let InvocationBody::Json(body) = &invocation.request.body {
         for (dimension_code, pointers) in [
             ("tier_code", &["/tier_code", "/service_tier", "/tier"][..]),
@@ -1844,7 +1988,8 @@ mod tests {
             "model_name": "kling-ai-avatar-v2",
             "mode": "pro"
         }));
-        let dimensions = pricing_dimensions(&pro, &BillingMeter::VideoOutputSecond, None, None);
+        let dimensions =
+            pricing_dimensions(&pro, &BillingMeter::VideoOutputSecond, None, None, None);
         assert_eq!(
             Some(&serde_json::json!("pro")),
             dimensions.get("quality"),
@@ -1858,11 +2003,48 @@ mod tests {
         let without_mode = invocation_with_body(serde_json::json!({
             "model_name": "kling-ai-avatar-v2"
         }));
-        let dimensions =
-            pricing_dimensions(&without_mode, &BillingMeter::VideoOutputSecond, None, None);
+        let dimensions = pricing_dimensions(
+            &without_mode,
+            &BillingMeter::VideoOutputSecond,
+            None,
+            None,
+            None,
+        );
         assert!(
             dimensions.get("quality").is_none(),
             "an omitted `mode` must leave `quality` unset so the default-mode rate matches"
+        );
+    }
+
+    /// 官方视频计价按「输入含什么」分档（Ark Seedance 含视频 28 / 不含 46 元每百万
+    /// token）。派生值必须只看请求真实携带的输入，凭空的空字段不能改变档位。
+    #[test]
+    fn video_input_type_is_derived_from_what_the_request_feeds() {
+        use serde_json::json;
+        assert_eq!(
+            "video",
+            video_input_type_for_body(&json!({"prompt": "x", "video_url": "https://v/1.mp4"}))
+        );
+        assert_eq!(
+            "video",
+            video_input_type_for_body(&json!({"content": [{"type": "video", "video_url": "u"}]}))
+        );
+        assert_eq!(
+            "image",
+            video_input_type_for_body(&json!({"prompt": "x", "first_frame": {"url": "u"}}))
+        );
+        assert_eq!(
+            "text",
+            video_input_type_for_body(&json!({"prompt": "a cat"}))
+        );
+        // 空值/空数组不是「带视频输入」
+        assert_eq!(
+            "image",
+            video_input_type_for_body(&json!({"video_url": null, "image": "u"}))
+        );
+        assert_eq!(
+            "text",
+            video_input_type_for_body(&json!({"video_urls": [], "images": []}))
         );
     }
 }

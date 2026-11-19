@@ -29,6 +29,7 @@ import {
   ensureCloudRouterBrowserDevelopmentEnv,
   ensureCloudRouterBrowserProductionEnv,
   ensureCloudRouterReleaseEnv,
+  resolveCloudRouterBrowserDeployApplicationId,
 } from './cloud-router-application-env.mjs';
 import { loadEnvFile, mergeEnvRecordPreservingExistingNonEmpty } from '../lib/merge-env-file.mjs';
 import {
@@ -922,4 +923,205 @@ test('resolveApplicationEnvPaths selects browser app root for Vite profiles', ()
   assert.ok(
     paths.profileFilePath.endsWith(path.join('apps', 'sdkwork-cloudrouter-pc', '.env.standalone.development')),
   );
+});
+
+test('resolveCloudRouterBrowserDeployApplicationId reads the surface anchor, then the repository anchor', () => {
+  const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'cloud-router-anchor-precedence-'));
+  try {
+    const overridesDir = path.join(tempRoot, 'etc', 'topology', 'overrides');
+    mkdirSync(overridesDir, { recursive: true });
+    writeFileSync(
+      path.join(overridesDir, 'standalone.production.env'),
+      [
+        'SDKWORK_DEPLOY_APPLICATION_ID=381764684287578112',
+        'SDKWORK_DEPLOY_APPLICATION_ID_SDKWORK_CLOUDROUTER_PC=381764687714324480',
+        '',
+      ].join('\n'),
+      'utf8',
+    );
+
+    assert.equal(
+      resolveCloudRouterBrowserDeployApplicationId({
+        env: {},
+        workspaceRoot: tempRoot,
+        deploymentProfile: 'standalone',
+        environment: 'production',
+      }),
+      '381764687714324480',
+      'the authored layer must supply the surface anchor when no process variable is exported',
+    );
+    assert.equal(
+      resolveCloudRouterBrowserDeployApplicationId({
+        env: { SDKWORK_DEPLOY_APPLICATION_ID_SDKWORK_CLOUDROUTER_PC: 'app-injected' },
+        workspaceRoot: tempRoot,
+        deploymentProfile: 'standalone',
+        environment: 'production',
+      }),
+      'app-injected',
+      'a registrar-exported surface variable must win over the recorded layer',
+    );
+    assert.equal(
+      resolveCloudRouterBrowserDeployApplicationId({
+        env: { SDKWORK_DEPLOY_APPLICATION_ID: 'app-repository' },
+        workspaceRoot: tempRoot,
+        deploymentProfile: 'standalone',
+        environment: 'production',
+      }),
+      'app-repository',
+      'the repository-level variable stays the one-anchor-per-repository fallback',
+    );
+    assert.equal(
+      resolveCloudRouterBrowserDeployApplicationId({
+        env: {},
+        workspaceRoot: tempRoot,
+        deploymentProfile: 'standalone',
+        environment: 'development',
+      }),
+      '',
+      'an unregistered lifecycle must not borrow another lifecycle anchor',
+    );
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('ensureCloudRouterBrowserDevelopmentEnv publishes VITE_SDKWORK_DEPLOY_APPLICATION_ID from the surface anchor', () => {
+  const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'cloud-router-development-surface-anchor-'));
+  const applicationRoot = path.join(tempRoot, 'apps', 'sdkwork-cloudrouter-pc');
+  const homeDir = path.join(tempRoot, 'home');
+  const profileFilePath = path.join(applicationRoot, '.env.standalone.development');
+
+  try {
+    writeFileSync(
+      path.join(tempRoot, 'agent.app.config.json'),
+      JSON.stringify({
+        app: { key: 'sdkwork-cloudrouter' },
+        backend: { appId: 'sdkwork-cloudrouter', tenantId: '100001', organizationId: '0' },
+      }),
+      'utf8',
+    );
+    const overridesDir = path.join(tempRoot, 'etc', 'topology', 'overrides');
+    mkdirSync(overridesDir, { recursive: true });
+    writeFileSync(
+      path.join(overridesDir, 'standalone.development.env'),
+      [
+        'SDKWORK_DEPLOY_APPLICATION_ID=381764684287578112',
+        'SDKWORK_DEPLOY_APPLICATION_ID_SDKWORK_CLOUDROUTER_PC=381764687714324480',
+        '',
+      ].join('\n'),
+      'utf8',
+    );
+    mkdirSync(applicationRoot, { recursive: true });
+    writeFileSync(
+      profileFilePath,
+      'SDKWORK_ACCESS_TOKEN=' + PUBLIC_APPLICATION_ACCESS_TOKEN + '\n',
+      'utf8',
+    );
+
+    const result = ensureCloudRouterBrowserDevelopmentEnv({
+      workspaceRoot: tempRoot,
+      applicationRoot,
+      homeDir,
+      env: {},
+    });
+
+    assert.equal(
+      result.mergedEnv.VITE_SDKWORK_DEPLOY_APPLICATION_ID,
+      '381764687714324480',
+    );
+    assert.match(
+      readFileSync(profileFilePath, 'utf8'),
+      /^VITE_SDKWORK_DEPLOY_APPLICATION_ID=381764687714324480$/mu,
+    );
+    const { payload } = decodeApplicationAccessToken(result.mergedEnv.SDKWORK_ACCESS_TOKEN);
+    assert.equal(payload.app_id, '381764687714324480');
+    assert.equal(payload.aud, '381764687714324480');
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('ensureCloudRouterBrowserProductionEnv publishes VITE_SDKWORK_DEPLOY_APPLICATION_ID from the surface anchor', () => {
+  const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'cloud-router-production-surface-anchor-'));
+  const applicationRoot = path.join(tempRoot, 'apps', 'sdkwork-cloudrouter-pc');
+  const profileFilePath = path.join(applicationRoot, '.env.standalone.production');
+
+  try {
+    writeFileSync(
+      path.join(tempRoot, 'agent.app.config.json'),
+      JSON.stringify({
+        app: { key: 'sdkwork-cloudrouter' },
+        backend: { appId: 'sdkwork-cloudrouter', tenantId: '100001', organizationId: '0' },
+      }),
+      'utf8',
+    );
+    const overridesDir = path.join(tempRoot, 'etc', 'topology', 'overrides');
+    mkdirSync(overridesDir, { recursive: true });
+    writeFileSync(
+      path.join(overridesDir, 'standalone.production.env'),
+      [
+        'SDKWORK_DEPLOY_APPLICATION_ID=381764684287578112',
+        'SDKWORK_DEPLOY_APPLICATION_ID_SDKWORK_CLOUDROUTER_PC=381764687714324480',
+        '',
+      ].join('\n'),
+      'utf8',
+    );
+    mkdirSync(applicationRoot, { recursive: true });
+    writeFileSync(
+      profileFilePath,
+      'SDKWORK_ACCESS_TOKEN=' + PUBLIC_APPLICATION_ACCESS_TOKEN + '\n',
+      'utf8',
+    );
+
+    const result = ensureCloudRouterBrowserProductionEnv({
+      workspaceRoot: tempRoot,
+      applicationRoot,
+      env: {},
+    });
+
+    assert.equal(
+      result.mergedEnv.VITE_SDKWORK_DEPLOY_APPLICATION_ID,
+      '381764687714324480',
+    );
+    assert.match(
+      readFileSync(profileFilePath, 'utf8'),
+      /^VITE_SDKWORK_DEPLOY_APPLICATION_ID=381764687714324480$/mu,
+    );
+    const { payload } = decodeApplicationAccessToken(result.mergedEnv.SDKWORK_ACCESS_TOKEN);
+    assert.equal(payload.app_id, '381764687714324480');
+    assert.equal(payload.environment, 'production');
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('ensureCloudRouterReleaseEnv records the repository anchor for the server processes', () => {
+  const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'cloud-router-release-anchor-'));
+  try {
+    const overridesDir = path.join(tempRoot, 'etc', 'topology', 'overrides');
+    mkdirSync(overridesDir, { recursive: true });
+    writeFileSync(
+      path.join(overridesDir, 'standalone.production.env'),
+      [
+        'SDKWORK_DEPLOY_APPLICATION_ID=381764684287578112',
+        'SDKWORK_DEPLOY_APPLICATION_ID_SDKWORK_CLOUDROUTER_PC=381764687714324480',
+        '',
+      ].join('\n'),
+      'utf8',
+    );
+
+    const result = ensureCloudRouterReleaseEnv({
+      workspaceRoot: tempRoot,
+      env: {},
+      dryRun: true,
+    });
+
+    assert.equal(
+      result.mergedEnv.SDKWORK_DEPLOY_APPLICATION_ID,
+      '381764684287578112',
+      'the server identity is the repository anchor, never a surface anchor',
+    );
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
 });

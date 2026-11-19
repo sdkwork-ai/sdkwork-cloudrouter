@@ -67,6 +67,10 @@ export const CLOUD_ROUTER_RELEASE_ENV_KEY_ORDER = Object.freeze([
   CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.environment,
   CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.deploymentProfile,
   CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.runtimeTarget,
+  // Server-side deploy application anchor. The Rust edge/gateway resolves it at
+  // boot, enforces it as the access-token audience, and publishes it into the
+  // browser runtime document the packaged renderer reads.
+  CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV,
   // Region deployment dimension (REGION_SPEC.md) and its derived seed locale.
   // Registered in `release-environment-contract.mjs` under
   // `optionalEdgePrivateEnv`; they are emitted right after the lifecycle keys, so
@@ -114,6 +118,117 @@ function normalizeText(value) {
   return normalized || undefined;
 }
 
+/**
+ * Browser surface this profile generator owns.
+ *
+ * `etc/client-env.materialization.json` declares the PC surface as
+ * `sdkwork-cloudrouter-pc` and excludes `standalone.development` /
+ * `standalone.production` from the declarative materializer, so those two
+ * carriers are authored here instead.
+ */
+export const CLOUD_ROUTER_BROWSER_SURFACE_ID = 'sdkwork-cloudrouter-pc';
+
+/**
+ * Anchor variable a surface-scoped registration records for one surface.
+ *
+ * `sdkwork-specs/tools/app-registration` (APPLICATION_FACTORY_DEPLOYMENT_SPEC
+ * section 11) stores a surface's own deploy application id as
+ * `<SDKWORK_DEPLOY_APPLICATION_ID>_<SURFACE>`, upper-cased with every
+ * non-alphanumeric run folded to `_`:
+ * `SDKWORK_DEPLOY_APPLICATION_ID_SDKWORK_CLOUDROUTER_PC`.
+ * @param surfaceId - declared surface id.
+ * @returns the surface-scoped anchor variable name.
+ */
+export function surfaceDeployApplicationIdEnvKey(surfaceId) {
+  const suffix = String(surfaceId ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/gu, '_')
+    .replace(/^_+|_+$/gu, '');
+  return suffix
+    ? `${CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV}_${suffix}`
+    : CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV;
+}
+
+/**
+ * Resolve this repository's browser-surface deploy application anchor.
+ *
+ * Resolution order (highest first):
+ * 1. the surface-scoped process variable the registrar hands a materializer run
+ *    (`SDKWORK_DEPLOY_APPLICATION_ID_SDKWORK_CLOUDROUTER_PC`);
+ * 2. the repository-level `SDKWORK_DEPLOY_APPLICATION_ID` (server identity, and
+ *    the one-anchor-per-repository behavior);
+ * 3. the authored override layer, then the resolved profile for this lifecycle.
+ *
+ * Step 3 is load-bearing: `pnpm build` and the dev runner do not always merge the
+ * topology profile into `process.env`, and the registration records the anchor in
+ * the authored layer only. Without it a correctly registered surface still built
+ * an unanchored token and a renderer with no `VITE_SDKWORK_DEPLOY_APPLICATION_ID`.
+ * @param options - env bag, workspace root, lifecycle, deployment profile, surface.
+ * @returns the trimmed anchor, or an empty string when none is configured.
+ */
+export function resolveCloudRouterBrowserDeployApplicationId({
+  env = process.env,
+  workspaceRoot = DEFAULT_REPOSITORY_ROOT,
+  deploymentProfile = 'standalone',
+  environment = 'production',
+  surfaceId = CLOUD_ROUTER_BROWSER_SURFACE_ID,
+} = {}) {
+  const surfaceKey = surfaceDeployApplicationIdEnvKey(surfaceId);
+  const direct = normalizeText(env?.[surfaceKey])
+    ?? normalizeText(env?.[CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV]);
+  if (direct) {
+    return direct;
+  }
+  for (const relativePath of [
+    path.join('etc', 'topology', 'overrides', `${deploymentProfile}.${environment}.env`),
+    path.join('etc', 'topology', `${deploymentProfile}.${environment}.env`),
+  ]) {
+    const record = loadEnvFile(path.join(workspaceRoot, relativePath));
+    const value = normalizeText(record[surfaceKey])
+      ?? normalizeText(record[CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV]);
+    if (value) {
+      return value;
+    }
+  }
+  return '';
+}
+
+/**
+ * Resolve the server-side (repository) deploy application anchor for the release
+ * profile.
+ *
+ * The server identity is the repository-level anchor a repository-root
+ * registration records; a surface anchor never applies to it, so this resolver
+ * deliberately ignores `<base>_<SURFACE>` variables. Same process-env-then-
+ * authored-layer order as the browser resolver.
+ * @param options - env bag, workspace root, deployment profile, lifecycle.
+ * @returns the trimmed anchor, or undefined when none is configured.
+ */
+export function resolveReleaseDeployApplicationId({
+  env = process.env,
+  workspaceRoot = DEFAULT_REPOSITORY_ROOT,
+  deploymentProfile = 'standalone',
+  environment = 'production',
+} = {}) {
+  const direct = normalizeText(env?.[CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV]);
+  if (direct) {
+    return direct;
+  }
+  for (const relativePath of [
+    path.join('etc', 'topology', 'overrides', `${deploymentProfile}.${environment}.env`),
+    path.join('etc', 'topology', `${deploymentProfile}.${environment}.env`),
+  ]) {
+    const value = normalizeText(
+      loadEnvFile(path.join(workspaceRoot, relativePath))[CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV],
+    );
+    if (value) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
 function completeReleaseEnvKeyOrder(mergedEnv, generatedEnv) {
   const complete = { ...mergedEnv };
   delete complete.SDKWORK_ACCESS_TOKEN;
@@ -148,8 +263,15 @@ function buildDeployAnchoredPublicApplicationToken({
   environment,
   deploymentProfile = 'standalone',
   runtimeTarget = 'browser',
+  surfaceId = CLOUD_ROUTER_BROWSER_SURFACE_ID,
 } = {}) {
-  const appId = normalizeText(env[CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV]);
+  const appId = resolveCloudRouterBrowserDeployApplicationId({
+    env,
+    workspaceRoot,
+    deploymentProfile,
+    environment,
+    surfaceId,
+  });
   if (!appId) {
     return '';
   }
@@ -247,6 +369,11 @@ export const CLOUD_ROUTER_BROWSER_PRODUCTION_ENV_KEY_ORDER = Object.freeze([
   // kept in the profile so packaging can bake it into the renderer
   // (IAM_APPLICATION_BOOTSTRAP_SPEC.md section 5.4.5) and a built login works.
   'SDKWORK_ACCESS_TOKEN',
+  // Browser projection of the same anchor (APP_ACCESS_TOKEN_SPEC.md section 5,
+  // BROWSER_RUNTIME_ENV_SPEC.md): the renderer reads the identity it presents to
+  // IAM from its runtime env document, so packaging must publish it next to the
+  // token it anchors.
+  CLOUD_ROUTER_BROWSER_DEPLOY_APPLICATION_ID_KEY,
 ]);
 
 const BROWSER_PRODUCTION_ENV_HEADER = Object.freeze([
@@ -292,7 +419,12 @@ export function buildCloudRouterBrowserDevelopmentGeneratedEnv({
   // anchor; the build projects it so no renderer carries a compiled-in id. The
   // renderer fails closed when the projection is absent, so an unset anchor here
   // is not repaired with the retired IAM runtime app id.
-  const deployApplicationId = normalizeText(env[CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV]);
+  const deployApplicationId = resolveCloudRouterBrowserDeployApplicationId({
+    env,
+    workspaceRoot,
+    deploymentProfile,
+    environment: 'development',
+  });
   if (deployApplicationId) {
     generated[CLOUD_ROUTER_BROWSER_DEPLOY_APPLICATION_ID_KEY] = deployApplicationId;
   }
@@ -330,6 +462,7 @@ export function buildCloudRouterBrowserProductionGeneratedEnv({
 
 export function buildCloudRouterReleaseGeneratedEnv({
   env = process.env,
+  workspaceRoot = DEFAULT_REPOSITORY_ROOT,
   deploymentProfile = 'standalone',
   runtimeTarget = 'server',
 } = {}) {
@@ -341,6 +474,8 @@ export function buildCloudRouterReleaseGeneratedEnv({
     [CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.environment]: 'production',
     [CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.deploymentProfile]: deploymentProfile,
     [CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.runtimeTarget]: runtimeTarget,
+    [CLOUD_ROUTER_DEPLOY_APPLICATION_ID_ENV]:
+      resolveReleaseDeployApplicationId({ env, workspaceRoot, deploymentProfile }),
     SDKWORK_CLOUDROUTER_ROUTER_REGION_CODE: regionCode,
     SDKWORK_DATABASE_SEED_LOCALE:
       normalizeText(env.SDKWORK_DATABASE_SEED_LOCALE) ?? regionDefaultLocale,
@@ -492,6 +627,19 @@ export function ensureCloudRouterBrowserProductionEnv({
   });
   if (anchoredPublicToken) {
     sanitizedMergedEnv.SDKWORK_ACCESS_TOKEN = anchoredPublicToken;
+  }
+  // Publish the same anchor the token is bound to. Packaging bakes the token into
+  // the renderer, and the renderer also needs the identity for its IAM runtime;
+  // omitting it made a correctly anchored build fail closed with
+  // "browser renderer has no deploy application identity".
+  const productionDeployApplicationId = resolveCloudRouterBrowserDeployApplicationId({
+    env,
+    workspaceRoot,
+    deploymentProfile,
+    environment: 'production',
+  });
+  if (productionDeployApplicationId) {
+    sanitizedMergedEnv[CLOUD_ROUTER_BROWSER_DEPLOY_APPLICATION_ID_KEY] = productionDeployApplicationId;
   }
   const formattedContent = formatEnvFileContent(sanitizedMergedEnv, {
     headerLines: [...BROWSER_PRODUCTION_ENV_HEADER],

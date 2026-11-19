@@ -90,6 +90,12 @@ function clickGroup(groupId: ApplicationGroupId): void {
   fireEvent.click(element as Element);
 }
 
+function openAppConfigMenu(): void {
+  const trigger = screen.getAllByRole("button", { name: "应用配置" })[0];
+  fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false, pointerType: "mouse" });
+  fireEvent.click(trigger);
+}
+
 function expectText(text: string): void {
   expect(screen.queryAllByText(text).length).toBeGreaterThan(0);
 }
@@ -183,7 +189,8 @@ describe("application management page", () => {
     await screen.findAllByText("Storefront");
     clickGroup("deploy");
     await screen.findAllByText("Storefront");
-    fireEvent.click(screen.getByRole("button", { name: "访问令牌" }));
+    openAppConfigMenu();
+    fireEvent.click(screen.getByRole("menuitem", { name: "访问令牌" }));
 
     await screen.findByText(/该应用未在 IAM 注册为已启用的租户应用/);
   });
@@ -195,7 +202,8 @@ describe("application management page", () => {
     renderPage({ issueToken, loaders, resolveContext, tenantId: "tenant-1" });
 
     await screen.findAllByText("Storefront");
-    fireEvent.click(screen.getByRole("button", { name: "访问令牌" }));
+    openAppConfigMenu();
+    fireEvent.click(screen.getByRole("menuitem", { name: "访问令牌" }));
 
     await screen.findByText(/当前账号没有签发应用访问令牌的权限/);
   });
@@ -208,9 +216,7 @@ describe("application management page", () => {
     await screen.findAllByText("Storefront");
     const actions = document.querySelector("[data-application-row-actions]");
     expect(actions).not.toBeNull();
-    // The operations column must widen instead of stacking the four buttons.
-    expect(actions?.className).toContain("flex-nowrap");
-    expect(actions?.className).toContain("min-w-max");
-    expect(within(actions as HTMLElement).getAllByRole("button")).toHaveLength(4);
+    // One configuration trigger keeps the name and the config actions visible.
+    expect(within(actions as HTMLElement).getAllByRole("button")).toHaveLength(1);
   });
 });

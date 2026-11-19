@@ -224,6 +224,7 @@ export const en: ApplicationCatalogMessages = {
   },
   integrations: {
     actions: {
+      config: "App configuration",
       miniProgram: "Link mini program account",
       officialAccount: "Link official account",
       payment: "Payment setup",

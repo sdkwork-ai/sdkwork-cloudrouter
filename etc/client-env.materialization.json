@@ -73,6 +73,13 @@
             "SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL"
           ],
           "required": false
+        },
+        "VITE_SDKWORK_DEPLOY_APPLICATION_ID": {
+          "sources": [
+            "SDKWORK_DEPLOY_APPLICATION_ID_SDKWORK_CLOUDROUTER_PC",
+            "SDKWORK_DEPLOY_APPLICATION_ID"
+          ],
+          "required": false
         }
       },
       "excludeProfiles": [

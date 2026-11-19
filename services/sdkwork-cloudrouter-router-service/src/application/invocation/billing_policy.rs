@@ -308,6 +308,8 @@ const RECONCILED_MEDIA_CREATE_CODES: &[&str] = &[
     "luma_ai.video_generation",
     "pixverse.video_generation",
     "minimax.video_generation",
+    "bytedance.video_generation",
+    "volcengine.video_generation",
 ];
 
 /// Whether this invocation is a media create whose charge belongs to completion.

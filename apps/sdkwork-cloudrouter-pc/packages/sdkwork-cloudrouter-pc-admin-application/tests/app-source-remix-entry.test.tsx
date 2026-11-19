@@ -90,6 +90,17 @@ function createSourceService(): DeployAppSourceService {
   };
 }
 
+function openConfigMenu(): void {
+  const trigger = screen.getAllByRole("button", { name: "应用配置" })[0];
+  fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false, pointerType: "mouse" });
+  fireEvent.click(trigger);
+}
+
+function chooseConfigAction(action: string): void {
+  openConfigMenu();
+  fireEvent.click(screen.getByRole("menuitem", { name: action }));
+}
+
 function renderPage(input: {
   permissionScope?: readonly string[];
   sourceService: DeployAppSourceService;
@@ -118,8 +129,7 @@ describe("App Center source & remix entry", () => {
     renderPage({ permissionScope: ["deploy.apps.read"], sourceService });
 
     await screen.findAllByText("Storefront");
-    const entry = screen.getByRole("button", { name: copy.action });
-    fireEvent.click(entry);
+    chooseConfigAction(copy.action);
 
     await screen.findByRole("heading", { name: copy.title });
     expect(sourceService.load).toHaveBeenCalledWith("deploy-1");
@@ -137,7 +147,7 @@ describe("App Center source & remix entry", () => {
     });
 
     await screen.findAllByText("Storefront");
-    fireEvent.click(screen.getByRole("button", { name: copy.action }));
+    chooseConfigAction(copy.action);
 
     expect(await screen.findByRole("button", { name: copy.save })).toBeTruthy();
     expect(screen.queryByText(copy.errors.writeDenied)).toBeNull();
@@ -148,7 +158,8 @@ describe("App Center source & remix entry", () => {
     renderPage({ permissionScope: [], sourceService: createSourceService() });
 
     await screen.findAllByText("Storefront");
-    expect(screen.queryByRole("button", { name: copy.action })).toBeNull();
+    openConfigMenu();
+    expect(screen.queryByRole("menuitem", { name: copy.action })).toBeNull();
   });
 
   it("does not offer the deploy source entry on App Store rows", async () => {
@@ -160,6 +171,7 @@ describe("App Center source & remix entry", () => {
     fireEvent.click(appStoreTab as Element);
 
     await screen.findAllByText("sdkwork-birdcoder");
-    expect(screen.queryByRole("button", { name: copy.action })).toBeNull();
+    openConfigMenu();
+    expect(screen.queryByRole("menuitem", { name: copy.action })).toBeNull();
   });
 });

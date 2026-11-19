@@ -249,6 +249,14 @@ fn pending_async_task(
         // MiniMax answers `{task_id, base_resp}` and reads the task from a
         // collection endpoint with the id as a query parameter.
         ("minimax.video_generation", "/v1/video_generation") => AsyncUsageTaskKind::MediaTask,
+        // Ark (Volcengine / ByteDance) video tasks answer `{id}` and poll the same
+        // collection path with the id, reporting `status`
+        // (`queued|running|succeeded|failed`) and the billed token count under
+        // `usage.total_tokens`.
+        (
+            "bytedance.video_generation" | "volcengine.video_generation",
+            "/api/v3/contents/generations/tasks",
+        ) => AsyncUsageTaskKind::MediaTask,
         _ => return Ok(None),
     };
 
@@ -337,12 +345,32 @@ fn media_duration_seconds(invocation: &Invocation, kind: AsyncUsageTaskKind) -> 
     if kind != AsyncUsageTaskKind::MediaTask {
         return None;
     }
-    match &invocation.request.body {
+    let requested = match &invocation.request.body {
         crate::application::InvocationBody::Json(body) => {
             crate::application::invocation::requested_media_seconds(body)
         }
         _ => None,
-    }
+    };
+    requested.or_else(|| vendor_default_media_seconds(invocation))
+}
+
+/// Vendor default length for a create that does not state one.
+///
+/// Runway's text-to-video and image-to-video APIs document `duration` as
+/// optional with a default of **5 seconds**
+/// (<https://docs.dev.runwayml.com> — `duration`: "Default 5"). Treating the
+/// absent field as "no length" billed a 5-second render as a 1-second
+/// placeholder, so the completion reconciliation now uses the documented
+/// default. Only vendors whose documentation states a default are listed: an
+/// invented default would be an invented charge.
+const MEDIA_DEFAULT_DURATION_SECONDS: &[(&str, &str)] = &[("runway", "5")];
+
+fn vendor_default_media_seconds(invocation: &Invocation) -> Option<String> {
+    let supplier = invocation.account.as_ref()?.supplier_code.trim();
+    MEDIA_DEFAULT_DURATION_SECONDS
+        .iter()
+        .find(|(vendor, _)| vendor.eq_ignore_ascii_case(supplier))
+        .map(|(_, seconds)| (*seconds).to_owned())
 }
 
 /// Poll path for a media task, per vendor layout.
@@ -895,6 +923,39 @@ mod tests {
         );
     }
 
+    /// Runway documents `duration` as optional with a default of 5 seconds; an
+    /// omitted field must not fall back to a one-second placeholder.
+    #[tokio::test]
+    async fn a_runway_create_without_a_duration_uses_the_documented_default() {
+        let store = Arc::new(InMemoryAsyncUsageTaskStore::new());
+        let mut invocation = async_creation(
+            "/v1/text_to_video",
+            "runway.text_to_video",
+            serde_json::json!({"model": "gen4.5", "promptText": "a cat"}),
+        );
+        // The default comes from the resolved account's vendor; the shared test
+        // helper builds an OpenAI account.
+        if let Some(account) = invocation.account.as_mut() {
+            account.supplier_code = "runway".to_owned();
+        }
+        invocation.dispatch =
+            InvocationDispatch::json_response(200, serde_json::json!({"id": "task_12"}));
+
+        AsyncUsageRegistrationInterceptor::new(store.clone())
+            .after(&mut invocation)
+            .await
+            .expect("register");
+
+        let task = registered_task(&store).await;
+        assert_eq!(
+            Some("5"),
+            task.metadata
+                .as_ref()
+                .and_then(|metadata| metadata.get("durationSeconds"))
+                .and_then(|value| value.as_str())
+        );
+    }
+
     /// Luma polls the create path with the generation id.
     #[tokio::test]
     async fn registers_a_luma_media_task_polled_on_the_create_path() {
@@ -996,6 +1057,35 @@ mod tests {
             Some("6"),
             metadata
                 .get("durationSeconds")
+                .and_then(|value| value.as_str())
+        );
+    }
+
+    /// Ark video tasks poll the same collection path with the task id.
+    #[tokio::test]
+    async fn registers_a_bytedance_media_task_polled_on_the_tasks_collection() {
+        let store = Arc::new(InMemoryAsyncUsageTaskStore::new());
+        let mut invocation = async_creation(
+            "/api/v3/contents/generations/tasks",
+            "bytedance.video_generation",
+            serde_json::json!({"model": "doubao-seedance-2-0-260128", "content": [{"type": "text", "text": "a cat"}]}),
+        );
+        invocation.dispatch =
+            InvocationDispatch::json_response(200, serde_json::json!({"id": "cgt-2026-1"}));
+
+        AsyncUsageRegistrationInterceptor::new(store.clone())
+            .after(&mut invocation)
+            .await
+            .expect("register");
+
+        let task = registered_task(&store).await;
+        assert_eq!(AsyncUsageTaskKind::MediaTask, task.task_kind);
+        assert_eq!("cgt-2026-1", task.upstream_id);
+        assert_eq!(
+            Some("/api/v3/contents/generations/tasks/cgt-2026-1"),
+            task.metadata
+                .as_ref()
+                .and_then(|metadata| metadata.get("pollPath"))
                 .and_then(|value| value.as_str())
         );
     }

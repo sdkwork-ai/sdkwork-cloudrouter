@@ -224,6 +224,7 @@ export const zh: ApplicationCatalogMessages = {
   },
   integrations: {
     actions: {
+      config: "应用配置",
       miniProgram: "关联小程序账号",
       officialAccount: "关联公众号账号",
       payment: "支付配置",

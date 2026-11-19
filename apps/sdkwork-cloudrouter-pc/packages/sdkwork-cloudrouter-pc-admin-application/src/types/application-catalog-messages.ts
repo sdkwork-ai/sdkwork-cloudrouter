@@ -213,6 +213,7 @@ export interface ApplicationCatalogMessages {
   };
   integrations: {
     actions: {
+      config: string;
       miniProgram: string;
       officialAccount: string;
       payment: string;
