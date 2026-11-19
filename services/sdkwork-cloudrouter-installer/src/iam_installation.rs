@@ -45,9 +45,9 @@ use std::path::{Path, PathBuf};
 
 use sdkwork_iam_web_adapter::{
     enable_tenant_application, ensure_tenant_application_runtime, load_manifest_from_app_root,
-    manifest_to_ensure_command, resolve_bootstrap_environment,
-    resolve_tenant_application_by_deploy_application_id, tenant_application_instance_key,
-    EmbeddedApplicationBootstrapOptions, TenantApplication,
+    manifest_to_ensure_command, relink_tenant_application_deploy_application_id,
+    resolve_bootstrap_environment, resolve_tenant_application_by_deploy_application_id,
+    tenant_application_instance_key, EmbeddedApplicationBootstrapOptions, TenantApplication,
 };
 use sqlx::PgPool;
 
@@ -114,6 +114,20 @@ pub async fn ensure_iam_installation(
             resolve_tenant_application_by_deploy_application_id(pg, tenant_id, legacy_anchor)
                 .await?
         {
+            // Heal the legacy uuid anchor onto the canonical decimal one when the
+            // installation's instance key proves it belongs to this deploy app.
+            // A failed relink is not fatal: the legacy row is still a valid
+            // one-installation identity and is reused as-is.
+            if let Ok(Some(relinked)) = relink_tenant_application_deploy_application_id(
+                pg,
+                tenant_id,
+                legacy_anchor,
+                canonical_anchor,
+            )
+            .await
+            {
+                return finish_installation(relinked, canonical_anchor, false);
+            }
             let application = if existing.status == "enabled" {
                 existing
             } else {
