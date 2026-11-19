@@ -102,6 +102,9 @@ Electron, Tauri, Qt, Rust, Node, Go, Python.
 node scripts/check-app-factory-readiness.mjs
 # Deploy full workspace (green 2026-11-20)
 CARGO_TARGET_DIR=D:\crt cargo test --workspace
+# Deploy PostgreSQL integration gate (local cluster; green 2026-11-20)
+SDKWORK_DATABASE_TEST_POSTGRES_URL=postgres://postgres@127.0.0.1:55432/sdkwork_test \
+  pnpm test:postgres
 # Deploy identity mapping + service
 CARGO_TARGET_DIR=D:\crt cargo test -p sdkwork-deploy-identity-provisioning-port \
   -p sdkwork-intelligence-deploy-service --lib
@@ -126,8 +129,8 @@ None is introduced by the factory changes.
 
 ## 6. Remaining external dependencies
 
-1. Automatic refund/chargeback revocation worker (manual CLI exists) and
-   real PostgreSQL execution of the order/artifact/identity tests.
+1. Deployment execution of the refund revocation worker, plus cross-module
+   order/IAM database tests; the Deploy PostgreSQL gate itself now runs green.
 2. IAM runtime consumption of Deploy resource links (login/cashier currently
    resolve IAM-owned OAuth integrations).
 3. Real target-environment publish/deploy verification and mobile
