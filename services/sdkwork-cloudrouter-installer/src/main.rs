@@ -421,6 +421,19 @@ async fn run_command(
             let report = iam_installation::audit_identity_links(pg).await?;
             print_json(&report)?;
         }
+        InstallerCommand::ReconcileIdentities { apply } => {
+            let database_pool = connect_installer_database_pool(database_config).await?;
+            let sdkwork_database_sqlx::DatabasePool::Postgres(pg, _) = &database_pool else {
+                return Err(InstallerCliError::InvalidArgument(
+                    "reconcile-identities requires the PostgreSQL installer database"
+                        .to_owned(),
+                )
+                .into());
+            };
+            let report =
+                iam_installation::reconcile_legacy_identity_links(pg, apply).await?;
+            print_json(&report)?;
+        }
         InstallerCommand::RevokeRefundedApps { apply } => {
             let database_pool = connect_installer_database_pool(database_config).await?;
             let sdkwork_database_sqlx::DatabasePool::Postgres(pg, _) = &database_pool else {
@@ -494,6 +507,7 @@ enum InstallerCommand {
     ResetAdmin(ResetAdminOptions),
     IssueBootstrapToken(IssueBootstrapTokenOptions),
     AuditIdentities,
+    ReconcileIdentities { apply: bool },
     RevokeRefundedApps { apply: bool },
 }
 
@@ -544,6 +558,21 @@ where
         "audit-identities" => {
             reject_extra_args("audit-identities", args)?;
             InstallerCommand::AuditIdentities
+        }
+        "reconcile-identities" => {
+            let mut apply = false;
+            for arg in args {
+                match arg.as_str() {
+                    "--apply" => apply = true,
+                    other => {
+                        return Err(InstallerCliError::InvalidArgument(format!(
+                            "unknown reconcile-identities option: {other}"
+                        ))
+                        .into())
+                    }
+                }
+            }
+            InstallerCommand::ReconcileIdentities { apply }
         }
         "revoke-refunded-apps" => {
             let mut apply = false;
@@ -1049,6 +1078,7 @@ impl InstallerCommand {
             | Self::ResetAdmin(_)
             | Self::IssueBootstrapToken(_)
             | Self::AuditIdentities
+            | Self::ReconcileIdentities { .. }
             | Self::RevokeRefundedApps { .. } => false,
         }
     }

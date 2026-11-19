@@ -177,11 +177,63 @@ pub async fn audit_identity_links(pg: &PgPool) -> anyhow::Result<IdentityLinkAud
     Ok(report)
 }
 
-/// Ensures the IAM installation of a deploy application exists and is enabled.
+/// Result of a legacy-anchor reconciliation pass.
+#[derive(Clone, Debug, Default, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IdentityReconcileReport {
+    pub applied: bool,
+    pub candidates: Vec<LegacyIdentityLink>,
+    pub relinked: Vec<String>,
+}
+
+/// Relinks legacy uuid-anchored installations to their canonical decimal anchor.
+///
+/// Only the unambiguous `legacyLinks` are eligible: a duplicate (uuid + decimal
+/// both present) is never guessed at. Dry-run by default; `apply` calls the same
+/// guarded IAM relink used by `ensure_iam_installation`.
+pub async fn reconcile_legacy_identity_links(
+    pg: &PgPool,
+    apply: bool,
+) -> anyhow::Result<IdentityReconcileReport> {
+    let audit = audit_identity_links(pg).await?;
+    let mut report = IdentityReconcileReport {
+        applied: apply,
+        candidates: audit.legacy_links,
+        relinked: Vec::new(),
+    };
+    if !apply {
+        return Ok(report);
+    }
+    for link in &report.candidates {
+        match relink_tenant_application_deploy_application_id(
+            pg,
+            link.tenant_id.as_str(),
+            link.legacy_anchor.as_str(),
+            link.canonical_anchor.as_str(),
+        )
+        .await
+        {
+            Ok(Some(_)) => report
+                .relinked
+                .push(format!("{}:{}", link.tenant_id, link.deploy_uuid)),
+            Ok(None) => {}
+            Err(error) => {
+                return Err(anyhow::Error::msg(format!(
+                    "relink {}:{} failed: {error}",
+                    link.tenant_id, link.deploy_uuid
+                )))
+            }
+        }
+    }
+    Ok(report)
+}
+
 ///
 /// `deploy_application_id` is the canonical decimal anchor deploy's
 /// `apps.create` provisioning writes; `deploy_application_uuid` is the public
 /// deploy id, checked only as a legacy fallback so an older uuid-anchored
+/// Ensures the IAM installation of a deploy application exists and is enabled.
+///
 /// installation is reused instead of duplicated. The returned installation is
 /// guaranteed to be `enabled` and linked to the resolved anchor; anything else
 /// is an error that names what is wrong, never a value the caller could mistake

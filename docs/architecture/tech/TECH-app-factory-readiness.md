@@ -117,11 +117,13 @@ None is introduced by the factory changes.
 
 ## 6. Remaining external dependencies
 
-1. Scaffold install route/UI and template entitlement/purchase integration
-   (sdkwork-order/payment).
+1. Automatic refund/chargeback revocation worker (manual CLI exists) and
+   real PostgreSQL execution of the order/artifact/identity tests.
 2. IAM runtime consumption of Deploy resource links (login/cashier currently
    resolve IAM-owned OAuth integrations).
 3. Real target-environment publish/deploy verification and mobile
    signing/store-delivery pipeline.
 4. Legacy duplicate IAM rows (uuid + decimal) cleanup; the installer only heals
-   the single-row case.
+   the unambiguous single-row case. `cloudrouterctl audit-identities` reports
+   the pairs and `reconcile-identities --apply` relinks the safe legacy links;
+   true duplicates still need a reviewed maintenance action.
