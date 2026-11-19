@@ -107,14 +107,16 @@ Latest verified gates:
   tests pass, the full `flutter test` suite passes 36/36, and the surface
   contract passes 9/9.
 - Repo gates: i18n, application layering, API response envelopes, upload
-  declarations, and community/workspace `verify-repo` checks pass.
+  declarations, and community/workspace `verify-repo` checks pass. The
+  community subset of the API operation-pattern gate reports zero violations
+  after the query-parameter migration.
 
 Known delivery debt outside the circle flow:
 
-- The community OpenAPI families still expose pre-existing camelCase query
-  parameter names (`categoryId`, `reviewState`, `includeDisabled`), which the
-  API operation-pattern gate flags. Correcting them is a versioned public
-  contract migration, not a silent rename.
+- The community OpenAPI families now expose canonical lower_snake_case query
+  parameters (`category_id`, `review_state`, `include_disabled`,
+  `enabled_only`); the route extractors keep camelCase aliases so already
+  deployed clients continue to work during the migration window.
 - The community mobile package's vitest suite requires that repository's
   devDependencies to be installed; this workspace currently verifies it through
   the H5 typecheck and runtime build instead.
