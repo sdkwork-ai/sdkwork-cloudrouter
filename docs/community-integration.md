@@ -92,6 +92,36 @@ flutter test packages/sdkwork_cloudrouter_flutter_mobile_console_community/test
 node --test apps/sdkwork-cloudrouter-flutter-mobile/tests/flutter-mobile-surface-contract.test.mjs
 ```
 
+## Delivery status
+
+Latest verified gates:
+
+- H5: `pnpm typecheck`, `pnpm build:dev`, and the full `pnpm test` suite
+  (101/101) pass.
+- PC: `pnpm typecheck`, `pnpm build:test`, and the community portal suite
+  (6/6) pass. The admin/test suites pass 230 checks; one unrelated trade-route
+  count assertion remains outside the community surface.
+- Mini program: `pnpm _sdkwork:check`, 20 contract tests, 4 App API mapping
+  tests, and the 14-page runtime build pass.
+- Flutter: `flutter analyze` reports no errors, the community widget/media
+  tests pass, the full `flutter test` suite passes 36/36, and the surface
+  contract passes 9/9.
+- Repo gates: i18n, application layering, API response envelopes, upload
+  declarations, and community/workspace `verify-repo` checks pass.
+
+Known delivery debt outside the circle flow:
+
+- The community OpenAPI families still expose pre-existing camelCase query
+  parameter names (`categoryId`, `reviewState`, `includeDisabled`), which the
+  API operation-pattern gate flags. Correcting them is a versioned public
+  contract migration, not a silent rename.
+- The community mobile package's vitest suite requires that repository's
+  devDependencies to be installed; this workspace currently verifies it through
+  the H5 typecheck and runtime build instead.
+- Post moderation remains an admin-workspace operation; the portal/native
+  surfaces show the author's pending state but do not grant platform review
+  authority.
+
 ## Known gaps
 
 - Mini program management, groups, members, tiers, and paid checkout use the
