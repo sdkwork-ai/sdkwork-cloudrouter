@@ -38,3 +38,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Flutter golden failure artifacts
+/test/failures/
