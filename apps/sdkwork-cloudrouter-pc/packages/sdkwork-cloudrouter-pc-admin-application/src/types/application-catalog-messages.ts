@@ -218,6 +218,20 @@ export interface ApplicationCatalogMessages {
       officialAccount: string;
       payment: string;
     };
+    appKinds: {
+      "android": string;
+      "api": string;
+      "desktop": string;
+      "douyin-mini-program": string;
+      "flutter": string;
+      "harmonyos": string;
+      "h5": string;
+      "ios": string;
+      "pc": string;
+      "unknown": string;
+      "wechat-mini-program": string;
+      "web-legacy": string;
+    };
     channel: {
       accountType: string;
       appId: string;
@@ -245,6 +259,7 @@ export interface ApplicationCatalogMessages {
         title: string;
       };
       application: string;
+      bindingsLoadError: string;
       close: string;
       deployAnchor: string;
       descriptions: {
@@ -256,9 +271,11 @@ export interface ApplicationCatalogMessages {
         description: string;
         empty: string;
         label: string;
+        notBindable: string;
       };
       errors: string;
       forbidden: string;
+      legacySeed: string;
       loadError: string;
       loading: string;
       noChanges: string;
@@ -333,16 +350,46 @@ export interface ApplicationCatalogMessages {
       close: string;
       selectedCount: string;
     };
+    readiness: {
+      title: string;
+      description: string;
+      appKind: string;
+      requirements: string;
+      required: string;
+      recommended: string;
+      labels: {
+        autoLogin: string;
+        channel: string;
+        checkout: string;
+        payment: string;
+      };
+      statuses: {
+        incomplete: string;
+        "not-applicable": string;
+        ready: string;
+      };
+    };
+    requirements: {
+      "official-account": string;
+      "mini-program": string;
+      "payment-account": string;
+    };
     summary: {
+      autoLoginPending: string;
+      checkoutPending: string;
       miniProgram: string;
       officialAccount: string;
       paymentCount: string;
     };
     validation: {
+      "account-not-used-by-app-kind": string;
+      "auto-login-not-configured": string;
       "channel-app-id-missing": string;
       "channel-disabled": string;
       "channel-not-found": string;
       "channel-unauthorized": string;
+      "checkout-not-ready": string;
+      "environment-not-bindable": string;
       "payment-capability-missing": string;
       "payment-default-duplicate": string;
       "payment-default-missing": string;
@@ -350,7 +397,10 @@ export interface ApplicationCatalogMessages {
       "payment-environment-mismatch": string;
       "payment-inactive": string;
       "payment-not-found": string;
+      "payment-not-used-by-app-kind": string;
       "payment-partner-sub-merchant-missing": string;
+      "payment-provider-incompatible": string;
+      "required-integration-missing": string;
       "wechat-app-id-mismatch": string;
       "wechat-channel-missing": string;
       "wechat-payment-missing": string;

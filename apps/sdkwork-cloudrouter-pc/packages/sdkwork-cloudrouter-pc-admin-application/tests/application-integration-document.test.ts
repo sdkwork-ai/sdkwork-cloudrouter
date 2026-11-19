@@ -97,11 +97,13 @@ describe("application integration document", () => {
       schema: APPLICATION_INTEGRATION_SCHEMA,
       linkedApplications: [],
       environments: {},
+      migratedEnvironments: [],
     });
     expect(readApplicationIntegrationDocument({ integrations: { schema: "future/v9" } })).toEqual({
       schema: APPLICATION_INTEGRATION_SCHEMA,
       linkedApplications: [],
       environments: {},
+      migratedEnvironments: [],
     });
   });
 
@@ -213,6 +215,31 @@ describe("application integration document", () => {
     expect(resolveDeployApplicationForRecord(iamApplication, [deployApplication])?.id).toBe("deploy-1");
   });
 
+  it("prefers the IAM installation's deployApplicationId over a name match", () => {
+    const namedMatch: ApplicationRecord = {
+      groupId: "deploy",
+      id: "deploy-named",
+      name: "Console",
+      reference: "acme-console",
+    };
+    const anchored: ApplicationRecord = {
+      groupId: "deploy",
+      id: "deploy-anchored",
+      name: "Something else",
+      reference: "other-console",
+    };
+    const iamApplication: ApplicationRecord = {
+      deployApplicationId: "deploy-anchored",
+      groupId: "iam",
+      id: "iam-1",
+      name: "Console",
+      reference: "acme-console",
+    };
+
+    expect(resolveDeployApplicationForRecord(iamApplication, [namedMatch, anchored])?.id)
+      .toBe("deploy-anchored");
+  });
+
   it("does not steal a Deploy app that is already linked to another row of the same group", () => {
     const deployApplication: ApplicationRecord = {
       groupId: "deploy",
@@ -267,6 +294,30 @@ describe("application integration document", () => {
       paymentAccountCount: 0,
     });
     expect(summarizeApplicationIntegration({}, "deploy-1", false)).toBeUndefined();
+  });
+
+  it("adds app-kind readiness to the row summary only when the kind is known", () => {
+    const metadata = writeApplicationIntegrationDocument({}, upsertEnvironmentIntegration(
+      readApplicationIntegrationDocument({}),
+      "production",
+      environmentIntegration({
+        paymentAccounts: [{
+          accountMode: "direct",
+          accountNo: "wechat-prod",
+          environment: "production",
+          id: "pay-prod-wechat",
+          isDefault: true,
+          providerCode: "wechat_pay",
+        }],
+      }),
+    ));
+
+    // A WeChat mini program with payment but no mini program account cannot do
+    // JSAPI checkout or `wx.login` auto-login yet.
+    expect(summarizeApplicationIntegration(metadata, "deploy-1", false, "WECHAT_MINIPROGRAM")?.readiness)
+      .toEqual({ autoLogin: "incomplete", checkout: "incomplete" });
+    // Without a known kind the summary stays kind-agnostic.
+    expect(summarizeApplicationIntegration(metadata, "deploy-1", false)?.readiness).toBeUndefined();
   });
 });
 

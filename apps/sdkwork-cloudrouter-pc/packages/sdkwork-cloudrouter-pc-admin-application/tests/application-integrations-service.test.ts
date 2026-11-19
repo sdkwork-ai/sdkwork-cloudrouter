@@ -7,6 +7,11 @@ const mocks = vi.hoisted(() => ({
     app: {
       retrieve: vi.fn(),
       update: vi.fn(),
+      resourceLinks: {
+        delete: vi.fn(),
+        list: vi.fn(),
+        update: vi.fn(),
+      },
     },
     appEnvironment: {
       list: vi.fn(),
@@ -46,6 +51,10 @@ const {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.deployments.app.resourceLinks.list.mockResolvedValue({
+    items: [],
+    pageInfo: { hasMore: false },
+  });
 });
 
 describe("application integration transport", () => {
@@ -139,7 +148,7 @@ describe("application integration transport", () => {
     expect(environments).toEqual([{ key: "production" }]);
   });
 
-  it("merges the binding document into the complete metadata object and resolves the link", async () => {
+  it("writes the anchor to metadata and the binding through the resource-link authority", async () => {
     mocks.deployments.app.retrieve.mockResolvedValue({
       metadata: { category: "mall", media: { logo: "drive://logo" } },
     });
@@ -150,21 +159,23 @@ describe("application integration transport", () => {
         integrations: {
           schema: APPLICATION_INTEGRATION_SCHEMA,
           linkedApplications: [{ groupId: "iam", id: "iam-1" }],
-          environments: {
-            production: {
-              paymentAccounts: [{
-                id: "pay-1",
-                accountNo: "wechat-prod",
-                providerCode: "wechat_pay",
-                environment: "production",
-                accountMode: "direct",
-                isDefault: true,
-              }],
-            },
-          },
         },
       },
       updatedAt: "2026-11-15T09:00:00Z",
+    });
+    mocks.deployments.app.resourceLinks.update.mockResolvedValue({
+      id: "link-1",
+      appId: "deploy-1",
+      environment: "production",
+      resourceKind: "payment_account",
+      resourceRef: "wechat-prod",
+      providerCode: "wechat_pay",
+      isDefault: true,
+      bindingStatus: "ACTIVE",
+      metadata: {},
+      createdAt: "2026-11-15T09:00:00Z",
+      updatedAt: "2026-11-15T09:00:00Z",
+      version: "1",
     });
 
     const service = createApplicationIntegrationService();
@@ -186,6 +197,8 @@ describe("application integration transport", () => {
       }],
     });
 
+    // Metadata is written only for the cross-system anchor; existing keys and
+    // the legacy binding document are preserved byte-for-byte.
     expect(mocks.deployments.app.update).toHaveBeenCalledWith("deploy-1", {
       metadata: expect.objectContaining({
         category: "mall",
@@ -195,6 +208,20 @@ describe("application integration transport", () => {
           linkedApplications: [{ groupId: "iam", id: "iam-1" }],
         }),
       }),
+    });
+    expect(mocks.deployments.app.resourceLinks.update).toHaveBeenCalledWith("deploy-1", {
+      bindingStatus: "ACTIVE",
+      environment: "production",
+      isDefault: true,
+      metadata: expect.objectContaining({
+        accountId: "pay-1",
+        accountMode: "direct",
+        environment: "production",
+        source: "sdkwork-application-center",
+      }),
+      providerCode: "wechat_pay",
+      resourceKind: "payment_account",
+      resourceRef: "wechat-prod",
     });
     expect(result).toEqual(expect.objectContaining({
       deployAppId: "deploy-1",
@@ -249,7 +276,7 @@ describe("application integration transport", () => {
     }));
   });
 
-  it("refuses to overwrite an unknown future document version", async () => {
+  it("refuses to overwrite an unknown future document version when linking", async () => {
     mocks.deployments.app.retrieve.mockResolvedValue({
       metadata: { integrations: { schema: "future/v9" } },
     });
@@ -257,9 +284,251 @@ describe("application integration transport", () => {
     const service = createApplicationIntegrationService();
     await expect(service.save({
       deployAppId: "deploy-1",
+      linkedApplication: { groupId: "iam", id: "iam-1" },
       environments: [],
     })).rejects.toThrow(/version is not supported/);
     expect(mocks.deployments.app.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("authoritative resource-link transport", () => {
+  it("loads bindings from resource links and falls back to the legacy seed only when empty", async () => {
+    mocks.deployments.app.resourceLinks.list.mockResolvedValueOnce({
+      items: [
+        {
+          id: "link-official",
+          appId: "deploy-1",
+          environment: "production",
+          resourceKind: "official_account",
+          resourceRef: "wx-official",
+          providerCode: "wechat",
+          isDefault: false,
+          bindingStatus: "ACTIVE",
+          metadata: { accountId: "ra-official", displayName: "Official", status: "active" },
+          createdAt: "2026-11-15T09:00:00Z",
+          updatedAt: "2026-11-15T09:00:00Z",
+          version: "1",
+        },
+        {
+          id: "link-payment",
+          appId: "deploy-1",
+          environment: "production",
+          resourceKind: "payment_account",
+          resourceRef: "wechat-prod",
+          providerCode: "wechat_pay",
+          isDefault: true,
+          bindingStatus: "ACTIVE",
+          metadata: { accountId: "pay-1", accountName: "Merchant", accountMode: "direct", environment: "production" },
+          createdAt: "2026-11-15T09:00:00Z",
+          updatedAt: "2026-11-15T09:00:00Z",
+          version: "1",
+        },
+      ],
+      pageInfo: { hasMore: false },
+    });
+
+    const service = createApplicationIntegrationService();
+    const bindings = await service.loadBindings?.("deploy-1", {});
+
+    expect(bindings?.legacySeed).toBe(false);
+    expect(bindings?.environments.production.officialAccount).toEqual(expect.objectContaining({
+      appId: "wx-official",
+      displayName: "Official",
+      id: "ra-official",
+    }));
+    expect(bindings?.environments.production.paymentAccounts).toEqual([
+      expect.objectContaining({ accountNo: "wechat-prod", id: "pay-1", isDefault: true }),
+    ]);
+
+    mocks.deployments.app.resourceLinks.list.mockResolvedValueOnce({
+      items: [],
+      pageInfo: { hasMore: false },
+    });
+    const legacy = await service.loadBindings?.("deploy-1", {
+      integrations: {
+        schema: APPLICATION_INTEGRATION_SCHEMA,
+        linkedApplications: [],
+        environments: {
+          production: {
+            miniProgram: {
+              id: "ra-mini",
+              appId: "wx-mini",
+              displayName: "Mini",
+              providerCode: "wechat_mini_program",
+              resourceAccountKind: "mini-program",
+              enabled: true,
+            },
+            paymentAccounts: [],
+          },
+        },
+      },
+    });
+    expect(legacy?.legacySeed).toBe(true);
+    expect(legacy?.environments.production.miniProgram).toEqual(expect.objectContaining({
+      appId: "wx-mini",
+      id: "ra-mini",
+    }));
+  });
+
+  it("deletes removed rows and replaces a changed single-instance account", async () => {
+    mocks.deployments.app.retrieve.mockResolvedValue({ metadata: {} });
+    mocks.deployments.app.resourceLinks.list.mockResolvedValue({
+      items: [
+        {
+          id: "link-official",
+          appId: "deploy-1",
+          environment: "production",
+          resourceKind: "official_account",
+          resourceRef: "wx-old",
+          providerCode: "wechat",
+          isDefault: false,
+          bindingStatus: "ACTIVE",
+          metadata: { accountId: "ra-old", appId: "wx-old", displayName: "Old" },
+          createdAt: "2026-11-15T09:00:00Z",
+          updatedAt: "2026-11-15T09:00:00Z",
+          version: "1",
+        },
+        {
+          id: "link-payment-gone",
+          appId: "deploy-1",
+          environment: "production",
+          resourceKind: "payment_account",
+          resourceRef: "old-merchant",
+          providerCode: "alipay",
+          isDefault: true,
+          bindingStatus: "ACTIVE",
+          metadata: { accountId: "pay-old", accountMode: "direct", environment: "production" },
+          createdAt: "2026-11-15T09:00:00Z",
+          updatedAt: "2026-11-15T09:00:00Z",
+          version: "1",
+        },
+      ],
+      pageInfo: { hasMore: false },
+    });
+
+    const service = createApplicationIntegrationService();
+    await service.save({
+      deployAppId: "deploy-1",
+      environments: [{
+        key: "production",
+        integration: {
+          officialAccount: {
+            id: "ra-new",
+            appId: "wx-new",
+            displayName: "New",
+            providerCode: "wechat",
+            resourceAccountKind: "official-account",
+            enabled: true,
+          },
+          paymentAccounts: [],
+        },
+      }],
+    });
+
+    expect(mocks.deployments.app.resourceLinks.update).toHaveBeenCalledWith("deploy-1", expect.objectContaining({
+      environment: "production",
+      resourceKind: "official_account",
+      resourceRef: "wx-new",
+    }));
+    expect(mocks.deployments.app.resourceLinks.delete).toHaveBeenCalledWith("deploy-1", "link-payment-gone");
+    expect(mocks.deployments.app.resourceLinks.delete).toHaveBeenCalledTimes(1);
+    expect(mocks.deployments.app.update).not.toHaveBeenCalled();
+  });
+
+  it("does not resurrect a legacy environment after its bindings were cleared", async () => {
+    const legacyDocument = {
+      schema: APPLICATION_INTEGRATION_SCHEMA,
+      linkedApplications: [],
+      environments: {
+        production: {
+          miniProgram: {
+            id: "ra-mini",
+            appId: "wx-mini",
+            displayName: "Mini",
+            providerCode: "wechat_mini_program",
+            resourceAccountKind: "mini-program",
+            enabled: true,
+          },
+          paymentAccounts: [],
+        },
+      },
+    };
+    mocks.deployments.app.resourceLinks.list.mockResolvedValue({
+      items: [],
+      pageInfo: { hasMore: false },
+    });
+    const service = createApplicationIntegrationService();
+
+    // The legacy row is the migration seed until the operator saves.
+    const seeded = await service.loadBindings?.("deploy-1", { integrations: legacyDocument });
+    expect(seeded?.legacySeed).toBe(true);
+
+    mocks.deployments.app.retrieve.mockResolvedValue({
+      metadata: { integrations: legacyDocument },
+    });
+    mocks.deployments.app.update.mockResolvedValue({
+      metadata: {
+        integrations: {
+          ...legacyDocument,
+          migratedEnvironments: ["production"],
+        },
+      },
+    });
+
+    await service.save({
+      deployAppId: "deploy-1",
+      environments: [{ key: "production", integration: { paymentAccounts: [] } }],
+    });
+
+    // Clearing a legacy binding writes no authority row, but it must record the
+    // migration so the next open does not re-seed the deleted configuration.
+    expect(mocks.deployments.app.resourceLinks.delete).not.toHaveBeenCalled();
+    expect(mocks.deployments.app.update).toHaveBeenCalledWith("deploy-1", {
+      metadata: expect.objectContaining({
+        integrations: expect.objectContaining({
+          migratedEnvironments: ["production"],
+          environments: expect.objectContaining({ production: expect.anything() }),
+        }),
+      }),
+    });
+
+    mocks.deployments.app.resourceLinks.list.mockResolvedValue({
+      items: [{
+        id: "link-dev",
+        appId: "deploy-1",
+        environment: "development",
+        resourceKind: "payment_account",
+        resourceRef: "dev-merchant",
+        providerCode: "alipay",
+        isDefault: true,
+        bindingStatus: "ACTIVE",
+        metadata: { accountId: "pay-dev", accountMode: "direct", environment: "development" },
+        createdAt: "2026-11-15T09:00:00Z",
+        updatedAt: "2026-11-15T09:00:00Z",
+        version: "1",
+      }],
+      pageInfo: { hasMore: false },
+    });
+    const afterClear = await service.loadBindings?.("deploy-1", {
+      integrations: {
+        ...legacyDocument,
+        migratedEnvironments: ["production"],
+      },
+    });
+    expect(afterClear?.legacySeed).toBe(false);
+    expect(afterClear?.environments.production).toBeUndefined();
+    expect(afterClear?.environments.development?.paymentAccounts).toHaveLength(1);
+  });
+
+  it("refuses to send a non-lifecycle environment to the Deploy API", async () => {
+    mocks.deployments.app.retrieve.mockResolvedValue({ metadata: {} });
+
+    const service = createApplicationIntegrationService();
+    await expect(service.save({
+      deployAppId: "deploy-1",
+      environments: [{ key: "custom-prod", integration: { paymentAccounts: [] } }],
+    })).rejects.toThrow(/cannot carry account bindings/);
+    expect(mocks.deployments.app.resourceLinks.update).not.toHaveBeenCalled();
   });
 });
 

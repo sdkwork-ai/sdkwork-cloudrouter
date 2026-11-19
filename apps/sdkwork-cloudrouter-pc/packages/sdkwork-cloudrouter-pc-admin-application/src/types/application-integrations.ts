@@ -18,8 +18,33 @@ import type { ApplicationGroupId } from "./application-catalog";
 /** Stable document marker; a future format change gets a new version value. */
 export const APPLICATION_INTEGRATION_SCHEMA = "sdkwork.application.integrations/v1";
 
-/** Deploy application `metadata` key that carries the binding document. */
+/**
+ * Deploy application `metadata` key that carries the cross-system anchor.
+ *
+ * Account bindings are **not** read from or written to this document any more:
+ * `deploy_application_resource_link` owns them (see
+ * `docs/architecture/tech/TECH-application-resource-bindings.md` in the Deploy
+ * repository). The document remains the system of record only for
+ * `linkedApplications` (the IAM / App Store anchor) and the pre-migration
+ * binding rows, which this console reads once as a migration seed and never
+ * rewrites.
+ */
 export const APPLICATION_INTEGRATION_METADATA_KEY = "integrations";
+
+/**
+ * The lifecycle environment keys `deploy_application_resource_link.env_key`
+ * accepts. Deploy may register extra app environments with arbitrary keys, but
+ * a binding is only addressable on one of these five values.
+ */
+export const BINDABLE_APPLICATION_ENVIRONMENTS = [
+  "development",
+  "test",
+  "staging",
+  "demo",
+  "production",
+] as const;
+
+export type BindableApplicationEnvironment = (typeof BINDABLE_APPLICATION_ENVIRONMENTS)[number];
 
 /** Payment provider account environment as defined by the payment contract. */
 export type PaymentAccountEnvironment = "development" | "sandbox" | "production";
@@ -115,6 +140,15 @@ export interface ApplicationIntegrationDocument {
   schema: typeof APPLICATION_INTEGRATION_SCHEMA;
   linkedApplications: LinkedApplicationRef[];
   environments: Record<string, ApplicationEnvironmentIntegration>;
+  /**
+   * Legacy environment keys the console has already migrated to the
+   * authoritative resource-link table.
+   *
+   * Without this ledger a cleared environment would be re-seeded from the
+   * untouched legacy document on the next open, resurrecting a binding the
+   * operator intentionally removed.
+   */
+  migratedEnvironments?: readonly string[];
 }
 
 /** One environment of a Deploy application, as the environment picker shows it. */
@@ -170,6 +204,53 @@ export interface ApplicationIntegrationSummary {
   officialAccountCount: number;
   miniProgramCount: number;
   paymentAccountCount: number;
+  /**
+   * Auto-login and cashier readiness of the first configured environment.
+   *
+   * Present only when the caller knows the application kind; absent for an
+   * unknown kind or a summary built without one.
+   */
+  readiness?: {
+    autoLogin: "incomplete" | "not-applicable" | "ready";
+    checkout: "incomplete" | "not-applicable" | "ready";
+  };
+}
+
+/**
+ * One normalized `deploy_application_resource_link` row.
+ *
+ * `resourceRef` is the provider-side identity (WeChat AppID for a channel
+ * account, merchant account number for a payment account). The catalog account
+ * id the operator picked is kept in `metadata.accountId`, because the binding
+ * row id is not the catalog id.
+ */
+export interface ApplicationResourceLinkRecord {
+  id: string;
+  environment: string;
+  resourceKind: ApplicationIntegrationKindWire;
+  resourceRef: string;
+  providerCode?: string;
+  isDefault: boolean;
+  bindingStatus: string;
+  metadata: Readonly<Record<string, unknown>>;
+  updatedAt?: string;
+}
+
+/** Wire spelling of a resource link kind (`deploy_application_resource_link`). */
+export type ApplicationIntegrationKindWire = "official_account" | "mini_program" | "payment_account";
+
+/**
+ * Bindings loaded for one Deploy application.
+ *
+ * `legacySeed` is `true` only when the authoritative table returned no rows and
+ * the drawer seeded the editable view from the pre-migration document. Saving
+ * migrates those rows through the resource-link API; the document itself is
+ * left untouched as migration evidence.
+ */
+export interface ApplicationIntegrationBindings {
+  environments: Record<string, ApplicationEnvironmentIntegration>;
+  links: readonly ApplicationResourceLinkRecord[];
+  legacySeed: boolean;
 }
 
 /** One environment's pending edits, sent in a single metadata update. */
@@ -231,15 +312,30 @@ export interface ApplicationIntegrationService {
     query: IntegrationAccountQuery,
   ): Promise<IntegrationAccountPage<ApplicationPaymentAccountOption>>;
   loadEnvironments(deployAppId: string, fallbackEnvironment?: string): Promise<readonly ApplicationEnvironmentOption[]>;
+  /**
+   * Loads one application's account bindings from the authoritative
+   * `deploy_application_resource_link` table.
+   *
+   * Optional so older test doubles keep working; when a host omits it the
+   * drawer reads the legacy document read-only, which is the migration path.
+   */
+  loadBindings?(
+    deployAppId: string,
+    legacyMetadata?: Record<string, unknown>,
+  ): Promise<ApplicationIntegrationBindings>;
   save(input: ApplicationIntegrationSaveInput): Promise<ApplicationIntegrationSaveResult>;
 }
 
 /** Machine-readable validation issue; the page localizes it. */
 export type ApplicationIntegrationIssueCode =
+  | "account-not-used-by-app-kind"
+  | "auto-login-not-configured"
   | "channel-app-id-missing"
   | "channel-disabled"
   | "channel-not-found"
   | "channel-unauthorized"
+  | "checkout-not-ready"
+  | "environment-not-bindable"
   | "payment-capability-missing"
   | "payment-default-duplicate"
   | "payment-default-missing"
@@ -247,7 +343,10 @@ export type ApplicationIntegrationIssueCode =
   | "payment-environment-mismatch"
   | "payment-inactive"
   | "payment-not-found"
+  | "payment-not-used-by-app-kind"
   | "payment-partner-sub-merchant-missing"
+  | "payment-provider-incompatible"
+  | "required-integration-missing"
   | "wechat-app-id-mismatch"
   | "wechat-channel-missing"
   | "wechat-payment-missing";
@@ -261,6 +360,8 @@ export interface ApplicationIntegrationIssue {
 
 /** Everything validation needs to reason about one environment. */
 export interface ApplicationIntegrationValidationInput {
+  /** Deploy application kind (`appKind`), e.g. `WECHAT_MINIPROGRAM`. */
+  appKind?: string;
   environment: string;
   environmentLevel?: string;
   integration: ApplicationEnvironmentIntegration;

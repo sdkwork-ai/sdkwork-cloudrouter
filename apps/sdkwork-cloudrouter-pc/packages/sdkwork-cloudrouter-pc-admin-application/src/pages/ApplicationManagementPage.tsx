@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { useNavigate, useParams, useLocation, useSearchParams } from "react-router-dom";
 import {
+  AlertTriangle,
   ArrowLeft,
   Copy,
   CreditCard,
@@ -66,6 +67,7 @@ import {
 import {
   resolveDeployApplicationForRecord,
   summarizeApplicationIntegration,
+  summarizeApplicationIntegrationBindings,
 } from "../services/application-integration-document";
 import { getApplicationIntegrationService } from "../services/application-integrations";
 import type {
@@ -100,6 +102,15 @@ const APPLICATION_GROUPS: readonly ApplicationGroupDefinition[] = [
   { id: "deploy", icon: Layers, loader: loadDeployApplications, messageKey: "deploy" },
   { id: "app-store", icon: Store, loader: loadAppStoreApplications, messageKey: "appStore" },
 ];
+
+/**
+ * Bounds on the list-row integration summary fan-out.
+ *
+ * Each summary is one `apps.resourceLinks.list` call per deploy application;
+ * the list shows at most these many and leaves the rest to the drawer.
+ */
+const INTEGRATION_SUMMARY_LIMIT = 60;
+const INTEGRATION_SUMMARY_CONCURRENCY = 6;
 
 /** Left-navigation views: the three app sources plus category governance. */
 export type ApplicationCatalogView = ApplicationGroupId | "categories";
@@ -498,23 +509,91 @@ export function ApplicationManagementPage({
         .some((value) => value?.toLowerCase().includes(normalizedQuery)));
   }, [activeState?.items, query]);
 
-  const integrationSummaries = useMemo(() => {
-    const summaries = new Map<string, ApplicationIntegrationSummary>();
-    for (const item of activeState?.items ?? []) {
+  const [integrationSummaries, setIntegrationSummaries] = useState<
+    ReadonlyMap<string, ApplicationIntegrationSummary>
+  >(new Map());
+  // Bindings live in `deploy_application_resource_link`, not in the app metadata,
+  // so the list-row chips are resolved with one bounded fan-out per visible
+  // page. Beyond the cap the chips stay absent rather than turning a large
+  // tenant list into hundreds of requests.
+  useEffect(() => {
+    const items = activeState?.items ?? [];
+    if (items.length === 0) {
+      setIntegrationSummaries(new Map());
+      return;
+    }
+    const service = integrationsRef.current ?? getApplicationIntegrationService();
+    const loadBindings = service.loadBindings;
+    const linkedToDeploy = new Map<string, ApplicationRecord>();
+    const rowToDeploy = new Map<string, string>();
+    for (const item of items) {
       const deployApplication = resolveDeployApplicationForRecord(item, deployApplications);
       if (!deployApplication) {
         continue;
       }
-      const summary = summarizeApplicationIntegration(
-        deployApplication.metadata,
-        deployApplication.id,
-        item.groupId !== "deploy",
-      );
-      if (summary) {
-        summaries.set(rowKey(item), summary);
-      }
+      linkedToDeploy.set(deployApplication.id, deployApplication);
+      rowToDeploy.set(rowKey(item), deployApplication.id);
     }
-    return summaries;
+    if (!loadBindings) {
+      // Test doubles without the authority transport keep the legacy document
+      // summary; the drawer still explains the migration state.
+      const fallback = new Map<string, ApplicationIntegrationSummary>();
+      for (const item of items) {
+        const deployApplication = resolveDeployApplicationForRecord(item, deployApplications);
+        if (!deployApplication) {
+          continue;
+        }
+        const summary = summarizeApplicationIntegration(
+          deployApplication.metadata,
+          deployApplication.id,
+          item.groupId !== "deploy",
+          deployApplication.kind,
+        );
+        if (summary) {
+          fallback.set(rowKey(item), summary);
+        }
+      }
+      setIntegrationSummaries(fallback);
+      return;
+    }
+    let cancelled = false;
+    const targets = [...linkedToDeploy.values()].slice(0, INTEGRATION_SUMMARY_LIMIT);
+    void (async () => {
+      const byDeployApp = new Map<string, ApplicationIntegrationSummary>();
+      for (let index = 0; index < targets.length; index += INTEGRATION_SUMMARY_CONCURRENCY) {
+        const batch = targets.slice(index, index + INTEGRATION_SUMMARY_CONCURRENCY);
+        await Promise.all(batch.map(async (deployApplication) => {
+          try {
+            const bindings = await loadBindings(deployApplication.id, deployApplication.metadata);
+            const summary = summarizeApplicationIntegrationBindings(
+              bindings,
+              deployApplication.id,
+              false,
+              deployApplication.kind,
+            );
+            if (summary) {
+              byDeployApp.set(deployApplication.id, summary);
+            }
+          } catch {
+            // A failed summary must not break the application list.
+          }
+        }));
+      }
+      if (cancelled) {
+        return;
+      }
+      const byRow = new Map<string, ApplicationIntegrationSummary>();
+      for (const [row, deployAppId] of rowToDeploy) {
+        const summary = byDeployApp.get(deployAppId);
+        if (summary) {
+          byRow.set(row, { ...summary, linked: !row.startsWith("deploy:") });
+        }
+      }
+      setIntegrationSummaries(byRow);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [activeState?.items, deployApplications]);
 
   const openIntegration = (application: ApplicationRecord, kind: ApplicationIntegrationKind) => {
@@ -1054,6 +1133,18 @@ function IntegrationSummaryChips({
         <span className="inline-flex items-center gap-1 rounded-full border border-[var(--sdk-color-border-default)] px-2 py-0.5 text-[var(--sdk-color-text-secondary)]">
           <Smartphone className="h-3 w-3" />
           {copy.miniProgram}
+        </span>
+      ) : null}
+      {summary.readiness?.autoLogin === "incomplete" ? (
+        <span className="inline-flex items-center gap-1 rounded-full border border-[var(--sdk-color-status-warning)] px-2 py-0.5 text-[var(--sdk-color-status-warning)]">
+          <AlertTriangle className="h-3 w-3" />
+          {copy.autoLoginPending}
+        </span>
+      ) : null}
+      {summary.readiness?.checkout === "incomplete" && summary.paymentAccountCount > 0 ? (
+        <span className="inline-flex items-center gap-1 rounded-full border border-[var(--sdk-color-status-warning)] px-2 py-0.5 text-[var(--sdk-color-status-warning)]">
+          <AlertTriangle className="h-3 w-3" />
+          {copy.checkoutPending}
         </span>
       ) : null}
     </div>

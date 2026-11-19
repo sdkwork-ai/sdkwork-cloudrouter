@@ -242,6 +242,7 @@ function mapIamApplication(value: unknown): ApplicationRecord | undefined {
     return undefined;
   }
   return {
+    deployApplicationId: optionalString(record.deployApplicationId),
     domain: optionalString(record.primaryDomain),
     environment: optionalString(record.environment),
     groupId: "iam",

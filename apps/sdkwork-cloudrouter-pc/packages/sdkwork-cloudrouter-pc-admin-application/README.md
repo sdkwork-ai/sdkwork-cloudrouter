@@ -58,6 +58,29 @@ Both taxonomies render through the shared
   `template.templateCategories.list` on `/app/v3/api/template_categories`.
   `/app/v3/api/marketplace/templates` is browse-only (`marketplaceTemplates.list|retrieve`)
   and is not used for authoring.
+- **Deploy account bindings** — `apps.resourceLinks.list|update|delete` on
+  `/app/v3/api/apps/{appId}/resource_links` is the authority for the official
+  account, mini program and payment accounts an environment acts as
+  (`deploy_application_resource_link`). `deploy_app.metadata.integrations` is
+  **not** a binding authority: the console writes only `linkedApplications`
+  there (the IAM / App Store anchor) and reads the pre-migration `environments`
+  document once as a seed, so an operator can migrate without a second writer.
+  A `migratedEnvironments` ledger in the same key records which legacy
+  environments have already been written to the authority, so clearing a
+  binding does not resurrect it from the untouched document.
+  A binding is only addressable on a fleet lifecycle environment
+  (`development`, `test`, `staging`, `demo`, `production`); the drawer explains
+  that limit for a custom Deploy environment key instead of sending a request
+  the API rejects.
+- **App-kind matrix** — `services/application-integration-requirements.ts` maps
+  every Deploy `appKind` (H5, PC, WeChat/Douyin mini program, Flutter, iOS,
+  Android, HarmonyOS, desktop, API, legacy web) to the channel and payment
+  accounts it can use, the channel auto-login depends on, and whether it opens
+  the cashier. The drawer renders that matrix as a readiness checklist
+  (`channel`, `payment`, `auto-login`, `cashier`); validation turns gaps into
+  warnings (missing required account) and contradictions into errors (a WeChat
+  account on a Douyin app, payment on an API service, a non-WeChat pay provider
+  on a WeChat mini program, a non-lifecycle environment).
 - **Deploy backend SDK** — template approval/rejection/disable/feature and
   template-category CRUD. Confirmed surface (route manifest
   `sdks/_route-manifests/backend-api/sdkwork-routes-deploy-backend-api.route-manifest.json`):

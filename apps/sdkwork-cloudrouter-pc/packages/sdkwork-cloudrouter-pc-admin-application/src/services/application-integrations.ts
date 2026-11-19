@@ -3,10 +3,12 @@
  *
  * Three owning services are composed here instead of in the page:
  *
- * - Deploy app SDK: read the anchor app and persist the binding document on
- *   `deploy_app.metadata.integrations` (the app-level free-form document the
- *   Deploy contract exposes; `apps.update` replaces the whole metadata object,
- *   so every write starts from the freshly retrieved value).
+ * - Deploy app SDK: read the anchor app, persist the cross-system link on
+ *   `deploy_app.metadata.integrations` (the only metadata key this console
+ *   writes), and read/write the authoritative account bindings through
+ *   `apps.resourceLinks.list|update|delete`
+ *   (`deploy_application_resource_link`). The pre-migration binding rows in the
+ *   same document are read once as a seed and never rewritten.
  * - IAM service: list the unified `iam_oauth_resource_account` rows of kind
  *   `official_account` / `mini_program`.
  * - Payment backend SDK: list provider accounts and their environment,
@@ -23,10 +25,12 @@ import {
 import type {
   ApplicationChannelAccountOption,
   ApplicationEnvironmentOption,
+  ApplicationIntegrationBindings,
   ApplicationIntegrationSaveInput,
   ApplicationIntegrationSaveResult,
   ApplicationIntegrationService,
   ApplicationPaymentAccountOption,
+  ApplicationResourceLinkRecord,
   ChannelAccountKind,
   IntegrationAccountPage,
   IntegrationAccountQuery,
@@ -37,16 +41,22 @@ import {
   APPLICATION_INTEGRATION_SCHEMA,
 } from "../types/application-integrations";
 import {
+  applicationIntegrationBindingsFromResourceLinks,
+  buildResourceLinkChangeSet,
   linkApplication,
   readApplicationIntegrationDocument,
   unlinkApplication,
-  upsertEnvironmentIntegration,
-  writeApplicationIntegrationDocument,
+  writeApplicationIntegrationAnchor,
+  writeApplicationIntegrationMigration,
 } from "./application-integration-document";
 import { getApplicationCatalogIamService } from "./iam-service";
 
 const CATALOG_PAGE_SIZE = 200;
 const CHANNEL_PAGE_SIZE = 200;
+/** Resource links are small rows; 200 per page covers every realistic app. */
+const RESOURCE_LINK_PAGE_SIZE = 200;
+/** Hard bound on the page walk so a broken cursor cannot spin forever. */
+const RESOURCE_LINK_MAX_PAGES = 20;
 
 let defaultIntegrationService: ApplicationIntegrationService | null = null;
 
@@ -144,6 +154,12 @@ export function createApplicationIntegrationService(): ApplicationIntegrationSer
       return fallbackEnvironment?.trim() ? [{ key: fallbackEnvironment.trim() }] : [];
     },
 
+    async loadBindings(deployAppId, legacyMetadata) {
+      const client = getSdkworkDeploymentsAppSdkClient();
+      const links = await listAllResourceLinks(client, deployAppId);
+      return applicationIntegrationBindingsFromResourceLinks(links, legacyMetadata);
+    },
+
     async save(input) {
       return saveApplicationIntegration(input);
     },
@@ -157,20 +173,59 @@ async function saveApplicationIntegration(
   const current = await client.app.retrieve(input.deployAppId);
   const currentMetadata = asRecord(current.metadata);
   const rawDocument = asRecord(currentMetadata[APPLICATION_INTEGRATION_METADATA_KEY]);
-  if (rawDocument.schema !== undefined && rawDocument.schema !== APPLICATION_INTEGRATION_SCHEMA) {
-    // A newer writer owns the key. Refuse instead of overwriting a format this
-    // build cannot round-trip.
+  if (
+    input.linkedApplication
+    && rawDocument.schema !== undefined
+    && rawDocument.schema !== APPLICATION_INTEGRATION_SCHEMA
+  ) {
+    // Only the anchor is written to metadata. A newer schema owns that key, so
+    // refuse to overwrite a format this build cannot round-trip. Binding writes
+    // below are independent and still allowed.
     throw new Error("application integration document version is not supported by this client");
   }
-  let document = readApplicationIntegrationDocument(currentMetadata);
+
+  let metadata = currentMetadata;
+  let updatedAt = current.updatedAt;
+  const currentDocument = readApplicationIntegrationDocument(currentMetadata);
+  const migrated = new Set(currentDocument.migratedEnvironments ?? []);
+  const pendingMigration = input.environments
+    .map((environment) => environment.key)
+    .filter((key) => (
+      !migrated.has(key.toLowerCase())
+      && Object.prototype.hasOwnProperty.call(currentDocument.environments, key)
+    ));
+  let nextMetadata = currentMetadata;
   if (input.linkedApplication) {
-    document = linkApplication(document, input.linkedApplication);
+    const document = linkApplication(currentDocument, input.linkedApplication);
+    nextMetadata = writeApplicationIntegrationAnchor(nextMetadata, document.linkedApplications);
   }
+  if (pendingMigration.length > 0) {
+    nextMetadata = writeApplicationIntegrationMigration(nextMetadata, pendingMigration);
+  }
+  if (!sameMetadata(currentMetadata, nextMetadata)) {
+    const updated = await client.app.update(input.deployAppId, { metadata: nextMetadata });
+    metadata = asRecord(updated.metadata ?? nextMetadata);
+    updatedAt = updated.updatedAt;
+  }
+
+  // Account bindings are owned by `deploy_application_resource_link`. The diff
+  // is per environment: a single-instance kind is addressed by
+  // (environment, kind), a payment account by (environment, kind, resourceRef).
+  const existingLinks = await listAllResourceLinks(client, input.deployAppId);
   for (const environment of input.environments) {
-    document = upsertEnvironmentIntegration(document, environment.key, environment.integration);
+    const changes = buildResourceLinkChangeSet({
+      environment: environment.key,
+      existingLinks,
+      integration: environment.integration,
+    });
+    for (const upsert of changes.upserts) {
+      await client.app.resourceLinks.update(input.deployAppId, upsert);
+    }
+    for (const deletion of changes.deletes) {
+      await client.app.resourceLinks.delete(input.deployAppId, deletion.id);
+    }
   }
-  const metadata = writeApplicationIntegrationDocument(currentMetadata, document);
-  const updated = await client.app.update(input.deployAppId, { metadata });
+
   const previousDeployAppId = input.previousDeployAppId?.trim();
   let previousDeployApp: ApplicationIntegrationSaveResult["previousDeployApp"];
   if (input.linkedApplication && previousDeployAppId && previousDeployAppId !== input.deployAppId) {
@@ -184,8 +239,8 @@ async function saveApplicationIntegration(
   }
   return {
     deployAppId: input.deployAppId,
-    metadata: asRecord(updated.metadata ?? metadata),
-    ...(updated.updatedAt === undefined ? {} : { updatedAt: updated.updatedAt }),
+    metadata,
+    ...(updatedAt === undefined ? {} : { updatedAt }),
     ...(previousDeployApp === undefined ? {} : { previousDeployApp }),
   };
 }
@@ -210,9 +265,67 @@ async function removeApplicationLink(
   if (nextDocument === previousDocument) {
     return undefined;
   }
-  const nextMetadata = writeApplicationIntegrationDocument(previousMetadata, nextDocument);
+  const nextMetadata = writeApplicationIntegrationAnchor(previousMetadata, nextDocument.linkedApplications);
   const updated = await client.app.update(deployAppId, { metadata: nextMetadata });
   return asRecord(updated.metadata ?? nextMetadata);
+}
+
+/** Lists every resource-link row for one application (bounded page walk). */
+async function listAllResourceLinks(
+  client: ReturnType<typeof getSdkworkDeploymentsAppSdkClient>,
+  deployAppId: string,
+): Promise<ApplicationResourceLinkRecord[]> {
+  const links: ApplicationResourceLinkRecord[] = [];
+  for (let page = 1; page <= RESOURCE_LINK_MAX_PAGES; page += 1) {
+    const result = await client.app.resourceLinks.list(deployAppId, {
+      page,
+      pageSize: RESOURCE_LINK_PAGE_SIZE,
+    });
+    for (const item of result.items ?? []) {
+      const link = mapResourceLink(item);
+      if (link) {
+        links.push(link);
+      }
+    }
+    if (!result.pageInfo?.hasMore) {
+      break;
+    }
+  }
+  return links;
+}
+
+function mapResourceLink(value: unknown): ApplicationResourceLinkRecord | undefined {
+  const record = asRecord(value);
+  const id = readString(record.id);
+  const environment = readString(record.environment);
+  const resourceKind = readString(record.resourceKind);
+  const resourceRef = readString(record.resourceRef);
+  if (
+    !id
+    || !environment
+    || !resourceRef
+    || (resourceKind !== "official_account"
+      && resourceKind !== "mini_program"
+      && resourceKind !== "payment_account")
+  ) {
+    return undefined;
+  }
+  return {
+    bindingStatus: readString(record.bindingStatus) ?? "ACTIVE",
+    environment,
+    id,
+    isDefault: readBoolean(record.isDefault) ?? false,
+    metadata: asRecord(record.metadata),
+    ...(readString(record.providerCode) === undefined ? {} : { providerCode: readString(record.providerCode) }),
+    resourceKind,
+    resourceRef,
+    ...(readString(record.updatedAt) === undefined ? {} : { updatedAt: readString(record.updatedAt) }),
+  };
+}
+
+/** `true` when a metadata write would not change the stored document. */
+function sameMetadata(before: unknown, after: unknown): boolean {
+  return JSON.stringify(before) === JSON.stringify(after);
 }
 
 function readStatus(error: unknown): number | undefined {

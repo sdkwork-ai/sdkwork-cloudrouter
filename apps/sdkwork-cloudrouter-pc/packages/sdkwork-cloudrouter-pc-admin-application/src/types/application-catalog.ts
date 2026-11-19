@@ -108,6 +108,14 @@ export interface ApplicationRecord {
   reference?: string;
   /** Content or application kind (pc / h5 / api / app kind / platform). */
   kind?: string;
+  /**
+   * Deploy application this IAM installation serves (`deploy_application_id`).
+   *
+   * IAM provisions one installation per deploy application, so this is the
+   * authoritative cross-system anchor for an IAM row; it must win over any
+   * name-based fallback.
+   */
+  deployApplicationId?: string;
   environment?: string;
   status?: string;
   /** Organization owning the application; absent means tenant-level. */

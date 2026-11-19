@@ -258,6 +258,46 @@ describe("application integration actions", () => {
     expect((screen.getByRole("button", { name: "保存配置" }) as HTMLButtonElement).disabled).toBe(true);
   });
 
+  it("renders the app-kind readiness matrix for a WeChat mini program", async () => {
+    const miniProgramApplication: ApplicationRecord = {
+      ...deployApplication,
+      id: "deploy-mini",
+      kind: "WECHAT_MINIPROGRAM",
+      name: "Mini Storefront",
+      reference: "mini-storefront",
+    };
+    const integrations: ApplicationIntegrationService = {
+      ...createIntegrationService(),
+      loadBindings: vi.fn(async () => ({
+        environments: {},
+        legacySeed: false,
+        links: [],
+      })),
+    };
+    renderPage({ integrations, loaders: createLoaders({ deploy: [miniProgramApplication] }) });
+
+    await screen.findAllByText("Mini Storefront");
+    clickGroup("deploy");
+    await screen.findAllByText("Mini Storefront");
+    chooseAppConfigAction("支付配置");
+
+    const readiness = await waitFor(() => {
+      const element = document.querySelector("[data-application-integration-app-kind='WECHAT_MINIPROGRAM']");
+      expect(element).not.toBeNull();
+      return element as Element;
+    });
+    expect(readiness.getAttribute("data-application-integration-readiness")).toBe("wechat-mini-program");
+    expect(readiness.querySelector("[data-readiness-dimension='channel']")?.getAttribute("data-readiness-status"))
+      .toBe("incomplete");
+    expect(readiness.querySelector("[data-readiness-dimension='autoLogin']")?.getAttribute("data-readiness-status"))
+      .toBe("incomplete");
+    expect(readiness.querySelector("[data-readiness-dimension='checkout']")?.getAttribute("data-readiness-status"))
+      .toBe("incomplete");
+    const miniRequirement = readiness.querySelector("[data-requirement='mini-program']");
+    expect(miniRequirement?.getAttribute("data-requirement-level")).toBe("required");
+    expect(miniRequirement?.getAttribute("data-requirement-configured")).toBe("false");
+  });
+
   it("shows the environments from the Deploy app and the current binding status", async () => {
     const seeded: ApplicationRecord = {
       ...deployApplication,

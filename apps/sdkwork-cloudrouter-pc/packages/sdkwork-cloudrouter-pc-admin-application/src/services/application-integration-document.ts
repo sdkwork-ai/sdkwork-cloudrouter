@@ -11,12 +11,15 @@ import type {
   ApplicationChannelAccountBinding,
   ApplicationChannelAccountOption,
   ApplicationEnvironmentIntegration,
+  ApplicationIntegrationBindings,
   ApplicationIntegrationDocument,
   ApplicationIntegrationIssue,
   ApplicationIntegrationSummary,
   ApplicationIntegrationValidationInput,
   ApplicationPaymentAccountBinding,
   ApplicationPaymentAccountOption,
+  ApplicationResourceLinkRecord,
+  BindableApplicationEnvironment,
   LinkedApplicationRef,
   PaymentAccountEnvironment,
 } from "../types/application-integrations";
@@ -24,6 +27,14 @@ import {
   APPLICATION_INTEGRATION_METADATA_KEY,
   APPLICATION_INTEGRATION_SCHEMA,
 } from "../types/application-integrations";
+import {
+  evaluateApplicationIntegrationReadiness,
+  hasAnyIntegration,
+  isBindableEnvironmentKey,
+  matchesProviderPrefix,
+  normalizeBindableEnvironmentKey,
+  resolveApplicationIntegrationSurface,
+} from "./application-integration-requirements";
 import type { ApplicationGroupId, ApplicationRecord } from "../types/application-catalog";
 
 /** The document an unconfigured application has. */
@@ -32,6 +43,7 @@ export function emptyApplicationIntegrationDocument(): ApplicationIntegrationDoc
     schema: APPLICATION_INTEGRATION_SCHEMA,
     linkedApplications: [],
     environments: {},
+    migratedEnvironments: [],
   };
 }
 
@@ -71,6 +83,7 @@ export function readApplicationIntegrationDocument(metadata: unknown): Applicati
     schema: APPLICATION_INTEGRATION_SCHEMA,
     linkedApplications,
     environments,
+    migratedEnvironments: readStringList(raw.migratedEnvironments ?? raw.migrated_environments),
   };
 }
 
@@ -87,6 +100,66 @@ export function writeApplicationIntegrationDocument(
   return {
     ...asRecord(metadata),
     [APPLICATION_INTEGRATION_METADATA_KEY]: serializeDocument(document),
+  };
+}
+
+/**
+ * Records the legacy environment keys that were migrated to the authoritative
+ * binding table.
+ *
+ * This is migration bookkeeping, not a binding authority: the legacy
+ * `environments` body is preserved untouched, and the ledger only stops the
+ * drawer from re-seeding an environment the operator has already cleared.
+ */
+export function writeApplicationIntegrationMigration(
+  metadata: unknown,
+  environments: readonly string[],
+): Record<string, unknown> {
+  const base = asRecord(metadata);
+  const raw = asRecord(base[APPLICATION_INTEGRATION_METADATA_KEY]);
+  const migrated = new Set(readStringList(raw.migratedEnvironments ?? raw.migrated_environments));
+  for (const environment of environments) {
+    const normalized = normalizeBindableEnvironmentKey(environment);
+    if (normalized) {
+      migrated.add(normalized);
+    }
+  }
+  return {
+    ...base,
+    [APPLICATION_INTEGRATION_METADATA_KEY]: {
+      ...raw,
+      ...(raw.schema === undefined ? { schema: APPLICATION_INTEGRATION_SCHEMA } : {}),
+      migratedEnvironments: [...migrated].sort(),
+    },
+  };
+}
+
+/**
+ * Writes only the cross-system anchor, preserving every other key, including
+ * the pre-migration `environments` document this console must not rewrite.
+ *
+ * Account bindings go to `deploy_application_resource_link`; the anchor is the
+ * only application identity this console keeps on the Deploy metadata.
+ */
+export function writeApplicationIntegrationAnchor(
+  metadata: unknown,
+  linkedApplications: readonly LinkedApplicationRef[],
+): Record<string, unknown> {
+  const base = asRecord(metadata);
+  const raw = asRecord(base[APPLICATION_INTEGRATION_METADATA_KEY]);
+  const nextRaw: Record<string, unknown> = {
+    ...raw,
+    ...(raw.schema === undefined ? { schema: APPLICATION_INTEGRATION_SCHEMA } : {}),
+    linkedApplications: linkedApplications.map((application) => ({
+      groupId: application.groupId,
+      id: application.id,
+      ...(application.reference === undefined ? {} : { reference: application.reference }),
+      ...(application.name === undefined ? {} : { name: application.name }),
+    })),
+  };
+  return {
+    ...base,
+    [APPLICATION_INTEGRATION_METADATA_KEY]: nextRaw,
   };
 }
 
@@ -156,17 +229,101 @@ export function summarizeApplicationIntegration(
   metadata: unknown,
   deployAppId: string,
   linked: boolean,
+  appKind?: string,
 ): ApplicationIntegrationSummary | undefined {
   const document = readApplicationIntegrationDocument(metadata);
+  return summarizeEnvironments(document.environments, deployAppId, linked, appKind);
+}
+
+/**
+ * Groups authoritative resource-link rows into the per-environment view model.
+ *
+ * The catalog account id the operator picked lives in `metadata.accountId`
+ * (new writes) or `metadata.sourceAccountId` (backfilled rows); the link row id
+ * is not that id, so validation must use the stored snapshot id to resolve the
+ * account in the loaded catalog.
+ */
+export function environmentIntegrationsFromResourceLinks(
+  links: readonly ApplicationResourceLinkRecord[],
+): Record<string, ApplicationEnvironmentIntegration> {
+  const environments: Record<string, ApplicationEnvironmentIntegration> = {};
+  for (const link of links) {
+    const environment = link.environment.trim();
+    if (!environment) {
+      continue;
+    }
+    const current = environments[environment] ?? emptyEnvironmentIntegration();
+    const next: ApplicationEnvironmentIntegration = {
+      ...current,
+      paymentAccounts: [...current.paymentAccounts],
+    };
+    if (link.resourceKind === "official_account") {
+      next.officialAccount = channelBindingFromResourceLink(link, "official-account");
+    } else if (link.resourceKind === "mini_program") {
+      next.miniProgram = channelBindingFromResourceLink(link, "mini-program");
+    } else if (link.resourceKind === "payment_account") {
+      next.paymentAccounts.push(paymentBindingFromResourceLink(link));
+    }
+    environments[environment] = next;
+  }
+  return environments;
+}
+
+/** Builds the drawer view from authority rows plus the legacy read-only seed. */
+export function applicationIntegrationBindingsFromResourceLinks(
+  links: readonly ApplicationResourceLinkRecord[],
+  legacyMetadata?: Record<string, unknown>,
+): ApplicationIntegrationBindings {
+  const fromAuthority = environmentIntegrationsFromResourceLinks(links);
+  const legacy = readApplicationIntegrationDocument(legacyMetadata);
+  const migrated = new Set(legacy.migratedEnvironments ?? []);
+  const legacySeeded: Record<string, ApplicationEnvironmentIntegration> = {};
+  for (const [environment, integration] of Object.entries(legacy.environments)) {
+    // The authority wins. An environment absent from the table is seeded from
+    // the legacy document only until this console has migrated it; the ledger
+    // prevents a deliberately cleared environment from being resurrected.
+    if (
+      fromAuthority[environment] === undefined
+      && !migrated.has(environment)
+      && !isEnvironmentIntegrationEmpty(integration)
+    ) {
+      legacySeeded[environment] = integration;
+    }
+  }
+  return {
+    environments: { ...legacySeeded, ...fromAuthority },
+    legacySeed: Object.keys(legacySeeded).length > 0,
+    links,
+  };
+}
+
+/** Summary derived from authoritative rows. */
+export function summarizeApplicationIntegrationBindings(
+  bindings: ApplicationIntegrationBindings,
+  deployAppId: string,
+  linked: boolean,
+  appKind?: string,
+): ApplicationIntegrationSummary | undefined {
+  return summarizeEnvironments(bindings.environments, deployAppId, linked, appKind);
+}
+
+function summarizeEnvironments(
+  environments: Record<string, ApplicationEnvironmentIntegration>,
+  deployAppId: string,
+  linked: boolean,
+  appKind?: string,
+): ApplicationIntegrationSummary | undefined {
   let officialAccountCount = 0;
   let miniProgramCount = 0;
   let paymentAccountCount = 0;
   let environmentCount = 0;
-  for (const integration of Object.values(document.environments)) {
+  let firstConfigured: ApplicationEnvironmentIntegration | undefined;
+  for (const integration of Object.values(environments)) {
     if (isEnvironmentIntegrationEmpty(integration)) {
       continue;
     }
     environmentCount += 1;
+    firstConfigured ??= integration;
     if (integration.officialAccount) {
       officialAccountCount += 1;
     }
@@ -178,13 +335,214 @@ export function summarizeApplicationIntegration(
   if (environmentCount === 0) {
     return undefined;
   }
-  return {
+  const summary: ApplicationIntegrationSummary = {
     deployAppId,
     linked,
     environmentCount,
     officialAccountCount,
     miniProgramCount,
     paymentAccountCount,
+  };
+  if (appKind && firstConfigured) {
+    const readiness = evaluateApplicationIntegrationReadiness({ appKind, integration: firstConfigured });
+    summary.readiness = {
+      autoLogin: readiness.autoLogin.status,
+      checkout: readiness.checkout.status,
+    };
+  }
+  return summary;
+}
+
+/** One `apps.resourceLinks.update` upsert. */
+export interface ApplicationResourceLinkUpsert {
+  environment: BindableApplicationEnvironment;
+  resourceKind: "mini_program" | "official_account" | "payment_account";
+  resourceRef: string;
+  providerCode?: string;
+  isDefault?: boolean;
+  bindingStatus: "ACTIVE";
+  metadata: Record<string, unknown>;
+}
+
+/** One `apps.resourceLinks.delete`. */
+export interface ApplicationResourceLinkDelete {
+  id: string;
+}
+
+export interface ApplicationResourceLinkChangeSet {
+  deletes: ApplicationResourceLinkDelete[];
+  upserts: ApplicationResourceLinkUpsert[];
+}
+
+/**
+ * Diffs one environment's edited view against the authoritative rows.
+ *
+ * A single-instance kind is addressed by `(environment, kind)`, so a changed
+ * AppID is an update, not a second row. A payment account is addressed by
+ * `(environment, kind, resourceRef)`, so a different merchant account is a new
+ * row and a removed one becomes a soft delete.
+ */
+export function buildResourceLinkChangeSet(input: {
+  environment: string;
+  integration: ApplicationEnvironmentIntegration;
+  existingLinks: readonly ApplicationResourceLinkRecord[];
+}): ApplicationResourceLinkChangeSet {
+  const environment = normalizeBindableEnvironmentKey(input.environment);
+  if (!environment) {
+    // The drawer blocks this before saving; the transport must not turn a
+    // non-lifecycle key into a request the Deploy API would reject.
+    throw new Error(`environment ${input.environment} cannot carry account bindings`);
+  }
+  const { integration } = input;
+  const existing = input.existingLinks.filter(
+    (link) => link.environment.trim().toLowerCase() === environment,
+  );
+  const deletes: ApplicationResourceLinkDelete[] = [];
+  const upserts: ApplicationResourceLinkUpsert[] = [];
+
+  const existingOfficial = existing.find((link) => link.resourceKind === "official_account");
+  if (integration.officialAccount) {
+    if (!existingOfficial || bindingDiffers(existingOfficial, integration.officialAccount)) {
+      upserts.push(channelUpsert(environment, integration.officialAccount));
+    }
+  } else if (existingOfficial) {
+    deletes.push({ id: existingOfficial.id });
+  }
+
+  const existingMini = existing.find((link) => link.resourceKind === "mini_program");
+  if (integration.miniProgram) {
+    if (!existingMini || bindingDiffers(existingMini, integration.miniProgram)) {
+      upserts.push(channelUpsert(environment, integration.miniProgram));
+    }
+  } else if (existingMini) {
+    deletes.push({ id: existingMini.id });
+  }
+
+  const existingPayments = new Map(
+    existing
+      .filter((link) => link.resourceKind === "payment_account")
+      .map((link) => [link.resourceRef, link]),
+  );
+  const desiredPayments = new Set(integration.paymentAccounts.map((account) => account.accountNo));
+  for (const [resourceRef, link] of existingPayments) {
+    if (!desiredPayments.has(resourceRef)) {
+      deletes.push({ id: link.id });
+    }
+  }
+  for (const account of integration.paymentAccounts) {
+    const current = existingPayments.get(account.accountNo);
+    if (!current || current.isDefault !== account.isDefault || current.providerCode !== account.providerCode) {
+      upserts.push(paymentUpsert(environment, account));
+    }
+  }
+  return { deletes, upserts };
+}
+
+/** True when the stored row no longer matches the edited binding. */
+function bindingDiffers(
+  link: ApplicationResourceLinkRecord,
+  binding: ApplicationChannelAccountBinding,
+): boolean {
+  const metadata = link.metadata;
+  const storedAppId = readString(metadata.appId);
+  const storedDisplayName = readString(metadata.displayName);
+  return link.resourceRef !== binding.appId
+    || (link.providerCode ?? undefined) !== binding.providerCode
+    || (storedAppId !== undefined && storedAppId !== binding.appId)
+    || (storedDisplayName !== undefined && storedDisplayName !== binding.displayName)
+    || binding.enabled !== (link.bindingStatus.toUpperCase() === "ACTIVE");
+}
+
+function channelUpsert(
+  environment: BindableApplicationEnvironment,
+  binding: ApplicationChannelAccountBinding,
+): ApplicationResourceLinkUpsert {
+  return {
+    bindingStatus: "ACTIVE",
+    environment,
+    metadata: {
+      accountId: binding.id,
+      appId: binding.appId,
+      displayName: binding.displayName,
+      providerCode: binding.providerCode,
+      ...(binding.accountType === undefined ? {} : { accountType: binding.accountType }),
+      ...(binding.status === undefined ? {} : { status: binding.status }),
+      ...(binding.authorizationStatus === undefined
+        ? {}
+        : { authorizationStatus: binding.authorizationStatus }),
+      source: "sdkwork-application-center",
+    },
+    providerCode: binding.providerCode,
+    resourceKind: binding.resourceAccountKind === "official-account" ? "official_account" : "mini_program",
+    resourceRef: binding.appId,
+  };
+}
+
+function paymentUpsert(
+  environment: BindableApplicationEnvironment,
+  account: ApplicationPaymentAccountBinding,
+): ApplicationResourceLinkUpsert {
+  return {
+    bindingStatus: "ACTIVE",
+    environment,
+    ...(account.isDefault ? { isDefault: true } : {}),
+    metadata: {
+      accountId: account.id,
+      ...(account.accountName === undefined ? {} : { accountName: account.accountName }),
+      accountMode: account.accountMode,
+      environment: account.environment,
+      ...(account.settlementCurrency === undefined
+        ? {}
+        : { settlementCurrency: account.settlementCurrency }),
+      ...(account.countryCode === undefined ? {} : { countryCode: account.countryCode }),
+      source: "sdkwork-application-center",
+    },
+    ...(account.providerCode ? { providerCode: account.providerCode } : {}),
+    resourceKind: "payment_account",
+    resourceRef: account.accountNo,
+  };
+}
+
+function channelBindingFromResourceLink(
+  link: ApplicationResourceLinkRecord,
+  kind: "mini-program" | "official-account",
+): ApplicationChannelAccountBinding {
+  const metadata = link.metadata;
+  return {
+    id: readString(metadata.accountId ?? metadata.sourceAccountId) ?? link.id,
+    appId: link.resourceRef,
+    displayName: readString(metadata.displayName) ?? readString(metadata.appId) ?? link.resourceRef,
+    providerCode: link.providerCode ?? readString(metadata.providerCode) ?? "wechat",
+    ...(readString(metadata.accountType) === undefined
+      ? {}
+      : { accountType: readString(metadata.accountType) }),
+    resourceAccountKind: kind,
+    enabled: link.bindingStatus.trim().toUpperCase() === "ACTIVE",
+    ...(readString(metadata.status) === undefined ? {} : { status: readString(metadata.status) }),
+    ...(readString(metadata.authorizationStatus) === undefined
+      ? {}
+      : { authorizationStatus: readString(metadata.authorizationStatus) }),
+  };
+}
+
+function paymentBindingFromResourceLink(link: ApplicationResourceLinkRecord): ApplicationPaymentAccountBinding {
+  const metadata = link.metadata;
+  return {
+    id: readString(metadata.accountId ?? metadata.sourceAccountId) ?? link.id,
+    accountNo: link.resourceRef,
+    ...(readString(metadata.accountName) === undefined
+      ? {}
+      : { accountName: readString(metadata.accountName) }),
+    providerCode: link.providerCode ?? readString(metadata.providerCode) ?? "unknown",
+    environment: readString(metadata.environment) ?? link.environment,
+    accountMode: readString(metadata.accountMode) ?? "direct",
+    ...(readString(metadata.settlementCurrency) === undefined
+      ? {}
+      : { settlementCurrency: readString(metadata.settlementCurrency) }),
+    ...(readString(metadata.countryCode) === undefined
+      ? {}
+      : { countryCode: readString(metadata.countryCode) }),
+    isDefault: link.isDefault,
   };
 }
 
@@ -201,6 +559,17 @@ export function resolveDeployApplicationForRecord(
 ): ApplicationRecord | undefined {
   if (record.groupId === "deploy") {
     return deployApplications.find((application) => application.id === record.id) ?? record;
+  }
+  // IAM installs one tenant application per deploy application and stores the
+  // anchor itself (`iam_application_installation.deploy_application_id`), so the
+  // row's own field is authoritative over any name or metadata heuristic.
+  if (record.deployApplicationId) {
+    const anchored = deployApplications.find(
+      (application) => application.id === record.deployApplicationId,
+    );
+    if (anchored) {
+      return anchored;
+    }
   }
   const candidates = deployApplications.map((application) => ({
     application,
@@ -295,10 +664,18 @@ export function validateApplicationIntegration(
   input: ApplicationIntegrationValidationInput,
 ): ApplicationIntegrationIssue[] {
   const issues: ApplicationIntegrationIssue[] = [];
+  const surface = resolveApplicationIntegrationSurface(input.appKind);
   const paymentById = new Map(input.paymentAccounts.map((account) => [account.id, account]));
   const channelById = new Map(input.channelAccounts.map((account) => [account.id, account]));
   const paymentIds = new Set<string>();
   const defaultsByProvider = new Map<string, number>();
+
+  if (!isBindableEnvironmentKey(input.environment)) {
+    // Deploy can register extra environment keys, but a resource-link row only
+    // exists on a fleet lifecycle value. Explaining the limit is better than a
+    // 400 from the write.
+    issues.push(issue("environment-not-bindable", "error", { environment: input.environment || "-" }));
+  }
 
   for (const binding of input.integration.paymentAccounts) {
     if (paymentIds.has(binding.id)) {
@@ -308,6 +685,19 @@ export function validateApplicationIntegration(
     paymentIds.add(binding.id);
     if (binding.isDefault) {
       defaultsByProvider.set(binding.providerCode, (defaultsByProvider.get(binding.providerCode) ?? 0) + 1);
+    }
+    if (!surface.paymentApplies) {
+      issues.push(issue("payment-not-used-by-app-kind", "error", {
+        account: displayPayment(binding),
+        surface: surface.id,
+      }));
+    }
+    if (!matchesProviderPrefix(binding.providerCode, surface.paymentProviderPrefixes)) {
+      issues.push(issue("payment-provider-incompatible", "error", {
+        account: displayPayment(binding),
+        provider: binding.providerCode,
+        surface: surface.id,
+      }));
     }
     const account = paymentById.get(binding.id);
     if (!account) {
@@ -351,6 +741,26 @@ export function validateApplicationIntegration(
   const channels = [input.integration.officialAccount, input.integration.miniProgram]
     .filter((channel): channel is ApplicationChannelAccountBinding => channel !== undefined);
   for (const channel of channels) {
+    if (surface.channelKinds.length === 0) {
+      issues.push(issue("account-not-used-by-app-kind", "warning", {
+        account: channel.displayName || channel.appId,
+        surface: surface.id,
+      }));
+    } else if (!surface.channelKinds.includes(channel.resourceAccountKind)) {
+      issues.push(issue("account-not-used-by-app-kind", "error", {
+        account: channel.displayName || channel.appId,
+        surface: surface.id,
+      }));
+    }
+    // A Douyin surface cannot act as a WeChat account (and vice versa). An
+    // unknown app kind stays permissive so legacy rows keep loading.
+    if (surface.id !== "unknown" && !matchesProviderPrefix(channel.providerCode, surface.channelProviderPrefixes)) {
+      issues.push(issue("account-not-used-by-app-kind", "error", {
+        account: channel.displayName || channel.appId,
+        provider: channel.providerCode,
+        surface: surface.id,
+      }));
+    }
     const account = channelById.get(channel.id);
     if (!account || account.kind !== channel.resourceAccountKind) {
       issues.push(issue("channel-not-found", "warning", { channel: channel.displayName || channel.appId }));
@@ -398,7 +808,66 @@ export function validateApplicationIntegration(
     }
   }
 
+  // The remaining findings describe commercial readiness rather than broken
+  // rows, so they are warnings: an operator may legitimately bind payment
+  // before the channel account is approved. An empty environment is untouched
+  // state and is not nagged about.
+  if (hasAnyIntegration(input.integration)) {
+    for (const requirement of surface.requires) {
+      if (!requirementPresent(requirement, input.integration)) {
+        issues.push(issue("required-integration-missing", "warning", {
+          requirement,
+          surface: surface.id,
+        }));
+      }
+    }
+    const autoLoginRequirement = surface.autoLogin === "official-account"
+      ? "official-account"
+      : surface.autoLogin === "mini-program"
+        ? "mini-program"
+        : undefined;
+    if (
+      autoLoginRequirement
+      && !requirementPresent(autoLoginRequirement, input.integration)
+      // A required channel already reports the same gap; do not repeat it as
+      // an auto-login warning.
+      && !surface.requires.includes(autoLoginRequirement)
+    ) {
+      issues.push(issue("auto-login-not-configured", "warning", {
+        requirement: autoLoginRequirement,
+        surface: surface.id,
+      }));
+    }
+    const missingCheckoutChannel = surface.requires.some(
+      (requirement) => requirement !== "payment-account"
+        && !requirementPresent(requirement, input.integration),
+    );
+    if (
+      surface.checkout
+      && input.integration.paymentAccounts.length > 0
+      && missingCheckoutChannel
+    ) {
+      issues.push(issue("checkout-not-ready", "warning", {
+        surface: surface.id,
+      }));
+    }
+  }
+
   return issues;
+}
+
+function requirementPresent(
+  requirement: "mini-program" | "official-account" | "payment-account",
+  integration: ApplicationEnvironmentIntegration,
+): boolean {
+  switch (requirement) {
+    case "official-account":
+      return Boolean(integration.officialAccount);
+    case "mini-program":
+      return Boolean(integration.miniProgram);
+    case "payment-account":
+      return integration.paymentAccounts.length > 0;
+  }
 }
 
 /** Builds a binding snapshot from a catalog option. */
@@ -607,6 +1076,9 @@ function serializeDocument(document: ApplicationIntegrationDocument): Record<str
       ...(application.reference === undefined ? {} : { reference: application.reference }),
       ...(application.name === undefined ? {} : { name: application.name }),
     })),
+    ...(document.migratedEnvironments && document.migratedEnvironments.length > 0
+      ? { migratedEnvironments: [...document.migratedEnvironments] }
+      : {}),
     environments,
   };
 }
@@ -650,6 +1122,15 @@ function readString(value: unknown): string | undefined {
   }
   const trimmed = value.trim();
   return trimmed === "" ? undefined : trimmed;
+}
+
+function readStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return [...new Set(value
+    .map((entry) => readString(entry)?.toLowerCase())
+    .filter((entry): entry is string => entry !== undefined))];
 }
 
 function readBoolean(value: unknown): boolean | undefined {

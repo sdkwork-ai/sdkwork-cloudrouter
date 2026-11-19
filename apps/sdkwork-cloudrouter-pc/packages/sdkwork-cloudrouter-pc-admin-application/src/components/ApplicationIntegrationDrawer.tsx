@@ -2,13 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Check,
+  CheckCircle2,
   CreditCard,
   Link2,
   MessageCircle,
   Plus,
   RefreshCw,
+  ShieldCheck,
   Smartphone,
   Trash2,
+  XCircle,
 } from "lucide-react";
 import {
   Button,
@@ -39,16 +42,26 @@ import {
   emptyEnvironmentIntegration,
   isPaymentAccountCompatible,
   readApplicationIntegrationDocument,
-  readEnvironmentIntegration,
   resolveDeployApplicationForRecord,
   toChannelBinding,
   toPaymentBinding,
   validateApplicationIntegration,
 } from "../services/application-integration-document";
+import {
+  evaluateApplicationIntegrationReadiness,
+  INTEGRATION_REQUIREMENT_ORDER,
+  isBindableEnvironmentKey,
+  resolveApplicationIntegrationSurface,
+  type ApplicationIntegrationReadiness,
+  type ApplicationIntegrationReadinessStatus,
+  type ApplicationIntegrationSurface,
+  type IntegrationRequirementKey,
+} from "../services/application-integration-requirements";
 import type {
   ApplicationChannelAccountOption,
   ApplicationEnvironmentIntegration,
   ApplicationEnvironmentOption,
+  ApplicationIntegrationBindings,
   ApplicationIntegrationIssue,
   ApplicationIntegrationIssueCode,
   ApplicationIntegrationKind,
@@ -112,6 +125,8 @@ export function ApplicationIntegrationDrawer({
   });
   const [environments, setEnvironments] = useState<readonly ApplicationEnvironmentOption[]>([]);
   const [environmentsStatus, setEnvironmentsStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [bindingsStatus, setBindingsStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [legacySeed, setLegacySeed] = useState(false);
   const [environmentKey, setEnvironmentKey] = useState("");
   const [drafts, setDrafts] = useState<Record<string, ApplicationEnvironmentIntegration>>({});
   const [baseline, setBaseline] = useState<Record<string, ApplicationEnvironmentIntegration>>({});
@@ -173,6 +188,8 @@ export function ApplicationIntegrationDrawer({
     if (!deployApplication) {
       setEnvironments([]);
       setEnvironmentsStatus("ready");
+      setBindingsStatus("ready");
+      setLegacySeed(false);
       setEnvironmentKey("");
       setDrafts({});
       setBaseline({});
@@ -181,51 +198,61 @@ export function ApplicationIntegrationDrawer({
       };
     }
     setEnvironmentsStatus("loading");
-    void service.loadEnvironments(deployApplication.id, deployApplication.environment)
-      .then((loaded) => {
-        if (cancelled) {
-          return;
-        }
-        const document = readApplicationIntegrationDocument(deployApplication.metadata);
-        const keys = new Set<string>([
-          ...loaded.map((environment) => environment.key),
-          ...Object.keys(document.environments),
-        ]);
-        if (deployApplication.environment?.trim()) {
-          keys.add(deployApplication.environment.trim());
-        }
-        const options = [...keys]
-          .map((key) => loaded.find((environment) => environment.key === key) ?? { key })
-          .sort(compareEnvironmentOptions);
-        const seed = Object.fromEntries(
-          options.map((environment) => [environment.key, readEnvironmentIntegration(document, environment.key)]),
-        );
-        setEnvironments(options);
-        setDrafts(seed);
-        setBaseline(seed);
-        setEnvironmentKey((current) => preferredEnvironmentKey(options, current, deployApplication.environment));
-        setEnvironmentsStatus("ready");
-      })
-      .catch(() => {
-        if (cancelled) {
-          return;
-        }
+    setBindingsStatus("loading");
+    void (async () => {
+      let loaded: readonly ApplicationEnvironmentOption[] = [];
+      let environmentsFailed = false;
+      try {
+        loaded = await service.loadEnvironments(deployApplication.id, deployApplication.environment);
+      } catch {
+        environmentsFailed = true;
         const fallback = deployApplication.environment?.trim();
-        const options: ApplicationEnvironmentOption[] = fallback ? [{ key: fallback }] : [];
-        const document = readApplicationIntegrationDocument(deployApplication.metadata);
-        const seed = Object.fromEntries(
-          options.map((environment) => [environment.key, readEnvironmentIntegration(document, environment.key)]),
-        );
-        setEnvironments(options);
-        setDrafts(seed);
-        setBaseline(seed);
-        setEnvironmentKey(fallback ?? "");
-        setEnvironmentsStatus("error");
-      });
+        loaded = fallback ? [{ key: fallback }] : [];
+      }
+      let bindings: ApplicationIntegrationBindings | undefined;
+      let bindingsFailed = false;
+      if (service.loadBindings) {
+        try {
+          bindings = await service.loadBindings(deployApplication.id, deployApplication.metadata);
+        } catch {
+          bindingsFailed = true;
+        }
+      }
+      if (cancelled) {
+        return;
+      }
+      const legacy = readApplicationIntegrationDocument(deployApplication.metadata);
+      // The authority wins; the legacy document is only a migration seed when
+      // the resource-link table has no row for this app yet.
+      const seedSource = bindings?.environments ?? legacy.environments;
+      const keys = new Set<string>([
+        ...loaded.map((environment) => environment.key),
+        ...Object.keys(seedSource),
+      ]);
+      if (deployApplication.environment?.trim()) {
+        keys.add(deployApplication.environment.trim());
+      }
+      const options = [...keys]
+        .map((key) => loaded.find((environment) => environment.key === key) ?? { key })
+        .sort(compareEnvironmentOptions);
+      const seed = Object.fromEntries(
+        options.map((environment) => [
+          environment.key,
+          seedSource[environment.key] ?? emptyEnvironmentIntegration(),
+        ]),
+      );
+      setEnvironments(options);
+      setDrafts(seed);
+      setBaseline(seed);
+      setLegacySeed(bindings?.legacySeed ?? false);
+      setEnvironmentKey((current) => preferredEnvironmentKey(options, current, deployApplication.environment));
+      setEnvironmentsStatus(environmentsFailed ? "error" : "ready");
+      setBindingsStatus(bindingsFailed ? "error" : "ready");
+    })();
     return () => {
       cancelled = true;
     };
-  }, [deployApplications, selectedDeployAppId, service]);
+  }, [catalogReloadToken, deployApplications, selectedDeployAppId, service]);
 
   const selectedDeployApplication = deployApplications.find(
     (candidate) => candidate.id === selectedDeployAppId,
@@ -244,18 +271,26 @@ export function ApplicationIntegrationDrawer({
   });
   const environment = environments.find((candidate) => candidate.key === environmentKey);
   const draft = drafts[environmentKey] ?? emptyEnvironmentIntegration();
+  const appKind = selectedDeployApplication?.kind ?? application.kind;
+  const surface = useMemo(() => resolveApplicationIntegrationSurface(appKind), [appKind]);
+  const readiness = useMemo(
+    () => evaluateApplicationIntegrationReadiness({ appKind, integration: draft }),
+    [appKind, draft],
+  );
+  const environmentBindable = isBindableEnvironmentKey(environmentKey);
   const currentValidation = useMemo(() => {
-    if (!allCatalogsReady(paymentCatalog, officialCatalog, miniProgramCatalog)) {
+    if (!allCatalogsReady(paymentCatalog, officialCatalog, miniProgramCatalog, bindingsStatus)) {
       return [];
     }
     return validateApplicationIntegration({
+      ...(appKind ? { appKind } : {}),
       environment: environmentKey,
       ...(environment?.level === undefined ? {} : { environmentLevel: environment.level }),
       integration: draft,
       paymentAccounts: paymentCatalog.items,
       channelAccounts: [...officialCatalog.items, ...miniProgramCatalog.items],
     });
-  }, [draft, environment?.level, environmentKey, miniProgramCatalog, officialCatalog, paymentCatalog]);
+  }, [appKind, bindingsStatus, draft, environment?.level, environmentKey, miniProgramCatalog, officialCatalog, paymentCatalog]);
 
   const changedEnvironmentKeys = useMemo(
     () => Object.keys(drafts).filter(
@@ -269,12 +304,13 @@ export function ApplicationIntegrationDrawer({
 
   const changedIssuesByEnvironment = useMemo(() => {
     const issuesByEnvironment = new Map<string, ApplicationIntegrationIssue[]>();
-    if (!allCatalogsReady(paymentCatalog, officialCatalog, miniProgramCatalog)) {
+    if (!allCatalogsReady(paymentCatalog, officialCatalog, miniProgramCatalog, bindingsStatus)) {
       return issuesByEnvironment;
     }
     for (const key of changedEnvironmentKeys) {
       const option = environments.find((candidate) => candidate.key === key);
       issuesByEnvironment.set(key, validateApplicationIntegration({
+        ...(appKind ? { appKind } : {}),
         environment: key,
         ...(option?.level === undefined ? {} : { environmentLevel: option.level }),
         integration: drafts[key] ?? emptyEnvironmentIntegration(),
@@ -284,6 +320,8 @@ export function ApplicationIntegrationDrawer({
     }
     return issuesByEnvironment;
   }, [
+    appKind,
+    bindingsStatus,
     changedEnvironmentKeys,
     drafts,
     environments,
@@ -370,6 +408,12 @@ export function ApplicationIntegrationDrawer({
       setFormError(copy.drawer.noChanges);
       return;
     }
+    const unbindableEnvironments = changedEnvironmentKeys.filter((key) => !isBindableEnvironmentKey(key));
+    if (unbindableEnvironments.length > 0) {
+      setEnvironmentKey(unbindableEnvironments[0]);
+      setFormError(copy.drawer.environment.notBindable);
+      return;
+    }
     if (errorCount > 0) {
       const firstInvalidEnvironment = [...changedIssuesByEnvironment.entries()]
         .find(([, issues]) => issues.some((issue) => issue.severity === "error"))?.[0];
@@ -415,8 +459,11 @@ export function ApplicationIntegrationDrawer({
     : kind === "official-account"
       ? officialCatalog
       : miniProgramCatalog;
-  const catalogLoading = relevantCatalog.status === "loading" || environmentsStatus === "loading";
+  const catalogLoading = relevantCatalog.status === "loading"
+    || environmentsStatus === "loading"
+    || bindingsStatus === "loading";
   const catalogFailed = relevantCatalog.status === "error";
+  const bindingsFailed = bindingsStatus === "error";
 
   const selectedChannel = kind === "official-account" ? draft.officialAccount : draft.miniProgram;
   const pickerCopy = copy.picker;
@@ -586,6 +633,33 @@ export function ApplicationIntegrationDrawer({
             )}
           </section>
 
+          {legacySeed ? (
+            <StatusNotice tone="warning">{copy.drawer.legacySeed}</StatusNotice>
+          ) : null}
+
+          {bindingsFailed ? (
+            <StatusNotice tone="danger">
+              <span className="flex flex-wrap items-center gap-3">
+                <span>{copy.drawer.bindingsLoadError}</span>
+                <Button
+                  onClick={() => setCatalogReloadToken((token) => token + 1)}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  {copy.drawer.retry}
+                </Button>
+              </span>
+            </StatusNotice>
+          ) : null}
+
+          {environmentKey && !environmentBindable ? (
+            <StatusNotice tone="warning">{copy.drawer.environment.notBindable}</StatusNotice>
+          ) : null}
+
+          <ReadinessSection copy={copy} integration={draft} readiness={readiness} surface={surface} />
+
           {catalogFailed ? (
             <StatusNotice tone="danger">
               <span className="flex flex-wrap items-center gap-3">
@@ -608,6 +682,7 @@ export function ApplicationIntegrationDrawer({
             <PaymentSection
               boundAccounts={draft.paymentAccounts}
               copy={copy}
+              disabled={!environmentBindable}
               environmentKey={environmentKey}
               environmentLevel={environment?.level}
               messages={messages}
@@ -621,6 +696,7 @@ export function ApplicationIntegrationDrawer({
             <ChannelSection
               channelKind={kind}
               copy={copy}
+              disabled={!environmentBindable}
               messages={messages}
               onClear={clearChannel}
               onOpenPicker={() => setPickerOpen(true)}
@@ -674,6 +750,7 @@ export function ApplicationIntegrationDrawer({
 function PaymentSection({
   boundAccounts,
   copy,
+  disabled,
   environmentKey,
   environmentLevel,
   messages,
@@ -683,6 +760,7 @@ function PaymentSection({
 }: {
   boundAccounts: ApplicationEnvironmentIntegration["paymentAccounts"];
   copy: ApplicationCatalogMessages["integrations"];
+  disabled: boolean;
   environmentKey: string;
   environmentLevel?: string;
   messages: ApplicationCatalogMessages;
@@ -738,13 +816,14 @@ function PaymentSection({
               </div>
               <div className="flex items-center gap-1">
                 {!account.isDefault ? (
-                  <Button onClick={() => onMakeDefault(account.id)} size="sm" type="button" variant="outline">
+                  <Button disabled={disabled} onClick={() => onMakeDefault(account.id)} size="sm" type="button" variant="outline">
                     <Check className="h-3.5 w-3.5" />
                     {copy.payment.makeDefault}
                   </Button>
                 ) : null}
                 <Button
                   aria-label={`${copy.payment.remove} ${account.accountName ?? account.accountNo}`}
+                  disabled={disabled}
                   onClick={() => onRemove(account.id)}
                   size="sm"
                   type="button"
@@ -757,7 +836,7 @@ function PaymentSection({
           ))}
         </ul>
       )}
-      <Button onClick={onOpenPicker} type="button" variant="outline">
+      <Button disabled={disabled} onClick={onOpenPicker} type="button" variant="outline">
         <Plus className="h-3.5 w-3.5" />
         {copy.picker.paymentOpen}
       </Button>
@@ -768,6 +847,7 @@ function PaymentSection({
 function ChannelSection({
   channelKind,
   copy,
+  disabled,
   messages,
   onClear,
   onOpenPicker,
@@ -775,6 +855,7 @@ function ChannelSection({
 }: {
   channelKind: ChannelAccountKind;
   copy: ApplicationCatalogMessages["integrations"];
+  disabled: boolean;
   messages: ApplicationCatalogMessages;
   onClear: (kind: ChannelAccountKind) => void;
   onOpenPicker: () => void;
@@ -809,13 +890,13 @@ function ChannelSection({
               {selected.status ? <span>{copy.channel.status}: {statusLabel(selected.status, messages)}</span> : null}
             </div>
           </div>
-          <Button onClick={() => onClear(channelKind)} size="sm" type="button" variant="outline">
+          <Button disabled={disabled} onClick={() => onClear(channelKind)} size="sm" type="button" variant="outline">
             <Trash2 className="h-3.5 w-3.5" />
             {copy.channel.clear}
           </Button>
         </div>
       )}
-      <Button onClick={onOpenPicker} type="button" variant="outline">
+      <Button disabled={disabled} onClick={onOpenPicker} type="button" variant="outline">
         <Link2 className="h-3.5 w-3.5" />
         {selected ? copy.picker.changeChannel : copy.picker.channelOpen}
       </Button>
@@ -823,13 +904,141 @@ function ChannelSection({
   );
 }
 
-/**
- * Build the three ownership-scope tab loaders for the generic picker.
- *
- * When the integration service implements cursor pages the picker searches the
- * backend directly; older test doubles fall back to a local page over the
- * already-loaded catalog so the drawer keeps working without the new methods.
- */
+function ReadinessSection({
+  copy,
+  integration,
+  readiness,
+  surface,
+}: {
+  copy: ApplicationCatalogMessages["integrations"];
+  integration: ApplicationEnvironmentIntegration;
+  readiness: ApplicationIntegrationReadiness;
+  surface: ApplicationIntegrationSurface;
+}) {
+  const appKindLabel = copy.appKinds[surface.id] ?? surface.appKind;
+  const rows: Array<{
+    key: "autoLogin" | "channel" | "checkout" | "payment";
+    dimension: ApplicationIntegrationReadiness["channel"];
+  }> = [
+    { dimension: readiness.channel, key: "channel" },
+    { dimension: readiness.payment, key: "payment" },
+    { dimension: readiness.autoLogin, key: "autoLogin" },
+    { dimension: readiness.checkout, key: "checkout" },
+  ];
+  const requirements = INTEGRATION_REQUIREMENT_ORDER.filter((requirement) => (
+    requirement === "payment-account"
+      ? surface.paymentApplies
+      : surface.channelKinds.includes(requirement)
+  ));
+  return (
+    <section
+      className="space-y-2.5 rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] p-3"
+      data-application-integration-app-kind={surface.appKind}
+      data-application-integration-readiness={surface.id}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="flex items-center gap-2 text-sm font-medium text-[var(--sdk-color-text-primary)]">
+          <ShieldCheck className="h-4 w-4" />
+          {copy.readiness.title}
+        </h3>
+        <span className="rounded-full border border-[var(--sdk-color-border-default)] px-2 py-0.5 text-[11px] text-[var(--sdk-color-text-secondary)]">
+          {copy.readiness.appKind}: {appKindLabel}
+        </span>
+      </div>
+      <p className="text-xs leading-5 text-[var(--sdk-color-text-muted)]">{copy.readiness.description}</p>
+      <ul className="grid gap-1.5 sm:grid-cols-2">
+        {rows.map(({ dimension, key }) => {
+          const statusLabel = readinessStatusLabel(dimension.status, copy);
+          const Icon = dimension.status === "ready"
+            ? CheckCircle2
+            : dimension.status === "incomplete"
+              ? AlertTriangle
+              : XCircle;
+          return (
+            <li
+              className="flex items-center gap-2 text-xs text-[var(--sdk-color-text-secondary)]"
+              data-readiness-dimension={key}
+              data-readiness-status={dimension.status}
+              key={key}
+            >
+              <Icon
+                aria-hidden="true"
+                className={[
+                  "h-3.5 w-3.5 shrink-0",
+                  dimension.status === "ready"
+                    ? "text-[var(--sdk-color-status-success)]"
+                    : dimension.status === "incomplete"
+                      ? "text-[var(--sdk-color-status-warning)]"
+                      : "text-[var(--sdk-color-text-muted)]",
+                ].join(" ")}
+              />
+              <span className="font-medium text-[var(--sdk-color-text-primary)]">
+                {copy.readiness.labels[key]}
+              </span>
+              <span>· {statusLabel}</span>
+            </li>
+          );
+        })}
+      </ul>
+      {requirements.length > 0 ? (
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-[var(--sdk-color-text-secondary)]">
+            {copy.readiness.requirements}
+          </p>
+          <ul className="flex flex-wrap gap-1.5">
+            {requirements.map((requirement) => {
+              const required = surface.requires.includes(requirement);
+              const configured = requirementConfigured(requirement, integration);
+              return (
+                <li key={requirement}>
+                  <span
+                    className={[
+                      "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px]",
+                      configured
+                        ? "border-[var(--sdk-color-status-success)] text-[var(--sdk-color-status-success)]"
+                        : "border-[var(--sdk-color-border-default)] text-[var(--sdk-color-text-muted)]",
+                    ].join(" ")}
+                    data-requirement={requirement}
+                    data-requirement-configured={configured ? "true" : "false"}
+                    data-requirement-level={required ? "required" : "recommended"}
+                  >
+                    {configured ? <Check className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                    {copy.requirements[requirement]}
+                    <span className="opacity-70">
+                      · {required ? copy.readiness.required : copy.readiness.recommended}
+                    </span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function requirementConfigured(
+  requirement: IntegrationRequirementKey,
+  integration: ApplicationEnvironmentIntegration,
+): boolean {
+  switch (requirement) {
+    case "official-account":
+      return Boolean(integration.officialAccount);
+    case "mini-program":
+      return Boolean(integration.miniProgram);
+    case "payment-account":
+      return integration.paymentAccounts.length > 0;
+  }
+}
+
+function readinessStatusLabel(
+  status: ApplicationIntegrationReadinessStatus,
+  copy: ApplicationCatalogMessages["integrations"],
+): string {
+  return copy.readiness.statuses[status];
+}
+
 function buildPickerSources(input: {
   channelItems: readonly ApplicationChannelAccountOption[];
   kind: ApplicationIntegrationKind;
@@ -1029,7 +1238,19 @@ function localizeIssue(
   if (!templateText) {
     return issue.code;
   }
-  return template(templateText, issue.params ?? {});
+  const params: Record<string, string> = {};
+  for (const [key, value] of Object.entries(issue.params ?? {})) {
+    if (key === "surface") {
+      params.surface = copy.appKinds[value as ApplicationIntegrationSurface["id"]] ?? value;
+      continue;
+    }
+    if (key === "requirement") {
+      params.requirement = copy.requirements[value as IntegrationRequirementKey] ?? value;
+      continue;
+    }
+    params[key] = value;
+  }
+  return template(templateText, params);
 }
 
 function dedupeIssues(issues: readonly ApplicationIntegrationIssue[]): ApplicationIntegrationIssue[] {
@@ -1050,8 +1271,12 @@ function allCatalogsReady(
   payment: CatalogState<ApplicationPaymentAccountOption>,
   official: CatalogState<ApplicationChannelAccountOption>,
   miniProgram: CatalogState<ApplicationChannelAccountOption>,
+  bindings: "loading" | "ready" | "error",
 ): boolean {
-  return payment.status === "ready" && official.status === "ready" && miniProgram.status === "ready";
+  return payment.status === "ready"
+    && official.status === "ready"
+    && miniProgram.status === "ready"
+    && bindings !== "loading";
 }
 
 function isForbiddenError(error: unknown): boolean {
