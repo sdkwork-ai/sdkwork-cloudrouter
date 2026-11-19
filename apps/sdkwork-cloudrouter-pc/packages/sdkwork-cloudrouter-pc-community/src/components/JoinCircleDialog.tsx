@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Loader2, X } from 'lucide-react';
 
@@ -7,8 +7,8 @@ import {
   activateCircleMembership,
   createCircleMembershipOrder,
   isCircleOrderPaid,
-  type Community,
   type CircleMembershipOrderResult,
+  type Community,
   type MembershipTier,
 } from '../runtime.ts';
 
@@ -18,12 +18,15 @@ const PAYMENT_METHODS = [
   { id: 'balance', labelKey: 'communityUi.balance' },
 ] as const;
 
+const PAYMENT_POLL_INTERVAL_MS = 3000;
+
 /**
  * Free and paid circle join flow.
  *
  * A paid join creates the membership order through sdkwork-order, opens the
  * shared cashier, and activates the membership only after the order status
- * reports paid. Activation is never inferred from the UI state.
+ * reports paid. The dialog also polls while it is open, so returning from the
+ * cashier completes activation without a manual refresh.
  */
 export function JoinCircleDialog({
   circle,
@@ -40,18 +43,62 @@ export function JoinCircleDialog({
 }) {
   const { t } = useTranslation();
   const [selectedTierId, setSelectedTierId] = useState(tiers[0]?.id ?? '');
+  const [lifetime, setLifetime] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string>(PAYMENT_METHODS[0].id);
   const [order, setOrder] = useState<CircleMembershipOrderResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const activatedRef = useRef(false);
+
+  const selectedTier = tiers.find((tier) => tier.id === selectedTierId) ?? tiers[0];
+  const supportsLifetime = Boolean(selectedTier?.lifetimePrice && selectedTier?.lifetimePackageId);
+  const useLifetime = lifetime && supportsLifetime;
+  const packageId = useLifetime
+    ? selectedTier?.lifetimePackageId
+    : selectedTier?.catalogPackageId;
+  const price = useLifetime ? selectedTier?.lifetimePrice : selectedTier?.price;
+
+  const finishActivation = async (currentOrder: CircleMembershipOrderResult) => {
+    if (!selectedTier || !packageId || activatedRef.current) {
+      return;
+    }
+    if (!(await isCircleOrderPaid(currentOrder.orderId))) {
+      return;
+    }
+    activatedRef.current = true;
+    await activateCircleMembership(circle.id, currentOrder.orderId, selectedTier.id, packageId);
+    onJoined();
+  };
+
+  // Poll the order while the dialog stays open so a cashier opened in another
+  // tab completes the membership as soon as the payment settles.
+  useEffect(() => {
+    if (!order || !open) {
+      return undefined;
+    }
+    let cancelled = false;
+    const tick = () => {
+      if (cancelled || activatedRef.current) return;
+      void finishActivation(order).catch(() => {
+        if (!cancelled) setError(t('communityUi.activateFailed'));
+      });
+    };
+    tick();
+    const timer = setInterval(tick, PAYMENT_POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order, open, selectedTierId, lifetime]);
+
+  useEffect(() => {
+    if (!supportsLifetime) setLifetime(false);
+  }, [supportsLifetime]);
 
   if (!open) {
     return null;
   }
-
-  const selectedTier = tiers.find((tier) => tier.id === selectedTierId) ?? tiers[0];
-  const needsPayment = Boolean(circle.isPaid);
-  const packageId = selectedTier?.catalogPackageId;
 
   const joinFree = async () => {
     setBusy(true);
@@ -78,7 +125,7 @@ export function JoinCircleDialog({
         circleId: circle.id,
         tierId: selectedTier.id,
         packageId,
-        isLifetime: false,
+        isLifetime: useLifetime,
         paymentMethod,
       });
       setOrder(created);
@@ -90,18 +137,14 @@ export function JoinCircleDialog({
   };
 
   const confirmPayment = async () => {
-    if (!order || !selectedTier || !packageId) {
-      return;
-    }
+    if (!order) return;
     setBusy(true);
     setError('');
     try {
-      if (!(await isCircleOrderPaid(order.orderId))) {
+      await finishActivation(order);
+      if (!activatedRef.current) {
         setError(t('communityUi.activateFailed'));
-        return;
       }
-      await activateCircleMembership(circle.id, order.orderId, selectedTier.id, packageId);
-      onJoined();
     } catch {
       setError(t('communityUi.activateFailed'));
     } finally {
@@ -128,7 +171,7 @@ export function JoinCircleDialog({
           </p>
         ) : null}
 
-        {!needsPayment ? (
+        {!circle.isPaid ? (
           <div className="space-y-4">
             <p className="text-sm text-slate-600 dark:text-slate-300">{t('communityUi.free')}</p>
             <button type="button" onClick={() => void joinFree()} disabled={busy} className="w-full rounded-xl bg-lobster-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-lobster-600 disabled:opacity-60">
@@ -149,6 +192,7 @@ export function JoinCircleDialog({
                 {t('communityUi.markPaid')}
               </button>
             </div>
+            <p className="text-xs text-slate-400">{t('communityUi.paymentPolling', 'This window checks the payment automatically.')}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -169,6 +213,12 @@ export function JoinCircleDialog({
                 ))}
                 {tiers.length === 0 ? <p className="text-sm text-slate-500">{t('communityUi.tiers')}: —</p> : null}
               </div>
+              {supportsLifetime ? (
+                <label className="mt-2 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                  <input type="checkbox" checked={lifetime} onChange={(event) => setLifetime(event.target.checked)} className="h-4 w-4" />
+                  {t('communityUi.lifetimePurchase', 'Lifetime membership')} · ¥{selectedTier?.lifetimePrice}
+                </label>
+              ) : null}
             </div>
 
             <div>
@@ -187,6 +237,10 @@ export function JoinCircleDialog({
                 ))}
               </div>
             </div>
+
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {t('communityUi.amountDue', 'Amount due')}: <span className="font-semibold text-slate-900 dark:text-white">¥{price ?? 0}</span>
+            </p>
 
             <button type="button" onClick={() => void createOrder()} disabled={busy} className="w-full rounded-xl bg-lobster-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-lobster-600 disabled:opacity-60">
               {busy ? <Loader2 className="mx-auto h-4 w-4 animate-spin" aria-hidden="true" /> : t('communityUi.createOrder')}

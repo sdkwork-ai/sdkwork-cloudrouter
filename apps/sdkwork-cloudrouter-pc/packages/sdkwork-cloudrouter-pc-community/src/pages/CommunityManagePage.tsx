@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Copy, Loader2, Plus, Trash2 } from 'lucide-react';
+import QRCode from 'qrcode';
 
 import {
   CircleAvatar,
@@ -11,6 +12,7 @@ import {
   CommunitySpinner,
   CommunityTabs,
 } from '../components/CommunityShell.tsx';
+import { CommunityMediaImage } from '../components/CommunityMediaImage.tsx';
 import {
   CommunityService,
   ensureCommunityPcRuntime,
@@ -38,6 +40,7 @@ export function CommunityManagePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [notice, setNotice] = useState('');
+  const [qrDataUrl, setQrDataUrl] = useState('');
 
   const load = useCallback(async () => {
     if (!circleId) return;
@@ -70,6 +73,24 @@ export function CommunityManagePage() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (!circle) {
+      setQrDataUrl('');
+      return undefined;
+    }
+    let cancelled = false;
+    void QRCode.toDataURL(inviteLink(circle.id), { margin: 2, width: 320 })
+      .then((url) => {
+        if (!cancelled) setQrDataUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setQrDataUrl('');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [circle]);
+
   if (loading) return <CommunityPage><CommunitySpinner label={t('communityUi.loading')} /></CommunityPage>;
   if (error) return <CommunityPage><CommunityErrorState onRetry={() => void load()} /></CommunityPage>;
   if (!circle) {
@@ -97,13 +118,29 @@ export function CommunityManagePage() {
       />
 
       {section === 'profile' ? (
-        <ProfilePanel
-          circle={circle}
-          onSaved={(next) => {
-            setCircle(next);
-            setNotice(t('communityUi.saved'));
-          }}
-        />
+        <>
+          <ProfilePanel
+            circle={circle}
+            onSaved={(next) => {
+              setCircle(next);
+              setNotice(t('communityUi.saved'));
+            }}
+          />
+          <div className="mt-6 max-w-3xl rounded-2xl border border-red-200 bg-red-50/60 p-5 dark:border-red-900/50 dark:bg-red-950/20">
+            <h2 className="text-sm font-semibold text-red-700 dark:text-red-300">{t('communityUi.dangerZone', 'Danger zone')}</h2>
+            <p className="mt-1 text-sm text-red-600/80 dark:text-red-300/80">{t('communityUi.deleteCircleHint', 'Deleting a circle removes it for every member. This cannot be undone.')}</p>
+            <button
+              type="button"
+              onClick={() => {
+                if (!window.confirm(t('communityUi.deleteConfirm', { name: circle.name }))) return;
+                void CommunityService.deleteCommunity(circle.id).then(() => navigate('/community'));
+              }}
+              className="mt-3 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+            >
+              {t('communityUi.deleteCircle', 'Delete circle')}
+            </button>
+          </div>
+        </>
       ) : null}
 
       {section === 'members' ? (
@@ -172,6 +209,9 @@ export function CommunityManagePage() {
         <div className="max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t('communityUi.manageQr')}</h2>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t('communityUi.qrHint')}</p>
+          {qrDataUrl ? (
+            <img src={qrDataUrl} alt={t('communityUi.manageQr')} className="mx-auto mt-5 h-48 w-48 rounded-xl border border-slate-200 bg-white p-2 dark:border-slate-700" />
+          ) : null}
           <div className="mt-4 flex items-center gap-2">
             <input readOnly value={inviteLink(circle.id)} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
             <button
@@ -195,8 +235,10 @@ function ProfilePanel({ circle, onSaved }: { readonly circle: Community; readonl
   const { t } = useTranslation();
   const [name, setName] = useState(circle.name);
   const [description, setDescription] = useState(circle.description);
-  const [coverImage, setCoverImage] = useState(circle.coverImage);
-  const [avatar, setAvatar] = useState(circle.avatar ?? '');
+  // Edit the stored reference, never the resolved display URL: saving a
+  // short-lived download grant would corrupt the circle media.
+  const [coverImage, setCoverImage] = useState(circle.rawCoverImage ?? circle.coverImage);
+  const [avatar, setAvatar] = useState(circle.rawAvatar ?? circle.avatar ?? '');
   const [tags, setTags] = useState(circle.tags.join(', '));
   const [tabs, setTabs] = useState((circle.tabs ?? []).join(', '));
   const [isPaid, setIsPaid] = useState(circle.isPaid ?? false);
@@ -265,7 +307,31 @@ function GroupsPanel({ circleId, groups, onChanged }: { readonly circleId: strin
   const [platform, setPlatform] = useState<CommunityGroup['platform']>('wechat');
   const [description, setDescription] = useState('');
   const [memberCount, setMemberCount] = useState('0');
+  const [qrCodes, setQrCodes] = useState<{ url: string; description: string }[]>([]);
   const [busy, setBusy] = useState(false);
+
+  const uploadQrs = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const urls = await uploadCommunityImages(Array.from(files));
+    setQrCodes((current) => [...current, ...urls.map((url) => ({ url, description: '' }))]);
+  };
+
+  const addQrToGroup = async (group: CommunityGroup, file: File | undefined) => {
+    if (!file) return;
+    const [url] = await uploadCommunityImages([file]);
+    if (!url) return;
+    await CommunityService.updateGroup(circleId, group.id, {
+      qrCodes: [...(group.qrCodes ?? []), { url, description: '' }],
+    });
+    await onChanged();
+  };
+
+  const removeQrFromGroup = async (group: CommunityGroup, url: string) => {
+    await CommunityService.updateGroup(circleId, group.id, {
+      qrCodes: (group.qrCodes ?? []).filter((item) => item.url !== url),
+    });
+    await onChanged();
+  };
 
   const create = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -277,11 +343,12 @@ function GroupsPanel({ circleId, groups, onChanged }: { readonly circleId: strin
         platform,
         description: description.trim() || undefined,
         memberCount: Number(memberCount) || 0,
-        qrCodes: [],
+        qrCodes,
       });
       setName('');
       setDescription('');
       setMemberCount('0');
+      setQrCodes([]);
       await onChanged();
     } finally {
       setBusy(false);
@@ -297,17 +364,50 @@ function GroupsPanel({ circleId, groups, onChanged }: { readonly circleId: strin
         </select>
         <input value={description} onChange={(event) => setDescription(event.target.value)} placeholder={t('communityUi.groupDescription')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
         <input type="number" min="0" value={memberCount} onChange={(event) => setMemberCount(event.target.value)} placeholder={t('communityUi.groupMembers')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
+        <div className="sm:col-span-2">
+          <label className="mb-1.5 block text-xs font-medium text-slate-500 dark:text-slate-400">{t('communityUi.groupQrCodes', 'Join QR codes')}</label>
+          <input type="file" accept="image/*" multiple onChange={(event) => void uploadQrs(event.target.files)} className="block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold dark:text-slate-400 dark:file:bg-slate-800 dark:file:text-slate-200" />
+          {qrCodes.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {qrCodes.map((qr) => (
+                <span key={qr.url} className="relative inline-flex">
+                  <CommunityMediaImage uri={qr.url} alt="" className="h-16 w-16 rounded-lg border border-slate-200 object-cover dark:border-slate-700" />
+                  <button type="button" onClick={() => setQrCodes((current) => current.filter((item) => item.url !== qr.url))} className="absolute -right-1 -top-1 rounded-full bg-red-600 p-0.5 text-white" aria-label={t('communityUi.delete')}>
+                    <Trash2 className="h-3 w-3" aria-hidden="true" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
         <button type="submit" disabled={busy} className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-lobster-500 px-4 py-2 text-sm font-semibold text-white hover:bg-lobster-600 disabled:opacity-60 sm:col-span-2">
           <Plus className="h-4 w-4" aria-hidden="true" />{t('communityUi.addGroup')}
         </button>
       </form>
       <ul className="space-y-2">
         {groups.map((group) => (
-          <li key={group.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900">
-            <span><span className="block font-medium text-slate-900 dark:text-white">{group.name}</span><span className="text-xs text-slate-400">{group.platform} · {group.memberCount} {t('communityUi.members')}</span></span>
-            <button type="button" onClick={() => { if (window.confirm(t('communityUi.deleteConfirm', { name: group.name }))) void CommunityService.deleteGroup(circleId, group.id).then(onChanged); }} className="rounded-lg p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40" aria-label={t('communityUi.delete')}>
-              <Trash2 className="h-4 w-4" aria-hidden="true" />
-            </button>
+          <li key={group.id} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center justify-between gap-3">
+              <span><span className="block font-medium text-slate-900 dark:text-white">{group.name}</span><span className="text-xs text-slate-400">{group.platform} · {group.memberCount} {t('communityUi.members')}</span></span>
+              <button type="button" onClick={() => { if (window.confirm(t('communityUi.deleteConfirm', { name: group.name }))) void CommunityService.deleteGroup(circleId, group.id).then(onChanged); }} className="rounded-lg p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40" aria-label={t('communityUi.delete')}>
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {(group.qrCodes ?? []).map((qr) => (
+                <span key={qr.url} className="relative inline-flex">
+                  <CommunityMediaImage uri={qr.url} alt={qr.description} className="h-16 w-16 rounded-lg border border-slate-200 object-cover dark:border-slate-700" />
+                  <button type="button" onClick={() => void removeQrFromGroup(group, qr.url)} className="absolute -right-1 -top-1 rounded-full bg-red-600 p-0.5 text-white" aria-label={t('communityUi.delete')}>
+                    <Trash2 className="h-3 w-3" aria-hidden="true" />
+                  </button>
+                </span>
+              ))}
+              <label className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-dashed border-slate-300 px-2.5 py-1.5 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                {t('communityUi.addQrCode', 'Add QR code')}
+                <input type="file" accept="image/*" className="sr-only" onChange={(event) => { void addQrToGroup(group, event.target.files?.[0]); event.target.value = ''; }} />
+              </label>
+            </div>
           </li>
         ))}
       </ul>
@@ -317,52 +417,88 @@ function GroupsPanel({ circleId, groups, onChanged }: { readonly circleId: strin
 
 function TiersPanel({ circleId, tiers, onChanged }: { readonly circleId: string; readonly tiers: readonly MembershipTier[]; readonly onChanged: () => Promise<void> }) {
   const { t } = useTranslation();
+  const [editingTierId, setEditingTierId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('99');
+  const [lifetimePrice, setLifetimePrice] = useState('');
   const [durationDays, setDurationDays] = useState('365');
   const [benefits, setBenefits] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const create = async (event: FormEvent<HTMLFormElement>) => {
+  const reset = () => {
+    setEditingTierId(null);
+    setName('');
+    setPrice('99');
+    setLifetimePrice('');
+    setDurationDays('365');
+    setBenefits('');
+  };
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!name.trim()) return;
     setBusy(true);
     try {
-      await CommunityService.createMembershipTier(circleId, {
+      const payload = {
         name: name.trim(),
         description: undefined,
         price: Number(price) || 0,
         durationDays: Number(durationDays) || 365,
+        lifetimePrice: lifetimePrice.trim() ? Number(lifetimePrice) : undefined,
         benefits: benefits.split(/\r?\n/u).map((item) => item.trim()).filter(Boolean),
         sortOrder: tiers.length,
-      });
-      setName('');
-      setBenefits('');
+      };
+      if (editingTierId) {
+        await CommunityService.updateMembershipTier(circleId, editingTierId, payload);
+      } else {
+        await CommunityService.createMembershipTier(circleId, payload);
+      }
+      reset();
       await onChanged();
     } finally {
       setBusy(false);
     }
   };
 
+  const startEdit = (tier: MembershipTier) => {
+    setEditingTierId(tier.id);
+    setName(tier.name);
+    setPrice(String(tier.price));
+    setLifetimePrice(tier.lifetimePrice ? String(tier.lifetimePrice) : '');
+    setDurationDays(String(tier.durationDays));
+    setBenefits(tier.benefits.join('\n'));
+  };
+
   return (
     <div className="space-y-4">
-      <form onSubmit={create} className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:grid-cols-2">
+      <form onSubmit={submit} className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:grid-cols-2">
         <input required value={name} onChange={(event) => setName(event.target.value)} placeholder={t('communityUi.tierName')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
         <input type="number" min="0" value={price} onChange={(event) => setPrice(event.target.value)} placeholder={t('communityUi.tierPrice')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
+        <input type="number" min="0" value={lifetimePrice} onChange={(event) => setLifetimePrice(event.target.value)} placeholder={t('communityUi.tierLifetimePrice', 'Lifetime price (optional)')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
         <input type="number" min="1" value={durationDays} onChange={(event) => setDurationDays(event.target.value)} placeholder={t('communityUi.tierDuration')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
         <textarea rows={2} value={benefits} onChange={(event) => setBenefits(event.target.value)} placeholder={t('communityUi.tierBenefitsHint')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
-        <button type="submit" disabled={busy} className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-lobster-500 px-4 py-2 text-sm font-semibold text-white hover:bg-lobster-600 disabled:opacity-60 sm:col-span-2">
-          <Plus className="h-4 w-4" aria-hidden="true" />{t('communityUi.addTier')}
-        </button>
+        <div className="flex gap-2 sm:col-span-2">
+          <button type="submit" disabled={busy} className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-lobster-500 px-4 py-2 text-sm font-semibold text-white hover:bg-lobster-600 disabled:opacity-60">
+            <Plus className="h-4 w-4" aria-hidden="true" />{editingTierId ? t('communityUi.save') : t('communityUi.addTier')}
+          </button>
+          {editingTierId ? (
+            <button type="button" onClick={reset} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200">
+              {t('communityUi.back')}
+            </button>
+          ) : null}
+        </div>
       </form>
       <ul className="space-y-2">
         {tiers.map((tier) => (
           <li key={tier.id} className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
             <span>
-              <span className="block font-medium text-slate-900 dark:text-white">{tier.name} · ¥{tier.price}</span>
+              <span className="block font-medium text-slate-900 dark:text-white">{tier.name} · ¥{tier.price}{tier.lifetimePrice ? ` / ¥${tier.lifetimePrice}` : ''}</span>
               <span className="text-xs text-slate-400">{tier.durationDays} {t('communityUi.tierDuration')} · {tier.enabled ? t('communityUi.published') : t('communityUi.draft')}</span>
             </span>
             <span className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => startEdit(tier)} className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                {t('communityUi.edit', 'Edit')}
+              </button>
               <button type="button" onClick={() => { void (tier.enabled ? CommunityService.unpublishMembershipTier(circleId, tier.id) : CommunityService.publishMembershipTier(circleId, tier.id)).then(onChanged); }} className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 {tier.enabled ? t('communityUi.unpublish') : t('communityUi.tierPublish')}
               </button>

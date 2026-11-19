@@ -150,6 +150,15 @@ export async function uploadCommunityImages(files: File[]): Promise<string[]> {
   return getCommunityMediaRuntime().uploadImages(files);
 }
 
+/** Resolves a stored resource URI into a download URL the browser can open. */
+export async function resolveCommunityResourceUrl(url: string): Promise<string | null> {
+  ensureCommunityPcRuntime();
+  if (!url.startsWith('drive://')) {
+    return url;
+  }
+  return getCommunityMediaRuntime().resolveDisplayUrl?.(url) ?? null;
+}
+
 function createIdempotencyKey(): string {
   const host = globalThis as unknown as { crypto?: { randomUUID?: () => string } };
   const randomUUID = host.crypto?.randomUUID;

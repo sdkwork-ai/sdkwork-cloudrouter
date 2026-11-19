@@ -64,8 +64,32 @@ test('the community runtime uses generated SDK ports and never raw HTTP', () => 
   assert.match(runtime, /getSdkworkOrderAppSdkClient/u);
   assert.match(runtime, /memberships\.orders\.create/u);
   assert.match(runtime, /createDriveUploadImageService/u);
+  assert.match(runtime, /isCircleOrderPaid/u);
+  assert.match(runtime, /resolveCommunityResourceUrl/u);
   assert.doesNotMatch(runtime, /\bfetch\s*\(/u);
   assert.doesNotMatch(runtime, /axios/u);
+});
+
+test('the portal exposes the complete publish, moderation, and group flows', () => {
+  const detail = readPackage('src/pages/CommunityDetailPage.tsx');
+  assert.match(detail, /getPostsByCommunityTag/u);
+  assert.match(detail, /createResource/u);
+  assert.match(detail, /composerSection/u);
+  assert.match(detail, /pendingReview/u);
+
+  const postCard = readPackage('src/components/PostCard.tsx');
+  assert.match(postCard, /pendingReview/u);
+
+  const join = readPackage('src/components/JoinCircleDialog.tsx');
+  assert.match(join, /isCircleOrderPaid/u);
+  assert.match(join, /lifetime/u);
+  assert.match(join, /PAYMENT_POLL_INTERVAL_MS/u);
+
+  const manage = readPackage('src/pages/CommunityManagePage.tsx');
+  assert.match(manage, /QRCode\.toDataURL/u);
+  assert.match(manage, /deleteCommunity/u);
+  assert.match(manage, /addQrToGroup/u);
+  assert.match(manage, /updateMembershipTier/u);
 });
 
 test('the community copy is merged into the host catalog', () => {

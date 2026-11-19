@@ -66,6 +66,46 @@ describe('cloudrouter h5 community integration', () => {
     assert.doesNotMatch(ports, /\bfetch\s*\(/u);
   });
 
+  it('keeps the complete shared community read and publish flows', () => {
+    const communityRoot = path.join(
+      REPO,
+      '..',
+      'sdkwork-community/apps/sdkwork-community-common/packages/sdkwork-community-mobile-react-community',
+    );
+    const service = fs.readFileSync(
+      path.join(communityRoot, 'src/services/CommunityService.ts'),
+      'utf8',
+    );
+    // Full entries come from the app-api feed, not the lightweight stream.
+    assert.match(service, /port\(\)\.community\.feed\.list\(/u);
+    assert.match(service, /getPostsByCommunityTag/u);
+    assert.match(service, /createResource/u);
+    assert.match(service, /PENDING_POSTS/u);
+    assert.match(service, /resolvePostImages/u);
+    assert.match(service, /resolveMediaUri/u);
+
+    const tabsContent = fs.readFileSync(
+      path.join(communityRoot, 'src/components/CommunityDetail/CommunityTabsContent.tsx'),
+      'utf8',
+    );
+    assert.match(tabsContent, /tabPosts/u);
+    assert.match(tabsContent, /isCustomTab/u);
+
+    const postCreate = fs.readFileSync(
+      path.join(communityRoot, 'src/pages/CommunityPostCreate.tsx'),
+      'utf8',
+    );
+    assert.match(postCreate, /createResource/u);
+    assert.match(postCreate, /isCustomTab/u);
+
+    const resourceList = fs.readFileSync(
+      path.join(communityRoot, 'src/components/ResourceList.tsx'),
+      'utf8',
+    );
+    assert.match(resourceList, /window\.open/u);
+    assert.doesNotMatch(resourceList, /资源保存中/u);
+  });
+
   it('declares the community post media upload identity', () => {
     const declaration = readJson('specs/upload.declaration.json');
     const entry = declaration.declarations.find(
