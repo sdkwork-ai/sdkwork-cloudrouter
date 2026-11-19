@@ -39,14 +39,13 @@ install count.
 
 ## 2. Version-pinned Git template source
 
-**State.** Git template install remixes the source application's **current**
-Git declaration. Archive templates already use the published version artifact.
+**State.** Version creation now captures the source app's Git declaration
+(provider, url, effective ref, sub path, clone mode, credential reference) into
+the version's `metadata.git`; install prefers that snapshot and falls back to
+the current source for versions created before the capture.
 
-**Required contract.** At `appTemplateVersions.create`, capture the source
-app's Git declaration (provider/url/ref/subPath/cloneMode/credential ref) into
-a version-owned snapshot and have install read it. This needs a
-`sourceSnapshot` field or a version metadata contract, an OpenAPI/SDK
-regeneration, and a backfill policy for existing versions.
+**Remaining contract.** Backfill `metadata.git` for versions created before
+the capture if any of them must be reproducible.
 
 **Verification:** publish a template, change the source app's Git ref, install
 the published version, and assert the installed app uses the published ref.
