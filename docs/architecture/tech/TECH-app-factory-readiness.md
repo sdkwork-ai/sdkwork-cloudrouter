@@ -78,8 +78,8 @@ Electron, Tauri, Qt, Rust, Node, Go, Python.
   and browse/authoring routes exist. `install_count` increments once per
   installed application (the `app.template.install` audit entry keys the
   idempotent replay), and the installed app records its template provenance in
-  `metadata.template`. A PostgreSQL integration test covers artifact-clone
-  replay.
+  `metadata.template`. PostgreSQL integration tests cover artifact-clone
+  replay and paid-order verification (buyer, payment state, template, refunded).
 - A **paid** template install requires the settled `orderId`; Deploy verifies the
   order read-only against `commerce_order` (buyer, paid state, `app_template`
   subject, template UUID) and uses the order id as the app-create idempotency
