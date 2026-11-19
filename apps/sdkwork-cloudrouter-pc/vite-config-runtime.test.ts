@@ -834,11 +834,11 @@ test("portal scripts run dependency preflight before Vite entrypoints", () => {
   // dependency preflight stays in front of the direct Vite run.
   assert.equal(
     portalPackage.scripts.dev,
-    "node ../../scripts/ensure-cloud-router-env.mjs --lifecycle dev && vite --configLoader native",
+    "node ../../scripts/ensure-cloud-router-env.mjs --lifecycle dev && vite --configLoader native --mode standalone.development",
   );
   assert.equal(
     portalPackage.scripts["dev:browser"],
-    "node ../../scripts/ensure-cloud-router-env.mjs --lifecycle dev && vite --configLoader native",
+    "node ../../scripts/ensure-cloud-router-env.mjs --lifecycle dev && vite --configLoader native --mode standalone.development",
   );
   assert.ok(
     portalPackage.scripts["dev:standalone"].startsWith("pnpm exec sdkwork-app dev --root ../"),
