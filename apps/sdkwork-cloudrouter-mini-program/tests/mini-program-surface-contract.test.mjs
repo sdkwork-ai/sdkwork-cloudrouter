@@ -236,6 +236,11 @@ describe('cloudrouter mini program application root', () => {
     const coreClient = readText('packages/sdkwork-cloudrouter-mp-core/src/sdk/communityAppSdkClient.ts');
     assert.ok(coreClient.includes('@sdkwork/community-app-sdk'));
     assert.ok(coreClient.includes('getCloudRouterTokenManager'));
+    const driveClient = readText('packages/sdkwork-cloudrouter-mp-core/src/sdk/driveAppSdkClient.ts');
+    assert.ok(driveClient.includes('@sdkwork/drive-app-sdk'));
+    assert.ok(driveClient.includes('downloadGrants'));
+    assert.ok(api.includes('resolveCloudRouterDriveMediaUrl'));
+    assert.ok(api.includes('resolveMedia'));
   });
 
   it('derives the shell tab bar from the shared console tab descriptors', () => {

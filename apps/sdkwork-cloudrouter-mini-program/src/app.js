@@ -71,13 +71,16 @@ function installMiniProgramTransportPolyfills() {
       const request = options || {};
       const headers = request.headers || {};
       return new Promise((resolve, reject) => {
-        wx.request({
+        let settled = false;
+        const task = wx.request({
           url: String(url),
           method: request.method || 'GET',
           header: headers,
           data: request.body,
           dataType: 'text',
           success(response) {
+            if (settled) return;
+            settled = true;
             const responseHeaders = response.header || {};
             resolve({
               status: response.statusCode,
@@ -102,9 +105,27 @@ function installMiniProgramTransportPolyfills() {
             });
           },
           fail(error) {
+            if (settled) return;
+            settled = true;
             reject(new Error(error && error.errMsg ? error.errMsg : 'network error'));
           },
         });
+        const signal = request.signal;
+        if (signal) {
+          const onAbort = () => {
+            if (settled) return;
+            settled = true;
+            try {
+              task.abort();
+            } catch {}
+            reject(new Error('aborted'));
+          };
+          if (signal.aborted) {
+            onAbort();
+          } else {
+            signal.addEventListener('abort', onAbort);
+          }
+        }
       });
     };
   }

@@ -83,7 +83,7 @@ node --import tsx --test apps/sdkwork-cloudrouter-pc/community-portal-runtime.te
 
 # Mini program
 pnpm --dir apps/sdkwork-cloudrouter-mini-program typecheck
-node --test apps/sdkwork-cloudrouter-mini-program/tests/*.test.mjs
+pnpm --dir apps/sdkwork-cloudrouter-mini-program _sdkwork:test
 pnpm --dir apps/sdkwork-cloudrouter-mini-program build:mini-program
 
 # Flutter
@@ -97,6 +97,9 @@ node --test apps/sdkwork-cloudrouter-flutter-mobile/tests/flutter-mobile-surface
 - Mini program management, groups, members, tiers, and paid checkout use the
   complete H5 workspace through `pages/community/web/index`; the native pages
   cover discovery, detail, posting, comments, reactions, and circle creation.
+  Native images resolve `drive://` references through the generated Drive App
+  SDK; the deployment must whitelist the Drive download host as a WeChat
+  download domain.
 - Flutter management and paid checkout intentionally use the H5 workspace;
   native discovery, detail, posting, comments, reactions, and circle creation
   are implemented in `sdkwork_cloudrouter_flutter_mobile_console_community`.

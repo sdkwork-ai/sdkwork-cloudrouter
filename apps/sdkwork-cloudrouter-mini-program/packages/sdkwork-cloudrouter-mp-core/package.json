@@ -51,6 +51,7 @@
   "dependencies": {
     "@sdkwork/cloudrouter-app-sdk": "workspace:*",
     "@sdkwork/community-app-sdk": "workspace:*",
+    "@sdkwork/drive-app-sdk": "workspace:*",
     "@sdkwork/cloudrouter-contracts": "workspace:*",
     "@sdkwork/cloudrouter-sdk-ports": "workspace:*",
     "@sdkwork/cloudrouter-service": "workspace:*",

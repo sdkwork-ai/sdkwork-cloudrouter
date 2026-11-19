@@ -1,5 +1,8 @@
 import {
   createCloudRouterMpCommunityAppSdkClient,
+  createCloudRouterMpDriveAppSdkClient,
+  resolveCloudRouterDriveMediaUrl,
+  type DriveAppSdkClient,
   type SdkworkCommunityAppClient,
 } from '@sdkwork/cloudrouter-mp-core';
 
@@ -168,10 +171,9 @@ function mapComment(record: WireRecord): MpCommunityComment {
 }
 
 function mapMember(record: WireRecord): MpCommunityMember {
-  const user = asRecord(record.user);
   return {
     id: text(record.id),
-    name: text(user.name),
+    name: text(record.userName),
     role: text(record.role) || 'member',
     status: text(record.status) || 'active',
     tierName: text(record.tierName),
@@ -222,6 +224,7 @@ function mergePending(
 }
 
 export interface MpCommunityApi {
+  resolveMedia(uri: string): Promise<string | null>;
   listCircles(): Promise<MpCommunityCircle[]>;
   getCircle(categoryId: string): Promise<MpCommunityCircle | null>;
   joinCircle(categoryId: string): Promise<void>;
@@ -248,6 +251,7 @@ export interface MpCommunityApi {
 export interface CreateMpCommunityApiOptions {
   appApiBaseUrl: string;
   client?: SdkworkCommunityAppClient;
+  driveClient?: DriveAppSdkClient;
 }
 
 export function createCloudRouterMpCommunityApi(
@@ -256,17 +260,53 @@ export function createCloudRouterMpCommunityApi(
   const client =
     options.client
     ?? createCloudRouterMpCommunityAppSdkClient(options.appApiBaseUrl);
+  const driveClient =
+    options.driveClient
+    ?? createCloudRouterMpDriveAppSdkClient(options.appApiBaseUrl);
+  const mediaCache = new Map<string, Promise<string | null>>();
+
+  function resolveMedia(uri: string): Promise<string | null> {
+    if (!uri) return Promise.resolve(null);
+    if (!uri.startsWith('drive://')) return Promise.resolve(uri);
+    const cached = mediaCache.get(uri);
+    if (cached) return cached;
+    const pending = resolveCloudRouterDriveMediaUrl(driveClient, uri).catch(() => null);
+    mediaCache.set(uri, pending);
+    return pending;
+  }
+
+  async function resolveCircleMedia(circle: MpCommunityCircle): Promise<MpCommunityCircle> {
+    const [avatar, coverImage] = await Promise.all([
+      resolveMedia(circle.avatar),
+      resolveMedia(circle.coverImage),
+    ]);
+    return {
+      ...circle,
+      avatar: avatar ?? '',
+      coverImage: coverImage ?? '',
+    };
+  }
+
+  async function resolvePostMedia(post: MpCommunityPost): Promise<MpCommunityPost> {
+    const images = await Promise.all(post.images.map((uri) => resolveMedia(uri)));
+    return {
+      ...post,
+      images: images.filter((uri): uri is string => Boolean(uri)),
+    };
+  }
 
   return {
+    resolveMedia,
+
     async listCircles() {
       const page = await client.community.categories.list();
-      return pageItems(page).map(mapCircle);
+      return Promise.all(pageItems(page).map(mapCircle).map(resolveCircleMedia));
     },
 
     async getCircle(categoryId) {
       try {
         const record = await client.community.categories.retrieve(categoryId);
-        return mapCircle(itemRecord(record));
+        return await resolveCircleMedia(mapCircle(itemRecord(record)));
       } catch {
         return null;
       }
@@ -293,7 +333,7 @@ export function createCloudRouterMpCommunityApi(
         tags: input.tags,
         tabs: input.tabs,
       });
-      return mapCircle(itemRecord(created));
+      return await resolveCircleMedia(mapCircle(itemRecord(created)));
     },
 
     async updateCircle(categoryId, input) {
@@ -316,17 +356,19 @@ export function createCloudRouterMpCommunityApi(
       const posts = pageItems(page)
         .map(mapPost)
         .filter((post) => !post.tags.includes('resource'));
-      return mergePending(categoryId, posts);
+      const resolved = await Promise.all(posts.map(resolvePostMedia));
+      return mergePending(categoryId, resolved);
     },
 
     async listTabPosts(categoryId, tag) {
       const page = await client.community.feed.list({ categoryId, tag });
-      return mergePending(categoryId, pageItems(page).map(mapPost), tag);
+      const resolved = await Promise.all(pageItems(page).map(mapPost).map(resolvePostMedia));
+      return mergePending(categoryId, resolved, tag);
     },
 
     async listResources(categoryId) {
       const page = await client.community.feed.list({ categoryId, kind: 'resource' });
-      return pageItems(page).map(mapPost);
+      return Promise.all(pageItems(page).map(mapPost).map(resolvePostMedia));
     },
 
     async listComments(entryId) {
@@ -396,4 +438,19 @@ export function createCloudRouterMpCommunityApi(
     },
   };
 }
+
+/**
+ * @internal Wire-shape regression surface. Exported only for the app-level
+ * mapping tests; pages must consume the `MpCommunityApi` facade.
+ */
+export const __testing = {
+  pageItems,
+  itemRecord,
+  mapCircle,
+  mapPost,
+  mapComment,
+  mapMember,
+  mapGroup,
+  mapTier,
+};
 

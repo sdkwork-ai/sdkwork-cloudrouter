@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sdkwork_cloudrouter_flutter_mobile_core/sdkwork_cloudrouter_flutter_mobile_core.dart';
 
 import '../community_repository.dart';
+import '../widgets/community_network_image.dart';
 import 'community_create_screen.dart';
 import 'community_detail_screen.dart';
 
@@ -160,7 +161,10 @@ class _CommunityListScreenState extends State<CommunityListScreen> {
                                   child: ListTile(
                                     contentPadding: const EdgeInsets.symmetric(
                                         horizontal: 14, vertical: 10),
-                                    leading: _CircleAvatar(circle: circle),
+                                    leading: _CircleAvatar(
+                                      circle: circle,
+                                      repository: widget.repository,
+                                    ),
                                     title: Row(
                                       children: <Widget>[
                                         Expanded(
@@ -214,20 +218,27 @@ class _CommunityListScreenState extends State<CommunityListScreen> {
 }
 
 class _CircleAvatar extends StatelessWidget {
-  const _CircleAvatar({required this.circle});
+  const _CircleAvatar({required this.circle, required this.repository});
 
   final CommunityCategory circle;
+  final CommunityRepository repository;
 
   @override
   Widget build(BuildContext context) {
     final url = circle.avatar;
-    return CircleAvatar(
-      radius: 24,
-      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-      backgroundImage: url != null && url.isNotEmpty ? NetworkImage(url) : null,
-      child: url == null || url.isEmpty
-          ? Text(circle.title.isEmpty ? '圈' : circle.title.substring(0, 1))
-          : null,
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: ClipOval(
+        child: url == null || url.isEmpty
+            ? Container(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                alignment: Alignment.center,
+                child: Text(
+                    circle.title.isEmpty ? '圈' : circle.title.substring(0, 1)),
+              )
+            : CommunityNetworkImage(repository: repository, uri: url),
+      ),
     );
   }
 }
