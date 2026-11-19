@@ -14,7 +14,7 @@ and generated SDKs remain owned by `sdkwork-community`.
 | Posts, comments, reactions | native | native | native | native |
 | Group management and join QR codes | native | native | shared H5 | shared H5 |
 | Member roles and moderation | native | native | shared H5 | shared H5 |
-| Post moderation queue | community admin workspace | community admin workspace | community admin workspace | community admin workspace |
+| Post moderation queue | CloudRouter PC admin workspace | CloudRouter PC admin workspace | CloudRouter PC admin workspace | CloudRouter PC admin workspace |
 | Paid membership tiers and order settlement | native | native | shared H5 | shared H5 |
 | Circle cashier | shared portal cashier | native bridge | shared H5 | shared H5 |
 
@@ -99,8 +99,9 @@ Latest verified gates:
 - H5: `pnpm typecheck`, `pnpm build:dev`, and the full `pnpm test` suite
   (101/101) pass.
 - PC: `pnpm typecheck`, `pnpm build:test`, and the community portal suite
-  (6/6) pass. The admin/test suites pass 230 checks; one unrelated trade-route
-  count assertion remains outside the community surface.
+  (6/6) pass. The admin community suite passes 18/18; the wider admin/test
+  suites pass 230 checks, with one unrelated trade-route count assertion
+  outside the community surface.
 - Mini program: `pnpm _sdkwork:check`, 20 contract tests, 4 App API mapping
   tests, and the 14-page runtime build pass.
 - Flutter: `flutter analyze` reports no errors, the community widget/media
@@ -120,9 +121,10 @@ Known delivery debt outside the circle flow:
 - The community mobile package's vitest suite requires that repository's
   devDependencies to be installed; this workspace currently verifies it through
   the H5 typecheck and runtime build instead.
-- Post moderation remains an admin-workspace operation; the portal/native
-  surfaces show the author's pending state but do not grant platform review
-  authority.
+- Post moderation is an administrator operation in the CloudRouter PC admin
+  community workspace (`/admin/community`); the portal/H5/native surfaces show
+  the author's pending state but do not grant platform review authority. The
+  admin service suite covers 18 moderation/circle/admin cases.
 
 ## Known gaps
 
