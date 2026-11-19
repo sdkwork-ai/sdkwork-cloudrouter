@@ -14,6 +14,7 @@ and generated SDKs remain owned by `sdkwork-community`.
 | Posts, comments, reactions | native | native | native | native |
 | Group management and join QR codes | native | native | shared H5 | shared H5 |
 | Member roles and moderation | native | native | shared H5 | shared H5 |
+| Post moderation queue | community admin workspace | community admin workspace | community admin workspace | community admin workspace |
 | Paid membership tiers and order settlement | native | native | shared H5 | shared H5 |
 | Circle cashier | shared portal cashier | native bridge | shared H5 | shared H5 |
 
@@ -104,3 +105,7 @@ node --test apps/sdkwork-cloudrouter-flutter-mobile/tests/flutter-mobile-surface
 - New posts are submitted for moderation (`pending-review`) and appear to their
   author immediately with a pending badge; other members see them after an
   administrator approves them in the admin community moderation queue.
+- The moderation queue and approve/reject actions are owned by the community
+  admin workspace (`/backend/v3/api/community/moderation/queue`), not the
+  portal. This keeps platform review authority in one place; circle members and
+  owners use the portal/H5/native surfaces to author and read content.
