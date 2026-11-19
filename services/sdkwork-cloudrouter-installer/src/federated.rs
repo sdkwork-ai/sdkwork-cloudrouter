@@ -330,11 +330,7 @@ mod tests {
             "a host package without the staged Messaging database module must remain a no-op"
         );
         assert!(
-            body.contains(concat!(
-                "\"",
-                "cloudrouterctl-messaging",
-                "\""
-            )),
+            body.contains(concat!("\"", "cloudrouterctl-messaging", "\"")),
             "seed history must attribute Messaging initialization to the installer"
         );
     }
@@ -373,9 +369,7 @@ mod tests {
             .expect("create throwaway schema");
 
         let separator = if base_url.contains('?') { '&' } else { '?' };
-        let scoped_url = format!(
-            "{base_url}{separator}options=-c%20search_path%3D{schema}"
-        );
+        let scoped_url = format!("{base_url}{separator}options=-c%20search_path%3D{schema}");
         let config = DatabaseConfig {
             engine: DatabaseEngine::Postgres,
             url: scoped_url,
@@ -413,7 +407,9 @@ mod tests {
         )
         .expect("resolve the sibling sdkwork-messaging checkout");
         assert!(
-            messaging_root.join("database/database.manifest.json").is_file(),
+            messaging_root
+                .join("database/database.manifest.json")
+                .is_file(),
             "the sibling sdkwork-messaging checkout must stage database/ at {}",
             messaging_root.display()
         );
@@ -429,7 +425,10 @@ mod tests {
         assert_eq!(applied.len(), 1, "one Messaging module is converged");
         let (module_id, _migrations, seeds) = &applied[0];
         assert_eq!(module_id, "messaging");
-        assert_eq!(*seeds, 5, "common provider seeds plus the zh-CN template and binding seeds");
+        assert_eq!(
+            *seeds, 5,
+            "common provider seeds plus the zh-CN template and binding seeds"
+        );
 
         let postgres = pool.as_postgres().expect("PostgreSQL pool");
         let row = sqlx::query(
