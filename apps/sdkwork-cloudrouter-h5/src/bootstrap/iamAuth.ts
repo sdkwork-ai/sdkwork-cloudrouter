@@ -87,20 +87,18 @@ export function createCloudRouterIamAuth(
   });
 
   // The logged-in cashier's WeChat payment OAuth is a **dual-token** IAM app
-  // API call. The IAM client is built before the shared TokenManager is wired,
-  // so attach it explicitly; otherwise `oauth/wechat/payment/start` would send
-  // only Access-Token and the start would fail with 401/403, leaving WeChat
-  // JSAPI payment unusable for signed-in users.
-  runtime.client.setTokenManager(getCloudRouterTokenManager());
+  // API call. Do not attach the shared TokenManager to the IAM client here: the
+  // client is also the credential-entry client, and a TokenManager without a
+  // bootstrap Access-Token would shadow the public app token before sign-in.
+  // The start below reads the committed dual tokens directly instead, and the
+  // one cookie-bootstrap call travels through the host transport because the
+  // generated SDK's fetch uses the browser default `same-origin` credentials.
   configureCloudRouterOrderWechatPaymentOAuth({
     async fetchAuthorizeUrl(redirect: string): Promise<string> {
-      // The start endpoint answers with HttpOnly state/redirect/tenant cookies,
-      // and the generated SDK's fetch uses the browser default `same-origin`
-      // credentials. A cloud H5 page and its API gateway are same-site but
-      // cross-origin, so those cookies would be dropped and the callback would
-      // fail with `context_missing`. This one cookie-bootstrap call therefore
-      // travels through the host transport with `credentials: include`, exactly
-      // like the anonymous cashier start.
+      // The start endpoint answers with HttpOnly state/redirect/tenant cookies.
+      // A cloud H5 page and its API gateway are same-site but cross-origin, so
+      // those cookies would be dropped without `credentials: include`, and the
+      // callback would fail with `context_missing`.
       const tokens = getCloudRouterTokenManager().getTokens();
       const startUrl = new URL('/app/v3/api/oauth/wechat/payment/start', baseUrl);
       startUrl.searchParams.set('redirect', redirect);

@@ -55,10 +55,6 @@ test('the H5 app mounts every order/cashier route outside the console shell', ()
 
 test('the logged-in cashier composes the IAM WeChat payment OAuth channel', () => {
   const iamAuth = read('src/bootstrap/iamAuth.ts');
-  // The start endpoint is dual-token; the IAM client must share the Cloud Router
-  // TokenManager or the signed-in cashier sends only Access-Token and cannot get
-  // the openid needed by wechat_jsapi.
-  assert.match(iamAuth, /setTokenManager\(getCloudRouterTokenManager\(\)\)/u);
   assert.match(iamAuth, /configureCloudRouterOrderWechatPaymentOAuth/u);
   // The start sets HttpOnly OAuth cookies; cross-origin same-site fetches need
   // `credentials: include` or the callback loses its state/tenant context.
