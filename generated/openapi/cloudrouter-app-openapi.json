@@ -10065,6 +10065,117 @@
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
         "x-sdkwork-permission": "cloudrouter.site_runtime.read"
       }
+    },
+    "/app/v3/api/storage/generation_delivery": {
+      "get": {
+        "tags": [
+          "storage"
+        ],
+        "operationId": "generationDelivery.resolve",
+        "summary": "GET /app/v3/api/storage/generation_delivery",
+        "description": "Resolve the caller's effective generation asset delivery policy (storage center). Reads storage_generation_delivery_policy and storage_vendor_asset_ttl. Writes none.",
+        "parameters": [
+          {
+            "name": "mediaKind",
+            "in": "query",
+            "required": true,
+            "description": "Media kind to resolve the policy for.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "audio",
+                "image",
+                "video"
+              ]
+            }
+          },
+          {
+            "name": "vendorCode",
+            "in": "query",
+            "required": false,
+            "description": "Optional provider vendor code used to return the asset lifetime (TTL seconds).",
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SdkWorkResourceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "x-route-scope": "console",
+        "x-contract-kind": "read",
+        "x-read-sources": [
+          "storage_generation_delivery_policy",
+          "storage_vendor_asset_ttl"
+        ],
+        "x-write-tables": [],
+        "x-file-targets": [],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-app-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
+        "x-source-file": "tools/bootstrap_openapi_from_route_manifest.mjs",
+        "x-ui-route": "/console/storage/generation_delivery",
+        "security": [
+          {
+            "AuthToken": [],
+            "AccessToken": []
+          }
+        ],
+        "x-sdkwork-required-surface": "organizationMember"
+      }
     }
   },
   "security": [

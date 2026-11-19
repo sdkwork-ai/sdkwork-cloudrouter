@@ -797,6 +797,32 @@
     },
     {
       "method": "GET",
+      "path": "/app/v3/api/storage/generation_delivery",
+      "operationId": "generationDelivery.resolve",
+      "tags": [
+        "storage"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
       "path": "/app/v3/api/system/site/runtime",
       "operationId": "site.runtime.retrieve",
       "tags": [

@@ -184,6 +184,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "runtime",
         "invocations.events.stream.retrieve",
     ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/storage/generation_delivery",
+        "storage",
+        "generationDelivery.resolve",
+    ),
     HttpRoute::public(
         HttpMethod::Get,
         "/app/v3/api/system/site/runtime",

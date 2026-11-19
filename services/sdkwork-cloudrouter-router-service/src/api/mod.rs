@@ -34,6 +34,7 @@ mod app_runtime;
 mod app_settings;
 mod app_settlements;
 pub mod app_sql_subject;
+mod app_storage_delivery;
 mod app_usage_logs;
 mod command_error;
 mod gateway_balance;
@@ -107,6 +108,9 @@ pub use app_settings::app_settings_router;
 pub use app_settings::app_settings_router_with_store;
 pub use app_settlements::app_settlements_dashboard_router;
 pub use app_settlements::app_settlements_dashboard_router_with_read_store;
+pub use app_storage_delivery::{
+    app_storage_delivery_router, app_storage_delivery_router_with_store,
+};
 pub use app_usage_logs::app_usage_logs_router;
 pub use app_usage_logs::app_usage_logs_router_with_read_store;
 pub use gateway_balance::{

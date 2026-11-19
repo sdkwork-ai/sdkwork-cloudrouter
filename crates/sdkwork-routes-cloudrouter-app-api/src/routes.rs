@@ -31,7 +31,7 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::installer::{
 };
 use sdkwork_cloudrouter_router_service::infrastructure::sql::pool::connect_standard_database_pool;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
-    PostgresAdminAuthSettingsStore, PostgresAdminTransactionCenterStore,
+    PostgresAdminAuthSettingsStore, PostgresAdminStorageStore, PostgresAdminTransactionCenterStore,
     PostgresAppGatewayTracesReadStore, PostgresAppInviteStore, PostgresAppNotificationStore,
     PostgresAppRoutingReadStore, PostgresAppRuntimeStore, PostgresCatalogLoadError,
     PostgresDashboardOverviewReadStore, PostgresGatewayApiKeyCommandStore,
@@ -46,12 +46,12 @@ use sdkwork_cloudrouter_router_service::ports::AdminTransactionCenterSubject;
 use sdkwork_cloudrouter_router_service::ports::ChatCompletionStreamRelay;
 use sdkwork_cloudrouter_router_service::ports::UpstreamAccountRouteCatalog;
 use sdkwork_cloudrouter_router_service::ports::{
-    AdminAuthSettingsStore, AppGatewayTracesReadStore, AppInviteStore, AppNotificationStore,
-    AppRoutingReadStore, AppRuntimeStore, DashboardOverviewReadStore, GatewayApiKeyCommandStore,
-    GatewayApiKeyManagementReadStore, ModelRankingRefreshOutcome, ModelRankingRefreshRunStatus,
-    ModelRankingRefreshStore, ModelRankingsCacheInvalidation, ModelRankingsReadModelStore,
-    OfficialPricingCatalogReadStore, SettingsStore, SettlementsDashboardReadStore,
-    SiteSettingsStore, UsageLogsReadStore,
+    AdminAuthSettingsStore, AdminStorageStore, AppGatewayTracesReadStore, AppInviteStore,
+    AppNotificationStore, AppRoutingReadStore, AppRuntimeStore, DashboardOverviewReadStore,
+    GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore, ModelRankingRefreshOutcome,
+    ModelRankingRefreshRunStatus, ModelRankingRefreshStore, ModelRankingsCacheInvalidation,
+    ModelRankingsReadModelStore, OfficialPricingCatalogReadStore, SettingsStore,
+    SettlementsDashboardReadStore, SiteSettingsStore, UsageLogsReadStore,
 };
 use sdkwork_cloudrouter_settlements_dashboard_repository_sqlx::PostgresSettlementsDashboardReadStore;
 use sdkwork_content_documents_sdk_reference::app_sdk_reference_router;
@@ -143,6 +143,7 @@ type EntityUuidGen = Arc<dyn EntityUuidGenerator + Send + Sync>;
 type PaymentIntentAggregateRuntimeStore = Arc<dyn PaymentAggregateRuntimeStore>;
 type SettlementsDashboardStore = Arc<dyn SettlementsDashboardReadStore + Send + Sync>;
 type SettingsRuntimeStore = Arc<dyn SettingsStore + Send + Sync>;
+type StorageDeliveryRuntimeStore = Arc<dyn AdminStorageStore + Send + Sync>;
 type UsageLogsStore = Arc<dyn UsageLogsReadStore + Send + Sync>;
 type GatewayTracesStore = Arc<dyn AppGatewayTracesReadStore + Send + Sync>;
 type ModelRankingRefreshRuntimeStore = Arc<dyn ModelRankingRefreshStore + Send + Sync>;
@@ -182,6 +183,7 @@ pub fn router() -> Router {
         .merge(sdkwork_cloudrouter_router_service::api::app_notification_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_runtime_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_routing_router())
+        .merge(sdkwork_cloudrouter_router_service::api::app_storage_delivery_router())
 }
 
 fn router_with_database_status(
@@ -298,6 +300,7 @@ where
         .merge(sdkwork_cloudrouter_router_service::api::app_notification_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_runtime_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_routing_router())
+        .merge(sdkwork_cloudrouter_router_service::api::app_storage_delivery_router())
         .merge(app_model_catalog_router(Arc::clone(&catalog)))
 }
 
@@ -416,6 +419,7 @@ struct AppRouterRuntime<'a> {
     official_pricing_read_store: Option<OfficialPricingReadStore>,
     settlements_dashboard_read_store: Option<SettlementsDashboardStore>,
     settings_store: Option<SettingsRuntimeStore>,
+    storage_delivery_store: Option<StorageDeliveryRuntimeStore>,
     usage_logs_read_store: Option<UsageLogsStore>,
     gateway_traces_read_store: Option<GatewayTracesStore>,
     app_notification_store: Option<AppNotificationRuntimeStore>,
@@ -447,6 +451,7 @@ fn router_with_runtime_stores_and_database_status(runtime: AppRouterRuntime<'_>)
         official_pricing_read_store,
         settlements_dashboard_read_store,
         settings_store,
+        storage_delivery_store,
         usage_logs_read_store,
         gateway_traces_read_store,
         app_notification_store,
@@ -624,6 +629,14 @@ fn router_with_runtime_stores_and_database_status(runtime: AppRouterRuntime<'_>)
         ),
         None => router.merge(sdkwork_cloudrouter_router_service::api::app_settings_router()),
     };
+    router = match storage_delivery_store {
+        Some(store) => router.merge(
+            sdkwork_cloudrouter_router_service::api::app_storage_delivery_router_with_store(store),
+        ),
+        None => {
+            router.merge(sdkwork_cloudrouter_router_service::api::app_storage_delivery_router())
+        }
+    };
     router = match settlements_dashboard_read_store {
         Some(read_store) => sdkwork_cloudrouter_http::merge_web_framework_scoped_app_read_router(
             router,
@@ -704,6 +717,7 @@ pub async fn router_with_postgres_product_catalog(
             official_pricing_read_store: Some(official_pricing_read_store),
             settlements_dashboard_read_store: Some(settlements_dashboard_read_store),
             settings_store: Some(settings_store),
+            storage_delivery_store: Some(Arc::new(PostgresAdminStorageStore::new(pool.clone()))),
             usage_logs_read_store: Some(usage_logs_read_store),
             gateway_traces_read_store: Some(gateway_traces_read_store),
             app_notification_store: Some(app_notification_store),
@@ -850,6 +864,7 @@ pub async fn router_with_postgres_shared_runtime(
             official_pricing_read_store: Some(official_pricing_read_store),
             settlements_dashboard_read_store: Some(settlements_dashboard_read_store),
             settings_store: Some(settings_store),
+            storage_delivery_store: Some(Arc::new(PostgresAdminStorageStore::new(pool.clone()))),
             usage_logs_read_store: Some(usage_logs_read_store),
             gateway_traces_read_store: Some(gateway_traces_read_store),
             app_notification_store: Some(app_notification_store),
@@ -1110,6 +1125,7 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
             official_pricing_read_store: Some(official_pricing_read_store),
             settlements_dashboard_read_store: Some(settlements_dashboard_read_store),
             settings_store: Some(settings_store),
+            storage_delivery_store: Some(Arc::new(PostgresAdminStorageStore::new(pool.clone()))),
             usage_logs_read_store: Some(usage_logs_read_store),
             gateway_traces_read_store: Some(gateway_traces_read_store),
             app_notification_store: Some(app_notification_store),
