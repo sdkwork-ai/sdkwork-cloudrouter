@@ -38,6 +38,7 @@
     "@sdkwork/order-mobile-react-orders": "workspace:*",
     "@sdkwork/ui-mobile-react": "workspace:*",
     "i18next": "catalog:",
+    "qrcode": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-i18next": "catalog:",
@@ -45,6 +46,7 @@
     "react-router-dom": "catalog:"
   },
   "devDependencies": {
+    "@types/qrcode": "catalog:",
     "@types/react": "catalog:",
     "typescript": "catalog:"
   }

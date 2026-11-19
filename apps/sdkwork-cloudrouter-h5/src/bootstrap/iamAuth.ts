@@ -11,6 +11,7 @@ import {
   writeCloudRouterSession,
 } from '@sdkwork/cloudrouter-h5-core/session';
 import { resolveCloudRouterAppApiBaseUrl } from '@sdkwork/cloudrouter-h5-core/sdk';
+import { configureCloudRouterOrderWechatPaymentOAuth } from '@sdkwork/cloudrouter-h5-orders/runtime';
 
 import { CREDENTIAL_ENTRY_BOOTSTRAP_GLOBAL } from '../app-auth/appSession.js';
 
@@ -82,6 +83,49 @@ export function createCloudRouterIamAuth(
       }
       runtime?.setAccessToken(iamSession.accessToken);
       options.onSessionCommitted?.();
+    },
+  });
+
+  // The logged-in cashier's WeChat payment OAuth is a **dual-token** IAM app
+  // API call. The IAM client is built before the shared TokenManager is wired,
+  // so attach it explicitly; otherwise `oauth/wechat/payment/start` would send
+  // only Access-Token and the start would fail with 401/403, leaving WeChat
+  // JSAPI payment unusable for signed-in users.
+  runtime.client.setTokenManager(getCloudRouterTokenManager());
+  configureCloudRouterOrderWechatPaymentOAuth({
+    async fetchAuthorizeUrl(redirect: string): Promise<string> {
+      // The start endpoint answers with HttpOnly state/redirect/tenant cookies,
+      // and the generated SDK's fetch uses the browser default `same-origin`
+      // credentials. A cloud H5 page and its API gateway are same-site but
+      // cross-origin, so those cookies would be dropped and the callback would
+      // fail with `context_missing`. This one cookie-bootstrap call therefore
+      // travels through the host transport with `credentials: include`, exactly
+      // like the anonymous cashier start.
+      const tokens = getCloudRouterTokenManager().getTokens();
+      const startUrl = new URL('/app/v3/api/oauth/wechat/payment/start', baseUrl);
+      startUrl.searchParams.set('redirect', redirect);
+      const response = await fetch(startUrl.toString(), {
+        cache: 'no-store',
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          ...(tokens.authToken ? { Authorization: `Bearer ${tokens.authToken}` } : {}),
+          ...(tokens.accessToken ? { 'Access-Token': tokens.accessToken } : {}),
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`IAM WeChat payment OAuth start failed (${response.status}).`);
+      }
+      const payload = (await response.json()) as {
+        data?: { authorizeUrl?: string; item?: { authorizeUrl?: string } };
+      };
+      const authorizeUrl = (
+        payload.data?.authorizeUrl ?? payload.data?.item?.authorizeUrl ?? ''
+      ).trim();
+      if (!/^https:\/\/open\.weixin\.qq\.com\/connect\/oauth2\/authorize\?/iu.test(authorizeUrl)) {
+        throw new Error('IAM WeChat payment OAuth returned an unexpected authorize URL.');
+      }
+      return authorizeUrl;
     },
   });
 

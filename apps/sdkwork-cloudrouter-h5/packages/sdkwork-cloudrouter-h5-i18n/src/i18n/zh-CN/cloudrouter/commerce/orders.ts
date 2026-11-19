@@ -92,6 +92,7 @@ export const ordersMessages: Record<string, string> = {
   'orders.cashier_go_pay': "去支付",
   'orders.cashier_auto_close': "剩余 {{countdown}} 自动关闭",
   'orders.cashier_qr_alt': "收银台二维码",
+  'orders.cashier_qr_failed': "二维码生成失败，请重试",
   'orders.cashier_jumping': "正在跳转收银台…",
   'orders.cashier_jump_fallback': "未跳转？点击继续支付",
   'orders.cashier_mobile_open_app': "请在微信或支付宝中打开本页面完成支付",

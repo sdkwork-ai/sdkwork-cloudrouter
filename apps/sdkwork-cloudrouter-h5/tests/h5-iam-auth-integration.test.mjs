@@ -87,7 +87,13 @@ describe('H5 IAM auth integration', () => {
       'utf8',
     );
     assert.ok(header.includes('ShieldCheck'), 'the IAM header uses a blue identity shield');
-    assert.ok(header.includes('from-[#3b82f6]'), 'the IAM mark uses the blue gradient');
+    // The IAM surface now derives the mark fill from the host brand token and
+    // ships no hard-coded gradient; a host palette swap must not require a fork.
+    assert.ok(
+      header.includes('bg-[var(--iam-h5-auth-brand-mark-bg)]'),
+      'the IAM mark uses the host brand fill token',
+    );
+    assert.doesNotMatch(header, /from-\[#3b82f6\]/u, 'the header ships no hard-coded gradient');
   });
 
   it('lets the sign-in page go back when it was reached from another page', () => {
