@@ -307,6 +307,14 @@
       "system_of_record": true
     },
     {
+      "table_name": "storage_generation_delivery_policy",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
       "table_name": "storage_provider",
       "owner": "router-service",
       "compliance_level": "L2",
@@ -336,6 +344,14 @@
       "compliance_level": "L2",
       "lifecycle_status": "active",
       "profile": "operational_state",
+      "system_of_record": true
+    },
+    {
+      "table_name": "storage_vendor_asset_ttl",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
       "system_of_record": true
     }
   ]

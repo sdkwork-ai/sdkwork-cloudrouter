@@ -469,3 +469,139 @@ tables:
   - name: ix_storage_gc_job_uuid
     columns:
     - uuid
+
+- table: storage_generation_delivery_policy
+  domain: storage
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/storage/generationDelivery
+  columns:
+    scope_type:
+      type: string(32)
+      constraints: NOT NULL
+    scope_id:
+      type: string(128)
+      constraints: NOT NULL
+    media_kind:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'all'
+    delivery_mode:
+      type: string(16)
+      constraints: NOT NULL
+    drive_space_id:
+      type: string(128)
+      constraints: ''
+    drive_folder_node_id:
+      type: string(128)
+      constraints: ''
+    download_deadline_seconds:
+      type: int32
+      constraints: ''
+    vendor_expiry_action:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'keep_reference'
+    delete_remote_after_download:
+      type: bool
+      constraints: NOT NULL DEFAULT TRUE
+    reason:
+      type: string(512)
+      constraints: ''
+    request_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+  required_columns:
+  - scope_type
+  - scope_id
+  - delivery_mode
+  unique_constraints:
+  - name: uk_storage_generation_delivery_policy_scope
+    columns:
+    - tenant_id
+    - organization_id
+    - scope_type
+    - scope_id
+    - media_kind
+  check_constraints:
+  - name: ck_storage_generation_delivery_policy_scope
+    expression: tenant_id >= 0 AND organization_id >= 0
+  - name: ck_storage_generation_delivery_policy_values
+    expression: scope_type IN ('organization', 'tenant', 'user')
+      AND media_kind IN ('all', 'image', 'video', 'audio')
+      AND delivery_mode IN ('remote_only', 'to_drive')
+      AND vendor_expiry_action IN ('delete_remote', 'fail_job', 'keep_reference')
+      AND (download_deadline_seconds IS NULL OR download_deadline_seconds > 0)
+      AND length(scope_id) > 0
+  indexes:
+  - name: ix_storage_generation_delivery_policy_scope_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - media_kind
+    - id
+
+- table: storage_vendor_asset_ttl
+  domain: storage
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/storage/generationDelivery
+  columns:
+    vendor_code:
+      type: string(64)
+      constraints: NOT NULL
+    media_kind:
+      type: string(16)
+      constraints: NOT NULL
+    ttl_seconds:
+      type: int32
+      constraints: NOT NULL
+    source:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'default'
+    reason:
+      type: string(512)
+      constraints: ''
+    request_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+  required_columns:
+  - vendor_code
+  - media_kind
+  - ttl_seconds
+  unique_constraints:
+  - name: uk_storage_vendor_asset_ttl_scope
+    columns:
+    - tenant_id
+    - organization_id
+    - vendor_code
+    - media_kind
+  check_constraints:
+  - name: ck_storage_vendor_asset_ttl_scope
+    expression: tenant_id >= 0 AND organization_id >= 0
+  - name: ck_storage_vendor_asset_ttl_values
+    expression: media_kind IN ('image', 'video', 'audio')
+      AND source IN ('default', 'operator', 'upstream')
+      AND ttl_seconds > 0
+      AND length(vendor_code) > 0
+  indexes:
+  - name: ix_storage_vendor_asset_ttl_scope_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - media_kind
+    - id

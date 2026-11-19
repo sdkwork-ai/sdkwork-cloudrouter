@@ -1,18 +1,22 @@
 use sqlx::{PgPool, Row};
 
-use crate::domain::{DomainError, DomainResult};
+use crate::domain::{
+    validate_generation_delivery_policy, validate_vendor_asset_ttl, DomainError, DomainResult,
+};
 use crate::infrastructure::sql::model_catalog_import::stable_uuid;
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::infrastructure::sql::sql_admin_storage::{
     job_status_label_sql, resource_status_label_sql, STORAGE_AUDIT_TARGET_DEFAULT_BUCKET,
-    STORAGE_AUDIT_TARGET_GC_JOB, STORAGE_AUDIT_TARGET_QUOTA_POLICY,
-    STORAGE_AUDIT_TARGET_RECONCILIATION_RUN,
+    STORAGE_AUDIT_TARGET_GC_JOB, STORAGE_AUDIT_TARGET_GENERATION_DELIVERY_POLICY,
+    STORAGE_AUDIT_TARGET_QUOTA_POLICY, STORAGE_AUDIT_TARGET_RECONCILIATION_RUN,
+    STORAGE_AUDIT_TARGET_VENDOR_ASSET_TTL,
 };
 use crate::ports::{
     AdminStorageCollection, AdminStorageCommandFuture, AdminStorageCursor, AdminStorageJsonRecord,
     AdminStorageStore, CreateStorageGarbageCollectionJobCommand, CreateStorageQuotaPolicyCommand,
     CreateStorageReconciliationRunCommand, ListAdminStorageRecordsQuery,
-    SetStorageDefaultBucketCommand,
+    SetStorageDefaultBucketCommand, UpsertStorageGenerationDeliveryPolicyCommand,
+    UpsertStorageVendorAssetTtlCommand,
 };
 
 #[derive(Debug, Clone)]
@@ -88,6 +92,34 @@ impl AdminStorageStore for PostgresAdminStorageStore {
         command: CreateStorageGarbageCollectionJobCommand,
     ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
         Box::pin(async move { create_gc_job(&self.pool, command).await })
+    }
+
+    fn list_generation_delivery_policies<'a>(
+        &'a self,
+        query: ListAdminStorageRecordsQuery,
+    ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
+        Box::pin(async move { list_generation_delivery_policies(&self.pool, query).await })
+    }
+
+    fn upsert_generation_delivery_policy<'a>(
+        &'a self,
+        command: UpsertStorageGenerationDeliveryPolicyCommand,
+    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
+        Box::pin(async move { upsert_generation_delivery_policy(&self.pool, command).await })
+    }
+
+    fn list_vendor_asset_ttls<'a>(
+        &'a self,
+        query: ListAdminStorageRecordsQuery,
+    ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
+        Box::pin(async move { list_vendor_asset_ttls(&self.pool, query).await })
+    }
+
+    fn upsert_vendor_asset_ttl<'a>(
+        &'a self,
+        command: UpsertStorageVendorAssetTtlCommand,
+    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
+        Box::pin(async move { upsert_vendor_asset_ttl(&self.pool, command).await })
     }
 }
 
@@ -625,6 +657,256 @@ async fn load_gc_job(
     find_loaded_record(collection, id, "storage gc job was not found")
 }
 
+async fn list_generation_delivery_policies(
+    pool: &PgPool,
+    query: ListAdminStorageRecordsQuery,
+) -> DomainResult<AdminStorageCollection> {
+    let status_label = resource_status_label_sql("p.status");
+    let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
+        r#"
+        SELECT
+            CAST(p.id AS TEXT) AS id,
+            p.scope_type AS "scopeType",
+            p.scope_id AS "scopeId",
+            p.media_kind AS "mediaKind",
+            p.delivery_mode AS "deliveryMode",
+            COALESCE(p.drive_space_id, '') AS "driveSpaceId",
+            COALESCE(p.drive_folder_node_id, '') AS "driveFolderNodeId",
+            COALESCE(CAST(p.download_deadline_seconds AS TEXT), '') AS "downloadDeadlineSeconds",
+            p.vendor_expiry_action AS "vendorExpiryAction",
+            p.delete_remote_after_download AS "deleteRemoteAfterDownload",
+            COALESCE(p.reason, '') AS reason,
+            {status_label} AS status,
+            CAST(p.updated_at AS TEXT) AS "updatedAt"
+        FROM storage_generation_delivery_policy p
+        WHERE p.tenant_id = $1
+          AND p.organization_id = $2
+          AND ($3::text IS NULL OR {status_label} = $3)
+          AND ($4::text IS NULL OR p.scope_type = $4)
+          AND ($5::text IS NULL OR p.scope_id = $5)
+          AND ($6::bigint IS NULL OR p.id < $6)
+        ORDER BY p.id DESC
+        LIMIT $7
+        "#
+    )))
+    .bind(query.subject.tenant_id)
+    .bind(query.subject.organization_id)
+    .bind(query.status.as_deref())
+    .bind(query.scope_type.as_deref())
+    .bind(query.scope_id.as_deref())
+    .bind(query.cursor.map(AdminStorageCursor::id))
+    .bind(query.limit + 1)
+    .fetch_all(pool)
+    .await
+    .map_err(store_error)?;
+    collection_from_rows(rows, query, GENERATION_DELIVERY_POLICY_FIELDS)
+}
+
+async fn upsert_generation_delivery_policy(
+    pool: &PgPool,
+    command: UpsertStorageGenerationDeliveryPolicyCommand,
+) -> DomainResult<AdminStorageJsonRecord> {
+    validate_generation_delivery_policy(
+        &command.scope_type,
+        &command.scope_id,
+        &command.media_kind,
+        &command.delivery_mode,
+        &command.vendor_expiry_action,
+        command.download_deadline_seconds,
+    )?;
+    let id: i64 = sqlx::query_scalar(
+        r#"
+        INSERT INTO storage_generation_delivery_policy
+            (id, uuid, tenant_id, organization_id, scope_type, scope_id, media_kind,
+             delivery_mode, drive_space_id, drive_folder_node_id, download_deadline_seconds,
+             vendor_expiry_action, delete_remote_after_download, reason, request_id)
+        VALUES
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        ON CONFLICT(tenant_id, organization_id, scope_type, scope_id, media_kind) DO UPDATE SET
+            delivery_mode = excluded.delivery_mode,
+            drive_space_id = excluded.drive_space_id,
+            drive_folder_node_id = excluded.drive_folder_node_id,
+            download_deadline_seconds = excluded.download_deadline_seconds,
+            vendor_expiry_action = excluded.vendor_expiry_action,
+            delete_remote_after_download = excluded.delete_remote_after_download,
+            reason = excluded.reason,
+            request_id = excluded.request_id,
+            status = 1,
+            updated_at = now(),
+            version = storage_generation_delivery_policy.version + 1
+        RETURNING id
+        "#,
+    )
+    .bind(next_cloud_runtime_id("storage_generation_delivery_policy")?)
+    .bind(stable_uuid(
+        "storage-generation-delivery-policy",
+        &[
+            &command.subject.tenant_id.to_string(),
+            &command.subject.organization_id.to_string(),
+            &command.scope_type,
+            &command.scope_id,
+            &command.media_kind,
+        ],
+    ))
+    .bind(command.subject.tenant_id)
+    .bind(command.subject.organization_id)
+    .bind(&command.scope_type)
+    .bind(&command.scope_id)
+    .bind(&command.media_kind)
+    .bind(&command.delivery_mode)
+    .bind(command.drive_space_id.as_deref())
+    .bind(command.drive_folder_node_id.as_deref())
+    .bind(command.download_deadline_seconds)
+    .bind(&command.vendor_expiry_action)
+    .bind(command.delete_remote_after_download)
+    .bind(&command.reason)
+    .bind(command.request_id.as_deref())
+    .fetch_one(pool)
+    .await
+    .map_err(|error| write_error("failed to upsert storage generation delivery policy", error))?;
+    insert_audit_if_absent(
+        pool,
+        command.subject,
+        command
+            .request_id
+            .as_deref()
+            .unwrap_or("storage-generation-delivery-policy"),
+        "storage.generation_delivery.update",
+        STORAGE_AUDIT_TARGET_GENERATION_DELIVERY_POLICY,
+        id,
+        None,
+    )
+    .await?;
+    load_generation_delivery_policy(pool, command.subject, id).await
+}
+
+async fn load_generation_delivery_policy(
+    pool: &PgPool,
+    subject: crate::ports::AdminStorageSubject,
+    id: i64,
+) -> DomainResult<AdminStorageJsonRecord> {
+    let query = load_query(subject, id)?;
+    let collection = list_generation_delivery_policies(pool, query).await?;
+    find_loaded_record(
+        collection,
+        id,
+        "storage generation delivery policy was not found",
+    )
+}
+
+async fn list_vendor_asset_ttls(
+    pool: &PgPool,
+    query: ListAdminStorageRecordsQuery,
+) -> DomainResult<AdminStorageCollection> {
+    let status_label = resource_status_label_sql("t.status");
+    let rows = sqlx::query(sqlx::AssertSqlSafe(format!(
+        r#"
+        SELECT
+            CAST(t.id AS TEXT) AS id,
+            t.vendor_code AS "vendorCode",
+            t.media_kind AS "mediaKind",
+            CAST(t.ttl_seconds AS TEXT) AS "ttlSeconds",
+            t.source AS source,
+            COALESCE(t.reason, '') AS reason,
+            {status_label} AS status,
+            CAST(t.updated_at AS TEXT) AS "updatedAt"
+        FROM storage_vendor_asset_ttl t
+        WHERE t.tenant_id = $1
+          AND t.organization_id = $2
+          AND ($3::text IS NULL OR {status_label} = $3)
+          AND ($4::text IS NULL OR t.media_kind = $4)
+          AND ($5::bigint IS NULL OR t.id < $5)
+        ORDER BY t.id DESC
+        LIMIT $6
+        "#
+    )))
+    .bind(query.subject.tenant_id)
+    .bind(query.subject.organization_id)
+    .bind(query.status.as_deref())
+    .bind(query.scope_type.as_deref())
+    .bind(query.cursor.map(AdminStorageCursor::id))
+    .bind(query.limit + 1)
+    .fetch_all(pool)
+    .await
+    .map_err(store_error)?;
+    collection_from_rows(rows, query, VENDOR_ASSET_TTL_FIELDS)
+}
+
+async fn upsert_vendor_asset_ttl(
+    pool: &PgPool,
+    command: UpsertStorageVendorAssetTtlCommand,
+) -> DomainResult<AdminStorageJsonRecord> {
+    validate_vendor_asset_ttl(
+        &command.vendor_code,
+        &command.media_kind,
+        command.ttl_seconds,
+        &command.source,
+    )?;
+    let id: i64 = sqlx::query_scalar(
+        r#"
+        INSERT INTO storage_vendor_asset_ttl
+            (id, uuid, tenant_id, organization_id, vendor_code, media_kind, ttl_seconds,
+             source, reason, request_id)
+        VALUES
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        ON CONFLICT(tenant_id, organization_id, vendor_code, media_kind) DO UPDATE SET
+            ttl_seconds = excluded.ttl_seconds,
+            source = excluded.source,
+            reason = excluded.reason,
+            request_id = excluded.request_id,
+            status = 1,
+            updated_at = now(),
+            version = storage_vendor_asset_ttl.version + 1
+        RETURNING id
+        "#,
+    )
+    .bind(next_cloud_runtime_id("storage_vendor_asset_ttl")?)
+    .bind(stable_uuid(
+        "storage-vendor-asset-ttl",
+        &[
+            &command.subject.tenant_id.to_string(),
+            &command.subject.organization_id.to_string(),
+            &command.vendor_code,
+            &command.media_kind,
+        ],
+    ))
+    .bind(command.subject.tenant_id)
+    .bind(command.subject.organization_id)
+    .bind(&command.vendor_code)
+    .bind(&command.media_kind)
+    .bind(command.ttl_seconds)
+    .bind(&command.source)
+    .bind(command.reason.as_deref())
+    .bind(command.request_id.as_deref())
+    .fetch_one(pool)
+    .await
+    .map_err(|error| write_error("failed to upsert storage vendor asset ttl", error))?;
+    insert_audit_if_absent(
+        pool,
+        command.subject,
+        command
+            .request_id
+            .as_deref()
+            .unwrap_or("storage-vendor-asset-ttl"),
+        "storage.vendor_asset_ttl.update",
+        STORAGE_AUDIT_TARGET_VENDOR_ASSET_TTL,
+        id,
+        None,
+    )
+    .await?;
+    load_vendor_asset_ttl(pool, command.subject, id).await
+}
+
+async fn load_vendor_asset_ttl(
+    pool: &PgPool,
+    subject: crate::ports::AdminStorageSubject,
+    id: i64,
+) -> DomainResult<AdminStorageJsonRecord> {
+    let query = load_query(subject, id)?;
+    let collection = list_vendor_asset_ttls(pool, query).await?;
+    find_loaded_record(collection, id, "storage vendor asset ttl was not found")
+}
+
 fn find_loaded_record(
     collection: AdminStorageCollection,
     id: i64,
@@ -994,6 +1276,33 @@ const GC_FIELDS: &[Field] = &[
     Field::String("status"),
     Field::String("createdAt"),
     Field::String("completedAt"),
+];
+
+const GENERATION_DELIVERY_POLICY_FIELDS: &[Field] = &[
+    Field::String("id"),
+    Field::String("scopeType"),
+    Field::String("scopeId"),
+    Field::String("mediaKind"),
+    Field::String("deliveryMode"),
+    Field::String("driveSpaceId"),
+    Field::String("driveFolderNodeId"),
+    Field::String("downloadDeadlineSeconds"),
+    Field::String("vendorExpiryAction"),
+    Field::Bool("deleteRemoteAfterDownload"),
+    Field::String("reason"),
+    Field::String("status"),
+    Field::String("updatedAt"),
+];
+
+const VENDOR_ASSET_TTL_FIELDS: &[Field] = &[
+    Field::String("id"),
+    Field::String("vendorCode"),
+    Field::String("mediaKind"),
+    Field::String("ttlSeconds"),
+    Field::String("source"),
+    Field::String("reason"),
+    Field::String("status"),
+    Field::String("updatedAt"),
 ];
 
 async fn ensure_provider_exists(

@@ -1,6 +1,7 @@
 mod async_usage_task;
 mod billing_owner;
 mod model_request_alias;
+mod storage_delivery;
 mod upstream_account_group_selection;
 mod upstream_auth;
 mod vendor_code_alias;
@@ -35,6 +36,17 @@ pub use sdkwork_models_catalog_service::domain::{
     DEFAULT_RETRYABLE_PROVIDER_STATUS_CODES,
 };
 pub use sdkwork_models_contract_service::{DomainError, DomainResult};
+pub use storage_delivery::{
+    effective_download_deadline_seconds, resolve_generation_delivery, resolve_vendor_asset_ttl,
+    validate_generation_delivery_policy, validate_vendor_asset_ttl, DeliverySubjectScope,
+    GenerationDeliveryMode, GenerationDeliveryPolicyRow, GenerationDeliveryScope,
+    GenerationMediaKind, ResolvedGenerationDelivery, VendorAssetTtlRow, VendorExpiryAction,
+    DEFAULT_DOWNLOAD_DEADLINE_TTL_PERCENT, DEFAULT_VENDOR_ASSET_TTL_SECONDS,
+    DELIVERY_MODE_REMOTE_ONLY, DELIVERY_MODE_TO_DRIVE, MEDIA_KIND_ALL, MEDIA_KIND_AUDIO,
+    MEDIA_KIND_IMAGE, MEDIA_KIND_VIDEO, SCOPE_ORGANIZATION, SCOPE_TENANT, SCOPE_USER,
+    VENDOR_EXPIRY_ACTION_DELETE_REMOTE, VENDOR_EXPIRY_ACTION_FAIL_JOB,
+    VENDOR_EXPIRY_ACTION_KEEP_REFERENCE,
+};
 pub use upstream_account_group_selection::{
     select_default_account_group_for_subject, select_default_session_account_group,
     upstream_account_group_in_subject_scope, AccountGroupModalityScope,

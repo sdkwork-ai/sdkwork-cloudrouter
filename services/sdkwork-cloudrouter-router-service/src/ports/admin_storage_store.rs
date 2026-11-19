@@ -98,6 +98,33 @@ pub struct CreateStorageGarbageCollectionJobCommand {
     pub request_id: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpsertStorageGenerationDeliveryPolicyCommand {
+    pub subject: AdminStorageSubject,
+    pub scope_type: String,
+    pub scope_id: String,
+    pub media_kind: String,
+    pub delivery_mode: String,
+    pub drive_space_id: Option<String>,
+    pub drive_folder_node_id: Option<String>,
+    pub download_deadline_seconds: Option<i32>,
+    pub vendor_expiry_action: String,
+    pub delete_remote_after_download: bool,
+    pub reason: String,
+    pub request_id: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpsertStorageVendorAssetTtlCommand {
+    pub subject: AdminStorageSubject,
+    pub vendor_code: String,
+    pub media_kind: String,
+    pub ttl_seconds: i32,
+    pub source: String,
+    pub reason: Option<String>,
+    pub request_id: Option<String>,
+}
+
 pub trait AdminStorageStore {
     fn list_default_buckets<'a>(
         &'a self,
@@ -142,5 +169,25 @@ pub trait AdminStorageStore {
     fn create_gc_job<'a>(
         &'a self,
         command: CreateStorageGarbageCollectionJobCommand,
+    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord>;
+
+    fn list_generation_delivery_policies<'a>(
+        &'a self,
+        query: ListAdminStorageRecordsQuery,
+    ) -> AdminStorageCommandFuture<'a, AdminStorageCollection>;
+
+    fn upsert_generation_delivery_policy<'a>(
+        &'a self,
+        command: UpsertStorageGenerationDeliveryPolicyCommand,
+    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord>;
+
+    fn list_vendor_asset_ttls<'a>(
+        &'a self,
+        query: ListAdminStorageRecordsQuery,
+    ) -> AdminStorageCommandFuture<'a, AdminStorageCollection>;
+
+    fn upsert_vendor_asset_ttl<'a>(
+        &'a self,
+        command: UpsertStorageVendorAssetTtlCommand,
     ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord>;
 }

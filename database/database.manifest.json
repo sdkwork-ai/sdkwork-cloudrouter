@@ -50,7 +50,7 @@
     "provider": "default",
     "hooks": []
   },
-  "materializedTableCount": 42,
+  "materializedTableCount": 44,
   "materializedTables": [
     "ai_chat_context_snapshot",
     "ai_chat_conversation",
@@ -90,10 +90,12 @@
     "storage_bucket",
     "storage_default_bucket_policy",
     "storage_gc_job",
+    "storage_generation_delivery_policy",
     "storage_provider",
     "storage_quota_policy",
     "storage_reconciliation_run",
-    "storage_usage_counter"
+    "storage_usage_counter",
+    "storage_vendor_asset_ttl"
   ],
   "databaseRole": "authoritative-server",
   "tablePrefixes": [

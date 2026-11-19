@@ -66,6 +66,15 @@
       "lock": "exclusive",
       "lock_timeout": "2s",
       "statement_timeout": "30s"
+    },
+    "0052_generation_asset_delivery.up.sql": {
+      "engine": "postgres",
+      "reversible": "true",
+      "rollback": "down-migration",
+      "transactional": "true",
+      "lock": "exclusive",
+      "lock_timeout": "2s",
+      "statement_timeout": "30s"
     }
   }
 }
