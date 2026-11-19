@@ -125,6 +125,18 @@ pub struct UpsertStorageVendorAssetTtlCommand {
     pub request_id: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResolveGenerationDeliveryQuery {
+    pub subject: AdminStorageSubject,
+    /// Requested media kind (`all`, `image`, `video`, `audio`).
+    pub media_kind: String,
+    /// Optional user scope override; absent resolves for the tenant/organization.
+    pub user_id: Option<i64>,
+    /// Optional vendor code used to look up the asset lifetime.
+    pub vendor_code: Option<String>,
+    pub request_id: String,
+}
+
 pub trait AdminStorageStore {
     fn list_default_buckets<'a>(
         &'a self,
@@ -189,5 +201,13 @@ pub trait AdminStorageStore {
     fn upsert_vendor_asset_ttl<'a>(
         &'a self,
         command: UpsertStorageVendorAssetTtlCommand,
+    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord>;
+
+    /// Resolves the effective delivery policy for one requester (single source of
+    /// truth for the admin API, the app-api resolve endpoint, and the internal
+    /// resolve endpoint).
+    fn resolve_generation_delivery<'a>(
+        &'a self,
+        query: ResolveGenerationDeliveryQuery,
     ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord>;
 }

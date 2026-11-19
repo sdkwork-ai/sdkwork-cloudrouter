@@ -209,7 +209,7 @@ pub use admin_storage_store::{
     AdminStorageCollection, AdminStorageCommandFuture, AdminStorageCursor, AdminStorageJsonRecord,
     AdminStorageStore, AdminStorageSubject, CreateStorageGarbageCollectionJobCommand,
     CreateStorageQuotaPolicyCommand, CreateStorageReconciliationRunCommand,
-    ListAdminStorageRecordsQuery, SetStorageDefaultBucketCommand,
+    ListAdminStorageRecordsQuery, ResolveGenerationDeliveryQuery, SetStorageDefaultBucketCommand,
     UpsertStorageGenerationDeliveryPolicyCommand, UpsertStorageVendorAssetTtlCommand,
 };
 pub use admin_transaction_center_store::{

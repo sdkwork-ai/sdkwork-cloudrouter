@@ -1,7 +1,9 @@
 use sqlx::{PgPool, Row};
 
 use crate::domain::{
-    validate_generation_delivery_policy, validate_vendor_asset_ttl, DomainError, DomainResult,
+    resolve_generation_delivery, resolve_vendor_asset_ttl, validate_generation_delivery_policy,
+    validate_vendor_asset_ttl, DeliverySubjectScope, DomainError, DomainResult,
+    GenerationDeliveryPolicyRow, GenerationMediaKind, VendorAssetTtlRow,
 };
 use crate::infrastructure::sql::model_catalog_import::stable_uuid;
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
@@ -15,8 +17,8 @@ use crate::ports::{
     AdminStorageCollection, AdminStorageCommandFuture, AdminStorageCursor, AdminStorageJsonRecord,
     AdminStorageStore, CreateStorageGarbageCollectionJobCommand, CreateStorageQuotaPolicyCommand,
     CreateStorageReconciliationRunCommand, ListAdminStorageRecordsQuery,
-    SetStorageDefaultBucketCommand, UpsertStorageGenerationDeliveryPolicyCommand,
-    UpsertStorageVendorAssetTtlCommand,
+    ResolveGenerationDeliveryQuery, SetStorageDefaultBucketCommand,
+    UpsertStorageGenerationDeliveryPolicyCommand, UpsertStorageVendorAssetTtlCommand,
 };
 
 #[derive(Debug, Clone)]
@@ -120,6 +122,13 @@ impl AdminStorageStore for PostgresAdminStorageStore {
         command: UpsertStorageVendorAssetTtlCommand,
     ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
         Box::pin(async move { upsert_vendor_asset_ttl(&self.pool, command).await })
+    }
+
+    fn resolve_generation_delivery<'a>(
+        &'a self,
+        query: ResolveGenerationDeliveryQuery,
+    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
+        Box::pin(async move { resolve_generation_delivery_record(&self.pool, query).await })
     }
 }
 
@@ -903,6 +912,153 @@ async fn load_vendor_asset_ttl(
     let query = load_query(subject, id)?;
     let collection = list_vendor_asset_ttls(pool, query).await?;
     find_loaded_record(collection, id, "storage vendor asset ttl was not found")
+}
+
+async fn resolve_generation_delivery_record(
+    pool: &PgPool,
+    query: ResolveGenerationDeliveryQuery,
+) -> DomainResult<AdminStorageJsonRecord> {
+    let media_kind = GenerationMediaKind::parse(&query.media_kind)
+        .ok_or_else(|| DomainError::new("mediaKind must be all, image, video or audio"))?;
+    let rows = sqlx::query_as::<
+        _,
+        (
+            String,
+            String,
+            String,
+            String,
+            Option<String>,
+            Option<String>,
+            Option<i32>,
+            String,
+            bool,
+        ),
+    >(
+        r#"
+        SELECT scope_type, scope_id, media_kind, delivery_mode, drive_space_id,
+               drive_folder_node_id, download_deadline_seconds, vendor_expiry_action,
+               delete_remote_after_download
+        FROM storage_generation_delivery_policy
+        WHERE tenant_id = $1
+          AND organization_id = $2
+          AND status = 1
+          AND media_kind IN ($3, 'all')
+        ORDER BY id ASC
+        "#,
+    )
+    .bind(query.subject.tenant_id)
+    .bind(query.subject.organization_id)
+    .bind(media_kind.as_str())
+    .fetch_all(pool)
+    .await
+    .map_err(store_error)?;
+    let policy_rows: Vec<GenerationDeliveryPolicyRow> = rows
+        .into_iter()
+        .map(|row| GenerationDeliveryPolicyRow {
+            scope_type: row.0,
+            scope_id: row.1,
+            media_kind: row.2,
+            delivery_mode: row.3,
+            drive_space_id: row.4,
+            drive_folder_node_id: row.5,
+            download_deadline_seconds: row.6,
+            vendor_expiry_action: row.7,
+            delete_remote_after_download: row.8,
+        })
+        .collect();
+    let subject = DeliverySubjectScope {
+        tenant_id: query.subject.tenant_id,
+        organization_id: query.subject.organization_id,
+        user_id: query.user_id,
+    };
+    let resolved = resolve_generation_delivery(&policy_rows, &subject, media_kind);
+
+    let vendor_ttl = match query.vendor_code.as_deref().map(str::trim) {
+        Some(vendor_code) if !vendor_code.is_empty() && media_kind != GenerationMediaKind::All => {
+            let ttl_rows = sqlx::query_as::<_, (String, String, i32)>(
+                r#"
+                SELECT vendor_code, media_kind, ttl_seconds
+                FROM storage_vendor_asset_ttl
+                WHERE tenant_id = $1
+                  AND organization_id = $2
+                  AND status = 1
+                  AND vendor_code = $3
+                "#,
+            )
+            .bind(query.subject.tenant_id)
+            .bind(query.subject.organization_id)
+            .bind(vendor_code)
+            .fetch_all(pool)
+            .await
+            .map_err(store_error)?;
+            let ttl_rows: Vec<VendorAssetTtlRow> = ttl_rows
+                .into_iter()
+                .map(|row| VendorAssetTtlRow {
+                    vendor_code: row.0,
+                    media_kind: row.1,
+                    ttl_seconds: row.2,
+                })
+                .collect();
+            resolve_vendor_asset_ttl(&ttl_rows, vendor_code, media_kind)
+        }
+        _ => None,
+    };
+
+    let mut record = AdminStorageJsonRecord::new();
+    record.insert(
+        "deliveryMode".to_owned(),
+        serde_json::Value::String(resolved.delivery_mode.as_str().to_owned()),
+    );
+    record.insert(
+        "driveSpaceId".to_owned(),
+        resolved
+            .drive_space_id
+            .map(serde_json::Value::String)
+            .unwrap_or(serde_json::Value::Null),
+    );
+    record.insert(
+        "driveFolderNodeId".to_owned(),
+        resolved
+            .drive_folder_node_id
+            .map(serde_json::Value::String)
+            .unwrap_or(serde_json::Value::Null),
+    );
+    record.insert(
+        "downloadDeadlineSeconds".to_owned(),
+        resolved
+            .download_deadline_seconds
+            .map(|seconds| serde_json::Value::Number(seconds.into()))
+            .unwrap_or(serde_json::Value::Null),
+    );
+    record.insert(
+        "vendorExpiryAction".to_owned(),
+        serde_json::Value::String(resolved.vendor_expiry_action.as_str().to_owned()),
+    );
+    record.insert(
+        "deleteRemoteAfterDownload".to_owned(),
+        serde_json::Value::Bool(resolved.delete_remote_after_download),
+    );
+    record.insert(
+        "sourceScope".to_owned(),
+        resolved
+            .source_scope
+            .as_ref()
+            .map(|(scope, scope_id)| {
+                serde_json::json!({ "scopeType": scope.as_str(), "scopeId": scope_id })
+            })
+            .unwrap_or(serde_json::Value::Null),
+    );
+    record.insert(
+        "vendorAssetTtlSeconds".to_owned(),
+        vendor_ttl
+            .map(|seconds| serde_json::Value::Number(seconds.into()))
+            .unwrap_or(serde_json::Value::Null),
+    );
+    record.insert(
+        "requestId".to_owned(),
+        serde_json::Value::String(query.request_id),
+    );
+    Ok(record)
 }
 
 fn find_loaded_record(
