@@ -27,6 +27,7 @@ import { CloudRouterConsoleIamOfficialAccountsRoute } from './console-business/c
 import { CloudRouterConsoleBusinessNavbarActions } from './console-business/consoleBusinessNavbar';
 import { applySdkCommerceThemeVariables } from './console-business/consoleCommerceTheme';
 import { CloudRouterAdminHostRoutes } from './admin/cloudRouterAdminHostMount';
+import { CommunityPortalRoutes } from '@sdkwork/cloudrouter-pc-community';
 import { LEGAL_DOCUMENT_PATHS } from '@sdkwork/documents-pc-legal/paths';
 
 const Home = lazyRoute(() => import('@sdkwork/cloudrouter-pc-home'), 'Home');
@@ -201,6 +202,9 @@ function MainLayout({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () 
           <Route path="/partner-join" element={<PartnerJoinLanding />} />
           <Route path="/partner-join/apply" element={<PartnerJoinApply />} />
           <Route path="/partner-join/status" element={<PartnerJoinStatus />} />
+          {/* Community (圈子社群) — public discovery plus signed-in circle
+              workspace and owner management pages. */}
+          <CommunityPortalRoutes />
           <Route
             path="/docs"
             element={

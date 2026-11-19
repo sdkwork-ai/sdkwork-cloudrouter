@@ -88,6 +88,7 @@ import { pricingMessages } from '@sdkwork/cloudrouter-pc-pricing/i18n';
 import { sharedAccountMessages } from './shared/account';
 import { sharedCommonMessages } from './shared/common';
 import { sharedNavigationMessages } from './shared/navigation';
+import { communityUiMessages } from '@sdkwork/cloudrouter-pc-community/i18n';
 
 /**
  * Key prefixes the host catalog owns.
@@ -186,5 +187,6 @@ export const resources = mergeI18nBundles([
   sharedAccountMessages,
   sharedCommonMessages,
   sharedNavigationMessages,
+  communityUiMessages,
   sdkworkSubscriptionCheckoutI18nBundle,
 ]);

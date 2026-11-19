@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "@sdkwork/cloudrouter-h5-community",
+    "displayName": "SDKWork Cloud Router H5 Community",
+    "version": "0.1.0",
+    "type": "react-package",
+    "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-h5/packages/sdkwork-cloudrouter-h5-community",
+    "domain": "community",
+    "declaredDomain": "community",
+    "capability": "community",
+    "surface": "h5",
+    "status": "ready",
+    "languages": [
+      "typescript",
+      "react"
+    ],
+    "generated": false,
+    "private": true,
+    "manifests": [
+      "package.json"
+    ]
+  },
+  "contracts": {
+    "publicExports": [
+      "."
+    ],
+    "runtimeEntrypoints": [
+      "package.json#scripts.typecheck"
+    ],
+    "sdkClients": [
+      "@sdkwork/community-app-sdk",
+      "@sdkwork/feeds-sdk",
+      "@sdkwork/order-app-sdk",
+      "@sdkwork/drive-app-sdk"
+    ],
+    "events": [],
+    "configKeys": [],
+    "sdkDependencies": [],
+    "routeManifest": null
+  },
+  "integration": {
+    "authority": "sdkwork-community owns the community domain contract and mobile UI. This package only binds the UI to the Cloud Router H5 host (generated SDK ports, Drive media, order settlement, and i18n).",
+    "dependencyPolicy": "Consumers integrate through public package exports; the host never creates raw HTTP clients or manual auth headers.",
+    "sdkPolicy": "Generated SDK clients are injected through the host bootstrap and the community runtime port."
+  },
+  "verification": {
+    "commands": [
+      "pnpm --dir apps/sdkwork-cloudrouter-h5 typecheck"
+    ]
+  },
+  "canonicalSpecs": [
+    {
+      "file": "COMPONENT_SPEC.md",
+      "path": "../../../../../sdkwork-specs/COMPONENT_SPEC.md",
+      "purpose": "Component-local contract and discovery rules."
+    },
+    {
+      "file": "FRONTEND_SPEC.md",
+      "path": "../../../../../sdkwork-specs/FRONTEND_SPEC.md",
+      "purpose": "Frontend service, state, SDK, and UI boundary rules."
+    },
+    {
+      "file": "APP_H5_ARCHITECTURE_SPEC.md",
+      "path": "../../../../../sdkwork-specs/APP_H5_ARCHITECTURE_SPEC.md",
+      "purpose": "H5 application root and host adapter rules."
+    },
+    {
+      "file": "I18N_SPEC.md",
+      "path": "../../../../../sdkwork-specs/I18N_SPEC.md",
+      "purpose": "User-facing copy and locale rules."
+    }
+  ]
+}

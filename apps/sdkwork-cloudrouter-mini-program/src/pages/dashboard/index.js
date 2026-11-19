@@ -18,6 +18,7 @@ const SERVICES = [
   { action: 'membership', icon: '💎', label: '会员中心' },
   { action: 'catalog', icon: '🧠', label: '模型与定价' },
   { action: 'more', icon: '⋯', label: '更多服务' },
+  { action: 'community', icon: '👥', label: '圈子社群' },
 ];
 
 Page({
@@ -74,6 +75,9 @@ Page({
         return;
       case 'apiKeys':
         wx.navigateTo({ url: '/pages/api-keys/index' });
+        return;
+      case 'community':
+        wx.navigateTo({ url: '/pages/community/index' });
         return;
       case 'usage':
         wx.navigateTo({ url: '/pages/usage/index' });

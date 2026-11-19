@@ -3,6 +3,15 @@
   "appId": "sdkwork-cloudrouter",
   "declarations": [
     {
+      "appResourceType": "community.post_media",
+      "appResourceIdKind": "entity",
+      "scene": "community-post",
+      "source": "cloudrouter-pc-community-post-upload",
+      "uploadProfileCode": "image",
+      "retention": "long_term",
+      "purpose": "Community post media uploaded from the Cloud Router PC community workspace."
+    },
+    {
       "appResourceType": "site.settings_brand_asset",
       "appResourceIdKind": "entity",
       "scene": "website-brand",

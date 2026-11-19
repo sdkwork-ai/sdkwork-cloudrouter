@@ -12,6 +12,7 @@ import 'package:sdkwork_cloudrouter_flutter_mobile_shell/sdkwork_cloudrouter_flu
 
 import '../runtime_scope.dart';
 import '../bootstrap/sdk_clients.dart';
+import 'community_h5_screen.dart';
 import 'h5_bridge_page.dart';
 
 /// Console tab host for the H5-aligned mobile sequence:
@@ -166,6 +167,8 @@ class _ConsoleShellState extends State<ConsoleShell> {
         _openH5(webBaseUrl, 'recharge', '快速充值');
       case 'orders':
         _openH5(webBaseUrl, 'orders', '订单中心');
+      case 'community':
+        _openCommunityH5(webBaseUrl);
     }
   }
 
@@ -177,6 +180,15 @@ class _ConsoleShellState extends State<ConsoleShell> {
           url: '$base/#/$route',
           title: title,
         ),
+      ),
+    );
+  }
+
+  void _openCommunityH5(String baseUrl) {
+    final base = baseUrl.replaceFirst(RegExp(r'/+$'), '');
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => CommunityH5Screen(url: '$base/community'),
       ),
     );
   }

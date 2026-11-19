@@ -35,6 +35,7 @@ class ConsoleHomeScreen extends StatelessWidget {
     _HomeService('新闻动态', Icons.campaign_outlined, 'news'),
     _HomeService('会员中心', Icons.workspace_premium_outlined, 'membership'),
     _HomeService('模型与定价', Icons.memory_outlined, 'catalog'),
+    _HomeService('圈子社群', Icons.forum_outlined, 'community'),
     _HomeService('更多服务', Icons.apps_outlined, 'more'),
   ];
 
@@ -113,6 +114,7 @@ class ConsoleHomeScreen extends StatelessWidget {
       case 'membership':
       case 'recharge':
       case 'orders':
+      case 'community':
         onNavigate(destination);
       case 'help':
         _showNotice(context, '帮助中心', '如需帮助，请联系 SDKWork 支持。');

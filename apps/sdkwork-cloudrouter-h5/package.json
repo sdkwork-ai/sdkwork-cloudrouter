@@ -36,6 +36,7 @@
     "@sdkwork/cloudrouter-h5-console-catalog": "workspace:*",
     "@sdkwork/cloudrouter-h5-console-dashboard": "workspace:*",
     "@sdkwork/cloudrouter-h5-console-usage": "workspace:*",
+    "@sdkwork/cloudrouter-h5-community": "workspace:*",
     "@sdkwork/cloudrouter-h5-core": "workspace:*",
     "@sdkwork/cloudrouter-h5-i18n": "workspace:*",
     "@sdkwork/cloudrouter-h5-messages": "workspace:*",

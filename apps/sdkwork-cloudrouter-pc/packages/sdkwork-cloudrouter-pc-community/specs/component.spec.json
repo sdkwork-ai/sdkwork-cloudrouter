@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "@sdkwork/cloudrouter-pc-community",
+    "displayName": "SDKWork Cloud Router PC Community",
+    "version": "0.1.0",
+    "type": "react-package",
+    "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-community",
+    "domain": "community",
+    "declaredDomain": "community",
+    "capability": "community",
+    "surface": "portal",
+    "status": "ready",
+    "languages": [
+      "typescript",
+      "react"
+    ],
+    "generated": false,
+    "private": true,
+    "manifests": [
+      "package.json"
+    ]
+  },
+  "contracts": {
+    "publicExports": [
+      ".",
+      "./i18n"
+    ],
+    "runtimeEntrypoints": [
+      "package.json#scripts.typecheck"
+    ],
+    "sdkClients": [
+      "@sdkwork/community-app-sdk",
+      "@sdkwork/feeds-sdk",
+      "@sdkwork/order-app-sdk",
+      "@sdkwork/drive-app-sdk"
+    ],
+    "events": [],
+    "configKeys": [],
+    "sdkDependencies": [],
+    "routeManifest": null
+  },
+  "integration": {
+    "authority": "sdkwork-community owns the community domain contract and mobile UI. This package composes the PC portal workspace on top of the community host service and runtime ports.",
+    "dependencyPolicy": "Consumers integrate through public package exports; the host never creates raw HTTP clients or manual auth headers.",
+    "sdkPolicy": "Generated SDK clients are injected through the Cloud Router PC commons factories and the community runtime port."
+  },
+  "verification": {
+    "commands": [
+      "pnpm --dir apps/sdkwork-cloudrouter-pc typecheck"
+    ]
+  },
+  "canonicalSpecs": [
+    {
+      "file": "COMPONENT_SPEC.md",
+      "path": "../../../../../sdkwork-specs/COMPONENT_SPEC.md",
+      "purpose": "Component-local contract and discovery rules."
+    },
+    {
+      "file": "FRONTEND_SPEC.md",
+      "path": "../../../../../sdkwork-specs/FRONTEND_SPEC.md",
+      "purpose": "Frontend service, state, SDK, and UI boundary rules."
+    },
+    {
+      "file": "APP_PC_REACT_UI_SPEC.md",
+      "path": "../../../../../sdkwork-specs/APP_PC_REACT_UI_SPEC.md",
+      "purpose": "PC React package and UI composition rules."
+    },
+    {
+      "file": "I18N_SPEC.md",
+      "path": "../../../../../sdkwork-specs/I18N_SPEC.md",
+      "purpose": "User-facing copy and locale rules."
+    }
+  ]
+}

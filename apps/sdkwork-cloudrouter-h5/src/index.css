@@ -6,7 +6,9 @@
  * commerce pages and the shared mobile UI primitives are explicit sources.
  */
 @source "../packages/sdkwork-cloudrouter-h5-orders/src";
+@source "../packages/sdkwork-cloudrouter-h5-community/src";
 @source "../packages/sdkwork-cloudrouter-h5-messages/src";
+@source "../../../../sdkwork-community/apps/sdkwork-community-common/packages/sdkwork-community-mobile-react-community/src";
 @source "../../../../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-mobile-react-orders/src";
 @source "../../../../sdkwork-membership/apps/sdkwork-membership-common/packages/sdkwork-membership-mobile-react-subscription/src";
 @source "../../../../sdkwork-ui/sdkwork-ui-mobile-react/src";

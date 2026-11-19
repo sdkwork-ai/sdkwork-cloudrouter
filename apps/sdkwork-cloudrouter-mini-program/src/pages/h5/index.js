@@ -10,6 +10,7 @@ const ROUTES = {
   orders: { title: '订单中心', path: '/orders' },
   messages: { title: '消息', path: '/messages' },
   playground: { title: '体验中心', path: '/playground' },
+  community: { title: '圈子社群', path: '/community' },
   signIn: { title: '登录', path: '/sign-in' },
   help: { title: '帮助中心', path: '/help' },
 };

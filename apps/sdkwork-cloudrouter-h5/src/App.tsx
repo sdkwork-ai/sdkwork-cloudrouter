@@ -18,8 +18,10 @@ import {
 import {
   ConsoleRuntimeProvider,
   consumePendingConsoleRuntime,
+  useConsoleRuntime,
   type ConsoleRuntimeConfiguration,
 } from './providers/AppProviders.js';
+import { CommunityRoutes } from '@sdkwork/cloudrouter-h5-community';
 
 /**
  * ``bootstrapH5Application()`` configures the console runtime before the first
@@ -37,6 +39,19 @@ import {
  * (`/cashier/{orderId}?scene=..&outTradeNo=..`) must render from that pathname
  * instead of being folded into a `#/` route.
  */
+/**
+ * Community host route: the community pages need the console locale and the
+ * IAM session, both supplied by the runtime provider mounted above.
+ */
+function CommunityHostRoute() {
+  const { locale } = useConsoleRuntime();
+  return (
+    <AppAuthGate>
+      <CommunityRoutes locale={locale} />
+    </AppAuthGate>
+  );
+}
+
 export function App() {
   const [configuration] = useState<ConsoleRuntimeConfiguration | null>(
     () => consumePendingConsoleRuntime(),
@@ -90,6 +105,10 @@ export function App() {
           {/* Settings is a stacked page reached from 我的; the shared settings
               center owns its own header/back and list/detail composition. */}
           <Route path="/settings" element={<SettingsRoute />} />
+          {/* Community (circles and groups) is a stacked workspace outside the
+              tab shell: the community-owned mobile pages own their headers and
+              flow, and the route catalog matches sdkwork-im H5. */}
+          <Route path="/community/*" element={<CommunityHostRoute />} />
           <Route path="*" element={<ConsoleRouteAssembly />} />
         </Routes>
       </ConsoleRuntimeProvider>

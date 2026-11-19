@@ -58,8 +58,6 @@ packages:
   - "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-inspiration"
   - "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-membership"
   - "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-playground"
-  - "../sdkwork-agents/apps/sdkwork-agents-h5"
-  - "../sdkwork-agents/apps/sdkwork-agents-h5/packages/*"
   - "../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-presentation"
   - "../sdkwork-agents/sdks/sdkwork-agents-app-sdk/sdkwork-agents-app-sdk-typescript"
   - "../sdkwork-agents/sdks/sdkwork-agents-backend-sdk/sdkwork-agents-backend-sdk-typescript"
@@ -127,10 +125,11 @@ packages:
   - "../sdkwork-cloudrouter/sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript"
   - "../sdkwork-cloudrouter/sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript"
   - "../sdkwork-cloudrouter/sdks/cloudrouter-open-sdk/cloudrouter-open-sdk-typescript"
+  - "../sdkwork-community/apps/sdkwork-community-common/packages/*"
   - "../sdkwork-community/sdks/sdkwork-community-app-sdk/sdkwork-community-app-sdk-typescript"
+  - "../sdkwork-community/sdks/sdkwork-community-backend-sdk/sdkwork-community-backend-sdk-typescript"
   - "../sdkwork-company/apps/sdkwork-company-pc/packages/sdkwork-company-pc-admin-enterprise"
   - "../sdkwork-company/sdks/sdkwork-company-backend-sdk/sdkwork-company-backend-sdk-typescript"
-  - "../sdkwork-community/sdks/sdkwork-community-backend-sdk/sdkwork-community-backend-sdk-typescript"
   - "../sdkwork-course/sdks/sdkwork-course-backend-sdk/sdkwork-course-backend-sdk-typescript"
   - "../sdkwork-deployments/sdks/sdkwork-deployments-app-sdk/sdkwork-deployments-app-sdk-typescript"
   - "../sdkwork-deployments/sdks/sdkwork-deployments-backend-sdk/sdkwork-deployments-backend-sdk-typescript"
@@ -145,7 +144,6 @@ packages:
   - "../sdkwork-documents/sdks/sdkwork-documents-app-sdk/sdkwork-documents-app-sdk-typescript/src/index.ts"
   - "../sdkwork-drive/apps/sdkwork-drive-common/packages/sdkwork-drive-mobile-react-upload-image"
   - "../sdkwork-drive/apps/sdkwork-drive-common/packages/sdkwork-drive-upload-image-core"
-  - "../sdkwork-drive/apps/sdkwork-drive-common/packages/sdkwork-drive-mobile-react-upload-image"
   - "../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-admin-core"
   - "../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-admin-operations"
   - "../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-admin-storage-providers"
@@ -177,8 +175,6 @@ packages:
   - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-admin-user"
   - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-mini-program"
   - "../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-iam-pc-official-accounts"
-  - "../sdkwork-iam/apps/sdkwork-iam-h5"
-  - "../sdkwork-iam/apps/sdkwork-iam-h5/packages/*"
   - "../sdkwork-im/sdks/sdkwork-im-sdk/sdkwork-im-sdk-typescript"
   - "../sdkwork-image/apps/sdkwork-image-common/packages/sdkwork-image-contracts"
   - "../sdkwork-image/apps/sdkwork-image-pc/packages/sdkwork-image-pc-generation"
@@ -233,9 +229,8 @@ packages:
   - "../sdkwork-models/sdks/sdkwork-models-backend-sdk/sdkwork-models-backend-sdk-typescript"
   - "../sdkwork-models/sdks/sdkwork-models-sdk/sdkwork-models-sdk-typescript"
   - "../sdkwork-music/apps/sdkwork-music-pc/packages/sdkwork-music-pc-generation"
-  - "../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-service"
-  - "../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-sdk-ports"
   - "../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-mobile-react-orders"
+  - "../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-service"
   - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-admin-core"
   - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-admin-orders"
   - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-admin-trade"
@@ -314,6 +309,9 @@ catalog:
   jsdom: 29.1.1
   "@types/react": ^19.2.14
   "@types/react-dom": ^19.2.3
+  "qrcode.react": ^4.2.0
+  react-easy-crop: ^5.5.7
+  html-to-image: ^1.11.13
   tsup: ^8.5.1
   "@tailwindcss/typography": ^0.5.19
   autoprefixer: ^10.4.27

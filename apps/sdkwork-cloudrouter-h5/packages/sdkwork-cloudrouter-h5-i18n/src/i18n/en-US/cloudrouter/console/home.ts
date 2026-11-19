@@ -28,6 +28,7 @@ export const homeMessages: Record<string, string> = {
   'cloudrouter.console.home.serviceNews': "Product news",
   'cloudrouter.console.home.serviceMembership': "Membership benefits",
   'cloudrouter.console.home.serviceModels': "Model catalog",
+  'cloudrouter.console.home.serviceCommunity': "Circles",
   'cloudrouter.console.home.serviceMore': "More",
   'cloudrouter.console.home.announcement': "AI cloud platform launch · limited membership and credit offers",
   'cloudrouter.console.home.promoBadge': "Limited",

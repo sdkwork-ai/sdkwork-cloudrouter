@@ -124,6 +124,9 @@ export function ConsoleRouteAssembly() {
       case 'catalog':
         navigate(CLOUDROUTER_CONSOLE_ROUTES.catalog.path);
         break;
+      case 'community':
+        navigate('/community');
+        break;
       case 'dashboard':
         navigate(CLOUDROUTER_CONSOLE_ROUTES.dashboard.path);
         break;
@@ -339,6 +342,7 @@ function homeLabels(translate: (key: string) => string): ConsoleHomeLabels {
     serviceNews: translate('cloudrouter.console.home.serviceNews'),
     serviceMembership: translate('cloudrouter.console.home.serviceMembership'),
     serviceModels: translate('cloudrouter.console.home.serviceModels'),
+    serviceCommunity: translate('cloudrouter.console.home.serviceCommunity'),
     serviceMore: translate('cloudrouter.console.home.serviceMore'),
     announcement: translate('cloudrouter.console.home.announcement'),
     promoBadge: translate('cloudrouter.console.home.promoBadge'),

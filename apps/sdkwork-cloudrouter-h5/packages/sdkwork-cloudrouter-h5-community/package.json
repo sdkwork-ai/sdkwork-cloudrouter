@@ -1,0 +1,47 @@
+{
+  "name": "@sdkwork/cloudrouter-h5-community",
+  "private": true,
+  "version": "0.1.0",
+  "license": "SEE LICENSE IN ../../../../LICENSE",
+  "type": "module",
+  "description": "Cloud Router H5 community (circles and groups) host integration: runtime ports, routes, and i18n.",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sdkwork/cloudrouter-h5-core": "workspace:*",
+    "@sdkwork/cloudrouter-h5-i18n": "workspace:*",
+    "@sdkwork/community-contracts": "workspace:*",
+    "@sdkwork/community-mobile-react-community": "workspace:*",
+    "@sdkwork/community-runtime": "workspace:*",
+    "@sdkwork/community-sdk-ports": "workspace:*",
+    "@sdkwork/drive-upload-image-core": "workspace:*",
+    "i18next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-i18next": "catalog:",
+    "react-router-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "typescript": "catalog:"
+  },
+  "sdkwork": {
+    "workspace": "sdkwork-cloudrouter",
+    "architecture": "h5-react",
+    "domain": "community",
+    "capability": "community",
+    "surface": "h5",
+    "status": "ready"
+  }
+}

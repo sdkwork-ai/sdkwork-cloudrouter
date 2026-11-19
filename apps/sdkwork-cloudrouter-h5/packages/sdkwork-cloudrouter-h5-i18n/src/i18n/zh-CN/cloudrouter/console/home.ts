@@ -28,6 +28,7 @@ export const homeMessages: Record<string, string> = {
   'cloudrouter.console.home.serviceNews': "产品动态",
   'cloudrouter.console.home.serviceMembership': "会员权益",
   'cloudrouter.console.home.serviceModels': "模型广场",
+  'cloudrouter.console.home.serviceCommunity': "圈子社区",
   'cloudrouter.console.home.serviceMore': "更多",
   'cloudrouter.console.home.announcement': "AI 云计算平台上线 · 会员与算力额度限时优惠",
   'cloudrouter.console.home.promoBadge': "限时",

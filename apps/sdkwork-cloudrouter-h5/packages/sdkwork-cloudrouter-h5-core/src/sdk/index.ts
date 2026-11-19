@@ -1,4 +1,5 @@
 export * from './consolePorts.js';
+export * from './domainClients.js';
 export * from './orderAppSdkClient.js';
 export * from './runtimeEnv.js';
 export * from './sdkClients.js';

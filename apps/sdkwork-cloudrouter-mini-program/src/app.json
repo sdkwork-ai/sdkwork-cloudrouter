@@ -4,6 +4,7 @@
     "pages/playground/index",
     "pages/catalog/index",
     "pages/messages/index",
+    "pages/community/index",
     "pages/profile/index",
     "pages/usage/index",
     "pages/api-keys/index",

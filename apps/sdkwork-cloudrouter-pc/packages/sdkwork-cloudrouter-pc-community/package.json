@@ -1,0 +1,55 @@
+{
+  "name": "@sdkwork/cloudrouter-pc-community",
+  "version": "0.1.0",
+  "private": true,
+  "license": "SEE LICENSE IN ../../../../LICENSE",
+  "type": "module",
+  "description": "SDKWork Cloud Router PC community (circles and groups) workspace.",
+  "main": "./src/index.tsx",
+  "module": "./src/index.tsx",
+  "types": "./src/index.tsx",
+  "exports": {
+    ".": {
+      "types": "./src/index.tsx",
+      "import": "./src/index.tsx",
+      "default": "./src/index.tsx"
+    },
+    "./i18n": {
+      "types": "./src/i18n.ts",
+      "import": "./src/i18n.ts",
+      "default": "./src/i18n.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sdkwork/cloudroutes-pc-commons": "workspace:*",
+    "@sdkwork/community-mobile-react-community": "workspace:*",
+    "@sdkwork/community-runtime": "workspace:*",
+    "@sdkwork/community-sdk-ports": "workspace:*",
+    "@sdkwork/drive-app-sdk": "workspace:*",
+    "@sdkwork/drive-upload-image-core": "workspace:*",
+    "@sdkwork/feeds-sdk": "workspace:*",
+    "@sdkwork/order-app-sdk": "workspace:*",
+    "lucide-react": "catalog:",
+    "react-i18next": "catalog:"
+  },
+  "peerDependencies": {
+    "react": ">=19.0.0 <20.0.0",
+    "react-dom": ">=19.0.0 <20.0.0",
+    "react-router-dom": ">=7.0.0 <8.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "typescript": "~5.8.2"
+  },
+  "sdkwork": {
+    "workspace": "sdkwork-cloudrouter",
+    "architecture": "pc-react",
+    "domain": "community",
+    "capability": "community",
+    "surface": "portal",
+    "status": "ready"
+  }
+}

@@ -139,6 +139,12 @@
       "require": "./src/session-jwt-claims.ts",
       "default": "./src/session-jwt-claims.ts"
     },
+    "./session-service": {
+      "types": "./src/sessionService.ts",
+      "import": "./src/sessionService.ts",
+      "require": "./src/sessionService.ts",
+      "default": "./src/sessionService.ts"
+    },
     "./sdkwork-utils": {
       "types": "./src/sdkwork-utils.ts",
       "import": "./src/sdkwork-utils.ts",

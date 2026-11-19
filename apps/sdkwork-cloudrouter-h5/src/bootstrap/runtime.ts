@@ -12,6 +12,7 @@ import { registerHostAdapters } from './hostAdapters.js';
 import { bootstrapIamRuntime } from './iamRuntime.js';
 import { bootstrapH5SdkClients } from './sdkClients.js';
 import { configureConsoleRuntime } from '../providers/AppProviders.js';
+import { bootstrapCommunityH5 } from '@sdkwork/cloudrouter-h5-community';
 
 /**
  * Single application bootstrap: environment selection, host adapters, the IAM
@@ -32,6 +33,10 @@ export async function bootstrapH5Application(): Promise<void> {
   registerHostAdapters();
   bootstrapIamRuntime();
   const sdk = bootstrapH5SdkClients();
+  // Community (circles and groups) rides the same generated-SDK bootstrap:
+  // bind its App SDK port, feeds stream, Drive media, and order settlement
+  // before the first community route renders.
+  bootstrapCommunityH5();
   // Start the public branding read before React mounts so the document title
   // and the navbar paint the operator's configured site name/logo.
   void fetchH5SiteBranding().then(applyH5SiteBrandingToDocument);

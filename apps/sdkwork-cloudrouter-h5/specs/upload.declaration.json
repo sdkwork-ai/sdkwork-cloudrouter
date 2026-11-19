@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "appId": "sdkwork-cloudrouter",
+  "declarations": [
+    {
+      "appResourceType": "community.post_media",
+      "appResourceIdKind": "entity",
+      "scene": "community-post",
+      "source": "sdkwork-cloudrouter-h5",
+      "uploadProfileCode": "image",
+      "retention": "long_term",
+      "purpose": "Community post media uploaded from the Cloud Router H5 community surface."
+    }
+  ]
+}

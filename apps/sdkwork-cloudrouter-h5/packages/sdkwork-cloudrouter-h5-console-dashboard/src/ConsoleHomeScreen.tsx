@@ -20,6 +20,7 @@ import {
   Sparkles,
   Terminal,
   Ticket,
+  Users,
   Wallet,
   X,
   type LucideIcon,
@@ -34,6 +35,7 @@ export type ConsoleHomeDestination =
   | 'coupons'
   | 'help'
   | 'catalog'
+  | 'community'
   | 'dashboard'
   | 'signIn'
   | 'signOut';
@@ -64,6 +66,7 @@ export interface ConsoleHomeLabels {
   readonly serviceNews: string;
   readonly serviceMembership: string;
   readonly serviceModels: string;
+  readonly serviceCommunity: string;
   readonly serviceMore: string;
   readonly announcement: string;
   readonly promoBadge: string;
@@ -118,6 +121,7 @@ interface HomeService {
     | 'news'
     | 'membership'
     | 'models'
+    | 'community'
     | 'more';
   readonly label: string;
   readonly icon: LucideIcon;
@@ -186,6 +190,7 @@ export function ConsoleHomeScreen({
     { id: 'news', label: labels.serviceNews, icon: Megaphone },
     { id: 'membership', label: labels.serviceMembership, icon: Crown },
     { id: 'models', label: labels.serviceModels, icon: Boxes },
+    { id: 'community', label: labels.serviceCommunity, icon: Users },
     { id: 'more', label: labels.serviceMore, icon: MoreHorizontal },
   ];
   const services = serviceDefs.filter((service) => matches(service.label));
@@ -208,6 +213,7 @@ export function ConsoleHomeScreen({
       news: 'catalog',
       membership: 'membership',
       models: 'catalog',
+      community: 'community',
       more: 'more',
     };
     const destination = destinations[service.id];

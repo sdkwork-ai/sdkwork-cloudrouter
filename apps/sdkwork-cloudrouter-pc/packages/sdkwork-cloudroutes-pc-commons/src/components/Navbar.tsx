@@ -144,6 +144,7 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
     { name: t('nav.home'), href: '/' },
     { name: t('nav.models'), href: '/models' },
     { name: t('nav.hardwareMarket'), href: '/hardware-market' },
+    { name: t('nav.community'), href: '/community' },
     { name: t('nav.pricing'), href: '/pricing' },
     { name: t('nav.rankings'), href: '/rankings', showFrom: '2xl' as const },
     { name: t('nav.productDocs'), href: '/dev-docs/product-docs', showFrom: '2xl' as const },
