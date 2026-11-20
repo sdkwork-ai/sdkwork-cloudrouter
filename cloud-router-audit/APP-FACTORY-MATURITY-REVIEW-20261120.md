@@ -213,6 +213,111 @@
 | §13 诚实标注 | "Environment and hosts" 行改为第二主体审批 + 记录；"Scaffold and price" 行明确**被 appstore 契约阻塞**（无价格金额表/API 字段） | 工厂 checker 通过 |
 | 机器调用审计 | IAM 锚点 disable 处理器在禁用成功后写 `iam.audit_event`（action `iam.tenantApplications.disableByDeployApplication`，含 deploy 锚点/安装 id/权限）；审计写失败只记 error，不把已成功的禁用变成可重试错误 | `cargo test -p sdkwork-routes-iam-backend-api --lib` 50 passed；标准契约 175/175 |
 
+### 7.9 第五轮：规范校验器修复 + API 契约硬化（同日）
+
+| 项 | 落地位置 | 验证 |
+| --- | --- | --- |
+| 命令动词词表 | `sdkwork-specs/tools/lib/api-operation-patterns.mjs`：`COMMAND_ACTIONS` 增加 `disable`/`enable`/`default`。API_SPEC §7.4 的动词表是"for example"非穷举；旧词表把 `POST .../disable` 误判为 create 并要求 201 | 工具自测 41/41 |
+| 忽略临时快照 | `http-response-envelope-patterns.mjs`：`IGNORE_DIRS` 增加 `tmp`（与 doc-tool 门禁一致）。IAM 仓 `tmp/openapi-snap/` 的旧副本导致对已修复契约的假告警（84 → 38） | 重新扫描计数核对 |
+| IAM 查询参数规范 | `materialize-iam-v3-openapi-boundaries.mjs` 作为唯一来源，把 `role_bindings`、`provider_accounts` 的 9 个 camelCase 查询参数改为 lower_snake_case；`backend_sql.rs`/`provider_accounts.rs` 保留 camelCase 别名 | `cargo test -p sdkwork-routes-iam-backend-api --lib` 51 passed |
+| 外部协议标注 | 微信 official account notify 两个操作加入 external wire 映射，按 API_SPEC §4.5.2 豁免 | 校验器不再报这两条 |
+| 新锚点操作合规 | operationId 改为 `tenantApplications.management.byDeployApplication.disable`（动作=路径末段 `disable`） | 该操作不再出现在 findings |
+| deploy 对账契约合规 | `apps.factoryReconciliation` → `apps.factoryReconciliation.list`；`appsChecked` 改 int64 string + `x-sdkwork-int64-string`（§13.6） | deploy lib/PG/契约 4/4 全绿；该操作 0 findings |
+
+**量化剩余（需版本化契约迁移，不在本轮强改）**：
+- IAM：19 个唯一 API pattern findings（9 个 `operation-id-tag-duplication` 的 `iam.oauth.*` operationId、3 个 OAuth create 返回 200、6 个 operationId 动作名、1 个 logout 命令状态）。
+- deploy：24 个唯一 findings，重点是 download catalog 的 `revision`/`sizeBytes` 仍声明为 `type: integer`（真实浏览器精度风险，§13.6）、若干 `x-sdkwork-idempotent` 操作未声明必需 `Idempotency-Key` 头、PUT 动作命名与 `cloud_accounts` 查询参数。
+
+### 7.10 第六轮：状态固化与回滚恢复（同日）
+
+- 三个仓库在本轮开始前被外部进程提交（deploy `5279ef9`、iam `098a3288`、specs `0e86b2d`），前几轮改动已进入历史。
+- 该提交的 deploy OpenAPI 快照发生在 `apps.factoryReconciliation` 改名与 `appsChecked` int64-string 修复之前；一次文本脚本修改 idempotency 头时污染了 YAML（重复 `parameters:`），随后用 `git restore --worktree --source=HEAD -- <exact path>` 恢复并**重新应用**两项工厂修复，重新物化契约。
+- 教训已记录：对 4,600 行权威 YAML 做文本插入必须先解析验证；`Idempotency-Key` 头补齐留到下轮以解析-插入方式做，不再盲改。
+- 复核：deploy check/lib/PG 16 项/契约 4 个全绿；IAM 51 + 175 全绿；specs 工厂 checker、API pattern 工具自测 41、命名、文档调用契约全绿。
+
+### 7.11 第七轮：int64 线格式与幂等头契约修复（同日）
+
+| 项 | 落地位置 | 验证 |
+| --- | --- | --- |
+| download catalog int64 | deploy `downloads.rs` 响应 DTO 的 `revision`/`sizeBytes` 改为 `String`（读取时 `try_get::<i64>` 转字符串），请求边界解析 int64 字符串；OpenAPI 4 处 schema 改 `type: string` + `pattern` + `x-sdkwork-int64-string`（§13.6）。控制台本来就把 `sizeBytes` 当 `string` 处理，此项同时修正了线格式不一致 | deploy check/lib 全绿；API pattern 的 4 类 int64 findings 全部消失 |
+| 幂等头 | `apis/backend-api/deploy/openapi.yaml` 给 8 个 `x-sdkwork-idempotent: true` 操作补齐必需 `Idempotency-Key` 头（复用 `IdempotencyKeyParam`）；其中 4 个操作还缺 YAML 侧 idempotent 标记（JSON 由 Rust 路由注入），一并补齐，避免"有头无标记" | YAML 解析验证 + 重新物化；idempotency findings 0 |
+| 净效果 | deploy API pattern findings 73 → **37** | 计数核对 |
+
+**PC 控制台类型检查**：`pnpm typecheck` 在 deploy-pc 下报告 235 个错误，全部位于兄弟仓（sdkwork-iam/sdkwork-core/sdkwork-appbase/sdkwork-drive）的既有 `exactOptionalPropertyTypes`/类型漂移；**没有**任何 download/sizeBytes/revision 相关错误，因此不是本次线格式变更引入。
+
+### 7.12 第八轮：应用分层真实违规 + 校验器误报（同日）
+
+| 项 | 落地位置 | 验证 |
+| --- | --- | --- |
+| 分层校验器误报 | `check-application-layering.mjs`：`RAW_HTTP_RE` 会把 `this.fetch(1)` 和页面本地 `fetch(page)` 方法定义当成裸 `fetch(` 网络调用。改为 `hasRawHttpCall`：排除成员调用（负向后行）并剥离本地同名方法定义；真实裸 `fetch('/url')` 仍被拒绝 | 工具自测 6/6（新增"本地 fetch 方法"回归用例）；deploy/iam/specs 三仓 layering 全绿 |
+| 特性包直连生成 SDK | `admin-downloads` 的 `service.ts`/`DownloadCatalogPage.tsx`/测试改为从 `@sdkwork/deployments-pc-admin-core` 导入端口类型；core 以 `export type` 重新导出所需 wire 类型。生成 SDK 模块不再出现在特性包依赖图 | layering 通过；`admin-downloads` vitest 2/2 |
+| workspace 漂移 | `sync-workspace.mjs --repo sdkwork-deployments`：补入两个 mobile-react 包、移除已不存在的 `sdkwork-order-app-sdk` 条目（2 增 1 删） | `verify-repo` 不再报告该漂移 |
+
+**verify-repo 剩余 1 项（既有）**：`admin-core` 直接使用 app-api SDK（`@sdkwork/deployments-app-sdk`）承载 app-template 创作。这是既有设计（代码内注释已说明 backend-admin 契约没有 create/patch 命令），修复需要引入 app-plane 端口包并把创作编排移出 backend-admin core，属独立重构，未在本轮强改。
+
+### 7.13 第九轮：admin-core 端口化 + CI 依赖清单（同日）
+
+| 项 | 落地位置 | 验证 |
+| --- | --- | --- |
+| app-plane 端口化 | 新增 `admin-core/src/app-plane-port.ts`：定义 `DeploymentsAppPlaneClient` 与 create/update/screenshot 结构化类型；`index.tsx` 改用端口类型、删除 `createDeploymentsAppClient` 与 app-api SDK import；client 构造移到组合根 `DeploymentsAdminSurface.tsx` | `verify-repo` 对 deploy **全部通过**（此前 4 项） |
+| 组件契约 | `admin-core/specs/component.spec.json` 移除 `sdkwork-deployments-app-sdk` 的 `sdkDependencies` 条目（surface=backend-admin 不得声明 app-api SDK） | 同上 |
+| CI 依赖清单 | `agent.workflow.json` 补入 `sdkwork-cloudrouter`、`sdkwork-kernel`、`sdkwork-sandbox` 三个 `dependencies[]` 条目（本地 workspace 引用但 CI 未 checkout，属真实打包缺口） | `check-dependency-list-completeness` 通过（3 行新增，无格式噪声） |
+| 回归 | admin-core / admin-downloads 单测 5/5；PC typecheck 仍为 235 个错误，全部在兄弟仓既有类型漂移，admin-core/surface/downloads **0 个** | 类型检查与单测证据 |
+
+**遗留小项**：`admin-core/package.json` 仍声明 app-api SDK 依赖（源码已不使用），移除需同步 pnpm lockfile，留待依赖清理轮次。
+
+### 7.14 第十轮：deploy API 契约全合规（operationId/tag/状态码/查询参数）
+
+| 项 | 落地位置 | 验证 |
+| --- | --- | --- |
+| download catalog 资源组 | tag `downloadCatalog` → `downloads`（消除 operation-id-tag-duplication）；`downloadCatalog.upsert`/`downloadCard.upsert`/`downloadItem.upsert`/`downloadUpdate.upsert` → `.update`（PUT 动作合规） | 重新物化 + 双 SDK 生成；控制台迁移到 `client.downloads.*` 并补 `Idempotency-Key` 参数 |
+| 公开下载读 | `downloadCatalog.publicRetrieve` → `downloadCatalog.public.retrieve`（动作合规，SDK 变为 `downloads.downloadCatalog.public.retrieve`） | 同上 |
+| 批量主机名声明 | 改为命令端点 `/domain_zones/{zoneId}/hostname_claims/ensure` + operationId `domainZones.hostnameClaims.ensure`（批量"确保存在"不是资源 create，不应要求 201/data.item）；`ensure` 加入规范工具命令动词表 | API pattern 0；Rust 路由/清单/路径常量同步 |
+| source spec 绑定 | `apps.sourceSpecs.bindSource` → `apps.sourceSpecs.source.update`（PUT 动作合规，SDK `sourceSpecs.source.update`） | 控制台发布流同步 |
+| 云账号查询参数 | `dnsProvider`/`scopeType` → `dns_provider`/`scope_type`（YAML + `ListCloudAccountsQuery` serde rename，保留 camelCase alias） | API pattern 0 |
+| 净效果 | deploy API pattern findings **37 → 0**；`verify-repo` 通过；envelope/layering 通过 | 计数与门禁 |
+
+**控制台回归**：`admin-downloads` 服务迁移到 `client.downloads.*` + 幂等键，单测 2/2；admin-core 3/3；PC typecheck 仍 235 个既有兄弟仓错误，本轮触达文件 **0 个新增**。
+
+**注**：SDK 重新生成后存在 gitignored 的旧 `.js/.map` 构建残留（sourcemap 警告），由构建命令重建，不影响受版本控制的内容。
+
+### 7.15 第十一轮：审批权限门禁（deploy.apps.approve）
+
+| 项 | 落地位置 | 验证 |
+| --- | --- | --- |
+| 权限投影 | `DeployAppRequestContext.permissions: Vec<String>`（serde 默认、不序列化），由 `DeployAppContextInjector` 从已验证 principal 的 `permission_scope` 注入；客户端无法伪造 | 编译通过 |
+| 通配匹配 | `has_permission` 支持 `*`、`deploy.*`、`deploy.apps.*`、前缀 `*` 家族（与 IAM scope 词表一致） | 契约 crate 单测：精确/通配/拒绝矩阵 2/2 |
+| 审批门禁 | `require_promotion_approval()` fail-closed；`promote_environment` 在 `approve: true` 时先校验 `deploy.apps.approve`，否则返回 403 且不写任何行 | 单测覆盖"无权限/仅 write/有 approve"三态；deploy 契约 5/5 |
+| 影响面 | 记录审批现在需要第二个权限授予（与"审批人必须是第二主体"叠加），生产需先给审批角色授予 `deploy.apps.approve` | 已写入 §13 的 "Environment and hosts" 行（待补） |
+
+**测试修复**：为通过全量测试构建，补齐 16 处测试上下文初始化的 `permissions` 字段，并把 4 处 download catalog 测试的 `sizeBytes`/`revision` 断言改为 int64 字符串（第 6 轮线格式变更的测试面补齐）。
+
+**验证**：deploy `cargo test --workspace --tests --no-run` 0；lib 全绿；PG 6 组 18 项全过（本地 PostgreSQL 因陈旧进程退出，本轮已重启并验证）；契约 5/5；API pattern 0；verify-repo/layering/envelope/工厂 checker 全通过。
+
+### 7.16 第十二轮：对账 worker 进程（补齐 "reconciliation worker" 语义）
+
+| 项 | 落地位置 | 验证 |
+| --- | --- | --- |
+| 公开读入口 | `DeployRepository::reconcile_factory_references(tenant_id)`（委托内部 `pub(super)` 实现，单一实现） | 仓库 PG 3 项仍通过 |
+| worker crate | 新增 `crates/sdkwork-deploy-factory-reconciliation-worker`：遍历拥有应用的租户，逐租户运行同一报告；`DRIFT`→ERROR、`PARTIAL`→WARN、`CLEAN`→INFO；周期 `SDKWORK_DEPLOY_FACTORY_RECONCILIATION_INTERVAL_SECONDS`（默认 300s），Ctrl+C/SIGTERM 优雅退出；只读（`new_lookup`，无密钥/无租约） | `cargo check`/lib 单测 2/2；全量测试目标构建 0 |
+| 规范状态 | §13 Reconciliation 行补 worker 证据，并如实写明"只记录日志、未接告警平台" | 工厂 checker 5 组 0 失败 |
+
+## 8. 终态核对（目标逐项）
+
+| 目标项 | 状态 | 证据 |
+| --- | --- | --- |
+| 对账 worker | 完成 | 端点 + 仓库报告 + worker crate + PG 3 项 + 单测 |
+| 拆分部署卸载契约 | 完成 | IAM 锚点 disable + deploy 两适配器 + `factory_uninstall_postgres` 2 项 |
+| 价格权威 | **外部阻塞** | appstore 无 listing-price 契约；deploy 侧 fail-closed 已回归测试，§13 记录 |
+| 审计轨迹 | 完成 | deploy uninstall/promote 审计；IAM 机器禁用审计；审批人留痕 |
+| 租户隔离 | 完成 | ownership/environment PG 测试、FK RESTRICT、scope 守卫 |
+| token 锚定 | 完成 | 生成器 stamp `ownership_scope`、校验器、发布门禁 |
+| 规范校验器 | 完成 | 工厂 checker、API pattern（0）、layering、doc-tool、命名、工具自测 |
+| 技术债 | 完成（除工具链格式） | 词汇漂移、失败契约测试、编码均已修；IAM rustfmt 版本漂移属环境决策 |
+| 真实 PG 验证 | 完成 | deploy 18 项 PG、IAM 51/175、契约 5/5、verify-repo 通过 |
+
+**明确未做（记录在案，非安全漏洞）**：IAM 19 个 API 契约改名（破坏已发布 SDK，需版本治理）；控制台工厂页面（产品功能，§13 已按 reviewed 日期登记）；`admin-core/package.json` 未用依赖清理（需同步 lockfile）；IAM 全仓 rustfmt（工具链版本差异）。
+
 ---
 
 
