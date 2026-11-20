@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.app.store-publishing",
+  "marketId": "APPLE_APP_STORE",
+  "displayName": "Apple App Store",
+  "enabled": true,
+  "platforms": ["ios"],
+  "regions": {
+    "unitedStates": true,
+    "chinaMainland": true,
+    "note": "App Store Connect distributes in both the US and mainland China storefronts; China listing requires a valid ICP filing for the app's domain."
+  },
+  "identifiers": {
+    "bundleId": "com.sdkwork.cloudrouter.mobile",
+    "sku": "CLOUDROUTER-FLUTTER-MOBILE",
+    "appleId": null
+  },
+  "listing": {
+    "defaultLocale": "zh-CN",
+    "locales": {
+      "zh-CN": {
+        "name": "SDKWork CloudRouter",
+        "subtitle": "算力与模型，一站式上云",
+        "description": "SDKWork CloudRouter 移动端：查看会员与 Token Bank 算力额度、管理模型路由与 API 密钥、随时掌握用量与账单，并与 AI 助手对话。",
+        "keywords": ["云算力", "模型路由", "Token", "AI", "API 密钥"]
+      },
+      "en-US": {
+        "name": "SDKWork CloudRouter",
+        "subtitle": "Models and compute, one app",
+        "description": "SDKWork CloudRouter mobile: track membership and Token Bank compute credits, manage model routing and API keys, review usage and billing, and chat with AI assistants.",
+        "keywords": ["cloud compute", "model routing", "token", "ai", "api keys"]
+      }
+    },
+    "categories": {
+      "primary": "PRODUCTIVITY",
+      "secondary": "DEVELOPER_TOOLS"
+    },
+    "supportUrl": "https://sdkwork.com/support",
+    "privacyPolicyUrl": "https://sdkwork.com/privacy",
+    "marketingUrl": "https://sdkwork.com/apps/sdkwork-cloudrouter",
+    "copyright": "SDKWork"
+  },
+  "release": {
+    "track": "APP_STORE",
+    "releaseType": "MANUAL",
+    "phasedRelease": false,
+    "rolloutPercent": 100,
+    "countries": ["US", "CN", "HK", "TW", "SG", "JP", "GB", "DE", "FR", "CA", "AU"],
+    "minSupportedVersion": "0.1.0"
+  },
+  "submission": {
+    "mode": "automated",
+    "transport": "app-store-connect-api",
+    "credentialRefs": {
+      "keyId": "env:SDKWORK_APPLE_KEY_ID",
+      "issuerId": "env:SDKWORK_APPLE_ISSUER_ID",
+      "privateKey": "env:SDKWORK_APPLE_PRIVATE_KEY"
+    },
+    "targets": [
+      {
+        "id": "ios",
+        "platform": "ios",
+        "packageFormat": "IPA",
+        "artifactName": "ios.ipa"
+      }
+    ]
+  },
+  "media": {
+    "icon": "assets/media/store/icons/apple/app-icon-1024.png",
+    "screenshots": [
+      {
+        "root": "assets/media/store/screenshots/ios",
+        "platform": "APP_IOS",
+        "deviceClass": "IPHONE",
+        "displayType": "IPHONE_6_9"
+      }
+    ]
+  }
+}

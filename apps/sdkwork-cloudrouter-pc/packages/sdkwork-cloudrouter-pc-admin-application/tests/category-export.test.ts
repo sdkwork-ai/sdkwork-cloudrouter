@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildAppStoreCategoryExport,
   buildCategoryExportTree,
-  buildTemplateCategoryExport,
+  buildScaffoldCategoryExport,
 } from "../src/services/category-export";
 import type { AppStoreCategory } from "../src/types/appstore-categories";
 
@@ -46,8 +46,8 @@ describe("category export", () => {
     });
   });
 
-  it("exports template categories with stable keys", () => {
-    const document = buildTemplateCategoryExport([
+  it("exports scaffold categories with stable keys", () => {
+    const document = buildScaffoldCategoryExport([
       {
         id: "tpl-cat-1",
         categoryKey: "games",
@@ -57,7 +57,7 @@ describe("category export", () => {
       },
     ], new Date("2026-01-02T00:00:00.000Z"));
 
-    expect(document.kind).toBe("template-categories");
+    expect(document.kind).toBe("scaffold-categories");
     expect(document.categories[0]).toMatchObject({ code: "games", name: "Games" });
   });
 });

@@ -63,9 +63,9 @@ Electron, Tauri, Qt, Rust, Node, Go, Python.
 - A local scaffold can be published today: any framework/language directory is
   detected, its build-output path is recorded in `metadata`, and the normal
   release/deploy path applies.
-- A **free template** can be installed as a new app:
-  `POST /app/v3/api/marketplace/templates/{templateUuid}/install` creates an app
-  of the template's source kind and copies the source. A published version
+- A **free scaffold** can be installed as a new app:
+  `POST /app/v3/api/marketplace/scaffolds/{scaffoldUuid}/install` creates an app
+  of the scaffold's source kind and copies the source. A published version
   captures the source app's Git declaration (provider, url, default branch,
   clone mode, credential reference) in `metadata.git`; install prefers that
   version snapshot and falls back to the source app's current declaration for
@@ -74,19 +74,36 @@ Electron, Tauri, Qt, Rust, Node, Go, Python.
   that app. The App Center template panel exposes it as **Create from
   template** for `APP` + `FREE` + `PUBLISHED` listings; the marketplace
   storefront (Deploy console) calls it after a free acquire order is paid.
-- The template marketplace schema/repository (`deploy_application_scaffold*`)
+- The scaffold marketplace schema/repository (`deploy_application_scaffold*`)
   and browse/authoring routes exist. `install_count` increments once per
   installed application (the `app.template.install` audit entry keys the
-  idempotent replay), and the installed app records its template provenance in
+  idempotent replay), and the installed app records its scaffold provenance in
   `metadata.template`. PostgreSQL integration tests cover artifact-clone
   replay and paid-order verification (buyer, payment state, template, refunded).
-- A **paid** template install requires the settled `orderId`; Deploy verifies the
+- A **paid** scaffold install requires the settled `orderId`; Deploy verifies the
   order read-only against `commerce_order` (buyer, paid state, `app_template`
   subject, template UUID) and uses the order id as the app-create idempotency
   key, so one purchase creates one app. The order center reads the scaffold
-  marketplace first and falls back to the legacy template catalog, so a
+  marketplace first and falls back to the legacy catalog, so a
   storefront listing can actually be purchased. The order fulfillment remains
   the only writer of the paid install count.
+### 4.1 Scaffold surface (2026-11-21)
+
+The App Center template library is now the **scaffold library**. The operator
+menu entry keeps the URL named by the refactor request,
+`/admin/applications/templates`, and renders the scaffold library directly; the
+scaffold-vocabulary URLs `/admin/applications/scaffolds`,
+`/admin/applications/scaffold-reviews`, and
+`/admin/applications/scaffold-categories` are aliases over the same pages. The deploy API authority
+was renamed in the same change: `/app/v3/api/scaffolds`,
+`/app/v3/api/scaffold_categories`, `/app/v3/api/marketplace/scaffolds`, and the
+backend-admin equivalents. Operation IDs are `scaffolds.*`,
+`scaffolds.categories.*`, `scaffolds.versions.*`, and `marketplace.scaffolds.*`;
+the database-aligned wire fields `templateKey`, `templateType`, and
+`templateVersion` are unchanged and are mapped to the console's
+`scaffoldKey`/`scaffoldType` view model. See
+`sdkwork-deployments/apis/CHANGELOG.md` for the migration table.
+
 - **Still missing:** a real deployment run of the refund sweep. App-token
   issuance refuses a refunded order, `cloudrouterctl revoke-refunded-apps
   --apply` archives it manually, and the

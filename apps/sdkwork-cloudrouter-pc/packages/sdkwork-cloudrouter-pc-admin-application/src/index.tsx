@@ -20,14 +20,14 @@ export { AppPublishersPage } from "./pages/AppPublishersPage";
 export { AppFeaturedPage } from "./pages/AppFeaturedPage";
 export { AppCollectionsPage } from "./pages/AppCollectionsPage";
 export { AppListingsPage } from "./pages/AppListingsPage";
-export { AppTemplateCategoryPage } from "./pages/AppTemplateCategoryPage";
-export { AppTemplateManagementPage } from "./pages/AppTemplateManagementPage";
-export { TemplateReviewQueuePage } from "./pages/TemplateReviewQueuePage";
-export { TemplateReviewDrawer } from "./components/TemplateReviewDrawer";
-export { TemplateCategoryFormDrawer } from "./components/TemplateCategoryFormDrawer";
+export { ApplicationScaffoldCategoryPage } from "./pages/ApplicationScaffoldCategoryPage";
+export { ApplicationScaffoldManagementPage } from "./pages/ApplicationScaffoldManagementPage";
+export { ScaffoldReviewQueuePage } from "./pages/ScaffoldReviewQueuePage";
+export { ScaffoldReviewDrawer } from "./components/ScaffoldReviewDrawer";
+export { ScaffoldCategoryFormDrawer } from "./components/ScaffoldCategoryFormDrawer";
 export { AppSourceRemixDrawer } from "./components/AppSourceRemixDrawer";
-export { AppTemplatePanel } from "./components/AppTemplatePanel";
-export { AppTemplateCategoryPanel } from "./components/AppTemplateCategoryPanel";
+export { ApplicationScaffoldPanel } from "./components/ApplicationScaffoldPanel";
+export { ApplicationScaffoldCategoryPanel } from "./components/ApplicationScaffoldCategoryPanel";
 export {
   APPLICATION_CENTER_ACTION_PERMISSIONS,
   applicationCenterPermissionFor,
@@ -44,21 +44,20 @@ export type {
   AppCenterAnalyticsSnapshot,
 } from "./services/app-center-analytics";
 export {
-  createDeployTemplateAdminService,
-  getDeployTemplateAdminService,
-  isDeployTemplateAdminForbidden,
-  isDeployTemplateAdminUnavailable,
-  resetDeployTemplateAdminService,
-  TEMPLATE_CATEGORY_KEY_PATTERN,
-} from "./services/deploy-template-admin";
+  createApplicationScaffoldAdminService,
+  getApplicationScaffoldAdminService,
+  isApplicationScaffoldAdminForbidden,
+  isApplicationScaffoldAdminUnavailable,
+  resetApplicationScaffoldAdminService,
+  SCAFFOLD_CATEGORY_KEY_PATTERN,
+} from "./services/application-scaffold-admin";
 export type {
-  DeployTemplateAdminService,
-  DeployTemplateAdminStatus,
-  DeployTemplateAdminTransport,
-  DeployTemplateAdminUpdateInput,
-  DeployTemplateCategory,
-  DeployTemplateCategoryInput,
-} from "./services/deploy-template-admin";
+  ApplicationScaffoldAdminService,
+  ApplicationScaffoldAdminStatus,
+  ApplicationScaffoldAdminTransport,
+  ApplicationScaffoldAdminUpdateInput,
+  ScaffoldCategoryInput,
+} from "./services/application-scaffold-admin";
 export type { ApplicationCatalogView } from "./pages/ApplicationManagementPage";
 export { CLOUDROUTER_APPLICATION_CATALOG_I18N, useApplicationCatalogMessages } from "./i18n";
 export type { ApplicationCatalogMessages } from "./i18n";
@@ -294,18 +293,18 @@ export type {
   LinkedApplicationRef,
 } from "./types/application-integrations";
 export {
-  createDeployAppTemplateService,
-  getDeployAppTemplateService,
-  isDeployAppTemplateConflict,
-  isDeployAppTemplateForbidden,
-  isDeployAppTemplateUnavailable,
-  mapCategory as mapDeployTemplateCategory,
-  mapTemplate as mapDeployAppTemplate,
-  mapTemplatePage as mapDeployAppTemplatePage,
-  mapVersion as mapDeployAppTemplateVersion,
-  resetDeployAppTemplateService,
-} from "./services/deploy-app-templates";
-export type { DeployAppTemplateTransport } from "./services/deploy-app-templates";
+  createApplicationScaffoldService,
+  getApplicationScaffoldService,
+  isApplicationScaffoldConflict,
+  isApplicationScaffoldForbidden,
+  isApplicationScaffoldUnavailable,
+  mapCategory as mapScaffoldCategory,
+  mapScaffold as mapApplicationScaffold,
+  mapScaffoldPage as mapApplicationScaffoldPage,
+  mapScaffoldVersion as mapApplicationScaffoldVersion,
+  resetApplicationScaffoldService,
+} from "./services/application-scaffolds";
+export type { ApplicationScaffoldTransport } from "./services/application-scaffolds";
 export {
   classifyDeployAppSourceError,
   createDeployAppSourceService,
@@ -363,32 +362,32 @@ export {
   DEPLOY_APP_SOURCE_REPO_PROVIDERS,
 } from "./types/deploy-app-source";
 export {
-  DEPLOY_TEMPLATE_KEY_PATTERN,
-  DEPLOY_TEMPLATE_VERSION_PATTERN,
-  createEmptyTemplateDraft,
-  createTemplateDraft,
-  toTemplateCreateInput,
-  toTemplateUpdateInput,
-  validateTemplateDraft,
+  APPLICATION_SCAFFOLD_KEY_PATTERN,
+  APPLICATION_SCAFFOLD_VERSION_PATTERN,
+  createEmptyScaffoldDraft,
+  createScaffoldDraft,
+  toScaffoldCreateInput,
+  toScaffoldUpdateInput,
+  validateScaffoldDraft,
   validateVersionInput,
-} from "./services/deploy-template-form";
+} from "./services/application-scaffold-form";
 export type {
   DeployAppOption,
-  DeployAppTemplate,
-  DeployAppTemplateCategory,
-  DeployAppTemplateCreateInput,
-  DeployAppTemplateDraft,
-  DeployAppTemplateIssue,
-  DeployAppTemplateIssueCode,
-  DeployAppTemplateIssueField,
-  DeployAppTemplatePage,
-  DeployAppTemplatePricingModel,
-  DeployAppTemplateScreenshot,
-  DeployAppTemplateService,
-  DeployAppTemplateStatus,
-  DeployAppTemplateType,
-  DeployAppTemplateUpdateInput,
-  DeployAppTemplateVersion,
-  DeployAppTemplateVisibility,
-  DeployTemplateCategoryStatus,
-} from "./types/deploy-app-templates";
+  ApplicationScaffold,
+  ScaffoldCategory,
+  ApplicationScaffoldCreateInput,
+  ApplicationScaffoldDraft,
+  ApplicationScaffoldIssue,
+  ApplicationScaffoldIssueCode,
+  ApplicationScaffoldIssueField,
+  ApplicationScaffoldPage,
+  ApplicationScaffoldPricingModel,
+  ApplicationScaffoldScreenshot,
+  ApplicationScaffoldService,
+  ApplicationScaffoldStatus,
+  ApplicationScaffoldType,
+  ApplicationScaffoldUpdateInput,
+  ApplicationScaffoldVersion,
+  ApplicationScaffoldVisibility,
+  ScaffoldCategoryStatus,
+} from "./types/application-scaffolds";

@@ -236,6 +236,45 @@ export function summarizeApplicationIntegration(
 }
 
 /**
+ * Normalizes one authoritative `deploy_application_resource_link` row.
+ *
+ * Deploy may grow new resource kinds; an unknown kind is skipped instead of
+ * being rendered as an official account, mini program or payment account.
+ */
+export function mapApplicationResourceLink(
+  value: unknown,
+): ApplicationResourceLinkRecord | undefined {
+  const record = asRecord(value);
+  const id = readString(record.id);
+  const environment = readString(record.environment);
+  const resourceKind = readString(record.resourceKind ?? record.resource_kind);
+  const resourceRef = readString(record.resourceRef ?? record.resource_ref);
+  if (
+    !id
+    || !environment
+    || !resourceRef
+    || (resourceKind !== "official_account"
+      && resourceKind !== "mini_program"
+      && resourceKind !== "payment_account")
+  ) {
+    return undefined;
+  }
+  const providerCode = readString(record.providerCode ?? record.provider_code);
+  const updatedAt = readString(record.updatedAt ?? record.updated_at);
+  return {
+    bindingStatus: readString(record.bindingStatus ?? record.binding_status) ?? "ACTIVE",
+    environment,
+    id,
+    isDefault: readBoolean(record.isDefault ?? record.is_default) ?? false,
+    metadata: asRecord(record.metadata),
+    ...(providerCode === undefined ? {} : { providerCode }),
+    resourceKind,
+    resourceRef,
+    ...(updatedAt === undefined ? {} : { updatedAt }),
+  };
+}
+
+/**
  * Groups authoritative resource-link rows into the per-environment view model.
  *
  * The catalog account id the operator picked lives in `metadata.accountId`

@@ -1,0 +1,10 @@
+{
+  "modelVersion": "5.0.0",
+  "name": "cloudrouter_flutter_mobile",
+  "version": "0.1.0",
+  "description": "SDKWork CloudRouter Flutter HarmonyOS host application",
+  "dependencies": {
+    "@ohos/flutter_ohos": "file:./har/flutter.har"
+  },
+  "devDependencies": {}
+}

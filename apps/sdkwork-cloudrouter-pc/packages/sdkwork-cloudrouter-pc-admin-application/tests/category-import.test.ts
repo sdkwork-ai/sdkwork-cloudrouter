@@ -64,6 +64,6 @@ describe("category import planning", () => {
       }],
     };
     expect(planCategoryImport(deep, "appstore-categories").errors).toContain("depth-exceeded");
-    expect(planCategoryImport(document, "template-categories").errors).toContain("invalid-document");
+    expect(planCategoryImport(document, "scaffold-categories").errors).toContain("invalid-document");
   });
 });

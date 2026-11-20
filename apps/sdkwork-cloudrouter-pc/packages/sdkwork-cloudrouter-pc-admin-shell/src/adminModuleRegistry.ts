@@ -355,7 +355,7 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
   {
     moduleId: 'appCenter',
     // App-factory information architecture: one overview, then the app,
-    // store-governance, and template groups. The groups keep the menu legible
+    // store-governance, and scaffold groups. The groups keep the menu legible
     // as more capabilities (reviews, publishers, analytics) are added.
     items: [
       itemBlock({ path: '/admin/applications', labelKey: 'admin.menu.appCenter.overview', icon: LayoutDashboard }),
@@ -376,10 +376,10 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
         itemBlock({ path: '/admin/applications/moderation', labelKey: 'admin.menu.appCenter.moderation', icon: ShieldCheck }),
         itemBlock({ path: '/admin/applications/appeals', labelKey: 'admin.menu.appCenter.appeals', icon: FileClock }),
       ]),
-      groupBlock('admin.menu.appCenter.templatesGroup', [
-        itemBlock({ path: '/admin/applications/templates', labelKey: 'admin.menu.appCenter.templates', icon: Shapes }),
-        itemBlock({ path: '/admin/applications/template-reviews', labelKey: 'admin.menu.appCenter.templateReviews', icon: ShieldCheck }),
-        itemBlock({ path: '/admin/applications/template-categories', labelKey: 'admin.menu.appCenter.templateCategories', icon: FolderTree }),
+      groupBlock('admin.menu.appCenter.scaffoldsGroup', [
+        itemBlock({ path: '/admin/applications/templates', labelKey: 'admin.menu.appCenter.scaffolds', icon: Shapes }),
+        itemBlock({ path: '/admin/applications/scaffold-reviews', labelKey: 'admin.menu.appCenter.scaffoldReviews', icon: ShieldCheck }),
+        itemBlock({ path: '/admin/applications/scaffold-categories', labelKey: 'admin.menu.appCenter.scaffoldCategories', icon: FolderTree }),
       ]),
       groupBlock('admin.menu.appCenter.analyticsGroup', [
         itemBlock({ path: '/admin/applications/analytics', labelKey: 'admin.menu.appCenter.analytics', icon: BarChart3 }),

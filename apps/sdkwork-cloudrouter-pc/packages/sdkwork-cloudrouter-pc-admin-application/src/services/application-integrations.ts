@@ -10,7 +10,8 @@
  *   (`deploy_application_resource_link`). The pre-migration binding rows in the
  *   same document are read once as a seed and never rewritten.
  * - IAM service: list the unified `iam_oauth_resource_account` rows of kind
- *   `official_account` / `mini_program`.
+ *   `official_account` / `mini_program`, and probe a linked mini program's
+ *   sign-in configuration through `miniProgramLoginChecks.create`.
  * - Payment backend SDK: list provider accounts and their environment,
  *   capability and metadata facts.
  *
@@ -30,6 +31,7 @@ import type {
   ApplicationIntegrationSaveInput,
   ApplicationIntegrationSaveResult,
   ApplicationIntegrationService,
+  ApplicationMiniProgramLoginCheck,
   ApplicationPaymentAccountOption,
   ApplicationResourceLinkRecord,
   ChannelAccountKind,
@@ -45,6 +47,7 @@ import {
   applicationIntegrationBindingsFromResourceLinks,
   buildResourceLinkChangeSet,
   linkApplication,
+  mapApplicationResourceLink,
   readApplicationIntegrationDocument,
   unlinkApplication,
   writeApplicationIntegrationAnchor,
@@ -161,6 +164,15 @@ export function createApplicationIntegrationService(): ApplicationIntegrationSer
       const client = getSdkworkDeploymentsAppSdkClient();
       const links = await listAllResourceLinks(client, deployAppId);
       return applicationIntegrationBindingsFromResourceLinks(links, legacyMetadata);
+    },
+
+    async checkMiniProgramLogin(channelAccountId) {
+      const service = getApplicationCatalogIamService();
+      const payload = await service.iam.oauth.resourceAccounts.miniProgramLoginChecks.create(
+        channelAccountId,
+        {},
+      );
+      return mapMiniProgramLoginCheck(payload);
     },
 
     async loadIamApplicationType(deployApplicationId, deployApplicationUuid) {
@@ -335,7 +347,7 @@ async function listAllResourceLinks(
       pageSize: RESOURCE_LINK_PAGE_SIZE,
     });
     for (const item of result.items ?? []) {
-      const link = mapResourceLink(item);
+      const link = mapApplicationResourceLink(item);
       if (link) {
         links.push(link);
       }
@@ -347,38 +359,40 @@ async function listAllResourceLinks(
   return links;
 }
 
-function mapResourceLink(value: unknown): ApplicationResourceLinkRecord | undefined {
-  const record = asRecord(value);
-  const id = readString(record.id);
-  const environment = readString(record.environment);
-  const resourceKind = readString(record.resourceKind);
-  const resourceRef = readString(record.resourceRef);
-  if (
-    !id
-    || !environment
-    || !resourceRef
-    || (resourceKind !== "official_account"
-      && resourceKind !== "mini_program"
-      && resourceKind !== "payment_account")
-  ) {
-    return undefined;
-  }
-  return {
-    bindingStatus: readString(record.bindingStatus) ?? "ACTIVE",
-    environment,
-    id,
-    isDefault: readBoolean(record.isDefault) ?? false,
-    metadata: asRecord(record.metadata),
-    ...(readString(record.providerCode) === undefined ? {} : { providerCode: readString(record.providerCode) }),
-    resourceKind,
-    resourceRef,
-    ...(readString(record.updatedAt) === undefined ? {} : { updatedAt: readString(record.updatedAt) }),
-  };
-}
-
 /** `true` when a metadata write would not change the stored document. */
 function sameMetadata(before: unknown, after: unknown): boolean {
   return JSON.stringify(before) === JSON.stringify(after);
+}
+
+/**
+ * Normalizes one IAM mini program login probe.
+ *
+ * The backend records a diagnostic run even when the provider probe fails, so
+ * the HTTP call succeeding says nothing about the verdict; only `status` does.
+ */
+export function mapMiniProgramLoginCheck(payload: unknown): ApplicationMiniProgramLoginCheck {
+  const record = readItem(payload);
+  const status = (readString(record.status) ?? "").trim().toLowerCase();
+  const summary = readString(record.resultSummary ?? record.result_summary);
+  const checkedAt = readString(
+    record.finishedAt ?? record.finished_at ?? record.createdAt ?? record.created_at,
+  );
+  return {
+    status: status === "succeeded" || status === "passed" || status === "ok" ? "succeeded" : "failed",
+    ...(summary === undefined ? {} : { summary }),
+    ...(checkedAt === undefined ? {} : { checkedAt }),
+  };
+}
+
+/** Unwraps one SDKWork envelope item tolerantly across transport hops. */
+function readItem(payload: unknown): Record<string, unknown> {
+  const record = asRecord(payload);
+  const data = asRecord(record.data);
+  const item = asRecord(data.item ?? record.item);
+  if (Object.keys(item).length > 0) {
+    return item;
+  }
+  return Object.keys(data).length > 0 ? data : record;
 }
 
 function readStatus(error: unknown): number | undefined {

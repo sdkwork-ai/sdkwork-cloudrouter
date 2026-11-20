@@ -113,6 +113,22 @@ export interface ApplicationChannelAccountBinding {
   domainVerifyStatus?: string;
 }
 
+/**
+ * Result of one mini program login probe.
+ *
+ * IAM exposes `miniProgramLoginChecks.create`, which runs the provider's own
+ * configuration probe (AppID / AppSecret / surface wiring) and records a
+ * diagnostic run. A failed probe is still a successful HTTP call, so the UI must
+ * read `status` instead of treating the request as the verdict.
+ */
+export interface ApplicationMiniProgramLoginCheck {
+  status: "failed" | "succeeded";
+  /** Provider- or IAM-supplied explanation of the probe outcome. */
+  summary?: string;
+  /** When IAM finished the probe, ISO-8601. */
+  checkedAt?: string;
+}
+
 /** One bound payment provider account. */
 export interface ApplicationPaymentAccountBinding {
   id: string;
@@ -315,6 +331,15 @@ export interface ApplicationIntegrationService {
     scope: IntegrationAccountScope,
     query: IntegrationAccountQuery,
   ): Promise<IntegrationAccountPage<ApplicationPaymentAccountOption>>;
+  /**
+   * Probes one linked mini program's sign-in configuration through IAM.
+   *
+   * Optional: older hosts and test doubles keep working without it, and the
+   * drawer only offers the action when the transport implements it. A probe
+   * failure (including a provider-side rejection) resolves with
+   * `status: "failed"`; only a transport/permission failure rejects.
+   */
+  checkMiniProgramLogin?(channelAccountId: string): Promise<ApplicationMiniProgramLoginCheck>;
   loadEnvironments(deployAppId: string, fallbackEnvironment?: string): Promise<readonly ApplicationEnvironmentOption[]>;
   /**
    * Loads one application's account bindings from the authoritative

@@ -245,8 +245,26 @@ export interface ApplicationCatalogMessages {
     };
     channel: {
       accountType: string;
+      /** Localized `provider_account_type` values. */
+      accountTypes: {
+        enterprise: string;
+        government: string;
+        media: string;
+        organization: string;
+        personal: string;
+        test: string;
+      };
       appId: string;
+      /** Localized `authorization_status` values. */
+      authorizationStatuses: {
+        authorized: string;
+        expired: string;
+        revoked: string;
+        unauthorized: string;
+      };
+      authStatus: string;
       availableTitle: string;
+      bindingsTitle: string;
       clear: string;
       currentTitle: string;
       disabled: string;
@@ -254,12 +272,21 @@ export interface ApplicationCatalogMessages {
       emptyAvailable: string;
       emptyCurrent: string;
       enabled: string;
+      loginCheckAction: string;
+      loginCheckAt: string;
+      loginCheckError: string;
+      loginCheckFailed: string;
+      loginCheckForbidden: string;
+      loginCheckNotFound: string;
+      loginCheckPassed: string;
+      loginChecking: string;
       provider: string;
       searchPlaceholder: string;
       select: string;
       selected: string;
       status: string;
       unauthorized: string;
+      unsaved: string;
     };
     drawer: {
       anchor: {
@@ -772,22 +799,22 @@ export interface ApplicationCatalogMessages {
     loadError: string;
     inaccessible: string;
     kpi: {
-      pendingTemplates: string;
+      pendingScaffolds: string;
       pendingModeration: string;
       publishers: string;
       listings: string;
       collections: string;
-      templateCategories: string;
+      scaffoldCategories: string;
     };
     structureTitle: string;
     quickTitle: string;
     failureSource: {
-      templates: string;
+      scaffolds: string;
       moderation: string;
       publishers: string;
       listings: string;
       collections: string;
-      templateCategories: string;
+      scaffoldCategories: string;
     };
   };
   loadError: string;
@@ -902,13 +929,13 @@ export interface ApplicationCatalogMessages {
     unavailable: string;
     kpi: {
       applications: string;
-      templates: string;
+      scaffolds: string;
       categories: string;
       storeCategories: string;
     };
     kpiHint: {
       applications: string;
-      templates: string;
+      scaffolds: string;
       categories: string;
       storeCategories: string;
     };
@@ -918,18 +945,18 @@ export interface ApplicationCatalogMessages {
       applications: string;
       moderation: string;
       storeCategories: string;
-      templates: string;
-      templateCategories: string;
+      scaffolds: string;
+      scaffoldCategories: string;
     };
     recentTitle: string;
     recentEmpty: string;
     recentError: string;
     pendingTitle: string;
     pendingEmpty: string;
-    pending: { templates: string; moderation: string };
+    pending: { scaffolds: string; moderation: string };
     viewAll: string;
   };
-  templates: {
+  scaffolds: {
     title: string;
     description: string;
     create: string;
@@ -946,14 +973,34 @@ export interface ApplicationCatalogMessages {
     statuses: Record<"DRAFT" | "PENDING_REVIEW" | "PUBLISHED" | "REJECTED" | "DISABLED", string>;
     visibility: Record<"PUBLIC" | "PRIVATE", string>;
     pricing: Record<"FREE" | "PAID", string>;
+    types: Record<"APP" | "PPT" | "VIDEO", string>;
     columns: {
-      template: string;
+      scaffold: string;
+      type: string;
       status: string;
       visibility: string;
       pricing: string;
       installs: string;
       updatedAt: string;
       actions: string;
+    };
+    installDrawer: {
+      title: string;
+      description: string;
+      defaultName: string;
+      sourceHint: string;
+      name: string;
+      namePlaceholder: string;
+      nameRequired: string;
+      slug: string;
+      slugPlaceholder: string;
+      slugHint: string;
+      create: string;
+      creating: string;
+      cancel: string;
+      error: string;
+      forbidden: string;
+      unavailable: string;
     };
     actions: {
       edit: string;
@@ -985,9 +1032,9 @@ export interface ApplicationCatalogMessages {
       category: string;
       categoryPlaceholder: string;
       categoryHint: string;
-      templateKey: string;
-      templateKeyPlaceholder: string;
-      templateKeyHint: string;
+      scaffoldKey: string;
+      scaffoldKeyPlaceholder: string;
+      scaffoldKeyHint: string;
       displayName: string;
       displayNamePlaceholder: string;
       summary: string;
@@ -1017,8 +1064,8 @@ export interface ApplicationCatalogMessages {
       validation: Record<
         | "app-required"
         | "category-required"
-        | "template-key-required"
-        | "template-key-invalid"
+        | "scaffold-key-required"
+        | "scaffold-key-invalid"
         | "display-name-required"
         | "display-name-too-long"
         | "summary-required"
@@ -1075,7 +1122,7 @@ export interface ApplicationCatalogMessages {
       };
     };
   };
-  templateCategories: {
+  scaffoldCategories: {
     title: string;
     description: string;
     countTemplate: string;

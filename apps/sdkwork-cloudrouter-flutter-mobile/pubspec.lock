@@ -324,7 +324,7 @@ packages:
     source: hosted
     version: "1.1.1"
   sdkwork_agents_app_sdk:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       path: "../../../sdkwork-agents/sdks/sdkwork-agents-app-sdk/sdkwork-agents-app-sdk-flutter/generated/server-openapi"
       relative: true
@@ -338,7 +338,7 @@ packages:
     source: path
     version: "0.1.0"
   sdkwork_agents_flutter_mobile_conversation:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       path: "../../../sdkwork-agents/apps/sdkwork-agents-flutter-mobile/packages/sdkwork_agents_flutter_mobile_conversation"
       relative: true

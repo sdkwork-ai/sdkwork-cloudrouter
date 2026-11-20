@@ -8,8 +8,8 @@ import {
   loadAppCenterAnalytics,
   type AppCenterAnalyticsResult,
 } from "../services/app-center-analytics";
-import { getDeployAppTemplateService } from "../services/deploy-app-templates";
-import { getDeployTemplateAdminService } from "../services/deploy-template-admin";
+import { getApplicationScaffoldService } from "../services/application-scaffolds";
+import { getApplicationScaffoldAdminService } from "../services/application-scaffold-admin";
 import { getAppStoreModerationService } from "../services/appstore-moderation";
 import { getAppStorePublisherService } from "../services/appstore-publishers";
 import { getAppStoreListingService } from "../services/appstore-listings";
@@ -31,8 +31,8 @@ export function AppCenterAnalyticsPage() {
     let cancelled = false;
     setState({ status: "loading" });
     void loadAppCenterAnalytics({
-      templates: getDeployAppTemplateService(),
-      templateAdmin: getDeployTemplateAdminService(),
+      scaffolds: getApplicationScaffoldService(),
+      scaffoldAdmin: getApplicationScaffoldAdminService(),
       moderation: getAppStoreModerationService(),
       publishers: getAppStorePublisherService(),
       listings: getAppStoreListingService(),
@@ -98,12 +98,12 @@ export function AppCenterAnalyticsPage() {
       {snapshot ? (
         <>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            <Kpi label={copy.kpi.pendingTemplates} value={snapshot.templatesByStatus.PENDING_REVIEW} to="/admin/applications/template-reviews" />
+            <Kpi label={copy.kpi.pendingScaffolds} value={snapshot.scaffoldsByStatus.PENDING_REVIEW} to="/admin/applications/scaffold-reviews" />
             <Kpi label={copy.kpi.pendingModeration} value={snapshot.moderationPending} to="/admin/applications/moderation" />
             <Kpi label={copy.kpi.publishers} value={snapshot.publishersTotal} to="/admin/applications/publishers" />
             <Kpi label={copy.kpi.listings} value={snapshot.listingsTotal} to="/admin/applications/listings" />
             <Kpi label={copy.kpi.collections} value={snapshot.collectionsTotal} to="/admin/applications/collections" />
-            <Kpi label={copy.kpi.templateCategories} value={snapshot.templateCategoriesTotal} to="/admin/applications/template-categories" />
+            <Kpi label={copy.kpi.scaffoldCategories} value={snapshot.scaffoldCategoriesTotal} to="/admin/applications/scaffold-categories" />
           </div>
 
           <section className="rounded-[var(--sdk-radius-card)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] p-4">
@@ -114,9 +114,9 @@ export function AppCenterAnalyticsPage() {
                   className="flex items-center justify-between rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-default)] px-3 py-2 text-sm"
                   key={status}
                 >
-                  <span className="text-[var(--sdk-color-text-secondary)]">{messages.templates.statuses[status]}</span>
+                  <span className="text-[var(--sdk-color-text-secondary)]">{messages.scaffolds.statuses[status]}</span>
                   <span className="font-semibold text-[var(--sdk-color-text-primary)]">
-                    {snapshot.templatesByStatus[status]}
+                    {snapshot.scaffoldsByStatus[status]}
                   </span>
                 </div>
               ))}
@@ -126,7 +126,7 @@ export function AppCenterAnalyticsPage() {
           <section className="rounded-[var(--sdk-radius-card)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] p-4">
             <h3 className="text-sm font-semibold text-[var(--sdk-color-text-primary)]">{copy.quickTitle}</h3>
             <div className="mt-3 flex flex-wrap gap-2">
-              <QuickLink to="/admin/applications/template-reviews" label={copy.kpi.pendingTemplates} />
+              <QuickLink to="/admin/applications/scaffold-reviews" label={copy.kpi.pendingScaffolds} />
               <QuickLink to="/admin/applications/moderation" label={copy.kpi.pendingModeration} />
               <QuickLink to="/admin/applications/publishers" label={copy.kpi.publishers} />
               <QuickLink to="/admin/applications/featured" label={messages.featured.title} />

@@ -617,6 +617,7 @@ injection evidence from the release candidate.
 
 ## 9. Architecture Decision Index
 
+- [ADR-20261121: WeChat channel dual mode](../decisions/ADR-20261121-wechat-channel-dual-mode.md)
 - [ADR-20260815: Composable pricing and billing](../decisions/ADR-20260815-composable-pricing-and-billing.md)
 - [ADR-20260728: Standardize upstream supplier routing](../decisions/ADR-20260728-standardize-upstream-supplier-routing.md)
 - [ADR-20260730: Own Chat runtime PostgreSQL authority](../decisions/ADR-20260730-own-chat-runtime-postgres-authority.md) (superseded for the HTTP projection)
@@ -749,6 +750,7 @@ Each remains the detail authority for its topic; this index is the discoverabili
 | [TECH-2026-11-14-payment-records-query-capability.md](TECH-2026-11-14-payment-records-query-capability.md) | Payment Records Query Capability |
 | [TECH-2026-11-18-admin-enterprise-center.md](TECH-2026-11-18-admin-enterprise-center.md) | Admin Enterprise Center (sdkwork-company composition) |
 | [TECH-2026-11-18-admin-product-center-reinstatement.md](TECH-2026-11-18-admin-product-center-reinstatement.md) | Admin Product Center Reinstatement |
+| [TECH-2026-11-21-wechat-channel-dual-mode-design.md](TECH-2026-11-21-wechat-channel-dual-mode-design.md) | WeChat channel dual mode design |
 
 ## 11. Verification
 

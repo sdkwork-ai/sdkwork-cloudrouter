@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.app.store-publishing",
+  "marketId": "HUAWEI_APPGALLERY",
+  "displayName": "Huawei AppGallery",
+  "enabled": true,
+  "platforms": ["android", "harmony"],
+  "regions": {
+    "unitedStates": true,
+    "chinaMainland": true,
+    "note": "AppGallery is the China Android and HarmonyOS distribution lane and also ships in the US and EU storefronts."
+  },
+  "identifiers": {
+    "applicationId": "com.sdkwork.cloudrouter.mobile",
+    "harmonyBundleName": "com.sdkwork.cloudrouter.mobile",
+    "appId": null
+  },
+  "listing": {
+    "defaultLocale": "zh-CN",
+    "locales": {
+      "zh-CN": {
+        "name": "SDKWork CloudRouter",
+        "shortDescription": "算力与模型，一站式上云",
+        "description": "在 SDKWork CloudRouter 移动端查看会员与 Token Bank 算力额度、管理模型路由与 API 密钥、掌握用量与账单，并与 AI 助手对话。",
+        "keywords": ["云算力", "模型路由", "Token", "AI", "API 密钥"]
+      },
+      "en-US": {
+        "name": "SDKWork CloudRouter",
+        "shortDescription": "Models and compute, one app",
+        "description": "Track membership and Token Bank compute credits, manage model routing and API keys, review usage and billing, and chat with AI assistants from the SDKWork CloudRouter mobile app.",
+        "keywords": ["cloud compute", "model routing", "token", "ai", "api keys"]
+      }
+    },
+    "categories": {
+      "primary": "PRODUCTIVITY",
+      "secondary": "TOOLS"
+    },
+    "supportUrl": "https://sdkwork.com/support",
+    "privacyPolicyUrl": "https://sdkwork.com/privacy",
+    "marketingUrl": "https://sdkwork.com/apps/sdkwork-cloudrouter"
+  },
+  "release": {
+    "track": "REVIEW",
+    "releaseType": "MANUAL",
+    "phasedRelease": false,
+    "rolloutPercent": 100,
+    "countries": ["CN", "HK", "TW", "SG", "MY", "TH", "US", "GB", "DE", "FR"],
+    "minSupportedVersion": "0.1.0"
+  },
+  "submission": {
+    "mode": "automated",
+    "transport": "appgallery-connect-api",
+    "credentialRefs": {
+      "clientId": "env:SDKWORK_HUAWEI_APPGALLERY_CLIENT_ID",
+      "clientSecret": "env:SDKWORK_HUAWEI_APPGALLERY_CLIENT_SECRET"
+    },
+    "targets": [
+      {
+        "id": "android",
+        "platform": "android",
+        "packageFormat": "AAB",
+        "artifactName": "android.aab"
+      },
+      {
+        "id": "harmony",
+        "platform": "harmony",
+        "packageFormat": "HAP",
+        "artifactName": "harmony.hap"
+      }
+    ]
+  },
+  "media": {
+    "icon": "assets/media/store/icons/huawei/app-icon-216.png",
+    "screenshots": [
+      {
+        "root": "assets/media/store/screenshots/android",
+        "platform": "APP_ANDROID",
+        "deviceClass": "ANDROID_PHONE",
+        "displayType": "ANDROID_PHONE"
+      },
+      {
+        "root": "assets/media/store/screenshots/harmony",
+        "platform": "APP_HARMONY",
+        "deviceClass": "HARMONY_PHONE",
+        "displayType": "HARMONY_PHONE"
+      }
+    ]
+  }
+}

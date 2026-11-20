@@ -106,7 +106,7 @@ From the repository root, run `node ../sdkwork-specs/tools/check-agent-workflow-
 
 Run `node --test tests/flutter-mobile-surface-contract.test.mjs` and the SDKWork frontend composition checker.
 
-No Flutter/Dart toolchain is installed in this workspace yet. `flutter analyze` and `flutter test` are declared as a pending integration step in `agent.app.config.json#artifacts.installConfig.metadata`; until that toolchain is available, verification is limited to the Node contract test and the repository gates.
+A Flutter/Dart toolchain is available and must be used for this root: `flutter analyze`, `flutter test`, and `flutter build appbundle` are the local gates. iOS packages require macOS/Xcode and HarmonyOS packages require the OpenHarmony Flutter fork plus DevEco; those two lanes are host-bound, so keep their projects, manifest platforms, and store lanes verified with `node scripts/check-platform-host.mjs` and `node scripts/release-preflight.mjs` until a matching build host is available.
 
 ## Agent Execution Rules
 

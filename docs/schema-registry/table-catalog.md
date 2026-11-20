@@ -82,9 +82,6 @@ Generated from `docs/schema-registry/sdkwork-cloudrouter.tables.yaml`. Do not ed
 | --- | --- | --- | --- | --- |
 | `appstore_app` | Referenced appstore entity for appstore app; owned by a dependency registry. | `appstore_entity` | `appstore-platform` | no |
 | `appstore_app_dependency` | Referenced appstore entity for appstore app dependency; owned by a dependency registry. | `appstore_entity` | `appstore-platform` | no |
-| `appstore_app_template` | Referenced appstore entity for appstore app template; owned by a dependency registry. | `appstore_entity` | `appstore-platform` | no |
-| `appstore_app_template_usage` | Referenced appstore entity for appstore app template usage; owned by a dependency registry. | `appstore_entity` | `appstore-platform` | no |
-| `appstore_app_template_version` | Referenced appstore entity for appstore app template version; owned by a dependency registry. | `appstore_entity` | `appstore-platform` | no |
 | `appstore_catalog_chart_snapshot` | Referenced appstore entity for appstore catalog chart snapshot; owned by a dependency registry. | `appstore_entity` | `appstore-platform` | no |
 | `appstore_catalog_collection` | Referenced appstore entity for appstore catalog collection; owned by a dependency registry. | `appstore_entity` | `appstore-platform` | no |
 | `appstore_catalog_collection_item` | Referenced appstore entity for appstore catalog collection item; owned by a dependency registry. | `appstore_entity` | `appstore-platform` | no |

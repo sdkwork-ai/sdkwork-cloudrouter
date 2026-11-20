@@ -122,6 +122,18 @@ entries:
     status: proposed
     owner: cloudrouter-platform
     title: API reference documents as public host assets
+  - id: ADR-20261121
+    path: docs/architecture/decisions/ADR-20261121-wechat-channel-dual-mode.md
+    kind: adr
+    status: accepted
+    owner: cloudrouter-platform
+    title: WeChat channel dual mode
+  - id: TECH-2026-1121
+    path: docs/architecture/tech/TECH-2026-11-21-wechat-channel-dual-mode-design.md
+    kind: tech
+    status: draft
+    owner: cloudrouter-platform
+    title: WeChat channel dual mode design
   - id: MIG-2026-0002
     path: docs/migrations/MIG-2026-0002-composable-pricing-billing.md
     kind: migration

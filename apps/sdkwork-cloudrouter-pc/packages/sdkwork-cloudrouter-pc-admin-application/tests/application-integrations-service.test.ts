@@ -29,6 +29,9 @@ const mocks = vi.hoisted(() => ({
       oauth: {
         resourceAccounts: {
           list: vi.fn(),
+          miniProgramLoginChecks: {
+            create: vi.fn(),
+          },
         },
       },
       tenantApplications: {
@@ -615,6 +618,38 @@ describe("authoritative resource-link transport", () => {
     expect(mocks.iam.iam.tenantApplications.list).toHaveBeenCalledWith("tenant-1", {
       page: 1,
       page_size: 200,
+    });
+  });
+
+  it("runs the IAM mini program login probe and normalizes its verdict", async () => {
+    mocks.iam.iam.oauth.resourceAccounts.miniProgramLoginChecks.create.mockResolvedValue({
+      finishedAt: "2026-11-20T08:00:00Z",
+      id: "iamodr-1",
+      resultSummary: "external configuration probe passed",
+      runKind: "mini_program_login_check",
+      status: "succeeded",
+    });
+
+    const service = createApplicationIntegrationService();
+    await expect(service.checkMiniProgramLogin?.("ra-mini")).resolves.toEqual({
+      checkedAt: "2026-11-20T08:00:00Z",
+      status: "succeeded",
+      summary: "external configuration probe passed",
+    });
+    expect(mocks.iam.iam.oauth.resourceAccounts.miniProgramLoginChecks.create)
+      .toHaveBeenCalledWith("ra-mini", {});
+  });
+
+  it("reports a failed mini program login probe as a verdict, not a transport error", async () => {
+    mocks.iam.iam.oauth.resourceAccounts.miniProgramLoginChecks.create.mockResolvedValue({
+      resultSummary: "invalid appsecret",
+      status: "failed",
+    });
+
+    const service = createApplicationIntegrationService();
+    await expect(service.checkMiniProgramLogin?.("ra-mini")).resolves.toEqual({
+      status: "failed",
+      summary: "invalid appsecret",
     });
   });
 

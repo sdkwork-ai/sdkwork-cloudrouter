@@ -41,6 +41,10 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  sdkwork_agents_app_sdk:
+    path: ../../../sdkwork-agents/sdks/sdkwork-agents-app-sdk/sdkwork-agents-app-sdk-flutter/generated/server-openapi
+  sdkwork_agents_flutter_mobile_conversation:
+    path: ../../../sdkwork-agents/apps/sdkwork-agents-flutter-mobile/packages/sdkwork_agents_flutter_mobile_conversation
 
 dependency_overrides:
   sdkwork_common_flutter:

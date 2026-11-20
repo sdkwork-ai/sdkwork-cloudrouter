@@ -107,9 +107,9 @@ const IamOrganizationApplicationsAdmin = lazyAdminRoute(() => import('@sdkwork/c
 const ApplicationCenterAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterApplicationCenterPage');
 const AppCenterOverviewAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'AppCenterOverviewPage');
 const AppCenterAnalyticsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'AppCenterAnalyticsPage');
-const AppTemplateManagementAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'AppTemplateManagementPage');
-const AppTemplateCategoryAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'AppTemplateCategoryPage');
-const TemplateReviewQueueAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'TemplateReviewQueuePage');
+const ApplicationScaffoldManagementAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'ApplicationScaffoldManagementPage');
+const ApplicationScaffoldCategoryAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'ApplicationScaffoldCategoryPage');
+const ScaffoldReviewQueueAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'ScaffoldReviewQueuePage');
 const AppModerationAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'AppModerationPage');
 const AppAppealsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'AppAppealsPage');
 const AppPublishersAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'AppPublishersPage');
@@ -347,9 +347,15 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   // sidebar is the single left menu. The wildcard keeps one catalog instance
   // mounted while its view changes.
   route('applications', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-iam-backend-sdk', 'sdkwork-deployments-app-sdk', 'sdkwork-appstore-app-sdk', 'sdkwork-appstore-backend-sdk'], 'cloudrouter.admin.access', <AppCenterOverviewAdmin />),
-  route('applications/templates', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-deployments-app-sdk'], 'cloudrouter.admin.access', <AppTemplateManagementAdmin />),
-  route('applications/template-reviews', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-deployments-app-sdk', 'sdkwork-deployments-backend-sdk'], 'cloudrouter.admin.access', <TemplateReviewQueueAdmin />),
-  route('applications/template-categories', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-deployments-app-sdk'], 'cloudrouter.admin.access', <AppTemplateCategoryAdmin />),
+  // The operator URL named in the refactor request renders the scaffold
+  // library directly, and the scaffold-vocabulary URLs remain canonical for
+  // links and the shell menu. Both paths resolve to the same surface.
+  route('applications/templates', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-deployments-app-sdk'], 'cloudrouter.admin.access', <ApplicationScaffoldManagementAdmin />),
+  route('applications/template-reviews', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-deployments-app-sdk', 'sdkwork-deployments-backend-sdk'], 'cloudrouter.admin.access', <ScaffoldReviewQueueAdmin />),
+  route('applications/template-categories', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-deployments-app-sdk'], 'cloudrouter.admin.access', <ApplicationScaffoldCategoryAdmin />),
+  route('applications/scaffolds', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-deployments-app-sdk'], 'cloudrouter.admin.access', <ApplicationScaffoldManagementAdmin />),
+  route('applications/scaffold-reviews', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-deployments-app-sdk', 'sdkwork-deployments-backend-sdk'], 'cloudrouter.admin.access', <ScaffoldReviewQueueAdmin />),
+  route('applications/scaffold-categories', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-deployments-app-sdk'], 'cloudrouter.admin.access', <ApplicationScaffoldCategoryAdmin />),
   route('applications/moderation', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-appstore-backend-sdk'], 'cloudrouter.admin.access', <AppModerationAdmin />),
   route('applications/appeals', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-appstore-backend-sdk'], 'cloudrouter.admin.access', <AppAppealsAdmin />),
   route('applications/publishers', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-appstore-backend-sdk'], 'cloudrouter.admin.access', <AppPublishersAdmin />),

@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.app-assets.capture",
+  "appKey": "cloudrouter-flutter-mobile",
+  "appVersion": "0.1.0",
+  "surfaces": [
+    {
+      "id": "ios",
+      "kind": "ui",
+      "tool": "flutter-widget-test",
+      "platform": "APP_IOS",
+      "deviceClass": "IPHONE",
+      "displayType": "IPHONE_6_9",
+      "viewport": { "width": 440, "height": 956, "deviceScaleFactor": 3 },
+      "locales": ["zh-CN"],
+      "theme": "light",
+      "readySelector": "flutter:flutter-app-settled"
+    },
+    {
+      "id": "android",
+      "kind": "ui",
+      "tool": "flutter-widget-test",
+      "platform": "APP_ANDROID",
+      "deviceClass": "ANDROID_PHONE",
+      "displayType": "ANDROID_PHONE",
+      "viewport": { "width": 540, "height": 960, "deviceScaleFactor": 2 },
+      "locales": ["zh-CN"],
+      "theme": "light",
+      "readySelector": "flutter:flutter-app-settled"
+    },
+    {
+      "id": "harmony",
+      "kind": "ui",
+      "tool": "flutter-widget-test",
+      "platform": "APP_HARMONY",
+      "deviceClass": "HARMONY_PHONE",
+      "displayType": "HARMONY_PHONE",
+      "viewport": { "width": 540, "height": 960, "deviceScaleFactor": 2 },
+      "locales": ["zh-CN"],
+      "theme": "light",
+      "readySelector": "flutter:flutter-app-settled"
+    },
+    {
+      "id": "mobile",
+      "kind": "ui",
+      "tool": "flutter-widget-test",
+      "platform": "APP",
+      "deviceClass": "MOBILE",
+      "displayType": "MOBILE_9_16",
+      "viewport": { "width": 390, "height": 844, "deviceScaleFactor": 3 },
+      "locales": ["zh-CN"],
+      "theme": "light",
+      "readySelector": "flutter:flutter-app-settled"
+    }
+  ],
+  "capture": {
+    "tool": "flutter-widget-test",
+    "command": "node scripts/capture-store-media.mjs",
+    "outputRoot": ".sdkwork/tmp/assets-capture",
+    "locales": ["zh-CN"],
+    "freezeAnimations": true,
+    "seed": "cloudrouter-flutter-store-media"
+  }
+}

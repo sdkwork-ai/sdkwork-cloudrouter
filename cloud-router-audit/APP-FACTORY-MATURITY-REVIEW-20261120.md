@@ -318,6 +318,35 @@
 
 **明确未做（记录在案，非安全漏洞）**：IAM 19 个 API 契约改名（破坏已发布 SDK，需版本治理）；控制台工厂页面（产品功能，§13 已按 reviewed 日期登记）；`admin-core/package.json` 未用依赖清理（需同步 lockfile）；IAM 全仓 rustfmt（工具链版本差异）。
 
+### 7.17 收尾轮：四项遗留全部落地（同日）
+
+**① IAM API 契约迁移（19 个唯一 findings → 0）**
+
+| 类别 | 处理 |
+| --- | --- |
+| 9 × tag 重复 | `iam.oauth.*` 去前缀 → `oauth.*`（tag `iam` 仍决定 SDK 根，生成路径不变） |
+| 3 × create-status | `authorizations.create`、`completions`、`desktopSessions.create` 改为 `201` + `data.item`；materializer 用 `promoteCreateResponse` 把原 `data` 包进 `item`，SDK 返回值保持不变 |
+| 1 × command-status | `sessions.current.logout` 改 `200` + `data.accepted` |
+| 6 × action | `providerAccounts.resolve.retrieve`、`providerAccounts.default`、`providerAccounts.credentials.reveal.retrieve`；微信支付 callback/start/cashier 标为 external wire |
+| 版本治理 | 新增 `sdkwork-iam/apis/CHANGELOG.md`，逐条记录破坏性变更与 pre-launch no-compatibility approval；服务 facade/adapter/控制台/契约目录/测试同步 |
+
+验证：IAM API pattern **0**、标准契约 **175/175**、路由测试 40+51+31、IAM PC `pnpm typecheck` **0 错误**。
+
+**② 控制台工厂入口**
+
+- 新增 `console-publishing/src/service/app-factory.ts`：readiness / uninstall / remix / promotions 四个行为统一走生成的 app client；
+- 新增 `AppFactoryPanel`（挂载在应用详情抽屉）：六环节就绪度（状态 + 阻塞环节）、前向卸载（确认 + 结果）、再创作开关、环境选择 + 提升历史 + 提升表单（含 `approve`/`approverUserId`/`note`）+ 20 个 i18n 键（zh/en）；
+- **顺带修复契约缺口**：`apps.readiness`/`apps.uninstall` 此前只在 axum 注册、未写入 app-api authority，已补路径与 schema；`environment promotions` 的 operationId 与 environment list/create 重复，改为 `appEnvironmentPromotions.list/create`；
+- 验证：服务单测 4/4；PC typecheck 仍 235 个既有兄弟仓错误，新增文件 **0 错误**；deploy API pattern 0；契约 5/5；envelope/verify-repo 通过。
+
+**③ IAM 全仓 rustfmt**
+
+`cargo fmt --all` 后 `cargo fmt --all --check` 通过（24 个 Rust 文件被规范化）；`cargo test --workspace --lib` 16 个测试目标全绿。同时修复两处**既有失败测试**：`unified_postgres_env` 写临时 `config/host/postgres.env` 前未建父目录。
+
+**④ admin-core 依赖清理**
+
+materializer 表驱动的 `package.json` 已不含 `@sdkwork/deployments-app-sdk`；`pnpm-lock.yaml` 同步并通过 `pnpm install --frozen-lockfile`；`pnpm-workspace.yaml` 补齐 mobile-react 的 component-core 与 order app-sdk 两个真实依赖，registry 同步修复后 `verify-repo` 通过。
+
 ---
 
 

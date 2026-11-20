@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   toDeployedMiniProgramApps,
 } from "../src/services/deployed-mini-program-apps";
+import type { ApplicationResourceLinkRecord } from "../src/types/application-integrations";
 import {
   APPLICATION_INTEGRATION_METADATA_KEY,
   APPLICATION_INTEGRATION_SCHEMA,
@@ -126,4 +127,59 @@ describe("deployed mini program application projection", () => {
     expect(toDeployedMiniProgramApps(undefined)).toEqual([]);
     expect(toDeployedMiniProgramApps("not a record")).toEqual([]);
   });
+
+  it("reads the authoritative resource link when the legacy document has no binding", () => {
+    // New bindings are written to `deploy_application_resource_link` only, so a
+    // picker that reads the metadata document alone would drop the AppID.
+    const rows = toDeployedMiniProgramApps(miniProgramApp({}), [resourceLink("wx-prod", "Acme prod")]);
+
+    expect(rows).toEqual([
+      {
+        id: "deploy-app-1",
+        name: "Acme mini program",
+        reference: "acme-mini",
+        status: "ACTIVE",
+        environment: "production",
+        appId: "wx-prod",
+        accountName: "Acme prod",
+      },
+    ]);
+  });
+
+  it("prefers the authoritative link over a stale legacy binding of the same environment", () => {
+    const rows = toDeployedMiniProgramApps(
+      miniProgramApp({
+        environments: {
+          production: { miniProgram: miniProgramBinding("wx-legacy", "Legacy mini") },
+        },
+      }),
+      [resourceLink("wx-authority", "Authoritative mini")],
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      appId: "wx-authority",
+      accountName: "Authoritative mini",
+      environment: "production",
+    });
+  });
 });
+
+/** One authoritative `deploy_application_resource_link` row for a mini program. */
+function resourceLink(appId: string, displayName: string): ApplicationResourceLinkRecord {
+  return {
+    bindingStatus: "ACTIVE",
+    environment: "production",
+    id: `link-${appId}`,
+    isDefault: false,
+    metadata: {
+      accountId: `iamora-${appId}`,
+      appId,
+      displayName,
+      providerCode: "wechat",
+    },
+    providerCode: "wechat",
+    resourceKind: "mini_program",
+    resourceRef: appId,
+  };
+}

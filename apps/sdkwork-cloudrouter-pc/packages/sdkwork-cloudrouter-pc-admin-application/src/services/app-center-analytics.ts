@@ -1,10 +1,10 @@
-import type { DeployAppTemplateService } from "../types/deploy-app-templates";
-import type { DeployTemplateAdminService } from "./deploy-template-admin";
+import type { ApplicationScaffoldService } from "../types/application-scaffolds";
+import type { ApplicationScaffoldAdminService } from "./application-scaffold-admin";
 import type { AppStoreModerationService } from "../types/appstore-moderation";
 import type { AppStorePublisherService } from "../types/appstore-publishers";
 import type { AppStoreListingService } from "../types/appstore-listings";
 import type { AppStoreCollectionService } from "../types/appstore-collections";
-import type { DeployAppTemplateStatus } from "../types/deploy-app-templates";
+import type { ApplicationScaffoldStatus } from "../types/application-scaffolds";
 
 /**
  * Read-only App Center operations snapshot.
@@ -14,18 +14,18 @@ import type { DeployAppTemplateStatus } from "../types/deploy-app-templates";
  * independently so one failing backend degrades one card instead of the page.
  */
 export interface AppCenterAnalyticsSnapshot {
-  templatesByStatus: Record<DeployAppTemplateStatus, number>;
-  templatesTotal: number;
+  scaffoldsByStatus: Record<ApplicationScaffoldStatus, number>;
+  scaffoldsTotal: number;
   moderationPending: number;
   publishersTotal: number;
   listingsTotal: number;
   collectionsTotal: number;
-  templateCategoriesTotal: number;
+  scaffoldCategoriesTotal: number;
 }
 
 export interface AppCenterAnalyticsDependencies {
-  templates: Pick<DeployAppTemplateService, "list">;
-  templateAdmin: Pick<DeployTemplateAdminService, "listCategories">;
+  scaffolds: Pick<ApplicationScaffoldService, "list">;
+  scaffoldAdmin: Pick<ApplicationScaffoldAdminService, "listCategories">;
   moderation: Pick<AppStoreModerationService, "listQueue">;
   publishers: Pick<AppStorePublisherService, "list">;
   listings: Pick<AppStoreListingService, "list">;
@@ -33,7 +33,7 @@ export interface AppCenterAnalyticsDependencies {
 }
 
 export interface AppCenterAnalyticsFailure {
-  source: "templates" | "moderation" | "publishers" | "listings" | "collections" | "templateCategories";
+  source: "scaffolds" | "moderation" | "publishers" | "listings" | "collections" | "scaffoldCategories";
   error: unknown;
 }
 
@@ -42,7 +42,7 @@ export interface AppCenterAnalyticsResult {
   failures: readonly AppCenterAnalyticsFailure[];
 }
 
-const TEMPLATE_STATUSES: readonly DeployAppTemplateStatus[] = [
+const SCAFFOLD_STATUSES: readonly ApplicationScaffoldStatus[] = [
   "DRAFT",
   "PENDING_REVIEW",
   "PUBLISHED",
@@ -51,19 +51,19 @@ const TEMPLATE_STATUSES: readonly DeployAppTemplateStatus[] = [
 ];
 
 const EMPTY_SNAPSHOT: AppCenterAnalyticsSnapshot = {
-  templatesByStatus: {
+  scaffoldsByStatus: {
     DRAFT: 0,
     PENDING_REVIEW: 0,
     PUBLISHED: 0,
     REJECTED: 0,
     DISABLED: 0,
   },
-  templatesTotal: 0,
+  scaffoldsTotal: 0,
   moderationPending: 0,
   publishersTotal: 0,
   listingsTotal: 0,
   collectionsTotal: 0,
-  templateCategoriesTotal: 0,
+  scaffoldCategoriesTotal: 0,
 };
 
 export async function loadAppCenterAnalytics(
@@ -72,28 +72,28 @@ export async function loadAppCenterAnalytics(
   const failures: AppCenterAnalyticsFailure[] = [];
   const snapshot: AppCenterAnalyticsSnapshot = {
     ...EMPTY_SNAPSHOT,
-    templatesByStatus: { ...EMPTY_SNAPSHOT.templatesByStatus },
+    scaffoldsByStatus: { ...EMPTY_SNAPSHOT.scaffoldsByStatus },
   };
 
-  const [templateResults, moderation, publishers, listings, collections, templateCategories] = await Promise.all([
-    Promise.allSettled(TEMPLATE_STATUSES.map((status) =>
-      deps.templates.list({ page: 1, pageSize: 1, status }))),
+  const [scaffoldResults, moderation, publishers, listings, collections, scaffoldCategories] = await Promise.all([
+    Promise.allSettled(SCAFFOLD_STATUSES.map((status) =>
+      deps.scaffolds.list({ page: 1, pageSize: 1, status }))),
     settle("moderation", () => deps.moderation.listQueue({ reviewStatus: "PENDING", pageSize: 50 })),
     settle("publishers", () => deps.publishers.list({ pageSize: 50 })),
     settle("listings", () => deps.listings.list({ pageSize: 50 })),
     settle("collections", () => deps.collections.list({ pageSize: 50 })),
-    settle("templateCategories", () => deps.templateAdmin.listCategories()),
+    settle("scaffoldCategories", () => deps.scaffoldAdmin.listCategories()),
   ]);
 
-  let templateFailureRecorded = false;
-  TEMPLATE_STATUSES.forEach((status, index) => {
-    const result = templateResults[index];
+  let scaffoldFailureRecorded = false;
+  SCAFFOLD_STATUSES.forEach((status, index) => {
+    const result = scaffoldResults[index];
     if (result?.status === "fulfilled") {
-      snapshot.templatesByStatus[status] = result.value.total;
-      snapshot.templatesTotal += result.value.total;
-    } else if (result?.status === "rejected" && !templateFailureRecorded) {
-      templateFailureRecorded = true;
-      failures.push({ source: "templates", error: result.reason });
+      snapshot.scaffoldsByStatus[status] = result.value.total;
+      snapshot.scaffoldsTotal += result.value.total;
+    } else if (result?.status === "rejected" && !scaffoldFailureRecorded) {
+      scaffoldFailureRecorded = true;
+      failures.push({ source: "scaffolds", error: result.reason });
     }
   });
 
@@ -121,10 +121,10 @@ export async function loadAppCenterAnalytics(
     failures.push({ source: "collections", error: collections.error });
   }
 
-  if (templateCategories.ok) {
-    snapshot.templateCategoriesTotal = templateCategories.value.length;
+  if (scaffoldCategories.ok) {
+    snapshot.scaffoldCategoriesTotal = scaffoldCategories.value.length;
   } else {
-    failures.push({ source: "templateCategories", error: templateCategories.error });
+    failures.push({ source: "scaffoldCategories", error: scaffoldCategories.error });
   }
 
   return { snapshot, failures };

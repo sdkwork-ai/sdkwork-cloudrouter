@@ -25,39 +25,39 @@ import {
   loadIamApplications,
   resolveApplicationCatalogContext,
 } from "../services/application-catalog";
-import { getDeployAppTemplateService } from "../services/deploy-app-templates";
+import { getApplicationScaffoldService } from "../services/application-scaffolds";
 import { getAppStoreCategoryService } from "../services/appstore-categories";
 import { getAppStoreModerationService } from "../services/appstore-moderation";
-import type { DeployAppTemplate } from "../types/deploy-app-templates";
+import type { ApplicationScaffold } from "../types/application-scaffolds";
 
 interface OverviewData {
   iam: number;
   deploy: number;
   appStore: number;
-  templates: number;
-  templateCategories: number;
+  scaffolds: number;
+  scaffoldCategories: number;
   storeCategories: number;
-  pendingTemplates: number;
+  pendingScaffolds: number;
   pendingModeration: number;
-  recentTemplates: readonly DeployAppTemplate[];
+  recentScaffolds: readonly ApplicationScaffold[];
 }
 
 const EMPTY_DATA: OverviewData = {
   iam: 0,
   deploy: 0,
   appStore: 0,
-  templates: 0,
-  templateCategories: 0,
+  scaffolds: 0,
+  scaffoldCategories: 0,
   storeCategories: 0,
-  pendingTemplates: 0,
+  pendingScaffolds: 0,
   pendingModeration: 0,
-  recentTemplates: [],
+  recentScaffolds: [],
 };
 
 /**
  * Application Center landing page.
  *
- * Aggregates the three application platforms and the template catalog into one
+ * Aggregates the three application platforms and the scaffold catalog into one
  * operator overview, with quick links into each management surface. A failing
  * source degrades to an "unavailable" notice instead of blanking the page.
  */
@@ -74,13 +74,13 @@ export function AppCenterOverviewPage() {
     setLoading(true);
     setPartialFailure(false);
     void (async () => {
-      const templateService = getDeployAppTemplateService();
+      const scaffoldService = getApplicationScaffoldService();
       const results = await Promise.allSettled([
         resolveApplicationCatalogContext({}),
-        templateService.list({ page: 1, pageSize: 5 }),
-        templateService.listCategories(),
+        scaffoldService.list({ page: 1, pageSize: 5 }),
+        scaffoldService.listCategories(),
         getAppStoreCategoryService().list({ pageSize: 100 }),
-        templateService.list({ page: 1, pageSize: 1, status: "PENDING_REVIEW" }),
+        scaffoldService.list({ page: 1, pageSize: 1, status: "PENDING_REVIEW" }),
         getAppStoreModerationService().listQueue({ reviewStatus: "PENDING", pageSize: 50 }),
       ]);
       if (cancelled) {
@@ -88,10 +88,10 @@ export function AppCenterOverviewPage() {
       }
       const [
         contextResult,
-        templateResult,
-        templateCategoryResult,
+        scaffoldResult,
+        scaffoldCategoryResult,
         storeCategoryResult,
-        pendingTemplateResult,
+        pendingScaffoldResult,
         pendingModerationResult,
       ] = results;
       let failed = 0;
@@ -126,14 +126,14 @@ export function AppCenterOverviewPage() {
       } else {
         failed += 1;
       }
-      const templatePage = templateResult.status === "fulfilled" ? templateResult.value : undefined;
-      if (templateResult.status !== "fulfilled") {
+      const scaffoldPage = scaffoldResult.status === "fulfilled" ? scaffoldResult.value : undefined;
+      if (scaffoldResult.status !== "fulfilled") {
         failed += 1;
       }
-      const templateCategories = templateCategoryResult.status === "fulfilled"
-        ? templateCategoryResult.value
+      const scaffoldCategories = scaffoldCategoryResult.status === "fulfilled"
+        ? scaffoldCategoryResult.value
         : undefined;
-      if (templateCategoryResult.status !== "fulfilled") {
+      if (scaffoldCategoryResult.status !== "fulfilled") {
         failed += 1;
       }
       const storeCategoryPage = storeCategoryResult.status === "fulfilled"
@@ -142,10 +142,10 @@ export function AppCenterOverviewPage() {
       if (storeCategoryResult.status !== "fulfilled") {
         failed += 1;
       }
-      const pendingTemplates = pendingTemplateResult.status === "fulfilled"
-        ? pendingTemplateResult.value.total
+      const pendingScaffolds = pendingScaffoldResult.status === "fulfilled"
+        ? pendingScaffoldResult.value.total
         : 0;
-      if (pendingTemplateResult.status !== "fulfilled") {
+      if (pendingScaffoldResult.status !== "fulfilled") {
         failed += 1;
       }
       const pendingModeration = pendingModerationResult.status === "fulfilled"
@@ -158,12 +158,12 @@ export function AppCenterOverviewPage() {
         iam,
         deploy,
         appStore,
-        templates: templatePage?.total ?? 0,
-        templateCategories: templateCategories?.length ?? 0,
+        scaffolds: scaffoldPage?.total ?? 0,
+        scaffoldCategories: scaffoldCategories?.length ?? 0,
         storeCategories: storeCategoryPage?.items.length ?? 0,
-        pendingTemplates,
+        pendingScaffolds,
         pendingModeration,
-        recentTemplates: templatePage?.items.slice(0, 5) ?? [],
+        recentScaffolds: scaffoldPage?.items.slice(0, 5) ?? [],
       });
       setPartialFailure(failed > 0);
       setLoading(false);
@@ -203,16 +203,16 @@ export function AppCenterOverviewPage() {
           value={totalApplications}
         />
         <KpiCard
-          hint={copy.kpiHint.templates}
+          hint={copy.kpiHint.scaffolds}
           icon={<Shapes className="h-4 w-4" />}
-          label={copy.kpi.templates}
-          value={data.templates}
+          label={copy.kpi.scaffolds}
+          value={data.scaffolds}
         />
         <KpiCard
           hint={copy.kpiHint.categories}
           icon={<FolderTree className="h-4 w-4" />}
           label={copy.kpi.categories}
-          value={data.templateCategories}
+          value={data.scaffoldCategories}
         />
         <KpiCard
           hint={copy.kpiHint.storeCategories}
@@ -224,19 +224,19 @@ export function AppCenterOverviewPage() {
 
       <section className="rounded-[var(--sdk-radius-card)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] p-4">
         <h2 className="text-sm font-semibold text-[var(--sdk-color-text-primary)]">{copy.pendingTitle}</h2>
-        {data.pendingTemplates + data.pendingModeration === 0 ? (
+        {data.pendingScaffolds + data.pendingModeration === 0 ? (
           <p className="mt-2 text-sm text-[var(--sdk-color-text-muted)]">{copy.pendingEmpty}</p>
         ) : (
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             <Link
               className="flex items-center justify-between rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-default)] px-3 py-2 text-sm transition-colors hover:border-[var(--sdk-color-brand-primary)]"
-              to="/admin/applications/template-reviews"
+              to="/admin/applications/scaffold-reviews"
             >
               <span className="flex items-center gap-2 text-[var(--sdk-color-text-secondary)]">
                 <ShieldCheck className="h-4 w-4" />
-                {copy.pending.templates}
+                {copy.pending.scaffolds}
               </span>
-              <span className="font-semibold text-[var(--sdk-color-text-primary)]">{data.pendingTemplates}</span>
+              <span className="font-semibold text-[var(--sdk-color-text-primary)]">{data.pendingScaffolds}</span>
             </Link>
             <Link
               className="flex items-center justify-between rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-default)] px-3 py-2 text-sm transition-colors hover:border-[var(--sdk-color-brand-primary)]"
@@ -261,8 +261,8 @@ export function AppCenterOverviewPage() {
           <QuickLink icon={<Boxes className="h-4 w-4" />} label={copy.quick.applications} to="/admin/applications/deploy" />
           <QuickLink icon={<ShieldCheck className="h-4 w-4" />} label={copy.quick.moderation} to="/admin/applications/moderation" />
           <QuickLink icon={<Store className="h-4 w-4" />} label={copy.quick.storeCategories} to="/admin/applications/categories" />
-          <QuickLink icon={<Shapes className="h-4 w-4" />} label={copy.quick.templates} to="/admin/applications/templates" />
-          <QuickLink icon={<FolderTree className="h-4 w-4" />} label={copy.quick.templateCategories} to="/admin/applications/template-categories" />
+          <QuickLink icon={<Shapes className="h-4 w-4" />} label={copy.quick.scaffolds} to="/admin/applications/scaffolds" />
+          <QuickLink icon={<FolderTree className="h-4 w-4" />} label={copy.quick.scaffoldCategories} to="/admin/applications/scaffold-categories" />
         </div>
       </section>
 
@@ -274,30 +274,30 @@ export function AppCenterOverviewPage() {
           </h2>
           <Link
             className="inline-flex items-center gap-1 text-sm font-medium text-[var(--sdk-color-brand-primary)]"
-            to="/admin/applications/templates"
+            to="/admin/applications/scaffolds"
           >
             {copy.viewAll}
             <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
-        {data.recentTemplates.length === 0 ? (
+        {data.recentScaffolds.length === 0 ? (
           <p className="text-sm text-[var(--sdk-color-text-muted)]">{copy.recentEmpty}</p>
         ) : (
           <ul className="divide-y divide-[var(--sdk-color-border-default)]">
-            {data.recentTemplates.map((template) => (
-              <li className="flex flex-wrap items-center justify-between gap-3 py-2.5" key={template.id}>
+            {data.recentScaffolds.map((scaffold) => (
+              <li className="flex flex-wrap items-center justify-between gap-3 py-2.5" key={scaffold.id}>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-[var(--sdk-color-text-primary)]">
-                    {template.displayName}
+                    {scaffold.displayName}
                   </p>
                   <p className="truncate font-mono text-xs text-[var(--sdk-color-text-muted)]">
-                    {template.templateKey}
+                    {scaffold.scaffoldKey}
                   </p>
                 </div>
                 <StatusBadge
-                  label={messages.templates.statuses[template.status]}
-                  status={template.status}
-                  variant={templateStatusVariant(template.status)}
+                  label={messages.scaffolds.statuses[scaffold.status]}
+                  status={scaffold.status}
+                  variant={scaffoldStatusVariant(scaffold.status)}
                 />
               </li>
             ))}
@@ -346,7 +346,7 @@ function QuickLink({ icon, label, to }: { icon: ReactNode; label: string; to: st
   );
 }
 
-function templateStatusVariant(status: DeployAppTemplate["status"]): StatusBadgeVariant {
+function scaffoldStatusVariant(status: ApplicationScaffold["status"]): StatusBadgeVariant {
   switch (status) {
     case "PUBLISHED":
       return "success";

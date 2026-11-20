@@ -4,15 +4,15 @@ import { readPortalPermissionScope } from "@sdkwork/cloudroutes-pc-commons/runti
 /**
  * Action-level permission seam for the App Center.
  *
- * Template actions are gated on the Deploy permission codes the Deploy route
+ * Scaffold actions are gated on the Deploy permission codes the Deploy route
  * manifests actually enforce
  * (`sdks/_route-manifests/app-api/sdkwork-routes-deploy-app-api.route-manifest.json`,
  * `sdks/_route-manifests/backend-api/sdkwork-routes-deploy-backend-api.route-manifest.json`):
  *
- * - authoring/review (`PATCH|POST|DELETE /app_templates`, backend
- *   `PATCH /app_templates/{templateUuid}`) requires `deploy.appTemplates.write`;
- * - template taxonomy maintenance (`POST|PATCH|DELETE /template_categories`)
- *   requires `deploy.templateCategories.write`;
+ * - authoring/review (`PATCH|POST|DELETE /scaffolds`, backend
+ *   `PATCH /scaffolds/{scaffoldUuid}`) requires `deploy.scaffolds.write`;
+ * - scaffold taxonomy maintenance (`POST|PATCH|DELETE /scaffold_categories`)
+ *   requires `deploy.scaffoldCategories.write`;
  * - the remix source reads (`GET /apps/{appId}/source`, `GET /remix`) require
  *   `deploy.apps.read`, and its writes (`PUT|DELETE /source`, `PUT /remix`)
  *   require `deploy.apps.write`;
@@ -25,16 +25,16 @@ import { readPortalPermissionScope } from "@sdkwork/cloudroutes-pc-commons/runti
  * gate: this application's declared `backend.accessTokenPermissionScope`
  * (`agent.app.config.json`) carries only `cloudrouter.*` / `iam.*` /
  * `community.*` codes, so gating solely on a deploy code would hide every
- * template control from an operator the backend still authorizes. The Deploy
+ * scaffold control from an operator the backend still authorizes. The Deploy
  * backend stays the authority: it rejects the request without the deploy grant,
  * and the UI gate is defense in depth only.
  */
 export const APPLICATION_CENTER_MODULE_PERMISSION = "cloudrouter.admin.access";
 
 export const APPLICATION_CENTER_ACTION_PERMISSIONS = {
-  templateReview: "deploy.appTemplates.write",
-  templateWrite: "deploy.appTemplates.write",
-  templateCategoryWrite: "deploy.templateCategories.write",
+  scaffoldReview: "deploy.scaffolds.write",
+  scaffoldWrite: "deploy.scaffolds.write",
+  scaffoldCategoryWrite: "deploy.scaffoldCategories.write",
   /**
    * Remix source surface (`apps.source.*` / `apps.remix.*`). The route manifest
    * gates every read on `deploy.apps.read` and every write on `deploy.apps.write`,

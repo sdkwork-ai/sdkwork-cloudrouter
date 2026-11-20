@@ -14,7 +14,7 @@ function createDeps(): AppCenterAnalyticsDependencies {
     DISABLED: 3,
   };
   return {
-    templates: {
+    scaffolds: {
       list: vi.fn(async (query?: { status?: string }) => ({
         items: [],
         page: 1,
@@ -22,12 +22,12 @@ function createDeps(): AppCenterAnalyticsDependencies {
         total: query?.status ? totals[query.status] ?? 0 : 0,
         hasMore: false,
       })),
-    } as unknown as AppCenterAnalyticsDependencies["templates"],
-    templateAdmin: {
+    } as unknown as AppCenterAnalyticsDependencies["scaffolds"],
+    scaffoldAdmin: {
       listCategories: vi.fn(async () => [
         { id: "cat-1", categoryKey: "a", displayName: "A", sortOrder: 0, status: "ACTIVE" },
       ]),
-    } as unknown as AppCenterAnalyticsDependencies["templateAdmin"],
+    } as unknown as AppCenterAnalyticsDependencies["scaffoldAdmin"],
     moderation: {
       listQueue: vi.fn(async () => ({ items: [], hasMore: false, total: 3 })),
     } as unknown as AppCenterAnalyticsDependencies["moderation"],
@@ -48,19 +48,19 @@ describe("App Center analytics", () => {
     const result = await loadAppCenterAnalytics(createDeps());
 
     expect(result.failures).toEqual([]);
-    expect(result.snapshot.templatesByStatus).toEqual({
+    expect(result.snapshot.scaffoldsByStatus).toEqual({
       DRAFT: 2,
       PENDING_REVIEW: 4,
       PUBLISHED: 10,
       REJECTED: 1,
       DISABLED: 3,
     });
-    expect(result.snapshot.templatesTotal).toBe(20);
+    expect(result.snapshot.scaffoldsTotal).toBe(20);
     expect(result.snapshot.moderationPending).toBe(3);
     expect(result.snapshot.publishersTotal).toBe(10);
     expect(result.snapshot.listingsTotal).toBe(20);
     expect(result.snapshot.collectionsTotal).toBe(2);
-    expect(result.snapshot.templateCategoriesTotal).toBe(1);
+    expect(result.snapshot.scaffoldCategoriesTotal).toBe(1);
   });
 
   it("degrades one failing source without blanking the snapshot", async () => {
@@ -70,7 +70,7 @@ describe("App Center analytics", () => {
     });
 
     const result = await loadAppCenterAnalytics(deps);
-    expect(result.snapshot.templatesTotal).toBe(20);
+    expect(result.snapshot.scaffoldsTotal).toBe(20);
     expect(result.snapshot.publishersTotal).toBe(10);
     expect(result.failures.map((failure) => failure.source)).toEqual(["moderation"]);
   });

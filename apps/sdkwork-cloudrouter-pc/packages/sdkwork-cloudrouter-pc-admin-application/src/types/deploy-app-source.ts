@@ -171,7 +171,7 @@ export interface DeployAppSourceIssue {
  * Source operations the drawer needs.
  *
  * Every method maps onto one generated SDK operation; the structural seam is
- * the same one `DeployAppTemplateService` uses so a test can record calls
+ * the same one `ApplicationScaffoldService` uses so a test can record calls
  * without constructing an HTTP client.
  */
 export interface DeployAppSourceService {

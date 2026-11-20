@@ -17,7 +17,7 @@
 ## 2. 表分类
 | 前缀 | 职责 | 代表表 |
 | --- | --- | --- |
-| `appstore_` | SaaS 应用平台与模板（`sdkwork-appstore`）| `appstore_app`, `appstore_app_template`, `appstore_app_template_version`, `appstore_app_template_usage` |
+| `appstore_` | SaaS 应用平台（`sdkwork-appstore`）| `appstore_app`, `appstore_app_dependency`, `appstore_application_listing`（应用脚手架统一由 deploy 的 `deploy_application_scaffold*` 拥有，appstore 不再保有自己的模板族） |
 | `course_` | 课程中心（`sdkwork-course`）| `course_catalog`, `course_section`, `course_lesson`, `course_catalog_link`, `course_application`, `course_comment`, `course_reaction` |
 | `c_` | 跨垂直统一分类 | `c_category` |
 | `ai_` | 模型路由、技能、MCP | `ai_agent_skill`, `ai_agent_skill_package`, `ai_skill_asset`, `ai_skill_artifact`, `ai_skill_action` |
@@ -32,7 +32,7 @@
 | 图标/截图/安装包| `appstore_app.resource_list`、`install_config` 为 JSON |
 | 下载量评分 | **Option A**：`appstore_app.download_count`、`rating_avg`、`rating_count` |
 | 开发者 | `iam_user` + `appstore_app` 归属字段 |
-| 应用模板 | `appstore_app_template`、`appstore_app_template_version`、`appstore_app_template_usage` |
+| 应用脚手架 | 由 deploy 拥有：`deploy_application_scaffold`、`deploy_application_scaffold_version`、`deploy_application_scaffold_category`；appstore 仅在 SKU 溯源列 `source_scaffold_version_id` 引用，不再保有模板族 |
 
 Admin/App API 契约表名：`appstore_app`、`c_category`（OpenAPI `x-table` 与 frontend-field-contracts `data_sources` 均已对齐）。
 

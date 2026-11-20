@@ -9,10 +9,10 @@ import {
 } from "../src/permissions/application-center-actions";
 
 describe("App Center action permissions", () => {
-  it("maps template actions to the Deploy permission codes the route manifest enforces", () => {
-    expect(applicationCenterPermissionFor("templateReview")).toBe("deploy.appTemplates.write");
-    expect(applicationCenterPermissionFor("templateWrite")).toBe("deploy.appTemplates.write");
-    expect(applicationCenterPermissionFor("templateCategoryWrite")).toBe("deploy.templateCategories.write");
+  it("maps scaffold actions to the Deploy permission codes the route manifest enforces", () => {
+    expect(applicationCenterPermissionFor("scaffoldReview")).toBe("deploy.scaffolds.write");
+    expect(applicationCenterPermissionFor("scaffoldWrite")).toBe("deploy.scaffolds.write");
+    expect(applicationCenterPermissionFor("scaffoldCategoryWrite")).toBe("deploy.scaffoldCategories.write");
   });
 
   it("keeps the module gate for App Store actions without a finer IAM code", () => {
@@ -33,19 +33,19 @@ describe("App Center action permissions", () => {
     expect(isApplicationCenterActionAllowed("sourceWrite", ["deploy.apps.write"])).toBe(true);
   });
 
-  it("gates template actions on the deploy grant or the module gate", () => {
-    expect(isApplicationCenterActionAllowed("templateReview", ["deploy.appTemplates.write"])).toBe(true);
-    expect(isApplicationCenterActionAllowed("templateCategoryWrite", ["deploy.templateCategories.write"])).toBe(true);
+  it("gates scaffold actions on the deploy grant or the module gate", () => {
+    expect(isApplicationCenterActionAllowed("scaffoldReview", ["deploy.scaffolds.write"])).toBe(true);
+    expect(isApplicationCenterActionAllowed("scaffoldCategoryWrite", ["deploy.scaffoldCategories.write"])).toBe(true);
     // The console session scope carries only cloudrouter.* codes today, so the
     // module gate keeps an authorized operator on the surface.
-    expect(isApplicationCenterActionAllowed("templateReview", ["cloudrouter.admin.access"])).toBe(true);
-    expect(isApplicationCenterActionAllowed("templateWrite", ["*"])).toBe(true);
-    expect(isApplicationCenterActionAllowed("templateCategoryWrite", ["deploy.*"])).toBe(true);
+    expect(isApplicationCenterActionAllowed("scaffoldReview", ["cloudrouter.admin.access"])).toBe(true);
+    expect(isApplicationCenterActionAllowed("scaffoldWrite", ["*"])).toBe(true);
+    expect(isApplicationCenterActionAllowed("scaffoldCategoryWrite", ["deploy.*"])).toBe(true);
   });
 
   it("denies actions when the scope carries neither grant", () => {
-    expect(isApplicationCenterActionAllowed("templateReview", ["cloudrouter.system.read"])).toBe(false);
-    expect(isApplicationCenterActionAllowed("templateCategoryWrite", ["deploy.marketplaceTemplates.read"])).toBe(false);
+    expect(isApplicationCenterActionAllowed("scaffoldReview", ["cloudrouter.system.read"])).toBe(false);
+    expect(isApplicationCenterActionAllowed("scaffoldCategoryWrite", ["deploy.marketplaceScaffolds.read"])).toBe(false);
     expect(isApplicationCenterActionAllowed("moderationDecide", [])).toBe(false);
   });
 });

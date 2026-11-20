@@ -48,9 +48,31 @@ export function ApplicationRowActionsMenu({
   const showMiniProgram = surface.channelKinds.includes("mini-program");
   const showPayment = surface.paymentApplies;
   const hasIntegrationActions = showOfficialAccount || showMiniProgram || showPayment;
+  // A mini program surface owns its channel account as the primary setting, so
+  // the mini program entry leads the menu; a web surface leads with its official
+  // account. The order is the only difference, never availability.
+  const miniProgramFirst = surface.autoLogin === "mini-program";
   const showIdentityRetry = canProvisionIdentity
     && identityStatus !== undefined
     && identityStatus !== "active";
+  const officialAccountItem = showOfficialAccount ? (
+    <DropdownMenuItem
+      data-application-integration-action="official-account"
+      onSelect={() => onIntegration("official-account")}
+    >
+      <MessageCircle className="h-4 w-4" />
+      {messages.integrations.actions.officialAccount}
+    </DropdownMenuItem>
+  ) : null;
+  const miniProgramItem = showMiniProgram ? (
+    <DropdownMenuItem
+      data-application-integration-action="mini-program"
+      onSelect={() => onIntegration("mini-program")}
+    >
+      <Smartphone className="h-4 w-4" />
+      {messages.integrations.actions.miniProgram}
+    </DropdownMenuItem>
+  ) : null;
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
@@ -60,20 +82,13 @@ export function ApplicationRowActionsMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        {showOfficialAccount ? (
-          <DropdownMenuItem onSelect={() => onIntegration("official-account")}>
-            <MessageCircle className="h-4 w-4" />
-            {messages.integrations.actions.officialAccount}
-          </DropdownMenuItem>
-        ) : null}
-        {showMiniProgram ? (
-          <DropdownMenuItem onSelect={() => onIntegration("mini-program")}>
-            <Smartphone className="h-4 w-4" />
-            {messages.integrations.actions.miniProgram}
-          </DropdownMenuItem>
-        ) : null}
+        {miniProgramFirst ? miniProgramItem : officialAccountItem}
+        {miniProgramFirst ? officialAccountItem : miniProgramItem}
         {showPayment ? (
-          <DropdownMenuItem onSelect={() => onIntegration("payment")}>
+          <DropdownMenuItem
+            data-application-integration-action="payment"
+            onSelect={() => onIntegration("payment")}
+          >
             <CreditCard className="h-4 w-4" />
             {messages.integrations.actions.payment}
           </DropdownMenuItem>

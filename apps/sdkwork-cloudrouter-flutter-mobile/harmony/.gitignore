@@ -1,0 +1,15 @@
+# hvigor / DevEco build output
+build/
+.hvigor/
+oh_modules/
+.hvigor-cache/
+
+# Flutter OHOS engine payload materialized by `flutter build hap`
+har/
+
+# Signing material never enters the repository
+*.p12
+*.cer
+*.p7b
+*.pem
+*.key

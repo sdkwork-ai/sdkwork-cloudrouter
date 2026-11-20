@@ -26,8 +26,20 @@ Generated thumbnails, OS metadata files, editor swap files, keystores, credentia
 2. Declare bundled runtime resources in `pubspec.yaml#flutter.assets`; store media stays undeclared.
 3. Record the manifest entry before enabling it, then run `node ../../../../sdkwork-specs/tools/check-app-assets-standard.mjs --root ../..`.
 
+## Store Media Workflow
+Store screenshots are captured from the shipped screens, never mocked up:
+
+1. `node scripts/capture-store-media.mjs` writes raw PNGs and `capture-report.json` under `.sdkwork/tmp/assets-capture/`.
+2. Review the raw captures, then `node scripts/promote-store-media.mjs` copies the five screens per shelf into `media/store/screenshots/`.
+3. `python scripts/generate-store-images.py` regenerates the brand icon, launcher icons, catalog cover, and Google feature graphic, and strips the alpha channel from every store screenshot.
+4. `node scripts/sync-store-publishing.mjs --write` projects the store-tagged media and lanes into `agent.app.config.json`; `node scripts/check-store-publishing.mjs` verifies it.
+
 ## Current State
-The skeleton is in place and the manifest still uses the legacy media binding. `capture/capture.config.json` is authored when creation-time capture is enabled for this root; until then no capture command is registered.
+The `sdkwork-app-assets.v1` marker is adopted. `capture/capture.config.json`
+registers the `flutter-widget-test` adapter at the canonical iOS, Android,
+HarmonyOS, and generic-mobile viewports. `media/icons/`, `media/covers/`,
+`media/store/screenshots/`, and `media/store/{apple,google,huawei,harmony}/`
+hold the real mark and capture set; no placeholder media remains enabled.
 
 ## Related Specs
 - `../../../../sdkwork-specs/APP_ASSETS_SPEC.md`

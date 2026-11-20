@@ -1,6 +1,6 @@
 import type { CategoryExportDocument, CategoryExportLocalization } from "./category-export";
 
-export type CategoryImportKind = "appstore-categories" | "template-categories";
+export type CategoryImportKind = "appstore-categories" | "scaffold-categories";
 
 export type CategoryImportErrorCode =
   | "invalid-document"

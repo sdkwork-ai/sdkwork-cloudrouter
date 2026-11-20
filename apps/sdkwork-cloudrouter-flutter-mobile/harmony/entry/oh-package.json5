@@ -1,0 +1,9 @@
+{
+  "name": "entry",
+  "version": "1.0.0",
+  "description": "SDKWork CloudRouter Flutter entry module",
+  "main": "",
+  "author": "sdkwork",
+  "license": "AGPL-3.0",
+  "dependencies": {}
+}

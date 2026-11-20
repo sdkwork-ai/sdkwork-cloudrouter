@@ -1,5 +1,5 @@
 import type { AppStoreCategory } from "../types/appstore-categories";
-import type { DeployTemplateCategory } from "../services/deploy-template-admin";
+import type { ScaffoldCategory } from "../services/application-scaffold-admin";
 
 export interface CategoryExportLocalization {
   locale: string;
@@ -21,7 +21,7 @@ export interface CategoryExportNode {
 export interface CategoryExportDocument {
   schemaVersion: 1;
   exportedAt: string;
-  kind: "appstore-categories" | "template-categories";
+  kind: "appstore-categories" | "scaffold-categories";
   categories: CategoryExportNode[];
 }
 
@@ -91,7 +91,7 @@ export function buildAppStoreCategoryExport(
     name: resolveName(category) || category.code,
     level: category.level,
     status: category.status,
-    sortOrder: category.sortOrder,
+    sortOrder: category.sortOrder ?? 0,
     localizations: category.localizations,
   }));
   return {
@@ -102,8 +102,8 @@ export function buildAppStoreCategoryExport(
   };
 }
 
-export function buildTemplateCategoryExport(
-  categories: readonly DeployTemplateCategory[],
+export function buildScaffoldCategoryExport(
+  categories: readonly ScaffoldCategory[],
   now = new Date(),
 ): CategoryExportDocument {
   const sources = categories.map((category) => ({
@@ -112,12 +112,12 @@ export function buildTemplateCategoryExport(
     code: category.categoryKey,
     name: category.displayName,
     status: category.status,
-    sortOrder: category.sortOrder,
+    sortOrder: category.sortOrder ?? 0,
   }));
   return {
     schemaVersion: 1,
     exportedAt: now.toISOString(),
-    kind: "template-categories",
+    kind: "scaffold-categories",
     categories: buildCategoryExportTree(sources),
   };
 }

@@ -68,6 +68,7 @@ import type {
   ApplicationIntegrationKind,
   ApplicationIntegrationSaveResult,
   ApplicationIntegrationService,
+  ApplicationMiniProgramLoginCheck,
   ApplicationPaymentAccountOption,
   ChannelAccountKind,
   IntegrationAccountScope,
@@ -79,6 +80,13 @@ interface CatalogState<T> {
   items: readonly T[];
   error?: unknown;
 }
+
+/** State of the on-demand mini program login probe. */
+type MiniProgramLoginCheckState =
+  | { status: "idle" }
+  | { status: "checking" }
+  | { status: "ready"; result: ApplicationMiniProgramLoginCheck }
+  | { status: "error"; reason: "forbidden" | "not-found" | "failed" };
 
 export interface ApplicationIntegrationDrawerProps {
   application: ApplicationRecord;
@@ -136,6 +144,7 @@ export function ApplicationIntegrationDrawer({
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string>();
   const [saveError, setSaveError] = useState<unknown>();
+  const [loginCheck, setLoginCheck] = useState<MiniProgramLoginCheckState>({ status: "idle" });
 
   // Catalogs are independent so a missing payment service cannot blank the
   // official-account drawer (and vice versa); each error is reported on its own.
@@ -314,7 +323,13 @@ export function ApplicationIntegrationDrawer({
     if (!selectedDeployAppId) {
       return [];
     }
-    if (!allCatalogsReady(paymentCatalog, officialCatalog, miniProgramCatalog, bindingsStatus)) {
+    if (!isValidationReady({
+      bindings: bindingsStatus,
+      integration: draft,
+      miniProgram: miniProgramCatalog,
+      official: officialCatalog,
+      payment: paymentCatalog,
+    })) {
       return [];
     }
     return validateApplicationIntegration({
@@ -351,17 +366,28 @@ export function ApplicationIntegrationDrawer({
 
   const changedIssuesByEnvironment = useMemo(() => {
     const issuesByEnvironment = new Map<string, ApplicationIntegrationIssue[]>();
-    if (!allCatalogsReady(paymentCatalog, officialCatalog, miniProgramCatalog, bindingsStatus)) {
-      return issuesByEnvironment;
-    }
     for (const key of changedEnvironmentKeys) {
+      const integration = drafts[key] ?? emptyEnvironmentIntegration();
+      // Only the catalogs that can actually resolve this environment's bound
+      // accounts have to be ready. An unrelated catalog outage (for example the
+      // payment service failing while a mini program is being linked) must not
+      // silently disable channel validation.
+      if (!isValidationReady({
+        bindings: bindingsStatus,
+        integration,
+        miniProgram: miniProgramCatalog,
+        official: officialCatalog,
+        payment: paymentCatalog,
+      })) {
+        continue;
+      }
       const option = environments.find((candidate) => candidate.key === key);
       issuesByEnvironment.set(key, validateApplicationIntegration({
         ...(appKind ? { appKind } : {}),
         ...(iamApplicationType ? { iamApplicationType } : {}),
         environment: key,
         ...(option?.level === undefined ? {} : { environmentLevel: option.level }),
-        integration: drafts[key] ?? emptyEnvironmentIntegration(),
+        integration,
         paymentAccounts: paymentCatalog.items,
         channelAccounts: [...officialCatalog.items, ...miniProgramCatalog.items],
       }));
@@ -519,6 +545,34 @@ export function ApplicationIntegrationDrawer({
   const bindingsFailed = bindingsStatus === "error";
 
   const selectedChannel = kind === "official-account" ? draft.officialAccount : draft.miniProgram;
+  const loginCheckAvailable = kind === "mini-program" && Boolean(service.checkMiniProgramLogin);
+
+  // A probe verdict describes one account in one environment; switching either
+  // invalidates it instead of showing a stale "passed" badge.
+  useEffect(() => {
+    setLoginCheck({ status: "idle" });
+  }, [environmentKey, kind, selectedChannel?.id]);
+
+  const runLoginCheck = async () => {
+    const probe = service.checkMiniProgramLogin;
+    if (!probe || !selectedChannel) {
+      return;
+    }
+    const accountId = selectedChannel.id;
+    setLoginCheck({ status: "checking" });
+    try {
+      const result = await probe.call(service, accountId);
+      setLoginCheck({ status: "ready", result });
+    } catch (error: unknown) {
+      const status = Number((error as { status?: unknown; statusCode?: unknown } | null)?.status
+        ?? (error as { statusCode?: unknown } | null)?.statusCode);
+      setLoginCheck({
+        status: "error",
+        reason: status === 403 ? "forbidden" : status === 404 || status === 501 ? "not-found" : "failed",
+      });
+    }
+  };
+
   const pickerCopy = copy.picker;
   const pickerLabels = useMemo<ScopeResourcePickerLabels>(() => ({
     title: pickerCopy.title[kindKey(kind)],
@@ -717,6 +771,18 @@ export function ApplicationIntegrationDrawer({
             <StatusNotice tone="warning">{copy.drawer.environment.notBindable}</StatusNotice>
           ) : null}
 
+          {kind !== "payment" && !catalogLoading && environments.length > 0 ? (
+            <ChannelBindingOverview
+              baseline={baseline}
+              channelKind={kind}
+              drafts={drafts}
+              environments={environments}
+              messages={messages}
+              onSelect={setEnvironmentKey}
+              selectedKey={environmentKey}
+            />
+          ) : null}
+
           <ReadinessSection copy={copy} integration={draft} readiness={readiness} surface={surface} />
 
           {catalogFailed ? (
@@ -756,9 +822,12 @@ export function ApplicationIntegrationDrawer({
               channelKind={kind}
               copy={copy}
               disabled={!environmentBindable}
+              loginCheck={loginCheck}
+              loginCheckAvailable={loginCheckAvailable}
               messages={messages}
               onClear={clearChannel}
               onOpenPicker={() => setPickerOpen(true)}
+              onRunLoginCheck={() => void runLoginCheck()}
               selected={selectedChannel}
             />
           ) : null}
@@ -907,22 +976,29 @@ function ChannelSection({
   channelKind,
   copy,
   disabled,
+  loginCheck,
+  loginCheckAvailable,
   messages,
   onClear,
   onOpenPicker,
+  onRunLoginCheck,
   selected,
 }: {
   channelKind: ChannelAccountKind;
   copy: ApplicationCatalogMessages["integrations"];
   disabled: boolean;
+  loginCheck: MiniProgramLoginCheckState;
+  loginCheckAvailable: boolean;
   messages: ApplicationCatalogMessages;
   onClear: (kind: ChannelAccountKind) => void;
   onOpenPicker: () => void;
+  onRunLoginCheck: () => void;
   selected: ApplicationEnvironmentIntegration["officialAccount"] | ApplicationEnvironmentIntegration["miniProgram"];
 }) {
   const Icon = channelKind === "official-account" ? MessageCircle : Smartphone;
+  const checking = loginCheck.status === "checking";
   return (
-    <section className="space-y-3">
+    <section className="space-y-3" data-channel-kind={channelKind}>
       <h3 className="flex items-center gap-2 text-sm font-medium text-[var(--sdk-color-text-primary)]">
         <Icon className="h-4 w-4" />
         {copy.channel.currentTitle}
@@ -930,7 +1006,10 @@ function ChannelSection({
       {!selected ? (
         <p className="text-sm text-[var(--sdk-color-text-muted)]">{copy.channel.emptyCurrent}</p>
       ) : (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel-muted)] px-3 py-2">
+        <div
+          className="flex flex-wrap items-start justify-between gap-3 rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel-muted)] px-3 py-2"
+          data-channel-binding={selected.id}
+        >
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <span className="truncate text-sm font-medium text-[var(--sdk-color-text-primary)]">
@@ -943,25 +1022,230 @@ function ChannelSection({
                 {copy.channel.selected}
               </span>
             </div>
-            <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[var(--sdk-color-text-muted)]">
-              <span>{copy.channel.appId}: {selected.appId || "-"}</span>
-              {selected.accountType ? <span>{copy.channel.accountType}: {selected.accountType}</span> : null}
-              {selected.status ? <span>{copy.channel.status}: {statusLabel(selected.status, messages)}</span> : null}
-              {selected.domainVerifyStatus ? (
-                <span>{copy.channel.domainStatus}: {selected.domainVerifyStatus}</span>
-              ) : null}
-            </div>
+            <dl className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[var(--sdk-color-text-muted)]">
+              {channelAccountFacts(selected, copy, messages).map((fact) => (
+                <div className="flex min-w-0 items-baseline gap-1" data-channel-fact={fact.key} key={fact.key}>
+                  <dt>{fact.label}:</dt>
+                  <dd className="min-w-0 truncate text-[var(--sdk-color-text-secondary)]">{fact.value}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
-          <Button disabled={disabled} onClick={() => onClear(channelKind)} size="sm" type="button" variant="outline">
+          <Button disabled={disabled || checking} onClick={() => onClear(channelKind)} size="sm" type="button" variant="outline">
             <Trash2 className="h-3.5 w-3.5" />
             {copy.channel.clear}
           </Button>
         </div>
       )}
-      <Button disabled={disabled} onClick={onOpenPicker} type="button" variant="outline">
-        <Link2 className="h-3.5 w-3.5" />
-        {selected ? copy.picker.changeChannel : copy.picker.channelOpen}
-      </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button disabled={disabled || checking} onClick={onOpenPicker} type="button" variant="outline">
+          <Link2 className="h-3.5 w-3.5" />
+          {selected ? copy.picker.changeChannel : copy.picker.channelOpen}
+        </Button>
+        {channelKind === "mini-program" && loginCheckAvailable && selected ? (
+          <Button
+            data-mini-program-login-check
+            disabled={disabled || checking}
+            onClick={onRunLoginCheck}
+            type="button"
+            variant="outline"
+          >
+            <ShieldCheck className="h-3.5 w-3.5" />
+            {checking ? copy.channel.loginChecking : copy.channel.loginCheckAction}
+          </Button>
+        ) : null}
+      </div>
+      {checking ? (
+        <p className="text-xs text-[var(--sdk-color-text-muted)]" role="status">
+          {copy.channel.loginChecking}
+        </p>
+      ) : null}
+      {loginCheck.status === "ready" ? (
+        <StatusNotice
+          data-mini-program-login-check-result={loginCheck.result.status}
+          tone={loginCheck.result.status === "succeeded" ? "success" : "danger"}
+        >
+          <div className="space-y-0.5">
+            <p className="font-medium">
+              {loginCheck.result.status === "succeeded"
+                ? copy.channel.loginCheckPassed
+                : copy.channel.loginCheckFailed}
+            </p>
+            {loginCheck.result.summary ? (
+              <p className="text-xs leading-5">{loginCheck.result.summary}</p>
+            ) : null}
+            {loginCheck.result.checkedAt ? (
+              <p className="text-xs text-[var(--sdk-color-text-muted)]">
+                {template(copy.channel.loginCheckAt, { time: formatDateTime(loginCheck.result.checkedAt) })}
+              </p>
+            ) : null}
+          </div>
+        </StatusNotice>
+      ) : null}
+      {loginCheck.status === "error" ? (
+        <StatusNotice tone="danger">
+          {loginCheck.reason === "forbidden"
+            ? copy.channel.loginCheckForbidden
+            : loginCheck.reason === "not-found"
+              ? copy.channel.loginCheckNotFound
+              : copy.channel.loginCheckError}
+        </StatusNotice>
+      ) : null}
+    </section>
+  );
+}
+
+/**
+ * One account fact list shared by the drawer card: AppID first, then whatever
+ * the provider actually reports so an operator can tell a healthy mini program
+ * from one that is disabled, unauthorized or still a test account.
+ */
+function channelAccountFacts(
+  selected: NonNullable<ApplicationEnvironmentIntegration["miniProgram"]>,
+  copy: ApplicationCatalogMessages["integrations"],
+  messages: ApplicationCatalogMessages,
+): ReadonlyArray<{ key: string; label: string; value: string }> {
+  const facts: Array<{ key: string; label: string; value: string }> = [
+    { key: "appId", label: copy.channel.appId, value: selected.appId || "-" },
+  ];
+  if (selected.accountType) {
+    facts.push({
+      key: "accountType",
+      label: copy.channel.accountType,
+      value: localizedAccountType(selected.accountType, copy),
+    });
+  }
+  if (selected.authorizationStatus) {
+    facts.push({
+      key: "authorizationStatus",
+      label: copy.channel.authStatus,
+      value: localizedAuthorizationStatus(selected.authorizationStatus, copy),
+    });
+  }
+  if (selected.status) {
+    facts.push({ key: "status", label: copy.channel.status, value: statusLabel(selected.status, messages) });
+  }
+  if (selected.domainVerifyStatus) {
+    facts.push({
+      key: "domainStatus",
+      label: copy.channel.domainStatus,
+      value: selected.domainVerifyStatus,
+    });
+  }
+  return facts;
+}
+
+/** Localizes the IAM `provider_account_type` vocabulary, keeping unknown values. */
+function localizedAccountType(
+  value: string,
+  copy: ApplicationCatalogMessages["integrations"],
+): string {
+  const normalized = value.trim().toLowerCase();
+  const known: Record<string, keyof typeof copy.channel.accountTypes> = {
+    company: "enterprise",
+    corporate: "enterprise",
+    enterprise: "enterprise",
+    government: "government",
+    individual: "personal",
+    media: "media",
+    organization: "organization",
+    personal: "personal",
+    test: "test",
+    test_account: "test",
+  };
+  const key = known[normalized];
+  return key ? copy.channel.accountTypes[key] : value;
+}
+
+/** Localizes `authorization_status`, keeping unknown values. */
+function localizedAuthorizationStatus(
+  value: string,
+  copy: ApplicationCatalogMessages["integrations"],
+): string {
+  const normalized = value.trim().toLowerCase();
+  const known: Record<string, keyof typeof copy.channel.authorizationStatuses> = {
+    authorized: "authorized",
+    expired: "expired",
+    pending: "unauthorized",
+    revoked: "revoked",
+    unauthorized: "unauthorized",
+    unverified: "unauthorized",
+  };
+  const key = known[normalized];
+  return key ? copy.channel.authorizationStatuses[key] : value;
+}
+
+/**
+ * Per-environment binding overview.
+ *
+ * A mini program or official account is linked once per environment, so the
+ * drawer shows the whole matrix before the operator pages through the selector;
+ * an environment carrying unsaved edits is marked instead of silently looking
+ * like the stored state.
+ */
+function ChannelBindingOverview({
+  baseline,
+  channelKind,
+  drafts,
+  environments,
+  messages,
+  onSelect,
+  selectedKey,
+}: {
+  baseline: Record<string, ApplicationEnvironmentIntegration>;
+  channelKind: ChannelAccountKind;
+  drafts: Record<string, ApplicationEnvironmentIntegration>;
+  environments: readonly ApplicationEnvironmentOption[];
+  messages: ApplicationCatalogMessages;
+  onSelect: (key: string) => void;
+  selectedKey: string;
+}) {
+  const copy = messages.integrations.channel;
+  return (
+    <section className="space-y-2" data-channel-overview={channelKind}>
+      <h3 className="text-sm font-medium text-[var(--sdk-color-text-primary)]">{copy.bindingsTitle}</h3>
+      <ul className="grid gap-1.5 sm:grid-cols-2">
+        {environments.map((environment) => {
+          const integration = drafts[environment.key] ?? emptyEnvironmentIntegration();
+          const bound = channelKind === "official-account"
+            ? integration.officialAccount
+            : integration.miniProgram;
+          const unsaved = integrationFingerprint(integration)
+            !== integrationFingerprint(baseline[environment.key] ?? emptyEnvironmentIntegration());
+          const active = environment.key === selectedKey;
+          return (
+            <li key={environment.key}>
+              <button
+                aria-current={active ? "true" : undefined}
+                className={[
+                  "flex w-full min-w-0 flex-col gap-0.5 rounded-[var(--sdk-radius-control)] border px-3 py-2 text-left transition-colors",
+                  active
+                    ? "border-[var(--sdk-color-brand-primary)] bg-[var(--sdk-color-brand-primary-soft)]"
+                    : "border-[var(--sdk-color-border-default)] hover:bg-[var(--sdk-color-surface-panel-muted)]",
+                ].join(" ")}
+                data-channel-overview-environment={environment.key}
+                data-channel-overview-bound={bound ? "true" : "false"}
+                onClick={() => onSelect(environment.key)}
+                type="button"
+              >
+                <span className="flex items-center gap-2 text-xs text-[var(--sdk-color-text-secondary)]">
+                  <span className="truncate font-medium">{environmentLabel(environment)}</span>
+                  {unsaved ? (
+                    <span className="rounded-full border border-[var(--sdk-color-status-warning)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--sdk-color-status-warning)]">
+                      {copy.unsaved}
+                    </span>
+                  ) : null}
+                </span>
+                <span className="truncate text-xs text-[var(--sdk-color-text-muted)]">
+                  {bound
+                    ? `${bound.displayName}${bound.appId ? ` · ${bound.appId}` : ""}`
+                    : copy.emptyCurrent}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 }
@@ -1329,16 +1613,43 @@ function dedupeIssues(issues: readonly ApplicationIntegrationIssue[]): Applicati
   return unique;
 }
 
-function allCatalogsReady(
-  payment: CatalogState<ApplicationPaymentAccountOption>,
-  official: CatalogState<ApplicationChannelAccountOption>,
-  miniProgram: CatalogState<ApplicationChannelAccountOption>,
-  bindings: "loading" | "ready" | "error",
-): boolean {
-  return payment.status === "ready"
-    && official.status === "ready"
-    && miniProgram.status === "ready"
-    && bindings !== "loading";
+/**
+ * `true` when every catalog the draft actually references has loaded.
+ *
+ * Validation resolves the accounts a draft references (channel and payment
+ * accounts) against their catalogs; a catalog the draft does not reference is
+ * irrelevant. Requiring all three would let an unrelated outage silently
+ * suppress findings — exactly how a broken mini program binding becomes
+ * invisible.
+ */
+function isValidationReady(input: {
+  bindings: "loading" | "ready" | "error";
+  integration: ApplicationEnvironmentIntegration;
+  miniProgram: CatalogState<ApplicationChannelAccountOption>;
+  official: CatalogState<ApplicationChannelAccountOption>;
+  payment: CatalogState<ApplicationPaymentAccountOption>;
+}): boolean {
+  if (input.bindings === "loading") {
+    return false;
+  }
+  const { integration } = input;
+  // Either channel kind may still be bound on a legacy row, so both catalogs
+  // are needed before any channel account can be resolved.
+  if (
+    (integration.officialAccount || integration.miniProgram)
+    && (input.official.status !== "ready" || input.miniProgram.status !== "ready")
+  ) {
+    return false;
+  }
+  return integration.paymentAccounts.length === 0 || input.payment.status === "ready";
+}
+
+function formatDateTime(value: string): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(parsed);
 }
 
 function isForbiddenError(error: unknown): boolean {

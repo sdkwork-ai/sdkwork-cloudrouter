@@ -193,11 +193,17 @@ describe('cloudrouter flutter mobile application root', () => {
     }
   });
 
-  it('declares the Flutter toolchain gap instead of claiming a bundle', () => {
+  it('declares the store-first release matrix instead of an install bundle', () => {
     const metadata = manifest.artifacts.installConfig.metadata;
     assert.equal(metadata.deferred, true);
     assert.equal(metadata.packageManager, 'flutter');
     assert.ok(String(metadata.deferredReason).length > 20);
+    assert.match(metadata.deferredReason, /publish\.stores/u);
+    assert.deepEqual(
+      (manifest.publish.stores ?? []).map((lane) => lane.marketId),
+      ['APPLE_APP_STORE', 'GOOGLE_PLAY', 'HUAWEI_APPGALLERY'],
+    );
+    assert.deepEqual(manifest.runtime.targetPlatforms, ['ios', 'android', 'harmony']);
     const coreReadme = fs.readFileSync(
       path.join(ROOT, 'packages', 'sdkwork_cloudrouter_flutter_mobile_core', 'README.md'),
       'utf8',

@@ -1,0 +1,16 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "SDKWork CloudRouter"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "SDKWork CloudRouter"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "CloudRouter"
+    }
+  ]
+}

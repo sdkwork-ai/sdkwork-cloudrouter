@@ -41,7 +41,8 @@
     "runtimes": [
       "APP",
       "APP_ANDROID",
-      "APP_IOS"
+      "APP_IOS",
+      "APP_HARMONY"
     ],
     "deliveryModes": [
       "DIRECT_DOWNLOAD"
@@ -52,35 +53,1160 @@
       "standalone",
       "cloud"
     ],
-    "defaultDeploymentProfile": "standalone"
+    "defaultDeploymentProfile": "standalone",
+    "targetPlatforms": [
+      "ios",
+      "android",
+      "harmony"
+    ]
   },
   "media": {
     "icons": {
       "primary": {
-        "id": "cloudrouter-flutter-mobile-primary-icon",
+        "id": "catalog-app-icon-1024",
         "type": "ICON",
         "purpose": "PRIMARY",
         "platform": "APP",
-        "locale": "en-US",
+        "locale": "zh-CN",
         "width": 1024,
         "height": 1024,
         "format": "PNG",
         "enabled": true,
         "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/assets/icon-1024.png",
         "metadata": {
-          "generatedPlaceholder": true
-        }
+          "source": "apps/sdkwork-cloudrouter-pc/public/apple-touch-icon.png",
+          "generatedBy": "scripts/generate-store-images.py"
+        },
+        "fileSizeBytes": 424373,
+        "path": "assets/media/icons/app-icon-1024.png",
+        "alphaChannel": false
       },
-      "platform": [],
+      "platform": [
+        {
+          "id": "apple-app-store-icon",
+          "type": "ICON",
+          "purpose": "STORE_LISTING",
+          "platform": "APP_IOS",
+          "locale": "zh-CN",
+          "width": 1024,
+          "height": 1024,
+          "format": "PNG",
+          "fileSizeBytes": 424373,
+          "alphaChannel": false,
+          "enabled": true,
+          "path": "assets/media/store/icons/apple/app-icon-1024.png",
+          "storePlatform": "APPLE_APP_STORE",
+          "metadata": {
+            "altText": "Apple App Store 应用图标"
+          }
+        },
+        {
+          "id": "google-play-icon",
+          "type": "ICON",
+          "purpose": "STORE_LISTING",
+          "platform": "APP_ANDROID",
+          "locale": "zh-CN",
+          "width": 512,
+          "height": 512,
+          "format": "PNG",
+          "fileSizeBytes": 167754,
+          "alphaChannel": false,
+          "enabled": true,
+          "path": "assets/media/store/icons/google/play-icon-512.png",
+          "storePlatform": "GOOGLE_PLAY",
+          "metadata": {
+            "altText": "Google Play 应用图标"
+          }
+        },
+        {
+          "id": "huawei-appgallery-icon",
+          "type": "ICON",
+          "purpose": "STORE_LISTING",
+          "platform": "APP_ANDROID",
+          "locale": "zh-CN",
+          "width": 216,
+          "height": 216,
+          "format": "PNG",
+          "fileSizeBytes": 51608,
+          "alphaChannel": false,
+          "enabled": true,
+          "path": "assets/media/store/icons/huawei/app-icon-216.png",
+          "storePlatform": "HUAWEI_APPGALLERY",
+          "metadata": {
+            "altText": "Huawei AppGallery 应用图标"
+          }
+        }
+      ],
       "metadata": {
-        "generatedPlaceholder": true
+        "assetVersion": "0.1.0",
+        "defaultLocale": "zh-CN"
       }
     },
-    "screenshots": [],
-    "previews": [],
+    "screenshots": [
+      {
+        "id": "apple-app-store-ios-home",
+        "type": "SCREENSHOT",
+        "purpose": "STORE_SUBMISSION",
+        "platform": "APP_IOS",
+        "deviceClass": "IPHONE",
+        "displayType": "IPHONE_6_9",
+        "locale": "zh-CN",
+        "width": 1320,
+        "height": 2868,
+        "format": "PNG",
+        "fileSizeBytes": 167780,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/ios/home.png",
+        "sortOrder": 0,
+        "storePlatform": "APPLE_APP_STORE",
+        "metadata": {
+          "altText": "首页：算力与模型服务总览，包含搜索、常用入口与服务列表",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "apple-app-store-ios-messages",
+        "type": "SCREENSHOT",
+        "purpose": "STORE_SUBMISSION",
+        "platform": "APP_IOS",
+        "deviceClass": "IPHONE",
+        "displayType": "IPHONE_6_9",
+        "locale": "zh-CN",
+        "width": 1320,
+        "height": 2868,
+        "format": "PNG",
+        "fileSizeBytes": 58557,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/ios/messages.png",
+        "sortOrder": 1,
+        "storePlatform": "APPLE_APP_STORE",
+        "metadata": {
+          "altText": "消息：与设计、运维和产品助手的会话列表",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "apple-app-store-ios-playground",
+        "type": "SCREENSHOT",
+        "purpose": "STORE_SUBMISSION",
+        "platform": "APP_IOS",
+        "deviceClass": "IPHONE",
+        "displayType": "IPHONE_6_9",
+        "locale": "zh-CN",
+        "width": 1320,
+        "height": 2868,
+        "format": "PNG",
+        "fileSizeBytes": 71444,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/ios/playground.png",
+        "sortOrder": 2,
+        "storePlatform": "APPLE_APP_STORE",
+        "metadata": {
+          "altText": "体验中心：与 AI 助手实时对话",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "apple-app-store-ios-profile",
+        "type": "SCREENSHOT",
+        "purpose": "STORE_SUBMISSION",
+        "platform": "APP_IOS",
+        "deviceClass": "IPHONE",
+        "displayType": "IPHONE_6_9",
+        "locale": "zh-CN",
+        "width": 1320,
+        "height": 2868,
+        "format": "PNG",
+        "fileSizeBytes": 80922,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/ios/profile.png",
+        "sortOrder": 3,
+        "storePlatform": "APPLE_APP_STORE",
+        "metadata": {
+          "altText": "个人中心：账户、会员与设置入口",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "apple-app-store-ios-settings",
+        "type": "SCREENSHOT",
+        "purpose": "STORE_SUBMISSION",
+        "platform": "APP_IOS",
+        "deviceClass": "IPHONE",
+        "displayType": "IPHONE_6_9",
+        "locale": "zh-CN",
+        "width": 1320,
+        "height": 2868,
+        "format": "PNG",
+        "fileSizeBytes": 80173,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/ios/settings.png",
+        "sortOrder": 4,
+        "storePlatform": "APPLE_APP_STORE",
+        "metadata": {
+          "altText": "设置：外观、语音、通知与关于",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "catalog-android-home",
+        "type": "SCREENSHOT",
+        "purpose": "CATALOG_SCREENSHOT",
+        "platform": "APP_ANDROID",
+        "deviceClass": "ANDROID_PHONE",
+        "displayType": "ANDROID_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 105448,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/android/home.png",
+        "sortOrder": 0,
+        "metadata": {
+          "altText": "首页：算力与模型服务总览，包含搜索、常用入口与服务列表",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "catalog-android-messages",
+        "type": "SCREENSHOT",
+        "purpose": "CATALOG_SCREENSHOT",
+        "platform": "APP_ANDROID",
+        "deviceClass": "ANDROID_PHONE",
+        "displayType": "ANDROID_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 39382,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/android/messages.png",
+        "sortOrder": 1,
+        "metadata": {
+          "altText": "消息：与设计、运维和产品助手的会话列表",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "catalog-android-playground",
+        "type": "SCREENSHOT",
+        "purpose": "CATALOG_SCREENSHOT",
+        "platform": "APP_ANDROID",
+        "deviceClass": "ANDROID_PHONE",
+        "displayType": "ANDROID_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 47422,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/android/playground.png",
+        "sortOrder": 2,
+        "metadata": {
+          "altText": "体验中心：与 AI 助手实时对话",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "catalog-android-profile",
+        "type": "SCREENSHOT",
+        "purpose": "CATALOG_SCREENSHOT",
+        "platform": "APP_ANDROID",
+        "deviceClass": "ANDROID_PHONE",
+        "displayType": "ANDROID_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 55741,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/android/profile.png",
+        "sortOrder": 3,
+        "metadata": {
+          "altText": "个人中心：账户、会员与设置入口",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "catalog-android-settings",
+        "type": "SCREENSHOT",
+        "purpose": "CATALOG_SCREENSHOT",
+        "platform": "APP_ANDROID",
+        "deviceClass": "ANDROID_PHONE",
+        "displayType": "ANDROID_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 53945,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/android/settings.png",
+        "sortOrder": 4,
+        "metadata": {
+          "altText": "设置：外观、语音、通知与关于",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "catalog-harmony-home",
+        "type": "SCREENSHOT",
+        "purpose": "CATALOG_SCREENSHOT",
+        "platform": "APP_HARMONY",
+        "deviceClass": "HARMONY_PHONE",
+        "displayType": "HARMONY_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 105448,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/harmony/home.png",
+        "sortOrder": 0,
+        "metadata": {
+          "altText": "首页：算力与模型服务总览，包含搜索、常用入口与服务列表",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "catalog-harmony-messages",
+        "type": "SCREENSHOT",
+        "purpose": "CATALOG_SCREENSHOT",
+        "platform": "APP_HARMONY",
+        "deviceClass": "HARMONY_PHONE",
+        "displayType": "HARMONY_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 39382,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/harmony/messages.png",
+        "sortOrder": 1,
+        "metadata": {
+          "altText": "消息：与设计、运维和产品助手的会话列表",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "catalog-harmony-playground",
+        "type": "SCREENSHOT",
+        "purpose": "CATALOG_SCREENSHOT",
+        "platform": "APP_HARMONY",
+        "deviceClass": "HARMONY_PHONE",
+        "displayType": "HARMONY_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 47422,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/harmony/playground.png",
+        "sortOrder": 2,
+        "metadata": {
+          "altText": "体验中心：与 AI 助手实时对话",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "catalog-harmony-profile",
+        "type": "SCREENSHOT",
+        "purpose": "CATALOG_SCREENSHOT",
+        "platform": "APP_HARMONY",
+        "deviceClass": "HARMONY_PHONE",
+        "displayType": "HARMONY_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 55741,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/harmony/profile.png",
+        "sortOrder": 3,
+        "metadata": {
+          "altText": "个人中心：账户、会员与设置入口",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "catalog-harmony-settings",
+        "type": "SCREENSHOT",
+        "purpose": "CATALOG_SCREENSHOT",
+        "platform": "APP_HARMONY",
+        "deviceClass": "HARMONY_PHONE",
+        "displayType": "HARMONY_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 53945,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/harmony/settings.png",
+        "sortOrder": 4,
+        "metadata": {
+          "altText": "设置：外观、语音、通知与关于",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "catalog-ios-home",
+        "type": "SCREENSHOT",
+        "purpose": "CATALOG_SCREENSHOT",
+        "platform": "APP_IOS",
+        "deviceClass": "IPHONE",
+        "displayType": "IPHONE_6_9",
+        "locale": "zh-CN",
+        "width": 1320,
+        "height": 2868,
+        "format": "PNG",
+        "fileSizeBytes": 167780,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/ios/home.png",
+        "sortOrder": 0,
+        "metadata": {
+          "altText": "首页：算力与模型服务总览，包含搜索、常用入口与服务列表",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "catalog-ios-messages",
+        "type": "SCREENSHOT",
+        "purpose": "CATALOG_SCREENSHOT",
+        "platform": "APP_IOS",
+        "deviceClass": "IPHONE",
+        "displayType": "IPHONE_6_9",
+        "locale": "zh-CN",
+        "width": 1320,
+        "height": 2868,
+        "format": "PNG",
+        "fileSizeBytes": 58557,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/ios/messages.png",
+        "sortOrder": 1,
+        "metadata": {
+          "altText": "消息：与设计、运维和产品助手的会话列表",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "catalog-ios-playground",
+        "type": "SCREENSHOT",
+        "purpose": "CATALOG_SCREENSHOT",
+        "platform": "APP_IOS",
+        "deviceClass": "IPHONE",
+        "displayType": "IPHONE_6_9",
+        "locale": "zh-CN",
+        "width": 1320,
+        "height": 2868,
+        "format": "PNG",
+        "fileSizeBytes": 71444,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/ios/playground.png",
+        "sortOrder": 2,
+        "metadata": {
+          "altText": "体验中心：与 AI 助手实时对话",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "catalog-ios-profile",
+        "type": "SCREENSHOT",
+        "purpose": "CATALOG_SCREENSHOT",
+        "platform": "APP_IOS",
+        "deviceClass": "IPHONE",
+        "displayType": "IPHONE_6_9",
+        "locale": "zh-CN",
+        "width": 1320,
+        "height": 2868,
+        "format": "PNG",
+        "fileSizeBytes": 80922,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/ios/profile.png",
+        "sortOrder": 3,
+        "metadata": {
+          "altText": "个人中心：账户、会员与设置入口",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "catalog-ios-settings",
+        "type": "SCREENSHOT",
+        "purpose": "CATALOG_SCREENSHOT",
+        "platform": "APP_IOS",
+        "deviceClass": "IPHONE",
+        "displayType": "IPHONE_6_9",
+        "locale": "zh-CN",
+        "width": 1320,
+        "height": 2868,
+        "format": "PNG",
+        "fileSizeBytes": 80173,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/ios/settings.png",
+        "sortOrder": 4,
+        "metadata": {
+          "altText": "设置：外观、语音、通知与关于",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "catalog-mobile-home",
+        "type": "SCREENSHOT",
+        "purpose": "CATALOG_SCREENSHOT",
+        "platform": "APP",
+        "deviceClass": "MOBILE",
+        "displayType": "MOBILE_9_16",
+        "locale": "zh-CN",
+        "width": 1170,
+        "height": 2532,
+        "format": "PNG",
+        "fileSizeBytes": 149030,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/mobile/home.png",
+        "sortOrder": 0,
+        "metadata": {
+          "altText": "首页：算力与模型服务总览，包含搜索、常用入口与服务列表",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "catalog-mobile-messages",
+        "type": "SCREENSHOT",
+        "purpose": "CATALOG_SCREENSHOT",
+        "platform": "APP",
+        "deviceClass": "MOBILE",
+        "displayType": "MOBILE_9_16",
+        "locale": "zh-CN",
+        "width": 1170,
+        "height": 2532,
+        "format": "PNG",
+        "fileSizeBytes": 55108,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/mobile/messages.png",
+        "sortOrder": 1,
+        "metadata": {
+          "altText": "消息：与设计、运维和产品助手的会话列表",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "catalog-mobile-playground",
+        "type": "SCREENSHOT",
+        "purpose": "CATALOG_SCREENSHOT",
+        "platform": "APP",
+        "deviceClass": "MOBILE",
+        "displayType": "MOBILE_9_16",
+        "locale": "zh-CN",
+        "width": 1170,
+        "height": 2532,
+        "format": "PNG",
+        "fileSizeBytes": 68269,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/mobile/playground.png",
+        "sortOrder": 2,
+        "metadata": {
+          "altText": "体验中心：与 AI 助手实时对话",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "catalog-mobile-profile",
+        "type": "SCREENSHOT",
+        "purpose": "CATALOG_SCREENSHOT",
+        "platform": "APP",
+        "deviceClass": "MOBILE",
+        "displayType": "MOBILE_9_16",
+        "locale": "zh-CN",
+        "width": 1170,
+        "height": 2532,
+        "format": "PNG",
+        "fileSizeBytes": 77198,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/mobile/profile.png",
+        "sortOrder": 3,
+        "metadata": {
+          "altText": "个人中心：账户、会员与设置入口",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "catalog-mobile-settings",
+        "type": "SCREENSHOT",
+        "purpose": "CATALOG_SCREENSHOT",
+        "platform": "APP",
+        "deviceClass": "MOBILE",
+        "displayType": "MOBILE_9_16",
+        "locale": "zh-CN",
+        "width": 1170,
+        "height": 2532,
+        "format": "PNG",
+        "fileSizeBytes": 76809,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/mobile/settings.png",
+        "sortOrder": 4,
+        "metadata": {
+          "altText": "设置：外观、语音、通知与关于",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "google-play-android-home",
+        "type": "SCREENSHOT",
+        "purpose": "STORE_SUBMISSION",
+        "platform": "APP_ANDROID",
+        "deviceClass": "ANDROID_PHONE",
+        "displayType": "ANDROID_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 105448,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/android/home.png",
+        "sortOrder": 0,
+        "storePlatform": "GOOGLE_PLAY",
+        "metadata": {
+          "altText": "首页：算力与模型服务总览，包含搜索、常用入口与服务列表",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "google-play-android-messages",
+        "type": "SCREENSHOT",
+        "purpose": "STORE_SUBMISSION",
+        "platform": "APP_ANDROID",
+        "deviceClass": "ANDROID_PHONE",
+        "displayType": "ANDROID_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 39382,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/android/messages.png",
+        "sortOrder": 1,
+        "storePlatform": "GOOGLE_PLAY",
+        "metadata": {
+          "altText": "消息：与设计、运维和产品助手的会话列表",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "google-play-android-playground",
+        "type": "SCREENSHOT",
+        "purpose": "STORE_SUBMISSION",
+        "platform": "APP_ANDROID",
+        "deviceClass": "ANDROID_PHONE",
+        "displayType": "ANDROID_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 47422,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/android/playground.png",
+        "sortOrder": 2,
+        "storePlatform": "GOOGLE_PLAY",
+        "metadata": {
+          "altText": "体验中心：与 AI 助手实时对话",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "google-play-android-profile",
+        "type": "SCREENSHOT",
+        "purpose": "STORE_SUBMISSION",
+        "platform": "APP_ANDROID",
+        "deviceClass": "ANDROID_PHONE",
+        "displayType": "ANDROID_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 55741,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/android/profile.png",
+        "sortOrder": 3,
+        "storePlatform": "GOOGLE_PLAY",
+        "metadata": {
+          "altText": "个人中心：账户、会员与设置入口",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "google-play-android-settings",
+        "type": "SCREENSHOT",
+        "purpose": "STORE_SUBMISSION",
+        "platform": "APP_ANDROID",
+        "deviceClass": "ANDROID_PHONE",
+        "displayType": "ANDROID_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 53945,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/android/settings.png",
+        "sortOrder": 4,
+        "storePlatform": "GOOGLE_PLAY",
+        "metadata": {
+          "altText": "设置：外观、语音、通知与关于",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "huawei-appgallery-android-home",
+        "type": "SCREENSHOT",
+        "purpose": "STORE_SUBMISSION",
+        "platform": "APP_ANDROID",
+        "deviceClass": "ANDROID_PHONE",
+        "displayType": "ANDROID_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 105448,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/android/home.png",
+        "sortOrder": 0,
+        "storePlatform": "HUAWEI_APPGALLERY",
+        "metadata": {
+          "altText": "首页：算力与模型服务总览，包含搜索、常用入口与服务列表",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "huawei-appgallery-android-messages",
+        "type": "SCREENSHOT",
+        "purpose": "STORE_SUBMISSION",
+        "platform": "APP_ANDROID",
+        "deviceClass": "ANDROID_PHONE",
+        "displayType": "ANDROID_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 39382,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/android/messages.png",
+        "sortOrder": 1,
+        "storePlatform": "HUAWEI_APPGALLERY",
+        "metadata": {
+          "altText": "消息：与设计、运维和产品助手的会话列表",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "huawei-appgallery-android-playground",
+        "type": "SCREENSHOT",
+        "purpose": "STORE_SUBMISSION",
+        "platform": "APP_ANDROID",
+        "deviceClass": "ANDROID_PHONE",
+        "displayType": "ANDROID_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 47422,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/android/playground.png",
+        "sortOrder": 2,
+        "storePlatform": "HUAWEI_APPGALLERY",
+        "metadata": {
+          "altText": "体验中心：与 AI 助手实时对话",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "huawei-appgallery-android-profile",
+        "type": "SCREENSHOT",
+        "purpose": "STORE_SUBMISSION",
+        "platform": "APP_ANDROID",
+        "deviceClass": "ANDROID_PHONE",
+        "displayType": "ANDROID_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 55741,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/android/profile.png",
+        "sortOrder": 3,
+        "storePlatform": "HUAWEI_APPGALLERY",
+        "metadata": {
+          "altText": "个人中心：账户、会员与设置入口",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "huawei-appgallery-android-settings",
+        "type": "SCREENSHOT",
+        "purpose": "STORE_SUBMISSION",
+        "platform": "APP_ANDROID",
+        "deviceClass": "ANDROID_PHONE",
+        "displayType": "ANDROID_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 53945,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/android/settings.png",
+        "sortOrder": 4,
+        "storePlatform": "HUAWEI_APPGALLERY",
+        "metadata": {
+          "altText": "设置：外观、语音、通知与关于",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "huawei-appgallery-harmony-home",
+        "type": "SCREENSHOT",
+        "purpose": "STORE_SUBMISSION",
+        "platform": "APP_HARMONY",
+        "deviceClass": "HARMONY_PHONE",
+        "displayType": "HARMONY_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 105448,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/harmony/home.png",
+        "sortOrder": 0,
+        "storePlatform": "HUAWEI_APPGALLERY",
+        "metadata": {
+          "altText": "首页：算力与模型服务总览，包含搜索、常用入口与服务列表",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "huawei-appgallery-harmony-messages",
+        "type": "SCREENSHOT",
+        "purpose": "STORE_SUBMISSION",
+        "platform": "APP_HARMONY",
+        "deviceClass": "HARMONY_PHONE",
+        "displayType": "HARMONY_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 39382,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/harmony/messages.png",
+        "sortOrder": 1,
+        "storePlatform": "HUAWEI_APPGALLERY",
+        "metadata": {
+          "altText": "消息：与设计、运维和产品助手的会话列表",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "huawei-appgallery-harmony-playground",
+        "type": "SCREENSHOT",
+        "purpose": "STORE_SUBMISSION",
+        "platform": "APP_HARMONY",
+        "deviceClass": "HARMONY_PHONE",
+        "displayType": "HARMONY_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 47422,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/harmony/playground.png",
+        "sortOrder": 2,
+        "storePlatform": "HUAWEI_APPGALLERY",
+        "metadata": {
+          "altText": "体验中心：与 AI 助手实时对话",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "huawei-appgallery-harmony-profile",
+        "type": "SCREENSHOT",
+        "purpose": "STORE_SUBMISSION",
+        "platform": "APP_HARMONY",
+        "deviceClass": "HARMONY_PHONE",
+        "displayType": "HARMONY_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 55741,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/harmony/profile.png",
+        "sortOrder": 3,
+        "storePlatform": "HUAWEI_APPGALLERY",
+        "metadata": {
+          "altText": "个人中心：账户、会员与设置入口",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      },
+      {
+        "id": "huawei-appgallery-harmony-settings",
+        "type": "SCREENSHOT",
+        "purpose": "STORE_SUBMISSION",
+        "platform": "APP_HARMONY",
+        "deviceClass": "HARMONY_PHONE",
+        "displayType": "HARMONY_PHONE",
+        "locale": "zh-CN",
+        "width": 1080,
+        "height": 1920,
+        "format": "PNG",
+        "fileSizeBytes": 53945,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/screenshots/harmony/settings.png",
+        "sortOrder": 4,
+        "storePlatform": "HUAWEI_APPGALLERY",
+        "metadata": {
+          "altText": "设置：外观、语音、通知与关于",
+          "capture": {
+            "appVersion": "0.1.0",
+            "capturedAt": "2026-11-21T00:45:00+08:00",
+            "tool": "flutter-widget-test"
+          }
+        }
+      }
+    ],
+    "previews": [
+      {
+        "id": "catalog-cover-zh-cn",
+        "type": "COVER",
+        "purpose": "CATALOG_COVER",
+        "platform": "APP",
+        "locale": "zh-CN",
+        "width": 1920,
+        "height": 1080,
+        "format": "PNG",
+        "fileSizeBytes": 222767,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/covers/catalog-cover-1920x1080.png",
+        "sortOrder": 0,
+        "metadata": {
+          "altText": "SDKWork CloudRouter 品牌封面：手机界面与品牌标识"
+        }
+      },
+      {
+        "id": "google-play-feature-graphic",
+        "type": "FEATURE_GRAPHIC",
+        "purpose": "FEATURE_GRAPHIC",
+        "platform": "APP_ANDROID",
+        "locale": "zh-CN",
+        "width": 1024,
+        "height": 500,
+        "format": "PNG",
+        "fileSizeBytes": 69199,
+        "alphaChannel": false,
+        "enabled": true,
+        "path": "assets/media/store/google/feature-graphic-1024x500.png",
+        "storePlatform": "GOOGLE_PLAY",
+        "sortOrder": 1,
+        "metadata": {
+          "altText": "SDKWork CloudRouter 谷歌商店横幅：算力与模型，一站式上云"
+        }
+      }
+    ],
     "metadata": {
       "assetVersion": "0.1.0",
-      "defaultLocale": "en-US"
+      "defaultLocale": "zh-CN",
+      "standard": "sdkwork-app-assets.v1"
     }
   },
   "publish": {
@@ -89,18 +1215,97 @@
     "platforms": [
       "APP",
       "APP_ANDROID",
-      "APP_IOS"
+      "APP_IOS",
+      "APP_HARMONY"
     ],
     "installPlatforms": [
       "APP",
       "APP_ANDROID",
-      "APP_IOS"
+      "APP_IOS",
+      "APP_HARMONY"
     ],
     "config": {
       "workspaceRoot": "apps/sdkwork-cloudrouter-flutter-mobile",
       "framework": "flutter",
       "managedBy": "sdkwork-cloudrouter-client-scaffold"
-    }
+    },
+    "stores": [
+      {
+        "marketId": "APPLE_APP_STORE",
+        "displayName": "Apple App Store",
+        "storeId": "com.sdkwork.cloudrouter.mobile",
+        "platforms": [
+          "APP_IOS"
+        ],
+        "countries": [
+          "US",
+          "CN",
+          "HK",
+          "TW",
+          "SG",
+          "JP",
+          "GB",
+          "DE",
+          "FR",
+          "CA",
+          "AU"
+        ],
+        "track": "APP_STORE",
+        "status": "READY",
+        "defaultLocale": "zh-CN",
+        "configRef": "etc/store-publishing/apple-app-store.json"
+      },
+      {
+        "marketId": "GOOGLE_PLAY",
+        "displayName": "Google Play",
+        "storeId": "com.sdkwork.cloudrouter.mobile",
+        "platforms": [
+          "APP_ANDROID"
+        ],
+        "countries": [
+          "US",
+          "CA",
+          "GB",
+          "DE",
+          "FR",
+          "JP",
+          "SG",
+          "AU",
+          "IN",
+          "BR"
+        ],
+        "track": "PRODUCTION",
+        "status": "READY",
+        "defaultLocale": "en-US",
+        "configRef": "etc/store-publishing/google-play.json",
+        "storeUrl": "https://play.google.com/store/apps/details?id=com.sdkwork.cloudrouter.mobile"
+      },
+      {
+        "marketId": "HUAWEI_APPGALLERY",
+        "displayName": "Huawei AppGallery",
+        "storeId": "com.sdkwork.cloudrouter.mobile",
+        "platforms": [
+          "APP_ANDROID",
+          "APP_HARMONY"
+        ],
+        "countries": [
+          "CN",
+          "HK",
+          "TW",
+          "SG",
+          "MY",
+          "TH",
+          "US",
+          "GB",
+          "DE",
+          "FR"
+        ],
+        "track": "REVIEW",
+        "status": "READY",
+        "defaultLocale": "zh-CN",
+        "configRef": "etc/store-publishing/huawei-appgallery.json"
+      }
+    ]
   },
   "artifacts": {
     "installConfig": {
@@ -110,7 +1315,7 @@
         "framework": "flutter",
         "packageManager": "flutter",
         "deferred": true,
-        "deferredReason": "No Flutter/Dart toolchain is installed in this workspace, so `flutter pub get`, `flutter analyze`, and the Android/iOS build are declared as a pending integration step instead of an authored bundle."
+        "deferredReason": "The first release ships through per-store lanes (publish.stores): signed IPA, AAB and HAP artifacts are submitted to App Store Connect, Google Play and AppGallery Connect instead of a direct-download install package. Install packages are added after the first store release publishes a durable artifact URL."
       }
     }
   },
@@ -125,7 +1330,75 @@
         "version": "0.1.0",
         "channel": "BETA",
         "current": true,
-        "packageIds": []
+        "packageIds": [],
+        "metadata": {
+          "marketReleases": [
+            {
+              "releaseVersion": "0.1.0",
+              "marketId": "APPLE_APP_STORE",
+              "track": "APP_STORE",
+              "status": "PENDING_SUBMISSION",
+              "rolloutPercent": 100,
+              "countries": [
+                "US",
+                "CN",
+                "HK",
+                "TW",
+                "SG",
+                "JP",
+                "GB",
+                "DE",
+                "FR",
+                "CA",
+                "AU"
+              ],
+              "minSupportedVersion": "0.1.0",
+              "forceUpdate": false
+            },
+            {
+              "releaseVersion": "0.1.0",
+              "marketId": "GOOGLE_PLAY",
+              "track": "PRODUCTION",
+              "status": "PENDING_SUBMISSION",
+              "rolloutPercent": 25,
+              "countries": [
+                "US",
+                "CA",
+                "GB",
+                "DE",
+                "FR",
+                "JP",
+                "SG",
+                "AU",
+                "IN",
+                "BR"
+              ],
+              "minSupportedVersion": "0.1.0",
+              "forceUpdate": false
+            },
+            {
+              "releaseVersion": "0.1.0",
+              "marketId": "HUAWEI_APPGALLERY",
+              "track": "REVIEW",
+              "status": "PENDING_SUBMISSION",
+              "rolloutPercent": 100,
+              "countries": [
+                "CN",
+                "HK",
+                "TW",
+                "SG",
+                "MY",
+                "TH",
+                "US",
+                "GB",
+                "DE",
+                "FR"
+              ],
+              "minSupportedVersion": "0.1.0",
+              "forceUpdate": false
+            }
+          ]
+        }
       }
     ]
   },

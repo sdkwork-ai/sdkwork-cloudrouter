@@ -80,6 +80,36 @@ const miniProgram: ApplicationChannelAccountOption = {
   authorizationStatus: "authorized",
 };
 
+/** A WeChat mini program deploy row already linked to `miniProgram` in production. */
+function seededMiniProgramApplication(): ApplicationRecord {
+  return {
+    ...deployApplication,
+    id: "deploy-mini-seeded",
+    kind: "WECHAT_MINIPROGRAM",
+    metadata: {
+      integrations: {
+        schema: APPLICATION_INTEGRATION_SCHEMA,
+        linkedApplications: [],
+        environments: {
+          production: {
+            miniProgram: {
+              appId: "wx-mini-1",
+              displayName: "Acme Mini",
+              enabled: true,
+              id: "ra-mini-1",
+              providerCode: "wechat_mini_program",
+              resourceAccountKind: "mini-program",
+              status: "active",
+            },
+          },
+        },
+      },
+    },
+    name: "Mini Storefront",
+    reference: "mini-storefront",
+  };
+}
+
 function createIntegrationService(): ApplicationIntegrationService {
   return {
     loadChannelAccounts: vi.fn(async (kind) =>
@@ -166,7 +196,7 @@ describe("application integration actions", () => {
     expect(screen.getByRole("button", { name: "应用配置" })).toBeTruthy();
     openAppConfigMenu();
     expect(screen.getByRole("menuitem", { name: "支付配置" })).toBeTruthy();
-    expect(screen.getByRole("menuitem", { name: "关联小程序账号" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "关联小程序配置" })).toBeTruthy();
     expect(screen.getByRole("menuitem", { name: "关联公众号账号" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("menuitem", { name: "支付配置" }));
@@ -221,7 +251,7 @@ describe("application integration actions", () => {
     clickGroup("deploy");
     await screen.findAllByText("Storefront");
 
-    chooseAppConfigAction("关联小程序账号");
+    chooseAppConfigAction("关联小程序配置");
     fireEvent.click(await screen.findByRole("button", { name: "选择账号" }));
     fireEvent.click(await screen.findByRole("tab", { name: "租户" }));
     fireEvent.click(await screen.findByRole("option", { name: /Acme Mini/ }));
@@ -325,7 +355,7 @@ describe("application integration actions", () => {
 
     expect(screen.getByRole("menuitem", { name: "支付配置" })).toBeTruthy();
     expect(screen.queryByRole("menuitem", { name: "关联公众号账号" })).toBeNull();
-    expect(screen.queryByRole("menuitem", { name: "关联小程序账号" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "关联小程序配置" })).toBeNull();
   });
 
   it("shows the environments from the Deploy app and the current binding status", async () => {
@@ -376,5 +406,111 @@ describe("application integration actions", () => {
     expect(await screen.findByText("已绑定支付账号")).toBeTruthy();
     expect(screen.getByText("WeChat Pay Production")).toBeTruthy();
     expect(screen.getByText("默认")).toBeTruthy();
+  });
+
+  it("leads with the mini program configuration for a mini program application", async () => {
+    renderPage({ integrations: createIntegrationService(), loaders: createLoaders({ deploy: [seededMiniProgramApplication()] }) });
+
+    await screen.findAllByText("Mini Storefront");
+    clickGroup("deploy");
+    await screen.findAllByText("Mini Storefront");
+    openAppConfigMenu();
+
+    const labels = screen.getAllByRole("menuitem").map((item) => item.textContent ?? "");
+    expect(labels.indexOf("关联小程序配置")).toBeGreaterThanOrEqual(0);
+    expect(labels.indexOf("关联小程序配置")).toBeLessThan(labels.indexOf("关联公众号账号"));
+  });
+
+  it("lists the mini program binding of every environment and marks unsaved edits", async () => {
+    const integrations = createIntegrationService();
+    integrations.loadEnvironments = vi.fn(async () => [
+      { key: "production", level: "PRODUCTION", name: "Production" },
+      { key: "staging", level: "STAGING", name: "Staging" },
+    ]);
+    renderPage({ integrations, loaders: createLoaders({ deploy: [seededMiniProgramApplication()] }) });
+
+    await screen.findAllByText("Mini Storefront");
+    clickGroup("deploy");
+    await screen.findAllByText("Mini Storefront");
+    chooseAppConfigAction("关联小程序配置");
+
+    expect(await screen.findByText("各环境关联状态")).toBeTruthy();
+    const productionOverview = document.querySelector("[data-channel-overview-environment='production']");
+    const stagingOverview = document.querySelector("[data-channel-overview-environment='staging']");
+    expect(productionOverview?.getAttribute("data-channel-overview-bound")).toBe("true");
+    expect(productionOverview?.textContent).toContain("Acme Mini");
+    expect(stagingOverview?.getAttribute("data-channel-overview-bound")).toBe("false");
+
+    fireEvent.click(await screen.findByRole("button", { name: "取消关联" }));
+
+    const productionAfterEdit = document.querySelector("[data-channel-overview-environment='production']");
+    expect(productionAfterEdit?.getAttribute("data-channel-overview-bound")).toBe("false");
+    expect(productionAfterEdit?.textContent).toContain("未保存");
+  });
+
+  it("runs the mini program sign-in probe for the linked account", async () => {
+    const checkMiniProgramLogin = vi.fn(async () => ({
+      checkedAt: "2026-11-20T08:00:00Z",
+      status: "succeeded" as const,
+      summary: "external configuration probe passed",
+    }));
+    const integrations: ApplicationIntegrationService = {
+      ...createIntegrationService(),
+      checkMiniProgramLogin,
+    };
+    renderPage({ integrations, loaders: createLoaders({ deploy: [seededMiniProgramApplication()] }) });
+
+    await screen.findAllByText("Mini Storefront");
+    clickGroup("deploy");
+    await screen.findAllByText("Mini Storefront");
+    chooseAppConfigAction("关联小程序配置");
+
+    fireEvent.click(await screen.findByRole("button", { name: "检测小程序登录" }));
+    await waitFor(() => expect(checkMiniProgramLogin).toHaveBeenCalledWith("ra-mini-1"));
+    expect(await screen.findByText("小程序登录检测通过。")).toBeTruthy();
+    expect(screen.getByText("external configuration probe passed")).toBeTruthy();
+    expect(document.querySelector("[data-mini-program-login-check-result='succeeded']")).not.toBeNull();
+  });
+
+  it("shows a failed mini program sign-in probe verdict", async () => {
+    const integrations: ApplicationIntegrationService = {
+      ...createIntegrationService(),
+      checkMiniProgramLogin: vi.fn(async () => ({
+        status: "failed" as const,
+        summary: "invalid appsecret",
+      })),
+    };
+    renderPage({ integrations, loaders: createLoaders({ deploy: [seededMiniProgramApplication()] }) });
+
+    await screen.findAllByText("Mini Storefront");
+    clickGroup("deploy");
+    await screen.findAllByText("Mini Storefront");
+    chooseAppConfigAction("关联小程序配置");
+
+    fireEvent.click(await screen.findByRole("button", { name: "检测小程序登录" }));
+    expect(await screen.findByText("小程序登录检测未通过。")).toBeTruthy();
+    expect(screen.getByText("invalid appsecret")).toBeTruthy();
+  });
+
+  it("keeps channel validation when the payment catalog is unavailable", async () => {
+    const integrations = createIntegrationService();
+    integrations.loadPaymentAccounts = vi.fn(async () => {
+      throw new Error("payment backend unavailable");
+    });
+    integrations.loadChannelAccounts = vi.fn(async (kind) => (
+      kind === "official-account"
+        ? [officialAccount]
+        : [{ ...miniProgram, enabled: false, status: "inactive" }]
+    ));
+    renderPage({ integrations, loaders: createLoaders({ deploy: [seededMiniProgramApplication()] }) });
+
+    await screen.findAllByText("Mini Storefront");
+    clickGroup("deploy");
+    await screen.findAllByText("Mini Storefront");
+    chooseAppConfigAction("关联小程序配置");
+
+    // The payment catalog failed, but the mini program binding is still
+    // validated against the channel catalog that did load.
+    expect(await screen.findByText(/已停用或未激活/)).toBeTruthy();
   });
 });

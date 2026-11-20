@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.app.store-publishing.capture",
+  "tool": "flutter-widget-test",
+  "command": "node scripts/capture-store-media.mjs",
+  "capturedAt": "2026-11-21T00:45:00+08:00",
+  "appVersion": "0.1.0",
+  "fontNote": "Captured with Noto Sans SC and the Flutter SDK MaterialIcons face; both are resolved from the host at capture time and are never committed.",
+  "sourceScreens": ["home", "messages", "playground", "profile", "settings"]
+}

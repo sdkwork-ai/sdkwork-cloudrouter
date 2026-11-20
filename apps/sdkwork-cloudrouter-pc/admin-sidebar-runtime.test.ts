@@ -19,6 +19,7 @@ test("application center is an app-factory header module with grouped views", ()
   assert.equal(appCenter.defaultPath, "/admin/applications");
   assert.deepEqual(appCenter.pathPrefixes, ["/admin/applications"]);
   assert.equal(getActiveModuleFromPath("/admin/applications"), "appCenter");
+  assert.equal(getActiveModuleFromPath("/admin/applications/scaffolds"), "appCenter");
   assert.equal(getActiveModuleFromPath("/admin/applications/templates"), "appCenter");
   assert.equal(getActiveModuleFromPath("/admin/applications/categories"), "appCenter");
 
@@ -53,11 +54,11 @@ test("application center is an app-factory header module with grouped views", ()
     ],
   );
   assert.deepEqual(
-    groups.get("admin.menu.appCenter.templatesGroup")?.items.map((item) => item.path),
+    groups.get("admin.menu.appCenter.scaffoldsGroup")?.items.map((item) => item.path),
     [
       "/admin/applications/templates",
-      "/admin/applications/template-reviews",
-      "/admin/applications/template-categories",
+      "/admin/applications/scaffold-reviews",
+      "/admin/applications/scaffold-categories",
     ],
   );
   assert.deepEqual(
