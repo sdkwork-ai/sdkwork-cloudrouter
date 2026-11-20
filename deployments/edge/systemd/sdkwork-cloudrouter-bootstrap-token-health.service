@@ -1,0 +1,14 @@
+# /etc/systemd/system/sdkwork-cloudrouter-bootstrap-token-health.service
+[Unit]
+Description=Verify the served Cloud Router credential-entry bootstrap Access-Token is fresh
+After=network-online.target
+# The probe exists because the issuer timer can fail silently for days: the
+# serving edge keeps handing out whatever token was last written, so nginx, the
+# gateway container and the database all stay green while every login returns
+# 40103. Failing this unit is the only signal that maps to "users cannot log in".
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/sdkwork-cloudrouter-verify-credential-entry-bootstrap.sh probe
+User=root
+Nice=10
+IOSchedulingClass=idle

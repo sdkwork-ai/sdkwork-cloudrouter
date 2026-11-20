@@ -1,0 +1,16 @@
+# /etc/systemd/system/sdkwork-cloudrouter-bootstrap-token.service
+[Unit]
+Description=Issue Cloud Router credential-entry bootstrap Access-Token (cloud release trusted-host channel)
+After=network-online.target docker.service
+Wants=network-online.target
+# A single failed rotation leaves the portal serving an expired bootstrap token,
+# which breaks every login without touching any other health signal. Escalate
+# immediately instead of waiting for the next user to report "cannot sign in".
+OnFailure=sdkwork-cloudrouter-edge-alert@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/sdkwork-cloudrouter-issue-credential-entry-bootstrap.sh
+User=root
+Nice=10
+IOSchedulingClass=idle

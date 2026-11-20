@@ -250,3 +250,7 @@ deployments/docker/bundle/env/
 
 # Bundle env templates stay tracked; only the materialized local bundle is ignored
 !deployments/docker/bundle/env/*.env.example
+
+# Flutter golden-test failure diffs (regenerated on every failed run, never committed)
+apps/sdkwork-cloudrouter-flutter-mobile/test/failures/
+

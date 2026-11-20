@@ -1,0 +1,12 @@
+# /etc/systemd/system/sdkwork-cloudrouter-bootstrap-token.timer
+[Unit]
+Description=Refresh the Cloud Router credential-entry bootstrap Access-Token
+
+[Timer]
+OnBootSec=60
+OnUnitActiveSec=20min
+Unit=sdkwork-cloudrouter-bootstrap-token.service
+Persistent=true
+
+[Install]
+WantedBy=timers.target

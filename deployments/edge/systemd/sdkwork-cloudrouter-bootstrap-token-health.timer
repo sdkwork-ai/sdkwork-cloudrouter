@@ -1,0 +1,12 @@
+# /etc/systemd/system/sdkwork-cloudrouter-bootstrap-token-health.timer
+[Unit]
+Description=Check the Cloud Router credential-entry bootstrap Access-Token every five minutes
+
+[Timer]
+OnBootSec=90
+OnUnitActiveSec=5min
+Unit=sdkwork-cloudrouter-bootstrap-token-health.service
+Persistent=true
+
+[Install]
+WantedBy=timers.target

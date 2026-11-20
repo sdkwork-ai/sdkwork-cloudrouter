@@ -1,0 +1,8 @@
+# /etc/systemd/system/sdkwork-cloudrouter-edge-alert@.service
+[Unit]
+Description=Report a failed Cloud Router edge unit (%i) on the alert channel
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/sdkwork-cloudrouter-verify-credential-entry-bootstrap.sh notify %i
+User=root

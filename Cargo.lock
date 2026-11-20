@@ -5211,6 +5211,7 @@ dependencies = [
  "sdkwork-database-spi",
  "sdkwork-database-sqlx",
  "sdkwork-order-database-host",
+ "sdkwork-order-repository-sqlx",
  "sdkwork-order-service-host",
  "sdkwork-routes-order-app-api",
  "sdkwork-routes-order-backend-api",
@@ -5219,6 +5220,7 @@ dependencies = [
  "sdkwork-web-core",
  "serde_json",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -7588,7 +7590,6 @@ dependencies = [
  "sdkwork-commerce-money",
  "sdkwork-contract-service",
  "sdkwork-database-config",
- "sdkwork-database-history",
  "sdkwork-database-id",
  "sdkwork-database-sqlx",
  "sdkwork-merchandise-repository-sqlx",
@@ -7728,7 +7729,6 @@ name = "sdkwork-payment-providers"
 version = "0.1.0"
 dependencies = [
  "aes-gcm 0.11.1",
- "async-trait",
  "base64 0.22.1",
  "chrono",
  "hmac 0.12.1",
