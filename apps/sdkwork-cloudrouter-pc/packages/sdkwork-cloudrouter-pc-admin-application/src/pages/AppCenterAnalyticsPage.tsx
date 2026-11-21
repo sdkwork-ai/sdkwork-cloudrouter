@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, BarChart3, RefreshCw } from "lucide-react";
-import { Button, StatusNotice } from "@sdkwork/ui-pc-react";
+import { ArrowRight, BarChart3 } from "lucide-react";
+import { StatusNotice } from "@sdkwork/ui-pc-react";
 
+import {
+  AppCenterListHeader,
+  AppCenterLoadFailure,
+  AppCenterRefreshButton,
+} from "../components/AppCenterListShell";
 import { useApplicationCatalogMessages } from "../i18n";
 import {
   loadAppCenterAnalytics,
@@ -58,41 +63,52 @@ export function AppCenterAnalyticsPage() {
   const snapshot = result?.snapshot;
 
   return (
-    <section className="space-y-5">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h2 className="flex items-center gap-2 text-base font-semibold text-[var(--sdk-color-text-primary)]">
+    <section className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1">
+      <AppCenterListHeader
+        actions={(
+          <AppCenterRefreshButton
+            busy={state.status === "loading"}
+            label={copy.refresh}
+            onRefresh={() => setReloadToken((token) => token + 1)}
+          />
+        )}
+        description={copy.description}
+        title={(
+          <span className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             {copy.title}
-          </h2>
-          <p className="text-sm text-[var(--sdk-color-text-muted)]">{copy.description}</p>
-        </div>
-        <Button
-          disabled={state.status === "loading"}
-          onClick={() => setReloadToken((token) => token + 1)}
-          type="button"
-          variant="outline"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${state.status === "loading" ? "animate-spin" : ""}`} />
-          {copy.refresh}
-        </Button>
-      </header>
-
-      {state.status === "loading" ? (
-        <p className="text-sm text-[var(--sdk-color-text-muted)]" role="status">
-          {copy.loading}
-        </p>
-      ) : null}
+          </span>
+        )}
+      />
 
       {state.status === "error" ? (
-        <StatusNotice tone="danger">{copy.loadError}</StatusNotice>
+        <AppCenterLoadFailure
+          message={copy.loadError}
+          onRetry={() => setReloadToken((token) => token + 1)}
+          retryLabel={messages.retry}
+        />
       ) : null}
 
       {result && result.failures.length > 0 ? (
         <StatusNotice tone="warning">
           {copy.inaccessible}{" "}
-          {result.failures.map((failure) => copy.failureSource[failure.source]).join("、")}
+          {result.failures.map((failure) => copy.failureSource[failure.source]).join(", ")}
         </StatusNotice>
+      ) : null}
+
+      {state.status === "loading" && !snapshot ? (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" data-app-center-analytics-loading>
+          {Array.from({ length: 6 }, (_, index) => (
+            <div
+              className="rounded-[var(--sdk-radius-card)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] p-4"
+              key={index}
+            >
+              <span className="sr-only">{copy.loading}</span>
+              <span className="block h-3 w-24 animate-pulse rounded bg-[var(--sdk-color-surface-panel-muted)]" />
+              <span className="mt-2 block h-7 w-12 animate-pulse rounded bg-[var(--sdk-color-surface-panel-muted)]" />
+            </div>
+          ))}
+        </div>
       ) : null}
 
       {snapshot ? (
@@ -142,11 +158,11 @@ export function AppCenterAnalyticsPage() {
 function Kpi({ label, to, value }: { label: string; to: string; value: number }) {
   return (
     <Link
-      className="rounded-[var(--sdk-radius-card)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] p-4 transition-colors hover:border-[var(--sdk-color-brand-primary)]"
+      className="rounded-[var(--sdk-radius-card)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] p-4 transition-colors hover:border-[var(--sdk-color-brand-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sdk-color-border-focus)]"
       to={to}
     >
       <p className="text-xs text-[var(--sdk-color-text-muted)]">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-[var(--sdk-color-text-primary)]">{value}</p>
+      <p className="mt-1 text-2xl font-semibold tabular-nums text-[var(--sdk-color-text-primary)]">{value}</p>
     </Link>
   );
 }
@@ -154,7 +170,7 @@ function Kpi({ label, to, value }: { label: string; to: string; value: number })
 function QuickLink({ label, to }: { label: string; to: string }) {
   return (
     <Link
-      className="inline-flex items-center gap-1 rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-default)] px-3 py-1.5 text-sm text-[var(--sdk-color-text-secondary)] transition-colors hover:border-[var(--sdk-color-brand-primary)]"
+      className="inline-flex items-center gap-1 rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-default)] px-3 py-1.5 text-sm text-[var(--sdk-color-text-secondary)] transition-colors hover:border-[var(--sdk-color-brand-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sdk-color-border-focus)]"
       to={to}
     >
       {label}

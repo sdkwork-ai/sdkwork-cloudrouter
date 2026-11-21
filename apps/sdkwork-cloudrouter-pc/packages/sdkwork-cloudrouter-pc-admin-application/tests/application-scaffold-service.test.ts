@@ -95,7 +95,14 @@ function createTransport(overrides: ScaffoldOverrides = {}): {
         scaffolds: {
           install: async (id, body, params) => {
             calls.push({ operation: "marketplace.scaffolds.install", args: [id, body, params] });
-            return { app: { id: "app-installed", name: "Installed app" }, scaffoldUuid: id };
+            return {
+              app: {
+                id: "app-installed",
+                name: "Installed app",
+                deployApplicationId: "410000000000000001",
+              },
+              scaffoldUuid: id,
+            };
           },
         },
       },
@@ -207,6 +214,7 @@ describe("application scaffold service", () => {
     expect(result).toEqual({
       appId: "app-installed",
       appName: "Installed app",
+      deployApplicationId: "410000000000000001",
       scaffoldUuid: "scaffold-1",
     });
     expect(calls.find((call) => call.operation === "marketplace.scaffolds.install")?.args[1])

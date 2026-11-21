@@ -203,16 +203,24 @@ export function AppStoreCategoryFormDrawer({
             <Field invalid={Boolean(codeIssue)} required={!editing}>
               <FieldLabel htmlFor="appstore-category-code">{copy.code}</FieldLabel>
               <Input
+                aria-describedby={
+                  codeIssue ? "appstore-category-code-error" : "appstore-category-code-hint"
+                }
                 aria-invalid={Boolean(codeIssue)}
+                autoFocus={!editing}
                 disabled={editing || saving}
                 id="appstore-category-code"
                 onChange={(event) => updateDraft("code", event.target.value)}
                 placeholder={copy.codePlaceholder}
                 value={draft.code}
               />
-              <FieldDescription>{editing ? copy.codeImmutable : copy.codeHint}</FieldDescription>
+              <FieldDescription id="appstore-category-code-hint">
+                {editing ? copy.codeImmutable : copy.codeHint}
+              </FieldDescription>
               {codeIssue ? (
-                <FieldError>{issueMessage(codeIssue, messages)}</FieldError>
+                <FieldError id="appstore-category-code-error">
+                  {issueMessage(codeIssue, messages)}
+                </FieldError>
               ) : null}
             </Field>
 
@@ -254,15 +262,24 @@ export function AppStoreCategoryFormDrawer({
             <Field invalid={Boolean(sortOrderIssue)}>
               <FieldLabel htmlFor="appstore-category-sort-order">{copy.sortOrder}</FieldLabel>
               <Input
+                aria-describedby={
+                  sortOrderIssue
+                    ? "appstore-category-sort-order-error"
+                    : "appstore-category-sort-order-hint"
+                }
                 aria-invalid={Boolean(sortOrderIssue)}
                 id="appstore-category-sort-order"
                 inputMode="numeric"
                 onChange={(event) => updateDraft("sortOrder", event.target.value)}
                 value={draft.sortOrder}
               />
-              <FieldDescription>{copy.sortOrderHint}</FieldDescription>
+              <FieldDescription id="appstore-category-sort-order-hint">
+                {copy.sortOrderHint}
+              </FieldDescription>
               {sortOrderIssue ? (
-                <FieldError>{issueMessage(sortOrderIssue, messages)}</FieldError>
+                <FieldError id="appstore-category-sort-order-error">
+                  {issueMessage(sortOrderIssue, messages)}
+                </FieldError>
               ) : null}
             </Field>
 
@@ -369,7 +386,13 @@ export function AppStoreCategoryFormDrawer({
                       {copy.name}
                     </FieldLabel>
                     <Input
+                      aria-describedby={
+                        nameIssue
+                          ? `appstore-category-name-${localization.locale}-error`
+                          : undefined
+                      }
                       aria-invalid={Boolean(nameIssue)}
+                      autoFocus={!editing && localization.locale === "zh-CN"}
                       id={`appstore-category-name-${localization.locale}`}
                       onChange={(event) =>
                         updateLocalization(localization.locale, "displayName", event.target.value)}
@@ -377,7 +400,9 @@ export function AppStoreCategoryFormDrawer({
                       value={localization.displayName}
                     />
                     {nameIssue ? (
-                      <FieldError>{issueMessage(nameIssue, messages)}</FieldError>
+                      <FieldError id={`appstore-category-name-${localization.locale}-error`}>
+                        {issueMessage(nameIssue, messages)}
+                      </FieldError>
                     ) : null}
                   </Field>
                   <Field invalid={Boolean(descriptionTooLong)}>
@@ -385,6 +410,11 @@ export function AppStoreCategoryFormDrawer({
                       {copy.description}
                     </FieldLabel>
                     <Textarea
+                      aria-describedby={
+                        descriptionTooLong
+                          ? `appstore-category-description-${localization.locale}-error`
+                          : `appstore-category-description-${localization.locale}-hint`
+                      }
                       aria-invalid={Boolean(descriptionTooLong)}
                       id={`appstore-category-description-${localization.locale}`}
                       onChange={(event) =>
@@ -393,9 +423,13 @@ export function AppStoreCategoryFormDrawer({
                       rows={2}
                       value={localization.description}
                     />
-                    <FieldDescription>{copy.localeDescriptionHint}</FieldDescription>
+                    <FieldDescription id={`appstore-category-description-${localization.locale}-hint`}>
+                      {copy.localeDescriptionHint}
+                    </FieldDescription>
                     {descriptionTooLong ? (
-                      <FieldError>{issueMessage(descriptionTooLong, messages)}</FieldError>
+                      <FieldError id={`appstore-category-description-${localization.locale}-error`}>
+                        {issueMessage(descriptionTooLong, messages)}
+                      </FieldError>
                     ) : null}
                   </Field>
                 </div>

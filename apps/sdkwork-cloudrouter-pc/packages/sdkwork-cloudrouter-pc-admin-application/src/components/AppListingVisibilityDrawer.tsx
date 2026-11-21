@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Eye } from "lucide-react";
+import { Eye, EyeOff, Globe, X } from "lucide-react";
 import {
   Button,
   Drawer,
@@ -15,6 +15,7 @@ import {
   Textarea,
 } from "@sdkwork/ui-pc-react";
 
+import { AppCenterDecisionGroup } from "./AppCenterDecisionGroup";
 import type { ApplicationCatalogMessages } from "../i18n";
 import { isAppStoreListingForbidden } from "../services/appstore-listings";
 import type {
@@ -23,12 +24,26 @@ import type {
   AppStoreListingVisibility,
 } from "../types/appstore-listings";
 
-const VISIBILITY_STATES: readonly AppStoreListingVisibility[] = [
+const VISIBILITY_ICONS = {
+  DELISTED: <X className="h-4 w-4 shrink-0" />,
+  HIDDEN: <EyeOff className="h-4 w-4 shrink-0" />,
+  REGION_RESTRICTED: <Globe className="h-4 w-4 shrink-0" />,
+  VISIBLE: <Eye className="h-4 w-4 shrink-0" />,
+} as const;
+
+const VISIBILITY_TONES: Record<AppStoreListingVisibility, "positive" | "negative" | "neutral"> = {
+  DELISTED: "negative",
+  HIDDEN: "neutral",
+  REGION_RESTRICTED: "neutral",
+  VISIBLE: "positive",
+};
+
+const VISIBILITY_STATES = [
   "VISIBLE",
   "HIDDEN",
   "DELISTED",
   "REGION_RESTRICTED",
-];
+] as const satisfies readonly AppStoreListingVisibility[];
 
 export interface AppListingVisibilityDrawerProps {
   listing: AppStoreListing;
@@ -38,7 +53,13 @@ export interface AppListingVisibilityDrawerProps {
   service: AppStoreListingService;
 }
 
-/** Change one listing's storefront visibility. */
+/**
+ * Change one listing's storefront visibility.
+ *
+ * Visibility is one of four mutually exclusive states, so it renders as the
+ * shared decision control: the icon and the tone say what the storefront will
+ * do, and the reason stays optional until a state actually hides the listing.
+ */
 export function AppListingVisibilityDrawer({
   listing,
   messages,
@@ -88,30 +109,18 @@ export function AppListingVisibilityDrawer({
           </DrawerDescription>
         </DrawerHeader>
         <DrawerBody className="space-y-4">
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-[var(--sdk-color-text-primary)]">{copy.state}</p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {VISIBILITY_STATES.map((state) => {
-                const active = state === visibility;
-                return (
-                  <button
-                    aria-pressed={active}
-                    className={`flex items-center gap-2 rounded-[var(--sdk-radius-control)] border px-3 py-2 text-left text-sm transition-colors ${
-                      active
-                        ? "border-[var(--sdk-color-brand-primary)] bg-[var(--sdk-color-brand-primary-soft)] text-[var(--sdk-color-brand-primary)]"
-                        : "border-[var(--sdk-color-border-default)] text-[var(--sdk-color-text-secondary)] hover:bg-[var(--sdk-color-surface-panel-muted)]"
-                    }`}
-                    key={state}
-                    onClick={() => setVisibility(state)}
-                    type="button"
-                  >
-                    <Eye className="h-4 w-4" />
-                    {messages.listings.visibility[state]}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <AppCenterDecisionGroup
+            columns={2}
+            label={copy.state}
+            onChange={setVisibility}
+            options={VISIBILITY_STATES.map((state) => ({
+              icon: VISIBILITY_ICONS[state],
+              label: messages.listings.visibility[state],
+              tone: VISIBILITY_TONES[state],
+              value: state,
+            }))}
+            value={visibility}
+          />
 
           <Field>
             <FieldLabel htmlFor="listing-visibility-reason">{copy.reason}</FieldLabel>

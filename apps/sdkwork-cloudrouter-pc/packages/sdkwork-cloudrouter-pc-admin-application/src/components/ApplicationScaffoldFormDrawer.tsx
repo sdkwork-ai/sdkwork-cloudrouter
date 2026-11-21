@@ -159,7 +159,7 @@ export function ApplicationScaffoldFormDrawer({
                   onValueChange={(value) => updateDraft("appUuid", value)}
                   value={draft.appUuid}
                 >
-                  <SelectTrigger aria-label={copy.app} id="app-scaffold-app">
+                  <SelectTrigger aria-label={copy.app} autoFocus id="app-scaffold-app">
                     <SelectValue placeholder={copy.appPlaceholder} />
                   </SelectTrigger>
                   <SelectContent>
@@ -172,7 +172,7 @@ export function ApplicationScaffoldFormDrawer({
                 </Select>
               )}
               <FieldDescription>{copy.appHint}</FieldDescription>
-              {appIssue ? <FieldError>{issueMessage(appIssue)}</FieldError> : null}
+              {appIssue ? <FieldError id="app-scaffold-app-error">{issueMessage(appIssue)}</FieldError> : null}
             </Field>
 
             <Field invalid={Boolean(categoryIssue)} required>
@@ -194,12 +194,15 @@ export function ApplicationScaffoldFormDrawer({
                 </SelectContent>
               </Select>
               <FieldDescription>{copy.categoryHint}</FieldDescription>
-              {categoryIssue ? <FieldError>{issueMessage(categoryIssue)}</FieldError> : null}
+              {categoryIssue ? (
+                <FieldError id="app-scaffold-category-error">{issueMessage(categoryIssue)}</FieldError>
+              ) : null}
             </Field>
 
             <Field invalid={Boolean(keyIssue)} required={!editing}>
               <FieldLabel htmlFor="app-scaffold-key">{copy.scaffoldKey}</FieldLabel>
               <Input
+                aria-describedby={keyIssue ? "app-scaffold-key-error" : "app-scaffold-key-hint"}
                 aria-invalid={Boolean(keyIssue)}
                 disabled={editing || saving}
                 id="app-scaffold-key"
@@ -207,13 +210,14 @@ export function ApplicationScaffoldFormDrawer({
                 placeholder={copy.scaffoldKeyPlaceholder}
                 value={draft.scaffoldKey}
               />
-              <FieldDescription>{copy.scaffoldKeyHint}</FieldDescription>
-              {keyIssue ? <FieldError>{issueMessage(keyIssue)}</FieldError> : null}
+              <FieldDescription id="app-scaffold-key-hint">{copy.scaffoldKeyHint}</FieldDescription>
+              {keyIssue ? <FieldError id="app-scaffold-key-error">{issueMessage(keyIssue)}</FieldError> : null}
             </Field>
 
             <Field invalid={Boolean(nameIssue)} required>
               <FieldLabel htmlFor="app-scaffold-name">{copy.displayName}</FieldLabel>
               <Input
+                aria-describedby={nameIssue ? "app-scaffold-name-error" : undefined}
                 aria-invalid={Boolean(nameIssue)}
                 id="app-scaffold-name"
                 maxLength={120}
@@ -221,12 +225,15 @@ export function ApplicationScaffoldFormDrawer({
                 placeholder={copy.displayNamePlaceholder}
                 value={draft.displayName}
               />
-              {nameIssue ? <FieldError>{issueMessage(nameIssue)}</FieldError> : null}
+              {nameIssue ? (
+                <FieldError id="app-scaffold-name-error">{issueMessage(nameIssue)}</FieldError>
+              ) : null}
             </Field>
 
             <Field className="sm:col-span-2" invalid={Boolean(summaryIssue)} required>
               <FieldLabel htmlFor="app-scaffold-summary">{copy.summary}</FieldLabel>
               <Input
+                aria-describedby={summaryIssue ? "app-scaffold-summary-error" : undefined}
                 aria-invalid={Boolean(summaryIssue)}
                 id="app-scaffold-summary"
                 maxLength={280}
@@ -234,12 +241,15 @@ export function ApplicationScaffoldFormDrawer({
                 placeholder={copy.summaryPlaceholder}
                 value={draft.summary}
               />
-              {summaryIssue ? <FieldError>{issueMessage(summaryIssue)}</FieldError> : null}
+              {summaryIssue ? (
+                <FieldError id="app-scaffold-summary-error">{issueMessage(summaryIssue)}</FieldError>
+              ) : null}
             </Field>
 
             <Field className="sm:col-span-2" invalid={Boolean(descriptionIssue)}>
               <FieldLabel htmlFor="app-scaffold-description">{copy.description}</FieldLabel>
               <Textarea
+                aria-describedby={descriptionIssue ? "app-scaffold-description-error" : undefined}
                 aria-invalid={Boolean(descriptionIssue)}
                 id="app-scaffold-description"
                 maxLength={4000}
@@ -248,7 +258,11 @@ export function ApplicationScaffoldFormDrawer({
                 rows={5}
                 value={draft.description}
               />
-              {descriptionIssue ? <FieldError>{issueMessage(descriptionIssue)}</FieldError> : null}
+              {descriptionIssue ? (
+                <FieldError id="app-scaffold-description-error">
+                  {issueMessage(descriptionIssue)}
+                </FieldError>
+              ) : null}
             </Field>
 
             <Field>
@@ -292,6 +306,7 @@ export function ApplicationScaffoldFormDrawer({
                 <Field invalid={Boolean(priceIssue)} required>
                   <FieldLabel htmlFor="app-scaffold-price">{copy.priceMinor}</FieldLabel>
                   <Input
+                    aria-describedby={priceIssue ? "app-scaffold-price-error" : undefined}
                     aria-invalid={Boolean(priceIssue)}
                     id="app-scaffold-price"
                     inputMode="numeric"
@@ -299,11 +314,14 @@ export function ApplicationScaffoldFormDrawer({
                     placeholder={copy.priceMinorPlaceholder}
                     value={draft.priceMinor}
                   />
-                  {priceIssue ? <FieldError>{issueMessage(priceIssue)}</FieldError> : null}
+                  {priceIssue ? (
+                    <FieldError id="app-scaffold-price-error">{issueMessage(priceIssue)}</FieldError>
+                  ) : null}
                 </Field>
                 <Field invalid={Boolean(currencyIssue)} required>
                   <FieldLabel htmlFor="app-scaffold-currency">{copy.currency}</FieldLabel>
                   <Input
+                    aria-describedby={currencyIssue ? "app-scaffold-currency-error" : undefined}
                     aria-invalid={Boolean(currencyIssue)}
                     id="app-scaffold-currency"
                     maxLength={3}
@@ -311,7 +329,9 @@ export function ApplicationScaffoldFormDrawer({
                     placeholder={copy.currencyPlaceholder}
                     value={draft.currency}
                   />
-                  {currencyIssue ? <FieldError>{issueMessage(currencyIssue)}</FieldError> : null}
+                  {currencyIssue ? (
+                    <FieldError id="app-scaffold-currency-error">{issueMessage(currencyIssue)}</FieldError>
+                  ) : null}
                 </Field>
               </>
             ) : null}

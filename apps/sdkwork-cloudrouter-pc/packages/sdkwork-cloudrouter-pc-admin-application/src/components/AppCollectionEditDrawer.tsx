@@ -9,6 +9,8 @@ import {
   DrawerHeader,
   DrawerTitle,
   Field,
+  FieldDescription,
+  FieldError,
   FieldLabel,
   Input,
   Select,
@@ -25,6 +27,9 @@ import type { AppStoreCollection, AppStoreCollectionService } from "../types/app
 
 const COLLECTION_STATUSES = ["ACTIVE", "DRAFT", "ARCHIVED"] as const;
 
+/** Sort order is an integral editorial position, never a negative or fractional one. */
+const SORT_ORDER_PATTERN = /^(0|[1-9][0-9]{0,5})$/u;
+
 export interface AppCollectionEditDrawerProps {
   collection: AppStoreCollection;
   messages: ApplicationCatalogMessages;
@@ -33,7 +38,13 @@ export interface AppCollectionEditDrawerProps {
   service: AppStoreCollectionService;
 }
 
-/** Update a collection's lifecycle status and sort order. */
+/**
+ * Update a collection's lifecycle status and sort order.
+ *
+ * The order field is validated before the write: `type="number"` accepts a
+ * negative or fractional value that the backend cannot order, so an invalid
+ * entry stays a field error instead of a failed request.
+ */
 export function AppCollectionEditDrawer({
   collection,
   messages,
@@ -48,15 +59,21 @@ export function AppCollectionEditDrawer({
   );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<unknown>();
+  const [validationError, setValidationError] = useState<string>();
 
   const submit = async () => {
+    const trimmedSort = sortOrder.trim();
+    if (trimmedSort && !SORT_ORDER_PATTERN.test(trimmedSort)) {
+      setValidationError(copy.invalidSortOrder);
+      return;
+    }
+    setValidationError(undefined);
     setSubmitting(true);
     setError(undefined);
     try {
-      const parsedSort = sortOrder.trim() ? Number(sortOrder) : undefined;
       await service.update(collection.collectionId, {
         collectionStatus: status,
-        ...(parsedSort === undefined || Number.isNaN(parsedSort) ? {} : { sortOrder: parsedSort }),
+        ...(trimmedSort ? { sortOrder: Number(trimmedSort) } : {}),
       });
       onSaved();
       onClose();
@@ -100,16 +117,26 @@ export function AppCollectionEditDrawer({
             </Select>
           </Field>
 
-          <Field>
+          <Field invalid={Boolean(validationError)}>
             <FieldLabel htmlFor="collection-sort-order">{copy.sortOrder}</FieldLabel>
             <Input
+              aria-describedby={validationError ? "collection-sort-order-error" : undefined}
+              aria-invalid={Boolean(validationError)}
               id="collection-sort-order"
               inputMode="numeric"
-              min={0}
-              onChange={(event) => setSortOrder(event.target.value)}
-              type="number"
+              onChange={(event) => {
+                setSortOrder(event.target.value);
+                if (validationError) {
+                  setValidationError(undefined);
+                }
+              }}
               value={sortOrder}
             />
+            {validationError ? (
+              <FieldError id="collection-sort-order-error">{validationError}</FieldError>
+            ) : (
+              <FieldDescription>{copy.sortOrderHint}</FieldDescription>
+            )}
           </Field>
 
           {error ? (

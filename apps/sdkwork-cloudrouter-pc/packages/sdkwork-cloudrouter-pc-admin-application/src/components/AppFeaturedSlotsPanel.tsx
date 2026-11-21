@@ -1,9 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import { RefreshCw, Plus, Sparkles } from "lucide-react";
-import { Button, StatusBadge, StatusNotice } from "@sdkwork/ui-pc-react";
+import { Plus } from "lucide-react";
+import { Button, DataTable, type DataTableColumn, StatusBadge, StatusNotice } from "@sdkwork/ui-pc-react";
 
+import {
+  AppCenterListHeader,
+  AppCenterLoadFailure,
+  AppCenterRefreshButton,
+  AppCenterSummaryFooter,
+  appCenterTableSlots,
+} from "./AppCenterListShell";
 import { AppFeaturedSlotDrawer } from "./AppFeaturedSlotDrawer";
 import type { ApplicationCatalogMessages } from "../i18n";
+import { formatDateTime } from "../services/format";
+import { templateMessage } from "../services/message-template";
 import {
   getAppStoreFeaturedSlotService,
   isAppStoreFeaturedSlotForbidden,
@@ -21,7 +30,14 @@ type LoadState =
   | { status: "ready"; items: readonly AppStoreFeaturedSlot[] }
   | { status: "error"; items: readonly AppStoreFeaturedSlot[]; error: unknown };
 
-/** App Store featured-slot administration inside the App Center. */
+/**
+ * App Store featured-slot administration inside the App Center.
+ *
+ * Featured placements are a curated, bounded set (each slot is one editorial
+ * position), so the panel reads the whole catalog once and the footer only
+ * prints the total. Both the create and the edit command end in the same drawer,
+ * one seeded with an empty slot.
+ */
 export function AppFeaturedSlotsPanel({
   messages,
   service: injectedService,
@@ -36,6 +52,15 @@ export function AppFeaturedSlotsPanel({
   const [editTarget, setEditTarget] = useState<AppStoreFeaturedSlot>();
   const [createOpen, setCreateOpen] = useState(false);
   const [notice, setNotice] = useState<string>();
+
+  const refresh = (success?: string) => {
+    if (success) {
+      setNotice(success);
+    } else {
+      setNotice(undefined);
+    }
+    setReloadToken((token) => token + 1);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -57,133 +82,126 @@ export function AppFeaturedSlotsPanel({
     };
   }, [reloadToken, service]);
 
+  const columns = useMemo<DataTableColumn<AppStoreFeaturedSlot>[]>(() => [
+    {
+      cell: (slot) => (
+        <span className="font-mono text-xs font-medium text-[var(--sdk-color-text-primary)]">
+          {slot.slotCode}
+        </span>
+      ),
+      header: copy.columns.slot,
+      id: "slot",
+    },
+    {
+      cell: (slot) => <span className="font-mono text-xs">{slot.listingId || "—"}</span>,
+      header: copy.columns.listing,
+      id: "listing",
+    },
+    {
+      cell: (slot) => (
+        <StatusBadge
+          label={statusLabel(slot.status, copy)}
+          status={slot.status ?? "unknown"}
+          variant={featuredStatusVariant(slot.status)}
+        />
+      ),
+      header: copy.columns.status,
+      id: "status",
+    },
+    {
+      cell: (slot) => (
+        slot.startsAt || slot.endsAt
+          ? `${formatDateTime(slot.startsAt)} → ${formatDateTime(slot.endsAt)}`
+          : "—"
+      ),
+      header: copy.columns.window,
+      id: "window",
+    },
+    {
+      cell: (slot) => slot.audienceScope ?? "—",
+      header: copy.columns.audience,
+      id: "audience",
+    },
+    {
+      cell: (slot) => slot.platformScope ?? "—",
+      header: copy.columns.platform,
+      id: "platform",
+    },
+  ], [copy]);
+
+  const busy = state.status === "loading";
+
   return (
-    <section className="space-y-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h2 className="text-base font-semibold text-[var(--sdk-color-text-primary)]">{copy.title}</h2>
-          <p className="text-sm text-[var(--sdk-color-text-muted)]">{copy.description}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            disabled={state.status === "loading"}
-            onClick={() => setReloadToken((token) => token + 1)}
-            type="button"
-            variant="outline"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${state.status === "loading" ? "animate-spin" : ""}`} />
-            {copy.refresh}
-          </Button>
-          <Button
-            onClick={() => {
-              setNotice(undefined);
-              setCreateOpen(true);
-            }}
-            type="button"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            {copy.createAction}
-          </Button>
-        </div>
-      </header>
+    <section className="flex min-h-0 flex-1 flex-col gap-3" data-app-center-panel="featured">
+      <AppCenterListHeader
+        actions={(
+          <>
+            <AppCenterRefreshButton busy={busy} label={copy.refresh} onRefresh={() => refresh()} />
+            <Button
+              onClick={() => {
+                setNotice(undefined);
+                setCreateOpen(true);
+              }}
+              type="button"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {copy.createAction}
+            </Button>
+          </>
+        )}
+        description={copy.description}
+        title={copy.title}
+      />
 
       {notice ? <StatusNotice tone="success">{notice}</StatusNotice> : null}
 
       {state.status === "error" ? (
-        <StatusNotice tone="danger">
-          <span className="flex flex-wrap items-center gap-3">
-            <span>{errorMessage(state.error, copy)}</span>
-            <Button
-              onClick={() => setReloadToken((token) => token + 1)}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              {copy.retry}
-            </Button>
-          </span>
-        </StatusNotice>
+        <AppCenterLoadFailure
+          message={errorMessage(state.error, copy)}
+          onRetry={() => refresh()}
+          retryLabel={copy.retry}
+        />
       ) : null}
 
-      {state.status === "loading" ? (
-        <p className="text-sm text-[var(--sdk-color-text-muted)]" role="status">
-          {copy.loading}
-        </p>
-      ) : null}
-
-      {state.status === "ready" && state.items.length === 0 ? (
-        <div className="rounded-[var(--sdk-radius-card)] border border-dashed border-[var(--sdk-color-border-default)] p-10 text-center">
-          <Sparkles className="mx-auto h-8 w-8 text-[var(--sdk-color-text-muted)]" />
-          <h3 className="mt-3 text-sm font-semibold text-[var(--sdk-color-text-primary)]">{copy.emptyTitle}</h3>
-          <p className="mt-1 text-sm text-[var(--sdk-color-text-muted)]">{copy.emptyDescription}</p>
-        </div>
-      ) : null}
-
-      {state.items.length > 0 ? (
-        <div className="overflow-x-auto rounded-[var(--sdk-radius-card)] border border-[var(--sdk-color-border-default)]">
-          <table className="w-full min-w-[820px] text-sm">
-            <thead className="bg-[var(--sdk-color-surface-panel-muted)] text-left text-xs uppercase tracking-wide text-[var(--sdk-color-text-muted)]">
-              <tr>
-                <th className="px-4 py-2.5 font-medium">{copy.columns.slot}</th>
-                <th className="px-4 py-2.5 font-medium">{copy.columns.listing}</th>
-                <th className="px-4 py-2.5 font-medium">{copy.columns.status}</th>
-                <th className="px-4 py-2.5 font-medium">{copy.columns.window}</th>
-                <th className="px-4 py-2.5 font-medium">{copy.columns.audience}</th>
-                <th className="px-4 py-2.5 font-medium">{copy.columns.platform}</th>
-                <th className="px-4 py-2.5 text-right font-medium">{copy.columns.actions}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--sdk-color-border-default)]">
-              {state.items.map((slot) => (
-                <tr key={slot.slotCode}>
-                  <td className="px-4 py-3 font-medium text-[var(--sdk-color-text-primary)]">
-                    {slot.slotCode}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-[var(--sdk-color-text-secondary)]">
-                    {slot.listingId || "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge
-                      label={statusLabel(slot.status, copy)}
-                      status={slot.status ?? "unknown"}
-                      variant={featuredStatusVariant(slot.status)}
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-[var(--sdk-color-text-muted)]">
-                    {slot.startsAt || slot.endsAt
-                      ? `${formatInstant(slot.startsAt)} → ${formatInstant(slot.endsAt)}`
-                      : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-[var(--sdk-color-text-muted)]">{slot.audienceScope ?? "—"}</td>
-                  <td className="px-4 py-3 text-[var(--sdk-color-text-muted)]">{slot.platformScope ?? "—"}</td>
-                  <td className="px-4 py-3 text-right">
-                    <Button
-                      onClick={() => {
-                        setNotice(undefined);
-                        setEditTarget(slot);
-                      }}
-                      size="sm"
-                      type="button"
-                      variant="outline"
-                    >
-                      {copy.editAction}
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
+      <DataTable
+        className="min-h-0 flex-1"
+        columns={columns}
+        emptyDescription={copy.emptyDescription}
+        emptyTitle={copy.emptyTitle}
+        footer={(
+          <AppCenterSummaryFooter
+            countText={templateMessage(messages.pagination.totalTemplate, {
+              count: String(state.items.length),
+            })}
+          />
+        )}
+        getRowId={(slot) => slot.slotCode}
+        loading={busy}
+        loadingLabel={copy.loading}
+        rowActions={(slot) => (
+          <Button
+            onClick={() => {
+              setNotice(undefined);
+              setEditTarget(slot);
+            }}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            {copy.editAction}
+          </Button>
+        )}
+        rowActionsLabel={copy.columns.actions}
+        rows={[...state.items]}
+        slotProps={appCenterTableSlots()}
+        stickyHeader
+      />
 
       {editTarget ? (
         <AppFeaturedSlotDrawer
           messages={messages}
           onClose={() => setEditTarget(undefined)}
-          onSaved={() => {
-            setNotice(messages.featured.dialog.success);
-            setReloadToken((token) => token + 1);
-          }}
+          onSaved={() => refresh(messages.featured.dialog.success)}
           service={service}
           slot={editTarget}
         />
@@ -194,12 +212,9 @@ export function AppFeaturedSlotsPanel({
           isNew
           messages={messages}
           onClose={() => setCreateOpen(false)}
-          onSaved={() => {
-            setNotice(messages.featured.dialog.success);
-            setReloadToken((token) => token + 1);
-          }}
+          onSaved={() => refresh(messages.featured.dialog.success)}
           service={service}
-          slot={{ slotCode: "", listingId: "", status: "SCHEDULED" }}
+          slot={{ listingId: "", slotCode: "", status: "SCHEDULED" }}
         />
       ) : null}
     </section>
@@ -235,10 +250,3 @@ function errorMessage(error: unknown, copy: ApplicationCatalogMessages["featured
   return copy.loadError;
 }
 
-function formatInstant(value: string | undefined): string {
-  if (!value) {
-    return "—";
-  }
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
-}

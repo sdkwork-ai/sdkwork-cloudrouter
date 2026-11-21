@@ -34,11 +34,19 @@ import {
   StatusNotice,
   type StatusBadgeVariant,
 } from "@sdkwork/ui-pc-react";
+import { BottomPagination } from "@sdkwork/cloudroutes-pc-commons";
 
 import {
   DeployApplicationFilters,
+  DeployApplicationHeaderFilters,
   type DeployOrganizationLookup,
 } from "../components/DeployApplicationFilters";
+import {
+  AppCenterCountLabel,
+  AppCenterListHeader,
+  AppCenterSummaryFooter,
+  appCenterTableSlots,
+} from "../components/AppCenterListShell";
 import { ApplicationIntegrationDrawer } from "../components/ApplicationIntegrationDrawer";
 import { ApplicationRowActionsMenu } from "../components/ApplicationRowActionsMenu";
 import { AppSourceRemixDrawer } from "../components/AppSourceRemixDrawer";
@@ -52,18 +60,21 @@ import {
   isApplicationTokenUnavailable,
   issueApplicationAccessToken,
   loadAppStoreApplications,
-  loadDeployApplications,
+  loadDeployApplicationPage,
   loadDeployOrganizationOptions,
   resolveApplicationCatalogContext,
 } from "../services/application-catalog";
 import {
   DEFAULT_DEPLOY_APP_LIST_FILTER,
+  DEFAULT_DEPLOY_APP_PAGE_SIZE,
+  DEPLOY_APP_PAGE_SIZE_OPTIONS,
   deployAppKindMessageKey,
   hasActiveDeployAppListFilter,
   isDeployAppListQueryInvalid,
   isValidDeployOrganizationId,
   normalizeDeployOrganizationId,
   parseDeployAppListFilter,
+  resolveDeployAppPagination,
   writeDeployAppListFilter,
 } from "../services/deploy-application-filter";
 import {
@@ -82,7 +93,11 @@ import type {
   ApplicationAccessToken,
   ApplicationAccessTokenIssuer,
   ApplicationCatalogContext,
+  ApplicationCatalogLoaderResult,
+  ApplicationCatalogPage,
+  ApplicationCatalogQuery,
   ApplicationGroupId,
+  ApplicationGroupLoader,
   ApplicationGroupState,
   ApplicationRecord,
   DeployAppKindTabId,
@@ -96,12 +111,12 @@ import type { DeployAppSourceService } from "../types/deploy-app-source";
 interface ApplicationGroupDefinition {
   id: ApplicationGroupId;
   icon: LucideIcon;
-  loader: (context: ApplicationCatalogContext) => Promise<readonly ApplicationRecord[]>;
+  loader: ApplicationGroupLoader;
   messageKey: "appStore" | "deploy" | "iam";
 }
 
 const APPLICATION_GROUPS: readonly ApplicationGroupDefinition[] = [
-  { id: "deploy", icon: Layers, loader: loadDeployApplications, messageKey: "deploy" },
+  { id: "deploy", icon: Layers, loader: loadDeployApplicationPage, messageKey: "deploy" },
   { id: "app-store", icon: Store, loader: loadAppStoreApplications, messageKey: "appStore" },
 ];
 
@@ -237,6 +252,11 @@ export function ApplicationManagementPage({
   const [internalView, setInternalView] = useState<ApplicationCatalogView>("iam");
   const activeView = controlledView ?? internalView;
   const [query, setQuery] = useState("");
+  // The deploy list is an offset-paginated server table: the page window and
+  // the search term are query inputs, never a slice of a downloaded array.
+  const [deployPage, setDeployPage] = useState(1);
+  const [deployPageSize, setDeployPageSize] = useState<number>(DEFAULT_DEPLOY_APP_PAGE_SIZE);
+  const deploySearch = query.trim();
   const [reloadToken, setReloadToken] = useState(0);
   const [tokenTarget, setTokenTarget] = useState<ApplicationRecord>();
   const [tokenState, setTokenState] = useState<
@@ -345,8 +365,9 @@ export function ApplicationManagementPage({
     };
   }, [organizationId, reloadToken, tenantId]);
 
-  // Deploy list: one server query per (context, filter, refresh) change. The
-  // hook keeps the previous rows while the new filtered page is loading.
+  // Deploy list: one server page per (context, filter, search, window, refresh)
+  // change. The hook keeps the previous rows while the next page is loading, so
+  // the table never flashes empty between pages.
   useEffect(() => {
     if (!context) {
       return;
@@ -358,12 +379,18 @@ export function ApplicationManagementPage({
     }));
     void (async () => {
       try {
-        const loader = loadersRef.current?.deploy ?? loadDeployApplications;
-        const items = await loader(context, { deploy: deployFilterRef.current });
+        const loader = loadersRef.current?.deploy ?? loadDeployApplicationPage;
+        const listQuery: ApplicationCatalogQuery = {
+          deploy: deployFilterRef.current,
+          page: deployPage,
+          pageSize: deployPageSize,
+          ...(deploySearch ? { keyword: deploySearch } : {}),
+        };
+        const result = await loader(context, listQuery);
         if (!cancelled) {
           setGroupStates((current) => ({
             ...current,
-            deploy: { items, status: "ready" },
+            deploy: { ...normalizeCatalogLoaderResult(result), status: "ready" },
           }));
         }
       } catch (error) {
@@ -378,7 +405,7 @@ export function ApplicationManagementPage({
     return () => {
       cancelled = true;
     };
-  }, [context, deployFilterKey, reloadToken]);
+  }, [context, deployFilterKey, deployPage, deployPageSize, deploySearch, reloadToken]);
 
   // Keep the organization directory lookup lazy: it is only needed once the
   // operator picks the organization ownership filter. `status` is deliberately
@@ -423,6 +450,9 @@ export function ApplicationManagementPage({
 
   const updateDeployFilter = (patch: Partial<DeployAppListFilter>) => {
     const next: DeployAppListFilter = { ...deployFilter, ...patch };
+    // A narrower (or different) filter changes the result set, so the previous
+    // page number no longer names the same window.
+    setDeployPage(1);
     setSearchParams(
       (current) => writeDeployAppListFilter(current, next),
       { replace: true },
@@ -470,10 +500,27 @@ export function ApplicationManagementPage({
   const clearDeployFilters = () => {
     setOrganizationDraft("");
     setOrganizationDraftError(false);
+    setDeployPage(1);
     setSearchParams(
       (current) => writeDeployAppListFilter(current, DEFAULT_DEPLOY_APP_LIST_FILTER),
       { replace: true },
     );
+  };
+
+  const handleSearchChange = (value: string) => {
+    setQuery(value);
+    // The search is a server facet for the deploy list, so it re-queries page 1
+    // instead of trimming the rows already on screen.
+    setDeployPage(1);
+  };
+
+  const handleDeployPageChange = (nextPage: number) => {
+    setDeployPage(Math.max(1, nextPage));
+  };
+
+  const handleDeployPageSizeChange = (nextPageSize: number) => {
+    setDeployPageSize(Math.max(1, nextPageSize));
+    setDeployPage(1);
   };
 
   const loadAccessToken = async (application: ApplicationRecord) => {
@@ -498,9 +545,13 @@ export function ApplicationManagementPage({
     setIdentityBusyId(application.id);
     setIdentityNotice(null);
     try {
-      const status = await createApplicationIdentityService().provision(application.id);
+      const result = await createApplicationIdentityService().provision(application.id);
       setIdentityNotice({
-        text: messages.identity.success.replace("{status}", status),
+        text: result.deployApplicationId
+          ? messages.identity.successWithId
+            .replace("{status}", result.status)
+            .replace("{id}", result.deployApplicationId)
+          : messages.identity.success.replace("{status}", result.status),
         tone: "success",
       });
       setReloadToken((token) => token + 1);
@@ -566,8 +617,16 @@ export function ApplicationManagementPage({
     }
   };
 
+  // Deploy search is a server facet: the returned window is already the matching
+  // set, and re-filtering it locally would hide rows the backend matched on a
+  // field (slug) the local predicate does not evaluate — and would disagree with
+  // the server total the footer prints. The bounded App Store group still
+  // filters on screen because its library read has no keyword facet.
   const filteredItems = useMemo(() => {
     const items = activeState?.items ?? [];
+    if (activeGroup?.id === "deploy") {
+      return items;
+    }
     const normalizedQuery = query.trim().toLowerCase();
     if (!normalizedQuery) {
       return items;
@@ -575,7 +634,7 @@ export function ApplicationManagementPage({
     return items.filter((item) =>
       [item.name, item.reference, item.domain, item.kind, item.status]
         .some((value) => value?.toLowerCase().includes(normalizedQuery)));
-  }, [activeState?.items, query]);
+  }, [activeGroup?.id, activeState?.items, query]);
 
   const [integrationSummaries, setIntegrationSummaries] = useState<
     ReadonlyMap<string, ApplicationIntegrationSummary>
@@ -713,6 +772,23 @@ export function ApplicationManagementPage({
       header: messages.columns.application,
       id: "application",
     };
+    // The snowflake id (`deploy_app.id`, the IAM installation anchor) is the
+    // value operators quote to support and paste into commands. It must be
+    // printed exactly as the wire carried it: a decimal string, never through
+    // `Number`, because a snowflake is past 2^53 and rounding it would name a
+    // neighbouring application.
+    const applicationId: DataTableColumn<ApplicationRecord> = {
+      cell: (item) => item.deployApplicationId ? (
+        <span
+          className="block select-all truncate font-mono text-xs tabular-nums text-[var(--sdk-color-text-secondary)]"
+          title={item.deployApplicationId}
+        >
+          {item.deployApplicationId}
+        </span>
+      ) : "-",
+      header: messages.columns.applicationId,
+      id: "applicationId",
+    };
     const kind: DataTableColumn<ApplicationRecord> = {
       cell: (item) => item.kind || "-",
       header: messages.columns.type,
@@ -765,6 +841,7 @@ export function ApplicationManagementPage({
     if (activeGroup.id === "deploy") {
       return [
         identity,
+        applicationId,
         {
           cell: (item) => <DeployAppKindBadge kind={item.kind} messages={messages} />,
           header: messages.columns.type,
@@ -801,6 +878,28 @@ export function ApplicationManagementPage({
   const deployQueryInvalid = activeGroup?.id === "deploy"
     && isDeployAppListQueryInvalid(activeState?.error);
   const listNarrowed = deployFiltersActive || query.trim().length > 0;
+  const deployGroupActive = activeGroup?.id === "deploy";
+  const deployPagination = resolveDeployAppPagination({
+    itemCount: groupStates.deploy.items.length,
+    page: deployPage,
+    pageInfo: groupStates.deploy.pageInfo,
+    pageSize: deployPageSize,
+  });
+  // The list total is a server figure for the paginated Deploy group and the
+  // size of the bounded collection for the others; both are printed by the
+  // footer, never above the table.
+  const listTotalCount = deployGroupActive
+    ? deployPagination.totalItems
+    : filteredItems.length;
+  const listCountText = template(messages.countTemplate, { count: String(listTotalCount) });
+
+  // A deleted row or a narrower result set can leave the current page past the
+  // last one; follow the clamped page instead of showing an empty window.
+  useEffect(() => {
+    if (deployGroupActive && deployPagination.page !== deployPage) {
+      setDeployPage(deployPagination.page);
+    }
+  }, [deployGroupActive, deployPage, deployPagination.page]);
 
   const handleOrganizationDraftChange = (value: string) => {
     setOrganizationDraft(value);
@@ -907,39 +1006,49 @@ export function ApplicationManagementPage({
           />
         ) : (
         <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="min-w-0">
-              <h2 className="text-base font-semibold text-[var(--sdk-color-text-primary)]">{activeCopy?.label}</h2>
-              <p className="text-sm text-[var(--sdk-color-text-muted)]">{activeCopy?.description}</p>
-            </div>
-            <label className="relative w-full max-w-72">
-              <span className="sr-only">{messages.searchPlaceholder}</span>
-              <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--sdk-color-text-muted)]" />
-              <Input
-                aria-label={messages.searchPlaceholder}
-                className="pl-9"
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder={messages.searchPlaceholder}
-                value={query}
-              />
-            </label>
-          </div>
+          {/* One header row: the group title on the left, the search box and the
+              ownership filter on the right, and the total in the footer bar. */}
+          <AppCenterListHeader
+            description={activeCopy?.description}
+            title={activeCopy?.label}
+            toolbar={(
+              <>
+                <label className="relative w-full min-w-0 sm:w-64">
+                  <span className="sr-only">{messages.searchPlaceholder}</span>
+                  <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--sdk-color-text-muted)]" />
+                  <Input
+                    aria-label={messages.searchPlaceholder}
+                    className="pl-9"
+                    onChange={(event) => handleSearchChange(event.target.value)}
+                    placeholder={messages.searchPlaceholder}
+                    value={query}
+                  />
+                </label>
+                {deployGroupActive ? (
+                  <DeployApplicationHeaderFilters
+                    filter={deployFilter}
+                    filtersActive={deployFiltersActive}
+                    lookup={organizationLookup}
+                    messages={messages}
+                    onClear={clearDeployFilters}
+                    onOrganizationCommit={commitOrganizationDraft}
+                    onOrganizationDraftChange={handleOrganizationDraftChange}
+                    onOrganizationSelect={handleOrganizationSelect}
+                    onOwnershipChange={handleOwnershipChange}
+                    organizationDraft={organizationDraft}
+                    organizationError={organizationDraftError}
+                    showOwnership={!context?.organizationId}
+                  />
+                ) : null}
+              </>
+            )}
+          />
 
-          {activeGroup?.id === "deploy" ? (
+          {deployGroupActive ? (
             <DeployApplicationFilters
               filter={deployFilter}
-              filtersActive={deployFiltersActive}
-              lookup={organizationLookup}
               messages={messages}
-              onClear={clearDeployFilters}
               onKindTabChange={handleKindTabChange}
-              onOrganizationCommit={commitOrganizationDraft}
-              onOrganizationDraftChange={handleOrganizationDraftChange}
-              onOrganizationSelect={handleOrganizationSelect}
-              onOwnershipChange={handleOwnershipChange}
-              organizationDraft={organizationDraft}
-              organizationError={organizationDraftError}
-              showOwnership={!context?.organizationId}
             />
           ) : null}
 
@@ -971,10 +1080,6 @@ export function ApplicationManagementPage({
             </StatusNotice>
           ) : null}
 
-          <p className="text-xs text-[var(--sdk-color-text-muted)]">
-            {template(messages.countTemplate, { count: String(filteredItems.length) })}
-          </p>
-
           {identityNotice ? (
             <StatusNotice tone={identityNotice.tone}>{identityNotice.text}</StatusNotice>
           ) : null}
@@ -984,6 +1089,31 @@ export function ApplicationManagementPage({
             columns={columns}
             emptyDescription={listNarrowed ? messages.deployFilters.emptyDescription : messages.emptyDescription}
             emptyTitle={listNarrowed ? messages.deployFilters.emptyTitle : messages.emptyTitle}
+            footer={deployGroupActive ? (
+              <BottomPagination
+                className="w-full"
+                disabled={activeState?.status === "loading"}
+                hasNextPage={deployPagination.hasNextPage}
+                itemCount={activeState?.items.length ?? 0}
+                nextLabel={messages.pagination.next}
+                onNextPage={() => handleDeployPageChange(deployPagination.page + 1)}
+                onPageSizeChange={handleDeployPageSizeChange}
+                onPreviousPage={() => handleDeployPageChange(deployPagination.page - 1)}
+                page={deployPagination.page}
+                pageLabel={template(messages.pagination.pageOfTemplate, {
+                  page: String(deployPagination.page),
+                  total: String(deployPagination.totalPages),
+                })}
+                pageSize={deployPagination.pageSize}
+                pageSizeLabel={messages.pagination.pageSizeLabel}
+                pageSizeOptions={[...DEPLOY_APP_PAGE_SIZE_OPTIONS]}
+                previousLabel={messages.pagination.previous}
+                showingLabel={messages.pagination.showing}
+                summary={<AppCenterCountLabel text={listCountText} />}
+              />
+            ) : (
+              <AppCenterSummaryFooter countText={listCountText} />
+            )}
             getRowId={(item) => `${item.groupId}:${item.id}`}
             loading={activeState?.status === "loading"}
             rowActions={(item) => {
@@ -1006,11 +1136,7 @@ export function ApplicationManagementPage({
             }}
             rowActionsLabel={messages.columns.actions}
             rows={[...filteredItems]}
-            slotProps={{
-              footer: { className: "shrink-0" },
-              surface: { className: "flex min-h-0 flex-1 flex-col" },
-              viewport: { className: "min-h-0 flex-1" },
-            }}
+            slotProps={appCenterTableSlots()}
             stickyHeader
           />
         </section>
@@ -1037,6 +1163,14 @@ export function ApplicationManagementPage({
                 <dd className="min-w-0 truncate font-medium text-[var(--sdk-color-text-primary)]">{tokenTarget.name}</dd>
                 <dt className="text-[var(--sdk-color-text-muted)]">{messages.accessToken.reference}</dt>
                 <dd className="min-w-0 truncate">{tokenTarget.reference || "-"}</dd>
+                {tokenTarget.deployApplicationId ? (
+                  <>
+                    <dt className="text-[var(--sdk-color-text-muted)]">{messages.columns.applicationId}</dt>
+                    <dd className="min-w-0 select-all truncate font-mono text-xs" title={tokenTarget.deployApplicationId}>
+                      {tokenTarget.deployApplicationId}
+                    </dd>
+                  </>
+                ) : null}
                 <dt className="text-[var(--sdk-color-text-muted)]">{messages.accessToken.group}</dt>
                 <dd>{messages.groups[groupMessageKey(tokenTarget.groupId)].label}</dd>
                 <dt className="text-[var(--sdk-color-text-muted)]">{messages.accessToken.scope}</dt>
@@ -1203,6 +1337,25 @@ export const CloudRouterOrganizationApplicationsPage: ComponentType = function C
 
 function rowKey(application: ApplicationRecord): string {
   return `${application.groupId}:${application.id}`;
+}
+
+/**
+ * Split a loader answer into rows and optional page metadata.
+ *
+ * A bounded group answers with its whole collection; the paginated Deploy group
+ * answers with one server page. One seam accepts both so a host loader and a
+ * test double can each answer in its natural shape.
+ */
+function normalizeCatalogLoaderResult(
+  result: ApplicationCatalogLoaderResult,
+): Pick<ApplicationGroupState, "items" | "pageInfo"> {
+  // `Array.isArray` cannot narrow a `readonly T[]` union member, so the page
+  // branch names its shape explicitly instead of relying on the guard.
+  if (Array.isArray(result)) {
+    return { items: result as readonly ApplicationRecord[] };
+  }
+  const page = result as ApplicationCatalogPage;
+  return { items: page.items, pageInfo: page.pageInfo };
 }
 
 function IntegrationSummaryChips({

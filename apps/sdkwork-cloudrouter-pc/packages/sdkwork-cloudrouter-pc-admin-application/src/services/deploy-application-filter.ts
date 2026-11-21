@@ -1,6 +1,7 @@
 import {
   DEPLOY_APP_KINDS,
   DEPLOY_OWNERSHIP_SCOPES,
+  type ApplicationCatalogPageInfo,
   type DeployAppKind,
   type DeployAppKindTabId,
   type DeployAppListFilter,
@@ -76,6 +77,18 @@ export const DEFAULT_DEPLOY_APP_LIST_FILTER: DeployAppListFilter = {
   kindTab: "all",
   ownership: "all",
 };
+
+/**
+ * Page-size choices in the deploy list footer.
+ *
+ * The list is an offset-paginated admin table, so a page is a server window;
+ * the smallest choice is the default and every choice stays inside the
+ * platform's `page_size` ceiling.
+ */
+export const DEPLOY_APP_PAGE_SIZE_OPTIONS = [20, 50, 100] as const;
+
+/** The window the deploy list opens with. */
+export const DEFAULT_DEPLOY_APP_PAGE_SIZE: number = DEPLOY_APP_PAGE_SIZE_OPTIONS[0];
 
 /** Query parameter names. Short, stable, and shareable. */
 export const DEPLOY_FILTER_PARAMS = {
@@ -278,4 +291,49 @@ export function normalizeDeployOwnershipScope(
   return typeof value === "string" && DEPLOY_OWNERSHIP_SCOPES.includes(value as DeployOwnershipScope)
     ? (value as DeployOwnershipScope)
     : undefined;
+}
+
+/** Facts the deploy list footer renders for the current page window. */
+export interface DeployAppPagination {
+  /** Current page, clamped to the pages the total actually has. */
+  page: number;
+  pageSize: number;
+  /** Matching rows across every page. */
+  totalItems: number;
+  /** Last page number; at least 1 so an empty list still renders one page. */
+  totalPages: number;
+  hasNextPage: boolean;
+}
+
+/**
+ * Resolve the footer's window from the server page metadata.
+ *
+ * The request's page is authoritative for "which page am I on" (the metadata
+ * still describes the previous window while the next one is in flight); the
+ * backend owns the total and the next-page flag. Arithmetic over the rows on
+ * screen is only the fallback for a loader that answers with a plain array. The
+ * page is clamped so deleting the last row of the last page cannot strand the
+ * operator on an empty window.
+ */
+export function resolveDeployAppPagination(input: {
+  page: number;
+  pageSize: number;
+  itemCount: number;
+  pageInfo?: ApplicationCatalogPageInfo;
+}): DeployAppPagination {
+  const pageSize = Math.max(1, input.pageInfo?.pageSize ?? input.pageSize);
+  const requestedPage = Math.max(1, input.page);
+  const totalItems = Math.max(
+    0,
+    input.pageInfo?.totalItems ?? (requestedPage - 1) * pageSize + input.itemCount,
+  );
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const page = Math.min(requestedPage, totalPages);
+  return {
+    page,
+    pageSize,
+    totalItems,
+    totalPages,
+    hasNextPage: input.pageInfo?.hasMore ?? page < totalPages,
+  };
 }

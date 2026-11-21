@@ -312,6 +312,61 @@ describe("app-kind-aware validation", () => {
       }),
     ]);
   });
+
+  it("compares only IAM's own application-type vocabulary", () => {
+    const mismatches = (appKind: string, iamApplicationType: string) =>
+      validateApplicationIntegration({
+        appKind,
+        iamApplicationType,
+        channelAccounts: [],
+        environment: "production",
+        integration: { paymentAccounts: [] },
+        paymentAccounts: [],
+      }).filter((issue) => issue.code === "application-type-mismatch");
+
+    // A correctly provisioned pair never warns: both planes name the endpoint.
+    for (const [appKind, iamType] of [
+      ["H5_WEB", "h5"],
+      ["PC_WEB", "pc"],
+      ["FLUTTER_APP", "flutter"],
+      ["API_SERVICE", "api"],
+      ["WECHAT_MINIPROGRAM", "miniprogram"],
+      ["DOUYIN_MINIPROGRAM", "miniprogram"],
+      ["IOS_APP", "ios"],
+      ["ANDROID_APP", "android"],
+      ["HARMONYOS_APP", "harmonyos"],
+      ["DESKTOP_APP", "desktop"],
+    ]) {
+      expect(mismatches(appKind, iamType), `${appKind} vs ${iamType}`).toEqual([]);
+    }
+
+    // A real disagreement names two values IAM can store.
+    expect(mismatches("DESKTOP_APP", "pc")).toEqual([
+      expect.objectContaining({
+        code: "application-type-mismatch",
+        params: expect.objectContaining({ expected: "desktop", registered: "pc" }),
+      }),
+    ]);
+    expect(mismatches("FLUTTER_APP", "other")).toEqual([
+      expect.objectContaining({
+        code: "application-type-mismatch",
+        params: expect.objectContaining({ expected: "flutter", registered: "other" }),
+      }),
+    ]);
+    // A legacy registration that stored the collapsed value is a real defect too.
+    expect(mismatches("WECHAT_MINIPROGRAM", "other")).toEqual([
+      expect.objectContaining({
+        code: "application-type-mismatch",
+        params: expect.objectContaining({ expected: "miniprogram", registered: "other" }),
+      }),
+    ]);
+
+    // Legacy web kinds cannot name one endpoint, and an unreadable value is not a
+    // governance defect.
+    expect(mismatches("SPA_WEB", "h5")).toEqual([]);
+    expect(mismatches("STATIC_WEB", "pc")).toEqual([]);
+    expect(mismatches("H5_WEB", "h5-web")).toEqual([]);
+  });
 });
 
 describe("resource link document conversion", () => {

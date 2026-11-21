@@ -138,8 +138,13 @@ describe("App Center scaffold review and taxonomy", () => {
 
     expect(await screen.findByText("暂无分类，先新建一级分类。")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "新建一级分类" }));
-    fireEvent.change(screen.getByLabelText("分类标识"), { target: { value: "productivity" } });
-    fireEvent.change(screen.getByLabelText("显示名称"), { target: { value: "效率工具" } });
+    // Required fields carry the visual `*`, so the label text is matched loosely.
+    fireEvent.change(screen.getByLabelText("分类标识", { exact: false }), {
+      target: { value: "productivity" },
+    });
+    fireEvent.change(screen.getByLabelText("显示名称", { exact: false }), {
+      target: { value: "效率工具" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "保存分类" }));
 
     await waitFor(() => expect(adminService.createCategory).toHaveBeenCalledTimes(1));

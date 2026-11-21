@@ -202,6 +202,11 @@ describe("application integration actions", () => {
     fireEvent.click(screen.getByRole("menuitem", { name: "支付配置" }));
     expect(integrations.loadPaymentAccounts).toHaveBeenCalledTimes(1);
 
+    // The configure drawer repeats the row's snowflake id, so an operator
+    // editing integrations quotes the same anchor the list shows.
+    expect(screen.getAllByText("应用ID").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("410000000000000001").length).toBeGreaterThanOrEqual(2);
+
     fireEvent.click(await screen.findByRole("button", { name: "添加支付账号" }));
     fireEvent.click(await screen.findByRole("tab", { name: "租户" }));
     fireEvent.click(await screen.findByRole("option", { name: /WeChat Pay Production/ }));

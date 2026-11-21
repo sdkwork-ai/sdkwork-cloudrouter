@@ -10,6 +10,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   Field,
+  FieldError,
   FieldLabel,
   Input,
   Select,
@@ -86,9 +87,12 @@ export function AppCollectionCreateDrawer({
           <DrawerDescription>{copy.description}</DrawerDescription>
         </DrawerHeader>
         <DrawerBody className="space-y-4">
-          <Field>
+          <Field invalid={Boolean(validationError)} required>
             <FieldLabel htmlFor="collection-code">{copy.code}</FieldLabel>
             <Input
+              aria-describedby={validationError ? "collection-code-error" : undefined}
+              aria-invalid={Boolean(validationError)}
+              autoFocus
               id="collection-code"
               onChange={(event) => {
                 setCode(event.target.value);
@@ -99,6 +103,9 @@ export function AppCollectionCreateDrawer({
               placeholder={copy.codePlaceholder}
               value={code}
             />
+            {validationError ? (
+              <FieldError id="collection-code-error">{validationError}</FieldError>
+            ) : null}
           </Field>
 
           <Field>
@@ -136,7 +143,6 @@ export function AppCollectionCreateDrawer({
             </Select>
           </Field>
 
-          {validationError ? <StatusNotice tone="danger">{validationError}</StatusNotice> : null}
           {error ? (
             <StatusNotice tone="danger">
               {isAppStoreCollectionForbidden(error) ? messages.collections.forbidden : copy.error}

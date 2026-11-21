@@ -34,6 +34,7 @@ const iamApplication: ApplicationRecord = {
 };
 
 const deployApplication: ApplicationRecord = {
+  deployApplicationId: "410000000000000001",
   environment: "production",
   groupId: "deploy",
   id: "deploy-1",
@@ -120,6 +121,22 @@ describe("application management page", () => {
     expect(loaders.iam).not.toHaveBeenCalled();
   });
 
+  it("prints each deploy application's snowflake id exactly as the wire carried it", async () => {
+    const loaders = createLoaders();
+    // 2^53 + 1: the first integer an IEEE-754 double cannot represent. A page
+    // that read the id through `Number` would print 9007199254740992 instead.
+    loaders.deploy.mockResolvedValue([
+      { ...deployApplication, deployApplicationId: "9007199254740993" },
+    ]);
+    const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
+    renderPage({ loaders, resolveContext, tenantId: "tenant-1" });
+
+    await screen.findAllByText("Storefront");
+    expect(screen.getByRole("columnheader", { name: "应用ID" })).toBeTruthy();
+    expectText("9007199254740993");
+    expect(screen.queryAllByText("9007199254740992").length).toBe(0);
+  });
+
   it("switches to the App Store group without mixing its rows", async () => {
     const loaders = createLoaders();
     const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
@@ -135,20 +152,41 @@ describe("application management page", () => {
     expectText("1.2.0");
   });
 
-  it("filters the active group locally", async () => {
+  it("searches the deploy group on the server instead of trimming the loaded page", async () => {
     const loaders = createLoaders();
-    loaders.deploy.mockResolvedValue([
-      deployApplication,
-      { ...deployApplication, id: "deploy-2", name: "Billing" },
+    const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
+    renderPage({ loaders, resolveContext, tenantId: "tenant-1" });
+
+    await screen.findAllByText("Storefront");
+    loaders.deploy.mockResolvedValue([{ ...deployApplication, id: "deploy-2", name: "Billing" }]);
+    fireEvent.change(screen.getByPlaceholderText("搜索应用名称、标识、域名或应用ID"), { target: { value: "bill" } });
+
+    // The keyword is a server facet: the row set is whatever the backend
+    // returned for it, never a local filter over the rows already on screen.
+    await waitFor(() => expect(loaders.deploy).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({ keyword: "bill", page: 1 }),
+    ));
+    expectText("Billing");
+  });
+
+  it("filters the bounded App Store group locally", async () => {
+    const loaders = createLoaders();
+    loaders["app-store"].mockResolvedValue([
+      appStoreApplication,
+      { ...appStoreApplication, id: "library-2", name: "billing-desktop" },
     ]);
     const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
     renderPage({ loaders, resolveContext, tenantId: "tenant-1" });
 
     await screen.findAllByText("Storefront");
-    fireEvent.change(screen.getByPlaceholderText("搜索应用名称、标识或域名"), { target: { value: "bill" } });
+    clickGroup("app-store");
+    await screen.findAllByText("sdkwork-birdcoder");
 
-    await waitFor(() => expect(screen.queryAllByText("Storefront").length).toBe(0));
-    expectText("Billing");
+    fireEvent.change(screen.getByPlaceholderText("搜索应用名称、标识、域名或应用ID"), { target: { value: "bill" } });
+
+    await waitFor(() => expect(screen.queryAllByText("sdkwork-birdcoder").length).toBe(0));
+    expectText("billing-desktop");
   });
 
   it("keeps the App Store group empty for organizations and explains the scope", async () => {

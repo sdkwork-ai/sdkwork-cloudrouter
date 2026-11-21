@@ -22,7 +22,7 @@ vi.mock("../src/services/iam-service", () => ({
   getApplicationCatalogIamService: () => ({ iam: { organizations: { list: vi.fn() } } }),
 }));
 
-const { loadDeployApplications } = await import("../src/services/application-catalog");
+const { loadDeployApplicationPage, loadDeployApplications } = await import("../src/services/application-catalog");
 
 function deployRow(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
@@ -98,6 +98,42 @@ describe("deploy application list query", () => {
     });
   });
 
+  it("keeps the snowflake application id as the exact decimal string", async () => {
+    mocks.app.list.mockResolvedValue({
+      items: [deployRow({ deployApplicationId: "9007199254740993" })],
+      pageInfo: { mode: "offset", page: 1, pageSize: 200 },
+    });
+
+    const rows = await loadDeployApplications({ tenantId: "tenant-1" });
+
+    // int64 ids stay decimal strings on the wire (`API_SPEC.md` §13.6); reading
+    // this through `Number` would round it to 9007199254740992.
+    expect(rows[0]?.deployApplicationId).toBe("9007199254740993");
+  });
+
+  it("drops a payload that names the application id in any non-decimal shape", async () => {
+    mocks.app.list.mockResolvedValue({
+      items: [deployRow({ deployApplicationId: 410000000000000001 })],
+      pageInfo: { mode: "offset", page: 1, pageSize: 200 },
+    });
+
+    const rows = await loadDeployApplications({ tenantId: "tenant-1" });
+
+    expect(rows[0]?.deployApplicationId).toBeUndefined();
+  });
+
+  it("accepts a host that already returns the decimal snowflake as the row id", async () => {
+    mocks.app.list.mockResolvedValue({
+      items: [deployRow({ id: "410000000000000001" })],
+      pageInfo: { mode: "offset", page: 1, pageSize: 200 },
+    });
+
+    const rows = await loadDeployApplications({ tenantId: "tenant-1" });
+
+    // A UUID `id` is never treated as an application id; only a decimal one is.
+    expect(rows[0]?.deployApplicationId).toBe("410000000000000001");
+  });
+
   it("derives a missing ownership scope from the legacy organization encoding", async () => {
     mocks.app.list.mockResolvedValue({
       items: [
@@ -126,5 +162,61 @@ describe("deploy application list query", () => {
     const rows = await loadDeployApplications({ organizationId: "42", tenantId: "tenant-1" });
 
     expect(rows.map((row) => row.id)).toEqual(["app-org"]);
+    // The narrowing is a server facet too, so the window and the total describe
+    // the same set as the rows on screen.
+    expect(mocks.app.list).toHaveBeenCalledWith(expect.objectContaining({
+      ownerOrganizationId: "42",
+      ownershipScope: "ORGANIZATION",
+    }));
+  });
+});
+
+describe("deploy application list page window", () => {
+  it("sends the page window and the trimmed keyword as server facets", async () => {
+    mocks.app.list.mockResolvedValue({
+      items: [deployRow()],
+      pageInfo: { hasMore: true, mode: "offset", page: 2, pageSize: 20, totalItems: "45", totalPages: 3 },
+    });
+
+    const page = await loadDeployApplicationPage(
+      { tenantId: "tenant-1" },
+      { keyword: "  storefront ", page: 2, pageSize: 20 },
+    );
+
+    expect(mocks.app.list).toHaveBeenCalledWith(expect.objectContaining({
+      keyword: "storefront",
+      page: 2,
+      pageSize: 20,
+    }));
+    // `totalItems` is an int64 decimal string on the wire; the page metadata is
+    // a number the footer can print.
+    expect(page.pageInfo).toEqual({
+      hasMore: true,
+      page: 2,
+      pageSize: 20,
+      totalItems: 45,
+    });
+    expect(page.items.map((row) => row.id)).toEqual(["app-1"]);
+  });
+
+  it("omits the keyword when the search box is empty", async () => {
+    await loadDeployApplicationPage({ tenantId: "tenant-1" }, { keyword: "   ", page: 1, pageSize: 20 });
+
+    const params = mocks.app.list.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(params).not.toHaveProperty("keyword");
+    expect(params.page).toBe(1);
+    expect(params.pageSize).toBe(20);
+  });
+
+  it("derives the next-page flag from the total when the backend omits hasMore", async () => {
+    mocks.app.list.mockResolvedValue({
+      items: [deployRow()],
+      pageInfo: { mode: "offset", page: 1, pageSize: 20, totalItems: "1" },
+    });
+
+    const page = await loadDeployApplicationPage({ tenantId: "tenant-1" }, { pageSize: 20 });
+
+    expect(page.pageInfo.totalItems).toBe(1);
+    expect(page.pageInfo.hasMore).toBe(false);
   });
 });

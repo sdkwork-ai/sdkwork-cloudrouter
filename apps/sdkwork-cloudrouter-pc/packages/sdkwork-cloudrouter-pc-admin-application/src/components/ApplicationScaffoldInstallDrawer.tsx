@@ -7,6 +7,9 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
+  Field,
+  FieldDescription,
+  FieldError,
   FieldLabel,
   Input,
   StatusNotice,
@@ -45,7 +48,11 @@ export function ApplicationScaffoldInstallDrawer({
 }: {
   messages: ApplicationCatalogMessages;
   onClose: () => void;
-  onInstalled: (result: { appId: string; appName: string }) => void;
+  onInstalled: (result: {
+    appId: string;
+    appName: string;
+    deployApplicationId?: string;
+  }) => void;
   scaffold: ApplicationScaffold;
   service: ApplicationScaffoldService;
 }) {
@@ -54,18 +61,18 @@ export function ApplicationScaffoldInstallDrawer({
   const [slug, setSlug] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>();
-  const [nameError, setNameError] = useState(false);
+  const [nameError, setNameError] = useState<string>();
 
   const submit = async () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
-      setNameError(true);
+      setNameError(copy.nameRequired);
       return;
     }
     if (busy) {
       return;
     }
-    setNameError(false);
+    setNameError(undefined);
     setBusy(true);
     setError(undefined);
     try {
@@ -73,7 +80,11 @@ export function ApplicationScaffoldInstallDrawer({
         name: trimmedName,
         ...(slug.trim() ? { slug: slug.trim() } : {}),
       });
-      onInstalled({ appId: result.appId, appName: result.appName });
+      onInstalled({
+        appId: result.appId,
+        appName: result.appName,
+        ...(result.deployApplicationId ? { deployApplicationId: result.deployApplicationId } : {}),
+      });
     } catch (nextError) {
       setError(nextError);
     } finally {
@@ -112,33 +123,36 @@ export function ApplicationScaffoldInstallDrawer({
             </p>
           </div>
 
-          <div className="space-y-1.5">
+          <Field invalid={Boolean(nameError)} required>
             <FieldLabel htmlFor="scaffold-install-name">{copy.name}</FieldLabel>
             <Input
+              aria-describedby={nameError ? "scaffold-install-name-error" : undefined}
+              aria-invalid={Boolean(nameError)}
               autoFocus
               id="scaffold-install-name"
               onChange={(event) => {
                 setName(event.target.value);
-                setNameError(false);
+                setNameError(undefined);
               }}
               placeholder={copy.namePlaceholder}
               value={name}
             />
             {nameError ? (
-              <p className="text-xs text-[var(--sdk-color-state-danger)]">{copy.nameRequired}</p>
+              <FieldError id="scaffold-install-name-error">{nameError}</FieldError>
             ) : null}
-          </div>
+          </Field>
 
-          <div className="space-y-1.5">
+          <Field>
             <FieldLabel htmlFor="scaffold-install-slug">{copy.slug}</FieldLabel>
             <Input
+              aria-describedby="scaffold-install-slug-hint"
               id="scaffold-install-slug"
               onChange={(event) => setSlug(event.target.value)}
               placeholder={copy.slugPlaceholder}
               value={slug}
             />
-            <p className="text-xs text-[var(--sdk-color-text-muted)]">{copy.slugHint}</p>
-          </div>
+            <FieldDescription id="scaffold-install-slug-hint">{copy.slugHint}</FieldDescription>
+          </Field>
 
           {error ? (
             <StatusNotice tone="danger">

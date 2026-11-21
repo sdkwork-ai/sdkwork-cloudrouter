@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams, useInRouterContext } from "react-router-dom";
-import { Download, FolderTree, Plus, RefreshCw, Search } from "lucide-react";
+import { Download, FolderTree, Plus, Search } from "lucide-react";
 import {
   Button,
   ConfirmDialog,
@@ -13,7 +13,13 @@ import {
   type CascadeCategoryNode,
 } from "@sdkwork/cloudroutes-pc-commons";
 
+import {
+  AppCenterCursorFooter,
+  AppCenterListHeader,
+  AppCenterRefreshButton,
+} from "./AppCenterListShell";
 import type { ApplicationCatalogMessages } from "../i18n";
+import { templateMessage } from "../services/message-template";
 import { AppStoreCategoryFormDrawer } from "../components/AppStoreCategoryFormDrawer";
 import { CategoryItemActionsMenu } from "../components/CategoryItemActionsMenu";
 import {
@@ -430,83 +436,88 @@ function AppStoreCategoryPanelContent({
   const actionFailure = actionError ? categoryFailureMessage(actionError, copy, messages) : undefined;
 
   return (
-    <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h2 className="flex items-center gap-2 text-base font-semibold text-[var(--sdk-color-text-primary)]">
+    <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-3" data-app-center-panel="store-categories">
+      <input
+        accept=".json,application/json"
+        className="hidden"
+        onChange={(event) => {
+          void handleImportFile(event.target.files?.[0]);
+          event.currentTarget.value = "";
+        }}
+        ref={importInputRef}
+        type="file"
+      />
+
+      <AppCenterListHeader
+        actions={(
+          <>
+            <Button
+              onClick={() => importInputRef.current?.click()}
+              type="button"
+              variant="outline"
+            >
+              {copy.importAction}
+            </Button>
+            <Button
+              disabled={state.items.length === 0}
+              onClick={() => {
+                const document = buildAppStoreCategoryExport(
+                  state.items,
+                  (category) => resolveCategoryDisplayName(category, locale) ?? category.code,
+                );
+                downloadJsonDocument(
+                  document,
+                  `appstore-categories-${new Date().toISOString().slice(0, 10)}.json`,
+                );
+              }}
+              type="button"
+              variant="outline"
+            >
+              <Download className="h-4 w-4" />
+              {copy.exportAction}
+            </Button>
+            <AppCenterRefreshButton
+              busy={state.status === "loading"}
+              label={messages.refresh}
+              onRefresh={reload}
+            />
+          </>
+        )}
+        description={copy.description}
+        title={(
+          <span className="flex items-center gap-2">
             <FolderTree className="h-4 w-4" />
             {copy.title}
-          </h2>
-          <p className="text-sm text-[var(--sdk-color-text-muted)]">{copy.description}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <input
-            accept=".json,application/json"
-            className="hidden"
-            onChange={(event) => {
-              void handleImportFile(event.target.files?.[0]);
-              event.currentTarget.value = "";
-            }}
-            ref={importInputRef}
-            type="file"
-          />
-          <Button
-            onClick={() => importInputRef.current?.click()}
-            type="button"
-            variant="outline"
-          >
-            {copy.importAction}
-          </Button>
-          <Button
-            disabled={state.items.length === 0}
-            onClick={() => {
-              const document = buildAppStoreCategoryExport(
-                state.items,
-                (category) => resolveCategoryDisplayName(category, locale) ?? category.code,
-              );
-              downloadJsonDocument(
-                document,
-                `appstore-categories-${new Date().toISOString().slice(0, 10)}.json`,
-              );
-            }}
-            type="button"
-            variant="outline"
-          >
-            <Download className="h-4 w-4" />
-            {copy.exportAction}
-          </Button>
-          <Button disabled={state.status === "loading"} onClick={reload} type="button" variant="outline">
-            <RefreshCw className={`h-4 w-4 ${state.status === "loading" ? "animate-spin" : ""}`} />
-            {messages.refresh}
-          </Button>
-        </div>
-      </header>
+          </span>
+        )}
+        toolbar={(
+          <>
+            <div className="relative w-full min-w-0 sm:w-64">
+              <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--sdk-color-text-muted)]" />
+              <Input
+                aria-label={copy.cascade.locatePlaceholder}
+                className="pl-9"
+                onChange={(event) => setLocateQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    locate();
+                  }
+                }}
+                placeholder={copy.cascade.locatePlaceholder}
+                value={locateQuery}
+              />
+            </div>
+            <Button onClick={locate} size="sm" type="button" variant="outline">
+              {copy.cascade.locateAction}
+            </Button>
+            {locateMiss ? (
+              <span className="text-xs text-[var(--sdk-color-state-danger)]">{copy.cascade.locateEmpty}</span>
+            ) : null}
+          </>
+        )}
+      />
 
       <p className="text-xs text-[var(--sdk-color-text-muted)]">{copy.cascade.depthHint}</p>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative w-full max-w-sm">
-          <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--sdk-color-text-muted)]" />
-          <Input
-            aria-label={copy.cascade.locatePlaceholder}
-            className="pl-9"
-            onChange={(event) => setLocateQuery(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                locate();
-              }
-            }}
-            placeholder={copy.cascade.locatePlaceholder}
-            value={locateQuery}
-          />
-        </div>
-        <Button onClick={locate} size="sm" type="button" variant="outline">
-          {copy.cascade.locateAction}
-        </Button>
-        {locateMiss ? (
-          <span className="text-xs text-[var(--sdk-color-state-danger)]">{copy.cascade.locateEmpty}</span>
-        ) : null}
-      </div>
 
       {notice ? <StatusNotice tone="success">{notice}</StatusNotice> : null}
       {failure ? (
@@ -616,13 +627,14 @@ function AppStoreCategoryPanelContent({
         onSelect={handleSelect}
       />
 
-      {state.hasMore && nextCursor ? (
-        <div className="flex justify-center">
-          <Button disabled={loadingMore} onClick={() => void loadMore()} size="sm" type="button" variant="ghost">
-            {loadingMore ? copy.loadingMore : copy.loadMore}
-          </Button>
-        </div>
-      ) : null}
+      <AppCenterCursorFooter
+        countText={templateMessage(copy.countTemplate, { count: String(state.items.length) })}
+        hasMore={Boolean(state.hasMore && nextCursor)}
+        loadMoreLabel={copy.loadMore}
+        loading={loadingMore}
+        loadingLabel={copy.loadingMore}
+        onLoadMore={() => { void loadMore(); }}
+      />
 
       {formTarget ? (
         <AppStoreCategoryFormDrawer

@@ -209,6 +209,7 @@ export function createApplicationScaffoldService(
       return {
         appId,
         appName: readString(app, "name") || appId,
+        deployApplicationId: readDecimalId(app, "deployApplicationId"),
         scaffoldUuid: readString(record, "scaffoldUuid") || scaffoldId,
       };
     },
@@ -494,6 +495,21 @@ function readString(record: Record<string, unknown>, ...keys: readonly string[])
     }
   }
   return "";
+}
+
+/**
+ * A decimal int64 id exactly as the wire carried it.
+ *
+ * `deployApplicationId` is a snowflake past 2^53, so it must never pass
+ * through `Number`. A value of another shape is not an application id and is
+ * dropped rather than printed.
+ */
+function readDecimalId(
+  record: Record<string, unknown>,
+  ...keys: readonly string[]
+): string | undefined {
+  const value = readString(record, ...keys);
+  return /^-?[0-9]+$/u.test(value) ? value : undefined;
 }
 
 function readNumber(record: Record<string, unknown>, ...keys: readonly string[]): number | undefined {

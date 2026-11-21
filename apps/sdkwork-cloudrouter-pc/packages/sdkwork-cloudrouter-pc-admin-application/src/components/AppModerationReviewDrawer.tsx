@@ -8,10 +8,12 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  StatusNotice,
+  StatusBadge,
 } from "@sdkwork/ui-pc-react";
 
+import { AppCenterLoadFailure } from "./AppCenterListShell";
 import type { ApplicationCatalogMessages } from "../i18n";
+import { formatDateTime } from "../services/format";
 import type {
   AppStoreModerationQueueItem,
   AppStoreModerationReview,
@@ -25,7 +27,13 @@ export interface AppModerationReviewDrawerProps {
   service: AppStoreModerationService;
 }
 
-/** Read-only moderation review inspector. */
+/**
+ * Read-only moderation review inspector.
+ *
+ * The queue row renders immediately and the full review replaces it in place;
+ * a failed read keeps the queue data and offers a retry rather than blanking the
+ * panel.
+ */
 export function AppModerationReviewDrawer({
   item,
   messages,
@@ -36,6 +44,7 @@ export function AppModerationReviewDrawer({
   const [review, setReview] = useState<AppStoreModerationReview | AppStoreModerationQueueItem>(item);
   const [loading, setLoading] = useState(Boolean(service.getReview));
   const [error, setError] = useState<unknown>();
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     if (!service.getReview) {
@@ -43,8 +52,10 @@ export function AppModerationReviewDrawer({
       return;
     }
     let cancelled = false;
+    const getReview = service.getReview.bind(service);
     setLoading(true);
-    void service.getReview(item.reviewId).then(
+    setError(undefined);
+    void getReview(item.reviewId).then(
       (detail) => {
         if (!cancelled) {
           if (detail) {
@@ -63,7 +74,7 @@ export function AppModerationReviewDrawer({
     return () => {
       cancelled = true;
     };
-  }, [item.reviewId, service]);
+  }, [item.reviewId, reloadToken, service]);
 
   const attributes = "attributes" in review ? review.attributes : {};
   const attributeEntries = Object.entries(attributes).filter(([key, value]) =>
@@ -85,16 +96,23 @@ export function AppModerationReviewDrawer({
             {review.listingName} · {review.reviewId}
           </DrawerDescription>
         </DrawerHeader>
-        <DrawerBody className="space-y-4">
+        <DrawerBody aria-busy={loading || undefined} className="space-y-4">
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
             <dt className="text-[var(--sdk-color-text-muted)]">{messages.moderation.columns.submissionType}</dt>
             <dd>{submissionTypeLabel(review.submissionType, messages)}</dd>
             <dt className="text-[var(--sdk-color-text-muted)]">{messages.moderation.columns.status}</dt>
-            <dd>{statusLabel(review.reviewStatus, messages)}</dd>
+            <dd>
+              <StatusBadge
+                label={statusLabel(review.reviewStatus, messages)}
+                showIcon
+                status={review.reviewStatus}
+                variant={reviewStatusVariant(review.reviewStatus)}
+              />
+            </dd>
             <dt className="text-[var(--sdk-color-text-muted)]">{messages.moderation.columns.assignee}</dt>
             <dd>{review.assignedTo ?? "—"}</dd>
             <dt className="text-[var(--sdk-color-text-muted)]">{messages.moderation.columns.submittedAt}</dt>
-            <dd>{review.submittedAt ?? "—"}</dd>
+            <dd>{formatDateTime(review.submittedAt)}</dd>
           </dl>
 
           {loading ? (
@@ -104,7 +122,11 @@ export function AppModerationReviewDrawer({
           ) : null}
 
           {error ? (
-            <StatusNotice tone="danger">{copy.error}</StatusNotice>
+            <AppCenterLoadFailure
+              message={copy.error}
+              onRetry={() => setReloadToken((token) => token + 1)}
+              retryLabel={messages.retry}
+            />
           ) : null}
 
           {!loading && !error ? (
@@ -198,4 +220,20 @@ function statusLabel(
     status as keyof ApplicationCatalogMessages["moderation"]["statuses"]
   ];
   return known ?? messages.moderation.statuses.unknown;
+}
+
+/** Badge tone for `review_status`; the queue list uses the same mapping. */
+function reviewStatusVariant(
+  status: string,
+): "success" | "warning" | "danger" | "default" | "secondary" {
+  if (status === "APPROVED") {
+    return "success";
+  }
+  if (status === "REJECTED") {
+    return "danger";
+  }
+  if (status === "CHANGES_REQUESTED") {
+    return "warning";
+  }
+  return status === "IN_REVIEW" ? "default" : "secondary";
 }

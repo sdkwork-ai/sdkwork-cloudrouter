@@ -736,10 +736,13 @@ export function validateApplicationIntegration(
   // screen exists to surface.
   const expectedIamType = expectedIamApplicationType(surface.id);
   const registeredIamType = input.iamApplicationType?.trim().toLowerCase();
+  // Only a value IAM actually stores can be compared. An unrecognized string is a
+  // reading problem, not a governance defect, and inventing surface names here
+  // would make every correctly registered desktop app look wrong.
   if (
     expectedIamType
     && registeredIamType
-    && registeredIamType !== "other"
+    && IAM_TENANT_APPLICATION_TYPES.has(registeredIamType)
     && registeredIamType !== expectedIamType
   ) {
     issues.push(issue("application-type-mismatch", "warning", {
@@ -974,6 +977,30 @@ function requirementPresent(
       return integration.paymentAccounts.length > 0;
   }
 }
+
+/**
+ * IAM tenant-application types (`IAM_TENANT_APPLICATION_TYPES`,
+ * `IAM_APPLICATION_BOOTSTRAP_SPEC.md` §2.1 and the
+ * `@sdkwork/iam-application-bootstrap` runtime vocabulary).
+ *
+ * Both planes name the endpoint, so a mini program is `miniprogram`, a native app
+ * is `ios`/`android`/`harmonyos`, and a desktop host is `desktop`. The comparison
+ * below may only use these values: a surface name that IAM does not store cannot
+ * be compared, and a stale five-value assumption made a correctly registered
+ * mini program or desktop app look wrong (or hide the mismatch entirely).
+ */
+const IAM_TENANT_APPLICATION_TYPES = new Set([
+  "api",
+  "h5",
+  "pc",
+  "flutter",
+  "miniprogram",
+  "ios",
+  "android",
+  "harmonyos",
+  "desktop",
+  "other",
+]);
 
 /** The IAM `applicationType` that corresponds to one Deploy surface. */
 export function expectedIamApplicationType(

@@ -170,6 +170,13 @@ export type ApplicationScaffoldIssueField =
 export interface ApplicationScaffoldInstallResult {
   appId: string;
   appName: string;
+  /**
+   * The created application's snowflake id (`deployApplicationId`), as the
+   * decimal string the wire carried. Present whenever the create response
+   * carried it; the success notice prints it so the operator can record the id
+   * of the application the scaffold just created.
+   */
+  deployApplicationId?: string;
   scaffoldUuid: string;
 }
 
