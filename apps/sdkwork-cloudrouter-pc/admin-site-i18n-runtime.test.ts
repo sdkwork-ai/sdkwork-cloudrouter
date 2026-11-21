@@ -12,6 +12,7 @@ import {
 } from './packages/sdkwork-cloudroutes-pc-commons/src/footer-settings.ts';
 import { HOME_SECTIONS } from './packages/sdkwork-cloudrouter-pc-admin-site/src/siteContentFields.ts';
 import { ADMIN_MODULE_CATALOG } from './packages/sdkwork-cloudroutes-pc-commons/src/admin-modules.ts';
+import { HOMEPAGE_MENU_CATALOG } from './packages/sdkwork-cloudroutes-pc-commons/src/homepage-menu.ts';
 
 const PORTAL_ROOT = path.dirname(new URL(import.meta.url).pathname).replace(/^\/([A-Za-z]:)/, '$1');
 const ADMIN_SITE_SOURCES = [
@@ -21,6 +22,7 @@ const ADMIN_SITE_SOURCES = [
   path.join(PORTAL_ROOT, 'packages/sdkwork-cloudrouter-pc-admin-site/src/DownloadCatalogEditor.tsx'),
   path.join(PORTAL_ROOT, 'packages/sdkwork-cloudrouter-pc-admin-site/src/SiteDownloadsPanel.tsx'),
   path.join(PORTAL_ROOT, 'packages/sdkwork-cloudrouter-pc-admin-site/src/AdminModuleSettingsEditor.tsx'),
+  path.join(PORTAL_ROOT, 'packages/sdkwork-cloudrouter-pc-admin-site/src/HomepageMenuEditor.tsx'),
   path.join(PORTAL_ROOT, 'packages/sdkwork-cloudrouter-pc-admin-site/src/SiteSettingsControls.tsx'),
 ];
 const ADMIN_SITE_SOURCE = ADMIN_SITE_SOURCES[0];
@@ -149,6 +151,11 @@ test('every category, platform, footer region and homepage region label resolves
   // description are looked up through `ADMIN_MODULE_CATALOG`, not a literal t() call.
   for (const module of ADMIN_MODULE_CATALOG) {
     wanted.push(module.labelKey, module.descriptionKey);
+  }
+  // The homepage menu manager reuses the header's own `nav.*` labels and adds one description per
+  // link; both are looked up through `HOMEPAGE_MENU_CATALOG`.
+  for (const item of HOMEPAGE_MENU_CATALOG) {
+    wanted.push(item.labelKey, item.descriptionKey);
   }
 
   assert.ok(wanted.length > 30, 'expected a substantial set of registry-driven keys');

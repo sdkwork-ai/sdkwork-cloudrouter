@@ -1,4 +1,4 @@
-import { AppWindow, Building2, KeyRound, KeySquare, Link2, MessageCircle, Network, QrCode, ScrollText, ShieldAlert, ShieldCheck, Smartphone, UserCog, Users, type LucideIcon } from 'lucide-react';
+import { AppWindow, BarChart3, Building2, KeyRound, KeySquare, Link2, MessageCircle, Network, QrCode, ScrollText, Server, ShieldAlert, ShieldCheck, Smartphone, UserCog, Users, type LucideIcon } from 'lucide-react';
 
 /**
  * Cloud Router IAM admin contribution metadata.
@@ -70,8 +70,11 @@ export const IAM_ADMIN_MENU: CloudRouterIamAdminMenu = {
       items: [
         { path: '/admin/iam/oauth/relying-party', labelKey: 'admin.menu.iam.oauth.relyingParty', icon: KeyRound },
         { path: '/admin/iam/oauth/providers', labelKey: 'admin.menu.iam.oauth.providers', icon: KeyRound },
+        { path: '/admin/iam/oauth/operator-platforms', labelKey: 'admin.menu.iam.oauth.operatorPlatforms', icon: Server },
         { path: '/admin/iam/oauth/mini-programs', labelKey: 'admin.menu.iam.oauth.miniPrograms', icon: Smartphone },
         { path: '/admin/iam/oauth/official-accounts', labelKey: 'admin.menu.iam.oauth.officialAccounts', icon: MessageCircle },
+        { path: '/admin/iam/oauth/authorized-accounts', labelKey: 'admin.menu.iam.oauth.authorizedAccounts', icon: KeySquare },
+        { path: '/admin/iam/oauth/channel-releases', labelKey: 'admin.menu.iam.oauth.channelReleases', icon: BarChart3 },
         { path: '/admin/iam/oauth/scan-login', labelKey: 'admin.menu.iam.oauth.scanLogin', icon: QrCode },
       ],
     },
@@ -112,11 +115,14 @@ export const IAM_ADMIN_ROUTE_RECORDS: readonly CloudRouterIamAdminRouteRecord[] 
   { path: 'iam/oauth', requiredPermission: 'iam.oauth.read', redirectTo: '/admin/iam/oauth/relying-party' },
   { path: 'iam/oauth/relying-party', requiredPermission: 'iam.oauth.read' },
   { path: 'iam/oauth/providers', requiredPermission: 'iam.oauth.read' },
+  { path: 'iam/oauth/operator-platforms', requiredPermission: 'iam.oauth.read' },
   // Tenant-owned channel accounts are maintained by every signed-in member;
   // only the enterprise OAuth configuration above keeps the OAuth code.
   { path: 'iam/oauth/mini-programs', requiredPermission: 'iam:self' },
   { path: 'iam/oauth/official-accounts', requiredPermission: 'iam:self' },
   { path: 'iam/oauth/official-accounts/:resourceAccountId/custom-menus', requiredPermission: 'iam:self' },
+  { path: 'iam/oauth/authorized-accounts', requiredPermission: 'iam.oauth.read' },
+  { path: 'iam/oauth/channel-releases', requiredPermission: 'iam.oauth.read' },
   { path: 'iam/oauth/scan-login', requiredPermission: 'iam.oauth.read' },
   { path: 'iam/account-binding', requiredPermission: 'iam.account_binding_policy.read' },
   { path: 'iam/audit', requiredPermission: 'iam.audit_events.read' },
@@ -139,8 +145,11 @@ export const IAM_ADMIN_PERMISSION_HINTS: readonly CloudRouterIamAdminPermissionH
   { pathPrefix: '/admin/iam/authorizations', requiredPermission: 'iam.role_bindings.read' },
   { pathPrefix: '/admin/iam/oauth', requiredPermission: 'iam.oauth.read' },
   { pathPrefix: '/admin/iam/oauth/providers', requiredPermission: 'iam.oauth.read' },
+  { pathPrefix: '/admin/iam/oauth/operator-platforms', requiredPermission: 'iam.oauth.read' },
   { pathPrefix: '/admin/iam/oauth/mini-programs', requiredPermission: 'iam:self' },
   { pathPrefix: '/admin/iam/oauth/official-accounts', requiredPermission: 'iam:self' },
+  { pathPrefix: '/admin/iam/oauth/authorized-accounts', requiredPermission: 'iam.oauth.read' },
+  { pathPrefix: '/admin/iam/oauth/channel-releases', requiredPermission: 'iam.oauth.read' },
   { pathPrefix: '/admin/iam/oauth/scan-login', requiredPermission: 'iam.oauth.read' },
   { pathPrefix: '/admin/iam/account-binding', requiredPermission: 'iam.account_binding_policy.read' },
   { pathPrefix: '/admin/iam/audit', requiredPermission: 'iam.audit_events.read' },

@@ -11,6 +11,7 @@ import type {
   ApplicationCatalogPageInfo,
   ApplicationCatalogQuery,
   ApplicationRecord,
+  DeployAppKind,
   DeployAppListQuery,
   DeployOrganizationOption,
 } from "../types/application-catalog";
@@ -102,6 +103,35 @@ export async function loadDeployApplications(
   query?: ApplicationCatalogQuery,
 ): Promise<readonly ApplicationRecord[]> {
   return (await loadDeployApplicationPage(context, query)).items;
+}
+
+/**
+ * Correct the endpoint kind of one draft deploy application.
+ *
+ * `apps.update` accepts `appKind` only as a guarded correction: the deploy API
+ * refuses it once the application has platform targets or releases, rejects the
+ * legacy `SPA_WEB` value, and re-provisions the IAM installation so its
+ * `applicationType` follows the new endpoint. The backend stays the authority;
+ * the page only offers the action for a draft row.
+ *
+ * @param appId - deploy application uuid (`AppResponse.id`)
+ * @param kind - the canonical endpoint kind to store
+ */
+export async function correctDeployApplicationKind(
+  appId: string,
+  kind: DeployAppKind,
+): Promise<void> {
+  const client = getSdkworkDeploymentsAppSdkClient();
+  await client.app.update(appId, { appKind: kind });
+}
+
+/** `true` when the deploy API refused the kind correction as a conflict. */
+export function isApplicationKindCorrectionConflict(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+  const record = error as Record<string, unknown>;
+  return Number(record.status ?? record.statusCode) === 409;
 }
 
 /**

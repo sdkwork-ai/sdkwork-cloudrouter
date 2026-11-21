@@ -12,6 +12,7 @@ import {
   LayoutGrid,
   Link2,
   Loader2,
+  Navigation,
   Palette,
   Plus,
   QrCode,
@@ -23,6 +24,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { DriveUploadImage } from 'sdkwork-drive-pc-upload-image';
 import { AdminModuleSettingsEditor } from './AdminModuleSettingsEditor';
+import { HomepageMenuEditor } from './HomepageMenuEditor';
 import { DownloadCatalogEditor } from './DownloadCatalogEditor';
 import { SiteDownloadsPanel } from './SiteDownloadsPanel';
 import { InlineWarning, SectionDivider, TextArea, TextField, ToggleSwitch } from './SiteSettingsControls';
@@ -33,6 +35,7 @@ import {
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { BusinessStatePanel } from '@sdkwork/cloudroutes-pc-commons';
 import { validateAdminModuleSettings, type AdminModuleSettings } from '@sdkwork/cloudroutes-pc-commons/admin-modules';
+import { type HomepageMenuSettings } from '@sdkwork/cloudroutes-pc-commons/homepage-menu';
 import {
   cloudRouterMediaResourceToDriveUploadImageValue,
   driveUploadImageValueToCloudRouterMediaResource,
@@ -91,6 +94,7 @@ import {
 
 export { DEFAULT_SITE_SETTINGS, SiteSettingsService, toSiteSettings } from './SiteSettingsService';
 export type { SiteSettingsForm } from './SiteSettingsService';
+export { HomepageMenuEditor } from './HomepageMenuEditor';
 export {
   CATEGORY_FIELDS,
   findDuplicatedSiteSettingsFields,
@@ -180,6 +184,12 @@ const SITE_SETTINGS_CATEGORIES: ReadonlyArray<{
     icon: Home,
     labelKey: 'admin.siteSettings.categories.homepage.label',
     descriptionKey: 'admin.siteSettings.categories.homepage.description',
+  },
+  {
+    id: 'homepageMenu',
+    icon: Navigation,
+    labelKey: 'admin.siteSettings.categories.homepageMenu.label',
+    descriptionKey: 'admin.siteSettings.categories.homepageMenu.description',
   },
   {
     id: 'adminModules',
@@ -498,6 +508,9 @@ export function CloudRouterSiteSettingsPage({
   const updateHomeContent = (next: HomeContentForm) => {
     setForm((current) => ({ ...current, homepage: next }));
   };
+  const updateHomepageMenu = (next: HomepageMenuSettings) => {
+    setForm((current) => ({ ...current, homepageMenu: next }));
+  };
   const updateAdminModules = (next: AdminModuleSettings) => {
     setForm((current) => ({ ...current, adminModules: next }));
   };
@@ -720,6 +733,10 @@ export function CloudRouterSiteSettingsPage({
 
             {activeCategory === 'homepage' ? (
               <HomeContentFields onChange={updateHomeContent} value={form.homepage} />
+            ) : null}
+
+            {activeCategory === 'homepageMenu' ? (
+              <HomepageMenuEditor onChange={updateHomepageMenu} value={form.homepageMenu} />
             ) : null}
 
             {activeCategory === 'adminModules' ? (

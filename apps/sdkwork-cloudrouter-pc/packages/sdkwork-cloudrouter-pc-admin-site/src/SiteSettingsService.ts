@@ -20,6 +20,13 @@ import {
   type AdminModuleSettings,
 } from '@sdkwork/cloudroutes-pc-commons/admin-modules';
 import {
+  createDefaultHomepageMenuSettings,
+  hasHiddenHomepageMenuItems,
+  normalizeHomepageMenuSettings,
+  toHomepageMenuSettingsPayload,
+  type HomepageMenuSettings,
+} from '@sdkwork/cloudroutes-pc-commons/homepage-menu';
+import {
   ensureSdkworkApiSuccess,
   readApiRecord,
   readMediaResource,
@@ -93,6 +100,10 @@ type QrVisibilityKeys =
  * payload. `homepage` becomes the console's flat editor state and `downloads` the canonical JSON
  * text of the catalog, so the compiler — not a reviewer — keeps a control from writing the wrong
  * thing into either document.
+ *
+ * The homepage header menu is not a separate contract field: it rides inside the same `homepage`
+ * document as `menu`, so it is modelled as its own form field (below) and merged back on save
+ * rather than added here.
  */
 type DocumentBackedKeys = 'homepage' | 'downloads' | 'adminModules';
 
@@ -122,6 +133,13 @@ export type SiteSettingsForm = Omit<
   douyinQrCodeEnabled: boolean;
   /** The homepage document, flattened into the controls that edit it. */
   homepage: HomeContentForm;
+  /**
+   * Which links the public homepage header draws.
+   *
+   * Stored inside the `homepage` document as `menu`; exposed as its own form field so the header
+   * menu gets its own tab and its own dirty counter instead of being buried in the copy form.
+   */
+  homepageMenu: HomepageMenuSettings;
   /** The download catalog as canonical JSON text; blank means "publish the bundled catalog". */
   downloads: string;
   /** Admin module enablement, header visibility and header order. */
@@ -164,6 +182,9 @@ const BASE_DEFAULTS = {
   // repository publishes. An operator who never touches these tabs changes nothing.
   downloads: '',
   homepage: createDefaultHomeContentForm(),
+  // Every bundled header link stays visible, which is exactly what a deployment that never opened
+  // this page renders.
+  homepageMenu: createDefaultHomepageMenuSettings(),
   adminModules: createDefaultAdminModuleSettings(),
   // No locale starts out translated: an empty map means every language publishes the base copy,
   // which is exactly what a deployment that never opened this page renders.
@@ -228,11 +249,25 @@ export function toSiteSettings(record: Record<string, unknown>): SiteSettingsFor
     termsUrl: readString(record, 'termsUrl', DEFAULT_SITE_SETTINGS.termsUrl),
     customCss: readString(record, 'customCss', DEFAULT_SITE_SETTINGS.customCss),
     homepage: readHomeContentForm(record.homepage),
+    homepageMenu: readHomepageMenuSettings(record.homepage),
     downloads: readDownloadCatalogText(record.downloads),
     adminModules: normalizeAdminModuleSettings(record.adminModules),
     ...readFooterFields(record),
     ...readI18nFields(record),
   };
+}
+
+/**
+ * Reads the header-menu document out of the homepage payload.
+ *
+ * A payload written before the menu existed, or one an operator hand-edited into an unexpected
+ * shape, resolves to every bundled link — the header can lose configuration, never its navigation.
+ */
+export function readHomepageMenuSettings(homepage: unknown): HomepageMenuSettings {
+  const document = homepage && typeof homepage === 'object' && !Array.isArray(homepage)
+    ? (homepage as Record<string, unknown>)
+    : undefined;
+  return normalizeHomepageMenuSettings(document?.menu);
 }
 
 /**
@@ -413,7 +448,13 @@ export function toSiteSettingsUpdateRequest(
   // as `{}` — "publish the bundled copy" — and an empty downloads box as `{}` — "publish the
   // catalog checked into the repository" — so saving the form cannot pin content the operator
   // never authored.
-  const homepage = toHomeContentPayload(form.homepage) as unknown as AdminSiteSettingsUpdateRequest['homepage'];
+  const homepageDocument = toHomeContentPayload(form.homepage);
+  // The header menu rides inside the homepage document. A fully visible menu writes nothing, so
+  // the untouched payload stays `{}`; only a deliberate hide is persisted as `menu`.
+  if (hasHiddenHomepageMenuItems(form.homepageMenu)) {
+    homepageDocument.menu = toHomepageMenuSettingsPayload(form.homepageMenu);
+  }
+  const homepage = homepageDocument as unknown as AdminSiteSettingsUpdateRequest['homepage'];
   const downloads = toDownloadsPayload(form.downloads) as unknown as AdminSiteSettingsUpdateRequest['downloads'];
   const adminModules = toAdminModuleSettingsPayload(form.adminModules) as unknown as AdminSiteSettingsUpdateRequest['adminModules'];
   return {

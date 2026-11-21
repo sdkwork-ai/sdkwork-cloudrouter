@@ -55,6 +55,8 @@ import { useApplicationCatalogMessages, type ApplicationCatalogMessages } from "
 import { isApplicationCenterActionAllowed } from "../permissions/application-center-actions";
 import { createApplicationIdentityService } from "../services/application-identity";
 import {
+  correctDeployApplicationKind,
+  isApplicationKindCorrectionConflict,
   isApplicationSourceUnavailable,
   isApplicationTokenForbidden,
   isApplicationTokenUnavailable,
@@ -100,6 +102,7 @@ import type {
   ApplicationGroupLoader,
   ApplicationGroupState,
   ApplicationRecord,
+  DeployAppKind,
   DeployAppKindTabId,
   DeployAppListFilter,
   DeployOrganizationOption,
@@ -131,6 +134,40 @@ const INTEGRATION_SUMMARY_CONCURRENCY = 6;
 
 /** Left-navigation views: the three app sources plus category governance. */
 export type ApplicationCatalogView = ApplicationGroupId | "categories";
+
+/**
+ * Endpoint kinds a draft correction may assign.
+ *
+ * `SPA_WEB` is the legacy rendering-model value and the deploy API refuses it as
+ * a new assignment; every other canonical kind (including the static website
+ * kind) is selectable.
+ */
+type KindCorrectionKind = Exclude<DeployAppKind, "SPA_WEB">;
+
+const KIND_CORRECTION_OPTIONS: readonly KindCorrectionKind[] = [
+  "H5_WEB",
+  "PC_WEB",
+  "WECHAT_MINIPROGRAM",
+  "DOUYIN_MINIPROGRAM",
+  "FLUTTER_APP",
+  "IOS_APP",
+  "ANDROID_APP",
+  "HARMONYOS_APP",
+  "DESKTOP_APP",
+  "API_SERVICE",
+  "STATIC_WEB",
+];
+
+/** Localized label of a stored kind; an unrecognized or legacy value prints as-is. */
+function kindCorrectionLabel(
+  messages: ApplicationCatalogMessages,
+  kind: string | undefined,
+): string {
+  if (kind && (KIND_CORRECTION_OPTIONS as readonly string[]).includes(kind)) {
+    return messages.kindCorrection.options[kind as KindCorrectionKind];
+  }
+  return kind ?? "-";
+}
 
 /**
  * Resolve the App Center view from its route.
@@ -173,6 +210,7 @@ export function ApplicationManagementPage({
   activeView: controlledView,
   backTo,
   categoryService,
+  correctKind,
   integrations,
   issueToken,
   loaders,
@@ -190,6 +228,8 @@ export function ApplicationManagementPage({
   backTo: string;
   /** Test/extension seam: override the App Store category transport. */
   categoryService?: AppStoreCategoryService;
+  /** Test/extension seam: override the draft app-kind correction transport. */
+  correctKind?: (appId: string, kind: DeployAppKind) => Promise<void>;
   /** Test/extension seam: override the application integration transport. */
   integrations?: ApplicationIntegrationService;
   /** Test/extension seam: override access-token issuance. */
@@ -271,6 +311,14 @@ export function ApplicationManagementPage({
     kind: ApplicationIntegrationKind;
   }>();
   const [sourceTarget, setSourceTarget] = useState<ApplicationRecord>();
+  // Draft endpoint-kind correction: the target row, the chosen kind, its
+  // in-flight state, and the last failure. The deploy API guards the change, so
+  // a conflict carries a specific explanation instead of a generic error.
+  const [kindTarget, setKindTarget] = useState<ApplicationRecord>();
+  const [kindDraft, setKindDraft] = useState<KindCorrectionKind>("H5_WEB");
+  const [kindBusy, setKindBusy] = useState(false);
+  const [kindError, setKindError] = useState<unknown>();
+  const [kindNotice, setKindNotice] = useState<string | null>(null);
   const [organizationLookup, setOrganizationLookup] = useState<DeployOrganizationLookup>({
     options: [],
     status: "idle",
@@ -287,6 +335,9 @@ export function ApplicationManagementPage({
   const canProvisionIdentity = permissionScope
     ? isApplicationCenterActionAllowed("identityProvision", permissionScope)
     : isApplicationCenterActionAllowed("identityProvision");
+  const canCorrectKind = permissionScope
+    ? isApplicationCenterActionAllowed("kindCorrect", permissionScope)
+    : isApplicationCenterActionAllowed("kindCorrect");
   const [identityNotice, setIdentityNotice] = useState<
     { tone: "danger" | "success"; text: string } | null
   >(null);
@@ -538,11 +589,48 @@ export function ApplicationManagementPage({
     }
   };
 
+  // Draft endpoint-kind correction. The deploy API is the authority: it accepts
+  // the field only for a DRAFT application without platform targets or releases
+  // and re-provisions the IAM installation type; the page only opens the dialog
+  // for a draft row, and a 409 is shown as the precise refusal.
+  const openKindCorrection = (application: ApplicationRecord) => {
+    if (!canCorrectKind) {
+      return;
+    }
+    setKindTarget(application);
+    const current = application.kind as DeployAppKind | undefined;
+    setKindDraft(
+      current && (KIND_CORRECTION_OPTIONS as readonly string[]).includes(current)
+        ? (current as KindCorrectionKind)
+        : "H5_WEB",
+    );
+    setKindError(undefined);
+  };
+
+  const submitKindCorrection = async () => {
+    if (!kindTarget || kindBusy) {
+      return;
+    }
+    setKindBusy(true);
+    setKindError(undefined);
+    try {
+      await (correctKind ?? correctDeployApplicationKind)(kindTarget.id, kindDraft);
+      setKindNotice(template(messages.kindCorrection.success, {
+        kind: messages.kindCorrection.options[kindDraft],
+      }));
+      setKindTarget(undefined);
+      setReloadToken((token) => token + 1);
+    } catch (error) {
+      setKindError(error);
+    } finally {
+      setKindBusy(false);
+    }
+  };
+
   const retryIdentity = async (application: ApplicationRecord) => {
     if (!canProvisionIdentity || identityBusyId !== null) {
       return;
-    }
-    setIdentityBusyId(application.id);
+    }    setIdentityBusyId(application.id);
     setIdentityNotice(null);
     try {
       const result = await createApplicationIdentityService().provision(application.id);
@@ -1084,6 +1172,10 @@ export function ApplicationManagementPage({
             <StatusNotice tone={identityNotice.tone}>{identityNotice.text}</StatusNotice>
           ) : null}
 
+          {kindNotice ? (
+            <StatusNotice tone="success">{kindNotice}</StatusNotice>
+          ) : null}
+
           <DataTable
             className="min-h-0 flex-1"
             columns={columns}
@@ -1122,11 +1214,15 @@ export function ApplicationManagementPage({
                 <div data-application-row-actions>
                   <ApplicationRowActionsMenu
                     appKind={item.groupId === "deploy" ? item.kind : deployApplication?.kind}
+                    canCorrectKind={item.groupId === "deploy"
+                      && canCorrectKind
+                      && String(item.status ?? "").toUpperCase() === "DRAFT"}
                     canProvisionIdentity={item.groupId === "deploy" && canProvisionIdentity}
                     canReadSource={item.groupId === "deploy" && canReadSource}
                     identityStatus={item.identityStatus}
                     messages={messages}
                     onAccessToken={() => openAccessToken(item)}
+                    onCorrectKind={() => openKindCorrection(item)}
                     onIntegration={(kind) => openIntegration(item, kind)}
                     onRetryIdentity={() => void retryIdentity(item)}
                     onSource={() => setSourceTarget(item)}
@@ -1264,6 +1360,85 @@ export function ApplicationManagementPage({
               variant="outline"
             >
               {messages.accessToken.regenerate}
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      <Drawer
+        onOpenChange={(open) => {
+          if (!open) {
+            setKindTarget(undefined);
+            setKindError(undefined);
+          }
+        }}
+        open={Boolean(kindTarget)}
+      >
+        <DrawerContent size="md">
+          <DrawerHeader>
+            <DrawerTitle>{messages.kindCorrection.title}</DrawerTitle>
+            <DrawerDescription>{messages.kindCorrection.description}</DrawerDescription>
+          </DrawerHeader>
+          <DrawerBody className="space-y-4">
+            {kindTarget ? (
+              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+                <dt className="text-[var(--sdk-color-text-muted)]">{messages.columns.application}</dt>
+                <dd className="min-w-0 truncate font-medium text-[var(--sdk-color-text-primary)]">
+                  {kindTarget.name}
+                </dd>
+                <dt className="text-[var(--sdk-color-text-muted)]">{messages.columns.applicationId}</dt>
+                <dd className="min-w-0 select-all truncate font-mono text-xs">
+                  {kindTarget.deployApplicationId ?? kindTarget.id}
+                </dd>
+                <dt className="text-[var(--sdk-color-text-muted)]">{messages.kindCorrection.current}</dt>
+                <dd>{kindCorrectionLabel(messages, kindTarget.kind)}</dd>
+              </dl>
+            ) : null}
+            <label className="block space-y-1.5">
+              <span className="text-sm font-medium text-[var(--sdk-color-text-primary)]">
+                {messages.kindCorrection.label}
+              </span>
+              <select
+                className="w-full rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] px-3 py-2 text-sm text-[var(--sdk-color-text-primary)]"
+                onChange={(event) => setKindDraft(event.target.value as KindCorrectionKind)}
+                value={kindDraft}
+              >
+                {KIND_CORRECTION_OPTIONS.map((kind) => (
+                  <option key={kind} value={kind}>
+                    {messages.kindCorrection.options[kind]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {kindError ? (
+              <StatusNotice tone="danger">
+                {isApplicationKindCorrectionConflict(kindError)
+                  ? messages.kindCorrection.conflict
+                  : isApplicationTokenForbidden(kindError)
+                    ? messages.kindCorrection.forbidden
+                    : isApplicationSourceUnavailable(kindError)
+                      ? messages.kindCorrection.unavailable
+                      : messages.kindCorrection.error}
+              </StatusNotice>
+            ) : null}
+          </DrawerBody>
+          <DrawerFooter>
+            <Button
+              onClick={() => {
+                setKindTarget(undefined);
+                setKindError(undefined);
+              }}
+              type="button"
+              variant="secondary"
+            >
+              {messages.kindCorrection.close}
+            </Button>
+            <Button
+              disabled={kindBusy || kindTarget?.kind === kindDraft}
+              onClick={() => void submitKindCorrection()}
+              type="button"
+            >
+              {kindBusy ? messages.kindCorrection.busy : messages.kindCorrection.submit}
             </Button>
           </DrawerFooter>
         </DrawerContent>

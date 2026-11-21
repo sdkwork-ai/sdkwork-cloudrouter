@@ -22,6 +22,11 @@ import {
 } from '../portal-auth.ts';
 import { useSiteBranding } from '../siteBranding.ts';
 import {
+  HOMEPAGE_MENU_CATALOG,
+  getVisibleHomepageMenuItemIds,
+  homepageMenuEntryShowFrom,
+} from '../homepage-menu.ts';
+import {
   createPortalNotificationService,
   getPortalNotificationAppId,
   getPortalNotificationClient,
@@ -140,21 +145,24 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
     { code: 'zh-CN', name: t('commons.navbar.language.zh', '中文') },
   ];
 
-  const navLinks = [
-    { name: t('nav.home'), href: '/' },
-    { name: t('nav.models'), href: '/models' },
-    { name: t('nav.hardwareMarket'), href: '/hardware-market' },
-    { name: t('nav.community'), href: '/community' },
-    { name: t('nav.pricing'), href: '/pricing' },
-    { name: t('nav.rankings'), href: '/rankings', showFrom: '2xl' as const },
-    { name: t('nav.productDocs'), href: '/dev-docs/product-docs', showFrom: '2xl' as const },
-    { name: t('nav.docs'), href: '/docs' },
-    { name: t('nav.api'), href: '/dev-docs/api-reference', showFrom: '2xl' as const },
-    { name: t('nav.sdk'), href: '/dev-docs/sdk-reference', showFrom: '2xl' as const },
-    { name: t('nav.playground', 'Playground'), href: '/playground' },
-    { name: t('nav.tokenPlan', 'Token Plan'), href: '/token-plan', showFrom: '2xl' as const },
-    { name: t('nav.partnerJoin', 'Partner Program'), href: '/partner-join', showFrom: '2xl' as const },
-  ];
+  // Operator-published header composition: the registry owns the links the site can draw and the
+  // site-settings document owns which of them are on. Filtering here keeps the desktop bar, the
+  // overflow "More" menu and the mobile drawer in agreement by construction.
+  //
+  // The setting is published for the *public* header. The console reuses this navbar, and its
+  // links are portal entry points rather than marketing copy, so the operator's composition is
+  // scoped to non-console routes: an operator who hides "Pricing" on the landing page must not
+  // also lose the way back there from a console page.
+  const visibleMenuIds = isConsolePath
+    ? null
+    : new Set(getVisibleHomepageMenuItemIds(siteBranding.homepageMenu));
+  const navLinks = HOMEPAGE_MENU_CATALOG
+    .filter((item) => visibleMenuIds === null || visibleMenuIds.has(item.id))
+    .map((item) => ({
+      name: t(item.labelKey),
+      href: item.href,
+      showFrom: homepageMenuEntryShowFrom(item),
+    }));
 
   const navLinkVisibilityClass = (showFrom?: 'xl' | '2xl') => {
     if (showFrom === '2xl') {
@@ -247,56 +255,60 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
           aria-label={t('navbar.menu.label', 'Navigation menu')}
         >
           {navLinks.map((link) => renderNavLink(link))}
-          <div className="relative hidden lg:inline-flex 2xl:hidden" ref={moreMenuRef}>
-            <button
-              type="button"
-              onClick={() => setIsMoreMenuOpen((open) => !open)}
-              className={`inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background xl:text-sm ${
-                isOverflowNavActive || isMoreMenuOpen
-                  ? 'text-lobster-500 dark:text-white'
-                  : 'text-slate-600 hover:text-lobster-500 dark:text-slate-400 dark:hover:text-white'
-              }`}
-              aria-expanded={isMoreMenuOpen}
-              aria-haspopup="menu"
-              aria-controls="navbar-more-menu"
-            >
-              {t('navbar.more', 'More')}
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isMoreMenuOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
-            </button>
-            <AnimatePresence>
-              {isMoreMenuOpen ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute left-1/2 top-full z-50 mt-2 min-w-[11rem] -translate-x-1/2 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700/60 dark:bg-[#1a1a1a]"
-                  id="navbar-more-menu"
-                  role="menu"
-                  aria-label={t('navbar.moreMenu.label', 'More navigation links')}
-                >
-                  {overflowNavLinks.map((link) => {
-                    const isActive =
-                      location.pathname === link.href ||
-                      (link.href !== '/' && location.pathname.startsWith(link.href));
-                    return (
-                      <Link
-                        key={link.href}
-                        to={link.href}
-                        role="menuitem"
-                        onClick={() => setIsMoreMenuOpen(false)}
-                        className={`${overflowMenuItemClass(link.showFrom)} w-full items-center px-4 py-2 text-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lobster-500 dark:hover:bg-white/5 ${
-                          isActive ? 'font-medium text-lobster-500' : 'text-slate-700 dark:text-slate-300'
-                        }`}
-                      >
-                        {link.name}
-                      </Link>
-                    );
-                  })}
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
-          </div>
+          {/* A deployment can hide every wide-only link, so the trigger only exists when it has
+              something to open; otherwise it would render an empty dropdown. */}
+          {overflowNavLinks.length > 0 ? (
+            <div className="relative hidden lg:inline-flex 2xl:hidden" ref={moreMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsMoreMenuOpen((open) => !open)}
+                className={`inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-lobster-500 focus-visible:ring-offset-background xl:text-sm ${
+                  isOverflowNavActive || isMoreMenuOpen
+                    ? 'text-lobster-500 dark:text-white'
+                    : 'text-slate-600 hover:text-lobster-500 dark:text-slate-400 dark:hover:text-white'
+                }`}
+                aria-expanded={isMoreMenuOpen}
+                aria-haspopup="menu"
+                aria-controls="navbar-more-menu"
+              >
+                {t('navbar.more', 'More')}
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isMoreMenuOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+              </button>
+              <AnimatePresence>
+                {isMoreMenuOpen ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute left-1/2 top-full z-50 mt-2 min-w-[11rem] -translate-x-1/2 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700/60 dark:bg-[#1a1a1a]"
+                    id="navbar-more-menu"
+                    role="menu"
+                    aria-label={t('navbar.moreMenu.label', 'More navigation links')}
+                  >
+                    {overflowNavLinks.map((link) => {
+                      const isActive =
+                        location.pathname === link.href ||
+                        (link.href !== '/' && location.pathname.startsWith(link.href));
+                      return (
+                        <Link
+                          key={link.href}
+                          to={link.href}
+                          role="menuitem"
+                          onClick={() => setIsMoreMenuOpen(false)}
+                          className={`${overflowMenuItemClass(link.showFrom)} w-full items-center px-4 py-2 text-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lobster-500 dark:hover:bg-white/5 ${
+                            isActive ? 'font-medium text-lobster-500' : 'text-slate-700 dark:text-slate-300'
+                          }`}
+                        >
+                          {link.name}
+                        </Link>
+                      );
+                    })}
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+            </div>
+          ) : null}
         </nav>
 
         {shouldShowAuthenticatedActions ? (

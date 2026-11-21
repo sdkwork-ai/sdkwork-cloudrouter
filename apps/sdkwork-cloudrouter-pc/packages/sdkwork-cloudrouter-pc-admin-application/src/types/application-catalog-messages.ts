@@ -1,4 +1,5 @@
 import type {
+  DeployAppKind,
   DeployAppKindTabId,
   DeployOwnershipMessageKey,
 } from "./application-catalog";
@@ -229,14 +230,36 @@ export interface ApplicationCatalogMessages {
     successWithId: string;
     failed: string;
   };
+  /**
+   * Draft endpoint-kind correction (`apps.update` with `appKind`).
+   *
+   * The deploy API refuses it once the application has platform targets or
+   * releases, so the dialog is offered for drafts and the conflict copy explains
+   * the refusal instead of hiding the action.
+   */
+  kindCorrection: {
+    action: string;
+    busy: string;
+    close: string;
+    conflict: string;
+    current: string;
+    description: string;
+    error: string;
+    forbidden: string;
+    label: string;
+    options: Record<Exclude<DeployAppKind, "SPA_WEB">, string>;
+    submit: string;
+    success: string;
+    title: string;
+    unavailable: string;
+  };
   integrations: {
     actions: {
       config: string;
       miniProgram: string;
       officialAccount: string;
       payment: string;
-    };
-    appKinds: {
+    };    appKinds: {
       "android": string;
       "api": string;
       "desktop": string;

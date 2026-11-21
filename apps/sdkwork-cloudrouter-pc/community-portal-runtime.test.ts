@@ -65,14 +65,15 @@ test('React Router accepts the community contribution as <Routes> children', asy
 });
 
 test('the portal navigation exposes the community entry', () => {
-  const navbar = fs.readFileSync(
+  const menu = fs.readFileSync(
     path.join(
       APP_ROOT,
-      'packages/sdkwork-cloudroutes-pc-commons/src/components/Navbar.tsx',
+      'packages/sdkwork-cloudroutes-pc-commons/src/homepage-menu.ts',
     ),
     'utf8',
   );
-  assert.match(navbar, /t\('nav\.community'\), href: '\/community'/u);
+  assert.match(menu, /labelKey: 'nav\.community'/u);
+  assert.match(menu, /href: '\/community'/u);
 
   const navigation = fs.readFileSync(
     path.join(

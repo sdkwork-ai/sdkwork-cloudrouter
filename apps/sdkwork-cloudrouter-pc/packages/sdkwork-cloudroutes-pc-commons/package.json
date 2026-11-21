@@ -37,6 +37,12 @@
       "require": "./src/sdk-clients.ts",
       "default": "./src/sdk-clients.ts"
     },
+    "./deploy-application-id": {
+      "types": "./src/deploy-application-id.ts",
+      "import": "./src/deploy-application-id.ts",
+      "require": "./src/deploy-application-id.ts",
+      "default": "./src/deploy-application-id.ts"
+    },
     "./sdk-request-boundary": {
       "types": "./src/sdk-request-boundary.ts",
       "import": "./src/sdk-request-boundary.ts",
@@ -162,6 +168,12 @@
       "import": "./src/admin-modules.ts",
       "require": "./src/admin-modules.ts",
       "default": "./src/admin-modules.ts"
+    },
+    "./homepage-menu": {
+      "types": "./src/homepage-menu.ts",
+      "import": "./src/homepage-menu.ts",
+      "require": "./src/homepage-menu.ts",
+      "default": "./src/homepage-menu.ts"
     },
     "./footer-settings": {
       "types": "./src/footer-settings.ts",

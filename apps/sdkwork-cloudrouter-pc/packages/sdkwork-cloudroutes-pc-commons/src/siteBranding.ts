@@ -6,6 +6,11 @@ import {
   useResolvedMediaResourceUrl,
 } from './drive-media.ts';
 import { FOOTER_SECTIONS, type FooterSectionVisibility } from './footer-sections.ts';
+import {
+  createDefaultHomepageMenuSettings,
+  normalizeHomepageMenuSettings,
+  type HomepageMenuSettings,
+} from './homepage-menu.ts';
 import { readMediaResource, readMediaResourceUrl, type CloudRouterMediaResource } from './media-resource.ts';
 import { getCloudRouterAppSdkClient } from './sdk-clients.ts';
 import { resolveSdkworkSdkLocale } from './sdk-locale.ts';
@@ -62,6 +67,14 @@ export interface SiteBranding {
    * and its fallback rules; this layer only carries the payload through the single runtime fetch.
    */
   homepage: ApiRecord;
+  /**
+   * Which links the public homepage header draws.
+   *
+   * Published as `homepage.menu` from `/admin/site` and normalised here so the header never has to
+   * know the stored document's shape: an absent or unreadable value resolves to every bundled link,
+   * which is exactly what a deployment that never opened the page renders.
+   */
+  homepageMenu: HomepageMenuSettings;
   /**
    * Download catalog published from `/admin/site`, as authored — an empty object when nothing was
    * configured, which the download section reads as "keep the catalog checked into the repository".
@@ -165,6 +178,7 @@ export const DEFAULT_SITE_BRANDING: SiteBranding = {
   termsUrl: '/terms',
   customCss: '',
   homepage: {},
+  homepageMenu: createDefaultHomepageMenuSettings(),
   downloads: {},
   adminModules: {},
 };
@@ -401,6 +415,9 @@ function normalizeSiteBranding(record: ApiRecord): SiteBranding {
       ];
     }),
   ) as SocialPlatformLinks;
+  // Read once: the homepage document carries both the copy overrides and the header menu, and the
+  // two views must be derived from the same payload rather than two lookups.
+  const homepage = readConfiguredRecord(record, 'homepage');
   return {
     siteName,
     shortName,
@@ -436,7 +453,8 @@ function normalizeSiteBranding(record: ApiRecord): SiteBranding {
     privacyUrl: readConfiguredString(record, 'privacyUrl', DEFAULT_SITE_BRANDING.privacyUrl).trim(),
     termsUrl: readConfiguredString(record, 'termsUrl', DEFAULT_SITE_BRANDING.termsUrl).trim(),
     customCss: readConfiguredString(record, 'customCss').trim(),
-    homepage: readConfiguredRecord(record, 'homepage'),
+    homepage,
+    homepageMenu: normalizeHomepageMenuSettings(homepage.menu),
     downloads: readConfiguredRecord(record, 'downloads'),
     adminModules: readConfiguredRecord(record, 'adminModules'),
   };

@@ -66,6 +66,8 @@ function renderPage(props: {
   organizationId?: string;
   tenantId?: string;
   issueToken?: ReturnType<typeof vi.fn>;
+  correctKind?: ((appId: string, kind: string) => Promise<void>) | ReturnType<typeof vi.fn>;
+  permissionScope?: readonly string[];
   loaders: ReturnType<typeof createLoaders>;
   resolveContext: (input: { organizationId?: string; tenantId?: string }) => Promise<ApplicationCatalogContext>;
 }) {
@@ -74,9 +76,11 @@ function renderPage(props: {
       <MemoryRouter>
         <ApplicationManagementPage
           backTo="/admin/iam/tenants"
+          correctKind={props.correctKind as never}
           issueToken={props.issueToken as never}
           loaders={props.loaders}
           organizationId={props.organizationId}
+          permissionScope={props.permissionScope}
           resolveContext={props.resolveContext}
           tenantId={props.tenantId}
         />
@@ -256,5 +260,37 @@ describe("application management page", () => {
     expect(actions).not.toBeNull();
     // One configuration trigger keeps the name and the config actions visible.
     expect(within(actions as HTMLElement).getAllByRole("button")).toHaveLength(1);
+  });
+
+  it("corrects a draft application's endpoint type from the row menu", async () => {
+    const loaders = createLoaders();
+    const draft: ApplicationRecord = {
+      ...deployApplication,
+      id: "deploy-draft-1",
+      kind: "API_SERVICE",
+      name: "Draft Flutter",
+      status: "DRAFT",
+    };
+    loaders.deploy.mockResolvedValue([draft]);
+    const correctKind = vi.fn().mockResolvedValue(undefined);
+    const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
+    renderPage({
+      correctKind,
+      loaders,
+      permissionScope: ["deploy.apps.write"],
+      resolveContext,
+      tenantId: "tenant-1",
+    });
+
+    await screen.findAllByText("Draft Flutter");
+    openAppConfigMenu();
+    fireEvent.click(screen.getByRole("menuitem", { name: "修改应用类型" }));
+    fireEvent.change(await screen.findByRole("combobox"), {
+      target: { value: "FLUTTER_APP" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "保存修正" }));
+
+    await waitFor(() => expect(correctKind).toHaveBeenCalledWith("deploy-draft-1", "FLUTTER_APP"));
+    await screen.findByText(/应用类型已修正为 Flutter 应用/);
   });
 });

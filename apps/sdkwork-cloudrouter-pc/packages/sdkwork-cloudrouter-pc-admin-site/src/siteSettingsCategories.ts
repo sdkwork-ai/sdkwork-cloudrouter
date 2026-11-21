@@ -22,6 +22,7 @@ export type SiteSettingsCategoryId =
   | 'assets'
   | 'theme'
   | 'homepage'
+  | 'homepageMenu'
   | 'adminModules'
   | 'downloads'
   | 'social'
@@ -34,6 +35,7 @@ export const SITE_SETTINGS_CATEGORY_IDS: readonly SiteSettingsCategoryId[] = [
   'assets',
   'theme',
   'homepage',
+  'homepageMenu',
   'adminModules',
   'downloads',
   'social',
@@ -91,6 +93,9 @@ export const CATEGORY_FIELDS: Record<SiteSettingsCategoryId, readonly (keyof Sit
   // edits part of it reports through the field it belongs to. Splitting them across tabs would
   // make "which tab do I save this on?" ambiguous for a single round-tripped document.
   homepage: ['homepage'],
+  // The header menu is stored inside the homepage document, but it is its own form field so it can
+  // have its own tab and its own unsaved-changes count without double-counting `homepage`.
+  homepageMenu: ['homepageMenu'],
   adminModules: ['adminModules'],
   downloads: ['downloads'],
   social: [...SOCIAL_ENABLED_FIELDS, ...SOCIAL_URL_FIELDS],
