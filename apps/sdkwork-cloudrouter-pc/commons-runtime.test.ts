@@ -957,7 +957,7 @@ test("admin exposes the document center module backed by the shared documents ed
 test("portal serves public documents at /docs and relocates developer docs to /dev-docs", () => {
   const appSource = readPortalSource("./src/App.tsx");
   const shellSource = readPortalSource("./packages/sdkwork-cloudrouter-pc-shell/src/AppShellLayout.tsx");
-  const navbarSource = readPortalSource("./packages/sdkwork-cloudroutes-pc-commons/src/components/Navbar.tsx");
+  const menuSource = readPortalSource("./packages/sdkwork-cloudroutes-pc-commons/src/homepage-menu.ts");
   const footerSource = readPortalSource("./packages/sdkwork-cloudroutes-pc-commons/src/components/Footer.tsx");
 
   assert.match(appSource, /path="\/docs"/);
@@ -966,7 +966,8 @@ test("portal serves public documents at /docs and relocates developer docs to /d
   assert.match(appSource, /createCloudRouterPublicDocumentsClient/);
   assert.match(shellSource, /path="\/dev-docs"/);
   assert.match(shellSource, /to="\/dev-docs\/api-reference"/);
-  assert.match(navbarSource, /'\/dev-docs\/api-reference'/);
+  // The API reference header entry lives in the operator-configurable registry now.
+  assert.match(menuSource, /'\/dev-docs\/api-reference'/);
   assert.match(footerSource, /'\/dev-docs\/product-docs'/);
 });
 
@@ -1885,16 +1886,17 @@ test("console sidebar exposes memberships as the commerce upgrade entry point", 
     new URL("./packages/sdkwork-cloudrouter-pc-console-shell/src/ConsoleLayout.tsx", import.meta.url),
     "utf8",
   );
-  const navbarSource = readFileSync(
-    new URL("./packages/sdkwork-cloudroutes-pc-commons/src/components/Navbar.tsx", import.meta.url),
+  const menuSource = readFileSync(
+    new URL("./packages/sdkwork-cloudroutes-pc-commons/src/homepage-menu.ts", import.meta.url),
     "utf8",
   );
 
   assert.match(consoleShellSource, /path: '\/console\/memberships'/);
   assert.match(consoleShellSource, /fallbackLabel: 'Memberships'/);
-  assert.match(navbarSource, /href: '\/token-plan'/u);
-  assert.doesNotMatch(navbarSource, /href: '\/console\/memberships'/u);
-  assert.doesNotMatch(navbarSource, /\/console\/billing\?vip/u);
+  assert.match(menuSource, /labelKey: 'nav\.tokenPlan'/u);
+  assert.match(menuSource, /href: '\/token-plan'/u);
+  assert.doesNotMatch(menuSource, /href: '\/console\/memberships'/u);
+  assert.doesNotMatch(menuSource, /\/console\/billing\?vip/u);
 });
 
 test("navbar keeps the public GitHub repository entry hidden", () => {
@@ -2513,6 +2515,7 @@ test("app-surface services do not supply client auth context selectors", () => {
 
 test("portal header exposes the Smart Hardware Market and mounts its storefront routes", () => {
   const navbarSource = readPortalSource("./packages/sdkwork-cloudroutes-pc-commons/src/components/Navbar.tsx");
+  const menuSource = readPortalSource("./packages/sdkwork-cloudroutes-pc-commons/src/homepage-menu.ts");
   const appSource = readPortalSource("./src/App.tsx");
   const navigationSource = readPortalSource(
     "./packages/sdkwork-cloudrouter-pc-i18n/src/resources/shared/navigation.ts",
@@ -2525,9 +2528,12 @@ test("portal header exposes the Smart Hardware Market and mounts its storefront 
     "./packages/sdkwork-cloudrouter-pc-hardware-market/src/components/HardwareMarketPurchaseDialog.tsx",
   );
 
-  // Header entry: one link, localized in both required locales.
-  assert.ok(navbarSource.includes("t('nav.hardwareMarket')"));
-  assert.ok(navbarSource.includes("href: '/hardware-market'"));
+  // Header entry: one link in the operator-configurable registry, localized in both required
+  // locales. The navbar renders whatever the registry lists, so the registry is the source of
+  // truth the admin menu manager toggles.
+  assert.ok(menuSource.includes("labelKey: 'nav.hardwareMarket'"));
+  assert.ok(menuSource.includes("href: '/hardware-market'"));
+  assert.ok(navbarSource.includes("HOMEPAGE_MENU_CATALOG"));
   assert.ok(navigationSource.includes('"nav.hardwareMarket": "Hardware Market"'));
   assert.ok(navigationSource.includes('"nav.hardwareMarket": "智能硬件市场"'));
 

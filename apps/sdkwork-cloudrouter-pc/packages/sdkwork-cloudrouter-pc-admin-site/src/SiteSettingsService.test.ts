@@ -29,6 +29,13 @@ import {
   updateAdminModuleSetting,
   validateAdminModuleSettings,
 } from '@sdkwork/cloudroutes-pc-commons/admin-modules';
+import {
+  HOMEPAGE_MENU_IDS,
+  createDefaultHomepageMenuSettings,
+  getVisibleHomepageMenuItemIds,
+  isHomepageMenuItemVisible,
+  normalizeHomepageMenuSettings,
+} from '@sdkwork/cloudroutes-pc-commons/homepage-menu';
 
 describe('site settings compliance defaults', () => {
   it('keeps filing fields empty until an operator configures verified values', () => {
@@ -341,10 +348,93 @@ describe('site settings documents', () => {
       modalities: true,
     });
     expect(DEFAULT_SITE_SETTINGS.downloads).toBe('');
+    // The header menu also starts fully populated: every bundled link is drawn until an operator
+    // hides one, which is exactly what a deployment that never opened this page renders.
+    expect(DEFAULT_SITE_SETTINGS.homepageMenu).toEqual(createDefaultHomepageMenuSettings());
+    expect(DEFAULT_SITE_SETTINGS.homepageMenu.items.map((entry) => entry.id)).toEqual(HOMEPAGE_MENU_IDS);
     // Unlike the content documents, the module manager starts in the same fully-populated
     // state an untouched deployment renders: every module on, in catalog order.
     expect(DEFAULT_SITE_SETTINGS.adminModules).toEqual(createDefaultAdminModuleSettings());
     expect(DEFAULT_SITE_SETTINGS.adminModules.modules.map((entry) => entry.id)).toEqual(ADMIN_MODULE_IDS);
+  });
+
+  it('reads a hidden homepage header link from the homepage document', () => {
+    const settings = toSiteSettings({
+      siteName: 'Router Operations',
+      homepage: {
+        menu: {
+          version: 1,
+          items: [
+            { id: 'tokenPlan', visible: false },
+            { id: 'rankings', visible: false },
+          ],
+        },
+      },
+    });
+
+    expect(isHomepageMenuItemVisible(settings.homepageMenu, 'tokenPlan')).toBe(false);
+    expect(isHomepageMenuItemVisible(settings.homepageMenu, 'rankings')).toBe(false);
+    // A link the payload did not mention stays visible, so upgrading the portal never silently
+    // removes navigation the deployment already had.
+    expect(isHomepageMenuItemVisible(settings.homepageMenu, 'models')).toBe(true);
+    expect(getVisibleHomepageMenuItemIds(settings.homepageMenu)).not.toContain('tokenPlan');
+    expect(settings.homepageMenu.items.map((entry) => entry.id)).toEqual(HOMEPAGE_MENU_IDS);
+  });
+
+  it('keeps the homepage header menu inside the homepage document through a save', () => {
+    const settings = toSiteSettings({
+      siteName: 'Router Operations',
+      homepage: { menu: { version: 1, items: [{ id: 'tokenPlan', visible: false }] } },
+    });
+    const payload = toSiteSettingsUpdateRequest({
+      ...DEFAULT_SITE_SETTINGS,
+      homepageMenu: settings.homepageMenu,
+    }) as unknown as Record<string, unknown>;
+
+    // The menu is not a new contract field: it travels as `homepage.menu`, the document the
+    // site-runtime endpoint already publishes.
+    expect(payload).not.toHaveProperty('homepageMenu');
+    const homepage = payload.homepage as { menu?: { items: Array<{ id: string; visible: boolean }> } };
+    expect(homepage.menu?.items).toHaveLength(HOMEPAGE_MENU_IDS.length);
+    expect(homepage.menu?.items.find((entry) => entry.id === 'tokenPlan')).toEqual({
+      id: 'tokenPlan',
+      visible: false,
+    });
+
+    const saved = toSiteSettings({ ...payload, siteName: 'Router Operations' });
+    expect(isHomepageMenuItemVisible(saved.homepageMenu, 'tokenPlan')).toBe(false);
+    // The copy half of the document is untouched by the menu save.
+    expect(saved.homepage).toEqual(DEFAULT_SITE_SETTINGS.homepage);
+  });
+
+  it('upgrades an unknown or future homepage menu document instead of rendering a partial header', () => {
+    // An id this build cannot draw is dropped; a link it does know is appended visible, so an
+    // older or newer console can never remove navigation the deployment already has.
+    const upgraded = normalizeHomepageMenuSettings({
+      version: 1,
+      items: [
+        { id: 'retiredLink', visible: false },
+        { id: 'docs', visible: false },
+      ],
+    });
+    expect(upgraded.items.map((entry) => entry.id)).toEqual(HOMEPAGE_MENU_IDS);
+    expect(isHomepageMenuItemVisible(upgraded, 'docs')).toBe(false);
+    expect(isHomepageMenuItemVisible(upgraded, 'models')).toBe(true);
+
+    // A document from a future schema is not reinterpreted field by field.
+    expect(normalizeHomepageMenuSettings({ version: 99, items: [] })).toEqual(createDefaultHomepageMenuSettings());
+  });
+
+  it('lets an operator hide every header link', () => {
+    const hidden = normalizeHomepageMenuSettings({
+      version: 1,
+      items: HOMEPAGE_MENU_IDS.map((id) => ({ id, visible: false })),
+    });
+
+    // Valid, if unusual: a deployment can run a landing page with no marketing navigation. The
+    // routes still work; the header simply draws nothing.
+    expect(getVisibleHomepageMenuItemIds(hidden)).toEqual([]);
+    expect(isHomepageMenuItemVisible(hidden, 'home')).toBe(false);
   });
 
   it('reads a published admin module document and preserves its order and switches', () => {

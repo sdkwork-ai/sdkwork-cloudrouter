@@ -11,6 +11,7 @@ import {
   watchSiteBrandingLocale,
 } from './packages/sdkwork-cloudroutes-pc-commons/src/siteBranding.ts';
 import { resetCloudRouterSdkClients } from './packages/sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts';
+import { isHomepageMenuItemVisible } from './packages/sdkwork-cloudroutes-pc-commons/src/homepage-menu.ts';
 
 /**
  * The smallest `document` the branding applier touches.
@@ -210,6 +211,52 @@ test('site branding fetch reads from the app system site runtime sdk surface', a
     (host as typeof globalThis & {
       __SDKWORK_CLOUDROUTER_ROUTER_APP_SDK_CLIENT__?: unknown;
     }).__SDKWORK_CLOUDROUTER_ROUTER_APP_SDK_CLIENT__ = originalSdk;
+    resetSiteBrandingCache();
+    resetCloudRouterSdkClients();
+  }
+});
+
+test('site branding normalizes the homepage header menu published inside the homepage document', async () => {
+  resetCloudRouterSdkClients();
+  resetSiteBrandingCache();
+
+  const host = globalThis as typeof globalThis & {
+    __SDKWORK_CLOUDROUTER_ROUTER_APP_SDK_CLIENT__?: unknown;
+  };
+  const originalSdk = host.__SDKWORK_CLOUDROUTER_ROUTER_APP_SDK_CLIENT__;
+  host.__SDKWORK_CLOUDROUTER_ROUTER_APP_SDK_CLIENT__ = {
+    system: {
+      site: {
+        runtime: {
+          async retrieve() {
+            return {
+              code: 0,
+              data: {
+                siteName: 'Custom Site',
+                homepage: {
+                  tagline: 'One gateway',
+                  menu: { version: 1, items: [{ id: 'tokenPlan', visible: false }] },
+                },
+              },
+            };
+          },
+        },
+      },
+    },
+  };
+
+  try {
+    const branding = await fetchSiteBranding();
+    // The raw homepage document is still carried verbatim for the landing-page reader.
+    assert.deepEqual(branding.homepage.menu, {
+      version: 1,
+      items: [{ id: 'tokenPlan', visible: false }],
+    });
+    // The header reads the normalized view: the hidden link is off, the rest stay on.
+    assert.equal(isHomepageMenuItemVisible(branding.homepageMenu, 'tokenPlan'), false);
+    assert.equal(isHomepageMenuItemVisible(branding.homepageMenu, 'models'), true);
+  } finally {
+    host.__SDKWORK_CLOUDROUTER_ROUTER_APP_SDK_CLIENT__ = originalSdk;
     resetSiteBrandingCache();
     resetCloudRouterSdkClients();
   }

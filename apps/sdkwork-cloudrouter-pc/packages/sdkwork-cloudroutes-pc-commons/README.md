@@ -19,6 +19,9 @@ This README is the SDKWork module entrypoint for `sdkwork-cloudroutes-pc-commons
 - `./components/CopyButton`
 - `./idempotency`
 - `./utils/env`
+- `./admin-modules`
+- `./homepage-menu`
+- `./footer-settings`
 
 ## Required SDK Surface
 

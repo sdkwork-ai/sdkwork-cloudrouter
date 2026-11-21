@@ -233,7 +233,7 @@ test("console business host mounts T1 domain wallet, membership, coupon, checkou
   const tokenPlanPageSource = readPortalFile("./src/token-plan/CloudRouterTokenPlanPage.tsx");
   const tokenPlanSurfaceSource = readPortalFile("./src/token-plan/CloudRouterTokenPlanSurface.tsx");
   const shellSource = readPortalFile("./packages/sdkwork-cloudrouter-pc-shell/src/AppShellLayout.tsx");
-  const publicNavbarSource = readPortalFile("./packages/sdkwork-cloudroutes-pc-commons/src/components/Navbar.tsx");
+  const publicMenuSource = readPortalFile("./packages/sdkwork-cloudroutes-pc-commons/src/homepage-menu.ts");
   const packageJson = JSON.parse(readPortalFile("./package.json")) as { dependencies: Record<string, string> };
 
   assert.match(appSource, /CloudRouterConsoleBusinessHostRoutes/);
@@ -256,8 +256,8 @@ test("console business host mounts T1 domain wallet, membership, coupon, checkou
   assert.doesNotMatch(membershipPageSource, /createSdkworkMembership(?:Backdrop|Glass|Hero|Panel|Tone)Style/);
   assert.doesNotMatch(membershipPageSource, /Membership(?:Benefits|Levels|Plans)Section/);
   assert.match(shellSource, /path="\/token-plan"/);
-  assert.match(publicNavbarSource, /\/token-plan/);
-  assert.match(publicNavbarSource, /nav\.tokenPlan/);
+  assert.match(publicMenuSource, /\/token-plan/);
+  assert.match(publicMenuSource, /nav\.tokenPlan/);
   assert.match(navbarSource, /CloudRouterNavbarWalletEntry/);
   assert.doesNotMatch(navbarSource, /console\.navbar\.coupons/);
   assert.doesNotMatch(navbarSource, /TicketPercent/);

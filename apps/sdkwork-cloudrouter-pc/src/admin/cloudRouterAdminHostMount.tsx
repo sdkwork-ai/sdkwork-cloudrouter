@@ -124,6 +124,9 @@ const IamOauthAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin
 const IamOauthRelyingPartyAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthRelyingPartyAdmin');
 const IamOauthProviderConnectionsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthProviderConnectionsAdmin');
 const IamOauthMiniProgramsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthMiniProgramsAdmin');
+const IamOauthOperatorPlatformsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthOperatorPlatformsAdmin');
+const IamOauthAuthorizedAccountsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthAuthorizedAccountsAdmin');
+const IamOauthChannelReleasesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthChannelReleasesAdmin');
 const IamOauthOfficialAccountsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthOfficialAccountsAdmin');
 const IamOauthOfficialAccountCustomMenuAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthOfficialAccountCustomMenuAdmin');
 const IamOauthScanLoginAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthScanLoginAdmin');
@@ -288,6 +291,9 @@ const IAM_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>> = {
   'iam/oauth/relying-party': <IamOauthRelyingPartyAdmin />,
   'iam/oauth/providers': <IamOauthProviderConnectionsAdmin />,
   'iam/oauth/mini-programs': <IamOauthMiniProgramsAdmin />,
+  'iam/oauth/operator-platforms': <IamOauthOperatorPlatformsAdmin />,
+  'iam/oauth/authorized-accounts': <IamOauthAuthorizedAccountsAdmin />,
+  'iam/oauth/channel-releases': <IamOauthChannelReleasesAdmin />,
   'iam/oauth/official-accounts': <IamOauthOfficialAccountsAdmin />,
   'iam/oauth/official-accounts/:resourceAccountId/custom-menus': <IamOauthOfficialAccountCustomMenuAdmin />,
   'iam/oauth/scan-login': <IamOauthScanLoginAdmin />,

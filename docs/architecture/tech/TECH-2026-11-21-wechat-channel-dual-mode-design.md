@@ -541,3 +541,33 @@ deploy_deployment（沿用现有枚举）:
 - [ADR-20261121-wechat-channel-dual-mode](../decisions/ADR-20261121-wechat-channel-dual-mode.md)
 - `TECH-2026-06-09-appbase-oauth-system-design.md`（身份模型）
 - 微信官方：component_verify_ticket、授权事件推送、pre_auth_code、api_query_auth、消息与事件推送、全网发布检测、代码管理（commit/submit_audit/release/revert/gray）、域名/隐私/类目。
+
+## 16. 实施状态（2026-11-24）
+
+| 能力 | 实现位置 | 状态 | 证据 |
+| --- | --- | --- | --- |
+| component ticket/token（单飞锁、提前刷新、ticket 顺序与告警） | IAM `wechat_component_token*` / `wechat_component_ticket*` | ✅ | IAM web-adapter 298 测试 |
+| 扫码授权 / auth_code 换取 / refresh token 轮换 / 账号快照回填 | IAM `wechat_component_authorization` / `grant` / `authorizer` | ✅ | 同上 + 授权集成测试 |
+| 授权事件与消息回调（验签、解密、去重、全网发布应答） | IAM open-api callbacks | ✅ | open-api 路由标准 7/7 |
+| 能力路由（菜单、代码、审核、发布、回退、灰度、域名、隐私共 10 项） | IAM backend `capability_invocations` | ✅ | backend 路由标准 12/12 + 审计留痕 |
+| 发布记录 / 状态机 / 配额 / 计量 | Deploy `channel_release*` | ✅ | Deploy service 195 测试 |
+| 发布编排与 IAM 能力 provider | Deploy `channel_release_publisher` / `channel_capability_*` | ✅ | 同上 |
+| 直连模式（命令规划 + 沙箱执行） | Deploy `channel_release_direct` / `channel_ci_*` | ✅ | Deploy service 测试 |
+| 管理端（服务商平台 / 授权方 / 发布看板 + 操作台） | CloudRouter admin-iam | ✅ | tsc + i18n 校验 |
+| 订阅与计量（`channel_release_count`） | Deploy entitlement / usage | ✅ | Deploy service 测试 |
+| 验收脚本与运行手册 | Deploy `tools/wechat_channel_acceptance.mjs`、runbooks | ✅ | dry-run + docs 校验 |
+
+外部待办：
+
+| 项 | 负责方 | 说明 |
+| --- | --- | --- |
+| 服务间凭据方案 | 安全评审 | Deploy 仓 ADR-20261124，目标态 `client_credentials` |
+| 第三方平台资质 / 测试号 / 全网发布权限 | 运营 | 需人工申请，代码无法替代 |
+| 真实端到端验收 | 运营 + 研发 | 执行验收脚本并归档证据 |
+
+验收命令（Deploy 仓）：
+
+```bash
+node tools/wechat_channel_acceptance.mjs --dry-run --phase all
+node tools/wechat_channel_acceptance.mjs --phase all --output target/acceptance/run.json
+```

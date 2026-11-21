@@ -1,4 +1,4 @@
-import { CreditCard, GitBranch, KeyRound, MessageCircle, RefreshCw, Settings2, Smartphone } from "lucide-react";
+import { CreditCard, GitBranch, KeyRound, MessageCircle, RefreshCw, Settings2, Smartphone, Wrench } from "lucide-react";
 import {
   Button,
   DropdownMenu,
@@ -24,21 +24,25 @@ import type { ApplicationIntegrationKind } from "../types/application-integratio
  */
 export function ApplicationRowActionsMenu({
   appKind,
+  canCorrectKind = false,
   canProvisionIdentity,
   canReadSource,
   identityStatus,
   messages,
   onAccessToken,
+  onCorrectKind,
   onIntegration,
   onRetryIdentity,
   onSource,
 }: {
   appKind?: string;
+  canCorrectKind?: boolean;
   canProvisionIdentity: boolean;
   canReadSource: boolean;
   identityStatus?: string;
   messages: ApplicationCatalogMessages;
   onAccessToken: () => void;
+  onCorrectKind?: () => void;
   onIntegration: (kind: ApplicationIntegrationKind) => void;
   onRetryIdentity: () => void;
   onSource: () => void;
@@ -99,7 +103,16 @@ export function ApplicationRowActionsMenu({
             {messages.identity.retryAction}
           </DropdownMenuItem>
         ) : null}
-        {hasIntegrationActions || showIdentityRetry ? <DropdownMenuSeparator /> : null}
+        {canCorrectKind ? (
+          <DropdownMenuItem
+            data-deploy-app-kind-correct="true"
+            onSelect={() => onCorrectKind?.()}
+          >
+            <Wrench className="h-4 w-4" />
+            {messages.kindCorrection.action}
+          </DropdownMenuItem>
+        ) : null}
+        {hasIntegrationActions || showIdentityRetry || canCorrectKind ? <DropdownMenuSeparator /> : null}
         <DropdownMenuItem onSelect={onAccessToken}>
           <KeyRound className="h-4 w-4" />
           {messages.accessToken.action}

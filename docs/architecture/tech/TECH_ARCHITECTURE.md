@@ -726,6 +726,8 @@ Each remains the detail authority for its topic; this index is the discoverabili
 | [TECH-33-sdkwork-models-install-flow.md](TECH-33-sdkwork-models-install-flow.md) | sdkwork-models Install Flow |
 | [TECH-34-login-qrcode-system.md](TECH-34-login-qrcode-system.md) | TECH-34-login-qrcode-system |
 | [TECH-35-high-volume-ledger-evolution.md](TECH-35-high-volume-ledger-evolution.md) | High-Volume Ledger And Trace Evolution |
+| [TECH-app-factory-blockers.md](TECH-app-factory-blockers.md) | App factory blockers |
+| [TECH-app-factory-readiness.md](TECH-app-factory-readiness.md) | App factory readiness |
 | [TECH-changelog.md](TECH-changelog.md) | Changelog |
 | [TECH-deployment-modes-2.md](TECH-deployment-modes-2.md) | TECH-deployment-modes-2 |
 | [TECH-deployment-modes.md](TECH-deployment-modes.md) | TECH-deployment-modes |

@@ -44,6 +44,12 @@ export const APPLICATION_CENTER_ACTION_PERMISSIONS = {
   sourceWrite: "deploy.apps.write",
   /** `apps.identityProvision` is a Deploy write command. */
   identityProvision: "deploy.apps.write",
+  /**
+   * Draft endpoint-kind correction is an `apps.update` command, so it needs the
+   * same Deploy write grant; the API additionally refuses it once the draft has
+   * platform targets or releases.
+   */
+  kindCorrect: "deploy.apps.write",
   storeCategoryWrite: APPLICATION_CENTER_MODULE_PERMISSION,
   moderationDecide: APPLICATION_CENTER_MODULE_PERMISSION,
   publisherVerify: APPLICATION_CENTER_MODULE_PERMISSION,
