@@ -148,7 +148,7 @@ const LazyIamTenantsAdmin = lazy(async () => {
 });
 
 const LazyIamApplicationsAdmin = lazy(async () => {
-  const { createSdkworkIamTenantController, SdkworkIamTenantApplicationsAdminWorkspace } = await import('@sdkwork/iam-pc-admin-tenant');
+  const { createSdkworkIamTenantController, SdkworkIamInstallationsAdminWorkspace } = await import('@sdkwork/iam-pc-admin-tenant');
   return {
     default: function CloudRouterIamApplicationsAdminContent() {
       const service = useIamAdminService();
@@ -161,7 +161,7 @@ const LazyIamApplicationsAdmin = lazy(async () => {
         () => createSdkworkIamTenantController({ permissionScope, selectedTenantId, service }),
         [permissionScope, selectedTenantId, service],
       );
-      return <SdkworkIamTenantApplicationsAdminWorkspace controller={controller} />;
+      return <SdkworkIamInstallationsAdminWorkspace controller={controller} />;
     },
   };
 });
