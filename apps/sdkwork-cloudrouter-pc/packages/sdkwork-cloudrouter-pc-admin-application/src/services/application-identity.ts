@@ -47,7 +47,16 @@ export function createApplicationIdentityService(
   transport?: ApplicationIdentityTransport,
 ): ApplicationIdentityService {
   const provision = transport
-    ?? ((appId: string) => getSdkworkDeploymentsBackendSdkClient().app.identityProvision(appId));
+    ?? (async (
+      appId: string,
+    ): Promise<{ identityStatus?: string; deployApplicationId?: string }> => {
+      // `AppIdentityProvisionResponse` carries only `appId` + `identityStatus`
+      // (deploy openapi.yaml); the decimal anchor arrives via the app listing
+      // rows, so the default transport maps exactly what the wire provides and
+      // the console renders the no-id success variant.
+      const result = await getSdkworkDeploymentsBackendSdkClient().app.identityProvision(appId);
+      return { identityStatus: result.identityStatus };
+    });
   return {
     async provision(appId: string): Promise<ApplicationIdentityProvisionResult> {
       const trimmed = appId.trim();
