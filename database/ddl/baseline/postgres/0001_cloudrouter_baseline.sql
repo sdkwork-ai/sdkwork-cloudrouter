@@ -4257,44 +4257,17 @@ CREATE TABLE IF NOT EXISTS ai_mcp_binding (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_binding_uuid ON ai_mcp_binding (uuid);
 CREATE INDEX IF NOT EXISTS idx_ai_mcp_binding_scope_priority ON ai_mcp_binding (tenant_id, organization_id, server_id, priority, id);
 
-CREATE TABLE IF NOT EXISTS ai_mcp_server (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    server_key VARCHAR(128) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    description VARCHAR(4000),
-    category_id BIGINT,
-    category_code VARCHAR(128),
-    transport VARCHAR(64) NOT NULL DEFAULT 'http',
-    visibility VARCHAR(64) NOT NULL DEFAULT 'organization',
-    owner_user_id BIGINT NOT NULL DEFAULT 0,
-    latest_revision_id BIGINT,
-    published_revision_id BIGINT,
-    health_status VARCHAR(64) NOT NULL DEFAULT 'unchecked',
-    last_checked_at TIMESTAMPTZ,
-    last_error_masked VARCHAR(1024),
-    tags JSONB NOT NULL DEFAULT '[]'::jsonb,
-    published_at TIMESTAMPTZ,
-    deprecated_at TIMESTAMPTZ,
-    CONSTRAINT ck_ai_mcp_server_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT ck_ai_mcp_server_subject_scope CHECK (tenant_id > 0 AND organization_id >= 0),
-    CONSTRAINT ck_ai_mcp_server_values CHECK (length(server_key) > 0 AND length(name) > 0 AND length(transport) > 0 AND length(visibility) > 0 AND length(health_status) > 0)
-);
+-- NOTE (fresh-install ownership fix): `ai_mcp_server` and `ai_mcp_tool`
+-- are owned by the sibling `sdkwork-mcp` module, whose baseline creates them
+-- with the authoritative MCP shape (see folded 0042 below: the live databases
+-- carry sdkwork-mcp's shape because 0041's IF NOT EXISTS silently no-opped
+-- wherever sdkwork-mcp had created the tables first). This consolidated
+-- baseline therefore does NOT create them: replaying 0041's CREATE here would
+-- win the shape race against sdkwork-mcp on freshly provisioned databases and
+-- break its seeds. `ai_mcp_binding` / `ai_mcp_server_revision` stay (Cloud
+-- Router-owned, retired again by folded 0042).
 
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_server_uuid ON ai_mcp_server (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_server_scope_key ON ai_mcp_server (tenant_id, organization_id, server_key);
-CREATE INDEX IF NOT EXISTS idx_ai_mcp_server_scope_updated ON ai_mcp_server (tenant_id, organization_id, updated_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_mcp_server_scope_category ON ai_mcp_server (tenant_id, organization_id, category_id);
+
 
 CREATE TABLE IF NOT EXISTS ai_mcp_server_revision (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -4334,42 +4307,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_server_revision_uuid ON ai_mcp_serve
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_server_revision_scope_no ON ai_mcp_server_revision (tenant_id, organization_id, server_id, revision_no);
 CREATE INDEX IF NOT EXISTS idx_ai_mcp_server_revision_scope_created ON ai_mcp_server_revision (tenant_id, organization_id, server_id, created_at, id);
 
-CREATE TABLE IF NOT EXISTS ai_mcp_tool (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    server_id BIGINT NOT NULL,
-    server_revision_id BIGINT,
-    tool_key VARCHAR(128) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    description VARCHAR(4000),
-    input_schema JSONB,
-    output_schema JSONB,
-    risk_level VARCHAR(64) NOT NULL DEFAULT 'low',
-    requires_approval BOOLEAN NOT NULL DEFAULT false,
-    enabled BOOLEAN NOT NULL DEFAULT true,
-    rate_limit_policy JSONB,
-    schema_hash VARCHAR(128),
-    discovered_at TIMESTAMPTZ,
-    last_invoked_at TIMESTAMPTZ,
-    sort_weight INTEGER NOT NULL DEFAULT 0,
-    CONSTRAINT ck_ai_mcp_tool_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT ck_ai_mcp_tool_subject_scope CHECK (tenant_id > 0 AND organization_id >= 0 AND server_id > 0),
-    CONSTRAINT ck_ai_mcp_tool_values CHECK (length(tool_key) > 0 AND length(name) > 0 AND length(risk_level) > 0 AND sort_weight >= 0)
-);
 
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_tool_uuid ON ai_mcp_tool (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_tool_scope_key ON ai_mcp_tool (tenant_id, organization_id, server_id, tool_key);
-CREATE INDEX IF NOT EXISTS idx_ai_mcp_tool_scope_sort ON ai_mcp_tool (tenant_id, organization_id, server_id, sort_weight, id);
+
 
 CREATE TABLE IF NOT EXISTS iam_gateway_membership (
     id BIGINT NOT NULL PRIMARY KEY,
