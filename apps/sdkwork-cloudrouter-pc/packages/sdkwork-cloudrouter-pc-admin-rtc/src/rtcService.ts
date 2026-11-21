@@ -25,6 +25,19 @@ import {
 
 let cloudRouterRtcAdminService: RtcAdminCenterServices | null = null;
 
+/**
+ * Idempotency key for mutating RTC commands (API_SPEC §15.6). Every create /
+ * update / disable / revoke / command call carries one so a retried request is
+ * deduplicated by the RTC backend instead of creating a second resource.
+ */
+function newIdempotencyKey(): string {
+  const cryptoApi = globalThis.crypto;
+  if (cryptoApi && typeof cryptoApi.randomUUID === 'function') {
+    return cryptoApi.randomUUID();
+  }
+  return `rtc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export function getCloudRouterRtcAdminService(): RtcAdminCenterServices {
   if (!cloudRouterRtcAdminService) {
     const client = createBackendRtcClient(
@@ -40,14 +53,22 @@ export function getCloudRouterRtcAdminService(): RtcAdminCenterServices {
         create: (command) =>
           client.rtcProviderAccounts.rtc.providerAccounts.create(
             command as Parameters<typeof client.rtcProviderAccounts.rtc.providerAccounts.create>[0],
+            { idempotencyKey: newIdempotencyKey() },
           ),
         update: (id, command) =>
           client.rtcProviderAccounts.rtc.providerAccounts.update(
             id,
-            command as Parameters<typeof client.rtcProviderAccounts.rtc.providerAccounts.update>[1],
+            { idempotencyKey: newIdempotencyKey() },
+            command as Parameters<typeof client.rtcProviderAccounts.rtc.providerAccounts.update>[2],
           ),
         disable: (id, reason) =>
-          client.rtcProviderAccounts.rtc.providerAccounts.disable(id, { reason: reason ?? null }),
+          client.rtcProviderAccounts.rtc.providerAccounts.disable(
+            id,
+            { reason: reason ?? null },
+            { idempotencyKey: newIdempotencyKey() },
+          ),
+        activate: (id) =>
+          client.rtcProviderAccounts.rtc.providerAccounts.activate(id, {}),
       },
       applications: {
         list: (accountId, params) =>
@@ -61,15 +82,22 @@ export function getCloudRouterRtcAdminService(): RtcAdminCenterServices {
             command as Parameters<
               typeof client.rtcProviderApplications.rtc.providerAccounts.applications.create
             >[1],
+            { idempotencyKey: newIdempotencyKey() },
           ),
         update: (id, command) =>
           client.rtcProviderApplications.rtc.providerApplications.update(
             id,
+            { idempotencyKey: newIdempotencyKey() },
             command as Parameters<
               typeof client.rtcProviderApplications.rtc.providerApplications.update
-            >[1],
+            >[2],
           ),
-        disable: (id) => client.rtcProviderApplications.rtc.providerApplications.disable(id, {}),
+        disable: (id, reason) =>
+          client.rtcProviderApplications.rtc.providerApplications.disable(
+            id,
+            { reason: reason ?? null },
+            { idempotencyKey: newIdempotencyKey() },
+          ),
       },
       credentials: {
         list: (applicationId, params) =>
@@ -83,16 +111,22 @@ export function getCloudRouterRtcAdminService(): RtcAdminCenterServices {
             command as Parameters<
               typeof client.rtcProviderCredentials.rtc.providerApplications.credentials.create
             >[1],
+            { idempotencyKey: newIdempotencyKey() },
           ),
         update: (id, command) =>
           client.rtcProviderCredentials.rtc.providerCredentials.update(
             id,
+            { idempotencyKey: newIdempotencyKey() },
             command as Parameters<
               typeof client.rtcProviderCredentials.rtc.providerCredentials.update
-            >[1],
+            >[2],
           ),
         revoke: (id, reason) =>
-          client.rtcProviderCredentials.rtc.providerCredentials.revoke(id, { reason: reason ?? null }),
+          client.rtcProviderCredentials.rtc.providerCredentials.revoke(
+            id,
+            { reason: reason ?? null },
+            { idempotencyKey: newIdempotencyKey() },
+          ),
       },
       profiles: {
         list: (params) => client.rtcProviderProfiles.rtc.providerProfiles.list({ pageSize: params?.limit ?? 200, cursor: params?.cursor }).then(toListPage),
@@ -100,30 +134,58 @@ export function getCloudRouterRtcAdminService(): RtcAdminCenterServices {
         create: (command) =>
           client.rtcProviderProfiles.rtc.providerProfiles.create(
             command as Parameters<typeof client.rtcProviderProfiles.rtc.providerProfiles.create>[0],
+            { idempotencyKey: newIdempotencyKey() },
           ),
         update: (id, command) =>
           client.rtcProviderProfiles.rtc.providerProfiles.update(
             id,
-            command as Parameters<typeof client.rtcProviderProfiles.rtc.providerProfiles.update>[1],
+            { idempotencyKey: newIdempotencyKey() },
+            command as Parameters<typeof client.rtcProviderProfiles.rtc.providerProfiles.update>[2],
           ),
         disable: (id, reason) =>
-          client.rtcProviderProfiles.rtc.providerProfiles.disable(id, { reason: reason ?? null }),
+          client.rtcProviderProfiles.rtc.providerProfiles.disable(
+            id,
+            { reason: reason ?? null },
+            { idempotencyKey: newIdempotencyKey() },
+          ),
+        activate: (id) =>
+          client.rtcProviderProfiles.rtc.providerProfiles.activate(id, {}),
         verify: (id, mode) =>
-          client.rtcProviderProfiles.rtc.providerProfiles.verify(id, {
-            queryKind: mode,
-          }) as Promise<ProviderProfileVerifyResult>,
+          client.rtcProviderProfiles.rtc.providerProfiles.verify(
+            id,
+            { queryKind: mode },
+            { idempotencyKey: newIdempotencyKey() },
+          ) as Promise<ProviderProfileVerifyResult>,
         configureCapabilities: (id, enabled, disabled) =>
-          client.rtcProviderProfiles.rtc.providerProfiles.capabilities.configure(id, {
-            enabledCapabilities: enabled,
-            disabledCapabilities: disabled,
-          }),
+          client.rtcProviderProfiles.rtc.providerProfiles.capabilities.update(
+            id,
+            {
+              enabledCapabilities: enabled,
+              disabledCapabilities: disabled,
+            },
+            { idempotencyKey: newIdempotencyKey() },
+          ),
       },
       routes: {
         list: (params) => client.rtcProviderRoutes.rtc.providerRoutes.list({ pageSize: params?.limit ?? 200, cursor: params?.cursor }).then(toListPage),
         get: (id) => client.rtcProviderRoutes.rtc.providerRoutes.retrieve(id),
-        create: (command) => client.rtcProviderRoutes.rtc.providerRoutes.create(command),
-        update: (id, command) => client.rtcProviderRoutes.rtc.providerRoutes.update(id, command),
-        disable: (id) => client.rtcProviderRoutes.rtc.providerRoutes.disable(id, {}),
+        create: (command) =>
+          client.rtcProviderRoutes.rtc.providerRoutes.create(
+            command as Parameters<typeof client.rtcProviderRoutes.rtc.providerRoutes.create>[0],
+            { idempotencyKey: newIdempotencyKey() },
+          ),
+        update: (id, command) =>
+          client.rtcProviderRoutes.rtc.providerRoutes.update(
+            id,
+            { idempotencyKey: newIdempotencyKey() },
+            command as Parameters<typeof client.rtcProviderRoutes.rtc.providerRoutes.update>[2],
+          ),
+        disable: (id, reason) =>
+          client.rtcProviderRoutes.rtc.providerRoutes.disable(
+            id,
+            { reason: reason ?? null },
+            { idempotencyKey: newIdempotencyKey() },
+          ),
       },
       schemas: {
         listSchemas: () => client.rtcProviderSchemas.rtc.providerSchemas.list().then((response) => response.items),
@@ -136,7 +198,11 @@ export function getCloudRouterRtcAdminService(): RtcAdminCenterServices {
           client.rtcProviderWebhooks.rtc.providerWebhooks.events.list({ pageSize: params?.limit ?? 200, cursor: params?.cursor }).then(toListPage),
       },
       queryJobs: {
-        create: (command) => client.rtcProviderQueryJobs.rtc.providerQueryJobs.create(command),
+        create: (command) =>
+          client.rtcProviderQueryJobs.rtc.providerQueryJobs.create(
+            command as Parameters<typeof client.rtcProviderQueryJobs.rtc.providerQueryJobs.create>[0],
+            { idempotencyKey: newIdempotencyKey() },
+          ),
         get: (id) => client.rtcProviderQueryJobs.rtc.providerQueryJobs.retrieve(id),
         listSnapshots: (id) => client.rtcProviderQueryJobs.rtc.providerQueryJobs.snapshots.list(id).then((response) => ({ items: response.items })),
       },
@@ -154,7 +220,11 @@ export function getCloudRouterRtcAdminService(): RtcAdminCenterServices {
             })
             .then(toListPage),
         get: (id) => client.rtcRooms.rtc.rooms.retrieve(id),
-        create: (command) => client.rtcRooms.rtc.rooms.create({ title: command.title, roomId: command.roomId ?? null }),
+        create: (command) =>
+          client.rtcRooms.rtc.rooms.create(
+            { title: command.title, roomId: command.roomId ?? null },
+            { idempotencyKey: newIdempotencyKey() },
+          ),
       },
       mediaSessions: {
         list: (params) =>
@@ -170,7 +240,12 @@ export function getCloudRouterRtcAdminService(): RtcAdminCenterServices {
             })
             .then(toListPage),
         get: (id) => client.rtcMediaSessions.rtc.mediaSessions.retrieve(id),
-        close: (id) => client.rtcMediaSessions.rtc.mediaSessions.close(id, {}),
+        close: (id) =>
+          client.rtcMediaSessions.rtc.mediaSessions.close(
+            id,
+            {},
+            { idempotencyKey: newIdempotencyKey() },
+          ),
         getCompletionRecord: (id) =>
           client.rtcMediaSessions.rtc.mediaSessions.completionRecord.retrieve(id),
       },
