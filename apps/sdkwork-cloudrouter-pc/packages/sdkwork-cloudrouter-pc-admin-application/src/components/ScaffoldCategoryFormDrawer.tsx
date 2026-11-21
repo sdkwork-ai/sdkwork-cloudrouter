@@ -9,6 +9,8 @@ import {
   DrawerHeader,
   DrawerTitle,
   Field,
+  FieldDescription,
+  FieldError,
   FieldLabel,
   Input,
   Select,
@@ -32,6 +34,9 @@ import {
 
 const ROOT_PARENT = "__root__";
 
+/** Sort order is an integral editorial position in the 0 - 999999 range. */
+const SORT_ORDER_PATTERN = /^(0|[1-9][0-9]{0,5})$/u;
+
 export interface ScaffoldCategoryFormDrawerProps {
   categories: readonly ScaffoldCategory[];
   category?: ScaffoldCategory;
@@ -42,7 +47,13 @@ export interface ScaffoldCategoryFormDrawerProps {
   service: ApplicationScaffoldAdminService;
 }
 
-/** Create or edit a scaffold category through the Deploy backend. */
+/**
+ * Create or edit a scaffold category through the Deploy backend.
+ *
+ * Each field reports its own problem: the key, the display name, the parent
+ * depth, and the sort order are validated independently so a rejected save
+ * points at the control that failed instead of one generic notice at the bottom.
+ */
 export function ScaffoldCategoryFormDrawer({
   categories,
   category,
@@ -65,7 +76,10 @@ export function ScaffoldCategoryFormDrawer({
   const [status, setStatus] = useState<"ACTIVE" | "DISABLED">(category?.status === "DISABLED" ? "DISABLED" : "ACTIVE");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<unknown>();
-  const [validationError, setValidationError] = useState<string>();
+  const [keyError, setKeyError] = useState<string>();
+  const [nameError, setNameError] = useState<string>();
+  const [parentError, setParentError] = useState<string>();
+  const [sortError, setSortError] = useState<string>();
 
   const parentOptions = useMemo(
     () => categories.filter((candidate) =>
@@ -74,45 +88,55 @@ export function ScaffoldCategoryFormDrawer({
     [categories, category],
   );
 
-  const submit = async () => {
+  const validate = (): boolean => {
+    let valid = true;
     const key = categoryKey.trim();
     if (!key) {
-      setValidationError(copy.validation["key-required"]);
-      return;
-    }
-    if (!SCAFFOLD_CATEGORY_KEY_PATTERN.test(key)) {
-      setValidationError(copy.validation["key-invalid"]);
-      return;
+      setKeyError(copy.validation["key-required"]);
+      valid = false;
+    } else if (!SCAFFOLD_CATEGORY_KEY_PATTERN.test(key)) {
+      setKeyError(copy.validation["key-invalid"]);
+      valid = false;
     }
     if (!displayName.trim()) {
-      setValidationError(copy.validation["display-name-required"]);
-      return;
+      setNameError(copy.validation["display-name-required"]);
+      valid = false;
     }
     const parent = parentId && parentId !== ROOT_PARENT
       ? categories.find((candidate) => candidate.id === parentId)
       : undefined;
     if (parent && categoryDepth(parent, categories) >= 5) {
-      setValidationError(messages.categories.cascade.depthHint);
-      return;
-    }
-    if (
+      setParentError(messages.categories.cascade.depthHint);
+      valid = false;
+    } else if (
       parent
       && category
       && categoryDepth(parent, categories) + subtreeHeight(category, categories) > 5
     ) {
-      setValidationError(messages.categories.cascade.depthHint);
+      setParentError(messages.categories.cascade.depthHint);
+      valid = false;
+    }
+    const trimmedSort = sortOrder.trim();
+    if (trimmedSort && !SORT_ORDER_PATTERN.test(trimmedSort)) {
+      setSortError(copy.validation["sort-order-invalid"]);
+      valid = false;
+    }
+    return valid;
+  };
+
+  const submit = async () => {
+    if (!validate()) {
       return;
     }
-    setValidationError(undefined);
     setSubmitting(true);
     setError(undefined);
-    const parsedSort = sortOrder.trim() ? Number(sortOrder) : undefined;
+    const trimmedSort = sortOrder.trim();
     const input: ScaffoldCategoryInput = {
-      categoryKey: key,
+      categoryKey: categoryKey.trim(),
       displayName: displayName.trim(),
       ...(description.trim() ? { description: description.trim() } : {}),
       ...(parentId && parentId !== ROOT_PARENT ? { parentId } : {}),
-      ...(parsedSort === undefined || Number.isNaN(parsedSort) ? {} : { sortOrder: parsedSort }),
+      ...(trimmedSort ? { sortOrder: Number(trimmedSort) } : {}),
       status,
     };
     try {
@@ -145,36 +169,49 @@ export function ScaffoldCategoryFormDrawer({
           <DrawerDescription>{category ? copy.editDescription : copy.createDescription}</DrawerDescription>
         </DrawerHeader>
         <DrawerBody className="space-y-4">
-          <Field>
+          <Field invalid={Boolean(keyError)} required={!category}>
             <FieldLabel htmlFor="scaffold-category-key">{copy.key}</FieldLabel>
             <Input
+              aria-describedby={keyError ? "scaffold-category-key-error" : "scaffold-category-key-hint"}
+              aria-invalid={Boolean(keyError)}
+              autoFocus={!category}
               disabled={Boolean(category)}
               id="scaffold-category-key"
               onChange={(event) => {
                 setCategoryKey(event.target.value);
-                if (validationError) {
-                  setValidationError(undefined);
+                if (keyError) {
+                  setKeyError(undefined);
                 }
               }}
               placeholder={copy.keyPlaceholder}
               value={categoryKey}
             />
-            <p className="text-xs text-[var(--sdk-color-text-muted)]">{copy.keyHint}</p>
+            {keyError ? (
+              <FieldError id="scaffold-category-key-error">{keyError}</FieldError>
+            ) : (
+              <FieldDescription id="scaffold-category-key-hint">{copy.keyHint}</FieldDescription>
+            )}
           </Field>
 
-          <Field>
+          <Field invalid={Boolean(nameError)} required>
             <FieldLabel htmlFor="scaffold-category-name">{copy.displayName}</FieldLabel>
             <Input
+              aria-describedby={nameError ? "scaffold-category-name-error" : undefined}
+              aria-invalid={Boolean(nameError)}
+              autoFocus={Boolean(category)}
               id="scaffold-category-name"
               onChange={(event) => {
                 setDisplayName(event.target.value);
-                if (validationError) {
-                  setValidationError(undefined);
+                if (nameError) {
+                  setNameError(undefined);
                 }
               }}
               placeholder={copy.displayNamePlaceholder}
               value={displayName}
             />
+            {nameError ? (
+              <FieldError id="scaffold-category-name-error">{nameError}</FieldError>
+            ) : null}
           </Field>
 
           <Field>
@@ -188,10 +225,20 @@ export function ScaffoldCategoryFormDrawer({
             />
           </Field>
 
-          <Field>
+          <Field invalid={Boolean(parentError)}>
             <FieldLabel htmlFor="scaffold-category-parent">{copy.parent}</FieldLabel>
-            <Select onValueChange={setParentId} value={parentId}>
-              <SelectTrigger id="scaffold-category-parent">
+            <Select
+              onValueChange={(value) => {
+                setParentId(value);
+                setParentError(undefined);
+              }}
+              value={parentId}
+            >
+              <SelectTrigger
+                aria-describedby={parentError ? "scaffold-category-parent-error" : "scaffold-category-parent-hint"}
+                aria-invalid={Boolean(parentError)}
+                id="scaffold-category-parent"
+              >
                 <SelectValue placeholder={copy.parentPlaceholder} />
               </SelectTrigger>
               <SelectContent>
@@ -203,19 +250,34 @@ export function ScaffoldCategoryFormDrawer({
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-[var(--sdk-color-text-muted)]">{copy.parentHint}</p>
+            {parentError ? (
+              <FieldError id="scaffold-category-parent-error">{parentError}</FieldError>
+            ) : (
+              <FieldDescription id="scaffold-category-parent-hint">{copy.parentHint}</FieldDescription>
+            )}
           </Field>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field>
+            <Field invalid={Boolean(sortError)}>
               <FieldLabel htmlFor="scaffold-category-sort">{copy.sortOrder}</FieldLabel>
               <Input
+                aria-describedby={sortError ? "scaffold-category-sort-error" : "scaffold-category-sort-hint"}
+                aria-invalid={Boolean(sortError)}
                 id="scaffold-category-sort"
                 inputMode="numeric"
-                onChange={(event) => setSortOrder(event.target.value)}
-                type="number"
+                onChange={(event) => {
+                  setSortOrder(event.target.value);
+                  if (sortError) {
+                    setSortError(undefined);
+                  }
+                }}
                 value={sortOrder}
               />
+              {sortError ? (
+                <FieldError id="scaffold-category-sort-error">{sortError}</FieldError>
+              ) : (
+                <FieldDescription id="scaffold-category-sort-hint">{copy.sortOrderHint}</FieldDescription>
+              )}
             </Field>
             <Field>
               <FieldLabel htmlFor="scaffold-category-status">{copy.status}</FieldLabel>
@@ -234,7 +296,6 @@ export function ScaffoldCategoryFormDrawer({
             </Field>
           </div>
 
-          {validationError ? <StatusNotice tone="danger">{validationError}</StatusNotice> : null}
           {error ? (
             <StatusNotice tone="danger">
               {isApplicationScaffoldAdminForbidden(error)

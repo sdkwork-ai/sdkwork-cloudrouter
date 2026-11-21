@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { GitBranch, Package } from "lucide-react";
 import {
   Button,
   Drawer,
@@ -23,6 +24,7 @@ import {
   Switch,
 } from "@sdkwork/ui-pc-react";
 
+import { AppCenterDecisionGroup } from "./AppCenterDecisionGroup";
 import type { ApplicationCatalogMessages } from "../i18n";
 import { isApplicationCenterActionAllowed } from "../permissions/application-center-actions";
 import {
@@ -367,28 +369,30 @@ export function AppSourceRemixDrawer({
                   </h3>
                   <p className="text-xs leading-5 text-[var(--sdk-color-text-muted)]">{copy.kind.hint}</p>
                 </div>
-                <div className="flex flex-wrap gap-2" role="group" aria-label={copy.kind.label}>
-                  <Button
-                    aria-pressed={draft.kind === "GIT"}
-                    disabled={!canWrite || busy}
-                    onClick={() => updateDraft("kind", "GIT")}
-                    size="sm"
-                    type="button"
-                    variant={draft.kind === "GIT" ? "primary" : "outline"}
-                  >
-                    {copy.kind.git}
-                  </Button>
-                  <Button
-                    aria-pressed={draft.kind === "ARCHIVE"}
-                    disabled={!canWrite || busy}
-                    onClick={() => updateDraft("kind", "ARCHIVE")}
-                    size="sm"
-                    type="button"
-                    variant={draft.kind === "ARCHIVE" ? "primary" : "outline"}
-                  >
-                    {copy.kind.archive}
-                  </Button>
-                </div>
+                <AppCenterDecisionGroup
+                  columns={2}
+                  label={copy.kind.label}
+                  onChange={(kind) => {
+                    if (canWrite && !busy) {
+                      updateDraft("kind", kind);
+                    }
+                  }}
+                  options={[
+                    {
+                      icon: <GitBranch className="h-4 w-4 shrink-0" />,
+                      label: copy.kind.git,
+                      tone: "neutral",
+                      value: "GIT",
+                    },
+                    {
+                      icon: <Package className="h-4 w-4 shrink-0" />,
+                      label: copy.kind.archive,
+                      tone: "neutral",
+                      value: "ARCHIVE",
+                    },
+                  ]}
+                  value={draft.kind}
+                />
 
                 {draft.kind === "GIT" ? (
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -409,12 +413,19 @@ export function AppSourceRemixDrawer({
                         </SelectContent>
                       </Select>
                       <FieldDescription>{copy.git.providerHint}</FieldDescription>
-                      <FieldIssue issue={issueFor("repoProvider")} messages={messages} />
+                      <FieldIssue
+                        id="app-source-provider-error"
+                        issue={issueFor("repoProvider")}
+                        messages={messages}
+                      />
                     </Field>
 
                     <Field invalid={Boolean(issueFor("repoUrl"))} required>
                       <FieldLabel htmlFor="app-source-repo-url">{copy.git.repoUrl}</FieldLabel>
                       <Input
+                        aria-describedby={
+                          issueFor("repoUrl") ? "app-source-repo-url-error" : undefined
+                        }
                         aria-invalid={Boolean(issueFor("repoUrl"))}
                         disabled={!canWrite || busy}
                         id="app-source-repo-url"
@@ -422,12 +433,19 @@ export function AppSourceRemixDrawer({
                         placeholder={copy.git.repoUrlPlaceholder}
                         value={draft.repoUrl}
                       />
-                      <FieldIssue issue={issueFor("repoUrl")} messages={messages} />
+                      <FieldIssue
+                        id="app-source-repo-url-error"
+                        issue={issueFor("repoUrl")}
+                        messages={messages}
+                      />
                     </Field>
 
                     <Field invalid={Boolean(issueFor("repoRef"))}>
                       <FieldLabel htmlFor="app-source-repo-ref">{copy.git.repoRef}</FieldLabel>
                       <Input
+                        aria-describedby={
+                          issueFor("repoRef") ? "app-source-repo-ref-error" : undefined
+                        }
                         aria-invalid={Boolean(issueFor("repoRef"))}
                         disabled={!canWrite || busy}
                         id="app-source-repo-ref"
@@ -435,12 +453,19 @@ export function AppSourceRemixDrawer({
                         placeholder={copy.git.repoRefPlaceholder}
                         value={draft.repoRef}
                       />
-                      <FieldIssue issue={issueFor("repoRef")} messages={messages} />
+                      <FieldIssue
+                        id="app-source-repo-ref-error"
+                        issue={issueFor("repoRef")}
+                        messages={messages}
+                      />
                     </Field>
 
                     <Field invalid={Boolean(issueFor("subPath"))}>
                       <FieldLabel htmlFor="app-source-sub-path">{copy.git.subPath}</FieldLabel>
                       <Input
+                        aria-describedby={
+                          issueFor("subPath") ? "app-source-sub-path-error" : undefined
+                        }
                         aria-invalid={Boolean(issueFor("subPath"))}
                         disabled={!canWrite || busy}
                         id="app-source-sub-path"
@@ -448,7 +473,11 @@ export function AppSourceRemixDrawer({
                         placeholder={copy.git.subPathPlaceholder}
                         value={draft.subPath}
                       />
-                      <FieldIssue issue={issueFor("subPath")} messages={messages} />
+                      <FieldIssue
+                        id="app-source-sub-path-error"
+                        issue={issueFor("subPath")}
+                        messages={messages}
+                      />
                     </Field>
 
                     <Field invalid={Boolean(issueFor("credentialSecretRef"))}>
@@ -456,6 +485,11 @@ export function AppSourceRemixDrawer({
                         {copy.git.credentialSecretRef}
                       </FieldLabel>
                       <Input
+                        aria-describedby={
+                          issueFor("credentialSecretRef")
+                            ? "app-source-credential-error"
+                            : undefined
+                        }
                         aria-invalid={Boolean(issueFor("credentialSecretRef"))}
                         disabled={!canWrite || busy}
                         id="app-source-credential"
@@ -463,7 +497,11 @@ export function AppSourceRemixDrawer({
                         placeholder={copy.git.credentialSecretRefPlaceholder}
                         value={draft.credentialSecretRef}
                       />
-                      <FieldIssue issue={issueFor("credentialSecretRef")} messages={messages} />
+                      <FieldIssue
+                        id="app-source-credential-error"
+                        issue={issueFor("credentialSecretRef")}
+                        messages={messages}
+                      />
                     </Field>
 
                     <Field>
@@ -524,6 +562,11 @@ export function AppSourceRemixDrawer({
                     <Field invalid={Boolean(issueFor("artifactId"))} required>
                       <FieldLabel htmlFor="app-source-artifact-id">{copy.archive.artifactId}</FieldLabel>
                       <Input
+                        aria-describedby={
+                          issueFor("artifactId")
+                            ? "app-source-artifact-id-error"
+                            : "app-source-artifact-id-hint"
+                        }
                         aria-invalid={Boolean(issueFor("artifactId"))}
                         disabled={!canWrite || busy}
                         id="app-source-artifact-id"
@@ -531,8 +574,14 @@ export function AppSourceRemixDrawer({
                         placeholder={copy.archive.artifactIdPlaceholder}
                         value={draft.artifactId}
                       />
-                      <FieldDescription>{copy.archive.uploadHint}</FieldDescription>
-                      <FieldIssue issue={issueFor("artifactId")} messages={messages} />
+                      <FieldDescription id="app-source-artifact-id-hint">
+                        {copy.archive.uploadHint}
+                      </FieldDescription>
+                      <FieldIssue
+                        id="app-source-artifact-id-error"
+                        issue={issueFor("artifactId")}
+                        messages={messages}
+                      />
                     </Field>
                   </div>
                 )}
@@ -632,16 +681,23 @@ export function AppSourceRemixDrawer({
 }
 
 function FieldIssue({
+  id,
   issue,
   messages,
 }: {
+  /** Id the owning input points at through `aria-describedby`. */
+  id?: string;
   issue: DeployAppSourceIssue | undefined;
   messages: ApplicationCatalogMessages;
 }) {
   if (!issue) {
     return null;
   }
-  return <FieldError>{messages.sourceRemix.validation[issue.code]}</FieldError>;
+  return (
+    <FieldError id={id} role="alert">
+      {messages.sourceRemix.validation[issue.code]}
+    </FieldError>
+  );
 }
 
 /** Map one failure onto the sentence the drawer shows for it. */

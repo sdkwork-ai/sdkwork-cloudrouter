@@ -1,10 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
-import { Globe, RefreshCw } from "lucide-react";
-import { Button, StatusBadge, StatusNotice } from "@sdkwork/ui-pc-react";
+import { Button, DataTable, type DataTableColumn, StatusBadge, StatusNotice } from "@sdkwork/ui-pc-react";
 
+import {
+  AppCenterCursorFooter,
+  AppCenterListHeader,
+  AppCenterLoadFailure,
+  AppCenterRefreshButton,
+  appCenterTableSlots,
+  cursorCountText,
+} from "./AppCenterListShell";
 import { AppListingDetailDrawer } from "./AppListingDetailDrawer";
 import { AppListingVisibilityDrawer } from "./AppListingVisibilityDrawer";
 import type { ApplicationCatalogMessages } from "../i18n";
+import { formatDateTime } from "../services/format";
+import { listingStatusVariant, visibilityVariant } from "../services/appstore-listing-presentation";
 import {
   getAppStoreListingService,
   isAppStoreListingForbidden,
@@ -22,7 +31,13 @@ type LoadState =
   | { status: "ready"; items: readonly AppStoreListing[] }
   | { status: "error"; items: readonly AppStoreListing[]; error: unknown };
 
-/** App Store listing visibility administration inside the App Center. */
+/**
+ * App Store listing administration inside the App Center.
+ *
+ * The list is cursor-paginated. Publishing state and storefront visibility are
+ * two separate facets, so they get two badges and two row commands: reading the
+ * detail, and changing what the storefront shows.
+ */
 export function AppListingsPanel({ messages, service: injectedService }: AppListingsPanelProps) {
   const copy = messages.listings;
   const service = useMemo(
@@ -32,23 +47,28 @@ export function AppListingsPanel({ messages, service: injectedService }: AppList
   const [state, setState] = useState<LoadState>({ status: "loading", items: [] });
   const [nextCursor, setNextCursor] = useState<string>();
   const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState<number>();
   const [loadingMore, setLoadingMore] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
   const [visibilityTarget, setVisibilityTarget] = useState<AppStoreListing>();
   const [detailTarget, setDetailTarget] = useState<AppStoreListing>();
   const [notice, setNotice] = useState<string>();
 
+  const refresh = () => setReloadToken((token) => token + 1);
+
   useEffect(() => {
     let cancelled = false;
     setState({ status: "loading", items: [] });
     setNextCursor(undefined);
     setHasMore(false);
+    setTotal(undefined);
     void service.list({ pageSize: 50 }).then(
       (page) => {
         if (!cancelled) {
           setState({ status: "ready", items: page.items });
           setNextCursor(page.nextCursor);
           setHasMore(page.hasMore);
+          setTotal(page.total);
         }
       },
       (error: unknown) => {
@@ -72,6 +92,7 @@ export function AppListingsPanel({ messages, service: injectedService }: AppList
       setState((current) => ({ status: "ready", items: [...current.items, ...page.items] }));
       setNextCursor(page.nextCursor);
       setHasMore(page.hasMore);
+      setTotal((current) => page.total ?? current);
     } catch (error) {
       setState((current) => ({ ...current, status: "error", error }));
     } finally {
@@ -79,146 +100,141 @@ export function AppListingsPanel({ messages, service: injectedService }: AppList
     }
   };
 
-  return (
-    <section className="space-y-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h2 className="text-base font-semibold text-[var(--sdk-color-text-primary)]">{copy.title}</h2>
-          <p className="text-sm text-[var(--sdk-color-text-muted)]">{copy.description}</p>
+  const columns = useMemo<DataTableColumn<AppStoreListing>[]>(() => [
+    {
+      cell: (listing) => (
+        <div className="min-w-0">
+          <div className="truncate font-medium text-[var(--sdk-color-text-primary)]">
+            {listing.displayName}
+          </div>
+          <div className="truncate font-mono text-[11px] text-[var(--sdk-color-text-muted)]">
+            {listing.listingCode ?? listing.listingId}
+          </div>
         </div>
-        <Button
-          disabled={state.status === "loading"}
-          onClick={() => setReloadToken((token) => token + 1)}
-          type="button"
-          variant="outline"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${state.status === "loading" ? "animate-spin" : ""}`} />
-          {copy.refresh}
-        </Button>
-      </header>
+      ),
+      header: copy.columns.listing,
+      id: "listing",
+    },
+    {
+      cell: (listing) => listing.publisherName ?? listing.publisherId ?? "—",
+      header: copy.columns.publisher,
+      id: "publisher",
+    },
+    {
+      cell: (listing) => (
+        <StatusBadge
+          label={statusLabel(listing.listingStatus, copy)}
+          status={listing.listingStatus}
+          variant={listingStatusVariant(listing.listingStatus)}
+        />
+      ),
+      header: copy.columns.status,
+      id: "status",
+    },
+    {
+      cell: (listing) => (
+        <StatusBadge
+          label={visibilityLabel(listing.storefrontVisibility, copy)}
+          status={listing.storefrontVisibility ?? "unknown"}
+          variant={visibilityVariant(listing.storefrontVisibility)}
+        />
+      ),
+      header: copy.columns.visibility,
+      id: "visibility",
+    },
+    {
+      cell: (listing) => listing.categoryCode ?? "—",
+      header: copy.columns.category,
+      id: "category",
+    },
+    {
+      cell: (listing) => listing.platform ?? "—",
+      header: copy.columns.platform,
+      id: "platform",
+    },
+    {
+      cell: (listing) => listing.latestReleaseVersion ?? "—",
+      header: copy.columns.version,
+      id: "version",
+    },
+    {
+      cell: (listing) => (formatDateTime(listing.updatedAt)),
+      header: copy.columns.updatedAt,
+      id: "updatedAt",
+    },
+  ], [copy]);
+
+  const busy = state.status === "loading";
+
+  return (
+    <section className="flex min-h-0 flex-1 flex-col gap-3" data-app-center-panel="listings">
+      <AppCenterListHeader
+        actions={(
+          <AppCenterRefreshButton busy={busy} label={copy.refresh} onRefresh={refresh} />
+        )}
+        description={copy.description}
+        title={copy.title}
+      />
 
       {notice ? <StatusNotice tone="success">{notice}</StatusNotice> : null}
 
       {state.status === "error" ? (
-        <StatusNotice tone="danger">
-          <span className="flex flex-wrap items-center gap-3">
-            <span>{errorMessage(state.error, copy)}</span>
+        <AppCenterLoadFailure
+          message={errorMessage(state.error, copy)}
+          onRetry={refresh}
+          retryLabel={copy.retry}
+        />
+      ) : null}
+
+      <DataTable
+        className="min-h-0 flex-1"
+        columns={columns}
+        emptyDescription={copy.emptyDescription}
+        emptyTitle={copy.emptyTitle}
+        footer={(
+          <AppCenterCursorFooter
+            countText={cursorCountText(messages, state.items.length, total)}
+            hasMore={hasMore}
+            loadMoreLabel={copy.loadMore}
+            loading={loadingMore}
+            loadingLabel={messages.pagination.loadingMore}
+            onLoadMore={() => { void loadMore(); }}
+          />
+        )}
+        getRowId={(listing) => listing.listingId}
+        loading={busy}
+        loadingLabel={copy.loading}
+        rowActions={(listing) => (
+          <div className="flex min-w-max flex-nowrap items-center justify-end gap-1.5 whitespace-nowrap">
             <Button
-              onClick={() => setReloadToken((token) => token + 1)}
+              onClick={() => {
+                setNotice(undefined);
+                setDetailTarget(listing);
+              }}
+              size="sm"
+              type="button"
+              variant="ghost"
+            >
+              {copy.detailAction}
+            </Button>
+            <Button
+              onClick={() => {
+                setNotice(undefined);
+                setVisibilityTarget(listing);
+              }}
               size="sm"
               type="button"
               variant="outline"
             >
-              {copy.retry}
+              {copy.visibilityAction}
             </Button>
-          </span>
-        </StatusNotice>
-      ) : null}
-
-      {state.status === "loading" ? (
-        <p className="text-sm text-[var(--sdk-color-text-muted)]" role="status">
-          {copy.loading}
-        </p>
-      ) : null}
-
-      {state.status === "ready" && state.items.length === 0 ? (
-        <div className="rounded-[var(--sdk-radius-card)] border border-dashed border-[var(--sdk-color-border-default)] p-10 text-center">
-          <Globe className="mx-auto h-8 w-8 text-[var(--sdk-color-text-muted)]" />
-          <h3 className="mt-3 text-sm font-semibold text-[var(--sdk-color-text-primary)]">{copy.emptyTitle}</h3>
-          <p className="mt-1 text-sm text-[var(--sdk-color-text-muted)]">{copy.emptyDescription}</p>
-        </div>
-      ) : null}
-
-      {state.items.length > 0 ? (
-        <div className="overflow-x-auto rounded-[var(--sdk-radius-card)] border border-[var(--sdk-color-border-default)]">
-          <table className="w-full min-w-[980px] text-sm">
-            <thead className="bg-[var(--sdk-color-surface-panel-muted)] text-left text-xs uppercase tracking-wide text-[var(--sdk-color-text-muted)]">
-              <tr>
-                <th className="px-4 py-2.5 font-medium">{copy.columns.listing}</th>
-                <th className="px-4 py-2.5 font-medium">{copy.columns.publisher}</th>
-                <th className="px-4 py-2.5 font-medium">{copy.columns.status}</th>
-                <th className="px-4 py-2.5 font-medium">{copy.columns.visibility}</th>
-                <th className="px-4 py-2.5 font-medium">{copy.columns.category}</th>
-                <th className="px-4 py-2.5 font-medium">{copy.columns.platform}</th>
-                <th className="px-4 py-2.5 font-medium">{copy.columns.version}</th>
-                <th className="px-4 py-2.5 font-medium">{copy.columns.updatedAt}</th>
-                <th className="px-4 py-2.5 text-right font-medium">{copy.columns.actions}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--sdk-color-border-default)]">
-              {state.items.map((listing) => (
-                <tr key={listing.listingId}>
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-[var(--sdk-color-text-primary)]">{listing.displayName}</div>
-                    <div className="mt-0.5 font-mono text-[11px] text-[var(--sdk-color-text-muted)]">
-                      {listing.listingCode ?? listing.listingId}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-[var(--sdk-color-text-secondary)]">
-                    {listing.publisherName ?? listing.publisherId ?? "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge
-                      label={statusLabel(listing.listingStatus, copy)}
-                      status={listing.listingStatus}
-                      variant={listingStatusVariant(listing.listingStatus)}
-                    />
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge
-                      label={visibilityLabel(listing.storefrontVisibility, copy)}
-                      status={listing.storefrontVisibility ?? "unknown"}
-                      variant={visibilityVariant(listing.storefrontVisibility)}
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-[var(--sdk-color-text-muted)]">{listing.categoryCode ?? "—"}</td>
-                  <td className="px-4 py-3 text-[var(--sdk-color-text-muted)]">{listing.platform ?? "—"}</td>
-                  <td className="px-4 py-3 text-[var(--sdk-color-text-muted)]">
-                    {listing.latestReleaseVersion ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 text-[var(--sdk-color-text-muted)]">
-                    {listing.updatedAt ? formatDate(listing.updatedAt) : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        onClick={() => {
-                          setNotice(undefined);
-                          setDetailTarget(listing);
-                        }}
-                        size="sm"
-                        type="button"
-                        variant="ghost"
-                      >
-                        {copy.detailAction}
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setNotice(undefined);
-                          setVisibilityTarget(listing);
-                        }}
-                        size="sm"
-                        type="button"
-                        variant="outline"
-                      >
-                        {copy.visibilityAction}
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
-
-      {hasMore && state.status !== "error" ? (
-        <div className="flex justify-center">
-          <Button disabled={loadingMore} onClick={() => void loadMore()} type="button" variant="outline">
-            {copy.loadMore}
-          </Button>
-        </div>
-      ) : null}
+          </div>
+        )}
+        rowActionsLabel={copy.columns.actions}
+        rows={[...state.items]}
+        slotProps={appCenterTableSlots()}
+        stickyHeader
+      />
 
       {visibilityTarget ? (
         <AppListingVisibilityDrawer
@@ -227,7 +243,7 @@ export function AppListingsPanel({ messages, service: injectedService }: AppList
           onClose={() => setVisibilityTarget(undefined)}
           onSaved={() => {
             setNotice(messages.listings.dialog.success);
-            setReloadToken((token) => token + 1);
+            refresh();
           }}
           service={service}
         />
@@ -261,31 +277,6 @@ function statusLabel(
   return known ?? status ?? copy.statuses.UNKNOWN;
 }
 
-function listingStatusVariant(
-  status: string | undefined,
-): "success" | "warning" | "danger" | "default" | "secondary" {
-  const normalized = status?.toUpperCase();
-  if (normalized === "PUBLISHED" || normalized === "ACTIVE") {
-    return "success";
-  }
-  if (normalized === "SUSPENDED") {
-    return "danger";
-  }
-  return normalized === "DRAFT" ? "warning" : "secondary";
-}
-
-function visibilityVariant(
-  visibility: string | undefined,
-): "success" | "warning" | "danger" | "default" {
-  if (visibility === "VISIBLE") {
-    return "success";
-  }
-  if (visibility === "DELISTED") {
-    return "danger";
-  }
-  return visibility === "HIDDEN" || visibility === "REGION_RESTRICTED" ? "warning" : "default";
-}
-
 function errorMessage(error: unknown, copy: ApplicationCatalogMessages["listings"]): string {
   if (isAppStoreListingForbidden(error)) {
     return copy.forbidden;
@@ -296,7 +287,3 @@ function errorMessage(error: unknown, copy: ApplicationCatalogMessages["listings
   return copy.loadError;
 }
 
-function formatDate(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
-}

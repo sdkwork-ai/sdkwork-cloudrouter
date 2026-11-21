@@ -1,9 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { Building2, RefreshCw } from "lucide-react";
-import { Button, StatusBadge, StatusNotice } from "@sdkwork/ui-pc-react";
+import { Button, DataTable, type DataTableColumn, StatusBadge, StatusNotice } from "@sdkwork/ui-pc-react";
 
+import {
+  AppCenterCursorFooter,
+  AppCenterListHeader,
+  AppCenterLoadFailure,
+  AppCenterRefreshButton,
+  appCenterTableSlots,
+  cursorCountText,
+} from "./AppCenterListShell";
 import { AppPublisherVerifyDrawer } from "./AppPublisherVerifyDrawer";
 import type { ApplicationCatalogMessages } from "../i18n";
+import { formatDateTime } from "../services/format";
 import {
   getAppStorePublisherService,
   isAppStorePublisherForbidden,
@@ -21,7 +29,15 @@ type LoadState =
   | { status: "ready"; items: readonly AppStorePublisher[] }
   | { status: "error"; items: readonly AppStorePublisher[]; error: unknown };
 
-/** App Store publisher administration inside the App Center. */
+/**
+ * App Store publisher administration inside the App Center.
+ *
+ * The list is cursor-paginated (`nextCursor` + `hasMore`), so the footer prints
+ * how many publishers are loaded and offers "load more" rather than a page
+ * number it cannot compute. Verification decisions open the shared drawer and
+ * reload the first page so the badge the operator just changed is the badge the
+ * table shows.
+ */
 export function AppPublishersPanel({ messages, service: injectedService }: AppPublishersPanelProps) {
   const copy = messages.publishers;
   const service = useMemo(
@@ -31,22 +47,27 @@ export function AppPublishersPanel({ messages, service: injectedService }: AppPu
   const [state, setState] = useState<LoadState>({ status: "loading", items: [] });
   const [nextCursor, setNextCursor] = useState<string>();
   const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState<number>();
   const [loadingMore, setLoadingMore] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
   const [verifyTarget, setVerifyTarget] = useState<AppStorePublisher>();
   const [notice, setNotice] = useState<string>();
+
+  const refresh = () => setReloadToken((token) => token + 1);
 
   useEffect(() => {
     let cancelled = false;
     setState({ status: "loading", items: [] });
     setNextCursor(undefined);
     setHasMore(false);
+    setTotal(undefined);
     void service.list({ pageSize: 50 }).then(
       (page) => {
         if (!cancelled) {
           setState({ status: "ready", items: page.items });
           setNextCursor(page.nextCursor);
           setHasMore(page.hasMore);
+          setTotal(page.total);
         }
       },
       (error: unknown) => {
@@ -70,6 +91,7 @@ export function AppPublishersPanel({ messages, service: injectedService }: AppPu
       setState((current) => ({ status: "ready", items: [...current.items, ...page.items] }));
       setNextCursor(page.nextCursor);
       setHasMore(page.hasMore);
+      setTotal((current) => page.total ?? current);
     } catch (error) {
       setState((current) => ({ ...current, status: "error", error }));
     } finally {
@@ -77,136 +99,129 @@ export function AppPublishersPanel({ messages, service: injectedService }: AppPu
     }
   };
 
-  return (
-    <section className="space-y-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h2 className="text-base font-semibold text-[var(--sdk-color-text-primary)]">{copy.title}</h2>
-          <p className="text-sm text-[var(--sdk-color-text-muted)]">{copy.description}</p>
+  const columns = useMemo<DataTableColumn<AppStorePublisher>[]>(() => [
+    {
+      cell: (publisher) => (
+        <div className="min-w-0">
+          <div className="truncate font-medium text-[var(--sdk-color-text-primary)]">
+            {publisher.displayName}
+          </div>
+          <div className="truncate font-mono text-[11px] text-[var(--sdk-color-text-muted)]">
+            {publisher.publisherId}
+          </div>
         </div>
-        <Button
-          disabled={state.status === "loading"}
-          onClick={() => setReloadToken((token) => token + 1)}
-          type="button"
-          variant="outline"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${state.status === "loading" ? "animate-spin" : ""}`} />
-          {copy.refresh}
-        </Button>
-      </header>
+      ),
+      header: copy.columns.publisher,
+      id: "publisher",
+    },
+    {
+      cell: (publisher) => publisher.publisherType ?? "—",
+      header: copy.columns.type,
+      id: "type",
+    },
+    {
+      cell: (publisher) => (
+        <StatusBadge
+          label={publisherStatusLabel(publisher.status, copy)}
+          status={publisher.status ?? "unknown"}
+          variant={publisher.status === "ACTIVE" || publisher.status === "active" ? "success" : "secondary"}
+        />
+      ),
+      header: copy.columns.status,
+      id: "status",
+    },
+    {
+      cell: (publisher) => (
+        <StatusBadge
+          label={verificationStatusLabel(publisher.verificationStatus, copy)}
+          status={publisher.verificationStatus ?? "unknown"}
+          variant={verificationVariant(publisher.verificationStatus)}
+        />
+      ),
+      header: copy.columns.verification,
+      id: "verification",
+    },
+    {
+      cell: (publisher) => (
+        <div className="min-w-0">
+          <div className="truncate">{publisher.supportEmail ?? "—"}</div>
+          {publisher.websiteUrl ? (
+            <div className="truncate text-xs">{publisher.websiteUrl}</div>
+          ) : null}
+        </div>
+      ),
+      header: copy.columns.contact,
+      id: "contact",
+    },
+    {
+      cell: (publisher) => formatDateTime(publisher.createdAt),
+      header: copy.columns.createdAt,
+      id: "createdAt",
+    },
+  ], [copy]);
+
+  const busy = state.status === "loading";
+
+  return (
+    <section className="flex min-h-0 flex-1 flex-col gap-3" data-app-center-panel="publishers">
+      <AppCenterListHeader
+        actions={(
+          <AppCenterRefreshButton busy={busy} label={copy.refresh} onRefresh={refresh} />
+        )}
+        description={copy.description}
+        title={copy.title}
+      />
 
       {notice ? <StatusNotice tone="success">{notice}</StatusNotice> : null}
 
       {state.status === "error" ? (
-        <StatusNotice tone="danger">
-          <span className="flex flex-wrap items-center gap-3">
-            <span>{errorMessage(state.error, copy)}</span>
+        <AppCenterLoadFailure
+          message={errorMessage(state.error, copy)}
+          onRetry={refresh}
+          retryLabel={copy.retry}
+        />
+      ) : null}
+
+      <DataTable
+        className="min-h-0 flex-1"
+        columns={columns}
+        emptyDescription={copy.emptyDescription}
+        emptyTitle={copy.emptyTitle}
+        footer={(
+          <AppCenterCursorFooter
+            countText={cursorCountText(messages, state.items.length, total)}
+            hasMore={hasMore}
+            loadMoreLabel={copy.loadMore}
+            loading={loadingMore}
+            loadingLabel={messages.pagination.loadingMore}
+            onLoadMore={() => { void loadMore(); }}
+          />
+        )}
+        getRowId={(publisher) => publisher.publisherId}
+        loading={busy}
+        loadingLabel={copy.loading}
+        rowActions={(publisher) => (
+          needsVerification(publisher.verificationStatus) ? (
             <Button
-              onClick={() => setReloadToken((token) => token + 1)}
+              onClick={() => {
+                setNotice(undefined);
+                setVerifyTarget(publisher);
+              }}
               size="sm"
               type="button"
               variant="outline"
             >
-              {copy.retry}
+              {copy.verifyAction}
             </Button>
-          </span>
-        </StatusNotice>
-      ) : null}
-
-      {state.status === "loading" ? (
-        <p className="text-sm text-[var(--sdk-color-text-muted)]" role="status">
-          {copy.loading}
-        </p>
-      ) : null}
-
-      {state.status === "ready" && state.items.length === 0 ? (
-        <div className="rounded-[var(--sdk-radius-card)] border border-dashed border-[var(--sdk-color-border-default)] p-10 text-center">
-          <Building2 className="mx-auto h-8 w-8 text-[var(--sdk-color-text-muted)]" />
-          <h3 className="mt-3 text-sm font-semibold text-[var(--sdk-color-text-primary)]">{copy.emptyTitle}</h3>
-          <p className="mt-1 text-sm text-[var(--sdk-color-text-muted)]">{copy.emptyDescription}</p>
-        </div>
-      ) : null}
-
-      {state.items.length > 0 ? (
-        <div className="overflow-x-auto rounded-[var(--sdk-radius-card)] border border-[var(--sdk-color-border-default)]">
-          <table className="w-full min-w-[820px] text-sm">
-            <thead className="bg-[var(--sdk-color-surface-panel-muted)] text-left text-xs uppercase tracking-wide text-[var(--sdk-color-text-muted)]">
-              <tr>
-                <th className="px-4 py-2.5 font-medium">{copy.columns.publisher}</th>
-                <th className="px-4 py-2.5 font-medium">{copy.columns.type}</th>
-                <th className="px-4 py-2.5 font-medium">{copy.columns.status}</th>
-                <th className="px-4 py-2.5 font-medium">{copy.columns.verification}</th>
-                <th className="px-4 py-2.5 font-medium">{copy.columns.contact}</th>
-                <th className="px-4 py-2.5 font-medium">{copy.columns.createdAt}</th>
-                <th className="px-4 py-2.5 text-right font-medium">{copy.columns.actions}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--sdk-color-border-default)]">
-              {state.items.map((publisher) => (
-                <tr key={publisher.publisherId}>
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-[var(--sdk-color-text-primary)]">{publisher.displayName}</div>
-                    <div className="mt-0.5 font-mono text-[11px] text-[var(--sdk-color-text-muted)]">
-                      {publisher.publisherId}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-[var(--sdk-color-text-secondary)]">
-                    {publisher.publisherType ?? "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge
-                      label={publisherStatusLabel(publisher.status, copy)}
-                      status={publisher.status ?? "unknown"}
-                      variant={publisher.status === "ACTIVE" || publisher.status === "active" ? "success" : "secondary"}
-                    />
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge
-                      label={verificationStatusLabel(publisher.verificationStatus, copy)}
-                      status={publisher.verificationStatus ?? "unknown"}
-                      variant={verificationVariant(publisher.verificationStatus)}
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-[var(--sdk-color-text-muted)]">
-                    <div>{publisher.supportEmail ?? "—"}</div>
-                    {publisher.websiteUrl ? (
-                      <div className="truncate text-xs">{publisher.websiteUrl}</div>
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-3 text-[var(--sdk-color-text-muted)]">
-                    {publisher.createdAt ? formatDate(publisher.createdAt) : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {needsVerification(publisher.verificationStatus) ? (
-                      <Button
-                        onClick={() => {
-                          setNotice(undefined);
-                          setVerifyTarget(publisher);
-                        }}
-                        size="sm"
-                        type="button"
-                        variant="outline"
-                      >
-                        {copy.verifyAction}
-                      </Button>
-                    ) : (
-                      <span className="text-xs text-[var(--sdk-color-text-muted)]">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
-
-      {hasMore && state.status !== "error" ? (
-        <div className="flex justify-center">
-          <Button disabled={loadingMore} onClick={() => void loadMore()} type="button" variant="outline">
-            {copy.loadMore}
-          </Button>
-        </div>
-      ) : null}
+          ) : (
+            <span className="text-xs text-[var(--sdk-color-text-muted)]">—</span>
+          )
+        )}
+        rowActionsLabel={copy.columns.actions}
+        rows={[...state.items]}
+        slotProps={appCenterTableSlots()}
+        stickyHeader
+      />
 
       {verifyTarget ? (
         <AppPublisherVerifyDrawer
@@ -214,7 +229,7 @@ export function AppPublishersPanel({ messages, service: injectedService }: AppPu
           onClose={() => setVerifyTarget(undefined)}
           onVerified={() => {
             setNotice(messages.publishers.dialog.success);
-            setReloadToken((token) => token + 1);
+            refresh();
           }}
           publisher={verifyTarget}
           service={service}
@@ -266,9 +281,4 @@ function errorMessage(error: unknown, copy: ApplicationCatalogMessages["publishe
     return copy.unavailable;
   }
   return copy.loadError;
-}
-
-function formatDate(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 }

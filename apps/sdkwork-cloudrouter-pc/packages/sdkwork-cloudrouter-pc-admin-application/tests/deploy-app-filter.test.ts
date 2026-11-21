@@ -13,6 +13,7 @@ import {
   isValidDeployOrganizationId,
   normalizeDeployOrganizationId,
   parseDeployAppListFilter,
+  resolveDeployAppPagination,
   toDeployAppListQuery,
   writeDeployAppListFilter,
 } from "../src/services/deploy-application-filter";
@@ -207,5 +208,67 @@ describe("deploy filter error classification", () => {
     expect(deployOwnershipMessageKey("ORGANIZATION")).toBe("organization");
     expect(deployOwnershipMessageKey("USER")).toBe("user");
     expect(deployOwnershipMessageKey("nope")).toBeUndefined();
+  });
+});
+
+describe("deploy list footer pagination", () => {
+  it("reads the total, the page count, and the next-page flag from server metadata", () => {
+    expect(resolveDeployAppPagination({
+      itemCount: 20,
+      page: 1,
+      pageInfo: { hasMore: true, page: 1, pageSize: 20, totalItems: 45 },
+      pageSize: 20,
+    })).toEqual({
+      hasNextPage: true,
+      page: 1,
+      pageSize: 20,
+      totalItems: 45,
+      totalPages: 3,
+    });
+  });
+
+  it("keeps the last page open when the server reports no further page", () => {
+    expect(resolveDeployAppPagination({
+      itemCount: 5,
+      page: 3,
+      pageInfo: { hasMore: false, page: 3, pageSize: 20, totalItems: 45 },
+      pageSize: 20,
+    })).toMatchObject({ hasNextPage: false, page: 3, totalItems: 45, totalPages: 3 });
+  });
+
+  it("clamps a page that the total no longer has back onto the last page", () => {
+    // The last row of the last page was deleted: the operator must not be left
+    // staring at an empty window three pages deep.
+    expect(resolveDeployAppPagination({
+      itemCount: 0,
+      page: 4,
+      pageInfo: { hasMore: false, page: 4, pageSize: 20, totalItems: 45 },
+      pageSize: 20,
+    })).toMatchObject({ hasNextPage: false, page: 3, totalPages: 3 });
+  });
+
+  it("falls back to the page size when the backend reports no total", () => {
+    expect(resolveDeployAppPagination({ itemCount: 2, page: 1, pageSize: 20 })).toEqual({
+      hasNextPage: false,
+      page: 1,
+      pageSize: 20,
+      totalItems: 2,
+      totalPages: 1,
+    });
+    expect(resolveDeployAppPagination({ itemCount: 20, page: 2, pageSize: 20 })).toMatchObject({
+      hasNextPage: false,
+      page: 2,
+      totalItems: 40,
+      totalPages: 2,
+    });
+  });
+
+  it("keeps an empty list on a single page", () => {
+    expect(resolveDeployAppPagination({
+      itemCount: 0,
+      page: 1,
+      pageInfo: { hasMore: false, page: 1, pageSize: 20, totalItems: 0 },
+      pageSize: 20,
+    })).toEqual({ hasNextPage: false, page: 1, pageSize: 20, totalItems: 0, totalPages: 1 });
   });
 });

@@ -175,6 +175,11 @@ export interface ApplicationCatalogMessages {
   columns: {
     actions: string;
     application: string;
+    /**
+     * Header of the column that prints a Deploy application's snowflake id
+     * (`deployApplicationId`) as the decimal string the wire carried.
+     */
+    applicationId: string;
     domain: string;
     environment: string;
     platform: string;
@@ -220,6 +225,8 @@ export interface ApplicationCatalogMessages {
     retryAllSuccess: string;
     retryAllFailed: string;
     success: string;
+    /** Success notice that also names the application anchor IAM now reports. */
+    successWithId: string;
     failed: string;
   };
   integrations: {
@@ -645,6 +652,8 @@ export interface ApplicationCatalogMessages {
       endsAt: string;
       slotStatus: string;
       statuses: { ACTIVE: string; ENDED: string; SCHEDULED: string };
+      /** Explains that the window is evaluated in the operator's time zone. */
+      windowHint: string;
       submit: string;
       submitting: string;
       cancel: string;
@@ -709,11 +718,15 @@ export interface ApplicationCatalogMessages {
       description: string;
       status: string;
       sortOrder: string;
+      /** Guidance under the order field (range and unit). */
+      sortOrderHint: string;
       submit: string;
       submitting: string;
       cancel: string;
       success: string;
       error: string;
+      /** Rejected sort-order input: it must be a non-negative integer. */
+      invalidSortOrder: string;
     };
     items: {
       title: string;
@@ -721,6 +734,8 @@ export interface ApplicationCatalogMessages {
       listingIds: string;
       listingIdsPlaceholder: string;
       listingIdsHint: string;
+      /** Live count of the listing ids the save will write, e.g. "{count} listings". */
+      parsedTemplate: string;
       submit: string;
       submitting: string;
       cancel: string;
@@ -819,6 +834,23 @@ export interface ApplicationCatalogMessages {
   };
   loadError: string;
   organizationAppStoreNotice: string;
+  /** Footer pagination copy: the window and total the list footer renders. */
+  pagination: {
+    /** Page ordinal with the known page count, e.g. "Page {page} / {total}". */
+    pageOfTemplate: string;
+    pageSizeLabel: string;
+    previous: string;
+    next: string;
+    showing: string;
+    /** Cursor list footer without a server total, e.g. "Loaded {count}". */
+    loadedTemplate: string;
+    /** Cursor list footer with a server total, e.g. "Loaded {loaded} of {total}". */
+    loadedOfTotalTemplate: string;
+    /** Complete-list footer, e.g. "{count} items". */
+    totalTemplate: string;
+    /** Busy label on the cursor footer's "load more" command. */
+    loadingMore: string;
+  };
   refresh: string;
   retry: string;
   scopes: { organization: string; tenant: string };
@@ -1008,6 +1040,8 @@ export interface ApplicationCatalogMessages {
       install: string;
       installing: string;
       installSucceeded: string;
+      /** Success notice that also names the created application's snowflake id. */
+      installSucceededWithId: string;
       installError: string;
       submit: string;
       submitting: string;
@@ -1085,7 +1119,13 @@ export interface ApplicationCatalogMessages {
       status: string;
       note: string;
       notePlaceholder: string;
+      /** Says when the note is mandatory (a rejection needs a reason). */
+      noteHint: string;
+      /** Rejection without a note. */
+      noteRequired: string;
       featured: string;
+      /** Explains what featuring a scaffold does. */
+      featuredHint: string;
       submit: string;
       submitting: string;
       cancel: string;
@@ -1161,6 +1201,8 @@ export interface ApplicationCatalogMessages {
       parentPlaceholder: string;
       parentHint: string;
       sortOrder: string;
+      /** Guidance under the order field (range and unit). */
+      sortOrderHint: string;
       status: string;
       save: string;
       saving: string;
@@ -1173,6 +1215,7 @@ export interface ApplicationCatalogMessages {
         "key-required": string;
         "key-invalid": string;
         "display-name-required": string;
+        "sort-order-invalid": string;
       };
     };
     delete: {

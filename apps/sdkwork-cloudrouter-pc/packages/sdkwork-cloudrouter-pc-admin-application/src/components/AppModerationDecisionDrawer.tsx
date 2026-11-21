@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { ShieldCheck } from "lucide-react";
 import { loadStoredAppSessionToken } from "@sdkwork/cloudroutes-pc-commons/runtime";
 import {
   Button,
@@ -11,12 +10,14 @@ import {
   DrawerHeader,
   DrawerTitle,
   Field,
+  FieldError,
   FieldLabel,
   Input,
   StatusNotice,
   Textarea,
 } from "@sdkwork/ui-pc-react";
 
+import { AppCenterDecisionGroup } from "./AppCenterDecisionGroup";
 import type { ApplicationCatalogMessages } from "../i18n";
 import {
   isAppStoreModerationForbidden,
@@ -36,9 +37,14 @@ export interface AppModerationDecisionDrawerProps {
   service: AppStoreModerationService;
 }
 
-const DECISIONS: readonly AppStoreModerationDecision[] = ["APPROVE", "REJECT", "REQUEST_CHANGES"];
-
-/** Record one moderation decision; non-approval decisions require a reason. */
+/**
+ * Record one moderation decision.
+ *
+ * The decision type and the reason are one form: a non-approval outcome without
+ * a reason is rejected before the write, and the reason fields are marked
+ * invalid so the operator can see which control the message refers to. Taking
+ * the item is a separate command because it changes the queue, not the listing.
+ */
 export function AppModerationDecisionDrawer({
   item,
   messages,
@@ -121,33 +127,19 @@ export function AppModerationDecisionDrawer({
           </DrawerDescription>
         </DrawerHeader>
         <DrawerBody className="space-y-4">
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-[var(--sdk-color-text-primary)]">{copy.type}</p>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {DECISIONS.map((decision) => {
-                const active = decision === decisionType;
-                return (
-                  <button
-                    aria-pressed={active}
-                    className={`flex items-center gap-2 rounded-[var(--sdk-radius-control)] border px-3 py-2 text-left text-sm transition-colors ${
-                      active
-                        ? "border-[var(--sdk-color-brand-primary)] bg-[var(--sdk-color-brand-primary-soft)] text-[var(--sdk-color-brand-primary)]"
-                        : "border-[var(--sdk-color-border-default)] text-[var(--sdk-color-text-secondary)] hover:bg-[var(--sdk-color-surface-panel-muted)]"
-                    }`}
-                    key={decision}
-                    onClick={() => {
-                      setDecisionType(decision);
-                      setValidationError(undefined);
-                    }}
-                    type="button"
-                  >
-                    <ShieldCheck className="h-4 w-4" />
-                    {decisionLabel(decision, copy)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <AppCenterDecisionGroup
+            label={copy.type}
+            onChange={(next) => {
+              setDecisionType(next);
+              setValidationError(undefined);
+            }}
+            options={[
+              { label: copy.approve, tone: "positive", value: "APPROVE" },
+              { label: copy.reject, tone: "negative", value: "REJECT" },
+              { label: copy.requestChanges, tone: "neutral", value: "REQUEST_CHANGES" },
+            ]}
+            value={decisionType}
+          />
 
           <Field>
             <FieldLabel htmlFor="moderation-reason-code">{copy.reasonCode}</FieldLabel>
@@ -159,9 +151,11 @@ export function AppModerationDecisionDrawer({
             />
           </Field>
 
-          <Field>
+          <Field invalid={Boolean(reasonRequired && validationError)} required={reasonRequired}>
             <FieldLabel htmlFor="moderation-reason-detail">{copy.reasonDetail}</FieldLabel>
             <Textarea
+              aria-describedby={reasonRequired && validationError ? "moderation-reason-error" : undefined}
+              aria-invalid={Boolean(reasonRequired && validationError)}
               id="moderation-reason-detail"
               onChange={(event) => {
                 setReasonDetail(event.target.value);
@@ -173,9 +167,11 @@ export function AppModerationDecisionDrawer({
               rows={4}
               value={reasonDetail}
             />
+            {validationError ? (
+              <FieldError id="moderation-reason-error">{validationError}</FieldError>
+            ) : null}
           </Field>
 
-          {validationError ? <StatusNotice tone="danger">{validationError}</StatusNotice> : null}
           {error ? (
             <StatusNotice tone="danger">
               {isAppStoreModerationForbidden(error)
@@ -207,14 +203,4 @@ export function AppModerationDecisionDrawer({
       </DrawerContent>
     </Drawer>
   );
-}
-
-function decisionLabel(
-  decision: AppStoreModerationDecision,
-  copy: ApplicationCatalogMessages["moderation"]["decision"],
-): string {
-  if (decision === "REJECT") {
-    return copy.reject;
-  }
-  return decision === "REQUEST_CHANGES" ? copy.requestChanges : copy.approve;
 }

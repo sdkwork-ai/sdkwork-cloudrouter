@@ -1,13 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams, useInRouterContext } from "react-router-dom";
-import { Download, FolderTree, Plus, RefreshCw, Search } from "lucide-react";
+import { Download, FolderTree, Plus, Search } from "lucide-react";
 import { Button, ConfirmDialog, Input, StatusNotice } from "@sdkwork/ui-pc-react";
 import {
   CascadeCategoryManager,
   type CascadeCategoryNode,
 } from "@sdkwork/cloudroutes-pc-commons";
 
+import {
+  AppCenterListHeader,
+  AppCenterRefreshButton,
+  AppCenterSummaryFooter,
+} from "./AppCenterListShell";
 import type { ApplicationCatalogMessages } from "../i18n";
+import { templateMessage } from "../services/message-template";
 import { CategoryItemActionsMenu } from "./CategoryItemActionsMenu";
 import { ScaffoldCategoryFormDrawer } from "./ScaffoldCategoryFormDrawer";
 import { isApplicationCenterActionAllowed } from "../permissions/application-center-actions";
@@ -405,81 +411,81 @@ function ApplicationScaffoldCategoryPanelContent({
   const cascadeLabels = messages.categories.cascade;
 
   return (
-    <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h2 className="flex items-center gap-2 text-base font-semibold text-[var(--sdk-color-text-primary)]">
+    <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-3" data-app-center-panel="scaffold-categories">
+      <input
+        accept=".json,application/json"
+        className="hidden"
+        onChange={(event) => {
+          void handleImportFile(event.target.files?.[0]);
+          event.currentTarget.value = "";
+        }}
+        ref={importInputRef}
+        type="file"
+      />
+
+      <AppCenterListHeader
+        actions={(
+          <>
+            <Button onClick={() => importInputRef.current?.click()} type="button" variant="outline">
+              {messages.categories.importAction}
+            </Button>
+            <Button
+              disabled={state.items.length === 0}
+              onClick={() => {
+                const document = buildScaffoldCategoryExport(state.items);
+                downloadJsonDocument(
+                  document,
+                  `scaffold-categories-${new Date().toISOString().slice(0, 10)}.json`,
+                );
+              }}
+              type="button"
+              variant="outline"
+            >
+              <Download className="h-4 w-4" />
+              {messages.categories.exportAction}
+            </Button>
+            <AppCenterRefreshButton
+              busy={state.status === "loading"}
+              label={messages.refresh}
+              onRefresh={() => setReloadToken((token) => token + 1)}
+            />
+          </>
+        )}
+        description={copy.description}
+        title={(
+          <span className="flex items-center gap-2">
             <FolderTree className="h-4 w-4" />
             {copy.title}
-          </h2>
-          <p className="text-sm text-[var(--sdk-color-text-muted)]">{copy.description}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <input
-            accept=".json,application/json"
-            className="hidden"
-            onChange={(event) => {
-              void handleImportFile(event.target.files?.[0]);
-              event.currentTarget.value = "";
-            }}
-            ref={importInputRef}
-            type="file"
-          />
-          <Button onClick={() => importInputRef.current?.click()} type="button" variant="outline">
-            {messages.categories.importAction}
-          </Button>
-          <Button
-            disabled={state.items.length === 0}
-            onClick={() => {
-              const document = buildScaffoldCategoryExport(state.items);
-              downloadJsonDocument(
-                document,
-                `scaffold-categories-${new Date().toISOString().slice(0, 10)}.json`,
-              );
-            }}
-            type="button"
-            variant="outline"
-          >
-            <Download className="h-4 w-4" />
-            {messages.categories.exportAction}
-          </Button>
-          <Button
-            disabled={state.status === "loading"}
-            onClick={() => setReloadToken((token) => token + 1)}
-            type="button"
-            variant="outline"
-          >
-            <RefreshCw className={`h-4 w-4 ${state.status === "loading" ? "animate-spin" : ""}`} />
-            {messages.refresh}
-          </Button>
-        </div>
-      </header>
+          </span>
+        )}
+        toolbar={(
+          <>
+            <div className="relative w-full min-w-0 sm:w-64">
+              <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--sdk-color-text-muted)]" />
+              <Input
+                aria-label={cascadeLabels.locatePlaceholder}
+                className="pl-9"
+                onChange={(event) => setLocateQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    locate();
+                  }
+                }}
+                placeholder={cascadeLabels.locatePlaceholder}
+                value={locateQuery}
+              />
+            </div>
+            <Button onClick={locate} size="sm" type="button" variant="outline">
+              {cascadeLabels.locateAction}
+            </Button>
+            {locateMiss ? (
+              <span className="text-xs text-[var(--sdk-color-state-danger)]">{cascadeLabels.locateEmpty}</span>
+            ) : null}
+          </>
+        )}
+      />
 
       <p className="text-xs text-[var(--sdk-color-text-muted)]">{cascadeLabels.depthHint}</p>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative w-full max-w-sm">
-          <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--sdk-color-text-muted)]" />
-          <Input
-            aria-label={cascadeLabels.locatePlaceholder}
-            className="pl-9"
-            onChange={(event) => setLocateQuery(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                locate();
-              }
-            }}
-            placeholder={cascadeLabels.locatePlaceholder}
-            value={locateQuery}
-          />
-        </div>
-        <Button onClick={locate} size="sm" type="button" variant="outline">
-          {cascadeLabels.locateAction}
-        </Button>
-        {locateMiss ? (
-          <span className="text-xs text-[var(--sdk-color-state-danger)]">{cascadeLabels.locateEmpty}</span>
-        ) : null}
-      </div>
 
       {notice ? <StatusNotice tone="success">{notice}</StatusNotice> : null}
       {state.readOnly ? <StatusNotice tone="default">{copy.readonlyNotice}</StatusNotice> : null}
@@ -593,6 +599,10 @@ function ApplicationScaffoldCategoryPanelContent({
         loading={state.status === "loading"}
         maxDepth={5}
         onSelect={handleSelect}
+      />
+
+      <AppCenterSummaryFooter
+        countText={templateMessage(copy.countTemplate, { count: String(state.items.length) })}
       />
 
       {formTarget ? (

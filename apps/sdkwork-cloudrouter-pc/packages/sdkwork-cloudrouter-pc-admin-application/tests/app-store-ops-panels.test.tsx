@@ -113,7 +113,8 @@ describe("App Store publisher and listing administration", () => {
     expect(await screen.findByText("Acme Notes")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "调整可见性" }));
     expect(await screen.findByText("调整商店可见性")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "隐藏" }));
+    // Visibility is a mutually exclusive choice, so each state is a radio.
+    fireEvent.click(screen.getByRole("radio", { name: "隐藏" }));
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
     await waitFor(() => expect(service.updateVisibility).toHaveBeenCalledTimes(1));
@@ -146,10 +147,19 @@ describe("App Store publisher and listing administration", () => {
 
     expect(await screen.findByText("暂无精选位")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "新建精选位" }));
-    fireEvent.change(screen.getByLabelText("精选位编码"), { target: { value: "HOME_HERO" } });
-    fireEvent.change(screen.getByLabelText("应用 ID"), { target: { value: "listing-1" } });
-    fireEvent.change(screen.getByLabelText("开始时间"), { target: { value: "2026-12-01T00:00" } });
-    fireEvent.change(screen.getByLabelText("结束时间"), { target: { value: "2026-12-02T00:00" } });
+    // Required fields carry the visual `*`, so the label text is matched loosely.
+    fireEvent.change(screen.getByLabelText("精选位编码", { exact: false }), {
+      target: { value: "HOME_HERO" },
+    });
+    fireEvent.change(screen.getByLabelText("应用 ID", { exact: false }), {
+      target: { value: "listing-1" },
+    });
+    fireEvent.change(screen.getByLabelText("开始时间", { exact: false }), {
+      target: { value: "2026-12-01T00:00" },
+    });
+    fireEvent.change(screen.getByLabelText("结束时间", { exact: false }), {
+      target: { value: "2026-12-02T00:00" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "保存投放" }));
 
     await waitFor(() => expect(service.update).toHaveBeenCalledTimes(1));

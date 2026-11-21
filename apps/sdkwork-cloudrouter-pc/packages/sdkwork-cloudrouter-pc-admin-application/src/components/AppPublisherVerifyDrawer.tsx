@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Building2 } from "lucide-react";
 import {
   Button,
   Drawer,
@@ -19,6 +18,7 @@ import {
   StatusNotice,
 } from "@sdkwork/ui-pc-react";
 
+import { AppCenterDecisionGroup } from "./AppCenterDecisionGroup";
 import type { ApplicationCatalogMessages } from "../i18n";
 import { isAppStorePublisherForbidden } from "../services/appstore-publishers";
 import type {
@@ -35,12 +35,6 @@ const VERIFICATION_TYPES: readonly AppStorePublisherVerificationType[] = [
   "PAYOUT",
 ];
 
-const DECISIONS: readonly AppStorePublisherVerificationDecision[] = [
-  "APPROVE",
-  "REJECT",
-  "REQUEST_MORE_INFO",
-];
-
 export interface AppPublisherVerifyDrawerProps {
   messages: ApplicationCatalogMessages;
   onClose: () => void;
@@ -49,7 +43,14 @@ export interface AppPublisherVerifyDrawerProps {
   service: AppStorePublisherService;
 }
 
-/** Record one publisher verification decision. */
+/**
+ * Record one publisher verification decision.
+ *
+ * The drawer states which publisher it acts on in the header, keeps the
+ * verification type and the decision independent (they are two facets of one
+ * decision), and refuses to close while the write is in flight so a slow
+ * request cannot hide its own result.
+ */
 export function AppPublisherVerifyDrawer({
   messages,
   onClose,
@@ -113,30 +114,16 @@ export function AppPublisherVerifyDrawer({
             </Select>
           </Field>
 
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-[var(--sdk-color-text-primary)]">{copy.decision}</p>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {DECISIONS.map((candidate) => {
-                const active = candidate === decision;
-                return (
-                  <button
-                    aria-pressed={active}
-                    className={`flex items-center gap-2 rounded-[var(--sdk-radius-control)] border px-3 py-2 text-left text-sm transition-colors ${
-                      active
-                        ? "border-[var(--sdk-color-brand-primary)] bg-[var(--sdk-color-brand-primary-soft)] text-[var(--sdk-color-brand-primary)]"
-                        : "border-[var(--sdk-color-border-default)] text-[var(--sdk-color-text-secondary)] hover:bg-[var(--sdk-color-surface-panel-muted)]"
-                    }`}
-                    key={candidate}
-                    onClick={() => setDecision(candidate)}
-                    type="button"
-                  >
-                    <Building2 className="h-4 w-4" />
-                    {decisionLabel(candidate, copy)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <AppCenterDecisionGroup
+            label={copy.decision}
+            onChange={setDecision}
+            options={[
+              { label: copy.approve, tone: "positive", value: "APPROVE" },
+              { label: copy.reject, tone: "negative", value: "REJECT" },
+              { label: copy.requestMoreInfo, tone: "neutral", value: "REQUEST_MORE_INFO" },
+            ]}
+            value={decision}
+          />
 
           {error ? (
             <StatusNotice tone="danger">
@@ -155,14 +142,4 @@ export function AppPublisherVerifyDrawer({
       </DrawerContent>
     </Drawer>
   );
-}
-
-function decisionLabel(
-  decision: AppStorePublisherVerificationDecision,
-  copy: ApplicationCatalogMessages["publishers"]["dialog"],
-): string {
-  if (decision === "REJECT") {
-    return copy.reject;
-  }
-  return decision === "REQUEST_MORE_INFO" ? copy.requestMoreInfo : copy.approve;
 }

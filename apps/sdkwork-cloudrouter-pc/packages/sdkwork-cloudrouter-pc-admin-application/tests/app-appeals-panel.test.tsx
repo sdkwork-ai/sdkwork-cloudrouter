@@ -52,7 +52,7 @@ describe("moderation appeals panel", () => {
     fireEvent.click(screen.getByRole("button", { name: "裁决" }));
 
     expect(await screen.findByText("裁决审核申诉")).toBeTruthy();
-    fireEvent.change(screen.getByLabelText("裁决说明"), {
+    fireEvent.change(screen.getByLabelText(/^裁决说明/u), {
       target: { value: "重新审核后通过" },
     });
     fireEvent.click(screen.getByRole("button", { name: "提交裁决" }));

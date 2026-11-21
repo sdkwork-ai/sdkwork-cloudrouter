@@ -38,6 +38,8 @@ import {
 } from "@sdkwork/cloudroutes-pc-commons";
 
 import type { ApplicationCatalogMessages } from "../i18n";
+import { formatDateTime } from "../services/format";
+import { templateMessage } from "../services/message-template";
 import {
   emptyEnvironmentIntegration,
   isPaymentAccountCompatible,
@@ -495,7 +497,7 @@ export function ApplicationIntegrationDrawer({
       if (firstInvalidEnvironment && firstInvalidEnvironment !== environmentKey) {
         setEnvironmentKey(firstInvalidEnvironment);
       }
-      setFormError(template(copy.drawer.errors, { count: String(errorCount) }));
+      setFormError(templateMessage(copy.drawer.errors, { count: String(errorCount) }));
       return;
     }
     setSaving(true);
@@ -664,7 +666,7 @@ export function ApplicationIntegrationDrawer({
         <DrawerHeader>
           <DrawerTitle>{copy.drawer.titles[kindKey(kind)]}</DrawerTitle>
           <DrawerDescription>
-            {template(copy.drawer.descriptions[kindKey(kind)], { app: application.name })}
+            {templateMessage(copy.drawer.descriptions[kindKey(kind)], { app: application.name })}
           </DrawerDescription>
         </DrawerHeader>
         <DrawerBody className="space-y-5">
@@ -679,6 +681,13 @@ export function ApplicationIntegrationDrawer({
               {selectedDeployApplication
                 ? `${selectedDeployApplication.name}${selectedDeployApplication.reference ? ` · ${selectedDeployApplication.reference}` : ""}`
                 : "-"}
+            </dd>
+            <dt className="text-[var(--sdk-color-text-muted)]">{messages.columns.applicationId}</dt>
+            <dd
+              className="min-w-0 select-all truncate font-mono text-xs"
+              title={selectedDeployApplication?.deployApplicationId ?? undefined}
+            >
+              {selectedDeployApplication?.deployApplicationId ?? "-"}
             </dd>
           </dl>
 
@@ -844,12 +853,12 @@ export function ApplicationIntegrationDrawer({
           ) : null}
           {!formError && !saveError && errorCount > 0 ? (
             <p className="text-xs text-[var(--sdk-color-text-muted)]">
-              {template(copy.drawer.errors, { count: String(errorCount) })}
+              {templateMessage(copy.drawer.errors, { count: String(errorCount) })}
             </p>
           ) : null}
           {!formError && !saveError && errorCount === 0 && warningCount > 0 ? (
             <p className="text-xs text-[var(--sdk-color-text-muted)]">
-              {template(copy.drawer.warnings, { count: String(warningCount) })}
+              {templateMessage(copy.drawer.warnings, { count: String(warningCount) })}
             </p>
           ) : null}
         </DrawerBody>
@@ -1076,7 +1085,7 @@ function ChannelSection({
             ) : null}
             {loginCheck.result.checkedAt ? (
               <p className="text-xs text-[var(--sdk-color-text-muted)]">
-                {template(copy.channel.loginCheckAt, { time: formatDateTime(loginCheck.result.checkedAt) })}
+                {templateMessage(copy.channel.loginCheckAt, { time: formatDateTime(loginCheck.result.checkedAt) })}
               </p>
             ) : null}
           </div>
@@ -1556,13 +1565,13 @@ function ValidationNotice({
 }) {
   const unique = dedupeIssues(issues);
   return (
-    <StatusNotice tone={tone}>
+    <StatusNotice role="alert" tone={tone}>
       <div className="space-y-1">
         <p className="flex items-center gap-2 text-sm font-medium">
           <AlertTriangle className="h-4 w-4" />
           {tone === "danger"
-            ? template(copy.drawer.errors, { count: String(unique.filter((issue) => issue.severity === "error").length) })
-            : template(copy.drawer.warnings, { count: String(unique.length) })}
+            ? templateMessage(copy.drawer.errors, { count: String(unique.filter((issue) => issue.severity === "error").length) })
+            : templateMessage(copy.drawer.warnings, { count: String(unique.length) })}
         </p>
         <ul className="list-disc space-y-1 pl-5 text-xs leading-5">
           {unique.map((issue) => (
@@ -1596,7 +1605,7 @@ function localizeIssue(
     }
     params[key] = value;
   }
-  return template(templateText, params);
+  return templateMessage(templateText, params);
 }
 
 function dedupeIssues(issues: readonly ApplicationIntegrationIssue[]): ApplicationIntegrationIssue[] {
@@ -1642,14 +1651,6 @@ function isValidationReady(input: {
     return false;
   }
   return integration.paymentAccounts.length === 0 || input.payment.status === "ready";
-}
-
-function formatDateTime(value: string): string {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(parsed);
 }
 
 function isForbiddenError(error: unknown): boolean {
@@ -1761,12 +1762,5 @@ function integrationFingerprint(integration: ApplicationEnvironmentIntegration):
       .map((account) => `${account.id}:${account.providerCode}:${account.isDefault ? 1 : 0}`)
       .sort(),
   });
-}
-
-function template(value: string, replacements: Readonly<Record<string, string>>): string {
-  return Object.entries(replacements).reduce(
-    (result, [key, replacement]) => result.replace(`{${key}}`, replacement),
-    value,
-  );
 }
 

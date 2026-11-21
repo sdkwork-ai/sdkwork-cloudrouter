@@ -309,7 +309,7 @@ describe("source & remix drawer", () => {
     renderDrawer({ service });
 
     await screen.findByText(copy.readiness.missing);
-    fireEvent.click(screen.getByRole("button", { name: copy.kind.archive }));
+    fireEvent.click(screen.getByRole("radio", { name: copy.kind.archive }));
     fireEvent.change(input("app-source-artifact-id"), { target: { value: " art-7 " } });
     fireEvent.click(screen.getByRole("button", { name: copy.save }));
 

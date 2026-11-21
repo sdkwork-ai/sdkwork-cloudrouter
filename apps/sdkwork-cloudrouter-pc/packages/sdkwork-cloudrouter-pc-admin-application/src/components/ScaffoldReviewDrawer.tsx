@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   Button,
+  Checkbox,
   Drawer,
   DrawerBody,
   DrawerContent,
@@ -9,6 +10,8 @@ import {
   DrawerHeader,
   DrawerTitle,
   Field,
+  FieldDescription,
+  FieldError,
   FieldLabel,
   Select,
   SelectContent,
@@ -43,7 +46,13 @@ export interface ScaffoldReviewDrawerProps {
   scaffold: ApplicationScaffold;
 }
 
-/** Backend-admin moderation of one Deploy app scaffold. */
+/**
+ * Backend-admin moderation of one Deploy app scaffold.
+ *
+ * Publishing and rejecting are the two decisions that carry a reason, so the
+ * review note becomes required exactly when the chosen status is a rejection —
+ * the published state may stay silent, the rejected state may not.
+ */
 export function ScaffoldReviewDrawer({
   messages,
   onClose,
@@ -57,8 +66,15 @@ export function ScaffoldReviewDrawer({
   const [featured, setFeatured] = useState(scaffold.isFeatured);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<unknown>();
+  const [noteError, setNoteError] = useState<string>();
+
+  const noteRequired = status === "REJECTED" && !note.trim();
 
   const submit = async () => {
+    if (noteRequired) {
+      setNoteError(copy.noteRequired);
+      return;
+    }
     setSubmitting(true);
     setError(undefined);
     try {
@@ -100,7 +116,13 @@ export function ScaffoldReviewDrawer({
           ) : null}
           <Field>
             <FieldLabel htmlFor="scaffold-review-status">{copy.status}</FieldLabel>
-            <Select onValueChange={(value) => setStatus(value as ApplicationScaffoldAdminStatus)} value={status}>
+            <Select
+              onValueChange={(value) => {
+                setStatus(value as ApplicationScaffoldAdminStatus);
+                setNoteError(undefined);
+              }}
+              value={status}
+            >
               <SelectTrigger id="scaffold-review-status">
                 <SelectValue />
               </SelectTrigger>
@@ -114,26 +136,43 @@ export function ScaffoldReviewDrawer({
             </Select>
           </Field>
 
-          <Field>
+          <Field invalid={Boolean(noteError)} required={status === "REJECTED"}>
             <FieldLabel htmlFor="scaffold-review-note">{copy.note}</FieldLabel>
             <Textarea
+              aria-describedby={noteError ? "scaffold-review-note-error" : undefined}
+              aria-invalid={Boolean(noteError)}
               id="scaffold-review-note"
-              onChange={(event) => setNote(event.target.value)}
+              onChange={(event) => {
+                setNote(event.target.value);
+                if (noteError) {
+                  setNoteError(undefined);
+                }
+              }}
               placeholder={copy.notePlaceholder}
               rows={4}
               value={note}
             />
+            {noteError ? (
+              <FieldError id="scaffold-review-note-error">{noteError}</FieldError>
+            ) : (
+              <FieldDescription>{copy.noteHint}</FieldDescription>
+            )}
           </Field>
 
-          <label className="flex items-center gap-2 text-sm text-[var(--sdk-color-text-secondary)]">
-            <input
+          <Field orientation="horizontal">
+            <Checkbox
+              aria-describedby="scaffold-review-featured-hint"
               checked={featured}
-              className="h-4 w-4 rounded border-[var(--sdk-color-border-default)]"
-              onChange={(event) => setFeatured(event.target.checked)}
-              type="checkbox"
+              id="scaffold-review-featured"
+              onCheckedChange={(checked) => setFeatured(checked === true)}
             />
-            {copy.featured}
-          </label>
+            <div className="space-y-1">
+              <FieldLabel htmlFor="scaffold-review-featured">{copy.featured}</FieldLabel>
+              <FieldDescription id="scaffold-review-featured-hint">
+                {copy.featuredHint}
+              </FieldDescription>
+            </div>
+          </Field>
 
           {error ? (
             <StatusNotice tone="danger">

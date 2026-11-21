@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Button, Drawer, DrawerBody, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, Field, FieldLabel, StatusNotice, Textarea } from "@sdkwork/ui-pc-react";
+import { Button, Drawer, DrawerBody, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, Field, FieldError, FieldLabel, StatusNotice, Textarea } from "@sdkwork/ui-pc-react";
 
+import { AppCenterDecisionGroup } from "./AppCenterDecisionGroup";
 import type { ApplicationCatalogMessages } from "../i18n";
 import { isAppStoreModerationForbidden } from "../services/appstore-moderation";
 import type {
@@ -70,33 +71,23 @@ export function AppAppealDecisionDrawer({
           </DrawerDescription>
         </DrawerHeader>
         <DrawerBody className="space-y-4">
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-[var(--sdk-color-text-primary)]">{copy.decision}</p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {(["APPROVE", "REJECT"] as const).map((candidate) => {
-                const active = candidate === decision;
-                return (
-                  <button
-                    aria-pressed={active}
-                    className={`rounded-[var(--sdk-radius-control)] border px-3 py-2 text-left text-sm transition-colors ${
-                      active
-                        ? "border-[var(--sdk-color-brand-primary)] bg-[var(--sdk-color-brand-primary-soft)] text-[var(--sdk-color-brand-primary)]"
-                        : "border-[var(--sdk-color-border-default)] text-[var(--sdk-color-text-secondary)] hover:bg-[var(--sdk-color-surface-panel-muted)]"
-                    }`}
-                    key={candidate}
-                    onClick={() => setDecision(candidate)}
-                    type="button"
-                  >
-                    {candidate === "APPROVE" ? copy.approve : copy.reject}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <AppCenterDecisionGroup
+            columns={2}
+            label={copy.decision}
+            onChange={setDecision}
+            options={[
+              { label: copy.approve, tone: "positive", value: "APPROVE" },
+              { label: copy.reject, tone: "negative", value: "REJECT" },
+            ]}
+            value={decision}
+          />
 
-          <Field>
+          <Field invalid={Boolean(validationError)} required>
             <FieldLabel htmlFor="appeal-decision-note">{copy.note}</FieldLabel>
             <Textarea
+              aria-describedby={validationError ? "appeal-decision-note-error" : undefined}
+              aria-invalid={Boolean(validationError)}
+              autoFocus
               id="appeal-decision-note"
               onChange={(event) => {
                 setNote(event.target.value);
@@ -108,9 +99,11 @@ export function AppAppealDecisionDrawer({
               rows={4}
               value={note}
             />
+            {validationError ? (
+              <FieldError id="appeal-decision-note-error">{validationError}</FieldError>
+            ) : null}
           </Field>
 
-          {validationError ? <StatusNotice tone="danger">{validationError}</StatusNotice> : null}
           {error ? (
             <StatusNotice tone="danger">
               {isAppStoreModerationForbidden(error) ? copy.forbidden : copy.error}

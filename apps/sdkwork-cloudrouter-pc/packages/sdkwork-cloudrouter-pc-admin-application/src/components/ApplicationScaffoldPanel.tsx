@@ -5,7 +5,6 @@ import {
   History,
   Pencil,
   Plus,
-  RefreshCw,
   Search,
   Send,
   ShieldCheck,
@@ -26,8 +25,17 @@ import {
   StatusNotice,
   type StatusBadgeVariant,
 } from "@sdkwork/ui-pc-react";
+import { BottomPagination } from "@sdkwork/cloudroutes-pc-commons";
 
+import {
+  AppCenterCountLabel,
+  AppCenterListHeader,
+  AppCenterLoadFailure,
+  AppCenterRefreshButton,
+  appCenterTableSlots,
+} from "./AppCenterListShell";
 import type { ApplicationCatalogMessages } from "../i18n";
+import { templateMessage } from "../services/message-template";
 import { ApplicationScaffoldFormDrawer } from "./ApplicationScaffoldFormDrawer";
 import { ApplicationScaffoldInstallDrawer } from "./ApplicationScaffoldInstallDrawer";
 import { ApplicationScaffoldVersionsDrawer } from "./ApplicationScaffoldVersionsDrawer";
@@ -259,9 +267,17 @@ export function ApplicationScaffoldPanel({
     && scaffold.pricingModel === "FREE"
     && scaffold.status === "PUBLISHED";
 
-  const handleInstalled = (result: { appId: string; appName: string }) => {
+  const handleInstalled = (result: {
+    appId: string;
+    appName: string;
+    deployApplicationId?: string;
+  }) => {
     setInstallTarget(undefined);
-    setInstallNotice(copy.actions.installSucceeded.replace("{name}", result.appName));
+    setInstallNotice(result.deployApplicationId
+      ? copy.actions.installSucceededWithId
+        .replace("{name}", result.appName)
+        .replace("{id}", result.deployApplicationId)
+      : copy.actions.installSucceeded.replace("{name}", result.appName));
     setReloadToken((token) => token + 1);
   };
 
@@ -300,77 +316,73 @@ export function ApplicationScaffoldPanel({
   };
 
   return (
-    <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h2 className="text-base font-semibold text-[var(--sdk-color-text-primary)]">{title ?? copy.title}</h2>
-          <p className="text-sm text-[var(--sdk-color-text-muted)]">{description ?? copy.description}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button disabled={busy} onClick={() => setReloadToken((token) => token + 1)} type="button" variant="outline">
-            <RefreshCw className={`h-4 w-4 ${busy ? "animate-spin" : ""}`} />
-            {messages.refresh}
-          </Button>
-          <Button onClick={() => setFormTarget({})} type="button">
-            <Plus className="h-4 w-4" />
-            {copy.create}
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <form
-          className="relative w-full max-w-72"
-          onSubmit={(event) => {
-            event.preventDefault();
-            applySearch();
-          }}
-        >
-          <span className="sr-only">{copy.searchPlaceholder}</span>
-          <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--sdk-color-text-muted)]" />
-          <Input
-            aria-label={copy.searchPlaceholder}
-            className="pl-9"
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={copy.searchPlaceholder}
-            value={search}
-          />
-        </form>
-        <Select
-          onValueChange={(value) => {
-            setPage(1);
-            setStatusFilter(value);
-          }}
-          value={statusFilter}
-        >
-          <SelectTrigger aria-label={copy.statusFilter} className="w-44">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={STATUS_FILTER_ALL}>{copy.statusAll}</SelectItem>
-            {STATUS_FILTERS.map((status) => (
-              <SelectItem key={status} value={status}>
-                {copy.statuses[status]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <p className="text-xs text-[var(--sdk-color-text-muted)]">
-          {copy.countTemplate.replace("{count}", String(total))}
-        </p>
-      </div>
+    <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-3" data-app-center-panel="scaffolds">
+      <AppCenterListHeader
+        actions={(
+          <>
+            <AppCenterRefreshButton
+              busy={busy}
+              label={messages.refresh}
+              onRefresh={() => setReloadToken((token) => token + 1)}
+            />
+            <Button onClick={() => setFormTarget({})} type="button">
+              <Plus className="h-4 w-4" />
+              {copy.create}
+            </Button>
+          </>
+        )}
+        description={description ?? copy.description}
+        title={title ?? copy.title}
+        toolbar={(
+          <>
+            <form
+              className="relative w-full min-w-0 sm:w-64"
+              onSubmit={(event) => {
+                event.preventDefault();
+                applySearch();
+              }}
+            >
+              <span className="sr-only">{copy.searchPlaceholder}</span>
+              <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--sdk-color-text-muted)]" />
+              <Input
+                aria-label={copy.searchPlaceholder}
+                className="pl-9"
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder={copy.searchPlaceholder}
+                value={search}
+              />
+            </form>
+            <Select
+              onValueChange={(value) => {
+                setPage(1);
+                setStatusFilter(value);
+              }}
+              value={statusFilter}
+            >
+              <SelectTrigger aria-label={copy.statusFilter} className="w-44">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={STATUS_FILTER_ALL}>{copy.statusAll}</SelectItem>
+                {STATUS_FILTERS.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {copy.statuses[status]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </>
+        )}
+      />
 
       {installNotice ? <StatusNotice tone="success">{installNotice}</StatusNotice> : null}
 
       {loadFailure ? (
-        <StatusNotice tone="danger">
-          <span className="flex flex-wrap items-center gap-3">
-            <span>{loadFailure}</span>
-            <Button onClick={() => setReloadToken((token) => token + 1)} size="sm" type="button" variant="outline">
-              {messages.retry}
-            </Button>
-          </span>
-        </StatusNotice>
+        <AppCenterLoadFailure
+          message={loadFailure}
+          onRetry={() => setReloadToken((token) => token + 1)}
+          retryLabel={messages.retry}
+        />
       ) : null}
 
       <DataTable
@@ -378,20 +390,38 @@ export function ApplicationScaffoldPanel({
         columns={columns}
         emptyDescription={copy.emptyDescription}
         emptyTitle={copy.emptyTitle}
+        footer={(
+          <BottomPagination
+            className="w-full"
+            disabled={busy}
+            hasNextPage={page * pageSize < total}
+            itemCount={items.length}
+            nextLabel={messages.pagination.next}
+            onNextPage={() => setPage(page + 1)}
+            onPageSizeChange={(next) => {
+              setPageSize(next);
+              setPage(1);
+            }}
+            onPreviousPage={() => setPage(Math.max(1, page - 1))}
+            page={page}
+            pageLabel={templateMessage(messages.pagination.pageOfTemplate, {
+              page: String(page),
+              total: String(Math.max(1, Math.ceil(total / pageSize))),
+            })}
+            pageSize={pageSize}
+            pageSizeLabel={messages.pagination.pageSizeLabel}
+            pageSizeOptions={[...PAGE_SIZE_OPTIONS]}
+            previousLabel={messages.pagination.previous}
+            showingLabel={messages.pagination.showing}
+            summary={(
+              <AppCenterCountLabel
+                text={templateMessage(copy.countTemplate, { count: String(total) })}
+              />
+            )}
+          />
+        )}
         getRowId={(item) => item.id}
         loading={busy && items.length === 0}
-        pagination={{
-          mode: "server",
-          page,
-          pageSize,
-          pageSizeOptions: PAGE_SIZE_OPTIONS,
-          rowCount: total,
-          onPageChange: (next) => setPage(next),
-          onPageSizeChange: (next) => {
-            setPageSize(next);
-            setPage(1);
-          },
-        }}
         rowActions={(item) => {
           return (
             <div className="flex min-w-max flex-nowrap items-center justify-end gap-1.5 whitespace-nowrap">
@@ -472,11 +502,7 @@ export function ApplicationScaffoldPanel({
         }}
         rowActionsLabel={copy.columns.actions}
         rows={[...items]}
-        slotProps={{
-          footer: { className: "shrink-0" },
-          surface: { className: "flex min-h-0 flex-1 flex-col" },
-          viewport: { className: "min-h-0 flex-1" },
-        }}
+        slotProps={appCenterTableSlots()}
         stickyHeader
       />
 

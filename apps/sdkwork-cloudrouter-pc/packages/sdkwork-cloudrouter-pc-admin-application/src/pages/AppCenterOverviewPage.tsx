@@ -5,19 +5,17 @@ import {
   Boxes,
   FolderTree,
   Layers,
-  LayoutDashboard,
-  RefreshCw,
   Shapes,
   ShieldCheck,
   Store,
 } from "lucide-react";
 import {
-  Button,
   StatusBadge,
   StatusNotice,
   type StatusBadgeVariant,
 } from "@sdkwork/ui-pc-react";
 
+import { AppCenterRefreshButton } from "../components/AppCenterListShell";
 import { useApplicationCatalogMessages } from "../i18n";
 import {
   loadAppStoreApplications,
@@ -182,15 +180,11 @@ export function AppCenterOverviewPage() {
           <h1 className="text-xl font-semibold text-[var(--sdk-color-text-primary)]">{copy.title}</h1>
           <p className="text-sm text-[var(--sdk-color-text-muted)]">{copy.description}</p>
         </div>
-        <Button
-          disabled={loading}
-          onClick={() => setReloadToken((token) => token + 1)}
-          type="button"
-          variant="outline"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          {messages.refresh}
-        </Button>
+        <AppCenterRefreshButton
+          busy={loading}
+          label={messages.refresh}
+          onRefresh={() => setReloadToken((token) => token + 1)}
+        />
       </header>
 
       {partialFailure ? <StatusNotice tone="warning">{copy.unavailable}</StatusNotice> : null}
@@ -200,24 +194,28 @@ export function AppCenterOverviewPage() {
           hint={copy.kpiHint.applications}
           icon={<Boxes className="h-4 w-4" />}
           label={copy.kpi.applications}
+          loading={loading}
           value={totalApplications}
         />
         <KpiCard
           hint={copy.kpiHint.scaffolds}
           icon={<Shapes className="h-4 w-4" />}
           label={copy.kpi.scaffolds}
+          loading={loading}
           value={data.scaffolds}
         />
         <KpiCard
           hint={copy.kpiHint.categories}
           icon={<FolderTree className="h-4 w-4" />}
           label={copy.kpi.categories}
+          loading={loading}
           value={data.scaffoldCategories}
         />
         <KpiCard
           hint={copy.kpiHint.storeCategories}
           icon={<Store className="h-4 w-4" />}
           label={copy.kpi.storeCategories}
+          loading={loading}
           value={data.storeCategories}
         />
       </section>
@@ -261,7 +259,7 @@ export function AppCenterOverviewPage() {
           <QuickLink icon={<Boxes className="h-4 w-4" />} label={copy.quick.applications} to="/admin/applications/deploy" />
           <QuickLink icon={<ShieldCheck className="h-4 w-4" />} label={copy.quick.moderation} to="/admin/applications/moderation" />
           <QuickLink icon={<Store className="h-4 w-4" />} label={copy.quick.storeCategories} to="/admin/applications/categories" />
-          <QuickLink icon={<Shapes className="h-4 w-4" />} label={copy.quick.scaffolds} to="/admin/applications/scaffolds" />
+          <QuickLink icon={<Shapes className="h-4 w-4" />} label={copy.quick.scaffolds} to="/admin/applications/templates" />
           <QuickLink icon={<FolderTree className="h-4 w-4" />} label={copy.quick.scaffoldCategories} to="/admin/applications/scaffold-categories" />
         </div>
       </section>
@@ -274,7 +272,7 @@ export function AppCenterOverviewPage() {
           </h2>
           <Link
             className="inline-flex items-center gap-1 text-sm font-medium text-[var(--sdk-color-brand-primary)]"
-            to="/admin/applications/scaffolds"
+            to="/admin/applications/templates"
           >
             {copy.viewAll}
             <ArrowRight className="h-3.5 w-3.5" />
@@ -312,11 +310,14 @@ function KpiCard({
   hint,
   icon,
   label,
+  loading = false,
   value,
 }: {
   hint: string;
   icon: ReactNode;
   label: string;
+  /** While a read is in flight the value is unknown, never zero. */
+  loading?: boolean;
   value: number;
 }) {
   return (
@@ -325,7 +326,14 @@ function KpiCard({
         <span className="text-sm font-medium">{label}</span>
         {icon}
       </div>
-      <p className="mt-2 text-3xl font-semibold tabular-nums text-[var(--sdk-color-text-primary)]">{value}</p>
+      {loading ? (
+        <p aria-busy="true" className="mt-2" data-app-center-kpi-loading>
+          <span className="sr-only">{label}</span>
+          <span className="inline-block h-8 w-14 animate-pulse rounded-[var(--sdk-radius-control)] bg-[var(--sdk-color-surface-panel-muted)]" />
+        </p>
+      ) : (
+        <p className="mt-2 text-3xl font-semibold tabular-nums text-[var(--sdk-color-text-primary)]">{value}</p>
+      )}
       <p className="mt-1 text-xs text-[var(--sdk-color-text-muted)]">{hint}</p>
     </div>
   );
@@ -334,7 +342,7 @@ function KpiCard({
 function QuickLink({ icon, label, to }: { icon: ReactNode; label: string; to: string }) {
   return (
     <Link
-      className="flex items-center gap-3 rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] px-3 py-2.5 text-sm font-medium text-[var(--sdk-color-text-primary)] transition-colors hover:border-[var(--sdk-color-brand-primary)]"
+      className="flex items-center gap-3 rounded-[var(--sdk-radius-control)] border border-[var(--sdk-color-border-default)] bg-[var(--sdk-color-surface-panel)] px-3 py-2.5 text-sm font-medium text-[var(--sdk-color-text-primary)] transition-colors hover:border-[var(--sdk-color-brand-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sdk-color-border-focus)]"
       to={to}
     >
       <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--sdk-color-brand-primary-soft)] text-[var(--sdk-color-brand-primary)]">

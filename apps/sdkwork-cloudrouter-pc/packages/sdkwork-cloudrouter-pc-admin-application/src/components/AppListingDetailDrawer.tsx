@@ -8,10 +8,13 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  StatusNotice,
+  StatusBadge,
 } from "@sdkwork/ui-pc-react";
 
+import { AppCenterLoadFailure } from "./AppCenterListShell";
 import type { ApplicationCatalogMessages } from "../i18n";
+import { listingStatusVariant, visibilityVariant } from "../services/appstore-listing-presentation";
+import { formatDateTime } from "../services/format";
 import type {
   AppStoreListing,
   AppStoreListingDetail,
@@ -25,7 +28,13 @@ export interface AppListingDetailDrawerProps {
   service: AppStoreListingService;
 }
 
-/** Read-only listing inspector. */
+/**
+ * Read-only listing inspector.
+ *
+ * The row that opened the drawer is rendered immediately and the fuller read
+ * replaces it in place, so the inspector never shows an empty frame. A failed
+ * read keeps the row data and offers a retry instead of blanking the panel.
+ */
 export function AppListingDetailDrawer({
   listing,
   messages,
@@ -36,6 +45,7 @@ export function AppListingDetailDrawer({
   const [detail, setDetail] = useState<AppStoreListingDetail | AppStoreListing>(listing);
   const [loading, setLoading] = useState(Boolean(service.getListing));
   const [error, setError] = useState<unknown>();
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     if (!service.getListing) {
@@ -43,8 +53,10 @@ export function AppListingDetailDrawer({
       return;
     }
     let cancelled = false;
+    const getListing = service.getListing.bind(service);
     setLoading(true);
-    void service.getListing(listing.listingId).then(
+    setError(undefined);
+    void getListing(listing.listingId).then(
       (nextDetail) => {
         if (!cancelled) {
           if (nextDetail) {
@@ -63,7 +75,7 @@ export function AppListingDetailDrawer({
     return () => {
       cancelled = true;
     };
-  }, [listing.listingId, service]);
+  }, [listing.listingId, reloadToken, service]);
 
   const attributes = "attributes" in detail ? detail.attributes : {};
   const attributeEntries = Object.entries(attributes).filter(([key, value]) =>
@@ -85,14 +97,28 @@ export function AppListingDetailDrawer({
             {detail.displayName} · {detail.listingId}
           </DrawerDescription>
         </DrawerHeader>
-        <DrawerBody className="space-y-4">
+        <DrawerBody aria-busy={loading || undefined} className="space-y-4">
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
             <dt className="text-[var(--sdk-color-text-muted)]">{messages.listings.columns.publisher}</dt>
             <dd>{detail.publisherName ?? detail.publisherId ?? "—"}</dd>
             <dt className="text-[var(--sdk-color-text-muted)]">{messages.listings.columns.status}</dt>
-            <dd>{statusLabel(detail.listingStatus, messages)}</dd>
+            <dd>
+              <StatusBadge
+                label={statusLabel(detail.listingStatus, messages)}
+                showIcon
+                status={detail.listingStatus}
+                variant={listingStatusVariant(detail.listingStatus)}
+              />
+            </dd>
             <dt className="text-[var(--sdk-color-text-muted)]">{messages.listings.columns.visibility}</dt>
-            <dd>{visibilityLabel(detail.storefrontVisibility, messages)}</dd>
+            <dd>
+              <StatusBadge
+                label={visibilityLabel(detail.storefrontVisibility, messages)}
+                showIcon
+                status={detail.storefrontVisibility ?? "unknown"}
+                variant={visibilityVariant(detail.storefrontVisibility)}
+              />
+            </dd>
             <dt className="text-[var(--sdk-color-text-muted)]">{messages.listings.columns.category}</dt>
             <dd>{detail.categoryCode ?? "—"}</dd>
             <dt className="text-[var(--sdk-color-text-muted)]">{messages.listings.columns.platform}</dt>
@@ -100,7 +126,7 @@ export function AppListingDetailDrawer({
             <dt className="text-[var(--sdk-color-text-muted)]">{messages.listings.columns.version}</dt>
             <dd>{detail.latestReleaseVersion ?? "—"}</dd>
             <dt className="text-[var(--sdk-color-text-muted)]">{messages.listings.columns.updatedAt}</dt>
-            <dd>{detail.updatedAt ?? "—"}</dd>
+            <dd>{formatDateTime(detail.updatedAt)}</dd>
           </dl>
 
           {loading ? (
@@ -109,7 +135,13 @@ export function AppListingDetailDrawer({
             </p>
           ) : null}
 
-          {error ? <StatusNotice tone="danger">{copy.error}</StatusNotice> : null}
+          {error ? (
+            <AppCenterLoadFailure
+              message={copy.error}
+              onRetry={() => setReloadToken((token) => token + 1)}
+              retryLabel={messages.retry}
+            />
+          ) : null}
 
           {!loading && !error ? (
             <section className="space-y-2">

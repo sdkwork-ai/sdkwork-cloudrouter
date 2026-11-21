@@ -7,12 +7,16 @@ import {
 import type {
   ApplicationAccessToken,
   ApplicationCatalogContext,
+  ApplicationCatalogPage,
+  ApplicationCatalogPageInfo,
   ApplicationCatalogQuery,
   ApplicationRecord,
+  DeployAppListQuery,
   DeployOrganizationOption,
 } from "../types/application-catalog";
 import { getApplicationCatalogIamService } from "./iam-service";
 import {
+  DEFAULT_DEPLOY_APP_LIST_FILTER,
   normalizeDeployOwnershipScope,
   toDeployAppListQuery,
 } from "./deploy-application-filter";
@@ -54,23 +58,117 @@ export async function loadIamApplications(
     .filter((item) => matchesOrganization(item, context.organizationId));
 }
 
+/**
+ * One page of the Deploy app inventory.
+ *
+ * The list is an offset-paginated admin table (`PAGINATION_SPEC.md` §3), so the
+ * backend — not the browser — owns the filter, the search, the window, and the
+ * total. Nothing here slices an array: the answer is one page plus the metadata
+ * the footer renders.
+ */
+export async function loadDeployApplicationPage(
+  context: ApplicationCatalogContext,
+  query?: ApplicationCatalogQuery,
+): Promise<ApplicationCatalogPage> {
+  const client = getSdkworkDeploymentsAppSdkClient();
+  const page = query?.page ?? 1;
+  const pageSize = query?.pageSize ?? CATALOG_PAGE_SIZE;
+  const keyword = query?.keyword?.trim();
+  const response = await client.app.list({
+    page,
+    pageSize,
+    ...(keyword ? { keyword } : {}),
+    ...toDeployAppPageQuery(query?.deploy ?? DEFAULT_DEPLOY_APP_LIST_FILTER, context),
+  });
+  const items = (response.items ?? [])
+    .map((item) => mapDeployApplication(item))
+    .filter((item): item is ApplicationRecord => item !== undefined)
+    .filter((item) => matchesOrganization(item, context.organizationId));
+  return {
+    items,
+    pageInfo: toApplicationCatalogPageInfo(response.pageInfo, { itemCount: items.length, page, pageSize }),
+  };
+}
+
+/**
+ * The Deploy inventory as one flat array.
+ *
+ * Only for callers that summarize the reachable apps (the App Center overview
+ * metric) instead of paging them; an interactive table must use
+ * {@link loadDeployApplicationPage} so the browser never paginates locally.
+ */
 export async function loadDeployApplications(
   context: ApplicationCatalogContext,
   query?: ApplicationCatalogQuery,
 ): Promise<readonly ApplicationRecord[]> {
-  const client = getSdkworkDeploymentsAppSdkClient();
-  // Server-side filtering keeps the page honest: pagination and the total are
-  // computed on the whole filtered set rather than on a locally trimmed slice.
-  const page = await client.app.list({
-    page: 1,
-    pageSize: CATALOG_PAGE_SIZE,
-    ...toDeployAppListQuery(query?.deploy ?? { kindTab: "all", ownership: "all" }),
-  });
-  return (page.items ?? [])
-    .map((item) => mapDeployApplication(item))
-    .filter((item): item is ApplicationRecord => item !== undefined)
-    .filter((item) => matchesOrganization(item, context.organizationId));
+  return (await loadDeployApplicationPage(context, query)).items;
 }
+
+/**
+ * Deploy list query for one page window.
+ *
+ * An organization drill-down narrows on the server: `owner_organization_id`
+ * is a conjunctive facet, so the window, the total, and the owner gate all
+ * agree. Filtering the returned page locally instead would make the count and
+ * the page boundary describe a different set than the rows on screen.
+ */
+function toDeployAppPageQuery(
+  filter: Parameters<typeof toDeployAppListQuery>[0],
+  context: ApplicationCatalogContext,
+): DeployAppListQuery {
+  const query = toDeployAppListQuery(filter);
+  if (!context.organizationId) {
+    return query;
+  }
+  return {
+    ...query,
+    ownerOrganizationId: context.organizationId,
+    ownershipScope: "ORGANIZATION",
+  };
+}
+
+/**
+ * Normalize the generated SDK's `pageInfo` into the loader's page vocabulary.
+ *
+ * `totalItems` arrives as a decimal int64 string and is the only trustworthy
+ * total; `hasMore` wins over arithmetic when the backend reports it. When the
+ * backend publishes neither, the window itself is the fallback signal.
+ */
+function toApplicationCatalogPageInfo(
+  value: unknown,
+  fallback: { itemCount: number; page: number; pageSize: number },
+): ApplicationCatalogPageInfo {
+  const record = asRecord(value);
+  const reportedPage = parseCount(record.page);
+  const reportedPageSize = parseCount(record.pageSize);
+  const totalItems = parseCount(record.totalItems);
+  const page = reportedPage ?? fallback.page;
+  const pageSize = reportedPageSize ?? fallback.pageSize;
+  const hasMore = typeof record.hasMore === "boolean"
+    ? record.hasMore
+    : totalItems !== undefined
+      ? page * pageSize < totalItems
+      : fallback.itemCount >= pageSize;
+  return {
+    page,
+    pageSize,
+    hasMore,
+    ...(totalItems !== undefined ? { totalItems } : {}),
+  };
+}
+
+/** Non-negative integer from a wire count that may be a decimal string. */
+function parseCount(value: unknown): number | undefined {
+  const candidate = typeof value === "number"
+    ? value
+    : typeof value === "string" && /^[0-9]+$/u.test(value.trim())
+      ? Number(value)
+      : undefined;
+  return candidate !== undefined && Number.isSafeInteger(candidate) && candidate >= 0
+    ? candidate
+    : undefined;
+}
+
 
 /**
  * Organization options for the deploy ownership filter.
@@ -242,6 +340,11 @@ function mapIamApplication(value: unknown): ApplicationRecord | undefined {
     return undefined;
   }
   return {
+    // IAM's anchor is the decimal `deploy_app.id`, but the catalog keeps the
+    // raw value here: `resolveDeployApplicationForRecord` deliberately tolerates
+    // a host that mirrors the deploy uuid in this field and matches it as a
+    // fallback. Only the Deploy row's own id is validated as decimal, because
+    // that is the value the list renders.
     deployApplicationId: optionalString(record.deployApplicationId),
     domain: optionalString(record.primaryDomain),
     environment: optionalString(record.environment),
@@ -269,7 +372,11 @@ function mapDeployApplication(value: unknown): ApplicationRecord | undefined {
     // encoding, anything positive is an organization.
     ?? (organizationId && organizationId !== "0" ? "ORGANIZATION" : "TENANT");
   return {
-    deployApplicationId: optionalString(record.deployApplicationId),
+    // `deployApplicationId` is the contract field. A host that already puts the
+    // decimal snowflake in `id` is accepted too: a UUID is not a decimal, so
+    // this fallback can never turn the public address into an application id.
+    deployApplicationId:
+      decimalIdString(record.deployApplicationId) ?? decimalIdString(record.id),
     environment: optionalString(record.defaultEnvironment),
     groupId: "deploy",
     id,
@@ -339,4 +446,17 @@ function optionalString(value: unknown): string | undefined {
   }
   const trimmed = value.trim();
   return trimmed === "" ? undefined : trimmed;
+}
+
+/**
+ * A decimal int64 id exactly as the wire carried it.
+ *
+ * `API_SPEC.md` §13.6 requires int64 ids on the wire as decimal strings; a
+ * snowflake is past 2^53, so reading it through `Number` would round it onto a
+ * neighbouring application. Anything that is not the declared decimal shape is
+ * not an application id: it is dropped rather than rendered next to the row.
+ */
+function decimalIdString(value: unknown): string | undefined {
+  const text = optionalString(value);
+  return text !== undefined && /^-?[0-9]+$/u.test(text) ? text : undefined;
 }

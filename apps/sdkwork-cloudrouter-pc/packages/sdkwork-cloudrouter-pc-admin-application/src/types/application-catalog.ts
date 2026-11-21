@@ -96,7 +96,50 @@ export interface DeployOrganizationOption {
 /** Optional per-group query handed to a catalog loader. */
 export interface ApplicationCatalogQuery {
   deploy?: DeployAppListFilter;
+  /**
+   * Free-text search the backend evaluates for groups that declare a keyword
+   * facet (Deploy). A paginated group must not search the loaded window only:
+   * a row on page 3 has to be findable from page 1.
+   */
+  keyword?: string;
+  /** 1-based page window; omitted means the first page. */
+  page?: number;
+  /** Rows per page; omitted lets the loader apply the catalog default. */
+  pageSize?: number;
 }
+
+/**
+ * Server page metadata for one list window.
+ *
+ * Mirrors the backend's `pageInfo` in the loader's own vocabulary so the page
+ * never reads raw wire fields: `totalItems` and `hasMore` drive the footer
+ * count and the Next control instead of arithmetic over the rows on screen.
+ */
+export interface ApplicationCatalogPageInfo {
+  page: number;
+  pageSize: number;
+  /** Total rows matching the query across every page, when reported. */
+  totalItems?: number;
+  /** Whether the backend has another page after this one. */
+  hasMore: boolean;
+}
+
+/** One server page of a group that does not fit in a single response. */
+export interface ApplicationCatalogPage {
+  items: readonly ApplicationRecord[];
+  pageInfo: ApplicationCatalogPageInfo;
+}
+
+/**
+ * Loader verdict for one group.
+ *
+ * An array is a complete, bounded collection (the whole group is on screen). An
+ * object is one page of a server-paginated list, and its `pageInfo` is the only
+ * source of the footer total and the page boundary.
+ */
+export type ApplicationCatalogLoaderResult =
+  | readonly ApplicationRecord[]
+  | ApplicationCatalogPage;
 
 export interface ApplicationRecord {
   /** Stable identity within the group. */
@@ -113,7 +156,9 @@ export interface ApplicationRecord {
    *
    * IAM provisions one installation per deploy application, so this is the
    * authoritative cross-system anchor for an IAM row; it must win over any
-   * name-based fallback.
+   * name-based fallback. For a Deploy row it is the application's own snowflake
+   * primary key, kept as the decimal string the wire carried and displayed as
+   * the row's application ID.
    */
   deployApplicationId?: string;
   environment?: string;
@@ -164,18 +209,22 @@ export interface ApplicationGroupState {
   items: readonly ApplicationRecord[];
   /** Raw source failure; the page localizes it for display. */
   error?: unknown;
+  /** Server page metadata, present only when the group's loader returns a page. */
+  pageInfo?: ApplicationCatalogPageInfo;
 }
 
 /**
  * Loads one group's applications for the current entity context.
  *
- * A group that supports server-side filtering (Deploy) reads its filter from
- * the optional query; groups without filters ignore it.
+ * A group that supports server-side filtering and pagination (Deploy) reads its
+ * filter, keyword, and page window from the optional query and answers with
+ * {@link ApplicationCatalogPage}; a bounded group answers with its whole
+ * collection.
  */
 export type ApplicationGroupLoader = (
   context: ApplicationCatalogContext,
   query?: ApplicationCatalogQuery,
-) => Promise<readonly ApplicationRecord[]>;
+) => Promise<ApplicationCatalogLoaderResult>;
 
 /**
  * A short-lived access credential issued for one application by the IAM
