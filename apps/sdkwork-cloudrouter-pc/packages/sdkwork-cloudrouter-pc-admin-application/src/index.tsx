@@ -9,7 +9,7 @@ export {
   ApplicationManagementPage,
   CloudRouterApplicationCenterPage,
   CloudRouterOrganizationApplicationsPage,
-  CloudRouterTenantApplicationsPage,
+  CloudRouterInstallationsPage,
   resolveApplicationCatalogView,
 } from "./pages/ApplicationManagementPage";
 export { AppCenterOverviewPage } from "./pages/AppCenterOverviewPage";

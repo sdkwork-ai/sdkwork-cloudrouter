@@ -29,7 +29,7 @@ export interface ApplicationCatalogMessages {
     scope: string;
     securityNote: string;
     sessionId: string;
-    tenantApplicationId: string;
+    installationId: string;
     title: string;
     tokenLabel: string;
     unavailable: string;

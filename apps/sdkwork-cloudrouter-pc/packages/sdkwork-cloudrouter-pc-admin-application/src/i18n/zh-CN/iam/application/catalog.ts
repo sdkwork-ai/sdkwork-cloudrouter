@@ -23,7 +23,7 @@ export const zh: ApplicationCatalogMessages = {
     scope: "归属",
     securityNote: "访问令牌等同于该应用的调用凭证，请勿在客户端或公开渠道泄露；令牌到期后需要重新签发。",
     sessionId: "会话 ID",
-    tenantApplicationId: "IAM 租户应用 ID",
+    installationId: "IAM 租户应用 ID",
     title: "应用访问令牌",
     tokenLabel: "访问令牌",
     unavailable: "该应用未在 IAM 注册为已启用的租户应用，无法签发访问令牌。请先在 IAM 应用中注册并启用该应用。",

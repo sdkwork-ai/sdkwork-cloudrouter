@@ -34,7 +34,7 @@ const mocks = vi.hoisted(() => ({
           },
         },
       },
-      tenantApplications: {
+      installations: {
         list: vi.fn(),
       },
     },
@@ -601,7 +601,7 @@ describe("authoritative resource-link transport", () => {
   });
 
   it("resolves the IAM application type anchored on the deploy application", async () => {
-    mocks.iam.iam.tenantApplications.list.mockResolvedValue({
+    mocks.iam.iam.installations.list.mockResolvedValue({
       items: [
         { applicationType: "pc", deployApplicationId: "deploy-other" },
         { applicationType: "miniprogram", deployApplicationId: "deploy-1" },
@@ -615,7 +615,7 @@ describe("authoritative resource-link transport", () => {
     await expect(
       service.loadIamApplicationType?.("410000000000000001", "deploy-missing"),
     ).resolves.toBeUndefined();
-    expect(mocks.iam.iam.tenantApplications.list).toHaveBeenCalledWith("tenant-1", {
+    expect(mocks.iam.iam.installations.list).toHaveBeenCalledWith("tenant-1", {
       page: 1,
       page_size: 200,
     });

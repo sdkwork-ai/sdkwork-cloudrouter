@@ -182,7 +182,7 @@ export function createApplicationIntegrationService(): ApplicationIntegrationSer
       }
       const service = getApplicationCatalogIamService();
       for (let page = 1; page <= IAM_APP_TYPE_MAX_PAGES; page += 1) {
-        const payload = await service.iam.tenantApplications.list(tenantId, {
+        const payload = await service.iam.installations.list(tenantId, {
           page,
           page_size: CHANNEL_PAGE_SIZE,
         });

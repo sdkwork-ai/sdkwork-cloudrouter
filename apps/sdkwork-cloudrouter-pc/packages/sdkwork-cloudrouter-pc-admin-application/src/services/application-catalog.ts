@@ -44,7 +44,7 @@ export async function loadIamApplications(
   context: ApplicationCatalogContext,
 ): Promise<readonly ApplicationRecord[]> {
   const service = getApplicationCatalogIamService();
-  const payload = await service.iam.tenantApplications.list(context.tenantId, {
+  const payload = await service.iam.installations.list(context.tenantId, {
     page: 1,
     page_size: CATALOG_PAGE_SIZE,
   });
@@ -184,7 +184,7 @@ export async function issueApplicationAccessToken(
     tenantId: context.tenantId,
   };
   if (application.groupId === "iam") {
-    body.tenantApplicationId = application.id;
+    body.installationId = application.id;
   } else if (application.groupId === "app-store") {
     body.instanceKey = application.name;
   } else {
@@ -205,7 +205,7 @@ export async function issueApplicationAccessToken(
     expiresAt: optionalString(item.expiresAt),
     organizationId: optionalString(item.organizationId) ?? organizationId,
     sessionId: optionalString(item.sessionId),
-    tenantApplicationId: optionalString(item.tenantApplicationId),
+    installationId: optionalString(item.installationId),
     tenantId: optionalString(item.tenantId) ?? context.tenantId,
   };
 }
@@ -237,7 +237,7 @@ export function isApplicationTokenForbidden(error: unknown): boolean {
 
 function mapIamApplication(value: unknown): ApplicationRecord | undefined {
   const record = asRecord(value);
-  const id = optionalString(record.tenantApplicationId) ?? optionalString(record.appId);
+  const id = optionalString(record.installationId) ?? optionalString(record.appId);
   if (!id) {
     return undefined;
   }

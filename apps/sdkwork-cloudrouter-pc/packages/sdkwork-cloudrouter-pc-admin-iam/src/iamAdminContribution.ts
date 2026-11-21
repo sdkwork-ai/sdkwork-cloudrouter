@@ -99,7 +99,7 @@ export interface CloudRouterIamAdminRouteRecord {
 export const IAM_ADMIN_ROUTE_RECORDS: readonly CloudRouterIamAdminRouteRecord[] = [
   { path: 'iam', requiredPermission: 'iam.users.read', redirectTo: '/admin/iam/users' },
   { path: 'iam/users', requiredPermission: 'iam.users.read' },
-  { path: 'iam/applications', requiredPermission: 'iam.tenant_applications.update' },
+  { path: 'iam/applications', requiredPermission: 'iam.installations.update' },
   { path: 'iam/tenants', requiredPermission: 'iam.tenants.read' },
   { path: 'iam/tenants/:tenantId/applications', requiredPermission: 'iam.tenants.read' },
   { path: 'iam/organizations', requiredPermission: 'iam.organizations.read' },
@@ -130,7 +130,7 @@ export interface CloudRouterIamAdminPermissionHint {
 export const IAM_ADMIN_PERMISSION_HINTS: readonly CloudRouterIamAdminPermissionHint[] = [
   { pathPrefix: '/admin/iam', requiredPermission: 'iam.users.read' },
   { pathPrefix: '/admin/iam/users', requiredPermission: 'iam.users.read' },
-  { pathPrefix: '/admin/iam/applications', requiredPermission: 'iam.tenant_applications.update' },
+  { pathPrefix: '/admin/iam/applications', requiredPermission: 'iam.installations.update' },
   { pathPrefix: '/admin/iam/tenants', requiredPermission: 'iam.tenants.read' },
   { pathPrefix: '/admin/iam/organizations', requiredPermission: 'iam.organizations.read' },
   { pathPrefix: '/admin/iam/roles', requiredPermission: 'iam.roles.read' },

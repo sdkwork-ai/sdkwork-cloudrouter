@@ -188,7 +188,7 @@ export interface ApplicationAccessToken {
   expiresAt?: string;
   organizationId?: string;
   sessionId?: string;
-  tenantApplicationId?: string;
+  installationId?: string;
   tenantId?: string;
 }
 

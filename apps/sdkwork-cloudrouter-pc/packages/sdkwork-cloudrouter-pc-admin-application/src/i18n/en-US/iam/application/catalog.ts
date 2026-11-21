@@ -23,7 +23,7 @@ export const en: ApplicationCatalogMessages = {
     scope: "Scope",
     securityNote: "The access token is the application's calling credential. Never expose it in a client or a public channel; issue a new one after it expires.",
     sessionId: "Session ID",
-    tenantApplicationId: "IAM tenant application ID",
+    installationId: "IAM tenant application ID",
     title: "Application access token",
     tokenLabel: "Access token",
     unavailable: "This application is not registered as an enabled IAM tenant application, so no access token can be issued. Register and enable it in IAM applications first.",

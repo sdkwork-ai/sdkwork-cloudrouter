@@ -1106,8 +1106,8 @@ export function ApplicationManagementPage({
                   <dd>{tokenState.value.expiresAt ? formatDateTime(tokenState.value.expiresAt) : "-"}</dd>
                   <dt className="text-[var(--sdk-color-text-muted)]">{messages.accessToken.appId}</dt>
                   <dd className="break-all">{tokenState.value.appId || "-"}</dd>
-                  <dt className="text-[var(--sdk-color-text-muted)]">{messages.accessToken.tenantApplicationId}</dt>
-                  <dd className="break-all">{tokenState.value.tenantApplicationId || "-"}</dd>
+                  <dt className="text-[var(--sdk-color-text-muted)]">{messages.accessToken.installationId}</dt>
+                  <dd className="break-all">{tokenState.value.installationId || "-"}</dd>
                   <dt className="text-[var(--sdk-color-text-muted)]">{messages.accessToken.sessionId}</dt>
                   <dd className="break-all">{tokenState.value.sessionId || "-"}</dd>
                 </dl>
@@ -1161,7 +1161,7 @@ export function ApplicationManagementPage({
   );
 }
 
-export const CloudRouterTenantApplicationsPage: ComponentType = function CloudRouterTenantApplicationsPageEntry() {
+export const CloudRouterInstallationsPage: ComponentType = function CloudRouterInstallationsPageEntry() {
   const { tenantId } = useParams<{ tenantId: string }>();
   if (!tenantId) {
     return null;

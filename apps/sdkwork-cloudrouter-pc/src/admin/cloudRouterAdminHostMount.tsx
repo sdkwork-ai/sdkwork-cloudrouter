@@ -102,7 +102,7 @@ const IamTenantsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-adm
 const IamApplicationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamApplicationsAdmin');
 const IamOrganizationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOrganizationsAdmin');
 const IamOrganizationStructureAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOrganizationStructureAdmin');
-const IamTenantApplicationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterTenantApplicationsPage');
+const IamInstallationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterInstallationsPage');
 const IamOrganizationApplicationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterOrganizationApplicationsPage');
 const ApplicationCenterAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterApplicationCenterPage');
 const AppCenterOverviewAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'AppCenterOverviewPage');
@@ -275,7 +275,7 @@ const HARDWARE_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>> = {
 const IAM_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>> = {
   'iam/users': <IamUsersAdmin />,
   'iam/tenants': <IamTenantsAdmin />,
-  'iam/tenants/:tenantId/applications': <IamTenantApplicationsAdmin />,
+  'iam/tenants/:tenantId/applications': <IamInstallationsAdmin />,
   'iam/applications': <IamApplicationsAdmin />,
   'iam/organizations': <IamOrganizationsAdmin />,
   'iam/organizations/:organizationId/structure': <IamOrganizationStructureAdmin />,
