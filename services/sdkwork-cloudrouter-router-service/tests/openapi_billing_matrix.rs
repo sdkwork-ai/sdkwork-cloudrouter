@@ -620,11 +620,11 @@ const PRICED_PER_CALL: &[(&str, &str)] = &[
     ("POST", "/v1/tools/fetch"),
 ];
 
-/// 商业化就绪计数锁：218 = Free 132 + 可售计量 76 + 音效 1 + 已补价按次 3 +
+/// 商业化就绪计数锁：219 = Free 133 + 可售计量 76 + 音效 1 + 已补价按次 3 +
 /// 未定价按次 5 + 已登记不可售 1。任何操作的状态漂移都会让这条断言红，迫使
 /// 同步更新就绪报告。
 #[tokio::test]
-async fn commercial_readiness_counts_are_exactly_212_of_218() {
+async fn commercial_readiness_counts_are_exactly_213_of_219() {
     let matrix = collect_matrix().await;
     let (mut free, mut metered, mut api_request, mut unsellable) = (0, 0, 0, 0);
     for shape in matrix.values() {
@@ -635,8 +635,8 @@ async fn commercial_readiness_counts_are_exactly_212_of_218() {
             _ => metered += 1,
         }
     }
-    assert_eq!(218, matrix.len(), "published operation count drifted");
-    assert_eq!(132, free, "Free operation count drifted");
+    assert_eq!(219, matrix.len(), "published operation count drifted");
+    assert_eq!(133, free, "Free operation count drifted");
     assert_eq!(76, metered, "metered sellable operation count drifted");
     assert_eq!(1, unsellable, "acknowledged unsellable count drifted");
     assert_eq!(
@@ -674,7 +674,7 @@ async fn commercial_readiness_counts_are_exactly_212_of_218() {
     }
 
     assert_eq!(
-        212,
+        213,
         free + metered + 1 + PRICED_PER_CALL.len(),
         "sellable count = Free + metered + sound-generation + priced per-call"
     );

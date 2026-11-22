@@ -127,6 +127,7 @@ POST	/v1/images/generations	openai.images.generations	Image	ImageResult	ResultCo
 POST	/v1/images/variations	openai.images.variations	Image	ImageResult	ResultCount	ImageResult	ResponseBody
 GET	/v1/models	openai.models	FreeEndpoint	None	Free	None	None
 GET	/v1/models/{model}	openai.models	FreeEndpoint	None	Free	None	None
+GET	/v1/models/{model}/groups	openai.models	FreeEndpoint	None	Free	None	None
 POST	/v1/moderations	openai.moderations	Moderation	ApiRequest	Free	None	None
 POST	/v1/realtime/calls	openai.realtime	RealtimeSession	LlmInputToken	Composite	LlmInputToken	Composite
 POST	/v1/realtime/calls/{call_id}/accept	openai.realtime	RealtimeSession	ApiRequest	Free	None	None
