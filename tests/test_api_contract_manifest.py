@@ -478,7 +478,7 @@ class ApiContractManifestGeneratorTest(unittest.TestCase):
                 root,
                 """
                 frontend_operations:
-                  - route: /auth/oauth/callback/:provider
+                  - route: /oauth/callback/:provider
                     source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts
                     operation: getOAuthAuthorizationUrl
                     operation_id: oauth.authorizationUrls.create

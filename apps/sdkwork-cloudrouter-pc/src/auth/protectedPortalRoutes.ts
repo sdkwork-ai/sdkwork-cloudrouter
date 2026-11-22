@@ -3,8 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { Navigate, useLocation } from 'react-router-dom';
 import {
   buildPortalAuthLoginRedirect,
-  isPortalAppHandoffPath,
-  isPortalAppSignInHandoff,
   isPortalAuthRoute,
   isPortalSignOutPath,
   isProtectedPortalPath,
@@ -16,7 +14,7 @@ import {
 
 import { usePortalIamSession } from './usePortalIamSession.ts';
 
-export { PROTECTED_PORTAL_ROUTE_PREFIXES, isPortalAppHandoffPath, isPortalSignOutPath, isProtectedPortalPath };
+export { PROTECTED_PORTAL_ROUTE_PREFIXES, isPortalSignOutPath, isProtectedPortalPath };
 
 export interface ProtectedPortalLocationLike {
   hash?: string;
@@ -54,19 +52,16 @@ export function PortalAuthenticatedAuthRouteGuard({ children }: { children: Reac
   const location = useLocation();
   const isAuthenticated = usePortalIamSession();
 
-  // The app hand-off page, and the hosted login that still carries the
-  // IAM-issued sign-in state, run *after* a successful sign-in: they must
-  // render so the one-time code reaches the operating system's deep-link
-  // handler. The hosted sign-out page is the same kind of exception in the
-  // other direction: only a signed-in visitor can end the session, so
-  // redirecting them home would make sign-out unreachable. An authenticated
-  // visitor without any of those markers is a normal revisit of the auth
-  // surface and goes to the authenticated home.
+  // The guard owns the account surface only. An authenticated visitor who
+  // revisits a login/registration page goes to the authenticated home; the
+  // hosted sign-out page is the exception in the other direction, because only
+  // a signed-in visitor can end the session and redirecting them home would
+  // make sign-out unreachable. OAuth flows (`/oauth/*`) never reach this
+  // guard, so they need no exemption.
   if (
     isAuthenticated
     && isPortalAuthRoute(location.pathname)
     && !isPortalSignOutPath(location.pathname)
-    && !isPortalAppSignInHandoff(location)
   ) {
     return createElement(Navigate, {
       replace: true,

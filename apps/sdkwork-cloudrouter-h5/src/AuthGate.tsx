@@ -4,6 +4,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { SdkworkIamH5AuthLoginSurface } from '@sdkwork/iam-h5-auth';
 import { CLOUDROUTER_CONSOLE_ROUTES } from '@sdkwork/cloudrouter-contracts';
 
+import { APP_OAUTH_CALLBACK_PATH } from './app-auth/appAuthorizeEntry.js';
 import { useConsoleRuntime } from './providers/AppProviders.js';
 
 /**
@@ -59,6 +60,7 @@ export function ConsoleSignInRoute() {
     <SdkworkIamH5AuthLoginSurface
       controller={runtime.iamAuthController}
       locale={runtime.locale}
+      oauthCallbackPath={APP_OAUTH_CALLBACK_PATH}
       onAuthenticated={handleAuthenticated}
       {...(canGoBack ? { onBack: handleBack } : {})}
     />
@@ -88,6 +90,7 @@ export function AppAuthGate({ children }: AppAuthGateProps) {
     <SdkworkIamH5AuthLoginSurface
       controller={runtime.iamAuthController}
       locale={runtime.locale}
+      oauthCallbackPath={APP_OAUTH_CALLBACK_PATH}
     />
   );
 }

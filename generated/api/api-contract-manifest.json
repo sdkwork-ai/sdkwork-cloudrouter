@@ -33181,7 +33181,7 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts#getOAuthAuthorizationUrl@/auth/oauth/callback/:provider",
+      "key": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts#getOAuthAuthorizationUrl@/oauth/callback/:provider",
       "kind": "create",
       "module": ":provider",
       "openapi_exposed": true,
@@ -33204,7 +33204,7 @@
           "type": "object"
         }
       },
-      "route": "/auth/oauth/callback/:provider",
+      "route": "/oauth/callback/:provider",
       "route_scope": "public",
       "sdk_api_prefix": "/app/v3/api",
       "sdk_client": "SdkworkAppClient",
@@ -33610,7 +33610,7 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts#signInWithOAuth@/auth/oauth/callback/:provider",
+      "key": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts#signInWithOAuth@/oauth/callback/:provider",
       "kind": "create",
       "module": ":provider",
       "openapi_exposed": true,
@@ -33634,7 +33634,7 @@
           "type": "object"
         }
       },
-      "route": "/auth/oauth/callback/:provider",
+      "route": "/oauth/callback/:provider",
       "route_scope": "public",
       "sdk_api_prefix": "/app/v3/api",
       "sdk_client": "SdkworkAppClient",

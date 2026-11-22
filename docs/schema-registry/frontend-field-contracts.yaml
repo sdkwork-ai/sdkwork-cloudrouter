@@ -3610,7 +3610,7 @@ frontend_operations:
     request_body_required: false
     write_tables:
       - ops_audit_log
-  - route: /auth/oauth/callback/:provider
+  - route: /oauth/callback/:provider
     source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts
     operation: getOAuthAuthorizationUrl
     operation_id: oauth.authorization.urls.post
@@ -3631,7 +3631,7 @@ frontend_operations:
     request_body_required: false
     write_tables:
       - ops_audit_log
-  - route: /auth/oauth/callback/:provider
+  - route: /oauth/callback/:provider
     source: apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts
     operation: signInWithOAuth
     operation_id: oauth.sessions.post
@@ -13778,6 +13778,20 @@ routes:
       - iam_user
       - iam_user_identity
 
+  - route: /oauth/login
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+    required_tables:
+      - iam_user
+      - iam_user_identity
+
+  - route: /oauth/callback/:provider
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+    required_tables:
+      - iam_user
+      - iam_user_identity
+
   - route: /oauth/desktop/launch
     dependency_owned: true
     dependency_sdk_family: sdkwork-cloudrouter-app-sdk
@@ -14180,7 +14194,7 @@ routes:
       - messaging_verification_challenge
       - messaging_verification_policy
       - ops_config_snapshot
-  - route: /auth/oauth/callback/:provider
+  - route: /oauth/callback/:provider
     dependency_owned: true
     dependency_sdk_family: sdkwork-cloudrouter-app-sdk
     required_tables:

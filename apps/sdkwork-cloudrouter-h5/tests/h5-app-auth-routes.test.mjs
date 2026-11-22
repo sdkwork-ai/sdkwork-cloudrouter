@@ -17,8 +17,9 @@ const APP_AUTH_ROUTES = [
   'path="/oauth/app"',
   'path="/iam/v3/oauth/authorize"',
   'path="/iam/oauth/authorize"',
-  'path="/auth/login"',
+  'path="/oauth/login"',
   'path="/oauth/desktop/launch"',
+  'path="/auth/login"',
 ];
 
 function exportKeys(source) {
@@ -61,7 +62,9 @@ describe('H5 hosted app sign-in', () => {
       // Every route that serves only a native application's browser login
       // keeps the `/oauth` namespace, never the portal's `/auth` surface.
       "APP_AUTHORIZE_ALIAS_PATH = '/oauth/app'",
+      "APP_AUTHORIZE_LOGIN_PATH = '/oauth/login'",
       "APP_AUTHORIZE_LAUNCH_PATH = '/oauth/desktop/launch'",
+      "APP_OAUTH_CALLBACK_PATH = '/oauth/callback'",
       "AUTHORIZATION_STATE_PARAM = 'oauthAuthorizationStateId'",
       "code_challenge_method",
       'unsupported-challenge-method',

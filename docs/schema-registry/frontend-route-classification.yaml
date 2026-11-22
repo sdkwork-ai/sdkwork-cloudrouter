@@ -395,7 +395,7 @@ routes:
   evidence:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - docs/schema-registry/frontend-field-contracts.yaml
-- route: /auth/oauth/callback/:provider
+- route: /oauth/callback/:provider
   package: portal-root
   owner: product-surface
   route_scope: public
@@ -404,7 +404,7 @@ routes:
   dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
-  - /auth/oauth/callback/:provider
+  - /oauth/callback/:provider
   evidence:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - docs/schema-registry/frontend-field-contracts.yaml
@@ -937,6 +937,19 @@ routes:
   api_surface: app
   operation_routes:
   - /oauth/app
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+
+- route: /oauth/login
+  package: portal-root
+  owner: product-surface
+  route_scope: public
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  api_surface: app
+  operation_routes:
+  - /oauth/login
   evidence:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
 

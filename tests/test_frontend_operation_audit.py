@@ -1433,10 +1433,10 @@ class FrontendOperationAuditTest(unittest.TestCase):
                 root,
                 """
                 routes:
-                  - route: /auth/oauth/callback/:provider
+                  - route: /oauth/callback/:provider
                     required_tables: [iam_oauth_provider_config]
                 frontend_operations:
-                  - route: /auth/oauth/callback/:provider
+                  - route: /oauth/callback/:provider
                     source: apps/sdkwork-cloudrouter-pc/packages/demo/src/oauthService.ts
                     operation: createAuthorizationUrl
                     operation_id: oauth.authorizationUrls.create

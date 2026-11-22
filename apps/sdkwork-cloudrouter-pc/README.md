@@ -263,23 +263,31 @@ Extension points are limited to declared public exports, runtime entrypoints, SD
 Native SDKWork applications (the BirdCoder desktop shell, for example) never
 render their own login form: they open `<platform>/iam/v3/oauth/authorize` in
 the system browser and redeem the authorization code through their registered
-deep link. The portal hosts the browser half of that flow, and every route that
-exists only for it lives under `/oauth`:
+deep link.
+
+The portal keeps two disjoint namespaces: `/auth/*` is the website's own account
+surface (login, registration, recovery, scan login, sign-out) and `/oauth/*`
+carries every OAuth hop — the native-application login flow, the provider
+callback of the website's OAuth client, and the hosted authorize alias. The IAM
+authorization server and its open-platform endpoints live under `/iam/oauth/*`.
 
 - `/iam/v3/oauth/authorize`, its versionless `/iam/oauth/authorize` alias, and
   the `/oauth/app` alias (`src/app-auth/`) validate the authorization-code
   request (response type, client id, app callback, state, PKCE S256) and hand
   the navigation to the IAM authorization server, which owns the pending
   authorization state.
-- `/auth/login?oauthAuthorizationStateId=…` is the hosted login the IAM server
-  returns to; the SDKWork auth page completes the pending authorization through
-  the signed-in browser session.
-- `/oauth/desktop/launch?redirectUrl=…` fires the app's registered deep link. It
-  is a protocol-level `/oauth` route, so the portal's `/auth/*`
-  authenticated-visitor redirect never sees it (`isPortalAppHandoffPath` still
-  recognizes it for hosts that guard their own auth mount): the visitor is
-  signed in by the time they land there, and bouncing them to the portal home
-  would drop the authorization code.
+- `/oauth/login?oauthAuthorizationStateId=…` is the OAuth login step the IAM
+  server returns to; the shared login page completes the pending authorization
+  through the signed-in browser session. The site's own `/auth/login` is never
+  part of the OAuth flow.
+- `/oauth/desktop/launch?redirectUrl=…` fires the app's registered deep link.
+- `/oauth/callback/:provider?code=…` is the provider callback of the website's
+  OAuth client; a third-party login from the account surface returns here, not
+  to `/auth/oauth/callback`.
+
+These routes are mounted outside the `/auth/*` guard, so the authenticated-
+visitor redirect never sees them and a one-time code cannot be dropped on the
+way to the operating system.
 
 The entry does not send the browser to another page: a valid app authorization
 renders the hosted IAM auth surface in place on the entry route, so an
@@ -292,8 +300,7 @@ IAM app-api (`POST /app/v3/api/oauth/authorizations`), because the standalone
 gateway composes the app-api, not the open-api authorize endpoint. A
 third-provider sign-in creates the state before the provider round-trip so the
 callback still carries `oauthAuthorizationStateId`, and an already-issued
-`<loginBase>/login?oauthAuthorizationStateId=…` link keeps the original
-behaviour.
+`/oauth/login?oauthAuthorizationStateId=…` link keeps the original behaviour.
 
 ### Owner And Status
 

@@ -490,7 +490,7 @@ tables:
       - /admin/storage/quotas
       - /admin/storage/reconciliation
       - /admin/upstream
-      - /auth/oauth/callback/:provider
+      - /oauth/callback/:provider
       - /console/api-keys
       - /console/notifications
       - /console/user

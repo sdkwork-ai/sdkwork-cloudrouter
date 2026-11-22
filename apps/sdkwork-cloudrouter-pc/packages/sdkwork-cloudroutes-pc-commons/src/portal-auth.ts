@@ -3,7 +3,6 @@ import { isSdkworkIamSessionAuthenticated } from '@sdkwork/iam-runtime';
 import {
   loadStoredAppSessionToken,
 } from './app-session-token.ts';
-import { PORTAL_OAUTH_SIGN_IN_STATE_PARAM } from './portal-oauth-params.ts';
 import { PORTAL_SESSION_CHANGE_EVENT } from './portal-session-events.ts';
 
 export interface PortalAuthLocationLike {
@@ -19,6 +18,13 @@ export type PortalLoginRequiredActionDecision =
 const DEFAULT_HOME_PATH = '/';
 const AUTH_BASE_PATH = '/auth';
 const AUTH_LOGIN_PATH = '/auth/login';
+/**
+ * OAuth namespace. Every route that exists only for an OAuth flow — the
+ * native-application login step, its deep-link hand-off, and the provider
+ * callback of the website's OAuth client — lives here instead of the account
+ * surface above.
+ */
+const OAUTH_BASE_PATH = '/oauth';
 /**
  * Hosted sign-out page. The page itself is implemented by the shared IAM auth
  * package (`@sdkwork/auth-pc-react` serves it below whichever auth base path a
@@ -40,19 +46,6 @@ export const PORTAL_AUTH_SIGN_OUT_PATH = `${AUTH_BASE_PATH}/sign-out`;
  * A `redirect` query parameter always wins over this fallback.
  */
 const DEFAULT_AUTHENTICATED_HOME_PATH = '/';
-/**
- * Hosted app hand-off page. It is reached only after the browser completed an
- * authorization that started in a native application, so the visitor is
- * always authenticated here and the page must render instead of bouncing the
- * browser to the portal home — the deep link back into the app never fires
- * otherwise.
- *
- * The page is a protocol-level route under `/oauth` (shared with
- * `@sdkwork/auth-pc-react/oauth-app-paths`), not part of the `/auth` account
- * surface: every route that serves a native application's browser login keeps
- * the `/oauth` namespace.
- */
-const APP_HANDOFF_PATH = '/oauth/desktop/launch';
 
 export const PROTECTED_PORTAL_ROUTE_PREFIXES = [
   '/console',
@@ -84,6 +77,18 @@ export function isPortalAuthRoute(pathname: string): boolean {
 }
 
 /**
+ * Whether a path belongs to the OAuth namespace rather than the account
+ * surface. The two systems are disjoint, so a return target or guard decision
+ * never treats one as the other.
+ * @param pathname - browser pathname.
+ * @returns true for `/oauth` and anything under it.
+ */
+export function isPortalOAuthRoute(pathname: string): boolean {
+  const normalized = normalizePortalPathname(pathname);
+  return normalized === OAUTH_BASE_PATH || normalized.startsWith(`${OAUTH_BASE_PATH}/`);
+}
+
+/**
  * Whether a path is the hosted sign-out page.
  *
  * It lives under the auth base path but is not an anonymous-only route: the
@@ -95,60 +100,6 @@ export function isPortalSignOutPath(pathname: string): boolean {
   const normalized = normalizePortalPathname(pathname);
   return normalized === PORTAL_AUTH_SIGN_OUT_PATH
     || normalized.startsWith(`${PORTAL_AUTH_SIGN_OUT_PATH}/`);
-}
-
-/**
- * Whether a path is the hosted app hand-off page that fires the deep link back
- * into a native application.
- *
- * It lives under the auth base path but is not an anonymous auth route: the
- * browser has just signed in, and redirecting the authenticated visitor away
- * would drop the authorization code before the operating system receives it.
- * @param pathname - browser pathname.
- * @returns true for the hand-off page.
- */
-export function isPortalAppHandoffPath(pathname: string): boolean {
-  const normalized = normalizePortalPathname(pathname);
-  return normalized === APP_HANDOFF_PATH || normalized.startsWith(`${APP_HANDOFF_PATH}/`);
-}
-
-/**
- * Whether an auth-area URL carries the sign-in state the IAM server issued to
- * a browser login a native application started.
- *
- * The hosted login page must complete that pending request and only then hand
- * the deep link back to the app; redirecting the visitor away drops the
- * one-time code and leaves the desktop app waiting.
- * @param search - the current location search, with or without a leading `?`.
- * @returns true when the sign-in state parameter is present and non-blank.
- */
-export function hasPortalOAuthSignInState(
-  search: string | null | undefined,
-): boolean {
-  const normalized = (search ?? '').replace(/^\?/u, '');
-  if (normalized === '') {
-    return false;
-  }
-  const state = new URLSearchParams(normalized).get(PORTAL_OAUTH_SIGN_IN_STATE_PARAM);
-  return (state ?? '').trim() !== '';
-}
-
-/**
- * Whether an authenticated visitor must stay on the current auth route to
- * finish the native-application sign-in hand-off.
- *
- * Two routes qualify: the login-success hand-off page itself, and the hosted
- * login page when it carries the IAM-issued sign-in state (the visitor may
- * already hold a portal session, and the pending request still has to be
- * completed before leaving the auth surface).
- * @param location - browser location inside the auth area.
- * @returns true when the guard must render the auth surface instead of redirecting.
- */
-export function isPortalAppSignInHandoff(
-  location: PortalAuthLocationLike,
-): boolean {
-  return isPortalAppHandoffPath(location.pathname)
-    || hasPortalOAuthSignInState(location.search);
 }
 
 export function buildPortalAuthLoginRedirect(location: PortalAuthLocationLike): string {
@@ -216,7 +167,15 @@ export function sanitizePortalAuthRedirect(
   // query value once, so a nested `redirect=/auth/login?redirect=...` may
   // still be percent-encoded after the single decode above.
   const redirectUrlFully = new URL(fullyDecoded, 'http://sdkwork-cloudrouter.local');
-  if (isPortalAuthRoute(redirectUrl.pathname) || isPortalAuthRoute(redirectUrlFully.pathname)) {
+  if (
+    isPortalAuthRoute(redirectUrl.pathname)
+    || isPortalAuthRoute(redirectUrlFully.pathname)
+    // The OAuth namespace is a protocol surface: a return target must never
+    // aim at a provider callback, the OAuth login step, or the deep-link
+    // hand-off page.
+    || isPortalOAuthRoute(redirectUrl.pathname)
+    || isPortalOAuthRoute(redirectUrlFully.pathname)
+  ) {
     return normalizePortalPathname(homePath);
   }
 

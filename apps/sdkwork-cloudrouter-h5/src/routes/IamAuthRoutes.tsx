@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { SdkworkIamH5AuthCallbackSurface } from '@sdkwork/iam-h5-auth';
 import { CLOUDROUTER_CONSOLE_ROUTES } from '@sdkwork/cloudrouter-contracts';
 
+import { APP_OAUTH_CALLBACK_PATH } from '../app-auth/appAuthorizeEntry.js';
 import { useConsoleRuntime } from '../providers/AppProviders.js';
 
 /**
@@ -11,7 +12,9 @@ import { useConsoleRuntime } from '../providers/AppProviders.js';
  * The shared IAM auth surface exchanges the provider `code`/`state` for a
  * session and commits it through the host bridge; this route only returns the
  * visitor to the console home afterwards. It is mounted outside the tab shell
- * because the callback is a transient auth screen, not a console tab.
+ * because the callback is a transient auth screen, not a console tab, and it
+ * lives in the `/oauth` namespace because the provider round trip is an OAuth
+ * hop rather than a page of the account surface.
  */
 export function IamOAuthCallbackRoute() {
   const runtime = useConsoleRuntime();
@@ -24,6 +27,7 @@ export function IamOAuthCallbackRoute() {
     <SdkworkIamH5AuthCallbackSurface
       controller={runtime.iamAuthController}
       locale={runtime.locale}
+      oauthCallbackPath={APP_OAUTH_CALLBACK_PATH}
       onAuthenticated={returnHome}
       onScanLoginCompleted={returnHome}
     />

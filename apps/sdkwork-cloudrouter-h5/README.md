@@ -60,14 +60,21 @@ The `build:h5:*` architecture axis is owned by the repository root; run it there
 
 A phone can receive a native SDKWork application's browser-login link, so this
 root serves the same hosted sign-in surface as the PC renderer. The pages live
-in `src/app-auth/` and are ordinary routes:
+in `src/app-auth/` and are ordinary routes. The two namespaces are disjoint:
+`/auth/*` is the website's own account surface and `/oauth/*` carries every
+OAuth hop.
 
 - `/iam/v3/oauth/authorize`, its versionless `/iam/oauth/authorize` alias, and
   the `/oauth/app` alias validate the authorization-code request and hand the
   navigation to the IAM authorization server.
-- `/auth/login` signs the visitor in and completes the pending authorization
-  through the generated app SDK client.
+- `/oauth/login` is the OAuth login step: it signs the visitor in through the
+  shared IAM surface and completes the pending authorization through the
+  generated app SDK client.
 - `/oauth/desktop/launch` fires the app's registered deep link.
+- `/oauth/callback` exchanges the provider `code`/`state` of the website's own
+  OAuth client (WeChat web authorization) and commits the session.
+- `/auth/login` is the website's own sign-in page; it is also the scan-login QR
+  target the IAM server emits (`/auth/login?session_key=…`).
 
 Both authorize entries forward to the app-api origin's
 `/iam/v3/api/oauth/authorize`, the IAM open-api path the platform gateway
@@ -83,7 +90,7 @@ The renderer routes with the History API (`BrowserRouter`), the same mode as the
 PC renderer, so a deep link keeps the address bar it arrived on. The order and
 payment backends emit `{h5BaseUrl}/cashier/{orderId}?scene=..&outTradeNo=..`
 (`sdkwork-utils-rust::build_commerce_cashier_url`), and the IAM server returns to
-real pathnames such as `/auth/login?...` and `/auth/oauth/callback`; both render
+real pathnames such as `/auth/login?...` and `/oauth/callback`; both render
 directly, without being rewritten into a `#/` route.
 
 Both browser surfaces are served with an `/index.html` SPA fallback (see

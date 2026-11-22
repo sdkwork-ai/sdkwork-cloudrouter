@@ -1,11 +1,11 @@
-// Hosted app sign-in entry: request contract, plan selection, and the
-// hand-off exemption the portal auth guard relies on.
+// Hosted app sign-in entry: request contract, plan selection, and the OAuth /
+// account-surface separation the portal routes and guard rely on.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
-  APP_AUTHORIZE_ALIAS_PATH,
+  APP_AUTHORIZE_LOGIN_PATH,
   APP_AUTHORIZE_LAUNCH_PATH,
   APP_AUTHORIZE_PATH,
   APP_AUTHORIZE_PATHS,
@@ -15,10 +15,9 @@ import {
   planAppAuthorizeEntry,
 } from './src/app-auth/appAuthorizeEntry.ts';
 import {
-  hasPortalOAuthSignInState,
-  isPortalAppHandoffPath,
-  isPortalAppSignInHandoff,
   isPortalAuthRoute,
+  isPortalOAuthRoute,
+  sanitizePortalAuthRedirect,
 } from './packages/sdkwork-cloudroutes-pc-commons/src/portal-auth.ts';
 
 /** A complete authorization-code request from a native application. */
@@ -154,42 +153,26 @@ test('the hosted auth header reuses the homepage brand lockup', () => {
   assert.match(entry, /brandNode=\{brandHeader\}/u);
 });
 
-test('the portal auth guard keeps the app hand-off page out of the authenticated redirect', () => {
-  // The hand-off page is a protocol-level `/oauth` route, not a page of the
-  // portal's `/auth` account surface: the `/auth/*` guard never sees it, and
-  // the hand-off exemption still recognizes it for the hosts that also guard
-  // their own `/auth` mount.
+test('the OAuth namespace and the account surface never overlap', () => {
+  // The hand-off page, the login step, and the provider callback are OAuth
+  // protocol routes; the `/auth` account surface is a different system.
   assert.equal(isPortalAuthRoute(APP_AUTHORIZE_LAUNCH_PATH), false);
-  assert.equal(isPortalAppHandoffPath(APP_AUTHORIZE_LAUNCH_PATH), true);
-  for (const path of ['/auth/login', '/auth/register', APP_AUTHORIZE_PATH, APP_AUTHORIZE_ALIAS_PATH]) {
-    assert.equal(isPortalAppHandoffPath(path), false, path);
+  assert.equal(isPortalAuthRoute(APP_AUTHORIZE_LOGIN_PATH), false);
+  assert.equal(isPortalOAuthRoute(APP_AUTHORIZE_LAUNCH_PATH), true);
+  assert.equal(isPortalOAuthRoute(APP_AUTHORIZE_LOGIN_PATH), true);
+  assert.equal(isPortalOAuthRoute('/oauth/callback/github'), true);
+  for (const path of ['/auth/login', '/auth/register', '/admin', '/console']) {
+    assert.equal(isPortalOAuthRoute(path), false, path);
   }
+  assert.equal(isPortalAuthRoute('/auth/login'), true);
+  assert.equal(isPortalAuthRoute('/oauth/callback/github'), false);
 });
 
-test('an authenticated login page still completes a pending app sign-in', () => {
-  assert.equal(hasPortalOAuthSignInState('?oauthAuthorizationStateId=oauth_state_123'), true);
-  assert.equal(hasPortalOAuthSignInState('oauthAuthorizationStateId=oauth_state_123&redirect=ignored'), true);
-  assert.equal(hasPortalOAuthSignInState('?oauthAuthorizationStateId=%20%20'), false);
-  assert.equal(hasPortalOAuthSignInState('?redirect=%2Fadmin'), false);
-  assert.equal(hasPortalOAuthSignInState(''), false);
-  assert.equal(hasPortalOAuthSignInState(undefined), false);
-
-  // The login page carrying the IAM-issued sign-in state belongs to the app
-  // sign-in flow: the guard must render it instead of redirecting to /admin.
-  assert.equal(
-    isPortalAppSignInHandoff({ pathname: '/auth/login', search: '?oauthAuthorizationStateId=oauth_state_123' }),
-    true,
-  );
-  assert.equal(
-    isPortalAppSignInHandoff({ pathname: APP_AUTHORIZE_LAUNCH_PATH, search: '' }),
-    true,
-  );
-  // A plain auth-route revisit is not part of the flow and may be redirected.
-  assert.equal(isPortalAppSignInHandoff({ pathname: '/auth/login', search: '' }), false);
-  assert.equal(
-    isPortalAppSignInHandoff({ pathname: '/auth/login', search: '?redirect=%2Fadmin' }),
-    false,
-  );
+test('a return target never aims at the OAuth protocol namespace', () => {
+  for (const target of ['/oauth/login', '/oauth/callback/github', '/oauth/desktop/launch']) {
+    assert.equal(sanitizePortalAuthRedirect(target, '/'), '/', target);
+  }
+  assert.equal(sanitizePortalAuthRedirect('/console/dashboard', '/'), '/console/dashboard');
 });
 
 test('the versioned and versionless authorize paths answer the same entry', () => {
@@ -204,13 +187,21 @@ test('the versioned and versionless authorize paths answer the same entry', () =
   }
 });
 
-test('the router mounts the authorize entry outside the auth-area guard', () => {
+test('the router mounts every OAuth route outside the account-surface guard', () => {
   const app = readFileSync(new URL('./src/App.tsx', import.meta.url), 'utf8');
   assert.match(app, /path="\/iam\/v3\/oauth\/authorize"[^>]*CloudRouterAppAuthorizeEntry/u);
   assert.match(app, /path="\/oauth\/app"[^>]*CloudRouterAppAuthorizeEntry/u);
-  // The hand-off page keeps the `/oauth` namespace too, and renders the hosted
-  // IAM routes that dispatch the deep link.
-  assert.match(app, /path="\/oauth\/desktop\/launch"[^>]*CloudRouterAuthRoutes/u);
+  // The login step, the hand-off page, and the provider callback render the
+  // hosted IAM routes that own those OAuth flows.
+  for (const path of ['/oauth/login', '/oauth/desktop/launch', '/oauth/callback/:provider']) {
+    assert.match(
+      app,
+      new RegExp(`path="${path}"[^>]*CloudRouterAuthRoutes`, 'u'),
+      `App.tsx must mount the OAuth surface at ${path}`,
+    );
+  }
   const guarded = readFileSync(new URL('./src/auth/protectedPortalRoutes.ts', import.meta.url), 'utf8');
-  assert.match(guarded, /!isPortalAppSignInHandoff\(location\)/u);
+  // The account-surface guard carries no OAuth hand-off exemption: the OAuth
+  // routes are outside the `/auth/*` mount entirely.
+  assert.doesNotMatch(guarded, /isPortalAppSignInHandoff|isPortalAppHandoffPath/u);
 });

@@ -7085,7 +7085,7 @@
       "read_sources": [
         "iam_user_identity"
       ],
-      "route": "/auth/oauth/callback/:provider",
+      "route": "/oauth/callback/:provider",
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts",
       "write_tables": [
@@ -7252,7 +7252,7 @@
         "iam_user_identity",
         "iam_user"
       ],
-      "route": "/auth/oauth/callback/:provider",
+      "route": "/oauth/callback/:provider",
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthController.ts",
       "write_tables": [

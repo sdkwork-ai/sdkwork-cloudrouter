@@ -19,6 +19,7 @@ import {
 import { resolveCloudRouterAppApiBaseUrl } from '@sdkwork/cloudrouter-h5-core/sdk';
 
 import {
+  APP_OAUTH_CALLBACK_PATH,
   AUTHORIZATION_STATE_PARAM,
   buildAppAuthorizeForwardUrl,
   buildAppLaunchPath,
@@ -201,6 +202,7 @@ export function AppSignInPage() {
     <SdkworkIamH5AuthLoginSurface
       controller={runtime.iamAuthController}
       locale={runtime.locale}
+      oauthCallbackPath={APP_OAUTH_CALLBACK_PATH}
       onAuthenticated={() => {
         if (completionStartedRef.current) return;
         completionStartedRef.current = true;

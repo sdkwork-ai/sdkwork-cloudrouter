@@ -9,9 +9,10 @@
  * server, and (after the hosted login) fires the registered deep link back into
  * the application from `/oauth/desktop/launch`.
  *
- * Every route that exists only for a native application's browser login lives
- * under `/oauth` (`/oauth/app`, `/oauth/desktop/launch`); the portal's `/auth`
- * namespace keeps its own account surface.
+ * The two namespaces are disjoint: `/auth/*` is the website's own account
+ * surface and `/oauth/*` carries every OAuth hop of this flow — the login step
+ * (`/oauth/login`), the deep-link hand-off, and the provider callback of the
+ * website's OAuth client (`/oauth/callback`).
  *
  * Everything here is pure so the request contract can be tested without a
  * browser.
@@ -36,12 +37,12 @@ export const APP_AUTHORIZE_PATHS: readonly string[] = Object.freeze([
 export const APP_AUTHORIZE_ENDPOINT_PATH = '/iam/v3/api/oauth/authorize';
 /** Alias entry under the `/oauth` namespace. */
 export const APP_AUTHORIZE_ALIAS_PATH = '/oauth/app';
-/** Hosted login page the IAM authorization server returns to. */
-export const APP_AUTHORIZE_LOGIN_PATH = '/auth/login';
+/** OAuth login step; the shared login form completes the pending authorization. */
+export const APP_AUTHORIZE_LOGIN_PATH = '/oauth/login';
 /** Hand-off page that fires the deep link after authorization completes. */
 export const APP_AUTHORIZE_LAUNCH_PATH = '/oauth/desktop/launch';
-/** IAM H5 OAuth provider callback (WeChat web authorization) route. */
-export const APP_OAUTH_CALLBACK_PATH = '/auth/oauth/callback';
+/** Provider callback of the website's OAuth client (WeChat web authorization). */
+export const APP_OAUTH_CALLBACK_PATH = '/oauth/callback';
 /** Canonical app-api prefix; its origin also serves the IAM open-api. */
 export const APP_API_PREFIX = '/app/v3/api';
 

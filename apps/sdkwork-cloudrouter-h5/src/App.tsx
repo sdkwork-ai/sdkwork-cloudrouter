@@ -66,8 +66,12 @@ export function App() {
           <Route path="/oauth/app" element={<AppAuthorizeEntryPage />} />
           <Route path="/iam/v3/oauth/authorize" element={<AppAuthorizeEntryPage />} />
           <Route path="/iam/oauth/authorize" element={<AppAuthorizeEntryPage />} />
-          <Route path="/auth/login" element={<AppSignInPage />} />
+          <Route path="/oauth/login" element={<AppSignInPage />} />
           <Route path="/oauth/desktop/launch" element={<AppLaunchPage />} />
+          {/* The website's own sign-in page, which is also the scan-login QR
+              target the IAM server emits (`/auth/login?session_key=…`). The
+              OAuth flow never lands here: its login step is `/oauth/login`. */}
+          <Route path="/auth/login" element={<ConsoleSignInRoute />} />
           {/* Shared IAM H5 OAuth callback: the IAM login surface redirects the
               browser to this real path, which the history router renders
               directly so the same screen resumes the session exchange. */}

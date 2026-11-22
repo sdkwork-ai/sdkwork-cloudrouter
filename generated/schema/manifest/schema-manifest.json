@@ -753,7 +753,7 @@
         "ops_config_snapshot"
       ]
     },
-    "/auth/oauth/callback/:provider": {
+    "/oauth/callback/:provider": {
       "api_surfaces": [
         "app",
         "backend",
@@ -30289,7 +30289,7 @@
         "/admin/storage/quotas",
         "/admin/storage/reconciliation",
         "/admin/upstream",
-        "/auth/oauth/callback/:provider",
+        "/oauth/callback/:provider",
         "/console/api-keys",
         "/console/notifications",
         "/console/user"

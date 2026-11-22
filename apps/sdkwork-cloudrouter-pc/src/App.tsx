@@ -302,11 +302,19 @@ export default function App() {
             <Route path="/iam/v3/oauth/authorize" element={<CloudRouterAppAuthorizeEntry />} />
             <Route path="/iam/oauth/authorize" element={<CloudRouterAppAuthorizeEntry />} />
             <Route path="/oauth/app" element={<CloudRouterAppAuthorizeEntry />} />
+            {/* OAuth login step of the desktop flow. The page renders the
+                shared login form and completes the pending authorization named
+                by `oauthAuthorizationStateId`; the account surface under
+                `/auth/*` stays out of the flow. */}
+            <Route path="/oauth/login" element={<CloudRouterAuthRoutes />} />
             {/* Login-success hand-off page of the native-application flow. It is
                 a protocol-level `/oauth` route rather than part of the portal's
                 `/auth/*` account surface, so the authenticated-visitor bounce
                 never drops the one-time code before the deep link fires. */}
             <Route path="/oauth/desktop/launch" element={<CloudRouterAuthRoutes />} />
+            {/* Provider callback of the website's OAuth client. The third-party
+                round trip is an OAuth hop, so it never enters `/auth/*`. */}
+            <Route path="/oauth/callback/:provider" element={<CloudRouterAuthRoutes />} />
             <Route path="/auth/*" element={<PortalAuthenticatedAuthRouteGuard><CloudRouterAuthRoutes /></PortalAuthenticatedAuthRouteGuard>} />
 
             {/* Unified order cashier, reachable from a QR deep link and from the

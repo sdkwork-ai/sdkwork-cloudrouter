@@ -12,8 +12,10 @@
  * form immediately instead of a waiting card.
  *
  * The `/oauth/app` alias renders the same entry. Every route that exists only
- * for a native application's browser login lives under `/oauth`, so the
- * portal's `/auth` account surface never carries an application-only page.
+ * for the native-application OAuth flow — the login step, the hand-off page,
+ * and the provider callback of the website's OAuth client — lives under
+ * `/oauth`, so the portal's `/auth` account surface never carries an
+ * application-only page.
  *
  * Everything in this module is pure so the request contract can be tested
  * without a browser.
@@ -25,6 +27,7 @@ import {
   SDKWORK_OAUTH_APP_AUTHORIZE_PATHS,
   SDKWORK_OAUTH_APP_AUTHORIZE_VERSIONLESS_PATH,
   SDKWORK_OAUTH_APP_LAUNCH_PATH,
+  SDKWORK_OAUTH_APP_LOGIN_PATH,
   SDKWORK_OAUTH_AUTHORIZATION_STATE_PARAM,
 } from '@sdkwork/auth-pc-react/oauth-app-paths'
 
@@ -36,6 +39,8 @@ export const APP_AUTHORIZE_VERSIONLESS_PATH = SDKWORK_OAUTH_APP_AUTHORIZE_VERSIO
 export const APP_AUTHORIZE_PATHS: readonly string[] = SDKWORK_OAUTH_APP_AUTHORIZE_PATHS
 /** Alias entry: the same hosted surface under the `/oauth` namespace. */
 export const APP_AUTHORIZE_ALIAS_PATH = SDKWORK_OAUTH_APP_ALIAS_PATH
+/** OAuth login step; the shared login form completes the pending authorization. */
+export const APP_AUTHORIZE_LOGIN_PATH = SDKWORK_OAUTH_APP_LOGIN_PATH
 /** Hand-off page that fires the deep link after authorization completes. */
 export const APP_AUTHORIZE_LAUNCH_PATH = SDKWORK_OAUTH_APP_LAUNCH_PATH
 

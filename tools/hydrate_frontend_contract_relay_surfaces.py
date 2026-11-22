@@ -93,7 +93,7 @@ ROUTE_CONTRACT_SUPPLEMENTS: tuple[dict[str, Any], ...] = (
         "dependency_sdk_family": "sdkwork-cloudrouter-app-sdk",
     },
     {
-        "route": "/auth/oauth/callback/:provider",
+        "route": "/oauth/callback/:provider",
         "required_tables": [
             "iam_user",
             "iam_user_identity",

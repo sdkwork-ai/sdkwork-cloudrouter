@@ -58,7 +58,7 @@ describe('H5 IAM auth integration', () => {
     const route = read('src/routes/IamAuthRoutes.tsx');
     assert.ok(route.includes('SdkworkIamH5AuthCallbackSurface'));
     const entry = read('src/app-auth/appAuthorizeEntry.ts');
-    assert.ok(entry.includes("APP_OAUTH_CALLBACK_PATH = '/auth/oauth/callback'"));
+    assert.ok(entry.includes("APP_OAUTH_CALLBACK_PATH = '/oauth/callback'"));
   });
 
   it('declares the IAM H5 packages as workspace dependencies', () => {
