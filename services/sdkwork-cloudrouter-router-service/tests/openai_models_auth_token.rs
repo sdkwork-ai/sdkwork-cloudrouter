@@ -246,3 +246,31 @@ async fn non_api_key_bearer_is_rejected_without_authenticator() {
         payload["error"]["message"]
     );
 }
+#[tokio::test]
+async fn login_auth_token_bearer_lists_model_groups() {
+    // The browser picker uses the IAM auth-token channel of the public open API;
+    // the groups route must answer it with the same OpenAI list envelope.
+    let response = router_with_auth_token_channel()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri("/v1/models/gpt-4o-mini/groups")
+                .header("authorization", format!("Bearer {LOGIN_AUTH_TOKEN}"))
+                .header("access-token", SESSION_ACCESS_TOKEN)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::OK, response.status());
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!("list", payload["object"]);
+    assert!(
+        payload["data"].is_array(),
+        "the groups route must answer the OpenAI list envelope for an auth-token caller"
+    );
+}

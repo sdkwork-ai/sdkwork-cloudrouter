@@ -179,7 +179,12 @@ where
             );
         }
     };
-    let context = match authenticate(&state, &identity, &headers, Some(&model)).await {
+    // Listing the groups that serve a model must NOT require the caller's
+    // current default group to serve that model: a user whose default pool
+    // lacks the model is exactly who needs the alternatives. Resolve the
+    // subject (tenant/organization, plus the optional group override) without
+    // binding it to the requested model.
+    let context = match authenticate(&state, &identity, &headers, None).await {
         Ok(context) => context,
         Err(response) => return *response,
     };

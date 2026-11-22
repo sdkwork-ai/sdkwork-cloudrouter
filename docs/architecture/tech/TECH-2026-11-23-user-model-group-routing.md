@@ -102,6 +102,12 @@ allow-list alike), with a regression test. The locale retirement rule
   optional `groups` array with the same shape.
 - `GET /v1/vendors` continues to list only the models reachable for the
   authenticated key's group.
+- Listing groups never requires the caller's current group to serve the model:
+  an auth-token caller whose default pool lacks the model still receives the
+  alternatives, so a picker can offer a switch. The model id is the catalog key
+  (`<vendor>/<modelId>`); generated SDKs percent-encode the slash inside the
+  path segment, which the route must match as one parameter
+  (`/v1/models/deepseek%2Fdeepseek-flash/groups`).
 
 ### App-api (console)
 

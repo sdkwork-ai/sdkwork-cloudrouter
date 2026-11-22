@@ -29,6 +29,14 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
         "openai",
         vec!["embedding"],
     ));
+    // Relay catalog keys carry the vendor prefix (`<vendor>/<modelId>`); the
+    // SDK percent-encodes that slash inside the path segment.
+    catalog.add_model(AiModel::new(
+        "deepseek-flash",
+        "DeepSeek V4.1 Flash",
+        "deepseek",
+        vec!["chat"],
+    ));
     catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         10,
         "standard-group",
@@ -143,6 +151,39 @@ async fn openai_models_route_lists_model_groups_as_an_openai_list() {
         payload["data"].is_array(),
         "the groups endpoint must answer the documented {{ object: \"list\", data: [...] }} envelope"
     );
+}
+
+#[tokio::test]
+async fn openai_models_route_accepts_a_percent_encoded_vendor_model_key() {
+    let hasher =
+        Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let router = sdkwork_cloudrouter_router_service::api::openai_models_router(
+        Arc::new(catalog_with_hashed_api_key(key_hash)),
+        hasher,
+    );
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                // Generated SDKs encode the slash inside `{model}`; the route
+                // must still match one segment and resolve `deepseek/deepseek-flash`.
+                .uri("/v1/models/deepseek%2Fdeepseek-flash/groups")
+                .header("authorization", "Bearer sk-live-secret")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(payload["object"], "list");
+    assert!(payload["data"].is_array());
 }
 
 #[tokio::test]
