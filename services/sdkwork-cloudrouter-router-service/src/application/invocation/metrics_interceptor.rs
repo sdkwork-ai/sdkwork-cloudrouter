@@ -256,7 +256,74 @@ impl InvocationInterceptor for MetricsInterceptor {
 
 #[cfg(test)]
 mod tests {
-    use super::normalized_provider_metric_label;
+    use super::{normalized_provider_metric_label, MetricsInterceptor};
+    use crate::application::invocation::{
+        DispatchMode, Invocation, InvocationBilling, InvocationDispatchResponse,
+        InvocationNormalizedResponse, InvocationRequest, InvocationResource, InvocationSubject,
+    };
+    use crate::application::AuthenticatedApiKeyContext;
+    use crate::domain::{AiRouteModelRequirement, BillingMeter, RoutingCapability};
+    use axum::http::Method;
+    use std::sync::Mutex;
+
+    fn invocation() -> Invocation {
+        Invocation::new(
+            InvocationRequest::new(Method::POST, "/v1/chat/completions"),
+            InvocationSubject::from_api_key_context(AuthenticatedApiKeyContext {
+                tenant_id: 1,
+                organization_id: 0,
+                user_id: 1,
+                api_key_id: 1,
+                api_key_name_snapshot: "metric-key".to_owned(),
+                group_id: 1,
+                group_code: "group".to_owned(),
+                pricing_plan_code: "standard".to_owned(),
+            }),
+            InvocationResource::model_call(
+                "openai/gpt-4o-mini",
+                "openai.chat_completions",
+                RoutingCapability::Chat,
+                AiRouteModelRequirement::Required,
+            ),
+            InvocationBilling::composite(BillingMeter::LlmInputToken),
+        )
+    }
+
+    /// Internal provider adapters report the upstream result in-band; the
+    /// transport status stays 200. The metric must read the adapter status or a
+    /// failing adapter permanently looks like 2xx traffic.
+    #[test]
+    fn adapter_in_band_status_drives_the_metric_status_class() {
+        let mut invocation = invocation();
+        invocation.dispatch.mode = DispatchMode::InternalProviderAdapter;
+        invocation.dispatch.response = Some(InvocationDispatchResponse::json(
+            200,
+            serde_json::json!({"statusCode": 503}),
+        ));
+
+        assert_eq!(503, MetricsInterceptor::effective_status_code(&invocation));
+    }
+
+    /// The normalized response is what the client actually saw, so it wins.
+    #[test]
+    fn normalized_response_status_wins_over_the_transport_status() {
+        let mut invocation = invocation();
+        invocation.dispatch.response = Some(InvocationDispatchResponse::json(
+            500,
+            serde_json::json!({}),
+        ));
+        invocation.telemetry.normalized_response = Some(InvocationNormalizedResponse {
+            status_code: 200,
+            body: Some(serde_json::json!({"id": "ok"})),
+            body_bytes: None,
+            content_type: Some("application/json".to_owned()),
+            headers: axum::http::HeaderMap::new(),
+            stream_body: Mutex::new(None),
+            memory_guard: None,
+        });
+
+        assert_eq!(200, MetricsInterceptor::effective_status_code(&invocation));
+    }
 
     #[test]
     fn provider_metric_labels_use_a_fixed_family_dictionary() {
