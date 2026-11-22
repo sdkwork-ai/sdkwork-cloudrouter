@@ -18,6 +18,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
+import { BrandMark } from '@sdkwork/cloudroutes-pc-commons';
 import { useResolvedBrandLogoUrl, useSiteBranding } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { SdkworkAuthSurfaceHeader } from '@sdkwork/auth-pc-react';
 import { CloudRouterAuthRoutes } from '../auth/CloudRouterAuthRoutes.tsx';
@@ -37,7 +38,18 @@ export function CloudRouterAppAuthorizeEntry() {
   const plan = useMemo(() => planAppAuthorizeEntry(location.search), [location.search]);
   const siteBranding = useSiteBranding();
   const brandLogoUrl = useResolvedBrandLogoUrl(siteBranding);
-  const brand = { name: siteBranding.siteName, logoUrl: brandLogoUrl };
+  const displaySiteName = siteBranding.shortName || siteBranding.siteName;
+  const brand = { name: displaySiteName, logoUrl: brandLogoUrl };
+  // Same backend-configured lockup as the homepage navbar so the failure state
+  // still shows the product the visitor came from.
+  const brandHeader = (
+    <span className="flex min-w-0 items-center gap-2">
+      <BrandMark branding={siteBranding} />
+      <span className="hidden truncate text-base font-bold tracking-tight text-slate-900 dark:text-white sm:inline md:max-w-[10rem] lg:max-w-[12rem]">
+        {displaySiteName}
+      </span>
+    </span>
+  );
 
   // A valid app authorization renders the hosted login on this route. The
   // hosted page creates the pending state when the visitor signs in, so an
@@ -54,7 +66,7 @@ export function CloudRouterAppAuthorizeEntry() {
       data-testid="cloudrouter-app-sign-in"
     >
       <div className="relative z-20 mx-auto w-full max-w-[560px]">
-        <SdkworkAuthSurfaceHeader brand={brand} />
+        <SdkworkAuthSurfaceHeader brand={brand} brandNode={brandHeader} />
       </div>
       <div className="flex flex-1 items-center justify-center py-10">
         <section className="w-full max-w-[560px] rounded-3xl bg-white/92 p-8 shadow-2xl ring-1 ring-zinc-200/70 dark:bg-zinc-900/92 dark:ring-zinc-800 sm:p-10">

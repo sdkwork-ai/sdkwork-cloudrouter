@@ -142,6 +142,18 @@ test('the hosted page renders the auth surface and leaves the state to the login
   assert.doesNotMatch(entry, /window\.location\.(replace|assign)/u);
 });
 
+test('the hosted auth header reuses the homepage brand lockup', () => {
+  // The header must be the same backend-configured lockup as the navbar: the
+  // site branding (BrandMark plus the short name), not a second brand render.
+  const routes = readFileSync(new URL('./src/auth/CloudRouterAuthRoutes.tsx', import.meta.url), 'utf8');
+  assert.match(routes, /BrandMark/u);
+  assert.match(routes, /siteBranding\.shortName \|\| siteBranding\.siteName/u);
+  assert.match(routes, /brandHeader=\{brandHeader\}/u);
+  const entry = readFileSync(new URL('./src/app-auth/CloudRouterAppAuthorizeEntry.tsx', import.meta.url), 'utf8');
+  assert.match(entry, /BrandMark/u);
+  assert.match(entry, /brandNode=\{brandHeader\}/u);
+});
+
 test('the portal auth guard keeps the app hand-off page out of the authenticated redirect', () => {
   assert.equal(isPortalAuthRoute(APP_AUTHORIZE_LAUNCH_PATH), true);
   assert.equal(isPortalAppHandoffPath(APP_AUTHORIZE_LAUNCH_PATH), true);

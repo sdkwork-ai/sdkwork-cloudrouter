@@ -282,12 +282,14 @@ deep link. The portal hosts the browser half of that flow:
 The entry does not send the browser to another page: a valid app authorization
 renders the hosted IAM auth surface in place on the entry route, so an
 anonymous visitor sees the login form and a signed-in browser sees the account
-choice. The hosted page creates the pending authorization state lazily — when
-the browser signs in or confirms the account — through the IAM app-api
-(`POST /app/v3/api/oauth/authorizations`), because the standalone gateway
-composes the app-api, not the open-api authorize endpoint. A third-provider
-sign-in creates the state before the provider round-trip so the callback still
-carries `oauthAuthorizationStateId`, and an already-issued
+choice. The hosted header reuses the homepage navbar lockup (`BrandMark` plus
+the backend-configured short name), so the auth page cannot drift from the
+product's top-left branding. The hosted page creates the pending authorization
+state lazily — when the browser signs in or confirms the account — through the
+IAM app-api (`POST /app/v3/api/oauth/authorizations`), because the standalone
+gateway composes the app-api, not the open-api authorize endpoint. A
+third-provider sign-in creates the state before the provider round-trip so the
+callback still carries `oauthAuthorizationStateId`, and an already-issued
 `<loginBase>/login?oauthAuthorizationStateId=…` link keeps the original
 behaviour.
 

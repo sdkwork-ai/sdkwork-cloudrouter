@@ -3,6 +3,7 @@ import {
   type SdkworkAuthBrand,
 } from '@sdkwork/auth-pc-react';
 import { useTranslation } from 'react-i18next';
+import { BrandMark } from '@sdkwork/cloudroutes-pc-commons';
 import {
   useResolvedBrandLogoUrl,
   useSiteBranding,
@@ -31,10 +32,22 @@ export function CloudRouterAuthRoutes() {
   // reader link rotates; the shipped mark is the fallback rather than an absent `logoUrl`,
   // because both the shell here and the IAM pages render the brand from this one object.
   const brandLogoUrl = useResolvedBrandLogoUrl(siteBranding);
+  const displaySiteName = siteBranding.shortName || siteBranding.siteName;
   const brand: SdkworkAuthBrand = {
-    name: siteBranding.siteName,
+    name: displaySiteName,
     logoUrl: brandLogoUrl,
   };
+  // The same lockup the homepage navbar renders: the backend-configured site
+  // branding (logo, or the shipped mark, plus the short name), so the hosted
+  // auth header cannot drift from the top-left of the product.
+  const brandHeader = (
+    <span className="flex min-w-0 items-center gap-2">
+      <BrandMark branding={siteBranding} />
+      <span className="hidden truncate text-base font-bold tracking-tight text-slate-900 dark:text-white sm:inline md:max-w-[10rem] lg:max-w-[12rem]">
+        {displaySiteName}
+      </span>
+    </span>
+  );
 
   return (
     <CloudRouterAuthShell brand={brand}>
@@ -43,6 +56,7 @@ export function CloudRouterAuthRoutes() {
           appearance={resolveCloudRouterAuthAppearance()}
           basePath={CLOUD_ROUTER_AUTH_BASE_PATH}
           brand={brand}
+          brandHeader={brandHeader}
           className="!bg-transparent"
           getRuntime={getCloudRouterAuthRuntime}
           homePath="/"
