@@ -283,7 +283,7 @@ authorization server and its open-platform endpoints live under `/iam/oauth/*`.
 - `/oauth/desktop/launch?redirectUrl=…` fires the app's registered deep link.
 - `/oauth/callback/:provider?code=…` is the provider callback of the website's
   OAuth client; a third-party login from the account surface returns here, not
-  to `/auth/oauth/callback`.
+  to a page under `/auth`.
 
 These routes are mounted outside the `/auth/*` guard, so the authenticated-
 visitor redirect never sees them and a one-time code cannot be dropped on the

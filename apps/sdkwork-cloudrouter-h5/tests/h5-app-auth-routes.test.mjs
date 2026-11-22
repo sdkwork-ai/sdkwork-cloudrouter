@@ -42,6 +42,29 @@ describe('H5 hosted app sign-in', () => {
     assert.ok(app.includes('ConsoleRuntimeProvider'));
   });
 
+  it('keeps the account login and the OAuth login step on separate surfaces', () => {
+    const app = readSource('src/App.tsx');
+    // `/auth/login` is the website's own sign-in (and the scan-login QR target);
+    // the OAuth flow's login step is a different route rendering a different
+    // page. Neither route is mounted under the other namespace.
+    assert.ok(
+      app.includes('path="/auth/login" element={<ConsoleSignInRoute />}'),
+      'the account login page must stay on the account surface',
+    );
+    assert.ok(
+      app.includes('path="/oauth/login" element={<AppSignInPage />}'),
+      'the OAuth login step must stay on the OAuth surface',
+    );
+    assert.ok(
+      app.includes('path="/oauth/desktop/launch" element={<AppLaunchPage />}'),
+      'the deep-link hand-off must stay on the OAuth surface',
+    );
+    assert.ok(
+      !app.includes('path="/auth/oauth'),
+      'no OAuth route may be nested under the account prefix',
+    );
+  });
+
   it('serves the hosted sign-in paths as real pathnames (history routing)', () => {
     const app = readSource('src/App.tsx');
     assert.match(app, /<BrowserRouter>/u);

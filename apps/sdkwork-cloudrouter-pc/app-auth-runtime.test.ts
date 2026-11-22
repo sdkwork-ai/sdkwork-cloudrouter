@@ -200,6 +200,10 @@ test('the router mounts every OAuth route outside the account-surface guard', ()
       `App.tsx must mount the OAuth surface at ${path}`,
     );
   }
+  // No OAuth route hides under the account prefix, and the account surface has
+  // no catch-all that could swallow an OAuth path.
+  assert.doesNotMatch(app, /path="\/auth\/[^"]*oauth/iu);
+  assert.match(app, /path="\/auth\/\*"/u);
   const guarded = readFileSync(new URL('./src/auth/protectedPortalRoutes.ts', import.meta.url), 'utf8');
   // The account-surface guard carries no OAuth hand-off exemption: the OAuth
   // routes are outside the `/auth/*` mount entirely.
