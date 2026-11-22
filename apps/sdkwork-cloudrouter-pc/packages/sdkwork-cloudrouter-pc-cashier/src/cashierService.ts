@@ -141,6 +141,15 @@ export function createCloudRouterCashierCheckoutDriver(
 ): SdkworkOrderCheckoutDriver {
   const client = options.client ?? getSdkworkOrderAppSdkClient();
   const paymentMethod = options.paymentMethod ?? 'wechat_pay';
+  // One cashier session is one logical payment attempt. Minting a fresh
+  // Idempotency-Key per call meant a lost response plus a retry (or the dialog's
+  // retry button) created a *second* provider trade for the same order. Retries
+  // within this driver now reuse the key, while opening the cashier again creates
+  // a new session (and therefore a genuinely new attempt) — the semantics a
+  // server-side idempotency key is meant to have.
+  const paymentIdempotencyKey =
+    createIdempotencyParams(`cloudrouter-cashier-payment:${order.id}:${paymentMethod}`)
+      .idempotencyKey;
 
   const loadLatestStatus = async (): Promise<CloudRouterCashierOrder | null> => {
     try {
@@ -163,7 +172,7 @@ export function createCloudRouterCashierCheckoutDriver(
       const result = readRecord(await client.orders.payments.create(
         order.id,
         { paymentMethod },
-        createIdempotencyParams('cloudrouter-cashier-payment'),
+        { idempotencyKey: paymentIdempotencyKey },
       ));
       const params = readRecord(result.paymentParams);
       const qrCode = readString(params.qrCodePayload)
