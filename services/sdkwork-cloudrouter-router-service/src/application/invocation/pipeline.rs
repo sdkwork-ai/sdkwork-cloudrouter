@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::time::Duration;
 
 use axum::body::Body;
 use serde_json::Value;
@@ -392,18 +391,6 @@ impl DeferredStreamInvocation {
             &self.invocation.resource.api_code,
             &self.invocation.request.body,
         )
-    }
-
-    /// Returns the selected provider account's stream-body timeout when the
-    /// route supplied one. The HTTP transport owns enforcement because it is
-    /// the only layer that observes body frames and downstream cancellation.
-    pub fn stream_timeout(&self) -> Option<Duration> {
-        self.invocation
-            .account
-            .as_ref()
-            .and_then(|account| account.timeout_ms)
-            .filter(|timeout_ms| *timeout_ms > 0)
-            .map(Duration::from_millis)
     }
 
     pub fn cancellation_signal(&self) -> InvocationCancellationSignal {

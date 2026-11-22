@@ -31,6 +31,7 @@
 | 托管密钥引用可跨账号解析 | 已修复（归属校验），含单测 |
 | Routing 错误 502/503 口径分裂 | 已修复（统一 503），含单测 |
 | `on_error` 失败被静默吞掉 | 已修复（逐钩子 error 日志） |
+| 流式下游取消丢失已产生用量 | 已修复（共享用量累加器），含单测 |
 
 ## 3. 事故根因
 
@@ -204,6 +205,16 @@ chat 需要运维在供应商资源页绑定协议组（`/upstream_suppliers/{id
   资金/配额会冻结到 TTL 结束且无告警。
 - 修复：逐钩子记录 `error`（含拦截器名、pipeline 错误码、request_id）。
 
+**T. 流式下游取消丢失已产生用量（已修复）**
+- 位置：`crates/sdkwork-cloudrouter-edge-runtime/src/invocation_stream.rs`
+- 事实：`DownstreamStreamState::drop` 抢先以 `partial_usage: None` 完成终止态，
+  而累加器在 producer 任务里；客户端断开（关标签、Agent 取消、连接复位）时
+  producer 正阻塞在上游读取，因此 drop 几乎总是先赢 —— 已产生的 token 不计费，
+  预扣冻结到 30 分钟 TTL 才释放。反复取消即成为免单通道。
+- 修复：用量累加器改为 producer 与下游共享的 `Arc<Mutex<..>>`，drop 时读取
+  当前部分用量并随 `Cancelled` 上报；锁中毒只降级为"缺快照"，不在请求路径 panic。
+- 测试：`dropping_the_downstream_body_reports_observed_partial_usage`。
+
 **M. `credential_rotation` 只被搬运，未被消费**
 `account.credential_rotation` 从快照一路带到 `InvocationAccount`，但
 dispatch 不读取，按策略轮换（per_request/per_attempt）实际未生效。
@@ -212,15 +223,14 @@ dispatch 不读取，按策略轮换（per_request/per_attempt）实际未生效
 503 文案中的 `model_routes_loaded=0` 是恒真值（`loader.rs` 明确
 `model_upstream_routes: Vec::new()`，模型路由由 account route 推导）。
 
-### 4.3 审计提出、待复核
+### 4.3 待复核 / 待修复（审计提出）
 
-- 流式下游断开时 `DownstreamStreamState::drop` 抢先以
-  `partial_usage: None` 完成，导致已产生用量丢失、预扣冻结至 TTL。
 - 账号 `timeout_ms` 被当作整条流的总时限，长流在第 30 秒被截断。
 - 流中失败对熔断/健康不可见（收到响应头即记成功）。
 - 粘性绑定无 `expires_at`，命中后单一候选，熔断打开即 503 且不回退常规路由。
 - 2xx 无 `usage` 时非流式静默零计费。
-- API Key pepper 不可轮换；`secret_ref` 无租户维度；429 计入全局熔断。
+- API Key pepper 不可轮换；429 计入全局熔断。
+- 请求级总超时分支未记录 attempt（熔断漏记）。
 
 ## 5. 后续路线
 
@@ -254,7 +264,7 @@ cargo test  -p sdkwork-cloudrouter-router-service --test routing_decision_log_re
 cargo test  -p sdkwork-cloudrouter-router-service --test openai_chat_api       # 42 passed
 cargo test  -p sdkwork-cloudrouter-router-service --test openai_responses_api  # 12 passed
 cargo test  -p sdkwork-cloudrouter-router-service --test openai_embeddings_api # 9 passed
-cargo test  -p sdkwork-cloudrouter-edge-runtime  --lib                         # 109 passed
+cargo test  -p sdkwork-cloudrouter-edge-runtime  --lib                         # 110 passed
 ```
 
 ## 7. 风险提示

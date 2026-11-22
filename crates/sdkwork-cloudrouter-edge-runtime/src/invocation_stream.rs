@@ -35,17 +35,17 @@ pub(crate) struct InvocationStreamTimeouts {
 }
 
 impl InvocationStreamTimeouts {
-    /// Uses the selected account timeout when one is configured, otherwise the
-    /// typed relay runtime default. This keeps account-specific SLAs explicit
-    /// while ensuring the global stream timeout is not silently ignored.
-    pub(crate) fn from_account_timeout(
-        account_timeout: Option<Duration>,
-        default_total: Duration,
-    ) -> Self {
-        let total = account_timeout
-            .filter(|timeout| !timeout.is_zero())
-            .unwrap_or(default_total)
-            .max(Duration::from_millis(1));
+    /// Time limits for an already-established provider stream.
+    ///
+    /// The total ceiling is the runtime stream timeout and never the account's
+    /// request timeout: `ai_upstream_account.timeout_ms` bounds how long the
+    /// dispatcher waits for the provider's response *headers*. Reusing it as the
+    /// stream ceiling truncated every long agent/coding completion at that value
+    /// (a 30 s account timeout cut a stream the runtime allows 30 minutes for).
+    /// Provider stall detection stays per-frame via the first-frame and idle
+    /// deadlines below.
+    pub(crate) fn for_stream_ceiling(total: Duration) -> Self {
+        let total = total.max(Duration::from_millis(1));
         Self {
             total,
             first_frame: DEFAULT_STREAM_FIRST_FRAME_TIMEOUT.min(total),
@@ -673,20 +673,18 @@ mod tests {
     }
 
     #[test]
-    fn runtime_total_timeout_is_used_when_account_timeout_is_absent() {
-        let timeouts =
-            InvocationStreamTimeouts::from_account_timeout(None, Duration::from_millis(75));
-        assert_eq!(Duration::from_millis(75), timeouts.total);
-        assert_eq!(Duration::from_millis(75), timeouts.first_frame);
-        assert_eq!(Duration::from_millis(75), timeouts.idle);
+    fn stream_ceiling_sets_the_total_deadline() {
+        let timeouts = InvocationStreamTimeouts::for_stream_ceiling(Duration::from_secs(1800));
+        assert_eq!(Duration::from_secs(1800), timeouts.total);
+        assert_eq!(DEFAULT_STREAM_FIRST_FRAME_TIMEOUT, timeouts.first_frame);
+        assert_eq!(DEFAULT_STREAM_IDLE_TIMEOUT, timeouts.idle);
     }
 
+    /// A short ceiling caps the per-frame deadlines so a stalled upstream is cut
+    /// before the stream budget ends.
     #[test]
-    fn account_timeout_overrides_runtime_default() {
-        let timeouts = InvocationStreamTimeouts::from_account_timeout(
-            Some(Duration::from_millis(40)),
-            Duration::from_secs(5),
-        );
+    fn per_frame_deadlines_never_exceed_the_ceiling() {
+        let timeouts = InvocationStreamTimeouts::for_stream_ceiling(Duration::from_millis(40));
         assert_eq!(Duration::from_millis(40), timeouts.total);
         assert_eq!(Duration::from_millis(40), timeouts.first_frame);
         assert_eq!(Duration::from_millis(40), timeouts.idle);
@@ -764,8 +762,7 @@ mod tests {
         ];
         let body = Body::from_stream(futures_util::stream::iter(frames));
 
-        let timeouts =
-            InvocationStreamTimeouts::from_account_timeout(None, Duration::from_secs(30));
+        let timeouts = InvocationStreamTimeouts::for_stream_ceiling(Duration::from_secs(30));
         let (demand_sender, demand_receiver) = mpsc::channel(4);
         let (completion, mut terminal_receiver) = StreamCompletion::new();
         let cancellation = sdkwork_cloudrouter_router_service::application::InvocationRequest::new(
@@ -776,6 +773,9 @@ mod tests {
 
         tokio::spawn(run_stream_producer(
             body,
+            Arc::new(Mutex::new(StreamingUsageAccumulator::new(
+                StreamingUsageFormat::ServerSentEvents,
+            ))),
             StreamingUsageFormat::ServerSentEvents,
             timeouts,
             demand_receiver,

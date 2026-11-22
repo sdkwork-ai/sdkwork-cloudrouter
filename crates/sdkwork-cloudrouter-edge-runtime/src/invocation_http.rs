@@ -650,10 +650,7 @@ fn deferred_stream_response_to_http(
         Ok(response) => response,
         Err(error) => return response_from_invocation_error(&error),
     };
-    let timeout = InvocationStreamTimeouts::from_account_timeout(
-        deferred.stream_timeout(),
-        stream_response_timeout,
-    );
+    let timeout = InvocationStreamTimeouts::for_stream_ceiling(stream_response_timeout);
     let suppress_usage_only_events = deferred.suppress_usage_only_chunks();
     let body = wrap_invocation_stream(
         body,
