@@ -8,7 +8,8 @@ use sdkwork_cloudrouter_router_service::ports::{
     AdminStorageCollection, AdminStorageCommandFuture, AdminStorageCursor, AdminStorageJsonRecord,
     AdminStorageStore, CreateStorageGarbageCollectionJobCommand, CreateStorageQuotaPolicyCommand,
     CreateStorageReconciliationRunCommand, ListAdminStorageRecordsQuery,
-    SetStorageDefaultBucketCommand,
+    ResolveGenerationDeliveryQuery, SetStorageDefaultBucketCommand,
+    UpsertStorageGenerationDeliveryPolicyCommand, UpsertStorageVendorAssetTtlCommand,
 };
 use serde_json::{json, Map, Value};
 use tower::ServiceExt;
@@ -297,6 +298,69 @@ impl AdminStorageStore for TestAdminStorageStore {
             Ok(gc_record("gc-created"))
         })
     }
+
+    fn list_generation_delivery_policies<'a>(
+        &'a self,
+        query: ListAdminStorageRecordsQuery,
+    ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
+        collection(
+            "delivery-policy-1",
+            generation_delivery_policy_record,
+            query.limit,
+            None,
+        )
+    }
+
+    fn upsert_generation_delivery_policy<'a>(
+        &'a self,
+        _command: UpsertStorageGenerationDeliveryPolicyCommand,
+    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
+        Box::pin(async move { Ok(generation_delivery_policy_record("delivery-policy-upsert")) })
+    }
+
+    fn list_vendor_asset_ttls<'a>(
+        &'a self,
+        query: ListAdminStorageRecordsQuery,
+    ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
+        collection("vendor-asset-ttl-1", vendor_asset_ttl_record, query.limit, None)
+    }
+
+    fn upsert_vendor_asset_ttl<'a>(
+        &'a self,
+        _command: UpsertStorageVendorAssetTtlCommand,
+    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
+        Box::pin(async move { Ok(vendor_asset_ttl_record("vendor-asset-ttl-upsert")) })
+    }
+
+    fn resolve_generation_delivery<'a>(
+        &'a self,
+        _query: ResolveGenerationDeliveryQuery,
+    ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
+        Box::pin(async move { Ok(generation_delivery_policy_record("delivery-policy-resolved")) })
+    }
+}
+
+fn generation_delivery_policy_record(id: &str) -> AdminStorageJsonRecord {
+    record([
+        ("id", json!(id)),
+        ("logicalScope", json!("tenant_private")),
+        ("scopeKey", json!("org-1")),
+        ("deliveryMode", json!("cdn")),
+        ("retentionSeconds", json!(86_400)),
+        ("status", json!("active")),
+        ("updatedAt", json!("2026-05-25T00:00:00Z")),
+    ])
+}
+
+fn vendor_asset_ttl_record(id: &str) -> AdminStorageJsonRecord {
+    record([
+        ("id", json!(id)),
+        ("vendorCode", json!("openai")),
+        ("assetKind", json!("image")),
+        ("ttlSeconds", json!(3_600)),
+        ("status", json!("active")),
+        ("updatedAt", json!("2026-05-25T00:00:00Z")),
+    ])
 }
 
 fn collection<'a>(
