@@ -36,7 +36,11 @@ struct AppStorageDeliveryState {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+// HTTP query parameters use the canonical URL field names (`media_kind`,
+// `vendor_code`). The generated TypeScript SDK may expose `mediaKind` on its
+// params object, but the Rust wire contract must not rename fields here — the
+// DTO alias contract test enforces this across the API surface.
+#[serde(deny_unknown_fields)]
 struct ResolveGenerationDeliveryRequest {
     media_kind: String,
     vendor_code: Option<String>,
@@ -71,7 +75,7 @@ async fn resolve_generation_delivery(
         Err(_) => {
             return validation_problem_for_context(
                 ctx.as_ref(),
-                "mediaKind query parameter is invalid",
+                "media_kind query parameter is invalid",
             )
             .into_response()
         }
@@ -83,7 +87,7 @@ async fn resolve_generation_delivery(
     {
         return validation_problem_for_context(
             ctx.as_ref(),
-            "mediaKind must be one of all, audio, image, video",
+            "media_kind must be one of all, audio, image, video",
         )
         .into_response();
     }
