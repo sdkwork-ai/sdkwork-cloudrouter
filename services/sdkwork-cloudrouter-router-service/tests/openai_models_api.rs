@@ -111,6 +111,71 @@ async fn openai_models_route_retrieves_model_by_id() {
 }
 
 #[tokio::test]
+async fn openai_models_route_lists_model_groups_as_an_openai_list() {
+    let hasher =
+        Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let router = sdkwork_cloudrouter_router_service::api::openai_models_router(
+        Arc::new(catalog_with_hashed_api_key(key_hash)),
+        hasher,
+    );
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri("/v1/models/gpt-4o-mini/groups")
+                .header("authorization", "Bearer sk-live-secret")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::OK, response.status());
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+    assert_eq!("list", payload["object"]);
+    assert!(
+        payload["data"].is_array(),
+        "the groups endpoint must answer the documented {{ object: \"list\", data: [...] }} envelope"
+    );
+}
+
+#[tokio::test]
+async fn openai_models_route_reports_unknown_models_for_the_groups_endpoint() {
+    let hasher =
+        Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let router = sdkwork_cloudrouter_router_service::api::openai_models_router(
+        Arc::new(catalog_with_hashed_api_key(key_hash)),
+        hasher,
+    );
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri("/v1/models/no-such-model/groups")
+                .header("authorization", "Bearer sk-live-secret")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::NOT_FOUND, response.status());
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!("model_not_found", payload["error"]["code"]);
+}
+
+#[tokio::test]
 async fn openai_models_route_rejects_missing_api_key() {
     let hasher =
         Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());

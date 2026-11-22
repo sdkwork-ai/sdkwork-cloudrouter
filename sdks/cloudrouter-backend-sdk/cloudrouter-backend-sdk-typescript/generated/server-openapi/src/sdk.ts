@@ -4,6 +4,8 @@ import type { AuthTokenManager } from '@sdkwork/sdk-common';
 
 import { AiApi, createAiApi } from './api/ai';
 import { BillingApi, createBillingApi } from './api/billing';
+import { McpApi, createMcpApi } from './api/mcp';
+import { MemoryApi, createMemoryApi } from './api/memory';
 import { PaymentsApi, createPaymentsApi } from './api/payments';
 import { PricingApi, createPricingApi } from './api/pricing';
 import { RechargesApi, createRechargesApi } from './api/recharges';
@@ -15,6 +17,8 @@ export class SdkworkBackendClient {
 
   public readonly ai: AiApi;
   public readonly billing: BillingApi;
+  public readonly mcp: McpApi;
+  public readonly memory: MemoryApi;
   public readonly payments: PaymentsApi;
   public readonly pricing: PricingApi;
   public readonly recharges: RechargesApi;
@@ -26,6 +30,10 @@ export class SdkworkBackendClient {
     this.ai = createAiApi(this.httpClient);
 
     this.billing = createBillingApi(this.httpClient);
+
+    this.mcp = createMcpApi(this.httpClient);
+
+    this.memory = createMemoryApi(this.httpClient);
 
     this.payments = createPaymentsApi(this.httpClient);
 

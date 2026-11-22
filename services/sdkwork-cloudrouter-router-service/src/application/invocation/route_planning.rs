@@ -4,7 +4,7 @@ use super::routing::STICKY_SCOPE_SESSION;
 use super::{
     resolve_pricing_identity, AccountBillingMode, DispatchMode, Invocation, InvocationError,
     InvocationErrorKind, InvocationFuture, InvocationInterceptor, InvocationRouteCandidate,
-    InvocationRouteCandidateKind, InvocationRoutePlan, ResourceType, RoutingPipeline,
+    InvocationRouteCandidateKind, InvocationRoutePlan, ResourceType, RoutingPipeline, StickyMode,
     StickyRouteConstraint,
 };
 use crate::application::upstream_base_url::{
@@ -79,7 +79,49 @@ where
                 } else {
                     let candidate =
                         sticky_candidate(self.catalog.as_ref(), invocation, sticky_route);
-                    invocation.routing.route_plan = Some(InvocationRoutePlan::new(vec![candidate]));
+                    // `LookupSticky` addresses an existing object on the exact
+                    // account that owns it; routing the lookup elsewhere would
+                    // query the wrong upstream, so it stays a hard pin.
+                    let is_lookup = invocation
+                        .routing
+                        .sticky
+                        .as_ref()
+                        .is_some_and(|sticky| sticky.mode == StickyMode::LookupSticky);
+                    if is_lookup {
+                        invocation.routing.route_plan =
+                            Some(InvocationRoutePlan::new(vec![candidate]));
+                        return Ok(());
+                    }
+                    // Otherwise sticky is a preference, not a pin: keep the
+                    // regularly planned candidates as failover so a circuit-open
+                    // or revoked sticky account degrades to another account
+                    // instead of failing every request that carries the affinity
+                    // key.
+                    let context = authenticated_context(invocation)?;
+                    let planned = RoutingPipeline::new(Arc::clone(&self.catalog))
+                        .plan_route(invocation, context);
+                    let fallbacks = if planned.is_ok() {
+                        invocation
+                            .routing
+                            .route_plan
+                            .take()
+                            .map(|plan| plan.candidates)
+                            .unwrap_or_default()
+                    } else {
+                        // The sticky target is valid; a planning failure for the
+                        // general pool must not fail the request.
+                        Vec::new()
+                    };
+                    let mut candidates = vec![candidate];
+                    for fallback in fallbacks {
+                        if !candidates
+                            .iter()
+                            .any(|existing| same_candidate_target(existing, &fallback))
+                        {
+                            candidates.push(fallback);
+                        }
+                    }
+                    invocation.routing.route_plan = Some(InvocationRoutePlan::new(candidates));
                     return Ok(());
                 }
             }
@@ -347,6 +389,21 @@ where
         billing_mode: billing_mode_for(catalog, sticky_route.account_id),
         supplier_type,
     }
+}
+
+/// Whether two planned candidates address the same upstream target.
+///
+/// Sticky preference and general planning can resolve the same account and
+/// credential; keeping both would dispatch the same request twice against one
+/// account.
+fn same_candidate_target(
+    left: &InvocationRouteCandidate,
+    right: &InvocationRouteCandidate,
+) -> bool {
+    left.supplier_code == right.supplier_code
+        && left.account_id == right.account_id
+        && left.credential_id == right.credential_id
+        && left.region_code.trim().eq_ignore_ascii_case(right.region_code.trim())
 }
 
 fn mapped_model_candidate<C>(

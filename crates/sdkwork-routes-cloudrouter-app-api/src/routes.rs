@@ -32,12 +32,12 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::installer::{
 use sdkwork_cloudrouter_router_service::infrastructure::sql::pool::connect_standard_database_pool;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
     PostgresAdminAuthSettingsStore, PostgresAdminStorageStore, PostgresAdminTransactionCenterStore,
-    PostgresAppGatewayTracesReadStore, PostgresAppInviteStore, PostgresAppNotificationStore,
-    PostgresAppRoutingReadStore, PostgresAppRuntimeStore, PostgresCatalogLoadError,
-    PostgresDashboardOverviewReadStore, PostgresGatewayApiKeyCommandStore,
-    PostgresOfficialPricingCatalogReadStore, PostgresPaymentIntentRuntimeStore,
-    PostgresPricingCatalogLoader, PostgresSettingsStore, PostgresSiteSettingsStore,
-    PostgresUsageLogsReadStore,
+    PostgresAppGatewayTracesReadStore, PostgresAppInviteStore, PostgresAppModelGroupStore,
+    PostgresAppNotificationStore, PostgresAppRoutingReadStore, PostgresAppRuntimeStore,
+    PostgresCatalogLoadError, PostgresDashboardOverviewReadStore,
+    PostgresGatewayApiKeyCommandStore, PostgresOfficialPricingCatalogReadStore,
+    PostgresPaymentIntentRuntimeStore, PostgresPricingCatalogLoader, PostgresSettingsStore,
+    PostgresSiteSettingsStore, PostgresUsageLogsReadStore,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::{
     AppRuntimeGatewayHttpClient, OsApiKeySecretGenerator, RedisRuntimeStreamBus,
@@ -47,11 +47,11 @@ use sdkwork_cloudrouter_router_service::ports::ChatCompletionStreamRelay;
 use sdkwork_cloudrouter_router_service::ports::UpstreamAccountRouteCatalog;
 use sdkwork_cloudrouter_router_service::ports::{
     AdminAuthSettingsStore, AdminStorageStore, AppGatewayTracesReadStore, AppInviteStore,
-    AppNotificationStore, AppRoutingReadStore, AppRuntimeStore, DashboardOverviewReadStore,
-    GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore, ModelRankingRefreshOutcome,
-    ModelRankingRefreshRunStatus, ModelRankingRefreshStore, ModelRankingsCacheInvalidation,
-    ModelRankingsReadModelStore, OfficialPricingCatalogReadStore, SettingsStore,
-    SettlementsDashboardReadStore, SiteSettingsStore, UsageLogsReadStore,
+    AppModelGroupStore, AppNotificationStore, AppRoutingReadStore, AppRuntimeStore,
+    DashboardOverviewReadStore, GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore,
+    ModelRankingRefreshOutcome, ModelRankingRefreshRunStatus, ModelRankingRefreshStore,
+    ModelRankingsCacheInvalidation, ModelRankingsReadModelStore, OfficialPricingCatalogReadStore,
+    SettingsStore, SettlementsDashboardReadStore, SiteSettingsStore, UsageLogsReadStore,
 };
 use sdkwork_cloudrouter_settlements_dashboard_repository_sqlx::PostgresSettlementsDashboardReadStore;
 use sdkwork_content_documents_sdk_reference::app_sdk_reference_router;
@@ -106,11 +106,18 @@ fn app_api_key_runtime_deps_for_postgres(
     api_key_security_config: &ApiKeySecurityConfig,
     credential_secret_codec: CredentialCodec,
 ) -> Result<AppApiKeyRuntimeDeps, ProductCatalogRouterError> {
-    let api_key_hasher = HmacSha256ApiKeySecretHasher::new(api_key_security_config.pepper_secret())
-        .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?;
-    let api_key_secret_codec =
-        RingAeadApiKeySecretCodec::new(api_key_security_config.pepper_secret())
-            .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?;
+    // Retired peppers keep pre-rotation key hashes verifiable and pre-rotation
+    // ciphertexts decryptable; new keys always adopt the active pepper.
+    let api_key_hasher = HmacSha256ApiKeySecretHasher::with_key_ring(
+        api_key_security_config.pepper_secret(),
+        api_key_security_config.previous_peppers().to_vec(),
+    )
+    .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?;
+    let api_key_secret_codec = RingAeadApiKeySecretCodec::with_key_ring(
+        api_key_security_config.pepper_secret(),
+        api_key_security_config.previous_peppers().to_vec(),
+    )
+    .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?;
     let api_key_secret_storage = ApiKeySecretStorageConfig::new(
         api_key_security_config.secret_storage_mode(),
         Arc::new(api_key_secret_codec),
@@ -136,6 +143,7 @@ type AppRuntimeGatewayRuntimeClient =
     Arc<dyn sdkwork_cloudrouter_router_service::ports::AppRuntimeGatewayClient + Send + Sync>;
 type AppRuntimeStreamBus = Arc<dyn RuntimeStreamBus + Send + Sync>;
 type AppRoutingStore = Arc<dyn AppRoutingReadStore + Send + Sync>;
+type AppModelGroupRuntimeStore = Arc<dyn AppModelGroupStore + Send + Sync>;
 type AppSiteSettingsRuntimeStore = Arc<dyn SiteSettingsStore + Send + Sync>;
 type DashboardReadStore = Arc<dyn DashboardOverviewReadStore + Send + Sync>;
 type OfficialPricingReadStore = Arc<dyn OfficialPricingCatalogReadStore + Send + Sync>;
@@ -429,6 +437,7 @@ struct AppRouterRuntime<'a> {
     app_runtime_gateway_client: Option<AppRuntimeGatewayRuntimeClient>,
     app_runtime_stream_bus: Option<AppRuntimeStreamBus>,
     app_routing_read_store: Option<AppRoutingStore>,
+    app_model_group_store: Option<AppModelGroupRuntimeStore>,
     model_catalog_router: Option<Router>,
     config: Option<&'a DatabaseConfig>,
     request_limits_config: RequestLimitsConfig,
@@ -461,6 +470,7 @@ fn router_with_runtime_stores_and_database_status(runtime: AppRouterRuntime<'_>)
         app_runtime_gateway_client,
         app_runtime_stream_bus,
         app_routing_read_store,
+        app_model_group_store,
         model_catalog_router,
         config,
         request_limits_config: _request_limits_config,
@@ -605,6 +615,14 @@ fn router_with_runtime_stores_and_database_status(runtime: AppRouterRuntime<'_>)
         ),
         None => router.merge(sdkwork_cloudrouter_router_service::api::app_routing_router()),
     };
+    router = match app_model_group_store {
+        Some(store) => sdkwork_cloudrouter_http::merge_web_framework_scoped_app_router(
+            router,
+            sdkwork_cloudrouter_router_service::api::app_model_group_router(store),
+            subject_boundary_config.clone(),
+        ),
+        None => router,
+    };
     if let Some(api_key_runtime) = api_key_runtime {
         router = sdkwork_cloudrouter_http::merge_web_framework_scoped_app_router(
             router,
@@ -664,9 +682,10 @@ pub async fn router_with_postgres_product_catalog(
         credential_secret_codec.clone(),
     ));
     let model_catalog_snapshot = read_store.load_snapshot().await?;
+    let model_catalog = Arc::new(RefreshableSqlPricingCatalog::new(model_catalog_snapshot));
     let model_rankings_store =
         model_rankings_service(Arc::new(PostgresModelRankingsReadStore::new(pool.clone())));
-    let model_catalog_router = app_model_catalog_router(Arc::new(model_catalog_snapshot)).merge(
+    let model_catalog_router = app_model_catalog_router(Arc::clone(&model_catalog)).merge(
         app_model_rankings_router_with_subject_boundary(
             model_rankings_store,
             &trusted_subject_config,
@@ -674,6 +693,10 @@ pub async fn router_with_postgres_product_catalog(
             &tenant_signing_key_resolver_from_pool(&pool),
         ),
     );
+    let app_model_group_store = Arc::new(PostgresAppModelGroupStore::new(
+        Arc::clone(&model_catalog),
+        pool.clone(),
+    ));
     let payment_intent_runtime_store =
         Arc::new(PostgresPaymentIntentRuntimeStore::new(pool.clone()));
     let payment_provider_registry = bootstrap_postgres_payment_provider_registry(&pool).await;
@@ -727,6 +750,7 @@ pub async fn router_with_postgres_product_catalog(
             app_runtime_gateway_client: None,
             app_runtime_stream_bus: None,
             app_routing_read_store: Some(app_routing_read_store),
+            app_model_group_store: Some(app_model_group_store),
             model_catalog_router: Some(model_catalog_router),
             config: Some(&database_config),
             request_limits_config: RequestLimitsConfig::default(),
@@ -836,6 +860,10 @@ pub async fn router_with_postgres_shared_runtime(
     let app_notification_store = Arc::new(PostgresAppNotificationStore::new(pool.clone()));
     let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));
     let app_routing_read_store = Arc::new(PostgresAppRoutingReadStore::new(commerce_pool.clone()));
+    let app_model_group_store = Arc::new(PostgresAppModelGroupStore::new(
+        Arc::clone(&catalog),
+        commerce_pool.clone(),
+    ));
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
     let api_key_runtime = Some(app_api_key_runtime_deps_for_postgres(
         pool.clone(),
@@ -874,6 +902,7 @@ pub async fn router_with_postgres_shared_runtime(
             app_runtime_gateway_client: Some(app_runtime_gateway_client),
             app_runtime_stream_bus: Some(app_runtime_stream_bus),
             app_routing_read_store: Some(app_routing_read_store),
+            app_model_group_store: Some(app_model_group_store),
             model_catalog_router: Some(model_catalog_router),
             config: Some(&config),
             request_limits_config,
@@ -1090,6 +1119,10 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
     let app_notification_store = Arc::new(PostgresAppNotificationStore::new(pool.clone()));
     let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));
     let app_routing_read_store = Arc::new(PostgresAppRoutingReadStore::new(pool.clone()));
+    let app_model_group_store = Arc::new(PostgresAppModelGroupStore::new(
+        Arc::clone(&app_runtime_execution_catalog),
+        pool.clone(),
+    ));
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
     let api_key_runtime = Some(app_api_key_runtime_deps_for_postgres(
         pool.clone(),
@@ -1135,6 +1168,7 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
             app_runtime_gateway_client: Some(Arc::clone(&app_runtime_gateway_client)),
             app_runtime_stream_bus: Some(Arc::clone(&app_runtime_stream_bus)),
             app_routing_read_store: Some(app_routing_read_store),
+            app_model_group_store: Some(app_model_group_store),
             model_catalog_router: Some(model_catalog_router),
             config: Some(&config),
             request_limits_config,

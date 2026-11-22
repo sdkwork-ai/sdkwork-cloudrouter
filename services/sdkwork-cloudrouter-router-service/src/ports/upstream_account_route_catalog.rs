@@ -261,6 +261,17 @@ pub trait UpstreamAccountRouteCatalog: PricingCatalog + PricingDefaultRegionProv
             .collect()
     }
 
+    /// Returns the user-scoped model → account-group rules
+    /// (`ai_user_account_group_route`) loaded into the snapshot.
+    ///
+    /// Session traffic consults them before the account-level default group;
+    /// the default implementation returns an empty list so catalogs that do not
+    /// carry the table (in-memory test catalogs, compatibility wrappers) keep
+    /// the pre-existing routing behaviour exactly.
+    fn list_user_account_group_routes(&self) -> Vec<crate::domain::UserAccountGroupRoute> {
+        Vec::new()
+    }
+
     /// Returns the per-gate account-pool diagnosis captured while loading the
     /// snapshot when zero upstream account routes were loaded, so selection
     /// errors can state exactly which configuration gate blocks the pool.

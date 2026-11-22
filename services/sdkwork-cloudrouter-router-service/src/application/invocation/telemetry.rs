@@ -13,6 +13,12 @@ pub struct InvocationTelemetry {
     pub provider_error_code: Option<String>,
     pub error_type: Option<String>,
     pub error_message_masked: Option<String>,
+    /// Set when an established provider stream ended before its normal
+    /// completion (client cancel, deadline, upstream error, lease loss) and the
+    /// partial usage was settled. Downstream effects that assume a healthy
+    /// upstream — committing a sticky binding, recording cache affinity — use it
+    /// to stop pinning future requests to the failing account.
+    pub stream_interrupted: bool,
     pub normalized_response: Option<InvocationNormalizedResponse>,
     /// Ephemeral pipeline timing state. It is never serialized or exported as
     /// a label and is consumed exactly once by the metrics interceptor.

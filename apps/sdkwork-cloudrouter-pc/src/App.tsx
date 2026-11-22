@@ -96,6 +96,7 @@ const PartnerJoinStatus = lazyRoute(() => import('@sdkwork/cloudrouter-pc-partne
 const DashboardView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-dashboard'), 'DashboardView');
 const UsageView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-usage'), 'UsageView');
 const GatewayView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-gateway'), 'GatewayView');
+const ModelGroupsView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-gateway'), 'ModelGroupsView');
 const ApiKeysView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-api-keys'), 'ApiKeysView');
 // Agents capability: the console entry is a thin adapter that embeds the
 // sdkwork-agents console block (agent catalog, creation/edit flow). Route
@@ -346,6 +347,7 @@ export default function App() {
               <Route path="usage" element={<UsageView />} />
               <Route path="gateway" element={<GatewayView />} />
               <Route path="api-keys" element={<ApiKeysView />} />
+              <Route path="routing/default-groups" element={<ModelGroupsView />} />
               {/* Agents console: module sub-routes stay deep-linkable, and the
                   editor deep link carries the agent id. */}
               <Route path="agents/*" element={<AgentsView />} />

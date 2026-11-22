@@ -234,6 +234,14 @@ pub enum DefaultAccountGroupSelectionReason {
     CodeConvention,
     /// Step 4: the subject has exactly one group in scope.
     SingleGroupInScope,
+    /// The request explicitly pinned the group through the account-group header.
+    HeaderOverride,
+    /// The user configured a default group for this exact model.
+    UserModelDefault,
+    /// The user configured a default group for every model of this vendor.
+    UserVendorDefault,
+    /// The user configured a default group for every model of this modality.
+    UserModalityDefault,
 }
 
 impl DefaultAccountGroupSelectionReason {
@@ -245,6 +253,10 @@ impl DefaultAccountGroupSelectionReason {
             Self::IsDefaultFlag => "is_default",
             Self::CodeConvention => "default-group-code",
             Self::SingleGroupInScope => "single-group-in-scope",
+            Self::HeaderOverride => "header-override",
+            Self::UserModelDefault => "user-model-default",
+            Self::UserVendorDefault => "user-vendor-default",
+            Self::UserModalityDefault => "user-modality-default",
         }
     }
 }

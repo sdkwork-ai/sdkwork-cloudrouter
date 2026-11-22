@@ -1421,16 +1421,22 @@ pub fn shared_models_catalog_root_from_runtime_toml(
 fn build_api_key_hasher(
     config: &ApiKeySecurityConfig,
 ) -> Result<ApiKeyHasher, ProductCatalogRouterError> {
-    let hasher = HmacSha256ApiKeySecretHasher::new(config.pepper_secret())
-        .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?;
+    let hasher = HmacSha256ApiKeySecretHasher::with_key_ring(
+        config.pepper_secret(),
+        config.previous_peppers().to_vec(),
+    )
+    .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?;
     Ok(Arc::new(hasher))
 }
 
 fn build_api_key_secret_storage_config(
     config: &ApiKeySecurityConfig,
 ) -> Result<ApiKeySecretStorageConfig, ProductCatalogRouterError> {
-    let codec = RingAeadApiKeySecretCodec::new(config.pepper_secret())
-        .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?;
+    let codec = RingAeadApiKeySecretCodec::with_key_ring(
+        config.pepper_secret(),
+        config.previous_peppers().to_vec(),
+    )
+    .map_err(|error| ProductCatalogRouterError::Config(error.to_string()))?;
     Ok(ApiKeySecretStorageConfig::new(
         config.secret_storage_mode(),
         Arc::new(codec),

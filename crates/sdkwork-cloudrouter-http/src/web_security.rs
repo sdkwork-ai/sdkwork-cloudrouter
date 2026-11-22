@@ -64,6 +64,22 @@ pub fn cloud_service_security_policy(environment: &WebEnvironment) -> SecurityPo
     security_policy.cors = security_policy
         .cors
         .with_registered_sdkwork_client_origins();
+    // Opt-in account-group routing header (`api/openai_auth_token.rs`
+    // `ACCOUNT_GROUP_ROUTING_HEADER`). It is a request header, so every
+    // environment must approve it explicitly: the development wildcard and the
+    // production explicit allow-list are different code paths, and a browser
+    // preflight that does not see this header fails before the route runs.
+    if !security_policy
+        .cors
+        .allowed_headers
+        .iter()
+        .any(|value| value.eq_ignore_ascii_case("x-sdkwork-account-group"))
+    {
+        security_policy
+            .cors
+            .allowed_headers
+            .push("x-sdkwork-account-group".to_owned());
+    }
     security_policy
 }
 
@@ -125,6 +141,29 @@ mod tests {
                 .any(|value| value == "*"),
             "the production header gate must stay an explicit allow-list"
         );
+    }
+
+    #[test]
+    fn account_group_routing_header_is_allowed_in_every_environment() {
+        // The opt-in `x-sdkwork-account-group` header must survive the CORS
+        // preflight in both the development wildcard posture and the production
+        // explicit allow-list; otherwise the browser blocks model calls that
+        // pin a group before the server ever sees them.
+        for environment in [
+            WebEnvironment::Dev,
+            WebEnvironment::Test,
+            WebEnvironment::Prod,
+        ] {
+            let policy = cloud_service_security_policy(&environment);
+            assert!(
+                policy
+                    .cors
+                    .allowed_headers
+                    .iter()
+                    .any(|value| value.eq_ignore_ascii_case("x-sdkwork-account-group")),
+                "the account-group header must be allowed in {environment:?}"
+            );
+        }
     }
 
     #[test]

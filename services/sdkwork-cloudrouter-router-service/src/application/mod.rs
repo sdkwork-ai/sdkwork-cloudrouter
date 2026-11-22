@@ -17,6 +17,7 @@ mod gateway_pricing_decision;
 mod generations_pricing_estimate;
 mod iam_runtime_context;
 mod invocation;
+mod model_group_catalog;
 mod password_hash;
 mod payment_adapter;
 mod payment_intent_runtime;
@@ -127,7 +128,8 @@ pub use invocation::{
     InvocationRouteCandidateKind, InvocationRoutePlan, InvocationRouting, InvocationShape,
     InvocationSubject, InvocationSurface, InvocationTelemetry, InvocationUsage,
     InvocationUsageLine, InvocationUsageLineRole, MetricsInterceptor, OpenAiResourceClassifier,
-    PayloadExtractionInterceptor, PipelineAsyncPollTransport, PricingFinalizationInterceptor,
+    PayloadExtractionInterceptor, peek_requested_model, PipelineAsyncPollTransport,
+    PricingFinalizationInterceptor,
     PricingPreflightInterceptor, PricingSettlementInterceptor, ProviderAdapterDispatchInterceptor,
     ProviderNativeResourceClassifier, RequestTransformInterceptor, ResolvedProviderSecret,
     ResourceType, ResponseNormalizationInterceptor, RouteKind, RoutePlanningInterceptor,
@@ -137,8 +139,13 @@ pub use invocation::{
     StreamingUsageFormat, TenantInflightConfig, TenantInflightInterceptor,
     TraceTelemetryInterceptor, UsageExtractionInterceptor, UsageRecordingInterceptor,
 };
-pub use password_hash::{PasswordHasher, Pbkdf2Sha256PasswordHasher};
-pub use payment_adapter::{
+pub use model_group_catalog::{
+    account_route_is_callable_for_group, build_model_group_catalog, group_model_access_forbids,
+    model_group_options, model_primary_modality, model_reachable_via_routes,
+    model_supported_group_ids, model_modalities, route_is_callable, scope_serves_modality,
+    ModelGroupRoutingIndex,
+};
+pub use password_hash::{PasswordHasher, Pbkdf2Sha256PasswordHasher};pub use payment_adapter::{
     PaymentAdapterFuture, PaymentAdapterOperation, PaymentCancelPaymentIntentRequest,
     PaymentCancelRefundRequest, PaymentCapturePaymentIntentRequest,
     PaymentConfirmPaymentIntentRequest, PaymentCreateIntentRequest, PaymentCreateRefundRequest,

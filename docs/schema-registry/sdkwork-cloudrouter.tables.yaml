@@ -275,8 +275,9 @@ modules:
     description: AI routing, upstream supplier, upstream account, account-group, policy,
       quota, and runtime coordination tables.
     compliance_level: L2
-    tables_count: 20
+    tables_count: 21
     tables:
+    - ai_user_account_group_route
     - ai_upstream_account
     - ai_upstream_account_health_state
     - ai_upstream_account_credential

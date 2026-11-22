@@ -464,6 +464,8 @@ impl DeferredStreamInvocation {
                     self.settle_partial_then_fail(
                         partial_usage,
                         stream_lifecycle_error("client cancelled provider stream"),
+                        // The client hung up; the account is healthy.
+                        false,
                     )
                     .await
                 }
@@ -478,6 +480,9 @@ impl DeferredStreamInvocation {
                         stream_lifecycle_error(format!(
                             "provider stream {stage} deadline exceeded"
                         )),
+                        // A stalled stream is the provider's fault: the account
+                        // must reach the circuit breaker.
+                        true,
                     )
                     .await
                 }
@@ -490,6 +495,8 @@ impl DeferredStreamInvocation {
                     self.settle_partial_then_fail(
                         partial_usage,
                         stream_lifecycle_error(format!("provider stream failed: {message}")),
+                        // The body broke mid-answer: the account is at fault.
+                        true,
                     )
                     .await
                 }
@@ -498,8 +505,13 @@ impl DeferredStreamInvocation {
                     partial_usage,
                 } => {
                     self.invocation.telemetry.ttft_ms = ttft_ms;
-                    self.settle_partial_then_fail(partial_usage, tenant_lease_loss_error())
-                        .await
+                    self.settle_partial_then_fail(
+                        partial_usage,
+                        tenant_lease_loss_error(),
+                        // The tenant lost its lease; the provider did nothing wrong.
+                        false,
+                    )
+                    .await
                 }
             }
         }
@@ -519,7 +531,19 @@ impl DeferredStreamInvocation {
         mut self,
         partial_usage: Option<Value>,
         error: InvocationError,
+        account_fault: bool,
     ) -> Result<(), InvocationError> {
+        // Marks the invocation as an interrupted stream: the after-chain still
+        // runs to persist usage and settle the produced tokens, but side effects
+        // that assume a healthy upstream (sticky commit) must not fire.
+        self.invocation.telemetry.stream_interrupted = true;
+        // The dispatch attempt was recorded as a success when the provider's
+        // response headers arrived. A stream that then broke is an account fault
+        // even though the transport said 200, so rewrite the attempt before the
+        // circuit breaker finalizes it.
+        if account_fault {
+            mark_stream_account_failure(&mut self.invocation, &error);
+        }
         if let Some(usage_body) = partial_usage.as_ref() {
             if streaming_usage_is_required(&self.invocation) {
                 if let Err(record_error) =
@@ -570,6 +594,26 @@ impl DeferredStreamInvocation {
             .await;
         Err(error)
     }
+}
+
+/// Rewrites the account's latest dispatch attempt from success to a stream
+/// failure.
+///
+/// A dispatch attempt is recorded as a success as soon as the provider's
+/// response headers arrive. Without this rewrite an account that only ever
+/// streams a broken body looks healthy forever: the circuit breaker never cools
+/// it down and it keeps receiving traffic.
+fn mark_stream_account_failure(invocation: &mut Invocation, error: &InvocationError) {
+    let Some(attempt) = invocation.routing.attempted_routes.last_mut() else {
+        return;
+    };
+    if !attempt.success {
+        return;
+    }
+    attempt.success = false;
+    attempt.retryable = true;
+    attempt.error_code = Some("provider_stream_failed".to_owned());
+    attempt.error_message = Some(error.message.clone());
 }
 
 fn ensure_invocation_active(invocation: &Invocation) -> Result<(), InvocationError> {
@@ -745,6 +789,72 @@ mod tests {
         assert_eq!(InvocationErrorKind::RateLimit, error.kind);
         assert_eq!(0, later_before_calls.load(Ordering::SeqCst));
         assert_eq!(1, error_notifications.load(Ordering::SeqCst));
+    }
+
+    /// A stream that breaks after the response headers were accepted must not
+    /// leave the account recorded as successful, or the circuit breaker never
+    /// cools it down and it keeps receiving traffic.
+    #[test]
+    fn a_mid_stream_failure_rewrites_the_successful_attempt() {
+        let mut invocation = invocation();
+        invocation
+            .routing
+            .attempted_routes
+            .push(crate::application::invocation::InvocationRouteAttempt {
+                supplier_code: "openai".to_owned(),
+                account_id: 3001,
+                candidate_index: 0,
+                status_code: Some(200),
+                success: true,
+                retryable: true,
+                error_code: None,
+                error_message: None,
+                latency_ms: Some(12),
+            });
+        let error = InvocationError::new(
+            InvocationErrorKind::Dispatch,
+            "provider stream idle deadline exceeded",
+        );
+
+        mark_stream_account_failure(&mut invocation, &error);
+
+        let attempt = &invocation.routing.attempted_routes[0];
+        assert!(!attempt.success);
+        assert!(attempt.retryable);
+        assert_eq!(
+            Some("provider_stream_failed"),
+            attempt.error_code.as_deref()
+        );
+        assert_eq!(
+            Some("provider stream idle deadline exceeded"),
+            attempt.error_message.as_deref()
+        );
+    }
+
+    #[test]
+    fn an_already_failed_attempt_is_not_rewritten() {
+        let mut invocation = invocation();
+        invocation
+            .routing
+            .attempted_routes
+            .push(crate::application::invocation::InvocationRouteAttempt {
+                supplier_code: "openai".to_owned(),
+                account_id: 3001,
+                candidate_index: 0,
+                status_code: Some(503),
+                success: false,
+                retryable: true,
+                error_code: Some("provider_unavailable".to_owned()),
+                error_message: Some("already recorded".to_owned()),
+                latency_ms: Some(9),
+            });
+        let error = InvocationError::new(InvocationErrorKind::Dispatch, "stream failed");
+
+        mark_stream_account_failure(&mut invocation, &error);
+
+        let attempt = &invocation.routing.attempted_routes[0];
+        assert_eq!(Some("provider_unavailable"), attempt.error_code.as_deref());
+        assert_eq!(Some("already recorded"), attempt.error_message.as_deref());
     }
 
     /// The gateway hides the usage-only chunk it forced the provider to emit, but

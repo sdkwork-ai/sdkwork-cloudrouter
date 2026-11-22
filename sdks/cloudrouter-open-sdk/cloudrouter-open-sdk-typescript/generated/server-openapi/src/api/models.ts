@@ -1,14 +1,30 @@
 import { aiApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
-import type { OpenAiModel, OpenAiModelList } from '../types';
+import type { OpenAiModel, OpenAiModelGroupList, OpenAiModelList } from '../types';
 
 
-export class ModelsApi {
+export class ModelsGroupsApi {
   private client: HttpClient;
 
   constructor(client: HttpClient) {
     this.client = client;
+  }
+
+
+/** List model account groups */
+  async list(model: string, requestOptions?: ApiRequestOptions): Promise<OpenAiModelGroupList> {
+    return this.client.request<OpenAiModelGroupList>(aiApiPath(`/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}/groups`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
+  }
+}
+
+export class ModelsApi {
+  private client: HttpClient;
+  public readonly groups: ModelsGroupsApi;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+    this.groups = new ModelsGroupsApi(client);
   }
 
 

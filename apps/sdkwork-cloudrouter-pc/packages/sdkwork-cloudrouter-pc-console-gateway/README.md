@@ -10,11 +10,19 @@ This README is the SDKWork module entrypoint for `sdkwork-cloudrouter-pc-console
 ## Public API
 
 - `src/index.ts`
+  - `GatewayView` — call traces for the console gateway surface.
+  - `ModelGroupsView` — the `/console/routing/default-groups` page: modality →
+    vendor → model → account group, with per-model and per-vendor defaults.
+  - `modelGroupService` — typed wrappers over
+    `ai.routing.modelGroupCatalog.retrieve`, `ai.routing.modelGroups.retrieve`,
+    `ai.routing.modelGroupDefaults.retrieve`, and
+    `ai.routing.modelGroupDefaults.update`.
 
 ## Required SDK Surface
 
 - Consumes `ai.gateway.traces.list` from the composed `@sdkwork/cloudrouter-app-sdk` through the `@sdkwork/cloudrouter-pc-console-core/sdk` boundary.
 - The list is cursor-paginated. The first request uses `pageSize: 20`; continuation requests pass the server-provided opaque `pageInfo.nextCursor`. The UI never parses cursors, downloads all pages automatically, or paginates with a client-side array slice.
+- Consumes the user-level model group surfaces (`routing.modelGroupCatalog.retrieve`, `routing.modelGroups.retrieve`, `routing.modelGroupDefaults.retrieve`, `routing.modelGroupDefaults.update`) through the same boundary. Every group id is a wire string (`int64` contract); the UI never converts it to a JavaScript number.
 
 ## Configuration
 

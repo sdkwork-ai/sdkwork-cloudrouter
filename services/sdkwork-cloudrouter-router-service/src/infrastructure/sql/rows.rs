@@ -653,6 +653,44 @@ impl UpstreamAccountGroupRow {
     }
 }
 
+/// One user-scoped model → account-group routing rule
+/// (`ai_user_account_group_route`). Modality / vendor / model are stored as the
+/// exact catalog vocabulary so the snapshot resolver can compare them without
+/// a second lookup.
+pub struct UserAccountGroupRouteRow {
+    pub tenant_id: i64,
+    pub organization_id: i64,
+    pub user_id: i64,
+    pub scope_type: String,
+    pub modality: String,
+    pub vendor_code: String,
+    pub model: String,
+    pub account_group_id: i64,
+    pub account_group_code: String,
+    pub priority: i32,
+}
+
+impl UserAccountGroupRouteRow {
+    /// Converts to the domain rule, rejecting an unknown `scope_type` instead of
+    /// inventing a catch-all scope. `None` lets the snapshot drop one corrupt
+    /// row without failing the whole catalog load.
+    pub fn try_into_domain(self) -> Option<crate::domain::UserAccountGroupRoute> {
+        let scope = crate::domain::AccountGroupRouteScope::parse(&self.scope_type)?;
+        Some(crate::domain::UserAccountGroupRoute {
+            tenant_id: self.tenant_id,
+            organization_id: self.organization_id,
+            user_id: self.user_id,
+            scope,
+            modality: self.modality,
+            vendor_code: self.vendor_code,
+            model: self.model,
+            account_group_id: self.account_group_id,
+            account_group_code: self.account_group_code,
+            priority: self.priority,
+        })
+    }
+}
+
 /// 供应商级模型黑白名单（从 ai_model_access_policy 聚合），JSON 列在快照构建时
 /// 解析为 SupplierModelAccess。
 ///

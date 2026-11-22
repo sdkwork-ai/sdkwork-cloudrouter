@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "@sdkwork/cloudrouter-backend-sdk"
   },
-  "changeFingerprint": "794bb67cf28cf3db579aadb2486d03a08538aa4ba3ccd9319adaa62c008d1fe0",
+  "changeFingerprint": "6358e4d3f769a2c77540d3642acc3db8c9f1ed2122bd25666b651f04b5063571",
   "changes": {
     "createdGeneratedFiles": [
       "bin/publish-core.mjs",
@@ -26,6 +26,8 @@
       "src/api/base.ts",
       "src/api/billing.ts",
       "src/api/index.ts",
+      "src/api/mcp.ts",
+      "src/api/memory.ts",
       "src/api/paths.ts",
       "src/api/payments.ts",
       "src/api/pricing.ts",
@@ -280,6 +282,8 @@
           "src/api/base.ts",
           "src/api/billing.ts",
           "src/api/index.ts",
+          "src/api/mcp.ts",
+          "src/api/memory.ts",
           "src/api/paths.ts",
           "src/api/payments.ts",
           "src/api/pricing.ts",

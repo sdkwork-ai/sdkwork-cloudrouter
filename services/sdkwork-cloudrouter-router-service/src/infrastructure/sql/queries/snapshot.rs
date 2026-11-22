@@ -11,6 +11,7 @@ impl PricingCatalogSql {
             Self::load_pricing_rules(),
             Self::load_account_rate_cards(),
             Self::load_upstream_account_groups(),
+            Self::load_user_account_group_routes(),
             Self::load_upstream_supplier_model_access(),
             Self::load_upstream_account_model_access(),
             Self::load_api_keys(),
@@ -1227,6 +1228,35 @@ WHERE card.status = 1
   AND plan.status = 1
   AND plan.deleted_at IS NULL
 ORDER BY card.priority ASC, card.effective_from DESC, card.id DESC
+"#
+    }
+
+    /// User-scoped model → account-group routing rules. The snapshot resolves
+    /// them for session traffic before falling back to the account-level
+    /// default group (see `domain::select_session_account_group_with_user_routing`).
+    pub fn load_user_account_group_routes() -> &'static str {
+        r#"
+SELECT
+    route.tenant_id,
+    route.organization_id,
+    route.user_id,
+    route.scope_type,
+    route.modality,
+    route.vendor_code,
+    route.model,
+    route.account_group_id,
+    COALESCE(NULLIF(route.account_group_code, ''), account_group.group_code, '') AS account_group_code,
+    route.priority
+FROM ai_user_account_group_route route
+LEFT JOIN ai_upstream_account_group account_group
+  ON account_group.id = route.account_group_id
+ AND account_group.tenant_id = route.tenant_id
+ AND account_group.organization_id = route.organization_id
+ AND account_group.deleted_at IS NULL
+WHERE route.status = 1
+  AND route.deleted_at IS NULL
+ORDER BY route.tenant_id ASC, route.organization_id ASC, route.user_id ASC,
+         route.scope_type ASC, route.priority ASC, route.id ASC
 "#
     }
 

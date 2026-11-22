@@ -155,9 +155,32 @@ fn extract_composite_usage_from_body(
     invocation: &mut Invocation,
     body: &Value,
 ) -> Result<(), InvocationError> {
-    let usage = match body.get("usage").or_else(|| body.get("usageMetadata")) {
-        Some(usage) => usage,
-        None => return Ok(()),
+    // 上游（或中间的透明代理）偶发省略 `usage`。直接返回会让整条计费链拿不到
+    // 用量行：结算报 "did not produce a billable amount"，而响应此时已经成功
+    // 物化 —— 客户端照常拿到 200，等于免单。缺 usage 时按与流式兜底相同的保守
+    // 估算合成一条 usage 体（输入按请求体、输出按响应文本），宁可偏低也不能为 0。
+    let provider_usage = body.get("usage").or_else(|| body.get("usageMetadata"));
+    let estimated_usage = if provider_usage.is_none() {
+        let estimated =
+            estimated_usage_body_without_provider_usage(&invocation.request.body, body);
+        if estimated.is_some() {
+            tracing::warn!(
+                stage = "billing_usage_extraction",
+                api_code = %invocation.resource.api_code,
+                request_id = %invocation.request.request_id,
+                "successful provider response omitted usage; billing a conservative estimate"
+            );
+        }
+        estimated
+    } else {
+        None
+    };
+    let Some(usage) = provider_usage.or_else(|| {
+        estimated_usage
+            .as_ref()
+            .and_then(|estimated| estimated.get("usage"))
+    }) else {
+        return Ok(());
     };
     let (mut billable_input, mut cached_tokens, mut cache_write_tokens, mut output_tokens) =
         composite_usage_components(usage);
@@ -1007,6 +1030,81 @@ fn estimated_request_input_tokens(request_body: &InvocationBody) -> i64 {
         _ => return 1,
     };
     estimate_text_tokens(&text)
+}
+
+/// 非流式 2xx 缺 `usage` 时的兜底 usage 体。
+///
+/// 输入按请求体估算、输出按响应文本估算；没有任何文本输出（204、纯工具调用、
+/// 二进制体）时返回 `None`——那时确实无从计价，交给结算层按"无用量"处理。
+fn estimated_usage_body_without_provider_usage(
+    request_body: &InvocationBody,
+    response_body: &Value,
+) -> Option<Value> {
+    let output_tokens = estimated_response_output_tokens(response_body);
+    if output_tokens <= 0 {
+        return None;
+    }
+    let input_tokens = estimated_request_input_tokens(request_body);
+    Some(serde_json::json!({
+        "usage": {
+            "prompt_tokens": input_tokens,
+            "completion_tokens": output_tokens,
+            "total_tokens": input_tokens + output_tokens,
+        }
+    }))
+}
+
+/// 从响应体里收集助手输出文本并估算 completion token。
+fn estimated_response_output_tokens(body: &Value) -> i64 {
+    let mut text = String::new();
+    // Chat Completions: `choices[].message.content`（字符串或多模态片段）
+    // 与旧式补全的 `choices[].text`。
+    if let Some(choices) = body.get("choices").and_then(Value::as_array) {
+        for choice in choices {
+            if let Some(content) = choice
+                .get("message")
+                .and_then(|message| message.get("content"))
+            {
+                append_response_text(content, &mut text);
+            }
+            if let Some(choice_text) = choice.get("text").and_then(Value::as_str) {
+                text.push_str(choice_text);
+            }
+        }
+    }
+    // Responses API: `output[].content[].text` 与聚合的 `output_text`。
+    if let Some(output) = body.get("output").and_then(Value::as_array) {
+        for item in output {
+            if let Some(parts) = item.get("content").and_then(Value::as_array) {
+                for part in parts {
+                    if let Some(part_text) = part.get("text").and_then(Value::as_str) {
+                        text.push_str(part_text);
+                    }
+                }
+            }
+        }
+    }
+    if let Some(output_text) = body.get("output_text").and_then(Value::as_str) {
+        text.push_str(output_text);
+    }
+    if text.is_empty() {
+        return 0;
+    }
+    estimate_text_tokens(&text)
+}
+
+fn append_response_text(content: &Value, text: &mut String) {
+    if let Some(content_text) = content.as_str() {
+        text.push_str(content_text);
+        return;
+    }
+    if let Some(parts) = content.as_array() {
+        for part in parts {
+            if let Some(part_text) = part.get("text").and_then(Value::as_str) {
+                text.push_str(part_text);
+            }
+        }
+    }
 }
 
 fn extract_response_body_usage(invocation: &mut Invocation) -> Result<(), InvocationError> {

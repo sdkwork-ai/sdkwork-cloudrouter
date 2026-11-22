@@ -3667,6 +3667,27 @@ class CloudRouterGatewayOpenApiGenerator:
                 ],
             ),
         }
+        paths["/v1/models/{model}/groups"] = {
+            "get": self._operation(
+                "Models",
+                "listModelGroups",
+                "List model account groups",
+                (
+                    "Lists the account groups the authenticated caller can route one model "
+                    "through, in failover priority order, with `defaultForModel` marking the "
+                    "group a request without an account-group override selects. The bearer "
+                    "credential may be a Cloud Router API key (`sk-`/`sp-` prefix) or an "
+                    "SDKWork IAM login auth token; an auth-token caller may also send the "
+                    "paired dual-token session access token in the optional `Access-Token` header."
+                ),
+                None,
+                "OpenAiModelGroupList",
+                parameters=[
+                    self._path_param("model", "Model identifier or catalog key."),
+                    access_token_header,
+                ],
+            ),
+        }
         paths["/v1/completions"] = {"post": self._operation("Completions", "createCompletion", "Create completion", "Creates a legacy text completion through an OpenAI-compatible request.", "JsonObject", "JsonObject")}
         paths["/v1/moderations"] = {"post": self._operation("Moderations", "createModeration", "Create moderation", "Classifies text or multimodal input through an OpenAI-compatible moderation request.", "JsonObject", "JsonObject")}
         paths["/v1/tools/search"] = {
@@ -4331,6 +4352,26 @@ class CloudRouterGatewayOpenApiGenerator:
                         "displayName": {"type": "string", "description": "Model display name from the Cloud Router catalog."},
                         "owned_by": {"type": "string", "description": "Organization or provider that owns the model."},
                         "vendorDisplayName": {"type": "string", "description": "Display name of the model vendor from the Cloud Router catalog."},
+                    },
+                },
+                "OpenAiModelGroupList": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["object", "data"],
+                    "properties": {
+                        "object": {"type": "string", "enum": ["list"], "description": "Object type, always list."},
+                        "data": {"type": "array", "items": {"$ref": "#/components/schemas/OpenAiModelGroup"}, "description": "Account groups the caller can route this model through, in failover priority order."},
+                    },
+                },
+                "OpenAiModelGroup": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["id", "code", "name", "defaultForModel"],
+                    "properties": {
+                        "id": {"type": "string", "description": "Numeric account group id as a string (wire int64 contract)."},
+                        "code": {"type": "string", "description": "Stable account group code."},
+                        "name": {"type": "string", "description": "Display name of the account group."},
+                        "defaultForModel": {"type": "boolean", "description": "Whether this is the group the model routes through when the caller sends no account-group override."},
                     },
                 },
                 "OpenAiChatCompletionRequest": {

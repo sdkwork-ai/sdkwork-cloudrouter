@@ -124,12 +124,24 @@ fn circuit_breaker_degraded_counter() -> prometheus::IntCounterVec {
         .clone()
 }
 
+/// Consecutive provider rate limits before the account is cooled down.
+///
+/// A rate limit is a capacity signal, not a transport fault: it gets its own
+/// streak so a 429 burst does not borrow the fault threshold, and the resulting
+/// cool-down is short because the provider will accept traffic again soon.
+const RATE_LIMIT_FAILURE_THRESHOLD: u32 = 3;
+const RATE_LIMIT_OPEN_DURATION: Duration = Duration::from_secs(15);
+
 #[derive(Debug)]
 struct CircuitEntry {
     state: CircuitState,
     consecutive_failures: u32,
+    consecutive_rate_limits: u32,
     consecutive_successes: u32,
     opened_at: Option<Instant>,
+    /// Cool-down for the current open window: the fault duration for transport
+    /// failures, the shorter rate-limit duration when 429s opened it.
+    open_for: Duration,
     half_open_probes: u32,
 }
 
@@ -138,8 +150,10 @@ impl CircuitEntry {
         Self {
             state: CircuitState::Closed,
             consecutive_failures: 0,
+            consecutive_rate_limits: 0,
             consecutive_successes: 0,
             opened_at: None,
+            open_for: Duration::ZERO,
             half_open_probes: 0,
         }
     }
@@ -325,6 +339,16 @@ pub trait CircuitBreakerStateStore: Send + Sync {
     /// Record a failed call for `account_id`.
     async fn record_failure(&self, account_id: i64);
 
+    /// Record a provider rate-limit rejection (HTTP 429) for `account_id`.
+    ///
+    /// A rate limit is a capacity signal, not a transport fault, so stores that
+    /// can distinguish it keep a separate streak and a shorter cool-down. The
+    /// default keeps the conservative behavior (count it as a failure) for
+    /// stores that cannot.
+    async fn record_rate_limit(&self, account_id: i64) {
+        self.record_failure(account_id).await;
+    }
+
     /// Get current state for a channel.
     async fn get_state(&self, account_id: i64) -> CircuitState;
 
@@ -461,9 +485,14 @@ impl CircuitBreakerInterceptor {
         match entry.state {
             CircuitState::Closed => CircuitCallPermit::Closed,
             CircuitState::Open => {
+                let open_for = if entry.open_for.is_zero() {
+                    self.config.open_duration
+                } else {
+                    entry.open_for
+                };
                 let should_transition = entry
                     .opened_at
-                    .is_some_and(|opened| opened.elapsed() >= self.config.open_duration);
+                    .is_some_and(|opened| opened.elapsed() >= open_for);
                 if should_transition {
                     if self.config.half_open_max_probes == 0 {
                         observe_circuit_breaker_rejection("local", "probes_disabled", 1);
@@ -558,6 +587,7 @@ impl CircuitBreakerInterceptor {
         match entry.state {
             CircuitState::Closed => {
                 entry.consecutive_failures = 0;
+                entry.consecutive_rate_limits = 0;
                 entry.consecutive_successes = entry.consecutive_successes.saturating_add(1);
             }
             CircuitState::HalfOpen => {
@@ -600,6 +630,7 @@ impl CircuitBreakerInterceptor {
                 if entry.consecutive_failures >= self.config.failure_threshold {
                     entry.state = CircuitState::Open;
                     entry.opened_at = Some(Instant::now());
+                    entry.open_for = self.config.open_duration;
                     entry.half_open_probes = 0;
                     self.record_state_change(account_id, CircuitState::Closed, CircuitState::Open);
                     tracing::warn!(
@@ -612,6 +643,7 @@ impl CircuitBreakerInterceptor {
             CircuitState::HalfOpen => {
                 entry.state = CircuitState::Open;
                 entry.opened_at = Some(Instant::now());
+                entry.open_for = self.config.open_duration;
                 entry.half_open_probes = 0;
                 entry.consecutive_successes = 0;
                 self.record_state_change(account_id, CircuitState::HalfOpen, CircuitState::Open);
@@ -622,6 +654,63 @@ impl CircuitBreakerInterceptor {
             }
             CircuitState::Open => {
                 entry.opened_at = Some(Instant::now());
+                entry.open_for = self.config.open_duration;
+            }
+        }
+        self.record_failure_metric(account_id);
+    }
+
+    /// Records a provider rate-limit rejection (HTTP 429).
+    ///
+    /// The account is saturated, not broken: 429s accumulate on their own streak
+    /// and open a short cool-down instead of consuming the transport-fault
+    /// budget. Mixing the two made a single busy tenant (or model) push a
+    /// perfectly healthy account into the fault window for every other caller.
+    fn record_rate_limit(&self, account_id: i64) {
+        let mut circuits = match self.circuits.lock() {
+            Ok(guard) => guard,
+            Err(poisoned) => poisoned.into_inner(),
+        };
+        if !reserve_circuit_entry(&mut circuits, account_id) {
+            self.record_failure_metric(account_id);
+            return;
+        }
+        let entry = circuits
+            .entry(account_id)
+            .or_insert_with(CircuitEntry::closed);
+        match entry.state {
+            CircuitState::Closed => {
+                entry.consecutive_rate_limits = entry.consecutive_rate_limits.saturating_add(1);
+                entry.consecutive_successes = 0;
+                if entry.consecutive_rate_limits >= RATE_LIMIT_FAILURE_THRESHOLD {
+                    entry.state = CircuitState::Open;
+                    entry.opened_at = Some(Instant::now());
+                    entry.open_for = RATE_LIMIT_OPEN_DURATION;
+                    entry.half_open_probes = 0;
+                    self.record_state_change(account_id, CircuitState::Closed, CircuitState::Open);
+                    tracing::warn!(
+                        account_id,
+                        rate_limits = entry.consecutive_rate_limits,
+                        open_for_secs = RATE_LIMIT_OPEN_DURATION.as_secs(),
+                        "circuit breaker opened for a rate-limited channel"
+                    );
+                }
+            }
+            CircuitState::HalfOpen => {
+                entry.state = CircuitState::Open;
+                entry.opened_at = Some(Instant::now());
+                entry.open_for = RATE_LIMIT_OPEN_DURATION;
+                entry.half_open_probes = 0;
+                entry.consecutive_successes = 0;
+                self.record_state_change(account_id, CircuitState::HalfOpen, CircuitState::Open);
+                tracing::warn!(
+                    account_id,
+                    "circuit breaker re-opened from half-open after a rate-limited probe"
+                );
+            }
+            CircuitState::Open => {
+                entry.opened_at = Some(Instant::now());
+                entry.open_for = RATE_LIMIT_OPEN_DURATION;
             }
         }
         self.record_failure_metric(account_id);
@@ -697,6 +786,19 @@ impl CircuitBreakerInterceptor {
                 }
             } else if client_rejection {
                 continue;
+            } else if attempt.status_code == Some(429) {
+                // Rate limits are capacity pressure, not transport faults: they
+                // get their own streak and a shorter cool-down so one saturated
+                // tenant or model cannot open the account's fault window.
+                if local_fallback {
+                    self.record_rate_limit(attempt.account_id);
+                } else if let Some(store) = self.distributed.as_ref() {
+                    store.record_rate_limit(attempt.account_id).await;
+                } else if self.distributed_required {
+                    observe_circuit_breaker_degraded("record_rate_limit", self.config.fail_open);
+                } else {
+                    self.record_rate_limit(attempt.account_id);
+                }
             } else if local_fallback {
                 self.record_failure(attempt.account_id);
             } else if let Some(store) = self.distributed.as_ref() {
@@ -1188,9 +1290,17 @@ impl RedisCircuitBreakerStore {
 
         if state == 'open' then
             local opened_at = tonumber(redis.call('HGET', key, 'opened_at') or '0')
+            -- The window that opened the circuit decides its own cool-down: a
+            -- rate-limit open is short, a transport-fault open uses the caller's
+            -- window. `open_for` is absent on rows written before this field
+            -- existed, so fall back to the configured duration.
+            local open_for = tonumber(redis.call('HGET', key, 'open_for') or '0')
+            if open_for <= 0 then
+                open_for = open_duration
+            end
             local elapsed = now - opened_at
 
-            if elapsed >= open_duration then
+            if elapsed >= open_for then
                 if max_probes <= 0 then
                     return -3
                 end
@@ -1229,6 +1339,7 @@ impl RedisCircuitBreakerStore {
 
         if state == 'closed' then
             redis.call('HSET', key, 'consecutive_failures', 0)
+            redis.call('HSET', key, 'consecutive_rate_limits', 0)
             local successes = tonumber(redis.call('HGET', key, 'consecutive_successes') or '0')
             redis.call('HSET', key, 'consecutive_successes', successes + 1)
             redis.call('EXPIRE', key, ttl)
@@ -1247,6 +1358,7 @@ impl RedisCircuitBreakerStore {
             if successes >= success_threshold then
                 redis.call('HSET', key, 'state', 'closed')
                 redis.call('HSET', key, 'consecutive_failures', 0)
+                redis.call('HSET', key, 'consecutive_rate_limits', 0)
                 redis.call('HSET', key, 'consecutive_successes', 0)
                 redis.call('HSET', key, 'half_open_probes', 0)
                 redis.call('EXPIRE', key, ttl)
@@ -1267,6 +1379,7 @@ impl RedisCircuitBreakerStore {
         local key = KEYS[1]
         local failure_threshold = tonumber(ARGV[1])
         local ttl = tonumber(ARGV[2])
+        local open_duration = tonumber(ARGV[3])
         -- Clock authority is the Redis server (mirrors tenant_inflight).
         local clock = redis.call('TIME')
         local now = tonumber(clock[1])
@@ -1282,6 +1395,7 @@ impl RedisCircuitBreakerStore {
             if failures >= failure_threshold then
                 redis.call('HSET', key, 'state', 'open')
                 redis.call('HSET', key, 'opened_at', now)
+                redis.call('HSET', key, 'open_for', open_duration)
                 redis.call('HSET', key, 'half_open_probes', 0)
                 redis.call('EXPIRE', key, ttl)
                 return 'opened'
@@ -1294,6 +1408,7 @@ impl RedisCircuitBreakerStore {
         if state == 'half_open' then
             redis.call('HSET', key, 'state', 'open')
             redis.call('HSET', key, 'opened_at', now)
+            redis.call('HSET', key, 'open_for', open_duration)
             redis.call('HSET', key, 'half_open_probes', 0)
             redis.call('HSET', key, 'consecutive_successes', 0)
             redis.call('EXPIRE', key, ttl)
@@ -1302,6 +1417,62 @@ impl RedisCircuitBreakerStore {
 
         if state == 'open' then
             redis.call('HSET', key, 'opened_at', now)
+            redis.call('HSET', key, 'open_for', open_duration)
+            redis.call('EXPIRE', key, ttl)
+            return 'ok'
+        end
+
+        return 'ok'
+        "#
+    }
+
+    /// Lua script for a provider rate-limit rejection (HTTP 429).
+    ///
+    /// Mirrors the local breaker: its own streak and a short cool-down, so a
+    /// saturated account backs off without entering the transport-fault window.
+    fn lua_record_rate_limit() -> &'static str {
+        r#"
+        local key = KEYS[1]
+        local rate_limit_threshold = tonumber(ARGV[1])
+        local ttl = tonumber(ARGV[2])
+        local rate_limit_open_duration = tonumber(ARGV[3])
+        local clock = redis.call('TIME')
+        local now = tonumber(clock[1])
+
+        local state = redis.call('HGET', key, 'state') or 'closed'
+
+        if state == 'closed' then
+            local rate_limits = tonumber(redis.call('HGET', key, 'consecutive_rate_limits') or '0')
+            rate_limits = rate_limits + 1
+            redis.call('HSET', key, 'consecutive_rate_limits', rate_limits)
+            redis.call('HSET', key, 'consecutive_successes', 0)
+
+            if rate_limits >= rate_limit_threshold then
+                redis.call('HSET', key, 'state', 'open')
+                redis.call('HSET', key, 'opened_at', now)
+                redis.call('HSET', key, 'open_for', rate_limit_open_duration)
+                redis.call('HSET', key, 'half_open_probes', 0)
+                redis.call('EXPIRE', key, ttl)
+                return 'opened'
+            end
+
+            redis.call('EXPIRE', key, ttl)
+            return 'ok'
+        end
+
+        if state == 'half_open' then
+            redis.call('HSET', key, 'state', 'open')
+            redis.call('HSET', key, 'opened_at', now)
+            redis.call('HSET', key, 'open_for', rate_limit_open_duration)
+            redis.call('HSET', key, 'half_open_probes', 0)
+            redis.call('HSET', key, 'consecutive_successes', 0)
+            redis.call('EXPIRE', key, ttl)
+            return 'reopened'
+        end
+
+        if state == 'open' then
+            redis.call('HSET', key, 'opened_at', now)
+            redis.call('HSET', key, 'open_for', rate_limit_open_duration)
             redis.call('EXPIRE', key, ttl)
             return 'ok'
         end
@@ -1440,6 +1611,7 @@ impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
                 .arg(&key)
                 .arg(self.config.failure_threshold as i64)
                 .arg(self.key_ttl_seconds() as i64)
+                .arg(self.config.open_duration.as_secs() as i64)
                 .query_async::<String>(&mut conn),
         )
         .await;
@@ -1506,6 +1678,51 @@ impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
         }
     }
 
+    async fn record_rate_limit(&self, account_id: i64) {
+        let Some(mut conn) = self.connection().await else {
+            self.observe_coordination_error("record_rate_limit", "redis connection unavailable");
+            return;
+        };
+        let key = self.redis_key(account_id);
+
+        let result = tokio::time::timeout(
+            self.command_timeout,
+            redis::cmd("EVAL")
+                .arg(Self::lua_record_rate_limit())
+                .arg(1)
+                .arg(&key)
+                .arg(RATE_LIMIT_FAILURE_THRESHOLD as i64)
+                .arg(self.key_ttl_seconds() as i64)
+                .arg(RATE_LIMIT_OPEN_DURATION.as_secs() as i64)
+                .query_async::<String>(&mut conn),
+        )
+        .await;
+
+        match result {
+            Ok(Ok(state)) if state == "opened" => observe_circuit_breaker_transition(
+                "redis",
+                CircuitState::Closed,
+                CircuitState::Open,
+            ),
+            Ok(Ok(state)) if state == "reopened" => {
+                observe_circuit_breaker_transition(
+                    "redis",
+                    CircuitState::HalfOpen,
+                    CircuitState::Open,
+                );
+                tracing::warn!(
+                    account_id,
+                    "circuit breaker re-opened from half-open after a rate limit (distributed)"
+                );
+            }
+            Ok(Ok(_)) => {}
+            Ok(Err(error)) => self.observe_coordination_error("record_rate_limit", error),
+            Err(_) => {
+                self.observe_coordination_error("record_rate_limit", "redis command timed out")
+            }
+        }
+    }
+
     async fn reset(&self, account_id: i64) {
         let Some(mut conn) = self.connection().await else {
             self.observe_coordination_error("reset", "redis connection unavailable");
@@ -1559,6 +1776,103 @@ mod tests {
 
         cb.record_failure(1);
         assert_eq!(cb.get_state(1), CircuitState::Open);
+    }
+
+    #[test]
+    fn rate_limits_open_a_short_cooldown_on_their_own_streak() {
+        let cb = CircuitBreakerInterceptor::new(CircuitBreakerConfig {
+            failure_threshold: 5,
+            open_duration: Duration::from_secs(3600),
+            half_open_max_probes: 2,
+            success_threshold: 2,
+            fail_open: true,
+        });
+
+        // Two rate limits stay below the rate-limit streak and, crucially, do
+        // not consume the transport-fault budget either.
+        cb.record_rate_limit(1);
+        cb.record_rate_limit(1);
+        assert_eq!(cb.get_state(1), CircuitState::Closed);
+        assert!(cb.allow_call(1));
+
+        cb.record_rate_limit(1);
+        assert_eq!(cb.get_state(1), CircuitState::Open);
+        assert!(!cb.allow_call(1));
+
+        let circuits = cb.circuits.lock().expect("circuits");
+        let entry = circuits.get(&1).expect("entry");
+        assert_eq!(
+            RATE_LIMIT_OPEN_DURATION, entry.open_for,
+            "a rate-limited account cools down for the short window, not the fault window"
+        );
+    }
+
+    #[test]
+    fn transport_faults_keep_the_configured_fault_window() {
+        let cb = CircuitBreakerInterceptor::new(CircuitBreakerConfig {
+            failure_threshold: 3,
+            open_duration: Duration::from_secs(3600),
+            half_open_max_probes: 2,
+            success_threshold: 2,
+            fail_open: true,
+        });
+
+        cb.record_failure(1);
+        cb.record_failure(1);
+        assert_eq!(cb.get_state(1), CircuitState::Closed);
+        cb.record_failure(1);
+        assert_eq!(cb.get_state(1), CircuitState::Open);
+
+        let circuits = cb.circuits.lock().expect("circuits");
+        let entry = circuits.get(&1).expect("entry");
+        assert_eq!(Duration::from_secs(3600), entry.open_for);
+    }
+
+    #[test]
+    fn a_success_resets_the_rate_limit_streak() {
+        let cb = CircuitBreakerInterceptor::new(CircuitBreakerConfig {
+            failure_threshold: 5,
+            open_duration: Duration::from_secs(30),
+            half_open_max_probes: 2,
+            success_threshold: 2,
+            fail_open: true,
+        });
+
+        cb.record_rate_limit(1);
+        cb.record_rate_limit(1);
+        cb.record_success(1);
+        cb.record_rate_limit(1);
+        cb.record_rate_limit(1);
+
+        assert_eq!(
+            cb.get_state(1),
+            CircuitState::Closed,
+            "a success restarts the rate-limit streak"
+        );
+    }
+
+    /// The distributed scripts must keep the same two-window contract as the
+    /// local breaker: a per-open `open_for` (so a rate-limit open cools down for
+    /// the short window) and a dedicated `consecutive_rate_limits` streak.
+    /// True behavior needs a Redis instance, so this pins the contract text.
+    #[test]
+    fn redis_scripts_keep_the_rate_limit_contract() {
+        let acquire = RedisCircuitBreakerStore::lua_allow_call();
+        assert!(acquire.contains("'open_for'"), "acquire must honour open_for");
+        assert!(acquire.contains("open_for = open_duration"));
+
+        let failure = RedisCircuitBreakerStore::lua_record_failure();
+        assert!(failure.contains("HSET', key, 'open_for', open_duration"));
+
+        let rate_limit = RedisCircuitBreakerStore::lua_record_rate_limit();
+        assert!(rate_limit.contains("consecutive_rate_limits"));
+        assert!(rate_limit.contains("rate_limit_open_duration"));
+
+        let success = RedisCircuitBreakerStore::lua_record_success();
+        assert!(
+            success.contains("'consecutive_rate_limits', 0"),
+            "a success must restart the rate-limit streak"
+        );
     }
 
     #[test]

@@ -8,9 +8,13 @@ use axum::{Json, Router};
 use sdkwork_cloudrouter_http::ApiKeyIdentity;
 
 use crate::api::openai_auth_token::{
-    authenticated_context_from_auth_token_identity, OpenAiAuthTokenAuthenticator,
+    apply_api_key_account_group_override,
+    authenticated_context_from_auth_token_identity_with_routing, OpenAiAuthTokenAuthenticator,
 };
-use crate::api::openai_contract::{OpenAiModelListResponse, OpenAiModelResponse};
+use crate::api::openai_contract::{
+    OpenAiModelGroupListResponse, OpenAiModelGroupResponse, OpenAiModelListResponse,
+    OpenAiModelResponse,
+};
 use crate::api::openai_error::openai_error;
 use crate::application::{
     ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
@@ -75,6 +79,7 @@ where
     Router::new()
         .route("/v1/models", get(list_models::<C>))
         .route("/v1/models/{model}", get(retrieve_model::<C>))
+        .route("/v1/models/{model}/groups", get(list_model_groups::<C>))
         .with_state(OpenAiModelsState {
             catalog,
             api_key_hasher,
@@ -102,7 +107,7 @@ where
             );
         }
     };
-    if let Err(response) = authenticate(&state, &identity, &headers).await {
+    if let Err(response) = authenticate(&state, &identity, &headers, None).await {
         return *response;
     }
 
@@ -138,7 +143,7 @@ where
             );
         }
     };
-    if let Err(response) = authenticate(&state, &identity, &headers).await {
+    if let Err(response) = authenticate(&state, &identity, &headers, Some(&model)).await {
         return *response;
     }
 
@@ -152,6 +157,59 @@ where
     };
 
     Json(to_model_response(state.catalog.as_ref(), model)).into_response()
+}
+
+async fn list_model_groups<C>(
+    State(state): State<OpenAiModelsState<C>>,
+    Path(model): Path<String>,
+    headers: HeaderMap,
+    uri: Uri,
+) -> Response
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    let identity = match ApiKeyIdentity::from_headers_and_uri(&headers, &uri) {
+        Ok(identity) => identity,
+        Err(error) => {
+            return openai_error(
+                StatusCode::BAD_REQUEST,
+                "invalid_request",
+                "invalid_request_error",
+                error,
+            );
+        }
+    };
+    let context = match authenticate(&state, &identity, &headers, Some(&model)).await {
+        Ok(context) => context,
+        Err(response) => return *response,
+    };
+    let Some(found) = find_model_for_openai_id(state.catalog.as_ref(), &model) else {
+        return openai_error(
+            StatusCode::NOT_FOUND,
+            "model_not_found",
+            "invalid_request_error",
+            "model not found",
+        );
+    };
+    let data = crate::application::model_group_options(
+        state.catalog.as_ref(),
+        &found,
+        context.tenant_id,
+        context.organization_id,
+    )
+    .into_iter()
+    .map(|group| OpenAiModelGroupResponse {
+        id: group.group_id.to_string(),
+        code: group.group_code,
+        name: group.group_name,
+        default_for_model: group.selected,
+    })
+    .collect();
+    Json(OpenAiModelGroupListResponse {
+        object: "list".to_owned(),
+        data,
+    })
+    .into_response()
 }
 
 fn find_model_for_openai_id<C>(catalog: &C, model: &str) -> Option<AiModel>
@@ -185,6 +243,7 @@ async fn authenticate<C>(
     state: &OpenAiModelsState<C>,
     identity: &ApiKeyIdentity,
     headers: &HeaderMap,
+    requested_model: Option<&str>,
 ) -> Result<AuthenticatedApiKeyContext, OpenAiResponseError>
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
@@ -197,6 +256,9 @@ where
             "missing api key credential",
         )));
     };
+    let requested_group = headers
+        .get(crate::domain::ACCOUNT_GROUP_ROUTING_HEADER)
+        .and_then(|value| value.to_str().ok());
     // Flexible bearer channel, mirroring `/v1/chat/completions`: API-key
     // prefixed credentials (`sk-`/`sp-`) authenticate through the gateway API
     // key store; any other bearer value is an SDKWork IAM login auth token.
@@ -206,6 +268,13 @@ where
                 ApiKeyAuthenticator::new(state.catalog.as_ref(), state.api_key_hasher.as_ref());
             authenticator
                 .authenticate(AuthenticateApiKeyQuery { credential_secret })
+                .map(|context| {
+                    apply_api_key_account_group_override(
+                        state.catalog.as_ref(),
+                        context,
+                        requested_group,
+                    )
+                })
                 .map_err(|_| {
                     Box::new(openai_error(
                         StatusCode::UNAUTHORIZED,
@@ -233,8 +302,15 @@ where
                 .authenticate(credential_secret, access_token)
                 .await?;
             // The model list has no inference modality: resolve the subject's
-            // mixed/default group (same rule the balance query uses).
-            authenticated_context_from_auth_token_identity(state.catalog.as_ref(), identity, None)
+            // model rule or mixed/default group (same rule the balance query
+            // uses).
+            authenticated_context_from_auth_token_identity_with_routing(
+                state.catalog.as_ref(),
+                identity,
+                None,
+                requested_model,
+                requested_group,
+            )
         }
     }
 }

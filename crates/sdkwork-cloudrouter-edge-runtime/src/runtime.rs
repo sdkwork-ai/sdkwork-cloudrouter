@@ -3279,8 +3279,20 @@ fn parse_retryable_status_codes_config(
 }
 
 fn build_api_key_hasher(config: &ApiKeySecurityConfig) -> Result<ApiKeyHasher, GatewayRouterError> {
-    let hasher = HmacSha256ApiKeySecretHasher::new(config.pepper_secret())
-        .map_err(|error| GatewayRouterError::Config(error.to_string()))?;
+    // The retired peppers keep API keys issued before a rotation verifiable:
+    // authentication is a hash lookup, so the active pepper alone would reject
+    // every existing key the moment it changes.
+    let hasher = HmacSha256ApiKeySecretHasher::with_key_ring(
+        config.pepper_secret(),
+        config.previous_peppers().to_vec(),
+    )
+    .map_err(|error| GatewayRouterError::Config(error.to_string()))?;
+    if hasher.previous_pepper_count() > 0 {
+        tracing::info!(
+            retired_peppers = hasher.previous_pepper_count(),
+            "api key hasher is verifying against retired pepper generations"
+        );
+    }
     Ok(Arc::new(hasher))
 }
 

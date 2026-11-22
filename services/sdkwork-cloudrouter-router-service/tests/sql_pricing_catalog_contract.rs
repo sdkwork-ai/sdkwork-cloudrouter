@@ -27,7 +27,10 @@ const CANONICAL_UPSTREAM_TABLES: [&str; 10] = [
 
 /// Tables that must appear across the whole snapshot query set but are not
 /// referenced by the single `load_upstream_account_routes` query.
-const SNAPSHOT_SET_EXTRA_TABLES: [&str; 1] = ["ai_model_access_policy"];
+const SNAPSHOT_SET_EXTRA_TABLES: [&str; 2] = [
+    "ai_model_access_policy",
+    "ai_user_account_group_route",
+];
 
 const RETIRED_UPSTREAM_TABLES: [&str; 16] = [
     "ai_provider",
@@ -51,7 +54,7 @@ const RETIRED_UPSTREAM_TABLES: [&str; 16] = [
 #[test]
 fn snapshot_query_set_is_complete_and_uses_only_postgresql_upstream_authorities() {
     let queries = PricingCatalogSql::snapshot_load_queries();
-    assert_eq!(17, queries.len());
+    assert_eq!(18, queries.len());
 
     let sql = queries.join("\n");
     for table in CANONICAL_UPSTREAM_TABLES {

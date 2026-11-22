@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "794bb67cf28cf3db579aadb2486d03a08538aa4ba3ccd9319adaa62c008d1fe0",
+  "changeFingerprint": "6358e4d3f769a2c77540d3642acc3db8c9f1ed2122bd25666b651f04b5063571",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -33,6 +33,8 @@
           "src/api/base.ts",
           "src/api/billing.ts",
           "src/api/index.ts",
+          "src/api/mcp.ts",
+          "src/api/memory.ts",
           "src/api/paths.ts",
           "src/api/payments.ts",
           "src/api/pricing.ts",
@@ -424,10 +426,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 344,
-    "models": 314,
-    "apis": 7,
-    "types": 316
+    "totalFiles": 384,
+    "models": 352,
+    "apis": 9,
+    "types": 354
   },
   "warnings": [
     {
@@ -441,6 +443,18 @@
     {
       "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied CloudRouter strict TypeScript contract normalization to src/types/index.ts"
+    },
+    {
+      "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied CloudRouter strict TypeScript contract normalization to src/api/ai.ts"
+    },
+    {
+      "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied CloudRouter strict TypeScript contract normalization to src/api/mcp.ts"
+    },
+    {
+      "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied CloudRouter strict TypeScript contract normalization to src/api/memory.ts"
     },
     {
       "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -474,12 +488,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 239,
+    "writtenFiles": 241,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "794bb67cf28cf3db579aadb2486d03a08538aa4ba3ccd9319adaa62c008d1fe0",
+    "changeFingerprint": "6358e4d3f769a2c77540d3642acc3db8c9f1ed2122bd25666b651f04b5063571",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -496,6 +510,8 @@
         "src/api/base.ts",
         "src/api/billing.ts",
         "src/api/index.ts",
+        "src/api/mcp.ts",
+        "src/api/memory.ts",
         "src/api/paths.ts",
         "src/api/payments.ts",
         "src/api/pricing.ts",
@@ -750,6 +766,8 @@
             "src/api/base.ts",
             "src/api/billing.ts",
             "src/api/index.ts",
+            "src/api/mcp.ts",
+            "src/api/memory.ts",
             "src/api/paths.ts",
             "src/api/payments.ts",
             "src/api/pricing.ts",

@@ -30,6 +30,30 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
+        "/app/v3/api/ai/routing/model_group_catalog",
+        "ai",
+        "routing.modelGroupCatalog.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/ai/routing/model_groups",
+        "ai",
+        "routing.modelGroups.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/ai/routing/model_group_defaults",
+        "ai",
+        "routing.modelGroupDefaults.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Put,
+        "/app/v3/api/ai/routing/model_group_defaults",
+        "ai",
+        "routing.modelGroupDefaults.update",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
         "/app/v3/api/ai/routing/api_keys",
         "ai",
         "routing.apiKeys.list",

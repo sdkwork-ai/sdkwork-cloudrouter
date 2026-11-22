@@ -40,6 +40,8 @@ pub struct PricingCatalogRows {
     pub pricing_rules: Vec<PricingRuleRow>,
     pub account_rate_cards: Vec<AccountRateCardRow>,
     pub upstream_account_groups: Vec<UpstreamAccountGroupRow>,
+    /// User-scoped model → account-group rules (`ai_user_account_group_route`).
+    pub user_account_group_routes: Vec<crate::infrastructure::sql::rows::UserAccountGroupRouteRow>,
     pub upstream_supplier_model_access: Vec<UpstreamSupplierModelAccessRow>,
     pub upstream_account_model_access: Vec<UpstreamAccountModelAccessRow>,
     pub api_keys: Vec<GatewayApiKeyRow>,
@@ -131,6 +133,11 @@ pub struct SqlPricingCatalogSnapshot {
     pricing_rules: Vec<PricingRule>,
     account_rate_cards: Vec<AccountRateCard>,
     upstream_account_groups: Vec<UpstreamAccountGroup>,
+    /// User-scoped model → account-group rules. Kept as a flat list: the
+    /// resolver filters by `(tenant, organization, user)` and the console
+    /// writes are low-volume, so a full scan per session request is cheaper
+    /// than an index that would need invalidation on every page save.
+    user_account_group_routes: Vec<crate::domain::UserAccountGroupRoute>,
     /// Modality scope (`group_type` / `modalities`) per account group id, used
     /// by session (auth-token) default-group selection.
     group_modality_scopes: HashMap<i64, crate::domain::AccountGroupModalityScope>,
@@ -685,6 +692,14 @@ impl SqlPricingCatalogSnapshot {
             group_modality_scopes.insert(row.id, row.modality_scope());
             upstream_account_groups.push(row.try_into_domain()?);
         }
+        // One corrupt rule must not fail the whole catalog: an unknown scope or
+        // an out-of-scope row is dropped and routing falls back to the account
+        // default, exactly as before the table existed.
+        let user_account_group_routes = rows
+            .user_account_group_routes
+            .into_iter()
+            .filter_map(|row| row.try_into_domain())
+            .collect::<Vec<_>>();
         let mut snapshot = Self {
             vendors: map_rows(rows.vendors, ModelVendorRow::try_into_domain)?,
             models: map_rows(rows.models, AiModelRow::try_into_domain)?,
@@ -710,6 +725,7 @@ impl SqlPricingCatalogSnapshot {
                 .map(|row| row.value)
                 .collect(),
             upstream_account_groups,
+            user_account_group_routes,
             group_modality_scopes,
             api_keys: map_rows(rows.api_keys, GatewayApiKeyRow::try_into_domain)?,
             access_policies: map_rows(
@@ -1002,6 +1018,10 @@ impl UpstreamAccountRouteCatalog for RefreshableSqlPricingCatalog {
 
     fn list_session_account_groups(&self) -> Vec<crate::domain::SessionAccountGroup> {
         self.current_snapshot().list_session_account_groups()
+    }
+
+    fn list_user_account_group_routes(&self) -> Vec<crate::domain::UserAccountGroupRoute> {
+        self.current_snapshot().list_user_account_group_routes()
     }
 
     fn video_pricing_tier(
@@ -1575,6 +1595,10 @@ impl UpstreamAccountRouteCatalog for SqlPricingCatalogSnapshot {
                 crate::domain::SessionAccountGroup::new(group, scope)
             })
             .collect()
+    }
+
+    fn list_user_account_group_routes(&self) -> Vec<crate::domain::UserAccountGroupRoute> {
+        self.user_account_group_routes.clone()
     }
 
     fn video_pricing_tier(

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- New `GET /v1/models/{model}/groups` (`listModelGroups`) lists the account
+  groups the caller can route one model through, in failover order, with
+  `defaultForModel` marking the group a request without an account-group
+  override selects. A model can therefore be served by several groups. Returns
+  `OpenAiModelGroupList` (`{ object: "list", data: OpenAiModelGroup[] }`).
 - `GET /v1/models` and `GET /v1/models/{model}` now accept an SDKWork IAM login
   auth token as the `Authorization: Bearer` credential in addition to a Cloud
   Router API key (`sk-`/`sp-` prefix), so a signed-in product can fetch

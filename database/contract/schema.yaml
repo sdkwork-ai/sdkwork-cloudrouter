@@ -7817,6 +7817,174 @@ tables:
         parent_table: ai_upstream_supplier_endpoint
     semantic_contracts: null
     frontend_routes: []
+  - name: ai_user_account_group_route
+    domain: ai
+    profile: tenant_entity
+    compliance_level: L2
+    write_owner: ai-routing-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      user_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      scope_type:
+        type: string(16)
+        required: true
+        postgres_type: VARCHAR(16)
+        constraints: NOT NULL
+      modality:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL DEFAULT ''
+      vendor_code:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL DEFAULT ''
+      model:
+        type: string(200)
+        required: true
+        postgres_type: VARCHAR(200)
+        constraints: NOT NULL DEFAULT ''
+      account_group_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      account_group_code:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL DEFAULT ''
+      priority:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 100
+    constraints:
+      - name: pk_ai_user_account_group_route
+        type: primary_key
+        columns:
+          - id
+      - name: ck_ai_user_account_group_route_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_ai_user_account_group_route_scope_group
+        type: unique
+        columns: &id072
+          - tenant_id
+          - organization_id
+          - user_id
+          - scope_type
+          - modality
+          - vendor_code
+          - model
+          - account_group_id
+        where: deleted_at IS NULL
+      - name: ck_ai_user_account_group_route_user
+        type: check
+        columns: []
+        expression: user_id > 0
+      - name: ck_ai_user_account_group_route_scope
+        type: check
+        columns: []
+        expression: scope_type IN ('model', 'vendor', 'modality') AND modality IN ('', 'text', 'image', 'video', 'audio',
+          'music') AND priority >= 0 AND ((scope_type = 'modality' AND vendor_code = '' AND model = '' AND modality <> '')
+          OR (scope_type = 'vendor' AND vendor_code <> '' AND model = '') OR (scope_type = 'model' AND model <> ''))
+    indexes:
+      - name: uk_ai_user_account_group_route_scope_group
+        columns: *id072
+        unique: true
+        where: deleted_at IS NULL
+      - name: ix_ai_user_account_group_route_user
+        columns:
+          - tenant_id
+          - organization_id
+          - user_id
+          - id
+        unique: false
+        where: deleted_at IS NULL
+      - name: ix_ai_user_account_group_route_group
+        columns:
+          - account_group_id
+          - id
+        unique: false
+        where: deleted_at IS NULL
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes:
+      - /console/routing/default-groups
   - name: iam_user_preference
     domain: iam_user
     profile: user_entity
@@ -7929,7 +8097,7 @@ tables:
         expression: tenant_id > 0 AND organization_id >= 0
       - name: uk_iam_user_preference_scope
         type: unique
-        columns: &id072
+        columns: &id073
           - tenant_id
           - organization_id
           - user_id
@@ -7944,7 +8112,7 @@ tables:
         expression: length(language) <= 32 AND length(timezone) <= 64 AND version >= 0
     indexes:
       - name: uk_iam_user_preference_scope
-        columns: *id072
+        columns: *id073
         unique: true
         where: deleted_at IS NULL
       - name: idx_iam_user_preference_user_updated
@@ -8095,7 +8263,7 @@ tables:
         expression: tenant_id > 0 AND organization_id >= 0
       - name: uk_integration_webhook_endpoint_scope_code
         type: unique
-        columns: &id073
+        columns: &id074
           - tenant_id
           - organization_id
           - endpoint_code
@@ -8111,7 +8279,7 @@ tables:
           version >= 0
     indexes:
       - name: uk_integration_webhook_endpoint_scope_code
-        columns: *id073
+        columns: *id074
         unique: true
         where: deleted_at IS NULL
       - name: idx_integration_webhook_endpoint_scope_code
@@ -8231,7 +8399,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_storage_bucket_scope_name
         type: unique
-        columns: &id074
+        columns: &id075
           - tenant_id
           - organization_id
           - provider_id
@@ -8247,7 +8415,7 @@ tables:
         expression: length(bucket_name) > 0 AND length(logical_scope) > 0 AND length(bucket_region) <= 64
     indexes:
       - name: uk_storage_bucket_scope_name
-        columns: *id074
+        columns: *id075
         unique: true
         where: null
       - name: ix_storage_bucket_scope_scope
@@ -8377,7 +8545,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_storage_default_bucket_scope
         type: unique
-        columns: &id075
+        columns: &id076
           - tenant_id
           - organization_id
           - logical_scope
@@ -8393,7 +8561,7 @@ tables:
           512
     indexes:
       - name: uk_storage_default_bucket_scope
-        columns: *id075
+        columns: *id076
         unique: true
         where: null
       - name: ix_storage_default_bucket_scope_updated
@@ -8508,7 +8676,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_storage_gc_job_idempotency
         type: unique
-        columns: &id076
+        columns: &id077
           - tenant_id
           - organization_id
           - idempotency_key
@@ -8523,7 +8691,7 @@ tables:
         expression: candidate_count >= 0 AND length(job_type) > 0
     indexes:
       - name: uk_storage_gc_job_idempotency
-        columns: *id076
+        columns: *id077
         unique: true
         where: null
       - name: ix_storage_gc_job_scope_created
@@ -8683,7 +8851,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_storage_generation_delivery_policy_scope
         type: unique
-        columns: &id077
+        columns: &id078
           - tenant_id
           - organization_id
           - scope_type
@@ -8702,7 +8870,7 @@ tables:
           AND (download_deadline_seconds IS NULL OR download_deadline_seconds > 0) AND length(scope_id) > 0
     indexes:
       - name: uk_storage_generation_delivery_policy_scope
-        columns: *id077
+        columns: *id078
         unique: true
         where: null
       - name: ix_storage_generation_delivery_policy_scope_status
@@ -8828,7 +8996,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_storage_provider_scope_code
         type: unique
-        columns: &id078
+        columns: &id079
           - tenant_id
           - organization_id
           - supplier_code
@@ -8844,7 +9012,7 @@ tables:
           <= 64
     indexes:
       - name: uk_storage_provider_scope_code
-        columns: *id078
+        columns: *id079
         unique: true
         where: null
       - name: ix_storage_provider_scope_status
@@ -8979,7 +9147,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_storage_quota_policy_scope
         type: unique
-        columns: &id079
+        columns: &id080
           - tenant_id
           - organization_id
           - scope_type
@@ -8987,7 +9155,7 @@ tables:
         where: null
       - name: uk_storage_quota_policy_idempotency
         type: unique
-        columns: &id080
+        columns: &id081
           - tenant_id
           - organization_id
           - idempotency_key
@@ -9003,11 +9171,11 @@ tables:
           IN ('hard', 'soft') AND length(scope_type) > 0 AND length(scope_id) > 0
     indexes:
       - name: uk_storage_quota_policy_scope
-        columns: *id079
+        columns: *id080
         unique: true
         where: null
       - name: uk_storage_quota_policy_idempotency
-        columns: *id080
+        columns: *id081
         unique: true
         where: null
       - name: ix_storage_quota_policy_scope_status
@@ -9143,7 +9311,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_storage_reconciliation_run_idempotency
         type: unique
-        columns: &id081
+        columns: &id082
           - tenant_id
           - organization_id
           - idempotency_key
@@ -9159,7 +9327,7 @@ tables:
           > 0
     indexes:
       - name: uk_storage_reconciliation_run_idempotency
-        columns: *id081
+        columns: *id082
         unique: true
         where: null
       - name: ix_storage_reconciliation_run_scope_created
@@ -9259,7 +9427,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_storage_usage_counter_scope
         type: unique
-        columns: &id082
+        columns: &id083
           - tenant_id
           - organization_id
           - scope_type
@@ -9276,7 +9444,7 @@ tables:
           > 0
     indexes:
       - name: uk_storage_usage_counter_scope
-        columns: *id082
+        columns: *id083
         unique: true
         where: null
       - name: ix_storage_usage_counter_scope_id
@@ -9406,7 +9574,7 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_storage_vendor_asset_ttl_scope
         type: unique
-        columns: &id083
+        columns: &id084
           - tenant_id
           - organization_id
           - vendor_code
@@ -9423,7 +9591,7 @@ tables:
           > 0 AND length(vendor_code) > 0
     indexes:
       - name: uk_storage_vendor_asset_ttl_scope
-        columns: *id083
+        columns: *id084
         unique: true
         where: null
       - name: ix_storage_vendor_asset_ttl_scope_status

@@ -8,7 +8,6 @@
 //! during deep link imports to write complete channel offerings (vendor +
 //! models) without the user picking vendors by hand.
 
-use crate::domain::has_text;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
@@ -20,14 +19,14 @@ use axum::{Json, Router};
 use sdkwork_cloudrouter_http::ApiKeyIdentity;
 
 use crate::api::openai_contract::{
-    OpenAiVendorListResponse, OpenAiVendorModelResponse, OpenAiVendorResponse,
+    OpenAiModelGroupResponse, OpenAiVendorListResponse, OpenAiVendorModelResponse,
+    OpenAiVendorResponse,
 };
 use crate::api::openai_error::openai_error;
 use crate::application::{
-    model_access_forbidden_reason, ApiKeyAuthenticator, ApiKeySecretHasher,
-    AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
+    account_route_is_callable_for_group, model_access_forbidden_reason, ApiKeyAuthenticator,
+    ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext, ModelGroupRoutingIndex,
 };
-use crate::domain::UpstreamAccountRoute;
 use crate::ports::{PricingCatalog, UpstreamAccountRouteCatalog};
 
 type OpenAiResponseError = Box<Response>;
@@ -47,6 +46,18 @@ pub struct GatewayVendorModel {
     pub display_name: String,
     pub context_tokens: Option<i64>,
     pub max_output_tokens: Option<i64>,
+    /// Account groups that can serve this model.
+    pub groups: Vec<GatewayModelGroup>,
+}
+
+/// One account group that can serve a model (open-api projection).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GatewayModelGroup {
+    pub id: i64,
+    pub code: String,
+    pub name: String,
+    pub is_default: bool,
+    pub selected: bool,
 }
 
 struct OpenAiVendorsState<C> {
@@ -101,6 +112,13 @@ where
         Ok(context) => context,
         Err(response) => return *response,
     };
+    let context = crate::api::openai_auth_token::apply_api_key_account_group_override(
+        state.catalog.as_ref(),
+        context,
+        headers
+            .get(crate::domain::ACCOUNT_GROUP_ROUTING_HEADER)
+            .and_then(|value| value.to_str().ok()),
+    );
 
     let data = list_group_scoped_vendors(state.catalog.as_ref(), context.group_id)
         .into_iter()
@@ -115,6 +133,16 @@ where
                     display_name: model.display_name,
                     context_tokens: model.context_tokens,
                     max_output_tokens: model.max_output_tokens,
+                    groups: model
+                        .groups
+                        .into_iter()
+                        .map(|group| OpenAiModelGroupResponse {
+                            id: group.id.to_string(),
+                            code: group.code,
+                            name: group.name,
+                            default_for_model: group.selected,
+                        })
+                        .collect(),
                 })
                 .collect(),
         })
@@ -132,6 +160,9 @@ where
 /// counts when at least one of its upstream routes lands on such an account.
 /// Models are grouped by their catalog vendor code; the vendor name comes
 /// from the catalog and falls back to the code itself.
+///
+/// Each model also carries the account groups that can serve it, so a model
+/// picker can show the caller's routable groups without a second round trip.
 pub fn list_group_scoped_vendors<C>(catalog: &C, account_group_id: i64) -> Vec<GatewayVendorModels>
 where
     C: UpstreamAccountRouteCatalog,
@@ -144,18 +175,17 @@ where
     // 分组模型黑白名单：禁止的模型不进入可见列表（与路由执行一致，
     // 避免向调用方暴露其分组无权使用的模型）。
     let model_access = catalog.account_group_model_access(account_group_id);
+    let scope = catalog
+        .list_upstream_account_groups()
+        .into_iter()
+        .find(|group| group.id == account_group_id)
+        .map(|group| (group.tenant_id, group.organization_id))
+        .unwrap_or((0, 0));
+    let routing_index = ModelGroupRoutingIndex::build(catalog);
+    let callable_refs = callable_accounts.iter().collect::<Vec<_>>();
     let mut by_vendor: BTreeMap<String, (String, Vec<GatewayVendorModel>)> = BTreeMap::new();
     catalog.visit_models(None, &mut |model| {
-        // Model routes are keyed by catalog key (`vendor/model`), so the
-        // lookup must try both the model name and the catalog key.
-        let reachable =
-            model_route_targets_callable_account(catalog, &model.model, &callable_accounts)
-                || model_route_targets_callable_account(
-                    catalog,
-                    &model.catalog_key,
-                    &callable_accounts,
-                );
-        if !reachable {
+        if !crate::application::model_reachable_via_routes(catalog, model, &callable_refs) {
             return true;
         }
         if let Some(access) = model_access.as_ref() {
@@ -174,11 +204,23 @@ where
                     .unwrap_or_else(|| model.vendor_code.clone());
                 (name, Vec::new())
             });
+        let groups = routing_index
+            .groups_for_model(catalog, model, scope.0, scope.1, None, None)
+            .into_iter()
+            .map(|group| GatewayModelGroup {
+                id: group.group_id,
+                code: group.group_code,
+                name: group.group_name,
+                is_default: group.is_default,
+                selected: group.selected,
+            })
+            .collect();
         entry.1.push(GatewayVendorModel {
             id: model.model.clone(),
             display_name: model.display_name.clone(),
             context_tokens: model.context_tokens,
             max_output_tokens: model.max_output_tokens,
+            groups,
         });
         true
     });
@@ -186,40 +228,6 @@ where
         .into_iter()
         .map(|(code, (name, models))| GatewayVendorModels { code, name, models })
         .collect()
-}
-
-/// True when any model upstream route for `model_key` targets one of the
-/// group's callable accounts.
-fn model_route_targets_callable_account<C>(
-    catalog: &C,
-    model_key: &str,
-    callable_accounts: &[UpstreamAccountRoute],
-) -> bool
-where
-    C: PricingCatalog,
-{
-    catalog
-        .list_model_upstream_routes(model_key)
-        .iter()
-        .any(|route| {
-            callable_accounts.iter().any(|account| {
-                account.account_id == route.account_id
-                    && account.supplier_code == route.supplier_code
-            })
-        })
-}
-
-fn account_route_is_callable_for_group(
-    route: &UpstreamAccountRoute,
-    account_group_id: i64,
-) -> bool {
-    route
-        .account_group_bindings
-        .iter()
-        .any(|binding| binding.account_group_id == account_group_id)
-        && has_text(route.base_url.as_deref())
-        && (has_text(route.secret_ref.as_deref()) || !route.auth_profile.default_headers.is_empty())
-        && route.is_account_healthy()
 }
 
 fn authenticate<C>(

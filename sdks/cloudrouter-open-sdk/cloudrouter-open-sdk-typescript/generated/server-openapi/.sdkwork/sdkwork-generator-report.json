@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "39e09f791a7f999b180d53e0d60a5de0945090fe3488c5e56c6160bc37efb431",
+  "changeFingerprint": "2f7ecb66358712c7037485fac83609eeffd18d0ce2137aa9e7fadacfa8246367",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -350,6 +350,8 @@
           "src/types/open-ai-json-schema-additional-properties.ts",
           "src/types/open-ai-json-schema-format.ts",
           "src/types/open-ai-json-schema.ts",
+          "src/types/open-ai-model-group-list.ts",
+          "src/types/open-ai-model-group.ts",
           "src/types/open-ai-model-list.ts",
           "src/types/open-ai-model.ts",
           "src/types/open-ai-moderation-create-request.ts",
@@ -691,10 +693,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 506,
-    "models": 418,
+    "totalFiles": 508,
+    "models": 420,
     "apis": 65,
-    "types": 421
+    "types": 423
   },
   "warnings": [
     {
@@ -733,12 +735,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 506,
+    "writtenFiles": 508,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "39e09f791a7f999b180d53e0d60a5de0945090fe3488c5e56c6160bc37efb431",
+    "changeFingerprint": "2f7ecb66358712c7037485fac83609eeffd18d0ce2137aa9e7fadacfa8246367",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -1070,6 +1072,8 @@
         "src/types/open-ai-json-schema-additional-properties.ts",
         "src/types/open-ai-json-schema-format.ts",
         "src/types/open-ai-json-schema.ts",
+        "src/types/open-ai-model-group-list.ts",
+        "src/types/open-ai-model-group.ts",
         "src/types/open-ai-model-list.ts",
         "src/types/open-ai-model.ts",
         "src/types/open-ai-moderation-create-request.ts",
@@ -1593,6 +1597,8 @@
             "src/types/open-ai-json-schema-additional-properties.ts",
             "src/types/open-ai-json-schema-format.ts",
             "src/types/open-ai-json-schema.ts",
+            "src/types/open-ai-model-group-list.ts",
+            "src/types/open-ai-model-group.ts",
             "src/types/open-ai-model-list.ts",
             "src/types/open-ai-model.ts",
             "src/types/open-ai-moderation-create-request.ts",

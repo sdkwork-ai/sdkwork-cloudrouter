@@ -1111,6 +1111,31 @@ pub struct OpenAiVendorModelResponse {
     pub context_tokens: Option<i64>,
     #[serde(rename = "maxOutputTokens", skip_serializing_if = "Option::is_none")]
     pub max_output_tokens: Option<i64>,
+    /// Account groups that can serve this model (Cloud Router extension).
+    /// Omitted when the catalog exposes no groups so older clients see the
+    /// previous shape unchanged.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub groups: Vec<OpenAiModelGroupResponse>,
+}
+
+/// One account group that can serve a model, as exposed on the open-api.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OpenAiModelGroupResponse {
+    /// Numeric group id as a string (wire int64 contract).
+    pub id: String,
+    pub code: String,
+    pub name: String,
+    #[serde(rename = "defaultForModel")]
+    pub default_for_model: bool,
+}
+
+/// Response of `GET /v1/models/{model}/groups`: the groups the authenticated
+/// caller can route this model through.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OpenAiModelGroupListResponse {
+    #[serde(rename = "object")]
+    pub object: String,
+    pub data: Vec<OpenAiModelGroupResponse>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

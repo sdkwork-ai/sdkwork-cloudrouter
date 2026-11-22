@@ -244,13 +244,49 @@ where
     let (classification, invocation_path) = classified;
     let (resource, billing, routing) = classification.into_parts();
     let capability = resource.capability;
+    // Read the body before resolving the account group: the auth-token channel
+    // resolves the caller's model → group rules, which requires the requested
+    // model. Authentication already ran before this function, so buffering the
+    // (body-limit-capped) payload here does not expose work to unauthenticated
+    // callers.
+    let body_limit = state.body_limit_bytes;
+    let body = match invocation_body_from_http(&parts.headers, body, body_limit).await {
+        Ok(body) => body,
+        Err(error) => return response_from_invocation_error(&error),
+    };
+    let request = invocation_request_from_http(
+        parts.method,
+        invocation_path,
+        parts.uri,
+        parts.headers,
+        body,
+        // The request keeps a copy for downstream logs; the policy guard below
+        // still needs the caller's address.
+        client_ip.clone(),
+    );
+    let requested_model =
+        sdkwork_cloudrouter_router_service::application::peek_requested_model(&request);
+    let requested_group = request
+        .headers
+        .get(sdkwork_cloudrouter_router_service::domain::ACCOUNT_GROUP_ROUTING_HEADER)
+        .and_then(|value| value.to_str().ok())
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
     let auth_context = match identity {
-        crate::gateway_api_key_auth::GatewayIdentity::ApiKey(context) => context,
+        crate::gateway_api_key_auth::GatewayIdentity::ApiKey(context) => {
+            sdkwork_cloudrouter_router_service::api::apply_api_key_account_group_override(
+                state.catalog.as_ref(),
+                context,
+                requested_group,
+            )
+        }
         crate::gateway_api_key_auth::GatewayIdentity::Session(identity) => {
-            match sdkwork_cloudrouter_router_service::api::authenticated_context_from_auth_token_identity(
+            match sdkwork_cloudrouter_router_service::api::authenticated_context_from_auth_token_identity_with_routing(
                 state.catalog.as_ref(),
                 identity,
                 Some(capability),
+                requested_model.as_deref(),
+                requested_group,
             ) {
                 Ok(context) => context,
                 Err(response) => return *response,
@@ -263,6 +299,7 @@ where
         organization_id = auth_context.organization_id,
         account_group_id = auth_context.group_id,
         account_group_code = %auth_context.group_code,
+        requested_model = requested_model.as_deref().unwrap_or(""),
         capability = %capability_code(capability),
         "invocation.http authentication succeeded"
     );
@@ -278,19 +315,6 @@ where
     {
         return response_from_policy_violation(&violation);
     }
-    let body_limit = state.body_limit_bytes;
-    let body = match invocation_body_from_http(&parts.headers, body, body_limit).await {
-        Ok(body) => body,
-        Err(error) => return response_from_invocation_error(&error),
-    };
-    let request = invocation_request_from_http(
-        parts.method,
-        invocation_path,
-        parts.uri,
-        parts.headers,
-        body,
-        client_ip,
-    );
     let account_group_id = auth_context.group_id;
     // 计费主体解析（团队计费）：key → 用户 → 成员关系投影 → 组织钱包。
     // MembershipRequired（key 绑定组织但非成员）显式 403；其余解析失败
@@ -855,21 +879,30 @@ fn apply_gateway_dispatch_defaults<C>(
         let callable_accounts = catalog
             .list_upstream_account_routes()
             .into_iter()
-            .filter(|route| group_account_route_is_callable(route, account_group_id))
+            .filter(|route| {
+                sdkwork_cloudrouter_router_service::application::account_route_is_callable_for_group(
+                    route,
+                    account_group_id,
+                )
+            })
             .collect::<Vec<_>>();
         // 分组模型黑白名单：禁止的模型不进入可见列表（与路由执行一致）
         let model_access = catalog.account_group_model_access(account_group_id);
+        let scope = catalog
+            .list_upstream_account_groups()
+            .into_iter()
+            .find(|group| group.id == account_group_id)
+            .map(|group| (group.tenant_id, group.organization_id))
+            .unwrap_or((0, 0));
+        let routing_index =
+            sdkwork_cloudrouter_router_service::application::ModelGroupRoutingIndex::build(catalog);
+        let callable_refs = callable_accounts.iter().collect::<Vec<_>>();
         catalog.visit_models(None, &mut |model| {
-            // Model routes are keyed by catalog key (`vendor/model`), so the
-            // lookup must try both the model name and the catalog key.
-            let reachable =
-                model_upstream_route_matches_account(catalog, &model.model, &callable_accounts)
-                    || model_upstream_route_matches_account(
-                        catalog,
-                        &model.catalog_key,
-                        &callable_accounts,
-                    );
-            if !reachable {
+            if !sdkwork_cloudrouter_router_service::application::model_reachable_via_routes(
+                catalog,
+                model,
+                &callable_refs,
+            ) {
                 return true;
             }
             if let Some(access) = model_access.as_ref() {
@@ -897,6 +930,25 @@ fn apply_gateway_dispatch_defaults<C>(
             if let Some(vendor) = vendor {
                 entry["vendorDisplayName"] = json!(vendor.display_name);
             }
+            let groups = routing_index.groups_for_model(
+                catalog,
+                model,
+                scope.0,
+                scope.1,
+                None,
+                None,
+            );
+            if !groups.is_empty() {
+                entry["groups"] = json!(groups
+                    .into_iter()
+                    .map(|group| json!({
+                        "id": group.group_id.to_string(),
+                        "code": group.group_code,
+                        "name": group.group_name,
+                        "defaultForModel": group.selected,
+                    }))
+                    .collect::<Vec<_>>());
+            }
             models.push(entry);
             true
         });
@@ -907,6 +959,73 @@ fn apply_gateway_dispatch_defaults<C>(
                 "object": "list",
                 "data": models
             }),
+        ));
+        return;
+    }
+
+    if invocation.resource.surface == InvocationSurface::OpenAiCompatible
+        && invocation.resource.resource_type == ResourceType::FreeEndpoint
+        && invocation.resource.api_code == "openai.models"
+        && invocation.request.method == axum::http::Method::GET
+        && invocation.request.path.starts_with("/v1/models/")
+        && invocation.request.path.ends_with("/groups")
+    {
+        // Cloud Router extension: the account groups that can serve one model.
+        // The classifier keys every `/v1/models/<id>…` path to `openai.models`,
+        // so this branch must come before the generic not-implemented default.
+        let model = invocation
+            .request
+            .path
+            .trim_start_matches("/v1/models/")
+            .trim_end_matches("/groups")
+            .trim_end_matches('/');
+        let scope = catalog
+            .list_upstream_account_groups()
+            .into_iter()
+            .find(|group| group.id == account_group_id)
+            .map(|group| (group.tenant_id, group.organization_id))
+            .unwrap_or((0, 0));
+        let mut found = catalog.find_model(model);
+        if found.is_none() {
+            catalog.visit_models(None, &mut |candidate| {
+                if candidate.model != model {
+                    return true;
+                }
+                found = Some(candidate.clone());
+                false
+            });
+        }
+        let not_found = found.is_none();
+        let response = match found {
+            Some(found) => {
+                let data = sdkwork_cloudrouter_router_service::application::model_group_options(
+                    catalog, &found, scope.0, scope.1,
+                )
+                .into_iter()
+                .map(|group| {
+                    json!({
+                        "id": group.group_id.to_string(),
+                        "code": group.group_code,
+                        "name": group.group_name,
+                        "defaultForModel": group.selected,
+                    })
+                })
+                .collect::<Vec<_>>();
+                json!({ "object": "list", "data": data })
+            }
+            None => json!({
+                "error": {
+                    "message": "model not found",
+                    "type": "invalid_request_error",
+                    "param": null,
+                    "code": "model_not_found"
+                }
+            }),
+        };
+        invocation.dispatch.mode = DispatchMode::SyntheticLocalResponse;
+        invocation.dispatch.response = Some(InvocationDispatchResponse::json(
+            if not_found { 404 } else { 200 },
+            response,
         ));
         return;
     }
@@ -935,6 +1054,18 @@ fn apply_gateway_dispatch_defaults<C>(
                     }
                     if let Some(max_output_tokens) = model.max_output_tokens {
                         entry["maxOutputTokens"] = json!(max_output_tokens);
+                    }
+                    if !model.groups.is_empty() {
+                        entry["groups"] = json!(model
+                            .groups
+                            .into_iter()
+                            .map(|group| json!({
+                                "id": group.id.to_string(),
+                                "code": group.code,
+                                "name": group.name,
+                                "defaultForModel": group.selected,
+                            }))
+                            .collect::<Vec<_>>());
                     }
                     entry
                 })
@@ -1317,50 +1448,6 @@ fn invalid_request(message: impl Into<String>) -> InvocationError {
     InvocationError::new(InvocationErrorKind::InvalidRequest, message)
 }
 
-/// True when any model upstream route for `model_key` targets one of the
-/// group's callable accounts.
-fn model_upstream_route_matches_account<C>(
-    catalog: &C,
-    model_key: &str,
-    callable_accounts: &[sdkwork_cloudrouter_router_service::domain::UpstreamAccountRoute],
-) -> bool
-where
-    C: sdkwork_cloudrouter_router_service::ports::PricingCatalog,
-{
-    catalog
-        .list_model_upstream_routes(model_key)
-        .iter()
-        .any(|route| {
-            callable_accounts.iter().any(|account| {
-                account.account_id == route.account_id
-                    && account.supplier_code == route.supplier_code
-            })
-        })
-}
-
-/// An upstream account route is callable for the group when it is bound to
-/// the group and carries a base URL plus a credential (or default headers).
-fn group_account_route_is_callable(
-    route: &sdkwork_cloudrouter_router_service::domain::UpstreamAccountRoute,
-    account_group_id: i64,
-) -> bool {
-    route
-        .account_group_bindings
-        .iter()
-        .any(|binding| binding.account_group_id == account_group_id)
-        && route
-            .base_url
-            .as_deref()
-            .map(str::trim)
-            .is_some_and(|value| !value.is_empty())
-        && (route
-            .secret_ref
-            .as_deref()
-            .map(str::trim)
-            .is_some_and(|value| !value.is_empty())
-            || !route.auth_profile.default_headers.is_empty())
-}
-
 #[cfg(test)]
 mod gateway_dispatch_defaults_tests {
     use super::apply_gateway_dispatch_defaults;
@@ -1442,6 +1529,47 @@ mod gateway_dispatch_defaults_tests {
         ));
         catalog.add_api_key(GatewayApiKey::new(101, 10, "sk-live", "hash"));
         catalog
+    }
+
+    fn model_groups_invocation(model: &str) -> Invocation {
+        Invocation::new(
+            InvocationRequest::new(Method::GET, format!("/v1/models/{model}/groups")),
+            subject(),
+            InvocationResource::free_endpoint(
+                "openai/management/models",
+                "openai.models",
+                RoutingCapability::Network,
+            ),
+            InvocationBilling::free(),
+        )
+    }
+
+    #[test]
+    fn model_groups_endpoint_lists_the_groups_that_serve_the_model() {
+        let mut invocation = model_groups_invocation("gpt-4o-mini");
+        apply_gateway_dispatch_defaults(&mut invocation, &catalog(), 10);
+        assert_eq!(
+            invocation.dispatch.mode,
+            DispatchMode::SyntheticLocalResponse
+        );
+        let response = invocation.dispatch.response.expect("synthetic response");
+        assert_eq!(200, response.status_code);
+        let body = response.body.expect("json body");
+        assert_eq!("list", body["object"]);
+        let groups = body["data"].as_array().expect("group data array");
+        assert_eq!(1, groups.len());
+        assert_eq!("10", groups[0]["id"]);
+        assert_eq!("standard-group", groups[0]["code"]);
+    }
+
+    #[test]
+    fn model_groups_endpoint_returns_404_for_an_unknown_model() {
+        let mut invocation = model_groups_invocation("does-not-exist");
+        apply_gateway_dispatch_defaults(&mut invocation, &catalog(), 10);
+        let response = invocation.dispatch.response.expect("synthetic response");
+        assert_eq!(404, response.status_code);
+        let body = response.body.expect("json body");
+        assert_eq!("model_not_found", body["error"]["code"]);
     }
 
     #[test]

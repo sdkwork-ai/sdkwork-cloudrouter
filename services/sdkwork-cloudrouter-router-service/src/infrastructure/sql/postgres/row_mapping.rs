@@ -13,6 +13,7 @@ use crate::infrastructure::sql::rows::{
     ModelMappingRuleRow, ModelPriceRow, ModelVendorRow, PricingDefaultRegionRow, PricingPlanRow,
     PricingRuleRow, QuotaPolicyRow, UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow,
     UpstreamAccountModelAccessRow, UpstreamAccountRouteRow, UpstreamSupplierModelAccessRow,
+    UserAccountGroupRouteRow,
 };
 
 pub async fn load_vendors(
@@ -204,6 +205,28 @@ pub async fn load_upstream_account_groups(
             sale_multiplier: row.try_get("sale_multiplier")?,
             model_blacklist_json: row.try_get("model_blacklist")?,
             model_whitelist_json: row.try_get("model_whitelist")?,
+        })
+    })
+    .fetch(executor)
+    .await
+}
+
+pub async fn load_user_account_group_routes(
+    executor: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
+    sql: &'static str,
+) -> Result<Vec<UserAccountGroupRouteRow>, sqlx::Error> {
+    map_query(sql, |row| {
+        Ok(UserAccountGroupRouteRow {
+            tenant_id: row.try_get("tenant_id")?,
+            organization_id: row.try_get("organization_id")?,
+            user_id: row.try_get("user_id")?,
+            scope_type: row.try_get("scope_type")?,
+            modality: row.try_get("modality")?,
+            vendor_code: row.try_get("vendor_code")?,
+            model: row.try_get("model")?,
+            account_group_id: row.try_get("account_group_id")?,
+            account_group_code: row.try_get("account_group_code")?,
+            priority: row.try_get("priority")?,
         })
     })
     .fetch(executor)

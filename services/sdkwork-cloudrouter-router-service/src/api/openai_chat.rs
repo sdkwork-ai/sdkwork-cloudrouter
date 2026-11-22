@@ -17,7 +17,8 @@ use sdkwork_cloudrouter_security::redact_error_message;
 use serde_json::Value;
 
 use crate::api::openai_auth_token::{
-    authenticated_context_from_auth_token_identity, OpenAiAuthTokenAuthenticator,
+    apply_api_key_account_group_override,
+    authenticated_context_from_auth_token_identity_with_routing, OpenAiAuthTokenAuthenticator,
 };
 use crate::api::openai_contract::OpenAiChatCompletionRequest;
 use crate::api::openai_error::openai_error;
@@ -601,13 +602,20 @@ where
     // Flexible bearer channel: API-key prefixed credentials (`sk-`/`sp-`)
     // authenticate through the gateway API key store; any other bearer value
     // is treated as an SDKWork auth token.
+    let requested_group = headers
+        .get(crate::domain::ACCOUNT_GROUP_ROUTING_HEADER)
+        .and_then(|value| value.to_str().ok());
     let context = match state.bearer_classifier.classify(credential_secret) {
         OpenApiCredentialKind::ApiKey => match authenticate_api_key(
             state.catalog.as_ref(),
             state.api_key_hasher.as_ref(),
             &identity,
         ) {
-            Ok(context) => context,
+            Ok(context) => apply_api_key_account_group_override(
+                state.catalog.as_ref(),
+                context,
+                requested_group,
+            ),
             Err(response) => return *response,
         },
         OpenApiCredentialKind::AuthToken => {
@@ -631,10 +639,12 @@ where
                 Ok(identity) => identity,
                 Err(response) => return *response,
             };
-            match authenticated_context_from_auth_token_identity(
+            match authenticated_context_from_auth_token_identity_with_routing(
                 state.catalog.as_ref(),
                 identity,
                 Some(RoutingCapability::Chat),
+                Some(request.model.as_str()),
+                requested_group,
             ) {
                 Ok(context) => context,
                 Err(response) => return *response,

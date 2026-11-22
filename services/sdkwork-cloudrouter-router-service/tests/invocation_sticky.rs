@@ -549,6 +549,43 @@ async fn session_commit_works_for_streaming_response_without_json_body() {
 }
 
 #[tokio::test]
+async fn interrupted_stream_does_not_commit_a_sticky_binding() {
+    // A stream that reaches its 200 headers but ends mid-answer (cancel,
+    // deadline, upstream failure) keeps `dispatch.response` at 200. Committing
+    // its binding would pin every later request in the session to the account
+    // that just failed.
+    let store = Arc::new(MemoryStickyRouteStore::default());
+    let mut invocation = session_sticky_invocation();
+    invocation.account = Some(routed_account());
+    invocation.dispatch = InvocationDispatch {
+        mode: DispatchMode::DirectHttpPassthrough,
+        invocation_shape:
+            sdkwork_cloudrouter_router_service::application::InvocationShape::SseStream,
+        adapter_target: None,
+        resolved_secret: None,
+        provider_request: None,
+        response: Some(
+            sdkwork_cloudrouter_router_service::application::InvocationDispatchResponse::streaming(
+                200,
+                Some("text/event-stream".to_owned()),
+                axum::body::Body::empty(),
+            ),
+        ),
+    };
+    invocation.telemetry.stream_interrupted = true;
+
+    StickyCommitInterceptor::new(store.clone())
+        .after(&mut invocation)
+        .await
+        .expect("sticky commit");
+
+    assert!(
+        store.upserts.lock().expect("upserts").is_empty(),
+        "an interrupted stream must not be committed as a sticky binding"
+    );
+}
+
+#[tokio::test]
 async fn session_sticky_store_failure_falls_back_to_regular_routing() {
     // 与资源型 sticky 不同，会话亲和查找故障不应拖垮请求。
     let store = Arc::new(MemoryStickyRouteStore::failing_lookups());

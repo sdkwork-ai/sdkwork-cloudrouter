@@ -1,15 +1,31 @@
+mod account_group_routing;
 mod async_usage_task;
 mod billing_owner;
+mod model_group;
 mod model_request_alias;
 mod storage_delivery;
 mod upstream_account_group_selection;
 mod upstream_auth;
 mod vendor_code_alias;
 
+pub use account_group_routing::{
+    account_group_can_serve_modality, normalize_account_group_header,
+    select_api_key_account_group_override, select_session_account_group_with_user_routing,
+    select_session_account_group_with_user_routing_and_support, session_modality_from_wire,
+    AccountGroupRouteScope, SessionAccountGroupRoutingSelection, UserAccountGroupRoute,
+    ACCOUNT_GROUP_ROUTING_HEADER, ACCOUNT_GROUP_ROUTING_HEADER_MAX_LEN,
+};
+pub(crate) use account_group_routing::rule_matches_request;
+
 pub use async_usage_task::{
     AsyncUsageTask, AsyncUsageTaskKind, AsyncUsageTaskStatus, NewAsyncUsageTask,
 };
 pub use billing_owner::BillingOwnerKind;
+pub use model_group::{
+    ModelGroupCatalogModality, ModelGroupCatalogModel, ModelGroupCatalogVendor, ModelGroupOption,
+};
+// The alias helpers stay crate-internal (`pub(crate)` in their module); the
+// re-export must not widen them to the public API.
 pub(crate) use model_request_alias::{
     model_alias_probes, model_alias_slug, model_id_segment, model_matches_alias_probe,
     normalize_wire_model_id, ModelAliasProbe,

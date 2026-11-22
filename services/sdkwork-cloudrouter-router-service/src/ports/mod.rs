@@ -37,6 +37,7 @@ mod api_key_command_store;
 mod api_key_management_read_store;
 mod app_gateway_traces_read_store;
 mod app_invite_store;
+mod app_model_group_store;
 mod app_notification_store;
 mod app_routing_read_store;
 mod app_runtime_gateway_client;
@@ -242,6 +243,10 @@ pub use app_invite_store::{
     AppInviteCodeItem, AppInviteCodeOwner, AppInviteCommandFuture, AppInvitePolicy,
     AppInviteRelationClaimed, AppInviteStore, AppInviteSubject, ClaimAppInviteRelationCommand,
     IssueAppInviteCodeCommand, ValidateAppInviteCodeQuery,
+};
+pub use app_model_group_store::{
+    AppModelGroupCatalogQuery, AppModelGroupDefaultItem, AppModelGroupFuture, AppModelGroupStore,
+    AppModelGroupSubject, SetAppModelGroupDefaultCommand,
 };
 pub use app_notification_store::{
     AcknowledgeAppNotificationCommand, AppNotificationFuture, AppNotificationItem,

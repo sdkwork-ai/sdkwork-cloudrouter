@@ -27,6 +27,7 @@ mod app_api_keys;
 mod app_dashboard;
 mod app_gateway;
 mod app_invite;
+mod app_model_groups;
 mod app_notification;
 mod app_pricing;
 mod app_routing;
@@ -96,6 +97,9 @@ pub use app_pricing::{
     app_pricing_router_with_read_store,
 };
 pub use app_routing::app_routing_router;
+pub use app_model_groups::{
+    app_model_group_router, empty_app_model_group_router, APP_MODEL_GROUP_ROUTES,
+};
 pub use app_routing::app_routing_router_with_read_store;
 pub use app_runtime::app_runtime_router;
 pub use app_runtime::app_runtime_router_with_store;
@@ -118,7 +122,8 @@ pub use gateway_balance::{
     GatewayTokenBankBalance, ZeroGatewayBalanceStore,
 };
 pub use openai_auth_token::{
-    authenticated_context_from_auth_token_identity, OpenAiAuthTokenAuthenticator,
+    apply_api_key_account_group_override, authenticated_context_from_auth_token_identity,
+    authenticated_context_from_auth_token_identity_with_routing, OpenAiAuthTokenAuthenticator,
     OpenAiAuthTokenError, OpenAiAuthTokenIdentity,
 };
 pub use openai_chat::openai_chat_completions_router;

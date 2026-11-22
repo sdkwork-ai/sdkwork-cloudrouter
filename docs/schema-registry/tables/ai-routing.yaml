@@ -1676,3 +1676,78 @@ tables:
     - resource_code
     - status
     - id
+
+- table: ai_user_account_group_route
+  domain: ai
+  profile: tenant_entity
+  soft_delete_policy: active_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - open
+  - worker
+  frontend_routes:
+  - /console/routing/default-groups
+  columns:
+    user_id:
+      type: int64
+      constraints: NOT NULL
+    scope_type:
+      type: string(16)
+      constraints: NOT NULL
+    modality:
+      type: string(32)
+      constraints: NOT NULL DEFAULT ''
+    vendor_code:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    model:
+      type: string(200)
+      constraints: NOT NULL DEFAULT ''
+    account_group_id:
+      type: int64
+      constraints: NOT NULL
+    account_group_code:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+  unique_constraints:
+  - name: uk_ai_user_account_group_route_scope_group
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - scope_type
+    - modality
+    - vendor_code
+    - model
+    - account_group_id
+    where: deleted_at IS NULL
+  check_constraints:
+  - name: ck_ai_user_account_group_route_user
+    expression: user_id > 0
+  - name: ck_ai_user_account_group_route_scope
+    expression: scope_type IN ('model', 'vendor', 'modality')
+      AND modality IN ('', 'text', 'image', 'video', 'audio', 'music')
+      AND priority >= 0
+      AND ((scope_type = 'modality' AND vendor_code = '' AND model = '' AND modality <> '')
+      OR (scope_type = 'vendor' AND vendor_code <> '' AND model = '')
+      OR (scope_type = 'model' AND model <> ''))
+  indexes:
+  - name: ix_ai_user_account_group_route_user
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - id
+    where: deleted_at IS NULL
+  - name: ix_ai_user_account_group_route_group
+    columns:
+    - account_group_id
+    - id
+    where: deleted_at IS NULL

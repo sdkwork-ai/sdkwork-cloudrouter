@@ -18,9 +18,7 @@ use axum::response::Response;
 use crate::api::openai_error::openai_error;
 use crate::api::AUTH_TOKEN_SESSION_NAME_SNAPSHOT;
 use crate::application::AuthenticatedApiKeyContext;
-use crate::domain::{
-    select_default_session_account_group, RoutingCapability, SessionAccountGroupModality,
-};
+use crate::domain::{RoutingCapability, SessionAccountGroupModality};
 use crate::ports::UpstreamAccountRouteCatalog;
 
 /// Error type for the auth-token channel (an HTTP response to return).
@@ -71,13 +69,93 @@ pub fn authenticated_context_from_auth_token_identity<C>(
 where
     C: UpstreamAccountRouteCatalog,
 {
+    authenticated_context_from_auth_token_identity_with_routing(
+        catalog,
+        identity,
+        capability,
+        None,
+        None,
+    )
+}
+
+/// Model-aware variant of
+/// [`authenticated_context_from_auth_token_identity`].
+///
+/// Adds the two user-controlled routing layers in front of the account-level
+/// default group:
+///
+/// 1. `requested_group` — the value of
+///    [`crate::domain::ACCOUNT_GROUP_ROUTING_HEADER`] (`x-sdkwork-account-group`),
+///    naming a group id or code the subject may use;
+/// 2. the user's own model → group rules
+///    (`ai_user_account_group_route`) for `requested_model` — model first, then
+///    vendor, then modality.
+///
+/// Both layers only choose among groups that are already in the subject's
+/// scope and serve the requested modality; an unknown or unreachable value
+/// falls through to the account-level default instead of failing the request.
+pub fn authenticated_context_from_auth_token_identity_with_routing<C>(
+    catalog: &C,
+    identity: OpenAiAuthTokenIdentity,
+    capability: Option<RoutingCapability>,
+    requested_model: Option<&str>,
+    requested_group: Option<&str>,
+) -> Result<AuthenticatedApiKeyContext, OpenAiAuthTokenError>
+where
+    C: UpstreamAccountRouteCatalog,
+{
     let modality = capability.and_then(SessionAccountGroupModality::from_capability);
     let groups = catalog.list_session_account_groups();
-    let Some(selection) = select_default_session_account_group(
+    let user_routes = catalog.list_user_account_group_routes();
+    let requested_model = requested_model
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    let mut requested_model_keys = Vec::new();
+    let mut requested_vendor_codes = Vec::new();
+    if let Some(model) = requested_model {
+        requested_model_keys.push(model.to_owned());
+        for key in catalog.model_catalog_keys_by_name(model) {
+            if !requested_model_keys
+                .iter()
+                .any(|existing| existing.eq_ignore_ascii_case(&key))
+            {
+                requested_model_keys.push(key);
+            }
+        }
+        requested_vendor_codes = catalog.model_vendor_codes_by_name(model);
+        if requested_vendor_codes.is_empty() {
+            if let Some(found) = catalog.find_model(model) {
+                requested_vendor_codes.push(found.vendor_code);
+            }
+        }
+    }
+    // Restrict one-to-many rules to groups that can actually serve this model,
+    // so a configured list is a real failover list instead of pinning a group
+    // that has no account for the model.
+    let model_support = requested_model.and_then(|model| {
+        let found = catalog.find_model(model).or_else(|| {
+            requested_model_keys
+                .iter()
+                .find_map(|key| catalog.find_model(key))
+        })?;
+        Some(crate::application::model_supported_group_ids(
+            catalog,
+            &found,
+            identity.tenant_id,
+            identity.organization_id,
+        ))
+    });
+    let Some(selection) = crate::domain::select_session_account_group_with_user_routing_and_support(
         &groups,
+        &user_routes,
         identity.tenant_id,
         identity.organization_id,
+        identity.user_id,
         modality,
+        &requested_model_keys,
+        &requested_vendor_codes,
+        requested_group,
+        model_support.as_deref(),
     ) else {
         let modality_label = modality
             .map(|modality| modality.group_type())
@@ -93,7 +171,14 @@ where
             ),
         )));
     };
-    let group = selection.group;
+    let group = selection.group().clone();
+    tracing::debug!(
+        account_group_id = group.id,
+        account_group_code = %group.code,
+        routing_source = selection.reason().as_str(),
+        requested_model = requested_model.unwrap_or(""),
+        "session account group resolved"
+    );
     Ok(AuthenticatedApiKeyContext {
         // No gateway API key backs an auth-token session; 0 marks the synthetic
         // identity used for audit/usage attribution.
@@ -106,6 +191,57 @@ where
         group_code: group.code,
         pricing_plan_code: group.pricing_plan_code,
     })
+}
+
+/// Applies the explicit account-group header to an **API-key** context.
+///
+/// An API key is already bound to one or more account groups; the header may
+/// only narrow the choice to one of those bindings. Anything else (unknown
+/// id/code, a group bound to another key, a blank header) keeps the key's own
+/// default group — a header must never let a key escape its authorization
+/// scope.
+pub fn apply_api_key_account_group_override<C>(
+    catalog: &C,
+    context: AuthenticatedApiKeyContext,
+    requested_group: Option<&str>,
+) -> AuthenticatedApiKeyContext
+where
+    C: UpstreamAccountRouteCatalog,
+{
+    let Some(raw) = crate::domain::normalize_account_group_header(requested_group) else {
+        return context;
+    };
+    let Some(api_key) = catalog.find_api_key(context.api_key_id) else {
+        tracing::warn!(
+            api_key_id = context.api_key_id,
+            "account-group header ignored: authenticated api key is no longer in the catalog"
+        );
+        return context;
+    };
+    let bound_group_ids = api_key
+        .effective_account_group_bindings()
+        .iter()
+        .map(|binding| binding.account_group_id)
+        .collect::<Vec<_>>();
+    let groups = catalog.list_upstream_account_groups();
+    let Some(group) = crate::domain::select_api_key_account_group_override(
+        &bound_group_ids,
+        &groups,
+        Some(raw),
+    ) else {
+        tracing::warn!(
+            api_key_id = context.api_key_id,
+            requested = raw,
+            "account-group header ignored: the group is not bound to this api key"
+        );
+        return context;
+    };
+    AuthenticatedApiKeyContext {
+        group_id: group.id,
+        group_code: group.code,
+        pricing_plan_code: group.pricing_plan_code,
+        ..context
+    }
 }
 
 #[cfg(test)]
@@ -208,5 +344,67 @@ mod tests {
         )
         .expect_err("no chat-capable default");
         assert_eq!(StatusCode::SERVICE_UNAVAILABLE, error.status());
+    }
+
+    #[test]
+    fn header_override_selects_the_requested_group() {
+        let catalog = catalog_with(&[
+            (10, "default-group", "mixed", &[]),
+            (20, "video-pool", "video", &["video"]),
+        ]);
+        let context = authenticated_context_from_auth_token_identity_with_routing(
+            &catalog,
+            identity(),
+            Some(RoutingCapability::Chat),
+            Some("gpt-4o"),
+            Some("default-group"),
+        )
+        .expect("header override");
+        assert_eq!(10, context.group_id);
+    }
+
+    #[test]
+    fn user_model_rule_wins_over_the_account_default() {
+        let mut catalog = catalog_with(&[
+            (10, "default-group", "mixed", &[]),
+            (30, "llm-pool", "llm", &["text"]),
+        ]);
+        // The test catalog has no models; register the routing rule directly.
+        catalog.add_user_account_group_route(crate::domain::UserAccountGroupRoute {
+            tenant_id: TENANT_ID,
+            organization_id: 0,
+            user_id: 30,
+            scope: crate::domain::AccountGroupRouteScope::Model,
+            modality: "text".to_owned(),
+            vendor_code: String::new(),
+            model: "gpt-4o".to_owned(),
+            account_group_id: 30,
+            account_group_code: "llm-pool".to_owned(),
+            priority: 100,
+        });
+        let context = authenticated_context_from_auth_token_identity_with_routing(
+            &catalog,
+            identity(),
+            Some(RoutingCapability::Chat),
+            Some("gpt-4o"),
+            None,
+        )
+        .expect("user model rule");
+        assert_eq!(30, context.group_id);
+        assert_eq!("llm-pool", context.group_code);
+    }
+
+    #[test]
+    fn unknown_header_group_falls_back_to_the_account_default() {
+        let catalog = catalog_with(&[(10, "default-group", "mixed", &[])]);
+        let context = authenticated_context_from_auth_token_identity_with_routing(
+            &catalog,
+            identity(),
+            Some(RoutingCapability::Chat),
+            None,
+            Some("does-not-exist"),
+        )
+        .expect("fallback");
+        assert_eq!(10, context.group_id);
     }
 }

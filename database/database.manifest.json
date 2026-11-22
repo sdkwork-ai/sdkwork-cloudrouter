@@ -50,7 +50,7 @@
     "provider": "default",
     "hooks": []
   },
-  "materializedTableCount": 44,
+  "materializedTableCount": 45,
   "materializedTables": [
     "ai_chat_context_snapshot",
     "ai_chat_conversation",
@@ -85,6 +85,7 @@
     "ai_upstream_supplier_auth_method",
     "ai_upstream_supplier_endpoint",
     "ai_upstream_supplier_endpoint_health_state",
+    "ai_user_account_group_route",
     "iam_user_preference",
     "integration_webhook_endpoint",
     "storage_bucket",

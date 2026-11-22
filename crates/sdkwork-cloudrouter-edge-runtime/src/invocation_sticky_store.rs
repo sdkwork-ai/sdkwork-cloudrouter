@@ -81,10 +81,12 @@ impl StickyRouteStore for InvocationStickyObjectRouteStore {
                     (id, uuid, tenant_id, organization_id, status, api_key_id, account_group_id,
                      object_type, object_id, object_key_hash, parent_object_type,
                      parent_object_id, supplier_code, account_id, vendor_code, api_code,
-                     catalog_key, provider_model, region_code, sticky_scope, last_seen_at)
+                     catalog_key, provider_model, region_code, sticky_scope, last_seen_at,
+                     expires_at)
                 VALUES
                     ($19, $1, $2, $3, 1, $4, $5, $6, $7, $8, $9, $10,
-                     $11, $12, $13, $14, $15, $16, $17, $18, CURRENT_TIMESTAMP)
+                     $11, $12, $13, $14, $15, $16, $17, $18, CURRENT_TIMESTAMP,
+                     CURRENT_TIMESTAMP + INTERVAL '7 days')
                 ON CONFLICT(tenant_id, organization_id, object_type, object_id)
                 WHERE deleted_at IS NULL
                 DO UPDATE SET
@@ -103,6 +105,11 @@ impl StickyRouteStore for InvocationStickyObjectRouteStore {
                     region_code = EXCLUDED.region_code,
                     sticky_scope = EXCLUDED.sticky_scope,
                     last_seen_at = CURRENT_TIMESTAMP,
+                    -- Sliding expiry: every hit extends the binding. Without it
+                    -- `expires_at` stayed NULL, the read filter never excluded a
+                    -- row, and a session stayed pinned to one account (and the
+                    -- table grew) forever.
+                    expires_at = EXCLUDED.expires_at,
                     updated_at = CURRENT_TIMESTAMP,
                     version = ai_upstream_object_route.version + 1
                 "#,

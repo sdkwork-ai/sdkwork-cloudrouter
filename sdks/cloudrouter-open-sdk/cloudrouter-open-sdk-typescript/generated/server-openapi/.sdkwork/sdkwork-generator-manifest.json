@@ -208,7 +208,7 @@
     },
     {
       "path": "src/api/models.ts",
-      "sha256": "324fe9946d2f94789b82aa52b930c40ac6fb5ec1dabc0f36543dd9258a1acce0"
+      "sha256": "1a03ecbfcffaf1c6ea8c10dc5b9e490c216f1b01311cc3c7dc5ba617dd3c725a"
     },
     {
       "path": "src/api/moderations.ts",
@@ -840,7 +840,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "dab8def0d6bac375fe9e79ade30211751e24430817b733dc2444248e680471b0"
+      "sha256": "915cd604dc0ae84176e7d1c2d0c28c8718c0d84fa1caa9c265b7c55296d5fe3d"
     },
     {
       "path": "src/types/jimeng-video-generation-request.ts",
@@ -1325,6 +1325,14 @@
     {
       "path": "src/types/open-ai-json-schema.ts",
       "sha256": "9a4893c1d6cb6a34314fa679ab01b6b881472a4e28e3b789db89e2b6c2f38250"
+    },
+    {
+      "path": "src/types/open-ai-model-group-list.ts",
+      "sha256": "7b8f0951fbd8013ee4948da47faaeae8890f3026d646b8ce6e615b50ff19bc43"
+    },
+    {
+      "path": "src/types/open-ai-model-group.ts",
+      "sha256": "0546df5eed4826c93c52b7e19d33033c1f78a9ae79e4a5c130cf4a846f5aaed1"
     },
     {
       "path": "src/types/open-ai-model-list.ts",

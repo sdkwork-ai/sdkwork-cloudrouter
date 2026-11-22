@@ -2,6 +2,8 @@ export { BaseApi } from './base';
 export { backendApiPath } from './paths';
 export * from './ai';
 export * from './billing';
+export * from './mcp';
+export * from './memory';
 export * from './payments';
 export * from './pricing';
 export * from './recharges';

@@ -164,6 +164,13 @@ impl InvocationInterceptor for StickyCommitInterceptor {
             // 会话 sticky 以请求中的会话 id 作为绑定键（会话 id 会透传给
             // 上游账号），因此不依赖响应体——流式（SSE）响应没有 JSON body
             // 也必须能提交绑定；其余模式仍从成功响应中提取对象 id。
+            // An interrupted stream (client cancel, deadline, upstream failure)
+            // keeps its 200 transport status, but committing its binding would
+            // pin every later request in this session to the account that just
+            // failed mid-answer.
+            if invocation.telemetry.stream_interrupted {
+                return Ok(());
+            }
             let object_id = match sticky.mode {
                 StickyMode::SessionSticky => sticky
                     .object_id

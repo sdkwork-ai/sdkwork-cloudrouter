@@ -33,6 +33,18 @@
 | `on_error` 失败被静默吞掉 | 已修复（逐钩子 error 日志） |
 | 流式下游取消丢失已产生用量 | 已修复（共享用量累加器），含单测 |
 | 账号 `timeout_ms` 被当作流总时限 | 已修复（总时限改用 runtime stream ceiling），含测试 |
+| 请求级总超时未记录 attempt | 已修复（记 `request_deadline_exceeded`），含测试 |
+| 指标读 transport 状态而非 effective 状态 | 已修复（归一化/adapter 状态优先），含单测 |
+| 粘性绑定永不过期 | 已修复（滑动 7 天 `expires_at`） |
+| 粘性命中后单候选、熔断即 503 | 已修复（非 lookup 保留常规候选作为回退），含单测 |
+| 流被中断仍提交粘性绑定 | 已修复（`stream_interrupted` 守卫），含单测 |
+| 非流式 2xx 无 `usage` 免单 | 已修复（输入/输出估算兜底），含用例 + 全 billing 套件回归 |
+| 流中失败对熔断不可见 | 已修复（中断改写 attempt；客户端取消不背锅），含单测 |
+| API Key pepper 不可轮换 | 已修复（哈希 ring + 认证探测候选世代），含用例 |
+| API Key 原始密文轮换后不可读 | 已修复（按 `key_secret_key_id` 的解密 ring），含单测 |
+| 幂等等待窗口过短（~1s 即 409） | 已修复（10s 预算、按租约钳制），含用例 |
+| 429 与传输故障共用熔断阈值/冷却 | 已修复（本地 + Redis：独立 streak + 短冷却），含 4 用例 |
+| 幂等键透传上游（跨租户假去重） | 已修复（网关终止 `idempotency-key`），含单测 |
 
 ## 3. 事故根因
 
@@ -233,6 +245,160 @@ chat 需要运维在供应商资源页绑定协议组（`/upstream_suppliers/{id
   `invocation_router_times_out_an_unpolled_stream_and_releases_idempotency`
   （改为用 `stream_response_timeout` 配置短 ceiling 来验证"未消费流到期释放幂等锁"）。
 
+**V. 请求级总超时未记录 attempt（已修复）**
+- 位置：`dispatch_executor.rs` 请求级 deadline 分支
+- 事实：该分支只设置 `last_error` 后跳出，不写 `attempted_routes`；命中总时限的
+  账号不会被记一次失败，挂死账号永远进不了熔断。
+- 修复：分支内标记后补齐 `failed_attempt`（code `request_deadline_exceeded`）再
+  退出；因 dispatch future 持有 `&mut Invocation`，实际记录放在 select 之后。
+- 测试：`request_deadline_records_a_failed_attempt_for_the_hanging_account`
+  （`start_paused` 虚拟时钟 + 永久 pending 的 dispatcher）。
+
+**W. 指标读 transport 状态而非 effective 状态（已修复）**
+- 位置：`metrics_interceptor.rs::effective_status_code`
+- 事实：只读 `dispatch.response.status_code`。内部 provider adapter 的上游结果在
+  带内 `statusCode` 里，transport 始终 200 ⇒ 失败的 adapter 调用被计为 2xx，
+  SLO 与告警失真。
+- 修复：优先归一化响应的状态（客户端实际看到的），否则用
+  `effective_dispatch_status_code`（含 adapter 带内状态），最后兜底 500。
+- 测试：`adapter_in_band_status_drives_the_metric_status_class`、
+  `normalized_response_status_wins_over_the_transport_status`。
+
+**X. 粘性绑定永不失效、且命中后单候选（已修复）**
+- 位置：`crates/sdkwork-cloudrouter-edge-runtime/src/invocation_sticky_store.rs`、
+  `route_planning.rs` 粘性分支
+- 事实 1：upsert 从不写 `expires_at`，读过滤条件因此永不排除任何行 —— 会话被
+  永久钉在一个账号上，表也只增不减。
+- 事实 2：粘性命中后 route plan 只有 1 个候选，账号熔断/凭据吊销即整请求 503，
+  即使组内还有健康的同模型账号。
+- 修复 1：写入滑动 7 天 `expires_at`（每次命中续期）。
+- 修复 2：除 `LookupSticky`（必须落在拥有对象的那个账号）外，粘性改为"首选 +
+  常规候选回退"：粘性候选置首位，常规规划结果去重后追加；常规规划失败不影响
+  粘性可用。lookup 语义保持不变。
+- 测试：`sticky_preference_keeps_regular_candidates_as_failover`、
+  `lookup_sticky_remains_a_hard_pin`。
+
+**Y. 流被中断仍提交粘性绑定（已修复）**
+- 位置：`telemetry.rs`（新增 `stream_interrupted`）、`pipeline.rs`
+  `settle_partial_then_fail`、`sticky.rs::after`
+- 事实：中断的流（取消/超时/上游错误）transport 仍是 200，粘性提交只看
+  `effective_response_is_success` ⇒ 把"刚刚中途失败的账号"写成会话亲和绑定，
+  后续请求继续钉在它上面。
+- 修复：部分结算路径置 `telemetry.stream_interrupted = true`；粘性提交在该标志
+  下跳过（用量仍然照常落库与结算）。
+- 测试：`interrupted_stream_does_not_commit_a_sticky_binding`。
+
+**Z. 非流式 2xx 缺 `usage` 免单（已修复）**
+- 位置：`usage_extraction.rs::extract_composite_usage_from_body`
+- 事实：找不到 `usage`/`usageMetadata` 时直接 `Ok(())`，不产用量行 ⇒ 结算
+  `actual_amount` 为 None ⇒ 报 "did not produce a billable amount"，但厂商响应
+  此时已成功物化，客户端照常拿到 200 —— **实际免单**，只留一条 warn。
+- 修复：缺 usage 时按与流式兜底相同的保守估算合成用量体——输入按请求体
+  （`estimated_request_input_tokens`）、输出按响应文本（Chat `choices[].message.content`、
+  `choices[].text`、Responses `output[].content[].text` / `output_text`），
+  无任何文本输出时不产行（确实无从计价）。
+- 测试：`billing_missing_usage_estimate.rs` 两个用例，外加 **37 个 billing 套件
+  全量回归**（0 失败）确认未改变既有计费语义。
+
+**AA. 流中失败对熔断不可见（已修复）**
+- 位置：`pipeline.rs::settle_partial_then_fail` / `mark_stream_account_failure`
+- 事实：dispatch attempt 在**收到响应头**时就记为成功；流随后中断（空闲/首帧
+  超时、上游 body 断流）不会改写它，于是"只会吐半截流"的账号永远健康，熔断
+  冷却永不触发，流量持续打向它。
+- 修复：部分结算时按故障归属改写该账号最新 attempt（`success=false`、
+  `error_code=provider_stream_failed`）；**客户端取消与租户租约丢失不改写**
+  （不是账号的错）；已判失败的 attempt 不覆盖。
+- 测试：`a_mid_stream_failure_rewrites_the_successful_attempt`、
+  `an_already_failed_attempt_is_not_rewritten`；熔断器 17 个库内单测随 lib 套件
+  一并通过。
+
+**AB. API Key pepper 不可轮换（已修复）**
+- 位置：`sdkwork-models` 的 `ApiKeySecretHasher`/`ApiKeyAuthenticator`、
+  `sdkwork-cloudrouter-config` 的 `ApiKeySecurityConfig`、
+  `crypto.rs::HmacSha256ApiKeySecretHasher`
+- 事实：鉴权按哈希查行（`find_api_key_by_hash`），单一 pepper 意味着**一换就
+  让所有存量 key 立刻 401**，安全事件中"轮换"等于"全量客户中断"。
+- 修复三层：
+  1. 认证端口新增 `candidate_hashes`（默认等价单 pepper），`authenticate` 按候选
+     顺序探测，命中即通过；
+  2. 网关哈希器改为 ring：活跃 pepper 生成新哈希，退役 pepper 仅参与探测；
+     空白/重复/与活跃相同项被规范化；
+  3. 配置新增 `SDKWORK_CLOUDROUTER_API_KEY_HASH_PREVIOUS_PEPPERS`（逗号分隔，
+     每项 ≥32 字符、去重、上限 8），轮换流程 = 把旧 pepper 加入该列表。
+- 测试：`api_key_authentication_ring.rs` 3 个用例（旧哈希仍可鉴权、错 secret 仍
+  失败、新 key 只用活跃 pepper）+ config 4 个用例 + crypto 2 个用例。
+- 尚未覆盖：`RingAeadApiKeySecretCodec`（原始 key 密文）仍是单密钥，轮换后
+  "显示原始 key"按行降级为掩码显示；已列入 4.3。
+
+**AC. API Key 原始密文轮换后不可读（已修复）**
+- 位置：`crypto.rs::RingAeadApiKeySecretCodec`
+- 事实：密文按 pepper 派生密钥加密、读取时只认当前 `key_secret_key_id`；
+  pepper 一换，所有存量密文解析失败，管理面"显示原始 key"退化为掩码。
+- 修复：新增 `with_key_ring`：`key_secret_key_id → 派生密钥` 的映射，按密文记录的
+  id 选择解密密钥，新密文始终用活跃 pepper；未知 id 仍显式失败。
+- 接线：**三个构造点全部改为 ring** —— edge runtime、`app-api`、`backend-api`
+  （此前只有一处接了哈希 ring，另外两处仍是单 pepper）。
+- 测试：`api_key_codec_decrypts_ciphertexts_from_retired_peppers`。
+
+**AD. 幂等等待窗口过短（已修复）**
+- 位置：`idempotency.rs::IdempotencyConfig` / `wait_for_completion`
+- 事实：等待窗口是 10 次 × 100ms ≈ **1 秒**。同一 idempotency key 的重试是官方
+  文档推荐的模式（尤其长生成/流式），1 秒后第二个请求就拿到 409，客户端只能
+  放弃或换 key。
+- 修复：等待改为**墙钟预算** `wait_timeout`（默认 10s），并钳制到
+  `in_progress_timeout`（120s）——超出后租约本就可被重新获取；轮询间隔仍是
+  100ms，重试计数只作为查询上限（200）。
+- 测试：`the_default_wait_window_admits_a_real_retry`、
+  `a_contended_same_key_request_waits_and_replays_instead_of_failing`、
+  `a_waiter_that_outlives_the_wait_window_gets_a_conflict`。—— `--lib idempotency`
+  10 passed；**全量套件复跑被并发编辑阻塞**（见下）。
+
+**AE. 429 与传输故障共用熔断阈值/冷却（本地状态已修复，待执行验证）**
+- 位置：`circuit_breaker.rs`
+- 事实：`attempt_is_client_rejection` 明确把 429 排除在"客户端拒绝"之外，于是
+  429 与 5xx/传输错误共用 `consecutive_failures` 与 `open_duration`：一个租户或
+  一个模型把上游打到限流，会让账号对**所有调用方**进入长达 30s 的故障冷却。
+- 修复（本地状态机）：429 独立计数 `consecutive_rate_limits`（阈值 3）与独立
+  冷却 `RATE_LIMIT_OPEN_DURATION = 15s`；`CircuitEntry.open_for` 记录本次开路的
+  冷却时长，`acquire_call_permit` 据此判定；成功即重置限流 streak；传输故障仍走
+  `failure_threshold`/`open_duration`。
+- 分布式（Redis）状态：新增 `record_rate_limit` 端口方法，默认实现委托
+  `record_failure`——即 Redis 侧暂保持旧行为，待 Lua 增加 `open_until` 后对齐
+  （已列入 4.3）。
+- 测试（已执行）：`rate_limits_open_a_short_cooldown_on_their_own_streak`、
+  `transport_faults_keep_the_configured_fault_window`、
+  `a_success_resets_the_rate_limit_streak`。—— `--lib circuit_breaker` **21 passed**。
+
+**AF. Redis 侧 429 冷却对齐（已修复）**
+- 位置：`circuit_breaker.rs` 的 Lua 脚本
+- 事实：上一项只改了本地状态机；分布式 store 的 Lua 用固定 `open_duration`，
+  且没有 429 维度 —— 多节点部署下 429 仍会把账号打入故障窗口。
+- 修复：
+  - `opened_at` 旁新增 `open_for`（本次开路的冷却秒数），`lua_allow_call` 优先
+    读它、缺失时回退 `open_duration`（旧行兼容）；
+  - `lua_record_failure` 写入故障窗口秒数；
+  - 新增 `lua_record_rate_limit`：独立 `consecutive_rate_limits` streak（阈值 3）
+    与 15s 冷却；
+  - `lua_record_success` 同时重置 429 streak。
+- 测试：`redis_scripts_keep_the_rate_limit_contract` 钉住上述契约文本（真实行为
+  需 Redis 实例，属集成环境验证项）。
+
+**AG. 幂等键透传上游（已修复）**
+- 位置：`invocation_dispatcher.rs::is_gateway_owned_request_header`
+- 事实：客户端的 `Idempotency-Key` 会被转发给上游。上游按**账号**去重，而我们的
+  键是**租户作用域**：两个租户恰好选了同一个客户端键，会在同一上游账号上互相
+  假去重（A 的结果回给 B）；换账号失败重试也可能命中无关的历史请求。
+- 修复：在网关终止 `idempotency-key`/`x-idempotency-key`（与其他网关自有头一起
+  剥离）。网关自身已通过幂等 store 保证至多一次执行。
+- 测试：`the_gateway_idempotency_key_is_not_forwarded_upstream`；`--lib` 111 passed
+  （+1），`invocation_router` 29 passed。
+
+**种子/数据核对（AG 附带）**：`DEFAULT_RELAY_SUPPLIERS` 已为四个 relay 声明
+`openai_chat_completions` / `openai_responses` / `anthropic_messages` 三协议与三个
+媒体 resource group；LLM 授权由协议声明派生（`llmProtocols.ts`），媒体授权有
+`every_relay_supplier_is_granted_the_media_groups` 等种子测试守护。**本轮核对结论：
+种子无需变更**。
+
 **M. `credential_rotation` 只被搬运，未被消费**
 `account.credential_rotation` 从快照一路带到 `InvocationAccount`，但
 dispatch 不读取，按策略轮换（per_request/per_attempt）实际未生效。
@@ -243,12 +409,12 @@ dispatch 不读取，按策略轮换（per_request/per_attempt）实际未生效
 
 ### 4.3 待复核 / 待修复（审计提出）
 
-- 流中失败对熔断/健康不可见（收到响应头即记成功）。
-- 粘性绑定无 `expires_at`，命中后单一候选，熔断打开即 503 且不回退常规路由。
-- 2xx 无 `usage` 时非流式静默零计费。
-- API Key pepper 不可轮换；429 计入全局熔断。
-- 请求级总超时分支未记录 attempt（熔断漏记）。
-- 指标读 adapter 带内状态而非 effective status；幂等等待窗口过短。
+- 性能：定价解析请求内 memo + `visible_model_prices` 索引；
+  `list_upstream_account_routes` 返回 `Arc`（消费者在 `sdkwork-models`，跨仓）。
+- 运营/发布：`ai_model_mapping_rule` 后台 CRUD、采购价导入（`price_side=2`，
+  0 行，需业务数据）、runbook、经 `bin/` 发布并线上回归。
+- **环境依赖**：Redis Lua 的 429 冷却行为需在集成环境（真实 Redis）复验；
+  DB 契约（`expires_at`、`key_secret_key_id` 环）需在预发库复跑迁移套件。
 
 ## 5. 后续路线
 
@@ -276,8 +442,13 @@ dispatch 不读取，按策略轮换（per_request/per_attempt）实际未生效
 
 ```bash
 cargo check -p sdkwork-cloudrouter-router-service -p sdkwork-cloudrouter-edge-runtime
-cargo test  -p sdkwork-cloudrouter-router-service --lib                        # 757 passed
-cargo test  -p sdkwork-cloudrouter-router-service --test invocation_dispatch   # 31 passed
+cargo test  -p sdkwork-cloudrouter-router-service --lib                        # 788 passed（全量）
+cargo test  -p sdkwork-cloudrouter-router-service --lib circuit_breaker        # 21 passed
+cargo test  -p sdkwork-cloudrouter-router-service --lib idempotency            # 10 passed
+cargo test  -p sdkwork-cloudrouter-router-service --test invocation_dispatch   # 32 passed
+cargo test  -p sdkwork-cloudrouter-router-service --test invocation_route_planning # 13 passed
+cargo test  -p sdkwork-cloudrouter-router-service --test invocation_sticky    # 16 passed
+cargo test  -p sdkwork-cloudrouter-router-service --test billing_missing_usage_estimate # 2 passed
 cargo test  -p sdkwork-cloudrouter-router-service --test invocation_pipeline   # 4 passed
 cargo test  -p sdkwork-cloudrouter-router-service --test upstream_route_selector # 61 passed
 cargo test  -p sdkwork-cloudrouter-router-service --test sql_pricing_catalog_contract # 14 passed

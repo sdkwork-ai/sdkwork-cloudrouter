@@ -2,8 +2,9 @@ use axum::http::Method;
 use sdkwork_cloudrouter_router_service::application::{
     AccountResolutionInterceptor, AuthenticatedApiKeyContext, Invocation, InvocationBody,
     InvocationClassificationRequest, InvocationInterceptor, InvocationRequest,
-    InvocationResourceClassifier, OpenAiResourceClassifier, ProviderNativeResourceClassifier,
-    RoutePlanningInterceptor, StickyRouteConstraint,
+    InvocationResourceClassifier, InvocationRouteCandidateKind, OpenAiResourceClassifier,
+    ProviderNativeResourceClassifier, RoutePlanningInterceptor, StickyRouteConstraint,
+    StickyRouting,
 };
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
@@ -615,6 +616,126 @@ async fn sticky_route_constraint_overrides_normal_route_selection() {
     assert_eq!("sticky-provider", account.supplier_code);
     assert_eq!(3003, account.account_id);
     assert_eq!(Some("sticky-model"), account.provider_model.as_deref());
+}
+
+/// Sticky affinity is a preference, not a pin: the plan keeps the sticky target
+/// first and also carries the regularly planned accounts, so a sticky account
+/// that turns circuit-open degrades to another account instead of failing every
+/// request that carries the affinity key.
+#[tokio::test]
+async fn sticky_preference_keeps_regular_candidates_as_failover() {
+    let mut catalog = base_catalog();
+    add_model_route(
+        &mut catalog,
+        3001,
+        "priced-provider",
+        "gpt-4o-mini-priced",
+        "openai.chat_completions",
+        "0.110000",
+    );
+    add_model_route(
+        &mut catalog,
+        3006,
+        "sticky-preferred",
+        "gpt-4o-mini-sticky",
+        "openai.chat_completions",
+        "0.110000",
+    );
+    let catalog = Arc::new(catalog);
+    let mut invocation = openai_invocation(
+        Method::POST,
+        "/v1/chat/completions",
+        InvocationBody::json(json!({
+            "model": "gpt-4o-mini",
+            "messages": [{"role": "user", "content": "ping"}]
+        })),
+    );
+    invocation.resource.requested_model = Some("gpt-4o-mini".to_owned());
+    invocation.routing.sticky = Some(StickyRouting::session("session", "sess-1"));
+    invocation.routing.sticky_route = Some(StickyRouteConstraint {
+        supplier_code: "sticky-preferred".to_owned(),
+        account_id: 3006,
+        account_group_id: Some(10),
+        vendor_code: Some("sticky-preferred".to_owned()),
+        api_code: Some("openai.chat_completions".to_owned()),
+        catalog_key: Some("openai/gpt-4o-mini".to_owned()),
+        provider_model: Some("gpt-4o-mini-sticky".to_owned()),
+        region_code: Some("global".to_owned()),
+        sticky_scope: Some("session".to_owned()),
+    });
+
+    RoutePlanningInterceptor::new(catalog)
+        .before(&mut invocation)
+        .await
+        .expect("route planning");
+
+    let plan = invocation.routing.route_plan.expect("route plan");
+    assert_eq!(0, plan.selected_index);
+    assert_eq!(InvocationRouteCandidateKind::Sticky, plan.candidates[0].kind);
+    assert_eq!("sticky-preferred", plan.candidates[0].supplier_code);
+    assert!(
+        plan.candidates.len() >= 2,
+        "regular candidates must remain as failover: {:?}",
+        plan.candidates
+            .iter()
+            .map(|candidate| candidate.supplier_code.as_str())
+            .collect::<Vec<_>>()
+    );
+}
+
+/// A lookup addresses an object that lives on one exact account; falling back to
+/// another account would query the wrong upstream, so a lookup stays pinned.
+#[tokio::test]
+async fn lookup_sticky_remains_a_hard_pin() {
+    let mut catalog = base_catalog();
+    add_model_route(
+        &mut catalog,
+        3001,
+        "priced-provider",
+        "gpt-4o-mini-priced",
+        "openai.chat_completions",
+        "0.110000",
+    );
+    add_model_route(
+        &mut catalog,
+        3006,
+        "sticky-preferred",
+        "gpt-4o-mini-sticky",
+        "openai.chat_completions",
+        "0.110000",
+    );
+    let catalog = Arc::new(catalog);
+    let mut invocation = openai_invocation(
+        Method::POST,
+        "/v1/chat/completions",
+        InvocationBody::json(json!({
+            "model": "gpt-4o-mini",
+            "messages": [{"role": "user", "content": "ping"}]
+        })),
+    );
+    invocation.resource.requested_model = Some("gpt-4o-mini".to_owned());
+    invocation.routing.sticky = Some(StickyRouting::lookup("response", "resp_1"));
+    invocation.routing.sticky_route = Some(StickyRouteConstraint {
+        supplier_code: "sticky-preferred".to_owned(),
+        account_id: 3006,
+        account_group_id: Some(10),
+        vendor_code: Some("sticky-preferred".to_owned()),
+        api_code: Some("openai.chat_completions".to_owned()),
+        catalog_key: Some("openai/gpt-4o-mini".to_owned()),
+        provider_model: Some("gpt-4o-mini-sticky".to_owned()),
+        region_code: Some("global".to_owned()),
+        sticky_scope: Some("object".to_owned()),
+    });
+
+    RoutePlanningInterceptor::new(catalog)
+        .before(&mut invocation)
+        .await
+        .expect("route planning");
+
+    let plan = invocation.routing.route_plan.expect("route plan");
+    assert_eq!(1, plan.candidates.len(), "a lookup must stay a hard pin");
+    assert_eq!(InvocationRouteCandidateKind::Sticky, plan.candidates[0].kind);
+    assert_eq!("sticky-preferred", plan.candidates[0].supplier_code);
 }
 
 /// A sticky binding committed before a catalog redeploy must not pin a route

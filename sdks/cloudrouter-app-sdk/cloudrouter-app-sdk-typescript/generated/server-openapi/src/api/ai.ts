@@ -1,9 +1,6 @@
 import { appApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
-
-import type { AppRoutingAccountGroupListResponse, AppRoutingApiKeyListResponse, AppRoutingRequestTraceListResponse, AppRoutingUsageSnapshot, DashboardOverviewResponse, GatewayTracesPage, OfficialPricingCatalogResponse, SettlementsDashboardSnapshot, UsageLogsResponse } from '../types';
-
-
+import type { AppRoutingAccountGroupListResponse, AppRoutingApiKeyListResponse, AppRoutingModelGroupCatalog, AppRoutingModelGroupDefaultRequest, AppRoutingModelGroupDefaults, AppRoutingModelGroupDefaultSetResponse, AppRoutingModelGroups, AppRoutingRequestTraceListResponse, AppRoutingUsageSnapshot, DashboardOverviewResponse, GatewayTracesPage, OfficialPricingCatalogResponse, SettlementsDashboardSnapshot, UsageLogsResponse } from '../types';
 export interface AiUsageLogsListParams {
   cursor?: string;
   pageSize?: number;
@@ -113,6 +110,69 @@ export class AiRoutingRequestTracesApi {
   }
 }
 
+export interface AiRoutingModelGroupsRetrieveParams {
+  model: string;
+}
+
+export class AiRoutingModelGroupsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List model groups */
+  async retrieve(params: AiRoutingModelGroupsRetrieveParams, requestOptions?: ApiRequestOptions): Promise<AppRoutingModelGroups> {
+    const query = buildQueryString([
+      { name: 'model', value: params.model, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<AppRoutingModelGroups>(appendQueryString(appApiPath(`/ai/routing/model_groups`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'item' });
+  }
+}
+
+export class AiRoutingModelGroupDefaultsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List model group defaults */
+  async retrieve(requestOptions?: ApiRequestOptions): Promise<AppRoutingModelGroupDefaults> {
+    return this.client.request<AppRoutingModelGroupDefaults>(appApiPath(`/ai/routing/model_group_defaults`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'item' });
+  }
+
+/** Set model group default */
+  async update(body: AppRoutingModelGroupDefaultRequest, requestOptions?: ApiRequestOptions): Promise<AppRoutingModelGroupDefaultSetResponse> {
+    return this.client.request<AppRoutingModelGroupDefaultSetResponse>(appApiPath(`/ai/routing/model_group_defaults`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PUT' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'command' });
+  }
+}
+
+export interface AiRoutingModelGroupCatalogRetrieveParams {
+  modality?: 'text' | 'image' | 'video' | 'audio' | 'music';
+  vendorCode?: string;
+}
+
+export class AiRoutingModelGroupCatalogApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List model group catalog */
+  async retrieve(params?: AiRoutingModelGroupCatalogRetrieveParams, requestOptions?: ApiRequestOptions): Promise<AppRoutingModelGroupCatalog> {
+    const query = buildQueryString([
+      { name: 'modality', value: params?.modality, style: 'form', explode: true, allowReserved: false },
+      { name: 'vendor_code', value: params?.vendorCode, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<AppRoutingModelGroupCatalog>(appendQueryString(appApiPath(`/ai/routing/model_group_catalog`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'item' });
+  }
+}
+
 export interface AiRoutingApiKeysListParams {
   page?: number;
   pageSize?: number;
@@ -166,12 +226,18 @@ export class AiRoutingAccountGroupsApi {
 export class AiRoutingApi {
   public readonly accountGroups: AiRoutingAccountGroupsApi;
   public readonly apiKeys: AiRoutingApiKeysApi;
+  public readonly modelGroupCatalog: AiRoutingModelGroupCatalogApi;
+  public readonly modelGroupDefaults: AiRoutingModelGroupDefaultsApi;
+  public readonly modelGroups: AiRoutingModelGroupsApi;
   public readonly requestTraces: AiRoutingRequestTracesApi;
   public readonly usage: AiRoutingUsageApi;
 
   constructor(client: HttpClient) {
     this.accountGroups = new AiRoutingAccountGroupsApi(client);
     this.apiKeys = new AiRoutingApiKeysApi(client);
+    this.modelGroupCatalog = new AiRoutingModelGroupCatalogApi(client);
+    this.modelGroupDefaults = new AiRoutingModelGroupDefaultsApi(client);
+    this.modelGroups = new AiRoutingModelGroupsApi(client);
     this.requestTraces = new AiRoutingRequestTracesApi(client);
     this.usage = new AiRoutingUsageApi(client);
   }
@@ -290,7 +356,22 @@ export class AiDashboardApi {
 
 }
 
+export class AiAgentsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Resolve console hardware agents */
+  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/ai/agents`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+  }
+}
+
 export class AiApi {
+  public readonly agents: AiAgentsApi;
   public readonly dashboard: AiDashboardApi;
   public readonly gateway: AiGatewayApi;
   public readonly pricing: AiPricingApi;
@@ -299,6 +380,7 @@ export class AiApi {
   public readonly usage: AiUsageApi;
 
   constructor(client: HttpClient) {
+    this.agents = new AiAgentsApi(client);
     this.dashboard = new AiDashboardApi(client);
     this.gateway = new AiGatewayApi(client);
     this.pricing = new AiPricingApi(client);

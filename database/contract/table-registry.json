@@ -267,6 +267,14 @@
       "system_of_record": true
     },
     {
+      "table_name": "ai_user_account_group_route",
+      "owner": "ai-routing-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
       "table_name": "iam_user_preference",
       "owner": "router-service",
       "compliance_level": "L2",

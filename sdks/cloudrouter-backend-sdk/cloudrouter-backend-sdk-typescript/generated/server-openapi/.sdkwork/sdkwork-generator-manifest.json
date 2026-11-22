@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "e683393916105ffd869afe8bcd599a059215d68647b4a8cd04b91d52b3f4b97c"
+      "sha256": "f1f2b4d27586e0927d3c5096c683ab838077dd03cee8c01f6918fa7090f16537"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -52,7 +52,7 @@
     },
     {
       "path": "src/api/ai.ts",
-      "sha256": "363ac45f8149ce2bf023962dc7a27236c2a4c4baccbf22d25fa70f996ce71764"
+      "sha256": "9ca42c8a551d2ee2b13b909fb109f9f05e572cef295fb40d2369c895d3dd83d6"
     },
     {
       "path": "src/api/base.ts",
@@ -64,7 +64,15 @@
     },
     {
       "path": "src/api/index.ts",
-      "sha256": "5373cdced6828478e8604f5e39c4efdbebd6b625960040d8350a80ecaf64f5bd"
+      "sha256": "fd2524dfb21c594b9c47ae8ba8cf593e546ca272fbc328ffcde4e15fdb5c6049"
+    },
+    {
+      "path": "src/api/mcp.ts",
+      "sha256": "f67af79a1bf40bc62736b6ce72920cdfa2e271604a5bcf0a69a383a0ebf8af78"
+    },
+    {
+      "path": "src/api/memory.ts",
+      "sha256": "a2ccf4b20c7e9ee8230cf7886b7509fb17fa02544fa74c871246549b162f91ca"
     },
     {
       "path": "src/api/paths.ts",
@@ -108,7 +116,7 @@
     },
     {
       "path": "src/sdk.ts",
-      "sha256": "24458d72e337ef7f63dc331697cf14a197c24e367461fe4b3e113f50bd064488"
+      "sha256": "6338497a678ac9e57623f4a6612df67a6211a4b4f386f7fd957a0e73a4b05f0a"
     },
     {
       "path": "src/types/admin-analytics-insight.ts",
@@ -460,7 +468,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "47f1b6ef197c537a0d309cb5a44d9b3645e791dd2fad0b00c62bd4d64986d682"
+      "sha256": "19708cecfe40b91a21f09ee7a806aa2e7537a1bce5abde263cf1aa5574f86e2e"
     },
     {
       "path": "src/types/installation-status-response.ts",

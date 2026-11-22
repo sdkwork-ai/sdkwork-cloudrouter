@@ -3,6 +3,12 @@ use std::fmt;
 #[derive(Clone, PartialEq, Eq)]
 pub struct ApiKeySecurityConfig {
     pepper_secret: String,
+    /// Retired peppers kept only for verification.
+    ///
+    /// Authentication looks an API key up by hash, so a pepper rotation without
+    /// the retired generation would invalidate every key issued before it. New
+    /// keys are always hashed with `pepper_secret`; these are probed afterwards.
+    previous_peppers: Vec<String>,
     secret_storage_mode: ApiKeySecretStorageMode,
 }
 
@@ -77,7 +83,14 @@ impl ApiKeySecretStorageMode {
 
 impl ApiKeySecurityConfig {
     pub const ENV_API_KEY_PEPPER: &'static str = "SDKWORK_CLOUDROUTER_API_KEY_PEPPER";
+    /// Comma-separated retired peppers, kept so a pepper rotation does not
+    /// invalidate existing API keys.
+    pub const ENV_API_KEY_PREVIOUS_PEPPERS: &'static str =
+        "SDKWORK_CLOUDROUTER_API_KEY_HASH_PREVIOUS_PEPPERS";
     pub const MIN_PEPPER_LEN: usize = 32;
+    /// Bounds verification work per authentication (each generation is one HMAC
+    /// plus one hash lookup).
+    pub const MAX_PREVIOUS_PEPPERS: usize = 8;
 
     pub fn from_optional_parts(pepper_secret: Option<String>) -> Result<Option<Self>, String> {
         let Some(pepper_secret) = pepper_secret else {
@@ -94,6 +107,14 @@ impl ApiKeySecurityConfig {
         pepper_secret: impl Into<String>,
         secret_storage_mode: ApiKeySecretStorageMode,
     ) -> Result<Self, String> {
+        Self::from_parts_with_previous(pepper_secret, secret_storage_mode, Vec::new())
+    }
+
+    pub fn from_parts_with_previous(
+        pepper_secret: impl Into<String>,
+        secret_storage_mode: ApiKeySecretStorageMode,
+        previous_peppers: Vec<String>,
+    ) -> Result<Self, String> {
         let pepper_secret = pepper_secret.into();
         let trimmed = pepper_secret.trim();
         if trimmed.is_empty() {
@@ -106,8 +127,42 @@ impl ApiKeySecurityConfig {
                 Self::MIN_PEPPER_LEN
             ));
         }
+        let active = trimmed.to_owned();
+        let mut ring: Vec<String> = Vec::new();
+        for pepper in previous_peppers {
+            let pepper = pepper.trim();
+            if pepper.is_empty() {
+                continue;
+            }
+            if pepper == active {
+                return Err(format!(
+                    "{} must not repeat the active {}",
+                    Self::ENV_API_KEY_PREVIOUS_PEPPERS,
+                    Self::ENV_API_KEY_PEPPER
+                ));
+            }
+            if pepper.len() < Self::MIN_PEPPER_LEN {
+                return Err(format!(
+                    "{} entries must be at least {} characters",
+                    Self::ENV_API_KEY_PREVIOUS_PEPPERS,
+                    Self::MIN_PEPPER_LEN
+                ));
+            }
+            if ring.iter().any(|existing| existing == pepper) {
+                continue;
+            }
+            ring.push(pepper.to_owned());
+        }
+        if ring.len() > Self::MAX_PREVIOUS_PEPPERS {
+            return Err(format!(
+                "{} accepts at most {} retired peppers",
+                Self::ENV_API_KEY_PREVIOUS_PEPPERS,
+                Self::MAX_PREVIOUS_PEPPERS
+            ));
+        }
         Ok(Self {
-            pepper_secret: trimmed.to_owned(),
+            pepper_secret: active,
+            previous_peppers: ring,
             secret_storage_mode,
         })
     }
@@ -135,11 +190,27 @@ impl ApiKeySecurityConfig {
                     runtime_toml.and_then(|config| config.security.api_key_secret_storage.clone())
                 }),
         )?;
-        Self::from_parts(pepper_secret, secret_storage_mode).map(Some)
+        let previous_peppers = std::env::var(Self::ENV_API_KEY_PREVIOUS_PEPPERS)
+            .ok()
+            .map(|value| {
+                value
+                    .split(',')
+                    .map(str::trim)
+                    .filter(|pepper| !pepper.is_empty())
+                    .map(str::to_owned)
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        Self::from_parts_with_previous(pepper_secret, secret_storage_mode, previous_peppers)
+            .map(Some)
     }
 
     pub fn pepper_secret(&self) -> &str {
         &self.pepper_secret
+    }
+
+    pub fn previous_peppers(&self) -> &[String] {
+        &self.previous_peppers
     }
 
     pub fn secret_storage_mode(&self) -> ApiKeySecretStorageMode {
@@ -152,7 +223,76 @@ impl fmt::Debug for ApiKeySecurityConfig {
         formatter
             .debug_struct("ApiKeySecurityConfig")
             .field("pepper_secret", &"[REDACTED]")
+            .field("previous_peppers", &self.previous_peppers.len())
             .field("secret_storage_mode", &self.secret_storage_mode)
             .finish()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ApiKeySecretStorageMode, ApiKeySecurityConfig};
+
+    const ACTIVE: &str = "11111111111111111111111111111111";
+    const RETIRED: &str = "22222222222222222222222222222222";
+    const RETIRED_TWO: &str = "33333333333333333333333333333333";
+
+    #[test]
+    fn retired_peppers_are_normalized_and_deduplicated() {
+        let config = ApiKeySecurityConfig::from_parts_with_previous(
+            ACTIVE,
+            ApiKeySecretStorageMode::Ciphertext,
+            vec![
+                String::new(),
+                format!("  {RETIRED}  "),
+                RETIRED.to_owned(),
+                RETIRED_TWO.to_owned(),
+                "   ".to_owned(),
+            ],
+        )
+        .expect("ring");
+
+        assert_eq!(ACTIVE, config.pepper_secret());
+        assert_eq!(
+            vec![RETIRED.to_owned(), RETIRED_TWO.to_owned()],
+            config.previous_peppers(),
+            "blanks and duplicates are dropped; order is kept"
+        );
+    }
+
+    #[test]
+    fn a_retired_pepper_must_not_repeat_the_active_one() {
+        let error = ApiKeySecurityConfig::from_parts_with_previous(
+            format!("  {ACTIVE}  "),
+            ApiKeySecretStorageMode::Ciphertext,
+            vec![ACTIVE.to_owned()],
+        )
+        .expect_err("repeating the active pepper is ambiguous");
+        assert!(error.contains("must not repeat the active"), "{error}");
+    }
+
+    #[test]
+    fn a_retired_pepper_must_meet_the_minimum_length() {
+        let error = ApiKeySecurityConfig::from_parts_with_previous(
+            ACTIVE,
+            ApiKeySecretStorageMode::Ciphertext,
+            vec!["short".to_owned()],
+        )
+        .expect_err("short retired pepper must be rejected");
+        assert!(error.contains("at least"), "{error}");
+    }
+
+    #[test]
+    fn the_ring_is_bounded() {
+        let previous = (0..=ApiKeySecurityConfig::MAX_PREVIOUS_PEPPERS)
+            .map(|index| format!("{index:032}"))
+            .collect::<Vec<_>>();
+        let error = ApiKeySecurityConfig::from_parts_with_previous(
+            ACTIVE,
+            ApiKeySecretStorageMode::Ciphertext,
+            previous,
+        )
+        .expect_err("a ring larger than the bound must be rejected");
+        assert!(error.contains("at most"), "{error}");
     }
 }

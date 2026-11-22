@@ -12481,6 +12481,60 @@
         ],
         "type": "object"
       },
+      "OpenAiModelGroup": {
+        "additionalProperties": false,
+        "description": "OpenAI-compatible open ai model group schema exposed by Cloud Router.",
+        "properties": {
+          "code": {
+            "description": "Stable account group code.",
+            "type": "string"
+          },
+          "defaultForModel": {
+            "description": "Whether this is the group the model routes through when the caller sends no account-group override.",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "Numeric account group id as a string (wire int64 contract).",
+            "type": "string"
+          },
+          "name": {
+            "description": "Display name of the account group.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "defaultForModel"
+        ],
+        "type": "object"
+      },
+      "OpenAiModelGroupList": {
+        "additionalProperties": false,
+        "description": "OpenAI-compatible open ai model group list schema exposed by Cloud Router.",
+        "properties": {
+          "data": {
+            "description": "Account groups the caller can route this model through, in failover priority order.",
+            "items": {
+              "$ref": "#/components/schemas/OpenAiModelGroup"
+            },
+            "type": "array"
+          },
+          "object": {
+            "description": "Object type, always list.",
+            "enum": [
+              "list"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "object",
+          "data"
+        ],
+        "type": "object"
+      },
       "OpenAiModelList": {
         "additionalProperties": false,
         "description": "OpenAI-compatible open ai model list schema exposed by Cloud Router.",
@@ -35740,6 +35794,112 @@
           }
         ],
         "summary": "Retrieve model",
+        "tags": [
+          "Models"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "openai-v1"
+      }
+    },
+    "/v1/models/{model}/groups": {
+      "get": {
+        "description": "Lists the account groups the authenticated caller can route one model through, in failover priority order, with `defaultForModel` marking the group a request without an account-group override selects. The bearer credential may be a Cloud Router API key (`sk-`/`sp-` prefix) or an SDKWork IAM login auth token; an auth-token caller may also send the paired dual-token session access token in the optional `Access-Token` header.",
+        "operationId": "listModelGroups",
+        "parameters": [
+          {
+            "description": "Model identifier or catalog key.",
+            "in": "path",
+            "name": "model",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Optional dual-token session access token that pairs with an SDKWork IAM login auth token in `Authorization`. Cloud Router API key credentials do not need it.",
+            "in": "header",
+            "name": "Access-Token",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiModelGroupList"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List model account groups",
         "tags": [
           "Models"
         ],

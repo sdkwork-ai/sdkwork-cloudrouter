@@ -9,8 +9,8 @@ use super::multipart_form::{
 use super::routing::SESSION_STICKY_OBJECT_TYPE;
 use super::{
     meter_is_streamable, Invocation, InvocationBody, InvocationDispatch, InvocationError,
-    InvocationErrorKind, InvocationFuture, InvocationInterceptor, InvocationShape,
-    InvocationSurface, StickyMode, StickyRouting,
+    InvocationErrorKind, InvocationFuture, InvocationInterceptor, InvocationRequest,
+    InvocationShape, InvocationSurface, StickyMode, StickyRouting,
 };
 use crate::domain::AiRouteModelRequirement;
 
@@ -31,6 +31,48 @@ impl InvocationInterceptor for PayloadExtractionInterceptor {
             validate_required_model(invocation)
         })
     }
+}
+
+/// Best-effort model extraction for callers that must resolve routing before
+/// the pipeline's payload stage runs (the auth-token account-group selection).
+///
+/// Mirrors [`extract_requested_model`]'s order without failing the request:
+/// anything unparseable returns `None`, and the caller falls back to its
+/// modality/account-level defaults. Never used to dispatch; the pipeline still
+/// performs the authoritative extraction (with validation and error mapping).
+pub fn peek_requested_model(request: &InvocationRequest) -> Option<String> {
+    if let Some(model) = invocation_request_path_model(request) {
+        return Some(model);
+    }
+    if let Some(model) = request.query.as_deref().and_then(query_value_model) {
+        return Some(model);
+    }
+    if request_content_type_is_multipart_form(&request.headers) {
+        if let InvocationBody::Bytes(bytes) = &request.body {
+            return optional_model_from_multipart_form(&request.headers, bytes)
+                .ok()
+                .flatten();
+        }
+        return None;
+    }
+    match &request.body {
+        InvocationBody::Json(value) => model_from_json_value(value, &request.path).ok().flatten(),
+        InvocationBody::Bytes(bytes) => serde_json::from_slice::<Value>(bytes)
+            .ok()
+            .and_then(|value| model_from_json_value(&value, &request.path).ok().flatten()),
+        InvocationBody::Empty => None,
+    }
+}
+
+fn invocation_request_path_model(request: &InvocationRequest) -> Option<String> {
+    if request.method != Method::DELETE {
+        return None;
+    }
+    request
+        .path
+        .strip_prefix("/v1/models/")
+        .and_then(non_empty_text)
+        .map(str::to_owned)
 }
 
 fn extract_requested_model(invocation: &mut Invocation) -> Result<(), InvocationError> {

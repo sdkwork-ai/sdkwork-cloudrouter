@@ -744,6 +744,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "retrieveModel",
     ),
     HttpRoute::api_key_or_dual_token(
+        HttpMethod::Get,
+        "/v1/models/{model}/groups",
+        "Models",
+        "listModelGroups",
+    ),
+    HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
         "/v1/moderations",
         "Moderations",

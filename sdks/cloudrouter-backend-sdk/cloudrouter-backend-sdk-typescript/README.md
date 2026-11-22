@@ -27,7 +27,7 @@ client.setAuthToken('your-auth-token');
 client.setAccessToken('your-access-token');
 
 // Use the SDK
-const result = await client.ai.upstreamResourceCatalog.retrieve();
+const result = await client.ai.agentCategories.list();
 ```
 
 ## Authentication
@@ -56,6 +56,8 @@ const client = new SdkworkBackendClient({
 
 - `client.ai` - ai API
 - `client.billing` - billing API
+- `client.mcp` - mcp API
+- `client.memory` - memory API
 - `client.payments` - payments API
 - `client.pricing` - pricing API
 - `client.recharges` - recharges API
@@ -67,8 +69,8 @@ const client = new SdkworkBackendClient({
 ### ai
 
 ```typescript
-// List upstream resource catalog
-const result = await client.ai.upstreamResourceCatalog.retrieve();
+// List agent categories
+const result = await client.ai.agentCategories.list();
 ```
 
 ### billing
@@ -80,6 +82,20 @@ const params = {
   page_size: 2,
 };
 const result = await client.billing.rechargeRecords.list(params);
+```
+
+### mcp
+
+```typescript
+// List admin categories
+const result = await client.mcp.categories.list();
+```
+
+### memory
+
+```typescript
+// List memory records
+const result = await client.memory.memoryAdmin.records.list();
 ```
 
 ### payments
@@ -143,7 +159,7 @@ const result = await client.system.auth.settings.retrieve();
 import { SdkworkBackendClient, NetworkError, TimeoutError, AuthenticationError } from '@sdkwork/cloudrouter-backend-sdk';
 
 try {
-  const result = await client.ai.upstreamResourceCatalog.retrieve();
+  const result = await client.ai.agentCategories.list();
 } catch (error) {
   if (error instanceof AuthenticationError) {
     console.error('Authentication failed:', error.message);

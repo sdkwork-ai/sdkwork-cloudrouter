@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "1ed014f575938b9077e6e216c3a483ca2a84d9f51d9089560b038c17bd24d34a",
+  "changeFingerprint": "a27d3a26700a2646c0b8aa8bca3c81cf9ae1f97294f3481087adf40ed79d54eb",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -57,6 +57,19 @@
           "src/types/app-routing-api-key-account-group.ts",
           "src/types/app-routing-api-key-list-response.ts",
           "src/types/app-routing-api-key.ts",
+          "src/types/app-routing-model-group-catalog-item-response.ts",
+          "src/types/app-routing-model-group-catalog-modality.ts",
+          "src/types/app-routing-model-group-catalog-model.ts",
+          "src/types/app-routing-model-group-catalog-vendor.ts",
+          "src/types/app-routing-model-group-catalog.ts",
+          "src/types/app-routing-model-group-default-request.ts",
+          "src/types/app-routing-model-group-default-set-response.ts",
+          "src/types/app-routing-model-group-default.ts",
+          "src/types/app-routing-model-group-defaults-item-response.ts",
+          "src/types/app-routing-model-group-defaults.ts",
+          "src/types/app-routing-model-group-option.ts",
+          "src/types/app-routing-model-groups-item-response.ts",
+          "src/types/app-routing-model-groups.ts",
           "src/types/app-routing-model-stats.ts",
           "src/types/app-routing-request-trace-list-response.ts",
           "src/types/app-routing-request-trace.ts",
@@ -302,10 +315,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 148,
-    "models": 120,
+    "totalFiles": 168,
+    "models": 140,
     "apis": 5,
-    "types": 122
+    "types": 142
   },
   "warnings": [
     {
@@ -315,6 +328,14 @@
     {
       "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied CloudRouter strict TypeScript contract normalization to src/types/index.ts"
+    },
+    {
+      "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied CloudRouter strict TypeScript contract normalization to src/api/ai.ts"
+    },
+    {
+      "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied CloudRouter strict TypeScript contract normalization to src/api/system.ts"
     },
     {
       "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -344,12 +365,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 117,
+    "writtenFiles": 130,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "1ed014f575938b9077e6e216c3a483ca2a84d9f51d9089560b038c17bd24d34a",
+    "changeFingerprint": "a27d3a26700a2646c0b8aa8bca3c81cf9ae1f97294f3481087adf40ed79d54eb",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -388,6 +409,19 @@
         "src/types/app-routing-api-key-account-group.ts",
         "src/types/app-routing-api-key-list-response.ts",
         "src/types/app-routing-api-key.ts",
+        "src/types/app-routing-model-group-catalog-item-response.ts",
+        "src/types/app-routing-model-group-catalog-modality.ts",
+        "src/types/app-routing-model-group-catalog-model.ts",
+        "src/types/app-routing-model-group-catalog-vendor.ts",
+        "src/types/app-routing-model-group-catalog.ts",
+        "src/types/app-routing-model-group-default-request.ts",
+        "src/types/app-routing-model-group-default-set-response.ts",
+        "src/types/app-routing-model-group-default.ts",
+        "src/types/app-routing-model-group-defaults-item-response.ts",
+        "src/types/app-routing-model-group-defaults.ts",
+        "src/types/app-routing-model-group-option.ts",
+        "src/types/app-routing-model-groups-item-response.ts",
+        "src/types/app-routing-model-groups.ts",
         "src/types/app-routing-model-stats.ts",
         "src/types/app-routing-request-trace-list-response.ts",
         "src/types/app-routing-request-trace.ts",
@@ -522,6 +556,19 @@
             "src/types/app-routing-api-key-account-group.ts",
             "src/types/app-routing-api-key-list-response.ts",
             "src/types/app-routing-api-key.ts",
+            "src/types/app-routing-model-group-catalog-item-response.ts",
+            "src/types/app-routing-model-group-catalog-modality.ts",
+            "src/types/app-routing-model-group-catalog-model.ts",
+            "src/types/app-routing-model-group-catalog-vendor.ts",
+            "src/types/app-routing-model-group-catalog.ts",
+            "src/types/app-routing-model-group-default-request.ts",
+            "src/types/app-routing-model-group-default-set-response.ts",
+            "src/types/app-routing-model-group-default.ts",
+            "src/types/app-routing-model-group-defaults-item-response.ts",
+            "src/types/app-routing-model-group-defaults.ts",
+            "src/types/app-routing-model-group-option.ts",
+            "src/types/app-routing-model-groups-item-response.ts",
+            "src/types/app-routing-model-groups.ts",
             "src/types/app-routing-model-stats.ts",
             "src/types/app-routing-request-trace-list-response.ts",
             "src/types/app-routing-request-trace.ts",

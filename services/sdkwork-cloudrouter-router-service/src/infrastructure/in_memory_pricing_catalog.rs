@@ -21,6 +21,8 @@ pub struct InMemoryPricingCatalog {
     model_mappings: Vec<ModelMappingRule>,
     plans: Vec<PricingPlan>,
     upstream_account_groups: Vec<UpstreamAccountGroup>,
+    /// User-scoped model → account-group routing rules.
+    user_account_group_routes: Vec<crate::domain::UserAccountGroupRoute>,
     /// Modality scope (`group_type` / `modalities`) per account group id, used
     /// by session (auth-token) default-group selection.
     group_modality_scopes: HashMap<i64, crate::domain::AccountGroupModalityScope>,
@@ -67,6 +69,26 @@ impl InMemoryPricingCatalog {
 
     pub fn add_upstream_account_group(&mut self, group: UpstreamAccountGroup) {
         self.upstream_account_groups.push(group);
+    }
+
+    /// Registers one user-scoped model routing rule
+    /// (`ai_user_account_group_route`). The SQL catalog loads real rows; tests
+    /// and in-memory fixtures use this.
+    pub fn add_user_account_group_route(
+        &mut self,
+        route: crate::domain::UserAccountGroupRoute,
+    ) {
+        self.user_account_group_routes.retain(|existing| {
+            !(existing.tenant_id == route.tenant_id
+                && existing.organization_id == route.organization_id
+                && existing.user_id == route.user_id
+                && existing.scope == route.scope
+                && existing.modality == route.modality
+                && existing.vendor_code == route.vendor_code
+                && existing.model == route.model
+                && existing.account_group_id == route.account_group_id)
+        });
+        self.user_account_group_routes.push(route);
     }
 
     /// Registers the modality scope of an already-added account group so
@@ -387,6 +409,10 @@ impl UpstreamAccountRouteCatalog for InMemoryPricingCatalog {
                 crate::domain::SessionAccountGroup::new(group, scope)
             })
             .collect()
+    }
+
+    fn list_user_account_group_routes(&self) -> Vec<crate::domain::UserAccountGroupRoute> {
+        self.user_account_group_routes.clone()
     }
 
     fn upstream_route_gate_diagnosis(&self) -> Option<UpstreamRouteGateDiagnosis> {

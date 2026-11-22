@@ -27,30 +27,81 @@ const API_KEY_SECRET_CIPHERTEXT_VERSION: &str = "v1";
 const API_KEY_SECRET_KDF_SALT: &[u8] = b"sdkwork-cloudrouter:api-key-secret:v1";
 const API_KEY_SECRET_AEAD_KEY_DOMAIN: &[u8] = b"sdkwork-cloudrouter:api-key-secret:aead:v1\0";
 
+/// HMAC hasher for gateway API key secrets.
+///
+/// Verification is a hash lookup (`find_api_key_by_hash`), so every pepper that
+/// may have produced a stored hash must be probeable: rotating the pepper
+/// without the retired generation would invalidate every API key issued before
+/// the rotation. `previous_peppers` carries those retired generations;
+/// `hash_secret` always uses the active one (new keys adopt it).
 #[derive(Clone)]
 pub struct HmacSha256ApiKeySecretHasher {
-    pepper_secret: String,
+    active_pepper: String,
+    previous_peppers: Vec<String>,
 }
 
 impl HmacSha256ApiKeySecretHasher {
     pub fn new(pepper_secret: impl Into<String>) -> DomainResult<Self> {
-        let pepper_secret = pepper_secret.into();
-        let trimmed = pepper_secret.trim();
+        Self::with_key_ring(pepper_secret, Vec::new())
+    }
+
+    /// Builds a hasher whose verification ring includes retired peppers.
+    ///
+    /// Retired peppers are normalized (trimmed, blanks and the active pepper
+    /// dropped, duplicates removed) so a mis-typed rotation list cannot make
+    /// authentication ambiguous.
+    pub fn with_key_ring(
+        active_pepper: impl Into<String>,
+        previous_peppers: Vec<String>,
+    ) -> DomainResult<Self> {
+        let active_pepper = active_pepper.into();
+        let trimmed = active_pepper.trim();
         if trimmed.is_empty() {
             return Err(DomainError::new("api key pepper must not be blank"));
         }
+        let active_pepper = trimmed.to_owned();
+        let mut ring: Vec<String> = Vec::new();
+        for pepper in previous_peppers {
+            let pepper = pepper.trim();
+            if pepper.is_empty() || pepper == active_pepper {
+                continue;
+            }
+            if !ring.iter().any(|existing| existing == pepper) {
+                ring.push(pepper.to_owned());
+            }
+        }
         Ok(Self {
-            pepper_secret: trimmed.to_owned(),
+            active_pepper,
+            previous_peppers: ring,
         })
     }
+
+    pub fn previous_pepper_count(&self) -> usize {
+        self.previous_peppers.len()
+    }
+}
+
+fn api_key_hash(pepper: &str, secret: &str) -> DomainResult<String> {
+    let mut mac = HmacSha256::new_from_slice(pepper.as_bytes())
+        .map_err(|_| DomainError::new("api key pepper is invalid"))?;
+    mac.update(secret.as_bytes());
+    Ok(hex::encode(mac.finalize().into_bytes()))
 }
 
 impl ApiKeySecretHasher for HmacSha256ApiKeySecretHasher {
     fn hash_secret(&self, secret: &str) -> DomainResult<String> {
-        let mut mac = HmacSha256::new_from_slice(self.pepper_secret.as_bytes())
-            .map_err(|_| DomainError::new("api key pepper is invalid"))?;
-        mac.update(secret.as_bytes());
-        Ok(hex::encode(mac.finalize().into_bytes()))
+        api_key_hash(&self.active_pepper, secret)
+    }
+
+    fn candidate_hashes(&self, secret: &str) -> DomainResult<Vec<String>> {
+        let mut hashes = vec![api_key_hash(&self.active_pepper, secret)?];
+        for pepper in &self.previous_peppers {
+            let hash = api_key_hash(pepper, secret)?;
+            if !hashes.contains(&hash) {
+                hashes.push(hash);
+            }
+        }
+        Ok(hashes)
     }
 }
 
@@ -59,6 +110,7 @@ impl fmt::Debug for HmacSha256ApiKeySecretHasher {
         formatter
             .debug_struct("HmacSha256ApiKeySecretHasher")
             .field("pepper_secret", &"[REDACTED]")
+            .field("previous_peppers", &self.previous_peppers.len())
             .finish()
     }
 }
@@ -197,33 +249,49 @@ impl fmt::Debug for RingAeadCredentialSecretCodec {
 /// domain-separated KDF; ciphertexts are bound to the owning key scope so a
 /// ciphertext can never be replayed under another tenant/org/key.
 ///
-/// Rotation: the pepper is the single AEAD key source. Rotating
-/// `SDKWORK_CLOUDROUTER_API_KEY_PEPPER` invalidates previously stored ciphertexts;
-/// management reads degrade per row (masked display + warn log, see
-/// `attach_api_key_raw_keys`) instead of failing, so a rotation never bricks
-/// the API key surfaces. Keys created after the rotation encrypt with the new
-/// pepper. A key-ring based rotation (active + decryption keys, modeled on
-/// `RingAeadCredentialSecretCodec`) can be layered on later via
-/// `key_secret_key_id` without a schema change.
+/// Rotation: `key_secret_key_id` records the generation that produced each
+/// ciphertext, so the retired pepper generations stay decryptable
+/// (`with_key_ring`). New ciphertexts always use the active pepper. Without the
+/// retired generations a rotation degrades "reveal raw key" to masked display
+/// for every key issued before it.
 pub struct RingAeadApiKeySecretCodec {
-    key: LessSafeKey,
-    key_id: String,
+    active_key_id: String,
+    keys: BTreeMap<String, LessSafeKey>,
 }
 
 impl RingAeadApiKeySecretCodec {
     pub fn new(pepper_secret: impl AsRef<str>) -> DomainResult<Self> {
-        let pepper_secret = validated_key_secret(pepper_secret.as_ref())?;
-        let digest = derived_key(
-            API_KEY_SECRET_KDF_SALT,
-            API_KEY_SECRET_AEAD_KEY_DOMAIN,
-            pepper_secret,
-        );
-        let unbound_key = UnboundKey::new(&AES_256_GCM, &digest)
-            .map_err(|_| DomainError::new("api key secret codec key is invalid"))?;
+        Self::with_key_ring(pepper_secret.as_ref(), Vec::new())
+    }
+
+    pub fn with_key_ring(
+        active_pepper: impl AsRef<str>,
+        previous_peppers: Vec<String>,
+    ) -> DomainResult<Self> {
+        let active_pepper = validated_key_secret(active_pepper.as_ref())?;
+        let active_key_id = api_key_derived_key_id(active_pepper);
+        let mut keys = BTreeMap::new();
+        keys.insert(active_key_id.clone(), api_key_aead_key(active_pepper)?);
+        for pepper in previous_peppers {
+            let pepper = pepper.trim();
+            if pepper.is_empty() {
+                continue;
+            }
+            let pepper = validated_key_secret(pepper)?;
+            let key_id = api_key_derived_key_id(pepper);
+            if key_id == active_key_id || keys.contains_key(&key_id) {
+                continue;
+            }
+            keys.insert(key_id, api_key_aead_key(pepper)?);
+        }
         Ok(Self {
-            key: LessSafeKey::new(unbound_key),
-            key_id: api_key_derived_key_id(pepper_secret),
+            active_key_id,
+            keys,
         })
+    }
+
+    pub fn previous_key_count(&self) -> usize {
+        self.keys.len().saturating_sub(1)
     }
 }
 
@@ -239,8 +307,10 @@ impl ApiKeySecretCodec for RingAeadApiKeySecretCodec {
         })?;
         let nonce = Nonce::assume_unique_for_key(nonce_bytes);
         let mut in_out = secret.as_bytes().to_vec();
-        self.key
-            .seal_in_place_append_tag(nonce, Aad::from(context.aad().as_bytes()), &mut in_out)
+        let key = self.keys.get(&self.active_key_id).ok_or_else(|| {
+            DomainError::new("api key secret codec active key is unavailable")
+        })?;
+        key.seal_in_place_append_tag(nonce, Aad::from(context.aad().as_bytes()), &mut in_out)
             .map_err(|_| DomainError::new("failed to encrypt api key secret"))?;
         Ok(EncodedApiKeySecret {
             ciphertext: format!(
@@ -249,7 +319,7 @@ impl ApiKeySecretCodec for RingAeadApiKeySecretCodec {
                 hex::encode(nonce_bytes),
                 hex::encode(in_out)
             ),
-            key_id: self.key_id.clone(),
+            key_id: self.active_key_id.clone(),
         })
     }
 
@@ -276,9 +346,10 @@ impl ApiKeySecretCodec for RingAeadApiKeySecretCodec {
         if key_id.is_empty() || key_id.len() > CREDENTIAL_SECRET_MAX_KEY_ID_BYTES {
             return Err(DomainError::new("api key secret key id is invalid"));
         }
-        if key_id != self.key_id {
-            return Err(DomainError::new("api key secret key id is unavailable"));
-        }
+        let key = self
+            .keys
+            .get(key_id)
+            .ok_or_else(|| DomainError::new("api key secret key id is unavailable"))?;
 
         let nonce_vec = hex::decode(nonce_hex.unwrap())
             .map_err(|_| DomainError::new("api key secret nonce is invalid"))?;
@@ -288,8 +359,7 @@ impl ApiKeySecretCodec for RingAeadApiKeySecretCodec {
         let nonce = Nonce::assume_unique_for_key(nonce_bytes);
         let mut in_out = hex::decode(ciphertext_hex.unwrap())
             .map_err(|_| DomainError::new("api key secret ciphertext is invalid"))?;
-        let plaintext = self
-            .key
+        let plaintext = key
             .open_in_place(nonce, Aad::from(context.aad().as_bytes()), &mut in_out)
             .map_err(|_| DomainError::new("failed to decrypt api key secret"))?;
         String::from_utf8(plaintext.to_vec())
@@ -301,9 +371,22 @@ impl fmt::Debug for RingAeadApiKeySecretCodec {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter
             .debug_struct("RingAeadApiKeySecretCodec")
+            .field("active_key_id", &self.active_key_id)
+            .field("previous_keys", &self.previous_key_count())
             .field("keys", &"[REDACTED]")
             .finish()
     }
+}
+
+fn api_key_aead_key(pepper_secret: &str) -> DomainResult<LessSafeKey> {
+    let digest = derived_key(
+        API_KEY_SECRET_KDF_SALT,
+        API_KEY_SECRET_AEAD_KEY_DOMAIN,
+        pepper_secret,
+    );
+    let unbound_key = UnboundKey::new(&AES_256_GCM, &digest)
+        .map_err(|_| DomainError::new("api key secret codec key is invalid"))?;
+    Ok(LessSafeKey::new(unbound_key))
 }
 
 fn validated_key_secret(secret: &str) -> DomainResult<&str> {
@@ -452,6 +535,95 @@ mod tests {
                 .unwrap()
                 .fingerprint
         );
+    }
+
+    #[test]
+    fn api_key_hasher_verifies_retired_peppers_while_hashing_with_the_active_one() {
+        let retired = "11111111111111111111111111111111";
+        let active = "22222222222222222222222222222222";
+        let legacy = HmacSha256ApiKeySecretHasher::new(retired).unwrap();
+        let legacy_hash = legacy.hash_secret("sk-legacy").unwrap();
+
+        let hasher =
+            HmacSha256ApiKeySecretHasher::with_key_ring(active, vec![retired.to_owned()])
+                .expect("key ring");
+
+        assert_eq!(1, hasher.previous_pepper_count());
+        assert_ne!(
+            legacy_hash,
+            hasher.hash_secret("sk-legacy").unwrap(),
+            "new keys must adopt the active pepper"
+        );
+        let candidates = hasher.candidate_hashes("sk-legacy").unwrap();
+        assert_eq!(2, candidates.len());
+        assert_eq!(
+            hasher.hash_secret("sk-legacy").unwrap(),
+            candidates[0],
+            "the active generation is probed first"
+        );
+        assert_eq!(
+            legacy_hash, candidates[1],
+            "the retired generation must stay probeable"
+        );
+    }
+
+    #[test]
+    fn api_key_hasher_ring_drops_blanks_duplicates_and_the_active_pepper() {
+        let active = "22222222222222222222222222222222";
+        let retired = "33333333333333333333333333333333";
+        let hasher = HmacSha256ApiKeySecretHasher::with_key_ring(
+            active,
+            vec![
+                String::new(),
+                active.to_owned(),
+                "   ".to_owned(),
+                retired.to_owned(),
+                retired.to_owned(),
+            ],
+        )
+        .expect("key ring");
+
+        assert_eq!(1, hasher.previous_pepper_count());
+    }
+
+    #[test]
+    fn api_key_codec_decrypts_ciphertexts_from_retired_peppers() {
+        let retired = RingAeadApiKeySecretCodec::new(PREVIOUS_SECRET).unwrap();
+        let encoded = retired
+            .encode_secret(api_key_context(400001), "sk-retired-secret")
+            .unwrap();
+        let codec = RingAeadApiKeySecretCodec::with_key_ring(
+            ACTIVE_SECRET,
+            vec![PREVIOUS_SECRET.to_owned()],
+        )
+        .unwrap();
+
+        assert_eq!(1, codec.previous_key_count());
+        assert_eq!(
+            "sk-retired-secret",
+            codec
+                .decode_secret(
+                    api_key_context(400001),
+                    &encoded.key_id,
+                    &encoded.ciphertext
+                )
+                .unwrap(),
+            "a ciphertext written by the retired pepper must stay readable"
+        );
+        let active = codec
+            .encode_secret(api_key_context(400002), "sk-active-secret")
+            .unwrap();
+        assert_ne!(
+            encoded.key_id, active.key_id,
+            "new ciphertexts adopt the active generation"
+        );
+        assert!(codec
+            .decode_secret(
+                api_key_context(400001),
+                "key-unknown",
+                &encoded.ciphertext
+            )
+            .is_err());
     }
 
     fn api_key_context(api_key_id: i64) -> ApiKeySecretContext {

@@ -56,6 +56,14 @@ pub struct IdempotencyConfig {
     pub cache_failures: bool,
     pub max_wait_retries: u32,
     pub wait_retry_delay: Duration,
+    /// Total wall-clock budget for waiting on a same-key request that is still
+    /// in progress.
+    ///
+    /// A client retrying a slow generation with the same idempotency key is
+    /// expected to join the original call; returning 409 after ~1 s made the
+    /// documented retry pattern unusable. Never exceeds `in_progress_timeout`:
+    /// past that point the lease itself is up for reacquisition.
+    pub wait_timeout: Duration,
 }
 
 impl Default for IdempotencyConfig {
@@ -65,9 +73,19 @@ impl Default for IdempotencyConfig {
             max_entries: 10_000,
             in_progress_timeout: Duration::from_secs(120),
             cache_failures: false,
-            max_wait_retries: 10,
+            // The retry cap is only a safety bound on store lookups; the wait is
+            // governed by `wait_timeout`.
+            max_wait_retries: 200,
             wait_retry_delay: Duration::from_millis(100),
+            wait_timeout: Duration::from_secs(10),
         }
+    }
+}
+
+impl IdempotencyConfig {
+    /// Effective wait budget, clamped to the in-progress lease lifetime.
+    fn effective_wait_timeout(&self) -> Duration {
+        self.wait_timeout.min(self.in_progress_timeout)
     }
 }
 
@@ -261,8 +279,22 @@ impl IdempotencyInterceptor {
         storage_key: &str,
         request_fingerprint: &str,
     ) -> Result<Option<InvocationDispatchResponse>, InvocationError> {
+        // Waiting is bounded by wall time, not only by a retry count: a client
+        // that retries a slow generation with the same idempotency key (the
+        // documented retry pattern) must be able to join the in-flight call.
+        // The previous 10 × 100 ms ≈ 1 s window turned every such retry into an
+        // immediate 409 while the original request was still streaming.
+        let deadline = Instant::now() + self.config.effective_wait_timeout();
         for _ in 0..self.config.max_wait_retries {
-            tokio::time::sleep(self.config.wait_retry_delay).await;
+            let now = Instant::now();
+            if now >= deadline {
+                break;
+            }
+            let sleep = self
+                .config
+                .wait_retry_delay
+                .min(deadline.saturating_duration_since(now));
+            tokio::time::sleep(sleep).await;
             let Some(entry) = store
                 .lookup(storage_key)
                 .await
@@ -1388,6 +1420,119 @@ mod tests {
                 .and_then(|body| body.get("marker"))
                 .and_then(serde_json::Value::as_str)
         );
+    }
+
+    /// The wait window must admit the documented retry pattern: a client that
+    /// retries a slow generation with the same idempotency key joins the
+    /// in-flight call instead of getting an immediate 409.
+    #[test]
+    fn the_default_wait_window_admits_a_real_retry() {
+        let config = IdempotencyConfig::default();
+        assert!(
+            config.effective_wait_timeout() >= Duration::from_secs(5),
+            "a retrying client must be able to join an in-flight generation, got {:?}",
+            config.effective_wait_timeout()
+        );
+
+        let mut clamped = config;
+        clamped.in_progress_timeout = Duration::from_secs(2);
+        assert_eq!(
+            Duration::from_secs(2),
+            clamped.effective_wait_timeout(),
+            "the wait must never outlive the in-progress lease"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_contended_same_key_request_waits_and_replays_instead_of_failing() {
+        let mut config = IdempotencyConfig::default();
+        config.wait_retry_delay = Duration::from_millis(5);
+        config.wait_timeout = Duration::from_secs(2);
+        let interceptor = IdempotencyInterceptor::new(config);
+        let mut first = invocation(
+            "req-wait-first",
+            100,
+            200,
+            300,
+            400,
+            "shared-retry-key",
+            json!({"model": "gpt-4o-mini", "prompt": "ping"}),
+        );
+        interceptor
+            .before(&mut first)
+            .await
+            .expect("first request acquires the lease");
+        let mut second = invocation(
+            "req-wait-second",
+            100,
+            200,
+            300,
+            400,
+            "shared-retry-key",
+            json!({"model": "gpt-4o-mini", "prompt": "ping"}),
+        );
+
+        let waiting = interceptor.before(&mut second);
+        let completing = async {
+            tokio::time::sleep(Duration::from_millis(50)).await;
+            first.dispatch.response = Some(response(200, "completed-first"));
+            interceptor
+                .after(&mut first)
+                .await
+                .expect("commit the original response");
+        };
+        let (waiter, ()) = tokio::join!(waiting, completing);
+        waiter.expect("the retry must wait for the in-flight request");
+
+        assert_eq!(DispatchMode::SyntheticLocalResponse, second.dispatch.mode);
+        assert_eq!(
+            Some("completed-first"),
+            second
+                .dispatch
+                .response
+                .as_ref()
+                .and_then(|response| response.body.as_ref())
+                .and_then(|body| body.get("marker"))
+                .and_then(serde_json::Value::as_str)
+        );
+    }
+
+    #[tokio::test]
+    async fn a_waiter_that_outlives_the_wait_window_gets_a_conflict() {
+        let mut config = IdempotencyConfig::default();
+        config.wait_retry_delay = Duration::from_millis(5);
+        config.wait_timeout = Duration::from_millis(40);
+        let interceptor = IdempotencyInterceptor::new(config);
+        let mut first = invocation(
+            "req-stuck-first",
+            100,
+            200,
+            300,
+            400,
+            "stuck-key",
+            json!({"model": "gpt-4o-mini", "prompt": "ping"}),
+        );
+        interceptor
+            .before(&mut first)
+            .await
+            .expect("first request acquires the lease");
+        let mut second = invocation(
+            "req-stuck-second",
+            100,
+            200,
+            300,
+            400,
+            "stuck-key",
+            json!({"model": "gpt-4o-mini", "prompt": "ping"}),
+        );
+
+        let error = interceptor
+            .before(&mut second)
+            .await
+            .expect_err("a request still in progress beyond the window must conflict");
+
+        assert_eq!(InvocationErrorKind::Idempotency, error.kind);
+        assert!(second.dispatch.response.is_none());
     }
 
     #[tokio::test]

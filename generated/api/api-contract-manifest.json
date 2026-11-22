@@ -547,7 +547,7 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts#listAdminConnectors@/admin/connector",
+      "key": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts#listAdminConnectors@/admin/connector/:serverKey",
       "kind": "read",
       "module": "sdkwork-mcp-pc-core",
       "openapi_exposed": true,
@@ -571,7 +571,7 @@
           "type": "object"
         }
       },
-      "route": "/admin/connector",
+      "route": "/admin/connector/:serverKey",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -914,6 +914,84 @@
       "write_tables": [
         "ai_mcp_tool"
       ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/memory/spaces",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-core/src/sdk/index.tsx#fetchMemoryCategories@/admin/memory/categories",
+      "kind": "read",
+      "module": "sdkwork-memory-pc-admin-core",
+      "openapi_exposed": true,
+      "operation": "fetchMemoryCategories",
+      "operation_id": "memoryAdmin.spaces.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_space"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/memory/categories",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "memory",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-core/src/sdk/index.tsx",
+      "tag": "memory",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/memory/memories",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-core/src/sdk/index.tsx#fetchMemoryRecords@/admin/memory",
+      "kind": "read",
+      "module": "sdkwork-memory-pc-admin-core",
+      "openapi_exposed": true,
+      "operation": "fetchMemoryRecords",
+      "operation_id": "memoryAdmin.records.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_record"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/memory",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "memory",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-core/src/sdk/index.tsx",
+      "tag": "memory",
+      "write_tables": []
     },
     {
       "api_method": "POST",
@@ -26861,6 +26939,691 @@
       "write_tables": []
     },
     {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/ai/routing/model_group_catalog",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/modelGroupService.ts#fetchModelGroupCatalog@/console/routing/default-groups",
+      "kind": "read",
+      "module": "pc-console-gateway",
+      "openapi_exposed": true,
+      "operation": "fetchModelGroupCatalog",
+      "operation_id": "routing.modelGroupCatalog.retrieve",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "modality",
+          "required": false,
+          "schema": {
+            "enum": [
+              "text",
+              "image",
+              "video",
+              "audio",
+              "music"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "vendor_code",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_user_account_group_route",
+        "ai_upstream_account_group",
+        "ai_upstream_account_group_member",
+        "ai_resource_binding",
+        "ai_upstream_account",
+        "ai_upstream_supplier",
+        "ai_model_access_policy"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AppRoutingModelGroupCatalogItemResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AppRoutingModelGroupCatalogItemResponse",
+          "properties": {
+            "item": {
+              "additionalProperties": false,
+              "name": "AppRoutingModelGroupCatalog",
+              "properties": {
+                "modalities": {
+                  "items": {
+                    "additionalProperties": false,
+                    "name": "AppRoutingModelGroupCatalogModality",
+                    "properties": {
+                      "modality": {
+                        "enum": [
+                          "text",
+                          "image",
+                          "video",
+                          "audio",
+                          "music"
+                        ],
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "vendors": {
+                        "items": {
+                          "additionalProperties": false,
+                          "name": "AppRoutingModelGroupCatalogVendor",
+                          "properties": {
+                            "models": {
+                              "items": {
+                                "additionalProperties": false,
+                                "name": "AppRoutingModelGroupCatalogModel",
+                                "properties": {
+                                  "catalogKey": {
+                                    "maxLength": 256,
+                                    "type": "string"
+                                  },
+                                  "defaultGroupCodes": {
+                                    "items": {
+                                      "maxLength": 128,
+                                      "type": "string"
+                                    },
+                                    "type": "array"
+                                  },
+                                  "defaultSource": {
+                                    "maxLength": 64,
+                                    "nullable": true,
+                                    "type": "string"
+                                  },
+                                  "displayName": {
+                                    "maxLength": 256,
+                                    "type": "string"
+                                  },
+                                  "groups": {
+                                    "items": {
+                                      "additionalProperties": false,
+                                      "name": "AppRoutingModelGroupOption",
+                                      "properties": {
+                                        "groupCode": {
+                                          "maxLength": 128,
+                                          "type": "string"
+                                        },
+                                        "groupId": {
+                                          "format": "int64",
+                                          "pattern": "^[0-9]+$",
+                                          "type": "string",
+                                          "x-sdkwork-int64-string": true,
+                                          "x-sdkwork-rust-type": "i64"
+                                        },
+                                        "groupName": {
+                                          "maxLength": 200,
+                                          "type": "string"
+                                        },
+                                        "isDefault": {
+                                          "type": "boolean"
+                                        },
+                                        "selected": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "groupId",
+                                        "groupCode",
+                                        "groupName",
+                                        "isDefault",
+                                        "selected"
+                                      ],
+                                      "type": "object"
+                                    },
+                                    "type": "array"
+                                  },
+                                  "modalities": {
+                                    "items": {
+                                      "enum": [
+                                        "text",
+                                        "image",
+                                        "video",
+                                        "audio",
+                                        "music"
+                                      ],
+                                      "maxLength": 16,
+                                      "type": "string"
+                                    },
+                                    "type": "array"
+                                  },
+                                  "model": {
+                                    "maxLength": 256,
+                                    "type": "string"
+                                  },
+                                  "vendorCode": {
+                                    "maxLength": 128,
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "model",
+                                  "catalogKey",
+                                  "displayName",
+                                  "vendorCode",
+                                  "modalities",
+                                  "groups",
+                                  "defaultGroupCodes"
+                                ],
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            "vendorCode": {
+                              "maxLength": 128,
+                              "type": "string"
+                            },
+                            "vendorName": {
+                              "maxLength": 256,
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "vendorCode",
+                            "vendorName",
+                            "models"
+                          ],
+                          "type": "object"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "modality",
+                      "vendors"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": [
+                "modalities"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "item"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/console/routing/default-groups",
+      "route_scope": "console",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-app-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/modelGroupService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/ai/routing/model_group_defaults",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/modelGroupService.ts#fetchModelGroupDefaults@/console/routing/default-groups",
+      "kind": "read",
+      "module": "pc-console-gateway",
+      "openapi_exposed": true,
+      "operation": "fetchModelGroupDefaults",
+      "operation_id": "routing.modelGroupDefaults.retrieve",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_user_account_group_route",
+        "ai_upstream_account_group"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AppRoutingModelGroupDefaultsItemResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AppRoutingModelGroupDefaultsItemResponse",
+          "properties": {
+            "item": {
+              "additionalProperties": false,
+              "name": "AppRoutingModelGroupDefaults",
+              "properties": {
+                "defaults": {
+                  "items": {
+                    "additionalProperties": false,
+                    "name": "AppRoutingModelGroupDefault",
+                    "properties": {
+                      "accountGroupCode": {
+                        "maxLength": 128,
+                        "type": "string"
+                      },
+                      "accountGroupId": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "accountGroupName": {
+                        "maxLength": 200,
+                        "type": "string"
+                      },
+                      "modality": {
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "model": {
+                        "maxLength": 256,
+                        "type": "string"
+                      },
+                      "priority": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "scope": {
+                        "enum": [
+                          "model",
+                          "vendor",
+                          "modality"
+                        ],
+                        "maxLength": 16,
+                        "type": "string"
+                      },
+                      "vendorCode": {
+                        "maxLength": 128,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "scope",
+                      "modality",
+                      "vendorCode",
+                      "model",
+                      "accountGroupId",
+                      "accountGroupCode",
+                      "accountGroupName",
+                      "priority"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": [
+                "defaults"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "item"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/console/routing/default-groups",
+      "route_scope": "console",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-app-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/modelGroupService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/ai/routing/model_groups",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/modelGroupService.ts#fetchModelGroups@/console/routing/default-groups",
+      "kind": "read",
+      "module": "pc-console-gateway",
+      "openapi_exposed": true,
+      "operation": "fetchModelGroups",
+      "operation_id": "routing.modelGroups.retrieve",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "model",
+          "required": true,
+          "schema": {
+            "maxLength": 256,
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_user_account_group_route",
+        "ai_upstream_account_group",
+        "ai_upstream_account_group_member",
+        "ai_resource_binding",
+        "ai_upstream_account",
+        "ai_upstream_supplier",
+        "ai_model_access_policy"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AppRoutingModelGroupsItemResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AppRoutingModelGroupsItemResponse",
+          "properties": {
+            "item": {
+              "additionalProperties": false,
+              "name": "AppRoutingModelGroups",
+              "properties": {
+                "groups": {
+                  "items": {
+                    "additionalProperties": false,
+                    "name": "AppRoutingModelGroupOption",
+                    "properties": {
+                      "groupCode": {
+                        "maxLength": 128,
+                        "type": "string"
+                      },
+                      "groupId": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "groupName": {
+                        "maxLength": 200,
+                        "type": "string"
+                      },
+                      "isDefault": {
+                        "type": "boolean"
+                      },
+                      "selected": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "groupId",
+                      "groupCode",
+                      "groupName",
+                      "isDefault",
+                      "selected"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "model": {
+                  "maxLength": 256,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "model",
+                "groups"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "item"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/console/routing/default-groups",
+      "route_scope": "console",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-app-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/modelGroupService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "PUT",
+      "api_path": "/app/v3/api/ai/routing/model_group_defaults",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/modelGroupService.ts#setModelGroupDefault@/console/routing/default-groups",
+      "kind": "update",
+      "module": "pc-console-gateway",
+      "openapi_exposed": true,
+      "operation": "setModelGroupDefault",
+      "operation_id": "routing.modelGroupDefaults.update",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ai_user_account_group_route",
+        "ai_upstream_account_group"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AppRoutingModelGroupDefaultRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AppRoutingModelGroupDefaultRequest",
+          "properties": {
+            "accountGroup": {
+              "description": "Backward-compatible single-group form; merged into accountGroups.",
+              "maxLength": 128,
+              "type": "string"
+            },
+            "accountGroups": {
+              "description": "Ordered failover list of group ids or codes; replaces the scope's list.",
+              "items": {
+                "maxLength": 128,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "modality": {
+              "enum": [
+                "text",
+                "image",
+                "video",
+                "audio",
+                "music"
+              ],
+              "maxLength": 16,
+              "nullable": true,
+              "type": "string"
+            },
+            "model": {
+              "maxLength": 256,
+              "nullable": true,
+              "type": "string"
+            },
+            "scope": {
+              "enum": [
+                "model",
+                "vendor",
+                "modality"
+              ],
+              "maxLength": 16,
+              "type": "string"
+            },
+            "vendorCode": {
+              "maxLength": 128,
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          "required": [
+            "scope"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AppRoutingModelGroupDefaultSetResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AppRoutingModelGroupDefaultSetResponse",
+          "properties": {
+            "accepted": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "accepted"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/console/routing/default-groups",
+      "route_scope": "console",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-app-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/modelGroupService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_user_account_group_route"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/ai/agents",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-hardware/src/cloudRouterHardwareService.ts#resolveConsoleHardwareAgents@/console/hardware",
+      "kind": "read",
+      "module": "pc-console-hardware",
+      "openapi_exposed": true,
+      "operation": "resolveConsoleHardwareAgents",
+      "operation_id": "agents.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_agent"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/console/hardware",
+      "route_scope": "console",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "agents",
+      "sdk_family": "cloudrouter-app-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-hardware/src/cloudRouterHardwareService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/iot/devices",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-hardware/src/cloudRouterHardwareService.ts#resolveConsoleHardwareDevices@/console/hardware/devices",
+      "kind": "read",
+      "module": "pc-console-hardware",
+      "openapi_exposed": true,
+      "operation": "resolveConsoleHardwareDevices",
+      "operation_id": "iot.devices.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "aiot_device"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/console/hardware/devices",
+      "route_scope": "console",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "system",
+      "sdk_family": "cloudrouter-app-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-hardware/src/cloudRouterHardwareService.ts",
+      "tag": "system",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/iot/firmware",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-hardware/src/cloudRouterHardwareService.ts#resolveConsoleHardwareFirmware@/console/hardware/firmware",
+      "kind": "read",
+      "module": "pc-console-hardware",
+      "openapi_exposed": true,
+      "operation": "resolveConsoleHardwareFirmware",
+      "operation_id": "iot.firmware.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "aiot_firmware"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/console/hardware/firmware",
+      "route_scope": "console",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "system",
+      "sdk_family": "cloudrouter-app-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-hardware/src/cloudRouterHardwareService.ts",
+      "tag": "system",
+      "write_tables": []
+    },
+    {
       "api_method": "POST",
       "api_path": "/app/v3/api/notification/notifications/{notificationId}/acknowledge",
       "api_surface": "app",
@@ -35213,24 +35976,24 @@
   "summary": {
     "api_method_counts": {
       "DELETE": 25,
-      "GET": 125,
+      "GET": 133,
       "PATCH": 24,
       "POST": 74,
-      "PUT": 15
+      "PUT": 16
     },
     "api_surface_counts": {
-      "app": 74,
-      "backend": 189
+      "app": 81,
+      "backend": 191
     },
-    "operation_count": 263,
+    "operation_count": 272,
     "route_scope_counts": {
-      "admin": 189,
-      "console": 31,
+      "admin": 191,
+      "console": 38,
       "public": 43
     },
     "sdk_client_counts": {
-      "SdkworkAppClient": 74,
-      "SdkworkBackendClient": 189
+      "SdkworkAppClient": 81,
+      "SdkworkBackendClient": 191
     }
   }
 }

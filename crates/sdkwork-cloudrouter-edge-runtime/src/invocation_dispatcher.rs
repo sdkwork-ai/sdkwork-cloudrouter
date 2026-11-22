@@ -841,6 +841,13 @@ fn is_gateway_owned_request_header(name: &HeaderName) -> bool {
     // provider's view of the original client and protocol. `x-sdkwork-*` carries
     // this platform's internal identity/projection metadata, which a third-party
     // provider has no use for.
+    //
+    // `idempotency-key` is the gateway's *tenant-scoped* dedup key: the gateway
+    // already guarantees at-most-once execution through its own idempotency
+    // store, and forwarding the raw key upstream is unsafe — a provider dedups
+    // per account, so two tenants whose client-chosen keys collide would have
+    // one caller's request silently answered with the other's result, and a
+    // failover attempt could be deduped against an unrelated earlier request.
     matches!(
         name,
         "accept-encoding"
@@ -852,6 +859,8 @@ fn is_gateway_owned_request_header(name: &HeaderName) -> bool {
             | "x-forwarded-proto"
             | "x-real-ip"
             | "x-scheme"
+            | "idempotency-key"
+            | "x-idempotency-key"
     ) || name.starts_with("x-sdkwork-")
 }
 
@@ -943,6 +952,24 @@ mod tests {
         "HTTP_PROXY",
         "http_proxy",
     ];
+
+    /// The gateway's tenant-scoped dedup key must never reach a provider: a
+    /// provider dedups per account, so a forwarded key could collide across
+    /// tenants or dedup a failover attempt against an unrelated request.
+    #[test]
+    fn the_gateway_idempotency_key_is_not_forwarded_upstream() {
+        let none = std::collections::HashSet::new();
+        for name in ["idempotency-key", "x-idempotency-key"] {
+            let header = HeaderName::from_bytes(name.as_bytes()).expect("header name");
+            assert!(
+                !should_forward_header(&header, &none),
+                "{name} must be terminated at the gateway"
+            );
+        }
+        // Ordinary caller headers still flow through.
+        let content_type = HeaderName::from_static("x-custom-trace");
+        assert!(should_forward_header(&content_type, &none));
+    }
 
     #[test]
     fn parses_an_http_proxy_and_rejects_other_schemes() {

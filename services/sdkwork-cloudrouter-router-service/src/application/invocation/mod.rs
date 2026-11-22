@@ -76,7 +76,7 @@ pub use idempotency::{
 pub use interceptor::{InvocationFuture, InvocationInterceptor};
 pub use metrics_interceptor::MetricsInterceptor;
 pub use openai_classifier::OpenAiResourceClassifier;
-pub use payload::PayloadExtractionInterceptor;
+pub use payload::{peek_requested_model, PayloadExtractionInterceptor};
 pub use pipeline::{
     DeferredStreamInvocation, DeferredStreamResponse, InvocationPipeline,
     InvocationPipelineExecution, StreamTerminalOutcome,

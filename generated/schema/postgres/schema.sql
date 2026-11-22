@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.5.0.
--- Registry SHA-256: 222af56e9fac5439c04eb1c76b3503bf690fdbdf34e4d2836e63c9e1ed927f91.
+-- Registry SHA-256: f92c53aa0ee38b439ea3fc913d974fb951ffbb35881225a716e0266642363ea4.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -1313,6 +1313,36 @@ CREATE TABLE IF NOT EXISTS ai_upstream_supplier_endpoint_health_state (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_endpoint_health_state_scope ON ai_upstream_supplier_endpoint_health_state (tenant_id, organization_id, endpoint_id);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_supplier_endpoint_health_state_health ON ai_upstream_supplier_endpoint_health_state (tenant_id, organization_id, health_status, updated_at, endpoint_id);
+
+CREATE TABLE IF NOT EXISTS ai_user_account_group_route (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    user_id BIGINT NOT NULL,
+    scope_type VARCHAR(16) NOT NULL,
+    modality VARCHAR(32) NOT NULL DEFAULT '',
+    vendor_code VARCHAR(128) NOT NULL DEFAULT '',
+    model VARCHAR(200) NOT NULL DEFAULT '',
+    account_group_id BIGINT NOT NULL,
+    account_group_code VARCHAR(128) NOT NULL DEFAULT '',
+    priority INTEGER NOT NULL DEFAULT 100,
+    CONSTRAINT ck_ai_user_account_group_route_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_ai_user_account_group_route_user CHECK (user_id > 0),
+    CONSTRAINT ck_ai_user_account_group_route_scope CHECK (scope_type IN ('model', 'vendor', 'modality') AND modality IN ('', 'text', 'image', 'video', 'audio', 'music') AND priority >= 0 AND ((scope_type = 'modality' AND vendor_code = '' AND model = '' AND modality <> '') OR (scope_type = 'vendor' AND vendor_code <> '' AND model = '') OR (scope_type = 'model' AND model <> '')))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_user_account_group_route_scope_group ON ai_user_account_group_route (tenant_id, organization_id, user_id, scope_type, modality, vendor_code, model, account_group_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS ix_ai_user_account_group_route_user ON ai_user_account_group_route (tenant_id, organization_id, user_id, id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS ix_ai_user_account_group_route_group ON ai_user_account_group_route (account_group_id, id) WHERE deleted_at IS NULL;
 
 CREATE TABLE IF NOT EXISTS cloudrouter_pricing_plan (
     id BIGINT NOT NULL PRIMARY KEY,

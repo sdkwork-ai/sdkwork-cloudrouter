@@ -105,6 +105,16 @@ development lifecycle history stays readable.
   `weighted` default, so a row inserted without an explicit strategy stored
   `weighted` even though the selector documents price-first as the default.
 
+- `0054_user_model_group_routing.up.sql` creates
+  `ai_user_account_group_route`, the user-scoped model → account-group routing
+  control plane behind the console "Default groups" page. A scope (`model`,
+  `vendor`, or `modality`) is **one-to-many**: it lists several account groups
+  ordered by `priority`, and the auth-token open-api channel tries the caller's
+  model → vendor → modality rules in order before the account-level default
+  group. The `x-sdkwork-account-group` request header can pin a reachable group
+  for any model call. The table is soft-deleted with the standard column
+  contract and a partial unique index over the scope plus group.
+
 ## Historical migrations
 
 Folded into the baseline (`0001_cloudrouter_baseline.sql`) during pre-release

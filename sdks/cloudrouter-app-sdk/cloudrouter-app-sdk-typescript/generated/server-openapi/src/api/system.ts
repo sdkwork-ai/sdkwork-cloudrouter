@@ -1,9 +1,6 @@
 import { appApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
-
 import type { SiteRuntimeSettingsResponse } from '../types';
-
-
 export interface SystemSiteRuntimeRetrieveParams {
   tenantCode?: string;
   organizationCode?: string;
@@ -36,10 +33,51 @@ export class SystemSiteApi {
 
 }
 
+export class SystemIotFirmwareApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Resolve console hardware firmware */
+  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/iot/firmware`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+  }
+}
+
+export class SystemIotDevicesApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Resolve console hardware devices */
+  async list(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+    return this.client.request<Record<string, never>>(appApiPath(`/iot/devices`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+  }
+}
+
+export class SystemIotApi {
+  public readonly devices: SystemIotDevicesApi;
+  public readonly firmware: SystemIotFirmwareApi;
+
+  constructor(client: HttpClient) {
+    this.devices = new SystemIotDevicesApi(client);
+    this.firmware = new SystemIotFirmwareApi(client);
+  }
+
+}
+
 export class SystemApi {
+  public readonly iot: SystemIotApi;
   public readonly site: SystemSiteApi;
 
   constructor(client: HttpClient) {
+    this.iot = new SystemIotApi(client);
     this.site = new SystemSiteApi(client);
   }
 

@@ -9,7 +9,7 @@ frontend_operations:
   - route: /admin/memory/categories
     source: ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-core/src/sdk/index.tsx
     operation: fetchMemoryCategories
-    operation_id: memory.backend.spaces.list
+    operation_id: memoryAdmin.spaces.list
     kind: read
     api_surface: backend
     api_method: GET
@@ -29,7 +29,7 @@ frontend_operations:
   - route: /admin/memory
     source: ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-core/src/sdk/index.tsx
     operation: fetchMemoryRecords
-    operation_id: memory.backend.records.list
+    operation_id: memoryAdmin.records.list
     kind: read
     api_surface: backend
     api_method: GET
@@ -111,7 +111,7 @@ frontend_operations:
     operation: listAdminConnectors
     operation_id: mcpAdmin.listConnectors
     kind: read
-    api_surface: app
+    api_surface: backend
     api_method: GET
     api_path: /backend/v3/api/mcp/servers/{serverId}/connectors
     sdk_domain: mcp
@@ -1746,6 +1746,257 @@ frontend_operations:
         schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
       - name: q
         schema: { type: string, maxLength: 256 }
+  - route: /console/routing/default-groups
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/modelGroupService.ts
+    operation: fetchModelGroupCatalog
+    operation_id: routing.modelGroupCatalog.retrieve
+    kind: read
+    api_surface: app
+    api_method: GET
+    api_path: /app/v3/api/ai/routing/model_group_catalog
+    sdk_domain: ai
+    read_sources:
+      - ai_user_account_group_route
+      - ai_upstream_account_group
+      - ai_upstream_account_group_member
+      - ai_resource_binding
+      - ai_upstream_account
+      - ai_upstream_supplier
+      - ai_model_access_policy
+    response_schema:
+      name: AppRoutingModelGroupCatalogItemResponse
+      schema:
+        additionalProperties: false
+        name: AppRoutingModelGroupCatalogItemResponse
+        properties:
+          item:
+            additionalProperties: false
+            name: AppRoutingModelGroupCatalog
+            properties:
+              modalities:
+                items:
+                  additionalProperties: false
+                  name: AppRoutingModelGroupCatalogModality
+                  properties:
+                    modality: { enum: [text, image, video, audio, music], maxLength: 16, type: string }
+                    vendors:
+                      items:
+                        additionalProperties: false
+                        name: AppRoutingModelGroupCatalogVendor
+                        properties:
+                          models:
+                            items:
+                              additionalProperties: false
+                              name: AppRoutingModelGroupCatalogModel
+                              properties:
+                                catalogKey: { maxLength: 256, type: string }
+                                defaultGroupCodes:
+                                  items: { maxLength: 128, type: string }
+                                  type: array
+                                defaultSource:
+                                  maxLength: 64
+                                  nullable: true
+                                  type: string
+                                displayName: { maxLength: 256, type: string }
+                                groups:
+                                  items:
+                                    additionalProperties: false
+                                    name: AppRoutingModelGroupOption
+                                    properties:
+                                      groupCode: { maxLength: 128, type: string }
+                                      groupId:
+                                        format: int64
+                                        pattern: ^[0-9]+$
+                                        type: string
+                                        x-sdkwork-int64-string: true
+                                        x-sdkwork-rust-type: i64
+                                      groupName: { maxLength: 200, type: string }
+                                      isDefault: { type: boolean }
+                                      selected: { type: boolean }
+                                    required: [groupId, groupCode, groupName, isDefault, selected]
+                                    type: object
+                                  type: array
+                                modalities:
+                                  items: { enum: [text, image, video, audio, music], maxLength: 16, type: string }
+                                  type: array
+                                model: { maxLength: 256, type: string }
+                                vendorCode: { maxLength: 128, type: string }
+                              required: [model, catalogKey, displayName, vendorCode, modalities, groups, defaultGroupCodes]
+                              type: object
+                            type: array
+                          vendorCode: { maxLength: 128, type: string }
+                          vendorName: { maxLength: 256, type: string }
+                        required: [vendorCode, vendorName, models]
+                        type: object
+                      type: array
+                  required: [modality, vendors]
+                  type: object
+                type: array
+            required: [modalities]
+            type: object
+        required: [item]
+        type: object
+    query_parameters:
+      - name: modality
+        schema: { enum: [text, image, video, audio, music], type: string }
+      - name: vendor_code
+        schema: { type: string, maxLength: 128 }
+  - route: /console/routing/default-groups
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/modelGroupService.ts
+    operation: fetchModelGroups
+    operation_id: routing.modelGroups.retrieve
+    kind: read
+    api_surface: app
+    api_method: GET
+    api_path: /app/v3/api/ai/routing/model_groups
+    sdk_domain: ai
+    read_sources:
+      - ai_user_account_group_route
+      - ai_upstream_account_group
+      - ai_upstream_account_group_member
+      - ai_resource_binding
+      - ai_upstream_account
+      - ai_upstream_supplier
+      - ai_model_access_policy
+    response_schema:
+      name: AppRoutingModelGroupsItemResponse
+      schema:
+        additionalProperties: false
+        name: AppRoutingModelGroupsItemResponse
+        properties:
+          item:
+            additionalProperties: false
+            name: AppRoutingModelGroups
+            properties:
+              groups:
+                items:
+                  additionalProperties: false
+                  name: AppRoutingModelGroupOption
+                  properties:
+                    groupCode: { maxLength: 128, type: string }
+                    groupId:
+                      format: int64
+                      pattern: ^[0-9]+$
+                      type: string
+                      x-sdkwork-int64-string: true
+                      x-sdkwork-rust-type: i64
+                    groupName: { maxLength: 200, type: string }
+                    isDefault: { type: boolean }
+                    selected: { type: boolean }
+                  required: [groupId, groupCode, groupName, isDefault, selected]
+                  type: object
+                type: array
+              model: { maxLength: 256, type: string }
+            required: [model, groups]
+            type: object
+        required: [item]
+        type: object
+    query_parameters:
+      - name: model
+        required: true
+        schema: { type: string, maxLength: 256 }
+  - route: /console/routing/default-groups
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/modelGroupService.ts
+    operation: fetchModelGroupDefaults
+    operation_id: routing.modelGroupDefaults.retrieve
+    kind: read
+    api_surface: app
+    api_method: GET
+    api_path: /app/v3/api/ai/routing/model_group_defaults
+    sdk_domain: ai
+    read_sources:
+      - ai_user_account_group_route
+      - ai_upstream_account_group
+    response_schema:
+      name: AppRoutingModelGroupDefaultsItemResponse
+      schema:
+        additionalProperties: false
+        name: AppRoutingModelGroupDefaultsItemResponse
+        properties:
+          item:
+            additionalProperties: false
+            name: AppRoutingModelGroupDefaults
+            properties:
+              defaults:
+                items:
+                  additionalProperties: false
+                  name: AppRoutingModelGroupDefault
+                  properties:
+                    accountGroupCode: { maxLength: 128, type: string }
+                    accountGroupId:
+                      format: int64
+                      pattern: ^[0-9]+$
+                      type: string
+                      x-sdkwork-int64-string: true
+                      x-sdkwork-rust-type: i64
+                    accountGroupName: { maxLength: 200, type: string }
+                    modality: { maxLength: 16, type: string }
+                    model: { maxLength: 256, type: string }
+                    priority: { minimum: 0, type: integer, format: int32 }
+                    scope: { enum: [model, vendor, modality], maxLength: 16, type: string }
+                    vendorCode: { maxLength: 128, type: string }
+                  required: [scope, modality, vendorCode, model, accountGroupId, accountGroupCode, accountGroupName, priority]
+                  type: object
+                type: array
+            required: [defaults]
+            type: object
+        required: [item]
+        type: object
+    query_parameters: []
+  - route: /console/routing/default-groups
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/modelGroupService.ts
+    operation: setModelGroupDefault
+    operation_id: routing.modelGroupDefaults.update
+    kind: update
+    api_surface: app
+    api_method: PUT
+    api_path: /app/v3/api/ai/routing/model_group_defaults
+    sdk_domain: ai
+    read_sources:
+      - ai_user_account_group_route
+      - ai_upstream_account_group
+    response_schema:
+      name: AppRoutingModelGroupDefaultSetResponse
+      schema:
+        additionalProperties: false
+        name: AppRoutingModelGroupDefaultSetResponse
+        properties:
+          accepted: { type: boolean }
+        required: [accepted]
+        type: object
+    request_schema:
+      name: AppRoutingModelGroupDefaultRequest
+      schema:
+        additionalProperties: false
+        name: AppRoutingModelGroupDefaultRequest
+        properties:
+          accountGroup:
+            description: Backward-compatible single-group form; merged into accountGroups.
+            maxLength: 128
+            type: string
+          accountGroups:
+            description: Ordered failover list of group ids or codes; replaces the scope's list.
+            items: { maxLength: 128, type: string }
+            type: array
+          modality:
+            enum: [text, image, video, audio, music]
+            maxLength: 16
+            nullable: true
+            type: string
+          model:
+            maxLength: 256
+            nullable: true
+            type: string
+          scope: { enum: [model, vendor, modality], maxLength: 16, type: string }
+          vendorCode:
+            maxLength: 128
+            nullable: true
+            type: string
+        required: [scope]
+        type: object
+    request_body_required: true
+    write_tables:
+      - ai_user_account_group_route
   - route: /console/api-keys
     source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts
     operation: fetchGroups
@@ -13238,26 +13489,6 @@ frontend_operations:
       - ai_mcp_server
     write_tables:
       - ai_mcp_server
-    response_schema:
-      name: NoData
-      schema:
-        $schema: https://json-schema.org/draft/2020-12/schema
-        additionalProperties: false
-        properties: {}
-        type: object
-    query_parameters: []
-
-  - route: /admin/connector
-    source: ../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts
-    operation: listAdminConnectors
-    operation_id: mcpAdmin.listConnectors
-    kind: read
-    api_surface: backend
-    api_method: GET
-    api_path: /backend/v3/api/mcp/servers/{serverId}/connectors
-    sdk_domain: mcp
-    read_sources:
-      - ai_mcp_connector
     response_schema:
       name: NoData
       schema:

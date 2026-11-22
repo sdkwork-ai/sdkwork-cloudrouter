@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "584cf6a123ef57b5ce439e9a9ad2d485f79411df30c75ceb5d4f38a52425b41c"
+      "sha256": "1fecdf8a044ce4f9a8edc1a8d7c3943c970910372e604812ada874705b1a5c98"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -52,7 +52,7 @@
     },
     {
       "path": "src/api/ai.ts",
-      "sha256": "d983a03827828a8c8e21125b6ffa33f38931e2875346918a1f693b18924c0ecc"
+      "sha256": "49cd842aa02bce9cec93a30b4892de72ca77494bdc05c04e89cae0ee57287fc3"
     },
     {
       "path": "src/api/base.ts",
@@ -64,7 +64,7 @@
     },
     {
       "path": "src/api/index.ts",
-      "sha256": "d83a128040f1e9db5e6429343798b70aad5d61772668c555bbde1e53f1153125"
+      "sha256": "813979ce6290f48a0b75c9247ec19cf4ee56c374cf699dc83506bbb375b79695"
     },
     {
       "path": "src/api/notification.ts",
@@ -80,7 +80,7 @@
     },
     {
       "path": "src/api/system.ts",
-      "sha256": "1d72168ee3908a5bf8d06eaca7572d5d490e0333cc3141bf2e42c2483c5315e8"
+      "sha256": "52b30db6f44719351f87e772e4dc369d32526a6431fe2406c69c283d21b55ed6"
     },
     {
       "path": "src/auth/index.ts",
@@ -100,7 +100,7 @@
     },
     {
       "path": "src/sdk.ts",
-      "sha256": "b95350add77cdb992ed8de1dee329bf40733a853943d1a0e899cb4fb9b6b9af5"
+      "sha256": "f1c7b04c455569dfdd8c71d4ca8333d0aeb9a2e962ac1a1c978618f09e97366d"
     },
     {
       "path": "src/types/acknowledge-notification-response.ts",
@@ -153,6 +153,58 @@
     {
       "path": "src/types/app-routing-api-key.ts",
       "sha256": "de961972db05aed15a835bec1e01cc697a8b2d4927da5b0ae0d3ef65d759e2e7"
+    },
+    {
+      "path": "src/types/app-routing-model-group-catalog-item-response.ts",
+      "sha256": "4d9c1f78c75e775c13a3524ff0baadb019a487e1d78fd3dbff1cad6f3416b05f"
+    },
+    {
+      "path": "src/types/app-routing-model-group-catalog-modality.ts",
+      "sha256": "0070aedc7703c43c4cde0939d1c96b5876d67b74279ec1751e71b93a3e7c0d93"
+    },
+    {
+      "path": "src/types/app-routing-model-group-catalog-model.ts",
+      "sha256": "9c5328b1324ffecbaaff8f1a31535eb43120a557eafa74a25c0b04749aa1e026"
+    },
+    {
+      "path": "src/types/app-routing-model-group-catalog-vendor.ts",
+      "sha256": "9ad29a9fd92364eeca72215c81cadefd88341f7a84b9a645e1f4b695ce287223"
+    },
+    {
+      "path": "src/types/app-routing-model-group-catalog.ts",
+      "sha256": "51d6fec7e95d853778d8f72686c4275d8206cc74c4409dddedf61f2f3c439b54"
+    },
+    {
+      "path": "src/types/app-routing-model-group-default-request.ts",
+      "sha256": "a345e4018347e6a48702acbef634f3d88186d12e844941dca4f43c80383ec4e0"
+    },
+    {
+      "path": "src/types/app-routing-model-group-default-set-response.ts",
+      "sha256": "51c288a5b4a88d434ecb7eb711c32a221012fb4bec13b5982aa11b7c0443828d"
+    },
+    {
+      "path": "src/types/app-routing-model-group-default.ts",
+      "sha256": "036820e44c2c0c2576113fb7ed433c38c1e14265d9e071ed904e4e639d4cb837"
+    },
+    {
+      "path": "src/types/app-routing-model-group-defaults-item-response.ts",
+      "sha256": "cde1ced1db3a72c3c64f065e3019a600e2deac0d51945f9b3436689b88f9e146"
+    },
+    {
+      "path": "src/types/app-routing-model-group-defaults.ts",
+      "sha256": "fb543440bd72edf7d1e85e46f6bba76b1a705f439ad3d62fb3578386b108af94"
+    },
+    {
+      "path": "src/types/app-routing-model-group-option.ts",
+      "sha256": "032434a5cd13cf41f6cdb2eb5d995a750c471feced6f016abf5a1aec5c4f0d2a"
+    },
+    {
+      "path": "src/types/app-routing-model-groups-item-response.ts",
+      "sha256": "6e057871e4f5717add0ba6576f075c5a6d418e76019b0e8d10173cc200aa1715"
+    },
+    {
+      "path": "src/types/app-routing-model-groups.ts",
+      "sha256": "de0845817d5cf5fb6bbb58da87aa41e44dae4c322fab0b10ad4dc2717c8903c0"
     },
     {
       "path": "src/types/app-routing-model-stats.ts",
@@ -248,7 +300,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "e895e5082600439fdd14a9e426d4a1c7ae18b9091b8314819f9bc5925c3993c3"
+      "sha256": "cd121f873939d6b43775ba4dab5c1f85a55c7288d8a5951de2ac1389c8567ae9"
     },
     {
       "path": "src/types/json-null.ts",

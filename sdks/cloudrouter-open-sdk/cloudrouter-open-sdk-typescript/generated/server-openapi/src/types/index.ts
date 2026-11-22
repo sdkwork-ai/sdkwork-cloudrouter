@@ -244,6 +244,8 @@ export type { OpenAiJsonSchema } from './open-ai-json-schema';
 export type { OpenAiJsonSchemaAdditionalProperties } from './open-ai-json-schema-additional-properties';
 export type { OpenAiJsonSchemaFormat } from './open-ai-json-schema-format';
 export type { OpenAiModel } from './open-ai-model';
+export type { OpenAiModelGroup } from './open-ai-model-group';
+export type { OpenAiModelGroupList } from './open-ai-model-group-list';
 export type { OpenAiModelList } from './open-ai-model-list';
 export type { OpenAiModeration } from './open-ai-moderation';
 export type { OpenAiModerationCreateRequest } from './open-ai-moderation-create-request';

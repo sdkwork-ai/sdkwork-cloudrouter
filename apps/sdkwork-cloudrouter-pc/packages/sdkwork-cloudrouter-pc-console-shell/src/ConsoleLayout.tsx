@@ -15,6 +15,7 @@ import {
   LogOut,
   MessageCircle,
   Receipt,
+  Route as RouteIcon,
   Settings,
   Ticket,
   Wallet,
@@ -97,6 +98,7 @@ const consoleVmInstancesGroup = groupBlock(
 const consoleSidebarGroups = [
   groupBlock('console.menu.group.integration', 'Access & Routing', [
     itemBlock({ path: '/console/api-keys', labelKey: 'console.menu.apiKeys', fallbackLabel: 'Token management', icon: Key }),
+    itemBlock({ path: '/console/routing/default-groups', labelKey: 'console.menu.defaultGroups', fallbackLabel: 'Default groups', icon: RouteIcon }),
     // The caller's own WeChat official accounts: the unified
     // `@sdkwork/iam-pc-official-accounts` self-service surface, the same
     // component the admin surface mounts in operator posture.

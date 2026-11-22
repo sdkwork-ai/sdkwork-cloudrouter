@@ -59,17 +59,17 @@ const client = new SdkworkAppClient({
 
 - `client.ai` - ai API
 - `client.iam` - iam API
+- `client.system` - system API
 - `client.notification` - notification API
 - `client.runtime` - runtime API
-- `client.system` - system API
 
 ## Usage Examples
 
 ### ai
 
 ```typescript
-// List routing usage
-const result = await client.ai.routing.usage.retrieve();
+// Resolve console hardware agents
+const result = await client.ai.agents.list();
 ```
 
 ### iam
@@ -80,6 +80,13 @@ const body = {
   inviteCode: 'inviteCode',
 };
 const result = await client.iam.invite.validate.create(body);
+```
+
+### system
+
+```typescript
+// Resolve console hardware devices
+const result = await client.system.iot.devices.list();
 ```
 
 ### notification
@@ -109,17 +116,6 @@ const params = {
   status: 'pending',
 };
 const result = await client.runtime.invocations.list(params);
-```
-
-### system
-
-```typescript
-// List site branding
-const params = {
-  tenant_code: 'tenant_code',
-  organization_code: 'organization_code',
-};
-const result = await client.system.site.runtime.retrieve(params);
 ```
 
 ## Error Handling
