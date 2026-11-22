@@ -47,3 +47,17 @@ test('the session key is scoped to the order and the chosen method', () => {
     /createIdempotencyParams\(`cloudrouter-cashier-payment:\$\{order\.id\}:\$\{paymentMethod\}`\)/u,
   );
 });
+
+test('the provider attempt window survives into the status polls', () => {
+  // Counting down the order window again after the first poll would show a live
+  // QR for an attempt whose trade already expired.
+  assert.match(source, /let attemptExpiresAt: string \| undefined;/u);
+  assert.match(source, /attemptExpiresAt = readString\(params\.expiresAt\);/u);
+  const uses = source.match(/resolveCashierExpiresAt\(/gu) ?? [];
+  assert.ok(
+    uses.length >= 3,
+    `create and both poll branches must resolve the deadline (found ${uses.length})`,
+  );
+  // The pending poll must not fall back to the bare order window.
+  assert.doesNotMatch(source, /expiresAt: latest\?\.expireTime \?\? order\.expireTime,/u);
+});

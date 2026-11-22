@@ -147,6 +147,11 @@ export function createCloudRouterCashierCheckoutDriver(
   // within this driver now reuse the key, while opening the cashier again creates
   // a new session (and therefore a genuinely new attempt) — the semantics a
   // server-side idempotency key is meant to have.
+  // The provider attempt window is captured when the payment is created and
+  // reused by every later status poll: the dialog had been counting down the
+  // longer order window again as soon as it started polling.
+  let attemptExpiresAt: string | undefined;
+
   const paymentIdempotencyKey =
     createIdempotencyParams(`cloudrouter-cashier-payment:${order.id}:${paymentMethod}`)
       .idempotencyKey;
@@ -175,6 +180,7 @@ export function createCloudRouterCashierCheckoutDriver(
         { idempotencyKey: paymentIdempotencyKey },
       ));
       const params = readRecord(result.paymentParams);
+      attemptExpiresAt = readString(params.expiresAt);
       const qrCode = readString(params.qrCodePayload)
         ?? readString(params.qrCodeUrl)
         ?? readString(params.cashierUrl);
@@ -201,13 +207,13 @@ export function createCloudRouterCashierCheckoutDriver(
       const latest = await loadLatestStatus();
       if (!latest || isCloudRouterCashierPayable(latest)) {
         return {
-          expiresAt: latest?.expireTime ?? order.expireTime,
+          expiresAt: resolveCashierExpiresAt(latest?.expireTime ?? order.expireTime, attemptExpiresAt),
           orderId: order.id,
           status: 'pending',
         };
       }
       return {
-        expiresAt: latest.expireTime,
+        expiresAt: resolveCashierExpiresAt(latest.expireTime, attemptExpiresAt),
         orderId: order.id,
         status: isCloudRouterCashierSettled(latest) ? 'completed' : 'failed',
       };
