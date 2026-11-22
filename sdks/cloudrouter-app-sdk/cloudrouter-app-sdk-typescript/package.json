@@ -20,11 +20,6 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    },
-    "./domains": {
-      "types": "./src/domains/index.ts",
-      "import": "./src/domains/index.ts",
-      "default": "./src/domains/index.ts"
     }
   },
   "scripts": {

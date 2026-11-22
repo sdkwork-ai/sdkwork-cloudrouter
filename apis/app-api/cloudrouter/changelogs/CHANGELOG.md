@@ -1,5 +1,24 @@
 # Cloud Router App API Changelog
 
+## 0.7.0
+
+- New user-level model routing surface:
+  - `routing.modelGroupCatalog.retrieve`
+    (`GET /app/v3/api/ai/routing/model_group_catalog`) returns the
+    modality → vendor → model catalog with the account groups that can serve
+    each model and the caller's effective ordered default groups.
+  - `routing.modelGroups.retrieve` (`GET /app/v3/api/ai/routing/model_groups`)
+    returns the groups that can serve one model.
+  - `routing.modelGroupDefaults.retrieve`
+    (`GET /app/v3/api/ai/routing/model_group_defaults`) lists the caller's
+    stored rules.
+  - `routing.modelGroupDefaults.update`
+    (`PUT /app/v3/api/ai/routing/model_group_defaults`) replaces one scope's
+    ordered group list (`scope`, `modality`, `vendorCode`, `model`,
+    `accountGroups`); an empty list clears the rule. A scope is one-to-many:
+    `accountGroups` is an ordered failover list, and `priority` is reported on
+    the read surface.
+
 ## 0.6.0
 
 - `routing.accountGroups.list` (`/app/v3/api/ai/routing/account_groups`) no

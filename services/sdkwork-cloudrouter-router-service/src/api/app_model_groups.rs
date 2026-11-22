@@ -304,3 +304,63 @@ pub const APP_MODEL_GROUP_ROUTES: [(&str, &str); 4] = [
     ("GET", "/app/v3/api/ai/routing/model_group_defaults"),
     ("PUT", "/app/v3/api/ai/routing/model_group_defaults"),
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::{build_command, SetModelGroupDefaultRequest};
+    use crate::domain::AccountGroupRouteScope;
+
+    #[test]
+    fn model_command_keeps_the_ordered_account_group_list() {
+        let command = build_command(SetModelGroupDefaultRequest {
+            scope: "model".to_owned(),
+            modality: Some("text".to_owned()),
+            vendor_code: Some("openai".to_owned()),
+            model: Some("gpt-4o".to_owned()),
+            account_groups: vec![" primary ".to_owned(), "backup".to_owned()],
+            account_group: Some("legacy".to_owned()),
+        })
+        .expect("valid command");
+        assert_eq!(AccountGroupRouteScope::Model, command.scope);
+        assert_eq!(vec!["primary", "backup", "legacy"], command.account_groups);
+    }
+
+    #[test]
+    fn empty_account_group_list_clears_the_scope() {
+        let command = build_command(SetModelGroupDefaultRequest {
+            scope: "vendor".to_owned(),
+            modality: Some("image".to_owned()),
+            vendor_code: Some("openai".to_owned()),
+            model: None,
+            account_groups: Vec::new(),
+            account_group: None,
+        })
+        .expect("valid command");
+        assert!(command.account_groups.is_empty());
+    }
+
+    #[test]
+    fn unknown_scope_and_modality_are_rejected() {
+        let scope_error = build_command(SetModelGroupDefaultRequest {
+            scope: "tenant".to_owned(),
+            modality: None,
+            vendor_code: None,
+            model: None,
+            account_groups: Vec::new(),
+            account_group: None,
+        })
+        .expect_err("unknown scope");
+        assert!(scope_error.contains("scope"));
+
+        let modality_error = build_command(SetModelGroupDefaultRequest {
+            scope: "model".to_owned(),
+            modality: Some("hologram".to_owned()),
+            vendor_code: None,
+            model: Some("m".to_owned()),
+            account_groups: Vec::new(),
+            account_group: None,
+        })
+        .expect_err("unknown modality");
+        assert!(modality_error.contains("modality"));
+    }
+}

@@ -138,12 +138,17 @@ where
                 .iter()
                 .find_map(|key| catalog.find_model(key))
         })?;
-        Some(crate::application::model_supported_group_ids(
+        let ids = crate::application::model_supported_group_ids(
             catalog,
             &found,
             identity.tenant_id,
             identity.organization_id,
-        ))
+        );
+        // An empty set means the catalog has no route for this model at all.
+        // Keep the previous behaviour there (fall through to the account
+        // default so the route planner can report the precise model-route gap)
+        // instead of masking it as "no default group".
+        (!ids.is_empty()).then_some(ids)
     });
     let Some(selection) = crate::domain::select_session_account_group_with_user_routing_and_support(
         &groups,

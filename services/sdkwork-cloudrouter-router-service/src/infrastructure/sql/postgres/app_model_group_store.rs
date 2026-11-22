@@ -341,14 +341,14 @@ impl AppModelGroupStore for PostgresAppModelGroupStore {
                     r#"
                     INSERT INTO ai_user_account_group_route (
                         id, uuid, tenant_id, organization_id, user_id,
-                        owner_type, owner_id, data_scope, status,
+                        data_scope, status,
                         created_at, updated_at, version,
                         scope_type, modality, vendor_code, model,
                         account_group_id, account_group_code, priority
                     )
                     VALUES (
                         $1, $2, $3, $4, $5,
-                        1, $5, 1, 1,
+                        1, 1,
                         CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0,
                         $6, $7, $8, $9,
                         $10, $11, $12
