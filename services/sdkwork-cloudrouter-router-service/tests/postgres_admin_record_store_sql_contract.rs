@@ -61,13 +61,26 @@ fn postgres_admin_record_store_aggregates_billable_usage_cte_column_names() {
 }
 
 #[test]
-fn postgres_admin_record_store_aliases_ranked_trace_subquery() {
+fn postgres_admin_record_store_pages_by_keyset_not_by_ranking_every_row() {
     let record_sql = compact_sql(sql_const(
         POSTGRES_ADMIN_RECORD_STORE,
         "LIST_ADMIN_RECORD_LOGS",
     ));
+    // The list used to rank every row with ROW_NUMBER() only to keep one per trace,
+    // which forced a full sort per page. Keyset pagination replaced it. If a ranked
+    // subquery ever returns it must carry an alias, because PostgreSQL rejects an
+    // unaliased `FROM (SELECT ...)`, and it must not resurrect the window-based row
+    // count either.
     assert!(
-        record_sql.contains(") ranked_trace WHERE trace_rank = 1"),
-        "admin record SQL must alias the ROW_NUMBER subquery; PostgreSQL rejects FROM (SELECT ...) without an alias"
+        !record_sql.contains("ROW_NUMBER() OVER"),
+        "admin record list must page by keyset, not by ranking every row"
+    );
+    assert!(
+        !record_sql.contains("COUNT(*) OVER()"),
+        "admin record list must not compute a windowed total per row"
+    );
+    assert!(
+        record_sql.contains("LIMIT $6"),
+        "admin record list must bound the page with the keyset limit"
     );
 }
