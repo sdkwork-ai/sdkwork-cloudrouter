@@ -272,7 +272,7 @@ callback of the website's OAuth client, and the hosted authorize alias. The IAM
 authorization server and its open-platform endpoints live under `/iam/oauth/*`.
 
 - `/iam/v3/oauth/authorize`, its versionless `/iam/oauth/authorize` alias, and
-  the `/oauth/app` alias (`src/app-auth/`) validate the authorization-code
+  the `/oauth/app` alias (`src/oauth/`) validate the authorization-code
   request (response type, client id, app callback, state, PKCE S256) and hand
   the navigation to the IAM authorization server, which owns the pending
   authorization state.

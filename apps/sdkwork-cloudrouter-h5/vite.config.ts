@@ -138,7 +138,7 @@ export default defineConfig(({ mode, command }) => ({
     ],
   },
   plugins: [
-    // The app-auth surface consumes IAM SDK routes, so the credential-entry
+    // The OAuth surface consumes IAM SDK routes, so the credential-entry
     // token must reach the module graph through the canonical credential-entry
     // plugins (IAM_CREDENTIAL_ENTRY_SPEC.md sections 4 and 6) — never through a
     // public VITE_* key or a Vite define. Development uses the private bootstrap

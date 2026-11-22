@@ -514,11 +514,16 @@ where
             billing_subject_resolver: billing_subject_resolver.clone(),
         })?
     } else {
-        tracing::warn!(
-            "running with legacy OpenAI relay fallback routes: no provider secret resolver is configured; \
-             commercial deployments must configure provider secrets \
-             (SDKWORK_CLOUDROUTER_PROVIDER_SECRET_MAP_JSON or managed provider secrets) so traffic \
-             flows through the invocation pipeline"
+        // Unreachable from the database bootstrap below: a database-backed
+        // runtime always constructs the resolver, so this branch only exists
+        // for relay-only compositions that pass no secret resolver. It must
+        // never be reached with a live database: that is the state that turned
+        // "no enabled upstream account yet" into a permanent 501 on every
+        // OpenAI surface.
+        tracing::error!(
+            "running with the legacy static relay routes: no provider secret resolver is \
+             configured. A database-backed runtime must always provide one; reaching this \
+             branch means account/supplier routing, metering, and streaming are bypassed"
         );
         let relays = build_openai_runtime_relays(
             provider_passthrough_config.clone(),
@@ -3187,6 +3192,25 @@ fn log_gateway_runtime_catalog_snapshot_summary(
             "gateway runtime catalog snapshot loaded"
         );
     }
+    // A snapshot with no callable upstream account route means every model
+    // request will answer 503 while the process itself is healthy. Readiness
+    // stays green in that state (the gateway is correctly serving admin and
+    // problem responses), so without this line a fully broken model surface
+    // looks like a healthy deployment in the logs.
+    if phase == "startup" && summary.callable_upstream_account_routes == 0 {
+        tracing::error!(
+            service = "sdkwork-cloudrouter-edge-runtime",
+            catalog_engine = engine,
+            catalog_phase = phase,
+            upstream_suppliers = summary.upstream_suppliers,
+            upstream_account_routes = summary.upstream_account_routes,
+            callable_upstream_account_routes = summary.callable_upstream_account_routes,
+            managed_provider_secrets = summary.managed_provider_secrets,
+            "no callable upstream account route: every model request will fail until an \
+             enabled supplier, an enabled account with an active credential, a resolvable \
+             base URL, and a group membership exist in the database"
+        );
+    }
 }
 
 fn parse_positive_u64_config(
@@ -3296,6 +3320,24 @@ fn require_upstream_credential_security_config(
     })
 }
 
+/// Builds the provider secret resolver for a database-backed runtime.
+///
+/// The resolver is always constructed, even when the startup snapshot holds no
+/// managed secret. `ai_upstream_account_credential` is the only secret
+/// authority (ADR-20260728), and its decrypted values reach this resolver
+/// through the catalog refresh, so "the database currently has no enabled
+/// account credential" is a *data* condition — never a deployment mode.
+///
+/// The previous contract returned `None` for an empty snapshot, and the caller
+/// used `resolver.is_some()` to choose between the metered invocation pipeline
+/// and the legacy single-upstream static relay. A fresh installation (every
+/// seeded upstream account starts `disabled`) therefore booted into the static
+/// relay permanently: enabling an account and uploading a credential restored
+/// routing data within one refresh tick, but the OpenAI surfaces stayed
+/// pinned to a router whose relays were never configured, answering 501 on every
+/// request until the process restarted. Keeping the resolver present makes the
+/// pipeline data-driven — an unresolved credential is now a precise
+/// per-request dispatch error for the affected account.
 fn openai_runtime_relay_secret_resolver(
     provider_secret_map_config: Option<ProviderSecretMapConfig>,
     managed_provider_secrets: std::collections::BTreeMap<String, String>,
@@ -3303,9 +3345,6 @@ fn openai_runtime_relay_secret_resolver(
     let external_secrets = provider_secret_map_config
         .map(ProviderSecretMapConfig::into_secret_map)
         .unwrap_or_default();
-    if external_secrets.is_empty() && managed_provider_secrets.is_empty() {
-        return None;
-    }
     Some(Arc::new(RefreshableProviderSecretMapResolver::from_maps(
         external_secrets,
         managed_provider_secrets,
@@ -4363,14 +4402,24 @@ gateway_invocation_body_max_bytes = 37
         );
     }
 
+    /// A database-backed runtime must always receive a resolver, even when the
+    /// startup snapshot has no managed secret yet. The resolver's presence
+    /// selects the metered invocation pipeline; making it depend on data that
+    /// starts empty (fresh installs seed every upstream account `disabled`)
+    /// pinned the whole OpenAI surface to the legacy static relay until a
+    /// process restart.
     #[test]
-    fn database_runtime_does_not_enable_empty_secret_ref_resolver() {
+    fn database_runtime_always_builds_the_secret_resolver() {
         let resolver =
             openai_runtime_relay_secret_resolver(None, std::collections::BTreeMap::new());
+        let resolver = resolver.expect("database runtimes must mount the metered pipeline");
 
+        let error = resolver
+            .resolve_secret_value("managed://upstream-account-credential/1")
+            .expect_err("an empty snapshot cannot resolve a credential");
         assert!(
-            resolver.is_none(),
-            "an empty resolver must not override an explicit provider relay config"
+            error.to_string().contains("not configured"),
+            "missing credentials stay a precise per-request error: {error}"
         );
     }
 

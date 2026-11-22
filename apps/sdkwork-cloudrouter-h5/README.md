@@ -60,7 +60,7 @@ The `build:h5:*` architecture axis is owned by the repository root; run it there
 
 A phone can receive a native SDKWork application's browser-login link, so this
 root serves the same hosted sign-in surface as the PC renderer. The pages live
-in `src/app-auth/` and are ordinary routes. The two namespaces are disjoint:
+in `src/oauth/` and are ordinary routes. The two namespaces are disjoint:
 `/auth/*` is the website's own account surface and `/oauth/*` carries every
 OAuth hop.
 

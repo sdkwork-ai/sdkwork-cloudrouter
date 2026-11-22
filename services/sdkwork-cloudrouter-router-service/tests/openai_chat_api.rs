@@ -579,7 +579,7 @@ async fn openai_chat_completions_authenticates_and_returns_honest_relay_not_impl
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::NOT_IMPLEMENTED, response.status());
+    assert_eq!(StatusCode::SERVICE_UNAVAILABLE, response.status());
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .unwrap();
@@ -708,7 +708,7 @@ async fn openai_chat_completions_accepts_official_model_id_when_model_is_not_reg
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::NOT_IMPLEMENTED, response.status());
+    assert_eq!(StatusCode::SERVICE_UNAVAILABLE, response.status());
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .unwrap();
@@ -745,7 +745,7 @@ async fn openai_chat_completions_accepts_base_catalog_key_for_region_scoped_pric
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::NOT_IMPLEMENTED, response.status());
+    assert_eq!(StatusCode::SERVICE_UNAVAILABLE, response.status());
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .unwrap();

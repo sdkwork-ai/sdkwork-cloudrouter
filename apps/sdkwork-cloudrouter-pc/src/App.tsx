@@ -86,7 +86,7 @@ const CloudRouterAuthRoutes = lazyRoute(() => import('./auth/CloudRouterAuthRout
 // rule: every route that exists only for a native application's browser login
 // lives under `/oauth`, never inside the portal's `/auth` account surface.
 const CloudRouterAppAuthorizeEntry = lazyRoute(
-  () => import('./app-auth/CloudRouterAppAuthorizeEntry'),
+  () => import('./oauth/CloudRouterAppAuthorizeEntry'),
   'CloudRouterAppAuthorizeEntry',
 );
 const PartnerJoinLanding = lazyRoute(() => import('@sdkwork/cloudrouter-pc-partner-join'), 'PartnerJoinLanding');

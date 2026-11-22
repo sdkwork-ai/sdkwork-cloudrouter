@@ -42,7 +42,7 @@ describe('H5 IAM auth integration', () => {
   });
 
   it('uses the IAM surface for the hosted app sign-in too', () => {
-    const pages = read('src/app-auth/AppAuthPages.tsx');
+    const pages = read('src/oauth/AppAuthPages.tsx');
     assert.ok(
       pages.includes('SdkworkIamH5AuthLoginSurface'),
       'hosted app sign-in renders the IAM surface',
@@ -57,7 +57,7 @@ describe('H5 IAM auth integration', () => {
     assert.ok(app.includes('IamOAuthCallbackRoute'));
     const route = read('src/routes/IamAuthRoutes.tsx');
     assert.ok(route.includes('SdkworkIamH5AuthCallbackSurface'));
-    const entry = read('src/app-auth/appAuthorizeEntry.ts');
+    const entry = read('src/oauth/appAuthorizeEntry.ts');
     assert.ok(entry.includes("APP_OAUTH_CALLBACK_PATH = '/oauth/callback'"));
   });
 

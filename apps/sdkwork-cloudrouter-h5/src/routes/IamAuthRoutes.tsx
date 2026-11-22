@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { SdkworkIamH5AuthCallbackSurface } from '@sdkwork/iam-h5-auth';
 import { CLOUDROUTER_CONSOLE_ROUTES } from '@sdkwork/cloudrouter-contracts';
 
-import { APP_OAUTH_CALLBACK_PATH } from '../app-auth/appAuthorizeEntry.js';
+import { APP_OAUTH_CALLBACK_PATH } from '../oauth/appAuthorizeEntry.js';
 import { useConsoleRuntime } from '../providers/AppProviders.js';
 
 /**

@@ -13,7 +13,7 @@ import {
   isAppCallbackRedirectUri,
   parseAppAuthorizeRequest,
   planAppAuthorizeEntry,
-} from './src/app-auth/appAuthorizeEntry.ts';
+} from './src/oauth/appAuthorizeEntry.ts';
 import {
   isPortalAuthRoute,
   isPortalOAuthRoute,
@@ -130,7 +130,7 @@ test('an empty or invalid navigation is reported instead of bouncing to the stor
 });
 
 test('the hosted page renders the auth surface and leaves the state to the login page', () => {
-  const entry = readFileSync(new URL('./src/app-auth/CloudRouterAppAuthorizeEntry.tsx', import.meta.url), 'utf8');
+  const entry = readFileSync(new URL('./src/oauth/CloudRouterAppAuthorizeEntry.tsx', import.meta.url), 'utf8');
   // A valid request (create) and a request that already carries the IAM state
   // both render the hosted auth surface in place.
   assert.match(entry, /plan\.kind === 'create' \|\| plan\.kind === 'hosted'/u);
@@ -148,7 +148,7 @@ test('the hosted auth header reuses the homepage brand lockup', () => {
   assert.match(routes, /BrandMark/u);
   assert.match(routes, /siteBranding\.shortName \|\| siteBranding\.siteName/u);
   assert.match(routes, /brandHeader=\{brandHeader\}/u);
-  const entry = readFileSync(new URL('./src/app-auth/CloudRouterAppAuthorizeEntry.tsx', import.meta.url), 'utf8');
+  const entry = readFileSync(new URL('./src/oauth/CloudRouterAppAuthorizeEntry.tsx', import.meta.url), 'utf8');
   assert.match(entry, /BrandMark/u);
   assert.match(entry, /brandNode=\{brandHeader\}/u);
 });

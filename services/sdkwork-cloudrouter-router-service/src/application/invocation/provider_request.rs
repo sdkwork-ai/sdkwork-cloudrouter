@@ -65,15 +65,80 @@ impl ProviderRequestBuilder {
             body,
         );
         let path = rewrite_path_model(&invocation.request.path, provider_model);
+        let url = provider_url(account.base_url.as_deref(), &path, query.as_deref());
+        if let Some(url) = url.as_deref() {
+            if upstream_targets_this_gateway(&invocation.request.headers, url) {
+                return Err(InvocationError::new(
+                    InvocationErrorKind::Routing,
+                    format!(
+                        "upstream base URL for account {} points at the gateway serving this \
+                         request; refusing a routing loop that would re-enter this instance",
+                        account.account_id
+                    ),
+                ));
+            }
+        }
         Ok(InvocationProviderRequest {
             method: invocation.request.method.clone(),
-            url: provider_url(account.base_url.as_deref(), &path, query.as_deref()),
+            url,
             path,
             query,
             headers,
             body,
         })
     }
+}
+
+/// Whether a provider target resolves to the very host that is serving the
+/// current request.
+///
+/// A relay supplier may legitimately be another SDKWork deployment, but a route
+/// whose host equals the inbound `Host` or `x-forwarded-host` re-enters this
+/// same gateway: the provider call would loop back into the invocation
+/// pipeline, amplifying load and double-counting usage. The seeded relay
+/// suppliers (`birdcoder-global`, `sdkwork-global`, …) point at these very
+/// public hosts, so enabling one without this guard turns a misconfiguration
+/// into unbounded recursion.
+///
+/// Comparison is host-only: scheme, port, path, casing, and a trailing dot are
+/// ignored, and a multi-value `x-forwarded-host` list is checked per entry.
+fn upstream_targets_this_gateway(inbound: &HeaderMap, provider_url: &str) -> bool {
+    let Ok(parsed) = url::Url::parse(provider_url) else {
+        return false;
+    };
+    let Some(upstream_host) = parsed.host_str() else {
+        return false;
+    };
+    let upstream_host = normalize_host(upstream_host);
+    if upstream_host.is_empty() {
+        return false;
+    }
+    [header::HOST.as_str(), "x-forwarded-host"]
+        .into_iter()
+        .filter_map(|name| inbound.get(name).and_then(|value| value.to_str().ok()))
+        .flat_map(|value| value.split(','))
+        .any(|candidate| normalize_host(candidate) == upstream_host)
+}
+
+fn normalize_host(value: &str) -> String {
+    let value = value.trim().trim_end_matches('.');
+    // Tolerate an accidental scheme on a configured host (`https://api.example`).
+    let value = value
+        .split_once("://")
+        .map(|(_, rest)| rest)
+        .unwrap_or(value);
+    let value = value.split(['/', '?', '#']).next().unwrap_or(value);
+    // Strip the port; IPv6 literals keep their brackets.
+    if value.starts_with('[') {
+        let end = value.find(']').map(|index| index + 1).unwrap_or(value.len());
+        return value[..end].to_ascii_lowercase();
+    }
+    value
+        .rsplit_once(':')
+        .filter(|(_, port)| port.chars().all(|character| character.is_ascii_digit()))
+        .map(|(host, _)| host)
+        .unwrap_or(value)
+        .to_ascii_lowercase()
 }
 
 /// The provider-facing model id: the route's provider model normalized to the
@@ -736,5 +801,52 @@ mod tests {
             body.get("stream_options").is_none(),
             "vendor-native protocols carry their own usage shape"
         );
+    }
+
+    /// A relay supplier that points at the public host serving the request would
+    /// re-enter this gateway. The guard compares hosts only, so scheme, port,
+    /// casing, path, and a forwarded-host list must not defeat it.
+    #[test]
+    fn upstream_targeting_the_serving_gateway_is_detected() {
+        let mut headers = axum::http::HeaderMap::new();
+        headers.insert(
+            axum::http::header::HOST,
+            axum::http::HeaderValue::from_static("api.birdcoder.com"),
+        );
+        assert!(super::upstream_targets_this_gateway(
+            &headers,
+            "https://api.birdcoder.com/v1/chat/completions"
+        ));
+        assert!(super::upstream_targets_this_gateway(
+            &headers,
+            "https://API.BirdCoder.com.:8443/v1/chat/completions"
+        ));
+
+        headers.insert(
+            "x-forwarded-host",
+            axum::http::HeaderValue::from_static("edge.example.com, api.birdcoder.com"),
+        );
+        assert!(super::upstream_targets_this_gateway(
+            &headers,
+            "https://api.birdcoder.com/v1"
+        ));
+    }
+
+    #[test]
+    fn unrelated_upstream_hosts_are_not_rejected() {
+        let mut headers = axum::http::HeaderMap::new();
+        headers.insert(
+            axum::http::header::HOST,
+            axum::http::HeaderValue::from_static("api.birdcoder.com"),
+        );
+        assert!(!super::upstream_targets_this_gateway(
+            &headers,
+            "https://api.deepseek.com/v1/chat/completions"
+        ));
+        // A host that merely shares a suffix is a different host.
+        assert!(!super::upstream_targets_this_gateway(
+            &headers,
+            "https://relay-api.birdcoder.com/v1"
+        ));
     }
 }

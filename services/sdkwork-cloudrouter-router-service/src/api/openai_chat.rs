@@ -789,27 +789,35 @@ where
 
     if request.stream {
         let Some(stream_relay) = state.stream_relay.as_ref() else {
+            // A missing relay is a deployment/configuration fault, not an
+            // unimplemented endpoint: answer 503 (retryable, mapped to the
+            // platform `50301` problem) instead of 501, which the framework
+            // collapses into a generic `50001` and hides the real cause.
+            tracing::error!(
+                request_id = %invocation_context.request_id,
+                "streaming provider relay is not configured for /v1/chat/completions; deploy the metered invocation pipeline or configure a streaming relay"
+            );
             record_request_trace(
                 state.usage_recorder.as_ref(),
                 build_request_trace_command(
                     &invocation_context,
                     Some(&route),
-                    Some(StatusCode::NOT_IMPLEMENTED.as_u16()),
+                    Some(StatusCode::SERVICE_UNAVAILABLE.as_u16()),
                     None,
                     Some("streaming_relay_not_configured".to_owned()),
                     Some("server_error".to_owned()),
                     Some(
-                        "streaming provider relay is not implemented for /v1/chat/completions"
+                        "streaming provider relay is not configured for /v1/chat/completions"
                             .to_owned(),
                     ),
                 ),
             )
             .await;
             return openai_error(
-                StatusCode::NOT_IMPLEMENTED,
+                StatusCode::SERVICE_UNAVAILABLE,
                 "streaming_relay_not_configured",
                 "server_error",
-                "streaming provider relay is not implemented for /v1/chat/completions",
+                "streaming provider relay is not configured for /v1/chat/completions",
             );
         };
         return match relay_chat_completion_stream(
@@ -835,24 +843,30 @@ where
     }
 
     let Some(relay) = state.relay.as_ref() else {
+        // Same contract as the streaming branch above: a missing relay is a
+        // deployment fault (503), never a "not implemented" endpoint (501).
+        tracing::error!(
+            request_id = %invocation_context.request_id,
+            "provider relay is not configured for /v1/chat/completions; deploy the metered invocation pipeline or configure a provider relay"
+        );
         record_request_trace(
             state.usage_recorder.as_ref(),
             build_request_trace_command(
                 &invocation_context,
                 Some(&route),
-                Some(StatusCode::NOT_IMPLEMENTED.as_u16()),
+                Some(StatusCode::SERVICE_UNAVAILABLE.as_u16()),
                 None,
                 Some("provider_relay_not_configured".to_owned()),
                 Some("server_error".to_owned()),
-                Some("provider relay is not implemented for /v1/chat/completions".to_owned()),
+                Some("provider relay is not configured for /v1/chat/completions".to_owned()),
             ),
         )
         .await;
         return openai_error(
-            StatusCode::NOT_IMPLEMENTED,
+            StatusCode::SERVICE_UNAVAILABLE,
             "provider_relay_not_configured",
             "server_error",
-            "provider relay is not implemented for /v1/chat/completions",
+            "provider relay is not configured for /v1/chat/completions",
         );
     };
 

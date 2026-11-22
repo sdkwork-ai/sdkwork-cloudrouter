@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
-import { AppAuthorizeEntryPage, AppLaunchPage, AppSignInPage } from './app-auth/AppAuthPages.js';
-import { APP_OAUTH_CALLBACK_PATH } from './app-auth/appAuthorizeEntry.js';
+import { AppAuthorizeEntryPage, AppLaunchPage, AppSignInPage } from './oauth/AppAuthPages.js';
+import { APP_OAUTH_CALLBACK_PATH } from './oauth/appAuthorizeEntry.js';
 import { AppAuthGate, ConsoleSignInRoute } from './AuthGate.js';
 import { CLOUDROUTER_H5_ORDER_ROUTES } from '@sdkwork/cloudrouter-h5-orders/routes';
 import { ConsoleRouteAssembly, MessagesDetailRoute, SettingsRoute } from './routes/consoleRoutes.js';

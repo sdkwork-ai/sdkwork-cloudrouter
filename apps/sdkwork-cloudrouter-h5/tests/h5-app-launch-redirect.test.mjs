@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
-import { isSafeAppLaunchUrl } from '../src/app-auth/appAuthorizeEntry.ts';
+import { isSafeAppLaunchUrl } from '../src/oauth/appAuthorizeEntry.ts';
 
 test('accepts native app and loopback hand-offs', () => {
   assert.equal(
@@ -42,7 +42,7 @@ test('rejects web origins and scriptable destinations', () => {
 
 test('the launch page guards the redirectUrl it receives', () => {
   const source = readFileSync(
-    new URL('../src/app-auth/AppAuthPages.tsx', import.meta.url),
+    new URL('../src/oauth/AppAuthPages.tsx', import.meta.url),
     'utf8',
   );
   assert.match(source, /isSafeAppLaunchUrl\(requestedRedirectUrl\)/u);

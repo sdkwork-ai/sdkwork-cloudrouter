@@ -77,7 +77,7 @@ describe('H5 hosted app sign-in', () => {
   });
 
   it('declares the same authorization-request contract as the PC entry', () => {
-    const entry = readSource('src/app-auth/appAuthorizeEntry.ts');
+    const entry = readSource('src/oauth/appAuthorizeEntry.ts');
     for (const token of [
       "APP_AUTHORIZE_PATH = '/iam/v3/oauth/authorize'",
       "APP_AUTHORIZE_VERSIONLESS_PATH = '/iam/oauth/authorize'",
@@ -107,7 +107,7 @@ describe('H5 hosted app sign-in', () => {
     );
     const canonicalKey = /SDKWORK_CREDENTIAL_ENTRY_BOOTSTRAP_ACCESS_TOKEN_GLOBAL_KEY\s*=\s*'([^']+)'/u.exec(canonical)?.[1];
     assert.ok(canonicalKey, 'the canonical credential-entry package must declare the bootstrap token key');
-    const session = readSource('src/app-auth/appSession.ts');
+    const session = readSource('src/oauth/appSession.ts');
     assert.ok(
       session.includes(`CREDENTIAL_ENTRY_BOOTSTRAP_GLOBAL = '${canonicalKey}'`),
       'the H5 sign-in must read the same bootstrap-token global the platform injects',
@@ -147,9 +147,9 @@ describe('H5 hosted app sign-in', () => {
   });
 
   it('completes the authorization through the SDK client and hands off the deep link', () => {
-    const session = readSource('src/app-auth/appSession.ts');
+    const session = readSource('src/oauth/appSession.ts');
     assert.match(session, /\/oauth\/authorizations\/\$\{encodeURIComponent\(authorizationStateId\)\}\/completions/u);
-    const pages = readSource('src/app-auth/AppAuthPages.tsx');
+    const pages = readSource('src/oauth/AppAuthPages.tsx');
     assert.ok(pages.includes('buildAppLaunchPath(redirectUrl)'));
     assert.ok(pages.includes('window.location.assign(redirectUrl)'));
   });

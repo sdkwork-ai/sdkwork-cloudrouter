@@ -8,7 +8,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { buildAppSignInBody } from '../src/app-auth/appSignInBody.ts';
+import { buildAppSignInBody } from '../src/oauth/appSignInBody.ts';
 
 test('posts a password grant with the typed address as the identity', () => {
   const body = buildAppSignInBody({ email: '  user@example.com  ', password: 'secret' });

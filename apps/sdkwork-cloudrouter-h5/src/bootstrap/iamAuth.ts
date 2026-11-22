@@ -13,7 +13,7 @@ import {
 import { resolveCloudRouterAppApiBaseUrl } from '@sdkwork/cloudrouter-h5-core/sdk';
 import { configureCloudRouterOrderWechatPaymentOAuth } from '@sdkwork/cloudrouter-h5-orders/runtime';
 
-import { CREDENTIAL_ENTRY_BOOTSTRAP_GLOBAL } from '../app-auth/appSession.js';
+import { CREDENTIAL_ENTRY_BOOTSTRAP_GLOBAL } from '../oauth/appSession.js';
 
 export interface CloudRouterIamAuth {
   readonly controller: SdkworkIamH5AuthController;
