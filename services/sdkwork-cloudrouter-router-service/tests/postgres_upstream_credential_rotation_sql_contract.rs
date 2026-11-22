@@ -39,7 +39,9 @@ fn rotation_worker_locks_the_account_and_rechecks_due_by_schedule() {
         "AND a.id = $3",
         "AND a.deleted_at IS NULL",
         "FOR UPDATE",
-        "COALESCE(a.next_rotate_at IS NOT NULL AND a.next_rotate_at <= $3::timestamptz, FALSE) AS due_by_schedule",
+        // Bind order: $1 tenant, $2 organization, $3 account, $4 now — the recheck
+        // compares the schedule against the statement clock, not the account id.
+        "COALESCE(a.next_rotate_at IS NOT NULL AND a.next_rotate_at <= $4::timestamptz, FALSE) AS due_by_schedule",
     ] {
         assert_sql_contains(POSTGRES_UPSTREAM_CREDENTIAL_ROTATION_STORE, expected);
     }
