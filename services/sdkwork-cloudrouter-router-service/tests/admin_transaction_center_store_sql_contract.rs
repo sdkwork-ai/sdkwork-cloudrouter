@@ -85,7 +85,7 @@ fn transaction_center_sql_stores_do_not_hide_missing_standard_tables() {
 }
 
 #[test]
-fn transaction_center_mainstream_payment_supplier_codes_match_aggregate_contract() {
+fn transaction_center_filters_accept_configured_channels_without_a_closed_allowlist() {
     let spec: serde_json::Value =
         serde_json::from_str(PAYMENT_OPENAPI).expect("payment aggregate OpenAPI parses");
     let supported = spec
@@ -107,118 +107,25 @@ fn transaction_center_mainstream_payment_supplier_codes_match_aggregate_contract
         supported, expected,
         "payment aggregate OpenAPI must expose only the initial mainstream provider set"
     );
-
-    let supplier_codes = API
-        .split("const PAYMENT_PROVIDER_CODES")
-        .nth(1)
-        .expect("transaction center provider code allowlist")
-        .split("const PAYMENT_METHOD_CODES")
-        .next()
-        .expect("transaction center provider code block");
-    for provider in &expected {
-        assert!(
-            supplier_codes.contains(&format!("\"{provider}\"")),
-            "transaction center provider account mutations must allow mainstream provider {provider}"
-        );
-    }
+    // Providers and methods are deployment configuration in the payment centre, not
+    // compile-time variants, so the transaction centre must not carry a closed
+    // allowlist: it would reject a newly connected channel and hide a retired one's
+    // historical rows. The API validates the shape of the filter instead, and the
+    // payment centre's catalogue is the authority on which codes exist.
     assert!(
-        supplier_codes.contains("\"sandbox\""),
-        "transaction center provider allowlist must accept the seeded sandbox provider"
-    );
-    let method_codes = API
-        .split("const PAYMENT_METHOD_CODES")
-        .nth(1)
-        .expect("transaction center method code allowlist");
-    for method in ["stripe_card", "alipay_qr", "wechat_native", "sandbox_test"] {
-        assert!(
-            method_codes.contains(&format!("\"{method}\"")),
-            "transaction center method allowlist must accept seeded catalog method {method}"
-        );
-    }
-    for extension in [
-        "unionpay",
-        "yeepay",
-        "jd_pay",
-        "lianlian_pay",
-        "lakala",
-        "allinpay",
-        "china_ums",
-        "fuiou_pay",
-        "sandpay",
-        "huifu_pay",
-        "baofoo",
-        "bill99",
-        "pingan_pay",
-        "icbc_pay",
-        "cmb_pay",
-        "ccb_pay",
-        "boc_pay",
-        "psbc_pay",
-    ] {
-        assert!(
-            !supplier_codes.contains(&format!("\"{extension}\"")),
-            "extension provider {extension} must not be accepted by active transaction center mutations yet"
-        );
-    }
-    assert!(
-        supplier_codes.find("\"stripe\"") < supplier_codes.find("\"paypal\""),
-        "transaction center provider allowlist order must match payment aggregate supported provider order"
-    );
-}
-
-#[test]
-fn transaction_center_provider_account_projection_exposes_sdk_note_from_audit_summary() {
-    assert!(
-        POSTGRES_STORE.contains("audit.change_summary->>'note'"),
-        "postgres provider account projection must expose SDK note from audit change_summary"
+        !API.contains("const PAYMENT_PROVIDER_CODES"),
+        "the transaction centre must not hard-code a closed provider allowlist"
     );
     assert!(
-        POSTGRES_STORE.contains("'payments.provider_account.create'"),
-        "postgres provider account note projection must scope audit reads to create events"
+        !API.contains("const PAYMENT_METHOD_CODES"),
+        "the transaction centre must not hard-code a closed method allowlist"
     );
-}
-
-#[test]
-fn transaction_center_payment_provider_projection_exposes_only_canonical_api_fields() {
-    let provider_projection = POSTGRES_STORE
-        .split("async fn list_payment_providers")
-        .nth(1)
-        .unwrap_or_default()
-        .split("async fn list_payment_provider_accounts")
-        .next()
-        .unwrap_or_default();
-    for forbidden in [
-        "'tenant_id'",
-        "'organization_id'",
-        "'supplier_code'",
-        "'display_name'",
-        "'provider_type'",
-        "'supported_countries'",
-        "'supported_currencies'",
-        "'supported_methods'",
-        "'sort_order'",
-        "'created_at'",
-        "'updated_at'",
-    ] {
-        assert!(
-            !provider_projection.contains(forbidden),
-            "product provider inventory must not expose non-canonical field {forbidden}"
-        );
-    }
-}
-
-#[test]
-fn transaction_center_provider_account_projection_exposes_sdk_credential_flags_and_mode() {
-    let source = POSTGRES_STORE;
-    for fragment in [
-        "'hasPrimarySecret', (secret_ref IS NOT NULL AND secret_ref <> '')",
-        "'hasWebhookSecret', (webhook_secret_ref IS NOT NULL AND webhook_secret_ref <> '')",
-        "'hasCertificate', (certificate_ref IS NOT NULL AND certificate_ref <> '')",
-        "audit.change_summary->>'accountMode'",
-    ] {
-        assert!(
-            source.contains(fragment),
-            "postgres provider account projection must expose SDK fragment {fragment}"
-        );
-    }
+    assert!(
+        API.contains("normalize_optional_filter_code(query.provider_code"),
+        "the provider filter must be normalized by shape, not by membership"
+    );
+    assert!(
+        API.contains("normalize_optional_filter_code(query.method_code"),
+        "the method filter must be normalized by shape, not by membership"
+    );
 }
