@@ -32,6 +32,7 @@
 | Routing 错误 502/503 口径分裂 | 已修复（统一 503），含单测 |
 | `on_error` 失败被静默吞掉 | 已修复（逐钩子 error 日志） |
 | 流式下游取消丢失已产生用量 | 已修复（共享用量累加器），含单测 |
+| 账号 `timeout_ms` 被当作流总时限 | 已修复（总时限改用 runtime stream ceiling），含测试 |
 
 ## 3. 事故根因
 
@@ -213,7 +214,24 @@ chat 需要运维在供应商资源页绑定协议组（`/upstream_suppliers/{id
   预扣冻结到 30 分钟 TTL 才释放。反复取消即成为免单通道。
 - 修复：用量累加器改为 producer 与下游共享的 `Arc<Mutex<..>>`，drop 时读取
   当前部分用量并随 `Cancelled` 上报；锁中毒只降级为"缺快照"，不在请求路径 panic。
-- 测试：`dropping_the_downstream_body_reports_observed_partial_usage`。
+- 测试：`dropping_the_downstream_body_reports_observed_partial_usage`（单元），
+  `invocation_router_bills_partial_usage_when_the_client_disconnects_mid_stream`
+  （端到端：读到首帧后断开 body，断言 usage recorder 收到 streaming 事实且
+  输出 token 为估算正值、输入 token 由请求体估算补足）。
+
+**U. 账号 `timeout_ms` 被当作流总时限（已修复）**
+- 位置：`invocation_stream.rs::InvocationStreamTimeouts`、`invocation_http.rs`
+- 事实：`ai_upstream_account.timeout_ms` 语义是"等待上游响应头"的超时，却被
+  `from_account_timeout` 当成整条流的总时限。配了 30 s 账号超时的账号，任何长
+  Agent/编码流都会在第 30 秒被硬截断（`stage: "total"`），而运行时给流的预算是
+  30 分钟。
+- 修复：流时限只取运行时 stream ceiling（`for_stream_ceiling`），账号超时仅继续
+  约束响应头等待；`DeferredStreamInvocation::stream_timeout()` 随之删除，
+  避免再被误用。
+- 测试：`stream_ceiling_sets_the_total_deadline`、
+  `per_frame_deadlines_never_exceed_the_ceiling`，以及
+  `invocation_router_times_out_an_unpolled_stream_and_releases_idempotency`
+  （改为用 `stream_response_timeout` 配置短 ceiling 来验证"未消费流到期释放幂等锁"）。
 
 **M. `credential_rotation` 只被搬运，未被消费**
 `account.credential_rotation` 从快照一路带到 `InvocationAccount`，但
@@ -225,27 +243,31 @@ dispatch 不读取，按策略轮换（per_request/per_attempt）实际未生效
 
 ### 4.3 待复核 / 待修复（审计提出）
 
-- 账号 `timeout_ms` 被当作整条流的总时限，长流在第 30 秒被截断。
 - 流中失败对熔断/健康不可见（收到响应头即记成功）。
 - 粘性绑定无 `expires_at`，命中后单一候选，熔断打开即 503 且不回退常规路由。
 - 2xx 无 `usage` 时非流式静默零计费。
 - API Key pepper 不可轮换；429 计入全局熔断。
 - 请求级总超时分支未记录 attempt（熔断漏记）。
+- 指标读 adapter 带内状态而非 effective status；幂等等待窗口过短。
 
 ## 5. 后续路线
 
-1. ~~**记账与响应正确性**：修正 `finish_after`/`ResponseNormalization` 顺序，
-   保证厂商 2xx 不被记账失败覆盖~~（已完成，见 4.1-G）。
-2. ~~**容量（内存预扣）**：按声明大小预扣，消除"默认 2 并发"~~（已完成，见 4.1-H）。
-   剩余：定价解析请求内 memo、`list_upstream_account_routes` 返回 `Arc`
-   （消费者位于 `sdkwork-models`，需跨仓协同）。
-3. **relay 语义**：快照补 `supplier_type`，按类型决定默认 provider model；
-   补 `ai_model_mapping_rule` 后台 CRUD；新增 relay chat 资源组与 supplier
-   binding；`least_cost` 改为按真实采购价排序。
-4. **安全**：POST 跨账号重试的幂等键约束；账号 `default_base_url` 写入校验；
-   凭据解析加租户维度；pepper key ring。
-5. **数据与发布**：种子修订、采购价导入、`route_explain` 逐组验证、通过
-   `bin/` 入口发布并回归。
+1. ~~记账与响应正确性~~（4.1-G）、~~内存预扣容量~~（4.1-H）、
+   ~~`supplier_type` 寻址~~（4.1-J）、~~`least_cost` 真实比价~~（4.1-L）、
+   ~~非幂等 POST 重放~~（4.1-O）、~~Base URL 出站校验~~（4.1-P）、
+   ~~托管密钥归属~~（4.1-Q）、~~错误语义与 `on_error` 可观测~~（4.1-R/S）、
+   ~~流式取消用量~~（4.1-T）、~~流总时限~~（4.1-U）：已完成。
+2. **流生命周期端到端测试**：~~客户端断开的计费闭环~~（已补，见 4.1-T）。
+   剩余：超时/上游中断的结算断言（当前由同一 `settle_partial_then_fail` 路径
+   覆盖，缺独立用例），以及 precharge hold 释放的余额断言。
+3. **剩余正确性**：粘性绑定 `expires_at` 与熔断时回退常规路由；流中失败对
+   熔断/健康可见；请求级总超时分支记 attempt；指标读 adapter 带内状态；
+   2xx 无 `usage` 时的非流式计费兜底。
+4. **剩余安全**：POST 跨账号重试的上游幂等键；API Key pepper key ring。
+5. **性能**：定价解析请求内 memo + `visible_model_prices` 索引；
+   `list_upstream_account_routes` 返回 `Arc`（消费者在 `sdkwork-models`，需跨仓协同）。
+6. **运营与发布**：`ai_model_mapping_rule` 后台 CRUD、relay 协议组绑定、
+   采购成本价导入、runbook、经 `bin/` 发布并线上回归。
 
 ## 6. 验证记录
 
@@ -264,7 +286,9 @@ cargo test  -p sdkwork-cloudrouter-router-service --test routing_decision_log_re
 cargo test  -p sdkwork-cloudrouter-router-service --test openai_chat_api       # 42 passed
 cargo test  -p sdkwork-cloudrouter-router-service --test openai_responses_api  # 12 passed
 cargo test  -p sdkwork-cloudrouter-router-service --test openai_embeddings_api # 9 passed
-cargo test  -p sdkwork-cloudrouter-edge-runtime  --lib                         # 110 passed
+cargo test  -p sdkwork-cloudrouter-edge-runtime  --test invocation_router        # 29 passed
+cargo test  -p sdkwork-cloudrouter-edge-runtime  --test openai_chat_route        # 3 passed
+cargo test  -p sdkwork-cloudrouter-edge-runtime  --lib                          # 110 passed
 ```
 
 ## 7. 风险提示

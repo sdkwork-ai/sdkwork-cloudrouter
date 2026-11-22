@@ -194,9 +194,45 @@ impl InvocationDispatcher for StallingSseDispatcher {
     }
 }
 
+/// Emits exactly one SSE content frame and then stalls forever: the shape a
+/// provider is in when the client disconnects mid-answer.
+#[derive(Debug)]
+struct OneFrameThenStallSseDispatcher {
+    calls: AtomicUsize,
+    frame: Bytes,
+}
+
+impl OneFrameThenStallSseDispatcher {
+    fn new(frame: &'static str) -> Self {
+        Self {
+            calls: AtomicUsize::new(0),
+            frame: Bytes::from_static(frame.as_bytes()),
+        }
+    }
+}
+
+impl InvocationDispatcher for OneFrameThenStallSseDispatcher {
+    fn dispatch<'a>(
+        &'a self,
+        _invocation: &'a Invocation,
+        _account: &'a InvocationAccount,
+    ) -> InvocationDispatcherFuture<'a> {
+        self.calls.fetch_add(1, Ordering::SeqCst);
+        let frame = self.frame.clone();
+        Box::pin(async move {
+            let stream = futures_util::stream::iter(vec![Ok::<Bytes, std::io::Error>(frame)])
+                .chain(futures_util::stream::pending());
+            Ok(InvocationDispatchResponse::streaming(
+                200,
+                Some("text/event-stream".to_owned()),
+                Body::from_stream(stream),
+            ))
+        })
+    }
+}
+
 #[derive(Debug, Default)]
 struct ProviderErrorDispatcher;
-
 impl InvocationDispatcher for ProviderErrorDispatcher {
     fn dispatch<'a>(
         &'a self,
@@ -2302,13 +2338,18 @@ async fn invocation_router_times_out_an_unpolled_stream_and_releases_idempotency
             .with_retry_policy(ProviderRetryPolicy::new(1, vec![429, 503], 0).unwrap()),
     );
     let dispatcher = Arc::new(StallingSseDispatcher::default());
-    let router = sdkwork_cloudrouter_edge_runtime::invocation_router_with_full_pipeline(
+    // The stream ceiling is the runtime stream timeout, not the account request
+    // timeout: configure a short ceiling here so an unpolled stream reaches its
+    // total deadline inside the test window.
+    let router = sdkwork_cloudrouter_edge_runtime::invocation_router_with_full_pipeline_and_provider_adapter_config(
         Arc::new(catalog),
         hasher,
         dispatcher.clone(),
-        Some(secret_resolver()),
-        None,
-        None,
+        sdkwork_cloudrouter_edge_runtime::InvocationRouterOptions {
+            secret_resolver: Some(secret_resolver()),
+            stream_response_timeout: Duration::from_millis(25),
+            ..Default::default()
+        },
     );
     let build_request = || {
         Request::builder()
@@ -2347,6 +2388,83 @@ async fn invocation_router_times_out_an_unpolled_stream_and_releases_idempotency
 
     drop(first);
     drop(second);
+}
+
+/// A client that disconnects mid-answer must still be billed for what the
+/// provider already produced. The downstream body drop wins the terminal race,
+/// so the shared usage accumulator is what carries the partial usage into
+/// settlement; without it a cancel/refresh loop is a free channel.
+#[tokio::test]
+async fn invocation_router_bills_partial_usage_when_the_client_disconnects_mid_stream() {
+    let hasher = hasher();
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let mut catalog = catalog_with_hashed_api_key(&key_hash);
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3001)
+            .with_account_group_binding(10, 10, 100)
+            .with_upstream_endpoint(
+                Some("http://provider-proxy.internal/openrouter"),
+                Some("vault://providers/openrouter/account/main"),
+            )
+            .with_retry_policy(ProviderRetryPolicy::new(1, Vec::new(), 0).unwrap()),
+    );
+    let dispatcher = Arc::new(OneFrameThenStallSseDispatcher::new(
+        "data: {\"id\":\"chatcmpl-partial\",\"choices\":[{\"delta\":{\"content\":\"a partial answer is still billed\"}}]}\n\n",
+    ));
+    let usage_recorder = Arc::new(RecordingUsageRecorder::default());
+    let router =
+        sdkwork_cloudrouter_edge_runtime::invocation_router_with_full_pipeline_and_provider_adapter_config(
+            Arc::new(catalog),
+            hasher,
+            dispatcher.clone(),
+            sdkwork_cloudrouter_edge_runtime::InvocationRouterOptions {
+                secret_resolver: Some(secret_resolver()),
+                usage_recorder: Some(usage_recorder.clone()),
+                ..Default::default()
+            },
+        );
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/chat/completions")
+                .header("authorization", "Bearer sk-live-secret")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"model":"gpt-4o-mini","stream":true,"messages":[{"role":"user","content":"ping"}]}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::OK, response.status());
+
+    let mut body = response.into_body().into_data_stream();
+    let first = body.next().await.expect("first frame").expect("data frame");
+    assert!(std::str::from_utf8(&first)
+        .expect("utf-8 frame")
+        .contains("chatcmpl-partial"));
+
+    // The client disconnects after the first frame, before any usage frame.
+    drop(body);
+
+    let commands = wait_for_usage_commands(usage_recorder.as_ref(), 1).await;
+    assert!(!commands.is_empty(), "a disconnected stream must still be billed");
+    assert!(
+        commands.iter().all(|command| command.streaming),
+        "interrupted stream usage stays streaming"
+    );
+    assert!(
+        commands
+            .iter()
+            .any(|command| command.completion_tokens > 0),
+        "observed output must be estimated and billed: {commands:?}"
+    );
+    assert!(
+        commands.iter().any(|command| command.prompt_tokens > 0),
+        "prompt tokens are estimated from the request body: {commands:?}"
+    );
 }
 
 #[tokio::test]

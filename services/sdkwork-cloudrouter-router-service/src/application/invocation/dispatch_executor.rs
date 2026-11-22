@@ -137,19 +137,44 @@ impl InvocationInterceptor for DispatchExecutor {
                     }
                     let started = Instant::now();
                     dispatch_started = true;
+                    // A request-level deadline abort is still an observed account
+                    // failure: settling it here (instead of only setting
+                    // `last_error`) keeps a hanging account visible to the
+                    // circuit breaker. `invocation` cannot be touched inside the
+                    // select branch while the dispatch future borrows it, so the
+                    // attempt is recorded immediately after.
+                    let mut deadline_exceeded = false;
                     let dispatch_result = tokio::select! {
                         result = self.dispatcher.dispatch(invocation, &account) => result,
                         _ = tokio::time::sleep_until(tokio::time::Instant::from_std(request_deadline)) => {
-                            last_error = Some(dispatch_error(
+                            deadline_exceeded = true;
+                            Err(InvocationDispatchError::new(
+                                "request_deadline_exceeded",
                                 "request dispatch total deadline exceeded",
-                            ));
-                            exhausted_retryable = false;
-                            break;
+                                None,
+                                false,
+                            ))
                         }
                         _ = cancellation_signal.wait_for_tenant_lease_loss() => {
                             return Err(tenant_lease_loss_error());
                         }
                     };
+                    if deadline_exceeded {
+                        invocation.routing.attempted_routes.push(failed_attempt(
+                            candidate,
+                            index,
+                            None,
+                            false,
+                            Some("request_deadline_exceeded".to_owned()),
+                            Some("request dispatch total deadline exceeded".to_owned()),
+                            started,
+                        ));
+                        last_error = dispatch_result
+                            .err()
+                            .map(|error| dispatch_error(error_message(&error)));
+                        exhausted_retryable = false;
+                        break;
+                    }
                     ensure_dispatch_active(&cancellation_signal)?;
                     match dispatch_result {
                         Ok(response) if response_is_success(invocation, &response) => {

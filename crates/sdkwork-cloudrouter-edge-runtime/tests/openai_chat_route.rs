@@ -121,7 +121,7 @@ async fn gateway_mounts_openai_chat_completions_boundary_without_fake_success() 
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .unwrap();
-    assert_eq!(StatusCode::NOT_IMPLEMENTED, status);
+    assert_eq!(StatusCode::SERVICE_UNAVAILABLE, status);
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
     assert_eq!("provider_relay_not_configured", payload["error"]["code"]);
@@ -202,7 +202,7 @@ async fn gateway_chat_route_resolves_colon_separated_model_ids_before_relay_chec
             .unwrap();
         let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
         assert_eq!(
-            StatusCode::NOT_IMPLEMENTED,
+            StatusCode::SERVICE_UNAVAILABLE,
             status,
             "model id: {model_id}, body: {payload}"
         );

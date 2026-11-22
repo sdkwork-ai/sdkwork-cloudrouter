@@ -18,6 +18,7 @@ use sdkwork_cloudrouter_router_service::ports::{
 };
 use serde_json::{json, Value};
 use std::collections::{HashMap, VecDeque};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 fn subject() -> InvocationSubject {
@@ -448,6 +449,60 @@ async fn non_idempotent_chat_post_does_not_replay_after_server_error() {
             .response
             .as_ref()
             .map(|response| response.status_code)
+    );
+}
+
+#[derive(Debug, Default)]
+struct HangingDispatcher {
+    calls: AtomicUsize,
+}
+
+impl InvocationDispatcher for HangingDispatcher {
+    fn dispatch<'a>(
+        &'a self,
+        _invocation: &'a Invocation,
+        _account: &'a InvocationAccount,
+    ) -> InvocationDispatcherFuture<'a> {
+        self.calls.fetch_add(1, Ordering::SeqCst);
+        Box::pin(async move {
+            std::future::pending::<()>().await;
+            unreachable!("a hanging dispatcher never resolves")
+        })
+    }
+}
+
+/// A request-level deadline abort must still be recorded as an observed account
+/// failure: otherwise a hanging account never reaches the circuit breaker.
+#[tokio::test(start_paused = true)]
+async fn request_deadline_records_a_failed_attempt_for_the_hanging_account() {
+    let dispatcher = Arc::new(HangingDispatcher::default());
+    let mut invocation = invocation_with_plan(
+        AiRouteStrategy::StatelessFailover,
+        vec![candidate("primary", 3001)],
+    );
+    invocation.request = InvocationRequest::new(Method::POST, "/v1/chat/completions")
+        .with_request_id("req-dispatch-deadline")
+        .with_body(InvocationBody::json(
+            json!({"model": "gpt-4o-mini", "messages": []}),
+        ));
+
+    let error = DispatchExecutor::new(dispatcher.clone())
+        .before(&mut invocation)
+        .await
+        .expect_err("the request deadline must abort the dispatch");
+
+    assert!(
+        error.message.contains("total deadline"),
+        "unexpected error: {}",
+        error.message
+    );
+    assert_eq!(1, dispatcher.calls.load(Ordering::SeqCst));
+    assert_eq!(1, invocation.routing.attempted_routes.len());
+    let attempt = &invocation.routing.attempted_routes[0];
+    assert!(!attempt.success);
+    assert_eq!(
+        Some("request_deadline_exceeded"),
+        attempt.error_code.as_deref()
     );
 }
 

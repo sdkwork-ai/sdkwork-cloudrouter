@@ -120,11 +120,21 @@ impl MetricsInterceptor {
     }
 
     fn effective_status_code(invocation: &Invocation) -> u16 {
+        // Prefer the normalized (client-visible) status, then the effective
+        // dispatch status — which for internal provider adapters comes from the
+        // in-band adapter body rather than the transport status. Reading
+        // `response.status_code` alone reported adapter 4xx/5xx as 2xx and
+        // skewed the SLO/alerting class.
+        if let Some(normalized) = invocation.telemetry.normalized_response.as_ref() {
+            return normalized.status_code;
+        }
         invocation
             .dispatch
             .response
             .as_ref()
-            .map(|response| response.status_code)
+            .and_then(|response| {
+                super::effective_dispatch_status_code(invocation, response)
+            })
             .unwrap_or(500)
     }
 
