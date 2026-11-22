@@ -72,6 +72,7 @@ export const en = {
   "admin.menu.iam.oauth.officialAccounts": "Official Account Management",
   "admin.menu.iam.oauth.authorizedAccounts": "Authorized Accounts",
   "admin.menu.iam.oauth.scanLogin": "Scan Login Configuration",
+  "admin.menu.iam.oauth.loginFollowQr": "Follow QR",
   "admin.menu.iam.federation": "Connections & Federation",
   "admin.menu.iam.accountBinding": "Account Binding",
   "admin.menu.iam.security": "Security & Audit",

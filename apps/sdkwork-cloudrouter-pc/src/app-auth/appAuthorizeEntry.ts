@@ -215,3 +215,61 @@ export function planAppAuthorizeEntry(search: string): AppAuthorizeEntryPlan {
   }
   return { kind: 'create', request: parsed.request }
 }
+
+/** Sentence the waiting application always gets when the state cannot be created. */
+const APP_AUTHORIZE_START_FAILURE = 'The hosted authorization could not be started. Start the login again.'
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+/**
+ * Render the server's own answer to the state-creation request.
+ *
+ * The native application waiting on its deep link never sees this page's
+ * request or response, so the callback is the only channel that reaches its
+ * failure card. Sending the status, wire code, trace id, and problem document
+ * along is what lets that card name the failing server call instead of quoting
+ * one generic sentence.
+ * @param error - the rejection `oauth.authorizations.create` threw.
+ * @returns the detail lines, or undefined when the request never reached a server.
+ */
+function describeAppAuthorizeServerFailure(error: unknown): string | undefined {
+  if (!isRecord(error)) return undefined
+  const problem = isRecord(error.problem) ? error.problem : undefined
+  const status = typeof error.httpStatus === 'number'
+    ? error.httpStatus
+    : problem !== undefined && typeof problem.status === 'number' ? problem.status : undefined
+  const code = problem?.code
+  const traceId = typeof error.traceId === 'string' && error.traceId !== ''
+    ? error.traceId
+    : problem !== undefined && typeof problem.traceId === 'string' && problem.traceId !== '' ? problem.traceId : undefined
+  const meta = [
+    status === undefined ? '' : `HTTP ${String(status)}`,
+    code === undefined ? '' : `code ${String(code)}`,
+    traceId === undefined ? '' : `traceId ${traceId}`,
+  ].filter(part => part !== '').join(' · ')
+  const detail = typeof problem?.detail === 'string' && problem.detail.trim() !== ''
+    ? problem.detail.trim()
+    : typeof error.message === 'string' ? error.message.trim() : ''
+  const lines = [meta, detail].filter(line => line !== '')
+  if (problem !== undefined) {
+    try {
+      lines.push(JSON.stringify(problem))
+    } catch {
+      // A non-serializable document still leaves the status and detail above.
+    }
+  }
+  return lines.length === 0 ? undefined : lines.join('\n')
+}
+
+/**
+ * Build the description a failed state creation hands back to the waiting
+ * native application: the page's own sentence, then the server's report.
+ * @param error - the rejection `oauth.authorizations.create` threw.
+ * @returns the callback description, verbatim wire data included.
+ */
+export function describeAppAuthorizeFailure(error: unknown): string {
+  const serverFailure = describeAppAuthorizeServerFailure(error)
+  return serverFailure === undefined ? APP_AUTHORIZE_START_FAILURE : `${APP_AUTHORIZE_START_FAILURE}\n${serverFailure}`
+}

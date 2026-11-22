@@ -130,6 +130,7 @@ const IamOauthChannelReleasesAdmin = lazyAdminRoute(() => import('@sdkwork/cloud
 const IamOauthOfficialAccountsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthOfficialAccountsAdmin');
 const IamOauthOfficialAccountCustomMenuAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthOfficialAccountCustomMenuAdmin');
 const IamOauthScanLoginAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthScanLoginAdmin');
+const IamOauthLoginFollowQrAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOauthLoginFollowQrAdmin');
 const IamAccountBindingAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamAccountBindingAdmin');
 const IamAuditAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamAuditAdmin');
 const MessagingNotifyOverview = lazyAdminRoute(() => import('@sdkwork/messaging-pc-admin-notify'), 'NotificationDashboardPage');
@@ -297,6 +298,7 @@ const IAM_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>> = {
   'iam/oauth/official-accounts': <IamOauthOfficialAccountsAdmin />,
   'iam/oauth/official-accounts/:resourceAccountId/custom-menus': <IamOauthOfficialAccountCustomMenuAdmin />,
   'iam/oauth/scan-login': <IamOauthScanLoginAdmin />,
+  'iam/oauth/login-follow-qr': <IamOauthLoginFollowQrAdmin />,
   'iam/account-binding': <IamAccountBindingAdmin />,
   'iam/audit': <IamAuditAdmin />,
 };

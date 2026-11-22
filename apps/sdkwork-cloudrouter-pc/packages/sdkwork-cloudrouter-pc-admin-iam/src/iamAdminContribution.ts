@@ -76,6 +76,7 @@ export const IAM_ADMIN_MENU: CloudRouterIamAdminMenu = {
         { path: '/admin/iam/oauth/authorized-accounts', labelKey: 'admin.menu.iam.oauth.authorizedAccounts', icon: KeySquare },
         { path: '/admin/iam/oauth/channel-releases', labelKey: 'admin.menu.iam.oauth.channelReleases', icon: BarChart3 },
         { path: '/admin/iam/oauth/scan-login', labelKey: 'admin.menu.iam.oauth.scanLogin', icon: QrCode },
+        { path: '/admin/iam/oauth/login-follow-qr', labelKey: 'admin.menu.iam.oauth.loginFollowQr', icon: QrCode },
       ],
     },
     {
@@ -124,6 +125,7 @@ export const IAM_ADMIN_ROUTE_RECORDS: readonly CloudRouterIamAdminRouteRecord[] 
   { path: 'iam/oauth/authorized-accounts', requiredPermission: 'iam.oauth.read' },
   { path: 'iam/oauth/channel-releases', requiredPermission: 'iam.oauth.read' },
   { path: 'iam/oauth/scan-login', requiredPermission: 'iam.oauth.read' },
+  { path: 'iam/oauth/login-follow-qr', requiredPermission: 'iam.oauth.read' },
   { path: 'iam/account-binding', requiredPermission: 'iam.account_binding_policy.read' },
   { path: 'iam/audit', requiredPermission: 'iam.audit_events.read' },
 ];
@@ -151,6 +153,7 @@ export const IAM_ADMIN_PERMISSION_HINTS: readonly CloudRouterIamAdminPermissionH
   { pathPrefix: '/admin/iam/oauth/authorized-accounts', requiredPermission: 'iam.oauth.read' },
   { pathPrefix: '/admin/iam/oauth/channel-releases', requiredPermission: 'iam.oauth.read' },
   { pathPrefix: '/admin/iam/oauth/scan-login', requiredPermission: 'iam.oauth.read' },
+  { pathPrefix: '/admin/iam/oauth/login-follow-qr', requiredPermission: 'iam.oauth.read' },
   { pathPrefix: '/admin/iam/account-binding', requiredPermission: 'iam.account_binding_policy.read' },
   { pathPrefix: '/admin/iam/audit', requiredPermission: 'iam.audit_events.read' },
 ];

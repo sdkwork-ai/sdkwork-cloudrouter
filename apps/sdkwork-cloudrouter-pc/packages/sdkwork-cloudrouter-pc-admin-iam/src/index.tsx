@@ -512,6 +512,17 @@ const LazyIamOauthScanLoginAdmin = lazy(async () => {
   };
 });
 
+const LazyIamOauthLoginFollowQrAdmin = lazy(async () => {
+  const { createSdkworkIamOauthAdminController, SdkworkIamOauthLoginFollowQrPage } = await import('@sdkwork/iam-pc-admin-oauth');
+  return {
+    default: function CloudRouterIamOauthLoginFollowQrAdminContent() {
+      const service = useIamAdminService();
+      const controller = useMemo(() => createSdkworkIamOauthAdminController(service), [service]);
+      return <SdkworkIamOauthLoginFollowQrPage controller={controller} />;
+    },
+  };
+});
+
 const LazyIamAccountBindingAdmin = lazy(async () => {
   const { createSdkworkIamAccountBindingController, SdkworkIamAccountBindingSettings } = await import('@sdkwork/iam-pc-admin-account-binding');
   return {
@@ -553,5 +564,6 @@ export const CloudRouterIamOauthChannelReleasesAdmin: ComponentType = createIamA
 export const CloudRouterIamOauthOfficialAccountsAdmin: ComponentType = createIamAdminRoute(LazyIamOauthOfficialAccountsAdmin);
 export const CloudRouterIamOauthOfficialAccountCustomMenuAdmin: ComponentType = createIamAdminRoute(LazyIamOauthOfficialAccountCustomMenuAdmin);
 export const CloudRouterIamOauthScanLoginAdmin: ComponentType = createIamAdminRoute(LazyIamOauthScanLoginAdmin);
+export const CloudRouterIamOauthLoginFollowQrAdmin: ComponentType = createIamAdminRoute(LazyIamOauthLoginFollowQrAdmin);
 export const CloudRouterIamAccountBindingAdmin: ComponentType = createIamAdminRoute(LazyIamAccountBindingAdmin);
 export const CloudRouterIamAuditAdmin: ComponentType = createIamAdminRoute(LazyIamAuditAdmin);

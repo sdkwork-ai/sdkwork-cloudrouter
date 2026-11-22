@@ -20,7 +20,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getSdkworkAppbaseAppSdkClient } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { buildSdkworkDesktopAuthErrorRedirect } from '@sdkwork/auth-pc-react';
 import { CloudRouterAuthRoutes } from '../auth/CloudRouterAuthRoutes.tsx';
-import { planAppAuthorizeEntry } from './appAuthorizeEntry.ts';
+import { describeAppAuthorizeFailure, planAppAuthorizeEntry } from './appAuthorizeEntry.ts';
 
 /**
  * Render the hosted OAuth authorization page: create the pending state when the
@@ -59,11 +59,13 @@ export function CloudRouterAppAuthorizeEntry() {
         // A native app is waiting on its deep link. Report a state-creation
         // failure immediately instead of leaving it until the flow deadline;
         // only the SDKWork callback shape derived from the client id is used.
+        // The server's own answer travels with the sentence: the app's failure
+        // card is the only place anyone can read it, because this page owns the
+        // request and its response.
         const errorRedirect = buildSdkworkDesktopAuthErrorRedirect({
           clientId: plan.request.clientId,
           error: 'server_error',
-          errorDescription:
-            'The hosted authorization could not be started. Start the login again.',
+          errorDescription: describeAppAuthorizeFailure(error),
           redirectUri: plan.request.redirectUri,
           state: plan.request.state,
         });

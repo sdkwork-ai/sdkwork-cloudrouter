@@ -72,6 +72,7 @@ export const zh = {
   "admin.menu.iam.oauth.officialAccounts": "公众号账号",
   "admin.menu.iam.oauth.authorizedAccounts": "授权方账号",
   "admin.menu.iam.oauth.scanLogin": "扫码登录配置",
+  "admin.menu.iam.oauth.loginFollowQr": "关注二维码",
   "admin.menu.iam.federation": "连接与联合",
   "admin.menu.iam.accountBinding": "账号绑定",
   "admin.menu.iam.security": "安全与审计",
