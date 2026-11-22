@@ -155,7 +155,11 @@ test('the hosted auth header reuses the homepage brand lockup', () => {
 });
 
 test('the portal auth guard keeps the app hand-off page out of the authenticated redirect', () => {
-  assert.equal(isPortalAuthRoute(APP_AUTHORIZE_LAUNCH_PATH), true);
+  // The hand-off page is a protocol-level `/oauth` route, not a page of the
+  // portal's `/auth` account surface: the `/auth/*` guard never sees it, and
+  // the hand-off exemption still recognizes it for the hosts that also guard
+  // their own `/auth` mount.
+  assert.equal(isPortalAuthRoute(APP_AUTHORIZE_LAUNCH_PATH), false);
   assert.equal(isPortalAppHandoffPath(APP_AUTHORIZE_LAUNCH_PATH), true);
   for (const path of ['/auth/login', '/auth/register', APP_AUTHORIZE_PATH, APP_AUTHORIZE_ALIAS_PATH]) {
     assert.equal(isPortalAppHandoffPath(path), false, path);
@@ -203,7 +207,10 @@ test('the versioned and versionless authorize paths answer the same entry', () =
 test('the router mounts the authorize entry outside the auth-area guard', () => {
   const app = readFileSync(new URL('./src/App.tsx', import.meta.url), 'utf8');
   assert.match(app, /path="\/iam\/v3\/oauth\/authorize"[^>]*CloudRouterAppAuthorizeEntry/u);
-  assert.match(app, /path="\/auth\/app"[^>]*CloudRouterAppAuthorizeEntry/u);
+  assert.match(app, /path="\/oauth\/app"[^>]*CloudRouterAppAuthorizeEntry/u);
+  // The hand-off page keeps the `/oauth` namespace too, and renders the hosted
+  // IAM routes that dispatch the deep link.
+  assert.match(app, /path="\/oauth\/desktop\/launch"[^>]*CloudRouterAuthRoutes/u);
   const guarded = readFileSync(new URL('./src/auth/protectedPortalRoutes.ts', import.meta.url), 'utf8');
   assert.match(guarded, /!isPortalAppSignInHandoff\(location\)/u);
 });

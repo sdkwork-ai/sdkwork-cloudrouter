@@ -48,7 +48,11 @@ export function ScrollToTop() {
 export function RouteFallback() {
   const { pathname } = useLocation();
 
-  if (pathname.startsWith('/auth')) {
+  // The portal's own auth pages (/auth/*) and the native-application login
+  // flow (/oauth/app, /oauth/desktop/launch) both resolve the shared IAM auth
+  // chunk, so they get the full-viewport auth skeleton instead of the product
+  // content placeholder.
+  if (pathname.startsWith('/auth') || pathname.startsWith('/oauth')) {
     return (
       <div className="sdkwork-auth-route-fallback sdkwork-cloudrouter-auth-route-fallback fixed inset-0 z-[60] h-[100dvh] min-h-[100dvh] w-full" />
     );

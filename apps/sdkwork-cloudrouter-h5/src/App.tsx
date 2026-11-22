@@ -63,11 +63,11 @@ export function App() {
     <BrowserRouter>
       <ConsoleRuntimeProvider configuration={configuration}>
         <Routes>
-          <Route path="/auth/app" element={<AppAuthorizeEntryPage />} />
+          <Route path="/oauth/app" element={<AppAuthorizeEntryPage />} />
           <Route path="/iam/v3/oauth/authorize" element={<AppAuthorizeEntryPage />} />
           <Route path="/iam/oauth/authorize" element={<AppAuthorizeEntryPage />} />
           <Route path="/auth/login" element={<AppSignInPage />} />
-          <Route path="/auth/desktop/launch" element={<AppLaunchPage />} />
+          <Route path="/oauth/desktop/launch" element={<AppLaunchPage />} />
           {/* Shared IAM H5 OAuth callback: the IAM login surface redirects the
               browser to this real path, which the history router renders
               directly so the same screen resumes the session exchange. */}

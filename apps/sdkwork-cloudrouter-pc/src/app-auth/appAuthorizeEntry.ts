@@ -7,9 +7,13 @@
  * page and keep the request parameters intact. A complete authorization request
  * renders the hosted IAM auth surface in place on that route; the hosted page
  * creates the pending state when the browser signs in (or confirms the account)
- * and, after completion, lands on `/auth/desktop/launch`, which fires the deep
+ * and, after completion, lands on `/oauth/desktop/launch`, which fires the deep
  * link back into the application. An anonymous visitor therefore sees the login
  * form immediately instead of a waiting card.
+ *
+ * The `/oauth/app` alias renders the same entry. Every route that exists only
+ * for a native application's browser login lives under `/oauth`, so the
+ * portal's `/auth` account surface never carries an application-only page.
  *
  * Everything in this module is pure so the request contract can be tested
  * without a browser.
@@ -30,7 +34,7 @@ export const APP_AUTHORIZE_PATH = SDKWORK_OAUTH_APP_AUTHORIZE_PATH
 export const APP_AUTHORIZE_VERSIONLESS_PATH = SDKWORK_OAUTH_APP_AUTHORIZE_VERSIONLESS_PATH
 /** Every authorize path the hosted page answers. */
 export const APP_AUTHORIZE_PATHS: readonly string[] = SDKWORK_OAUTH_APP_AUTHORIZE_PATHS
-/** Alias entry: the same hosted surface under the auth area. */
+/** Alias entry: the same hosted surface under the `/oauth` namespace. */
 export const APP_AUTHORIZE_ALIAS_PATH = SDKWORK_OAUTH_APP_ALIAS_PATH
 /** Hand-off page that fires the deep link after authorization completes. */
 export const APP_AUTHORIZE_LAUNCH_PATH = SDKWORK_OAUTH_APP_LAUNCH_PATH

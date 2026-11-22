@@ -13771,7 +13771,14 @@ routes:
     dependency_sdk_family: sdkwork-agents-backend-sdk
     required_tables: []
 
-  - route: /auth/app
+  - route: /oauth/app
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+    required_tables:
+      - iam_user
+      - iam_user_identity
+
+  - route: /oauth/desktop/launch
     dependency_owned: true
     dependency_sdk_family: sdkwork-cloudrouter-app-sdk
     required_tables:

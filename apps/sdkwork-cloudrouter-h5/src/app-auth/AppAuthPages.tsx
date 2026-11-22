@@ -4,7 +4,7 @@
  * They are ordinary hash routes on the mobile renderer so a phone that opened
  * a native app's `/iam/v3/oauth/authorize` link (or that was returned to
  * `/auth/login` by the IAM authorization server) sees the same hosted flow as
- * the PC renderer, and the final `/auth/desktop/launch` page hands the
+ * the PC renderer, and the final `/oauth/desktop/launch` page hands the
  * authorization code back through the app's registered deep link.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';

@@ -63,11 +63,11 @@ root serves the same hosted sign-in surface as the PC renderer. The pages live
 in `src/app-auth/` and are ordinary routes:
 
 - `/iam/v3/oauth/authorize`, its versionless `/iam/oauth/authorize` alias, and
-  the `/auth/app` alias validate the authorization-code request and hand the
+  the `/oauth/app` alias validate the authorization-code request and hand the
   navigation to the IAM authorization server.
 - `/auth/login` signs the visitor in and completes the pending authorization
   through the generated app SDK client.
-- `/auth/desktop/launch` fires the app's registered deep link.
+- `/oauth/desktop/launch` fires the app's registered deep link.
 
 Both authorize entries forward to the app-api origin's
 `/iam/v3/api/oauth/authorize`, the IAM open-api path the platform gateway

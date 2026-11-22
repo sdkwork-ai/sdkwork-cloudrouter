@@ -81,7 +81,10 @@ const CloudRouterAuthRoutes = lazyRoute(() => import('./auth/CloudRouterAuthRout
 // Hosted app sign-in entry: native applications open the platform's
 // `/iam/v3/oauth/authorize` in the system browser and return through the
 // registered deep link. It is a public redirect surface, declared outside the
-// `/auth/*` guard so it never needs (or waits for) a portal session.
+// `/auth/*` guard so it never needs (or waits for) a portal session. Its
+// `/oauth` alias and the `/oauth/desktop/launch` hand-off page follow the same
+// rule: every route that exists only for a native application's browser login
+// lives under `/oauth`, never inside the portal's `/auth` account surface.
 const CloudRouterAppAuthorizeEntry = lazyRoute(
   () => import('./app-auth/CloudRouterAppAuthorizeEntry'),
   'CloudRouterAppAuthorizeEntry',
@@ -298,7 +301,12 @@ export default function App() {
           <Routes>
             <Route path="/iam/v3/oauth/authorize" element={<CloudRouterAppAuthorizeEntry />} />
             <Route path="/iam/oauth/authorize" element={<CloudRouterAppAuthorizeEntry />} />
-            <Route path="/auth/app" element={<CloudRouterAppAuthorizeEntry />} />
+            <Route path="/oauth/app" element={<CloudRouterAppAuthorizeEntry />} />
+            {/* Login-success hand-off page of the native-application flow. It is
+                a protocol-level `/oauth` route rather than part of the portal's
+                `/auth/*` account surface, so the authenticated-visitor bounce
+                never drops the one-time code before the deep link fires. */}
+            <Route path="/oauth/desktop/launch" element={<CloudRouterAuthRoutes />} />
             <Route path="/auth/*" element={<PortalAuthenticatedAuthRouteGuard><CloudRouterAuthRoutes /></PortalAuthenticatedAuthRouteGuard>} />
 
             {/* Unified order cashier, reachable from a QR deep link and from the

@@ -927,7 +927,7 @@ routes:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx
 
-- route: /auth/app
+- route: /oauth/app
   package: portal-root
   owner: product-surface
   route_scope: public
@@ -936,7 +936,20 @@ routes:
   dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   api_surface: app
   operation_routes:
-  - /auth/app
+  - /oauth/app
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+
+- route: /oauth/desktop/launch
+  package: portal-root
+  owner: product-surface
+  route_scope: public
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  api_surface: app
+  operation_routes:
+  - /oauth/desktop/launch
   evidence:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
 

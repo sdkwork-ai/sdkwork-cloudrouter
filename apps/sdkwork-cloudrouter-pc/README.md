@@ -263,21 +263,23 @@ Extension points are limited to declared public exports, runtime entrypoints, SD
 Native SDKWork applications (the BirdCoder desktop shell, for example) never
 render their own login form: they open `<platform>/iam/v3/oauth/authorize` in
 the system browser and redeem the authorization code through their registered
-deep link. The portal hosts the browser half of that flow:
+deep link. The portal hosts the browser half of that flow, and every route that
+exists only for it lives under `/oauth`:
 
 - `/iam/v3/oauth/authorize`, its versionless `/iam/oauth/authorize` alias, and
-  the `/auth/app` alias (`src/app-auth/`) validate the authorization-code
+  the `/oauth/app` alias (`src/app-auth/`) validate the authorization-code
   request (response type, client id, app callback, state, PKCE S256) and hand
   the navigation to the IAM authorization server, which owns the pending
   authorization state.
 - `/auth/login?oauthAuthorizationStateId=…` is the hosted login the IAM server
   returns to; the SDKWork auth page completes the pending authorization through
   the signed-in browser session.
-- `/auth/desktop/launch?redirectUrl=…` fires the app's registered deep link. It
-  lives under the auth base path but is exempt from the authenticated auth-route
-  redirect (`isPortalAppHandoffPath`): the visitor is signed in by the time they
-  land there, and bouncing them to the portal home would drop the
-  authorization code.
+- `/oauth/desktop/launch?redirectUrl=…` fires the app's registered deep link. It
+  is a protocol-level `/oauth` route, so the portal's `/auth/*`
+  authenticated-visitor redirect never sees it (`isPortalAppHandoffPath` still
+  recognizes it for hosts that guard their own auth mount): the visitor is
+  signed in by the time they land there, and bouncing them to the portal home
+  would drop the authorization code.
 
 The entry does not send the browser to another page: a valid app authorization
 renders the hosted IAM auth surface in place on the entry route, so an

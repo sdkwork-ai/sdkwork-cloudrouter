@@ -7,7 +7,11 @@
  * `/iam/oauth/authorize` alias) may land here on a phone. The entry validates
  * the authorization request, hands the navigation to the IAM authorization
  * server, and (after the hosted login) fires the registered deep link back into
- * the application from `/auth/desktop/launch`.
+ * the application from `/oauth/desktop/launch`.
+ *
+ * Every route that exists only for a native application's browser login lives
+ * under `/oauth` (`/oauth/app`, `/oauth/desktop/launch`); the portal's `/auth`
+ * namespace keeps its own account surface.
  *
  * Everything here is pure so the request contract can be tested without a
  * browser.
@@ -30,12 +34,12 @@ export const APP_AUTHORIZE_PATHS: readonly string[] = Object.freeze([
  * origin, not a gateway route.
  */
 export const APP_AUTHORIZE_ENDPOINT_PATH = '/iam/v3/api/oauth/authorize';
-/** Alias entry under the auth area. */
-export const APP_AUTHORIZE_ALIAS_PATH = '/auth/app';
+/** Alias entry under the `/oauth` namespace. */
+export const APP_AUTHORIZE_ALIAS_PATH = '/oauth/app';
 /** Hosted login page the IAM authorization server returns to. */
 export const APP_AUTHORIZE_LOGIN_PATH = '/auth/login';
 /** Hand-off page that fires the deep link after authorization completes. */
-export const APP_AUTHORIZE_LAUNCH_PATH = '/auth/desktop/launch';
+export const APP_AUTHORIZE_LAUNCH_PATH = '/oauth/desktop/launch';
 /** IAM H5 OAuth provider callback (WeChat web authorization) route. */
 export const APP_OAUTH_CALLBACK_PATH = '/auth/oauth/callback';
 /** Canonical app-api prefix; its origin also serves the IAM open-api. */

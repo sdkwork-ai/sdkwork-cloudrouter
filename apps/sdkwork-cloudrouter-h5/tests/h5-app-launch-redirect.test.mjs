@@ -1,5 +1,5 @@
 /**
- * Safety of the H5 hand-off page. `/auth/desktop/launch?redirectUrl=...` is
+ * Safety of the H5 hand-off page. `/oauth/desktop/launch?redirectUrl=...` is
  * reachable by anyone, so the page must only follow native app surfaces
  * (custom scheme) and RFC 8252 loopback redirects; a web origin or a
  * `javascript:`/`data:`/`file:` URL would make it an open redirect.

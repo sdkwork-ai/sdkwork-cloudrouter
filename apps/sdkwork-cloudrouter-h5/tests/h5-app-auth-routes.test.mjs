@@ -14,11 +14,11 @@ function readSource(relativePath) {
 
 /** Route declarations the app root must mount for the hosted app sign-in. */
 const APP_AUTH_ROUTES = [
-  'path="/auth/app"',
+  'path="/oauth/app"',
   'path="/iam/v3/oauth/authorize"',
   'path="/iam/oauth/authorize"',
   'path="/auth/login"',
-  'path="/auth/desktop/launch"',
+  'path="/oauth/desktop/launch"',
 ];
 
 function exportKeys(source) {
@@ -58,6 +58,10 @@ describe('H5 hosted app sign-in', () => {
       "APP_AUTHORIZE_PATH = '/iam/v3/oauth/authorize'",
       "APP_AUTHORIZE_VERSIONLESS_PATH = '/iam/oauth/authorize'",
       "APP_AUTHORIZE_ENDPOINT_PATH = '/iam/v3/api/oauth/authorize'",
+      // Every route that serves only a native application's browser login
+      // keeps the `/oauth` namespace, never the portal's `/auth` surface.
+      "APP_AUTHORIZE_ALIAS_PATH = '/oauth/app'",
+      "APP_AUTHORIZE_LAUNCH_PATH = '/oauth/desktop/launch'",
       "AUTHORIZATION_STATE_PARAM = 'oauthAuthorizationStateId'",
       "code_challenge_method",
       'unsupported-challenge-method',

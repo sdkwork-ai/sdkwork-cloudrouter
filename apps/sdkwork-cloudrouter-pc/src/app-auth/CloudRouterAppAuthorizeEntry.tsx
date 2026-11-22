@@ -1,6 +1,6 @@
 /**
  * The hosted OAuth authorization page (`/iam/v3/oauth/authorize` and its
- * versionless `/iam/oauth/authorize` alias, plus the `/auth/app` alias).
+ * versionless `/iam/oauth/authorize` alias, plus the `/oauth/app` alias).
  *
  * A native SDKWork application opens this path on the platform origin in the
  * system browser. A complete authorization request renders the hosted IAM auth
@@ -8,7 +8,7 @@
  * form, and a signed-in browser sees the account-choice step. The hosted page
  * creates the pending authorization state at the moment the browser actually
  * signs in or confirms the account, completes it after sign-in, and lands on
- * `/auth/desktop/launch`, which fires the registered deep link back into the
+ * `/oauth/desktop/launch`, which fires the registered deep link back into the
  * application.
  *
  * The page renders no product chrome of its own beyond the shared auth header:

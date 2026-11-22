@@ -46,8 +46,13 @@ const DEFAULT_AUTHENTICATED_HOME_PATH = '/';
  * always authenticated here and the page must render instead of bouncing the
  * browser to the portal home — the deep link back into the app never fires
  * otherwise.
+ *
+ * The page is a protocol-level route under `/oauth` (shared with
+ * `@sdkwork/auth-pc-react/oauth-app-paths`), not part of the `/auth` account
+ * surface: every route that serves a native application's browser login keeps
+ * the `/oauth` namespace.
  */
-const APP_HANDOFF_PATH = '/auth/desktop/launch';
+const APP_HANDOFF_PATH = '/oauth/desktop/launch';
 
 export const PROTECTED_PORTAL_ROUTE_PREFIXES = [
   '/console',
