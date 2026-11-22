@@ -35,9 +35,19 @@ impl InvocationInterceptor for RequestTransformInterceptor {
                 .account
                 .clone()
                 .ok_or_else(|| transform_error("request transform requires resolved account"))?;
+            // The selected candidate carries the supplier business type, which
+            // decides whether the outbound model keeps its vendor head (relay)
+            // or is reduced to the vendor-native id (official).
+            let supplier_type = invocation
+                .routing
+                .route_plan
+                .as_ref()
+                .and_then(|plan| plan.candidates.get(plan.selected_index))
+                .and_then(|candidate| candidate.supplier_type.clone());
             let provider_request = ProviderRequestBuilder.build(
                 invocation,
                 &account,
+                supplier_type.as_deref(),
                 invocation.dispatch.resolved_secret.as_ref(),
             )?;
             invocation.dispatch.provider_request = Some(provider_request);

@@ -23,6 +23,19 @@ pub trait InvocationInterceptor: Send + Sync + 'static {
         false
     }
 
+    /// Whether this interceptor owns response finalization for the invocation.
+    ///
+    /// `after` hooks run in reverse registration order. Accounting, telemetry,
+    /// and sticky hooks are registered after the response normalizer, so they
+    /// fail before it — and an aborted `after` chain would leave the invocation
+    /// without a normalized response. The pipeline uses this marker to force the
+    /// finalizer ahead of such a failure, so a provider response that already
+    /// succeeded (and was already billed upstream) is not replaced by a
+    /// synthesized gateway problem.
+    fn finalizes_response(&self) -> bool {
+        false
+    }
+
     fn before<'a>(&'a self, _invocation: &'a mut Invocation) -> InvocationFuture<'a, ()> {
         Box::pin(async { Ok(()) })
     }

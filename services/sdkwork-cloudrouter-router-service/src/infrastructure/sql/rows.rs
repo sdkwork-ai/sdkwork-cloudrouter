@@ -655,9 +655,14 @@ impl UpstreamAccountGroupRow {
 
 /// 供应商级模型黑白名单（从 ai_model_access_policy 聚合），JSON 列在快照构建时
 /// 解析为 SupplierModelAccess。
+///
+/// `supplier_type`（`official` / `relay`）同源加载，供路由决策区分"厂商直连"
+/// 与"中转站"两类上游：中转站按全限定 `vendor/model` 寻址模型，官方按
+/// vendor-native id 寻址。与访问策略同行读取避免多一条快照查询。
 pub struct UpstreamSupplierModelAccessRow {
     pub supplier_id: i64,
     pub supplier_code: String,
+    pub supplier_type: String,
     pub model_blacklist_json: String,
     pub model_whitelist_json: String,
 }

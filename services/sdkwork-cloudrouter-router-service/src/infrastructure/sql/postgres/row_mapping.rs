@@ -309,6 +309,7 @@ pub async fn load_upstream_supplier_model_access(
         Ok(UpstreamSupplierModelAccessRow {
             supplier_id: row.try_get("supplier_id")?,
             supplier_code: row.try_get("supplier_code")?,
+            supplier_type: row.try_get("supplier_type")?,
             model_blacklist_json: row.try_get("model_blacklist")?,
             model_whitelist_json: row.try_get("model_whitelist")?,
         })

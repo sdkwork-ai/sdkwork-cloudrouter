@@ -69,6 +69,10 @@ pub struct InvocationRouteCandidate {
     pub catalog_key: Option<String>,
     pub requested_model: Option<String>,
     pub provider_model: Option<String>,
+    /// Supplier business type (`official` / `relay`) resolved from the catalog
+    /// snapshot. Drives model addressing: relays receive the fully-qualified
+    /// catalog key, official vendors the vendor-native id.
+    pub supplier_type: Option<String>,
     pub region_code: String,
     /// 账号级计费模式（prepay/postpay），路由解析时从账号配置读取。
     pub billing_mode: AccountBillingMode,

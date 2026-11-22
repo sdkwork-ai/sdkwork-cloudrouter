@@ -17,7 +17,8 @@ pub(crate) use model_request_alias::{
 pub use sdkwork_models_catalog_service::domain::ResourceDefinition;
 pub use sdkwork_models_catalog_service::domain::{
     ensure_canonical_model_catalog_key, is_model_region_segment, model_catalog_scope_matches_key,
-    parse_model_catalog_identity, provider_native_model_id, AccountRateCard, AiModel,
+    parse_model_catalog_identity, parse_request_model_identity, provider_native_model_id,
+    AccountRateCard, AiModel,
     AiModelPublicMetadata, AiRouteFailureStrategy, AiRouteModelRequirement, AiRouteStrategy,
     BillingMeter, DecimalValue, GatewayAccessPolicy, GatewayApiKey,
     GatewayApiKeyAccountGroupBinding, GatewayRiskRule, IntegrationProviderType,

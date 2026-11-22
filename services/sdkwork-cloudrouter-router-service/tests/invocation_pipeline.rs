@@ -1,8 +1,8 @@
 use axum::http::Method;
 use sdkwork_cloudrouter_router_service::application::{
-    AuthenticatedApiKeyContext, Invocation, InvocationBilling, InvocationError,
-    InvocationErrorKind, InvocationInterceptor, InvocationPipeline, InvocationRequest,
-    InvocationResource, InvocationSubject,
+    AuthenticatedApiKeyContext, Invocation, InvocationBilling, InvocationDispatchResponse,
+    InvocationError, InvocationErrorKind, InvocationInterceptor, InvocationNormalizedResponse,
+    InvocationPipeline, InvocationRequest, InvocationResource, InvocationSubject,
 };
 use sdkwork_cloudrouter_router_service::domain::{
     AiRouteModelRequirement, BillingMeter, RoutingCapability,
@@ -213,5 +213,96 @@ async fn pipeline_notifies_error_observers_that_have_not_started() {
             "observer:trace:invalid_request",
         ],
         *events.lock().expect("events")
+    );
+}
+
+/// Behaves like the real response normalizer: it materializes the dispatched
+/// provider response into the normalized slot.
+#[derive(Clone)]
+struct ResponseFinalizerInterceptor;
+
+impl InvocationInterceptor for ResponseFinalizerInterceptor {
+    fn name(&self) -> &str {
+        "response_normalization"
+    }
+
+    fn finalizes_response(&self) -> bool {
+        true
+    }
+
+    fn after<'a>(
+        &'a self,
+        invocation: &'a mut Invocation,
+    ) -> sdkwork_cloudrouter_router_service::application::InvocationFuture<'a, ()> {
+        Box::pin(async move {
+            let status_code = invocation
+                .dispatch
+                .response
+                .as_ref()
+                .map(|response| response.status_code)
+                .unwrap_or(0);
+            invocation.telemetry.normalized_response =
+                Some(InvocationNormalizedResponse {
+                    status_code,
+                    body: Some(serde_json::json!({"id": "provider-ok"})),
+                    body_bytes: None,
+                    content_type: Some("application/json".to_owned()),
+                    headers: axum::http::HeaderMap::new(),
+                    stream_body: Mutex::new(None),
+                    memory_guard: None,
+                });
+            Ok(())
+        })
+    }
+}
+
+/// A post-dispatch accounting hook that fails after the provider already
+/// produced a successful response.
+#[derive(Clone)]
+struct FailingAccountingInterceptor;
+
+impl InvocationInterceptor for FailingAccountingInterceptor {
+    fn name(&self) -> &str {
+        "usage_recording"
+    }
+
+    fn after<'a>(
+        &'a self,
+        _invocation: &'a mut Invocation,
+    ) -> sdkwork_cloudrouter_router_service::application::InvocationFuture<'a, ()> {
+        Box::pin(async move {
+            Err(InvocationError::new(
+                InvocationErrorKind::Usage,
+                "accounting store is offline",
+            ))
+        })
+    }
+}
+
+#[tokio::test]
+async fn accounting_failure_keeps_the_successful_provider_response() {
+    let pipeline = InvocationPipeline::new()
+        .with_interceptor(ResponseFinalizerInterceptor)
+        .with_interceptor(FailingAccountingInterceptor);
+    let mut invocation = test_invocation();
+    invocation.dispatch.response =
+        Some(InvocationDispatchResponse::json(200, serde_json::json!({"id": "provider-ok"})));
+
+    let error = pipeline.execute(&mut invocation).await.unwrap_err();
+
+    assert_eq!(InvocationErrorKind::Usage, error.kind);
+    let normalized = invocation
+        .telemetry
+        .normalized_response
+        .as_ref()
+        .expect("a succeeded provider response must stay materialized");
+    assert_eq!(200, normalized.status_code);
+    assert_eq!(
+        Some("provider-ok"),
+        normalized
+            .body
+            .as_ref()
+            .and_then(|body| body.get("id"))
+            .and_then(serde_json::Value::as_str)
     );
 }

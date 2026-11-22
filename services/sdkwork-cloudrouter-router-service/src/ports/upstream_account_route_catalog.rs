@@ -299,6 +299,19 @@ pub trait UpstreamAccountRouteCatalog: PricingCatalog + PricingDefaultRegionProv
         None
     }
 
+    /// Returns the supplier business type (`official` / `relay`).
+    ///
+    /// The distinction drives model addressing: an official vendor receives its
+    /// vendor-native model id (`deepseek-flash`), while a relay is a different
+    /// vendor reselling the same catalog and addresses models by the
+    /// fully-qualified catalog key (`deepseek/deepseek-flash`). Unknown
+    /// suppliers keep the official behavior. Returned by value so a
+    /// snapshot-backed catalog can serve it without lending its Arc.
+    fn supplier_type(&self, supplier_code: &str) -> Option<String> {
+        let _ = supplier_code;
+        None
+    }
+
     /// Returns the account-level Base URL configuration (account default +
     /// per-protocol overrides, plus the supplier per-protocol URLs) used to
     /// resolve the callable Base URL with account-first priority. `None` when

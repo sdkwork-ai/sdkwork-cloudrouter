@@ -1235,6 +1235,7 @@ ORDER BY card.priority ASC, card.effective_from DESC, card.id DESC
 SELECT
     supplier.id AS supplier_id,
     supplier.supplier_code,
+    supplier.supplier_type,
     COALESCE((
         SELECT jsonb_agg(jsonb_build_object('vendorCode', policy.vendor_code, 'models', model_access_models.model_patterns) ORDER BY policy.priority ASC, policy.id ASC)
         FROM ai_model_access_policy policy

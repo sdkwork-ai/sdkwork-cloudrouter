@@ -67,6 +67,7 @@ fn candidate(supplier_code: &str, account_id: i64) -> InvocationRouteCandidate {
         catalog_key: Some("openai/gpt-4o-mini".to_owned()),
         requested_model: Some("gpt-4o-mini".to_owned()),
         provider_model: Some(format!("{supplier_code}-model")),
+        supplier_type: None,
         region_code: "global".to_owned(),
         credential_id: None,
         credential_rotation: None,
@@ -352,6 +353,101 @@ async fn noop_free_response_does_not_call_dispatcher() {
     assert_eq!(
         Some(204),
         invocation.dispatch.response.as_ref().map(|r| r.status_code)
+    );
+}
+
+#[tokio::test]
+async fn non_idempotent_chat_post_fails_over_after_dead_credential() {
+    // A revoked upstream key rejects the request before any model work: the
+    // sibling account must serve it instead of failing the caller.
+    let dispatcher = FakeDispatcher::new(vec![
+        ok(401, json!({"error": "invalid api key"})),
+        ok(200, json!({"id": "fallback-ok"})),
+    ]);
+    let mut invocation = invocation_with_plan(
+        AiRouteStrategy::StatelessFailover,
+        vec![candidate("primary", 3001), candidate("fallback", 3002)],
+    );
+    invocation.request = InvocationRequest::new(Method::POST, "/v1/chat/completions")
+        .with_request_id("req-post-401-failover")
+        .with_body(InvocationBody::json(json!({"model": "gpt-4o-mini", "messages": []})));
+
+    DispatchExecutor::new(Arc::new(dispatcher.clone()))
+        .before(&mut invocation)
+        .await
+        .expect("dispatch");
+
+    assert_eq!(vec!["primary", "fallback"], dispatcher.providers());
+    assert_eq!(2, invocation.routing.attempted_routes.len());
+    assert!(invocation.routing.attempted_routes[1].success);
+    assert_eq!(
+        Some("fallback-ok"),
+        invocation
+            .dispatch
+            .response
+            .as_ref()
+            .and_then(|response| response.body.as_ref())
+            .and_then(|body| body.get("id"))
+            .and_then(Value::as_str)
+    );
+}
+
+#[tokio::test]
+async fn non_idempotent_chat_post_fails_over_after_rate_limit() {
+    // 429 also proves the upstream did no work; the remaining candidates are
+    // the whole point of a multi-account pool.
+    let dispatcher = FakeDispatcher::new(vec![
+        ok(429, json!({"error": "rate limited"})),
+        ok(200, json!({"id": "fallback-ok"})),
+    ]);
+    let mut invocation = invocation_with_plan(
+        AiRouteStrategy::StatelessFailover,
+        vec![candidate("primary", 3001), candidate("fallback", 3002)],
+    );
+    invocation.request = InvocationRequest::new(Method::POST, "/v1/chat/completions")
+        .with_request_id("req-post-429-failover")
+        .with_body(InvocationBody::json(json!({"model": "gpt-4o-mini", "messages": []})));
+
+    DispatchExecutor::new(Arc::new(dispatcher.clone()))
+        .before(&mut invocation)
+        .await
+        .expect("dispatch");
+
+    assert_eq!(vec!["primary", "fallback"], dispatcher.providers());
+    assert_eq!(2, invocation.routing.attempted_routes.len());
+}
+
+#[tokio::test]
+async fn non_idempotent_chat_post_does_not_replay_after_server_error() {
+    // A 5xx may have been produced after the provider already executed the
+    // request. Replaying it on another account could double the upstream
+    // charge, so the replay-unsafe contract keeps the single attempt.
+    let dispatcher = FakeDispatcher::new(vec![
+        ok(503, json!({"error": "retry later"})),
+        ok(200, json!({"id": "fallback-must-not-run"})),
+    ]);
+    let mut invocation = invocation_with_plan(
+        AiRouteStrategy::StatelessFailover,
+        vec![candidate("primary", 3001), candidate("fallback", 3002)],
+    );
+    invocation.request = InvocationRequest::new(Method::POST, "/v1/chat/completions")
+        .with_request_id("req-post-503-no-replay")
+        .with_body(InvocationBody::json(json!({"model": "gpt-4o-mini", "messages": []})));
+
+    DispatchExecutor::new(Arc::new(dispatcher.clone()))
+        .before(&mut invocation)
+        .await
+        .expect("provider status remains the final response");
+
+    assert_eq!(vec!["primary"], dispatcher.providers());
+    assert_eq!(1, invocation.routing.attempted_routes.len());
+    assert_eq!(
+        Some(503),
+        invocation
+            .dispatch
+            .response
+            .as_ref()
+            .map(|response| response.status_code)
     );
 }
 
@@ -981,7 +1077,10 @@ async fn retries_same_candidate_before_failover_when_policy_allows() {
 }
 
 #[tokio::test]
-async fn retries_rebuild_provider_request_and_secret_for_each_attempt() {
+async fn retries_reuse_the_same_credential_for_the_same_account() {
+    // A same-account retry must present the credential already resolved for this
+    // invocation: re-resolving per attempt would advance a remote resolver and
+    // could present a different key to the same upstream request id.
     let dispatcher = FakeDispatcher::new(vec![
         ok(503, json!({"error": "retry later"})),
         ok(200, json!({"id": "same-candidate-ok"})),
@@ -1012,15 +1111,66 @@ async fn retries_rebuild_provider_request_and_secret_for_each_attempt() {
 
     let provider_requests = dispatcher.provider_requests();
     assert_eq!(2, provider_requests.len());
+    for request in &provider_requests {
+        assert_eq!(
+            Some("Bearer sk-primary-attempt-1"),
+            request
+                .as_ref()
+                .and_then(|request| request.headers.get("authorization"))
+                .and_then(|value| value.to_str().ok())
+        );
+    }
+}
+
+#[tokio::test]
+async fn retries_keep_the_same_credential_until_the_provider_rejects_it() {
+    // Authentication statuses cannot be declared retryable on an account
+    // policy (`with_retry_attempts` rejects them), so rotation is exercised at
+    // the cross-candidate level instead: the retry after a 401 resolves the
+    // sibling candidate's own credential rather than resending the refused key.
+    let dispatcher = FakeDispatcher::new(vec![
+        ok(401, json!({"error": "invalid api key"})),
+        ok(200, json!({"id": "rotated-ok"})),
+    ]);
+    let secret_resolver = Arc::new(MapSecretResolver {
+        secrets: HashMap::from([
+            (
+                "vault://provider/primary".to_owned(),
+                "sk-primary-dead".to_owned(),
+            ),
+            (
+                "vault://provider/fallback".to_owned(),
+                "sk-fallback-live".to_owned(),
+            ),
+        ]),
+    });
+    let mut invocation = invocation_with_plan(
+        AiRouteStrategy::StatelessFailover,
+        vec![
+            with_secret_ref(candidate("primary", 3001)),
+            with_secret_ref(candidate("fallback", 3002)),
+        ],
+    );
+    invocation.request = InvocationRequest::new(Method::POST, "/v1/chat/completions")
+        .with_request_id("req-post-401-credential-rotation")
+        .with_body(InvocationBody::json(json!({"model": "gpt-4o-mini", "messages": []})));
+
+    DispatchExecutor::with_secret_resolver(Arc::new(dispatcher.clone()), secret_resolver)
+        .before(&mut invocation)
+        .await
+        .expect("dispatch");
+
+    let provider_requests = dispatcher.provider_requests();
+    assert_eq!(2, provider_requests.len());
     assert_eq!(
-        Some("Bearer sk-primary-attempt-1"),
+        Some("Bearer sk-primary-dead"),
         provider_requests[0]
             .as_ref()
             .and_then(|request| request.headers.get("authorization"))
             .and_then(|value| value.to_str().ok())
     );
     assert_eq!(
-        Some("Bearer sk-primary-attempt-2"),
+        Some("Bearer sk-fallback-live"),
         provider_requests[1]
             .as_ref()
             .and_then(|request| request.headers.get("authorization"))

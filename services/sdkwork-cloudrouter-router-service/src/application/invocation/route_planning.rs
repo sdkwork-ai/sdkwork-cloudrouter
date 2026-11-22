@@ -285,6 +285,7 @@ where
     let group = sticky_route
         .account_group_id
         .and_then(|group_id| catalog.find_upstream_account_group(group_id));
+    let supplier_type = catalog.supplier_type(&sticky_route.supplier_code);
     InvocationRouteCandidate {
         kind: InvocationRouteCandidateKind::Sticky,
         supplier_code: sticky_route.supplier_code.clone(),
@@ -344,6 +345,7 @@ where
             .as_ref()
             .and_then(|route| route.retry_policy.clone()),
         billing_mode: billing_mode_for(catalog, sticky_route.account_id),
+        supplier_type,
     }
 }
 
@@ -390,6 +392,20 @@ where
     let account_config = catalog.account_base_url_config(route.account_id);
     // 克隆 api_code：其借用指向 selection.route，须在移动 selection 前解耦
     let api_code = route.api_code.clone();
+    // Resolve the supplier business type before `selection` is moved: the route
+    // borrows the selection, and the model addressing below depends on the type.
+    let supplier_type = catalog.supplier_type(&route.supplier_code);
+    let resolved_provider_model = account_mapping
+        .as_ref()
+        .and_then(|rule| rule.effective_provider_model().map(str::to_owned))
+        .unwrap_or_else(|| {
+            default_provider_model(
+                supplier_type.as_deref(),
+                &catalog_key,
+                &model,
+                &provider_model,
+            )
+        });
     let mut candidate = model_candidate(
         selection,
         capability,
@@ -397,16 +413,41 @@ where
         api_code.as_deref(),
         account_config.as_ref(),
     );
-    candidate.provider_model = Some(
-        account_mapping
-            .as_ref()
-            .and_then(|rule| rule.effective_provider_model().map(str::to_owned))
-            .unwrap_or_else(|| {
-                normalized_resolved_provider_model(&catalog_key, &model, &provider_model)
-            }),
-    );
+    candidate.provider_model = Some(resolved_provider_model);
+    candidate.supplier_type = supplier_type;
     candidate.billing_mode = billing_mode_for(catalog, candidate.account_id);
     candidate
+}
+
+/// Default provider-facing model id for a route, by supplier business type.
+///
+/// An **official** vendor addresses its models by the vendor-native id
+/// (`deepseek/deepseek-flash` → `deepseek-flash`). A **relay** is a different
+/// vendor reselling the same catalog: OpenRouter-style relays address models by
+/// the fully-qualified catalog key, so stripping the vendor head would ask the
+/// relay for a model it does not know. An explicit model-alias mapping always
+/// wins over both defaults.
+fn default_provider_model(
+    supplier_type: Option<&str>,
+    catalog_key: &str,
+    model: &str,
+    provider_model: &str,
+) -> String {
+    let catalog_key = catalog_key.trim();
+    let provider_model = provider_model.trim();
+    let model = model.trim();
+    let explicit_mapping = !provider_model.is_empty()
+        && provider_model != catalog_key
+        && crate::domain::provider_native_model_id(provider_model) != model;
+    if explicit_mapping {
+        return provider_model.to_owned();
+    }
+    if supplier_type.is_some_and(|kind| kind.trim().eq_ignore_ascii_case("relay"))
+        && !catalog_key.is_empty()
+    {
+        return catalog_key.to_owned();
+    }
+    normalized_resolved_provider_model(catalog_key, model, provider_model)
 }
 
 fn find_upstream_account_route_metadata(
@@ -499,6 +540,7 @@ fn model_candidate(
         timeout_ms: route.timeout_ms,
         retry_policy: route.retry_policy.clone(),
         billing_mode: AccountBillingMode::default(),
+        supplier_type: None,
     }
 }
 
@@ -511,6 +553,7 @@ where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let route = selection.route;
+    let supplier_type = catalog.supplier_type(&route.supplier_code);
     InvocationRouteCandidate {
         kind: InvocationRouteCandidateKind::UpstreamAccount,
         supplier_code: route.supplier_code.clone(),
@@ -537,6 +580,7 @@ where
         timeout_ms: route.timeout_ms,
         retry_policy: route.retry_policy.clone(),
         billing_mode: billing_mode_for(catalog, route.account_id),
+        supplier_type,
     }
 }
 
@@ -550,6 +594,7 @@ fn account_route_candidate<C>(
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
+    let supplier_type = catalog.supplier_type(&route.supplier_code);
     InvocationRouteCandidate {
         kind: InvocationRouteCandidateKind::UpstreamAccount,
         supplier_code: route.supplier_code.clone(),
@@ -576,6 +621,7 @@ where
         timeout_ms: route.timeout_ms,
         retry_policy: route.retry_policy.clone(),
         billing_mode: billing_mode_for(catalog, route.account_id),
+        supplier_type,
     }
 }
 

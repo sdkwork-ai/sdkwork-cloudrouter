@@ -118,6 +118,7 @@ impl InvocationInterceptor for DispatchExecutor {
                     if let Err(error) = refresh_provider_request(
                         invocation,
                         &account,
+                        candidate.supplier_type.as_deref(),
                         self.secret_resolver.as_deref(),
                     ) {
                         last_response = None;
@@ -255,10 +256,26 @@ impl InvocationInterceptor for DispatchExecutor {
                     sleep_before_retry(candidate, request_deadline, &cancellation_signal).await?;
                 }
                 ensure_dispatch_active(&cancellation_signal)?;
+                // Replay-unsafe requests (POST/PATCH/DELETE) must not be
+                // re-dispatched after an upstream may have executed them: that
+                // is what keeps a timeout or a 5xx from creating a second
+                // billable upstream call. A rejection that happens *before*
+                // execution is different — a dead credential (401/403), a
+                // model the account cannot serve (404), an exhausted quota or
+                // rate limit (402/429) proves the upstream did no work, so a
+                // healthy sibling candidate must serve the request instead of
+                // failing a ticket that one account alone broke.
+                let rejected_before_execution = last_response
+                    .as_ref()
+                    .map(|response| effective_response_status_code(invocation, response))
+                    .is_some_and(status_rejected_before_execution);
                 if !should_try_next(
                     invocation.routing.failure_strategy,
                     exhausted_retryable,
                     replay_is_safe || !dispatch_started,
+                ) && !should_fail_over_after_pre_execution_rejection(
+                    invocation.routing.failure_strategy,
+                    rejected_before_execution,
                 ) {
                     break;
                 }
@@ -326,6 +343,7 @@ fn refresh_adapter_target(
 fn refresh_provider_request(
     invocation: &mut Invocation,
     account: &InvocationAccount,
+    supplier_type: Option<&str>,
     secret_resolver: Option<&(dyn ProviderSecretResolver + Send + Sync)>,
 ) -> Result<(), InvocationError> {
     if matches!(
@@ -340,8 +358,12 @@ fn refresh_provider_request(
         secret_resolver,
         invocation.dispatch.resolved_secret.as_ref(),
     )?;
-    let provider_request =
-        ProviderRequestBuilder.build(invocation, account, resolved_secret.as_ref())?;
+    let provider_request = ProviderRequestBuilder.build(
+        invocation,
+        account,
+        supplier_type,
+        resolved_secret.as_ref(),
+    )?;
     invocation.dispatch.resolved_secret = resolved_secret;
     invocation.dispatch.provider_request = Some(provider_request);
     Ok(())
@@ -532,6 +554,26 @@ fn should_try_next(
     replay_is_safe: bool,
 ) -> bool {
     replay_is_safe && retryable && matches!(strategy, AiRouteFailureStrategy::Failover)
+}
+
+/// Provider statuses that reject a request before the model is executed.
+///
+/// These cannot have produced upstream output, so failing over to another
+/// candidate cannot double-bill or duplicate a side effect. They are the
+/// everyday multi-account failures: a rotated/revoked key (401/403), an account
+/// without access to the requested model (404), and an exhausted balance or
+/// rate limit (402/429).
+fn status_rejected_before_execution(status_code: u16) -> bool {
+    matches!(status_code, 401 | 402 | 403 | 404 | 429)
+}
+
+/// Cross-candidate failover for replay-unsafe requests whose upstream rejected
+/// them before execution.
+fn should_fail_over_after_pre_execution_rejection(
+    strategy: AiRouteFailureStrategy,
+    rejected_before_execution: bool,
+) -> bool {
+    rejected_before_execution && matches!(strategy, AiRouteFailureStrategy::Failover)
 }
 
 fn success_attempt(

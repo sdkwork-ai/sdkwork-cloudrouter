@@ -165,20 +165,11 @@ impl InvocationPipeline {
                 }
             }
 
-            for index in started.iter().rev() {
-                if let Err(error) = ensure_invocation_active(invocation) {
-                    self.notify_error(invocation, &started, &error).await;
-                    return Err(error);
-                }
-                if let Err(error) = self.interceptors[*index].after(invocation).await {
-                    self.notify_error(invocation, &started, &error).await;
-                    return Err(error);
-                }
-                if let Err(error) = ensure_invocation_active(invocation) {
-                    self.notify_error(invocation, &started, &error).await;
-                    return Err(error);
-                }
-            }
+            // Delegate to the shared `after` chain so both execution entry
+            // points keep the same response-preservation guarantee: a failing
+            // accounting hook must not discard a provider response that already
+            // succeeded.
+            self.finish_after(invocation, &started, &[]).await?;
 
             Ok(())
         }
@@ -265,15 +256,23 @@ impl InvocationPipeline {
         started: &[usize],
         completed_before_stream: &[usize],
     ) -> Result<(), InvocationError> {
-        for index in started.iter().rev() {
-            if completed_before_stream.contains(index) {
-                continue;
-            }
+        // `started` is ascending, so popping from the end walks it in reverse
+        // registration order (the `after` contract). `pending` always holds the
+        // hooks that have not run yet, which lets a failure force response
+        // finalization before those remaining hooks are skipped.
+        let mut pending: Vec<usize> = started
+            .iter()
+            .copied()
+            .filter(|index| !completed_before_stream.contains(index))
+            .collect();
+        while let Some(index) = pending.pop() {
             if let Err(error) = ensure_invocation_active(invocation) {
                 self.notify_error(invocation, started, &error).await;
                 return Err(error);
             }
-            if let Err(error) = self.interceptors[*index].after(invocation).await {
+            if let Err(error) = self.interceptors[index].after(invocation).await {
+                self.finalize_response_before_failure(invocation, &pending)
+                    .await;
                 self.notify_error(invocation, started, &error).await;
                 return Err(error);
             }
@@ -283,6 +282,39 @@ impl InvocationPipeline {
             }
         }
         Ok(())
+    }
+
+    /// Materializes the dispatched provider response when a later `after` hook
+    /// fails.
+    ///
+    /// Accounting, telemetry, and sticky hooks are registered after the response
+    /// normalizer, so their failures abort the reverse `after` chain before the
+    /// normalizer runs. The HTTP layer then sees no normalized response and
+    /// synthesizes a gateway problem, discarding a provider response that
+    /// already succeeded — and that the platform already paid for.
+    async fn finalize_response_before_failure(
+        &self,
+        invocation: &mut Invocation,
+        pending: &[usize],
+    ) {
+        if invocation.telemetry.normalized_response.is_some()
+            || invocation.dispatch.response.is_none()
+        {
+            return;
+        }
+        for index in pending.iter().rev() {
+            if !self.interceptors[*index].finalizes_response() {
+                continue;
+            }
+            if let Err(error) = self.interceptors[*index].after(invocation).await {
+                tracing::warn!(
+                    %error,
+                    request_id = %invocation.request.request_id,
+                    "response normalization failed while preserving a successful provider response"
+                );
+            }
+            return;
+        }
     }
 
     async fn notify_error(

@@ -100,7 +100,7 @@ impl AsyncUsagePollTransport for PipelineAsyncPollTransport {
                 value: value.clone(),
             });
             let provider_request = ProviderRequestBuilder
-                .build(&invocation, &account, resolved_secret.as_ref())
+                .build(&invocation, &account, None, resolved_secret.as_ref())
                 .map_err(|error| DomainError::new(error.message))?;
             invocation.dispatch.provider_request = Some(provider_request);
             invocation.dispatch.resolved_secret = resolved_secret;

@@ -146,6 +146,8 @@ pub struct SqlPricingCatalogSnapshot {
     supplier_model_access_by_code: HashMap<String, SupplierModelAccess>,
     account_model_access_by_id: HashMap<i64, AccountModelAccess>,
     supplier_default_base_url_by_code: HashMap<String, String>,
+    /// 供应商类型（`official` / `relay`），键为小写 `supplier_code`。
+    supplier_type_by_code: HashMap<String, String>,
     account_base_url_config_by_id: HashMap<i64, AccountBaseUrlConfig>,
     account_billing_modes: HashMap<i64, String>,
     // --- Indexes for O(1) hot-path lookups ---
@@ -626,6 +628,23 @@ impl SqlPricingCatalogSnapshot {
                     .map(|value| (row.supplier_code.clone(), value.to_owned()))
             })
             .collect::<HashMap<_, _>>();
+        // 供应商类型映射（official / relay）。路由决策据此选择模型寻址方式：
+        // 官方直连用 vendor-native id，中转站用全限定 vendor/model。
+        let supplier_type_by_code = rows
+            .upstream_supplier_model_access
+            .iter()
+            .filter_map(|row| {
+                let supplier_code = row.supplier_code.trim();
+                let supplier_type = row.supplier_type.trim();
+                if supplier_code.is_empty() || supplier_type.is_empty() {
+                    return None;
+                }
+                Some((
+                    supplier_code.to_ascii_lowercase(),
+                    supplier_type.to_ascii_lowercase(),
+                ))
+            })
+            .collect::<HashMap<_, _>>();
         // 账号 Base URL 配置映射（账号覆盖 + 供应商协议 URL；账号优先于供应商的解析数据源）
         let account_base_url_config_by_id = rows
             .upstream_account_routes
@@ -713,6 +732,7 @@ impl SqlPricingCatalogSnapshot {
             supplier_model_access_by_code,
             account_model_access_by_id,
             supplier_default_base_url_by_code,
+            supplier_type_by_code,
             account_base_url_config_by_id,
             account_billing_modes,
             models_by_key: HashMap::new(),
@@ -1011,6 +1031,13 @@ impl UpstreamAccountRouteCatalog for RefreshableSqlPricingCatalog {
         self.current_snapshot()
             .supplier_default_base_url_by_code
             .get(supplier_code)
+            .cloned()
+    }
+
+    fn supplier_type(&self, supplier_code: &str) -> Option<String> {
+        self.current_snapshot()
+            .supplier_type_by_code
+            .get(&supplier_code.trim().to_ascii_lowercase())
             .cloned()
     }
 
@@ -1583,6 +1610,12 @@ impl UpstreamAccountRouteCatalog for SqlPricingCatalogSnapshot {
     fn supplier_default_base_url(&self, supplier_code: &str) -> Option<String> {
         self.supplier_default_base_url_by_code
             .get(supplier_code)
+            .cloned()
+    }
+
+    fn supplier_type(&self, supplier_code: &str) -> Option<String> {
+        self.supplier_type_by_code
+            .get(&supplier_code.trim().to_ascii_lowercase())
             .cloned()
     }
 

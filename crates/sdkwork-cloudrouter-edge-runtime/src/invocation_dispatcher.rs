@@ -298,7 +298,10 @@ impl InvocationDispatcher for InvocationHttpDispatcher {
 
             let memory_guard = self
                 .response_memory_budget
-                .try_reserve(self.response_max_bytes.get() as u64)
+                .try_reserve_for_declared(
+                    self.response_max_bytes.get() as u64,
+                    declared_content_length_bytes(response.headers().get(header::CONTENT_LENGTH)),
+                )
                 .map_err(provider_response_memory_error)?;
 
             let body = collect_bounded_provider_response_body(
@@ -429,6 +432,14 @@ where
 /// Single-sourced from the outbound HTTP transport that owns body limits; this
 /// re-export keeps the existing call sites (and tests) reading the same name.
 use sdkwork_cloudrouter_provider_adapter_http::declared_content_length_exceeds_limit;
+
+/// Parses a valid upstream `content-length` into bytes.
+///
+/// Used to size the response memory reservation proportionally to the payload;
+/// a missing or malformed header falls back to the configured response limit.
+fn declared_content_length_bytes(value: Option<&HeaderValue>) -> Option<u64> {
+    value?.to_str().ok()?.trim().parse::<u64>().ok()
+}
 
 fn provider_response_too_large_error(status_code: u16, limit: usize) -> InvocationDispatchError {
     dispatch_error(

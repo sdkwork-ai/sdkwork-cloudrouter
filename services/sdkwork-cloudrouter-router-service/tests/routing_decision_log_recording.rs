@@ -99,6 +99,7 @@ fn candidate(supplier_code: &str, account_id: i64) -> InvocationRouteCandidate {
         catalog_key: Some("openai/gpt-4o-mini".to_owned()),
         requested_model: Some("gpt-4o-mini".to_owned()),
         provider_model: Some("openrouter-gpt-4o-mini".to_owned()),
+        supplier_type: None,
         region_code: "global".to_owned(),
         credential_id: None,
         credential_rotation: None,

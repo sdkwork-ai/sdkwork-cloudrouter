@@ -18,6 +18,7 @@ impl ProviderRequestBuilder {
         &self,
         invocation: &Invocation,
         account: &InvocationAccount,
+        supplier_type: Option<&str>,
         resolved_secret: Option<&ResolvedProviderSecret>,
     ) -> Result<InvocationProviderRequest, InvocationError> {
         // Reject path segments that could traverse the upstream base URL
@@ -41,8 +42,9 @@ impl ProviderRequestBuilder {
         // passthrough routes): the model written into the query, body, and path
         // is the catalog-native id, never a request dialect spelling
         // (`vendor:model`, `vendor|model`, full width, or `vendor/region/model`).
-        // A native id passes through unchanged, so this is idempotent.
-        let provider_model = normalized_provider_model(account.provider_model.as_deref());
+        // A relay supplier is the exception: it addresses models by the
+        // fully-qualified catalog key, so its route keeps the vendor head.
+        let provider_model = normalized_provider_model(account.provider_model.as_deref(), supplier_type);
         let provider_model = provider_model.as_deref();
         let mut query = rewrite_query_model(
             sanitize_sensitive_query(invocation.request.query.as_deref()),
@@ -141,14 +143,33 @@ fn normalize_host(value: &str) -> String {
         .to_ascii_lowercase()
 }
 
-/// The provider-facing model id: the route's provider model normalized to the
-/// catalog-native spelling (`provider_native_model_id`). Every outbound
-/// surface's model passes through this one helper — the JSON/multipart body, the
-/// query, and the `models/{model}:action` path — so a request dialect
-/// (`vendor:model`, `vendor|model`, full width, `vendor/region/model`) can never
-/// reach a vendor. A native id is returned unchanged, so it is idempotent.
-fn normalized_provider_model(provider_model: Option<&str>) -> Option<String> {
-    provider_model.map(crate::domain::provider_native_model_id)
+/// The provider-facing model id for a route.
+///
+/// Official vendors receive the catalog-native spelling
+/// (`provider_native_model_id`), so a request dialect (`vendor:model`,
+/// `vendor|model`, full width, `vendor/region/model`) can never reach a vendor.
+/// Relay suppliers keep the fully-qualified `vendor/model` head: they are a
+/// different vendor reselling the catalog and address models by that key, so
+/// stripping it would request a model the relay does not serve.
+fn normalized_provider_model(
+    provider_model: Option<&str>,
+    supplier_type: Option<&str>,
+) -> Option<String> {
+    let value = provider_model
+        .map(str::trim)
+        .filter(|value| !value.is_empty())?;
+    if supplier_type.is_some_and(|kind| kind.trim().eq_ignore_ascii_case("relay")) {
+        return Some(canonical_qualified_model_id(value));
+    }
+    Some(crate::domain::provider_native_model_id(value))
+}
+
+/// Canonicalizes a `vendor/model` id without dropping the vendor head.
+fn canonical_qualified_model_id(value: &str) -> String {
+    match crate::domain::parse_request_model_identity(value) {
+        Some(identity) => format!("{}/{}", identity.vendor_code, identity.model_id()),
+        None => value.to_owned(),
+    }
 }
 
 fn build_adapter_provider_request(
@@ -761,11 +782,39 @@ mod tests {
         ] {
             assert_eq!(
                 Some("deepseek-flash".to_owned()),
-                super::normalized_provider_model(Some(dialect)),
+                super::normalized_provider_model(Some(dialect), None),
                 "provider model: {dialect}"
             );
         }
-        assert_eq!(None, super::normalized_provider_model(None));
+        assert_eq!(None, super::normalized_provider_model(None, None));
+    }
+
+    /// A relay is a different vendor reselling the catalog: it addresses models
+    /// by the fully-qualified `vendor/model` key, so the vendor head must
+    /// survive while dialect separators are canonicalized.
+    #[test]
+    fn relay_suppliers_keep_the_qualified_catalog_key() {
+        for dialect in [
+            "deepseek/deepseek-flash",
+            "deepseek:deepseek-flash",
+            "deepseek|deepseek-flash",
+        ] {
+            assert_eq!(
+                Some("deepseek/deepseek-flash".to_owned()),
+                super::normalized_provider_model(Some(dialect), Some("relay")),
+                "relay provider model: {dialect}"
+            );
+        }
+        // A vendor-native id has no head to preserve.
+        assert_eq!(
+            Some("deepseek-flash".to_owned()),
+            super::normalized_provider_model(Some("deepseek-flash"), Some("relay"))
+        );
+        // Case-insensitive supplier type from the snapshot.
+        assert_eq!(
+            Some("deepseek/deepseek-flash".to_owned()),
+            super::normalized_provider_model(Some("deepseek/deepseek-flash"), Some("RELAY"))
+        );
     }
 
     #[test]

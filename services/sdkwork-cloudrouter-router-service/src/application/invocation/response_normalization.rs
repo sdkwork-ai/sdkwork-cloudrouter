@@ -19,6 +19,10 @@ impl InvocationInterceptor for ResponseNormalizationInterceptor {
         "response_normalization"
     }
 
+    fn finalizes_response(&self) -> bool {
+        true
+    }
+
     fn completes_before_stream(&self) -> bool {
         true
     }
