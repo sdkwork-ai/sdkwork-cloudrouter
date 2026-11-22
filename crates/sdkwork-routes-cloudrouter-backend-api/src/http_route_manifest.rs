@@ -6,18 +6,6 @@ use sdkwork_web_core::HttpRouteManifest;
 const HTTP_ROUTES: &[HttpRoute] = &[
     HttpRoute::dual_token(
         HttpMethod::Get,
-        "/backend/v3/api/ai/agent_categories",
-        "ai",
-        "agentCategories.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Put,
-        "/backend/v3/api/ai/agent_categories/{categoryCode}",
-        "ai",
-        "agentCategories.update",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
         "/backend/v3/api/ai/agents",
         "ai",
         "agents.list",
