@@ -180,7 +180,10 @@ async fn normalizes_invocation_error_response() {
         .expect("normalize");
 
     let response = invocation.telemetry.normalized_response.unwrap();
-    assert_eq!(502, response.status_code);
+    // A routing failure means no usable route was selected — retryable service
+    // unavailability (503), not a bad gateway response (502). Both the response
+    // normalizer and the usage recorder map it that way.
+    assert_eq!(503, response.status_code);
     assert_eq!(
         Some("routing_failed"),
         response
