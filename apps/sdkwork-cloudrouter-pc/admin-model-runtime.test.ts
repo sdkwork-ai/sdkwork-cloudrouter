@@ -21,6 +21,27 @@ import {
   createVendorInputFromForm,
   updateModelInputFromForm,
 } from "./../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelForm.ts";
+import {
+  alignFrontendDocumentWithCatalog,
+  capabilityModelTypes,
+  catalogKeyOf,
+  mergeAvailableFrontendModels,
+  mergeCatalogModels,
+  modelIdsByKey,
+  normalizeFrontendDocumentDefaults,
+  setChannelModelsVisibility,
+} from "./../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/frontendCatalogAlignment.ts";
+import type {
+  FrontendChannelConfig,
+  FrontendChannelModelConfig,
+  FrontendConfigDocument,
+} from "./../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/frontendConfigService.ts";
+import {
+  FrontendConfigRevisionConflictError,
+  isFrontendConfigRevisionConflict,
+  saveFrontendConfigDocument,
+} from "./../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/frontendConfigService.ts";
+import type { Model } from "./../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts";
 
 const KNOWN_VENDORS = [
   { id: "v_openai", name: "OpenAI", desc: "Industry leading LLMs inclusive of GPT-4 and DALL-E." },
@@ -3244,4 +3265,283 @@ test("admin API resource group seed defines supported API groups with static all
   assert.ok(!groupItems.get("api.volcengine.video")?.has("api.jimeng.video_generation"));
   assert.ok(groupItems.get("api.vidu.image")?.has("api.vidu.reference_to_image"));
   assert.ok(groupItems.get("api.vidu.video")?.has("api.vidu.start_end_to_video"));
+});
+
+// --- front-end catalog alignment -------------------------------------------------
+
+function alignmentModel(
+  id: string,
+  vendorCode: string,
+  model: string,
+  type: Model["type"],
+  overrides: Partial<Model> = {},
+): Model {
+  const base: Model = {
+    id,
+    vendorId: `v_${vendorCode}`,
+    vendorCode,
+    model,
+    displayName: model,
+    name: model,
+    type,
+    regionPrices: [],
+    status: "active",
+    calls: "0",
+    description: null,
+    modalities: [],
+    inputModalities: [],
+    outputModalities: [],
+    apiFormat: null,
+    capabilityIntro: null,
+    limitations: [],
+    supportedLanguages: [],
+    useCases: [],
+    trainingDataCutoff: null,
+    contextTokens: null,
+    maxOutputTokens: null,
+    supportsStreaming: false,
+    supportsTools: false,
+    supportsJsonSchema: false,
+    releaseStage: null,
+    shelfState: null,
+    routingState: null,
+    replacementModel: null,
+  };
+  return Object.assign(base, overrides);
+}
+
+function frontendModel(
+  catalogKey: string,
+  modelId: string | null,
+  visible = true,
+  sortOrder = 10,
+): FrontendChannelModelConfig {
+  return { catalogKey, modelId, visible, featured: false, sortOrder, badge: null, config: {} };
+}
+
+function frontendChannel(
+  channelCode: string,
+  models: FrontendChannelModelConfig[],
+  overrides: Partial<FrontendChannelConfig> = {},
+): FrontendChannelConfig {
+  const base: FrontendChannelConfig = {
+    channelCode,
+    displayName: channelCode,
+    displayNameI18n: {},
+    description: null,
+    enabled: true,
+    sortOrder: 10,
+    defaultCatalogKey: null,
+    capabilityCodes: ["chat"],
+    config: {},
+    schemaVersion: "1.0.0",
+    revision: 3,
+    models,
+    fields: [],
+  };
+  return Object.assign(base, overrides);
+}
+
+function frontendDocument(channels: FrontendChannelConfig[]): FrontendConfigDocument {
+  return { revision: 3, channels };
+}
+
+test("front-end catalog alignment disables retired rows, rebinds ids and reports new models", () => {
+  const catalog = [
+    alignmentModel("10", "deepseek", "deepseek-flash", "Chat", { displayName: "DeepSeek Flash" }),
+    alignmentModel("11", "deepseek", "deepseek-next", "Chat"),
+    alignmentModel("12", "deepseek", "deepseek-retired", "Chat", { status: "inactive" }),
+    alignmentModel("13", "openai", "gpt-image-2", "Image"),
+  ];
+  const document = frontendDocument([
+    frontendChannel("llm", [
+      frontendModel("deepseek/deepseek-flash", "1", true, 10),
+      frontendModel("deepseek/deepseek-gone", "2", true, 20),
+      frontendModel("deepseek/deepseek-flash", "1", true, 30),
+    ], { defaultCatalogKey: "deepseek/deepseek-gone" }),
+  ]);
+
+  const { document: aligned, report } = alignFrontendDocumentWithCatalog(document, catalog);
+  assert.equal(report.changed, true);
+  assert.equal(report.staleModelCount, 1);
+  assert.equal(report.reboundModelIdCount, 1);
+  assert.equal(report.availableModelCount, 1, "inactive and other-modality models are not offered");
+  assert.equal(report.duplicateModelCount, 1);
+  const channel = aligned.channels[0];
+  assert.ok(channel);
+  assert.deepEqual(
+    channel.models.map((model) => model.catalogKey),
+    ["deepseek/deepseek-flash", "deepseek/deepseek-gone"],
+  );
+  assert.equal(channel.models[0]?.modelId, "10");
+  assert.equal(channel.models[1]?.modelId, null, "a retired model loses its stale id");
+  assert.equal(channel.models[1]?.visible, false, "a retired visible model is disabled");
+  assert.equal(channel.defaultCatalogKey, "deepseek/deepseek-flash", "the default follows visibility");
+  const channelReport = report.channels[0];
+  assert.ok(channelReport);
+  assert.deepEqual(channelReport.staleModels.map((model) => model.catalogKey), ["deepseek/deepseek-gone"]);
+  assert.deepEqual(channelReport.reboundModelKeys, ["deepseek/deepseek-flash"]);
+  assert.deepEqual(
+    channelReport.availableModels.map((model) => model.catalogKey),
+    ["deepseek/deepseek-next"],
+  );
+});
+
+test("front-end catalog alignment is idempotent and never exposes a model automatically", () => {
+  const catalog = [
+    alignmentModel("10", "deepseek", "deepseek-flash", "Chat"),
+    alignmentModel("11", "deepseek", "deepseek-next", "Chat"),
+  ];
+  const document = frontendDocument([
+    frontendChannel("llm", [frontendModel("deepseek/deepseek-flash", "10")], {
+      defaultCatalogKey: "deepseek/deepseek-flash",
+    }),
+  ]);
+  const first = alignFrontendDocumentWithCatalog(document, catalog);
+  assert.equal(first.report.changed, false);
+  assert.equal(first.report.availableModelCount, 1);
+  assert.equal(first.document.channels[0]?.models.length, 1, "available models are reported, not added");
+
+  const staleDocument = frontendDocument([frontendChannel("llm", [frontendModel("deepseek/gone", "9", true)])]);
+  const alignedOnce = alignFrontendDocumentWithCatalog(staleDocument, catalog);
+  assert.equal(alignedOnce.report.staleModelCount, 1);
+  const alignedTwice = alignFrontendDocumentWithCatalog(alignedOnce.document, catalog);
+  assert.equal(alignedTwice.report.changed, false);
+  assert.equal(alignedTwice.report.staleModelCount, 0, "an already disabled retired row is not reported again");
+});
+
+test("front-end catalog alignment merges available models as disabled rows", () => {
+  const catalog = [
+    alignmentModel("10", "deepseek", "deepseek-flash", "Chat"),
+    alignmentModel("11", "deepseek", "deepseek-next", "Chat"),
+  ];
+  const document = frontendDocument([frontendChannel("llm", [frontendModel("deepseek/deepseek-flash", "10", true, 10)], {
+    defaultCatalogKey: "deepseek/deepseek-flash",
+  })]);
+  const merged = mergeAvailableFrontendModels(document, catalog);
+  assert.equal(merged.addedCount, 1);
+  const added = merged.document.channels[0]?.models.at(-1);
+  assert.ok(added);
+  assert.equal(added.catalogKey, "deepseek/deepseek-next");
+  assert.equal(added.modelId, "11");
+  assert.equal(added.visible, false);
+  assert.equal(added.sortOrder, 20);
+  const again = mergeAvailableFrontendModels(merged.document, catalog);
+  assert.equal(again.addedCount, 0, "a second merge is a no-op");
+});
+
+test("front-end catalog alignment bulk visibility skips retired rows", () => {
+  const channel = frontendChannel("llm", [
+    frontendModel("deepseek/flash", "1", false),
+    frontendModel("deepseek/gone", "2", false),
+    frontendModel("deepseek/pro", "3", false),
+  ]);
+  const catalogKeys = new Set(["deepseek/flash", "deepseek/pro"]);
+  const enabled = setChannelModelsVisibility(channel, true, catalogKeys);
+  assert.equal(enabled.changedCount, 2);
+  assert.deepEqual(
+    enabled.channel.models.map((model) => model.visible),
+    [true, false, true],
+    "a retired row stays disabled even when every catalog model is enabled",
+  );
+  const disabled = setChannelModelsVisibility(enabled.channel, false);
+  assert.equal(disabled.changedCount, 2);
+  assert.deepEqual(disabled.channel.models.map((model) => model.visible), [false, false, false]);
+});
+
+test("front-end catalog alignment normalizes a default that names a hidden model", () => {
+  const document = frontendDocument([
+    frontendChannel("llm", [
+      frontendModel("deepseek/gone", "2", false),
+      frontendModel("deepseek/flash", "1", true),
+    ], { defaultCatalogKey: "deepseek/gone" }),
+  ]);
+  const normalized = normalizeFrontendDocumentDefaults(document);
+  assert.equal(normalized.channels[0]?.defaultCatalogKey, "deepseek/flash");
+  assert.equal(normalized.channels[0]?.models.length, 2);
+});
+
+test("front-end catalog alignment maps capability codes and catalog keys", () => {
+  assert.deepEqual([...capabilityModelTypes(["chat", "responses"])], ["Chat"]);
+  assert.deepEqual([...capabilityModelTypes(["image_generation", "vision"])], ["Image"]);
+  assert.deepEqual([...capabilityModelTypes(["video_generation"])], ["Video"]);
+  assert.deepEqual(
+    [...capabilityModelTypes(["audio_input", "text_to_speech", "music_generation", "sound_effect_generation"])],
+    ["Audio", "Music", "SoundEffect"],
+  );
+  assert.equal(capabilityModelTypes([]).size, 0, "an unbound surface accepts every type");
+  assert.equal(catalogKeyOf({ vendorCode: "deepseek", model: "deepseek-flash" }), "deepseek/deepseek-flash");
+  const ids = modelIdsByKey([
+    alignmentModel("10", "deepseek", "deepseek-flash", "Chat"),
+    alignmentModel("11", "deepseek", "deepseek-next", "Chat"),
+  ]);
+  assert.equal(ids.get("deepseek/deepseek-next"), "11");
+});
+
+test("front-end catalog alignment never duplicates an exposed key on merge", () => {
+  const channel = frontendChannel("llm", [frontendModel("deepseek/flash", "10")]);
+  const merged = mergeCatalogModels(
+    channel,
+    ["deepseek/flash", "deepseek/next"],
+    new Map([["deepseek/next", "11"]]),
+    { visible: false },
+  );
+  assert.equal(merged.added, 1);
+  assert.deepEqual(
+    merged.channel.models.map((model) => [model.catalogKey, model.visible]),
+    [["deepseek/flash", true], ["deepseek/next", false]],
+  );
+});
+
+test("front-end config save sends the optimistic revision and the alignment source", async () => {
+  const document = frontendDocument([frontendChannel("llm", [])]);
+  await withBackendSdkFetch((url, init) => {
+    assert.equal(url, "/backend/v3/api/ai/frontend_config");
+    assert.equal(init?.method, "PUT");
+    const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+    assert.equal(body.expectedRevision, 3, "the editor base revision guards the write");
+    assert.equal(body.source, "model_sync_alignment");
+    assert.equal((body.channels as unknown[]).length, 1);
+    return { revision: 4, channels: [] };
+  }, async () => {
+    const saved = await saveFrontendConfigDocument(document, {
+      expectedRevision: 3,
+      source: "model_sync_alignment",
+    });
+    assert.equal(saved.revision, 4);
+  });
+});
+
+test("front-end config conflict detection recognizes the platform 409 shapes", () => {
+  assert.equal(isFrontendConfigRevisionConflict(new FrontendConfigRevisionConflictError()), true);
+  assert.equal(isFrontendConfigRevisionConflict({ code: 40901 }), true);
+  assert.equal(isFrontendConfigRevisionConflict({ status: 409 }), true);
+  assert.equal(isFrontendConfigRevisionConflict({ httpStatus: 409 }), true);
+  assert.equal(isFrontendConfigRevisionConflict({ problem: { code: 40901 } }), true);
+  assert.equal(isFrontendConfigRevisionConflict({ code: 500 }), false);
+  assert.equal(isFrontendConfigRevisionConflict(new Error("boom")), false);
+  assert.equal(isFrontendConfigRevisionConflict(null), false);
+  assert.equal(isFrontendConfigRevisionConflict({ code: "conflict" }), true);
+  assert.equal(isFrontendConfigRevisionConflict({ code: "40901" }), true);
+});
+
+test("front-end model configuration header exposes model data sync beside save", () => {
+  const source = readFileSync(
+    resolve(PORTAL_ROOT, "../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/FrontendModelAdmin.tsx"),
+    "utf8",
+  );
+  const syncIndex = source.indexOf("t('admin.model.frontend.syncCatalog')");
+  const saveIndex = source.indexOf("t('admin.model.frontend.save')");
+  const handlerIndex = source.indexOf("onClick={() => void syncModelData()}");
+  assert.notEqual(syncIndex, -1, "the sync action must render");
+  assert.notEqual(handlerIndex, -1, "the sync action must call the sync handler");
+  assert.ok(
+    syncIndex < saveIndex,
+    "the model data sync action sits beside the save action in the header",
+  );
+  assert.ok(handlerIndex > source.indexOf("data-admin-frontend-model-config"));
+  assert.match(source, /alignFrontendDocumentWithCatalog\(document, catalog\)/);
+  assert.match(source, /expectedRevision: document\.revision/);
+  assert.match(source, /source: 'model_sync_alignment'/);
+  assert.match(source, /syncOutcome\.report\.availableModelCount/);
 });

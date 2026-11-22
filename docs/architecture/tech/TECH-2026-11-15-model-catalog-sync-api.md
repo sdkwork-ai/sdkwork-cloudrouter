@@ -218,6 +218,26 @@ Rules:
 - `vendorOrder` affects presentation order only. `catalogKey` identity and
   `revision` semantics are unchanged.
 
+#### Alignment with the catalog
+
+The admin Models page's `模型前端配置` header action `更新模型数据` re-imports the
+`sdkwork-models` catalog through the Rust `models.sync` path, then aligns every
+surface with the refreshed catalog: a catalog key the catalog no longer
+describes is disabled and loses its stale int64 id, a bound id is refreshed,
+duplicate rows collapse, a dangling default moves to the first visible model,
+and newly published models are reported (never auto-exposed). The aligned
+document is published as its own revision with `source: "model_sync_alignment"`.
+The replace carries `expectedRevision`; a stale base revision is refused with
+HTTP 409 instead of overwriting another operator's change.
+
+The app read is catalog-backed: exposed rows whose catalog key is missing,
+deleted, or inactive are dropped even before an operator re-opens the admin
+page. Because that filter can change without a front-end revision bump, both
+reads emit a membership-aware entity tag (`fmc-<revision>-<hash>`), and the
+app projection's cache key includes a catalog freshness stamp. This keeps a
+conditional client from retaining a stale filtered document and keeps a cached
+app projection from outliving the catalog facts it was built from.
+
 ## 6. App API Surface
 
 Mount: `/app/v3/api/ai`. Auth: existing app tokens (`AuthToken` + `AccessToken`)
