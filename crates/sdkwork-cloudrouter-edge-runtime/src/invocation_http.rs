@@ -894,8 +894,6 @@ fn apply_gateway_dispatch_defaults<C>(
             .find(|group| group.id == account_group_id)
             .map(|group| (group.tenant_id, group.organization_id))
             .unwrap_or((0, 0));
-        let routing_index =
-            sdkwork_cloudrouter_router_service::application::ModelGroupRoutingIndex::build(catalog);
         let callable_refs = callable_accounts.iter().collect::<Vec<_>>();
         catalog.visit_models(None, &mut |model| {
             if !sdkwork_cloudrouter_router_service::application::model_reachable_via_routes(
@@ -930,14 +928,15 @@ fn apply_gateway_dispatch_defaults<C>(
             if let Some(vendor) = vendor {
                 entry["vendorDisplayName"] = json!(vendor.display_name);
             }
-            let groups = routing_index.groups_for_model(
-                catalog,
-                model,
-                scope.0,
-                scope.1,
-                None,
-                None,
-            );
+            let groups =
+                sdkwork_cloudrouter_router_service::application::model_group_options_for_context(
+                    catalog,
+                    model,
+                    scope.0,
+                    scope.1,
+                    None,
+                    Some(account_group_id),
+                );
             if !groups.is_empty() {
                 entry["groups"] = json!(groups
                     .into_iter()
@@ -998,8 +997,13 @@ fn apply_gateway_dispatch_defaults<C>(
         let not_found = found.is_none();
         let response = match found {
             Some(found) => {
-                let data = sdkwork_cloudrouter_router_service::application::model_group_options(
-                    catalog, &found, scope.0, scope.1,
+                let data = sdkwork_cloudrouter_router_service::application::model_group_options_for_context(
+                    catalog,
+                    &found,
+                    scope.0,
+                    scope.1,
+                    None,
+                    Some(account_group_id),
                 )
                 .into_iter()
                 .map(|group| {

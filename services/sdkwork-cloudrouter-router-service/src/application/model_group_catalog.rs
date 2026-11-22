@@ -178,7 +178,9 @@ impl ModelGroupRoutingIndex {
         model_reachable_via_routes(catalog, model, &callable)
     }
 
-    /// Effective default group ids for one model, in failover order.
+    /// Effective **explicit** user default group ids for one model, in failover
+    /// order. The account-level default is deliberately not included: the
+    /// console renders it as the inherited fallback, not as a user selection.
     pub fn effective_default_group_ids<C>(
         &self,
         catalog: &C,
@@ -195,13 +197,13 @@ impl ModelGroupRoutingIndex {
             .unwrap_or_default()
     }
 
-    /// Effective default group ids plus the rule that produced them. Only the
-    /// first configured group is used for the source label; the full ordered
-    /// list is returned so the console can render every selected group.
+    /// Explicit user default group ids plus the rule scope that produced them.
     ///
     /// A configured group only counts when it can actually serve the model
     /// (callable account + model access), so the console never shows a
-    /// selection that would fall through at routing time.
+    /// selection that would fall through at routing time. `None` means the
+    /// caller has no explicit rule for this model; the account-level default is
+    /// then reported separately by [`Self::account_default`].
     pub fn effective_default<C>(
         &self,
         catalog: &C,
@@ -244,21 +246,36 @@ impl ModelGroupRoutingIndex {
                 return Some((matching, scope_source(scope).to_owned()));
             }
         }
-        let selection = select_session_account_group_with_user_routing(
+        None
+    }
+
+    /// The account-level default group and reason for one model, used as the
+    /// inherited fallback when the user has no explicit rule.
+    pub fn account_default<C>(
+        &self,
+        _catalog: &C,
+        model: &AiModel,
+        tenant_id: i64,
+        organization_id: i64,
+    ) -> Option<(i64, String)>
+    where
+        C: PricingCatalog + ?Sized,
+    {
+        let modality = model_primary_modality(model);
+        let keys = [model.model.clone(), model.catalog_key.clone()];
+        let vendors = [model.vendor_code.clone()];
+        select_session_account_group_with_user_routing(
             &self.groups,
             &[],
             tenant_id,
             organization_id,
-            user_id,
+            0,
             modality,
             &keys,
             &vendors,
             None,
-        )?;
-        Some((
-            vec![selection.group().id],
-            selection.reason().as_str().to_owned(),
-        ))
+        )
+        .map(|selection| (selection.group().id, selection.reason().as_str().to_owned()))
     }
 }
 
@@ -457,6 +474,17 @@ where
                     .collect::<Vec<_>>()
             })
             .unwrap_or_default();
+        // When no explicit rule exists, surface the inherited account-level
+        // default as the source (the group codes stay empty so the console
+        // renders "use account default" as the active choice).
+        let default_source = effective
+            .as_ref()
+            .map(|(_, source)| source.clone())
+            .or_else(|| {
+                index
+                    .account_default(catalog, model, tenant_id, organization_id)
+                    .map(|(_, source)| source)
+            });
         for model_modality in matching_modalities {
             let vendor_name = catalog
                 .find_vendor(&model.vendor_code)
@@ -477,7 +505,7 @@ where
                         .collect(),
                     groups: groups.clone(),
                     default_group_codes: default_group_codes.clone(),
-                    default_source: effective.as_ref().map(|(_, source)| source.clone()),
+                    default_source: default_source.clone(),
                 },
             ));
         }
@@ -559,8 +587,46 @@ pub fn model_group_options<C>(
 where
     C: UpstreamAccountRouteCatalog + ?Sized,
 {
+    model_group_options_for_context(catalog, model, tenant_id, organization_id, None, None)
+}
+
+/// Open-api projection of the groups that serve `model`, with
+/// `defaultForModel` set for the group a request without an override would use.
+///
+/// * API-key traffic passes `user_id = None` and the key's own `group_id` as
+///   `fallback_group_id`; the bound default group is marked when it serves the
+///   model.
+/// * Auth-token traffic passes `user_id = Some(..)`; explicit user rules mark
+///   their selected groups, and when the user has no rule the account-level
+///   default is marked instead.
+pub fn model_group_options_for_context<C>(
+    catalog: &C,
+    model: &AiModel,
+    tenant_id: i64,
+    organization_id: i64,
+    user_id: Option<i64>,
+    fallback_group_id: Option<i64>,
+) -> Vec<ModelGroupOption>
+where
+    C: UpstreamAccountRouteCatalog + ?Sized,
+{
     let index = ModelGroupRoutingIndex::build(catalog);
-    index.groups_for_model(catalog, model, tenant_id, organization_id, None, None)
+    let mut groups =
+        index.groups_for_model(catalog, model, tenant_id, organization_id, user_id, None);
+    if groups.iter().any(|group| group.selected) {
+        return groups;
+    }
+    let default_group_id = fallback_group_id.or_else(|| {
+        index
+            .account_default(catalog, model, tenant_id, organization_id)
+            .map(|(id, _)| id)
+    });
+    if let Some(default_group_id) = default_group_id {
+        for group in &mut groups {
+            group.selected = group.group_id == default_group_id;
+        }
+    }
+    groups
 }
 
 /// Ids of the groups that can serve `model` inside `(tenant, organization)`.
@@ -635,4 +701,145 @@ pub fn scope_serves_modality(
     modality: SessionAccountGroupModality,
 ) -> bool {
     account_group_can_serve_modality(scope, modality)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::domain::{
+        AccountGroupModalityScope, DecimalValue, ModelVendor, ModelVendorDefinition,
+        UpstreamAccountGroup, UpstreamAccountGroupBinding, UpstreamAccountRoutingStrategy,
+        UpstreamResourceEntitlement,
+    };
+    use crate::infrastructure::InMemoryPricingCatalog;
+
+    const TENANT_ID: i64 = 100_001;
+
+    fn group(id: i64, code: &str, is_default: bool) -> UpstreamAccountGroup {
+        UpstreamAccountGroup {
+            id,
+            tenant_id: TENANT_ID,
+            organization_id: 0,
+            name: code.to_owned(),
+            code: code.to_owned(),
+            is_default,
+            pricing_plan_tenant_id: TENANT_ID,
+            pricing_plan_organization_id: 0,
+            pricing_plan_id: 1,
+            pricing_plan_code: "standard".to_owned(),
+            routing_strategy: UpstreamAccountRoutingStrategy::LeastCost,
+            fallback_mode: crate::domain::UpstreamAccountFallbackMode::Sequential,
+            priority: 100,
+            cost_multiplier: DecimalValue::ONE,
+            sale_multiplier: DecimalValue::ONE,
+        }
+    }
+
+    /// A route that carries only `ai_resource_binding` entitlements (the SQL
+    /// snapshot shape: no explicit model-route projection).
+    fn entitlement_route(account_id: i64, group_id: i64, catalog_key: &str) -> UpstreamAccountRoute {
+        let entitlement =
+            UpstreamResourceEntitlement::new(catalog_key, "model").with_route_kind("model");
+        let mut route = UpstreamAccountRoute::new("openai", account_id)
+            .with_upstream_endpoint(Some("https://api.openai.com"), Some("vault://openai"));
+        route.account_group_bindings = vec![
+            UpstreamAccountGroupBinding::new(group_id, 10, 100)
+                .with_resource_entitlements(vec![entitlement]),
+        ];
+        route
+    }
+
+    fn catalog() -> (InMemoryPricingCatalog, AiModel) {
+        let mut catalog = InMemoryPricingCatalog::default();
+        catalog.add_vendor(ModelVendorDefinition::new(
+            "openai",
+            ModelVendor::OpenAi,
+            "OpenAI",
+        ));
+        let model = AiModel::new("gpt-4o", "GPT-4o", "openai", vec!["chat"]);
+        catalog.add_model(model.clone());
+        catalog.add_upstream_account_group(group(10, "default-group", true));
+        catalog.add_upstream_account_group(group(20, "backup-group", false));
+        catalog.set_upstream_account_group_modality_scope(
+            10,
+            AccountGroupModalityScope::mixed(),
+        );
+        catalog.set_upstream_account_group_modality_scope(
+            20,
+            AccountGroupModalityScope::mixed(),
+        );
+        // Account 1001 only reaches the model through resource entitlements.
+        catalog.add_upstream_account_route(entitlement_route(1001, 10, "openai/gpt-4o"));
+        catalog.add_upstream_account_route(entitlement_route(1002, 20, "openai/gpt-4o"));
+        (catalog, model)
+    }
+
+    #[test]
+    fn entitlement_only_routes_count_as_model_membership() {
+        let (catalog, model) = catalog();
+        let index = ModelGroupRoutingIndex::build(&catalog);
+        let groups = index.groups_for_model(&catalog, &model, TENANT_ID, 0, None, None);
+        assert_eq!(
+            vec![10, 20],
+            groups.iter().map(|group| group.group_id).collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn explicit_rule_is_selected_and_empty_rule_reports_the_inherited_source() {
+        let (mut catalog, _model) = catalog();
+        catalog.add_user_account_group_route(UserAccountGroupRoute {
+            tenant_id: TENANT_ID,
+            organization_id: 0,
+            user_id: 30,
+            scope: AccountGroupRouteScope::Model,
+            modality: "text".to_owned(),
+            vendor_code: "openai".to_owned(),
+            model: "gpt-4o".to_owned(),
+            account_group_id: 20,
+            account_group_code: "backup-group".to_owned(),
+            priority: 10,
+        });
+
+        let catalog_entries = build_model_group_catalog(
+            &catalog,
+            (TENANT_ID, 0, 30),
+            Some(SessionAccountGroupModality::Llm),
+            Some("openai"),
+            &ModelGroupRoutingIndex::build(&catalog),
+        );
+        let model_entry = &catalog_entries[0].vendors[0].models[0];
+        assert_eq!(vec!["backup-group"], model_entry.default_group_codes);
+        assert_eq!(Some("user-model-default"), model_entry.default_source.as_deref());
+
+        // No rule: the account default is the inherited source, not a user
+        // selection, so `defaultGroupCodes` stays empty.
+        let empty = build_model_group_catalog(
+            &catalog,
+            (TENANT_ID, 0, 31),
+            Some(SessionAccountGroupModality::Llm),
+            Some("openai"),
+            &ModelGroupRoutingIndex::build(&catalog),
+        );
+        let inherited = &empty[0].vendors[0].models[0];
+        assert!(inherited.default_group_codes.is_empty());
+        assert!(inherited.default_source.is_some());
+    }
+
+    #[test]
+    fn api_key_default_group_is_marked_when_it_serves_the_model() {
+        let (catalog, model) = catalog();
+        let groups = model_group_options_for_context(
+            &catalog,
+            &model,
+            TENANT_ID,
+            0,
+            None,
+            Some(20),
+        );
+        assert_eq!(1, groups.iter().filter(|group| group.selected).count());
+        assert!(groups
+            .iter()
+            .any(|group| group.group_id == 20 && group.selected));
+    }
 }

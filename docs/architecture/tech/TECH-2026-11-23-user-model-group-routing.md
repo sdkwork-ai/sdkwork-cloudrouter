@@ -112,15 +112,24 @@ allow-list alike), with a regression test. The locale retirement rule
 ### App-api (console)
 
 - `GET /app/v3/api/ai/routing/model_group_catalog?modality=&vendor_code=`
-  — `data.item.modalities[]` → `vendors[]` → `models[]` → `groups[]` plus the
-  effective `defaultGroupCode` / `defaultSource`.
+  — `data.item.modalities[]` → `vendors[]` → `models[]` → `groups[]`. Each
+  model carries `defaultGroupCodes` (only the user's **explicit** ordered rules)
+  and `defaultSource`. With no explicit rule, `defaultGroupCodes` is empty and
+  `defaultSource` names the inherited account-level default, so the console can
+  render "use account default" as the active choice.
 - `GET /app/v3/api/ai/routing/model_groups?model=`
-  — `data.item.groups[]` for one model.
+  — `data.item.groups[]` for one model; `selected` marks the caller's explicit
+  user rule groups.
 - `GET /app/v3/api/ai/routing/model_group_defaults`
   — the caller's stored rules.
 - `PUT /app/v3/api/ai/routing/model_group_defaults`
   — replace one scope's ordered list (`scope`, `modality`, `vendorCode`,
   `model`, `accountGroups: string[]`); an empty list clears it.
+
+On the open-api, `defaultForModel` mirrors the request that would actually be
+routed: for an API key it marks the key's bound default group when that group
+serves the model; for an auth-token caller it marks every explicit user-rule
+group, and when the user has no rule it marks the account-level default.
 
 Reads combine the routing snapshot's group membership with the caller's
 **freshly persisted** rules, so a saved default appears on the next page load

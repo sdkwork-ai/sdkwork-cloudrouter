@@ -196,11 +196,21 @@ where
             "model not found",
         );
     };
-    let data = crate::application::model_group_options(
+    let (user_id, fallback_group_id) = if context.api_key_id == 0 {
+        // Auth-token session: an explicit user rule is the default; with no
+        // rule the helper falls back to the account-level default.
+        (Some(context.user_id), None)
+    } else {
+        // API key: the key's bound default group is the fallback.
+        (None, Some(context.group_id))
+    };
+    let data = crate::application::model_group_options_for_context(
         state.catalog.as_ref(),
         &found,
         context.tenant_id,
         context.organization_id,
+        user_id,
+        fallback_group_id,
     )
     .into_iter()
     .map(|group| OpenAiModelGroupResponse {

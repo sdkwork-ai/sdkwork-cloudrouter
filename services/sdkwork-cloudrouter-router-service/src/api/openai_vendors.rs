@@ -25,7 +25,7 @@ use crate::api::openai_contract::{
 use crate::api::openai_error::openai_error;
 use crate::application::{
     account_route_is_callable_for_group, model_access_forbidden_reason, ApiKeyAuthenticator,
-    ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext, ModelGroupRoutingIndex,
+    ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
 };
 use crate::ports::{PricingCatalog, UpstreamAccountRouteCatalog};
 
@@ -181,7 +181,6 @@ where
         .find(|group| group.id == account_group_id)
         .map(|group| (group.tenant_id, group.organization_id))
         .unwrap_or((0, 0));
-    let routing_index = ModelGroupRoutingIndex::build(catalog);
     let callable_refs = callable_accounts.iter().collect::<Vec<_>>();
     let mut by_vendor: BTreeMap<String, (String, Vec<GatewayVendorModel>)> = BTreeMap::new();
     catalog.visit_models(None, &mut |model| {
@@ -204,17 +203,23 @@ where
                     .unwrap_or_else(|| model.vendor_code.clone());
                 (name, Vec::new())
             });
-        let groups = routing_index
-            .groups_for_model(catalog, model, scope.0, scope.1, None, None)
-            .into_iter()
-            .map(|group| GatewayModelGroup {
-                id: group.group_id,
-                code: group.group_code,
-                name: group.group_name,
-                is_default: group.is_default,
-                selected: group.selected,
-            })
-            .collect();
+        let groups = crate::application::model_group_options_for_context(
+            catalog,
+            model,
+            scope.0,
+            scope.1,
+            None,
+            Some(account_group_id),
+        )
+        .into_iter()
+        .map(|group| GatewayModelGroup {
+            id: group.group_id,
+            code: group.group_code,
+            name: group.group_name,
+            is_default: group.is_default,
+            selected: group.selected,
+        })
+        .collect();
         entry.1.push(GatewayVendorModel {
             id: model.model.clone(),
             display_name: model.display_name.clone(),

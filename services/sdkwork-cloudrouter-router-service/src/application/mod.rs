@@ -141,9 +141,9 @@ pub use invocation::{
 };
 pub use model_group_catalog::{
     account_route_is_callable_for_group, build_model_group_catalog, group_model_access_forbids,
-    model_group_options, model_primary_modality, model_reachable_via_routes,
-    model_supported_group_ids, model_modalities, route_is_callable, scope_serves_modality,
-    ModelGroupRoutingIndex,
+    model_group_options, model_group_options_for_context, model_primary_modality,
+    model_reachable_via_routes, model_supported_group_ids, model_modalities, route_is_callable,
+    scope_serves_modality, ModelGroupRoutingIndex,
 };
 pub use password_hash::{PasswordHasher, Pbkdf2Sha256PasswordHasher};pub use payment_adapter::{
     PaymentAdapterFuture, PaymentAdapterOperation, PaymentCancelPaymentIntentRequest,

@@ -17,9 +17,9 @@ use sdkwork_cloudrouter_router_service::api::{
     OpenAiAuthTokenError, OpenAiAuthTokenIdentity, OpenAiRuntimeRouteConfig,
 };
 use sdkwork_cloudrouter_router_service::domain::{
-    AiModel, BillingMeter, DecimalValue, DomainResult, ModelPrice, ModelUpstreamRoute, ModelVendor,
-    ModelVendorDefinition, Money, PriceSide, PricingPlan, ProviderRetryPolicy,
-    UpstreamAccountGroup, UpstreamAccountRoute,
+    AccountGroupRouteScope, AiModel, BillingMeter, DecimalValue, DomainResult, ModelPrice,
+    ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
+    ProviderRetryPolicy, UpstreamAccountGroup, UpstreamAccountRoute, UserAccountGroupRoute,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
@@ -201,6 +201,178 @@ fn catalog_with_default_group_and_account_for_group_id(
 
 fn hasher() -> Arc<HmacSha256ApiKeySecretHasher> {
     Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap())
+}
+
+const BACKUP_GROUP_ID: i64 = 2002;
+const BACKUP_SUPPLIER_CODE: &str = "backup";
+const BACKUP_ACCOUNT_ID: i64 = 3002;
+
+/// The seeded default pool plus a second pool (`backup`), and optionally a
+/// user model rule that names one group. A rule pointing at a non-existent
+/// group exercises the account-default fallback.
+fn catalog_with_backup_pool_and_user_rule(user_rule_group: Option<i64>) -> InMemoryPricingCatalog {
+    let mut catalog = catalog_with_default_group_and_account();
+    let mut backup_group = UpstreamAccountGroup::new(
+        BACKUP_GROUP_ID,
+        "backup-group",
+        "standard",
+        DecimalValue::parse("1.000000").unwrap(),
+        DecimalValue::parse("1.100000").unwrap(),
+    );
+    backup_group.tenant_id = TENANT_ID;
+    backup_group.organization_id = 0;
+    backup_group.is_default = false;
+    catalog.add_upstream_account_group(backup_group);
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new(BACKUP_SUPPLIER_CODE, BACKUP_ACCOUNT_ID)
+            .with_account_group_binding(BACKUP_GROUP_ID, 10, 100)
+            .with_upstream_endpoint(
+                Some("https://provider-proxy.internal/backup"),
+                Some("vault://providers/backup/account/main"),
+            )
+            .with_timeout_ms(30_000)
+            .with_retry_policy(ProviderRetryPolicy::new(3, vec![429, 503], 0).unwrap()),
+    );
+    catalog.add_model_upstream_route(
+        ModelUpstreamRoute::new_for_catalog_key(
+            "openai/gpt-4o-mini",
+            "gpt-4o-mini",
+            BACKUP_SUPPLIER_CODE,
+            BACKUP_ACCOUNT_ID,
+            "openai/gpt-4o-mini",
+        )
+        .with_upstream_endpoint(
+            Some("https://provider-proxy.internal/backup"),
+            Some("vault://providers/backup/account/main"),
+        ),
+    );
+    for meter in [
+        BillingMeter::LlmInputToken,
+        BillingMeter::LlmOutputToken,
+        BillingMeter::LlmCacheReadToken,
+    ] {
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                "openai/gpt-4o-mini",
+                "gpt-4o-mini",
+                PriceSide::UpstreamCost,
+                meter,
+                Money::usd("0.110000").unwrap(),
+            )
+            .for_upstream_account(BACKUP_SUPPLIER_CODE, BACKUP_ACCOUNT_ID),
+        );
+    }
+    if let Some(group_id) = user_rule_group {
+        catalog.add_user_account_group_route(UserAccountGroupRoute {
+            tenant_id: TENANT_ID,
+            organization_id: 0,
+            user_id: 30,
+            scope: AccountGroupRouteScope::Model,
+            modality: "text".to_owned(),
+            vendor_code: "openai".to_owned(),
+            model: "gpt-4o-mini".to_owned(),
+            account_group_id: group_id,
+            account_group_code: if group_id == BACKUP_GROUP_ID {
+                "backup-group".to_owned()
+            } else {
+                "missing-group".to_owned()
+            },
+            priority: 10,
+        });
+    }
+    catalog
+}
+
+async fn invoke_auth_token_chat(
+    catalog: InMemoryPricingCatalog,
+    group_header: Option<&str>,
+) -> (StatusCode, String, Arc<Mutex<Vec<ChatCompletionRelayRequest>>>) {
+    let captured = Arc::new(Mutex::new(Vec::new()));
+    let relay = Arc::new(GatewayRecordingRelay::new(Arc::clone(&captured)));
+    let router = openai_chat_completions_router_with_auth_extensions(
+        Arc::new(catalog),
+        hasher(),
+        Some(relay),
+        None,
+        None,
+        Vec::new(),
+        OpenAiRuntimeRouteConfig::default(),
+        Some(Arc::new(CannedAuthTokenAuthenticator)),
+        sdkwork_web_core::default_open_api_bearer_classifier(),
+    );
+    let mut request = Request::builder()
+        .method("POST")
+        .uri("/v1/chat/completions")
+        .header("authorization", "Bearer <login-auth-token>")
+        .header("Access-Token", "login-access-token")
+        .header("content-type", "application/json");
+    if let Some(group_header) = group_header {
+        request = request.header("x-sdkwork-account-group", group_header);
+    }
+    let response = router
+        .oneshot(
+            request
+                .body(Body::from(
+                    r#"{"model":"gpt-4o-mini","messages":[{"role":"user","content":"ping"}]}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let status = response.status();
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    (status, String::from_utf8_lossy(&body).into_owned(), captured)
+}
+
+#[tokio::test]
+async fn user_model_rule_routes_auth_token_traffic_to_the_selected_pool() {
+    let (status, body, captured) = invoke_auth_token_chat(
+        catalog_with_backup_pool_and_user_rule(Some(BACKUP_GROUP_ID)),
+        None,
+    )
+    .await;
+    assert_eq!(StatusCode::OK, status, "expected 200, got {status}: {body}");
+    let request = captured
+        .lock()
+        .unwrap()
+        .first()
+        .cloned()
+        .expect("relay called");
+    assert_eq!(BACKUP_SUPPLIER_CODE, request.supplier_code);
+}
+
+#[tokio::test]
+async fn selector_header_overrides_the_user_rule_for_auth_token_traffic() {
+    let (status, body, captured) = invoke_auth_token_chat(
+        catalog_with_backup_pool_and_user_rule(Some(DEFAULT_GROUP_ID)),
+        Some("backup-group"),
+    )
+    .await;
+    assert_eq!(StatusCode::OK, status, "expected 200, got {status}: {body}");
+    let request = captured
+        .lock()
+        .unwrap()
+        .first()
+        .cloned()
+        .expect("relay called");
+    assert_eq!(BACKUP_SUPPLIER_CODE, request.supplier_code);
+}
+
+#[tokio::test]
+async fn unusable_user_rule_falls_back_to_the_account_default_pool() {
+    let (status, body, captured) =
+        invoke_auth_token_chat(catalog_with_backup_pool_and_user_rule(Some(999_999)), None)
+            .await;
+    assert_eq!(StatusCode::OK, status, "expected 200, got {status}: {body}");
+    let request = captured
+        .lock()
+        .unwrap()
+        .first()
+        .cloned()
+        .expect("relay called");
+    assert_eq!(SUPPLIER_CODE, request.supplier_code);
 }
 
 /// 登录后直接用 auth token 调 `/v1/chat/completions`：
