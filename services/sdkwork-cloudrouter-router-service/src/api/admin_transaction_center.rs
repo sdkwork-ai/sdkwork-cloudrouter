@@ -34,39 +34,6 @@ const MAX_I18N_LOCALE_KEY_LEN: usize = 32;
 const MAX_I18N_VALUE_LEN: usize = 64;
 const MAX_I18N_LOCALES: usize = 8;
 const PAYMENT_PROVIDER_STATUSES: &[&str] = &["active", "inactive", "disabled"];
-const PAYMENT_PROVIDER_CODES: &[&str] = &[
-    "wechat_pay",
-    "alipay",
-    "stripe",
-    "paypal",
-    "apple_pay",
-    "google_pay",
-    "sandbox",
-];
-const PAYMENT_METHOD_CODES: &[&str] = &[
-    "wechat_pay",
-    "alipay",
-    "paypal",
-    "card",
-    "apple_pay",
-    "google_pay",
-    "wallet_balance",
-    "stripe_card",
-    "stripe_apple_pay",
-    "stripe_google_pay",
-    "stripe_alipay",
-    "stripe_wechat_pay",
-    "alipay_qr",
-    "alipay_pc",
-    "alipay_wap",
-    "alipay_app",
-    "alipay_jsapi",
-    "wechat_native",
-    "wechat_jsapi",
-    "wechat_h5",
-    "wechat_app",
-    "sandbox_test",
-];
 
 #[derive(Clone)]
 struct AdminTransactionCenterState {
@@ -333,25 +300,13 @@ fn validated_list_query(
         offset: pagination.offset,
         status: normalize_optional_text(query.status, "status", MAX_QUERY_STATUS_LEN)?
             .map(|value| value.to_ascii_lowercase()),
-        supplier_code: normalize_optional_enum(
-            query.provider_code,
-            "providerCode",
-            MAX_CODE_LEN,
-            PAYMENT_PROVIDER_CODES,
-            AsciiCase::Lower,
-        )?,
+        supplier_code: normalize_optional_filter_code(query.provider_code, "providerCode")?,
         provider_account_id: normalize_optional_text(
             query.provider_account_id,
             "providerAccountId",
             MAX_ID_LEN,
         )?,
-        method_code: normalize_optional_enum(
-            query.method_code,
-            "methodCode",
-            MAX_CODE_LEN,
-            PAYMENT_METHOD_CODES,
-            AsciiCase::Lower,
-        )?,
+        method_code: normalize_optional_filter_code(query.method_code, "methodCode")?,
         country_code: normalize_optional_ascii_code(
             query.country_code,
             "countryCode",
@@ -374,28 +329,29 @@ fn validated_list_query(
     })
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum AsciiCase {
-    Lower,
-}
-
-fn normalize_optional_enum(
+/// Normalizes a provider or method filter code.
+///
+/// These are **not** closed enumerations: providers, methods and products are
+/// deployment/tenant configuration in the payment center, so a filter must stay
+/// usable for a code this build has never heard of (a newly connected channel, or
+/// a retired one whose historical transactions still need to be found). Rejecting
+/// unknown codes would make the transaction centre unable to show the very rows an
+/// operator is looking for. Validate the shape instead: lower-case, bounded
+/// length, `[a-z0-9_.-]`.
+fn normalize_optional_filter_code(
     value: Option<String>,
     field_name: &str,
-    max_len: usize,
-    allowed_values: &[&str],
-    ascii_case: AsciiCase,
 ) -> Result<Option<String>, ApiResponseError> {
-    let Some(value) = normalize_optional_text(value, field_name, max_len)? else {
+    let Some(value) = normalize_optional_text(value, field_name, MAX_CODE_LEN)? else {
         return Ok(None);
     };
-    let value = match ascii_case {
-        AsciiCase::Lower => value.to_ascii_lowercase(),
-    };
-    if !allowed_values.contains(&value.as_str()) {
+    let value = value.to_ascii_lowercase();
+    let shaped = value
+        .chars()
+        .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || matches!(ch, '_' | '-' | '.'));
+    if !shaped || value.starts_with(['_', '-', '.']) {
         return Err(bad_request(format!(
-            "{field_name} must be one of {}",
-            allowed_values.join(", ")
+            "{field_name} must be a lower-case channel code using letters, digits, '_', '-' or '.'"
         ))
         .into());
     }
@@ -425,4 +381,35 @@ fn normalize_optional_ascii_code(
         return Ok(None);
     };
     normalize_ascii_code(value, field_name, exact_len, pattern).map(Some)
+}
+
+#[cfg(test)]
+mod filter_code_tests {
+    #[test]
+    fn a_filter_code_is_open_but_shaped() {
+        // A channel this build does not know must still be filterable: providers
+        // and methods are deployment configuration, not enum variants.
+        for code in ["wechat_native", "alipay_pc", "stripe", "some_new_channel", "acme.pay"] {
+            assert!(
+                super::normalize_optional_filter_code(Some(code.to_owned()), "providerCode").is_ok(),
+                "{code} must be accepted"
+            );
+        }
+        // Shape is still enforced.
+        for bad in ["we chat", "wechat/pay", "-leading", "_leading"] {
+            assert!(
+                super::normalize_optional_filter_code(Some(bad.to_owned()), "providerCode").is_err(),
+                "{bad:?} must be rejected"
+            );
+        }
+        assert!(super::normalize_optional_filter_code(None, "providerCode")
+            .expect("absent filter")
+            .is_none());
+        // Case is normalized so filters are case-insensitive at the API edge.
+        assert_eq!(
+            super::normalize_optional_filter_code(Some("  WeChat_Native ".to_owned()), "providerCode")
+                .expect("normalized"),
+            Some("wechat_native".to_owned())
+        );
+    }
 }
