@@ -10,6 +10,8 @@ import type {
 } from '@sdkwork/order-pc-checkout';
 import { formatMoneyMinorUnits } from '@sdkwork/utils/money';
 
+import { resolveCashierExpiresAt } from './cashierExpiry';
+
 /**
  * PC cashier service over the generated Order App SDK.
  *
@@ -169,7 +171,7 @@ export function createCloudRouterCashierCheckoutDriver(
         ?? readString(params.cashierUrl);
       return {
         cashierUrl: readString(params.cashierUrl),
-        expiresAt: order.expireTime,
+        expiresAt: resolveCashierExpiresAt(order.expireTime, readString(params.expiresAt)),
         orderId: order.id,
         qrCode,
         status: 'pending',
