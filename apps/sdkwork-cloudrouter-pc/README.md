@@ -279,12 +279,17 @@ deep link. The portal hosts the browser half of that flow:
   land there, and bouncing them to the portal home would drop the
   authorization code.
 
-The entry forwards to the app-api origin's `/iam/v3/api/oauth/authorize` — the
-IAM open-api path the platform gateway classifies as public — so a deployment
-whose gateway does not expose that path publicly renders the entry's failure
-state instead of redirecting in a loop. The IAM authorization server must
-return the browser to this origin's hosted login
-(`SDKWORK_IAM_LOGIN_BASE_URL=<platform>/auth`).
+The entry does not send the browser to another page: a valid app authorization
+renders the hosted IAM auth surface in place on the entry route, so an
+anonymous visitor sees the login form and a signed-in browser sees the account
+choice. The hosted page creates the pending authorization state lazily — when
+the browser signs in or confirms the account — through the IAM app-api
+(`POST /app/v3/api/oauth/authorizations`), because the standalone gateway
+composes the app-api, not the open-api authorize endpoint. A third-provider
+sign-in creates the state before the provider round-trip so the callback still
+carries `oauthAuthorizationStateId`, and an already-issued
+`<loginBase>/login?oauthAuthorizationStateId=…` link keeps the original
+behaviour.
 
 ### Owner And Status
 

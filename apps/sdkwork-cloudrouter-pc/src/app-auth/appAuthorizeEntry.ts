@@ -4,11 +4,12 @@
  * Native SDKWork applications (the BirdCoder desktop shell, for example) open
  * `<platform>/iam/v3/oauth/authorize` (or the versionless
  * `/iam/oauth/authorize`) in the system browser. Both routes render the same
- * page and keep the request parameters intact. The page creates the pending
- * authorization state through the IAM app-api, renders the IAM login surface in
- * place on that same route, completes the authorization after sign-in, and
- * lands on `/auth/desktop/launch`, which fires the deep link back into the
- * application.
+ * page and keep the request parameters intact. A complete authorization request
+ * renders the hosted IAM auth surface in place on that route; the hosted page
+ * creates the pending state when the browser signs in (or confirms the account)
+ * and, after completion, lands on `/auth/desktop/launch`, which fires the deep
+ * link back into the application. An anonymous visitor therefore sees the login
+ * form immediately instead of a waiting card.
  *
  * Everything in this module is pure so the request contract can be tested
  * without a browser.
@@ -71,7 +72,11 @@ export interface AppAuthorizeRequest {
 
 /** What the hosted OAuth page should do with the current query string. */
 export type AppAuthorizeEntryPlan =
-  /** A complete authorization request: create the pending state on the backend. */
+  /**
+   * A complete authorization request: render the hosted auth surface in place.
+   * The state is created when the browser signs in (or confirms the account),
+   * so an anonymous visitor sees the login form immediately.
+   */
   | { readonly kind: 'create'; readonly request: AppAuthorizeRequest }
   /** The IAM state already exists; render the hosted login in place on this route. */
   | { readonly kind: 'hosted'; readonly stateId: string }
@@ -193,9 +198,10 @@ export function parseAppAuthorizeRequest(params: URLSearchParams): AppAuthorizeR
  * Decide what the hosted OAuth page does with one navigation.
  *
  * A browser already carrying the IAM-created authorization state renders the
- * hosted login in place on this route; a full authorization request still has
- * to create that state through the IAM app-api; anything else is reported
- * instead of being bounced into the product home page.
+ * hosted login in place on this route; a complete authorization request renders
+ * the same hosted surface without a state, and the hosted page creates the
+ * pending state when the visitor signs in; anything else is reported instead of
+ * being bounced into the product home page.
  * @param search - the current location search (with or without a leading `?`).
  * @returns the page plan.
  */
@@ -216,60 +222,3 @@ export function planAppAuthorizeEntry(search: string): AppAuthorizeEntryPlan {
   return { kind: 'create', request: parsed.request }
 }
 
-/** Sentence the waiting application always gets when the state cannot be created. */
-const APP_AUTHORIZE_START_FAILURE = 'The hosted authorization could not be started. Start the login again.'
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-/**
- * Render the server's own answer to the state-creation request.
- *
- * The native application waiting on its deep link never sees this page's
- * request or response, so the callback is the only channel that reaches its
- * failure card. Sending the status, wire code, trace id, and problem document
- * along is what lets that card name the failing server call instead of quoting
- * one generic sentence.
- * @param error - the rejection `oauth.authorizations.create` threw.
- * @returns the detail lines, or undefined when the request never reached a server.
- */
-function describeAppAuthorizeServerFailure(error: unknown): string | undefined {
-  if (!isRecord(error)) return undefined
-  const problem = isRecord(error.problem) ? error.problem : undefined
-  const status = typeof error.httpStatus === 'number'
-    ? error.httpStatus
-    : problem !== undefined && typeof problem.status === 'number' ? problem.status : undefined
-  const code = problem?.code
-  const traceId = typeof error.traceId === 'string' && error.traceId !== ''
-    ? error.traceId
-    : problem !== undefined && typeof problem.traceId === 'string' && problem.traceId !== '' ? problem.traceId : undefined
-  const meta = [
-    status === undefined ? '' : `HTTP ${String(status)}`,
-    code === undefined ? '' : `code ${String(code)}`,
-    traceId === undefined ? '' : `traceId ${traceId}`,
-  ].filter(part => part !== '').join(' · ')
-  const detail = typeof problem?.detail === 'string' && problem.detail.trim() !== ''
-    ? problem.detail.trim()
-    : typeof error.message === 'string' ? error.message.trim() : ''
-  const lines = [meta, detail].filter(line => line !== '')
-  if (problem !== undefined) {
-    try {
-      lines.push(JSON.stringify(problem))
-    } catch {
-      // A non-serializable document still leaves the status and detail above.
-    }
-  }
-  return lines.length === 0 ? undefined : lines.join('\n')
-}
-
-/**
- * Build the description a failed state creation hands back to the waiting
- * native application: the page's own sentence, then the server's report.
- * @param error - the rejection `oauth.authorizations.create` threw.
- * @returns the callback description, verbatim wire data included.
- */
-export function describeAppAuthorizeFailure(error: unknown): string {
-  const serverFailure = describeAppAuthorizeServerFailure(error)
-  return serverFailure === undefined ? APP_AUTHORIZE_START_FAILURE : `${APP_AUTHORIZE_START_FAILURE}\n${serverFailure}`
-}

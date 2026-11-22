@@ -82,7 +82,7 @@ test('redirect URIs admit app schemes and loopback callbacks only', () => {
   assert.equal(isAppCallbackRedirectUri('birdcoder://user:secret@auth/callback'), false);
 });
 
-test('a full request creates the pending authorization state on the same page', () => {
+test('a full request renders the hosted auth surface in place', () => {
   const plan = planAppAuthorizeEntry(authorizeSearch());
   if (plan.kind !== 'create') assert.fail(`expected a create plan, got ${plan.kind}`);
   assert.deepEqual(plan.request, {
@@ -130,16 +130,16 @@ test('an empty or invalid navigation is reported instead of bouncing to the stor
   );
 });
 
-test('the hosted page creates the state through the SDK instead of navigating to the API origin', () => {
+test('the hosted page renders the auth surface and leaves the state to the login page', () => {
   const entry = readFileSync(new URL('./src/app-auth/CloudRouterAppAuthorizeEntry.tsx', import.meta.url), 'utf8');
-  assert.doesNotMatch(entry, /window\.location\.replace/u);
-  assert.doesNotMatch(entry, /buildAppAuthorizeForwardUrl/u);
-  assert.match(entry, /oauth\.authorizations\.create/u);
-  assert.match(entry, /oauthAuthorizationStateId/u);
-  // A failed state creation must report through the app's deep link instead
-  // of leaving the desktop waiting for its deadline.
-  assert.match(entry, /buildSdkworkDesktopAuthErrorRedirect/u);
-  assert.match(entry, /window\.location\.assign/u);
+  // A valid request (create) and a request that already carries the IAM state
+  // both render the hosted auth surface in place.
+  assert.match(entry, /plan\.kind === 'create' \|\| plan\.kind === 'hosted'/u);
+  assert.match(entry, /CloudRouterAuthRoutes/u);
+  // The page never creates the pending state itself: the hosted login does,
+  // when the browser actually signs in or confirms the account.
+  assert.doesNotMatch(entry, /oauth\.authorizations\.create/u);
+  assert.doesNotMatch(entry, /window\.location\.(replace|assign)/u);
 });
 
 test('the portal auth guard keeps the app hand-off page out of the authenticated redirect', () => {
