@@ -187,7 +187,14 @@ export function AnonymousCashierPage({
         setAmount(view.amount ?? '');
         setCurrencyCode(view.currencyCode ?? 'CNY');
         setAllowedMethods(view.allowedMethods ?? []);
-        const expiry = view.expireTime ? Date.parse(view.expireTime) : Number.NaN;
+        // The capability token, its short link and the provider trade all expire
+        // before the order does; count down the deadline the server published
+        // for this session, not the order's own window.
+        const expiry = view.capabilityExpiresAt
+          ? Date.parse(view.capabilityExpiresAt)
+          : view.expireTime
+            ? Date.parse(view.expireTime)
+            : Number.NaN;
         const deadline = Number.isFinite(expiry)
           ? expiry
           : Date.now() + CASHIER_TTL_SECONDS * 1000;

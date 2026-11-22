@@ -22,10 +22,23 @@ export type {
   CashierLaunch,
 } from './anonymousPaymentLaunch.js';
 
+/**
+ * The cashier view plus the server-authoritative capability deadline.
+ *
+ * The generated client (`@sdkwork/order-app-sdk`) is rebuilt from
+ * `order-app-api.openapi.json`, which now declares `capabilityExpiresAt`; until
+ * this workspace regenerates it, the field is carried by this local extension so
+ * the page can stop at the instant the session stops being payable instead of
+ * counting down the (longer) order window.
+ */
+export type AnonymousCashierView = CashierOrder & {
+  readonly capabilityExpiresAt?: string;
+};
+
 /** Loads the anonymous cashier view. */
-export async function loadAnonymousCashier(token: string): Promise<CashierOrder> {
+export async function loadAnonymousCashier(token: string): Promise<AnonymousCashierView> {
   const client: SdkworkAppClient = requireCloudRouterOrderAppClient();
-  return client.orderCashier.cashier.retrieve(token);
+  return (await client.orderCashier.cashier.retrieve(token)) as AnonymousCashierView;
 }
 
 /**
