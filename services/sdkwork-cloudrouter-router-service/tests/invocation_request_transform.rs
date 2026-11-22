@@ -347,13 +347,17 @@ async fn percent_encodes_rewritten_query_model() {
         .expect("transform");
 
     let request = invocation.dispatch.provider_request.expect("request");
+    // The catalogue stores `vendor/model` and the upstream receives the native id:
+    // one parser in `runtime_provider_native_model_id` yields the part after the
+    // vendor separator, so `openrouter/` never leaks into the provider query. What
+    // this test owns is the encoding: `+` must stay a literal plus, not a space.
     assert_eq!(
-        Some("model=openrouter%2Fgpt-4o-mini%2Blatest&include=usage"),
+        Some("model=gpt-4o-mini%2Blatest&include=usage"),
         request.query.as_deref()
     );
     assert_eq!(
         Some(
-            "https://provider.example/root/v1/responses/input_tokens?model=openrouter%2Fgpt-4o-mini%2Blatest&include=usage"
+            "https://provider.example/root/v1/responses/input_tokens?model=gpt-4o-mini%2Blatest&include=usage"
         ),
         request.url.as_deref()
     );
