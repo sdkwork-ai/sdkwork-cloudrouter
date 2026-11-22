@@ -27,10 +27,41 @@ pub(crate) fn guarded_openai_json_response(
     body: Value,
     memory_guard: Option<ProviderResponseMemoryGuard>,
 ) -> Response {
+    // A provider rejection can echo the shared upstream credential it was
+    // dialed with (`sk-...`, `Bearer ...`, Google's `API key not valid`, Groq's
+    // `Invalid API Key`). The metered invocation pipeline already scrubs
+    // non-2xx provider bodies before returning them; this legacy relay path
+    // returned them verbatim, which would hand a platform upstream key to the
+    // calling tenant. Redact string values only, so the JSON structure and any
+    // non-secret prose the SDK branches on stay intact.
+    let body = if status.is_success() {
+        body
+    } else {
+        redact_json_secrets(body)
+    };
     let response = (status, Json(body)).into_response();
     match memory_guard {
         Some(memory_guard) => memory_guard.wrap_response(response),
         None => response,
+    }
+}
+
+/// Recursively applies credential redaction to every JSON string value.
+fn redact_json_secrets(value: Value) -> Value {
+    match value {
+        Value::String(text) => {
+            Value::String(crate::redaction::redact_sensitive_tokens(text.as_str()))
+        }
+        Value::Array(items) => {
+            Value::Array(items.into_iter().map(redact_json_secrets).collect())
+        }
+        Value::Object(entries) => Value::Object(
+            entries
+                .into_iter()
+                .map(|(key, value)| (key, redact_json_secrets(value)))
+                .collect(),
+        ),
+        other => other,
     }
 }
 
@@ -205,8 +236,34 @@ pub(crate) struct OpenAiRouteRelayExecution<'a, C> {
 
 #[cfg(test)]
 mod tests {
-    use super::{restore_relayed_model, rewrite_relay_sse_model_line};
+    use super::{redact_json_secrets, restore_relayed_model, rewrite_relay_sse_model_line};
     use serde_json::json;
+
+    /// A provider rejection that echoes the platform's upstream credential must
+    /// not reach the tenant. Structure and non-secret prose stay intact so SDK
+    /// error handling keeps working.
+    #[test]
+    fn provider_error_bodies_do_not_leak_upstream_credentials() {
+        let body = json!({
+            "error": {
+                "message": "Incorrect API key provided: sk-live1234567890abcdef. Please check.",
+                "type": "invalid_request_error",
+                "code": "invalid_api_key",
+                "nested": ["Bearer abcdefghijklmnop", {"deep": "api key: gsk_abcdefgh1234"}]
+            }
+        });
+        let redacted = redact_json_secrets(body);
+        let text = redacted.to_string();
+        assert!(!text.contains("sk-live1234567890abcdef"), "gateway key leaked: {text}");
+        assert!(!text.contains("abcdefghijklmnop"), "bearer token leaked: {text}");
+        assert!(!text.contains("gsk_abcdefgh1234"), "provider key leaked: {text}");
+        assert_eq!("invalid_request_error", redacted["error"]["type"]);
+        assert_eq!("invalid_api_key", redacted["error"]["code"]);
+        assert!(redacted["error"]["message"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("Incorrect API key provided"));
+    }
 
     #[test]
     fn relayed_json_model_is_restored_to_requested_model() {
