@@ -1,13 +1,13 @@
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
 use axum::body::{Body, Bytes};
 use futures_util::stream::{self, BoxStream};
 use futures_util::StreamExt;
 use sdkwork_cloudrouter_router_service::application::{
-    DeferredStreamInvocation, InvocationCancellationSignal, StreamTerminalOutcome,
-    StreamingUsageAccumulator, StreamingUsageFormat,
+    DeferredStreamInvocation, InvocationCancellationSignal, InvocationError,
+    StreamTerminalOutcome, StreamingUsageAccumulator, StreamingUsageFormat,
 };
 use tokio::sync::{mpsc, oneshot};
 use tokio::time::{timeout_at, Instant as TokioInstant};
@@ -85,12 +85,17 @@ pub(crate) fn wrap_invocation_stream(
 
     let (demand_sender, demand_receiver) = mpsc::channel(1);
     let usage_format = streaming_usage_format(content_type);
+    // The usage accumulator is shared by the producer (which observes frames)
+    // and the downstream body (which may win the terminal race on disconnect).
+    let usage = Arc::new(Mutex::new(StreamingUsageAccumulator::new(usage_format)));
     let producer_completion = completion.clone();
+    let producer_usage = Arc::clone(&usage);
     let producer_task = sdkwork_cloudrouter_http::track_background_task();
     tokio::spawn(async move {
         let _producer_task = producer_task;
         run_stream_producer(
             body,
+            producer_usage,
             usage_format,
             timeouts,
             demand_receiver,
@@ -104,6 +109,7 @@ pub(crate) fn wrap_invocation_stream(
     let state = DownstreamStreamState {
         demand_sender,
         completion,
+        usage,
         started_at: Instant::now(),
         first_frame_at: None,
     };
@@ -175,6 +181,9 @@ enum StreamEvent {
 struct DownstreamStreamState {
     demand_sender: mpsc::Sender<oneshot::Sender<StreamEvent>>,
     completion: StreamCompletion,
+    /// Shared with the producer so a disconnect can still bill what the provider
+    /// already produced.
+    usage: Arc<Mutex<StreamingUsageAccumulator>>,
     started_at: Instant,
     first_frame_at: Option<Instant>,
 }
@@ -196,19 +205,35 @@ impl DownstreamStreamState {
 
 impl Drop for DownstreamStreamState {
     fn drop(&mut self) {
-        // The producer-side usage accumulator lives in a different task, so a
-        // dropped downstream body cannot attach partial usage here; the
-        // producer's own terminal branches carry it instead.
+        // The client disconnected. This drop usually wins the terminal race
+        // because the producer is parked on an upstream read, so it must carry
+        // the usage observed so far: settling an interrupted stream for the
+        // tokens the provider already produced is what keeps a cancel/refresh
+        // loop from becoming a free channel, and it stops the precharge hold from
+        // staying frozen until its TTL expires.
+        let partial_usage = lock_usage(&self.usage).partial_usage_body();
         self.completion.complete(StreamTerminalOutcome::Cancelled {
             ttft_ms: self.ttft_ms(),
-            partial_usage: None,
+            partial_usage,
         });
     }
 }
 
+/// Locks the shared usage accumulator, recovering from a poisoned mutex.
+///
+/// Accounting must never turn a poisoned lock into a panic on the request path;
+/// the worst case is a missing partial-usage snapshot.
+fn lock_usage(
+    usage: &Arc<Mutex<StreamingUsageAccumulator>>,
+) -> MutexGuard<'_, StreamingUsageAccumulator> {
+    usage
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
 struct StreamProducerState {
     upstream: BoxStream<'static, Result<Bytes, axum::Error>>,
-    usage: StreamingUsageAccumulator,
+    usage: Arc<Mutex<StreamingUsageAccumulator>>,
     /// 是否从转发给客户端的流里剔除 usage-only SSE 事件。网关为计费强制
     /// `stream_options.include_usage` 后，上游会多回一个 `choices: []` 的
     /// usage chunk；不希望让未主动开启该选项的客户端看到它。
@@ -224,6 +249,7 @@ struct StreamProducerState {
 impl StreamProducerState {
     fn new(
         body: Body,
+        usage: Arc<Mutex<StreamingUsageAccumulator>>,
         usage_format: StreamingUsageFormat,
         timeouts: InvocationStreamTimeouts,
         suppress_usage_only_events: bool,
@@ -232,7 +258,7 @@ impl StreamProducerState {
         let started_deadline = TokioInstant::now();
         Self {
             upstream: body.into_data_stream().boxed(),
-            usage: StreamingUsageAccumulator::new(usage_format),
+            usage,
             suppress_usage_only_events: suppress_usage_only_events
                 && usage_format == StreamingUsageFormat::ServerSentEvents,
             started_at,
@@ -242,6 +268,20 @@ impl StreamProducerState {
             idle_deadline: None,
             idle_timeout: timeouts.idle,
         }
+    }
+
+    fn observe_usage(&self, bytes: &Bytes) -> Result<(), InvocationError> {
+        let mut usage = lock_usage(&self.usage);
+        usage.observe(bytes)
+    }
+
+    fn finish_usage(&self) -> Result<Option<serde_json::Value>, InvocationError> {
+        let mut usage = lock_usage(&self.usage);
+        usage.finish()
+    }
+
+    fn partial_usage(&self) -> Option<serde_json::Value> {
+        lock_usage(&self.usage).partial_usage_body()
     }
 
     /// 决定这一帧要不要转发；`None` 表示整帧都是 usage-only 事件，丢弃。
@@ -285,6 +325,7 @@ impl StreamProducerState {
 
 async fn run_stream_producer(
     body: Body,
+    usage: Arc<Mutex<StreamingUsageAccumulator>>,
     usage_format: StreamingUsageFormat,
     timeouts: InvocationStreamTimeouts,
     mut demand_receiver: mpsc::Receiver<oneshot::Sender<StreamEvent>>,
@@ -292,8 +333,13 @@ async fn run_stream_producer(
     cancellation_signal: InvocationCancellationSignal,
     suppress_usage_only_events: bool,
 ) {
-    let mut state =
-        StreamProducerState::new(body, usage_format, timeouts, suppress_usage_only_events);
+    let mut state = StreamProducerState::new(
+        body,
+        usage,
+        usage_format,
+        timeouts,
+        suppress_usage_only_events,
+    );
     // Accounting is best-effort relative to delivery: one frame that the usage
     // accumulator cannot process (a single event above its 256 KiB bound, for
     // example an image or a long tool-argument payload) must not truncate a
@@ -305,7 +351,7 @@ async fn run_stream_producer(
         let demand_result = tokio::select! {
             biased;
             _ = cancellation_signal.wait_for_tenant_lease_loss() => {
-                let partial_usage = state.usage.partial_usage_body();
+                let partial_usage = state.partial_usage();
                 completion.complete(StreamTerminalOutcome::LeaseLost {
                     ttft_ms: state.ttft_ms(),
                     partial_usage,
@@ -317,7 +363,7 @@ async fn run_stream_producer(
         let response_sender = match demand_result {
             Ok(Some(sender)) => sender,
             Ok(None) => {
-                let partial_usage = state.usage.partial_usage_body();
+                let partial_usage = state.partial_usage();
                 completion.complete(StreamTerminalOutcome::Cancelled {
                     ttft_ms: state.ttft_ms(),
                     partial_usage,
@@ -325,7 +371,7 @@ async fn run_stream_producer(
                 return;
             }
             Err(_) => {
-                let partial_usage = state.usage.partial_usage_body();
+                let partial_usage = state.partial_usage();
                 completion.complete(StreamTerminalOutcome::TimedOut {
                     stage: "total",
                     ttft_ms: state.ttft_ms(),
@@ -343,7 +389,7 @@ async fn run_stream_producer(
             let next_frame = tokio::select! {
                 biased;
                 _ = cancellation_signal.wait_for_tenant_lease_loss() => {
-                    let partial_usage = state.usage.partial_usage_body();
+                    let partial_usage = state.partial_usage();
                     completion.complete(StreamTerminalOutcome::LeaseLost {
                         ttft_ms: state.ttft_ms(),
                         partial_usage,
@@ -352,7 +398,7 @@ async fn run_stream_producer(
                 }
                 result = timeout_at(deadline, state.upstream.next()) => result,
                 _ = response_sender.closed() => {
-                    let partial_usage = state.usage.partial_usage_body();
+                    let partial_usage = state.partial_usage();
                     completion.complete(StreamTerminalOutcome::Cancelled {
                         ttft_ms: state.ttft_ms(),
                         partial_usage,
@@ -365,7 +411,7 @@ async fn run_stream_producer(
                     if !bytes.is_empty() {
                         state.record_frame_received();
                         if usage_accounting_active {
-                            if let Err(error) = state.usage.observe(&bytes) {
+                            if let Err(error) = state.observe_usage(&bytes) {
                                 usage_accounting_active = false;
                                 tracing::warn!(
                                     error_kind = ?error.kind,
@@ -381,7 +427,7 @@ async fn run_stream_producer(
                         continue;
                     };
                     if response_sender.send(StreamEvent::Data(forward)).is_err() {
-                        let partial_usage = state.usage.partial_usage_body();
+                        let partial_usage = state.partial_usage();
                         completion.complete(StreamTerminalOutcome::Cancelled {
                             ttft_ms: state.ttft_ms(),
                             partial_usage,
@@ -391,7 +437,7 @@ async fn run_stream_producer(
                     break;
                 }
                 Ok(Some(Err(error))) => {
-                    let partial_usage = state.usage.partial_usage_body();
+                    let partial_usage = state.partial_usage();
                     let outcome = StreamTerminalOutcome::UpstreamError {
                         message: "upstream stream body could not be read".to_owned(),
                         ttft_ms: state.ttft_ms(),
@@ -401,7 +447,7 @@ async fn run_stream_producer(
                         .send(StreamEvent::Failure { error, outcome })
                         .is_err()
                     {
-                        let partial_usage = state.usage.partial_usage_body();
+                        let partial_usage = state.partial_usage();
                         completion.complete(StreamTerminalOutcome::Cancelled {
                             ttft_ms: state.ttft_ms(),
                             partial_usage,
@@ -410,7 +456,7 @@ async fn run_stream_producer(
                     return;
                 }
                 Ok(None) => {
-                    let outcome = match state.usage.finish() {
+                    let outcome = match state.finish_usage() {
                         Ok(Some(usage_body)) => StreamTerminalOutcome::Completed {
                             usage_body: Some(usage_body),
                             ttft_ms: state.ttft_ms(),
@@ -423,7 +469,7 @@ async fn run_stream_producer(
                         // 观测到时才返回 `None`，由管线按 produces-no-billable-usage
                         // 报错（那是真的没有可结算的内容）。
                         Ok(None) => {
-                            let estimated = state.usage.partial_usage_body();
+                            let estimated = state.partial_usage();
                             StreamTerminalOutcome::Completed {
                                 usage_body: estimated,
                                 ttft_ms: state.ttft_ms(),
@@ -431,7 +477,7 @@ async fn run_stream_producer(
                         }
                         Err(error) => {
                             tracing::warn!(error_kind = ?error.kind, "stream usage accumulator failed at EOF");
-                            let partial_usage = state.usage.partial_usage_body();
+                            let partial_usage = state.partial_usage();
                             StreamTerminalOutcome::UpstreamError {
                                 message: "stream usage accounting failed".to_owned(),
                                 ttft_ms: state.ttft_ms(),
@@ -443,7 +489,7 @@ async fn run_stream_producer(
                         .send(StreamEvent::Terminal(outcome))
                         .is_err()
                     {
-                        let partial_usage = state.usage.partial_usage_body();
+                        let partial_usage = state.partial_usage();
                         completion.complete(StreamTerminalOutcome::Cancelled {
                             ttft_ms: state.ttft_ms(),
                             partial_usage,
@@ -452,7 +498,7 @@ async fn run_stream_producer(
                     return;
                 }
                 Err(_) => {
-                    let partial_usage = state.usage.partial_usage_body();
+                    let partial_usage = state.partial_usage();
                     completion.complete(StreamTerminalOutcome::TimedOut {
                         stage: timeout_stage,
                         ttft_ms: state.ttft_ms(),
@@ -578,6 +624,53 @@ fn streaming_usage_format(content_type: Option<&str>) -> StreamingUsageFormat {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A client disconnect must still settle the tokens the provider already
+    /// produced. The downstream drop usually wins the terminal race (the
+    /// producer is parked on an upstream read), so the shared accumulator is the
+    /// only way partial usage reaches the terminal outcome — without it a
+    /// cancel/refresh loop is a free channel and the precharge hold freezes until
+    /// its TTL expires.
+    #[tokio::test]
+    async fn dropping_the_downstream_body_reports_observed_partial_usage() {
+        let (completion, mut terminal_receiver) = StreamCompletion::new();
+        let usage = Arc::new(Mutex::new(StreamingUsageAccumulator::new(
+            StreamingUsageFormat::ServerSentEvents,
+        )));
+        {
+            let mut accumulator = lock_usage(&usage);
+            accumulator
+                .observe(
+                    b"data: {\"choices\":[],\"usage\":{\"prompt_tokens\":11,\"completion_tokens\":7,\"total_tokens\":18}}\n\n",
+                )
+                .expect("usage frame is observed");
+        }
+        let (demand_sender, _demand_receiver) = mpsc::channel(1);
+        let state = DownstreamStreamState {
+            demand_sender,
+            completion,
+            usage,
+            started_at: Instant::now(),
+            first_frame_at: None,
+        };
+
+        drop(state);
+
+        match terminal_receiver
+            .try_recv()
+            .expect("drop delivers a terminal outcome")
+        {
+            StreamTerminalOutcome::Cancelled { partial_usage, .. } => {
+                let partial = partial_usage.expect("partial usage must survive a disconnect");
+                let text = partial.to_string();
+                assert!(
+                    text.contains("completion_tokens"),
+                    "partial usage must carry the observed tokens: {text}"
+                );
+            }
+            other => panic!("unexpected terminal outcome: {other:?}"),
+        }
+    }
 
     #[test]
     fn runtime_total_timeout_is_used_when_account_timeout_is_absent() {

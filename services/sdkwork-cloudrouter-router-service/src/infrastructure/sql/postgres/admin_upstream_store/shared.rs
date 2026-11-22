@@ -28,6 +28,32 @@ pub(super) fn store_error(context: &str, error: sqlx::Error) -> DomainError {
     redacted_store_error(context, error)
 }
 
+/// Holds a stored upstream Base URL to the production egress boundary at
+/// configuration time.
+///
+/// An upstream Base URL is a future outbound sink: a credential-bearing,
+/// cleartext, or internal-target URL must be rejected when an operator saves
+/// it, not discovered when a live request dials it. The runtime applies the
+/// same policy again before dispatch
+/// (`invocation_dispatcher::validated_provider_uri`), so this only moves the
+/// failure to the person who can fix it.
+///
+/// Local development upstreams are configured through the explicit
+/// development-only constructors, not through the admin API, so holding stored
+/// configuration to the production boundary does not block them.
+pub(super) fn validate_upstream_base_url(value: &str, field_name: &str) -> DomainResult<()> {
+    let value = value.trim();
+    if value.is_empty() {
+        return Ok(());
+    }
+    sdkwork_cloudrouter_security::validate_outbound_base_url(
+        value,
+        sdkwork_cloudrouter_security::OutboundTargetPolicy::Production,
+    )
+    .map(|_| ())
+    .map_err(|error| DomainError::new(format!("{field_name} rejected: {error}")))
+}
+
 pub(super) fn column<T>(row: &PgRow, name: &str, context: &str) -> DomainResult<T>
 where
     for<'row> T: Decode<'row, Postgres> + Type<Postgres>,
@@ -234,5 +260,46 @@ pub(super) fn masked_secret(secret: &str) -> String {
                 .skip(characters.len().saturating_sub(4))
                 .collect::<String>()
         ),
+    }
+}
+
+#[cfg(test)]
+mod base_url_validation_tests {
+    use super::validate_upstream_base_url;
+
+    #[test]
+    fn accepts_public_https_upstreams() {
+        for value in [
+            "https://api.deepseek.com",
+            "https://api.deepseek.com/v1",
+            "https://api.openai.com/v1",
+            "  https://api.moonshot.cn/v1  ",
+        ] {
+            assert!(
+                validate_upstream_base_url(value, "defaultBaseUrl").is_ok(),
+                "public https upstream rejected: {value}"
+            );
+        }
+        assert!(validate_upstream_base_url("   ", "defaultBaseUrl").is_ok());
+    }
+
+    #[test]
+    fn rejects_urls_that_breach_the_egress_boundary() {
+        for value in [
+            "http://api.deepseek.com/v1",
+            "https://user:secret@api.deepseek.com/v1",
+            "https://api.deepseek.com/v1?token=abc",
+            "https://api.deepseek.com/v1#frag",
+            "https://127.0.0.1:8080/v1",
+            "https://169.254.169.254/latest/meta-data",
+            "http://localhost:11434/v1",
+        ] {
+            let error = validate_upstream_base_url(value, "defaultBaseUrl")
+                .expect_err("outbound boundary bypass must be rejected");
+            assert!(
+                error.to_string().contains("defaultBaseUrl rejected"),
+                "rejection must name the field: {error}"
+            );
+        }
     }
 }

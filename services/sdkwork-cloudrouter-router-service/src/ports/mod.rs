@@ -338,7 +338,10 @@ pub use official_pricing_refresh_store::{
 };
 pub use pricing_catalog::{PricingCatalog, PricingDefaultRegionProvider};
 pub use provider_adapter_route_resolver::ProviderAdapterRouteResolver;
-pub use provider_secret_resolver::ProviderSecretResolver;
+pub use provider_secret_resolver::{
+    ensure_managed_secret_belongs_to_account, managed_credential_id, ProviderSecretResolver,
+    MANAGED_CREDENTIAL_SECRET_REF_PREFIX,
+};
 pub use response_memory::ProviderResponseMemoryGuard;
 pub use responses_relay::{
     ResponsesRelay, ResponsesRelayFuture, ResponsesRelayRequest, ResponsesRelayResponse,

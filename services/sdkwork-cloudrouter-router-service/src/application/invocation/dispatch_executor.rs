@@ -12,8 +12,8 @@ use super::{
 };
 use crate::domain::AiRouteFailureStrategy;
 use crate::ports::{
-    InvocationDispatchError, InvocationDispatcher, ProviderAdapterRouteResolver,
-    ProviderSecretResolver,
+    ensure_managed_secret_belongs_to_account, InvocationDispatchError, InvocationDispatcher,
+    ProviderAdapterRouteResolver, ProviderSecretResolver,
 };
 
 #[derive(Clone)]
@@ -390,6 +390,11 @@ fn resolve_provider_secret(
     if let Some(reused) = current_secret.filter(|secret| secret.secret_ref == secret_ref) {
         return Ok(Some(reused.clone()));
     }
+    // A managed reference names the credential the route selected. Resolving one
+    // that does not belong to this account would read another account's (and
+    // potentially another tenant's) credential from the shared resolver map.
+    ensure_managed_secret_belongs_to_account(secret_ref, account.credential_id)
+        .map_err(|error| dispatch_error(error.to_string()))?;
     let Some(secret_resolver) = secret_resolver else {
         return Err(dispatch_error(format!(
             "provider secret resolver is not available for secret_ref {secret_ref}",

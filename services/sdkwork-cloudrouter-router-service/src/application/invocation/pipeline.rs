@@ -323,14 +323,35 @@ impl InvocationPipeline {
         started: &[usize],
         error: &InvocationError,
     ) {
+        // An `on_error` hook is the last chance to release a precharge hold,
+        // refund, or clear a lease. Swallowing its failure silently leaves funds
+        // or permits frozen until a TTL expires with no operator signal, so each
+        // failure is logged with the hook that failed.
         for index in started.iter().rev() {
-            let _ = self.interceptors[*index].on_error(invocation, error).await;
+            let interceptor = &self.interceptors[*index];
+            if let Err(hook_error) = interceptor.on_error(invocation, error).await {
+                tracing::error!(
+                    interceptor = interceptor.name(),
+                    pipeline_error_kind = error.kind.code(),
+                    %hook_error,
+                    request_id = %invocation.request.request_id,
+                    "invocation interceptor failed to handle a pipeline error"
+                );
+            }
         }
         for (index, interceptor) in self.interceptors.iter().enumerate().rev() {
             if started.contains(&index) || !interceptor.observe_pipeline_errors() {
                 continue;
             }
-            let _ = interceptor.on_error(invocation, error).await;
+            if let Err(hook_error) = interceptor.on_error(invocation, error).await {
+                tracing::error!(
+                    interceptor = interceptor.name(),
+                    pipeline_error_kind = error.kind.code(),
+                    %hook_error,
+                    request_id = %invocation.request.request_id,
+                    "invocation error observer failed to handle a pipeline error"
+                );
+            }
         }
     }
 }

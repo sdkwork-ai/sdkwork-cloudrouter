@@ -55,6 +55,11 @@ pub const DEFAULT_PROVIDER_RESPONSE_MAX_BYTES: u64 = 64 * 1024 * 1024;
 /// Streaming responses are relayed incrementally and do not use this buffer.
 pub const MAX_PROVIDER_RESPONSE_MAX_BYTES: u64 = 256 * 1024 * 1024;
 const UPSTREAM_VERIFICATION_RESPONSE_MAX_BYTES: usize = 1024 * 1024;
+/// The only provider status that may be replayed for a non-idempotent POST.
+///
+/// A rate-limit rejection is decided before the provider starts generating, so
+/// re-sending the request cannot duplicate upstream work or billing.
+const RATE_LIMIT_REJECTED_BEFORE_EXECUTION: u16 = 429;
 const DEFAULT_PROVIDER_RESPONSE_TIMEOUT: Duration =
     Duration::from_millis(DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS);
 const DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT: Duration =
@@ -1788,6 +1793,22 @@ async fn send_openai_json_with_runtime(
         );
 
         if attempt < retry_policy.max_attempts && retry_policy.is_retryable_status(status_code) {
+            // A POST can only be replayed when the upstream provably did not
+            // execute it. A 429 is refused before generation, so repeating it
+            // cannot duplicate upstream work. Every other retryable status
+            // (408/409/425/5xx) may follow an executed generation or a created
+            // async job: re-sending the same body would bill the platform a
+            // second time while the caller sees a single response. Those are
+            // surfaced instead — the route layer can still fail over to a
+            // *different* account, which is a different upstream request.
+            if status_code != RATE_LIMIT_REJECTED_BEFORE_EXECUTION {
+                tracing::debug!(
+                    request_label,
+                    status_code,
+                    "not replaying a non-idempotent provider POST after a status that may have executed"
+                );
+                return Ok((status_code, body, memory_guard));
+            }
             drop(body);
             drop(memory_guard);
             drop(dispatch_permit);

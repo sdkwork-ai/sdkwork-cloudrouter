@@ -484,6 +484,7 @@ mod tests {
             catalog_key: Some("openai/gpt-4".to_owned()),
             requested_model: Some("gpt-4".to_owned()),
             provider_model: Some("gpt-4".to_owned()),
+            supplier_type: None,
             region_code: "global".to_owned(),
             credential_id: Some(1),
             credential_rotation: None,

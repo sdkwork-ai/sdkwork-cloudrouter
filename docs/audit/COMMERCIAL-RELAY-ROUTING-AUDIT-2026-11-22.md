@@ -22,9 +22,15 @@
 | 记账钩子失败覆盖厂商 200 | 已修复，含单测 |
 | 非流式并发被内存预算钳到 2 | 已修复（按声明大小预扣），含单测 |
 | 定价解析每请求重复上百次全扫 | 待修复（已定位） |
-| `supplier_type=official|relay` 未参与运行时决策 | 待修复（已定位） |
-| 中转站 chat 资源授权缺失、模型名改写缺省错误 | 待修复（已定位） |
-| `least_cost` 用静态系数而非真实采购价 | 待修复（已定位） |
+| `supplier_type=official|relay` 未参与运行时决策 | 已修复，含单测 |
+| 中转站模型名改写缺省错误 | 已修复（按 supplier_type 寻址），含单测 |
+| 中转站 LLM 协议组未开箱绑定 | 设计如此：由后台按声明协议派生（运营动作） |
+| `least_cost` 用静态系数而非真实采购价 | 已修复（按采购价排序，混币回退），含单测 |
+| 非幂等 POST 在 relay 层被静默重试 | 已修复（仅 429 可重放），含测试 |
+| 账号/供应商 Base URL 写入无出站校验 | 已修复（配置期拒绝 + 分发期复检），含单测 |
+| 托管密钥引用可跨账号解析 | 已修复（归属校验），含单测 |
+| Routing 错误 502/503 口径分裂 | 已修复（统一 503），含单测 |
+| `on_error` 失败被静默吞掉 | 已修复（逐钩子 error 日志） |
 
 ## 3. 事故根因
 
@@ -113,6 +119,15 @@
   （1 MiB 下限、响应上限封顶）；无声明长度时仍按上限 × 4。
 - 测试：`declared_payload_sizes_get_proportional_reservations`。
 
+**J. `supplier_type` 未参与运行时决策（已修复）**
+- 位置：快照 `load_upstream_supplier_model_access`、`UpstreamAccountRouteCatalog::supplier_type`、
+  `route_planning.rs::default_provider_model`、`provider_request.rs::normalized_provider_model`
+- 修复：快照同行加载 `supplier_type` 并建索引；候选携带类型；官方供应商收到
+  vendor-native id（`deepseek-flash`），中转站收到全限定 catalog key
+  （`deepseek/deepseek-flash`）；显式模型映射规则优先于两者。
+- 测试：`provider_model_normalization_covers_every_separator_spelling`、
+  `relay_suppliers_keep_the_qualified_catalog_key`。
+
 ### 4.2 待修复（已定位，附证据）
 
 **I. 定价解析每请求重复上百次全扫**
@@ -122,23 +137,72 @@
 `catalog.rs` 的 `list_upstream_account_routes` 返回 `to_vec()`，每次深拷贝
 整张账号路由表，而快照本身已有 `Arc<[..]>`。
 
-**J. `supplier_type` 未参与运行时决策**
-`ai_upstream_supplier.supplier_type in ('official','relay')` 只用于种子写入与
-后台校验；路由、分发、模型名推导均不区分。后果：中转站默认收到去厂商前缀的
-native id（`deepseek-flash` 而非 `deepseek/deepseek-flash`），
-`ai_model_mapping_rule` 为 0 行且后台只有 GET/resolve、无 CRUD。
-
-**K. 中转站 chat 资源授权缺失（数据）**
+**K. 中转站 chat 授权的真实形态（设计如此，非缺陷）**
 生产库 12 条 relay supplier binding 全部指向媒体资源组
-（`relay.bytedance.media`、`relay.cn/global.visual_generation`），没有任何
-relay chat 授权；即使启用 relay 账号，chat 请求也会在
-`binding_matches_api_scope` / `binding_matches_capability` 处被拒。
+（`relay.bytedance.media`、`relay.cn/global.visual_generation`）。种子注释
+（`ai_routing_seed.rs` 第 44x 行）明确：LLM 面已标准化，**不为中转站另建 LLM
+资源组**，而是复用官方供应商已有的协议面资源组，授权由中转站声明的
+`protocols` 经后台映射（`llmProtocols.ts`）派生。因此"开箱即用"的中转站
+chat 需要运维在供应商资源页绑定协议组（`/upstream_suppliers/{id}/resources`），
+属于产品/运营决策而非代码缺陷。
 
-**L. `least_cost` 用静态系数**
-`upstream_account_route_planner.rs::order_accounts` 只比较
-`contract_cost_multiplier × 成员/分组系数`，不查询 `ai_model_pricing`
-（该表已有 `supplier_code`/`account_id`/`price_side=2` 维度，生产库
-`price_side=2` 为 0 行）。
+**L. `least_cost` 用静态系数（已修复）**
+- 位置：`upstream_route_selector.rs`（`resolve_route_procurement_cost`、
+  `order_routes_by_procurement_cost`、`candidate_uses_least_cost`）
+- 修复：定价门在判定"可计费"的同时返回该候选的采购单价（复用同一次
+  `PriceService::resolve`，不新增解析）；`least_cost` 分组按采购价稳定排序，
+  无采购价的候选保持在有价候选之后，混币种（无汇率）时保持原顺序；客户计费
+  仍不依赖采购价。
+- 测试：`cheapest_procurement_price_wins_and_unpriced_candidates_trail`、
+  `candidates_share_the_planner_order_when_no_procurement_price_exists`、
+  `mixed_currency_prices_are_not_ranked`。
+
+**O. 非幂等 POST 在 relay 层被静默重试（已修复）**
+- 位置：`infrastructure/provider/openai_compatible_relay.rs::send_openai_json_with_runtime`
+- 事实：请求级重试策略默认 2 次，`is_retryable_status` 覆盖 408/409/425/5xx：
+  上游可能已执行生成并被计费，重发同一 POST 会让平台付两次而调用方只收到一个
+  响应；同一缺陷在调用管道侧早已用 `request_allows_replay` 规避，两条路径语义
+  不一致。
+- 修复：仅 `429`（生成前拒绝，必然未执行）允许重放；其余可重试状态原样返回，
+  由路由层换账号（那是另一个上游请求）。
+- 测试：`openai_compatible_relay_does_not_replay_a_non_idempotent_post_after_5xx`、
+  `openai_compatible_relay_replays_a_rate_limited_post_within_the_configured_attempts`。
+
+**P. 账号/供应商 Base URL 写入无出站边界校验（已修复）**
+- 位置：`admin_upstream_store/shared.rs::validate_upstream_base_url`，
+  账号 `validate_account_command` 与供应商 `save` 调用
+- 事实：端点写入有 HTTPS/userinfo/query 校验，但账号 `default_base_url` 与
+  `protocols[].baseUrl`、供应商 `default_base_url` 完全未校验，可写入
+  `http://127.0.0.1`、`169.254.169.254` 等；运行期虽会二次拦截，但配置已落库。
+- 修复：配置期按 Production 出站策略校验（HTTPS、禁 userinfo/fragment/query、
+  禁内网与 IP 字面量），与既有 webhook 校验同源；本地开发上游走显式的
+  development-only 构造器，不经过后台 API。
+- 测试：`accepts_public_https_upstreams`、`rejects_urls_that_breach_the_egress_boundary`。
+
+**Q. 托管密钥引用无归属校验（已修复）**
+- 位置：`ports/provider_secret_resolver.rs`（`managed_credential_id`、
+  `ensure_managed_secret_belongs_to_account`），`secrets.rs` 与
+  `dispatch_executor.rs` 两条解析路径均调用
+- 事实：resolver 是跨租户共享的 `secret_ref → 明文` 映射；路由由目录、粘性绑定、
+  故障转移候选等多个快照拼装，陈旧的 `secret_ref` 可能解析到**另一个账号/租户**的
+  凭据（当前无用户可控路径，属契约缺陷）。
+- 修复：托管引用（`managed://upstream-account-credential/<id>`）必须与所选中账号的
+  `credential_id` 一致，否则拒绝；外部引用（`vault://…`、环境注入）不受此约束。
+- 测试：`managed_reference_must_name_the_selected_account_credential`、
+  `external_references_are_not_governed_by_the_managed_invariant`。
+
+**R. Routing 错误 502/503 口径分裂（已修复）**
+- 位置：`response_normalization.rs::status_code_for_error`
+- 事实：管道把 `Routing` 映射为 502，而 HTTP 层与用量/轨迹记录同一失败为 503，
+  客户端看到的与事故报告记录的不一致。
+- 修复：`Routing` 统一为 503（容量/路由不可用，可重试）；上游故障仍为 502。
+- 测试：`routing_failures_map_to_service_unavailable`。
+
+**S. `on_error` 失败被静默吞掉（已修复）**
+- 位置：`pipeline.rs::notify_error`
+- 事实：`let _ = ... .on_error(...)` 让释放预扣、退款、清租约的失败完全无日志，
+  资金/配额会冻结到 TTL 结束且无告警。
+- 修复：逐钩子记录 `error`（含拦截器名、pipeline 错误码、request_id）。
 
 **M. `credential_rotation` 只被搬运，未被消费**
 `account.credential_rotation` 从快照一路带到 `InvocationAccount`，但
@@ -180,13 +244,16 @@ dispatch 不读取，按策略轮换（per_request/per_attempt）实际未生效
 
 ```bash
 cargo check -p sdkwork-cloudrouter-router-service -p sdkwork-cloudrouter-edge-runtime
-cargo test  -p sdkwork-cloudrouter-router-service --lib                        # 748 passed
+cargo test  -p sdkwork-cloudrouter-router-service --lib                        # 757 passed
 cargo test  -p sdkwork-cloudrouter-router-service --test invocation_dispatch   # 31 passed
 cargo test  -p sdkwork-cloudrouter-router-service --test invocation_pipeline   # 4 passed
-cargo test  -p sdkwork-cloudrouter-router-service --lib provider_request       # 8 passed
-cargo test  -p sdkwork-cloudrouter-router-service --lib response_memory_budget # 4 passed
-cargo test  -p sdkwork-cloudrouter-router-service --lib openai_relay_execution # 8 passed
+cargo test  -p sdkwork-cloudrouter-router-service --test upstream_route_selector # 61 passed
+cargo test  -p sdkwork-cloudrouter-router-service --test sql_pricing_catalog_contract # 14 passed
+cargo test  -p sdkwork-cloudrouter-router-service --test app_runtime_api       # 58 passed
+cargo test  -p sdkwork-cloudrouter-router-service --test routing_decision_log_recording # 5 passed
 cargo test  -p sdkwork-cloudrouter-router-service --test openai_chat_api       # 42 passed
+cargo test  -p sdkwork-cloudrouter-router-service --test openai_responses_api  # 12 passed
+cargo test  -p sdkwork-cloudrouter-router-service --test openai_embeddings_api # 9 passed
 cargo test  -p sdkwork-cloudrouter-edge-runtime  --lib                         # 109 passed
 ```
 

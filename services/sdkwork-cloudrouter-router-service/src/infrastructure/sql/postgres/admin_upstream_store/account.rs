@@ -3,7 +3,8 @@ use sqlx::{PgPool, Postgres, Transaction};
 
 use super::shared::{
     column, conflict, generated_uuid, masked_secret, not_found, parse_protocols,
-    record_routing_change, search_pattern, store_error, DEFAULT_DATA_SCOPE,
+    record_routing_change, search_pattern, store_error, validate_upstream_base_url,
+    DEFAULT_DATA_SCOPE,
 };
 use crate::application::{UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext};
 use crate::domain::{DomainError, DomainResult};
@@ -1321,6 +1322,10 @@ fn validate_account_command(command: &SaveAdminUpstreamAccountCommand) -> Domain
         if config.base_url.trim().is_empty() {
             return Err(DomainError::new("protocols baseUrl must not be blank"));
         }
+        validate_upstream_base_url(config.base_url.as_str(), "protocols baseUrl")?;
+    }
+    if let Some(default_base_url) = command.default_base_url.as_deref() {
+        validate_upstream_base_url(default_base_url, "defaultBaseUrl")?;
     }
     if command
         .contract_cost_multiplier

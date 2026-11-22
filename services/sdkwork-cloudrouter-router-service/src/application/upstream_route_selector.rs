@@ -10,9 +10,9 @@ use std::fmt::{Display, Formatter};
 
 use crate::domain::{
     has_text, normalize_wire_model_id, parse_model_catalog_identity, provider_native_model_id,
-    BillingMeter, DomainError, DomainResult, GatewayApiKeyAccountGroupBinding, ModelUpstreamRoute,
-    PriceSide, PricingDimensionContext, ResourceDefinition, RouteCandidate, RoutingCapability,
-    UpstreamAccountGroup, UpstreamAccountGroupBinding, UpstreamAccountRoute,
+    BillingMeter, DecimalValue, DomainError, DomainResult, GatewayApiKeyAccountGroupBinding,
+    ModelUpstreamRoute, PriceSide, PricingDimensionContext, ResourceDefinition, RouteCandidate,
+    RoutingCapability, UpstreamAccountGroup, UpstreamAccountGroupBinding, UpstreamAccountRoute,
     UpstreamAccountRoutingStrategy,
 };
 use crate::ports::{
@@ -739,21 +739,35 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             if candidate_routes.is_empty() {
                 continue;
             }
+            // `least_cost` ranks what the account actually costs the platform,
+            // not just its static contract multiplier. The procurement price is
+            // read from the very same resolution the pricing gate performs, so
+            // ranking adds no extra pricing work. Candidates without a published
+            // procurement price keep their relative order behind priced ones.
+            let least_cost = self.candidate_uses_least_cost(query, &candidate);
+            let mut priced_routes: Vec<(Option<RouteProcurementCost>, ModelUpstreamRoute)> =
+                Vec::with_capacity(candidate_routes.len());
             for route in candidate_routes {
                 if !self.route_is_callable(&route) {
                     continue;
                 }
                 if !query.pricing_required {
                     // 免费计费：不扣费的调用不做定价预门，路由可达即可。
-                    push_unique_model_route(&mut selected_routes, route);
+                    priced_routes.push((None, route));
                     continue;
                 }
                 match self.ensure_route_is_priced(query, &route) {
-                    Ok(()) => push_unique_model_route(&mut selected_routes, route),
+                    Ok(cost) => priced_routes.push((cost, route)),
                     Err(error) => {
                         pricing_error.get_or_insert(error);
                     }
                 }
+            }
+            if least_cost {
+                order_routes_by_procurement_cost(&mut priced_routes);
+            }
+            for (_, route) in priced_routes {
+                push_unique_model_route(&mut selected_routes, route);
             }
         }
         if selected_routes.is_empty() {
@@ -763,6 +777,25 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         } else {
             CandidateUpstreamModelRouteEvaluation::Planned(selected_routes)
         }
+    }
+
+    /// Whether the candidate's account group is ranked by real procurement cost.
+    ///
+    /// The per-API-key route binding overrides the group default, mirroring
+    /// [`Self::binding_strategy_for_group`] in the account planner.
+    fn candidate_uses_least_cost(
+        &self,
+        query: &SelectUpstreamModelRouteQuery,
+        candidate: &RouteCandidate,
+    ) -> bool {
+        let strategy = self
+            .binding_strategy_for_group(query.context.api_key_id, candidate.account_group_id)
+            .or_else(|| {
+                self.catalog
+                    .find_upstream_account_group(candidate.account_group_id)
+                    .map(|group| group.routing_strategy)
+            });
+        matches!(strategy, Some(UpstreamAccountRoutingStrategy::LeastCost))
     }
 
     fn select_group_bound_account_route_plan(
@@ -1336,8 +1369,8 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         &self,
         query: &SelectUpstreamModelRouteQuery,
         route: &ModelUpstreamRoute,
-    ) -> DomainResult<()> {
-        ensure_route_is_priced(
+    ) -> DomainResult<Option<RouteProcurementCost>> {
+        resolve_route_procurement_cost(
             self.catalog,
             &RoutePricingProbe {
                 catalog_key: &route.catalog_key,
@@ -1374,10 +1407,33 @@ pub(crate) struct RoutePricingProbe<'a> {
     pub billing_meter: &'a BillingMeter,
 }
 
-pub(crate) fn ensure_route_is_priced<C>(
+pub(crate) fn ensure_route_is_priced<C>(catalog: &C, probe: &RoutePricingProbe<'_>) -> DomainResult<()>
+where
+    C: UpstreamAccountRouteCatalog,
+{
+    resolve_route_procurement_cost(catalog, probe).map(|_| ())
+}
+
+/// Aggregate procurement (upstream cost) unit price of a priced candidate.
+///
+/// Customer billing never depends on this value (see
+/// [`resource_is_priced_for_billing`]); it exists so `least_cost` can compare
+/// what an account actually costs the platform instead of only a static
+/// contract multiplier. The first priced meter's cost is used: every meter of
+/// one request is quoted in the same currency, and the input meter is the
+/// representative dimension.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct RouteProcurementCost {
+    pub currency: String,
+    pub unit_price: DecimalValue,
+}
+
+/// Resolves whether the candidate can be priced and, when the price book
+/// publishes an upstream cost side, its procurement unit price.
+pub(crate) fn resolve_route_procurement_cost<C>(
     catalog: &C,
     probe: &RoutePricingProbe<'_>,
-) -> DomainResult<()>
+) -> DomainResult<Option<RouteProcurementCost>>
 where
     C: UpstreamAccountRouteCatalog,
 {
@@ -1409,6 +1465,7 @@ where
     };
     let configured_default_region =
         catalog.default_billing_region(probe.tenant_id, probe.organization_id, probe.catalog_key);
+    let mut procurement: Option<RouteProcurementCost> = None;
     for meter in meters {
         // 同一档位解析也用在 sticky 路径上：目录对视频模型的条件费率同样需要
         // `tier_code`，两条核价路径的身份必须一致。这里同样按计量单位分别解析：
@@ -1461,7 +1518,18 @@ where
         }
         let resolution = PriceService::new().resolve(catalog, resource);
         match resolution {
-            Ok(resolution) if resource_is_priced_for_billing(&resolution) => {}
+            Ok(resolution) if resource_is_priced_for_billing(&resolution) => {
+                if procurement.is_none() {
+                    procurement = resolution
+                        .resolved_price
+                        .as_ref()
+                        .and_then(|price| price.procurement_cost.as_ref())
+                        .map(|cost| RouteProcurementCost {
+                            currency: cost.currency.clone(),
+                            unit_price: cost.unit_price,
+                        });
+                }
+            }
             Ok(resolution) if meter == BillingMeter::LlmCacheReadToken => {
                 let _ = resolution;
             }
@@ -1480,7 +1548,7 @@ where
             Err(error) => return Err(error),
         }
     }
-    Ok(())
+    Ok(procurement)
 }
 
 /// Whether the resolved resource is priced for **customer billing**.
@@ -2181,6 +2249,33 @@ fn apply_upstream_account_route(
     route
 }
 
+/// Stable-orders priced candidates by upstream procurement cost.
+///
+/// Candidates without a published procurement price keep their planner order
+/// behind the priced ones, so a price-book gap degrades to the previous
+/// behavior instead of reordering traffic arbitrarily. Prices quoted in
+/// different currencies are not comparable without an FX rate; the planner
+/// order is then kept as-is.
+fn order_routes_by_procurement_cost(
+    routes: &mut [(Option<RouteProcurementCost>, ModelUpstreamRoute)],
+) {
+    let mut currencies = routes
+        .iter()
+        .filter_map(|(cost, _)| cost.as_ref().map(|cost| cost.currency.as_str()));
+    let Some(currency) = currencies.next() else {
+        return;
+    };
+    if currencies.any(|other| other != currency) {
+        return;
+    }
+    routes.sort_by(|left, right| match (&left.0, &right.0) {
+        (Some(left), Some(right)) => left.unit_price.cmp(&right.unit_price),
+        (Some(_), None) => std::cmp::Ordering::Less,
+        (None, Some(_)) => std::cmp::Ordering::Greater,
+        (None, None) => std::cmp::Ordering::Equal,
+    });
+}
+
 fn push_unique_model_route(routes: &mut Vec<ModelUpstreamRoute>, route: ModelUpstreamRoute) {
     if routes
         .iter()
@@ -2773,5 +2868,74 @@ mod model_route_scope_key_tests {
             vec!["openai.chat_completions".to_owned()],
             model_route_api_scope_keys("openai.chat_completions", "deepseek-flash")
         );
+    }
+}
+
+#[cfg(test)]
+mod procurement_cost_ordering_tests {
+    use super::{order_routes_by_procurement_cost, RouteProcurementCost};
+    use crate::domain::{DecimalValue, ModelUpstreamRoute};
+
+    fn route(account_id: i64) -> ModelUpstreamRoute {
+        ModelUpstreamRoute::new_for_catalog_key(
+            "deepseek/deepseek-flash",
+            "deepseek-flash",
+            "deepseek",
+            account_id,
+            "deepseek-flash",
+        )
+    }
+
+    fn cost(currency: &str, unit_price: &str) -> RouteProcurementCost {
+        RouteProcurementCost {
+            currency: currency.to_owned(),
+            unit_price: DecimalValue::parse(unit_price).expect("decimal"),
+        }
+    }
+
+    fn account_order(
+        routes: &[(Option<RouteProcurementCost>, ModelUpstreamRoute)],
+    ) -> Vec<i64> {
+        routes
+            .iter()
+            .map(|(_, route)| route.account_id)
+            .collect()
+    }
+
+    #[test]
+    fn cheapest_procurement_price_wins_and_unpriced_candidates_trail() {
+        let mut routes = vec![
+            (Some(cost("USD", "0.90")), route(11)),
+            (None, route(12)),
+            (Some(cost("USD", "0.30")), route(13)),
+            (Some(cost("USD", "0.60")), route(14)),
+        ];
+
+        order_routes_by_procurement_cost(&mut routes);
+
+        assert_eq!(vec![13, 14, 11, 12], account_order(&routes));
+    }
+
+    #[test]
+    fn candidates_share_the_planner_order_when_no_procurement_price_exists() {
+        let mut routes = vec![(None, route(21)), (None, route(22)), (None, route(23))];
+
+        order_routes_by_procurement_cost(&mut routes);
+
+        assert_eq!(vec![21, 22, 23], account_order(&routes));
+    }
+
+    #[test]
+    fn mixed_currency_prices_are_not_ranked() {
+        // Comparing USD and CNY unit prices without an FX rate would silently
+        // prefer whichever number is smaller; keep the planner order instead.
+        let mut routes = vec![
+            (Some(cost("USD", "0.90")), route(31)),
+            (Some(cost("CNY", "0.10")), route(32)),
+        ];
+
+        order_routes_by_procurement_cost(&mut routes);
+
+        assert_eq!(vec![31, 32], account_order(&routes));
     }
 }

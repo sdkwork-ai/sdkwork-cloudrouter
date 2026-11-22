@@ -434,8 +434,13 @@ fn status_code_for_error(error: &InvocationError) -> u16 {
         // faults, so clients can route the user to recharge.
         super::InvocationErrorKind::InsufficientBalance => 402,
         super::InvocationErrorKind::BillingUnavailable => 501,
-        super::InvocationErrorKind::Routing
-        | super::InvocationErrorKind::Pricing
+        // Capacity/routing failures are "the gateway cannot serve this request
+        // right now" → 503, matching `invocation_http::response_from_invocation_error`
+        // and the usage/trace status. Previously this arm returned 502 while the
+        // HTTP layer recorded 503 for the same failure, so clients saw one status
+        // and incident reports another.
+        super::InvocationErrorKind::Routing => 503,
+        super::InvocationErrorKind::Pricing
         | super::InvocationErrorKind::Dispatch
         | super::InvocationErrorKind::ProviderPassthroughFailed
         | super::InvocationErrorKind::Usage
@@ -525,6 +530,25 @@ mod tests {
             "async usage reconciliation is not enabled",
         );
         assert_eq!(501, status_code_for_error(&error));
+    }
+
+    /// Capacity/routing failures must read as "try again later" and match the
+    /// status the HTTP layer and usage/trace records carry for the same failure.
+    #[test]
+    fn routing_failures_map_to_service_unavailable() {
+        for kind in [
+            InvocationErrorKind::Routing,
+            InvocationErrorKind::Pricing,
+            InvocationErrorKind::Dispatch,
+        ] {
+            let error = InvocationError::new(kind, "no routable upstream account");
+            let status = status_code_for_error(&error);
+            if kind == InvocationErrorKind::Routing {
+                assert_eq!(503, status, "routing failures are capacity failures");
+            } else {
+                assert_eq!(502, status, "upstream faults stay bad-gateway");
+            }
+        }
     }
 
     #[test]

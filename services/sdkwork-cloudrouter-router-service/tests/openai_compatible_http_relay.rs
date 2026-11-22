@@ -309,79 +309,10 @@ async fn openai_compatible_relay_times_out_slow_upstream_responses_without_leaki
 }
 
 #[tokio::test]
-async fn openai_compatible_relay_retries_retryable_upstream_status_once_without_leaking_secret() {
+async fn openai_compatible_relay_does_not_replay_a_non_idempotent_post_after_5xx() {
     let state = Arc::new(Mutex::new(RetryingProviderState::default()));
     let provider = Router::new()
         .route("/v1/chat/completions", post(capture_flaky_chat_completion))
-        .with_state(Arc::clone(&state));
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr = listener.local_addr().unwrap();
-    tokio::spawn(async move {
-        axum::serve(listener, provider).await.unwrap();
-    });
-
-    let endpoint = UpstreamProviderEndpoint::for_local_development(
-        format!("http://{addr}"),
-        "sk-upstream-provider-secret",
-    )
-    .unwrap();
-    let relay = test_relay(endpoint);
-    let response = relay
-        .create_chat_completion(ChatCompletionRelayRequest {
-            api_key_id: 101,
-            tenant_id: 100001,
-            organization_id: 0,
-            user_id: 30,
-            group_id: 10,
-            group_code: "standard-group".to_owned(),
-            pricing_plan_code: "standard".to_owned(),
-            model: "gpt-4o-mini".to_owned(),
-            supplier_code: "openrouter".to_owned(),
-            provider_account_id: 3001,
-            provider_region_code: "global".to_owned(),
-            provider_model: "gpt-4o-mini".to_owned(),
-            provider_base_url: Some(format!("http://{addr}")),
-            provider_secret_ref: Some("vault://providers/openrouter/account/main".to_owned()),
-            provider_auth_profile: ProviderAuthProfile::bearer(),
-            provider_timeout_ms: None,
-            provider_retry_policy: None,
-            request_body: json!({
-                "model": "gpt-4o-mini",
-                "messages": [{"role": "user", "content": "ping"}],
-                "stream": false
-            }),
-        })
-        .await
-        .unwrap();
-
-    assert_eq!(200, response.status_code);
-    assert_eq!("chatcmpl-upstream-retry", response.body["id"]);
-    assert!(!response
-        .body
-        .to_string()
-        .contains("sk-upstream-provider-secret"));
-
-    let state = state.lock().unwrap();
-    assert_eq!(2, state.requests.len());
-    assert!(state
-        .requests
-        .iter()
-        .all(|request| request.authorization.as_deref()
-            == Some("Bearer sk-upstream-provider-secret")));
-    assert!(state
-        .requests
-        .iter()
-        .all(|request| request.body["model"] == "gpt-4o-mini"));
-}
-
-#[tokio::test]
-async fn openai_compatible_relay_uses_request_retry_policy_for_non_stream_json_attempts() {
-    let state = Arc::new(Mutex::new(RetryingProviderState::default()));
-    let provider = Router::new()
-        .route(
-            "/v1/chat/completions",
-            post(capture_twice_flaky_chat_completion),
-        )
         .with_state(Arc::clone(&state));
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
@@ -423,11 +354,81 @@ async fn openai_compatible_relay_uses_request_retry_policy_for_non_stream_json_a
         .await
         .unwrap();
 
+    // A 503 may follow a generation the provider already executed and billed.
+    // Re-sending the same POST would charge the platform twice while the caller
+    // still sees one response, so the relay surfaces the status instead; the
+    // route layer can fail over to a different account.
+    assert_eq!(503, response.status_code);
+    assert_eq!(
+        "provider_temporarily_unavailable",
+        response.body["error"]["code"].as_str().unwrap()
+    );
+    assert!(!response.body.to_string().contains("sk-upstream-provider-secret"));
+
+    let state = state.lock().unwrap();
+    assert_eq!(1, state.requests.len());
+    assert_eq!(
+        Some("Bearer sk-upstream-provider-secret"),
+        state.requests[0].authorization.as_deref()
+    );
+}
+
+#[tokio::test]
+async fn openai_compatible_relay_replays_a_rate_limited_post_within_the_configured_attempts() {
+    let state = Arc::new(Mutex::new(RetryingProviderState::default()));
+    let provider = Router::new()
+        .route(
+            "/v1/chat/completions",
+            post(capture_rate_limited_chat_completion),
+        )
+        .with_state(Arc::clone(&state));
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        axum::serve(listener, provider).await.unwrap();
+    });
+
+    let endpoint = UpstreamProviderEndpoint::for_local_development(
+        format!("http://{addr}"),
+        "sk-upstream-provider-secret",
+    )
+    .unwrap();
+    let relay = test_relay(endpoint);
+    let response = relay
+        .create_chat_completion(ChatCompletionRelayRequest {
+            api_key_id: 101,
+            tenant_id: 100001,
+            organization_id: 0,
+            user_id: 30,
+            group_id: 10,
+            group_code: "standard-group".to_owned(),
+            pricing_plan_code: "standard".to_owned(),
+            model: "gpt-4o-mini".to_owned(),
+            supplier_code: "openrouter".to_owned(),
+            provider_account_id: 3001,
+            provider_region_code: "global".to_owned(),
+            provider_model: "gpt-4o-mini".to_owned(),
+            provider_base_url: Some(format!("http://{addr}")),
+            provider_secret_ref: Some("vault://providers/openrouter/account/main".to_owned()),
+            provider_auth_profile: ProviderAuthProfile::bearer(),
+            provider_timeout_ms: None,
+            provider_retry_policy: Some(ProviderRetryPolicy::new(3, vec![429], 0).unwrap()),
+            request_body: json!({
+                "model": "gpt-4o-mini",
+                "messages": [{"role": "user", "content": "ping"}],
+                "stream": false
+            }),
+        })
+        .await
+        .unwrap();
+
+    // A 429 is refused before generation, so replaying the POST cannot duplicate
+    // upstream work: the retry succeeds on the second attempt.
     assert_eq!(200, response.status_code);
     assert_eq!("chatcmpl-upstream-retry", response.body["id"]);
 
     let state = state.lock().unwrap();
-    assert_eq!(3, state.requests.len());
+    assert_eq!(2, state.requests.len());
 }
 
 #[tokio::test]
@@ -801,7 +802,7 @@ async fn capture_flaky_chat_completion(
     )
 }
 
-async fn capture_twice_flaky_chat_completion(
+async fn capture_rate_limited_chat_completion(
     State(state): State<Arc<Mutex<RetryingProviderState>>>,
     headers: HeaderMap,
     Json(body): Json<serde_json::Value>,
@@ -822,13 +823,13 @@ async fn capture_twice_flaky_chat_completion(
             .map(str::to_owned),
         body,
     });
-    if state.requests.len() <= 2 {
+    if state.requests.len() == 1 {
         return (
-            StatusCode::SERVICE_UNAVAILABLE,
+            StatusCode::TOO_MANY_REQUESTS,
             Json(json!({
                 "error": {
-                    "code": "provider_temporarily_unavailable",
-                    "message": "retry later"
+                    "code": "rate_limited",
+                    "message": "slow down"
                 }
             })),
         );

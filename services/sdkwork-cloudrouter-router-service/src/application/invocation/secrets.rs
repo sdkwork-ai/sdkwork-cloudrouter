@@ -4,7 +4,7 @@ use super::{
     Invocation, InvocationError, InvocationErrorKind, InvocationFuture, InvocationInterceptor,
     ResolvedProviderSecret,
 };
-use crate::ports::ProviderSecretResolver;
+use crate::ports::{ensure_managed_secret_belongs_to_account, ProviderSecretResolver};
 
 #[derive(Clone)]
 pub struct SecretResolutionInterceptor {
@@ -35,6 +35,8 @@ impl InvocationInterceptor for SecretResolutionInterceptor {
             else {
                 return Ok(());
             };
+            ensure_managed_secret_belongs_to_account(secret_ref, account.credential_id)
+                .map_err(|error| secret_error(error.to_string()))?;
             let value = self
                 .resolver
                 .resolve_secret_value(secret_ref)

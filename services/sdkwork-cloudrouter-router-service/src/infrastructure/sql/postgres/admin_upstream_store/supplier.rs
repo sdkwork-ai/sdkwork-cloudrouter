@@ -3,7 +3,7 @@ use sqlx::{PgPool, Postgres, Transaction};
 
 use super::shared::{
     column, conflict, not_found, parse_protocols, record_routing_change, search_pattern,
-    store_error, DEFAULT_DATA_SCOPE,
+    store_error, validate_upstream_base_url, DEFAULT_DATA_SCOPE,
 };
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
@@ -172,6 +172,15 @@ pub(super) async fn save(
     pool: &PgPool,
     command: SaveAdminUpstreamSupplierCommand,
 ) -> DomainResult<AdminUpstreamSupplierItem> {
+    // Reject an outbound Base URL that would breach the egress boundary before
+    // any row is written: a stored supplier default or protocol URL is a future
+    // provider target.
+    if let Some(default_base_url) = command.default_base_url.as_deref() {
+        validate_upstream_base_url(default_base_url, "defaultBaseUrl")?;
+    }
+    for protocol in &command.protocols {
+        validate_upstream_base_url(protocol.base_url.as_str(), "protocols baseUrl")?;
+    }
     let mut tx = pool
         .begin()
         .await
