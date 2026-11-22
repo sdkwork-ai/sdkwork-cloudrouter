@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import QRCode from 'qrcode';
 
+import { formatMinorUnits } from './minorUnits.js';
+
 import {
   detectPaymentEnvironment,
   invokeWechatJsapiPayment,
@@ -336,10 +338,13 @@ export function AnonymousCashierPage({
   };
 
   const formatAmount = (minor: string, currency: string) => {
-    const numeric = Number(minor);
-    if (!Number.isFinite(numeric)) return `${minor} ${currency}`;
+    // Integer money must not round-trip through Number and must not be divided
+    // by a literal 100 (API_SPEC §13.2.3/§13.6): a zero-decimal currency would
+    // render 100x too small.
+    const value = formatMinorUnits(minor, currency);
+    if (value === null) return `${minor} ${currency}`;
     const symbol = currency === 'CNY' ? '¥' : currency === 'USD' ? '$' : '';
-    return `${symbol}${(numeric / 100).toFixed(2)}`;
+    return `${symbol}${value}`;
   };
 
   const goSignIn = () => navigate(signInPath, { state: { from: orderCenterPath } });
