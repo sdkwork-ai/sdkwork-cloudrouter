@@ -92,6 +92,9 @@ export interface AnonymousCashierPageProps {
  * endpoint. It never calls an authenticated order endpoint, and it never shows
  * order details beyond the cashier whitelist (subject/amount/status).
  */
+/** Consecutive status-poll failures before the page admits it is retrying. */
+const STATUS_POLL_DEGRADED_THRESHOLD = 3;
+
 export function AnonymousCashierPage({
   token,
   orderCenterPath = '/me/orders',
@@ -115,12 +118,15 @@ export function AnonymousCashierPage({
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
+  /** True after repeated status-poll failures, so the payer knows the page is retrying. */
+  const [statusDegraded, setStatusDegraded] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<AnonymousWireMethod | null>(null);
   /** QR data URL for a desktop native trade (`wechat_pay` / `alipay`). */
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
   const phaseRef = useRef<CashierPhase>('loading');
   phaseRef.current = phase;
+  const pollFailuresRef = useRef(0);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const createInFlightRef = useRef(false);
@@ -146,6 +152,8 @@ export function AnonymousCashierPage({
   const pollStatus = useCallback(async () => {
     try {
       const status = await loadAnonymousCashierStatus(token);
+      pollFailuresRef.current = 0;
+      setStatusDegraded(false);
       if (status.paid || isCashierPaidStatus(status.status)) {
         stopAt('paid');
         return;
@@ -154,7 +162,13 @@ export function AnonymousCashierPage({
         stopAt('cancelled');
       }
     } catch {
-      // Transient failures keep the payer pending; the countdown owns expiry.
+      // Transient failures keep the payer pending; the countdown owns expiry. After
+      // a few in a row the page says so — a silent catch makes a dying connection
+      // look like a payment that is simply waiting.
+      pollFailuresRef.current += 1;
+      if (pollFailuresRef.current >= STATUS_POLL_DEGRADED_THRESHOLD) {
+        setStatusDegraded(true);
+      }
     }
   }, [stopAt, token]);
 
@@ -451,6 +465,11 @@ export function AnonymousCashierPage({
         </p>
       ) : null}
       {notice ? <p className="mt-3 text-xs text-text-sub">{notice}</p> : null}
+      {statusDegraded ? (
+        <p className="mt-1 text-xs text-text-sub">
+          {t('orders.cashier_status_degraded', '支付状态查询暂时失败，正在重试，请勿关闭页面')}
+        </p>
+      ) : null}
       {errorText ? <p className="mt-3 text-xs text-[var(--cr-danger,#d92d20)]">{errorText}</p> : null}
     </Layout>
   );
