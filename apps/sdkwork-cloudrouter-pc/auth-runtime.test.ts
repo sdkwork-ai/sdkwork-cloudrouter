@@ -464,7 +464,10 @@ test("portal exposes appbase auth routes as standalone React routes", () => {
   assert.doesNotMatch(authRouteSource, /cloudRouterAuthController/);
   assert.match(authRouteSource, /from '\.\/cloudRouterAuthRuntime'/);
   assert.doesNotMatch(authRouteSource, /CloudRouterAuthOAuthCallbackRoute/);
-  assert.match(authRouteSource, /basePath="\/auth"/);
+  // The account surface is mounted at the portal auth base path. The component
+  // passes the published constant rather than a literal, so the mount and the
+  // published path can never drift apart.
+  assert.match(authRouteSource, /basePath=\{CLOUD_ROUTER_AUTH_BASE_PATH\}/);
   assert.match(authRouteSource, /locale=\{i18n\.language\}/);
   assert.match(authRouteSource, /getRuntime=\{getCloudRouterAuthRuntime\}/);
   assert.match(authRouteSource, /homePath="\/"/);
