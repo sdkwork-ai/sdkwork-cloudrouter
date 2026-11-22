@@ -205,10 +205,16 @@ async fn enqueue_timeout_is_fail_open_but_marks_accounting_unreconciled() {
         health.clone(),
     );
 
-    recorder
-        .record_gateway_trace(trace_command())
-        .await
-        .expect("queue timeout must not replace provider success with an error");
+    // The recorder is not the relay boundary: `UsageRecordingInterceptor` swallows
+    // this error, records the failure on the invocation and keeps the user's
+    // response intact. Reporting success here instead would hide the loss from the
+    // fail-closed settlement guard, which is exactly what the accounting path must
+    // not do.
+    let outcome = recorder.record_gateway_trace(trace_command()).await;
+    assert!(
+        outcome.is_err(),
+        "an unrecoverable accounting loss must be reported so settlement can fail closed"
+    );
 
     assert!(health.is_degraded());
     assert_eq!(1, health.dual_failure_count());
