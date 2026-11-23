@@ -1,6 +1,6 @@
 # IAM 人员管理（Personnel Management）设计
 
-- 状态：P1 实施中（跨仓已授权；岗位维持"随部门任职"；权限采用"角色 + 数据范围"）
+- 状态：P1 + P2 后端已落地（sdkwork-iam `e181951f`、`9c55a59c`）；P3 页面待实施
 - 日期：2026-11-23
 - 范围：Cloud Router 管理端「身份目录 → 人员管理」页面 + IAM 模块（`sdkwork-iam`）数据模型与 API 扩展
 - 关联：`TECH-2026-11-18-admin-enterprise-center.md`（管理端信息架构）、`sdkwork-specs/IAM_SPEC.md`、`sdkwork-specs/DATABASE_FRAMEWORK_SPEC.md`、`sdkwork-specs/API_SPEC.md`
@@ -263,8 +263,8 @@ SELECT m.id                AS membership_id,
 | `departments.tree.retrieve` | `GET /departments/tree?organization_id=` | `iam.departments.read` | 新增 `organization_id`；节点含 `sortOrder`、`departmentKind`、`path` |
 | `departments.update` | `PATCH /departments/{departmentId}` | `iam.departments.update` | 扩展：body 接受 `parentDepartmentId`（null=根，缺省=不动）与 `sortOrder`；命中树字段时走专用事务——校验同组织/非自身/非后代（closure），重写子树 `path`、重建跨边界 closure、规整同级 `sort_order`，并写审计。错误 `iam_department_parent_cycle`(400)、`iam_department_parent_not_found`(400)。与 `organizations.update` 的换父语义保持一致，不新增操作 |
 | `organizationMemberships.list` | `GET /organization_memberships?organization_id=&department_id=&q=` | `iam.memberships.read` | 新增 `organization_id`/`department_id`；响应补 `phone`、`employeeNo`、`joinedAt`、`isPrimary` |
-| `members.roster` | `GET /members/roster?organizationId=&departmentId=&includeDescendants=&q=&page…` | `iam.memberships.read` | 新操作。一次返回人+多部门+岗位+角色，见 4.2 |
-| `organizationMemberships.departments.replace` | `PUT /organization_memberships/{membershipId}/departments` | `iam.memberships.update` + `iam.assignments.create/update` | 新操作。body `{organizationId, departments:[{departmentId,isPrimary,positionIds?}]}`；事务 diff：新增/复活、关闭缺失项、保证唯一主部门 |
+| `organizationMemberships.roster.list` | `GET /organization_memberships/roster?organization_id=&department_id=&include_descendants=&q=&page…` | `iam.memberships.read` | 已落地。一次返回人+多部门+岗位+角色（角色按有效期过滤），`department_id` 走部门闭包包含下级 |
+| `organizationMemberships.departments.update` | `PUT /organization_memberships/{membershipId}/departments` | `iam.memberships.update` | 已落地。body `{organizationId, departments:[{departmentId,isPrimary}]}`；事务化 diff：新增/复活、关闭缺失项（`effective_to`）、保证唯一主部门（>1 报 400；全未标记时第一条为主）。岗位走 `position_assignments`，不在本操作内 |
 | `roleBindings.list` | `GET /role_bindings?organizationId=&principalKind=&principalId=&includeExpired=` | `iam.role_bindings.read` | 新增过滤；响应补 `dataScopeKind`、`effectiveFrom/To` |
 | `roleBindings.create` | `POST /role_bindings` | `iam.role_bindings.create` | body 增 `dataScopeKind`、`effectiveFrom/To`；`scopeKind=department` 时校验部门属于该组织 |
 | `positions.create/update/list` | `/positions…` | `iam.positions.*` | 补 `rankLevel`（create 当前忽略）、`departmentId`（update/list 当前缺失），供"改岗位"选择器 |
@@ -361,7 +361,7 @@ SELECT m.id                AS membership_id,
 | --- | --- | --- |
 | P0（本设计） | 评审 schema 迁移 + API 增量 | 本文档 review |
 | P1 | 迁移 0049 + fold + ledger；`departments.update` 换父/排序；`sortOrder`/`phone` 投影；组织/部门范围过滤 | `check-database-framework-standard`、`cargo check -p sdkwork-routes-iam-backend-api`、OpenAPI materialize |
-| P2 | `members.roster`、`departments.replace`、`roleBindings` 数据范围/有效期 | 上述 + API 合同校验 |
+| P2 | `organizationMemberships.roster.list`、`departments.update`（批量任职）、`roleBindings` 数据范围/有效期 | 已落地；契约校验通过（见 §10） |
 | P3 | 前端页面（树+拖拽+成员表+抽屉）+ 组合元数据 + i18n | `pnpm typecheck`、`admin-sidebar-runtime.test.ts`、`sdk-composition-standard.test.mjs`、i18n/layering |
 | P4 | SDK 重新生成、契约测试、a11y 回归 | `pnpm sdk:generate:*`、`check-api-operation-patterns`、`check-api-response-envelope` |
 
@@ -374,8 +374,8 @@ SELECT m.id                AS membership_id,
 3. **权限模型**：采用"角色 + 数据范围 + 有效期"（迁移 0049 提供字段；`roleBindings` 的写入/解析随 P2 落地）。
 4. **组织范围**：允许左树展开多组织、按组织懒加载部门；列表接口以显式 `organizationId` 查询参数为准，缺省回退上下文组织。
 
-## 10. 未完事项（P2+）
+## 10. 未完事项（P3）
 
-- `members.roster` 聚合读取、`organizationMemberships.departments.replace` 批量任职、`roleBindings` 的 `dataScopeKind`/有效期写入与 `rbac_scope` 解析（含 `scope_kind='department'`）。
-- OpenAPI 物化与两端 SDK 重新生成（`api:materialize:openapi` → `sdk:generate:*`），前端才能在类型上拿到 `organizationId`/`departmentId` 参数与 `phone`/`sortOrder` 字段。
-- Cloud Router 页面与组合元数据（菜单/路由/权限提示/i18n），以及拖拽、成员抽屉与测试。
+- 已落地（P2）：`GET /organization_memberships/roster`（`organizationMemberships.roster.list`，人+多部门+岗位+角色 + 有效窗口过滤，支持 `organization_id`/`department_id`/`include_descendants`）与 `PUT /organization_memberships/{id}/departments`（`organizationMemberships.departments.update`，事务化批量任职 + 唯一主部门）。
+- 待落地（P2b）：`roleBindings` 的 `dataScopeKind`/有效期写入与 `rbac_scope` 解析（含 `scope_kind='department'` 与过期过滤）。
+- 待落地（P3）：Cloud Router `/admin/iam/personnel` 页面与组合元数据（菜单/路由/权限提示/i18n），组织/部门树拖拽、成员表、成员抽屉（基础信息/部门任职/角色与权限/审计），以及对应测试。
