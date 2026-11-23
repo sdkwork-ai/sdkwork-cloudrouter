@@ -239,8 +239,12 @@ export function CloudRouterIamPersonnelWorkspace({
   const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
   const [members, setMembers] = useState<RosterMember[]>([]);
   const [draggingId, setDraggingId] = useState('');
-  const [confirmingDeleteId, setConfirmingDeleteId] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
+  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+  const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
+  const [formParentId, setFormParentId] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<Department | null>(null);
+  const [nodeMenuId, setNodeMenuId] = useState('');
   const [formName, setFormName] = useState('');
   const [formCode, setFormCode] = useState('');
   const [formSortOrder, setFormSortOrder] = useState('');
@@ -461,12 +465,41 @@ export function CloudRouterIamPersonnelWorkspace({
   );
 
   const openCreateDepartment = useCallback(() => {
+    setFormMode('create');
+    setEditingDepartment(null);
+    setFormParentId(selectedDepartmentId);
     setFormName('');
     setFormCode('');
     setFormSortOrder('');
     setFormError('');
     setCodeTouched(false);
     setCreateOpen(true);
+  }, [selectedDepartmentId]);
+
+  const openCreateChild = useCallback((department: Department) => {
+    setFormMode('create');
+    setEditingDepartment(null);
+    setFormParentId(department.departmentId);
+    setFormName('');
+    setFormCode('');
+    setFormSortOrder('');
+    setFormError('');
+    setCodeTouched(false);
+    setCreateOpen(true);
+    setNodeMenuId('');
+  }, []);
+
+  const openEditDepartment = useCallback((department: Department) => {
+    setFormMode('edit');
+    setEditingDepartment(department);
+    setFormParentId(department.parentDepartmentId ?? '');
+    setFormName(department.name);
+    setFormCode(department.code);
+    setFormSortOrder('');
+    setFormError('');
+    setCodeTouched(true);
+    setCreateOpen(true);
+    setNodeMenuId('');
   }, []);
 
   const closeCreateDepartment = useCallback(() => {
@@ -503,24 +536,36 @@ export function CloudRouterIamPersonnelWorkspace({
         name,
         organizationId: selectedOrganizationId,
       };
-      if (selectedDepartmentId) payload.parentDepartmentId = selectedDepartmentId;
       const sortOrder = Number(formSortOrder);
       if (formSortOrder.trim() !== '' && Number.isFinite(sortOrder)) {
         payload.sortOrder = Math.max(0, Math.trunc(sortOrder));
       }
-      const created = await service.iam.departments.create(payload);
-      const createdId = asText(asRecord(created).departmentId);
-      setCreateOpen(false);
-      await loadDepartments(selectedOrganizationId);
-      if (createdId) setSelectedDepartmentId(createdId);
+      if (formMode === 'edit' && editingDepartment) {
+        await service.iam.departments.update(editingDepartment.departmentId, {
+          ...payload,
+          expectedVersion: editingDepartment.version,
+        });
+        setCreateOpen(false);
+        await loadDepartments(selectedOrganizationId);
+      } else {
+        if (formParentId) payload.parentDepartmentId = formParentId;
+        const created = await service.iam.departments.create(payload);
+        const createdId = asText(asRecord(created).departmentId);
+        setCreateOpen(false);
+        await loadDepartments(selectedOrganizationId);
+        if (createdId) setSelectedDepartmentId(createdId);
+      }
     } catch (reason) {
       setFormError(reasonMessage(reason));
     } finally {
       setCreating(false);
     }
   }, [
+    editingDepartment,
     formCode,
+    formMode,
     formName,
+    formParentId,
     formSortOrder,
     loadDepartments,
     selectedDepartmentId,
@@ -536,7 +581,7 @@ export function CloudRouterIamPersonnelWorkspace({
       setError('');
       try {
         await service.iam.departments.delete(departmentId);
-        setConfirmingDeleteId('');
+        setDeleteTarget(null);
         if (selectedDepartmentId === departmentId) setSelectedDepartmentId('');
         await loadDepartments(selectedOrganizationId);
         await loadRoster(selectedOrganizationId, '', searchQuery);
@@ -548,6 +593,16 @@ export function CloudRouterIamPersonnelWorkspace({
     },
     [loadDepartments, loadRoster, selectedDepartmentId, selectedOrganizationId, service],
   );
+
+  const openDeleteDepartment = useCallback((department: Department) => {
+    setDeleteTarget(department);
+    setNodeMenuId('');
+  }, []);
+
+  const submitDeleteDepartment = useCallback(async () => {
+    if (!deleteTarget) return;
+    await deleteDepartment(deleteTarget.departmentId);
+  }, [deleteDepartment, deleteTarget]);
 
   const startEditingMember = useCallback(
     (member: RosterMember) => {
@@ -735,30 +790,59 @@ export function CloudRouterIamPersonnelWorkspace({
                     {item.hasChildren ? '▾ ' : ''}
                     {item.department.name || item.department.code}
                   </button>
-                  {canDeleteDepartments ? (
-                    <button
-                      aria-label={`${t('admin.iam.personnel.delete')} ${item.department.name}`}
-                      className={`rounded px-1 text-xs ${
-                        confirmingDeleteId === item.department.departmentId
-                          ? 'bg-red-50 text-red-600 dark:bg-red-950'
-                          : 'text-slate-400 hover:text-red-600'
-                      }`}
-                      onClick={() => {
-                        if (confirmingDeleteId === item.department.departmentId) {
-                          void deleteDepartment(item.department.departmentId);
-                        } else {
-                          setConfirmingDeleteId(item.department.departmentId);
+                  {canCreateDepartments || canDeleteDepartments ? (
+                    <div className="relative">
+                      <button
+                        aria-expanded={nodeMenuId === item.department.departmentId}
+                        aria-label={`${t('admin.iam.personnel.actions')} ${item.department.name}`}
+                        className="rounded px-1 text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                        onClick={() =>
+                          setNodeMenuId(
+                            nodeMenuId === item.department.departmentId
+                              ? ''
+                              : item.department.departmentId,
+                          )
                         }
-                      }}
-                      title={
-                        confirmingDeleteId === item.department.departmentId
-                          ? t('admin.iam.personnel.confirmDelete')
-                          : t('admin.iam.personnel.delete')
-                      }
-                      type="button"
-                    >
-                      ×
-                    </button>
+                        type="button"
+                      >
+                        ⋯
+                      </button>
+                      {nodeMenuId === item.department.departmentId ? (
+                        <div
+                          className="absolute right-0 top-full z-20 w-36 rounded-lg border border-slate-200 bg-white py-1 text-xs shadow-lg dark:border-slate-700 dark:bg-slate-900"
+                          role="menu"
+                        >
+                          {canCreateDepartments ? (
+                            <button
+                              className="block w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800"
+                              onClick={() => openCreateChild(item.department)}
+                              role="menuitem"
+                              type="button"
+                            >
+                              {t('admin.iam.personnel.createChild')}
+                            </button>
+                          ) : null}
+                          <button
+                            className="block w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800"
+                            onClick={() => openEditDepartment(item.department)}
+                            role="menuitem"
+                            type="button"
+                          >
+                            {t('admin.iam.personnel.editDepartment')}
+                          </button>
+                          {canDeleteDepartments ? (
+                            <button
+                              className="block w-full px-3 py-1.5 text-left text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                              onClick={() => openDeleteDepartment(item.department)}
+                              role="menuitem"
+                              type="button"
+                            >
+                              {t('admin.iam.personnel.delete')}
+                            </button>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
                   ) : null}
                 </li>
               );
@@ -792,12 +876,18 @@ export function CloudRouterIamPersonnelWorkspace({
                 role="dialog"
               >
                 <h2 className="text-base font-semibold" id="personnel-create-title">
-                  {t('admin.iam.personnel.newDepartment')}
+                  {formMode === 'edit'
+                    ? t('admin.iam.personnel.editDepartment')
+                    : t('admin.iam.personnel.newDepartment')}
                 </h2>
                 <p className="mt-1 text-xs text-slate-500">
                   {t('admin.iam.personnel.parentDepartment')}
                   {'：'}
-                  {selectedDepartment?.name ?? t('admin.iam.personnel.rootDepartment')}
+                  {formParentId
+                    ? flatDepartments.find(
+                        (entry) => entry.department.departmentId === formParentId,
+                      )?.department.name ?? formParentId
+                    : t('admin.iam.personnel.rootDepartment')}
                 </p>
                 <form
                   className="mt-4 space-y-4"
@@ -870,10 +960,55 @@ export function CloudRouterIamPersonnelWorkspace({
                       disabled={creating || !formName.trim()}
                       type="submit"
                     >
-                      {t('admin.iam.personnel.create')}
+                      {formMode === 'edit'
+                        ? t('admin.iam.personnel.save')
+                        : t('admin.iam.personnel.create')}
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          ) : null}
+
+          {deleteTarget ? (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
+              onMouseDown={(event) => {
+                if (event.target === event.currentTarget) setDeleteTarget(null);
+              }}
+            >
+              <div
+                aria-labelledby="personnel-delete-title"
+                aria-modal="true"
+                className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900"
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') setDeleteTarget(null);
+                }}
+                role="dialog"
+              >
+                <h2 className="text-base font-semibold" id="personnel-delete-title">
+                  {t('admin.iam.personnel.deleteDepartmentTitle')}
+                </h2>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                  {t('admin.iam.personnel.deleteDepartmentConfirm', { name: deleteTarget.name })}
+                </p>
+                <div className="mt-4 flex justify-end gap-2">
+                  <button
+                    className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm dark:border-slate-700"
+                    onClick={() => setDeleteTarget(null)}
+                    type="button"
+                  >
+                    {t('admin.iam.personnel.cancel')}
+                  </button>
+                  <button
+                    className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40"
+                    disabled={busy}
+                    onClick={() => void submitDeleteDepartment()}
+                    type="button"
+                  >
+                    {t('admin.iam.personnel.delete')}
+                  </button>
+                </div>
               </div>
             </div>
           ) : null}

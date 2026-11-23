@@ -121,4 +121,7 @@ export const en = {
   "admin.iam.personnel.sortOrderHint": "Empty appends to the end",
   "admin.iam.personnel.fieldRequired": "This field is required",
   "admin.iam.personnel.invalidDepartmentCode": "Use 2-64 lowercase letters, digits, hyphen, or underscore, starting with a letter or digit.",
+  "admin.iam.personnel.editDepartment": "Edit department",
+  "admin.iam.personnel.deleteDepartmentTitle": "Delete department",
+  "admin.iam.personnel.deleteDepartmentConfirm": "Delete {{name}}? Departments with child units or active members cannot be deleted.",
 };

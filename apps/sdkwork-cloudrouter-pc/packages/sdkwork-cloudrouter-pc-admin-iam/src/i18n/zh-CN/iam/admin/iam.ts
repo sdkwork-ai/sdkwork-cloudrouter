@@ -121,4 +121,7 @@ export const zh = {
   "admin.iam.personnel.sortOrderHint": "留空则排在末尾",
   "admin.iam.personnel.fieldRequired": "此项必填",
   "admin.iam.personnel.invalidDepartmentCode": "需为 2-64 位小写字母、数字、连字符或下划线，且以字母或数字开头。",
+  "admin.iam.personnel.editDepartment": "编辑部门",
+  "admin.iam.personnel.deleteDepartmentTitle": "删除部门",
+  "admin.iam.personnel.deleteDepartmentConfirm": "确定删除「{{name}}」？含有子部门或活跃成员的部门不能删除。",
 };
