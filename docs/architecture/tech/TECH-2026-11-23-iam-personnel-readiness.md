@@ -86,7 +86,7 @@
 | --- | --- | --- |
 | G2 并发乐观锁 | ✅ 完成 | 迁移 0050 + `expectedVersion`/409 + 前端携带与失败刷新（`57fb9dc0`、`8e0dec1a`、`4119fd77`） |
 | G5 业务规则 | 🟡 部分 | 删除部门守卫（子部门/active 任职 409，`e4deb6d0`）；离职与组织迁移规则待做 |
-| G7 分页检索 | 🟡 部分 | roster 服务端分页 + pageInfo + 重置页（`ebb91784`）；排序/CSV 导出待做 |
+| G7 分页检索 | 🟡 分页 + 导出完成，排序待做 | 服务端分页与 pageInfo（`ebb91784`）；CSV 导出含转义/BOM/空页禁用（`ffa38d1d`）；服务端排序未做 |
 | G3 数据范围 | 🟡 接线完成，待 PG 用例 | 解析器/遗留语义/装载器（`7141d67f`、`da7dc6aa`、`8665e140`）；roster 谓词按 tenant/organization/department(+children)/self 强制（`27f78dd0`）；尚缺真库集成用例 |
 | G4 隔离/脱敏 | ⏳ | 无跨租户用例、无字段级可见性 |
 | G1 迁移演练 | 🟡 前向 + 重放通过，回滚待做 | 真库 `plan → migrate → status → drift-check` exit 0；**重放 migrate 应用 0 条**，`status=clean pending_migrations=0`，证明迁移账本幂等；仍缺旧应用兼容/回滚演练与预发证据 |
