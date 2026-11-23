@@ -78,14 +78,34 @@ where
 {
     Router::new()
         .route("/v1/models", get(list_models::<C>))
-        .route("/v1/models/{model}", get(retrieve_model::<C>))
-        .route("/v1/models/{model}/groups", get(list_model_groups::<C>))
+        // One catch-all segment: the model id may be a bare id (`gpt-4o`), a
+        // vendor-qualified catalog key (`openai/gpt-4o`), or a percent-encoded
+        // key (`openai%2Fgpt-4o`). The handler dispatches the `/groups`
+        // suffix, so literal slashes inside a vendor-qualified id also work.
+        .route("/v1/models/{*model}", get(model_path::<C>))
         .with_state(OpenAiModelsState {
             catalog,
             api_key_hasher,
             auth_token_authenticator,
             bearer_classifier,
         })
+}
+
+async fn model_path<C>(
+    State(state): State<OpenAiModelsState<C>>,
+    Path(model): Path<String>,
+    headers: HeaderMap,
+    uri: Uri,
+) -> Response
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    let model = model.trim_matches('/').trim().to_owned();
+    if let Some(model) = model.strip_suffix("/groups") {
+        return list_model_groups_inner(state, model.trim_matches('/').to_owned(), headers, uri)
+            .await;
+    }
+    retrieve_model_inner(state, model, headers, uri).await
 }
 
 async fn list_models<C>(
@@ -123,9 +143,9 @@ where
     .into_response()
 }
 
-async fn retrieve_model<C>(
-    State(state): State<OpenAiModelsState<C>>,
-    Path(model): Path<String>,
+async fn retrieve_model_inner<C>(
+    state: OpenAiModelsState<C>,
+    model: String,
     headers: HeaderMap,
     uri: Uri,
 ) -> Response
@@ -159,9 +179,9 @@ where
     Json(to_model_response(state.catalog.as_ref(), model)).into_response()
 }
 
-async fn list_model_groups<C>(
-    State(state): State<OpenAiModelsState<C>>,
-    Path(model): Path<String>,
+async fn list_model_groups_inner<C>(
+    state: OpenAiModelsState<C>,
+    model: String,
     headers: HeaderMap,
     uri: Uri,
 ) -> Response
@@ -229,29 +249,9 @@ where
 
 fn find_model_for_openai_id<C>(catalog: &C, model: &str) -> Option<AiModel>
 where
-    C: PricingCatalog,
+    C: UpstreamAccountRouteCatalog + ?Sized,
 {
-    if let Some(model) = catalog.find_model(model) {
-        return Some(model);
-    }
-    let mut found = None;
-    catalog.visit_models(None, &mut |candidate| {
-        if candidate.model != model {
-            return true;
-        }
-        found = Some(candidate.clone());
-        false
-    });
-    if found.is_some() {
-        return found;
-    }
-    // 精确未命中：接受 OpenRouter 风格 id（`anthropic/claude-opus-4.5` →
-    // 目录键 `anthropic/claude-opus-4-5`），与路由期解析同一容错语义。
-    let alias_keys = crate::ports::resolve_model_alias_catalog_keys(catalog, model);
-    if let [catalog_key] = alias_keys.as_slice() {
-        return catalog.find_model(catalog_key);
-    }
-    found
+    crate::application::resolve_catalog_model(catalog, model)
 }
 
 async fn authenticate<C>(

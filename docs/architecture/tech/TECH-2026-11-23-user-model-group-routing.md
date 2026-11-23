@@ -98,6 +98,12 @@ allow-list alike), with a regression test. The locale retirement rule
 
 - `GET /v1/models/{model}/groups` — groups that can serve the model
   (`{ object: "list", data: [{ id, code, name, defaultForModel }] }`).
+  `{model}` accepts every spelling the rest of the gateway accepts: a bare
+  vendor-native id (`gpt-4o`), a vendor-qualified catalog key
+  (`openai/gpt-4o`), the percent-encoded path form (`openai%2Fgpt-4o`), and
+  OpenRouter/colon aliases. Ambiguous bare names are rejected instead of
+  guessing a vendor; a vendor-qualified name is unambiguous even when several
+  vendors publish the same bare model.
 - `GET /v1/models` and `GET /v1/vendors` — every model entry now carries an
   optional `groups` array with the same shape.
 - `GET /v1/vendors` continues to list only the models reachable for the

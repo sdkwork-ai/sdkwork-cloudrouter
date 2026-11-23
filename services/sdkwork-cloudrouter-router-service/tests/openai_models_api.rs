@@ -154,6 +154,46 @@ async fn openai_models_route_lists_model_groups_as_an_openai_list() {
 }
 
 #[tokio::test]
+async fn openai_models_route_accepts_a_literal_vendor_slash_in_model_paths() {
+    let hasher =
+        Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let router = sdkwork_cloudrouter_router_service::api::openai_models_router(
+        Arc::new(catalog_with_hashed_api_key(key_hash)),
+        hasher,
+    );
+
+    let groups_response = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                // A caller may concatenate `vendor/` without percent-encoding
+                // the slash; both forms must resolve the same catalog model.
+                .uri("/v1/models/deepseek/deepseek-flash/groups")
+                .header("authorization", "Bearer sk-live-secret")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(groups_response.status(), StatusCode::OK);
+
+    let retrieve_response = router
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri("/v1/models/openai/gpt-4o-mini")
+                .header("authorization", "Bearer sk-live-secret")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(retrieve_response.status(), StatusCode::OK);
+}
+
+#[tokio::test]
 async fn openai_models_route_accepts_a_percent_encoded_vendor_model_key() {
     let hasher =
         Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());

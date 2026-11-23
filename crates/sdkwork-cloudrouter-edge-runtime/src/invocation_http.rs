@@ -984,16 +984,9 @@ fn apply_gateway_dispatch_defaults<C>(
             .find(|group| group.id == account_group_id)
             .map(|group| (group.tenant_id, group.organization_id))
             .unwrap_or((0, 0));
-        let mut found = catalog.find_model(model);
-        if found.is_none() {
-            catalog.visit_models(None, &mut |candidate| {
-                if candidate.model != model {
-                    return true;
-                }
-                found = Some(candidate.clone());
-                false
-            });
-        }
+        let found = sdkwork_cloudrouter_router_service::application::resolve_catalog_model(
+            catalog, model,
+        );
         let not_found = found.is_none();
         let response = match found {
             Some(found) => {
@@ -1564,6 +1557,19 @@ mod gateway_dispatch_defaults_tests {
         assert_eq!(1, groups.len());
         assert_eq!("10", groups[0]["id"]);
         assert_eq!("standard-group", groups[0]["code"]);
+    }
+
+    #[test]
+    fn model_groups_endpoint_accepts_vendor_prefixed_and_encoded_model_ids() {
+        for model in ["openai/gpt-4o-mini", "openai%2Fgpt-4o-mini"] {
+            let mut invocation = model_groups_invocation(model);
+            apply_gateway_dispatch_defaults(&mut invocation, &catalog(), 10);
+            let response = invocation.dispatch.response.expect("synthetic response");
+            assert_eq!(200, response.status_code, "model id {model}");
+            let body = response.body.expect("json body");
+            let groups = body["data"].as_array().expect("group data array");
+            assert_eq!(1, groups.len(), "model id {model}");
+        }
     }
 
     #[test]

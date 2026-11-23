@@ -133,11 +133,7 @@ where
     // so a configured list is a real failover list instead of pinning a group
     // that has no account for the model.
     let model_support = requested_model.and_then(|model| {
-        let found = catalog.find_model(model).or_else(|| {
-            requested_model_keys
-                .iter()
-                .find_map(|key| catalog.find_model(key))
-        })?;
+        let found = crate::application::resolve_catalog_model(catalog, model)?;
         let ids = crate::application::model_supported_group_ids(
             catalog,
             &found,

@@ -377,7 +377,99 @@ where
     })
 }
 
-/// Formats a model's primary modality for display (`text` for LLM models).
+/// Resolves a requested model id to one catalog model.
+///
+/// Model ids arrive in several shapes depending on the caller and transport:
+///
+/// * bare vendor-native id — `gpt-4o`;
+/// * fully qualified catalog key — `openai/gpt-4o`;
+/// * an already URL-decoded path segment (`openai/gpt-4o`) or the raw
+///   percent-encoded form (`openai%2Fgpt-4o`);
+/// * an OpenRouter/colon alias — `openai:gpt-4o`, `openai：gpt-4o`.
+///
+/// The exact catalog key wins. When only a bare name is known, it must resolve
+/// to exactly one catalog model; an ambiguous bare name returns `None` rather
+/// than guessing a vendor (routing rejects ambiguity elsewhere for the same
+/// reason).
+pub fn resolve_catalog_model<C>(catalog: &C, requested: &str) -> Option<AiModel>
+where
+    C: UpstreamAccountRouteCatalog + ?Sized,
+{
+    let decoded = percent_decode_model_id(requested);
+    let requested = decoded.trim().trim_matches('/').trim();
+    if requested.is_empty() {
+        return None;
+    }
+    if let Some(model) = catalog.find_model(requested) {
+        return Some(model);
+    }
+    // The catalog name index already handles catalog keys and OpenRouter-style
+    // aliases; each returned key is an exact catalog key.
+    for key in catalog.model_catalog_keys_by_name(requested) {
+        if let Some(model) = catalog.find_model(&key) {
+            return Some(model);
+        }
+    }
+    for key in crate::ports::resolve_model_alias_catalog_keys(catalog, requested) {
+        if let Some(model) = catalog.find_model(&key) {
+            return Some(model);
+        }
+    }
+
+    let (vendor_hint, bare_model) = match requested.split_once('/') {
+        Some((vendor, model)) => (Some(vendor.trim()), model.trim()),
+        None => (None, requested),
+    };
+    if !bare_model.is_empty() {
+        let mut matches = Vec::new();
+        catalog.visit_models(None, &mut |model| {
+            let vendor_matches = vendor_hint.map_or(true, |vendor| {
+                model.vendor_code.eq_ignore_ascii_case(vendor)
+            });
+            if vendor_matches
+                && (model.model.eq_ignore_ascii_case(bare_model)
+                    || model.catalog_key.eq_ignore_ascii_case(requested))
+            {
+                matches.push(model.clone());
+            }
+            true
+        });
+        if matches.len() == 1 {
+            return matches.pop();
+        }
+        // A vendor-qualified request is unambiguous even when several vendors
+        // publish the same bare model.
+        if vendor_hint.is_some() {
+            return matches.into_iter().next();
+        }
+    }
+    None
+}
+
+/// Decodes `%XX` escapes in one path segment without pulling a new dependency.
+/// Invalid escapes are preserved verbatim; only valid UTF-8 is produced.
+fn percent_decode_model_id(value: &str) -> String {
+    if !value.contains('%') {
+        return value.to_owned();
+    }
+    let bytes = value.as_bytes();
+    let mut decoded = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] == b'%' && index + 2 < bytes.len() {
+            let high = (bytes[index + 1] as char).to_digit(16);
+            let low = (bytes[index + 2] as char).to_digit(16);
+            if let (Some(high), Some(low)) = (high, low) {
+                decoded.push((high * 16 + low) as u8);
+                index += 3;
+                continue;
+            }
+        }
+        decoded.push(bytes[index]);
+        index += 1;
+    }
+    String::from_utf8_lossy(&decoded).into_owned()
+}
 pub fn model_primary_modality(model: &AiModel) -> Option<SessionAccountGroupModality> {
     model_modalities(model).into_iter().next()
 }
@@ -772,6 +864,33 @@ mod tests {
         catalog.add_upstream_account_route(entitlement_route(1001, 10, "openai/gpt-4o"));
         catalog.add_upstream_account_route(entitlement_route(1002, 20, "openai/gpt-4o"));
         (catalog, model)
+    }
+
+    #[test]
+    fn resolves_bare_prefixed_encoded_and_alias_model_ids() {
+        let (catalog, model) = catalog();
+        assert_eq!(
+            Some(model.catalog_key.clone()),
+            resolve_catalog_model(&catalog, "gpt-4o").map(|found| found.catalog_key)
+        );
+        assert_eq!(
+            Some(model.catalog_key.clone()),
+            resolve_catalog_model(&catalog, "openai/gpt-4o").map(|found| found.catalog_key)
+        );
+        assert_eq!(
+            Some(model.catalog_key.clone()),
+            resolve_catalog_model(&catalog, "openai%2Fgpt-4o").map(|found| found.catalog_key)
+        );
+        assert_eq!(
+            Some(model.catalog_key.clone()),
+            resolve_catalog_model(&catalog, "openai:gpt-4o").map(|found| found.catalog_key)
+        );
+        assert_eq!(
+            Some(model.catalog_key.clone()),
+            resolve_catalog_model(&catalog, "openai：gpt-4o").map(|found| found.catalog_key)
+        );
+        assert!(resolve_catalog_model(&catalog, "openai/does-not-exist").is_none());
+        assert!(resolve_catalog_model(&catalog, "").is_none());
     }
 
     #[test]
