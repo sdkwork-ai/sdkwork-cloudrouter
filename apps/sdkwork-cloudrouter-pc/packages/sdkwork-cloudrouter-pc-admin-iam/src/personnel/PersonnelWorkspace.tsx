@@ -31,6 +31,7 @@ interface Department {
   organizationId: string;
   parentDepartmentId: string | null;
   sortOrder: number;
+  version: number;
 }
 
 interface DepartmentRef {
@@ -118,6 +119,7 @@ function toDepartment(row: Record<string, unknown>): Department {
     organizationId: asText(row.organizationId),
     parentDepartmentId: asOptionalId(row.parentDepartmentId),
     sortOrder: asNumber(row.sortOrder ?? row.order),
+    version: asNumber(row.version),
   };
 }
 
@@ -304,16 +306,25 @@ export function CloudRouterIamPersonnelWorkspace({
   }, [loadRoster, searchQuery, selectedDepartmentId, selectedOrganizationId]);
 
   const moveDepartment = useCallback(
-    async (departmentId: string, parentDepartmentId: string | null, sortOrder?: number) => {
+    async (
+      departmentId: string,
+      parentDepartmentId: string | null,
+      sortOrder?: number,
+      expectedVersion?: number,
+    ) => {
       setBusy(true);
       setError('');
       try {
         const body: Record<string, unknown> = { parentDepartmentId };
         if (typeof sortOrder === 'number') body.sortOrder = Math.max(0, sortOrder);
+        if (typeof expectedVersion === 'number') body.expectedVersion = expectedVersion;
         await service.iam.departments.update(departmentId, body);
         await loadDepartments(selectedOrganizationId);
       } catch (reason) {
         setError(reasonMessage(reason));
+        // A stale revision (409) or any failed move: refresh so the operator
+        // sees the winner's tree instead of a diverged local view.
+        await loadDepartments(selectedOrganizationId);
       } finally {
         setBusy(false);
       }
@@ -328,24 +339,33 @@ export function CloudRouterIamPersonnelWorkspace({
       const draggedId = draggingId || event.dataTransfer.getData('text/plain');
       setDraggingId('');
       if (!canUpdateDepartments || !draggedId) return;
+      const sourceVersion = flatDepartments.find(
+        (entry) => entry.department.departmentId === draggedId,
+      )?.department.version;
       if (!target) {
-        await moveDepartment(draggedId, null);
+        await moveDepartment(draggedId, null, undefined, sourceVersion);
         return;
       }
       if (target.department.departmentId === draggedId) return;
       const rect = event.currentTarget.getBoundingClientRect();
       const asChild = event.clientY >= rect.top + rect.height / 2;
       if (asChild) {
-        await moveDepartment(draggedId, target.department.departmentId);
+        await moveDepartment(
+          draggedId,
+          target.department.departmentId,
+          undefined,
+          sourceVersion,
+        );
       } else {
         await moveDepartment(
           draggedId,
           target.department.parentDepartmentId,
           target.department.sortOrder,
+          sourceVersion,
         );
       }
     },
-    [canUpdateDepartments, draggingId, moveDepartment],
+    [canUpdateDepartments, draggingId, flatDepartments, moveDepartment],
   );
 
   const moveByKeyboard = useCallback(
@@ -360,7 +380,12 @@ export function CloudRouterIamPersonnelWorkspace({
       if (direction === 'up' || direction === 'down') {
         const target = siblings[direction === 'up' ? index - 1 : index + 1]?.department;
         if (!target) return;
-        await moveDepartment(item.department.departmentId, target.parentDepartmentId, target.sortOrder);
+        await moveDepartment(
+          item.department.departmentId,
+          target.parentDepartmentId,
+          target.sortOrder,
+          item.department.version,
+        );
         return;
       }
       if (direction === 'out') {
@@ -372,12 +397,18 @@ export function CloudRouterIamPersonnelWorkspace({
           item.department.departmentId,
           parent.parentDepartmentId,
           parent.sortOrder + 1,
+          item.department.version,
         );
         return;
       }
       const previous = siblings[index - 1]?.department;
       if (!previous) return;
-      await moveDepartment(item.department.departmentId, previous.departmentId);
+      await moveDepartment(
+        item.department.departmentId,
+        previous.departmentId,
+        undefined,
+        item.department.version,
+      );
     },
     [flatDepartments, moveDepartment],
   );
