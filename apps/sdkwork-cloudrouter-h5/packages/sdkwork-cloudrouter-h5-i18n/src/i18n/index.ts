@@ -11,6 +11,7 @@ import { playgroundMessages as ZhCnPlayground } from './zh-CN/cloudrouter/consol
 import { settingsMessages as ZhCnSettings } from './zh-CN/cloudrouter/console/settings.js';
 import { signInMessages as ZhCnSignIn } from './zh-CN/cloudrouter/auth/signIn.js';
 import { appAuthMessages as ZhCnAppAuth } from './zh-CN/cloudrouter/auth/app.js';
+import { ordersMessages as ZhCnOrders } from './zh-CN/cloudrouter/commerce/orders.js';
 import { sharedMessages as EnUsShared } from './en-US/cloudrouter/console/shared.js';
 import { homeMessages as EnUsHome } from './en-US/cloudrouter/console/home.js';
 import { dashboardMessages as EnUsDashboard } from './en-US/cloudrouter/console/dashboard.js';
@@ -22,6 +23,7 @@ import { playgroundMessages as EnUsPlayground } from './en-US/cloudrouter/consol
 import { settingsMessages as EnUsSettings } from './en-US/cloudrouter/console/settings.js';
 import { signInMessages as EnUsSignIn } from './en-US/cloudrouter/auth/signIn.js';
 import { appAuthMessages as EnUsAppAuth } from './en-US/cloudrouter/auth/app.js';
+import { ordersMessages as EnUsOrders } from './en-US/cloudrouter/commerce/orders.js';
 import { SDKWORK_CONSOLE_DEFAULT_LOCALE, type SdkworkConsoleLocale } from '../locale.js';
 
 export type SdkworkConsoleMessages = Record<string, string>;
@@ -39,6 +41,7 @@ export const SDKWORK_CONSOLE_MESSAGES: Record<SdkworkConsoleLocale, SdkworkConso
     ...ZhCnSettings,
     ...ZhCnSignIn,
     ...ZhCnAppAuth,
+    ...ZhCnOrders,
   },
   'en-US': {
     ...EnUsShared,
@@ -52,6 +55,7 @@ export const SDKWORK_CONSOLE_MESSAGES: Record<SdkworkConsoleLocale, SdkworkConso
     ...EnUsSettings,
     ...EnUsSignIn,
     ...EnUsAppAuth,
+    ...EnUsOrders,
   },
 };
 

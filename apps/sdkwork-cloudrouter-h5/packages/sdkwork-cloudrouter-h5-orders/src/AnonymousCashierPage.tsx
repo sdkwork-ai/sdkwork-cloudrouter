@@ -11,6 +11,7 @@ import {
   isMobileDevice,
   isWechatJsapiResultCancelled,
   isWechatJsapiResultOk,
+  localizeOrderTitle,
   type PaymentEnvironment,
 } from '@sdkwork/order-mobile-react-orders';
 
@@ -239,6 +240,14 @@ export function AnonymousCashierPage({
     [allowedMethods, environment, isMobile],
   );
 
+  // `subject` is the order's machine code (`membership`, `token_bank_recharge`,
+  // …), never display copy: rendering it directly leaks a database identifier
+  // into the payer's cashier ("membership"). Resolve it through the order-owned
+  // display catalog (`sdkwork-order` `ACCOUNT_VALUE_ORDER_SPEC.md` §2.2), which
+  // keeps free-form merchandising titles below and localizes every known code
+  // into the host's `orders.subject_*` copy for the current locale.
+  const localizedSubject = useMemo(() => localizeOrderTitle(subject, t), [subject, t]);
+
   const launch = useCallback(async (method: AnonymousWireMethod) => {
     if (createInFlightRef.current) return;
     // Inside WeChat the JSAPI trade needs the payer openid. Fetch the IAM start
@@ -407,7 +416,7 @@ export function AnonymousCashierPage({
       <div className="rounded-2xl bg-surface p-5 shadow-sm">
         <p className="text-xs text-text-sub">{t('orders.cashier_amount_label', '支付金额')}</p>
         <p className="mt-1 text-3xl font-bold text-text-main">{formatAmount(amount, currencyCode)}</p>
-        {subject ? <p className="mt-2 text-sm text-text-sub">{subject}</p> : null}
+        {localizedSubject ? <p className="mt-2 text-sm text-text-sub">{localizedSubject}</p> : null}
         {remainingSeconds > 0 ? (
           <p className="mt-3 text-xs text-text-sub">
             {t('orders.cashier_auto_close', '剩余 {{countdown}} 自动关闭', {
