@@ -1,0 +1,15 @@
+-- sdkwork:migration
+-- id: 0011_pricing_schedule_holiday_backfill
+-- engine: postgres
+-- module: pricing
+-- purpose: No-op rollback. The holiday keys are required by the 0009 payload
+--   guard, so stripping them again would make every schedule invalid.
+-- reversible: true
+-- rollback: forward-fix
+-- transactional: true
+-- lock: table
+-- lock_timeout: 5s
+-- statement_timeout: 60s
+-- contract_version: 0.5.0
+
+-- Intentionally empty: forward-fix only.
