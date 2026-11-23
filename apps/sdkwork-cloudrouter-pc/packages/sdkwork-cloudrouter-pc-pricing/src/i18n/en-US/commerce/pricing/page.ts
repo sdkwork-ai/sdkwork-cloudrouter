@@ -1,6 +1,6 @@
 export const pricingPageEn = {
   'pricing.title': 'Official pricing',
-  'pricing.subtitle': 'Current reference rates by vendor, region, product, operation, and billing meter.',
+  'pricing.subtitle': 'Current reference rates by vendor, region, product, operation, and billing meter, plus each account group’s real sales price at its configured multiplier.',
   'pricing.updated': 'Observed {{date}}',
   'pricing.search': 'Search models, products, operations, or meters',
   'pricing.filters.vendor': 'Vendor',
@@ -194,6 +194,10 @@ export const pricingPageEn = {
   'pricing.weekday.6': 'Sat',
   'pricing.weekday.7': 'Sun',
   'pricing.note.timeWindow': 'Peak hours are Monday–Friday (excluding Chinese statutory holidays) 09:00–12:00 and 14:00–18:00 Beijing time. All other hours, weekends, and statutory holidays bill at the off-peak price, typically half the peak rate.',
+  'pricing.columns.official': 'Official group',
+  'pricing.columns.groupCount': '{{count}} groups',
+  'pricing.columns.originalPrice': 'List {{price}}',
+  'pricing.columns.officialPriceTitle': 'Official price {{price}} × group multiplier {{multiplier}}',
   'pricing.filters.group': 'Pricing groups',
   'pricing.groups.summary': '{{groups}} groups · {{selected}} selected',
   'pricing.groups.reset': 'Reset groups',
@@ -217,5 +221,7 @@ export const pricingPageEn = {
   'pricing.groupTag.high_value': 'High value',
   'pricing.groupTag.official': 'Official',
   'pricing.groupTag.beta': 'Beta',
+  'pricing.vendors.more': 'More {{count}}',
+  'pricing.vendors.less': 'Show less',
   'pricing.groupTag.limited': 'Limited',
 } as const;

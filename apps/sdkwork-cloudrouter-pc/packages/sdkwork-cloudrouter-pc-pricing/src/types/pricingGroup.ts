@@ -169,6 +169,38 @@ export function pricingGroupMatchesRate(
 }
 
 /**
+ * 分组的销售倍率（默认 1.0）。官方分组固定 1.0，账号分组按配置的倍率折算。
+ */
+export function pricingGroupMultiplier(group: PricingGroupOption): string {
+  const multiplier = group.saleMultiplier?.trim() ?? '';
+  return multiplier.length > 0 ? multiplier : '1';
+}
+
+/** 倍率的数值（仅用于排序/展示，价格计算仍走精确十进制乘法）。 */
+export function pricingGroupMultiplierValue(group: PricingGroupOption): number {
+  const value = Number.parseFloat(pricingGroupMultiplier(group));
+  return Number.isFinite(value) ? value : 1;
+}
+
+/**
+ * 服务某个模型的账号分组列表（按倍率从低到高排序，同倍率按名称），
+ * 用于「一行一个模型 + 每行首个官方分组卡片 + 后续分组价格卡片」的列顺序。
+ */
+export function pricingGroupsServingRates(
+  groups: readonly PricingGroupOption[],
+  rates: readonly OfficialPricingRate[],
+): PricingGroupOption[] {
+  return groups
+    .filter((group) => rates.some((rate) => pricingGroupMatchesRate(group, rate)))
+    .sort(
+      (left, right) =>
+        pricingGroupMultiplierValue(left) - pricingGroupMultiplierValue(right)
+        || left.name.localeCompare(right.name)
+        || left.code.localeCompare(right.code),
+    );
+}
+
+/**
  * 生成价格行过滤器。没有分组/标签筛选时恒为真；
  * 有筛选但没有任何命中的分组时恒为假（明确的空结果）。
  */

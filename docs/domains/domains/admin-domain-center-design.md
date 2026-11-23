@@ -2,6 +2,9 @@
 
 Status: active · Owner: cloudrouter-platform · Surface: `/admin/domains`
 
+签发能力封装、验证方式选择与云盘归档的后续设计见
+[certificate-issuance-drive-archive-design.md](certificate-issuance-drive-archive-design.md)。
+
 ## 1. Purpose
 
 The Domain Center is the Cloud Router admin surface for the names this

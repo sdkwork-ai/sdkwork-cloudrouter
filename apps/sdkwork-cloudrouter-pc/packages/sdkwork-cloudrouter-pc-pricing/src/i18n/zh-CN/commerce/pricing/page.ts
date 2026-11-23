@@ -1,6 +1,6 @@
 export const pricingPageZh = {
   'pricing.title': '官方定价',
-  'pricing.subtitle': '按厂商、区域、产品、操作和计费计量展示当前官方参考价格。',
+  'pricing.subtitle': '按厂商、区域、产品、操作和计费计量展示官方参考价格，并按各账号分组的销售倍率展示真实销售价。',
   'pricing.updated': '采集于 {{date}}',
   'pricing.search': '搜索模型、产品、操作或计量项',
   'pricing.filters.vendor': '厂商',
@@ -194,6 +194,10 @@ export const pricingPageZh = {
   'pricing.weekday.6': '周六',
   'pricing.weekday.7': '周日',
   'pricing.note.timeWindow': '高峰时段为北京时间周一至周五（不含中国法定节假日）9:00–12:00、14:00–18:00；其余时段、周末及法定节假日全天按空闲时段价格计费，空闲价通常为高峰价的一半。',
+  'pricing.columns.official': '官方分组',
+  'pricing.columns.groupCount': '{{count}} 个分组',
+  'pricing.columns.originalPrice': '原价 {{price}}',
+  'pricing.columns.officialPriceTitle': '官方价 {{price}} × 分组倍率 {{multiplier}}',
   'pricing.filters.group': '价格分组',
   'pricing.groups.summary': '{{groups}} 个分组可选 · 已选 {{selected}}',
   'pricing.groups.reset': '重置分组筛选',
@@ -217,5 +221,7 @@ export const pricingPageZh = {
   'pricing.groupTag.high_value': '高价值',
   'pricing.groupTag.official': '官方',
   'pricing.groupTag.beta': '测试',
+  'pricing.vendors.more': '更多 {{count}}',
+  'pricing.vendors.less': '收起',
   'pricing.groupTag.limited': '限量',
 } as const;

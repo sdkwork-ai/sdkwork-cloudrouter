@@ -10,4 +10,4 @@ See `DOCUMENTATION_SPEC.md` section 2.
 - [payments/](payments/) — 支付中心领域（配置操作指南：[payment-center-operations.md](payments/payment-center-operations.md)）
 - [membership/](membership/) — 会员/订阅领域（团队订阅设计：[team-subscription.md](membership/team-subscription.md)）
 - [data/](data/) — 数据中心领域（Admin 数据中心产品与功能设计：[admin-data-center-design.md](data/admin-data-center-design.md)）
-- [domains/](domains/) — 域名中心领域（根域名、域名解析、证书管理设计：[admin-domain-center-design.md](domains/admin-domain-center-design.md)）
+- [domains/](domains/) — 域名中心领域（根域名、域名解析、证书管理设计：[admin-domain-center-design.md](domains/admin-domain-center-design.md)；证书签发封装与云盘归档：[certificate-issuance-drive-archive-design.md](domains/certificate-issuance-drive-archive-design.md)）
