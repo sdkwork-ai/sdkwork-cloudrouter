@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Ban, Eye, RotateCcw, X } from 'lucide-react';
-import { ConfirmDialog, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
+import { Ban, Copy, Eye, Loader2, RotateCcw, X } from 'lucide-react';
+import { ConfirmDialog, copyTextToClipboard, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import type { ApiRecord } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { MarketingStatusBadge } from '../components/MarketingDrawer';
 import { MarketingInlineAlert } from '../components/MarketingInlineAlert';
@@ -101,6 +101,10 @@ export function CodesPage() {
   const [revealed, setRevealed] = useState<RevealedCode | null>(null);
   const [revealError, setRevealError] = useState<CodeActionError | null>(null);
   const [revealingCodeId, setRevealingCodeId] = useState<string | null>(null);
+  /** 列表券码列的「点击复制完整明文」进行中的行；与揭示共享同一受审计接口。 */
+  const [copyingCodeId, setCopyingCodeId] = useState<string | null>(null);
+  /** 复制成功反馈；文案明确本次访问已记录审计。 */
+  const [codeCopyNotice, setCodeCopyNotice] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [pendingDisable, setPendingDisable] = useState<ApiRecord | null>(null);
   const [disableReason, setDisableReason] = useState('');
@@ -265,11 +269,12 @@ export function CodesPage() {
 
   const handleReveal = async (record: ApiRecord) => {
     const codeId = readPromotionCodeId(record);
-    if (!codeId || revealingCodeId !== null) {
+    if (!codeId || revealingCodeId !== null || copyingCodeId !== null) {
       return;
     }
     setRevealingCodeId(codeId);
     setRevealError(null);
+    setCodeCopyNotice(null);
     setRevealed(null);
     try {
       // 唯一获取完整券码的入口：受审计的 `codes.reveals.create`。
@@ -291,6 +296,58 @@ export function CodesPage() {
       });
     } finally {
       setRevealingCodeId(null);
+    }
+  };
+
+  /**
+   * 列表券码列点击即复制完整明文。
+   *
+   * 完整券码只能来自受审计的 `codes.reveals.create`，因此一次点击 = 一次揭示
+   * 调用 + 写入剪贴板：完整码不进入列表 DOM、不落到页面状态，只作为本地变量
+   * 传给剪贴板。每次点击都会产生一条审计事件。
+   *
+   * 剪贴板不可用（非安全上下文、权限被拒）时退化为打开现有的揭示面板，让运营
+   * 仍能手动读取/复制，而不是静默失败。
+   */
+  const handleCopyFullCode = async (record: ApiRecord) => {
+    const codeId = readPromotionCodeId(record);
+    if (!codeId || copyingCodeId !== null || revealingCodeId !== null) {
+      return;
+    }
+    const rowLabel = readPromotionCodeRowLabel(record);
+    setCopyingCodeId(codeId);
+    setRevealError(null);
+    setCodeCopyNotice(null);
+    try {
+      const result = await backendRevealPromotionCode(codeId);
+      const copied = await copyTextToClipboard(result.code);
+      if (copied.ok) {
+        setCodeCopyNotice(t(
+          'admin.marketing.promotions.codes.copyFullSuccess',
+          'Full code for row {{code}} copied to the clipboard. This access has been recorded in the audit log.',
+          { code: rowLabel },
+        ));
+        return;
+      }
+      // 剪贴板写失败：把完整码放进受审计的揭示面板，运营可手动复制。
+      setRevealed({
+        codeId,
+        codeNo: result.codeNo,
+        code: result.code,
+        rowLabel,
+      });
+      setRevealError({ message: copied.message, traceId: null });
+    } catch (cause) {
+      setRevealError({
+        message: resolveProblemMessage(
+          cause,
+          t,
+          t('admin.marketing.promotions.codes.revealError', 'Failed to reveal the code'),
+        ),
+        traceId: readMarketingProblemTraceId(cause),
+      });
+    } finally {
+      setCopyingCodeId(null);
     }
   };
 
@@ -323,15 +380,54 @@ export function CodesPage() {
     { key: 'codeNo', label: t('admin.col.codeNo', 'Code No') },
     {
       // 券码列只展示后端脱敏值；完整码即便仍在列表响应里也不进入 DOM。
+      // 点击单元格 = 一次受审计的揭示 + 写入剪贴板，明文不出现在列表里。
       key: 'codeMasked',
       label: t('admin.col.code', 'Code'),
       render: (_value, record) => {
         const masked = String(record['codeMasked'] ?? '').trim();
+        if (!masked) {
+          return MARKETING_EMPTY_VALUE;
+        }
         const last4 = String(record['codeLast4'] ?? '').trim();
+        const codeId = readPromotionCodeId(record);
+        const isCopying = codeId !== '' && copyingCodeId === codeId;
+        const copyBusy = copyingCodeId !== null || revealingCodeId !== null;
+        const copyAria = t(
+          'admin.marketing.promotions.codes.copyFullAria',
+          'Copy full code for row {{code}}',
+          { code: masked },
+        );
+        const copyTitle = codeId
+          ? t(
+              'admin.marketing.promotions.codes.copyFullTitle',
+              'Click to copy the full code. The access is recorded in the audit log.',
+            )
+          : t(
+              'admin.marketing.promotions.codes.copyFullUnavailable',
+              'Copying the full code is unavailable because this row has no code id',
+            );
         return (
-          <span className="tabular-nums" title={last4 || undefined}>
-            {masked || MARKETING_EMPTY_VALUE}
-          </span>
+          <button
+            type="button"
+            onClick={() => void handleCopyFullCode(record)}
+            disabled={!codeId || copyBusy}
+            aria-busy={isCopying || undefined}
+            aria-label={copyAria}
+            title={copyTitle}
+            className="group inline-flex max-w-full items-center gap-1 rounded-sm text-left tabular-nums text-slate-700 hover:text-lobster-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lobster-500 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-200 dark:hover:text-lobster-400"
+          >
+            <span className="font-mono text-xs" title={last4 || undefined}>
+              {masked}
+            </span>
+            {isCopying ? (
+              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden="true" />
+            ) : (
+              <Copy
+                className="h-3 w-3 shrink-0 opacity-50 group-hover:opacity-100"
+                aria-hidden="true"
+              />
+            )}
+          </button>
         );
       },
     },
@@ -364,7 +460,7 @@ export function CodesPage() {
     <>
       <MarketingListView
         title={t('admin.marketing.promotions.promotionCodes.title', 'Code Query')}
-        description={t('admin.marketing.promotions.promotionCodes.desc', 'Unified coupon code query across all pre-generated pools, with masked code display.')}
+        description={t('admin.marketing.promotions.promotionCodes.desc', 'Unified coupon code query across all pre-generated pools. Click a masked code to copy its full value; each copy is recorded in the audit log.')}
         load={backendPromotionCodesList}
         columns={columns}
         showStatusFilter
@@ -435,7 +531,7 @@ export function CodesPage() {
                   }
                 }}
                 onClick={() => void handleReveal(record)}
-                disabled={!codeId || isRevealing}
+                disabled={!codeId || isRevealing || copyingCodeId !== null}
                 // 可访问名称必须带行上下文（脱敏券码），否则读屏只能听到一串 Reveal。
                 aria-label={t(
                   'admin.marketing.promotions.codes.revealAria',
@@ -500,6 +596,13 @@ export function CodesPage() {
                 tone="success"
                 message={disableNotice}
                 onDismiss={() => setDisableNotice(null)}
+              />
+            ) : null}
+            {codeCopyNotice ? (
+              <MarketingInlineAlert
+                tone="success"
+                message={codeCopyNotice}
+                onDismiss={() => setCodeCopyNotice(null)}
               />
             ) : null}
             {revealError ? (
