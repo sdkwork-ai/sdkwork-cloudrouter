@@ -796,7 +796,7 @@ export function CloudRouterIamPersonnelWorkspace({
               {members.length === 0 ? (
                 <tr>
                   <td
-                    className="h-[50vh] min-h-[18rem] px-3 text-center align-middle text-slate-500"
+                    className="h-[calc(100vh-16rem)] min-h-[18rem] px-3 text-center align-middle text-slate-500"
                     colSpan={7}
                   >
                     {loading ? t('admin.iam.personnel.loading') : t('admin.iam.personnel.empty')}
