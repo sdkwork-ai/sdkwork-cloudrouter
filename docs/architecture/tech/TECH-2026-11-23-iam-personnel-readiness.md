@@ -89,7 +89,7 @@
 | G7 分页检索 | 🟡 部分 | roster 服务端分页 + pageInfo + 重置页（`ebb91784`）；排序/CSV 导出待做 |
 | G3 数据范围 | 🟡 接线完成，待 PG 用例 | 解析器/遗留语义/装载器（`7141d67f`、`da7dc6aa`、`8665e140`）；roster 谓词按 tenant/organization/department(+children)/self 强制（`27f78dd0`）；尚缺真库集成用例 |
 | G4 隔离/脱敏 | ⏳ | 无跨租户用例、无字段级可见性 |
-| G1 迁移演练 | 🟡 前向演练通过，回滚待做 | 本机 PG 上 `plan → migrate → status → drift-check` 全部 exit 0（0049/0050 已真实应用，drift 无差异）；尚缺降级回滚演练与预发环境证据 |
+| G1 迁移演练 | 🟡 前向 + 重放通过，回滚待做 | 真库 `plan → migrate → status → drift-check` exit 0；**重放 migrate 应用 0 条**，`status=clean pending_migrations=0`，证明迁移账本幂等；仍缺旧应用兼容/回滚演练与预发证据 |
 | G6/G8–G12 | ⏳ | 见上文清单 |
 
 ### G3 落地方案（下一轮执行口径）
