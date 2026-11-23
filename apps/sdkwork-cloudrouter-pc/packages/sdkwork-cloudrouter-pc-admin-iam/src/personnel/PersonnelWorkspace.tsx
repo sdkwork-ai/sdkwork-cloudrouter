@@ -579,9 +579,9 @@ export function CloudRouterIamPersonnelWorkspace({
   )?.department;
 
   return (
-    <div className="flex min-h-full flex-col gap-4 px-4 py-4 lg:flex-row">
-      <aside className="w-full shrink-0 lg:w-80" aria-label={t('admin.iam.personnel.directory')}>
-        <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+    <div className="flex min-h-full flex-1 flex-col gap-4 px-4 py-4 lg:flex-row">
+      <aside className="w-full shrink-0 lg:w-80 lg:self-stretch" aria-label={t('admin.iam.personnel.directory')}>
+        <div className="flex h-full min-h-[24rem] flex-col rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
           <label className="block text-xs font-medium text-slate-500" htmlFor="personnel-organization">
             {t('admin.iam.personnel.organization')}
           </label>
@@ -622,7 +622,7 @@ export function CloudRouterIamPersonnelWorkspace({
           </p>
 
           <ul
-            className="mt-2 max-h-[60vh] space-y-0.5 overflow-auto"
+            className="mt-2 min-h-0 flex-1 space-y-0.5 overflow-auto"
             onDragOver={(event) => {
               if (canUpdateDepartments) event.preventDefault();
             }}
@@ -732,7 +732,7 @@ export function CloudRouterIamPersonnelWorkspace({
         </div>
       </aside>
 
-      <section className="min-w-0 flex-1" aria-label={t('admin.iam.personnel.member')}>
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col" aria-label={t('admin.iam.personnel.member')}>
         {error ? (
           <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300" role="alert">
             {error}
@@ -778,7 +778,7 @@ export function CloudRouterIamPersonnelWorkspace({
         </div>
         <div
           aria-busy={busy || loading}
-          className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800"
+          className="flex min-h-0 flex-1 flex-col overflow-auto rounded-xl border border-slate-200 dark:border-slate-800"
         >
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500 dark:bg-slate-900">
@@ -795,7 +795,10 @@ export function CloudRouterIamPersonnelWorkspace({
             <tbody>
               {members.length === 0 ? (
                 <tr>
-                  <td className="px-3 py-8 text-center text-slate-500" colSpan={7}>
+                  <td
+                    className="h-[50vh] min-h-[18rem] px-3 text-center align-middle text-slate-500"
+                    colSpan={7}
+                  >
                     {loading ? t('admin.iam.personnel.loading') : t('admin.iam.personnel.empty')}
                   </td>
                 </tr>
