@@ -1,6 +1,6 @@
 # IAM 人员管理（Personnel Management）设计
 
-- 状态：P1 + P2 后端已落地（sdkwork-iam `e181951f`、`9c55a59c`）；P3 页面待实施
+- 状态：P1 + P2 + P3 页面骨架已落地（sdkwork-iam `e181951f`、`9c55a59c`、`bbf34b74`）；P2b 权限解析待实施
 - 日期：2026-11-23
 - 范围：Cloud Router 管理端「身份目录 → 人员管理」页面 + IAM 模块（`sdkwork-iam`）数据模型与 API 扩展
 - 关联：`TECH-2026-11-18-admin-enterprise-center.md`（管理端信息架构）、`sdkwork-specs/IAM_SPEC.md`、`sdkwork-specs/DATABASE_FRAMEWORK_SPEC.md`、`sdkwork-specs/API_SPEC.md`
@@ -378,4 +378,5 @@ SELECT m.id                AS membership_id,
 
 - 已落地（P2）：`GET /organization_memberships/roster`（`organizationMemberships.roster.list`，人+多部门+岗位+角色 + 有效窗口过滤，支持 `organization_id`/`department_id`/`include_descendants`）与 `PUT /organization_memberships/{id}/departments`（`organizationMemberships.departments.update`，事务化批量任职 + 唯一主部门）。
 - 待落地（P2b）：`roleBindings` 的 `dataScopeKind`/有效期写入与 `rbac_scope` 解析（含 `scope_kind='department'` 与过期过滤）。
-- 待落地（P3）：Cloud Router `/admin/iam/personnel` 页面与组合元数据（菜单/路由/权限提示/i18n），组织/部门树拖拽、成员表、成员抽屉（基础信息/部门任职/角色与权限/审计），以及对应测试。
+- 已落地（P3 首版）：`/admin/iam/personnel` 页面（组织选择 + 部门树拖拽换父/排序 + 建/删部门 + 花名册表 + 成员多部门编辑），菜单/路由/权限提示/中英文案齐全。
+- 待落地（P3b）：成员抽屉的角色/岗位编辑（依赖 P2b 的授权解析）、搜索/分页/批量、a11y 细节与页面级 vitest 用例。

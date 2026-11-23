@@ -1,4 +1,4 @@
-import { BarChart3, Building2, KeyRound, KeySquare, Link2, MessageCircle, Network, QrCode, ScrollText, Server, ShieldAlert, ShieldCheck, Smartphone, UserCog, Users, type LucideIcon } from 'lucide-react';
+import { BarChart3, Building2, KeyRound, KeySquare, Link2, MessageCircle, Network, QrCode, ScrollText, Server, ShieldAlert, ShieldCheck, Smartphone, UserCog, Users, UsersRound, type LucideIcon } from 'lucide-react';
 
 /**
  * Cloud Router IAM admin contribution metadata.
@@ -56,6 +56,7 @@ export const IAM_ADMIN_MENU: CloudRouterIamAdminMenu = {
         { path: '/admin/iam/users', labelKey: 'admin.menu.iam.users', icon: Users },
         { path: '/admin/iam/organizations', labelKey: 'admin.menu.iam.organizations', icon: Building2 },
         { path: '/admin/iam/tenants', labelKey: 'admin.menu.iam.tenants', icon: Network },
+        { path: '/admin/iam/personnel', labelKey: 'admin.menu.iam.personnel', icon: UsersRound },
       ],
     },
     {
@@ -105,6 +106,7 @@ export interface CloudRouterIamAdminRouteRecord {
 export const IAM_ADMIN_ROUTE_RECORDS: readonly CloudRouterIamAdminRouteRecord[] = [
   { path: 'iam', requiredPermission: 'iam.users.read', redirectTo: '/admin/iam/users' },
   { path: 'iam/users', requiredPermission: 'iam.users.read' },
+  { path: 'iam/personnel', requiredPermission: 'iam.memberships.read' },
   { path: 'iam/tenants', requiredPermission: 'iam.tenants.read' },
   { path: 'iam/tenants/:tenantId/applications', requiredPermission: 'iam.tenants.read' },
   { path: 'iam/organizations', requiredPermission: 'iam.organizations.read' },
@@ -139,6 +141,7 @@ export interface CloudRouterIamAdminPermissionHint {
 export const IAM_ADMIN_PERMISSION_HINTS: readonly CloudRouterIamAdminPermissionHint[] = [
   { pathPrefix: '/admin/iam', requiredPermission: 'iam.users.read' },
   { pathPrefix: '/admin/iam/users', requiredPermission: 'iam.users.read' },
+  { pathPrefix: '/admin/iam/personnel', requiredPermission: 'iam.memberships.read' },
   { pathPrefix: '/admin/iam/tenants', requiredPermission: 'iam.tenants.read' },
   { pathPrefix: '/admin/iam/organizations', requiredPermission: 'iam.organizations.read' },
   { pathPrefix: '/admin/iam/roles', requiredPermission: 'iam.roles.read' },

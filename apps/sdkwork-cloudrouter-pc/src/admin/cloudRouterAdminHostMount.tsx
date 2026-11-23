@@ -99,6 +99,7 @@ const DomainCenterAdmin = lazyAdminRoute(
 ) as LazyExoticComponent<ComponentType<DomainCenterAdminProps>>;
 const IamUsersAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamUsersAdmin');
 const IamTenantsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamTenantsAdmin');
+const IamPersonnelAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamPersonnelAdmin');
 const IamOrganizationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOrganizationsAdmin');
 const IamOrganizationStructureAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-iam'), 'CloudRouterIamOrganizationStructureAdmin');
 const IamInstallationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterInstallationsPage');
@@ -277,6 +278,7 @@ const HARDWARE_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>> = {
  */
 const IAM_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>> = {
   'iam/users': <IamUsersAdmin />,
+  'iam/personnel': <IamPersonnelAdmin />,
   'iam/tenants': <IamTenantsAdmin />,
   'iam/tenants/:tenantId/applications': <IamInstallationsAdmin />,
   'iam/organizations': <IamOrganizationsAdmin />,

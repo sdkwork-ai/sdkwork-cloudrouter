@@ -146,6 +146,17 @@ const LazyIamTenantsAdmin = lazy(async () => {
   };
 });
 
+const LazyIamPersonnelAdmin = lazy(async () => {
+  const { CloudRouterIamPersonnelWorkspace } = await import('./personnel/PersonnelWorkspace');
+  return {
+    default: function CloudRouterIamPersonnelAdminContent() {
+      const service = useIamAdminService();
+      const can = useIamAdminPermission();
+      return <CloudRouterIamPersonnelWorkspace can={can} service={service} />;
+    },
+  };
+});
+
 const LazyIamOrganizationsAdmin = lazy(async () => {
   const { createSdkworkIamOrganizationController, SdkworkIamOrganizationAdminWorkspace } = await import('@sdkwork/iam-pc-admin-organization');
   return {
@@ -527,6 +538,7 @@ const LazyIamAuditAdmin = lazy(async () => {
 
 export const CloudRouterIamUsersAdmin: ComponentType = createIamAdminRoute(LazyIamUsersAdmin);
 export const CloudRouterIamTenantsAdmin: ComponentType = createIamAdminRoute(LazyIamTenantsAdmin);
+export const CloudRouterIamPersonnelAdmin: ComponentType = createIamAdminRoute(LazyIamPersonnelAdmin);
 export const CloudRouterIamOrganizationsAdmin: ComponentType = createIamAdminRoute(LazyIamOrganizationsAdmin);
 export const CloudRouterIamOrganizationStructureAdmin: ComponentType = createIamAdminRoute(LazyIamOrganizationStructureAdmin);
 export const CloudRouterIamRolesAdmin: ComponentType = createIamAdminRoute(LazyIamRolesAdmin);

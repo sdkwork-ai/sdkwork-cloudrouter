@@ -1,0 +1,704 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { SdkworkIamService } from '@sdkwork/iam-service';
+
+/**
+ * 人员管理 (personnel management) workspace.
+ *
+ * Left: organization list + department tree with drag reparent/reorder, backed by
+ * `departments.update` (PATCH accepts `parentDepartmentId`/`sortOrder`).
+ * Right: the member roster (`organizationMemberships.roster.list`) with a
+ * multi-department editor (`organizationMemberships.departments.update`).
+ *
+ * All remote calls flow through the injected `SdkworkIamService`; this module
+ * never creates an HTTP client or an auth header.
+ */
+
+export interface CloudRouterIamPersonnelWorkspaceProps {
+  can: (permission: string) => boolean;
+  service: SdkworkIamService;
+}
+
+interface Organization {
+  id: string;
+  name: string;
+}
+
+interface Department {
+  code: string;
+  departmentId: string;
+  name: string;
+  organizationId: string;
+  parentDepartmentId: string | null;
+  sortOrder: number;
+}
+
+interface DepartmentRef {
+  departmentId: string;
+  isPrimary: boolean;
+  name: string;
+}
+
+interface PositionRef {
+  isPrimary: boolean;
+  name: string;
+  positionId: string;
+}
+
+interface RoleRef {
+  dataScopeKind: string;
+  effect: string;
+  roleBindingId: string;
+  roleCode: string;
+  scopeId: string;
+  scopeKind: string;
+}
+
+interface RosterMember {
+  departments: DepartmentRef[];
+  displayName: string;
+  email: string;
+  membershipId: string;
+  phone: string;
+  positions: PositionRef[];
+  roles: RoleRef[];
+  username: string;
+}
+
+interface FlatDepartment {
+  department: Department;
+  depth: number;
+  hasChildren: boolean;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
+}
+
+function asArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function asItems(payload: unknown): Record<string, unknown>[] {
+  return asArray(asRecord(payload).items).map(asRecord);
+}
+
+function asText(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
+function asNumber(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function asOptionalId(value: unknown): string | null {
+  const text = asText(value);
+  return text.length > 0 ? text : null;
+}
+
+function asBoolean(value: unknown): boolean {
+  return value === true || value === 1;
+}
+
+function toOrganization(row: Record<string, unknown>): Organization {
+  return { id: asText(row.organizationId), name: asText(row.name) };
+}
+
+function toDepartment(row: Record<string, unknown>): Department {
+  return {
+    code: asText(row.code),
+    departmentId: asText(row.departmentId),
+    name: asText(row.name),
+    organizationId: asText(row.organizationId),
+    parentDepartmentId: asOptionalId(row.parentDepartmentId),
+    sortOrder: asNumber(row.sortOrder ?? row.order),
+  };
+}
+
+function toMember(row: Record<string, unknown>): RosterMember {
+  return {
+    departments: asArray(row.departments).map((value) => {
+      const entry = asRecord(value);
+      return {
+        departmentId: asText(entry.departmentId),
+        isPrimary: asBoolean(entry.isPrimary),
+        name: asText(entry.name),
+      };
+    }),
+    displayName: asText(row.displayName) || asText(row.username),
+    email: asText(row.email),
+    membershipId: asText(row.membershipId),
+    phone: asText(row.phone),
+    positions: asArray(row.positions).map((value) => {
+      const entry = asRecord(value);
+      return {
+        isPrimary: asBoolean(entry.isPrimary),
+        name: asText(entry.name),
+        positionId: asText(entry.positionId),
+      };
+    }),
+    roles: asArray(row.roles).map((value) => {
+      const entry = asRecord(value);
+      return {
+        dataScopeKind: asText(entry.dataScopeKind),
+        effect: asText(entry.effect),
+        roleBindingId: asText(entry.roleBindingId),
+        roleCode: asText(entry.roleCode),
+        scopeId: asText(entry.scopeId),
+        scopeKind: asText(entry.scopeKind),
+      };
+    }),
+    username: asText(row.username),
+  };
+}
+
+function flattenDepartments(departments: Department[]): FlatDepartment[] {
+  const byParent = new Map<string, Department[]>();
+  for (const department of departments) {
+    const key = department.parentDepartmentId ?? '';
+    const siblings = byParent.get(key) ?? [];
+    siblings.push(department);
+    byParent.set(key, siblings);
+  }
+  for (const siblings of byParent.values()) {
+    siblings.sort((left, right) => left.sortOrder - right.sortOrder || left.name.localeCompare(right.name));
+  }
+  const flattened: FlatDepartment[] = [];
+  const visit = (parent: string, depth: number) => {
+    for (const department of byParent.get(parent) ?? []) {
+      flattened.push({
+        department,
+        depth,
+        hasChildren: (byParent.get(department.departmentId) ?? []).length > 0,
+      });
+      visit(department.departmentId, depth + 1);
+    }
+  };
+  visit('', 0);
+  return flattened;
+}
+
+function reasonMessage(reason: unknown): string {
+  if (reason instanceof Error) return reason.message;
+  const record = asRecord(reason);
+  const message = asText(record.message);
+  const traceId = asText(record.traceId);
+  if (message && traceId) return `${message} (${traceId})`;
+  return message || 'request failed';
+}
+
+export function CloudRouterIamPersonnelWorkspace({
+  can,
+  service,
+}: CloudRouterIamPersonnelWorkspaceProps) {
+  const { t } = useTranslation();
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
+  const [members, setMembers] = useState<RosterMember[]>([]);
+  const [draggingId, setDraggingId] = useState('');
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState('');
+  const [newDepartmentName, setNewDepartmentName] = useState('');
+  const [editingMember, setEditingMember] = useState<RosterMember | null>(null);
+  const [draftDepartmentIds, setDraftDepartmentIds] = useState<Record<string, boolean>>({});
+  const [draftPrimaryId, setDraftPrimaryId] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  const canUpdateDepartments = can('iam.departments.update');
+  const canCreateDepartments = can('iam.departments.create');
+  const canDeleteDepartments = can('iam.departments.delete');
+  const canUpdateMemberships = can('iam.memberships.update');
+  const flatDepartments = useMemo(() => flattenDepartments(departments), [departments]);
+
+  const loadOrganizations = useCallback(async () => {
+    try {
+      const payload = await service.iam.organizations.list({ pageSize: 200 });
+      const next = asItems(payload).map(toOrganization).filter((item) => item.id.length > 0);
+      setOrganizations(next);
+      setSelectedOrganizationId((current) => current || next[0]?.id || '');
+    } catch (reason) {
+      setError(reasonMessage(reason));
+    } finally {
+      setLoading(false);
+    }
+  }, [service]);
+
+  const loadDepartments = useCallback(
+    async (organizationId: string) => {
+      try {
+        const payload = await service.iam.departments.list({ organizationId, pageSize: 200 });
+        setDepartments(asItems(payload).map(toDepartment).filter((item) => item.departmentId.length > 0));
+      } catch (reason) {
+        setError(reasonMessage(reason));
+      }
+    },
+    [service],
+  );
+
+  const loadRoster = useCallback(
+    async (organizationId: string, departmentId: string) => {
+      try {
+        const payload = await service.iam.organizationMemberships.roster.list({
+          organizationId,
+          ...(departmentId ? { departmentId, includeDescendants: true } : {}),
+          pageSize: 200,
+        });
+        setMembers(asItems(payload).map(toMember).filter((item) => item.membershipId.length > 0));
+      } catch (reason) {
+        setError(reasonMessage(reason));
+      }
+    },
+    [service],
+  );
+
+  useEffect(() => {
+    void loadOrganizations();
+  }, [loadOrganizations]);
+
+  useEffect(() => {
+    setSelectedDepartmentId('');
+    if (!selectedOrganizationId) return;
+    setLoading(true);
+    void loadDepartments(selectedOrganizationId).finally(() => setLoading(false));
+  }, [loadDepartments, selectedOrganizationId]);
+
+  useEffect(() => {
+    if (!selectedOrganizationId) return;
+    void loadRoster(selectedOrganizationId, selectedDepartmentId);
+  }, [loadRoster, selectedDepartmentId, selectedOrganizationId]);
+
+  const moveDepartment = useCallback(
+    async (departmentId: string, parentDepartmentId: string | null, sortOrder?: number) => {
+      setBusy(true);
+      setError('');
+      try {
+        const body: Record<string, unknown> = { parentDepartmentId };
+        if (typeof sortOrder === 'number') body.sortOrder = Math.max(0, sortOrder);
+        await service.iam.departments.update(departmentId, body);
+        await loadDepartments(selectedOrganizationId);
+      } catch (reason) {
+        setError(reasonMessage(reason));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [loadDepartments, selectedOrganizationId, service],
+  );
+
+  const handleDrop = useCallback(
+    async (event: React.DragEvent<HTMLElement>, target: FlatDepartment | null) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const draggedId = draggingId || event.dataTransfer.getData('text/plain');
+      setDraggingId('');
+      if (!canUpdateDepartments || !draggedId) return;
+      if (!target) {
+        await moveDepartment(draggedId, null);
+        return;
+      }
+      if (target.department.departmentId === draggedId) return;
+      const rect = event.currentTarget.getBoundingClientRect();
+      const asChild = event.clientY >= rect.top + rect.height / 2;
+      if (asChild) {
+        await moveDepartment(draggedId, target.department.departmentId);
+      } else {
+        await moveDepartment(
+          draggedId,
+          target.department.parentDepartmentId,
+          target.department.sortOrder,
+        );
+      }
+    },
+    [canUpdateDepartments, draggingId, moveDepartment],
+  );
+
+  const createDepartment = useCallback(async () => {
+    const name = newDepartmentName.trim();
+    if (!name || !selectedOrganizationId) return;
+    setBusy(true);
+    setError('');
+    try {
+      await service.iam.departments.create({
+        code: `dept-${Date.now().toString(36)}`,
+        name,
+        organizationId: selectedOrganizationId,
+        ...(selectedDepartmentId ? { parentDepartmentId: selectedDepartmentId } : {}),
+      });
+      setNewDepartmentName('');
+      await loadDepartments(selectedOrganizationId);
+    } catch (reason) {
+      setError(reasonMessage(reason));
+    } finally {
+      setBusy(false);
+    }
+  }, [loadDepartments, newDepartmentName, selectedDepartmentId, selectedOrganizationId, service]);
+
+  const deleteDepartment = useCallback(
+    async (departmentId: string) => {
+      setBusy(true);
+      setError('');
+      try {
+        await service.iam.departments.delete(departmentId);
+        setConfirmingDeleteId('');
+        if (selectedDepartmentId === departmentId) setSelectedDepartmentId('');
+        await loadDepartments(selectedOrganizationId);
+        await loadRoster(selectedOrganizationId, '');
+      } catch (reason) {
+        setError(reasonMessage(reason));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [loadDepartments, loadRoster, selectedDepartmentId, selectedOrganizationId, service],
+  );
+
+  const startEditingMember = useCallback(
+    (member: RosterMember) => {
+      const checked: Record<string, boolean> = {};
+      let primary = '';
+      for (const department of member.departments) {
+        checked[department.departmentId] = true;
+        if (department.isPrimary) primary = department.departmentId;
+      }
+      setEditingMember(member);
+      setDraftDepartmentIds(checked);
+      setDraftPrimaryId(primary);
+    },
+    [],
+  );
+
+  const saveMemberDepartments = useCallback(async () => {
+    if (!editingMember) return;
+    const wanted = departments
+      .filter((department) => draftDepartmentIds[department.departmentId])
+      .map((department) => ({
+        departmentId: department.departmentId,
+        isPrimary: department.departmentId === draftPrimaryId,
+      }));
+    setBusy(true);
+    setError('');
+    try {
+      await service.iam.organizationMemberships.departments.update(editingMember.membershipId, {
+        departments: wanted,
+        organizationId: selectedOrganizationId,
+      });
+      setEditingMember(null);
+      await loadRoster(selectedOrganizationId, selectedDepartmentId);
+    } catch (reason) {
+      setError(reasonMessage(reason));
+    } finally {
+      setBusy(false);
+    }
+  }, [
+    departments,
+    draftDepartmentIds,
+    draftPrimaryId,
+    editingMember,
+    loadRoster,
+    selectedDepartmentId,
+    selectedOrganizationId,
+    service,
+  ]);
+
+  const selectedDepartment = flatDepartments.find(
+    (item) => item.department.departmentId === selectedDepartmentId,
+  )?.department;
+
+  return (
+    <div className="flex min-h-full flex-col gap-4 px-4 py-4 lg:flex-row">
+      <aside className="w-full shrink-0 lg:w-80" aria-label={t('admin.iam.personnel.directory')}>
+        <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+          <label className="block text-xs font-medium text-slate-500" htmlFor="personnel-organization">
+            {t('admin.iam.personnel.organization')}
+          </label>
+          <select
+            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-950"
+            id="personnel-organization"
+            onChange={(event) => setSelectedOrganizationId(event.target.value)}
+            value={selectedOrganizationId}
+          >
+            {organizations.length === 0 ? (
+              <option value="">{t('admin.iam.personnel.noOrganization')}</option>
+            ) : null}
+            {organizations.map((organization) => (
+              <option key={organization.id} value={organization.id}>
+                {organization.name || organization.id}
+              </option>
+            ))}
+          </select>
+
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <span className="text-xs font-medium text-slate-500">
+              {t('admin.iam.personnel.department')}
+            </span>
+            <button
+              className="rounded-md border border-slate-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-slate-700"
+              disabled={!selectedOrganizationId}
+              onClick={() => setSelectedDepartmentId('')}
+              type="button"
+            >
+              {t('admin.iam.personnel.allDepartments')}
+            </button>
+          </div>
+          <p className="mt-1 text-[11px] leading-4 text-slate-400">
+            {t('admin.iam.personnel.dragHint')}
+          </p>
+
+          <ul
+            className="mt-2 max-h-[60vh] space-y-0.5 overflow-auto"
+            onDragOver={(event) => {
+              if (canUpdateDepartments) event.preventDefault();
+            }}
+            onDrop={(event) => {
+              if (event.target === event.currentTarget) void handleDrop(event, null);
+            }}
+          >
+            {flatDepartments.map((item) => {
+              const active = selectedDepartmentId === item.department.departmentId;
+              return (
+                <li
+                  className="flex items-center gap-1"
+                  key={item.department.departmentId}
+                  style={{ paddingLeft: `${item.depth * 14}px` }}
+                >
+                  <button
+                    aria-current={active ? 'true' : undefined}
+                    className={`min-w-0 flex-1 truncate rounded-md px-2 py-1 text-left text-sm ${
+                      active
+                        ? 'bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300'
+                        : 'hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                    draggable={canUpdateDepartments}
+                    onClick={() => setSelectedDepartmentId(item.department.departmentId)}
+                    onDragEnd={() => setDraggingId('')}
+                    onDragOver={(event) => {
+                      if (canUpdateDepartments) event.preventDefault();
+                    }}
+                    onDragStart={(event) => {
+                      setDraggingId(item.department.departmentId);
+                      event.dataTransfer.setData('text/plain', item.department.departmentId);
+                    }}
+                    onDrop={(event) => void handleDrop(event, item)}
+                    type="button"
+                  >
+                    {item.hasChildren ? '▾ ' : ''}
+                    {item.department.name || item.department.code}
+                  </button>
+                  {canDeleteDepartments ? (
+                    <button
+                      aria-label={`${t('admin.iam.personnel.delete')} ${item.department.name}`}
+                      className={`rounded px-1 text-xs ${
+                        confirmingDeleteId === item.department.departmentId
+                          ? 'bg-red-50 text-red-600 dark:bg-red-950'
+                          : 'text-slate-400 hover:text-red-600'
+                      }`}
+                      onClick={() => {
+                        if (confirmingDeleteId === item.department.departmentId) {
+                          void deleteDepartment(item.department.departmentId);
+                        } else {
+                          setConfirmingDeleteId(item.department.departmentId);
+                        }
+                      }}
+                      title={
+                        confirmingDeleteId === item.department.departmentId
+                          ? t('admin.iam.personnel.confirmDelete')
+                          : t('admin.iam.personnel.delete')
+                      }
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+
+          {canCreateDepartments ? (
+            <div className="mt-3 flex gap-2">
+              <input
+                aria-label={t('admin.iam.personnel.departmentName')}
+                className="min-w-0 flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-950"
+                onChange={(event) => setNewDepartmentName(event.target.value)}
+                placeholder={t('admin.iam.personnel.departmentName')}
+                value={newDepartmentName}
+              />
+              <button
+                className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900"
+                disabled={busy || !newDepartmentName.trim()}
+                onClick={() => void createDepartment()}
+                type="button"
+              >
+                {selectedDepartment ? t('admin.iam.personnel.createChild') : t('admin.iam.personnel.create')}
+              </button>
+            </div>
+          ) : null}
+        </div>
+      </aside>
+
+      <section className="min-w-0 flex-1" aria-label={t('admin.iam.personnel.member')}>
+        {error ? (
+          <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <h2 className="truncate text-sm font-semibold">
+            {selectedDepartment ? selectedDepartment.name : t('admin.iam.personnel.allDepartments')}
+          </h2>
+          <span className="text-xs text-slate-400">
+            {t('admin.iam.personnel.memberCount', { count: members.length })}
+          </span>
+        </div>
+        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+          <table className="min-w-full text-sm">
+            <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500 dark:bg-slate-900">
+              <tr>
+                <th className="px-3 py-2">{t('admin.iam.personnel.name')}</th>
+                <th className="px-3 py-2">{t('admin.iam.personnel.departments')}</th>
+                <th className="px-3 py-2">{t('admin.iam.personnel.email')}</th>
+                <th className="px-3 py-2">{t('admin.iam.personnel.phone')}</th>
+                <th className="px-3 py-2">{t('admin.iam.personnel.positions')}</th>
+                <th className="px-3 py-2">{t('admin.iam.personnel.roles')}</th>
+                <th className="px-3 py-2">{t('admin.iam.personnel.actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {members.length === 0 ? (
+                <tr>
+                  <td className="px-3 py-8 text-center text-slate-500" colSpan={7}>
+                    {loading ? t('admin.iam.personnel.loading') : t('admin.iam.personnel.empty')}
+                  </td>
+                </tr>
+              ) : null}
+              {members.map((member) => (
+                <tr className="border-t border-slate-100 align-top dark:border-slate-800" key={member.membershipId}>
+                  <td className="px-3 py-2">
+                    <div className="font-medium">{member.displayName}</div>
+                    <div className="text-xs text-slate-400">{member.username}</div>
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-wrap gap-1">
+                      {member.departments.map((department) => (
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs ${
+                            department.isPrimary
+                              ? 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300'
+                              : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                          }`}
+                          key={department.departmentId}
+                        >
+                          {department.name}
+                          {department.isPrimary ? ` · ${t('admin.iam.personnel.primaryBadge')}` : ''}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{member.email || '—'}</td>
+                  <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{member.phone || '—'}</td>
+                  <td className="px-3 py-2 text-slate-600 dark:text-slate-300">
+                    {member.positions.length === 0
+                      ? '—'
+                      : member.positions.map((position) => position.name).join('、')}
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-wrap gap-1">
+                      {member.roles.length === 0 ? (
+                        <span className="text-slate-400">—</span>
+                      ) : (
+                        member.roles.map((role) => (
+                          <span
+                            className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+                            key={role.roleBindingId}
+                            title={`${role.scopeKind}:${role.scopeId} ${role.dataScopeKind}`}
+                          >
+                            {role.roleCode}
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-3 py-2">
+                    {canUpdateMemberships ? (
+                      <button
+                        className="rounded-md border border-slate-200 px-2 py-1 text-xs hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                        onClick={() => startEditingMember(member)}
+                        type="button"
+                      >
+                        {t('admin.iam.personnel.editDepartments')}
+                      </button>
+                    ) : (
+                      <span className="text-xs text-slate-400">{t('admin.iam.personnel.readOnly')}</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {editingMember ? (
+                <tr className="border-t border-slate-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
+                  <td colSpan={7} className="px-3 py-3">
+                    <p className="mb-2 text-xs font-medium text-slate-500">
+                      {t('admin.iam.personnel.editDepartmentsFor', { name: editingMember.displayName })}
+                    </p>
+                    <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
+                      {departments.map((department) => (
+                        <label className="flex items-center gap-2 text-sm" key={department.departmentId}>
+                          <input
+                            checked={Boolean(draftDepartmentIds[department.departmentId])}
+                            onChange={(event) => {
+                              const checked = event.target.checked;
+                              setDraftDepartmentIds((current) => ({
+                                ...current,
+                                [department.departmentId]: checked,
+                              }));
+                              if (!checked && draftPrimaryId === department.departmentId) {
+                                setDraftPrimaryId('');
+                              }
+                            }}
+                            type="checkbox"
+                          />
+                          <span className="truncate">{department.name}</span>
+                          <button
+                            className={`ml-auto rounded-full px-2 text-[11px] ${
+                              draftPrimaryId === department.departmentId
+                                ? 'bg-sky-600 text-white'
+                                : 'border border-slate-200 text-slate-500 dark:border-slate-700'
+                            }`}
+                            disabled={!draftDepartmentIds[department.departmentId]}
+                            onClick={() => setDraftPrimaryId(department.departmentId)}
+                            type="button"
+                          >
+                            {t('admin.iam.personnel.primary')}
+                          </button>
+                        </label>
+                      ))}
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900"
+                        disabled={busy}
+                        onClick={() => void saveMemberDepartments()}
+                        type="button"
+                      >
+                        {t('admin.iam.personnel.save')}
+                      </button>
+                      <button
+                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs dark:border-slate-700"
+                        onClick={() => setEditingMember(null)}
+                        type="button"
+                      >
+                        {t('admin.iam.personnel.cancel')}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
+}
