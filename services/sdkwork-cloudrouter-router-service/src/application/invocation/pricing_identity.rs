@@ -800,7 +800,7 @@ pub(crate) fn measurement_profile_for_catalog_meter(
             BillingMode::ResultCount,
             BillingQuantitySource::ResponseBody,
         ),
-        ImagePixel | ImageMegapixel | ApiItem => {
+        ImagePixel | ImageMegapixel | ApiItem | DocumentPage => {
             (BillingMode::ItemCount, BillingQuantitySource::ResponseBody)
         }
         TtsInputCharacter | SpeechCharacter => {

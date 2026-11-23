@@ -1,14 +1,19 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { Model } from '../data/models';
 import {
   deriveModelCatalogPricingView,
   deriveModelCatalogRegionPricingView,
   modelCatalogGroupFallbackLabel,
   modelCatalogGroupLabelKey,
+  modelCatalogPricingVariants,
   modelCatalogRegions,
+  modelPricingVariantIsCurrent,
+  modelReferencePriceVariant,
   type ModelCatalogPricingCell,
   type ModelCatalogPriceType,
+  type ModelCatalogPriceVariant,
 } from '../modelCatalog';
 import { GroupSaleMultiplierBadge } from './GroupSaleMultiplierBadge';
 
@@ -44,25 +49,71 @@ export function ModelPricingPanel({
     return Array.from(groups);
   }, [groupSaleMultipliers, model.groups]);
 
-  // 价格类型：峰谷为保留分支，无数据时不渲染（见 PRICE_TYPES）。
-  const PRICE_TYPES: ModelCatalogPriceType[] = ['standard', 'sale'];
-
   const [regionCode, setRegionCode] = useState<string>(() => regions[0]?.regionCode ?? '');
-  const [priceType, setPriceType] = useState<ModelCatalogPriceType>('standard');
-  const [selectedGroup, setSelectedGroup] = useState<string>(() => saleGroups[0] ?? '');
-
   const activeRegion = regions.some((region) => region.regionCode === regionCode)
     ? regionCode
     : (regions[0]?.regionCode ?? '');
+  const variantOptions = useMemo(
+    () => modelCatalogPricingVariants(model, activeRegion),
+    [activeRegion, model],
+  );
+  const currentVariant = variantOptions.find(
+    (variant) => variant.key !== 'standard' && modelPricingVariantIsCurrent(model, variant.key),
+  );
+  const defaultPriceType: ModelCatalogPriceType = currentVariant?.priceType
+    ?? (variantOptions.some((variant) => variant.key === 'standard') ? 'standard' : (variantOptions[0]?.priceType ?? 'standard'));
+  const priceTypes = useMemo<ModelCatalogPriceType[]>(() => {
+    const types = variantOptions
+      .map((variant) => variant.priceType)
+      .filter((priceType): priceType is ModelCatalogPriceType => priceType !== null);
+    return types.length > 0 ? types : ['standard'];
+  }, [variantOptions]);
+  const hasSale = saleGroups.length > 0;
+  const availablePriceTypes = useMemo<ModelCatalogPriceType[]>(
+    () => (hasSale ? [...priceTypes, 'sale'] : priceTypes),
+    [hasSale, priceTypes],
+  );
+
+  const [priceType, setPriceType] = useState<ModelCatalogPriceType>(defaultPriceType);
+  const [selectedGroup, setSelectedGroup] = useState<string>(() => saleGroups[0] ?? '');
+
+  useEffect(() => {
+    if (!availablePriceTypes.includes(priceType)) {
+      setPriceType(defaultPriceType);
+    }
+  }, [availablePriceTypes, defaultPriceType, priceType]);
+
   const activeGroup = saleGroups.includes(selectedGroup) ? selectedGroup : (saleGroups[0] ?? '');
   const saleMultiplier = activeGroup !== '' ? groupSaleMultipliers?.get(activeGroup) : undefined;
-  const hasSaleGroups = saleGroups.length > 0;
-  const saleOptions = priceType === 'sale' ? { saleMultiplier } : {};
+  const selectedVariant = priceType === 'peak'
+    ? 'peak'
+    : priceType === 'offPeak'
+      ? 'off_peak'
+      : priceType === 'batch'
+        ? 'batch'
+        : priceType === 'standard'
+          ? 'standard'
+          : undefined;
+  const saleOptions = priceType === 'sale' && saleMultiplier
+    ? { saleMultiplier }
+    : {};
   const pricing =
     activeRegion !== ''
-      ? deriveModelCatalogRegionPricingView(model, activeRegion, saleOptions)
-          ?? deriveModelCatalogPricingView(model, saleOptions)
+      ? deriveModelCatalogRegionPricingView(model, activeRegion, {
+        ...saleOptions,
+        ...(selectedVariant ? { priceVariant: selectedVariant } : {}),
+      }) ?? deriveModelCatalogPricingView(model, saleOptions)
       : deriveModelCatalogPricingView(model, saleOptions);
+  const selectedVariantCurrent = selectedVariant !== undefined
+    && selectedVariant !== 'standard'
+    && modelPricingVariantIsCurrent(model, selectedVariant);
+  const scheduleLines = useMemo(
+    () => formatModelPricingScheduleLines(model, activeRegion, selectedVariant, t),
+    [activeRegion, model, selectedVariant, t],
+  );
+  const currentVariantLabel = currentVariant
+    ? t(currentVariant.labelKey, currentVariant.fallbackLabel)
+    : null;
 
   return (
     <div>
@@ -75,7 +126,7 @@ export function ModelPricingPanel({
         </div>
       ) : null}
 
-      {(regions.length >= 2 || saleGroups.length >= 2 || hasSaleGroups) ? (
+      {(regions.length >= 2 || saleGroups.length >= 2 || availablePriceTypes.length > 1) ? (
         <div className="space-y-1.5 mb-2">
           {regions.length >= 2 ? (
             <div className="flex items-center gap-1" role="tablist" aria-label={t('models.region', 'Region')}>
@@ -136,10 +187,16 @@ export function ModelPricingPanel({
             </div>
           ) : null}
 
-          {hasSaleGroups ? (
-            <div className="flex items-center gap-1" role="tablist" aria-label={t('models.priceType', 'Price type')}>
-              {PRICE_TYPES.map((type) => {
+          {availablePriceTypes.length > 1 ? (
+            <div className="flex flex-wrap items-center gap-1" role="tablist" aria-label={t('models.priceType', 'Price type')}>
+              {availablePriceTypes.map((type) => {
                 const active = priceType === type;
+                const option = type === 'sale'
+                  ? null
+                  : variantOptions.find((variant) => variant.priceType === type);
+                const isCurrent = type === 'peak' || type === 'offPeak'
+                  ? currentVariant?.priceType === type
+                  : false;
                 return (
                   <button
                     key={type}
@@ -156,10 +213,14 @@ export function ModelPricingPanel({
                         : 'text-slate-500 bg-slate-100 dark:text-slate-400 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10'
                     }`}
                   >
-                    {t(
-                      type === 'sale' ? 'models.priceType.sale' : 'models.priceType.standard',
-                      type === 'sale' ? 'Sale' : 'Standard',
-                    )}
+                    {type === 'sale'
+                      ? t('models.priceType.sale', 'Sale')
+                      : t(option?.labelKey ?? 'models.priceType.standard', option?.fallbackLabel ?? 'Standard')}
+                    {isCurrent ? (
+                      <span className="rounded bg-white/20 px-1 text-[9px] uppercase tracking-wide">
+                        {t('models.priceType.current', 'now')}
+                      </span>
+                    ) : null}
                     {type === 'sale' ? (
                       <GroupSaleMultiplierBadge
                         multiplier={saleMultiplier ?? ''}
@@ -185,8 +246,66 @@ export function ModelPricingPanel({
           </div>
         ))}
       </div>
+
+      {currentVariantLabel || scheduleLines.length > 0 ? (
+        <div className="mt-2 space-y-1 rounded-md bg-amber-50/60 px-2 py-1.5 text-[10px] leading-4 text-amber-800 dark:bg-amber-500/5 dark:text-amber-200">
+          {currentVariantLabel ? (
+            <div className="font-medium">
+              {t('models.priceType.activeNow', 'Current window: {{variant}}', { variant: currentVariantLabel })}
+            </div>
+          ) : null}
+          {scheduleLines.map((line) => (
+            <div key={line} className="text-amber-700/90 dark:text-amber-200/80">{line}</div>
+          ))}
+          {selectedVariantCurrent ? (
+            <div className="font-medium">{t('models.priceType.selectedCurrent', 'This tab is active now')}</div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
+}
+
+function formatModelPricingScheduleLines(
+  model: Model,
+  regionCode: string,
+  selectedVariant: ModelCatalogPriceVariant | undefined,
+  t: TFunction,
+): string[] {
+  const prices = (model.pricing.referencePrices ?? []).filter((price) => (
+    price.regionCode.trim().toLowerCase() === regionCode.trim().toLowerCase()
+  ));
+  const price = selectedVariant && selectedVariant !== 'standard'
+    ? prices.find((candidate) => modelReferencePriceVariant(candidate) === selectedVariant && candidate.schedule)
+    : prices.find((candidate) => candidate.schedule);
+  const schedule = price?.schedule;
+  if (!schedule) {
+    return [];
+  }
+  const lines = [
+    t('models.priceType.timezone', {
+      timeZone: schedule.timeZone,
+      defaultValue: 'Timezone: {{timeZone}}',
+    }),
+  ];
+  for (const window of schedule.weeklyWindows) {
+    const days = [...window.daysOfWeek].sort((left, right) => left - right)
+      .map((day) => t(`models.weekday.${day}`, { defaultValue: String(day) }))
+      .join(', ');
+    const start = window.startTime.slice(0, 5);
+    const end = window.endTime.slice(0, 5);
+    const holidayOnly = window.holidayOnly
+      ? t('models.priceType.holidayOnly', { defaultValue: 'Holidays' })
+      : '';
+    lines.push(`${holidayOnly ? `${holidayOnly}: ` : ''}${days} ${start}–${end}`);
+  }
+  if (schedule.holidayDates.length > 0) {
+    lines.push(t('models.priceType.holidayCount', {
+      count: schedule.holidayDates.length,
+      defaultValue: 'Statutory holidays: {{count}} days (off-peak)',
+    }));
+  }
+  return lines;
 }
 
 function pricingCellContainerClassName(cell: ModelCatalogPricingCell, layout: 'token' | 'flat'): string {

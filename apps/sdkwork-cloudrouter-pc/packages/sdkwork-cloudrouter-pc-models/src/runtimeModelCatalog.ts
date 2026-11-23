@@ -3,7 +3,7 @@ import type {
   AppModelCatalogPriceAvailability,
 } from './runtimeModelCatalogTypes.ts';
 import { parseModelCatalogIdentity } from '@sdkwork/cloudroutes-pc-commons/model-catalog-identity';
-import { type Model, type ModelCategoryKey, type ModelGroupKey, type ModelPricingStatus } from './data/models.ts';
+import { type Model, type ModelCategoryKey, type ModelGroupKey, type ModelPricingSchedule, type ModelPricingStatus } from './data/models.ts';
 
 type ModelModality = Model['modality'];
 type RuntimeReferencePrice = NonNullable<Model['pricing']['referencePrices']>[number];
@@ -13,6 +13,9 @@ interface RuntimeModelCatalogReferencePrice {
   billingMeter: string;
   unitPrice: string;
   currency: string;
+  rateHash: string;
+  rateVariant: 'standard' | 'time_window' | 'batch';
+  schedule: ModelPricingSchedule | null;
 }
 
 export interface RuntimeModelCatalogItem {
@@ -332,7 +335,7 @@ function normalizeReferencePrices(value: unknown): RuntimeModelCatalogReferenceP
   if (!Array.isArray(value)) {
     return [];
   }
-  const byRegionAndMeter = new Map<string, RuntimeModelCatalogReferencePrice>();
+  const byRate = new Map<string, RuntimeModelCatalogReferencePrice>();
   for (const item of value) {
     if (
       !isRecord(item) ||
@@ -348,22 +351,94 @@ function normalizeReferencePrices(value: unknown): RuntimeModelCatalogReferenceP
     if (regionCode === null || billingMeter === null || currency === null || readPositiveDecimal(item.unitPrice) === null) {
       continue;
     }
-    const priceKey = `${normalizeKey(regionCode)}/${normalizeKey(billingMeter)}`;
-    if (!byRegionAndMeter.has(priceKey)) {
-      byRegionAndMeter.set(priceKey, {
+    const rateVariant = item.rateVariant === 'time_window'
+      ? 'time_window'
+      : item.rateVariant === 'batch'
+        ? 'batch'
+        : 'standard';
+    const schedule = rateVariant === 'time_window' ? normalizeSchedule(item.schedule) : null;
+    const rateHash = typeof item.rateHash === 'string' ? item.rateHash.trim() : '';
+    // A time-window rate family publishes several rows for the same
+    // `(region, meter)` — peak and off-peak must both survive. Only rows without
+    // an identity fall back to the region/meter key, which keeps legacy
+    // fixtures working.
+    const priceKey = rateHash
+      ? `${normalizeKey(regionCode)}/${normalizeKey(billingMeter)}/${rateHash}`
+      : `${normalizeKey(regionCode)}/${normalizeKey(billingMeter)}/${rateVariant}/${JSON.stringify(schedule)}`;
+    if (!byRate.has(priceKey)) {
+      byRate.set(priceKey, {
         regionCode,
         billingMeter,
         unitPrice: item.unitPrice.trim(),
         currency,
+        rateHash,
+        rateVariant,
+        schedule,
       });
     }
   }
-  return Array.from(byRegionAndMeter.values()).sort((left, right) => (
+  return Array.from(byRate.values()).sort((left, right) => (
     modelRegionSortKey(left.regionCode) - modelRegionSortKey(right.regionCode)
     || left.regionCode.localeCompare(right.regionCode)
     || billingMeterSortKey(left.billingMeter) - billingMeterSortKey(right.billingMeter)
     || left.billingMeter.localeCompare(right.billingMeter)
+    || pricingVariantSortKey(left) - pricingVariantSortKey(right)
+    || left.rateHash.localeCompare(right.rateHash)
   ));
+}
+
+function normalizeSchedule(value: unknown): ModelPricingSchedule | null {
+  if (!isRecord(value) || typeof value.timeZone !== 'string' || !Array.isArray(value.weeklyWindows)) {
+    return null;
+  }
+  const weeklyWindows = value.weeklyWindows.flatMap((window) => {
+    if (
+      !isRecord(window) ||
+      typeof window.windowCode !== 'string' ||
+      !Array.isArray(window.daysOfWeek) ||
+      typeof window.startTime !== 'string' ||
+      typeof window.endTime !== 'string' ||
+      (window.endDayOffset !== 0 && window.endDayOffset !== 1)
+    ) {
+      return [];
+    }
+    return [{
+      windowCode: window.windowCode,
+      daysOfWeek: window.daysOfWeek.filter((day): day is number => Number.isInteger(day) && day >= 1 && day <= 7),
+      startTime: window.startTime,
+      endTime: window.endTime,
+      endDayOffset: window.endDayOffset as 0 | 1,
+      holidayOnly: window.holidayOnly === true,
+    }];
+  });
+  if (weeklyWindows.length === 0) {
+    return null;
+  }
+  return {
+    timeZone: value.timeZone,
+    weeklyWindows,
+    includeDates: normalizeDateList(value.includeDates),
+    excludeDates: normalizeDateList(value.excludeDates),
+    holidayDates: normalizeDateList(value.holidayDates),
+  };
+}
+
+function normalizeDateList(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(item))
+    : [];
+}
+
+function pricingVariantSortKey(price: {
+  rateVariant?: 'standard' | 'time_window' | 'batch';
+  schedule?: ModelPricingSchedule | null;
+}): number {
+  if (price.rateVariant === 'batch') return 40;
+  if (price.rateVariant !== 'time_window') return 0;
+  const codes = price.schedule?.weeklyWindows.map((window) => window.windowCode) ?? [];
+  if (codes.length > 0 && codes.every((code) => code.startsWith('peak'))) return 10;
+  if (codes.length > 0 && codes.every((code) => code.startsWith('off_peak'))) return 20;
+  return 30;
 }
 
 function runtimeModelId(item: RuntimeModelCatalogItem): string {
@@ -533,19 +608,31 @@ function vendorDisplayName(item: RuntimeModelCatalogItem): string {
 
 function runtimePricing(item: RuntimeModelCatalogItem): Model['pricing'] {
   const priceAvailability = item.priceAvailability;
-  const referencePrices = item.officialReferencePrices
-    .map((price) => ({
-      regionCode: price.regionCode,
-      billingMeter: price.billingMeter,
-      unitPrice: readPositiveDecimal(price.unitPrice),
-      currency: price.currency,
-    }))
-    .filter((price): price is RuntimeReferencePrice => price.unitPrice !== null)
+  const referencePrices: RuntimeReferencePrice[] = item.officialReferencePrices
+    .flatMap((price): RuntimeReferencePrice[] => {
+      const unitPrice = readPositiveDecimal(price.unitPrice);
+      if (unitPrice === null) {
+        return [];
+      }
+      return [{
+        regionCode: price.regionCode,
+        billingMeter: price.billingMeter,
+        unitPrice,
+        currency: price.currency,
+        ...(price.rateHash ? { rateHash: price.rateHash } : {}),
+        ...(price.rateVariant && price.rateVariant !== 'standard'
+          ? { rateVariant: price.rateVariant }
+          : {}),
+        ...(price.schedule ? { schedule: price.schedule } : {}),
+      }];
+    })
     .sort((left, right) => (
       modelRegionSortKey(left.regionCode) - modelRegionSortKey(right.regionCode)
       || left.regionCode.localeCompare(right.regionCode)
       || billingMeterSortKey(left.billingMeter) - billingMeterSortKey(right.billingMeter)
       || left.billingMeter.localeCompare(right.billingMeter)
+      || pricingVariantSortKey(left) - pricingVariantSortKey(right)
+      || (left.rateHash ?? '').localeCompare(right.rateHash ?? '')
     ));
   const regionalReferencePrices = pricesForDefaultReferenceRegion(referencePrices);
   const selectedReferencePrice = regionalReferencePrices.find((price) => price.billingMeter === 'llm_input_token')

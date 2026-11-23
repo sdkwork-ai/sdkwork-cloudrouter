@@ -327,6 +327,30 @@ fn validate_required_model(invocation: &Invocation) -> Result<(), InvocationErro
             .and_then(non_empty_text)
             .is_none()
     {
+        // The mapped ProblemDetail only states that a model is required. The
+        // access event records the resulting status, not the cause, so without
+        // this trace a rejected request is invisible in the gateway log — which
+        // is exactly how an intermittent caller-side omission of `model` reads
+        // as a gateway fault. Log the shape of the offending request instead.
+        let body_bytes = match &invocation.request.body {
+            InvocationBody::Json(value) => serde_json::to_vec(value)
+                .map(|encoded| encoded.len())
+                .unwrap_or_default(),
+            InvocationBody::Bytes(bytes) => bytes.len(),
+            InvocationBody::Empty => 0,
+        };
+        tracing::warn!(
+            stage = "payload_extraction",
+            api_code = %invocation.resource.api_code,
+            route_key = %invocation.resource.route_key,
+            method = %invocation.request.method,
+            path = %invocation.request.path,
+            content_type = invocation.request.content_type.as_deref().unwrap_or(""),
+            body_bytes,
+            accepted_model_fields = ?crate::domain::MODEL_REQUEST_FIELD_NAMES,
+            request_id = %invocation.request.request_id,
+            "required route rejected a request that carries no model"
+        );
         return Err(InvocationError::new(
             InvocationErrorKind::InvalidRequest,
             format!("model is required for {}", invocation.resource.api_code),

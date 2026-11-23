@@ -50,17 +50,21 @@ The model supports:
 - typed scalar and scalar-array conditions with bounded dimensions;
 - customer multipliers, markups, and explicit unit-price overrides inside a
   pricing plan;
-- standard prices and weekly time-window prices in one rate family;
+- standard prices, peak/off-peak time-window prices, and vendor batch prices in
+  one rate family;
 - IANA time zones, ISO weekdays, same-day and cross-midnight windows;
 - include-date and exclude-date exceptions, with bounded list size;
+- a statutory holiday calendar (`holidayDates`) and holiday-only windows, so
+  weekends and Chinese public holidays bill at the off-peak rate;
 - historical selection by `occurred_at` across book, rate, plan, card, and rule
   effective intervals.
 
 For a time-window rate, local wall-clock time is derived in the declared IANA
 zone. A window matches its listed start day; `endDayOffset=1` carries the end
 into the following local day. Excluded dates always win, included dates narrow
-the schedule, and a matching window outranks the standard fallback. Overlapping
-or equally ranked candidates are a conflict and fail closed.
+the schedule, holiday dates select only a `holidayOnly` window, and a matching
+window outranks the standard fallback. Overlapping or equally ranked candidates
+are a conflict and fail closed.
 
 ## Safety and Accounting Rules
 

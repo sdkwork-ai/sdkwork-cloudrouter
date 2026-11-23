@@ -560,6 +560,8 @@ struct PricingScheduleJson {
     include_dates: Vec<String>,
     #[serde(default)]
     exclude_dates: Vec<String>,
+    #[serde(default)]
+    holiday_dates: Vec<String>,
 }
 
 #[derive(serde::Deserialize)]
@@ -570,6 +572,8 @@ struct PricingWeeklyWindowJson {
     start_time: String,
     end_time: String,
     end_day_offset: u8,
+    #[serde(default)]
+    holiday_only: bool,
 }
 
 fn pricing_rate_metadata_from_row(
@@ -723,6 +727,7 @@ fn parse_pricing_schedule(value: &str) -> Result<PricingSchedule, sqlx::Error> {
                     end_time: NaiveTime::parse_from_str(&window.end_time, "%H:%M:%S")
                         .map_err(decode_error)?,
                     end_day_offset: window.end_day_offset,
+                    holiday_only: window.holiday_only,
                 })
             })
             .collect::<Result<Vec<_>, sqlx::Error>>()?,
@@ -733,6 +738,11 @@ fn parse_pricing_schedule(value: &str) -> Result<PricingSchedule, sqlx::Error> {
             .collect::<Result<Vec<_>, sqlx::Error>>()?,
         exclude_dates: schedule
             .exclude_dates
+            .into_iter()
+            .map(|value| NaiveDate::parse_from_str(&value, "%Y-%m-%d").map_err(decode_error))
+            .collect::<Result<Vec<_>, sqlx::Error>>()?,
+        holiday_dates: schedule
+            .holiday_dates
             .into_iter()
             .map(|value| NaiveDate::parse_from_str(&value, "%Y-%m-%d").map_err(decode_error))
             .collect::<Result<Vec<_>, sqlx::Error>>()?,

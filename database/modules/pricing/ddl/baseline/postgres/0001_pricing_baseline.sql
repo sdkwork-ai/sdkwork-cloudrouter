@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.5.0.
--- Registry SHA-256: f92c53aa0ee38b439ea3fc913d974fb951ffbb35881225a716e0266642363ea4.
+-- Registry SHA-256: 6b2b4b02576ebd6eccae955658f01c7f4a0d2c40c63bb1897cb824ed81889b72.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -194,9 +194,9 @@ CREATE TABLE IF NOT EXISTS pricing_rate (
     CONSTRAINT ck_pricing_rate_conditions_json CHECK (jsonb_typeof(conditions) = 'array'),
     CONSTRAINT ck_pricing_rate_tiers_json CHECK (jsonb_typeof(tiers) = 'array'),
     CONSTRAINT ck_pricing_rate_formula_json CHECK (formula IS NULL OR jsonb_typeof(formula) = 'object'),
-    CONSTRAINT ck_pricing_rate_variant CHECK (rate_variant IN ('standard', 'time_window')),
+    CONSTRAINT ck_pricing_rate_variant CHECK (rate_variant IN ('standard', 'time_window', 'batch')),
     CONSTRAINT ck_pricing_rate_schedule_json CHECK (schedule IS NULL OR jsonb_typeof(schedule) = 'object'),
-    CONSTRAINT ck_pricing_rate_schedule_variant CHECK ((rate_variant = 'standard' AND schedule IS NULL) OR (rate_variant = 'time_window' AND schedule IS NOT NULL)),
+    CONSTRAINT ck_pricing_rate_schedule_variant CHECK (((rate_variant IN ('standard', 'batch')) AND schedule IS NULL) OR (rate_variant = 'time_window' AND schedule IS NOT NULL)),
     CONSTRAINT ck_pricing_rate_calculation_payload CHECK ((calculation_mode IN ('graduated', 'volume')) = (jsonb_array_length(tiers) > 0) AND (calculation_mode = 'formula') = (formula IS NOT NULL))
 );
 

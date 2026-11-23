@@ -31,7 +31,7 @@ export interface PricingRuleCreateRequest {
   /** Rule code field on pricing rule create request. */
   ruleCode: string;
   /** Schedule field on pricing rule create request. */
-  schedule?: { excludeDates: string[]; includeDates: string[]; timeZone: string; weeklyWindows: ({ daysOfWeek: number[]; endDayOffset: 0 | 1; endTime: string; startTime: string; windowCode: string; })[]; } | null;
+  schedule?: { excludeDates: string[]; holidayDates: string[]; includeDates: string[]; timeZone: string; weeklyWindows: ({ daysOfWeek: number[]; endDayOffset: 0 | 1; endTime: string; holidayOnly: boolean; startTime: string; windowCode: string; })[]; } | null;
   /** Status field on pricing rule create request. */
   status: 'active' | 'inactive';
   /** Unit price override field on pricing rule create request. */

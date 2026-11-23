@@ -40,6 +40,7 @@ Generated SDK transport output, live credentials, private customer data, runtime
 | WeChat channel dual mode decision | [architecture/decisions/ADR-20261121-wechat-channel-dual-mode.md](architecture/decisions/ADR-20261121-wechat-channel-dual-mode.md) |
 | WeChat channel dual mode design | [architecture/tech/TECH-2026-11-21-wechat-channel-dual-mode-design.md](architecture/tech/TECH-2026-11-21-wechat-channel-dual-mode-design.md) |
 | Pricing and billing migration | [migrations/MIG-2026-0002-composable-pricing-billing.md](migrations/MIG-2026-0002-composable-pricing-billing.md) |
+| Vendor pricing alignment audit | [audit/PRICING-VENDOR-ALIGNMENT-2026-11-23.md](audit/PRICING-VENDOR-ALIGNMENT-2026-11-23.md) |
 | Pricing reconciliation checker | [../tools/check_pricing_reconciliation.py](../tools/check_pricing_reconciliation.py) |
 | Service Level Agreement | [legal/SLA.md](legal/SLA.md) |
 | Edition tier matrix | [legal/TIER_MATRIX.md](legal/TIER_MATRIX.md) |

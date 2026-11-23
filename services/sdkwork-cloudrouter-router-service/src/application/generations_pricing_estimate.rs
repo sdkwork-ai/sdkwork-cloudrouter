@@ -227,6 +227,7 @@ fn meter_quantity(
         BillingMeter::ImageResult
         | BillingMeter::VideoResult
         | BillingMeter::SfxResult
+        | BillingMeter::DocumentPage
         | BillingMeter::ApiResult => declared(quantities.result_count, "item"),
         BillingMeter::ImageMegapixel => {
             let megapixels = quantities.pixel_size.and_then(|(width, height)| {

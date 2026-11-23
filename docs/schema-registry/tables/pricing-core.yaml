@@ -166,9 +166,9 @@ tables:
   - { name: ck_pricing_rate_conditions_json, expression: "jsonb_typeof(conditions) = 'array'" }
   - { name: ck_pricing_rate_tiers_json, expression: "jsonb_typeof(tiers) = 'array'" }
   - { name: ck_pricing_rate_formula_json, expression: "formula IS NULL OR jsonb_typeof(formula) = 'object'" }
-  - { name: ck_pricing_rate_variant, expression: "rate_variant IN ('standard', 'time_window')" }
+  - { name: ck_pricing_rate_variant, expression: "rate_variant IN ('standard', 'time_window', 'batch')" }
   - { name: ck_pricing_rate_schedule_json, expression: "schedule IS NULL OR jsonb_typeof(schedule) = 'object'" }
-  - { name: ck_pricing_rate_schedule_variant, expression: "(rate_variant = 'standard' AND schedule IS NULL) OR (rate_variant = 'time_window' AND schedule IS NOT NULL)" }
+  - { name: ck_pricing_rate_schedule_variant, expression: "((rate_variant IN ('standard', 'batch')) AND schedule IS NULL) OR (rate_variant = 'time_window' AND schedule IS NOT NULL)" }
   - { name: ck_pricing_rate_calculation_payload, expression: "(calculation_mode IN ('graduated', 'volume')) = (jsonb_array_length(tiers) > 0) AND (calculation_mode = 'formula') = (formula IS NOT NULL)" }
   indexes:
   - { name: uq_pricing_rate_scope_reference, columns: [tenant_id, organization_id, id], unique: true }

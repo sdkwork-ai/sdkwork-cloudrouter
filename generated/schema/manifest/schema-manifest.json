@@ -34,6 +34,7 @@
     "ai_upstream_supplier_auth_method",
     "ai_upstream_supplier_endpoint",
     "ai_upstream_supplier_endpoint_health_state",
+    "ai_user_account_group_route",
     "cloudrouter_account_rate_card",
     "cloudrouter_charge_line",
     "cloudrouter_pricing_plan",
@@ -70,7 +71,16 @@
     "pricing_import_run",
     "pricing_price_book",
     "pricing_rate",
-    "sdkwork_node_registry"
+    "sdkwork_node_registry",
+    "storage_bucket",
+    "storage_default_bucket_policy",
+    "storage_gc_job",
+    "storage_generation_delivery_policy",
+    "storage_provider",
+    "storage_quota_policy",
+    "storage_reconciliation_run",
+    "storage_usage_counter",
+    "storage_vendor_asset_ttl"
   ],
   "routes": {
     "/": {
@@ -654,7 +664,10 @@
       "required_api_surface": "backend",
       "route_scope": "admin",
       "tables": [
-        "ops_audit_log"
+        "ops_audit_log",
+        "storage_bucket",
+        "storage_default_bucket_policy",
+        "storage_provider"
       ]
     },
     "/admin/storage/garbageCollection": {
@@ -666,7 +679,19 @@
       "required_api_surface": "backend",
       "route_scope": "admin",
       "tables": [
-        "ops_audit_log"
+        "ops_audit_log",
+        "storage_gc_job"
+      ]
+    },
+    "/admin/storage/generationDelivery": {
+      "api_surfaces": [
+        "backend"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "storage_generation_delivery_policy",
+        "storage_vendor_asset_ttl"
       ]
     },
     "/admin/storage/providers": {
@@ -702,7 +727,8 @@
       "required_api_surface": "backend",
       "route_scope": "admin",
       "tables": [
-        "ops_audit_log"
+        "ops_audit_log",
+        "storage_quota_policy"
       ]
     },
     "/admin/storage/reconciliation": {
@@ -714,7 +740,18 @@
       "required_api_surface": "backend",
       "route_scope": "admin",
       "tables": [
-        "ops_audit_log"
+        "ops_audit_log",
+        "storage_reconciliation_run"
+      ]
+    },
+    "/admin/storage/usage": {
+      "api_surfaces": [
+        "backend"
+      ],
+      "required_api_surface": "backend",
+      "route_scope": "admin",
+      "tables": [
+        "storage_usage_counter"
       ]
     },
     "/admin/upstream": {
@@ -751,18 +788,6 @@
       "route_scope": "public",
       "tables": [
         "ops_config_snapshot"
-      ]
-    },
-    "/oauth/callback/:provider": {
-      "api_surfaces": [
-        "app",
-        "backend",
-        "worker"
-      ],
-      "required_api_surface": "app",
-      "route_scope": "public",
-      "tables": [
-        "ops_audit_log"
       ]
     },
     "/auth/register": {
@@ -857,6 +882,18 @@
       "route_scope": "console",
       "tables": [
         "ops_audit_log"
+      ]
+    },
+    "/console/routing/default-groups": {
+      "api_surfaces": [
+        "app",
+        "open",
+        "worker"
+      ],
+      "required_api_surface": "app",
+      "route_scope": "console",
+      "tables": [
+        "ai_user_account_group_route"
       ]
     },
     "/console/settings": {
@@ -960,6 +997,18 @@
         "ai_model_vendor"
       ]
     },
+    "/oauth/callback/:provider": {
+      "api_surfaces": [
+        "app",
+        "backend",
+        "worker"
+      ],
+      "required_api_surface": "app",
+      "route_scope": "public",
+      "tables": [
+        "ops_audit_log"
+      ]
+    },
     "/playground": {
       "api_surfaces": [
         "app",
@@ -1009,16 +1058,17 @@
   },
   "summary": {
     "api_surface_counts": {
-      "app": 107,
-      "backend": 103,
+      "app": 108,
+      "backend": 112,
+      "open": 1,
       "openai_v1": 3,
-      "worker": 110
+      "worker": 111
     },
     "external_legacy_table_count": 0,
-    "frontend_route_count": 65,
-    "generated_table_count": 70,
+    "frontend_route_count": 68,
+    "generated_table_count": 80,
     "legacy_table_count": 0,
-    "table_count": 131
+    "table_count": 141
   },
   "tables": [
     {
@@ -16893,6 +16943,255 @@
             "endpoint_id"
           ],
           "name": "uk_ai_upstream_supplier_endpoint_health_state_scope"
+        }
+      ],
+      "write_owner": "ai-routing-service"
+    },
+    {
+      "api_surfaces": [
+        "app",
+        "open",
+        "worker"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "user_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "scope_type",
+          "source": "explicit",
+          "type": "string(16)"
+        },
+        {
+          "name": "modality",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "vendor_code",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "model",
+          "source": "explicit",
+          "type": "string(200)"
+        },
+        {
+          "name": "account_group_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "account_group_code",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "priority",
+          "source": "explicit",
+          "type": "int32"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "ai",
+      "foreign_keys": [],
+      "frontend_routes": [
+        "/console/routing/default-groups"
+      ],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "id"
+          ],
+          "name": "ix_ai_user_account_group_route_user",
+          "unique": false
+        },
+        {
+          "columns": [
+            "account_group_id",
+            "id"
+          ],
+          "name": "ix_ai_user_account_group_route_group",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "tenant_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "ai_user_account_group_route",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "user_id",
+            "scope_type",
+            "modality",
+            "vendor_code",
+            "model",
+            "account_group_id"
+          ],
+          "name": "uk_ai_user_account_group_route_scope_group"
         }
       ],
       "write_owner": "ai-routing-service"
@@ -34870,6 +35169,1804 @@
       "table": "sdkwork_node_registry",
       "unique_constraints": [],
       "write_owner": "sdkwork-database-id"
+    },
+    {
+      "api_surfaces": [
+        "backend"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "provider_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "bucket_name",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "bucket_region",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "logical_scope",
+          "source": "explicit",
+          "type": "string(64)"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "storage",
+      "foreign_keys": [],
+      "frontend_routes": [
+        "/admin/storage/defaultBuckets"
+      ],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "logical_scope",
+            "bucket_name"
+          ],
+          "name": "ix_storage_bucket_scope_scope",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "tenant_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "storage_bucket",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "provider_id",
+            "bucket_name"
+          ],
+          "name": "uk_storage_bucket_scope_name"
+        }
+      ],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "backend"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "logical_scope",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "bucket_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "bucket_logical_scope",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "updated_by",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "reason",
+          "source": "explicit",
+          "type": "string(512)"
+        },
+        {
+          "name": "request_id",
+          "source": "explicit",
+          "type": "string(128)"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "storage",
+      "foreign_keys": [],
+      "frontend_routes": [
+        "/admin/storage/defaultBuckets"
+      ],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "status",
+            "updated_at"
+          ],
+          "name": "ix_storage_default_bucket_scope_updated",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "tenant_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "storage_default_bucket_policy",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "logical_scope"
+          ],
+          "name": "uk_storage_default_bucket_scope"
+        }
+      ],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "backend"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "name": "id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "uuid",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "tenant_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "organization_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "job_type",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "dry_run",
+          "source": "explicit",
+          "type": "bool"
+        },
+        {
+          "name": "requested_by",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "idempotency_key",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "request_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "criteria_json",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "result_json",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "candidate_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "status",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "created_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "completed_at",
+          "source": "explicit",
+          "type": "instant"
+        }
+      ],
+      "common_columns": [],
+      "compliance_level": "L2",
+      "domain": "storage",
+      "foreign_keys": [],
+      "frontend_routes": [
+        "/admin/storage/garbageCollection"
+      ],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "status",
+            "id"
+          ],
+          "name": "ix_storage_gc_job_scope_created",
+          "unique": false
+        },
+        {
+          "columns": [
+            "uuid"
+          ],
+          "name": "ix_storage_gc_job_uuid",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "tenant_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "storage_gc_job",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "idempotency_key"
+          ],
+          "name": "uk_storage_gc_job_idempotency"
+        }
+      ],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "backend"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "scope_type",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "scope_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "media_kind",
+          "source": "explicit",
+          "type": "string(16)"
+        },
+        {
+          "name": "delivery_mode",
+          "source": "explicit",
+          "type": "string(16)"
+        },
+        {
+          "name": "drive_space_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "drive_folder_node_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "download_deadline_seconds",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "vendor_expiry_action",
+          "source": "explicit",
+          "type": "string(16)"
+        },
+        {
+          "name": "delete_remote_after_download",
+          "source": "explicit",
+          "type": "bool"
+        },
+        {
+          "name": "reason",
+          "source": "explicit",
+          "type": "string(512)"
+        },
+        {
+          "name": "request_id",
+          "source": "explicit",
+          "type": "string(128)"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "storage",
+      "foreign_keys": [],
+      "frontend_routes": [
+        "/admin/storage/generationDelivery"
+      ],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "status",
+            "media_kind",
+            "id"
+          ],
+          "name": "ix_storage_generation_delivery_policy_scope_status",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "tenant_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "storage_generation_delivery_policy",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "scope_type",
+            "scope_id",
+            "media_kind"
+          ],
+          "name": "uk_storage_generation_delivery_policy_scope"
+        }
+      ],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "backend"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "name",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "supplier_code",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "provider_type",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "endpoint_url",
+          "source": "explicit",
+          "type": "string(512)"
+        },
+        {
+          "name": "region",
+          "source": "explicit",
+          "type": "string(64)"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "storage",
+      "foreign_keys": [],
+      "frontend_routes": [
+        "/admin/storage/defaultBuckets"
+      ],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "status",
+            "supplier_code"
+          ],
+          "name": "ix_storage_provider_scope_status",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "tenant_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "storage_provider",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "supplier_code"
+          ],
+          "name": "uk_storage_provider_scope_code"
+        }
+      ],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "backend"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "scope_type",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "scope_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "quota_limit_bytes",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "single_file_limit_bytes",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "enforcement",
+          "source": "explicit",
+          "type": "string(16)"
+        },
+        {
+          "name": "idempotency_key",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "request_id",
+          "source": "explicit",
+          "type": "string(128)"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "storage",
+      "foreign_keys": [],
+      "frontend_routes": [
+        "/admin/storage/quotas"
+      ],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "scope_type",
+            "status",
+            "id"
+          ],
+          "name": "ix_storage_quota_policy_scope_status",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "tenant_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "storage_quota_policy",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "scope_type",
+            "scope_id"
+          ],
+          "name": "uk_storage_quota_policy_scope"
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "idempotency_key"
+          ],
+          "name": "uk_storage_quota_policy_idempotency"
+        }
+      ],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "backend"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "name": "id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "uuid",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "tenant_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "organization_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "provider_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "bucket_id",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "run_type",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "dry_run",
+          "source": "explicit",
+          "type": "bool"
+        },
+        {
+          "name": "requested_by",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "idempotency_key",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "request_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "summary_json",
+          "source": "explicit",
+          "type": "json"
+        },
+        {
+          "name": "status",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "missing_object_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "orphan_object_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "checksum_mismatch_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "started_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "completed_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "created_at",
+          "source": "explicit",
+          "type": "instant"
+        }
+      ],
+      "common_columns": [],
+      "compliance_level": "L2",
+      "domain": "storage",
+      "foreign_keys": [],
+      "frontend_routes": [
+        "/admin/storage/reconciliation"
+      ],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "status",
+            "id"
+          ],
+          "name": "ix_storage_reconciliation_run_scope_created",
+          "unique": false
+        },
+        {
+          "columns": [
+            "uuid"
+          ],
+          "name": "ix_storage_reconciliation_run_uuid",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "tenant_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "storage_reconciliation_run",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "idempotency_key"
+          ],
+          "name": "uk_storage_reconciliation_run_idempotency"
+        }
+      ],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "backend"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "operational_state",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "operational_state",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "operational_state",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "operational_state",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "operational_state",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "scope_type",
+          "source": "explicit",
+          "type": "string(32)"
+        },
+        {
+          "name": "scope_id",
+          "source": "explicit",
+          "type": "string(128)"
+        },
+        {
+          "name": "used_logical_bytes",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "reserved_bytes",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "file_count",
+          "source": "explicit",
+          "type": "int64"
+        },
+        {
+          "name": "version",
+          "source": "explicit",
+          "type": "int64"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "operational_state",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "operational_state",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "operational_state",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "operational_state",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "operational_state",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "storage",
+      "foreign_keys": [],
+      "frontend_routes": [
+        "/admin/storage/usage"
+      ],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "scope_type",
+            "id"
+          ],
+          "name": "ix_storage_usage_counter_scope_id",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "operational_state",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "storage_usage_counter",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "scope_type",
+            "scope_id"
+          ],
+          "name": "uk_storage_usage_counter_scope"
+        }
+      ],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "backend"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "name": "vendor_code",
+          "source": "explicit",
+          "type": "string(64)"
+        },
+        {
+          "name": "media_kind",
+          "source": "explicit",
+          "type": "string(16)"
+        },
+        {
+          "name": "ttl_seconds",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "source",
+          "source": "explicit",
+          "type": "string(16)"
+        },
+        {
+          "name": "reason",
+          "source": "explicit",
+          "type": "string(512)"
+        },
+        {
+          "name": "request_id",
+          "source": "explicit",
+          "type": "string(128)"
+        }
+      ],
+      "common_columns": [
+        {
+          "group": "tenant_entity",
+          "name": "id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "uuid",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "tenant_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "organization_id",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "data_scope",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "status",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "created_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "updated_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "version",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_at",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "deleted_by",
+          "source": "common",
+          "type": "common"
+        },
+        {
+          "group": "tenant_entity",
+          "name": "metadata",
+          "source": "common",
+          "type": "common"
+        }
+      ],
+      "compliance_level": "L2",
+      "domain": "storage",
+      "foreign_keys": [],
+      "frontend_routes": [
+        "/admin/storage/generationDelivery"
+      ],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "status",
+            "media_kind",
+            "id"
+          ],
+          "name": "ix_storage_vendor_asset_ttl_scope_status",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "tenant_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "storage_vendor_asset_ttl",
+      "unique_constraints": [
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "vendor_code",
+            "media_kind"
+          ],
+          "name": "uk_storage_vendor_asset_ttl_scope"
+        }
+      ],
+      "write_owner": "router-service"
     }
   ]
 }

@@ -14,11 +14,20 @@ const PRICING_DIMENSION_COLUMNS_MIGRATION: &str = include_str!(
 const PRICING_INTEGRITY_MIGRATION: &str = include_str!(
     "../../../database/modules/pricing/migrations/postgres/0002_pricing_integrity_guards.up.sql"
 );
+const PRICING_SCHEDULE_HOLIDAY_MIGRATION: &str = include_str!(
+    "../../../database/modules/pricing/migrations/postgres/0009_pricing_schedule_holiday_calendar.up.sql"
+);
+const PRICING_BATCH_VARIANT_MIGRATION: &str = include_str!(
+    "../../../database/modules/pricing/migrations/postgres/0010_pricing_rate_batch_variant.up.sql"
+);
 const BILLING_BASELINE: &str = include_str!(
     "../../../database/modules/cloudrouter-billing/ddl/baseline/postgres/0001_cloudrouter_billing_baseline.sql"
 );
 const BILLING_INTEGRITY_MIGRATION: &str = include_str!(
     "../../../database/modules/cloudrouter-billing/migrations/postgres/0002_pricing_rule_integrity_guards.up.sql"
+);
+const BILLING_SCHEDULE_HOLIDAY_MIGRATION: &str = include_str!(
+    "../../../database/modules/cloudrouter-billing/migrations/postgres/0004_pricing_rule_schedule_holiday_calendar.up.sql"
 );
 
 #[tokio::test]
@@ -39,11 +48,23 @@ async fn pricing_integrity_migration_enforces_payloads_dimensions_and_immutabili
         .execute(&context.pool)
         .await
         .unwrap();
+    sqlx::raw_sql(PRICING_SCHEDULE_HOLIDAY_MIGRATION)
+        .execute(&context.pool)
+        .await
+        .unwrap();
+    sqlx::raw_sql(PRICING_BATCH_VARIANT_MIGRATION)
+        .execute(&context.pool)
+        .await
+        .unwrap();
     sqlx::raw_sql(BILLING_BASELINE)
         .execute(&context.pool)
         .await
         .unwrap();
     sqlx::raw_sql(BILLING_INTEGRITY_MIGRATION)
+        .execute(&context.pool)
+        .await
+        .unwrap();
+    sqlx::raw_sql(BILLING_SCHEDULE_HOLIDAY_MIGRATION)
         .execute(&context.pool)
         .await
         .unwrap();
@@ -94,7 +115,7 @@ async fn pricing_integrity_migration_enforces_payloads_dimensions_and_immutabili
     .await;
     assert_rejected(
         &context.pool,
-        "UPDATE cloudrouter_pricing_rule SET schedule = '{\"timeZone\":\"Mars/Olympus\",\"weeklyWindows\":[{\"windowCode\":\"invalid\",\"daysOfWeek\":[1],\"startTime\":\"09:00:00\",\"endTime\":\"12:00:00\",\"endDayOffset\":0}],\"includeDates\":[],\"excludeDates\":[]}'::jsonb WHERE id = 10",
+        "UPDATE cloudrouter_pricing_rule SET schedule = '{\"timeZone\":\"Mars/Olympus\",\"weeklyWindows\":[{\"windowCode\":\"invalid\",\"daysOfWeek\":[1],\"startTime\":\"09:00:00\",\"endTime\":\"12:00:00\",\"endDayOffset\":0,\"holidayOnly\":false}],\"includeDates\":[],\"excludeDates\":[],\"holidayDates\":[]}'::jsonb WHERE id = 10",
         "unknown IANA timezone",
     )
     .await;
@@ -108,10 +129,12 @@ async fn pricing_integrity_migration_enforces_payloads_dimensions_and_immutabili
                 "daysOfWeek":[1,2,3,4,5],
                 "startTime":"21:00:00",
                 "endTime":"02:00:00",
-                "endDayOffset":1
+                "endDayOffset":1,
+                "holidayOnly":false
             }],
             "includeDates":[],
-            "excludeDates":[]
+            "excludeDates":[],
+            "holidayDates":["2026-10-01"]
         }'::jsonb
         WHERE id = 10
         "#,
@@ -123,6 +146,18 @@ async fn pricing_integrity_migration_enforces_payloads_dimensions_and_immutabili
         &context.pool,
         "UPDATE cloudrouter_pricing_rule SET schedule = schedule || '{\"unexpected\":true}'::jsonb WHERE id = 10",
         "invalid timezone or array shape",
+    )
+    .await;
+    assert_rejected(
+        &context.pool,
+        "UPDATE cloudrouter_pricing_rule SET schedule = jsonb_set(schedule, '{includeDates}', '[\"2026-10-01\"]'::jsonb) WHERE id = 10",
+        "must be pairwise disjoint",
+    )
+    .await;
+    assert_rejected(
+        &context.pool,
+        "UPDATE cloudrouter_pricing_rule SET schedule = jsonb_set(schedule, '{weeklyWindows,0,holidayOnly}', 'true'::jsonb) WHERE id = 10",
+        "holidayOnly window must cover the whole day",
     )
     .await;
 
@@ -186,10 +221,12 @@ async fn pricing_integrity_migration_enforces_payloads_dimensions_and_immutabili
                     "daysOfWeek":[1,2,3,4,5],
                     "startTime":"09:00:00",
                     "endTime":"12:00:00",
-                    "endDayOffset":0
+                    "endDayOffset":0,
+                    "holidayOnly":false
                 }],
                 "includeDates":[],
-                "excludeDates":[]
+                "excludeDates":[],
+                "holidayDates":["2026-10-01"]
             }'::jsonb
         WHERE id = 1
         "#,
@@ -224,7 +261,7 @@ async fn pricing_integrity_migration_enforces_payloads_dimensions_and_immutabili
     .await;
     assert_rejected(
         &context.pool,
-        "UPDATE pricing_rate SET schedule = '{\"timeZone\":\"Mars/Olympus\",\"weeklyWindows\":[{\"windowCode\":\"invalid\",\"daysOfWeek\":[1],\"startTime\":\"09:00:00\",\"endTime\":\"12:00:00\",\"endDayOffset\":0}],\"includeDates\":[],\"excludeDates\":[]}'::jsonb WHERE id = 1",
+        "UPDATE pricing_rate SET schedule = '{\"timeZone\":\"Mars/Olympus\",\"weeklyWindows\":[{\"windowCode\":\"invalid\",\"daysOfWeek\":[1],\"startTime\":\"09:00:00\",\"endTime\":\"12:00:00\",\"endDayOffset\":0,\"holidayOnly\":false}],\"includeDates\":[],\"excludeDates\":[],\"holidayDates\":[]}'::jsonb WHERE id = 1",
         "unknown IANA timezone",
     )
     .await;
@@ -234,6 +271,38 @@ async fn pricing_integrity_migration_enforces_payloads_dimensions_and_immutabili
         "invalid timezone or array shape",
     )
     .await;
+    assert_rejected(
+        &context.pool,
+        "UPDATE pricing_rate SET schedule = jsonb_set(schedule, '{includeDates}', '[\"2026-10-01\"]'::jsonb) WHERE id = 1",
+        "must be pairwise disjoint",
+    )
+    .await;
+    assert_rejected(
+        &context.pool,
+        "UPDATE pricing_rate SET schedule = jsonb_set(schedule, '{weeklyWindows,0,holidayOnly}', 'true'::jsonb) WHERE id = 1",
+        "holidayOnly window must cover the whole day",
+    )
+    .await;
+    // Batch rows are a first-class official variant: accepted by the enum and
+    // required to carry no schedule.
+    sqlx::query(
+        "UPDATE pricing_rate SET rate_variant = 'batch', schedule = NULL WHERE id = 1",
+    )
+    .execute(&context.pool)
+    .await
+    .unwrap();
+    assert_rejected(
+        &context.pool,
+        "UPDATE pricing_rate SET rate_variant = 'unknown' WHERE id = 1",
+        "ck_pricing_rate_variant",
+    )
+    .await;
+    sqlx::query(
+        "UPDATE pricing_rate SET rate_variant = 'time_window', schedule = '{\"timeZone\":\"Asia/Shanghai\",\"weeklyWindows\":[{\"windowCode\":\"weekday-morning\",\"daysOfWeek\":[1,2,3,4,5],\"startTime\":\"09:00:00\",\"endTime\":\"12:00:00\",\"endDayOffset\":0,\"holidayOnly\":false}],\"includeDates\":[],\"excludeDates\":[],\"holidayDates\":[\"2026-10-01\"]}'::jsonb WHERE id = 1",
+    )
+    .execute(&context.pool)
+    .await
+    .unwrap();
     assert_rejected(
         &context.pool,
         "UPDATE pricing_rate SET vendor_code = 'anthropic' WHERE id = 1",

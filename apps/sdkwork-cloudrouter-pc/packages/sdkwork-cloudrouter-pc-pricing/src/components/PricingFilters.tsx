@@ -1,11 +1,17 @@
 import { Search, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { regionDisplayName, vendorDisplayName } from '../catalog/dataNames';
+import { PricingGroupFilter } from './PricingGroupFilter';
 import type {
   OfficialPricingMeterFacet,
   OfficialPricingRegionFacet,
   OfficialPricingValueFacet,
 } from '../types/pricing';
+import type {
+  PricingGroupOption,
+  PricingGroupSelection,
+  PricingGroupTagFacet,
+} from '../types/pricingGroup';
 
 interface PricingFiltersProps {
   searchQuery: string;
@@ -17,11 +23,18 @@ interface PricingFiltersProps {
   regions: readonly OfficialPricingRegionFacet[];
   meters: readonly OfficialPricingMeterFacet[];
   currencies: readonly OfficialPricingValueFacet[];
+  groups: readonly PricingGroupOption[];
+  groupTagFacets: readonly PricingGroupTagFacet[];
+  groupSelection: PricingGroupSelection;
+  groupState: 'loading' | 'ready' | 'failed';
   onSearchChange: (value: string) => void;
   onVendorChange: (value: string) => void;
   onRegionChange: (value: string) => void;
   onMeterChange: (value: string) => void;
   onCurrencyChange: (value: string) => void;
+  onGroupTagsChange: (tags: string[]) => void;
+  onGroupCodesChange: (codes: string[]) => void;
+  onClearGroups: () => void;
   onClear: () => void;
 }
 
@@ -85,6 +98,16 @@ export function PricingFilters(props: PricingFiltersProps) {
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
+
+      <PricingGroupFilter
+        groups={props.groups}
+        tagFacets={props.groupTagFacets}
+        selection={props.groupSelection}
+        state={props.groupState}
+        onTagsChange={props.onGroupTagsChange}
+        onGroupCodesChange={props.onGroupCodesChange}
+        onClear={props.onClearGroups}
+      />
     </div>
   );
 }

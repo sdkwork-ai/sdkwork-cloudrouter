@@ -5,10 +5,23 @@ import { PricingCategoryNav } from '../components/PricingCategoryNav';
 import { PricingCompareDrawer } from '../components/PricingCompareDrawer';
 import { PricingFilters } from '../components/PricingFilters';
 import { PricingPagination, PricingRateTable } from '../components/PricingRateTable';
-import { PricingEmptyState, PricingErrorState, PricingLoadingState } from '../components/PricingState';
+import {
+  PricingEmptyState,
+  PricingErrorState,
+  PricingGroupEmptyState,
+  PricingLoadingState,
+} from '../components/PricingState';
 import { fetchOfficialPricingRates } from '../services/pricingService';
+import { fetchPricingGroups } from '../services/pricingGroupService';
 import { compareKeyOf, rateCategory } from '../types/compare';
 import type { OfficialPricingCatalogResponse, OfficialPricingRate, PricingCategoryCode } from '../types/pricing';
+import {
+  buildPricingGroupRateMatcher,
+  buildPricingGroupTagFacets,
+  hasPricingGroupSelection,
+  type PricingGroupOption,
+} from '../types/pricingGroup';
+import { pricingRateIsActiveAt, pricingRateVariantKey, pricingRateVariantLabel } from '../types/pricingVariant';
 
 const DEFAULT_PAGE_SIZE = 40;
 const SEARCH_DEBOUNCE_MILLIS = 300;
@@ -31,6 +44,12 @@ export function PricingPage() {
   const [selectedRates, setSelectedRates] = useState<OfficialPricingRate[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
   const [mismatchHint, setMismatchHint] = useState<string | null>(null);
+  const [pricingGroups, setPricingGroups] = useState<PricingGroupOption[]>([]);
+  const [groupCatalogState, setGroupCatalogState] = useState<'loading' | 'ready' | 'failed'>('loading');
+  const [groupSelection, setGroupSelection] = useState<{ tags: string[]; groupCodes: string[] }>({
+    tags: [],
+    groupCodes: [],
+  });
   const mismatchTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -38,6 +57,30 @@ export function PricingPage() {
       if (mismatchTimerRef.current !== null) window.clearTimeout(mismatchTimerRef.current);
     };
   }, []);
+
+  // 分组目录只加载一次：读取失败时静默降级为「无分组筛选」，不影响官方价格。
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchPricingGroups(controller.signal)
+      .then((groups) => {
+        if (controller.signal.aborted) return;
+        setPricingGroups(groups);
+        setGroupCatalogState('ready');
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setPricingGroups([]);
+        setGroupCatalogState('failed');
+      });
+    return () => controller.abort();
+  }, []);
+
+  const groupTagFacets = useMemo(() => buildPricingGroupTagFacets(pricingGroups), [pricingGroups]);
+  const groupFilterActive = hasPricingGroupSelection(groupSelection);
+  const groupMatcher = useMemo(
+    () => buildPricingGroupRateMatcher(pricingGroups, groupSelection),
+    [groupSelection, pricingGroups],
+  );
 
   const showMismatchHint = (categoryCode: PricingCategoryCode) => {
     setMismatchHint(t('pricing.compare.mismatch', { category: t(`pricing.category.${categoryCode}`) }));
@@ -111,6 +154,10 @@ export function PricingPage() {
     [catalog?.groups],
   );
   const totalItems = catalog?.pageInfo.totalItems ?? '0';
+  const visibleItems = useMemo(
+    () => (catalog?.items ?? []).filter((rate) => groupMatcher(rate)),
+    [catalog?.items, groupMatcher],
+  );
   const changeCategory = (nextCategory: PricingCategoryCode) => {
     setCategory(nextCategory);
     setPage(1);
@@ -122,12 +169,30 @@ export function PricingPage() {
     setRegionCode('');
     setMeterCode('');
     setCurrencyCode('');
+    setGroupSelection({ tags: [], groupCodes: [] });
+    setPage(1);
+  };
+  const clearGroupFilters = () => {
+    setGroupSelection({ tags: [], groupCodes: [] });
+    setPage(1);
+  };
+  const changeGroupTags = (tags: string[]) => {
+    setGroupSelection((current) => ({ ...current, tags }));
+    setPage(1);
+  };
+  const changeGroupCodes = (groupCodes: string[]) => {
+    setGroupSelection((current) => ({ ...current, groupCodes }));
     setPage(1);
   };
   const updateFilter = (setter: (value: string) => void) => (value: string) => {
     setter(value);
     setPage(1);
   };
+  const timeWindowRates = useMemo(
+    () => (catalog?.items ?? []).filter((rate) => pricingRateVariantKey(rate) !== 'standard'),
+    [catalog?.items],
+  );
+  const activeTimeWindowRate = timeWindowRates.find((rate) => pricingRateIsActiveAt(rate));
 
   return (
     <main className="min-h-[calc(100vh-var(--sdkwork-portal-navbar-height,4rem))] bg-slate-50 text-slate-950 dark:bg-[#080808] dark:text-white">
@@ -137,9 +202,23 @@ export function PricingPage() {
             <div>
               <h1 className="text-2xl font-semibold text-slate-950 dark:text-white">{t('pricing.title')}</h1>
               <p className="mt-1 max-w-3xl text-sm text-slate-500 dark:text-slate-400">{t('pricing.subtitle')}</p>
+              {timeWindowRates.length > 0 ? (
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                  <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 font-medium text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
+                    {t('pricing.policy.timeWindow')}
+                  </span>
+                  <span className="max-w-2xl text-slate-500 dark:text-slate-400">{t('pricing.note.timeWindow')}</span>
+                  {activeTimeWindowRate ? <ActiveWindowBadge rate={activeTimeWindowRate} /> : null}
+                </div>
+              ) : null}
             </div>
-            <div className="text-sm font-medium tabular-nums text-slate-500 dark:text-slate-400">
-              {t('pricing.results', { count: totalItems })}
+            <div className="text-right text-sm font-medium tabular-nums text-slate-500 dark:text-slate-400">
+              <div>{t('pricing.results', { count: totalItems })}</div>
+              {groupFilterActive && !loading && !failed ? (
+                <div className="mt-0.5 text-xs font-normal text-slate-400">
+                  {t('pricing.groups.filtered', { count: visibleItems.length })}
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
@@ -161,11 +240,18 @@ export function PricingPage() {
             regions={catalog?.regions ?? []}
             meters={catalog?.meters ?? []}
             currencies={catalog?.currencies ?? []}
+            groups={pricingGroups}
+            groupTagFacets={groupTagFacets}
+            groupSelection={groupSelection}
+            groupState={groupCatalogState}
             onSearchChange={setSearchInput}
             onVendorChange={updateFilter(setVendorCode)}
             onRegionChange={updateFilter(setRegionCode)}
             onMeterChange={updateFilter(setMeterCode)}
             onCurrencyChange={updateFilter(setCurrencyCode)}
+            onGroupTagsChange={changeGroupTags}
+            onGroupCodesChange={changeGroupCodes}
+            onClearGroups={clearGroupFilters}
             onClear={clearFilters}
           />
 
@@ -219,10 +305,13 @@ export function PricingPage() {
             {loading ? <PricingLoadingState /> : null}
             {!loading && failed ? <PricingErrorState onRetry={() => setReloadVersion((version) => version + 1)} /> : null}
             {!loading && !failed && catalog?.items.length === 0 ? <PricingEmptyState /> : null}
-            {!loading && !failed && catalog && catalog.items.length > 0 ? (
+            {!loading && !failed && catalog && catalog.items.length > 0 && visibleItems.length === 0 ? (
+              <PricingGroupEmptyState onClear={clearGroupFilters} />
+            ) : null}
+            {!loading && !failed && catalog && visibleItems.length > 0 ? (
               <>
                 <PricingRateTable
-                  items={catalog.items}
+                  items={visibleItems}
                   selectedKeys={selectedKeys}
                   onToggleSelection={toggleSelection}
                 />
@@ -246,5 +335,18 @@ export function PricingPage() {
         onClose={() => setCompareOpen(false)}
       />
     </main>
+  );
+}
+
+function ActiveWindowBadge({ rate }: { rate: OfficialPricingRate }) {
+  const { t } = useTranslation();
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-300">
+      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+      {t('pricing.variant.activeNow', {
+        variant: pricingRateVariantLabel(rate, t),
+        defaultValue: 'Now: {{variant}}',
+      })}
+    </span>
   );
 }

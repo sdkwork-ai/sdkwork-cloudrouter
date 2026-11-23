@@ -19,7 +19,7 @@ export interface PriceSettingUpsertRequest {
   /** Rule id field on price setting upsert request. */
   ruleId?: string;
   /** Schedule field on price setting upsert request. */
-  schedule?: { excludeDates: string[]; includeDates: string[]; timeZone: string; weeklyWindows: ({ daysOfWeek: number[]; endDayOffset: 0 | 1; endTime: string; startTime: string; windowCode: string; })[]; } | null;
+  schedule?: { excludeDates: string[]; holidayDates: string[]; includeDates: string[]; timeZone: string; weeklyWindows: ({ daysOfWeek: number[]; endDayOffset: 0 | 1; endTime: string; holidayOnly: boolean; startTime: string; windowCode: string; })[]; } | null;
   /** Status field on price setting upsert request. */
   status?: 'active' | 'inactive';
   /** Unit price override field on price setting upsert request. */

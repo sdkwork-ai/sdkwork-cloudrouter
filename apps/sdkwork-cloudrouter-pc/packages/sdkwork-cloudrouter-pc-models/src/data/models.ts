@@ -1,10 +1,31 @@
 export type ModelPricingStatus = 'customer' | 'reference' | 'unavailable';
 
+export type ModelPricingScheduleWindow = {
+  windowCode: string;
+  daysOfWeek: number[];
+  startTime: string;
+  endTime: string;
+  endDayOffset: 0 | 1;
+  holidayOnly: boolean;
+};
+
+export type ModelPricingSchedule = {
+  timeZone: string;
+  weeklyWindows: ModelPricingScheduleWindow[];
+  includeDates: string[];
+  excludeDates: string[];
+  holidayDates: string[];
+};
+
 export type ModelReferencePrice = {
   regionCode: string;
   billingMeter: string;
   unitPrice: number;
   currency: string;
+  /** Stable identity of the catalog rate row; absent for legacy fixtures. */
+  rateHash?: string;
+  rateVariant?: 'standard' | 'time_window' | 'batch';
+  schedule?: ModelPricingSchedule;
 };
 
 export type ModelPricing = {

@@ -1156,7 +1156,7 @@ tables:
       - name: ck_pricing_rate_variant
         type: check
         columns: []
-        expression: rate_variant IN ('standard', 'time_window')
+        expression: rate_variant IN ('standard', 'time_window', 'batch')
       - name: ck_pricing_rate_schedule_json
         type: check
         columns: []
@@ -1164,8 +1164,8 @@ tables:
       - name: ck_pricing_rate_schedule_variant
         type: check
         columns: []
-        expression: (rate_variant = 'standard' AND schedule IS NULL) OR (rate_variant = 'time_window' AND schedule IS NOT
-          NULL)
+        expression: ((rate_variant IN ('standard', 'batch')) AND schedule IS NULL) OR (rate_variant = 'time_window' AND schedule
+          IS NOT NULL)
       - name: ck_pricing_rate_calculation_payload
         type: check
         columns: []

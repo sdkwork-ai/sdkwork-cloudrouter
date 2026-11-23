@@ -37,7 +37,7 @@ export interface AdminPricingRule {
   /** Rule code field on admin pricing rule. */
   ruleCode: string;
   /** Schedule field on admin pricing rule. */
-  schedule?: { excludeDates: string[]; includeDates: string[]; timeZone: string; weeklyWindows: ({ daysOfWeek: number[]; endDayOffset: 0 | 1; endTime: string; startTime: string; windowCode: string; })[]; } | null;
+  schedule?: { excludeDates: string[]; holidayDates: string[]; includeDates: string[]; timeZone: string; weeklyWindows: ({ daysOfWeek: number[]; endDayOffset: 0 | 1; endTime: string; holidayOnly: boolean; startTime: string; windowCode: string; })[]; } | null;
   /** Status field on admin pricing rule. */
   status: 'active' | 'inactive';
   /** Unit price override field on admin pricing rule. */

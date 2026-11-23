@@ -3,11 +3,14 @@ import { useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { humanizeCode, regionDisplayName, vendorDisplayName } from '../catalog/dataNames';
-import { compareKeyOf, groupRatesByModel, type ModelGroup } from '../types/compare';
-import type {
-  OfficialPricingFormula,
-  OfficialPricingRate,
-} from '../types/pricing';
+import { groupRatesByModel, type ModelGroup } from '../types/compare';
+import type { OfficialPricingFormula, OfficialPricingRate } from '../types/pricing';
+import {
+  formatPricingScheduleLines,
+  pricingRateIsActiveAt,
+  pricingRateVariantKey,
+  pricingRateVariantLabelKey,
+} from '../types/pricingVariant';
 
 interface PricingRateTableProps {
   items: readonly OfficialPricingRate[];
@@ -15,198 +18,92 @@ interface PricingRateTableProps {
   onToggleSelection: (rate: OfficialPricingRate) => void;
 }
 
+/**
+ * 价格列表：每个模型一张卡片（参考“卡片式价格”展示），
+ * 卡片内按区域列出各计量项价格、模型能力与计费策略，保留比价勾选。
+ * 桌面端与移动端共用同一套卡片，不再维护独立的表格视图。
+ */
 export function PricingRateTable({ items, selectedKeys, onToggleSelection }: PricingRateTableProps) {
-  const { t, i18n } = useTranslation();
-  const language = i18n.language;
+  const { i18n } = useTranslation();
   const groups = useMemo(() => groupRatesByModel(items), [items]);
 
   return (
-    <>
-      <div className="hidden overflow-x-auto border-y border-slate-200 bg-white md:block dark:border-white/10 dark:bg-[#0d0d0d]">
-        <table className="w-full min-w-[1080px] table-fixed border-collapse text-left">
-          <thead>
-            <tr className="border-b border-slate-200 text-xs font-semibold text-slate-500 dark:border-white/10 dark:text-slate-400">
-              <th className="w-10 px-2 py-3">
-                <span className="sr-only">{t('pricing.compare.selectColumn')}</span>
-              </th>
-              <th className="w-[17%] px-4 py-3">{t('pricing.table.product')}</th>
-              <th className="w-[13%] px-4 py-3">{t('pricing.table.provider')}</th>
-              <th className="w-[12%] px-4 py-3">{t('pricing.table.operation')}</th>
-              <th className="w-[22%] px-4 py-3">{t('pricing.table.prices')}</th>
-              <th className="w-[17%] px-4 py-3">{t('pricing.table.capabilities')}</th>
-              <th className="w-[19%] px-4 py-3">{t('pricing.table.policy')}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-            {groups.map((group) => (
-              <ModelRow key={group.key} group={group} language={language} selectedKeys={selectedKeys} onToggleSelection={onToggleSelection} t={t} />
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="space-y-3 md:hidden">
-        {groups.map((group) => (
-          <ModelCard key={group.key} group={group} language={language} selectedKeys={selectedKeys} onToggleSelection={onToggleSelection} t={t} />
-        ))}
-      </div>
-    </>
+    <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3" data-testid="pricing-rate-cards">
+      {groups.map((group) => (
+        <ModelPriceCard
+          key={group.key}
+          group={group}
+          language={i18n.language}
+          selectedKeys={selectedKeys}
+          onToggleSelection={onToggleSelection}
+        />
+      ))}
+    </div>
   );
 }
 
-function ModelRow({
+function ModelPriceCard({
   group,
   language,
   selectedKeys,
   onToggleSelection,
-  t,
 }: {
   group: ModelGroup;
   language: string;
   selectedKeys: ReadonlySet<string>;
   onToggleSelection: (rate: OfficialPricingRate) => void;
-  t: TFunction;
 }) {
+  const { t } = useTranslation();
   const rate = group.rates[0];
   const regions = uniqueValues(group.rates, (entry) => entry.regionCode);
-  const operations = uniqueValues(group.rates, (entry) => entry.operationDisplayName || humanizeCode(entry.operationCode));
-  const modes = uniqueValues(group.rates, (entry) => entry.calculationMode);
-  const billabilities = uniqueValues(group.rates, (entry) => entry.billability);
+  const regionGroups = useMemo(() => groupByRegion(group.rates), [group.rates]);
   const hasTiers = group.rates.some((entry) => entry.tiers.length > 0);
   const hasFormula = group.rates.some((entry) => isPricingFormula(entry.formula));
-  const regionGroups = useMemo(() => groupByRegion(group.rates), [group.rates]);
+  const hasTimeWindow = group.rates.some((entry) => entry.rateVariant === 'time_window');
+  const selected = selectedKeys.has(group.key);
+
   return (
-    <tr className="align-top hover:bg-slate-50/70 dark:hover:bg-white/[0.025]">
-      <td className="px-2 py-4 text-center">
+    <article
+      className={`flex min-w-0 flex-col rounded-xl border bg-white p-4 transition-colors dark:bg-[#0d0d0d] ${
+        selected
+          ? 'border-lobster-400/70 ring-1 ring-lobster-400/30 dark:border-lobster-500/45'
+          : 'border-slate-200 hover:border-slate-300 dark:border-white/10 dark:hover:border-white/20'
+      }`}
+    >
+      <header className="flex items-start gap-3">
         <input
           type="checkbox"
-          checked={selectedKeys.has(group.key)}
+          checked={selected}
           onChange={() => onToggleSelection(rate)}
-          aria-label={t('pricing.compare.selectRow', { name: rate.productDisplayName })}
-          className="h-4 w-4 cursor-pointer rounded border-slate-300 accent-lobster-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lobster-500 dark:border-white/20"
+          aria-label={t('pricing.compare.selectRow', { name: rate.resourceCode })}
+          className="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 accent-lobster-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lobster-500 dark:border-white/20"
         />
-      </td>
-      <td className="px-4 py-4">
-        <div className="break-words text-sm font-semibold text-slate-950 dark:text-white">{rate.resourceCode}</div>
-        <div className="mt-1 break-words text-xs text-slate-500 dark:text-slate-400">{rate.productDisplayName}</div>
-        {rate.catalogKey ? <div className="mt-1 break-all font-mono text-[11px] text-slate-400">{rate.catalogKey}</div> : null}
-      </td>
-      <td className="px-4 py-4">
-        <div className="text-sm font-medium text-slate-800 dark:text-slate-200">{vendorDisplayName(rate.vendorCode, language)}</div>
-        <div className="mt-1 flex flex-wrap gap-1">
-          {regions.map((code) => (
-            <span key={code} className="inline-flex rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
-              {regionDisplayName(code, language)}
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="break-all text-sm font-semibold text-slate-950 dark:text-white">{rate.resourceCode}</h2>
+            <span className="inline-flex shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+              {t(`pricing.category.${group.category}`)}
             </span>
-          ))}
-        </div>
-      </td>
-      <td className="px-4 py-4">
-        <div className="space-y-1 text-xs text-slate-700 dark:text-slate-200">
-          {operations.slice(0, 2).map((operation) => (
-            <div key={operation} className="break-words">{operation}</div>
-          ))}
-          {operations.length > 2 ? <div className="text-[11px] text-slate-400">{t('pricing.table.moreOperations', { count: operations.length - 2 })}</div> : null}
-        </div>
-      </td>
-      <td className="px-4 py-4">
-        {regionGroups.length === 1 ? (
-          <div className="space-y-1.5">
-            {regionGroups[0][1].map((entry) => (
-              <MeterPriceRow key={entry.rateCode} entry={entry} t={t} />
-            ))}
           </div>
-        ) : (
-          <div className="space-y-3">
-            {regionGroups.map(([regionCode, entries]) => (
-              <div key={regionCode}>
-                <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  {regionDisplayName(regionCode, language)}
-                </div>
-                <div className="space-y-1 pl-2.5">
-                  {entries.map((entry) => (
-                    <MeterPriceRow key={entry.rateCode} entry={entry} t={t} />
-                  ))}
-                </div>
-              </div>
-            ))}
+          <p className="mt-1 break-words text-xs text-slate-500 dark:text-slate-400">{rate.productDisplayName}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+            <span className="font-medium text-slate-700 dark:text-slate-200">{vendorDisplayName(rate.vendorCode, language)}</span>
+            <span className="flex flex-wrap gap-1">
+              {regions.map((code) => (
+                <span
+                  key={code}
+                  className="inline-flex rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
+                >
+                  {regionDisplayName(code, language)}
+                </span>
+              ))}
+            </span>
           </div>
-        )}
-      </td>
-      <td className="px-4 py-4">
-        <ModelCapabilities rate={rate} t={t} />
-      </td>
-      <td className="px-4 py-4">
-        <div className="flex flex-wrap gap-1.5">
-          <BillabilityBadge billability={billabilities[0] ?? 'unknown'} t={t} />
-          {modes.map((mode) => (
-            <PolicyBadge key={mode}>{calculationLabel(mode, t)}</PolicyBadge>
-          ))}
-          {hasTiers ? <PolicyBadge>{t('pricing.policy.tiers')}</PolicyBadge> : null}
-          {hasFormula ? <PolicyBadge>{t('pricing.policy.formula')}</PolicyBadge> : null}
         </div>
-        <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('pricing.policy.rateCount', { count: group.rates.length })}</div>
-        <div className="mt-1 text-[11px] text-slate-400">{t('pricing.effective', { date: dateOnly(rate.effectiveFrom) })}</div>
-        <div className="mt-1 flex items-center gap-3 text-[11px] text-slate-400">
-          <span>{t('pricing.updated', { date: formatDate(rate.sourceObservedAt, language) })}</span>
-          <a
-            href={rate.sourceUrl}
-            target="_blank"
-            rel="noreferrer"
-            title={t('pricing.source')}
-            aria-label={t('pricing.source')}
-            className="inline-flex items-center text-slate-500 hover:text-lobster-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lobster-500 dark:text-slate-400"
-          >
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-          </a>
-        </div>
-      </td>
-    </tr>
-  );
-}
+        <BillabilityBadge billability={rate.billability} t={t} />
+      </header>
 
-function ModelCard({
-  group,
-  language,
-  selectedKeys,
-  onToggleSelection,
-  t,
-}: {
-  group: ModelGroup;
-  language: string;
-  selectedKeys: ReadonlySet<string>;
-  onToggleSelection: (rate: OfficialPricingRate) => void;
-  t: TFunction;
-}) {
-  const rate = group.rates[0];
-  const regions = uniqueValues(group.rates, (entry) => entry.regionCode);
-  const regionGroups = useMemo(() => groupByRegion(group.rates), [group.rates]);
-  return (
-    <article className="rounded-md border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-[#0d0d0d]">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h2 className="break-words text-sm font-semibold text-slate-950 dark:text-white">{rate.resourceCode}</h2>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{rate.productDisplayName}</p>
-          <div className="mt-1.5 flex flex-wrap gap-1">
-            {regions.map((code) => (
-              <span key={code} className="inline-flex rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
-                {regionDisplayName(code, language)}
-              </span>
-            ))}
-          </div>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <input
-            type="checkbox"
-            checked={selectedKeys.has(group.key)}
-            onChange={() => onToggleSelection(rate)}
-            aria-label={t('pricing.compare.selectRow', { name: rate.productDisplayName })}
-            className="h-4 w-4 cursor-pointer rounded border-slate-300 accent-lobster-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lobster-500 dark:border-white/20"
-          />
-          <BillabilityBadge billability={rate.billability} t={t} />
-        </div>
-      </div>
-      <div className="mt-4 space-y-3">
+      <div className="mt-3 flex-1 space-y-3 border-t border-slate-100 pt-3 dark:border-white/5">
         {regionGroups.map(([regionCode, entries]) => (
           <div key={regionCode}>
             {regionGroups.length > 1 ? (
@@ -216,27 +113,46 @@ function ModelCard({
             ) : null}
             <div className="space-y-1.5">
               {entries.map((entry) => (
-                <div key={entry.rateCode} className="flex flex-wrap items-baseline gap-x-2 text-xs">
-                  <span className="text-slate-600 dark:text-slate-300">{entry.meterDisplayName || humanizeCode(entry.meterCode)}</span>
-                  <span className="tabular-nums font-semibold text-slate-950 dark:text-white">{formatDecimal(entry.unitPrice)}</span>
-                  <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">{entry.currencyCode}</span>
-                </div>
+                <MeterPriceLine key={entry.rateCode} entry={entry} t={t} />
               ))}
             </div>
           </div>
         ))}
       </div>
-      <div className="mt-4 border-t border-slate-100 pt-3 dark:border-white/5">
-        <div className="text-xs text-slate-400">{t('pricing.table.capabilities')}</div>
-        <div className="mt-2"><ModelCapabilities rate={rate} t={t} /></div>
+
+      <div className="mt-3 border-t border-slate-100 pt-3 dark:border-white/5">
+        <ModelCapabilities rate={rate} t={t} />
       </div>
-      <div className="mt-3 flex items-center justify-between gap-3 text-[11px] text-slate-400">
-        <span>{t('pricing.effective', { date: dateOnly(rate.effectiveFrom) })}</span>
-        <a href={rate.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-slate-500 hover:text-lobster-500">
+
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {uniqueValues(group.rates, (entry) => entry.calculationMode).map((mode) => (
+          <PolicyBadge key={mode}>{calculationLabel(mode, t)}</PolicyBadge>
+        ))}
+        {hasTiers ? <PolicyBadge>{t('pricing.policy.tiers')}</PolicyBadge> : null}
+        {hasFormula ? <PolicyBadge>{t('pricing.policy.formula')}</PolicyBadge> : null}
+        {hasTimeWindow ? <PolicyBadge>{t('pricing.policy.timeWindow')}</PolicyBadge> : null}
+      </div>
+
+      <footer className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-slate-100 pt-3 text-[11px] text-slate-400 dark:border-white/5">
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span>{t('pricing.policy.rateCount', { count: group.rates.length })}</span>
+          <span aria-hidden="true">·</span>
+          <span>{t('pricing.effective', { date: dateOnly(rate.effectiveFrom) })}</span>
+          <span aria-hidden="true">·</span>
+          <span>{t('pricing.updated', { date: formatDate(rate.sourceObservedAt, language) })}</span>
+        </span>
+        <a
+          href={rate.sourceUrl}
+          target="_blank"
+          rel="noreferrer"
+          title={t('pricing.source')}
+          aria-label={t('pricing.source')}
+          className="inline-flex items-center gap-1 text-slate-500 hover:text-lobster-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lobster-500 dark:text-slate-400"
+        >
           {t('pricing.source')}
           <ExternalLink className="h-3 w-3" aria-hidden="true" />
         </a>
-      </div>
+      </footer>
     </article>
   );
 }
@@ -246,9 +162,9 @@ function uniqueValues<T>(rates: readonly OfficialPricingRate[], pick: (rate: Off
 }
 
 /**
- * Groups a model's rates by region while preserving first-seen region order.
- * Sharing one region block per model makes meter prices visually aligned
- * instead of repeating a region tag on every individual rate line.
+ * Groups a model's rates by region while preserving first-seen region order,
+ * so each card renders one region block instead of repeating the region on
+ * every price line.
  */
 function groupByRegion(rates: readonly OfficialPricingRate[]): Array<[string, OfficialPricingRate[]]> {
   const order: string[] = []; const buckets = new Map<string, OfficialPricingRate[]>();
@@ -264,9 +180,25 @@ function groupByRegion(rates: readonly OfficialPricingRate[]): Array<[string, Of
   return order.map((code) => [code, buckets.get(code)!]);
 }
 
-function MeterPriceRow({ entry, t }: { entry: OfficialPricingRate; t: TFunction }): ReactNode {
+function MeterPriceLine({ entry, t }: { entry: OfficialPricingRate; t: TFunction }): ReactNode {
+  const variant = pricingRateVariantKey(entry);
+  const scheduleLines = formatPricingScheduleLines(entry.schedule, t);
+  const active = pricingRateIsActiveAt(entry);
+  const title = scheduleLines.length > 0 ? scheduleLines.join('\n') : undefined;
   return (
-    <div className="flex flex-wrap items-baseline gap-x-2 text-xs">
+    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs" title={title}>
+      {variant !== 'standard' ? (
+        <span
+          className={`inline-flex items-center gap-1 rounded border px-1 py-0.5 text-[10px] font-semibold ${
+            active
+              ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300'
+              : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300'
+          }`}
+        >
+          {active ? <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" /> : null}
+          {t(pricingRateVariantLabelKey(variant))}
+        </span>
+      ) : null}
       <span className="text-slate-600 dark:text-slate-300">{entry.meterDisplayName || humanizeCode(entry.meterCode)}</span>
       <span className="tabular-nums font-semibold text-slate-950 dark:text-white">{formatDecimal(entry.unitPrice)}</span>
       <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">{entry.currencyCode}</span>
@@ -327,7 +259,7 @@ function BillabilityBadge({ billability, t }: { billability: OfficialPricingRate
       ? 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/25 dark:bg-sky-500/10 dark:text-sky-300'
       : 'border-slate-200 bg-slate-50 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300';
   return (
-    <span className={`inline-flex rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase ${className}`}>
+    <span className={`inline-flex shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase ${className}`}>
       {t(`pricing.billability.${billability}`)}
     </span>
   );
@@ -367,14 +299,10 @@ function ModelCapabilities({ rate, t }: { rate: OfficialPricingRate; t: TFunctio
           </span>
         </div>
       ) : null}
-      {hasTokens ? (
-        <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400">
-          {contextTokens ? <span>{t('pricing.tokens.context', { value: formatCompactTokens(contextTokens) })}</span> : null}
-          {maxOutputTokens ? <span>{t('pricing.tokens.maxOutput', { value: formatCompactTokens(maxOutputTokens) })}</span> : null}
-        </div>
-      ) : null}
-      {hasFeatures ? (
+      {hasTokens || hasFeatures ? (
         <div className="flex flex-wrap gap-1.5">
+          {contextTokens ? <FeatureBadge>{t('pricing.tokens.context', { value: formatCompactTokens(contextTokens) })}</FeatureBadge> : null}
+          {maxOutputTokens ? <FeatureBadge>{t('pricing.tokens.maxOutput', { value: formatCompactTokens(maxOutputTokens) })}</FeatureBadge> : null}
           {supportsStreaming ? <FeatureBadge>{t('pricing.feature.streaming')}</FeatureBadge> : null}
           {supportsTools ? <FeatureBadge>{t('pricing.feature.tools')}</FeatureBadge> : null}
           {supportsJsonSchema ? <FeatureBadge>{t('pricing.feature.jsonSchema')}</FeatureBadge> : null}
@@ -425,7 +353,7 @@ export function formatCompactTokens(value: string): string {
 }
 
 function PolicyBadge({ children }: { children: string }) {
-  return <span className="mt-2 inline-flex rounded border border-slate-200 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:border-white/10 dark:text-slate-400">{children}</span>;
+  return <span className="inline-flex rounded border border-slate-200 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:border-white/10 dark:text-slate-400">{children}</span>;
 }
 
 export function formatDecimal(value: string): string {

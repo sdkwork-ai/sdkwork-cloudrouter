@@ -146,11 +146,16 @@ export function pricingScheduleMatchesAt(
   const time = `${parts.hour}:${parts.minute}:${parts.second}`;
   const weekday = ({ Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 } as Record<string, number>)[parts.weekday];
   if (!weekday) return false;
+  const holidayDates = schedule.holidayDates ?? [];
+  if (holidayDates.includes(date)) {
+    return schedule.weeklyWindows.some((window) => window.holidayOnly);
+  }
   return schedule.weeklyWindows.some((window) => {
+    if (window.holidayOnly) return false;
     const crossesMidnight = window.endDayOffset === 1;
     const beforeEnd = time < normalizeScheduleClock(window.endTime);
     const startDate = crossesMidnight && beforeEnd ? shiftIsoDate(date, -1) : date;
-    if (schedule.excludeDates.includes(startDate)) return false;
+    if (schedule.excludeDates.includes(startDate) || holidayDates.includes(startDate)) return false;
     const scheduledDay = window.daysOfWeek.includes(weekdayForIsoDate(startDate));
     if (!scheduledDay && !schedule.includeDates.includes(startDate)) return false;
     const start = normalizeScheduleClock(window.startTime);
@@ -258,6 +263,8 @@ export function officialRateQualifier(
   const qualifiers = rate.conditions.map((condition) => formatPricingCondition(condition, translate));
   if (rate.rateVariant === 'time_window') {
     qualifiers.push(translate('admin.pricing.condition.variant.time_window', 'Time-window price'));
+  } else if (rate.rateVariant === 'batch') {
+    qualifiers.push(translate('admin.pricing.condition.value.batch', 'Batch price'));
   }
   return qualifiers.length > 0 ? qualifiers.join(' · ') : undefined;
 }
@@ -302,6 +309,7 @@ export function officialRateVariantKey(
     }
   }
   if (rate.rateVariant === 'time_window') return 'time_window';
+  if (rate.rateVariant === 'batch') return 'batch';
   return 'standard';
 }
 
@@ -549,7 +557,19 @@ export function formatOfficialRateScheduleLines(
       : window.windowCode.trim()
         ? `${window.windowCode.trim()} · `
         : '';
-    lines.push(`${prefix}${days} ${start}–${end}${cross}`);
+    const holidayOnly = window.holidayOnly
+      ? translate('admin.pricing.schedule.holidayOnly', 'Holidays only')
+      : '';
+    lines.push(`${prefix}${holidayOnly ? `${holidayOnly} · ` : ''}${days} ${start}–${end}${cross}`);
+  }
+  const holidayDates = schedule.holidayDates ?? [];
+  if (holidayDates.length > 0) {
+    lines.push(
+      translate(
+        'admin.pricing.schedule.holidayDates',
+        `Statutory holidays (off-peak): ${holidayDates.join(', ')}`,
+      ).replace(/\{\{dates\}\}/g, holidayDates.join(', ')),
+    );
   }
   return lines;
 }

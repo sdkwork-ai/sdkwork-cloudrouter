@@ -236,7 +236,7 @@
     },
     {
       "path": "src/types/admin-pricing-rule.ts",
-      "sha256": "96cbb623e7bcc9ce3688bd4443e1cff03e4dececfbbdb6a5abb93d008ae9097e"
+      "sha256": "b2d933dcb3e79f8e27f2a3a43e8c5252b9be956c81392117aeb1ae5520037d8c"
     },
     {
       "path": "src/types/admin-rate-card-list-response.ts",
@@ -592,7 +592,7 @@
     },
     {
       "path": "src/types/official-pricing-rate.ts",
-      "sha256": "2a7aeee03e6a6457f5d6fea4eb0c2deaa3d9efdb2e2f65d15714494d1e2f51b6"
+      "sha256": "0c05d4455bca8f36d3cf7a9c843572148f3a18904402288bb8e8b5c2f8738ec3"
     },
     {
       "path": "src/types/official-pricing-refresh-response.ts",
@@ -628,7 +628,7 @@
     },
     {
       "path": "src/types/price-setting-upsert-request.ts",
-      "sha256": "a27ce824f3ddce86a7a23d2d9ecb31ba2b809763a4002e8ae045b655356bbda1"
+      "sha256": "1b64916348f3433aac5a330558d34aaae2d132ca340f7df5b346e886a6922123"
     },
     {
       "path": "src/types/pricing-default-region-create-request.ts",
@@ -644,11 +644,11 @@
     },
     {
       "path": "src/types/pricing-rule-create-request.ts",
-      "sha256": "2f7e565f30f8b39e4b06afc17ecc313be119ce0483a8504405c738b26b31ef7b"
+      "sha256": "6ed3341062aae4b1ae5dad7383cc962719c59dcf20ace78989837231e67aa260"
     },
     {
       "path": "src/types/pricing-rule-update-request.ts",
-      "sha256": "675f835aee7251a85fad69ecc37dacde2d24912cf70e350732a33c968619595a"
+      "sha256": "f3a8a48d1e2f771b8f152161748c31278b28300e6639a10841fcaec1d2471cc5"
     },
     {
       "path": "src/types/problem-detail.ts",

@@ -6,6 +6,7 @@ import { regionDisplayName, vendorDisplayName } from '../catalog/dataNames';
 import { buildCompareModels, type CompareModel, type CompareModelReferencePrice } from '../services/compareService';
 import { compareKeyOf, rateCategory } from '../types/compare';
 import type { OfficialPricingRate } from '../types/pricing';
+import { pricingRateVariantLabelKey, type PricingRateVariantKey } from '../types/pricingVariant';
 import { formatCompactTokens, formatDecimal } from './PricingRateTable';
 
 interface PricingCompareDrawerProps {
@@ -263,24 +264,32 @@ function ComparePricesTable({
 }) {
   const { i18n } = useTranslation();
   const regionLabel = regionDisplayName(region, i18n.language);
-  const meters = useMemo(() => {
-    const order: string[] = [];
+  const meterRows = useMemo(() => {
+    const order: Array<{ meter: string; variant: PricingRateVariantKey }> = [];
     const seen = new Set<string>();
     for (const model of models) {
       for (const price of model.prices) {
         if (price.regionCode !== region) continue;
         if (currency && price.currency !== currency) continue;
-        if (seen.has(price.billingMeter)) continue;
-        seen.add(price.billingMeter);
-        order.push(price.billingMeter);
+        const key = `${price.billingMeter}\u0000${price.variant}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        order.push({ meter: price.billingMeter, variant: price.variant });
       }
     }
     return order;
   }, [models, region, currency]);
 
-  const priceOf = (model: CompareModel, meter: string): CompareModelReferencePrice | null => {
+  const priceOf = (
+    model: CompareModel,
+    meter: string,
+    variant: PricingRateVariantKey,
+  ): CompareModelReferencePrice | null => {
     const matches = model.prices.filter(
-      (entry) => entry.regionCode === region && entry.billingMeter === meter && (!currency || entry.currency === currency),
+      (entry) => entry.regionCode === region
+        && entry.billingMeter === meter
+        && entry.variant === variant
+        && (!currency || entry.currency === currency),
     );
     return matches[0] ?? null;
   };
@@ -290,15 +299,22 @@ function ComparePricesTable({
       <div className="border-b border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-white/[0.02]">
         <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{regionLabel}</span>
       </div>
-      {meters.length === 0 ? (
+      {meterRows.length === 0 ? (
         <p className="px-4 py-6 text-center text-sm text-slate-400">
           {t('pricing.compare.empty')}
         </p>
       ) : (
         <table className="w-full border-collapse text-left">
           <tbody>
-            {meters.map((meter) => (
-              <ComparePriceRow key={meter} meter={meter} models={models} priceOf={priceOf} t={t} />
+            {meterRows.map((row) => (
+              <ComparePriceRow
+                key={`${row.meter}\u0000${row.variant}`}
+                meter={row.meter}
+                variant={row.variant}
+                models={models}
+                priceOf={priceOf}
+                t={t}
+              />
             ))}
           </tbody>
         </table>
@@ -309,17 +325,19 @@ function ComparePricesTable({
 
 function ComparePriceRow({
   meter,
+  variant,
   models,
   priceOf,
   t,
 }: {
   meter: string;
+  variant: PricingRateVariantKey;
   models: readonly CompareModel[];
-  priceOf: (model: CompareModel, meter: string) => CompareModelReferencePrice | null;
+  priceOf: (model: CompareModel, meter: string, variant: PricingRateVariantKey) => CompareModelReferencePrice | null;
   t: TFunction;
 }) {
   const values = models
-    .map((model) => ({ model, price: priceOf(model, meter) }))
+    .map((model) => ({ model, price: priceOf(model, meter, variant) }))
     .filter((entry): entry is { model: CompareModel; price: CompareModelReferencePrice } => entry.price !== null);
   const currencies = new Set(values.map((entry) => entry.price.currency));
   const cheapest =
@@ -330,9 +348,14 @@ function ComparePriceRow({
       <th scope="row" className="w-44 px-3 py-3 align-top text-left">
         <div className="text-sm font-medium text-slate-800 dark:text-slate-200">{compareMeterLabel(meter, t)}</div>
         <div className="mt-0.5 text-[11px] text-slate-400">{unit}</div>
+        {variant !== 'standard' ? (
+          <div className="mt-1 inline-flex rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
+            {t(pricingRateVariantLabelKey(variant))}
+          </div>
+        ) : null}
       </th>
       {models.map((model) => {
-        const price = priceOf(model, meter);
+        const price = priceOf(model, meter, variant);
         const isCheapest = price !== null && cheapest !== null && Number(price.unitPrice) === cheapest;
         return (
           <td key={model.key} className="px-3 py-3 align-top">

@@ -1306,7 +1306,7 @@ fn ledger_unit_code(meter_code: &str) -> &'static str {
         | "container_session" => "request",
         "image_result" | "embedding_image" => "image",
         "video_result" | "api_result" | "sfx_result" => "result",
-        "api_item" | "rerank_search" | "rerank_document" => "item",
+        "api_item" | "rerank_search" | "rerank_document" | "document_page" => "item",
         "tts_input_character" | "speech_character" => "character",
         "audio_input_second"
         | "audio_output_second"

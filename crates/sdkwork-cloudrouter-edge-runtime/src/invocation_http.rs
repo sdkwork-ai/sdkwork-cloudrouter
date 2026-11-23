@@ -249,10 +249,33 @@ where
     // model. Authentication already ran before this function, so buffering the
     // (body-limit-capped) payload here does not expose work to unauthenticated
     // callers.
-    let body_limit = state.body_limit_bytes;
+    // Vendor file-upload routes carry an opaque binary object rather than a
+    // JSON prompt, so they are gated by the dedicated upload ceiling instead of
+    // the JSON/invocation budget.
+    let body_limit = if is_vendor_upload_path(parts.uri.path()) {
+        state.upload_body_limit_bytes
+    } else {
+        state.body_limit_bytes
+    };
     let body = match invocation_body_from_http(&parts.headers, body, body_limit).await {
         Ok(body) => body,
-        Err(error) => return response_from_invocation_error(&error),
+        Err(error) => {
+            if is_vendor_upload_path(parts.uri.path()) {
+                // File uploads are rejected by size far more often than by any
+                // other cause, and the mapped ProblemDetail is deliberately
+                // terse. Leave an operator-facing trace with the numbers that
+                // explain it so a rejected upload is diagnosable from the log.
+                tracing::warn!(
+                    stage = "payload_extraction",
+                    path = %parts.uri.path(),
+                    declared_content_length =
+                        content_length_from_headers(&parts.headers).unwrap_or(0),
+                    body_limit_bytes = body_limit,
+                    "vendor upload body rejected by the upload gate"
+                );
+            }
+            return response_from_invocation_error(&error);
+        }
     };
     let request = invocation_request_from_http(
         parts.method,
@@ -734,8 +757,28 @@ async fn invocation_body_from_http(
     Ok(InvocationBody::Bytes(bytes.to_vec()))
 }
 
-fn request_body_should_parse_json(headers: &HeaderMap, bytes: &[u8]) -> bool {
-    headers
+/// Vendor file-upload surfaces: the request carries an opaque binary object
+/// (multipart form or raw body) instead of a JSON prompt.
+///
+/// These are the paths the gateway advertises as vendor file APIs —
+/// `POST /v1/files`, `/v1/uploads`, `/v1/containers/{container_id}/files`,
+/// `/anthropic/v1/files`, `/google/v1beta/files` — plus their sub-resources.
+/// The list stays literal on purpose: a prefix test against `/v1` would hand
+/// the wider upload ceiling to every model route, which is exactly the memory
+/// hazard the separate knob exists to avoid.
+fn is_vendor_upload_path(path: &str) -> bool {
+    let path = path.trim_end_matches('/');
+    matches!(
+        path,
+        "/v1/files" | "/v1/uploads" | "/anthropic/v1/files" | "/google/v1beta/files"
+    ) || path.starts_with("/v1/files/")
+        || path.starts_with("/v1/uploads/")
+        || path.starts_with("/v1/containers/")
+        || path.starts_with("/anthropic/v1/files/")
+        || path.starts_with("/google/v1beta/files/")
+}
+
+fn request_body_should_parse_json(headers: &HeaderMap, bytes: &[u8]) -> bool {    headers
         .get(header::CONTENT_TYPE)
         .and_then(|value| value.to_str().ok())
         .map(|value| value.to_ascii_lowercase().contains("application/json"))

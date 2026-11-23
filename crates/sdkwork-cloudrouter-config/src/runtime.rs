@@ -150,6 +150,11 @@ pub struct RequestLimitsSectionConfig {
     pub admin_skill_json_body_max_bytes: Option<u64>,
 
     pub gateway_invocation_body_max_bytes: Option<u64>,
+    /// Body ceiling for the vendor file-upload endpoints (`/v1/files`,
+    /// `/v1/uploads`, `/v1/containers/*/files`, `/anthropic/v1/files`,
+    /// `/google/v1beta/files`). Kept separate from the JSON budget so an
+    /// operator can align the upload gate with the vendor ceiling.
+    pub gateway_upload_body_max_bytes: Option<u64>,
     /// Outer HTTP backstop for one gateway request. Must stay wider than the
     /// per-hop provider timeout so a long non-streaming completion is not cut
     /// off by the transport layer before the provider answers.

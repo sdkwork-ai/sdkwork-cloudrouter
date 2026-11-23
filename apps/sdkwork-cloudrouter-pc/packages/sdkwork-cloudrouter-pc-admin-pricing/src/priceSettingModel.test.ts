@@ -114,9 +114,10 @@ describe('price setting model', () => {
     }, translate)).toBe('谷时价');
     expect(formatOfficialRateScheduleLines({
       timeZone: 'Asia/Shanghai',
-      weeklyWindows: [{ windowCode: 'peak', daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00:00', endTime: '18:00:00', endDayOffset: 0 }],
+      weeklyWindows: [{ windowCode: 'peak', daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00:00', endTime: '18:00:00', endDayOffset: 0, holidayOnly: false }],
       includeDates: [],
       excludeDates: [],
+      holidayDates: [],
     }, translate)).toEqual([
       '时区：Asia/Shanghai',
       '峰时价 · 周一、周二、周三、周四、周五 09:00–18:00',
@@ -310,9 +311,10 @@ describe('price setting model', () => {
     const rule = pricingRule({
       schedule: {
         timeZone: 'Asia/Shanghai',
-        weeklyWindows: [{ windowCode: 'business', daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00:00', endTime: '18:00:00', endDayOffset: 0 }],
+        weeklyWindows: [{ windowCode: 'business', daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00:00', endTime: '18:00:00', endDayOffset: 0, holidayOnly: false }],
         includeDates: [],
         excludeDates: [],
+        holidayDates: [],
       },
     });
     expect(pricingScheduleMatchesAt(rule.schedule!, mondayMorning)).toBe(false);
@@ -384,9 +386,10 @@ describe('price setting model', () => {
       priority: 50,
       schedule: {
         timeZone: 'Asia/Shanghai',
-        weeklyWindows: [{ windowCode: 'business', daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00:00', endTime: '18:00:00', endDayOffset: 0 }],
+        weeklyWindows: [{ windowCode: 'business', daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00:00', endTime: '18:00:00', endDayOffset: 0, holidayOnly: false }],
         includeDates: [],
         excludeDates: [],
+        holidayDates: [],
       },
     });
     const cnOutputRule = pricingRule({ id: 'rule-cn-output', regionCode: 'cn', meterCode: 'llm_output_token', pricingPlanId: 'plan-2', priority: 60, status: 'inactive' });
@@ -411,7 +414,7 @@ describe('price setting model', () => {
     expect(cn?.priceMode).toBe('time_window');
     // `rowUid` is a UI-only React key added when the editor seeds windows; the
     // schedule contract carries only the persisted fields.
-    expect(cn?.weeklyWindows.map(({ rowUid: _rowUid, ...window }) => window)).toEqual([{ windowCode: 'business', daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00:00', endTime: '18:00:00', endDayOffset: 0 }]);
+    expect(cn?.weeklyWindows.map(({ rowUid: _rowUid, ...window }) => window)).toEqual([{ windowCode: 'business', daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00:00', endTime: '18:00:00', endDayOffset: 0, holidayOnly: false }]);
     expect(cn?.meters).toHaveLength(2);
     // The two cn rules disagree on priority/status, so applying the group's
     // unified lifecycle needs an explicit acknowledgement before saving.
@@ -537,7 +540,7 @@ describe('price setting model', () => {
         formulaMode: 'unit_price_override' as const,
         priority: 100,
         status: 'active' as const,
-        schedule: { timeZone: 'Asia/Shanghai', weeklyWindows: [{ windowCode: 'business', daysOfWeek: [1], startTime: '09:00', endTime: '18:00', endDayOffset: 0 as const }], includeDates: [], excludeDates: [] },
+        schedule: { timeZone: 'Asia/Shanghai', weeklyWindows: [{ windowCode: 'business', daysOfWeek: [1], startTime: '09:00', endTime: '18:00', endDayOffset: 0 as const, holidayOnly: false }], includeDates: [], excludeDates: [], holidayDates: [] },
       },
     };
     expect(canUseAtomicPriceSettingUpsert(newScheduled)).toBe(false);
@@ -642,6 +645,68 @@ describe('price setting model', () => {
     expect(() => buildPriceSettingMutations(baseForm({ priceMode: 'time_window', includeDates: '2026-02-30' }), translate)).toThrow('admin.pricing.settings.form.dateInvalid');
   });
 
+  it('treats a declared statutory holiday as off-peak and rejects peak windows', () => {
+    const holiday = Date.parse('2026-10-01T02:00:00Z'); // 10:00 Beijing
+    const schedule = {
+      timeZone: 'Asia/Shanghai',
+      weeklyWindows: [
+        { windowCode: 'peak_weekday_morning', daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00:00', endTime: '12:00:00', endDayOffset: 0 as const, holidayOnly: false },
+        { windowCode: 'off_peak_holiday', daysOfWeek: [1, 2, 3, 4, 5, 6, 7], startTime: '00:00:00', endTime: '23:59:59', endDayOffset: 0 as const, holidayOnly: true },
+      ],
+      includeDates: [],
+      excludeDates: [],
+      holidayDates: ['2026-10-01'],
+    };
+    const peakOnly = { ...schedule, weeklyWindows: schedule.weeklyWindows.slice(0, 1) };
+    expect(pricingScheduleMatchesAt(peakOnly, holiday)).toBe(false);
+    expect(pricingScheduleMatchesAt(schedule, holiday)).toBe(true);
+    expect(pricingScheduleMatchesAt(schedule, Date.parse('2026-10-02T02:00:00Z'))).toBe(true); // ordinary Friday 10:00 peak window
+  });
+
+  it('rejects holiday dates that overlap include/exclude dates', () => {
+    expect(() => buildPriceSettingMutations(baseForm({
+      priceMode: 'time_window',
+      holidayDates: '2026-10-01',
+      includeDates: '2026-10-01',
+    }), translate)).toThrow('admin.pricing.settings.form.holidayDateOverlapInvalid');
+  });
+
+  it('requires a holiday-only window to cover the whole day', () => {
+    expect(() => buildPriceSettingMutations(baseForm({
+      priceMode: 'time_window',
+      weeklyWindows: [{
+        rowUid: 'holiday-window',
+        windowCode: 'off_peak_holiday',
+        daysOfWeek: [1, 2, 3, 4, 5, 6, 7],
+        startTime: '09:00',
+        endTime: '18:00',
+        endDayOffset: 0,
+        holidayOnly: true,
+      }],
+      holidayDates: '2026-10-01',
+    }), translate)).toThrow('admin.pricing.settings.form.holidayWindowInvalid');
+  });
+
+  it('serializes the holiday calendar and holiday-only window', () => {
+    const mutations = buildPriceSettingMutations(baseForm({
+      priceMode: 'time_window',
+      weeklyWindows: [{
+        rowUid: 'holiday-window',
+        windowCode: 'off_peak_holiday',
+        daysOfWeek: [1, 2, 3, 4, 5, 6, 7],
+        startTime: '00:00',
+        endTime: '23:59',
+        endDayOffset: 0,
+        holidayOnly: true,
+      }],
+      holidayDates: '2026-10-01, 2026-10-02',
+    }), translate);
+    expect(mutations[0]?.input?.schedule).toMatchObject({
+      holidayDates: ['2026-10-01', '2026-10-02'],
+      weeklyWindows: [{ holidayOnly: true }],
+    });
+  });
+
   it('requires explicit confirmation before normalizing conflicting meter metadata', () => {
     expect(() => buildPriceSettingMutations(baseForm({ metadataConflict: true }), translate)).toThrow(
       'admin.pricing.settings.form.metadataConflictRequired',
@@ -660,7 +725,9 @@ describe('price setting model', () => {
         startTime: '09:00',
         endTime: '18:00',
         endDayOffset: 0,
+        holidayOnly: false,
       }],
+      holidayDates: '',
     });
 
     const mutations = buildPriceSettingMutations(form, translate);
@@ -691,9 +758,10 @@ function baseGroup(overrides: Partial<PriceSettingRegionForm> = {}): PriceSettin
     removedRuleIds: [],
     priceMode: 'standard',
     timeZone: 'Asia/Shanghai',
-    weeklyWindows: [{ rowUid: 'test-window-1', windowCode: 'business-hours', daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00', endTime: '12:00', endDayOffset: 0 }],
+    weeklyWindows: [{ rowUid: 'test-window-1', windowCode: 'business-hours', daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00', endTime: '12:00', endDayOffset: 0, holidayOnly: false }],
     includeDates: '',
     excludeDates: '',
+    holidayDates: '',
     priority: '100',
     effectiveFrom: '',
     effectiveTo: '',
