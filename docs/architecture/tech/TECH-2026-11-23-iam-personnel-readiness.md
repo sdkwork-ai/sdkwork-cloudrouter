@@ -104,6 +104,41 @@
 
 验收：单测覆盖 5 种 scope 的谓词生成 + 一个跨租户 404 用例。
 
+### G3 接线前的语义修正（本轮发现）
+
+`resolve_data_scope` 现已把未知值与 `scope` 都收敛到 `SelfOnly`，这对**未知值**是正确
+的 fail-closed，但对 `scope` 是错的：`data_scope_kind='scope'` 的既有行（迁移 0049 之前
+创建、迁移默认值）语义是"与绑定自身 scope 一致"，可能是 tenant 或 organization 级。
+若直接接入 roster，会把所有存量管理员权限收窄成"只看自己"，属于严重误拒。
+
+因此接线顺序必须是：
+
+1. 解析调用方的 allow 绑定行 `(scope_kind, scope_id, data_scope_kind)`；
+2. `data_scope_kind='scope'` 先按 `scope_kind` 展开：`tenant`→Tenant、
+   `organization`→Organization、`department`→Department，再交给
+   `resolve_data_scope` 取最宽；
+3. 谓词（组织维度已在 handler 前置限定）：
+
+```sql
+AND ($8::text IS NULL OR $8 = 'organization'
+     OR ($8 = 'self' AND m.user_id = $10)
+     OR ($8 IN ('department', 'department_and_children') AND EXISTS (
+          SELECT 1 FROM iam_department_assignment dsa
+           WHERE dsa.tenant_id = m.tenant_id
+             AND dsa.organization_id = m.organization_id
+             AND dsa.organization_membership_id = m.id
+             AND dsa.status = 'active'
+             AND (dsa.department_id = ANY($9)
+                  OR ($8 = 'department_and_children' AND dsa.department_id IN (
+                       SELECT c.descendant_department_id FROM iam_department_closure c
+                        WHERE c.tenant_id = m.tenant_id
+                          AND c.organization_id = m.organization_id
+                          AND c.ancestor_department_id = ANY($9)))))))
+```
+
+4. 绑定解析失败或权限码缺失 → 返回空集并写审计，不降级为全量。
+
+
 
 
 ## 未经评审不得越过的红线
