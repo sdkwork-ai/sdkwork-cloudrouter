@@ -89,7 +89,7 @@
 | G7 分页检索 | 🟡 部分 | roster 服务端分页 + pageInfo + 重置页（`ebb91784`）；排序/CSV 导出待做 |
 | G3 数据范围 | 🟡 接线完成，待 PG 用例 | 解析器/遗留语义/装载器（`7141d67f`、`da7dc6aa`、`8665e140`）；roster 谓词按 tenant/organization/department(+children)/self 强制（`27f78dd0`）；尚缺真库集成用例 |
 | G4 隔离/脱敏 | ⏳ | 无跨租户用例、无字段级可见性 |
-| G1 迁移演练 | ⏳ | 0049/0050 未在任何 PG 执行 |
+| G1 迁移演练 | ⏳ 环境已确认可用 | 本机 `127.0.0.1:5432` 可连、`config/host/postgres.env` 存在，但尚未执行 `db:plan → db:migrate → db:drift:check`；无 `psql` 客户端，需走 `sdkwork-iam-db` 子命令 |
 | G6/G8–G12 | ⏳ | 见上文清单 |
 
 ### G3 落地方案（下一轮执行口径）
