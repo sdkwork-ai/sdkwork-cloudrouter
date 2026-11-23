@@ -19,6 +19,12 @@ import type {
   DomainDnsRecordType,
   DomainVerificationFilePlatform,
 } from './domainTypes';
+import {
+  DOMAIN_VERIFICATION_PLATFORMS,
+  isServableVerificationFileName,
+  platformAcceptsExtension,
+  verificationFileExtension,
+} from './domainVerificationPlatforms';
 
 export type DomainFieldErrors = Record<string, string>;
 
@@ -32,15 +38,12 @@ export const DOMAIN_DNS_RECORD_TYPES: readonly DomainDnsRecordType[] = [
   'CAA',
 ];
 
-export const DOMAIN_VERIFICATION_FILE_PLATFORMS: readonly DomainVerificationFilePlatform[] = [
-  'WECHAT_OFFICIAL_ACCOUNT',
-  'WECHAT_MINI_PROGRAM',
-  'ALIPAY',
-  'BYTEDANCE',
-  'APPLE',
-  'GOOGLE',
-  'CUSTOM',
-];
+/** The closed platform set, derived from the one catalog this console mirrors. */
+export const DOMAIN_VERIFICATION_FILE_PLATFORMS: readonly DomainVerificationFilePlatform[] =
+  DOMAIN_VERIFICATION_PLATFORMS.map((spec) => spec.platform);
+
+/** Largest verification file the control plane stores, in UTF-8 bytes. */
+export const DOMAIN_VERIFICATION_FILE_CONTENT_MAX = 4096;
 
 const LABEL_PATTERN = /^[a-z0-9\u00a1-\uffff](?:[a-z0-9\u00a1-\uffff-]{0,61}[a-z0-9\u00a1-\uffff])?$/u;
 const ASCII_LABEL_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
@@ -48,7 +51,6 @@ const IPV4_OCTET_PATTERN = /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/;
 const IPV6_PATTERN = /^[0-9a-fA-F:]+$/;
 const CAA_PATTERN = /^(\d{1,3})\s+(issue|issuewild|iodef)\s+"([^"\s]+)"$/i;
 const ACCOUNT_CODE_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/;
-const VERIFICATION_FILE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.(?:txt|html|xml)$/;
 
 const validationKey = (name: string): string => `admin.domainCenter.validation.${name}`;
 
@@ -449,12 +451,16 @@ export function validateVerificationFileForm(form: DomainVerificationFileForm): 
   const fileName = form.fileName.trim();
   if (isBlank(fileName)) {
     errors.fileName = validationKey('required');
-  } else if (!VERIFICATION_FILE_PATTERN.test(fileName)) {
+  } else if (!isServableVerificationFileName(fileName)) {
     errors.fileName = validationKey('invalidVerificationFileName');
+  } else if (!platformAcceptsExtension(form.platform, verificationFileExtension(fileName))) {
+    // The platform only ever fetches its own shape; registering another one
+    // would show "uploaded" and then never verify.
+    errors.fileName = validationKey('verificationFilePlatformExtension');
   }
   if (isBlank(form.content)) {
     errors.content = validationKey('required');
-  } else if (form.content.length > 65_536) {
+  } else if (new TextEncoder().encode(form.content).length > DOMAIN_VERIFICATION_FILE_CONTENT_MAX) {
     errors.content = validationKey('tooLong');
   }
   return errors;

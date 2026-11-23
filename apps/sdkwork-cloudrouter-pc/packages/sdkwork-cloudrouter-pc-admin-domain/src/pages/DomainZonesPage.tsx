@@ -32,6 +32,7 @@ import {
   DomainTableHead,
   DomainTextInput,
 } from '../components/domainUi';
+import { VerificationFilesDialog } from '../components/VerificationFilesDialog';
 import { domainCenterService } from '../domainService';
 import {
   formatDomainCount,
@@ -40,28 +41,16 @@ import {
 } from '../domainFormat';
 import {
   translateDomainLabel,
-  verificationFilePlatformLabel,
   zoneScopeLabel,
   zoneStatusLabel,
   zoneStatusTone,
 } from '../domainLabels';
-import type {
-  DomainCloudAccount,
-  DomainVerificationFile,
-  DomainVerificationFileCheck,
-  DomainVerificationFilePlatform,
-  DomainZone,
-  DomainZoneStatus,
-} from '../domainTypes';
+import type { DomainCloudAccount, DomainZone, DomainZoneStatus } from '../domainTypes';
 import type { DomainCenterSectionId } from '../domainTypes';
 import { useDomainCloudAccounts, useDomainZones } from '../hooks/useDomainResources';
 import {
-  DOMAIN_VERIFICATION_FILE_PLATFORMS,
   toCreateZoneInput,
-  toVerificationFileInput,
-  validateVerificationFileForm,
   validateZoneForm,
-  type DomainVerificationFileForm,
   type DomainZoneForm,
 } from '../domainValidation';
 
@@ -70,12 +59,6 @@ const EMPTY_ZONE_FORM: DomainZoneForm = {
   displayName: '',
   dnsProvider: '',
   providerAccountId: '',
-};
-
-const EMPTY_FILE_FORM: DomainVerificationFileForm = {
-  platform: 'WECHAT_OFFICIAL_ACCOUNT',
-  fileName: '',
-  content: '',
 };
 
 type ZoneFormState =
@@ -606,265 +589,6 @@ function ZoneFormDialog({
           )}
         />
       ) : null}
-    </DomainFormDialog>
-  );
-}
-
-function VerificationFilesDialog({
-  zone,
-  onClose,
-}: {
-  zone: DomainZone;
-  onClose: () => void;
-}) {
-  const { t, i18n } = useTranslation();
-  const [files, setFiles] = useState<DomainVerificationFile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<unknown>(null);
-  const [form, setForm] = useState<DomainVerificationFileForm>(EMPTY_FILE_FORM);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [busy, setBusy] = useState(false);
-  const [checks, setChecks] = useState<Record<string, DomainVerificationFileCheck>>({});
-  const [checkingId, setCheckingId] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const locale = i18n.resolvedLanguage ?? 'en-US';
-
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    setError(null);
-    domainCenterService
-      .listVerificationFiles(zone.id)
-      .then((loaded) => {
-        if (active) {
-          setFiles(loaded);
-        }
-      })
-      .catch((cause: unknown) => {
-        if (active) {
-          setError(cause);
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setLoading(false);
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [zone.id]);
-
-  const create = async () => {
-    const nextErrors = validateVerificationFileForm(form);
-    setFormErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) {
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    try {
-      const created = await domainCenterService.createVerificationFile(zone.id, toVerificationFileInput(form));
-      setFiles((current) => [created, ...current.filter((file) => file.id !== created.id)]);
-      setForm(EMPTY_FILE_FORM);
-    } catch (cause) {
-      setError(cause);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const remove = async (file: DomainVerificationFile) => {
-    setDeletingId(file.id);
-    setError(null);
-    try {
-      await domainCenterService.deleteVerificationFile(zone.id, file.id);
-      setFiles((current) => current.filter((item) => item.id !== file.id));
-    } catch (cause) {
-      setError(cause);
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
-  const check = async (file: DomainVerificationFile) => {
-    setCheckingId(file.id);
-    setError(null);
-    try {
-      const result = await domainCenterService.checkVerificationFile(zone.id, file.id);
-      setChecks((current) => ({ ...current, [file.id]: result }));
-    } catch (cause) {
-      setError(cause);
-    } finally {
-      setCheckingId(null);
-    }
-  };
-
-  return (
-    <DomainFormDialog
-      wide
-      busy={busy}
-      onClose={onClose}
-      title={t('admin.domainCenter.verificationFiles.title', 'Ownership verification files')}
-      description={t(
-        'admin.domainCenter.verificationFiles.description',
-        'Platform-issued files (WeChat, Alipay, ByteDance, Apple, Google) are served byte-for-byte from {{hostname}} so the issuing platform can verify domain control. Files are public by design and contain no secret.',
-        { hostname: zone.apexHostname },
-      )}
-      footer={
-        <DomainSecondaryButton onClick={onClose} disabled={busy}>
-          {t('common.actions.close', 'Close')}
-        </DomainSecondaryButton>
-      }
-    >
-      {error ? (
-        <DomainInlineNotice
-          tone="danger"
-          title={resolveProblemMessage(error, t, t('admin.domainCenter.verificationFiles.loadError', 'Verification files could not be loaded'))}
-        />
-      ) : null}
-
-      <div className="rounded-lg border border-slate-200 dark:border-white/10">
-        <table className="w-full text-left text-xs">
-          <DomainTableHead
-            columns={[
-              t('admin.domainCenter.columns.platform', 'Platform'),
-              t('admin.domainCenter.columns.fileName', 'File name'),
-              t('admin.domainCenter.columns.updatedAt', 'Updated'),
-              t('admin.domainCenter.verificationFiles.checkResult', 'Last check'),
-              t('admin.domainCenter.columns.actions', 'Actions'),
-            ]}
-          />
-          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-            {loading ? (
-              <DomainStateRows colSpan={5} kind="loading" title={t('admin.domainCenter.verificationFiles.loading', 'Loading files...')} />
-            ) : files.length === 0 ? (
-              <DomainStateRows
-                colSpan={5}
-                kind="empty"
-                title={t('admin.domainCenter.verificationFiles.empty', 'No verification file registered')}
-                description={t('admin.domainCenter.verificationFiles.emptyDesc', 'Add the file the issuing platform gave you.')}
-              />
-            ) : (
-              files.map((file) => {
-                const result = checks[file.id];
-                return (
-                  <tr key={file.id}>
-                    <td className="px-3 py-2">
-                      {translateDomainLabel(t, verificationFilePlatformLabel(file.platform))}
-                    </td>
-                    <td className="px-3 py-2 font-mono">{file.fileName}</td>
-                    <td className="px-3 py-2 text-slate-500 dark:text-slate-400">
-                      {formatDomainDateTime(file.updatedAt, locale)}
-                    </td>
-                    <td className="px-3 py-2">
-                      {result ? (
-                        <DomainStatusPill
-                          label={
-                            result.matched
-                              ? t('admin.domainCenter.verificationFiles.matched', 'Matched')
-                              : result.reachable
-                                ? t('admin.domainCenter.verificationFiles.reachableMismatch', 'Reachable, content mismatch')
-                                : t('admin.domainCenter.verificationFiles.unreachable', 'Not reachable')
-                          }
-                          tone={result.matched ? 'success' : result.reachable ? 'warning' : 'danger'}
-                          title={result.detail}
-                        />
-                      ) : (
-                        <span className="text-slate-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          type="button"
-                          onClick={() => void check(file)}
-                          disabled={checkingId === file.id}
-                          className="rounded-md border border-slate-200 px-2 py-1 text-[11px] text-slate-600 transition hover:bg-slate-50 disabled:opacity-60 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10"
-                        >
-                          {checkingId === file.id
-                            ? t('admin.domainCenter.verificationFiles.checking', 'Checking...')
-                            : t('admin.domainCenter.verificationFiles.check', 'Check')}
-                        </button>
-                        <DomainIconButton
-                          label={t('common.actions.delete', 'Delete')}
-                          tone="danger"
-                          disabled={deletingId === file.id}
-                          onClick={() => void remove(file)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </DomainIconButton>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="rounded-lg border border-dashed border-slate-300 p-3 dark:border-white/15">
-        <div className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-          {t('admin.domainCenter.verificationFiles.addTitle', 'Register a verification file')}
-        </div>
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
-          <DomainField
-            label={t('admin.domainCenter.columns.platform', 'Platform')}
-            error={formErrors.platform ? t(formErrors.platform, 'Invalid platform') : undefined}
-          >
-            <DomainSelect
-              value={form.platform}
-              onChange={(value) =>
-                setForm((current) => ({
-                  ...current,
-                  platform: value as DomainVerificationFilePlatform,
-                }))
-              }
-              options={DOMAIN_VERIFICATION_FILE_PLATFORMS.map((platform) => ({
-                value: platform,
-                label: translateDomainLabel(t, verificationFilePlatformLabel(platform)),
-              }))}
-            />
-          </DomainField>
-          <DomainField
-            label={t('admin.domainCenter.verificationFiles.fields.fileName', 'File name')}
-            error={formErrors.fileName ? t(formErrors.fileName, 'Invalid file name') : undefined}
-            hint="MP_verify_xxx.txt"
-          >
-            <DomainTextInput
-              mono
-              value={form.fileName}
-              onChange={(value) => setForm((current) => ({ ...current, fileName: value }))}
-            />
-          </DomainField>
-          <DomainField
-            label={t('admin.domainCenter.verificationFiles.fields.content', 'File content')}
-            error={formErrors.content ? t(formErrors.content, 'Content is required') : undefined}
-          >
-            <DomainTextInput
-              mono
-              value={form.content}
-              onChange={(value) => setForm((current) => ({ ...current, content: value }))}
-            />
-          </DomainField>
-        </div>
-        <div className="mt-3 flex justify-end">
-          <DomainPrimaryButton onClick={() => void create()} disabled={busy}>
-            <Plus className="h-4 w-4" />
-            {t('common.actions.add', 'Add')}
-          </DomainPrimaryButton>
-        </div>
-      </div>
-
-      <DomainInlineNotice
-        tone="info"
-        title={t('admin.domainCenter.verificationFiles.autoVerify', 'Verify the WHOLE domain ownership at hostname level')}
-        description={t(
-          'admin.domainCenter.verificationFiles.autoVerifyDesc',
-          'The DNS TXT ownership proof is managed on the hostname row (apex included). Files here only satisfy platforms that require a file-based proof.',
-        )}
-      />
     </DomainFormDialog>
   );
 }
