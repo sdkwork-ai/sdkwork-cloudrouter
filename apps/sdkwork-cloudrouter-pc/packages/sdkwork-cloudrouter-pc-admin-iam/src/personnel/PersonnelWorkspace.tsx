@@ -379,7 +379,7 @@ export function CloudRouterIamPersonnelWorkspace({
       event.stopPropagation();
       const draggedId = draggingId || event.dataTransfer.getData('text/plain');
       setDraggingId('');
-      if (!canUpdateDepartments || !draggedId) return;
+      if (!canUpdateDepartments || !draggedId || busy) return;
       const sourceVersion = flatDepartments.find(
         (entry) => entry.department.departmentId === draggedId,
       )?.department.version;
@@ -406,7 +406,7 @@ export function CloudRouterIamPersonnelWorkspace({
         );
       }
     },
-    [canUpdateDepartments, draggingId, flatDepartments, moveDepartment],
+    [busy, canUpdateDepartments, draggingId, flatDepartments, moveDepartment],
   );
 
   const moveByKeyboard = useCallback(
