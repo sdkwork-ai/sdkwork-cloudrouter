@@ -219,6 +219,9 @@ export function CloudRouterIamPersonnelWorkspace({
   const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const pageSize = 50;
 
   const canUpdateDepartments = can('iam.departments.update');
   const canCreateDepartments = can('iam.departments.create');
@@ -258,14 +261,19 @@ export function CloudRouterIamPersonnelWorkspace({
           organizationId,
           ...(departmentId ? { departmentId, includeDescendants: true } : {}),
           ...(search ? { q: search } : {}),
-          pageSize: 200,
+          page,
+          pageSize,
         });
         setMembers(asItems(payload).map(toMember).filter((item) => item.membershipId.length > 0));
+        const pageInfo = asRecord(asRecord(payload).pageInfo);
+        setTotal(
+          asNumber(pageInfo.totalItems ?? pageInfo.total ?? pageInfo.totalCount),
+        );
       } catch (reason) {
         setError(reasonMessage(reason));
       }
     },
-    [service],
+    [page, pageSize, service],
   );
 
   useEffect(() => {
@@ -295,6 +303,7 @@ export function CloudRouterIamPersonnelWorkspace({
 
   useEffect(() => {
     setSelectedDepartmentId('');
+    setPage(1);
     if (!selectedOrganizationId) return;
     setLoading(true);
     void loadDepartments(selectedOrganizationId).finally(() => setLoading(false));
@@ -303,7 +312,7 @@ export function CloudRouterIamPersonnelWorkspace({
   useEffect(() => {
     if (!selectedOrganizationId) return;
     void loadRoster(selectedOrganizationId, selectedDepartmentId, searchQuery);
-  }, [loadRoster, searchQuery, selectedDepartmentId, selectedOrganizationId]);
+  }, [loadRoster, page, searchQuery, selectedDepartmentId, selectedOrganizationId]);
 
   const moveDepartment = useCallback(
     async (
@@ -602,7 +611,10 @@ export function CloudRouterIamPersonnelWorkspace({
                         : 'hover:bg-slate-50 dark:hover:bg-slate-800'
                     }`}
                     draggable={canUpdateDepartments}
-                    onClick={() => setSelectedDepartmentId(item.department.departmentId)}
+                    onClick={() => {
+                      setSelectedDepartmentId(item.department.departmentId);
+                      setPage(1);
+                    }}
                     onKeyDown={(event) => {
                       if (!event.altKey || !canUpdateDepartments) return;
                       if (event.key === 'ArrowUp') {
@@ -695,6 +707,7 @@ export function CloudRouterIamPersonnelWorkspace({
           className="mb-2 flex gap-2"
           onSubmit={(event) => {
             event.preventDefault();
+            setPage(1);
             setSearchQuery(searchInput.trim());
           }}
         >
@@ -889,6 +902,29 @@ export function CloudRouterIamPersonnelWorkspace({
               ) : null}
             </tbody>
           </table>
+        </div>
+        <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+          <span>
+            {t('admin.iam.personnel.pageInfo', { page, pageSize, total })}
+          </span>
+          <div className="flex gap-2">
+            <button
+              className="rounded-md border border-slate-200 px-2 py-1 disabled:opacity-40 dark:border-slate-700"
+              disabled={page <= 1 || busy}
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              type="button"
+            >
+              {t('admin.iam.personnel.prev')}
+            </button>
+            <button
+              className="rounded-md border border-slate-200 px-2 py-1 disabled:opacity-40 dark:border-slate-700"
+              disabled={busy || page * pageSize >= total}
+              onClick={() => setPage((current) => current + 1)}
+              type="button"
+            >
+              {t('admin.iam.personnel.next')}
+            </button>
+          </div>
         </div>
       </section>
     </div>

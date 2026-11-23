@@ -108,4 +108,7 @@ export const zh = {
   "admin.iam.personnel.save": "保存",
   "admin.iam.personnel.search": "搜索",
   "admin.iam.personnel.searchPlaceholder": "搜索姓名、账号、邮箱或手机号",
+  "admin.iam.personnel.pageInfo": "第 {{page}} 页 · 每页 {{pageSize}} 条 · 共 {{total}} 人",
+  "admin.iam.personnel.prev": "上一页",
+  "admin.iam.personnel.next": "下一页",
 };
