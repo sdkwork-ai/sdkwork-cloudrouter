@@ -526,17 +526,17 @@ fn task_poll_path_matches(path: &str, family: &str) -> bool {
 }
 
 fn provider_native_model_from_standard_path(path: &str) -> Option<String> {
-    path.trim_matches('/')
+    let path = path.trim_matches('/');
+    let suffix = path
         .strip_prefix("v1beta/models/")
-        .and_then(|suffix| suffix.split_once(':').map(|(model, _)| model))
-        .or_else(|| {
-            path.trim_matches('/')
-                .strip_prefix("v1/models/")
-                .and_then(|suffix| suffix.split_once(':').map(|(model, _)| model))
-        })
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(str::to_owned)
+        .or_else(|| path.strip_prefix("v1/models/"))?;
+    // Split at the last `:`: the model id itself may contain a colon in a
+    // dialect spelling (`models/google:veo-3.0:generateVideos`), while the
+    // action suffix is always the final segment.
+    let (model, _action) = suffix.rsplit_once(':')?;
+    let model = crate::domain::decode_model_path_segment(model);
+    let model = crate::domain::normalize_wire_model_id(&model);
+    (!model.trim().is_empty()).then_some(model)
 }
 
 pub fn canonical_provider_native_catalog_key(
@@ -676,6 +676,28 @@ mod tests {
         );
         assert_eq!("gemini.generate_content", classification.resource.route_key);
         assert_eq!(None, classification.resource.route_kind);
+    }
+
+    #[test]
+    fn provider_native_path_model_decodes_qualified_and_dialect_ids() {
+        let classification = classify_post(
+            "/google/v1beta/models/google%2Fgemini-2.5-pro:generateContent",
+            "google",
+        );
+        assert_eq!(
+            Some("google/gemini-2.5-pro"),
+            classification.resource.requested_model.as_deref(),
+            "percent-encoded OpenRouter id must be decoded before catalog lookup"
+        );
+        let classification = classify_post(
+            "/google/v1beta/models/google:gemini-2.5-pro:generateContent",
+            "google",
+        );
+        assert_eq!(
+            Some("google/gemini-2.5-pro"),
+            classification.resource.requested_model.as_deref(),
+            "colon dialect must be normalized to the canonical separator"
+        );
     }
 
     #[test]

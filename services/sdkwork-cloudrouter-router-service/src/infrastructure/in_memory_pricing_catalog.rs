@@ -36,6 +36,7 @@ pub struct InMemoryPricingCatalog {
     supplier_model_access: HashMap<String, SupplierModelAccess>,
     account_model_access: HashMap<i64, AccountModelAccess>,
     supplier_default_base_urls: HashMap<String, String>,
+    supplier_type_by_code: HashMap<String, String>,
     default_regions_by_key: HashMap<(i64, i64, String), String>,
     upstream_route_gate_diagnosis: Option<UpstreamRouteGateDiagnosis>,
 }
@@ -153,6 +154,16 @@ impl InMemoryPricingCatalog {
     pub fn set_supplier_default_base_url(&mut self, supplier_code: &str, url: &str) {
         self.supplier_default_base_urls
             .insert(supplier_code.to_owned(), url.to_owned());
+    }
+
+    /// Declares the supplier business type (`official` / `relay`) so tests can
+    /// exercise relay model addressing. The SQL snapshot loads this from
+    /// `ai_upstream_supplier.supplier_type`.
+    pub fn set_supplier_type(&mut self, supplier_code: &str, supplier_type: &str) {
+        self.supplier_type_by_code.insert(
+            supplier_code.trim().to_ascii_lowercase(),
+            supplier_type.trim().to_ascii_lowercase(),
+        );
     }
 
     /// Records the default billing region for a model within a
@@ -433,6 +444,12 @@ impl UpstreamAccountRouteCatalog for InMemoryPricingCatalog {
 
     fn supplier_default_base_url(&self, supplier_code: &str) -> Option<String> {
         self.supplier_default_base_urls.get(supplier_code).cloned()
+    }
+
+    fn supplier_type(&self, supplier_code: &str) -> Option<String> {
+        self.supplier_type_by_code
+            .get(&supplier_code.trim().to_ascii_lowercase())
+            .cloned()
     }
 }
 

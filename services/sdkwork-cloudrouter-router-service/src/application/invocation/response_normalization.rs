@@ -9,7 +9,6 @@ use super::{
     DispatchMode, Invocation, InvocationDispatchResponse, InvocationError, InvocationFuture,
     InvocationInterceptor, InvocationNormalizedResponse, InvocationSurface,
 };
-use crate::domain::provider_native_model_id;
 
 #[derive(Debug, Clone, Default)]
 pub struct ResponseNormalizationInterceptor;
@@ -225,16 +224,16 @@ fn restore_json_model_field(body: &mut Value, requested_model: &str) -> bool {
     let Some(object) = body.as_object_mut() else {
         return false;
     };
-    match object.get("model") {
-        Some(Value::String(current)) if current != requested_model => {
-            object.insert(
-                "model".to_owned(),
-                Value::String(requested_model.to_owned()),
-            );
-            true
+    let mut restored = false;
+    for field in crate::domain::MODEL_REQUEST_FIELD_NAMES {
+        if let Some(Value::String(current)) = object.get(field) {
+            if current != requested_model {
+                object.insert(field.to_owned(), Value::String(requested_model.to_owned()));
+                restored = true;
+            }
         }
-        _ => false,
     }
+    restored
 }
 
 /// Restores the client-requested `model` in each OpenAI-compatible SSE frame.
@@ -281,11 +280,14 @@ fn streaming_model_restore_target(
     provider_model: Option<&str>,
     requested_model: &str,
 ) -> Option<String> {
+    // `provider_model` is already the exact outbound id (native for an official
+    // vendor, qualified for a relay). Compare it verbatim: re-parsing here
+    // would make a relay's qualified id look equal to a bare requested id and
+    // skip the restore, leaking the relay spelling to the client.
     let provider_model = provider_model
         .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(provider_native_model_id);
-    if provider_model.as_deref() == Some(requested_model) {
+        .filter(|value| !value.is_empty());
+    if provider_model == Some(requested_model.trim()) {
         return None;
     }
     Some(requested_model.to_owned())

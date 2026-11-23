@@ -268,8 +268,8 @@ pub use upstream_route_selector::{
     model_access_forbidden_message, model_access_forbidden_reason,
     model_access_forbidden_reason_lists, SelectUpstreamAccountRouteQuery,
     SelectUpstreamModelRouteQuery, SelectedUpstreamAccountRoute, SelectedUpstreamModelRoute,
-    SelectedUpstreamModelRoutePlan, UpstreamRouteSelectionError, UpstreamRouteSelectionErrorKind,
-    UpstreamRouteSelector,
+    SelectedUpstreamModelRoutePlan, SelectedUpstreamModelRoutePlanWithIdentity,
+    UpstreamRouteSelectionError, UpstreamRouteSelectionErrorKind, UpstreamRouteSelector,
 };
 pub use usage_retention::{
     resolve_usage_retention_config, resolve_usage_retention_config_result,

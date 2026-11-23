@@ -2,10 +2,10 @@ use std::sync::Arc;
 
 use super::routing::STICKY_SCOPE_SESSION;
 use super::{
-    resolve_pricing_identity, AccountBillingMode, DispatchMode, Invocation, InvocationError,
-    InvocationErrorKind, InvocationFuture, InvocationInterceptor, InvocationRouteCandidate,
-    InvocationRouteCandidateKind, InvocationRoutePlan, ResourceType, RoutingPipeline, StickyMode,
-    StickyRouteConstraint,
+    apply_pricing_identity, resolve_pricing_identity, AccountBillingMode, DispatchMode, Invocation,
+    InvocationError, InvocationErrorKind, InvocationFuture, InvocationInterceptor,
+    InvocationRouteCandidate, InvocationRouteCandidateKind, InvocationRoutePlan, ResourceType,
+    RoutingPipeline, StickyMode, StickyRouteConstraint,
 };
 use crate::application::upstream_base_url::{
     protocol_code_from_api_code, resolve_upstream_base_url,
@@ -18,8 +18,8 @@ use crate::application::{
     UpstreamRouteSelector,
 };
 use crate::domain::{
-    has_text, provider_native_model_id, BillingMeter, ModelUpstreamRoute,
-    ResolveModelMappingContext, RoutingCapability, UpstreamAccountRoute,
+    has_text, BillingMeter, ModelUpstreamRoute, ResolveModelMappingContext, RoutingCapability,
+    UpstreamAccountRoute,
 };
 use crate::ports::{AccountBaseUrlConfig, UpstreamAccountRouteCatalog};
 
@@ -178,28 +178,20 @@ where
     // 按**解析后的 catalog key** 取值：OpenRouter 风格请求名（如
     // `anthropic/claude-opus-4.5`）与目录键（`anthropic/claude-opus-4-5`）
     // 存在拼写差，按原始请求名查会得到空 vendor 列表。
-    let catalog_key = resolve_catalog_key(catalog, invocation, &requested_model)?;
-    invocation.resource.requested_model_catalog_key = Some(catalog_key.clone());
-    invocation.resource.resolved_vendor_codes = catalog.model_vendor_codes_by_name(&catalog_key);
-    tracing::trace!(
-        tenant_id = invocation.subject.tenant_id,
-        organization_id = invocation.subject.organization_id,
-        requested_model = %requested_model,
-        catalog_key = %catalog_key,
-        vendor_codes = ?invocation.resource.resolved_vendor_codes,
-        "model-type route: resolved supporting vendors"
-    );
-
+    let preferred_catalog_key = resolve_catalog_key(catalog, invocation, &requested_model)?;
     let billing_meter = invocation
         .billing
         .meter
         .clone()
         .unwrap_or(BillingMeter::LlmInputToken);
     let mapping_context = context.clone();
-    let plan = UpstreamRouteSelector::new(catalog)
-        .select_model_route_plan(SelectUpstreamModelRouteQuery {
+    // 两段式路由：先按调用方解析出的 `vendor/model` 目录键路由；该身份无法
+    // 成路由时（目录无该键的上游账号/价格），按同一请求的**裸模型 ID** 再
+    // 试一次。两段都遵守分组模型黑白名单，且只选唯一候选，不猜 vendor。
+    let selection = UpstreamRouteSelector::new(catalog)
+        .select_model_route_plan_with_fallback(SelectUpstreamModelRouteQuery {
             context,
-            catalog_key,
+            catalog_key: preferred_catalog_key,
             // 免费计费的管理面/免费调用不做定价预门（计费口径与路由口径分离）。
             pricing_required: invocation.billing.settlement_required,
             requested_model: requested_model.clone(),
@@ -214,7 +206,28 @@ where
                 route_error(error.to_string())
             }
         })?;
+    let catalog_key = selection.catalog_key;
+    invocation.resource.requested_model_catalog_key = Some(catalog_key.clone());
+    invocation.resource.resolved_vendor_codes = catalog.model_vendor_codes_by_name(&catalog_key);
+    // A fallback route may resolve a different catalog model than the name
+    // lookup used by the pricing-identity stage that ran before routing. Rebase
+    // the billing identity onto the key that actually serves the request so
+    // preflight, settlement, and usage extraction keep one authority.
+    if selection.fallback_used {
+        let identity = resolve_pricing_identity(catalog, invocation);
+        apply_pricing_identity(invocation, &identity);
+    }
+    tracing::trace!(
+        tenant_id = invocation.subject.tenant_id,
+        organization_id = invocation.subject.organization_id,
+        requested_model = %requested_model,
+        catalog_key = %catalog_key,
+        fallback_used = selection.fallback_used,
+        vendor_codes = ?invocation.resource.resolved_vendor_codes,
+        "model-type route: resolved supporting vendors"
+    );
 
+    let plan = selection.plan;
     let candidates = plan
         .routes
         .into_iter()
@@ -248,6 +261,22 @@ where
     // `video_output_second` 计价）。把身份解析结果传给预检，预检才不会拿
     // 目录里不存在的键/计量单位去找价。
     let identity = resolve_pricing_identity(catalog, invocation);
+    // API-resource media routes (video/audio/music/image catch-all) still carry
+    // a model. Resolve its catalog identity once so every candidate can write
+    // the supplier-facing model id, not the client's spelling. Network/API
+    // resources (files, assistants, …) keep the resource route's model; the
+    // requested model there is metadata, not the resource identity.
+    let media_catalog_key = if matches!(
+        invocation.resource.capability,
+        RoutingCapability::Image
+            | RoutingCapability::Audio
+            | RoutingCapability::Music
+            | RoutingCapability::Video
+    ) {
+        api_route_catalog_key(catalog, invocation)
+    } else {
+        None
+    };
     let selection = UpstreamRouteSelector::new(catalog)
         .select_account_route(SelectUpstreamAccountRouteQuery {
             context,
@@ -269,15 +298,114 @@ where
     // 最终账号 + 故障转移序列（planner 已按策略排序并按 fallback mode 截断），
     // 供过滤链与 dispatch 的 failover 使用。
     let failover_routes = selection.failover_routes.clone();
-    let mut candidates = vec![upstream_account_candidate(selection, invocation, catalog)];
-    candidates.extend(
-        failover_routes
-            .into_iter()
-            .map(|route| account_route_candidate(route, invocation, catalog)),
-    );
+    let mut candidates = vec![upstream_account_candidate(
+        selection,
+        invocation,
+        catalog,
+        media_catalog_key.as_deref(),
+    )];
+    candidates.extend(failover_routes.into_iter().map(|route| {
+        account_route_candidate(route, invocation, catalog, media_catalog_key.as_deref())
+    }));
     log_planned_candidates(invocation, &candidates, "account route");
     invocation.routing.route_plan = Some(InvocationRoutePlan::new(candidates));
     Ok(())
+}
+
+/// Catalog identity of the model carried by an API-resource media request.
+///
+/// Provider-native media routes (Gemini image/video, Kling, Vidu, Volcengine,
+/// ElevenLabs audio/music) are account-routed, but their requests still carry a
+/// model id that must be rewritten for the selected supplier. Resolve the
+/// catalog key once; a provider-native preset key that is not a catalog model
+/// is not authoritative (the name index is). Ambiguous matches are left
+/// unresolved rather than guessed.
+fn api_route_catalog_key<C>(catalog: &C, invocation: &Invocation) -> Option<String>
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    if let Some(key) = invocation
+        .resource
+        .requested_model_catalog_key
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .filter(|key| catalog.find_model(key).is_some())
+    {
+        return Some(key.to_owned());
+    }
+    let requested_model = invocation
+        .resource
+        .requested_model
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())?;
+    let keys = catalog.model_catalog_keys_by_name(requested_model);
+    match keys.as_slice() {
+        [key] => Some(key.clone()),
+        [] => None,
+        keys => {
+            tracing::debug!(
+                requested_model = %requested_model,
+                candidates = ?keys,
+                "media model id matches several catalog keys; leaving the provider model \
+                 unresolved instead of guessing a vendor"
+            );
+            None
+        }
+    }
+}
+
+/// Supplier-facing model for an API-resource media candidate.
+///
+/// The account-routed surface does not carry a per-route `provider_model`
+/// entitlement like model routes do, so the catalog identity plus the supplier
+/// type is the authority: official vendors get the vendor-native id, relays the
+/// qualified catalog key, and API-resource models absent from the catalog still
+/// have a known vendor prefix removed by the shared parser.
+fn api_route_provider_model(
+    supplier_code: &str,
+    supplier_type: Option<&str>,
+    catalog_key: Option<&str>,
+    requested_model: Option<&str>,
+) -> Option<String> {
+    // A resolved catalog identity is authoritative: official vendors get the
+    // catalog-native id and relays the qualified key. Only a media model with
+    // no catalog row (vendor-native ids such as `seedance-1.0`) falls through to
+    // supplier-prefix stripping below.
+    if let Some(catalog_key) = catalog_key {
+        return crate::domain::resolve_provider_model_id(
+            supplier_type,
+            Some(catalog_key),
+            requested_model,
+            None,
+        );
+    }
+    let relay = supplier_type.is_some_and(|kind| kind.trim().eq_ignore_ascii_case("relay"));
+    let normalized_requested = requested_model
+        .map(crate::domain::normalize_wire_model_id)
+        .filter(|value| !value.is_empty());
+    if !relay {
+        if let Some(requested_model) = normalized_requested.as_deref() {
+            if let Some((head, tail)) = requested_model.split_once('/') {
+                let head = head.trim();
+                let tail = tail.trim();
+                let supplier_vendor = crate::domain::catalog_vendor_code(supplier_code);
+                if !tail.is_empty()
+                    && (head.eq_ignore_ascii_case(supplier_code.trim())
+                        || head.eq_ignore_ascii_case(supplier_vendor))
+                {
+                    return Some(tail.to_owned());
+                }
+            }
+        }
+    }
+    crate::domain::resolve_provider_model_id(
+        supplier_type,
+        None,
+        normalized_requested.as_deref(),
+        None,
+    )
 }
 
 /// Debug-level summary of the planned route candidates (supplier/account/
@@ -455,14 +583,15 @@ where
     let resolved_provider_model = account_mapping
         .as_ref()
         .and_then(|rule| rule.effective_provider_model().map(str::to_owned))
-        .unwrap_or_else(|| {
-            default_provider_model(
+        .or_else(|| {
+            crate::domain::resolve_provider_model_id(
                 supplier_type.as_deref(),
-                &catalog_key,
-                &model,
-                &provider_model,
+                Some(catalog_key.as_str()),
+                Some(model.as_str()),
+                Some(provider_model.as_str()),
             )
-        });
+        })
+        .unwrap_or_default();
     let mut candidate = model_candidate(
         selection,
         capability,
@@ -476,37 +605,7 @@ where
     candidate
 }
 
-/// Default provider-facing model id for a route, by supplier business type.
-///
-/// An **official** vendor addresses its models by the vendor-native id
-/// (`deepseek/deepseek-flash` → `deepseek-flash`). A **relay** is a different
-/// vendor reselling the same catalog: OpenRouter-style relays address models by
-/// the fully-qualified catalog key, so stripping the vendor head would ask the
-/// relay for a model it does not know. An explicit model-alias mapping always
-/// wins over both defaults.
-fn default_provider_model(
-    supplier_type: Option<&str>,
-    catalog_key: &str,
-    model: &str,
-    provider_model: &str,
-) -> String {
-    let catalog_key = catalog_key.trim();
-    let provider_model = provider_model.trim();
-    let model = model.trim();
-    let explicit_mapping = !provider_model.is_empty()
-        && provider_model != catalog_key
-        && crate::domain::provider_native_model_id(provider_model) != model;
-    if explicit_mapping {
-        return provider_model.to_owned();
-    }
-    if supplier_type.is_some_and(|kind| kind.trim().eq_ignore_ascii_case("relay"))
-        && !catalog_key.is_empty()
-    {
-        return catalog_key.to_owned();
-    }
-    normalized_resolved_provider_model(catalog_key, model, provider_model)
-}
-
+/// Finds the live account-route metadata for a selected model route.
 fn find_upstream_account_route_metadata(
     model_route: &ModelUpstreamRoute,
     account_routes: &[UpstreamAccountRoute],
@@ -531,32 +630,6 @@ fn find_upstream_account_route_metadata(
         )
     });
     candidates.into_iter().next()
-}
-
-fn normalized_resolved_provider_model(
-    catalog_key: &str,
-    model: &str,
-    provider_model: &str,
-) -> String {
-    let provider_model = provider_model.trim();
-    if provider_model.is_empty() {
-        let model = model.trim();
-        return if model.is_empty() {
-            provider_native_model_id(catalog_key)
-        } else {
-            model.to_owned()
-        };
-    }
-    let native_model = provider_native_model_id(provider_model);
-    if provider_model == catalog_key.trim()
-        || (!native_model.is_empty()
-            && native_model == model.trim()
-            && native_model != provider_model)
-    {
-        native_model
-    } else {
-        provider_model.to_owned()
-    }
 }
 
 /// 按请求资源能力与 LLM 协议判定最终调用 Base URL（详见
@@ -605,6 +678,7 @@ fn upstream_account_candidate<C>(
     selection: SelectedUpstreamAccountRoute,
     invocation: &Invocation,
     catalog: &C,
+    media_catalog_key: Option<&str>,
 ) -> InvocationRouteCandidate
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
@@ -621,7 +695,17 @@ where
         api_code: invocation.resource.api_code.clone(),
         catalog_key: invocation.resource.requested_model_catalog_key.clone(),
         requested_model: invocation.resource.requested_model.clone(),
-        provider_model: invocation.resource.provider_native_model.clone(),
+        provider_model: if media_catalog_key.is_some() {
+            api_route_provider_model(
+                &route.supplier_code,
+                supplier_type.as_deref(),
+                media_catalog_key,
+                invocation.resource.requested_model.as_deref(),
+            )
+            .or_else(|| invocation.resource.provider_native_model.clone())
+        } else {
+            invocation.resource.provider_native_model.clone()
+        },
         region_code: route.region_code.clone(),
         credential_id: route.credential_id,
         credential_rotation: Some(route.credential_rotation.clone()),
@@ -647,6 +731,7 @@ fn account_route_candidate<C>(
     route: UpstreamAccountRoute,
     invocation: &Invocation,
     catalog: &C,
+    media_catalog_key: Option<&str>,
 ) -> InvocationRouteCandidate
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
@@ -662,7 +747,17 @@ where
         api_code: invocation.resource.api_code.clone(),
         catalog_key: invocation.resource.requested_model_catalog_key.clone(),
         requested_model: invocation.resource.requested_model.clone(),
-        provider_model: invocation.resource.provider_native_model.clone(),
+        provider_model: if media_catalog_key.is_some() {
+            api_route_provider_model(
+                &route.supplier_code,
+                supplier_type.as_deref(),
+                media_catalog_key,
+                invocation.resource.requested_model.as_deref(),
+            )
+            .or_else(|| invocation.resource.provider_native_model.clone())
+        } else {
+            invocation.resource.provider_native_model.clone()
+        },
         region_code: route.region_code.clone(),
         credential_id: route.credential_id,
         credential_rotation: Some(route.credential_rotation.clone()),
@@ -1006,11 +1101,21 @@ fn route_error(message: impl Into<String>) -> InvocationError {
 
 #[cfg(test)]
 mod tests {
-    use super::normalized_resolved_provider_model;
+    use crate::domain::resolve_provider_model_id;
+
+    fn provider_model(catalog_key: &str, model: &str, provider_model: &str) -> String {
+        resolve_provider_model_id(
+            Some("official"),
+            Some(catalog_key),
+            Some(model),
+            Some(provider_model),
+        )
+        .unwrap_or_default()
+    }
 
     #[test]
     fn provider_model_derivation_strips_every_separator_spelling() {
-        for provider_model in [
+        for provider_model_spelling in [
             "deepseek/deepseek-flash",
             "deepseek:deepseek-flash",
             "deepseek|deepseek-flash",
@@ -1019,14 +1124,58 @@ mod tests {
         ] {
             assert_eq!(
                 "deepseek-flash",
-                normalized_resolved_provider_model(
+                provider_model(
                     "deepseek/deepseek-flash",
                     "deepseek-flash",
-                    provider_model
+                    provider_model_spelling
                 ),
-                "provider model: {provider_model}"
+                "provider model: {provider_model_spelling}"
             );
         }
+    }
+
+    #[test]
+    fn media_route_provider_model_prefers_catalog_identity_and_strips_supplier_prefix() {
+        // Catalog identity wins: official -> native, relay -> qualified.
+        assert_eq!(
+            Some("gpt-image-2".to_owned()),
+            super::api_route_provider_model(
+                "openai",
+                None,
+                Some("openai/gpt-image-2"),
+                Some("openai/gpt-image-2"),
+            )
+        );
+        assert_eq!(
+            Some("openai/gpt-image-2".to_owned()),
+            super::api_route_provider_model(
+                "openrouter",
+                Some("relay"),
+                Some("openai/gpt-image-2"),
+                Some("gpt-image-2"),
+            )
+        );
+        // No catalog row: a supplier-owned vendor prefix is still stripped for
+        // an official vendor (Seedance/Volcengine).
+        assert_eq!(
+            Some("seedance-1.0".to_owned()),
+            super::api_route_provider_model(
+                "volcengine",
+                None,
+                None,
+                Some("volcengine/seedance-1.0"),
+            )
+        );
+        // Dialect separators are normalized before the prefix check.
+        assert_eq!(
+            Some("seedance-1.0".to_owned()),
+            super::api_route_provider_model(
+                "volcengine",
+                None,
+                None,
+                Some("volcengine:seedance-1.0"),
+            )
+        );
     }
 
     #[test]
@@ -1035,29 +1184,21 @@ mod tests {
         // deliberate mapping (or a relay id) and must pass through untouched.
         assert_eq!(
             "deepseek-chat",
-            normalized_resolved_provider_model(
-                "deepseek/deepseek-flash",
-                "deepseek-flash",
-                "deepseek-chat"
-            )
+            provider_model("deepseek/deepseek-flash", "deepseek-flash", "deepseek-chat")
         );
         assert_eq!(
             "ft:gpt-4o-2024-08-13:org:abc",
-            normalized_resolved_provider_model(
-                "openai/gpt-4o",
-                "gpt-4o",
-                "ft:gpt-4o-2024-08-13:org:abc"
-            )
+            provider_model("openai/gpt-4o", "gpt-4o", "ft:gpt-4o-2024-08-13:org:abc")
         );
         // An empty provider model falls back to the catalog model, then to the
         // catalog key parsed as a wire id.
         assert_eq!(
             "deepseek-flash",
-            normalized_resolved_provider_model("deepseek/deepseek-flash", "deepseek-flash", "")
+            provider_model("deepseek/deepseek-flash", "deepseek-flash", "")
         );
         assert_eq!(
             "deepseek-flash",
-            normalized_resolved_provider_model("deepseek/deepseek-flash", "", "")
+            provider_model("deepseek/deepseek-flash", "", "")
         );
     }
 }

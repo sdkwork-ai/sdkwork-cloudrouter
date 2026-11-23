@@ -20,8 +20,7 @@ use super::response_memory_budget::{
     ProviderResponseMemoryBudget, ProviderResponseMemoryBudgetError,
 };
 use crate::domain::{
-    provider_native_model_id, DomainError, DomainResult, ProviderAuthProfile, ProviderAuthType,
-    ProviderRetryPolicy,
+    DomainError, DomainResult, ProviderAuthProfile, ProviderAuthType, ProviderRetryPolicy,
 };
 use crate::ports::{
     ChatCompletionRelay, ChatCompletionRelayFuture, ChatCompletionRelayRequest,
@@ -1902,6 +1901,15 @@ fn upstream_request_body(body: Value, request_label: &str) -> DomainResult<Value
     Ok(body)
 }
 
+/// Overwrites the outbound `model` field with the route's resolved provider
+/// model.
+///
+/// The id is already the exact supplier-facing id: route planning resolved an
+/// official vendor to its native model id and a relay to the fully-qualified
+/// catalog key. Re-parsing it here would strip a relay's vendor head a second
+/// time (`anthropic/claude-opus-4-5` → `claude-opus-4-5`) and ask the relay
+/// for a model it does not serve, so this layer only validates and writes the
+/// value verbatim.
 fn upstream_model_request_body(
     mut request_body: Value,
     provider_model: &str,
@@ -1913,13 +1921,12 @@ fn upstream_model_request_body(
             "{request_label} provider model is required"
         )));
     }
-    let provider_model = provider_native_model_id(provider_model);
     let object = request_body.as_object_mut().ok_or_else(|| {
         DomainError::new(format!(
             "{request_label} request body must be a JSON object"
         ))
     })?;
-    object.insert("model".to_owned(), Value::String(provider_model));
+    object.insert("model".to_owned(), Value::String(provider_model.to_owned()));
     Ok(request_body)
 }
 

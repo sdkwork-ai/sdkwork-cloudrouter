@@ -110,6 +110,7 @@ impl GatewayUsageRecorder for RecordingUsageRecorder {
 #[derive(Debug, Clone)]
 struct CapturedUpstreamRequest {
     authorization: Option<String>,
+    path: String,
     body: Value,
 }
 
@@ -163,6 +164,7 @@ async fn start_mock_upstream(marker: &'static str) -> MockUpstreamHandle {
 
 async fn media_handler(
     State(provider): State<Arc<MockProvider>>,
+    uri: axum::http::Uri,
     headers: HeaderMap,
     Json(body): Json<Value>,
 ) -> (StatusCode, Json<Value>) {
@@ -176,6 +178,7 @@ async fn media_handler(
                 .get("authorization")
                 .and_then(|value| value.to_str().ok())
                 .map(str::to_owned),
+            path: uri.path().to_owned(),
             body,
         });
     (
@@ -862,6 +865,21 @@ fn collect_secrets(accounts: &[MediaAccountSpec]) -> Vec<(String, String)> {
         .collect()
 }
 
+async fn media_router_with_all_accounts(
+    openai: &str,
+    google: &str,
+    kling: &str,
+    vidu: &str,
+    volcengine: &str,
+) -> axum::Router {
+    let hasher = hasher();
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let accounts = media_accounts(openai, google, kling, vidu, volcengine);
+    let secrets = collect_secrets(&accounts);
+    let catalog = catalog_with_all_media_accounts(&key_hash, accounts);
+    build_router(catalog, secrets).await
+}
+
 #[tokio::test]
 async fn media_routing_openai_image2_routes_to_openai_account() {
     let openai = start_mock_upstream("openai").await;
@@ -1177,4 +1195,241 @@ async fn media_routing_seedance_video_generation_routes_to_volcengine_account() 
         calls[0].authorization
     );
     assert_eq!(0, openai.provider.calls());
+}
+
+#[tokio::test]
+async fn media_routing_openai_image_accepts_openrouter_qualified_model() {
+    let openai = start_mock_upstream("openai").await;
+    let router = media_router_with_all_accounts(
+        &openai.base_url,
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
+    )
+    .await;
+
+    let (status, body) = send_request(
+        router,
+        "/v1/images/generations",
+        json!({"model": "openai/gpt-image-2", "prompt": "city skyline"}),
+    )
+    .await;
+    assert_eq!(StatusCode::OK, status, "unexpected body: {body}");
+
+    let calls = openai.provider.captured();
+    assert_eq!(1, calls.len(), "OpenAI image2 must hit the OpenAI account");
+    // OpenRouter-style qualified request, official vendor-native outbound id.
+    assert_eq!("gpt-image-2", calls[0].body["model"]);
+}
+
+#[tokio::test]
+async fn media_routing_volcengine_video_strips_qualified_vendor_prefix() {
+    let volcengine = start_mock_upstream("volcengine").await;
+    let router = media_router_with_all_accounts(
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
+        &volcengine.base_url,
+    )
+    .await;
+
+    let (status, body) = send_request(
+        router,
+        "/volcengine/v1/videos/generations",
+        json!({"model": "volcengine/seedance-1.0", "prompt": "aurora borealis"}),
+    )
+    .await;
+    assert_eq!(StatusCode::OK, status, "unexpected body: {body}");
+
+    let calls = volcengine.provider.captured();
+    assert_eq!(1, calls.len(), "Seedance must hit the Volcengine account");
+    assert_eq!("seedance-1.0", calls[0].body["model"]);
+}
+
+#[tokio::test]
+async fn media_routing_audio_and_music_rewrite_vendor_native_model_fields() {
+    let elevenlabs = start_mock_upstream("elevenlabs").await;
+    let accounts = vec![
+        MediaAccountSpec {
+            supplier_code: "openai",
+            account_id: 4001,
+            base_url: "http://127.0.0.1:9".to_owned(),
+            secret_ref: "vault://providers/openai/account/main".to_owned(),
+            secret_value: "sk-openai-media-secret".to_owned(),
+            priority: 10,
+            api_scope: &["openai.images.generations", "openai.videos.generations"],
+            capabilities: &["image", "video"],
+        },
+        MediaAccountSpec {
+            supplier_code: "google",
+            account_id: 4002,
+            base_url: "http://127.0.0.1:9".to_owned(),
+            secret_ref: "vault://providers/google/account/main".to_owned(),
+            secret_value: "sk-google-media-secret".to_owned(),
+            priority: 20,
+            api_scope: &["gemini.image_generation", "gemini.video_generation"],
+            capabilities: &["image", "video"],
+        },
+        MediaAccountSpec {
+            supplier_code: "elevenlabs",
+            account_id: 4006,
+            base_url: elevenlabs.base_url.clone(),
+            secret_ref: "vault://providers/elevenlabs/account/main".to_owned(),
+            secret_value: "sk-elevenlabs-media-secret".to_owned(),
+            priority: 10,
+            api_scope: &["elevenlabs.text_to_speech", "elevenlabs.music_generation"],
+            capabilities: &["audio", "music"],
+        },
+    ];
+    let secrets = collect_secrets(&accounts);
+    let hasher = hasher();
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let mut catalog = catalog_with_all_media_accounts(&key_hash, accounts);
+    catalog.add_vendor(ModelVendorDefinition::new(
+        "elevenlabs",
+        ModelVendor::ElevenLabs,
+        "ElevenLabs",
+    ));
+    catalog.add_model(
+        AiModel::new(
+            "eleven_multilingual_v2",
+            "ElevenLabs multilingual v2",
+            "elevenlabs",
+            vec!["audio"],
+        )
+        .with_catalog_key("elevenlabs/eleven_multilingual_v2"),
+    );
+    catalog.add_model(
+        AiModel::new(
+            "music_v1",
+            "ElevenLabs music v1",
+            "elevenlabs",
+            vec!["music"],
+        )
+        .with_catalog_key("elevenlabs/music_v1"),
+    );
+    add_price_for_account(
+        &mut catalog,
+        "elevenlabs/eleven_multilingual_v2",
+        "eleven_multilingual_v2",
+        BillingMeter::TtsInputCharacter,
+        "0.100000",
+        "0.050000",
+        "elevenlabs",
+        4006,
+    );
+    add_price_for_account(
+        &mut catalog,
+        "elevenlabs/music_v1",
+        "music_v1",
+        BillingMeter::MusicOutputSecond,
+        "0.100000",
+        "0.050000",
+        "elevenlabs",
+        4006,
+    );
+    let router = build_router(catalog, secrets).await;
+
+    // Audio (ElevenLabs `model_id` field, OpenAI/OpenRouter `vendor/model`
+    // inbound spelling).
+    let (status, body) = send_request(
+        router.clone(),
+        "/elevenlabs/v1/text-to-speech/voice-1",
+        json!({
+            "model_id": "elevenlabs/eleven_multilingual_v2",
+            "text": "hello"
+        }),
+    )
+    .await;
+    assert_eq!(StatusCode::OK, status, "unexpected body: {body}");
+    let calls = elevenlabs.provider.captured();
+    assert_eq!(1, calls.len(), "TTS must hit the ElevenLabs account");
+    assert_eq!("eleven_multilingual_v2", calls[0].body["model_id"]);
+    assert_eq!("hello", calls[0].body["text"]);
+
+    // Music (API-resource media route, same `model_id` field).
+    let (status, body) = send_request(
+        router,
+        "/elevenlabs/v1/music",
+        json!({
+            "model_id": "elevenlabs/music_v1",
+            "prompt": "ambient synth"
+        }),
+    )
+    .await;
+    assert_eq!(StatusCode::OK, status, "unexpected body: {body}");
+    let calls = elevenlabs.provider.captured();
+    assert_eq!(2, calls.len(), "Music must hit the ElevenLabs account");
+    assert_eq!("music_v1", calls[1].body["model_id"]);
+    assert_eq!("ambient synth", calls[1].body["prompt"]);
+}
+
+#[tokio::test]
+async fn media_routing_openai_image_relay_receives_the_qualified_catalog_key() {
+    let openai = start_mock_upstream("openai").await;
+    let hasher = hasher();
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let accounts = media_accounts(
+        &openai.base_url,
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
+    );
+    let secrets = collect_secrets(&accounts);
+    let mut catalog = catalog_with_all_media_accounts(&key_hash, accounts);
+    // An OpenRouter-style relay resells the catalog and addresses models by
+    // the fully-qualified catalog key.
+    catalog.set_supplier_type("openai", "relay");
+    let router = build_router(catalog, secrets).await;
+
+    let (status, body) = send_request(
+        router,
+        "/v1/images/generations",
+        json!({"model": "gpt-image-2", "prompt": "city skyline"}),
+    )
+    .await;
+    assert_eq!(StatusCode::OK, status, "unexpected body: {body}");
+
+    let calls = openai.provider.captured();
+    assert_eq!(1, calls.len(), "relay image must hit its account");
+    assert_eq!("openai/gpt-image-2", calls[0].body["model"]);
+}
+
+#[tokio::test]
+async fn media_routing_gemini_path_model_is_percent_decoded_and_rewritten() {
+    let google = start_mock_upstream("google").await;
+    let router = media_router_with_all_accounts(
+        "http://127.0.0.1:9",
+        &google.base_url,
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
+    )
+    .await;
+
+    let (status, body) = send_request(
+        router,
+        "/google/v1beta/models/google%2Fgemini-2.0-flash-preview-image-generation:generateImages",
+        json!({"instances": [{"prompt": "mountain"}], "parameters": {}}),
+    )
+    .await;
+    assert_eq!(StatusCode::OK, status, "unexpected body: {body}");
+
+    let calls = google.provider.captured();
+    assert_eq!(1, calls.len(), "Gemini image must hit the Google account");
+    assert!(
+        calls[0]
+            .path
+            .contains("gemini-2.0-flash-preview-image-generation:generateImages"),
+        "upstream path must carry the native model id: {}",
+        calls[0].path
+    );
+    assert!(
+        !calls[0].path.contains("%2F"),
+        "the outbound path must not keep the encoded vendor separator: {}",
+        calls[0].path
+    );
 }

@@ -1,4 +1,5 @@
-//! Inbound model id in OpenRouter wire format → catalog model identity.
+//! Model id compatibility: inbound wire spelling → catalog identity → outbound
+//! supplier id.
 //!
 //! OpenRouter-style clients pass model ids as `vendor/slug` — `openai/gpt-4o`,
 //! `anthropic/claude-opus-4.5`, optionally with a trailing variant suffix
@@ -19,6 +20,14 @@
 //! apply it **only after their exact lookup misses**, so well-formed requests
 //! keep their existing resolution, and multi-key matches stay ambiguous
 //! (routing never guesses).
+//!
+//! The same module owns the three decisions that must agree on every surface:
+//! the ordered routing identities (`vendor/model` → bare model id), the
+//! supplier-facing outbound id (official native / relay qualified / explicit
+//! override preserved), and path-segment percent coding for Gemini-style
+//! media routes. HTTP field-name mechanics live in
+//! `application::invocation::model_fields`; this domain layer stays free of
+//! transport shapes.
 //!
 //! ## Scope
 //!
@@ -162,6 +171,200 @@ pub(crate) fn relay_namespace_stripped(value: &str) -> Option<String> {
 /// `/`, or the whole value when it carries no `/`.
 pub(crate) fn model_id_segment(value: &str) -> &str {
     value.trim().rsplit('/').next().unwrap_or(value.trim())
+}
+
+/// Ordered routing identities for a requested model id.
+///
+/// 1. The vendor-qualified catalog identity: `vendor/modelId`, with request
+///    separators normalized (`deepseek:deepseek-flash` →
+///    `deepseek/deepseek-flash`, full-width forms folded, relay overlays
+///    preserved) and one leading `region` segment dropped
+///    (`deepseek/cn/deepseek-flash` → `deepseek/deepseek-flash`). This is what
+///    the caller resolves and routes first.
+/// 2. The bare model id: the part a vendor addresses the model by
+///    (`deepseek-flash`, or `anthropic/claude-opus-4.5` behind a relay
+///    namespace). This is the fallback identity: if the vendor-qualified
+///    route cannot be selected, routing retries with the bare model id.
+///
+/// Duplicates (case-insensitive) and empty values are dropped. A request that
+/// never carried a vendor prefix yields exactly one identity (the normalized
+/// id) and the routing layer has nothing to fall back to.
+pub(crate) fn model_route_identities(requested_model: &str) -> Vec<String> {
+    let normalized = normalize_wire_model_id(requested_model);
+    if normalized.is_empty() {
+        return Vec::new();
+    }
+    let mut identities = Vec::with_capacity(2);
+    if let Some(identity) = crate::domain::parse_request_model_identity(&normalized) {
+        push_route_identity(
+            &mut identities,
+            &format!("{}/{}", identity.vendor_code, identity.model_id()),
+        );
+        push_route_identity(&mut identities, &identity.model_id());
+    } else {
+        push_route_identity(&mut identities, &normalized);
+    }
+    identities
+}
+
+fn push_route_identity(identities: &mut Vec<String>, value: &str) {
+    let value = value.trim();
+    if value.is_empty()
+        || identities
+            .iter()
+            .any(|existing| existing.eq_ignore_ascii_case(value))
+    {
+        return;
+    }
+    identities.push(value.to_owned());
+}
+
+/// Every JSON/query/multipart field a vendor-native request may use to name a
+/// model. The OpenAI surface uses `model`, Anthropic/OpenAI use `model`,
+/// ElevenLabs/MiniMax audio use `model_id`, Kling uses `model_name`.
+pub(crate) const MODEL_REQUEST_FIELD_NAMES: [&str; 5] =
+    ["model", "model_name", "modelName", "model_id", "modelId"];
+
+/// Resolves the model id written into the provider request body/query/path.
+///
+/// Official suppliers receive the vendor-native id; relays receive the
+/// fully-qualified catalog key; an explicit `provider_model` that names a
+/// different model is preserved. The resolved catalog key is authoritative
+/// when present, which also strips vendor slugs the shared catalog parser's
+/// known-vendor table does not list yet.
+///
+/// Returns `None` only when every input is blank.
+pub(crate) fn resolve_provider_model_id(
+    supplier_type: Option<&str>,
+    catalog_key: Option<&str>,
+    model: Option<&str>,
+    provider_model: Option<&str>,
+) -> Option<String> {
+    let catalog_key = catalog_key.map(str::trim).filter(|value| !value.is_empty());
+    let model = model.map(str::trim).filter(|value| !value.is_empty());
+    let provider_model = provider_model
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    let native_from_catalog = catalog_key.and_then(catalog_native_model_id);
+    let relay = supplier_type.is_some_and(|kind| kind.trim().eq_ignore_ascii_case("relay"));
+
+    if let Some(value) = provider_model {
+        if !provider_is_catalog_spelling(value, catalog_key, native_from_catalog.as_deref()) {
+            // An explicit override is the account's authoritative model name
+            // (mapping target, Azure deployment, provider-native alias). It may
+            // intentionally contain a vendor-looking head, so it is never
+            // passed through the known-vendor stripper; a relay still gets its
+            // separators folded into the qualified form it addresses models by.
+            return Some(if relay {
+                canonical_qualified_model_id(value)
+            } else {
+                value.to_owned()
+            });
+        }
+    }
+
+    if relay {
+        return catalog_key
+            .map(str::to_owned)
+            .or_else(|| provider_model.map(canonical_qualified_model_id))
+            .or_else(|| model.map(str::to_owned));
+    }
+
+    if let Some(native) = native_from_catalog {
+        return Some(native);
+    }
+    // API-resource media routes often carry a model that has no catalog row
+    // (vendor-native video/audio/music ids such as `seedance-1.0`). Apply the
+    // shared parser so a known vendor prefix (`deepseek/deepseek-flash`,
+    // `openai/gpt-4o`) is still removed before dialing an official vendor.
+    provider_model
+        .map(crate::domain::provider_native_model_id)
+        .or_else(|| model.map(crate::domain::provider_native_model_id))
+}
+
+/// The model-id segment of a canonical `vendor/model` catalog key.
+fn catalog_native_model_id(catalog_key: &str) -> Option<String> {
+    crate::domain::parse_model_catalog_identity(catalog_key)
+        .map(|identity| identity.model_id())
+        .filter(|value| !value.is_empty())
+}
+
+/// Whether the configured provider model merely spells the catalog model:
+/// either the catalog key itself or a dialect spelling whose model part is the
+/// catalog-native id (`deepseek:deepseek-flash`, `zhipuai/glm-4.6`).
+///
+/// A different model id is an explicit override and must be preserved.
+fn provider_is_catalog_spelling(
+    provider_model: &str,
+    catalog_key: Option<&str>,
+    native_from_catalog: Option<&str>,
+) -> bool {
+    if catalog_key.is_some_and(|key| provider_model.eq_ignore_ascii_case(key)) {
+        return true;
+    }
+    let Some(native) = native_from_catalog else {
+        return false;
+    };
+    if crate::domain::provider_native_model_id(provider_model).eq_ignore_ascii_case(native) {
+        return true;
+    }
+    crate::domain::parse_request_model_identity(provider_model)
+        .map(|identity| identity.model_id().eq_ignore_ascii_case(native))
+        .unwrap_or(false)
+}
+
+/// Canonicalizes a `vendor/model` id without dropping the vendor head.
+///
+/// Relay suppliers are addressed by the qualified id, so their dialect
+/// spellings (`vendor:model`, full width) must be folded without losing the
+/// vendor segment.
+fn canonical_qualified_model_id(value: &str) -> String {
+    match crate::domain::parse_request_model_identity(value) {
+        Some(identity) => format!("{}/{}", identity.vendor_code, identity.model_id()),
+        None => value.to_owned(),
+    }
+}
+
+/// Percent-decodes a model id read from a URL path segment.
+///
+/// Gemini-style media paths carry the model inside the path
+/// (`/v1beta/models/{model}:generateImages`). An OpenRouter-shaped id contains
+/// `/`, so clients percent-encode it (`anthropic%2Fclaude-opus-4.5`). The
+/// catalog must see the decoded id, while the outbound path must be encoded
+/// again.
+pub(crate) fn decode_model_path_segment(value: &str) -> String {
+    let bytes = value.as_bytes();
+    let mut decoded = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] == b'%' && index + 2 < bytes.len() {
+            if let Ok(hex) = std::str::from_utf8(&bytes[index + 1..index + 3]) {
+                if let Ok(byte) = u8::from_str_radix(hex, 16) {
+                    decoded.push(byte);
+                    index += 3;
+                    continue;
+                }
+            }
+        }
+        decoded.push(bytes[index]);
+        index += 1;
+    }
+    String::from_utf8(decoded).unwrap_or_else(|_| value.to_owned())
+}
+
+/// Percent-encodes a model id for use inside a URL path segment. `/` must be
+/// encoded so a relay-qualified id stays one path segment.
+pub(crate) fn encode_model_path_segment(value: &str) -> String {
+    let mut encoded = String::with_capacity(value.len());
+    for byte in value.bytes() {
+        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~') {
+            encoded.push(char::from(byte));
+        } else {
+            encoded.push('%');
+            encoded.push_str(&format!("{byte:02X}"));
+        }
+    }
+    encoded
 }
 
 /// Fallback probes for a requested model id whose exact lookup missed, in
@@ -454,5 +657,154 @@ mod tests {
             "deepseek/deepseek-flash:free",
             normalize_wire_model_id("deepseek|deepseek-flash:free")
         );
+    }
+
+    #[test]
+    fn route_identities_prefer_the_vendor_qualified_form_then_the_bare_model_id() {
+        assert_eq!(
+            vec!["deepseek/deepseek-flash", "deepseek-flash"],
+            model_route_identities("deepseek/deepseek-flash")
+        );
+        // Separator dialects and the IME space reach the same two identities.
+        for spelling in [
+            "deepseek:deepseek-flash",
+            "deepseek： deepseek-flash",
+            "deepseek|deepseek-flash",
+            "  deepseek／deepseek-flash  ",
+        ] {
+            assert_eq!(
+                vec!["deepseek/deepseek-flash", "deepseek-flash"],
+                model_route_identities(spelling),
+                "spelling: {spelling}"
+            );
+        }
+        // A region is routing state, not identity: drop the middle segment.
+        assert_eq!(
+            vec!["deepseek/deepseek-flash", "deepseek-flash"],
+            model_route_identities("deepseek/cn/deepseek-flash")
+        );
+        // A relay namespace stays part of the qualified identity and is
+        // stripped only for the bare fallback.
+        assert_eq!(
+            vec![
+                "openrouter/anthropic/claude-opus-4.5",
+                "anthropic/claude-opus-4.5"
+            ],
+            model_route_identities("openrouter：anthropic：claude-opus-4.5")
+        );
+        // No vendor separator: one identity, nothing to fall back to.
+        assert_eq!(vec!["gpt-4o"], model_route_identities("gpt-4o"));
+        assert!(model_route_identities("   ").is_empty());
+        // A model id with its own slash keeps it: only the leading vendor
+        // segment is routing syntax.
+        assert_eq!(
+            vec![
+                "openrouter/meta-llama/llama-3-70b",
+                "meta-llama/llama-3-70b"
+            ],
+            model_route_identities("openrouter/meta-llama/llama-3-70b")
+        );
+    }
+
+    #[test]
+    fn provider_model_resolution_covers_official_relay_and_explicit_override() {
+        // Official (or unknown) suppliers receive the vendor-native id, with
+        // the catalog key as the structural authority.
+        assert_eq!(
+            Some("deepseek-flash".to_owned()),
+            resolve_provider_model_id(
+                Some("official"),
+                Some("deepseek/deepseek-flash"),
+                Some("deepseek-flash"),
+                Some("deepseek/deepseek-flash"),
+            )
+        );
+        // Unknown catalog vendor is still stripped structurally.
+        assert_eq!(
+            Some("glm-4.6".to_owned()),
+            resolve_provider_model_id(
+                Some("official"),
+                Some("zhipuai/glm-4.6"),
+                Some("glm-4.6"),
+                Some("zhipuai:glm-4.6"),
+            )
+        );
+        // API-resource media route with no catalog row still strips a known
+        // vendor prefix.
+        assert_eq!(
+            Some("gpt-4o".to_owned()),
+            resolve_provider_model_id(Some("official"), None, Some("openai/gpt-4o"), None)
+        );
+        // Relay keeps the fully-qualified catalog key and upgrades a native
+        // route id to it.
+        assert_eq!(
+            Some("deepseek/deepseek-flash".to_owned()),
+            resolve_provider_model_id(
+                Some("relay"),
+                Some("deepseek/deepseek-flash"),
+                Some("deepseek-flash"),
+                Some("deepseek:deepseek-flash"),
+            )
+        );
+        // Explicit provider overrides are authoritative and preserved.
+        assert_eq!(
+            Some("gpt-4o-mini-provider".to_owned()),
+            resolve_provider_model_id(
+                Some("official"),
+                Some("openai/gpt-4o-mini"),
+                Some("gpt-4o-mini"),
+                Some("gpt-4o-mini-provider"),
+            )
+        );
+        assert_eq!(
+            Some("azure-deployment-42".to_owned()),
+            resolve_provider_model_id(
+                Some("official"),
+                Some("openai/gpt-4o-mini"),
+                Some("gpt-4o-mini"),
+                Some("azure-deployment-42"),
+            )
+        );
+        assert_eq!(
+            Some("ft:gpt-4o-2024-08-13:org:abc".to_owned()),
+            resolve_provider_model_id(
+                Some("official"),
+                Some("openai/gpt-4o-mini"),
+                Some("gpt-4o-mini"),
+                Some("ft:gpt-4o-2024-08-13:org:abc"),
+            )
+        );
+        // Model ids that legitimately contain `/` must survive: only the
+        // catalog vendor head is routing syntax.
+        assert_eq!(
+            Some("meta-llama/llama-3-70b".to_owned()),
+            resolve_provider_model_id(
+                Some("official"),
+                Some("meta-llama/meta-llama/llama-3-70b"),
+                Some("meta-llama/llama-3-70b"),
+                None,
+            )
+        );
+        assert_eq!(None, resolve_provider_model_id(None, None, None, None));
+    }
+
+    #[test]
+    fn model_path_segments_round_trip_qualified_ids() {
+        for model in [
+            "openai/gpt-4o",
+            "openrouter/anthropic/claude-opus-4.5",
+            "meta-llama/llama-3-70b",
+            "seedance-1.0",
+        ] {
+            let encoded = encode_model_path_segment(model);
+            assert!(!encoded.contains('/'), "encoded path segment: {encoded}");
+            assert_eq!(model, decode_model_path_segment(&encoded));
+        }
+        assert_eq!(
+            "openai/gpt-4o",
+            decode_model_path_segment("openai%2Fgpt-4o")
+        );
+        // An already-decoded segment survives unchanged.
+        assert_eq!("gpt-4o", decode_model_path_segment("gpt-4o"));
     }
 }

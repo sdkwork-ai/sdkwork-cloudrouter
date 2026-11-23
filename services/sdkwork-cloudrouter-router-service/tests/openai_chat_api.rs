@@ -1210,6 +1210,92 @@ async fn openai_chat_completions_accepts_slash_native_model_and_sends_native_mod
 }
 
 #[tokio::test]
+async fn openai_chat_completions_openrouter_alias_routes_to_the_catalog_qualified_id() {
+    let hasher =
+        Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
+    let key_hash = hasher.hash_secret("sk-standard-secret").unwrap();
+    let mut catalog = catalog_with_hashed_api_key_without_routing(key_hash);
+    catalog.add_vendor(ModelVendorDefinition::new(
+        "anthropic",
+        ModelVendor::Anthropic,
+        "Anthropic",
+    ));
+    catalog.add_model(
+        AiModel::new(
+            "claude-opus-4-5",
+            "Claude Opus 4.5",
+            "anthropic",
+            vec!["chat"],
+        )
+        .with_catalog_key("anthropic/claude-opus-4-5"),
+    );
+    add_composite_prices(
+        &mut catalog,
+        "anthropic/claude-opus-4-5",
+        "claude-opus-4-5",
+        "openrouter",
+        3004,
+        "1.250000",
+        "0.900000",
+    );
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openrouter", 3004)
+            .with_upstream_endpoint(
+                Some("http://upstream-account-group.internal/openrouter"),
+                Some("vault://providers/openrouter/account/group-10"),
+            )
+            .with_resource_scoped_account_group_binding(
+                10,
+                1,
+                100,
+                Vec::<String>::new(),
+                vec!["llm"],
+            ),
+    );
+    // An OpenRouter-style relay addresses models by the fully-qualified
+    // catalog key, while the inbound id uses the dotted OpenRouter spelling.
+    catalog.set_supplier_type("openrouter", "relay");
+
+    let captured = Arc::new(Mutex::new(Vec::new()));
+    let relay = Arc::new(RecordingRelay::new(Arc::clone(&captured)));
+    let router = sdkwork_cloudrouter_router_service::api::openai_chat_completions_router_with_relay(
+        Arc::new(catalog),
+        hasher,
+        relay,
+    );
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/chat/completions")
+                .header("authorization", "Bearer sk-standard-secret")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"model":"anthropic/claude-opus-4.5","messages":[{"role":"user","content":"ping"}]}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    let status = response.status();
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    assert_eq!(
+        StatusCode::OK,
+        status,
+        "unexpected body: {}",
+        String::from_utf8_lossy(&body)
+    );
+    let captured = captured.lock().unwrap();
+    assert_eq!(1, captured.len());
+    assert_eq!("openrouter", captured[0].supplier_code);
+    assert_eq!("anthropic/claude-opus-4-5", captured[0].provider_model);
+}
+
+#[tokio::test]
 async fn openai_chat_completions_routes_alibaba_regional_model_through_region_scoped_group_channel_route(
 ) {
     let hasher =
@@ -1496,6 +1582,234 @@ async fn openai_chat_completions_routes_model_candidates_through_bound_group_cha
         Some("vault://providers/openrouter-bound/account/group-10"),
         captured[0].provider_secret_ref.as_deref()
     );
+}
+
+#[tokio::test]
+async fn openai_chat_completions_routes_vendor_qualified_model_by_bare_model_fallback() {
+    let hasher =
+        Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let mut catalog = InMemoryPricingCatalog::default();
+    for (code, vendor) in [
+        ("deepseek", ModelVendor::DeepSeek),
+        ("fallback", ModelVendor::Custom),
+    ] {
+        catalog.add_vendor(ModelVendorDefinition::new(code, vendor, code));
+    }
+    // The vendor-qualified catalog identity exists, but has no price/route for
+    // the group: this is the shape that used to 503 before the fallback.
+    catalog.add_model(
+        AiModel::new("deepseek-flash", "DeepSeek Flash", "deepseek", vec!["chat"])
+            .with_catalog_key("deepseek/deepseek-flash"),
+    );
+    // The same bare model id is served by another catalog key, which is
+    // routable and priced.
+    catalog.add_model(
+        AiModel::new("deepseek-flash", "DeepSeek Flash", "fallback", vec!["chat"])
+            .with_catalog_key("fallback/deepseek-flash"),
+    );
+    catalog.add_model_upstream_route(
+        ModelUpstreamRoute::new_for_catalog_key(
+            "fallback/deepseek-flash",
+            "deepseek-flash",
+            "fallback",
+            4001,
+            "deepseek-flash",
+        )
+        .with_upstream_endpoint(
+            Some("http://provider-proxy.internal/fallback"),
+            Some("vault://providers/fallback/account/main"),
+        ),
+    );
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("fallback", 4001)
+            .with_upstream_endpoint(
+                Some("http://provider-proxy.internal/fallback"),
+                Some("vault://providers/fallback/account/main"),
+            )
+            .with_account_group_binding(10, 100, 100),
+    );
+    catalog.add_plan(PricingPlan::new(
+        "standard",
+        PriceSide::OfficialReference,
+        DecimalValue::parse("1.200000").unwrap(),
+        Money::usd("0.000000").unwrap(),
+    ));
+    catalog.add_upstream_account_group(
+        UpstreamAccountGroup::new(
+            10,
+            "standard-group",
+            "standard",
+            DecimalValue::parse("1.000000").unwrap(),
+            DecimalValue::parse("1.100000").unwrap(),
+        )
+        .with_routing_strategy(UpstreamAccountRoutingStrategy::Failover),
+    );
+    catalog.add_api_key(GatewayApiKey::new(101, 10, "sk-live", &key_hash).with_owner(10, 20, 30));
+    for meter in [
+        BillingMeter::LlmInputToken,
+        BillingMeter::LlmOutputToken,
+        BillingMeter::LlmCacheReadToken,
+    ] {
+        catalog.add_price(ModelPrice::new_for_catalog_key(
+            "fallback/deepseek-flash",
+            "deepseek-flash",
+            PriceSide::OfficialReference,
+            meter.clone(),
+            Money::usd("0.150000").unwrap(),
+        ));
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                "fallback/deepseek-flash",
+                "deepseek-flash",
+                PriceSide::UpstreamCost,
+                meter,
+                Money::usd("0.100000").unwrap(),
+            )
+            .for_upstream_account("fallback", 4001),
+        );
+    }
+
+    let captured = Arc::new(Mutex::new(Vec::new()));
+    let relay = Arc::new(RecordingRelay::new(Arc::clone(&captured)));
+    let router = sdkwork_cloudrouter_router_service::api::openai_chat_completions_router_with_relay(
+        Arc::new(catalog),
+        hasher,
+        relay,
+    );
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/chat/completions")
+                .header("authorization", "Bearer sk-live-secret")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"model":"deepseek/deepseek-flash","messages":[{"role":"user","content":"ping"}]}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::OK, response.status());
+    let captured = captured.lock().unwrap();
+    assert_eq!(1, captured.len());
+    assert_eq!(4001, captured[0].provider_account_id);
+    // Official/unknown suppliers receive the vendor-native model id: the
+    // fallback catalog key's vendor head must never reach the upstream call.
+    assert_eq!("deepseek-flash", captured[0].provider_model);
+}
+
+#[tokio::test]
+async fn openai_chat_completions_sends_relay_suppliers_the_qualified_catalog_key() {
+    let hasher =
+        Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let mut catalog = InMemoryPricingCatalog::default();
+    catalog.add_vendor(ModelVendorDefinition::new(
+        "deepseek",
+        ModelVendor::DeepSeek,
+        "DeepSeek",
+    ));
+    catalog.add_model(
+        AiModel::new("deepseek-flash", "DeepSeek Flash", "deepseek", vec!["chat"])
+            .with_catalog_key("deepseek/deepseek-flash"),
+    );
+    catalog.add_model_upstream_route(
+        ModelUpstreamRoute::new_for_catalog_key(
+            "deepseek/deepseek-flash",
+            "deepseek/deepseek-flash",
+            "relay-account",
+            4002,
+            "deepseek-flash",
+        )
+        .with_upstream_endpoint(
+            Some("http://provider-proxy.internal/relay"),
+            Some("vault://providers/relay/account/main"),
+        ),
+    );
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("relay-account", 4002)
+            .with_upstream_endpoint(
+                Some("http://provider-proxy.internal/relay"),
+                Some("vault://providers/relay/account/main"),
+            )
+            .with_account_group_binding(10, 100, 100),
+    );
+    catalog.add_plan(PricingPlan::new(
+        "standard",
+        PriceSide::OfficialReference,
+        DecimalValue::parse("1.200000").unwrap(),
+        Money::usd("0.000000").unwrap(),
+    ));
+    catalog.add_upstream_account_group(
+        UpstreamAccountGroup::new(
+            10,
+            "standard-group",
+            "standard",
+            DecimalValue::parse("1.000000").unwrap(),
+            DecimalValue::parse("1.100000").unwrap(),
+        )
+        .with_routing_strategy(UpstreamAccountRoutingStrategy::Failover),
+    );
+    catalog.add_api_key(GatewayApiKey::new(101, 10, "sk-live", &key_hash).with_owner(10, 20, 30));
+    // A relay resells the catalog and addresses models by the fully-qualified
+    // catalog key; it is not an official vendor that owns a bare model id.
+    catalog.set_supplier_type("relay-account", "relay");
+    for meter in [
+        BillingMeter::LlmInputToken,
+        BillingMeter::LlmOutputToken,
+        BillingMeter::LlmCacheReadToken,
+    ] {
+        catalog.add_price(ModelPrice::new_for_catalog_key(
+            "deepseek/deepseek-flash",
+            "deepseek-flash",
+            PriceSide::OfficialReference,
+            meter.clone(),
+            Money::usd("0.150000").unwrap(),
+        ));
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                "deepseek/deepseek-flash",
+                "deepseek-flash",
+                PriceSide::UpstreamCost,
+                meter,
+                Money::usd("0.100000").unwrap(),
+            )
+            .for_upstream_account("relay-account", 4002),
+        );
+    }
+
+    let captured = Arc::new(Mutex::new(Vec::new()));
+    let relay = Arc::new(RecordingRelay::new(Arc::clone(&captured)));
+    let router = sdkwork_cloudrouter_router_service::api::openai_chat_completions_router_with_relay(
+        Arc::new(catalog),
+        hasher,
+        relay,
+    );
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/chat/completions")
+                .header("authorization", "Bearer sk-live-secret")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"model":"deepseek/deepseek-flash","messages":[{"role":"user","content":"ping"}]}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::OK, response.status());
+    let captured = captured.lock().unwrap();
+    assert_eq!(1, captured.len());
+    assert_eq!(4002, captured[0].provider_account_id);
+    assert_eq!("deepseek/deepseek-flash", captured[0].provider_model);
 }
 
 #[tokio::test]

@@ -15,6 +15,7 @@ mod error;
 mod idempotency;
 mod interceptor;
 mod metrics_interceptor;
+mod model_fields;
 mod multipart_form;
 mod openai_classifier;
 mod payload;

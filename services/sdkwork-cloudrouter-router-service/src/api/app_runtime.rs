@@ -4112,7 +4112,7 @@ where
     };
     let routing_catalog_key =
         runtime_route_scope_catalog_key(requested_model_key, catalog_model.catalog_key.as_str());
-    match UpstreamRouteSelector::new(catalog).select_model_route_plan(
+    match UpstreamRouteSelector::new(catalog).select_model_route_plan_with_fallback(
         SelectUpstreamModelRouteQuery {
             context,
             catalog_key: routing_catalog_key.clone(),
@@ -4123,7 +4123,8 @@ where
             pricing_required: true,
         },
     ) {
-        Ok(plan) => {
+        Ok(selection) => {
+            let selected_catalog_key = selection.catalog_key;
             tracing::info!(
                 tenant_id = subject.tenant_id,
                 organization_id = subject.organization_id,
@@ -4131,9 +4132,11 @@ where
                 api_key_id = api_key.id,
                 group_id = api_key.default_account_group_id,
                 requested_model_key,
-                routing_catalog_key,
+                routing_catalog_key = %selected_catalog_key,
+                qualified_catalog_key = %routing_catalog_key,
+                fallback_used = selection.fallback_used,
                 capability = capability_label,
-                route_count = plan.routes.len(),
+                route_count = selection.plan.routes.len(),
                 "app runtime gateway route probe succeeded"
             );
             Ok(RuntimeGatewayRouteProbeStatus::Routable)
