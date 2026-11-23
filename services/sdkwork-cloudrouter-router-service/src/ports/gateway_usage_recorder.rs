@@ -644,7 +644,10 @@ impl GatewayUsageQuantity {
             BillingMeter::ApiResult | BillingMeter::VideoResult | BillingMeter::SfxResult => {
                 Self::results(positive_integer_quantity("result_count", quantity)?)
             }
-            BillingMeter::ApiItem | BillingMeter::RerankSearch | BillingMeter::RerankDocument => {
+            BillingMeter::ApiItem
+            | BillingMeter::RerankSearch
+            | BillingMeter::RerankDocument
+            | BillingMeter::DocumentPage => {
                 Self::items(positive_integer_quantity("item_count", quantity)?)
             }
             BillingMeter::TtsInputCharacter | BillingMeter::SpeechCharacter => {

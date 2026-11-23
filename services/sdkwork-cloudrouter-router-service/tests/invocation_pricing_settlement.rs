@@ -299,9 +299,11 @@ fn time_window_rate_metadata() -> PricingRateMetadata {
             start_time: NaiveTime::from_hms_opt(9, 0, 0).expect("start"),
             end_time: NaiveTime::from_hms_opt(12, 0, 0).expect("end"),
             end_day_offset: 0,
+            holiday_only: false,
         }],
         include_dates: Vec::new(),
         exclude_dates: Vec::new(),
+        holiday_dates: Vec::new(),
     });
     metadata.conditions.clear();
     metadata.minimum_quantity = DecimalValue::ONE;
@@ -324,6 +326,7 @@ fn deepseek_window_metadata(
         weekly_windows: windows,
         include_dates: Vec::new(),
         exclude_dates: Vec::new(),
+        holiday_dates: Vec::new(),
     });
     metadata
 }
@@ -592,6 +595,7 @@ async fn deepseek_peak_and_weekend_offpeak_windows_partition_the_week() {
         start_time: NaiveTime::from_hms_opt(start, 0, 0).expect("start"),
         end_time: NaiveTime::from_hms_opt(end, 0, 0).expect("end"),
         end_day_offset: 0,
+        holiday_only: false,
     };
     let weekend = |code: &str| PricingWeeklyWindow {
         window_code: code.to_owned(),
@@ -599,6 +603,7 @@ async fn deepseek_peak_and_weekend_offpeak_windows_partition_the_week() {
         start_time: NaiveTime::from_hms_opt(0, 0, 0).expect("start"),
         end_time: NaiveTime::from_hms_opt(23, 59, 59).expect("end"),
         end_day_offset: 0,
+        holiday_only: false,
     };
     let night = PricingWeeklyWindow {
         window_code: "off_peak_weekday_night".to_owned(),
@@ -606,6 +611,7 @@ async fn deepseek_peak_and_weekend_offpeak_windows_partition_the_week() {
         start_time: NaiveTime::from_hms_opt(18, 0, 0).expect("start"),
         end_time: NaiveTime::from_hms_opt(0, 0, 0).expect("end"),
         end_day_offset: 1,
+        holiday_only: false,
     };
     let peak = vec![
         weekday(9, 12, "peak_weekday_morning"),
@@ -677,6 +683,7 @@ async fn time_window_calendar_include_and_exclude_dates_override_weekday() {
             start_time: NaiveTime::from_hms_opt(9, 0, 0).expect("start"),
             end_time: NaiveTime::from_hms_opt(12, 0, 0).expect("end"),
             end_day_offset: 0,
+            holiday_only: false,
         }],
     );
     let schedule = metadata.schedule.as_mut().expect("schedule");
