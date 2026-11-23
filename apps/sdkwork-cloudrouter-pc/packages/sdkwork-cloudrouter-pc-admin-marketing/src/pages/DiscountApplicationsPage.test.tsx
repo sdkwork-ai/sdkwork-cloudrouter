@@ -13,6 +13,7 @@ import {
   backendPromotionDiscountApplicationsList,
   backendReleasePromotionDiscountApplication,
   backendSettlePromotionDiscountApplication,
+  formatMarketingTimestamp,
 } from '../marketingService';
 import { DiscountApplicationsPage } from './DiscountApplicationsPage';
 
@@ -136,6 +137,23 @@ describe('DiscountApplicationsPage reference filters', () => {
     });
 
     await waitFor(() => expect(lastCallParams()).toEqual({ page: 1, pageSize: 20, status: undefined }));
+  });
+
+  it('renders appliedAt from the UTC server form as a local timestamp', async () => {
+    // The promotion backend stores `applied_at` as UTC (`YYYY-MM-DD HH:MM:SS`).
+    // The cell must render the local instant, never the raw UTC text.
+    const appliedAt = '2026-11-15 16:45:00';
+    vi.mocked(backendPromotionDiscountApplicationsList).mockResolvedValue({
+      items: [{ ...applicationRow, appliedAt }],
+      pageInfo,
+    } as never);
+
+    render(<DiscountApplicationsPage />);
+
+    await screen.findByText('AP-1');
+    const row = screen.getByText('AP-1').closest('tr') as HTMLElement;
+    expect(row).toHaveTextContent(formatMarketingTimestamp(appliedAt, 'en'));
+    expect(row).not.toHaveTextContent(appliedAt);
   });
 });
 

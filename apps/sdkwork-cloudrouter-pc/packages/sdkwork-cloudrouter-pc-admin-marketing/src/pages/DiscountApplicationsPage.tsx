@@ -340,8 +340,8 @@ export function DiscountApplicationsPage() {
   return (
     <>
       <MarketingListView
-        title={t('admin.marketing.promotions.discountApplications.title', 'Usage History')}
-        description={t('admin.marketing.promotions.discountApplications.desc', 'Coupon usage history: checkout applications, settlements, releases, and reversals tied to orders.')}
+        title={t('admin.marketing.promotions.discountApplications.title', 'Discount Applications')}
+        description={t('admin.marketing.promotions.discountApplications.desc', 'Order-checkout discount applications: reservations, settlements, releases, and rollbacks tied to orders. This is a separate ledger from redemption attempts.')}
         load={load}
         columns={columns}
         showStatusFilter

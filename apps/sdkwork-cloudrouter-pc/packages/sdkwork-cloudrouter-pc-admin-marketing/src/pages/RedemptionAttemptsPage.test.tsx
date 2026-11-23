@@ -10,7 +10,7 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { backendRedemptionAttemptsList } from '../marketingService';
+import { backendRedemptionAttemptsList, formatMarketingTimestamp } from '../marketingService';
 import { RedemptionAttemptsPage } from './RedemptionAttemptsPage';
 
 vi.mock('react-i18next', () => {
@@ -40,6 +40,7 @@ const succeededAttempt = {
   id: 'attempt-1',
   codeId: 'code-1',
   submittedCodeSuffix: '9F2K',
+  submittedCodeMasked: 'WELC****9F2K',
   subjectType: 'user',
   subjectId: 'user-1001-with-a-very-long-identifier',
   outcome: 'succeeded',
@@ -58,6 +59,7 @@ const failedAttempt = {
   id: 'attempt-2',
   codeId: 'code-2',
   submittedCodeSuffix: '7Q1X',
+  submittedCodeMasked: 'AB12****7Q1X',
   subjectType: 'user',
   subjectId: 'user-2002',
   outcome: 'failed',
@@ -135,22 +137,44 @@ describe('RedemptionAttemptsPage rows', () => {
     }
   });
 
-  it('shows only the submitted code suffix, never a full code', async () => {
+  it('shows the masked submitted code, never a full code', async () => {
     mockAttempts([{ ...succeededAttempt, fullCode: 'WELCOME-FULL-CODE-1234' }]);
 
     render(<RedemptionAttemptsPage />);
 
-    const suffix = await screen.findByText('9F2K');
-    expect(suffix).toHaveAttribute('title', 'last 4 characters of the submitted code');
-    expect(suffix).toHaveClass('font-mono');
+    const masked = await screen.findByText('WELC****9F2K');
+    expect(masked).toHaveAttribute(
+      'title',
+      'Masked submitted code; the redeemable value is never stored',
+    );
+    expect(masked).toHaveClass('font-mono');
+    // The suffix alone and the full code are both absent from the DOM.
+    expect(screen.queryByText('9F2K')).not.toBeInTheDocument();
     expect(screen.queryByText('WELCOME-FULL-CODE-1234')).not.toBeInTheDocument();
   });
 
-  it('shows an em dash for the code suffix when codeId or suffix is empty', async () => {
+  it('falls back to the stored suffix for rows recorded before the mask column existed', async () => {
+    mockAttempts([{
+      ...failedAttempt,
+      id: 'attempt-legacy',
+      codeId: null,
+      submittedCodeMasked: '',
+      requestNo: 'REQ-LEGACY',
+    }]);
+
+    render(<RedemptionAttemptsPage />);
+
+    const row = (await screen.findByText('REQ-LEGACY')).closest('tr') as HTMLElement;
+    // No mask column (legacy row): `****` plus the suffix keeps the row readable.
+    expect(row.querySelectorAll('td')[1]).toHaveTextContent('****7Q1X');
+  });
+
+  it('shows an em dash only when neither the mask nor the suffix exists', async () => {
     mockAttempts([{
       ...failedAttempt,
       id: 'attempt-no-code',
       codeId: null,
+      submittedCodeMasked: '',
       submittedCodeSuffix: '',
       requestNo: 'REQ-NO-CODE',
     }]);
@@ -159,6 +183,21 @@ describe('RedemptionAttemptsPage rows', () => {
 
     const row = (await screen.findByText('REQ-NO-CODE')).closest('tr') as HTMLElement;
     expect(row.querySelectorAll('td')[1]).toHaveTextContent('—');
+  });
+
+  it('renders the attempt time from the UTC server form as a local timestamp', async () => {
+    // The backend stores/writes UTC (`YYYY-MM-DD HH:MM:SS`); the cell must show
+    // the local rendering, never the raw UTC text.
+    mockAttempts([succeededAttempt]);
+
+    render(<RedemptionAttemptsPage />);
+
+    const expected = formatMarketingTimestamp(succeededAttempt.occurredAt, 'en');
+    await screen.findByText('REQ-20261110-0001');
+    const row = screen.getByText('REQ-20261110-0001').closest('tr') as HTMLElement;
+    const timeCell = row.querySelectorAll('td')[0];
+    expect(timeCell).toHaveTextContent(expected);
+    expect(timeCell).not.toHaveTextContent(succeededAttempt.occurredAt);
   });
 });
 
