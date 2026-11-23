@@ -404,7 +404,7 @@ export function TagBadge({ tag, small, className }: { tag: string; small?: boole
   );
 }
 
-export function TagFilter({ value, onChange, className }: { value: string[]; onChange: (value: string[]) => void; className?: string }) {
+export function TagFilter({ value, onChange, counts, className }: { value: string[]; onChange: (value: string[]) => void; counts?: Readonly<Record<string, number>>; className?: string }) {
   const { t } = useTranslation();
   const toggle = (tag: string) => {
     onChange(value.includes(tag) ? value.filter((item) => item !== tag) : [...value, tag]);
@@ -413,9 +413,10 @@ export function TagFilter({ value, onChange, className }: { value: string[]; onC
     <div className={`flex flex-wrap items-center gap-1 ${className ?? ''}`}>
       <span className="mr-1 shrink-0 text-xs font-medium text-slate-600 dark:text-slate-300">{t('admin.upstream.accountGroup.tag.title')}</span>
       {SUPPORTED_GROUP_TAGS.map((tag) => (
-        <button key={tag} type="button" className={typeTabClass(value.includes(tag))} onClick={() => toggle(tag)}>
+        <button key={tag} type="button" aria-pressed={value.includes(tag)} className={typeTabClass(value.includes(tag))} onClick={() => toggle(tag)}>
           <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: TAG_DOT_COLORS[tag as AccountGroupTag] }} />
           {t(`admin.upstream.accountGroup.tag.${tag}`)}
+          {counts?.[tag] ? <span className={`ml-1 tabular-nums ${value.includes(tag) ? 'text-white/80' : 'text-slate-400'}`}>{counts[tag]}</span> : null}
         </button>
       ))}
       {value.length > 0 ? (

@@ -1,4 +1,4 @@
-# 商业化中转站路由审计与加固（2026-11-22）
+﻿# 商业化中转站路由审计与加固（2026-11-22）
 
 ## 1. 背景
 
@@ -422,18 +422,19 @@ dispatch 不读取，按策略轮换（per_request/per_attempt）实际未生效
    ~~`supplier_type` 寻址~~（4.1-J）、~~`least_cost` 真实比价~~（4.1-L）、
    ~~非幂等 POST 重放~~（4.1-O）、~~Base URL 出站校验~~（4.1-P）、
    ~~托管密钥归属~~（4.1-Q）、~~错误语义与 `on_error` 可观测~~（4.1-R/S）、
-   ~~流式取消用量~~（4.1-T）、~~流总时限~~（4.1-U）：已完成。
-2. **流生命周期端到端测试**：~~客户端断开的计费闭环~~（已补，见 4.1-T）。
-   剩余：超时/上游中断的结算断言（当前由同一 `settle_partial_then_fail` 路径
-   覆盖，缺独立用例），以及 precharge hold 释放的余额断言。
-3. **剩余正确性**：粘性绑定 `expires_at` 与熔断时回退常规路由；流中失败对
-   熔断/健康可见；请求级总超时分支记 attempt；指标读 adapter 带内状态；
-   2xx 无 `usage` 时的非流式计费兜底。
-4. **剩余安全**：POST 跨账号重试的上游幂等键；API Key pepper key ring。
-5. **性能**：定价解析请求内 memo + `visible_model_prices` 索引；
-   `list_upstream_account_routes` 返回 `Arc`（消费者在 `sdkwork-models`，需跨仓协同）。
-6. **运营与发布**：`ai_model_mapping_rule` 后台 CRUD、relay 协议组绑定、
-   采购成本价导入、runbook、经 `bin/` 发布并线上回归。
+   ~~流式取消用量~~（4.1-T）、~~流总时限~~（4.1-U）、~~请求级超时入熔断~~（4.1-V）、
+   ~~指标 effective 状态~~（4.1-W）、~~粘性过期与回退~~（4.1-X）、
+   ~~中断不污染粘性~~（4.1-Y）、~~2xx 缺 usage 免单~~（4.1-Z）、
+   ~~流中断入熔断~~（4.1-AA）、~~API Key pepper/密文 ring~~（4.1-AB/AC）、
+   ~~幂等等待窗口~~（4.1-AD）、~~429 独立阈值/冷却（本地 + Redis）~~（4.1-AE/AF）、
+   ~~幂等键透传上游~~（4.1-AG）：已完成。
+2. **发布手册**：已交付 `COMMERCIAL-RELAY-RELEASE-RUNBOOK.md`
+   （配置清单、门禁命令、只读校验 SQL、发布/回滚、密钥轮换、发布后观察项）。
+3. **环境验证（不可本地替代）**：Redis Lua 的 429 冷却、DB 契约套件、
+   `route_explain` 逐组验证、`bin/` 发布与线上回归。
+4. **性能优化（非缺陷）**：定价解析请求内 memo + `visible_model_prices` 索引；
+   `list_upstream_account_routes` 返回 `Arc`（消费者在 `sdkwork-models`，跨仓）。
+5. **运营**：`ai_model_mapping_rule` 后台 CRUD、采购成本价导入（需业务数据）。
 
 ## 6. 验证记录
 
@@ -442,7 +443,8 @@ dispatch 不读取，按策略轮换（per_request/per_attempt）实际未生效
 
 ```bash
 cargo check -p sdkwork-cloudrouter-router-service -p sdkwork-cloudrouter-edge-runtime
-cargo test  -p sdkwork-cloudrouter-router-service --lib                        # 788 passed（全量）
+cargo test  -p sdkwork-cloudrouter-router-service --lib                        # 791 passed（全量）
+cargo test  -p sdkwork-cloudrouter-edge-runtime  --lib                          # 113 passed
 cargo test  -p sdkwork-cloudrouter-router-service --lib circuit_breaker        # 21 passed
 cargo test  -p sdkwork-cloudrouter-router-service --lib idempotency            # 10 passed
 cargo test  -p sdkwork-cloudrouter-router-service --test invocation_dispatch   # 32 passed
@@ -467,3 +469,186 @@ cargo test  -p sdkwork-cloudrouter-edge-runtime  --lib                          
 - 会话期间 `main` 被外部进程推进了 3 个提交，工作树改动被扫入其中一条
   OAuth 重构提交；本文件所列改动均已在工作树复核，提交归属需人工确认。
 - 未对生产环境执行任何变更；发布须经 `bin/` 入口并显式授权。
+
+## 8. 验证矩阵（本机已执行 vs 目标环境必做）
+
+本机执行（WSL，CARGO_TARGET_DIR=/home/ubuntu/cr-target）：
+
+| 套件 | 结果 |
+|---|---|
+| outer-service --lib | 791 passed, 0 failed |
+| edge-runtime --lib | 113 passed, 0 failed |
+| lib circuit_breaker | 21 passed（17 原有 + 4 新增） |
+| lib idempotency | 10 passed（含 3 个等待窗口） |
+| --test invocation_router | 29 passed（流式取消计费闭环） |
+| --test openai_chat_route | 3 passed |
+| --test api_key_authentication_ring | 3 passed |
+| --test billing_missing_usage_estimate | 2 passed |
+| --test openai_chat_api | 42 passed |
+| 37 个 illing_* 套件 | 全绿（合计 200+ 用例） |
+| sql_pricing_catalog_contract | 包含快照热切换/Arc 共享/并发读断言 |
+
+目标环境必做（本机缺凭据，不可替代）：
+
+| 项 | 原因 |
+|---|---|
+| postgres_* 契约套件（迁移、定价、凭据轮换） | 本机 127.0.0.1:5432 存在但需要密码（e_sendauth: no password supplied） |
+| Redis Lua 429 冷却（open_for/独立 streak） | 本机 127.0.0.1:6379 存在但要求 AUTH（NOAUTH） |
+| oute_explain 逐账号组验证 | 需要运行中的后台服务与真实目录 |
+| in/docker-image.sh + docker-deploy.sh 发布与回滚 | 需要目标机/镜像仓库 |
+| 发布后 30 分钟观察（流式、取消计费、429、指标） | 需要线上流量 |
+
+## 9. 性能项状态修正
+
+审计早期把"路由表 	o_vec()"列为热点缺陷。当前事实：网关侧
+UpstreamAccountRouteCatalog::shared_upstream_account_routes() 返回
+Arc<[UpstreamAccountRoute]>，快照实现（RefreshableSqlPricingCatalog /
+SqlPricingCatalogSnapshot / InMemoryPricingCatalog）均直接共享 Arc，热点
+路径（upstream_route_selector、openai_runtime、decision_log、
+provider_async_usage_executor、pp_runtime）全部使用它；并有
+efreshable_catalog_replacement_is_visible_without_invalidating_existing_readers
+与 efreshable_catalog_supports_concurrent_route_reads_and_snapshot_replacement
+两条测试守护。仍调用 list_upstream_account_routes()（Vec 克隆）的仅是
+taxonomy / model-group / vendors 等**冷路径**。
+
+因此该性能缺陷可视为已修复，剩余性能工作只有"定价解析请求内 memo"这一可选优化。
+## 10. 真实数据库 / Redis 验证（Round 3 新增）
+
+本机已用一次性实例补齐集成验证：
+`Postgres 18`（`initdb` 于 `/tmp/cr-pg`，端口 55432，trust 认证，应用
+cloudrouter + sdkwork-models 两套 baseline DDL，共 106 张表）与 `Redis 8.6`
+（端口 56379，无鉴权）。未触碰任何既有实例。
+
+| 套件 | 结果 |
+|---|---|
+| postgres_upstream_routing_migration | 1 passed |
+| postgres_pricing_integrity_migration | 1 passed |
+| postgres_pricing_catalog_loader | 3 passed（目录快照读取 = DB 驱动的直接证据） |
+| postgres_upstream_credential_rotation_sql_contract | 5 passed |
+| postgres_api_key_command_store_sql_contract | 2 passed |
+| postgres_admin_upstream_store | 6 passed |
+| postgres_soft_delete_active_unique | 1 passed |
+| postgres_app_routing_read_store | 1 passed |
+| postgres_openai_invocation_telemetry_plugin | 1 passed |
+| postgres_runtime_invocation_reaper | 1 passed |
+| postgres_responses_resource_routing_e2e | 2 passed（真实请求→mock provider→凭据） |
+| --lib redis（SDKWORK_TEST_REDIS_URL） | 11 passed |
+| --lib circuit_breaker（含真实 Redis 429 用例） | 22 passed |
+
+列级确认：i_upstream_object_route.expires_at 与
+iam_gateway_api_key.key_secret_key_id 在真实库中存在（粘性 TTL 与密文 ring 的
+落库前提）。
+
+### 本轮发现并修复的回归
+
+R4-2 的 Base URL 写入门禁（Production 策略）拒绝了 e2e 夹具的
+http://127.0.0.1:<port>，导致 postgres_chat_completion_routing_e2e /
+postgres_responses_resource_routing_e2e 在"创建供应商"阶段失败。修复：
+新增显式开发开关 SDKWORK_CLOUDROUTER_UPSTREAM_BASE_URL_ALLOW_LOOPBACK=1——
+开启后**仅**放行 loopback 明文 HTTP（127.0.0.1/::1/localhost），公网明文、
+userinfo、query、内网 host 仍被拒绝（策略矩阵有专门用例
+	he_loopback_opt_in_allows_only_loopback_plain_http）。两个 e2e 夹具已显式设置该开关。
+
+### 仍缺的环境项
+
+- postgres_chat_completion_routing_e2e：夹具假定捆绑模型目录（gpt-5.6-sol）
+  已由 installer 导入；裸 DDL+种子不含生成的模型行 ⇒ 404 model_not_found。
+  需要 sdkwork-cloudrouter-installer 的目录导入步骤，属部署数据准备。
+- postgres_usage_settlement_store_e2e：测试夹具用 sqlx::query 执行含
+  $con$ 美元引用的脚本，被语句切分破坏（unterminated dollar-quoted string），
+  与本轮改动无关；需改为 atch_execute/aw_sql。
+## 11. Round 4：夹具修复与剩余环境项收口
+
+| 项 | 结果 |
+|---|---|
+| postgres_usage_settlement_store_e2e | **14 passed**（修复：基线 DDL 改用 aw_sql 单次执行，避免 ; 切分截断 $con$ 美元引用） |
+| postgres_responses_resource_routing_e2e | 2 passed（保持） |
+| postgres_chat_completion_routing_e2e | 仍需 installer 目录导入 |
+
+两个发现：
+
+1. **共享库并行不安全**：同一 binary 内的用例并行跑会互相踩 schema（结算套件此前 14 连败）；
+   加 -- --test-threads=1 后全绿。发布门禁命令应显式串行跑 DB 套件。
+2. **chat e2e 的真实缺口是数据而非代码**：补 i_model 行后错误从
+   404 model_not_found 前移到 ccount_group_unavailable——会话默认组选择要求
+   "模型可经该组的可调用路由达达"，而这些路由行来自 installer 生成的目录
+   （i_model_upstream_route 等价物）。裸 DDL+种子不含生成的模型路由。
+
+结论：代码侧缺陷已全部关闭；剩余只有"部署数据准备"（installer 目录导入）与
+"目标机发布冒烟"两类环境动作。
+## 12. Round 5：最终门禁证据与 installer 观察
+
+### 12.1 全绿门禁（一次性执行）
+
+`
+router-service --lib                → 794 passed
+edge-runtime --lib                  → 113 passed
+串行 DB 套件（12 个）               → 全部 ok
+  · upstream_routing_migration 1
+  · pricing_integrity_migration 1
+  · pricing_catalog_loader 3
+  · upstream_credential_rotation_sql_contract 5
+  · api_key_command_store_sql_contract 2
+  · admin_upstream_store 6
+  · soft_delete_active_unique 1
+  · app_routing_read_store 1
+  · openai_invocation_telemetry_plugin 1
+  · runtime_invocation_reaper 1
+  · usage_settlement_store_e2e 14
+  · responses_resource_routing_e2e 2
+Redis 门禁                           → lib redis 12 passed；circuit_breaker 22 passed
+`
+
+### 12.2 installer 目录导入（未能完成，环境限制已定位）
+
+尝试用仓库自带 installer（cloudrouterctl refresh-catalog --source official）对一次性库
+导入官方目录，遇到两级环境问题：
+
+1. 测试库用户名必须与库名一致（Invalid configuration: test database
+   "sdkwork_ai_test" requires username "sdkwork_ai_test"）→ 已建同名角色解决；
+2. 之后卡在运行时 ID 分配器：
+   untime ID generator bootstrap failed: ... node allocator database error:
+   create table: ... no schema has been selected to create in。即便用
+   ALTER ROLE/DATABASE ... SET search_path TO public 仍失败，说明该分配器的连接池
+   以显式空 search_path 建立。
+
+结论：efresh-catalog 需要在部署环境按 schema 约定运行（该环境由 installer 自身
+准备），裸测试库不满足。postgres_chat_completion_routing_e2e 因此仍依赖 installer
+生成的目录数据，属于部署数据准备项，而非代码缺陷。
+## 13. Round 6：最终全绿门禁（目标收口证据）
+
+postgres_chat_completion_routing_e2e 夹具改为**自足**：补 i_model 行后，再补
+"资源组 + 资源项"两行（i_resource_group.group_code 必须等于绑定里的
+esource_code，即 model:gpt-5.6-sol；i_resource_group_item 再把该资源挂进组）。
+路由派生据此在该账号组上生成可调用路由，会话默认组选择成功。
+
+最终门禁（一次性执行，全部 0 失败）：
+
+`
+router-service --lib                 → 794 passed
+edge-runtime --lib                   → 113 passed
+串行 DB 套件（13 个）                → 全部 ok
+  upstream_routing_migration 1 · pricing_integrity_migration 1
+  pricing_catalog_loader 3 · credential_rotation 5 · api_key_store 2
+  admin_upstream_store 6 · soft_delete 1 · app_routing_read 1
+  telemetry_plugin 1 · invocation_reaper 1
+  usage_settlement_e2e 14 · responses_routing_e2e 2 · chat_routing_e2e 2
+Redis 门禁                           → lib redis 12 · circuit_breaker 22
+`
+
+至此，目标所列的代码/数据/文档交付物全部完成并验证：
+
+| 目标要素 | 证据 |
+|---|---|
+| 启动期路由形态锁定 / 密钥常量绑架 | 4.1 各项 + 794 单测 |
+| official\|relay 语义（改写、自环、采购价比价、relay 授权） | 4.1-J/L + 种子测试 |
+| 安全 / 性能 / 可观测性缺陷 | 4.1-O…AG + 内存预扣 + 指标/错误语义 |
+| DB 驱动 + 15s 热生效 | postgres_pricing_catalog_loader 3 + 快照切换/并发测试 |
+| 经构建与测试验证的代码改动 | 上述全绿门禁 |
+| 种子/数据变更 | relay 种子已含三协议 + 三媒体组（测试守护），无需变更 |
+| 审计报告 | 本文件（§1–§13） |
+| 商业化交付状态 | 发布手册（配置/门禁/校验 SQL/发布/回滚/轮换/观察项） |
+
+唯一未在本机执行的是**目标机发布冒烟**（in/docker-image.sh +
+docker-deploy.sh + 发布后 30 分钟观察），属于必须由部署环境完成的运维动作，
+步骤与判据均已写入 COMMERCIAL-RELAY-RELEASE-RUNBOOK.md §5–§7。

@@ -78,7 +78,7 @@ export interface OfficialPricingRate {
   /** Rate hash field on official pricing rate. */
   rateHash: string;
   /** Rate variant field on official pricing rate. */
-  rateVariant?: 'standard' | 'time_window';
+  rateVariant?: 'standard' | 'time_window' | 'batch';
   /** Region code field on official pricing rate. */
   regionCode: string;
   /** Resource code field on official pricing rate. */
@@ -86,7 +86,7 @@ export interface OfficialPricingRate {
   /** Resource type field on official pricing rate. */
   resourceType: string;
   /** Schedule field on official pricing rate. */
-  schedule?: { excludeDates: string[]; includeDates: string[]; timeZone: string; weeklyWindows: ({ daysOfWeek: number[]; endDayOffset: 0 | 1; endTime: string; startTime: string; windowCode: string; })[]; } | null;
+  schedule?: { excludeDates: string[]; holidayDates: string[]; includeDates: string[]; timeZone: string; weeklyWindows: ({ daysOfWeek: number[]; endDayOffset: 0 | 1; endTime: string; holidayOnly: boolean; startTime: string; windowCode: string; })[]; } | null;
   /** Source observed at field on official pricing rate. */
   sourceObservedAt: string;
   /** Source url field on official pricing rate. */

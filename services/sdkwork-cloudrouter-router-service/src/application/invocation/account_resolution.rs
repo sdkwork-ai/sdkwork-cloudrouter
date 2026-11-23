@@ -5,9 +5,8 @@ use sdkwork_utils_rust::is_blank;
 use super::{
     routing_filter_context, DispatchMode, FilterRejectionKind, Invocation, InvocationAccount,
     InvocationError, InvocationErrorKind, InvocationFuture, InvocationInterceptor,
-    InvocationRouteCandidate, InvocationSurface, RoutingFilterChain,
+    InvocationRouteCandidate, InvocationRouteCandidateKind, InvocationSurface, RoutingFilterChain,
 };
-use crate::domain::provider_native_model_id;
 use crate::ports::UpstreamAccountRouteCatalog;
 
 #[derive(Clone)]
@@ -102,9 +101,23 @@ where
             } else if let Some(catalog_key) = candidate.catalog_key.as_ref() {
                 invocation.resource.requested_model_catalog_key = Some(catalog_key.clone());
             }
-            if let Some(provider_model) = candidate.provider_model.as_ref() {
-                invocation.resource.provider_native_model =
-                    Some(provider_native_model_id(provider_model));
+            // `catalog_key` is a real catalog identity for model/sticky
+            // candidates, but a synthetic `supplier/model` key for API-resource
+            // (provider-native/media) candidates. Only the real key may
+            // upgrade a relay's native model id to the qualified catalog key.
+            let provider_catalog_key = match candidate.kind {
+                InvocationRouteCandidateKind::Model | InvocationRouteCandidateKind::Sticky => {
+                    candidate.catalog_key.as_deref()
+                }
+                InvocationRouteCandidateKind::UpstreamAccount => None,
+            };
+            if let Some(provider_model) = crate::domain::resolve_provider_model_id(
+                candidate.supplier_type.as_deref(),
+                provider_catalog_key,
+                candidate.requested_model.as_deref(),
+                candidate.provider_model.as_deref(),
+            ) {
+                invocation.resource.provider_native_model = Some(provider_model);
             }
             Ok(())
         })

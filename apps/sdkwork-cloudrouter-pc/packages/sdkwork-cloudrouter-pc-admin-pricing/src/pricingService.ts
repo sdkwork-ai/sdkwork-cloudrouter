@@ -63,6 +63,8 @@ export interface AdminPricingScheduleWindow {
   startTime: string;
   endTime: string;
   endDayOffset: 0 | 1;
+  /** When true, the window matches only on a date listed in `holidayDates`. */
+  holidayOnly: boolean;
 }
 
 export interface AdminPricingSchedule {
@@ -70,6 +72,8 @@ export interface AdminPricingSchedule {
   weeklyWindows: AdminPricingScheduleWindow[];
   includeDates: string[];
   excludeDates: string[];
+  /** Statutory holiday calendar. Holiday dates are never peak windows. */
+  holidayDates: string[];
 }
 
 export interface AdminPricingPlanItem {
@@ -936,6 +940,7 @@ function normalizePricingSchedule(value: unknown): AdminPricingSchedule | undefi
   const windows = value.weeklyWindows;
   const includeDates = value.includeDates;
   const excludeDates = value.excludeDates;
+  const holidayDates = value.holidayDates ?? [];
   if (!timeZone || !Array.isArray(windows) || !Array.isArray(includeDates) || !Array.isArray(excludeDates)) {
     throw new Error('schedule requires timeZone, weeklyWindows, includeDates, and excludeDates');
   }
@@ -951,12 +956,16 @@ function normalizePricingSchedule(value: unknown): AdminPricingSchedule | undefi
     if (!Array.isArray(daysOfWeek) || daysOfWeek.some((day) => !Number.isInteger(day) || day < 1 || day > 7)) {
       throw new Error(`schedule.weeklyWindows[${index}].daysOfWeek is invalid`);
     }
+    if (item.holidayOnly !== undefined && typeof item.holidayOnly !== 'boolean') {
+      throw new Error(`schedule.weeklyWindows[${index}].holidayOnly must be a boolean`);
+    }
     return {
       windowCode: readString(item, 'windowCode').trim(),
       daysOfWeek: daysOfWeek as number[],
       startTime: readString(item, 'startTime').trim(),
       endTime: readString(item, 'endTime').trim(),
       endDayOffset,
+      holidayOnly: item.holidayOnly === true,
     };
   });
   const normalizeDateList = (list: unknown, field: string): string[] => {
@@ -970,6 +979,7 @@ function normalizePricingSchedule(value: unknown): AdminPricingSchedule | undefi
     weeklyWindows: normalizedWindows,
     includeDates: normalizeDateList(includeDates, 'includeDates'),
     excludeDates: normalizeDateList(excludeDates, 'excludeDates'),
+    holidayDates: normalizeDateList(holidayDates, 'holidayDates'),
   };
 }
 

@@ -152,7 +152,9 @@ function redemptionBenefitLabel(kind: string, t: MarketingTranslate): string {
  * 兑换尝试台账：每一次兑换请求的追加式证据（成功与失败都保留）。
  *
  * 展示契约：
- * - 券码只展示后四位（`submittedCodeSuffix`），完整券码从不入库也不返回；
+ * - 券码展示后端持久化的脱敏值（`submittedCodeMasked`：长码保留首尾四位，
+ *   短码只剩 `****`），完整券码从不入库也不返回；旧记录没有脱敏列时退化为
+ *   `****` + 后四位；
  * - 失败原因以失败码为分类，`failureDetail` 只作为次要说明展示，绝不解析；
  * - traceId 可复制，复制按钮的可访问名称包含该行的请求编号。
  */
@@ -169,23 +171,28 @@ export function RedemptionAttemptsPage() {
       ),
     },
     {
-      key: 'submittedCodeSuffix',
-      label: t('admin.marketing.promotions.redemptionAttempts.codeSuffix', 'Code Suffix'),
+      // 列 key 与 CSV 导出的取值键都指向脱敏值；`submittedCodeSuffix` 只在旧
+      // 记录（没有脱敏列）时作为退化渲染的输入，不会成为导出主值。
+      key: 'submittedCodeMasked',
+      label: t('admin.marketing.promotions.redemptionAttempts.code', 'Code'),
       render: (_value, record) => {
-        const codeId = readRecordText(record, 'codeId');
+        const masked = readRecordText(record, 'submittedCodeMasked');
         const suffix = readRecordText(record, 'submittedCodeSuffix');
-        if (!codeId || !suffix) {
+        // 脱敏列上线前写入的旧行没有该列：用「**** + 后四位」保持可读，
+        // 不因为历史数据缺失而显示空白。
+        const display = masked || (suffix ? `****${suffix}` : '');
+        if (!display) {
           return MARKETING_EMPTY_VALUE;
         }
         return (
           <span
             className="font-mono text-xs text-slate-700 dark:text-slate-200"
             title={t(
-              'admin.marketing.promotions.redemptionAttempts.codeSuffixHint',
-              'last 4 characters of the submitted code',
+              'admin.marketing.promotions.redemptionAttempts.codeHint',
+              'Masked submitted code; the redeemable value is never stored',
             )}
           >
-            {suffix}
+            {display}
           </span>
         );
       },
@@ -318,7 +325,7 @@ export function RedemptionAttemptsPage() {
       title={t('admin.marketing.promotions.redemptionAttempts.title', 'Redemption Attempts')}
       description={t(
         'admin.marketing.promotions.redemptionAttempts.desc',
-        'Every code-redemption attempt in the selected window, including failures. The redeemable code is never stored; only the last four characters of the submitted code are shown.',
+        'Every code-redemption attempt in the selected window, including failures. The redeemable code is never stored; each row shows the masked submitted code (first and last four characters).',
       )}
       load={loadRedemptionAttempts}
       columns={columns}

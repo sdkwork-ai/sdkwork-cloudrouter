@@ -153,7 +153,7 @@ where
     let selector = UpstreamRouteSelector::new(state.catalog.as_ref());
     let result = if let Some(catalog_key) = normalized.catalog_key.clone() {
         selector
-            .select_model_route_plan(SelectUpstreamModelRouteQuery {
+            .select_model_route_plan_with_fallback(SelectUpstreamModelRouteQuery {
                 context: normalized.context.clone(),
                 catalog_key,
                 requested_model: normalized.model.clone().unwrap_or_default(),
@@ -162,8 +162,10 @@ where
                 billing_meter: normalized.billing_meter.clone(),
                 pricing_required: true,
             })
-            .map(|plan| {
-                plan.routes
+            .map(|selection| {
+                selection
+                    .plan
+                    .routes
                     .into_iter()
                     .map(to_model_candidate_response)
                     .collect::<Vec<_>>()

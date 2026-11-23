@@ -674,6 +674,83 @@ async fn deepseek_peak_and_weekend_offpeak_windows_partition_the_week() {
 }
 
 #[tokio::test]
+async fn deepseek_statutory_holiday_uses_offpeak_window_all_day() {
+    let weekday = |start: u32, end: u32, code: &str| PricingWeeklyWindow {
+        window_code: code.to_owned(),
+        days_of_week: vec![1, 2, 3, 4, 5],
+        start_time: NaiveTime::from_hms_opt(start, 0, 0).expect("start"),
+        end_time: NaiveTime::from_hms_opt(end, 0, 0).expect("end"),
+        end_day_offset: 0,
+        holiday_only: false,
+    };
+    let holiday = NaiveDate::from_ymd_opt(2026, 10, 1).expect("holiday");
+    let mut peak = deepseek_window_metadata(
+        "sha256:deepseek-holiday-peak",
+        vec![weekday(9, 12, "peak_weekday_morning")],
+    );
+    peak.schedule
+        .as_mut()
+        .expect("peak schedule")
+        .exclude_dates
+        .push(holiday);
+    let mut offpeak = deepseek_window_metadata(
+        "sha256:deepseek-holiday-offpeak",
+        vec![PricingWeeklyWindow {
+            window_code: "off_peak_holiday".to_owned(),
+            days_of_week: vec![1, 2, 3, 4, 5, 6, 7],
+            start_time: NaiveTime::from_hms_opt(0, 0, 0).expect("start"),
+            end_time: NaiveTime::from_hms_opt(23, 59, 59).expect("end"),
+            end_day_offset: 0,
+            holiday_only: true,
+        }],
+    );
+    let offpeak_schedule = offpeak.schedule.as_mut().expect("off-peak schedule");
+    offpeak_schedule.holiday_dates.push(holiday);
+    offpeak_schedule.exclude_dates.clear();
+
+    let mut catalog = catalog_with_chat_prices();
+    for (price, metadata) in [
+        ("0.500000", peak),
+        ("0.200000", offpeak),
+    ] {
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                "openai/gpt-4o-mini",
+                "gpt-4o-mini",
+                PriceSide::OfficialReference,
+                BillingMeter::LlmInputToken,
+                Money::usd(price).unwrap(),
+            )
+            .with_rate_metadata(metadata),
+        );
+    }
+    let catalog = Arc::new(catalog);
+
+    for (timestamp, expected) in [
+        ("2026-10-19T02:00:00Z", "0.500000"), // Monday 10:00 peak
+        ("2026-10-01T02:00:00Z", "0.200000"), // National Day 10:00 off-peak
+    ] {
+        let mut invocation = chat_invocation();
+        invocation.occurred_at = DateTime::parse_from_rfc3339(timestamp)
+            .unwrap()
+            .with_timezone(&Utc);
+        PricingPreflightInterceptor::new(Arc::clone(&catalog))
+            .before(&mut invocation)
+            .await
+            .expect("holiday pricing");
+        let quote = invocation
+            .usage
+            .quote_for_meter(&BillingMeter::LlmInputToken)
+            .expect("holiday quote");
+        assert_eq!(
+            expected,
+            quote.customer_charge_unit_price.to_fixed_string(6),
+            "timestamp {timestamp}"
+        );
+    }
+}
+
+#[tokio::test]
 async fn time_window_calendar_include_and_exclude_dates_override_weekday() {
     let mut metadata = deepseek_window_metadata(
         "sha256:deepseek-calendar",

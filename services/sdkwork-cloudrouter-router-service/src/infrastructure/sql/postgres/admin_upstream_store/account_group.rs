@@ -41,6 +41,7 @@ pub(super) async fn list(
                 $3::text IS NULL
                 OR group_code ILIKE $3 ESCAPE '\'
                 OR group_name ILIKE $3 ESCAPE '\'
+                OR tags::text ILIKE $3 ESCAPE '\'
           )
         "#,
     )
@@ -60,6 +61,7 @@ pub(super) async fn list(
                 $3::text IS NULL
                 OR group_code ILIKE $3 ESCAPE '\'
                 OR group_name ILIKE $3 ESCAPE '\'
+                OR tags::text ILIKE $3 ESCAPE '\'
           )
         ORDER BY priority ASC, updated_at DESC, id ASC
         LIMIT $4 OFFSET $5

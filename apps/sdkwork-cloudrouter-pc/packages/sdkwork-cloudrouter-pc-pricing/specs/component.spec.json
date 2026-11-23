@@ -32,7 +32,7 @@
     "publicExports": [".", "./i18n"],
     "runtimeEntrypoints": ["package.json#scripts.build", "package.json#scripts.typecheck", "package.json#scripts.test"],
     "providedPorts": ["cloudrouter.pricing.portal"],
-    "requiredPorts": ["cloudrouter.app-sdk.ai.pricing"],
+    "requiredPorts": ["cloudrouter.app-sdk.ai.pricing", "cloudrouter.app-sdk.ai.routing"],
     "sdkClients": ["@sdkwork/cloudrouter-app-sdk"],
     "events": [],
     "configKeys": [],

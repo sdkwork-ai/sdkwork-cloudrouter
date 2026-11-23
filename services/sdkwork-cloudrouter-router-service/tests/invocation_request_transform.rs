@@ -336,6 +336,12 @@ async fn percent_encodes_rewritten_query_model() {
         .with_query("model=gpt-4o-mini&include=usage");
     invocation.account.as_mut().unwrap().provider_model =
         Some("openrouter/gpt-4o-mini+latest".to_owned());
+    // Route planning resolved the catalog key. The request builder strips the
+    // vendor head for an official supplier, so `openrouter/` never leaks into
+    // the provider query; what this test owns is the encoding: `+` must stay a
+    // literal plus, not a space.
+    invocation.resource.requested_model_catalog_key =
+        Some("openrouter/gpt-4o-mini+latest".to_owned());
 
     SecretResolutionInterceptor::new(resolver())
         .before(&mut invocation)
@@ -347,10 +353,10 @@ async fn percent_encodes_rewritten_query_model() {
         .expect("transform");
 
     let request = invocation.dispatch.provider_request.expect("request");
-    // The catalogue stores `vendor/model` and the upstream receives the native id:
-    // one parser in `runtime_provider_native_model_id` yields the part after the
-    // vendor separator, so `openrouter/` never leaks into the provider query. What
-    // this test owns is the encoding: `+` must stay a literal plus, not a space.
+    // The catalogue stores `vendor/model`; the shared outbound resolver yields
+    // the part after the vendor separator for an official supplier, so
+    // `openrouter/` never leaks into the provider query. The encoding is what
+    // this test owns: `+` must stay a literal plus, not a space.
     assert_eq!(
         Some("model=gpt-4o-mini%2Blatest&include=usage"),
         request.query.as_deref()
@@ -448,6 +454,18 @@ async fn builds_adapter_request_as_standard_json_body() {
         Some("sk-provider-secret"),
         body.pointer("/secret/value/auth/value")
             .and_then(|v| v.as_str())
+    );
+    // Adapter dispatch carries the resolved provider model both in the
+    // provider context and in the forwarded body; the client spelling must not
+    // survive into either.
+    assert_eq!(
+        Some("gpt-4o-mini-provider"),
+        body.pointer("/provider/providerModel")
+            .and_then(|v| v.as_str())
+    );
+    assert_eq!(
+        Some("gpt-4o-mini-provider"),
+        body.pointer("/body/model").and_then(|v| v.as_str())
     );
 }
 

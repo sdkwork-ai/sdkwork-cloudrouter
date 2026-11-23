@@ -9864,6 +9864,15 @@
                   "maxItems": 366,
                   "type": "array"
                 },
+                "holidayDates": {
+                  "items": {
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                    "type": "string"
+                  },
+                  "maxItems": 366,
+                  "type": "array"
+                },
                 "includeDates": {
                   "items": {
                     "format": "date",
@@ -9903,6 +9912,9 @@
                         "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                         "type": "string"
                       },
+                      "holidayOnly": {
+                        "type": "boolean"
+                      },
                       "startTime": {
                         "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                         "type": "string"
@@ -9918,7 +9930,8 @@
                       "daysOfWeek",
                       "startTime",
                       "endTime",
-                      "endDayOffset"
+                      "endDayOffset",
+                      "holidayOnly"
                     ],
                     "type": "object"
                   },
@@ -9931,7 +9944,8 @@
                 "timeZone",
                 "weeklyWindows",
                 "includeDates",
-                "excludeDates"
+                "excludeDates",
+                "holidayDates"
               ],
               "type": "object"
             },
@@ -10125,6 +10139,15 @@
                   "maxItems": 366,
                   "type": "array"
                 },
+                "holidayDates": {
+                  "items": {
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                    "type": "string"
+                  },
+                  "maxItems": 366,
+                  "type": "array"
+                },
                 "includeDates": {
                   "items": {
                     "format": "date",
@@ -10164,6 +10187,9 @@
                         "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                         "type": "string"
                       },
+                      "holidayOnly": {
+                        "type": "boolean"
+                      },
                       "startTime": {
                         "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                         "type": "string"
@@ -10179,7 +10205,8 @@
                       "daysOfWeek",
                       "startTime",
                       "endTime",
-                      "endDayOffset"
+                      "endDayOffset",
+                      "holidayOnly"
                     ],
                     "type": "object"
                   },
@@ -10192,7 +10219,8 @@
                 "timeZone",
                 "weeklyWindows",
                 "includeDates",
-                "excludeDates"
+                "excludeDates",
+                "holidayDates"
               ],
               "type": "object"
             },
@@ -10903,7 +10931,8 @@
                         "rateVariant": {
                           "enum": [
                             "standard",
-                            "time_window"
+                            "time_window",
+                            "batch"
                           ],
                           "type": "string"
                         },
@@ -10921,6 +10950,16 @@
                           "nullable": true,
                           "properties": {
                             "excludeDates": {
+                              "items": {
+                                "format": "date",
+                                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                                "type": "string"
+                              },
+                              "maxItems": 366,
+                              "type": "array",
+                              "uniqueItems": true
+                            },
+                            "holidayDates": {
                               "items": {
                                 "format": "date",
                                 "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
@@ -10973,6 +11012,9 @@
                                     "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                                     "type": "string"
                                   },
+                                  "holidayOnly": {
+                                    "type": "boolean"
+                                  },
                                   "startTime": {
                                     "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                                     "type": "string"
@@ -10988,7 +11030,8 @@
                                   "daysOfWeek",
                                   "startTime",
                                   "endTime",
-                                  "endDayOffset"
+                                  "endDayOffset",
+                                  "holidayOnly"
                                 ],
                                 "type": "object"
                               },
@@ -11001,7 +11044,8 @@
                             "timeZone",
                             "weeklyWindows",
                             "includeDates",
-                            "excludeDates"
+                            "excludeDates",
+                            "holidayDates"
                           ],
                           "type": "object"
                         },
@@ -11732,7 +11776,8 @@
                   "rateVariant": {
                     "enum": [
                       "standard",
-                      "time_window"
+                      "time_window",
+                      "batch"
                     ],
                     "type": "string"
                   },
@@ -11750,6 +11795,16 @@
                     "nullable": true,
                     "properties": {
                       "excludeDates": {
+                        "items": {
+                          "format": "date",
+                          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                          "type": "string"
+                        },
+                        "maxItems": 366,
+                        "type": "array",
+                        "uniqueItems": true
+                      },
+                      "holidayDates": {
                         "items": {
                           "format": "date",
                           "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
@@ -11802,6 +11857,9 @@
                               "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                               "type": "string"
                             },
+                            "holidayOnly": {
+                              "type": "boolean"
+                            },
                             "startTime": {
                               "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                               "type": "string"
@@ -11817,7 +11875,8 @@
                             "daysOfWeek",
                             "startTime",
                             "endTime",
-                            "endDayOffset"
+                            "endDayOffset",
+                            "holidayOnly"
                           ],
                           "type": "object"
                         },
@@ -11830,7 +11889,8 @@
                       "timeZone",
                       "weeklyWindows",
                       "includeDates",
-                      "excludeDates"
+                      "excludeDates",
+                      "holidayDates"
                     ],
                     "type": "object"
                   },
@@ -13148,6 +13208,15 @@
                         "maxItems": 366,
                         "type": "array"
                       },
+                      "holidayDates": {
+                        "items": {
+                          "format": "date",
+                          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                          "type": "string"
+                        },
+                        "maxItems": 366,
+                        "type": "array"
+                      },
                       "includeDates": {
                         "items": {
                           "format": "date",
@@ -13187,6 +13256,9 @@
                               "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                               "type": "string"
                             },
+                            "holidayOnly": {
+                              "type": "boolean"
+                            },
                             "startTime": {
                               "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                               "type": "string"
@@ -13202,7 +13274,8 @@
                             "daysOfWeek",
                             "startTime",
                             "endTime",
-                            "endDayOffset"
+                            "endDayOffset",
+                            "holidayOnly"
                           ],
                           "type": "object"
                         },
@@ -13215,7 +13288,8 @@
                       "timeZone",
                       "weeklyWindows",
                       "includeDates",
-                      "excludeDates"
+                      "excludeDates",
+                      "holidayDates"
                     ],
                     "type": "object"
                   },
@@ -14320,6 +14394,15 @@
                   "maxItems": 366,
                   "type": "array"
                 },
+                "holidayDates": {
+                  "items": {
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                    "type": "string"
+                  },
+                  "maxItems": 366,
+                  "type": "array"
+                },
                 "includeDates": {
                   "items": {
                     "format": "date",
@@ -14359,6 +14442,9 @@
                         "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                         "type": "string"
                       },
+                      "holidayOnly": {
+                        "type": "boolean"
+                      },
                       "startTime": {
                         "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                         "type": "string"
@@ -14374,7 +14460,8 @@
                       "daysOfWeek",
                       "startTime",
                       "endTime",
-                      "endDayOffset"
+                      "endDayOffset",
+                      "holidayOnly"
                     ],
                     "type": "object"
                   },
@@ -14387,7 +14474,8 @@
                 "timeZone",
                 "weeklyWindows",
                 "includeDates",
-                "excludeDates"
+                "excludeDates",
+                "holidayDates"
               ],
               "type": "object"
             },
@@ -14580,6 +14668,15 @@
                   "maxItems": 366,
                   "type": "array"
                 },
+                "holidayDates": {
+                  "items": {
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                    "type": "string"
+                  },
+                  "maxItems": 366,
+                  "type": "array"
+                },
                 "includeDates": {
                   "items": {
                     "format": "date",
@@ -14619,6 +14716,9 @@
                         "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                         "type": "string"
                       },
+                      "holidayOnly": {
+                        "type": "boolean"
+                      },
                       "startTime": {
                         "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                         "type": "string"
@@ -14634,7 +14734,8 @@
                       "daysOfWeek",
                       "startTime",
                       "endTime",
-                      "endDayOffset"
+                      "endDayOffset",
+                      "holidayOnly"
                     ],
                     "type": "object"
                   },
@@ -14647,7 +14748,8 @@
                 "timeZone",
                 "weeklyWindows",
                 "includeDates",
-                "excludeDates"
+                "excludeDates",
+                "holidayDates"
               ],
               "type": "object"
             },
@@ -14779,6 +14881,15 @@
                   "maxItems": 366,
                   "type": "array"
                 },
+                "holidayDates": {
+                  "items": {
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                    "type": "string"
+                  },
+                  "maxItems": 366,
+                  "type": "array"
+                },
                 "includeDates": {
                   "items": {
                     "format": "date",
@@ -14818,6 +14929,9 @@
                         "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                         "type": "string"
                       },
+                      "holidayOnly": {
+                        "type": "boolean"
+                      },
                       "startTime": {
                         "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                         "type": "string"
@@ -14833,7 +14947,8 @@
                       "daysOfWeek",
                       "startTime",
                       "endTime",
-                      "endDayOffset"
+                      "endDayOffset",
+                      "holidayOnly"
                     ],
                     "type": "object"
                   },
@@ -14846,7 +14961,8 @@
                 "timeZone",
                 "weeklyWindows",
                 "includeDates",
-                "excludeDates"
+                "excludeDates",
+                "holidayDates"
               ],
               "type": "object"
             },
@@ -15039,6 +15155,15 @@
                   "maxItems": 366,
                   "type": "array"
                 },
+                "holidayDates": {
+                  "items": {
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                    "type": "string"
+                  },
+                  "maxItems": 366,
+                  "type": "array"
+                },
                 "includeDates": {
                   "items": {
                     "format": "date",
@@ -15078,6 +15203,9 @@
                         "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                         "type": "string"
                       },
+                      "holidayOnly": {
+                        "type": "boolean"
+                      },
                       "startTime": {
                         "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                         "type": "string"
@@ -15093,7 +15221,8 @@
                       "daysOfWeek",
                       "startTime",
                       "endTime",
-                      "endDayOffset"
+                      "endDayOffset",
+                      "holidayOnly"
                     ],
                     "type": "object"
                   },
@@ -15106,7 +15235,8 @@
                 "timeZone",
                 "weeklyWindows",
                 "includeDates",
-                "excludeDates"
+                "excludeDates",
+                "holidayDates"
               ],
               "type": "object"
             },
@@ -28695,10 +28825,128 @@
                           "pattern": "^[A-Z]{3}$",
                           "type": "string"
                         },
+                        "rateHash": {
+                          "maxLength": 128,
+                          "type": "string"
+                        },
+                        "rateVariant": {
+                          "enum": [
+                            "standard",
+                            "time_window",
+                            "batch"
+                          ],
+                          "type": "string"
+                        },
                         "regionCode": {
                           "maxLength": 64,
                           "minLength": 1,
                           "type": "string"
+                        },
+                        "schedule": {
+                          "additionalProperties": false,
+                          "name": "AppModelCatalogPriceSchedule",
+                          "nullable": true,
+                          "properties": {
+                            "excludeDates": {
+                              "items": {
+                                "format": "date",
+                                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                                "type": "string"
+                              },
+                              "maxItems": 366,
+                              "type": "array",
+                              "uniqueItems": true
+                            },
+                            "holidayDates": {
+                              "items": {
+                                "format": "date",
+                                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                                "type": "string"
+                              },
+                              "maxItems": 366,
+                              "type": "array",
+                              "uniqueItems": true
+                            },
+                            "includeDates": {
+                              "items": {
+                                "format": "date",
+                                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                                "type": "string"
+                              },
+                              "maxItems": 366,
+                              "type": "array",
+                              "uniqueItems": true
+                            },
+                            "timeZone": {
+                              "maxLength": 128,
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "weeklyWindows": {
+                              "items": {
+                                "additionalProperties": false,
+                                "name": "AppModelCatalogPriceScheduleWindow",
+                                "properties": {
+                                  "daysOfWeek": {
+                                    "items": {
+                                      "format": "int32",
+                                      "maximum": 7,
+                                      "minimum": 1,
+                                      "type": "integer"
+                                    },
+                                    "maxItems": 7,
+                                    "minItems": 1,
+                                    "type": "array",
+                                    "uniqueItems": true
+                                  },
+                                  "endDayOffset": {
+                                    "enum": [
+                                      0,
+                                      1
+                                    ],
+                                    "format": "int32",
+                                    "type": "integer"
+                                  },
+                                  "endTime": {
+                                    "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                                    "type": "string"
+                                  },
+                                  "holidayOnly": {
+                                    "type": "boolean"
+                                  },
+                                  "startTime": {
+                                    "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                                    "type": "string"
+                                  },
+                                  "windowCode": {
+                                    "maxLength": 96,
+                                    "minLength": 1,
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "windowCode",
+                                  "daysOfWeek",
+                                  "startTime",
+                                  "endTime",
+                                  "endDayOffset",
+                                  "holidayOnly"
+                                ],
+                                "type": "object"
+                              },
+                              "maxItems": 64,
+                              "minItems": 1,
+                              "type": "array"
+                            }
+                          },
+                          "required": [
+                            "timeZone",
+                            "weeklyWindows",
+                            "includeDates",
+                            "excludeDates",
+                            "holidayDates"
+                          ],
+                          "type": "object"
                         },
                         "unitPrice": {
                           "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
@@ -28709,7 +28957,10 @@
                         "regionCode",
                         "billingMeter",
                         "unitPrice",
-                        "currency"
+                        "currency",
+                        "rateHash",
+                        "rateVariant",
+                        "schedule"
                       ],
                       "type": "object"
                     },
@@ -29290,10 +29541,128 @@
                           "pattern": "^[A-Z]{3}$",
                           "type": "string"
                         },
+                        "rateHash": {
+                          "maxLength": 128,
+                          "type": "string"
+                        },
+                        "rateVariant": {
+                          "enum": [
+                            "standard",
+                            "time_window",
+                            "batch"
+                          ],
+                          "type": "string"
+                        },
                         "regionCode": {
                           "maxLength": 64,
                           "minLength": 1,
                           "type": "string"
+                        },
+                        "schedule": {
+                          "additionalProperties": false,
+                          "name": "AppModelCatalogPriceSchedule",
+                          "nullable": true,
+                          "properties": {
+                            "excludeDates": {
+                              "items": {
+                                "format": "date",
+                                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                                "type": "string"
+                              },
+                              "maxItems": 366,
+                              "type": "array",
+                              "uniqueItems": true
+                            },
+                            "holidayDates": {
+                              "items": {
+                                "format": "date",
+                                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                                "type": "string"
+                              },
+                              "maxItems": 366,
+                              "type": "array",
+                              "uniqueItems": true
+                            },
+                            "includeDates": {
+                              "items": {
+                                "format": "date",
+                                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                                "type": "string"
+                              },
+                              "maxItems": 366,
+                              "type": "array",
+                              "uniqueItems": true
+                            },
+                            "timeZone": {
+                              "maxLength": 128,
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "weeklyWindows": {
+                              "items": {
+                                "additionalProperties": false,
+                                "name": "AppModelCatalogPriceScheduleWindow",
+                                "properties": {
+                                  "daysOfWeek": {
+                                    "items": {
+                                      "format": "int32",
+                                      "maximum": 7,
+                                      "minimum": 1,
+                                      "type": "integer"
+                                    },
+                                    "maxItems": 7,
+                                    "minItems": 1,
+                                    "type": "array",
+                                    "uniqueItems": true
+                                  },
+                                  "endDayOffset": {
+                                    "enum": [
+                                      0,
+                                      1
+                                    ],
+                                    "format": "int32",
+                                    "type": "integer"
+                                  },
+                                  "endTime": {
+                                    "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                                    "type": "string"
+                                  },
+                                  "holidayOnly": {
+                                    "type": "boolean"
+                                  },
+                                  "startTime": {
+                                    "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                                    "type": "string"
+                                  },
+                                  "windowCode": {
+                                    "maxLength": 96,
+                                    "minLength": 1,
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "windowCode",
+                                  "daysOfWeek",
+                                  "startTime",
+                                  "endTime",
+                                  "endDayOffset",
+                                  "holidayOnly"
+                                ],
+                                "type": "object"
+                              },
+                              "maxItems": 64,
+                              "minItems": 1,
+                              "type": "array"
+                            }
+                          },
+                          "required": [
+                            "timeZone",
+                            "weeklyWindows",
+                            "includeDates",
+                            "excludeDates",
+                            "holidayDates"
+                          ],
+                          "type": "object"
                         },
                         "unitPrice": {
                           "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
@@ -29304,7 +29673,10 @@
                         "regionCode",
                         "billingMeter",
                         "unitPrice",
-                        "currency"
+                        "currency",
+                        "rateHash",
+                        "rateVariant",
+                        "schedule"
                       ],
                       "type": "object"
                     },
@@ -31390,7 +31762,8 @@
                   "rateVariant": {
                     "enum": [
                       "standard",
-                      "time_window"
+                      "time_window",
+                      "batch"
                     ],
                     "type": "string"
                   },
@@ -31408,6 +31781,16 @@
                     "nullable": true,
                     "properties": {
                       "excludeDates": {
+                        "items": {
+                          "format": "date",
+                          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                          "type": "string"
+                        },
+                        "maxItems": 366,
+                        "type": "array",
+                        "uniqueItems": true
+                      },
+                      "holidayDates": {
                         "items": {
                           "format": "date",
                           "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
@@ -31460,6 +31843,9 @@
                               "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                               "type": "string"
                             },
+                            "holidayOnly": {
+                              "type": "boolean"
+                            },
                             "startTime": {
                               "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                               "type": "string"
@@ -31475,7 +31861,8 @@
                             "daysOfWeek",
                             "startTime",
                             "endTime",
-                            "endDayOffset"
+                            "endDayOffset",
+                            "holidayOnly"
                           ],
                           "type": "object"
                         },
@@ -31488,7 +31875,8 @@
                       "timeZone",
                       "weeklyWindows",
                       "includeDates",
-                      "excludeDates"
+                      "excludeDates",
+                      "holidayDates"
                     ],
                     "type": "object"
                   },

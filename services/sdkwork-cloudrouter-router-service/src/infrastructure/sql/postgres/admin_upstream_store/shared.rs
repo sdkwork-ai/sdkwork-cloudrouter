@@ -28,6 +28,16 @@ pub(super) fn store_error(context: &str, error: sqlx::Error) -> DomainError {
     redacted_store_error(context, error)
 }
 
+/// Explicit opt-in for loopback `http://` upstream Base URLs (local/dev only).
+///
+/// A gateway that fronts a provider on the same machine (vLLM, Ollama, a local
+/// LiteLLM, the e2e mock provider) needs `http://127.0.0.1:<port>`. The default
+/// write-time policy rejects every cleartext URL; this switch narrows that
+/// rejection to *non-loopback* cleartext targets only, so a public or internal
+/// `http://` URL is still refused. Dispatch keeps its own boundary.
+pub(super) const ENV_ALLOW_LOOPBACK_UPSTREAM_BASE_URL: &str =
+    "SDKWORK_CLOUDROUTER_UPSTREAM_BASE_URL_ALLOW_LOOPBACK";
+
 /// Holds a stored upstream Base URL to the production egress boundary at
 /// configuration time.
 ///
@@ -37,21 +47,58 @@ pub(super) fn store_error(context: &str, error: sqlx::Error) -> DomainError {
 /// same policy again before dispatch
 /// (`invocation_dispatcher::validated_provider_uri`), so this only moves the
 /// failure to the person who can fix it.
-///
-/// Local development upstreams are configured through the explicit
-/// development-only constructors, not through the admin API, so holding stored
-/// configuration to the production boundary does not block them.
 pub(super) fn validate_upstream_base_url(value: &str, field_name: &str) -> DomainResult<()> {
+    let allow_loopback = std::env::var(ENV_ALLOW_LOOPBACK_UPSTREAM_BASE_URL)
+        .ok()
+        .is_some_and(|value| matches!(value.trim(), "1" | "true" | "TRUE" | "yes"));
+    validate_upstream_base_url_with_policy(value, field_name, allow_loopback)
+}
+
+/// Pure form of [`validate_upstream_base_url`] so the policy matrix is testable
+/// without touching process-global environment state.
+pub(super) fn validate_upstream_base_url_with_policy(
+    value: &str,
+    field_name: &str,
+    allow_loopback: bool,
+) -> DomainResult<()> {
     let value = value.trim();
     if value.is_empty() {
         return Ok(());
     }
-    sdkwork_cloudrouter_security::validate_outbound_base_url(
+    let parsed = sdkwork_cloudrouter_security::validate_outbound_base_url(
         value,
         sdkwork_cloudrouter_security::OutboundTargetPolicy::Production,
     )
     .map(|_| ())
-    .map_err(|error| DomainError::new(format!("{field_name} rejected: {error}")))
+    .map_err(|error| DomainError::new(format!("{field_name} rejected: {error}")));
+
+    if parsed.is_ok() || !allow_loopback {
+        return parsed;
+    }
+    // Only a loopback cleartext target may use the opt-in; every other
+    // production violation (userinfo, fragment, query, internal host) still
+    // fails here because the development policy repeats those checks.
+    let Ok(url) = sdkwork_cloudrouter_security::validate_outbound_base_url(
+        value,
+        sdkwork_cloudrouter_security::OutboundTargetPolicy::Development,
+    ) else {
+        return parsed;
+    };
+    if url.scheme() != "http" {
+        return parsed;
+    }
+    let host = url.host_str().unwrap_or_default();
+    let host = host.trim_start_matches('[').trim_end_matches(']');
+    let is_loopback = host.eq_ignore_ascii_case("localhost")
+        || host
+            .parse::<std::net::IpAddr>()
+            .map(|address| address.is_loopback())
+            .unwrap_or(false);
+    if is_loopback {
+        Ok(())
+    } else {
+        parsed
+    }
 }
 
 pub(super) fn column<T>(row: &PgRow, name: &str, context: &str) -> DomainResult<T>
@@ -265,7 +312,7 @@ pub(super) fn masked_secret(secret: &str) -> String {
 
 #[cfg(test)]
 mod base_url_validation_tests {
-    use super::validate_upstream_base_url;
+    use super::{validate_upstream_base_url, validate_upstream_base_url_with_policy};
 
     #[test]
     fn accepts_public_https_upstreams() {
@@ -284,6 +331,7 @@ mod base_url_validation_tests {
     }
 
     #[test]
+    #[test]
     fn rejects_urls_that_breach_the_egress_boundary() {
         for value in [
             "http://api.deepseek.com/v1",
@@ -294,11 +342,41 @@ mod base_url_validation_tests {
             "https://169.254.169.254/latest/meta-data",
             "http://localhost:11434/v1",
         ] {
-            let error = validate_upstream_base_url(value, "defaultBaseUrl")
+            let error = validate_upstream_base_url_with_policy(value, "defaultBaseUrl", false)
                 .expect_err("outbound boundary bypass must be rejected");
             assert!(
                 error.to_string().contains("defaultBaseUrl rejected"),
                 "rejection must name the field: {error}"
+            );
+        }
+    }
+
+    /// A gateway fronting a local provider needs loopback plain HTTP. The
+    /// opt-in narrows the policy to loopback only: public cleartext stays
+    /// rejected, and every other production violation still fails.
+    #[test]
+    fn the_loopback_opt_in_allows_only_loopback_plain_http() {
+        for accepted in [
+            "http://127.0.0.1:8080/v1",
+            "http://localhost:11434/v1",
+            "http://[::1]:8000/v1",
+            "https://api.deepseek.com/v1",
+        ] {
+            assert!(
+                validate_upstream_base_url_with_policy(accepted, "defaultBaseUrl", true).is_ok(),
+                "loopback opt-in should accept {accepted}"
+            );
+        }
+        for rejected in [
+            "http://api.deepseek.com/v1",
+            "http://169.254.169.254/latest/meta-data",
+            "https://user:secret@api.deepseek.com/v1",
+            "https://api.deepseek.com/v1?token=abc",
+            "https://127.0.0.1:8080/v1",
+        ] {
+            assert!(
+                validate_upstream_base_url_with_policy(rejected, "defaultBaseUrl", true).is_err(),
+                "loopback opt-in must not accept {rejected}"
             );
         }
     }

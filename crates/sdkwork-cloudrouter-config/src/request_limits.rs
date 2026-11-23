@@ -3,6 +3,7 @@ pub struct RequestLimitsConfig {
     admin_app_json_body_max_bytes: usize,
     admin_skill_json_body_max_bytes: usize,
     gateway_invocation_body_max_bytes: usize,
+    gateway_upload_body_max_bytes: usize,
     gateway_request_timeout_millis: u64,
 }
 
@@ -13,6 +14,8 @@ impl RequestLimitsConfig {
         "SDKWORK_CLOUDROUTER_ADMIN_SKILL_JSON_BODY_MAX_BYTES";
     pub const ENV_GATEWAY_INVOCATION_BODY_MAX_BYTES: &'static str =
         "SDKWORK_CLOUDROUTER_GATEWAY_INVOCATION_BODY_MAX_BYTES";
+    pub const ENV_GATEWAY_UPLOAD_BODY_MAX_BYTES: &'static str =
+        "SDKWORK_CLOUDROUTER_GATEWAY_UPLOAD_BODY_MAX_BYTES";
     pub const ENV_GATEWAY_REQUEST_TIMEOUT_MILLIS: &'static str =
         "SDKWORK_CLOUDROUTER_GATEWAY_REQUEST_TIMEOUT_MILLIS";
 
@@ -28,6 +31,24 @@ impl RequestLimitsConfig {
     /// `SDKWORK_CLOUDROUTER_GATEWAY_INVOCATION_BODY_MAX_BYTES` / runtime.toml
     /// when serving very large image edits.
     pub const DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES: usize = 25 * 1024 * 1024;
+    /// Default maximum request body size for vendor file-upload endpoints.
+    ///
+    /// Applies to the paths that carry a binary object rather than a JSON
+    /// prompt: `POST /v1/files`, `/v1/uploads`, `/v1/containers/{id}/files`,
+    /// `/anthropic/v1/files` and `/google/v1beta/files`.
+    ///
+    /// OpenAI's Files API accepts a 512 MB object per request, which is an
+    /// order of magnitude above the 25 MiB JSON budget, so the gate needs its
+    /// own knob instead of widening every `/v1` route.
+    ///
+    /// The default intentionally equals the invocation budget: the intake still
+    /// collects the whole body in memory (`invocation_body_from_http`), so a
+    /// larger default would turn a single upload into a multi-hundred-megabyte
+    /// allocation and a trivially reachable OOM. Operators align it with the
+    /// vendor ceiling via `SDKWORK_CLOUDROUTER_GATEWAY_UPLOAD_BODY_MAX_BYTES`
+    /// once multipart bodies are streamed instead of buffered; until then the
+    /// honest ceiling is "what one request may hold in RAM".
+    pub const DEFAULT_GATEWAY_UPLOAD_BODY_MAX_BYTES: usize = 25 * 1024 * 1024;
     /// Default outer HTTP backstop for one gateway request.
     ///
     /// The web framework's production default is 30 s, while the provider
@@ -68,6 +89,12 @@ impl RequestLimitsConfig {
                     .and_then(|config| config.request_limits.gateway_invocation_body_max_bytes),
                 Self::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
             )?,
+            gateway_upload_body_max_bytes: configured_usize_limit(
+                Self::ENV_GATEWAY_UPLOAD_BODY_MAX_BYTES,
+                runtime_toml
+                    .and_then(|config| config.request_limits.gateway_upload_body_max_bytes),
+                Self::DEFAULT_GATEWAY_UPLOAD_BODY_MAX_BYTES,
+            )?,
             gateway_request_timeout_millis: configured_u64_limit(
                 Self::ENV_GATEWAY_REQUEST_TIMEOUT_MILLIS,
                 runtime_toml
@@ -89,6 +116,11 @@ impl RequestLimitsConfig {
         self.gateway_invocation_body_max_bytes
     }
 
+    /// Body ceiling for the vendor file-upload endpoints.
+    pub fn gateway_upload_body_max_bytes(&self) -> usize {
+        self.gateway_upload_body_max_bytes
+    }
+
     pub fn gateway_request_timeout_millis(&self) -> u64 {
         self.gateway_request_timeout_millis
     }
@@ -100,6 +132,7 @@ impl Default for RequestLimitsConfig {
             admin_app_json_body_max_bytes: Self::DEFAULT_ADMIN_APP_JSON_BODY_MAX_BYTES,
             admin_skill_json_body_max_bytes: Self::DEFAULT_ADMIN_SKILL_JSON_BODY_MAX_BYTES,
             gateway_invocation_body_max_bytes: Self::DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES,
+            gateway_upload_body_max_bytes: Self::DEFAULT_GATEWAY_UPLOAD_BODY_MAX_BYTES,
             gateway_request_timeout_millis: Self::DEFAULT_GATEWAY_REQUEST_TIMEOUT_MILLIS,
         }
     }

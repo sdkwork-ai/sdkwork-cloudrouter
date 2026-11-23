@@ -9,11 +9,11 @@ use std::collections::BTreeMap;
 use std::fmt::{Display, Formatter};
 
 use crate::domain::{
-    has_text, normalize_wire_model_id, parse_model_catalog_identity, provider_native_model_id,
-    BillingMeter, DecimalValue, DomainError, DomainResult, GatewayApiKeyAccountGroupBinding,
-    ModelUpstreamRoute, PriceSide, PricingDimensionContext, ResourceDefinition, RouteCandidate,
-    RoutingCapability, UpstreamAccountGroup, UpstreamAccountGroupBinding, UpstreamAccountRoute,
-    UpstreamAccountRoutingStrategy,
+    has_text, model_route_identities, normalize_wire_model_id, parse_model_catalog_identity,
+    provider_native_model_id, BillingMeter, DecimalValue, DomainError, DomainResult,
+    GatewayApiKeyAccountGroupBinding, ModelUpstreamRoute, PriceSide, PricingDimensionContext,
+    ResourceDefinition, RouteCandidate, RoutingCapability, UpstreamAccountGroup,
+    UpstreamAccountGroupBinding, UpstreamAccountRoute, UpstreamAccountRoutingStrategy,
 };
 use crate::ports::{
     AccountGroupModelAccess, UpstreamAccountRouteCatalog, UpstreamRouteGateDiagnosis,
@@ -77,6 +77,22 @@ pub struct SelectedUpstreamModelRoute {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SelectedUpstreamModelRoutePlan {
     pub routes: Vec<SelectedUpstreamModelRoute>,
+}
+
+/// Outcome of two-stage model routing: the selected plan plus the catalog key
+/// that actually supplied it.
+///
+/// `catalog_key` differs from the query's preferred key when the
+/// vendor-qualified route could not be selected and routing fell back to the
+/// bare model id. Callers must persist the returned key (resource identity,
+/// pricing, activity/usage attribution) instead of the requested one.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SelectedUpstreamModelRoutePlanWithIdentity {
+    pub plan: SelectedUpstreamModelRoutePlan,
+    pub catalog_key: String,
+    /// True when the vendor-qualified route failed and the bare model id was
+    /// routed instead.
+    pub fallback_used: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -248,6 +264,142 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                     query.catalog_key
                 ))
             }))
+    }
+
+    /// Selects a model route with two-stage identity fallback:
+    ///
+    /// 1. Route by the caller's preferred catalog key — every model-related
+    ///    open-api resolves `vendor/model` to a catalog key before calling here.
+    /// 2. If that route cannot be selected (unknown model route, empty account
+    ///    snapshot, no priced account, …), retry by the bare model id
+    ///    (`deepseek/deepseek-flash` → `deepseek-flash`) against the catalog.
+    ///
+    /// A `ModelForbidden` result from either stage is a hard rejection by the
+    /// selected account group and is returned immediately: falling back to
+    /// another spelling must never bypass a model blacklist (the blacklist
+    /// itself matches every spelling, but the fail-closed behaviour must not
+    /// depend on that).
+    ///
+    /// The bare identity may match several catalog keys (the same model served
+    /// by several vendors). Routing only takes the fallback when exactly one
+    /// *other* key remains; with more than one it reports the primary error
+    /// instead of guessing a vendor.
+    pub fn select_model_route_plan_with_fallback(
+        &self,
+        query: SelectUpstreamModelRouteQuery,
+    ) -> Result<SelectedUpstreamModelRoutePlanWithIdentity, UpstreamRouteSelectionError> {
+        let primary_catalog_key = query.catalog_key.clone();
+        let primary_error = match self.select_model_route_plan(query.clone()) {
+            Ok(plan) => {
+                return Ok(SelectedUpstreamModelRoutePlanWithIdentity {
+                    plan,
+                    catalog_key: primary_catalog_key,
+                    fallback_used: false,
+                });
+            }
+            Err(error) if error.kind() == UpstreamRouteSelectionErrorKind::ModelForbidden => {
+                return Err(error);
+            }
+            Err(error) => error,
+        };
+
+        for fallback_catalog_key in
+            self.bare_model_route_fallback_keys(&query, &primary_catalog_key)
+        {
+            let mut fallback_query = query.clone();
+            fallback_query.catalog_key = fallback_catalog_key.clone();
+            match self.select_model_route_plan(fallback_query) {
+                Ok(plan) => {
+                    tracing::info!(
+                        requested_model = %query.requested_model,
+                        primary_catalog_key = %primary_catalog_key,
+                        fallback_catalog_key = %fallback_catalog_key,
+                        api_key_id = query.context.api_key_id,
+                        group_id = query.context.group_id,
+                        group_code = %query.context.group_code,
+                        "model route selected by bare-model-id fallback after the \
+                         vendor-qualified route was unavailable"
+                    );
+                    return Ok(SelectedUpstreamModelRoutePlanWithIdentity {
+                        plan,
+                        catalog_key: fallback_catalog_key,
+                        fallback_used: true,
+                    });
+                }
+                Err(error) if error.kind() == UpstreamRouteSelectionErrorKind::ModelForbidden => {
+                    // Never let the fallback spelling route around a group's
+                    // model blacklist.
+                    return Err(error);
+                }
+                Err(error) => {
+                    tracing::warn!(
+                        requested_model = %query.requested_model,
+                        primary_catalog_key = %primary_catalog_key,
+                        primary_error = %primary_error,
+                        fallback_catalog_key = %fallback_catalog_key,
+                        fallback_error = %error,
+                        "bare-model-id route fallback also failed"
+                    );
+                }
+            }
+        }
+
+        // Prefer the most specific failure: the caller's explicit
+        // `vendor/model` identity. The fallback diagnostics are already logged.
+        Err(primary_error)
+    }
+
+    /// Catalog keys the bare model id of the selected identity can route by,
+    /// excluding the preferred key and any duplicate.
+    ///
+    /// The bare identity is derived from the preferred catalog key's model
+    /// segment (`deepseek/deepseek-flash` → `deepseek-flash`): that is the
+    /// model id the vendor-qualified route resolved to, and it keeps model
+    /// mappings authoritative (a mapped `openai/gpt-4o` target falls back to
+    /// `gpt-4o`, never to the un-mapped request id). When the preferred key is
+    /// not a canonical catalog key (a provider-native preset, for example), the
+    /// request's bare identity is used instead. Returns empty when there is
+    /// nothing to fall back to or when the bare id is ambiguous.
+    fn bare_model_route_fallback_keys(
+        &self,
+        query: &SelectUpstreamModelRouteQuery,
+        primary_catalog_key: &str,
+    ) -> Vec<String> {
+        let primary_catalog_key = primary_catalog_key.trim();
+        let Some(bare_identity) = parse_model_catalog_identity(primary_catalog_key)
+            .map(|identity| identity.model_id())
+            .filter(|value| !value.is_empty())
+            .or_else(|| model_route_identities(&query.requested_model).pop())
+        else {
+            return Vec::new();
+        };
+        if bare_identity.eq_ignore_ascii_case(primary_catalog_key) {
+            return Vec::new();
+        }
+        let mut fallback_keys: Vec<String> = Vec::new();
+        for key in self.catalog.model_catalog_keys_by_name(&bare_identity) {
+            let key = key.trim();
+            if key.is_empty()
+                || key.eq_ignore_ascii_case(primary_catalog_key)
+                || fallback_keys
+                    .iter()
+                    .any(|existing| existing.eq_ignore_ascii_case(key))
+            {
+                continue;
+            }
+            fallback_keys.push(key.to_owned());
+        }
+        if fallback_keys.len() > 1 {
+            tracing::warn!(
+                requested_model = %query.requested_model,
+                bare_model_id = %bare_identity,
+                primary_catalog_key,
+                candidate_count = fallback_keys.len(),
+                "bare model id matches several catalog keys; routing does not guess a vendor"
+            );
+            return Vec::new();
+        }
+        fallback_keys
     }
 
     fn select_model_route_plan_for_context(
@@ -2432,7 +2584,20 @@ fn resource_entitlement_matches_request(
         .filter(|value| !value.trim().is_empty())
     {
         constrained = true;
-        if !value.trim().eq_ignore_ascii_case(catalog_key) {
+        let value = value.trim();
+        // A resource entitlement may name the model by its canonical catalog
+        // key (`deepseek/deepseek-flash`), by the bare model id operators often
+        // configure for a vendor (`deepseek-flash`), or by the wire spelling
+        // the request used. Matching only the exact catalog key would reject a
+        // correctly configured bare-model entitlement as soon as routing is
+        // addressed by `vendor/model`; a different *qualified* vendor key must
+        // still not match, so the bare-model equivalence is limited to values
+        // without a vendor segment.
+        let bare_value = parse_model_catalog_identity(value).is_none();
+        if !value.eq_ignore_ascii_case(catalog_key)
+            && !value.eq_ignore_ascii_case(requested_model)
+            && !(bare_value && value.eq_ignore_ascii_case(&native_model))
+        {
             return false;
         }
     }

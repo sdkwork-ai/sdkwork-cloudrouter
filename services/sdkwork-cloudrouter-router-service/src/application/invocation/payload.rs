@@ -2,6 +2,7 @@ use axum::http::Method;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
+use super::model_fields::model_query_value;
 use super::multipart_form::{
     optional_model_from_multipart_form, request_content_type_is_multipart_form,
     require_multipart_boundary, require_non_blank_model,
@@ -12,7 +13,7 @@ use super::{
     InvocationErrorKind, InvocationFuture, InvocationInterceptor, InvocationRequest,
     InvocationShape, InvocationSurface, StickyMode, StickyRouting,
 };
-use crate::domain::AiRouteModelRequirement;
+use crate::domain::{AiRouteModelRequirement, MODEL_REQUEST_FIELD_NAMES};
 
 #[derive(Debug, Clone, Default)]
 pub struct PayloadExtractionInterceptor;
@@ -44,7 +45,7 @@ pub fn peek_requested_model(request: &InvocationRequest) -> Option<String> {
     if let Some(model) = invocation_request_path_model(request) {
         return Some(model);
     }
-    if let Some(model) = request.query.as_deref().and_then(query_value_model) {
+    if let Some(model) = request.query.as_deref().and_then(model_query_value) {
         return Some(model);
     }
     if request_content_type_is_multipart_form(&request.headers) {
@@ -97,7 +98,7 @@ fn extract_requested_model(invocation: &mut Invocation) -> Result<(), Invocation
         .request
         .query
         .as_deref()
-        .and_then(query_value_model)
+        .and_then(model_query_value)
     {
         apply_extracted_model(invocation, model);
         return Ok(());
@@ -326,6 +327,30 @@ fn validate_required_model(invocation: &Invocation) -> Result<(), InvocationErro
             .and_then(non_empty_text)
             .is_none()
     {
+        // The mapped ProblemDetail only states that a model is required. The
+        // access event records the resulting status, not the cause, so without
+        // this trace a rejected request is invisible in the gateway log — which
+        // is exactly how an intermittent caller-side omission of `model` reads
+        // as a gateway fault. Log the shape of the offending request instead.
+        let body_bytes = match &invocation.request.body {
+            InvocationBody::Json(value) => serde_json::to_vec(value)
+                .map(|encoded| encoded.len())
+                .unwrap_or_default(),
+            InvocationBody::Bytes(bytes) => bytes.len(),
+            InvocationBody::Empty => 0,
+        };
+        tracing::warn!(
+            stage = "payload_extraction",
+            api_code = %invocation.resource.api_code,
+            route_key = %invocation.resource.route_key,
+            method = %invocation.request.method,
+            path = %invocation.request.path,
+            content_type = invocation.request.content_type.as_deref().unwrap_or(""),
+            body_bytes,
+            accepted_model_fields = ?crate::domain::MODEL_REQUEST_FIELD_NAMES,
+            request_id = %invocation.request.request_id,
+            "required route rejected a request that carries no model"
+        );
         return Err(InvocationError::new(
             InvocationErrorKind::InvalidRequest,
             format!("model is required for {}", invocation.resource.api_code),
@@ -347,19 +372,20 @@ fn top_level_model_from_json_value(value: &Value) -> Result<Option<String>, Invo
     // 请求会被当成"未携带模型"，定价键只能退化为 api code，而 sdkwork-models
     // 目录对这些能力计价的对象是模型（`elevenlabs/eleven_multilingual_v2`），
     // 于是拿 api code 去查价必然 `model not found`。
-    for field in ["model", "model_name", "modelName", "model_id", "modelId"] {
-        let Some(model) = value.get(field) else {
+    let Some(object) = value.as_object() else {
+        return Ok(None);
+    };
+    for field in MODEL_REQUEST_FIELD_NAMES {
+        let Some(model) = object.get(field) else {
             continue;
         };
-        match model {
-            Value::String(model) => return require_non_blank_model(model).map(Some),
-            _ => {
-                return Err(InvocationError::new(
-                    InvocationErrorKind::InvalidRequest,
-                    "model must be a string",
-                ));
-            }
-        }
+        return match model {
+            Value::String(model) => require_non_blank_model(model).map(Some),
+            _ => Err(InvocationError::new(
+                InvocationErrorKind::InvalidRequest,
+                "model must be a string",
+            )),
+        };
     }
     Ok(None)
 }
@@ -387,10 +413,6 @@ fn provider_native_catalog_key(invocation: &Invocation, model: &str) -> String {
 
 fn bool_field(value: &Value, field: &str) -> Option<bool> {
     value.get(field).and_then(Value::as_bool)
-}
-
-fn query_value_model(query: &str) -> Option<String> {
-    query_value(query, "model").and_then(|value| non_empty_text(&value).map(str::to_owned))
 }
 
 fn query_value_stream(query: &str) -> Option<bool> {
@@ -447,13 +469,25 @@ fn non_empty_text(value: &str) -> Option<&str> {
 
 #[cfg(test)]
 mod tests {
-    use super::query_value_model;
+    use super::model_query_value;
 
     #[test]
     fn query_value_model_decodes_utf8_percent_encoded_value() {
         assert_eq!(
             Some("openrouter/模型+latest".to_owned()),
-            query_value_model("model=openrouter%2F%E6%A8%A1%E5%9E%8B%2Blatest")
+            model_query_value("model=openrouter%2F%E6%A8%A1%E5%9E%8B%2Blatest")
+        );
+    }
+
+    #[test]
+    fn query_value_model_accepts_vendor_native_field_names() {
+        assert_eq!(
+            Some("eleven_multilingual_v2".to_owned()),
+            model_query_value("model_id=eleven_multilingual_v2")
+        );
+        assert_eq!(
+            Some("kling-v3".to_owned()),
+            model_query_value("model_name=kling-v3&duration=8")
         );
     }
 }

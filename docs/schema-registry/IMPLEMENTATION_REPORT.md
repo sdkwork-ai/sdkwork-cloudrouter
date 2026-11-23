@@ -61,7 +61,12 @@ use `rate_variant=time_window` and a closed schedule structure containing:
 - one or more weekly windows using ISO weekdays;
 - start and end wall-clock times;
 - `endDayOffset` equal to `0` or `1` for same-day or cross-midnight windows;
-- bounded include-date and exclude-date lists.
+- bounded include-date, exclude-date, and `holidayDates` lists;
+- optional `holidayOnly` windows selected only by a declared holiday date.
+
+Vendor batch rates use `rate_variant=batch`, carry no schedule, and are selected
+only by their explicit `tier_code=batch` condition. The runtime never applies a
+batch rate to an interactive call.
 
 Rate and policy selection uses `cloudrouter_usage_measurement.occurred_at`, not
 the processing clock. A matching time-window rate takes precedence over the

@@ -3,12 +3,15 @@ use sdkwork_cloudrouter_http::{sanitize_sensitive_query, upsert_query_parameter}
 use sdkwork_cloudrouter_provider_adapter_contract::AdapterInvocationShape;
 use serde_json::{json, Value};
 
+use super::model_fields::{rewrite_json_model_fields, rewrite_query_model_fields};
 use super::multipart_form::{request_content_type_is_multipart_form, rewrite_multipart_model};
 use super::{
     DispatchMode, Invocation, InvocationAccount, InvocationBody, InvocationError,
     InvocationErrorKind, InvocationProviderRequest, InvocationSurface, ResolvedProviderSecret,
 };
-use crate::domain::{ProviderAuthProfile, ProviderAuthType};
+use crate::domain::{
+    decode_model_path_segment, encode_model_path_segment, ProviderAuthProfile, ProviderAuthType,
+};
 
 #[derive(Debug, Clone, Default)]
 pub(super) struct ProviderRequestBuilder;
@@ -43,12 +46,31 @@ impl ProviderRequestBuilder {
         // is the catalog-native id, never a request dialect spelling
         // (`vendor:model`, `vendor|model`, full width, or `vendor/region/model`).
         // A relay supplier is the exception: it addresses models by the
-        // fully-qualified catalog key, so its route keeps the vendor head.
-        let provider_model = normalized_provider_model(account.provider_model.as_deref(), supplier_type);
+        // fully-qualified catalog key, so its route keeps the vendor head. The
+        // decision is shared with the OpenAI-compatible relay runtime
+        // (`domain::resolve_provider_model_id`); this layer never
+        // re-derives it.
+        //
+        // On provider-native surfaces `requested_model_catalog_key` is a
+        // synthetic `supplier/model` key, not a catalog key. Using it to
+        // upgrade a relay's bare model would ask the relay for
+        // `openrouter/gpt-4o`; model routes have already resolved the relay's
+        // qualified id by the time they reach this builder, so the catalog key
+        // is only consulted for official-vendor stripping.
+        let relay_supplier =
+            supplier_type.is_some_and(|kind| kind.trim().eq_ignore_ascii_case("relay"));
+        let provider_model = normalized_provider_model(
+            account.provider_model.as_deref(),
+            supplier_type,
+            (!relay_supplier)
+                .then(|| invocation.resource.requested_model_catalog_key.as_deref())
+                .flatten(),
+            invocation.resource.requested_model.as_deref(),
+        );
         let provider_model = provider_model.as_deref();
-        let mut query = rewrite_query_model(
+        let mut query = rewrite_query_model_fields(
             sanitize_sensitive_query(invocation.request.query.as_deref()),
-            provider_model,
+            provider_model.unwrap_or_default(),
         );
         apply_auth(
             &mut headers,
@@ -145,31 +167,22 @@ fn normalize_host(value: &str) -> String {
 
 /// The provider-facing model id for a route.
 ///
-/// Official vendors receive the catalog-native spelling
-/// (`provider_native_model_id`), so a request dialect (`vendor:model`,
-/// `vendor|model`, full width, `vendor/region/model`) can never reach a vendor.
-/// Relay suppliers keep the fully-qualified `vendor/model` head: they are a
-/// different vendor reselling the catalog and address models by that key, so
-/// stripping it would request a model the relay does not serve.
+/// Delegates to the single shared resolver: an official vendor receives the
+/// catalog-native spelling (`provider_native_model_id`), while a relay keeps
+/// the fully-qualified `vendor/model` head it addresses models by. See
+/// [`crate::domain::resolve_provider_model_id`].
 fn normalized_provider_model(
     provider_model: Option<&str>,
     supplier_type: Option<&str>,
+    catalog_key: Option<&str>,
+    requested_model: Option<&str>,
 ) -> Option<String> {
-    let value = provider_model
-        .map(str::trim)
-        .filter(|value| !value.is_empty())?;
-    if supplier_type.is_some_and(|kind| kind.trim().eq_ignore_ascii_case("relay")) {
-        return Some(canonical_qualified_model_id(value));
-    }
-    Some(crate::domain::provider_native_model_id(value))
-}
-
-/// Canonicalizes a `vendor/model` id without dropping the vendor head.
-fn canonical_qualified_model_id(value: &str) -> String {
-    match crate::domain::parse_request_model_identity(value) {
-        Some(identity) => format!("{}/{}", identity.vendor_code, identity.model_id()),
-        None => value.to_owned(),
-    }
+    crate::domain::resolve_provider_model_id(
+        supplier_type,
+        catalog_key,
+        requested_model,
+        provider_model,
+    )
 }
 
 fn build_adapter_provider_request(
@@ -199,14 +212,15 @@ fn build_adapter_provider_request(
         })?;
         headers.insert(header::AUTHORIZATION, value);
     }
-    let path = adapter_path(&target.path_template, &target.supplier_code, standard_path);
+    let standard_path = rewrite_path_model(standard_path, account.provider_model.as_deref());
+    let path = adapter_path(&target.path_template, &target.supplier_code, &standard_path);
     Ok(InvocationProviderRequest {
         method: axum::http::Method::POST,
         url: provider_url(Some(&target.base_url), &path, None),
         path,
         query: None,
         headers,
-        body: build_adapter_body(invocation, account, resolved_secret, standard_path)?,
+        body: build_adapter_body(invocation, account, resolved_secret, &standard_path)?,
     })
 }
 
@@ -309,24 +323,21 @@ fn rewrite_body_model(
 fn rewrite_json_body_model(body: InvocationBody, provider_model: &str) -> InvocationBody {
     match body {
         InvocationBody::Json(mut value) => {
-            if let Some(object) = value.as_object_mut() {
-                if object.contains_key("model") {
-                    object.insert("model".to_owned(), Value::String(provider_model.to_owned()));
-                }
-            }
+            rewrite_json_model_fields(&mut value, provider_model);
             InvocationBody::Json(value)
         }
         InvocationBody::Bytes(bytes) => match serde_json::from_slice::<Value>(&bytes) {
-            Ok(mut value) if value.as_object().is_some_and(|o| o.contains_key("model")) => {
-                if let Some(object) = value.as_object_mut() {
-                    object.insert("model".to_owned(), Value::String(provider_model.to_owned()));
-                }
-                match serde_json::to_vec(&value) {
-                    Ok(bytes) => InvocationBody::Bytes(bytes),
-                    Err(_) => InvocationBody::Bytes(bytes),
+            Ok(mut value) => {
+                if rewrite_json_model_fields(&mut value, provider_model) {
+                    match serde_json::to_vec(&value) {
+                        Ok(rewritten) => InvocationBody::Bytes(rewritten),
+                        Err(_) => InvocationBody::Bytes(bytes),
+                    }
+                } else {
+                    InvocationBody::Bytes(bytes)
                 }
             }
-            _ => InvocationBody::Bytes(bytes),
+            Err(_) => InvocationBody::Bytes(bytes),
         },
         other => other,
     }
@@ -354,87 +365,21 @@ fn rewrite_models_action_path(path: &str, provider_model: &str) -> Option<String
     // The action suffix follows the last `:` so a dialect model id in the path
     // (`models/google:veo-3.0:generateVideos`) is still replaced wholesale.
     let (model, action) = rest.rsplit_once(':')?;
-    if model.trim().is_empty() || action.trim().is_empty() || model == provider_model {
+    let model = decode_model_path_segment(model);
+    if model.trim().is_empty() || action.trim().is_empty() || model.trim() == provider_model {
         return None;
     }
-    Some(format!("{prefix}{provider_model}:{action}"))
-}
-
-fn rewrite_query_model(query: Option<String>, provider_model: Option<&str>) -> Option<String> {
-    let Some(provider_model) = provider_model
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-    else {
-        return query;
-    };
-    query.map(|query| {
-        query
-            .split('&')
-            .map(|part| {
-                part.split_once('=')
-                    .map(|(name, value)| {
-                        if decoded_query_component(name) == "model" && !value.trim().is_empty() {
-                            format!("model={}", percent_encode_query_component(provider_model))
-                        } else {
-                            part.to_owned()
-                        }
-                    })
-                    .unwrap_or_else(|| part.to_owned())
-            })
-            .collect::<Vec<_>>()
-            .join("&")
-    })
+    // A relay model is fully-qualified (`vendor/model`), but the path segment
+    // must stay one segment: encode the separator instead of letting it become
+    // a second path component.
+    Some(format!(
+        "{prefix}{}:{action}",
+        encode_model_path_segment(provider_model)
+    ))
 }
 
 fn append_query_pair(query: &mut Option<String>, name: &str, value: &str) {
     *query = Some(upsert_query_parameter(query.as_deref(), name, value));
-}
-
-fn percent_encode_query_component(value: &str) -> String {
-    let mut encoded = String::with_capacity(value.len());
-    for byte in value.bytes() {
-        if is_unreserved_query_byte(byte) {
-            encoded.push(char::from(byte));
-        } else {
-            encoded.push('%');
-            encoded.push_str(&format!("{byte:02X}"));
-        }
-    }
-    encoded
-}
-
-fn is_unreserved_query_byte(byte: u8) -> bool {
-    byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~')
-}
-
-fn decoded_query_component(value: &str) -> String {
-    let mut output = Vec::with_capacity(value.len());
-    let bytes = value.as_bytes();
-    let mut index = 0;
-    while index < bytes.len() {
-        match bytes[index] {
-            b'+' => {
-                output.push(b' ');
-                index += 1;
-            }
-            b'%' if index + 2 < bytes.len() => {
-                if let Ok(hex) = std::str::from_utf8(&bytes[index + 1..index + 3]) {
-                    if let Ok(byte) = u8::from_str_radix(hex, 16) {
-                        output.push(byte);
-                        index += 3;
-                        continue;
-                    }
-                }
-                output.push(bytes[index]);
-                index += 1;
-            }
-            byte => {
-                output.push(byte);
-                index += 1;
-            }
-        }
-    }
-    String::from_utf8(output).unwrap_or_else(|_| value.to_owned())
 }
 
 fn build_adapter_body(
@@ -443,7 +388,7 @@ fn build_adapter_body(
     resolved_secret: Option<&ResolvedProviderSecret>,
     standard_path: &str,
 ) -> Result<InvocationBody, InvocationError> {
-    let body = match invocation.request.body.clone() {
+    let mut body = match invocation.request.body.clone() {
         InvocationBody::Json(value) => value,
         InvocationBody::Empty => Value::Null,
         InvocationBody::Bytes(bytes) => json!({
@@ -451,6 +396,18 @@ fn build_adapter_body(
             "length": bytes.len()
         }),
     };
+    // The adapter receives the resolved provider model in
+    // `provider.providerModel`; keep the forwarded body's model fields in sync
+    // so an adapter that forwards the body cannot reintroduce the client's
+    // `vendor/model` spelling.
+    if let Some(provider_model) = account
+        .provider_model
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        rewrite_json_model_fields(&mut body, provider_model);
+    }
     let secret = resolved_secret
         .map(|secret| {
             json!({
@@ -782,16 +739,25 @@ mod tests {
         ] {
             assert_eq!(
                 Some("deepseek-flash".to_owned()),
-                super::normalized_provider_model(Some(dialect), None),
+                super::normalized_provider_model(
+                    Some(dialect),
+                    None,
+                    Some("deepseek/deepseek-flash"),
+                    Some("deepseek-flash"),
+                ),
                 "provider model: {dialect}"
             );
         }
-        assert_eq!(None, super::normalized_provider_model(None, None));
+        assert_eq!(
+            None,
+            super::normalized_provider_model(None, None, None, None)
+        );
     }
 
     /// A relay is a different vendor reselling the catalog: it addresses models
     /// by the fully-qualified `vendor/model` key, so the vendor head must
-    /// survive while dialect separators are canonicalized.
+    /// survive while dialect separators are canonicalized. A route that only
+    /// carries the vendor-native id is upgraded to the qualified catalog key.
     #[test]
     fn relay_suppliers_keep_the_qualified_catalog_key() {
         for dialect in [
@@ -801,19 +767,35 @@ mod tests {
         ] {
             assert_eq!(
                 Some("deepseek/deepseek-flash".to_owned()),
-                super::normalized_provider_model(Some(dialect), Some("relay")),
+                super::normalized_provider_model(
+                    Some(dialect),
+                    Some("relay"),
+                    Some("deepseek/deepseek-flash"),
+                    Some("deepseek/deepseek-flash"),
+                ),
                 "relay provider model: {dialect}"
             );
         }
-        // A vendor-native id has no head to preserve.
+        // A native id is upgraded to the fully-qualified catalog key: a relay
+        // cannot resolve the bare vendor-native id.
         assert_eq!(
-            Some("deepseek-flash".to_owned()),
-            super::normalized_provider_model(Some("deepseek-flash"), Some("relay"))
+            Some("deepseek/deepseek-flash".to_owned()),
+            super::normalized_provider_model(
+                Some("deepseek-flash"),
+                Some("relay"),
+                Some("deepseek/deepseek-flash"),
+                Some("deepseek-flash"),
+            )
         );
         // Case-insensitive supplier type from the snapshot.
         assert_eq!(
             Some("deepseek/deepseek-flash".to_owned()),
-            super::normalized_provider_model(Some("deepseek/deepseek-flash"), Some("RELAY"))
+            super::normalized_provider_model(
+                Some("deepseek/deepseek-flash"),
+                Some("RELAY"),
+                Some("deepseek/deepseek-flash"),
+                Some("deepseek/deepseek-flash"),
+            )
         );
     }
 
@@ -836,6 +818,44 @@ mod tests {
                 Some("veo-3.0"),
             )
         );
+    }
+
+    #[test]
+    fn media_action_paths_encode_qualified_relay_models() {
+        // A relay model is fully-qualified, but it must stay one path segment.
+        assert_eq!(
+            "/v1beta/models/anthropic%2Fclaude-opus-4-5:generateContent",
+            super::rewrite_path_model(
+                "/v1beta/models/claude-opus-4-5:generateContent",
+                Some("anthropic/claude-opus-4-5"),
+            )
+        );
+        // An inbound percent-encoded id is decoded for comparison and replaced
+        // with the resolved native id.
+        assert_eq!(
+            "/v1beta/models/gemini-2.5-flash-image:generateImages",
+            super::rewrite_path_model(
+                "/v1beta/models/google%2Fgemini-2.5-flash-image:generateImages",
+                Some("gemini-2.5-flash-image"),
+            )
+        );
+    }
+
+    #[test]
+    fn json_body_model_rewrites_every_vendor_native_field() {
+        let body = body_json(super::rewrite_json_body_model(
+            InvocationBody::Json(json!({
+                "model": "openai/gpt-image-2",
+                "model_name": "openai/gpt-image-2",
+                "model_id": "openai/gpt-image-2",
+                "prompt": "keep",
+            })),
+            "gpt-image-2",
+        ));
+        assert_eq!("gpt-image-2", body["model"]);
+        assert_eq!("gpt-image-2", body["model_name"]);
+        assert_eq!("gpt-image-2", body["model_id"]);
+        assert_eq!("keep", body["prompt"]);
     }
 
     #[test]

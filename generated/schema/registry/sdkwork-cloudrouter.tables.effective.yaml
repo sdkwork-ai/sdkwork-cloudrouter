@@ -241,13 +241,32 @@ modules:
     - iam_user_preference
     - integration_webhook_endpoint
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
+  storage-center:
+    owner: cloud-router-platform
+    description: Storage-center governance records for default buckets, quota policies,
+      usage counters, reconciliation runs, garbage-collection jobs, and generation
+      asset delivery configuration (Drive download policy and vendor asset TTLs).
+    compliance_level: L2
+    tables_count: 9
+    tables:
+    - storage_provider
+    - storage_bucket
+    - storage_default_bucket_policy
+    - storage_quota_policy
+    - storage_usage_counter
+    - storage_reconciliation_run
+    - storage_gc_job
+    - storage_generation_delivery_policy
+    - storage_vendor_asset_ttl
+    ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
   ai-routing:
     owner: cloud-router-platform
     description: AI routing, upstream supplier, upstream account, account-group, policy,
       quota, and runtime coordination tables.
     compliance_level: L2
-    tables_count: 20
+    tables_count: 21
     tables:
+    - ai_user_account_group_route
     - ai_upstream_account
     - ai_upstream_account_health_state
     - ai_upstream_account_credential
@@ -5191,6 +5210,80 @@ tables:
       strategy: foreign_key_cascade
       parent_table: ai_upstream_supplier_endpoint
   imported: false
+- table: ai_user_account_group_route
+  domain: ai
+  profile: tenant_entity
+  soft_delete_policy: active_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - open
+  - worker
+  frontend_routes:
+  - /console/routing/default-groups
+  columns:
+    user_id:
+      type: int64
+      constraints: NOT NULL
+    scope_type:
+      type: string(16)
+      constraints: NOT NULL
+    modality:
+      type: string(32)
+      constraints: NOT NULL DEFAULT ''
+    vendor_code:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    model:
+      type: string(200)
+      constraints: NOT NULL DEFAULT ''
+    account_group_id:
+      type: int64
+      constraints: NOT NULL
+    account_group_code:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+  unique_constraints:
+  - name: uk_ai_user_account_group_route_scope_group
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - scope_type
+    - modality
+    - vendor_code
+    - model
+    - account_group_id
+    where: deleted_at IS NULL
+  check_constraints:
+  - name: ck_ai_user_account_group_route_user
+    expression: user_id > 0
+  - name: ck_ai_user_account_group_route_scope
+    expression: scope_type IN ('model', 'vendor', 'modality') AND modality IN ('',
+      'text', 'image', 'video', 'audio', 'music') AND priority >= 0 AND ((scope_type
+      = 'modality' AND vendor_code = '' AND model = '' AND modality <> '') OR (scope_type
+      = 'vendor' AND vendor_code <> '' AND model = '') OR (scope_type = 'model' AND
+      model <> ''))
+  indexes:
+  - name: ix_ai_user_account_group_route_user
+    columns:
+    - tenant_id
+    - organization_id
+    - user_id
+    - id
+    where: deleted_at IS NULL
+  - name: ix_ai_user_account_group_route_group
+    columns:
+    - account_group_id
+    - id
+    where: deleted_at IS NULL
+  imported: false
 - table: ai_vendor_api_endpoint
   domain: ai
   profile: relation_entity
@@ -9329,12 +9422,12 @@ tables:
   - name: ck_pricing_rate_formula_json
     expression: formula IS NULL OR jsonb_typeof(formula) = 'object'
   - name: ck_pricing_rate_variant
-    expression: rate_variant IN ('standard', 'time_window')
+    expression: rate_variant IN ('standard', 'time_window', 'batch')
   - name: ck_pricing_rate_schedule_json
     expression: schedule IS NULL OR jsonb_typeof(schedule) = 'object'
   - name: ck_pricing_rate_schedule_variant
-    expression: (rate_variant = 'standard' AND schedule IS NULL) OR (rate_variant
-      = 'time_window' AND schedule IS NOT NULL)
+    expression: ((rate_variant IN ('standard', 'batch')) AND schedule IS NULL) OR
+      (rate_variant = 'time_window' AND schedule IS NOT NULL)
   - name: ck_pricing_rate_calculation_payload
     expression: (calculation_mode IN ('graduated', 'volume')) = (jsonb_array_length(tiers)
       > 0) AND (calculation_mode = 'formula') = (formula IS NOT NULL)
@@ -9414,4 +9507,587 @@ tables:
     - expires_at_ms
   lifecycle:
     storage_strategy: live_state
+  imported: false
+- table: storage_bucket
+  domain: storage
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/storage/defaultBuckets
+  columns:
+    provider_id:
+      type: int64
+      constraints: NOT NULL
+    bucket_name:
+      type: string(128)
+      constraints: NOT NULL
+    bucket_region:
+      type: string(64)
+      constraints: NOT NULL DEFAULT ''
+    logical_scope:
+      type: string(64)
+      constraints: NOT NULL
+  required_columns:
+  - provider_id
+  - bucket_name
+  - logical_scope
+  unique_constraints:
+  - name: uk_storage_bucket_scope_name
+    columns:
+    - tenant_id
+    - organization_id
+    - provider_id
+    - bucket_name
+  check_constraints:
+  - name: ck_storage_bucket_scope
+    expression: tenant_id >= 0 AND organization_id >= 0 AND provider_id > 0
+  - name: ck_storage_bucket_values
+    expression: length(bucket_name) > 0 AND length(logical_scope) > 0 AND length(bucket_region)
+      <= 64
+  indexes:
+  - name: ix_storage_bucket_scope_scope
+    columns:
+    - tenant_id
+    - organization_id
+    - logical_scope
+    - bucket_name
+  imported: false
+- table: storage_default_bucket_policy
+  domain: storage
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/storage/defaultBuckets
+  columns:
+    logical_scope:
+      type: string(64)
+      constraints: NOT NULL
+    bucket_id:
+      type: int64
+      constraints: NOT NULL
+    bucket_logical_scope:
+      type: string(64)
+      constraints: NOT NULL
+    updated_by:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    reason:
+      type: string(512)
+      constraints: NOT NULL DEFAULT ''
+    request_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+  required_columns:
+  - logical_scope
+  - bucket_id
+  - bucket_logical_scope
+  unique_constraints:
+  - name: uk_storage_default_bucket_scope
+    columns:
+    - tenant_id
+    - organization_id
+    - logical_scope
+  check_constraints:
+  - name: ck_storage_default_bucket_scope
+    expression: tenant_id >= 0 AND organization_id >= 0
+  - name: ck_storage_default_bucket_values
+    expression: length(logical_scope) > 0 AND length(bucket_logical_scope) > 0 AND
+      bucket_id > 0 AND length(reason) <= 512
+  indexes:
+  - name: ix_storage_default_bucket_scope_updated
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - updated_at
+  imported: false
+- table: storage_gc_job
+  domain: storage
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/storage/garbageCollection
+  columns:
+    id:
+      type: int64
+      constraints: NOT NULL PRIMARY KEY
+    uuid:
+      type: string(64)
+      constraints: NOT NULL
+    tenant_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    organization_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    job_type:
+      type: string(32)
+      constraints: NOT NULL
+    dry_run:
+      type: bool
+      constraints: NOT NULL DEFAULT TRUE
+    requested_by:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    idempotency_key:
+      type: string(128)
+      constraints: NOT NULL
+    request_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    criteria_json:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    result_json:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    candidate_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    status:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    created_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+    completed_at:
+      type: instant
+  required_columns:
+  - job_type
+  - idempotency_key
+  unique_constraints:
+  - name: uk_storage_gc_job_idempotency
+    columns:
+    - tenant_id
+    - organization_id
+    - idempotency_key
+  check_constraints:
+  - name: ck_storage_gc_job_scope
+    expression: tenant_id >= 0 AND organization_id >= 0
+  - name: ck_storage_gc_job_values
+    expression: candidate_count >= 0 AND length(job_type) > 0
+  indexes:
+  - name: ix_storage_gc_job_scope_created
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - id
+  - name: ix_storage_gc_job_uuid
+    columns:
+    - uuid
+  imported: false
+- table: storage_generation_delivery_policy
+  domain: storage
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/storage/generationDelivery
+  columns:
+    scope_type:
+      type: string(32)
+      constraints: NOT NULL
+    scope_id:
+      type: string(128)
+      constraints: NOT NULL
+    media_kind:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'all'
+    delivery_mode:
+      type: string(16)
+      constraints: NOT NULL
+    drive_space_id:
+      type: string(128)
+      constraints: ''
+    drive_folder_node_id:
+      type: string(128)
+      constraints: ''
+    download_deadline_seconds:
+      type: int32
+      constraints: ''
+    vendor_expiry_action:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'keep_reference'
+    delete_remote_after_download:
+      type: bool
+      constraints: NOT NULL DEFAULT TRUE
+    reason:
+      type: string(512)
+      constraints: ''
+    request_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+  required_columns:
+  - scope_type
+  - scope_id
+  - delivery_mode
+  unique_constraints:
+  - name: uk_storage_generation_delivery_policy_scope
+    columns:
+    - tenant_id
+    - organization_id
+    - scope_type
+    - scope_id
+    - media_kind
+  check_constraints:
+  - name: ck_storage_generation_delivery_policy_scope
+    expression: tenant_id >= 0 AND organization_id >= 0
+  - name: ck_storage_generation_delivery_policy_values
+    expression: scope_type IN ('organization', 'tenant', 'user') AND media_kind IN
+      ('all', 'image', 'video', 'audio') AND delivery_mode IN ('remote_only', 'to_drive')
+      AND vendor_expiry_action IN ('delete_remote', 'fail_job', 'keep_reference')
+      AND (download_deadline_seconds IS NULL OR download_deadline_seconds > 0) AND
+      length(scope_id) > 0
+  indexes:
+  - name: ix_storage_generation_delivery_policy_scope_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - media_kind
+    - id
+  imported: false
+- table: storage_provider
+  domain: storage
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/storage/defaultBuckets
+  columns:
+    name:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    supplier_code:
+      type: string(64)
+      constraints: NOT NULL
+    provider_type:
+      type: string(64)
+      constraints: NOT NULL
+    endpoint_url:
+      type: string(512)
+      constraints: NOT NULL DEFAULT ''
+    region:
+      type: string(64)
+      constraints: NOT NULL DEFAULT ''
+  required_columns:
+  - supplier_code
+  - provider_type
+  unique_constraints:
+  - name: uk_storage_provider_scope_code
+    columns:
+    - tenant_id
+    - organization_id
+    - supplier_code
+  check_constraints:
+  - name: ck_storage_provider_scope
+    expression: tenant_id >= 0 AND organization_id >= 0
+  - name: ck_storage_provider_values
+    expression: length(supplier_code) > 0 AND length(provider_type) > 0 AND length(endpoint_url)
+      <= 512 AND length(region) <= 64
+  indexes:
+  - name: ix_storage_provider_scope_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - supplier_code
+  imported: false
+- table: storage_quota_policy
+  domain: storage
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/storage/quotas
+  columns:
+    scope_type:
+      type: string(32)
+      constraints: NOT NULL
+    scope_id:
+      type: string(128)
+      constraints: NOT NULL
+    quota_limit_bytes:
+      type: int64
+      constraints: NOT NULL
+    single_file_limit_bytes:
+      type: int64
+    enforcement:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'hard'
+    idempotency_key:
+      type: string(128)
+      constraints: NOT NULL
+    request_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+  required_columns:
+  - scope_type
+  - scope_id
+  - quota_limit_bytes
+  - idempotency_key
+  unique_constraints:
+  - name: uk_storage_quota_policy_scope
+    columns:
+    - tenant_id
+    - organization_id
+    - scope_type
+    - scope_id
+  - name: uk_storage_quota_policy_idempotency
+    columns:
+    - tenant_id
+    - organization_id
+    - idempotency_key
+  check_constraints:
+  - name: ck_storage_quota_policy_scope
+    expression: tenant_id >= 0 AND organization_id >= 0
+  - name: ck_storage_quota_policy_values
+    expression: quota_limit_bytes >= 0 AND (single_file_limit_bytes IS NULL OR single_file_limit_bytes
+      >= 0) AND enforcement IN ('hard', 'soft') AND length(scope_type) > 0 AND length(scope_id)
+      > 0
+  indexes:
+  - name: ix_storage_quota_policy_scope_status
+    columns:
+    - tenant_id
+    - organization_id
+    - scope_type
+    - status
+    - id
+  imported: false
+- table: storage_reconciliation_run
+  domain: storage
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/storage/reconciliation
+  columns:
+    id:
+      type: int64
+      constraints: NOT NULL PRIMARY KEY
+    uuid:
+      type: string(64)
+      constraints: NOT NULL
+    tenant_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    organization_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    provider_id:
+      type: int64
+    bucket_id:
+      type: int64
+    run_type:
+      type: string(32)
+      constraints: NOT NULL
+    dry_run:
+      type: bool
+      constraints: NOT NULL DEFAULT TRUE
+    requested_by:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    idempotency_key:
+      type: string(128)
+      constraints: NOT NULL
+    request_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    summary_json:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    status:
+      type: int32
+      constraints: NOT NULL DEFAULT 1
+    missing_object_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    orphan_object_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    checksum_mismatch_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    started_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+    completed_at:
+      type: instant
+    created_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+  required_columns:
+  - run_type
+  - idempotency_key
+  unique_constraints:
+  - name: uk_storage_reconciliation_run_idempotency
+    columns:
+    - tenant_id
+    - organization_id
+    - idempotency_key
+  check_constraints:
+  - name: ck_storage_reconciliation_run_scope
+    expression: tenant_id >= 0 AND organization_id >= 0
+  - name: ck_storage_reconciliation_run_values
+    expression: missing_object_count >= 0 AND orphan_object_count >= 0 AND checksum_mismatch_count
+      >= 0 AND length(run_type) > 0
+  indexes:
+  - name: ix_storage_reconciliation_run_scope_created
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - id
+  - name: ix_storage_reconciliation_run_uuid
+    columns:
+    - uuid
+  imported: false
+- table: storage_usage_counter
+  domain: storage
+  profile: operational_state
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: operational_state
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/storage/usage
+  columns:
+    scope_type:
+      type: string(32)
+      constraints: NOT NULL
+    scope_id:
+      type: string(128)
+      constraints: NOT NULL
+    used_logical_bytes:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    reserved_bytes:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    file_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    version:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+  required_columns:
+  - scope_type
+  - scope_id
+  unique_constraints:
+  - name: uk_storage_usage_counter_scope
+    columns:
+    - tenant_id
+    - organization_id
+    - scope_type
+    - scope_id
+  check_constraints:
+  - name: ck_storage_usage_counter_scope
+    expression: tenant_id >= 0 AND organization_id >= 0
+  - name: ck_storage_usage_counter_values
+    expression: used_logical_bytes >= 0 AND reserved_bytes >= 0 AND file_count >=
+      0 AND length(scope_type) > 0 AND length(scope_id) > 0
+  indexes:
+  - name: ix_storage_usage_counter_scope_id
+    columns:
+    - tenant_id
+    - organization_id
+    - scope_type
+    - id
+  imported: false
+- table: storage_vendor_asset_ttl
+  domain: storage
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/storage/generationDelivery
+  columns:
+    vendor_code:
+      type: string(64)
+      constraints: NOT NULL
+    media_kind:
+      type: string(16)
+      constraints: NOT NULL
+    ttl_seconds:
+      type: int32
+      constraints: NOT NULL
+    source:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'default'
+    reason:
+      type: string(512)
+      constraints: ''
+    request_id:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+  required_columns:
+  - vendor_code
+  - media_kind
+  - ttl_seconds
+  unique_constraints:
+  - name: uk_storage_vendor_asset_ttl_scope
+    columns:
+    - tenant_id
+    - organization_id
+    - vendor_code
+    - media_kind
+  check_constraints:
+  - name: ck_storage_vendor_asset_ttl_scope
+    expression: tenant_id >= 0 AND organization_id >= 0
+  - name: ck_storage_vendor_asset_ttl_values
+    expression: media_kind IN ('image', 'video', 'audio') AND source IN ('default',
+      'operator', 'upstream') AND ttl_seconds > 0 AND length(vendor_code) > 0
+  indexes:
+  - name: ix_storage_vendor_asset_ttl_scope_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - media_kind
+    - id
   imported: false

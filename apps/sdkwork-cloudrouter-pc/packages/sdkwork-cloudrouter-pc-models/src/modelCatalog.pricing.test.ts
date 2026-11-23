@@ -4,7 +4,12 @@ import { formatModelPriceValue, parseSaleMultiplier } from './pricing';
 import {
   deriveModelCatalogPricingView,
   deriveModelCatalogRegionPricingView,
+  modelCatalogPricingVariants,
   modelCatalogRegions,
+  modelPricingVariantIsCurrent,
+  modelReferencePriceVariant,
+  pricingScheduleMatchesAt,
+  type ModelCatalogPriceVariant,
 } from './modelCatalog';
 
 function buildModel(overrides: Partial<Model> = {}): Model {
@@ -168,5 +173,74 @@ describe('deriveModelCatalogPricingView', () => {
     expect(view.cells).toHaveLength(1);
     expect(view.cells[0].key).toBe('flatPrice');
     expect(view.cells[0].unavailable).toBe(false);
+  });
+});
+
+describe('官方峰谷时段费率', () => {
+  const holidayDates = ['2026-10-01'];
+  const peakSchedule = {
+    timeZone: 'Asia/Shanghai',
+    weeklyWindows: [
+      { windowCode: 'peak_weekday_morning', daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00:00', endTime: '12:00:00', endDayOffset: 0 as const, holidayOnly: false },
+      { windowCode: 'peak_weekday_afternoon', daysOfWeek: [1, 2, 3, 4, 5], startTime: '14:00:00', endTime: '18:00:00', endDayOffset: 0 as const, holidayOnly: false },
+    ],
+    includeDates: [],
+    excludeDates: holidayDates,
+    holidayDates: [],
+  };
+  const offPeakSchedule = {
+    timeZone: 'Asia/Shanghai',
+    weeklyWindows: [
+      { windowCode: 'off_peak_weekday_night', daysOfWeek: [1, 2, 3, 4, 5], startTime: '18:00:00', endTime: '00:00:00', endDayOffset: 1 as const, holidayOnly: false },
+      { windowCode: 'off_peak_weekend', daysOfWeek: [6, 7], startTime: '00:00:00', endTime: '23:59:59', endDayOffset: 0 as const, holidayOnly: false },
+      { windowCode: 'off_peak_holiday', daysOfWeek: [1, 2, 3, 4, 5, 6, 7], startTime: '00:00:00', endTime: '23:59:59', endDayOffset: 0 as const, holidayOnly: true },
+    ],
+    includeDates: [],
+    excludeDates: [],
+    holidayDates,
+  };
+  const deepseek = buildModel({
+    id: 'deepseek/deepseek-flash',
+    name: 'DeepSeek Flash',
+    vendorCode: 'deepseek',
+    provider: 'DeepSeek',
+    pricing: {
+      ...buildModel().pricing,
+      input: 2,
+      output: 8,
+      cachedInput: 0.04,
+      currency: 'CNY',
+      referencePrices: [
+        { regionCode: 'cn', billingMeter: 'llm_input_token', unitPrice: 2, currency: 'CNY', rateHash: 'peak-input', rateVariant: 'time_window', schedule: peakSchedule },
+        { regionCode: 'cn', billingMeter: 'llm_input_token', unitPrice: 1, currency: 'CNY', rateHash: 'offpeak-input', rateVariant: 'time_window', schedule: offPeakSchedule },
+        { regionCode: 'cn', billingMeter: 'llm_output_token', unitPrice: 8, currency: 'CNY', rateHash: 'peak-output', rateVariant: 'time_window', schedule: peakSchedule },
+        { regionCode: 'cn', billingMeter: 'llm_output_token', unitPrice: 4, currency: 'CNY', rateHash: 'offpeak-output', rateVariant: 'time_window', schedule: offPeakSchedule },
+      ],
+    },
+  });
+
+  it('classifies peak/off-peak rows instead of collapsing them', () => {
+    const prices = deepseek.pricing.referencePrices!;
+    expect(prices.map(modelReferencePriceVariant)).toEqual(['peak', 'off_peak', 'peak', 'off_peak']);
+    expect(modelCatalogPricingVariants(deepseek, 'cn').map((variant) => variant.key)).toEqual<ModelCatalogPriceVariant[]>(['peak', 'off_peak']);
+  });
+
+  it('matches peak, weekend, and statutory-holiday windows in Beijing time', () => {
+    // Monday 10:00 Beijing.
+    expect(pricingScheduleMatchesAt(peakSchedule, Date.parse('2026-10-19T02:00:00Z'))).toBe(true);
+    // Saturday 10:00 Beijing.
+    expect(pricingScheduleMatchesAt(offPeakSchedule, Date.parse('2026-10-24T02:00:00Z'))).toBe(true);
+    // National Day 10:00 Beijing: only the holiday-only off-peak window matches.
+    expect(pricingScheduleMatchesAt(peakSchedule, Date.parse('2026-10-01T02:00:00Z'))).toBe(false);
+    expect(pricingScheduleMatchesAt(offPeakSchedule, Date.parse('2026-10-01T02:00:00Z'))).toBe(true);
+  });
+
+  it('derives the selected variant price and marks the active window', () => {
+    const peak = deriveModelCatalogRegionPricingView(deepseek, 'cn', { priceVariant: 'peak' })!;
+    const offPeak = deriveModelCatalogRegionPricingView(deepseek, 'cn', { priceVariant: 'off_peak' })!;
+    expect(peak.cells.find((cell) => cell.key === 'input')?.value).toBe(formatModelPriceValue(2, 'CNY'));
+    expect(offPeak.cells.find((cell) => cell.key === 'input')?.value).toBe(formatModelPriceValue(1, 'CNY'));
+    expect(modelPricingVariantIsCurrent(deepseek, 'peak', Date.parse('2026-10-19T02:00:00Z'))).toBe(true);
+    expect(modelPricingVariantIsCurrent(deepseek, 'off_peak', Date.parse('2026-10-19T02:00:00Z'))).toBe(false);
   });
 });

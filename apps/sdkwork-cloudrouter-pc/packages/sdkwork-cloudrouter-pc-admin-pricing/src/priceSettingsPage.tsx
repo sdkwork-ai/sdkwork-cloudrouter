@@ -81,6 +81,7 @@ const DEFAULT_WINDOW: AdminPricingScheduleWindow = {
   startTime: '09:00',
   endTime: '12:00',
   endDayOffset: 0,
+  holidayOnly: false,
 };
 
 export interface PriceSettingMeterForm {
@@ -133,6 +134,7 @@ export interface PriceSettingRegionForm {
   weeklyWindows: ScheduleWindowRow[];
   includeDates: string;
   excludeDates: string;
+  holidayDates: string;
   priority: string;
   effectiveFrom: string;
   effectiveTo: string;
@@ -185,6 +187,7 @@ export function emptyRegionGroupForm(
     weeklyWindows: [toWindowRow(DEFAULT_WINDOW)],
     includeDates: '',
     excludeDates: '',
+    holidayDates: '',
     priority: '100',
     effectiveFrom: '',
     effectiveTo: '',
@@ -239,6 +242,7 @@ export function regionGroupFormsFromPrices(
         ?? [toWindowRow(DEFAULT_WINDOW)],
       includeDates: firstSchedule?.includeDates.join(', ') ?? '',
       excludeDates: firstSchedule?.excludeDates.join(', ') ?? '',
+      holidayDates: firstSchedule?.holidayDates?.join(', ') ?? '',
       priority: String(firstRule?.priority ?? 100),
       effectiveFrom: firstRule?.effectiveFrom ?? '',
       effectiveTo: firstRule?.effectiveTo ?? '',
@@ -508,7 +512,7 @@ export function PriceSettingsAdmin() {
     const group: PriceSettingRegionForm = {
       ...emptyRegionGroupForm(rule.regionCode ?? '', { pricingPlanId: rule.pricingPlanId }),
       meters: [{ key: `rule:${rule.id}`, ruleId: rule.id, ruleCode: rule.ruleCode, meterCode: rule.meterCode ?? '', operationCode: rule.operationCode ?? '', unitCode: 'unit', unitSize: '1', customerPrice: normalizePricingDecimal(rule.unitPriceOverride), existingFormulaMode: rule.formulaMode, existingMultiplier: normalizePricingDecimal(rule.multiplier) || rule.multiplier, existingMarkupAmount: normalizePricingDecimal(rule.markupAmount) || rule.markupAmount, conditions: rule.conditions }],
-      priceMode: rule.schedule ? 'time_window' : 'standard', timeZone: rule.schedule?.timeZone ?? 'Asia/Shanghai', weeklyWindows: rule.schedule?.weeklyWindows.map((window) => toWindowRow({ ...window, daysOfWeek: [...window.daysOfWeek] })) ?? [toWindowRow(DEFAULT_WINDOW)], includeDates: rule.schedule?.includeDates.join(', ') ?? '', excludeDates: rule.schedule?.excludeDates.join(', ') ?? '', priority: String(rule.priority), effectiveFrom: rule.effectiveFrom ?? '', effectiveTo: rule.effectiveTo ?? '', status: rule.status,
+      priceMode: rule.schedule ? 'time_window' : 'standard', timeZone: rule.schedule?.timeZone ?? 'Asia/Shanghai', weeklyWindows: rule.schedule?.weeklyWindows.map((window) => toWindowRow({ ...window, daysOfWeek: [...window.daysOfWeek] })) ?? [toWindowRow(DEFAULT_WINDOW)], includeDates: rule.schedule?.includeDates.join(', ') ?? '', excludeDates: rule.schedule?.excludeDates.join(', ') ?? '', holidayDates: rule.schedule?.holidayDates?.join(', ') ?? '', priority: String(rule.priority), effectiveFrom: rule.effectiveFrom ?? '', effectiveTo: rule.effectiveTo ?? '', status: rule.status,
     };
     setForm({
       catalogKey: rule.catalogKey ?? '', vendorCode: vendorFromCatalogKey(rule.catalogKey) || rule.providerCode || '', productCode: rule.productCode ?? rule.catalogKey ?? '', resourceCode: resourceFromCatalogKey(rule.catalogKey) || rule.productCode || '', resourceDisplayName: resourceFromCatalogKey(rule.catalogKey) || rule.productCode || '', providerCode: rule.providerCode ?? '',
@@ -1360,7 +1364,105 @@ function MeterFormRow({ meter, groupIndex, index, locale, t, updateMeter, remove
 }
 
 function TimeWindowFields({ group, groupIndex, t, updateWindow, toggleWindowDay, addWindow, updateGroup }: { group: PriceSettingRegionForm; groupIndex: number; t: TranslationFunction; updateWindow: (groupIndex: number, windowIndex: number, patch: Partial<AdminPricingScheduleWindow>) => void; toggleWindowDay: (groupIndex: number, windowIndex: number, day: number) => void; addWindow: (groupIndex: number) => void; updateGroup: (groupIndex: number, patch: Partial<PriceSettingRegionForm>) => void }) {
-  return <div className="flex flex-col gap-4 rounded-md bg-slate-50 p-3 dark:bg-white/[0.04]"><Field label={t('admin.pricing.settings.form.timeZone')} hint={t('admin.pricing.settings.form.timeZoneHint')}><input className={inputClass} list="pricing-time-zones" value={group.timeZone} onChange={(event) => updateGroup(groupIndex, { timeZone: event.target.value })} placeholder="Asia/Shanghai" required /><datalist id="pricing-time-zones"><option value="UTC" /><option value="Asia/Shanghai" /><option value="Asia/Tokyo" /><option value="America/Los_Angeles" /><option value="America/New_York" /><option value="Europe/London" /></datalist></Field><div className="flex items-center justify-between"><span className="text-sm font-medium text-slate-700 dark:text-slate-200">{t('admin.pricing.settings.form.windows')}</span><button type="button" className={secondaryButtonClass} onClick={() => addWindow(groupIndex)}><Plus className="h-3.5 w-3.5" aria-hidden="true" />{t('admin.pricing.settings.form.addWindow')}</button></div>{group.weeklyWindows.map((window, index) => <div key={window.rowUid} className="flex flex-col gap-3 rounded-md border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900"><div className="grid gap-3 md:grid-cols-[1fr_1fr_36px]"><Field label={t('admin.pricing.settings.form.windowCode')}><input className={inputClass} value={window.windowCode} onChange={(event) => updateWindow(groupIndex, index, { windowCode: event.target.value })} required /></Field><div className="grid grid-cols-2 gap-2"><Field label={t('admin.pricing.settings.form.startTime')}><input type="time" className={inputClass} value={window.startTime} onChange={(event) => updateWindow(groupIndex, index, { startTime: event.target.value })} required /></Field><Field label={t('admin.pricing.settings.form.endTime')}><input type="time" className={inputClass} value={window.endTime} onChange={(event) => updateWindow(groupIndex, index, { endTime: event.target.value })} required /></Field></div><button type="button" className="mt-5 inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10" title={t('admin.pricing.settings.form.removeWindow')} aria-label={t('admin.pricing.settings.form.removeWindow')} disabled={group.weeklyWindows.length <= 1} onClick={() => updateGroup(groupIndex, { weeklyWindows: group.weeklyWindows.filter((_, windowIndex) => windowIndex !== index) })}><Trash2 className="h-4 w-4" aria-hidden="true" /></button></div><div><span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.form.days')}</span><div className="flex flex-wrap gap-2">{DAY_OPTIONS.map((day, dayIndex) => <label key={day} className="inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300"><input type="checkbox" checked={window.daysOfWeek.includes(day)} onChange={() => toggleWindowDay(groupIndex, index, day)} />{t(`admin.pricing.settings.days.${day}`, { defaultValue: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][dayIndex] })}</label>)}</div></div><label className="inline-flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300"><input type="checkbox" checked={window.endDayOffset === 1} onChange={(event) => updateWindow(groupIndex, index, { endDayOffset: event.target.checked ? 1 : 0 })} />{t('admin.pricing.settings.form.crossMidnight')}</label></div>)}</div>;
+  return (
+    <div className="flex flex-col gap-4 rounded-md bg-slate-50 p-3 dark:bg-white/[0.04]">
+      <Field label={t('admin.pricing.settings.form.timeZone')} hint={t('admin.pricing.settings.form.timeZoneHint')}>
+        <input className={inputClass} list="pricing-time-zones" value={group.timeZone} onChange={(event) => updateGroup(groupIndex, { timeZone: event.target.value })} placeholder="Asia/Shanghai" required />
+        <datalist id="pricing-time-zones">
+          <option value="UTC" />
+          <option value="Asia/Shanghai" />
+          <option value="Asia/Tokyo" />
+          <option value="America/Los_Angeles" />
+          <option value="America/New_York" />
+          <option value="Europe/London" />
+        </datalist>
+      </Field>
+
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{t('admin.pricing.settings.form.windows')}</span>
+        <button type="button" className={secondaryButtonClass} onClick={() => addWindow(groupIndex)}>
+          <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+          {t('admin.pricing.settings.form.addWindow')}
+        </button>
+      </div>
+
+      {group.weeklyWindows.map((window, index) => (
+        <div key={window.rowUid} className="flex flex-col gap-3 rounded-md border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900">
+          <div className="grid gap-3 md:grid-cols-[1fr_1fr_36px]">
+            <Field label={t('admin.pricing.settings.form.windowCode')}>
+              <input className={inputClass} value={window.windowCode} onChange={(event) => updateWindow(groupIndex, index, { windowCode: event.target.value })} required />
+            </Field>
+            <div className="grid grid-cols-2 gap-2">
+              <Field label={t('admin.pricing.settings.form.startTime')}>
+                <input type="time" className={inputClass} value={window.startTime} onChange={(event) => updateWindow(groupIndex, index, { startTime: event.target.value })} required />
+              </Field>
+              <Field label={t('admin.pricing.settings.form.endTime')}>
+                <input type="time" className={inputClass} value={window.endTime} onChange={(event) => updateWindow(groupIndex, index, { endTime: event.target.value })} required />
+              </Field>
+            </div>
+            <button
+              type="button"
+              className="mt-5 inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
+              title={t('admin.pricing.settings.form.removeWindow')}
+              aria-label={t('admin.pricing.settings.form.removeWindow')}
+              disabled={group.weeklyWindows.length <= 1}
+              onClick={() => updateGroup(groupIndex, { weeklyWindows: group.weeklyWindows.filter((_, windowIndex) => windowIndex !== index) })}
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+
+          <div>
+            <span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.form.days')}</span>
+            <div className="flex flex-wrap gap-2">
+              {DAY_OPTIONS.map((day, dayIndex) => (
+                <label key={day} className="inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300">
+                  <input type="checkbox" checked={window.daysOfWeek.includes(day)} onChange={() => toggleWindowDay(groupIndex, index, day)} />
+                  {t(`admin.pricing.settings.days.${day}`, { defaultValue: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][dayIndex] })}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4">
+            <label className="inline-flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+              <input type="checkbox" checked={window.endDayOffset === 1} onChange={(event) => updateWindow(groupIndex, index, { endDayOffset: event.target.checked ? 1 : 0 })} />
+              {t('admin.pricing.settings.form.crossMidnight')}
+            </label>
+            <label className="inline-flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+              <input
+                type="checkbox"
+                checked={window.holidayOnly}
+                onChange={(event) => updateWindow(groupIndex, index, event.target.checked
+                  ? { holidayOnly: true, startTime: '00:00', endTime: '23:59', endDayOffset: 0 }
+                  : { holidayOnly: false })}
+              />
+              {t('admin.pricing.settings.form.holidayOnly')}
+            </label>
+          </div>
+        </div>
+      ))}
+
+      <Field
+        label={t('admin.pricing.settings.form.holidayDates')}
+        hint={t('admin.pricing.settings.form.holidayDatesHint')}
+      >
+        <textarea
+          className={inputClass}
+          rows={2}
+          value={group.holidayDates}
+          onChange={(event) => updateGroup(groupIndex, { holidayDates: event.target.value })}
+          placeholder="2026-10-01, 2026-10-02, 2026-10-03"
+        />
+      </Field>
+      <Field label={t('admin.pricing.settings.form.includeDates')} hint={t('admin.pricing.settings.form.includeDatesHint')}>
+        <textarea className={inputClass} rows={2} value={group.includeDates} onChange={(event) => updateGroup(groupIndex, { includeDates: event.target.value })} placeholder="2026-10-10" />
+      </Field>
+      <Field label={t('admin.pricing.settings.form.excludeDates')} hint={t('admin.pricing.settings.form.excludeDatesHint')}>
+        <textarea className={inputClass} rows={2} value={group.excludeDates} onChange={(event) => updateGroup(groupIndex, { excludeDates: event.target.value })} placeholder="2026-10-11" />
+      </Field>
+    </div>
+  );
 }
 
 function isPriceSettingResourceType(value: string): value is PriceSettingResourceType { return PRICE_SETTING_RESOURCE_TYPES.includes(value as PriceSettingResourceType); }
@@ -1385,6 +1487,7 @@ function pricingMetadataSignature(rule: AdminPricingRuleItem): string {
         .sort((left, right) => left.windowCode.localeCompare(right.windowCode)),
       includeDates: [...rule.schedule.includeDates].sort(),
       excludeDates: [...rule.schedule.excludeDates].sort(),
+      holidayDates: [...(rule.schedule.holidayDates ?? [])].sort(),
     }
     : null;
   return JSON.stringify({
@@ -1583,7 +1686,7 @@ export function copyPriceSettingMeters(
   return nextMeters;
 }
 
-type PriceSettingScheduleSource = Pick<PriceSettingRegionForm, 'priceMode' | 'timeZone' | 'weeklyWindows' | 'includeDates' | 'excludeDates'>;
+type PriceSettingScheduleSource = Pick<PriceSettingRegionForm, 'priceMode' | 'timeZone' | 'weeklyWindows' | 'includeDates' | 'excludeDates' | 'holidayDates'>;
 
 function buildPriceSchedule(form: PriceSettingScheduleSource, t: TranslationFunction): AdminPricingSchedule | undefined {
   if (form.priceMode === 'standard') return undefined;
@@ -1611,10 +1714,16 @@ function buildPriceSchedule(form: PriceSettingScheduleSource, t: TranslationFunc
     }
 
     const startTime = normalizeClockTime(window.startTime);
-    const endTime = normalizeClockTime(window.endTime);
+    let endTime = normalizeClockTime(window.endTime);
+    if (window.holidayOnly && startTime === '00:00:00' && endTime === '23:59:00') {
+      endTime = '23:59:59';
+    }
     const crossesMidnight = window.endDayOffset === 1;
     if ((!crossesMidnight && startTime >= endTime) || (crossesMidnight && startTime <= endTime)) {
       throw new Error(t('admin.pricing.settings.form.timeOrderInvalid'));
+    }
+    if (window.holidayOnly && (startTime !== '00:00:00' || endTime !== '23:59:59' || crossesMidnight)) {
+      throw new Error(t('admin.pricing.settings.form.holidayWindowInvalid'));
     }
 
     const { rowUid: _rowUid, ...authorityWindow } = window;
@@ -1624,16 +1733,23 @@ function buildPriceSchedule(form: PriceSettingScheduleSource, t: TranslationFunc
       startTime,
       endTime,
       daysOfWeek: [...new Set(window.daysOfWeek)].sort((left, right) => left - right),
+      holidayOnly: window.holidayOnly === true,
     };
   });
 
   const includeDates = parseDateList(form.includeDates, t);
   const excludeDates = parseDateList(form.excludeDates, t);
+  const holidayDates = parseDateList(form.holidayDates, t);
   if (includeDates.some((date) => excludeDates.includes(date))) {
     throw new Error(t('admin.pricing.settings.form.dateOverlapInvalid'));
   }
+  if (
+    holidayDates.some((date) => includeDates.includes(date) || excludeDates.includes(date))
+  ) {
+    throw new Error(t('admin.pricing.settings.form.holidayDateOverlapInvalid'));
+  }
 
-  return { timeZone, weeklyWindows, includeDates, excludeDates };
+  return { timeZone, weeklyWindows, includeDates, excludeDates, holidayDates };
 }
 
 function parseDateList(value: string, t: TranslationFunction): string[] {

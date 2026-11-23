@@ -1910,6 +1910,17 @@
                 "maxItems": 366,
                 "type": "array"
               },
+              "holidayDates": {
+                "description": "Holiday dates field on admin pricing rule.",
+                "items": {
+                  "description": "Schedule field on admin pricing rule.",
+                  "format": "date",
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "maxItems": 366,
+                "type": "array"
+              },
               "includeDates": {
                 "description": "Include dates field on admin pricing rule.",
                 "items": {
@@ -1958,6 +1969,10 @@
                       "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                       "type": "string"
                     },
+                    "holidayOnly": {
+                      "description": "Holiday only field on admin pricing rule.",
+                      "type": "boolean"
+                    },
                     "startTime": {
                       "description": "Start time field on admin pricing rule.",
                       "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
@@ -1975,7 +1990,8 @@
                     "daysOfWeek",
                     "startTime",
                     "endTime",
-                    "endDayOffset"
+                    "endDayOffset",
+                    "holidayOnly"
                   ],
                   "type": "object"
                 },
@@ -1988,7 +2004,8 @@
               "timeZone",
               "weeklyWindows",
               "includeDates",
-              "excludeDates"
+              "excludeDates",
+              "holidayDates"
             ],
             "type": "object"
           },
@@ -8461,7 +8478,8 @@
             "description": "Rate variant field on official pricing rate.",
             "enum": [
               "standard",
-              "time_window"
+              "time_window",
+              "batch"
             ],
             "type": "string"
           },
@@ -8484,6 +8502,18 @@
             "properties": {
               "excludeDates": {
                 "description": "Exclude dates field on official pricing rate.",
+                "items": {
+                  "description": "Schedule field on official pricing rate.",
+                  "format": "date",
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "maxItems": 366,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "holidayDates": {
+                "description": "Holiday dates field on official pricing rate.",
                 "items": {
                   "description": "Schedule field on official pricing rate.",
                   "format": "date",
@@ -8546,6 +8576,10 @@
                       "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                       "type": "string"
                     },
+                    "holidayOnly": {
+                      "description": "Holiday only field on official pricing rate.",
+                      "type": "boolean"
+                    },
                     "startTime": {
                       "description": "Start time field on official pricing rate.",
                       "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
@@ -8563,7 +8597,8 @@
                     "daysOfWeek",
                     "startTime",
                     "endTime",
-                    "endDayOffset"
+                    "endDayOffset",
+                    "holidayOnly"
                   ],
                   "type": "object"
                 },
@@ -8576,7 +8611,8 @@
               "timeZone",
               "weeklyWindows",
               "includeDates",
-              "excludeDates"
+              "excludeDates",
+              "holidayDates"
             ],
             "type": "object"
           },
@@ -9918,6 +9954,17 @@
                 "maxItems": 366,
                 "type": "array"
               },
+              "holidayDates": {
+                "description": "Holiday dates field on price setting upsert request.",
+                "items": {
+                  "description": "Schedule field on price setting upsert request.",
+                  "format": "date",
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "maxItems": 366,
+                "type": "array"
+              },
               "includeDates": {
                 "description": "Include dates field on price setting upsert request.",
                 "items": {
@@ -9966,6 +10013,10 @@
                       "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                       "type": "string"
                     },
+                    "holidayOnly": {
+                      "description": "Holiday only field on price setting upsert request.",
+                      "type": "boolean"
+                    },
                     "startTime": {
                       "description": "Start time field on price setting upsert request.",
                       "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
@@ -9983,7 +10034,8 @@
                     "daysOfWeek",
                     "startTime",
                     "endTime",
-                    "endDayOffset"
+                    "endDayOffset",
+                    "holidayOnly"
                   ],
                   "type": "object"
                 },
@@ -9996,7 +10048,8 @@
               "timeZone",
               "weeklyWindows",
               "includeDates",
-              "excludeDates"
+              "excludeDates",
+              "holidayDates"
             ],
             "type": "object"
           },
@@ -10515,6 +10568,17 @@
                 "maxItems": 366,
                 "type": "array"
               },
+              "holidayDates": {
+                "description": "Holiday dates field on pricing rule create request.",
+                "items": {
+                  "description": "Schedule field on pricing rule create request.",
+                  "format": "date",
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "maxItems": 366,
+                "type": "array"
+              },
               "includeDates": {
                 "description": "Include dates field on pricing rule create request.",
                 "items": {
@@ -10563,6 +10627,10 @@
                       "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                       "type": "string"
                     },
+                    "holidayOnly": {
+                      "description": "Holiday only field on pricing rule create request.",
+                      "type": "boolean"
+                    },
                     "startTime": {
                       "description": "Start time field on pricing rule create request.",
                       "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
@@ -10580,7 +10648,8 @@
                     "daysOfWeek",
                     "startTime",
                     "endTime",
-                    "endDayOffset"
+                    "endDayOffset",
+                    "holidayOnly"
                   ],
                   "type": "object"
                 },
@@ -10593,7 +10662,8 @@
               "timeZone",
               "weeklyWindows",
               "includeDates",
-              "excludeDates"
+              "excludeDates",
+              "holidayDates"
             ],
             "type": "object"
           },
@@ -10801,6 +10871,17 @@
                 "maxItems": 366,
                 "type": "array"
               },
+              "holidayDates": {
+                "description": "Holiday dates field on pricing rule update request.",
+                "items": {
+                  "description": "Schedule field on pricing rule update request.",
+                  "format": "date",
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "maxItems": 366,
+                "type": "array"
+              },
               "includeDates": {
                 "description": "Include dates field on pricing rule update request.",
                 "items": {
@@ -10849,6 +10930,10 @@
                       "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                       "type": "string"
                     },
+                    "holidayOnly": {
+                      "description": "Holiday only field on pricing rule update request.",
+                      "type": "boolean"
+                    },
                     "startTime": {
                       "description": "Start time field on pricing rule update request.",
                       "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
@@ -10866,7 +10951,8 @@
                     "daysOfWeek",
                     "startTime",
                     "endTime",
-                    "endDayOffset"
+                    "endDayOffset",
+                    "holidayOnly"
                   ],
                   "type": "object"
                 },
@@ -10879,7 +10965,8 @@
               "timeZone",
               "weeklyWindows",
               "includeDates",
-              "excludeDates"
+              "excludeDates",
+              "holidayDates"
             ],
             "type": "object"
           },
@@ -23913,6 +24000,1267 @@
         "x-sdkwork-resource": "referralStats",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
         "x-write-tables": []
+      }
+    },
+    "/backend/v3/api/mcp/categories": {
+      "get": {
+        "description": "List admin categories. Reads ai_mcp_server_category. Writes none. File targets none.",
+        "operationId": "categories.list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoriesListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List admin categories",
+        "tags": [
+          "mcp"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_mcp_server_category"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "mcp",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "mcp",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "categories",
+        "x-source-file": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+        "x-write-tables": []
+      },
+      "post": {
+        "description": "Upsert admin category. Reads ai_mcp_server_category. Writes ai_mcp_server_category. File targets none.",
+        "operationId": "categories.create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoriesCreateResult"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Upsert admin category",
+        "tags": [
+          "mcp"
+        ],
+        "x-contract-kind": "action",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_mcp_server_category"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "mcp",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "mcp",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "categories",
+        "x-source-file": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+        "x-write-tables": [
+          "ai_mcp_server_category"
+        ]
+      }
+    },
+    "/backend/v3/api/mcp/invocations": {
+      "get": {
+        "description": "List admin invocations. Reads ai_mcp_invocation. Writes none. File targets none.",
+        "operationId": "invocations.list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvocationsListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List admin invocations",
+        "tags": [
+          "mcp"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_mcp_invocation"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "mcp",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "mcp",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "invocations",
+        "x-source-file": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+        "x-write-tables": []
+      },
+      "post": {
+        "description": "Append admin invocation. Reads ai_mcp_invocation. Writes ai_mcp_invocation. File targets none.",
+        "operationId": "invocations.create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvocationsCreateResult"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Append admin invocation",
+        "tags": [
+          "mcp"
+        ],
+        "x-contract-kind": "create",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_mcp_invocation"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "mcp",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "mcp",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "invocations",
+        "x-source-file": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+        "x-write-tables": [
+          "ai_mcp_invocation"
+        ]
+      }
+    },
+    "/backend/v3/api/mcp/servers": {
+      "get": {
+        "description": "List admin servers. Reads ai_mcp_server. Writes none. File targets none.",
+        "operationId": "servers.list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServersListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List admin servers",
+        "tags": [
+          "mcp"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_mcp_server"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "mcp",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "mcp",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "servers",
+        "x-source-file": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+        "x-write-tables": []
+      },
+      "post": {
+        "description": "Create admin server. Reads ai_mcp_server. Writes ai_mcp_server. File targets none.",
+        "operationId": "servers.create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServersCreateResult"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Create admin server",
+        "tags": [
+          "mcp"
+        ],
+        "x-contract-kind": "create",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_mcp_server"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "mcp",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "mcp",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "servers",
+        "x-source-file": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+        "x-write-tables": [
+          "ai_mcp_server"
+        ]
+      }
+    },
+    "/backend/v3/api/mcp/servers/{serverId}/connectors": {
+      "get": {
+        "description": "List admin connectors. Reads ai_mcp_connector. Writes none. File targets none.",
+        "operationId": "servers.connectors.list",
+        "parameters": [
+          {
+            "description": "Server id path parameter.",
+            "in": "path",
+            "name": "serverId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServersConnectorsListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List admin connectors",
+        "tags": [
+          "mcp"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_mcp_connector"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "mcp",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "mcp",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "servers.connectors",
+        "x-source-file": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+        "x-write-tables": []
+      },
+      "post": {
+        "description": "Upsert admin connector. Reads ai_mcp_connector. Writes ai_mcp_connector. File targets none.",
+        "operationId": "servers.connectors.create",
+        "parameters": [
+          {
+            "description": "Server id path parameter.",
+            "in": "path",
+            "name": "serverId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServersConnectorsCreateResult"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Upsert admin connector",
+        "tags": [
+          "mcp"
+        ],
+        "x-contract-kind": "action",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_mcp_connector"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "mcp",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "mcp",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "servers.connectors",
+        "x-source-file": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+        "x-write-tables": [
+          "ai_mcp_connector"
+        ]
+      }
+    },
+    "/backend/v3/api/mcp/servers/{serverId}/connectors/{connectorKey}": {
+      "delete": {
+        "description": "Delete admin connector. Reads ai_mcp_connector. Writes ai_mcp_connector. File targets none.",
+        "operationId": "servers.connectors.delete",
+        "parameters": [
+          {
+            "description": "Server id path parameter.",
+            "in": "path",
+            "name": "serverId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Connector key path parameter.",
+            "in": "path",
+            "name": "connectorKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Delete admin connector",
+        "tags": [
+          "mcp"
+        ],
+        "x-contract-kind": "delete",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_mcp_connector"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "mcp",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "mcp",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "servers.connectors",
+        "x-source-file": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+        "x-write-tables": [
+          "ai_mcp_connector"
+        ]
+      }
+    },
+    "/backend/v3/api/mcp/servers/{serverId}/prompts": {
+      "post": {
+        "description": "Upsert admin prompt. Reads ai_mcp_prompt. Writes ai_mcp_prompt. File targets none.",
+        "operationId": "servers.prompts.create",
+        "parameters": [
+          {
+            "description": "Server id path parameter.",
+            "in": "path",
+            "name": "serverId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServersPromptsCreateResult"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Upsert admin prompt",
+        "tags": [
+          "mcp"
+        ],
+        "x-contract-kind": "action",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_mcp_prompt"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "mcp",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "mcp",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "servers.prompts",
+        "x-source-file": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+        "x-write-tables": [
+          "ai_mcp_prompt"
+        ]
+      }
+    },
+    "/backend/v3/api/mcp/servers/{serverId}/resources": {
+      "post": {
+        "description": "Upsert admin resource. Reads ai_mcp_resource. Writes ai_mcp_resource. File targets none.",
+        "operationId": "servers.resources.create",
+        "parameters": [
+          {
+            "description": "Server id path parameter.",
+            "in": "path",
+            "name": "serverId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServersResourcesCreateResult"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Upsert admin resource",
+        "tags": [
+          "mcp"
+        ],
+        "x-contract-kind": "action",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_mcp_resource"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "mcp",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "mcp",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "servers.resources",
+        "x-source-file": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+        "x-write-tables": [
+          "ai_mcp_resource"
+        ]
+      }
+    },
+    "/backend/v3/api/mcp/servers/{serverId}/tools": {
+      "post": {
+        "description": "Upsert admin tool. Reads ai_mcp_tool. Writes ai_mcp_tool. File targets none.",
+        "operationId": "servers.tools.create",
+        "parameters": [
+          {
+            "description": "Server id path parameter.",
+            "in": "path",
+            "name": "serverId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServersToolsCreateResult"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Upsert admin tool",
+        "tags": [
+          "mcp"
+        ],
+        "x-contract-kind": "action",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_mcp_tool"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "mcp",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "mcp",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "servers.tools",
+        "x-source-file": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+        "x-write-tables": [
+          "ai_mcp_tool"
+        ]
+      }
+    },
+    "/backend/v3/api/mcp/servers/{serverKey}": {
+      "delete": {
+        "description": "Delete admin server. Reads ai_mcp_server. Writes ai_mcp_server. File targets none.",
+        "operationId": "servers.delete",
+        "parameters": [
+          {
+            "description": "Server key path parameter.",
+            "in": "path",
+            "name": "serverKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Delete admin server",
+        "tags": [
+          "mcp"
+        ],
+        "x-contract-kind": "delete",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_mcp_server"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "mcp",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "mcp",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "servers",
+        "x-source-file": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+        "x-write-tables": [
+          "ai_mcp_server"
+        ]
+      },
+      "put": {
+        "description": "Update admin server. Reads ai_mcp_server. Writes ai_mcp_server. File targets none.",
+        "operationId": "servers.update",
+        "parameters": [
+          {
+            "description": "Server key path parameter.",
+            "in": "path",
+            "name": "serverKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServersUpdateResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Update admin server",
+        "tags": [
+          "mcp"
+        ],
+        "x-contract-kind": "update",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_mcp_server"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "mcp",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "mcp",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "servers",
+        "x-source-file": "../sdkwork-mcp/apps/sdkwork-mcp-pc/packages/sdkwork-mcp-pc-core/src/services/adminMcpService.ts",
+        "x-write-tables": [
+          "ai_mcp_server"
+        ]
       }
     },
     "/backend/v3/api/memory/memories": {

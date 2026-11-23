@@ -8,6 +8,7 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildMarketingCsv } from '../marketingCsv';
+import { formatMarketingTimestamp } from '../marketingService';
 import {
   MarketingListView,
   type MarketingColumn,
@@ -140,7 +141,7 @@ const timedColumns: MarketingColumn<TimedRow>[] = [
 ];
 
 describe('MarketingListView cell rendering', () => {
-  it('formats backend space-separated timestamps as local YYYY-MM-DD HH:mm with a full title', async () => {
+  it('formats backend space-separated UTC timestamps as local YYYY-MM-DD HH:mm with a full title', async () => {
     const loadTimed = (): Promise<MarketingPageResult<TimedRow>> => Promise.resolve({
       items: [{ id: '1', code: 'X', claimedAt: '2026-11-10 09:12:00' }],
       pageInfo,
@@ -148,8 +149,12 @@ describe('MarketingListView cell rendering', () => {
 
     render(<MarketingListView title="Code Query" load={loadTimed} columns={timedColumns} />);
 
-    const cell = await screen.findByText('2026-11-10 09:12');
+    const expected = formatMarketingTimestamp('2026-11-10 09:12:00', 'en');
+    const cell = await screen.findByText(expected);
     expect(cell).toHaveAttribute('title', '2026-11-10 09:12:00');
+    // The raw UTC value must never leak: the local rendering has minutes, not
+    // the raw seconds shape.
+    expect(cell).not.toHaveTextContent('2026-11-10 09:12:00');
   });
 
   it('renders an em dash for empty cells instead of a hyphen', async () => {

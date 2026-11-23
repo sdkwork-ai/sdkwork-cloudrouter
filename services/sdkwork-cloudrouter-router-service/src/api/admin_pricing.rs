@@ -2858,10 +2858,30 @@ fn normalize_pricing_schedule(value: Option<&Value>) -> Result<Option<Value>, Ap
     }
     let include_dates = parse_schedule_dates(&schedule.include_dates)?;
     let exclude_dates = parse_schedule_dates(&schedule.exclude_dates)?;
+    let holiday_dates = parse_schedule_dates(&schedule.holiday_dates)?;
     if include_dates.intersection(&exclude_dates).next().is_some() {
         return Err(ApiCommandError::BadRequest(
             "schedule date cannot be both included and excluded".to_owned(),
         ));
+    }
+    if include_dates.intersection(&holiday_dates).next().is_some()
+        || exclude_dates.intersection(&holiday_dates).next().is_some()
+    {
+        return Err(ApiCommandError::BadRequest(
+            "schedule holidayDates must be disjoint from includeDates and excludeDates".to_owned(),
+        ));
+    }
+    for window in &schedule.weekly_windows {
+        if window.holiday_only
+            && (window.start_time != "00:00:00"
+                || window.end_time != "23:59:59"
+                || window.end_day_offset != 0)
+        {
+            return Err(ApiCommandError::BadRequest(
+                "schedule holidayOnly window must cover the whole day (00:00:00-23:59:59, endDayOffset 0)"
+                    .to_owned(),
+            ));
+        }
     }
     Ok(Some(value.clone()))
 }

@@ -316,6 +316,14 @@ async fn seed_routing_topology(
     provider_a_base_url: &str,
     provider_b_base_url: &str,
 ) -> SeededTopology {
+    // The mock provider is a loopback plain-HTTP server. Stored Base URLs are
+    // held to the production egress boundary by default, so this dev-only
+    // harness opts into loopback cleartext explicitly (public cleartext stays
+    // rejected).
+    std::env::set_var(
+        "SDKWORK_CLOUDROUTER_UPSTREAM_BASE_URL_ALLOW_LOOPBACK",
+        "1",
+    );
     // The model's api_code must be `openai.responses` so that the Responses
     // API resource (`responses` capability) maps onto it.
     // A DB-owned model with the `responses` capability. The Responses route

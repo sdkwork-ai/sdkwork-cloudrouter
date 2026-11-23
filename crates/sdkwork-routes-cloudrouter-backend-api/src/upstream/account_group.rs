@@ -42,7 +42,9 @@ const SUPPORTED_TAGS: [&str; 10] = [
     "beta",
     "limited",
 ];
-const MAX_GROUP_TAGS: usize = 5;
+/// 一个分组可携带的标签上限。取值与标签字典容量一致：分组可以打满全部
+/// 运营标签（多标签是常态），同时仍受字典约束、不会写入任意字符串。
+const MAX_GROUP_TAGS: usize = SUPPORTED_TAGS.len();
 const ACCOUNT_GROUP_CREATE_IDEMPOTENCY_SCOPE: i64 = 1_000_003;
 
 #[derive(Debug, Deserialize)]

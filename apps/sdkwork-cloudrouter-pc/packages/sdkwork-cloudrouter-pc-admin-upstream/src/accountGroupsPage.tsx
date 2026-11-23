@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Copy, Edit3, Layers, Plus, RefreshCw, Search, ShieldOff, Star, Trash2 } from 'lucide-react';
+import { Copy, Edit3, Layers, Plus, RefreshCw, Search, ShieldOff, Star, Tags, Trash2 } from 'lucide-react';
 import { AdminTableShell, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
 import { formatDecimalDisplay } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { useTranslation } from 'react-i18next';
@@ -45,6 +45,10 @@ import {
 
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
 
+/** 分组列表分页拉取：单页上限与最大页数（避免无界循环）。 */
+const GROUP_LIST_PAGE_SIZE = 200;
+const MAX_GROUP_LIST_PAGES = 5;
+
 export function UpstreamAccountGroupAdmin() {
   return (
     <UpstreamPageShell>
@@ -72,14 +76,28 @@ export function AccountGroupAdminPanel() {
   const [explainTarget, setExplainTarget] = useState<UpstreamAccountGroup | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UpstreamAccountGroup | null>(null);
   const [defaultTarget, setDefaultTarget] = useState<UpstreamAccountGroup | null>(null);
+  const [tagsTarget, setTagsTarget] = useState<UpstreamAccountGroup | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const groupPage = await upstreamService.accountGroups.list({ page: 1, pageSize: 200, q: appliedQuery || undefined });
-      setItems(groupPage.items);
-      setTotalCount(Number(groupPage.pageInfo?.totalItems ?? groupPage.items.length));
+      // 分组列表按页拉全：标签/类型/倍率筛选都在客户端生效，
+      // 只取第一页会让筛选结果与总数不一致（历史上被 200 条上限静默截断）。
+      const collected: UpstreamAccountGroup[] = [];
+      let total = 0;
+      for (let page = 1; page <= MAX_GROUP_LIST_PAGES; page += 1) {
+        const groupPage = await upstreamService.accountGroups.list({
+          page,
+          pageSize: GROUP_LIST_PAGE_SIZE,
+          q: appliedQuery || undefined,
+        });
+        collected.push(...groupPage.items);
+        total = Number(groupPage.pageInfo?.totalItems ?? collected.length);
+        if (groupPage.items.length < GROUP_LIST_PAGE_SIZE || collected.length >= total) break;
+      }
+      setItems(collected);
+      setTotalCount(total);
     } catch (cause) {
       setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
     } finally {
@@ -149,6 +167,17 @@ export function AccountGroupAdminPanel() {
 
   const listFiltered = typeFilter !== 'all' || hasMultiplierFilter(multiplierRange) || tagFilter.length > 0;
 
+  /** 标签筛选 chips 的分组计数（按当前加载的全部分组统计）。 */
+  const tagCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const group of items) {
+      for (const tag of new Set(group.tags ?? [])) {
+        counts[tag] = (counts[tag] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }, [items]);
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -156,7 +185,7 @@ export function AccountGroupAdminPanel() {
         <div className="flex gap-2"><button type="button" className={secondaryButtonClass} onClick={() => void load()} disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />{t('common.actions.refresh')}</button><button type="button" className={primaryButtonClass} onClick={() => setEditing(null)}><Plus className="h-4 w-4" />{t('admin.upstream.accountGroup.actions.new')}</button></div>
       </div>
       <GroupTypeFilter value={typeFilter} onChange={setTypeFilter} />
-      <TagFilter value={tagFilter} onChange={setTagFilter} />
+      <TagFilter value={tagFilter} onChange={setTagFilter} counts={tagCounts} />
       <MultiplierRangeFilter value={multiplierRange} onChange={setMultiplierRange} />
       <InlineError message={error} />
       <AdminTableShell>
@@ -168,7 +197,7 @@ export function AccountGroupAdminPanel() {
                 <td className="px-4 py-3"><span className="flex items-center gap-2"><span className="block font-semibold text-slate-900 dark:text-white">{resolveGroupDisplayName(group, i18n.language)}</span>{group.isDefault ? <span className="rounded-full bg-lobster-50 px-2 py-0.5 text-xs font-semibold text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-300">{t('admin.upstream.accountGroup.table.default')}</span> : null}</span><span className="block font-mono text-xs text-slate-500">{group.groupCode}</span></td>
                 <td className="px-4 py-3"><div className="flex max-w-44 flex-wrap gap-1">{group.tags?.map((tag) => <TagBadge key={tag} tag={tag} small />)}</div></td>
                 <td className="px-4 py-3">{labelStrategy(group.routingStrategy, t)}</td><td className="px-4 py-3">{labelFallback(group.fallbackMode, t)}</td><td className="px-4 py-3 font-mono">×{formatDecimalDisplay(group.costMultiplier)}</td><td className="px-4 py-3 font-mono">×{formatDecimalDisplay(group.saleMultiplier)}</td><td className="px-4 py-3"><StatusBadge status={group.status} /></td>
-                <td className="px-4 py-3"><div className="flex justify-end gap-1">{!group.isDefault ? <button type="button" className={secondaryButtonClass} onClick={() => setDefaultTarget(group)} title={t('admin.upstream.accountGroup.actions.setDefault')}><Star className="h-4 w-4" /></button> : null}<button type="button" className={secondaryButtonClass} onClick={() => setResourceTarget(group)} title={t('admin.upstream.accountGroup.actions.resources')}><Layers className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setExplainTarget(group)} title={t('admin.upstream.accountGroup.actions.explain')}><Search className="h-4 w-4" /></button><button type="button" className={dangerButtonClass} onClick={() => setBlacklistTarget(group)} title={t('admin.upstream.accountGroup.actions.modelBlacklist')}><ShieldOff className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setCopying(group)} title={t('admin.upstream.accountGroup.actions.copy')}><Copy className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setEditing(group)} title={t('common.actions.edit')}><Edit3 className="h-4 w-4" /></button><button type="button" className={dangerButtonClass} onClick={() => setDeleteTarget(group)} title={t('common.actions.delete')}><Trash2 className="h-4 w-4" /></button></div></td>
+                <td className="px-4 py-3"><div className="flex justify-end gap-1">{!group.isDefault ? <button type="button" className={secondaryButtonClass} onClick={() => setDefaultTarget(group)} title={t('admin.upstream.accountGroup.actions.setDefault')}><Star className="h-4 w-4" /></button> : null}<button type="button" className={secondaryButtonClass} onClick={() => setResourceTarget(group)} title={t('admin.upstream.accountGroup.actions.resources')}><Layers className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setExplainTarget(group)} title={t('admin.upstream.accountGroup.actions.explain')}><Search className="h-4 w-4" /></button><button type="button" className={dangerButtonClass} onClick={() => setBlacklistTarget(group)} title={t('admin.upstream.accountGroup.actions.modelBlacklist')}><ShieldOff className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setTagsTarget(group)} title={t('admin.upstream.accountGroup.actions.tags')}><Tags className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setCopying(group)} title={t('admin.upstream.accountGroup.actions.copy')}><Copy className="h-4 w-4" /></button><button type="button" className={secondaryButtonClass} onClick={() => setEditing(group)} title={t('common.actions.edit')}><Edit3 className="h-4 w-4" /></button><button type="button" className={dangerButtonClass} onClick={() => setDeleteTarget(group)} title={t('common.actions.delete')}><Trash2 className="h-4 w-4" /></button></div></td>
               </tr>
             ))}
           </tbody>
@@ -186,6 +215,7 @@ export function AccountGroupAdminPanel() {
       {explainTarget ? <GroupRouteExplainModal group={explainTarget} onClose={() => setExplainTarget(null)} /> : null}
       {deleteTarget ? <ConfirmDialog title={t('admin.upstream.accountGroup.delete.title')} description={t('admin.upstream.accountGroup.delete.description', { name: resolveGroupDisplayName(deleteTarget, i18n.language) })} confirmLabel={t('common.actions.delete')} tone="danger" isBusy={busy} onCancel={() => setDeleteTarget(null)} onConfirm={() => void deleteGroup()} /> : null}
       {defaultTarget ? <ConfirmDialog title={t('admin.upstream.accountGroup.setDefault.title')} description={t('admin.upstream.accountGroup.setDefault.description', { name: resolveGroupDisplayName(defaultTarget, i18n.language) })} confirmLabel={t('admin.upstream.accountGroup.actions.setDefault')} isBusy={busy} onCancel={() => setDefaultTarget(null)} onConfirm={() => void setDefaultGroup()} /> : null}
+      {tagsTarget ? <GroupTagsModal group={tagsTarget} onSaved={(group) => setItems((current) => current.map((item) => item.id === group.id ? group : item))} onClose={() => setTagsTarget(null)} /> : null}
     </div>
   );
 }
@@ -244,6 +274,7 @@ function AccountGroupModal({ group, copying, busy, onSubmit, onClose }: { group:
                 <button type="button" className="ml-1 text-xs font-medium text-lobster-600 hover:underline dark:text-lobster-400" onClick={() => setSelectedTags([])}>{t('common.actions.clear')}</button>
               ) : null}
             </div>
+            <p className="mt-1 text-[11px] text-slate-400">{t('admin.upstream.accountGroup.form.tagsCount', { count: selectedTags.length, max: SUPPORTED_GROUP_TAGS.length })}</p>
           </Field></div>
           <div className="sm:col-span-2"><Field label={t('admin.upstream.common.fields.description')}><textarea name="description" className={textAreaClass} defaultValue={group?.description ?? ''} /></Field></div>
         </div>
@@ -274,6 +305,67 @@ function AccountGroupModal({ group, copying, busy, onSubmit, onClose }: { group:
             />
           </div>
         </div>
+      </div>
+    </Modal>
+  );
+}
+
+/** 行内快捷标签编辑：只提交 tags，避免为了打标签打开整张分组表单。 */
+function GroupTagsModal({ group, onSaved, onClose }: { group: UpstreamAccountGroup; onSaved: (group: UpstreamAccountGroup) => void; onClose: () => void }) {
+  const { t, i18n } = useTranslation();
+  const [selectedTags, setSelectedTags] = useState<string[]>(group.tags ?? []);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const save = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSaving(true);
+    setError(null);
+    try {
+      const updated = await upstreamService.accountGroups.update(group, { tags: selectedTags as UpstreamAccountGroup['tags'] });
+      onSaved(updated);
+      onClose();
+    } catch (cause) {
+      setError(errorMessageI18n(cause, t('admin.upstream.common.errors.operationFailed'), t));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      title={t('admin.upstream.accountGroup.tagsModal.title')}
+      description={resolveGroupDisplayName(group, i18n.language)}
+      busy={saving}
+      submitLabel={t('common.actions.saveChanges')}
+      onSubmit={save}
+      onClose={onClose}
+    >
+      <div className="grid gap-3">
+        <InlineError message={error} />
+        <p className="text-xs text-slate-500 dark:text-slate-400">{t('admin.upstream.accountGroup.tagsModal.hint')}</p>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {SUPPORTED_GROUP_TAGS.map((tag) => {
+            const selected = selectedTags.includes(tag);
+            return (
+              <button
+                key={tag}
+                type="button"
+                aria-pressed={selected}
+                className={`rounded-full transition ${selected ? 'ring-2 ring-lobster-500/60' : 'opacity-55 hover:opacity-100'}`}
+                onClick={() => setSelectedTags((current) => current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag])}
+              >
+                <TagBadge tag={tag} small />
+              </button>
+            );
+          })}
+          {selectedTags.length > 0 ? (
+            <button type="button" className="ml-1 text-xs font-medium text-lobster-600 hover:underline dark:text-lobster-400" onClick={() => setSelectedTags([])}>
+              {t('common.actions.clear')}
+            </button>
+          ) : null}
+        </div>
+        <p className="text-[11px] text-slate-400">{t('admin.upstream.accountGroup.tagsModal.count', { count: selectedTags.length, max: SUPPORTED_GROUP_TAGS.length })}</p>
       </div>
     </Modal>
   );

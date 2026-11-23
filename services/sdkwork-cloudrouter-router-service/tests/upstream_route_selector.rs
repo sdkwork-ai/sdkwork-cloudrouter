@@ -196,6 +196,59 @@ fn add_route_and_price(catalog: &mut InMemoryPricingCatalog, route: UpstreamAcco
     );
 }
 
+/// Adds a routable catalog model with the official reference prices a chat
+/// request needs (input/output/cache-read).
+fn add_catalog_model_with_prices(
+    catalog: &mut InMemoryPricingCatalog,
+    catalog_key: &str,
+    model_id: &str,
+    vendor_code: &str,
+) {
+    catalog.add_model(
+        AiModel::new(model_id, model_id, vendor_code, vec!["chat"]).with_catalog_key(catalog_key),
+    );
+    for meter in [
+        BillingMeter::LlmInputToken,
+        BillingMeter::LlmOutputToken,
+        BillingMeter::LlmCacheReadToken,
+    ] {
+        catalog.add_price(ModelPrice::new_for_catalog_key(
+            catalog_key,
+            model_id,
+            PriceSide::OfficialReference,
+            meter,
+            Money::usd("0.150000").unwrap(),
+        ));
+    }
+}
+
+/// Adds the upstream-cost side of the price book for `catalog_key` on one
+/// account route.
+fn add_upstream_costs_for_key(
+    catalog: &mut InMemoryPricingCatalog,
+    route: &UpstreamAccountRoute,
+    catalog_key: &str,
+    model_id: &str,
+) {
+    for meter in [
+        BillingMeter::LlmInputToken,
+        BillingMeter::LlmOutputToken,
+        BillingMeter::LlmCacheReadToken,
+    ] {
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                catalog_key,
+                model_id,
+                PriceSide::UpstreamCost,
+                meter,
+                Money::usd("0.100000").unwrap(),
+            )
+            .with_region_code(&route.region_code)
+            .for_upstream_account(&route.supplier_code, route.account_id),
+        );
+    }
+}
+
 fn account_route_query(group_id: i64) -> SelectUpstreamAccountRouteQuery {
     SelectUpstreamAccountRouteQuery {
         context: context(group_id),
@@ -2076,5 +2129,236 @@ fn empty_pool_without_diagnosis_keeps_the_legacy_cache_hint() {
     assert!(
         message.contains("no model routes and no account routes loaded in routing catalog"),
         "legacy message wording must stay intact without a diagnosis: {message}"
+    );
+}
+
+const DEEPSEEK_PRIMARY_KEY: &str = "deepseek/deepseek-flash";
+const DEEPSEEK_FALLBACK_KEY: &str = "relay/deepseek-flash";
+
+fn add_deepseek_route_vendors(catalog: &mut InMemoryPricingCatalog) {
+    catalog.add_vendor(ModelVendorDefinition::new(
+        "deepseek",
+        ModelVendor::DeepSeek,
+        "DeepSeek",
+    ));
+    catalog.add_vendor(ModelVendorDefinition::new(
+        "relay",
+        ModelVendor::Custom,
+        "Relay",
+    ));
+}
+
+fn deepseek_fallback_query(group_id: i64) -> SelectUpstreamModelRouteQuery {
+    let mut query = model_query(group_id);
+    query.catalog_key = DEEPSEEK_PRIMARY_KEY.to_owned();
+    query.requested_model = DEEPSEEK_PRIMARY_KEY.to_owned();
+    query
+}
+
+#[test]
+fn vendor_qualified_route_falls_back_to_the_bare_model_id() {
+    let group_id = 920;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    add_deepseek_route_vendors(&mut catalog);
+    // The vendor-qualified model exists in the catalog but has no price/route
+    // for the group: this is the exact shape that used to 503 before the
+    // bare-model-id fallback.
+    catalog.add_model(
+        AiModel::new("deepseek-flash", "DeepSeek Flash", "deepseek", vec!["chat"])
+            .with_catalog_key(DEEPSEEK_PRIMARY_KEY),
+    );
+    add_catalog_model_with_prices(
+        &mut catalog,
+        DEEPSEEK_FALLBACK_KEY,
+        "deepseek-flash",
+        "relay",
+    );
+    let route = account_route(group_id, 7001, "relay", 100, 100);
+    add_upstream_costs_for_key(
+        &mut catalog,
+        &route,
+        DEEPSEEK_FALLBACK_KEY,
+        "deepseek-flash",
+    );
+    catalog.add_upstream_account_route(route);
+
+    let selection = UpstreamRouteSelector::new(&catalog)
+        .select_model_route_plan_with_fallback(deepseek_fallback_query(group_id))
+        .expect("bare-model fallback must route the qualified request");
+    assert!(selection.fallback_used);
+    assert_eq!(DEEPSEEK_FALLBACK_KEY, selection.catalog_key);
+    assert_eq!(
+        DEEPSEEK_FALLBACK_KEY,
+        selection.plan.routes[0].route.catalog_key
+    );
+    assert_eq!(7001, selection.plan.routes[0].route.account_id);
+}
+
+#[test]
+fn vendor_qualified_route_wins_when_it_is_routable() {
+    let group_id = 921;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    add_deepseek_route_vendors(&mut catalog);
+    add_catalog_model_with_prices(
+        &mut catalog,
+        DEEPSEEK_PRIMARY_KEY,
+        "deepseek-flash",
+        "deepseek",
+    );
+    add_catalog_model_with_prices(
+        &mut catalog,
+        DEEPSEEK_FALLBACK_KEY,
+        "deepseek-flash",
+        "relay",
+    );
+    let route = account_route(group_id, 7002, "deepseek", 100, 100);
+    add_upstream_costs_for_key(&mut catalog, &route, DEEPSEEK_PRIMARY_KEY, "deepseek-flash");
+    add_upstream_costs_for_key(
+        &mut catalog,
+        &route,
+        DEEPSEEK_FALLBACK_KEY,
+        "deepseek-flash",
+    );
+    catalog.add_upstream_account_route(route);
+
+    let selection = UpstreamRouteSelector::new(&catalog)
+        .select_model_route_plan_with_fallback(deepseek_fallback_query(group_id))
+        .expect("qualified route must route");
+    assert!(!selection.fallback_used);
+    assert_eq!(DEEPSEEK_PRIMARY_KEY, selection.catalog_key);
+    assert_eq!(
+        DEEPSEEK_PRIMARY_KEY,
+        selection.plan.routes[0].route.catalog_key
+    );
+}
+
+#[test]
+fn model_forbidden_by_the_group_never_falls_back_to_another_spelling() {
+    let group_id = 922;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    add_deepseek_route_vendors(&mut catalog);
+    catalog.add_model(
+        AiModel::new("deepseek-flash", "DeepSeek Flash", "deepseek", vec!["chat"])
+            .with_catalog_key(DEEPSEEK_PRIMARY_KEY),
+    );
+    add_catalog_model_with_prices(
+        &mut catalog,
+        DEEPSEEK_FALLBACK_KEY,
+        "deepseek-flash",
+        "relay",
+    );
+    let route = account_route(group_id, 7003, "relay", 100, 100);
+    add_upstream_costs_for_key(
+        &mut catalog,
+        &route,
+        DEEPSEEK_FALLBACK_KEY,
+        "deepseek-flash",
+    );
+    catalog.add_upstream_account_route(route);
+    catalog.set_account_group_model_access(AccountGroupModelAccess {
+        group_id,
+        blacklist: vec![VendorModelListEntry {
+            vendor_code: "deepseek".to_owned(),
+            models: Vec::new(),
+        }],
+        whitelist: Vec::new(),
+    });
+
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route_plan_with_fallback(deepseek_fallback_query(group_id))
+        .expect_err("the group's model blacklist is a hard rejection");
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::ModelForbidden,
+        error.kind(),
+        "fallback must not route around a model blacklist: {error}"
+    );
+}
+
+#[test]
+fn bare_model_entitlement_matches_the_vendor_qualified_request() {
+    let group_id = 924;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    add_deepseek_route_vendors(&mut catalog);
+    catalog.add_model(
+        AiModel::new("deepseek-flash", "DeepSeek Flash", "deepseek", vec!["chat"])
+            .with_catalog_key(DEEPSEEK_PRIMARY_KEY),
+    );
+    add_catalog_model_with_prices(
+        &mut catalog,
+        DEEPSEEK_FALLBACK_KEY,
+        "deepseek-flash",
+        "relay",
+    );
+    let mut route = account_route(group_id, 7005, "relay", 100, 100);
+    // Operators may configure the account resource with the bare model id
+    // (`deepseek-flash`) while the request is routed by a qualified catalog
+    // key. The entitlement must still match the model the route resolves to.
+    let mut entitlement = UpstreamResourceEntitlement::new("deepseek-flash", "model");
+    entitlement.catalog_key = Some("deepseek-flash".to_owned());
+    route.account_group_bindings = vec![UpstreamAccountGroupBinding::new(group_id, 100, 100)
+        .with_resource_entitlements(vec![entitlement])];
+    add_upstream_costs_for_key(
+        &mut catalog,
+        &route,
+        DEEPSEEK_FALLBACK_KEY,
+        "deepseek-flash",
+    );
+    catalog.add_upstream_account_route(route);
+
+    let selection = UpstreamRouteSelector::new(&catalog)
+        .select_model_route_plan_with_fallback(deepseek_fallback_query(group_id))
+        .expect("bare-model entitlement must match the qualified request");
+    assert_eq!(DEEPSEEK_FALLBACK_KEY, selection.catalog_key);
+}
+
+#[test]
+fn ambiguous_bare_model_id_is_not_guessed_as_a_fallback_route() {
+    let group_id = 923;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    add_deepseek_route_vendors(&mut catalog);
+    catalog.add_model(
+        AiModel::new("deepseek-flash", "DeepSeek Flash", "deepseek", vec!["chat"])
+            .with_catalog_key(DEEPSEEK_PRIMARY_KEY),
+    );
+    for fallback_key in ["relay-a/deepseek-flash", "relay-b/deepseek-flash"] {
+        add_catalog_model_with_prices(&mut catalog, fallback_key, "deepseek-flash", "relay");
+    }
+    let route = account_route(group_id, 7004, "relay", 100, 100);
+    for fallback_key in ["relay-a/deepseek-flash", "relay-b/deepseek-flash"] {
+        add_upstream_costs_for_key(&mut catalog, &route, fallback_key, "deepseek-flash");
+    }
+    catalog.add_upstream_account_route(route);
+
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route_plan_with_fallback(deepseek_fallback_query(group_id))
+        .expect_err("two candidate vendors must not be guessed between");
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::PricingUnavailable,
+        error.kind(),
+        "the primary (qualified) error stays authoritative: {error}"
+    );
+    assert!(
+        error.to_string().contains(DEEPSEEK_PRIMARY_KEY),
+        "the primary identity must be reported: {error}"
     );
 }

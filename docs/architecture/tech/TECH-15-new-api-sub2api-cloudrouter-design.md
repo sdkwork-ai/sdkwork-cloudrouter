@@ -81,19 +81,24 @@ schedule object:
       "daysOfWeek": [1, 2, 3, 4, 5],
       "startTime": "09:00:00",
       "endTime": "12:00:00",
-      "endDayOffset": 0
+      "endDayOffset": 0,
+      "holidayOnly": false
     }
   ],
   "includeDates": [],
-  "excludeDates": []
+  "excludeDates": [],
+  "holidayDates": ["2026-10-01", "2026-10-02"]
 }
 ```
 
 `daysOfWeek` uses ISO weekday numbers. `endDayOffset=0` is same-day;
 `endDayOffset=1` supports windows such as 22:00-02:00. Times are local wall
 clock values in the declared IANA zone. Include dates narrow the eligible
-calendar and exclude dates take precedence. Window codes are unique, windows
-must be ordered and non-overlapping, and date lists are bounded and disjoint.
+calendar and exclude dates take precedence. `holidayDates` is the statutory
+holiday calendar: a matching date selects a `holidayOnly` window and never a
+peak window, which lets a vendor's peak/off-peak schedule treat weekends and
+public holidays as off-peak. Window codes are unique, windows must be ordered
+and non-overlapping, and date lists are bounded and disjoint.
 
 A matching time-window rate outranks a standard rate. If multiple candidates
 remain at the same specificity and priority, resolution returns a conflict and

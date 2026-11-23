@@ -593,7 +593,7 @@ frontend_operations:
                 quantityStep: { type: string, pattern: '^[0-9]+(?:\.[0-9]+)?$', nullable: true }
                 currencyCode: {type: string, pattern: '^[A-Z]{3}$'}
                 priority: { type: integer, format: int32, minimum: 0 }
-                rateVariant: { type: string, enum: [standard, time_window] }
+                rateVariant: { type: string, enum: [standard, time_window, batch] }
                 schedule:
                   nullable: true
                   additionalProperties: false
@@ -618,7 +618,8 @@ frontend_operations:
                           startTime: { type: string, pattern: '^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$' }
                           endTime: { type: string, pattern: '^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$' }
                           endDayOffset: { type: integer, format: int32, enum: [0, 1] }
-                        required: [windowCode, daysOfWeek, startTime, endTime, endDayOffset]
+                          holidayOnly: { type: boolean }
+                        required: [windowCode, daysOfWeek, startTime, endTime, endDayOffset, holidayOnly]
                     includeDates:
                       type: array
                       maxItems: 366
@@ -629,7 +630,12 @@ frontend_operations:
                       maxItems: 366
                       uniqueItems: true
                       items: { type: string, format: date, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' }
-                  required: [timeZone, weeklyWindows, includeDates, excludeDates]
+                    holidayDates:
+                      type: array
+                      maxItems: 366
+                      uniqueItems: true
+                      items: { type: string, format: date, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' }
+                  required: [timeZone, weeklyWindows, includeDates, excludeDates, holidayDates]
                 conditions:
                   type: array
                   items:
@@ -1350,9 +1356,55 @@ frontend_operations:
                     properties:
                       billingMeter: { maxLength: 64, minLength: 1, type: string }
                       currency: {pattern: '^[A-Z]{3}$', type: string}
+                      rateHash: { maxLength: 128, type: string }
+                      rateVariant: { enum: [standard, time_window, batch], type: string }
                       regionCode: { maxLength: 64, minLength: 1, type: string }
+                      schedule:
+                        additionalProperties: false
+                        name: AppModelCatalogPriceSchedule
+                        nullable: true
+                        properties:
+                          excludeDates:
+                            items: { format: date, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$', type: string }
+                            maxItems: 366
+                            type: array
+                            uniqueItems: true
+                          holidayDates:
+                            items: { format: date, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$', type: string }
+                            maxItems: 366
+                            type: array
+                            uniqueItems: true
+                          includeDates:
+                            items: { format: date, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$', type: string }
+                            maxItems: 366
+                            type: array
+                            uniqueItems: true
+                          timeZone: { maxLength: 128, minLength: 1, type: string }
+                          weeklyWindows:
+                            items:
+                              additionalProperties: false
+                              name: AppModelCatalogPriceScheduleWindow
+                              properties:
+                                daysOfWeek:
+                                  items: { format: int32, maximum: 7, minimum: 1, type: integer }
+                                  maxItems: 7
+                                  minItems: 1
+                                  type: array
+                                  uniqueItems: true
+                                endDayOffset: { enum: [0, 1], format: int32, type: integer }
+                                endTime: { pattern: '^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$', type: string }
+                                holidayOnly: { type: boolean }
+                                startTime: { pattern: '^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$', type: string }
+                                windowCode: { maxLength: 96, minLength: 1, type: string }
+                              required: [windowCode, daysOfWeek, startTime, endTime, endDayOffset, holidayOnly]
+                              type: object
+                            maxItems: 64
+                            minItems: 1
+                            type: array
+                        required: [timeZone, weeklyWindows, includeDates, excludeDates, holidayDates]
+                        type: object
                       unitPrice: {pattern: '^[0-9]+(?:\.[0-9]{1,12})?$', type: string}
-                    required: [regionCode, billingMeter, unitPrice, currency]
+                    required: [regionCode, billingMeter, unitPrice, currency, rateHash, rateVariant, schedule]
                     type: object
                   maxItems: 200
                   type: array
@@ -1531,9 +1583,55 @@ frontend_operations:
                     properties:
                       billingMeter: { maxLength: 64, minLength: 1, type: string }
                       currency: {pattern: '^[A-Z]{3}$', type: string}
+                      rateHash: { maxLength: 128, type: string }
+                      rateVariant: { enum: [standard, time_window, batch], type: string }
                       regionCode: { maxLength: 64, minLength: 1, type: string }
+                      schedule:
+                        additionalProperties: false
+                        name: AppModelCatalogPriceSchedule
+                        nullable: true
+                        properties:
+                          excludeDates:
+                            items: { format: date, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$', type: string }
+                            maxItems: 366
+                            type: array
+                            uniqueItems: true
+                          holidayDates:
+                            items: { format: date, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$', type: string }
+                            maxItems: 366
+                            type: array
+                            uniqueItems: true
+                          includeDates:
+                            items: { format: date, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$', type: string }
+                            maxItems: 366
+                            type: array
+                            uniqueItems: true
+                          timeZone: { maxLength: 128, minLength: 1, type: string }
+                          weeklyWindows:
+                            items:
+                              additionalProperties: false
+                              name: AppModelCatalogPriceScheduleWindow
+                              properties:
+                                daysOfWeek:
+                                  items: { format: int32, maximum: 7, minimum: 1, type: integer }
+                                  maxItems: 7
+                                  minItems: 1
+                                  type: array
+                                  uniqueItems: true
+                                endDayOffset: { enum: [0, 1], format: int32, type: integer }
+                                endTime: { pattern: '^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$', type: string }
+                                holidayOnly: { type: boolean }
+                                startTime: { pattern: '^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$', type: string }
+                                windowCode: { maxLength: 96, minLength: 1, type: string }
+                              required: [windowCode, daysOfWeek, startTime, endTime, endDayOffset, holidayOnly]
+                              type: object
+                            maxItems: 64
+                            minItems: 1
+                            type: array
+                        required: [timeZone, weeklyWindows, includeDates, excludeDates, holidayDates]
+                        type: object
                       unitPrice: {pattern: '^[0-9]+(?:\.[0-9]{1,12})?$', type: string}
-                    required: [regionCode, billingMeter, unitPrice, currency]
+                    required: [regionCode, billingMeter, unitPrice, currency, rateHash, rateVariant, schedule]
                     type: object
                   maxItems: 200
                   type: array
@@ -12625,11 +12723,13 @@ frontend_operations:
                           startTime: { type: string, pattern: '^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$' }
                           endTime: { type: string, pattern: '^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$' }
                           endDayOffset: { type: integer, enum: [0, 1] }
-                        required: [windowCode, daysOfWeek, startTime, endTime, endDayOffset]
+                          holidayOnly: { type: boolean }
+                        required: [windowCode, daysOfWeek, startTime, endTime, endDayOffset, holidayOnly]
                         type: object
                     includeDates: { type: array, maxItems: 366, items: { type: string, format: date, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' } }
                     excludeDates: { type: array, maxItems: 366, items: { type: string, format: date, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' } }
-                  required: [timeZone, weeklyWindows, includeDates, excludeDates]
+                    holidayDates: { type: array, maxItems: 366, items: { type: string, format: date, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' } }
+                  required: [timeZone, weeklyWindows, includeDates, excludeDates, holidayDates]
                   type: object
                 updatedAt: { format: date-time, maxLength: 64, type: string }
               required: [id, pricingPlanId, ruleCode, formulaMode, status]
@@ -14776,6 +14876,7 @@ frontend_models:
       - billingMeter
       - unitPrice
       - currency
+      - variant
     data_sources:
       - ai_model_pricing
   - route: /pricing
@@ -14800,6 +14901,7 @@ frontend_models:
       - prices.billingMeter
       - prices.unitPrice
       - prices.currency
+      - prices.variant
     data_sources:
       - ai_model
       - ai_model_pricing
@@ -16322,6 +16424,20 @@ frontend_models:
       - pricing.referencePrices.billingMeter
       - pricing.referencePrices.unitPrice
       - pricing.referencePrices.currency
+      - pricing.referencePrices.rateHash
+      - pricing.referencePrices.rateVariant
+      - pricing.referencePrices.schedule
+      - pricing.referencePrices.schedule.timeZone
+      - pricing.referencePrices.schedule.weeklyWindows
+      - pricing.referencePrices.schedule.weeklyWindows.windowCode
+      - pricing.referencePrices.schedule.weeklyWindows.daysOfWeek
+      - pricing.referencePrices.schedule.weeklyWindows.startTime
+      - pricing.referencePrices.schedule.weeklyWindows.endTime
+      - pricing.referencePrices.schedule.weeklyWindows.endDayOffset
+      - pricing.referencePrices.schedule.weeklyWindows.holidayOnly
+      - pricing.referencePrices.schedule.includeDates
+      - pricing.referencePrices.schedule.excludeDates
+      - pricing.referencePrices.schedule.holidayDates
       - pricing.unit
       - pricing.currency
       - pricing.status
@@ -16357,6 +16473,20 @@ frontend_models:
       - referencePrices.billingMeter
       - referencePrices.unitPrice
       - referencePrices.currency
+      - referencePrices.rateHash
+      - referencePrices.rateVariant
+      - referencePrices.schedule
+      - referencePrices.schedule.timeZone
+      - referencePrices.schedule.weeklyWindows
+      - referencePrices.schedule.weeklyWindows.windowCode
+      - referencePrices.schedule.weeklyWindows.daysOfWeek
+      - referencePrices.schedule.weeklyWindows.startTime
+      - referencePrices.schedule.weeklyWindows.endTime
+      - referencePrices.schedule.weeklyWindows.endDayOffset
+      - referencePrices.schedule.weeklyWindows.holidayOnly
+      - referencePrices.schedule.includeDates
+      - referencePrices.schedule.excludeDates
+      - referencePrices.schedule.holidayDates
       - unit
       - currency
       - status
@@ -16371,6 +16501,52 @@ frontend_models:
       - billingMeter
       - unitPrice
       - currency
+      - rateHash
+      - rateVariant
+      - schedule
+      - schedule.timeZone
+      - schedule.weeklyWindows
+      - schedule.weeklyWindows.windowCode
+      - schedule.weeklyWindows.daysOfWeek
+      - schedule.weeklyWindows.startTime
+      - schedule.weeklyWindows.endTime
+      - schedule.weeklyWindows.endDayOffset
+      - schedule.weeklyWindows.holidayOnly
+      - schedule.weeklyWindows.holidayOnly
+      - schedule.includeDates
+      - schedule.excludeDates
+      - schedule.holidayDates
+      - schedule.holidayDates
+    data_sources:
+      - ai_model_pricing
+  - route: /models
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/data/models.ts
+    interface: ModelPricingSchedule
+    fields:
+      - timeZone
+      - weeklyWindows
+      - weeklyWindows.windowCode
+      - weeklyWindows.daysOfWeek
+      - weeklyWindows.startTime
+      - weeklyWindows.endTime
+      - weeklyWindows.endDayOffset
+      - weeklyWindows.holidayOnly
+      - weeklyWindows.holidayOnly
+      - includeDates
+      - excludeDates
+      - holidayDates
+    data_sources:
+      - ai_model_pricing
+  - route: /models
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/data/models.ts
+    interface: ModelPricingScheduleWindow
+    fields:
+      - windowCode
+      - daysOfWeek
+      - startTime
+      - endTime
+      - endDayOffset
+      - holidayOnly
     data_sources:
       - ai_model_pricing
   - route: /models
@@ -16481,6 +16657,9 @@ frontend_models:
       - officialReferencePrices.billingMeter
       - officialReferencePrices.unitPrice
       - officialReferencePrices.currency
+      - officialReferencePrices.rateHash
+      - officialReferencePrices.rateVariant
+      - officialReferencePrices.schedule
       - priceAvailability
     data_sources:
       - ai_model_vendor
@@ -17094,8 +17273,10 @@ frontend_models:
       - schedule.weeklyWindows.startTime
       - schedule.weeklyWindows.endTime
       - schedule.weeklyWindows.endDayOffset
+      - schedule.weeklyWindows.holidayOnly
       - schedule.includeDates
       - schedule.excludeDates
+      - schedule.holidayDates
       - priority
       - effectiveFrom
       - effectiveTo
@@ -17134,8 +17315,10 @@ frontend_models:
       - schedule.weeklyWindows.startTime
       - schedule.weeklyWindows.endTime
       - schedule.weeklyWindows.endDayOffset
+      - schedule.weeklyWindows.holidayOnly
       - schedule.includeDates
       - schedule.excludeDates
+      - schedule.holidayDates
       - priority
       - effectiveFrom
       - effectiveTo
@@ -17162,6 +17345,7 @@ frontend_models:
       - startTime
       - endTime
       - endDayOffset
+      - holidayOnly
     data_sources:
       - cloudrouter_pricing_rule
   - route: /admin/pricing/rules
@@ -17175,8 +17359,10 @@ frontend_models:
       - weeklyWindows.startTime
       - weeklyWindows.endTime
       - weeklyWindows.endDayOffset
+      - weeklyWindows.holidayOnly
       - includeDates
       - excludeDates
+      - holidayDates
     data_sources:
       - cloudrouter_pricing_rule
   - route: /admin/pricing/settings/:sectionId?
@@ -17207,8 +17393,10 @@ frontend_models:
       - schedule.weeklyWindows.startTime
       - schedule.weeklyWindows.endTime
       - schedule.weeklyWindows.endDayOffset
+      - schedule.weeklyWindows.holidayOnly
       - schedule.includeDates
       - schedule.excludeDates
+      - schedule.holidayDates
       - priority
       - effectiveFrom
       - effectiveTo

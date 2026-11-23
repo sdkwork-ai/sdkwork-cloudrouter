@@ -192,6 +192,9 @@ struct InvocationRuntimeRoutesInput<'a, C> {
     query_string_api_key_policy: QueryStringApiKeyPolicy,
     runtime_toml: Option<&'a RuntimeTomlConfig>,
     body_max_bytes: usize,
+    /// Body ceiling for the vendor file-upload routes; see
+    /// `gateway_upload_body_max_bytes`.
+    upload_body_max_bytes: usize,
     tenant_inflight_config: Option<TenantInflightConfig>,
     estimated_instance_count: u32,
     stream_response_timeout: Duration,
@@ -266,6 +269,7 @@ where
         query_string_api_key_policy,
         runtime_toml,
         body_max_bytes,
+        upload_body_max_bytes,
         tenant_inflight_config,
         estimated_instance_count,
         stream_response_timeout,
@@ -328,6 +332,7 @@ where
                 tenant_inflight_config,
                 redis_config: redis_config.as_ref(),
                 body_limit_bytes: body_max_bytes,
+                upload_body_limit_bytes: upload_body_max_bytes,
                 stream_response_timeout,
                 query_string_api_key_policy,
                 internal_gateway_verifier: Some(internal_gateway_verifier),
@@ -481,6 +486,7 @@ where
     let dispatcher_response_max_bytes =
         invocation_response_max_bytes(provider_runtime_config.response_max_bytes)?;
     let body_max_bytes = gateway_invocation_body_max_bytes(request_limits_config);
+    let upload_body_max_bytes = gateway_upload_body_max_bytes(request_limits_config);
     let secret_resolver_configured = provider_secret_resolver.is_some();
     // When the call chain owns the tenant scope (gray flag), the legacy
     // TenantInflightInterceptor is not registered.
@@ -500,6 +506,7 @@ where
             query_string_api_key_policy,
             runtime_toml,
             body_max_bytes,
+            upload_body_max_bytes,
             tenant_inflight_config,
             estimated_instance_count: provider_runtime_config.estimated_instance_count,
             stream_response_timeout: provider_runtime_config.stream_response_timeout,
@@ -566,6 +573,7 @@ where
             query_string_api_key_policy,
             runtime_toml,
             body_max_bytes,
+            upload_body_max_bytes,
             tenant_inflight_config,
             estimated_instance_count: provider_runtime_config.estimated_instance_count,
             stream_response_timeout: provider_runtime_config.stream_response_timeout,
@@ -690,6 +698,14 @@ fn build_internal_gateway_request_verifier(
 
 fn gateway_invocation_body_max_bytes(request_limits_config: RequestLimitsConfig) -> usize {
     request_limits_config.gateway_invocation_body_max_bytes()
+}
+
+/// Body ceiling for the vendor file-upload routes.
+///
+/// Kept separate from the JSON budget so the upload gate can be aligned with
+/// the vendor ceiling without widening every `/v1` prompt route.
+fn gateway_upload_body_max_bytes(request_limits_config: RequestLimitsConfig) -> usize {
+    request_limits_config.gateway_upload_body_max_bytes()
 }
 
 fn invocation_response_max_bytes(value: u64) -> Result<NonZeroUsize, GatewayRouterError> {

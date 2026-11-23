@@ -1,12 +1,12 @@
 use crate::application::is_token_meter;
 use crate::domain::{
-    ensure_canonical_model_catalog_key, provider_native_model_id, AccountRateCard, AiModel,
-    AiModelPublicMetadata, BillingMeter, DecimalValue, DomainError, DomainResult,
-    GatewayAccessPolicy, GatewayApiKey, GatewayApiKeyAccountGroupBinding, GatewayRiskRule,
-    ModelMappingBindingType, ModelMappingRule, ModelPrice, ModelUpstreamRoute, ModelVendor,
-    ModelVendorDefinition, Money, PriceSide, PricingPlan, PricingRateMetadata, PricingRule,
-    ProviderRetryPolicy, QuotaPolicy, UpstreamAccountGroup, UpstreamAccountGroupBinding,
-    UpstreamAccountGroupMetricSnapshot, UpstreamAccountRoute, UpstreamResourceEntitlement,
+    ensure_canonical_model_catalog_key, AccountRateCard, AiModel, AiModelPublicMetadata,
+    BillingMeter, DecimalValue, DomainError, DomainResult, GatewayAccessPolicy, GatewayApiKey,
+    GatewayApiKeyAccountGroupBinding, GatewayRiskRule, ModelMappingBindingType, ModelMappingRule,
+    ModelPrice, ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide,
+    PricingPlan, PricingRateMetadata, PricingRule, ProviderRetryPolicy, QuotaPolicy,
+    UpstreamAccountGroup, UpstreamAccountGroupBinding, UpstreamAccountGroupMetricSnapshot,
+    UpstreamAccountRoute, UpstreamResourceEntitlement,
 };
 
 pub struct ModelVendorRow {
@@ -400,26 +400,17 @@ fn ensure_base_catalog_key(catalog_key: &str, message: &str) -> DomainResult<()>
 }
 
 fn normalized_provider_model(catalog_key: &str, model: &str, provider_model: &str) -> String {
-    let provider_model = provider_model.trim();
-    if !provider_model.is_empty() {
-        if is_catalog_model_alias(provider_model, catalog_key, model) {
-            return provider_native_model_id(provider_model);
-        }
-        return provider_model.to_owned();
-    }
-    let model = model.trim();
-    if !model.is_empty() {
-        return model.to_owned();
-    }
-    provider_native_model_id(catalog_key)
-}
-
-fn is_catalog_model_alias(provider_model: &str, catalog_key: &str, model: &str) -> bool {
-    if provider_model == catalog_key.trim() {
-        return true;
-    }
-    let native_model = provider_native_model_id(provider_model);
-    !native_model.is_empty() && native_model == model.trim() && native_model != provider_model
+    // The SQL row has no supplier type context; unknown/official is the safe
+    // default and the route layer re-resolves with the live supplier type. The
+    // shared resolver still preserves an explicit provider-model override and
+    // strips a catalog-spelling vendor head structurally.
+    crate::domain::resolve_provider_model_id(
+        None,
+        Some(catalog_key),
+        Some(model),
+        Some(provider_model),
+    )
+    .unwrap_or_default()
 }
 
 fn normalized_credential_rotation(value: String) -> String {

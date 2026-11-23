@@ -1259,34 +1259,15 @@ async fn create_schema(pool: &PgPool, schema: &str) {
         PRICING_BASELINE,
         CLOUDROUTER_BILLING_BASELINE,
     ] {
-        for statement in split_statements(baseline) {
-            if let Err(error) = sqlx::query(sqlx::AssertSqlSafe(statement.clone()))
-                .execute(&mut *connection)
-                .await
-            {
-                panic!(
-                    "apply baseline DDL failed for statement: {statement}
-error: {error}"
-                );
-            }
+        // Execute each baseline in one round trip. The files contain
+        // dollar-quoted function bodies (`$con$ ... $con$`) whose inner
+        // semicolons a naive `;` split truncates, which surfaced as
+        // "unterminated dollar-quoted string"; the server parses the file
+        // natively.
+        if let Err(error) = sqlx::raw_sql(baseline).execute(&mut *connection).await {
+            panic!("apply baseline DDL failed: {error}");
         }
     }
-}
-
-fn split_statements(baseline: &str) -> Vec<String> {
-    // Drop full-line `--` comments first so comment text containing `;` never
-    // splits a real statement.
-    let without_comments = baseline
-        .lines()
-        .filter(|line| !line.trim_start().starts_with("--"))
-        .collect::<Vec<_>>()
-        .join("\n");
-    without_comments
-        .split(';')
-        .map(str::trim)
-        .filter(|statement| !statement.is_empty())
-        .map(str::to_owned)
-        .collect()
 }
 
 fn quote_identifier(identifier: &str) -> String {

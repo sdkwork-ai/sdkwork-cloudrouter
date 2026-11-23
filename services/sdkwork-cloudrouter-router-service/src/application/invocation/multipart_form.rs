@@ -2,6 +2,7 @@ use axum::http::header;
 use axum::http::HeaderMap;
 
 use super::{InvocationError, InvocationErrorKind};
+use crate::domain::MODEL_REQUEST_FIELD_NAMES;
 
 pub(super) fn multipart_boundary(headers: &HeaderMap) -> Option<String> {
     let content_type = headers.get(header::CONTENT_TYPE)?.to_str().ok()?;
@@ -40,29 +41,54 @@ pub(super) fn optional_model_from_multipart_form(
     body: &[u8],
 ) -> Result<Option<String>, InvocationError> {
     let boundary = require_multipart_boundary(headers)?;
-    let Some(range) = multipart_field_value_range(body, boundary.as_bytes(), "model") else {
-        return Ok(None);
-    };
-    let value = String::from_utf8_lossy(&body[range.start..range.end]);
-    require_non_blank_model(&value).map(Some)
+    for field in MODEL_REQUEST_FIELD_NAMES {
+        let Some(range) = multipart_field_value_range(body, boundary.as_bytes(), field) else {
+            continue;
+        };
+        let value = String::from_utf8_lossy(&body[range.start..range.end]);
+        return require_non_blank_model(&value).map(Some);
+    }
+    Ok(None)
 }
 
+/// Rewrites every model-bearing multipart text field (`model`, `model_name`,
+/// `model_id`, …) to the resolved provider model. A vendor-native audio/image
+/// edit call may carry the model under a vendor-specific field name; rewriting
+/// only `model` would leave the client's spelling on the wire.
 pub(super) fn rewrite_multipart_model(
     headers: &HeaderMap,
     body: &[u8],
     provider_model: &str,
 ) -> Result<Vec<u8>, InvocationError> {
     let boundary = require_multipart_boundary(headers)?;
-    let range = multipart_field_value_range(body, boundary.as_bytes(), "model")
-        .ok_or_else(|| invalid_request("model is required"))?;
+    let mut ranges = Vec::new();
+    for field in MODEL_REQUEST_FIELD_NAMES {
+        ranges.extend(multipart_field_value_ranges(
+            body,
+            boundary.as_bytes(),
+            field,
+        ));
+    }
+    if ranges.is_empty() {
+        return Err(invalid_request("model is required"));
+    }
+    ranges.sort_by_key(|range| range.start);
     let mut rewritten = Vec::with_capacity(
         body.len()
-            .saturating_sub(range.end.saturating_sub(range.start))
-            + provider_model.len(),
+            + ranges
+                .len()
+                .saturating_mul(provider_model.len().saturating_sub(1)),
     );
-    rewritten.extend_from_slice(&body[..range.start]);
-    rewritten.extend_from_slice(provider_model.as_bytes());
-    rewritten.extend_from_slice(&body[range.end..]);
+    let mut cursor = 0usize;
+    for range in ranges {
+        if range.start < cursor {
+            continue;
+        }
+        rewritten.extend_from_slice(&body[cursor..range.start]);
+        rewritten.extend_from_slice(provider_model.as_bytes());
+        cursor = range.end;
+    }
+    rewritten.extend_from_slice(&body[cursor..]);
     Ok(rewritten)
 }
 
@@ -79,8 +105,19 @@ fn multipart_field_value_range(
     boundary: &[u8],
     field_name: &str,
 ) -> Option<std::ops::Range<usize>> {
+    multipart_field_value_ranges(body, boundary, field_name)
+        .into_iter()
+        .next()
+}
+
+fn multipart_field_value_ranges(
+    body: &[u8],
+    boundary: &[u8],
+    field_name: &str,
+) -> Vec<std::ops::Range<usize>> {
+    let mut ranges = Vec::new();
     if body.is_empty() || boundary.is_empty() || field_name.is_empty() {
-        return None;
+        return ranges;
     }
     let marker = multipart_boundary_marker(boundary);
     let mut search_start = 0usize;
@@ -88,25 +125,30 @@ fn multipart_field_value_range(
         let boundary_start = search_start + relative_start;
         let mut cursor = boundary_start + marker.len();
         if body.get(cursor..cursor + 2) == Some(b"--") {
-            return None;
+            break;
         }
         if body.get(cursor..cursor + 2) != Some(b"\r\n") {
             search_start = cursor;
             continue;
         }
         cursor += 2;
-        let headers_end = cursor + find_bytes(&body[cursor..], b"\r\n\r\n")?;
+        let Some(relative_headers_end) = find_bytes(&body[cursor..], b"\r\n\r\n") else {
+            break;
+        };
+        let headers_end = cursor + relative_headers_end;
         let headers = String::from_utf8_lossy(&body[cursor..headers_end]);
         let value_start = headers_end + 4;
         let boundary_prefix = multipart_next_boundary_prefix(boundary);
-        let relative_value_end = find_bytes(&body[value_start..], &boundary_prefix)?;
+        let Some(relative_value_end) = find_bytes(&body[value_start..], &boundary_prefix) else {
+            break;
+        };
         let value_end = value_start + relative_value_end;
         if multipart_headers_contain_field_name(&headers, field_name) {
-            return Some(value_start..value_end);
+            ranges.push(value_start..value_end);
         }
         search_start = value_end + 2;
     }
-    None
+    ranges
 }
 
 fn multipart_boundary_marker(boundary: &[u8]) -> Vec<u8> {
@@ -130,7 +172,7 @@ fn multipart_headers_contain_field_name(headers: &str, field_name: &str) -> bool
         .any(|(name, value)| {
             name.trim().eq_ignore_ascii_case("content-disposition")
                 && multipart_content_disposition_name(value)
-                    .map(|name| name == field_name)
+                    .map(|name| name.eq_ignore_ascii_case(field_name))
                     .unwrap_or(false)
         })
 }
@@ -180,4 +222,70 @@ fn unquote_header_parameter_value(value: &str) -> &str {
 
 fn invalid_request(message: impl Into<String>) -> InvocationError {
     InvocationError::new(InvocationErrorKind::InvalidRequest, message)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn multipart_headers(boundary: &str) -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            header::CONTENT_TYPE,
+            format!("multipart/form-data; boundary={boundary}")
+                .parse()
+                .expect("content type"),
+        );
+        headers
+    }
+
+    fn multipart_body(boundary: &str, fields: &[(&str, &str)]) -> Vec<u8> {
+        let mut body = String::new();
+        for (name, value) in fields {
+            body.push_str(&format!(
+                "--{boundary}\r\nContent-Disposition: form-data; name=\"{name}\"\r\n\r\n{value}\r\n"
+            ));
+        }
+        body.push_str(&format!("--{boundary}--\r\n"));
+        body.into_bytes()
+    }
+
+    #[test]
+    fn extracts_model_from_vendor_native_field_names() {
+        for field in ["model", "model_name", "model_id"] {
+            let headers = multipart_headers("test-boundary");
+            let body = multipart_body("test-boundary", &[(field, "eleven_multilingual_v2")]);
+            assert_eq!(
+                Some("eleven_multilingual_v2".to_owned()),
+                optional_model_from_multipart_form(&headers, &body).expect("model"),
+                "field: {field}"
+            );
+        }
+    }
+
+    #[test]
+    fn rewrites_every_model_bearing_field() {
+        let headers = multipart_headers("test-boundary");
+        let body = multipart_body(
+            "test-boundary",
+            &[
+                ("model", "openai/gpt-image-2"),
+                ("model_id", "openai/gpt-image-2"),
+                ("prompt", "keep"),
+            ],
+        );
+        let rewritten =
+            rewrite_multipart_model(&headers, &body, "gpt-image-2").expect("rewritten body");
+        let text = String::from_utf8(rewritten).expect("utf8");
+        assert!(!text.contains("openai/"));
+        assert_eq!(2, text.matches("gpt-image-2").count());
+        assert!(text.contains("keep"));
+    }
+
+    #[test]
+    fn missing_model_field_is_an_invalid_request() {
+        let headers = multipart_headers("test-boundary");
+        let body = multipart_body("test-boundary", &[("prompt", "x")]);
+        assert!(rewrite_multipart_model(&headers, &body, "gpt-4o").is_err());
+    }
 }

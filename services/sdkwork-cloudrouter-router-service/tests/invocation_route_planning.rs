@@ -582,6 +582,92 @@ async fn provider_native_model_route_resolves_cross_vendor_model_by_catalog_name
 }
 
 #[tokio::test]
+async fn pipeline_model_route_falls_back_to_the_bare_model_id() {
+    let mut catalog = base_catalog();
+    catalog.add_vendor(ModelVendorDefinition::new(
+        "deepseek",
+        ModelVendor::from_code("deepseek"),
+        "DeepSeek",
+    ));
+    catalog.add_vendor(ModelVendorDefinition::new(
+        "deepseek-relay",
+        ModelVendor::from_code("deepseek"),
+        "DeepSeek relay",
+    ));
+    // The qualified identity exists but is unpriced; the same bare model id
+    // under another catalog key is routable.
+    catalog.add_model(
+        AiModel::new("deepseek-flash", "DeepSeek Flash", "deepseek", vec!["chat"])
+            .with_catalog_key("deepseek/deepseek-flash"),
+    );
+    catalog.add_model(
+        AiModel::new(
+            "deepseek-flash",
+            "DeepSeek Flash",
+            "deepseek-relay",
+            vec!["chat"],
+        )
+        .with_catalog_key("deepseek-relay/deepseek-flash"),
+    );
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("deepseek-relay", 7001)
+            .with_upstream_endpoint(
+                Some("https://provider.example/deepseek-relay".to_owned()),
+                Some("vault://providers/deepseek-relay/main".to_owned()),
+            )
+            .with_account_group_binding(10, 100, 100),
+    );
+    for meter in [
+        BillingMeter::LlmInputToken,
+        BillingMeter::LlmOutputToken,
+        BillingMeter::LlmCacheReadToken,
+    ] {
+        catalog.add_price(ModelPrice::new_for_catalog_key(
+            "deepseek-relay/deepseek-flash",
+            "deepseek-flash",
+            PriceSide::OfficialReference,
+            meter.clone(),
+            Money::usd("0.030000").unwrap(),
+        ));
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                "deepseek-relay/deepseek-flash",
+                "deepseek-flash",
+                PriceSide::UpstreamCost,
+                meter,
+                Money::usd("0.020000").unwrap(),
+            )
+            .for_upstream_account("deepseek-relay", 7001),
+        );
+    }
+    let catalog = Arc::new(catalog);
+
+    let mut invocation = openai_invocation(
+        Method::POST,
+        "/v1/chat/completions",
+        InvocationBody::json(json!({
+            "model": "deepseek/deepseek-flash",
+            "messages": [{"role": "user", "content": "ping"}]
+        })),
+    );
+    invocation.resource.requested_model = Some("deepseek/deepseek-flash".to_owned());
+
+    RoutePlanningInterceptor::new(catalog.clone())
+        .before(&mut invocation)
+        .await
+        .expect("model route planning must fall back to the bare model id");
+
+    let plan = invocation.routing.route_plan.as_ref().expect("route plan");
+    assert_eq!(1, plan.candidates.len());
+    assert_eq!(7001, plan.candidates[0].account_id);
+    assert_eq!(
+        Some("deepseek-relay/deepseek-flash"),
+        invocation.resource.requested_model_catalog_key.as_deref(),
+        "the fallback catalog key must be written back for pricing and usage"
+    );
+}
+
+#[tokio::test]
 async fn sticky_route_constraint_overrides_normal_route_selection() {
     let mut catalog = base_catalog();
     add_account_route(&mut catalog, 3003, "sticky-provider");

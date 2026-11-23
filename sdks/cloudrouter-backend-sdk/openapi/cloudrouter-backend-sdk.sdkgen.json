@@ -1910,6 +1910,17 @@
                 "maxItems": 366,
                 "type": "array"
               },
+              "holidayDates": {
+                "description": "Holiday dates field on admin pricing rule.",
+                "items": {
+                  "description": "Schedule field on admin pricing rule.",
+                  "format": "date",
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "maxItems": 366,
+                "type": "array"
+              },
               "includeDates": {
                 "description": "Include dates field on admin pricing rule.",
                 "items": {
@@ -1958,6 +1969,10 @@
                       "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                       "type": "string"
                     },
+                    "holidayOnly": {
+                      "description": "Holiday only field on admin pricing rule.",
+                      "type": "boolean"
+                    },
                     "startTime": {
                       "description": "Start time field on admin pricing rule.",
                       "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
@@ -1975,7 +1990,8 @@
                     "daysOfWeek",
                     "startTime",
                     "endTime",
-                    "endDayOffset"
+                    "endDayOffset",
+                    "holidayOnly"
                   ],
                   "type": "object"
                 },
@@ -1988,7 +2004,8 @@
               "timeZone",
               "weeklyWindows",
               "includeDates",
-              "excludeDates"
+              "excludeDates",
+              "holidayDates"
             ],
             "type": "object"
           },
@@ -8461,7 +8478,8 @@
             "description": "Rate variant field on official pricing rate.",
             "enum": [
               "standard",
-              "time_window"
+              "time_window",
+              "batch"
             ],
             "type": "string"
           },
@@ -8484,6 +8502,18 @@
             "properties": {
               "excludeDates": {
                 "description": "Exclude dates field on official pricing rate.",
+                "items": {
+                  "description": "Schedule field on official pricing rate.",
+                  "format": "date",
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "maxItems": 366,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "holidayDates": {
+                "description": "Holiday dates field on official pricing rate.",
                 "items": {
                   "description": "Schedule field on official pricing rate.",
                   "format": "date",
@@ -8546,6 +8576,10 @@
                       "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                       "type": "string"
                     },
+                    "holidayOnly": {
+                      "description": "Holiday only field on official pricing rate.",
+                      "type": "boolean"
+                    },
                     "startTime": {
                       "description": "Start time field on official pricing rate.",
                       "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
@@ -8563,7 +8597,8 @@
                     "daysOfWeek",
                     "startTime",
                     "endTime",
-                    "endDayOffset"
+                    "endDayOffset",
+                    "holidayOnly"
                   ],
                   "type": "object"
                 },
@@ -8576,7 +8611,8 @@
               "timeZone",
               "weeklyWindows",
               "includeDates",
-              "excludeDates"
+              "excludeDates",
+              "holidayDates"
             ],
             "type": "object"
           },
@@ -9918,6 +9954,17 @@
                 "maxItems": 366,
                 "type": "array"
               },
+              "holidayDates": {
+                "description": "Holiday dates field on price setting upsert request.",
+                "items": {
+                  "description": "Schedule field on price setting upsert request.",
+                  "format": "date",
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "maxItems": 366,
+                "type": "array"
+              },
               "includeDates": {
                 "description": "Include dates field on price setting upsert request.",
                 "items": {
@@ -9966,6 +10013,10 @@
                       "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                       "type": "string"
                     },
+                    "holidayOnly": {
+                      "description": "Holiday only field on price setting upsert request.",
+                      "type": "boolean"
+                    },
                     "startTime": {
                       "description": "Start time field on price setting upsert request.",
                       "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
@@ -9983,7 +10034,8 @@
                     "daysOfWeek",
                     "startTime",
                     "endTime",
-                    "endDayOffset"
+                    "endDayOffset",
+                    "holidayOnly"
                   ],
                   "type": "object"
                 },
@@ -9996,7 +10048,8 @@
               "timeZone",
               "weeklyWindows",
               "includeDates",
-              "excludeDates"
+              "excludeDates",
+              "holidayDates"
             ],
             "type": "object"
           },
@@ -10515,6 +10568,17 @@
                 "maxItems": 366,
                 "type": "array"
               },
+              "holidayDates": {
+                "description": "Holiday dates field on pricing rule create request.",
+                "items": {
+                  "description": "Schedule field on pricing rule create request.",
+                  "format": "date",
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "maxItems": 366,
+                "type": "array"
+              },
               "includeDates": {
                 "description": "Include dates field on pricing rule create request.",
                 "items": {
@@ -10563,6 +10627,10 @@
                       "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                       "type": "string"
                     },
+                    "holidayOnly": {
+                      "description": "Holiday only field on pricing rule create request.",
+                      "type": "boolean"
+                    },
                     "startTime": {
                       "description": "Start time field on pricing rule create request.",
                       "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
@@ -10580,7 +10648,8 @@
                     "daysOfWeek",
                     "startTime",
                     "endTime",
-                    "endDayOffset"
+                    "endDayOffset",
+                    "holidayOnly"
                   ],
                   "type": "object"
                 },
@@ -10593,7 +10662,8 @@
               "timeZone",
               "weeklyWindows",
               "includeDates",
-              "excludeDates"
+              "excludeDates",
+              "holidayDates"
             ],
             "type": "object"
           },
@@ -10801,6 +10871,17 @@
                 "maxItems": 366,
                 "type": "array"
               },
+              "holidayDates": {
+                "description": "Holiday dates field on pricing rule update request.",
+                "items": {
+                  "description": "Schedule field on pricing rule update request.",
+                  "format": "date",
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "maxItems": 366,
+                "type": "array"
+              },
               "includeDates": {
                 "description": "Include dates field on pricing rule update request.",
                 "items": {
@@ -10849,6 +10930,10 @@
                       "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
                       "type": "string"
                     },
+                    "holidayOnly": {
+                      "description": "Holiday only field on pricing rule update request.",
+                      "type": "boolean"
+                    },
                     "startTime": {
                       "description": "Start time field on pricing rule update request.",
                       "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
@@ -10866,7 +10951,8 @@
                     "daysOfWeek",
                     "startTime",
                     "endTime",
-                    "endDayOffset"
+                    "endDayOffset",
+                    "holidayOnly"
                   ],
                   "type": "object"
                 },
@@ -10879,7 +10965,8 @@
               "timeZone",
               "weeklyWindows",
               "includeDates",
-              "excludeDates"
+              "excludeDates",
+              "holidayDates"
             ],
             "type": "object"
           },

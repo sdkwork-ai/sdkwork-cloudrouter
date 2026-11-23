@@ -1,4 +1,4 @@
-# 商业化中转站发布 Runbook（sdkwork-cloudrouter）
+﻿# 商业化中转站发布 Runbook（sdkwork-cloudrouter）
 
 本文件是 `COMMERCIAL-RELAY-ROUTING-AUDIT-2026-11-22.md` 的配套发布手册。
 所有命令都取自仓库真实入口；标注 **[目标环境]** 的步骤必须在预发/生产执行，
@@ -28,6 +28,7 @@
 | `SDKWORK_CLOUDROUTER_DATABASE_URL`（或运行时 TOML 等价项） | 目录快照与计费 | 启动失败 / 503 |
 | Redis 连接（可选但商用必开） | 分布式熔断、幂等、租户并发 | 退化为单节点本地熔断 |
 | Provider adapter manifest 路径（如启用内部 adapter） | provider adapter 路由 | 启动即 ERROR |
+| `SDKWORK_CLOUDROUTER_UPSTREAM_BASE_URL_ALLOW_LOOPBACK`（可选，仅本地/预发） | 允许 `http://127.0.0.1` 等回环上游（vLLM/Ollama/e2e mock） | 回环明文 Base URL 被写入门禁拒绝；公网明文始终拒绝 |
 
 > 检查：`bin/doctor.sh`，以及在目标机上 `printenv | grep SDKWORK_CLOUDROUTER`。
 
@@ -37,9 +38,9 @@
 # 编译门禁（两 crate 必须 exit 0）
 cargo check -p sdkwork-cloudrouter-router-service -p sdkwork-cloudrouter-edge-runtime
 
-# 单元/集成门禁（截至本次审计的期望值）
-cargo test -p sdkwork-cloudrouter-router-service --lib                # 788 passed
-cargo test -p sdkwork-cloudrouter-edge-runtime  --lib                 # 111 passed
+# 单元/集成门禁（截至本次审计的期望值；数字随树演进而增长，跑完核对 0 失败）
+cargo test -p sdkwork-cloudrouter-router-service --lib                # 791 passed
+cargo test -p sdkwork-cloudrouter-edge-runtime  --lib                 # 113 passed
 cargo test -p sdkwork-cloudrouter-router-service --test api_key_authentication_ring      # 3
 cargo test -p sdkwork-cloudrouter-router-service --test billing_missing_usage_estimate   # 2
 cargo test -p sdkwork-cloudrouter-router-service --test openai_chat_api                  # 42
@@ -49,6 +50,24 @@ cargo test -p sdkwork-cloudrouter-edge-runtime  --test openai_chat_route        
 for t in $(ls services/sdkwork-cloudrouter-router-service/tests/ | grep '^billing.*\.rs$' | sed 's/\.rs$//'); do
   cargo test -p sdkwork-cloudrouter-router-service --test "$t" || echo "FAIL $t"
 done
+
+# 数据库契约/路由 e2e：必须串行（同一 binary 内的用例共享 schema）
+export SDKWORK_DATABASE_URL="postgres://<user>:<pass>@<host>:5432/<db>"
+for t in postgres_upstream_routing_migration postgres_pricing_integrity_migration \
+         postgres_pricing_catalog_loader postgres_upstream_credential_rotation_sql_contract \
+         postgres_api_key_command_store_sql_contract postgres_admin_upstream_store \
+         postgres_soft_delete_active_unique postgres_app_routing_read_store \
+         postgres_openai_invocation_telemetry_plugin postgres_runtime_invocation_reaper \
+         postgres_usage_settlement_store_e2e postgres_responses_resource_routing_e2e \
+         postgres_chat_completion_routing_e2e; do
+  cargo test -p sdkwork-cloudrouter-router-service --test "$t" -- --test-threads=1 \
+    || echo "FAIL $t"
+done
+
+# Redis 背压/熔断 Lua（一次性实例即可）
+export SDKWORK_TEST_REDIS_URL="redis://<host>:6379/0"
+cargo test -p sdkwork-cloudrouter-router-service --lib redis
+cargo test -p sdkwork-cloudrouter-router-service --lib circuit_breaker
 ```
 
 构建产物：`bin/apps-build.sh`（cargo release）→ `bin/apps-package.sh`
@@ -81,7 +100,16 @@ SELECT count(*) AS keys_with_ciphertext_key_id
 FROM iam_gateway_api_key WHERE key_secret_key_id IS NOT NULL;
 ```
 
-数据库契约测试（需真实库）：
+目录导入（生成模型/定价目录；必须在部署 schema 环境执行）：
+
+```sh
+# 裸测试库会失败：运行时 ID 分配器要求显式 search_path（
+# "no schema has been selected to create in"），这也是它只能在 installer
+# 准备好的部署环境里运行的原因。
+cloudrouterctl refresh-catalog --source official
+```
+
+数据库契约测试（需真实库，且必须串行）：
 
 ```sh
 cargo test -p sdkwork-cloudrouter-router-service --test postgres_upstream_routing_migration

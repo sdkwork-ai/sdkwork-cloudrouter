@@ -143,8 +143,20 @@ describe('formatMarketingTimestamp', () => {
       .toBe(expectLocalDateTime('2026-11-10T09:12:00.000Z'));
   });
 
-  it('parses the backend CAST space form as local wall time', () => {
-    expect(formatMarketingTimestamp('2026-11-10 09:12:00', 'en')).toBe('2026-11-10 09:12');
+  it('parses the backend canonical server form as UTC', () => {
+    // 促销服务把 TEXT 时间写成 `YYYY-MM-DD HH:MM:SS` 的 **UTC**；把它当本地墙钟
+    // 会让整列时间偏移浏览器时区。回归断言：该形态与等价的 `Z` 形态渲染一致。
+    expect(formatMarketingTimestamp('2026-11-10 09:12:00', 'en'))
+      .toBe(expectLocalDateTime('2026-11-10T09:12:00.000Z'));
+    expect(formatMarketingTimestamp('2026-11-10 09:12:00', 'en'))
+      .toBe(formatMarketingTimestamp('2026-11-10T09:12:00.000Z', 'en'));
+  });
+
+  it('renders a UTC server-form date that crosses local midnight on the right day', () => {
+    // 2026-11-15 16:45 UTC 在上海是 2026-11-16 00:45；日期也必须跟着滚动，
+    // 不能只改小时却保留 UTC 的日期。
+    expect(formatMarketingTimestamp('2026-11-15 16:45:00', 'en'))
+      .toBe(expectLocalDateTime('2026-11-15T16:45:00.000Z'));
   });
 
   it('parses an offset form', () => {

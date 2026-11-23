@@ -2,6 +2,8 @@
 // - 列表只渲染后端脱敏值 `codeMasked`（并保留 `codeLast4` 作为 title），
 //   即便列表响应里仍带已废弃的完整 `promotionCode`，也不得进入 DOM 或 CSV；
 // - 普通 CSV 导出只写脱敏值；
+// - 点击列表脱敏券码 = 一次受审计揭示 + 写入剪贴板：明文不进入列表 DOM，
+//   剪贴板不可用时退化为打开揭示面板；
 // - 行内 Reveal 调用 `codes.reveals.create`，面板展示完整码 + 审计提示 + 复制；
 // - 行内 Reissue 调用 `codes.reissues.create`；仅 active 且未领取的券码可补发，
 //   成功只展示脱敏的新 codeNo/codeMasked（完整新码需在新行走受审计揭示）；
@@ -215,9 +217,77 @@ describe('CodesPage audited reveal', () => {
   });
 });
 
-const disableButtonName = `Disable code ${MASKED_CODE}`;
+const copyCellButtonName = `Copy full code for row ${MASKED_CODE}`;
 
-describe('CodesPage stop-loss disable', () => {
+describe('CodesPage direct copy from the list', () => {
+  it('copies the full plaintext code with one click without rendering it in the list', async () => {
+    vi.mocked(backendRevealPromotionCode).mockResolvedValue({ codeNo: 'CN-1', code: FULL_CODE });
+    render(<CodesPage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: copyCellButtonName }));
+
+    await waitFor(() => expect(backendRevealPromotionCode).toHaveBeenCalledWith('c1'));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(FULL_CODE));
+    expect(writeText).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText(
+      `Full code for row ${MASKED_CODE} copied to the clipboard. This access has been recorded in the audit log.`,
+    )).toBeInTheDocument();
+    // 完整码不进入列表 DOM，也不需要打开揭示面板。
+    expect(document.body.textContent).not.toContain(FULL_CODE);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    // 列表列继续只展示脱敏值。
+    expect(screen.getByText(MASKED_CODE)).toHaveAttribute('title', '4E21');
+  });
+
+  it('surfaces a reveal problem with a copyable traceId and copies nothing', async () => {
+    vi.mocked(backendRevealPromotionCode).mockRejectedValue({
+      problem: { detail: 'Reveal is not permitted', traceId: 'trace-copy-1' },
+    });
+    render(<CodesPage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: copyCellButtonName }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Reveal is not permitted');
+    expect(alert).toHaveTextContent('trace-copy-1');
+    expect(screen.getByRole('button', { name: 'Copy trace ID' })).toBeInTheDocument();
+    expect(writeText).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the audited reveal panel when the clipboard is unavailable', async () => {
+    vi.mocked(backendRevealPromotionCode).mockResolvedValue({ codeNo: 'CN-1', code: FULL_CODE });
+    writeText.mockRejectedValue(new DOMException('denied', 'NotAllowedError'));
+    render(<CodesPage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: copyCellButtonName }));
+
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent(FULL_CODE);
+    expect(dialog).toHaveTextContent('This access has been recorded in the audit log.');
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Clipboard permission was denied. Copy the value manually.',
+    );
+  });
+
+  it('disables direct copy when the row has no code id', async () => {
+    vi.mocked(backendPromotionCodesList).mockResolvedValue({
+      items: [{ ...codeRow, id: '' }],
+      pageInfo,
+    } as never);
+    render(<CodesPage />);
+
+    const copyButton = await screen.findByRole('button', { name: copyCellButtonName });
+    expect(copyButton).toBeDisabled();
+    expect(copyButton).toHaveAttribute(
+      'title',
+      'Copying the full code is unavailable because this row has no code id',
+    );
+    fireEvent.click(copyButton);
+    expect(backendRevealPromotionCode).not.toHaveBeenCalled();
+  });
+});
+
+const disableButtonName = `Disable code ${MASKED_CODE}`;describe('CodesPage stop-loss disable', () => {
   it('requires a confirmation with a reason and calls the disable service', async () => {
     vi.mocked(backendDisablePromotionCode).mockResolvedValue({ codeId: 'c1', status: 'disabled' });
     render(<CodesPage />);

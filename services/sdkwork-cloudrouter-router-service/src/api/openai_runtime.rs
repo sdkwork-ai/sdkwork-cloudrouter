@@ -328,10 +328,15 @@ where
         find_catalog_model(catalog, effective_model)?
     };
     ensure_model_capability(&catalog_model, accepted_capabilities, capability_label)?;
-    let model_catalog_key = catalog_model.catalog_key;
-    let routing_catalog_key = route_scope_catalog_key(effective_model, &model_catalog_key);
-    let model_plan = UpstreamRouteSelector::new(catalog)
-        .select_model_route_plan(SelectUpstreamModelRouteQuery {
+    let model_catalog_key = catalog_model.catalog_key.as_str();
+    let routing_catalog_key = route_scope_catalog_key(effective_model, model_catalog_key);
+    // 两段式路由：先按 `vendor/model`（或映射后的目录键）路由；该身份无法
+    // 成路由时，按同一请求的裸模型 ID 再试一次（见
+    // `select_model_route_plan_with_fallback`）。选中后必须用实际命中的
+    // catalog key 重新取目录模型，否则供应商标识、能力与出站模型会继续
+    // 引用第一段身份。
+    let selection = UpstreamRouteSelector::new(catalog)
+        .select_model_route_plan_with_fallback(SelectUpstreamModelRouteQuery {
             context: context.clone(),
             catalog_key: routing_catalog_key.clone(),
             requested_model: model.to_owned(),
@@ -341,8 +346,17 @@ where
             pricing_required: true,
         })
         .map_err(upstream_route_selection_error)?;
+    let routing_catalog_key = selection.catalog_key;
+    let selected_primary_catalog_key = routing_catalog_key == catalog_model.catalog_key;
+    let catalog_model = if selected_primary_catalog_key {
+        catalog_model
+    } else {
+        find_catalog_model(catalog, &routing_catalog_key)?
+    };
+    ensure_model_capability(&catalog_model, accepted_capabilities, capability_label)?;
     let account_routes = catalog.shared_upstream_account_routes();
-    let routes = model_plan
+    let routes = selection
+        .plan
         .routes
         .into_iter()
         .map(|selection| {
@@ -479,16 +493,19 @@ fn resolve_model_route(
         ));
     }
 
+    let supplier_type = catalog.supplier_type(&model_route.supplier_code);
     let provider_model = account_mapping
         .as_ref()
         .and_then(|rule| rule.effective_provider_model().map(str::to_owned))
-        .unwrap_or_else(|| {
-            normalized_resolved_provider_model(
-                &model_route.catalog_key,
-                &model_route.model,
-                &model_route.provider_model,
+        .or_else(|| {
+            crate::domain::resolve_provider_model_id(
+                supplier_type.as_deref(),
+                Some(model_route.catalog_key.as_str()),
+                Some(model_route.model.as_str()),
+                Some(model_route.provider_model.as_str()),
             )
-        });
+        })
+        .unwrap_or_default();
     let region_code = resolved_deployment_region_code(
         &model_route.region_code,
         account_metadata.as_ref(),
@@ -673,32 +690,6 @@ fn active_region_or_global(region: &str) -> String {
             "resolved region is not an active REGION_SPEC registry code; falling back to global"
         );
         "global".to_owned()
-    }
-}
-
-fn normalized_resolved_provider_model(
-    catalog_key: &str,
-    model: &str,
-    provider_model: &str,
-) -> String {
-    let provider_model = provider_model.trim();
-    if provider_model.is_empty() {
-        let model = model.trim();
-        return if model.is_empty() {
-            crate::domain::provider_native_model_id(catalog_key)
-        } else {
-            model.to_owned()
-        };
-    }
-    let native_model = crate::domain::provider_native_model_id(provider_model);
-    if provider_model == catalog_key.trim()
-        || (!native_model.is_empty()
-            && native_model == model.trim()
-            && native_model != provider_model)
-    {
-        native_model
-    } else {
-        provider_model.to_owned()
     }
 }
 

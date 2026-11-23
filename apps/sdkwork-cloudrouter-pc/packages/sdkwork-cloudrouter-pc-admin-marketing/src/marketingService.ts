@@ -1419,8 +1419,13 @@ const MARKETING_TIMESTAMP_PATTERN =
 /**
  * 解析三种后端时间形态：
  * - RFC 3339：`2026-11-10T09:12:00.000Z`
- * - 管理端 `CAST(... AS TEXT)`：`2026-11-10 09:12:00`（无时区，按本地墙钟解析）
+ * - 管理端 canonical server form：`2026-11-10 09:12:00`，**UTC**（促销服务以
+ *   `current_timestamp_string()` 写入 TEXT 列，见 `sdkwork-promotion`
+ *   `database/README.md`；`PromotionRedemptionAttempt.occurredAt` 也声明为该形态）
  * - 带 offset：`2026-11-10T09:12:00+08:00`、`2026-11-10 09:12:00+00`
+ *
+ * 无 offset 的形态一律按 UTC 解析：把它当成本地墙钟会让每个时间戳整体偏移
+ * 浏览器时区（Asia/Shanghai 下晚 8 小时），这正是兑换尝试页时间显示错误的根因。
  *
  * 返回 `null` 表示不可解析（调用方原样展示）。
  */
@@ -1446,21 +1451,15 @@ function parseMarketingTimestamp(raw: string): Date | null {
   ) {
     return null;
   }
-  const date = offset
-    ? new Date(Date.UTC(year, month - 1, day, hour, minute, second, milliseconds))
-    : new Date(year, month - 1, day, hour, minute, second, milliseconds);
+  const date = new Date(Date.UTC(year, month - 1, day, hour, minute, second, milliseconds));
   if (Number.isNaN(date.getTime())) {
     return null;
   }
-  const wallClockMatches = offset
-    ? date.getUTCFullYear() === year &&
-      date.getUTCMonth() === month - 1 &&
-      date.getUTCDate() === day &&
-      date.getUTCHours() === hour
-    : date.getFullYear() === year &&
-      date.getMonth() === month - 1 &&
-      date.getDate() === day &&
-      date.getHours() === hour;
+  const wallClockMatches =
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day &&
+    date.getUTCHours() === hour;
   if (!wallClockMatches) {
     return null;
   }

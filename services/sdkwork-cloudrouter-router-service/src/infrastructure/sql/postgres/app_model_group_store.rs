@@ -454,22 +454,7 @@ impl AppModelGroupStore for PostgresAppModelGroupStore {
 }
 
 fn find_model(catalog: &(dyn UpstreamAccountRouteCatalog + Send + Sync), model: &str) -> Option<AiModel> {
-    let model = model.trim();
-    if model.is_empty() {
-        return None;
-    }
-    if let Some(found) = catalog.find_model(model) {
-        return Some(found);
-    }
-    let mut found = None;
-    catalog.visit_models(None, &mut |candidate| {
-        if candidate.model != model {
-            return true;
-        }
-        found = Some(candidate.clone());
-        false
-    });
-    found
+    crate::application::resolve_catalog_model(catalog, model)
 }
 
 #[cfg(test)]

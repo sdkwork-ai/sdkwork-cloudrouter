@@ -27,8 +27,9 @@ pub use model_group::{
 // The alias helpers stay crate-internal (`pub(crate)` in their module); the
 // re-export must not widen them to the public API.
 pub(crate) use model_request_alias::{
-    model_alias_probes, model_alias_slug, model_id_segment, model_matches_alias_probe,
-    normalize_wire_model_id, ModelAliasProbe,
+    decode_model_path_segment, encode_model_path_segment, model_alias_probes, model_alias_slug,
+    model_id_segment, model_matches_alias_probe, model_route_identities, normalize_wire_model_id,
+    resolve_provider_model_id, ModelAliasProbe, MODEL_REQUEST_FIELD_NAMES,
 };
 pub use sdkwork_models_catalog_service::domain::ResourceDefinition;
 pub use sdkwork_models_catalog_service::domain::{

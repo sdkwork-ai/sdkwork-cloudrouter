@@ -1,4 +1,4 @@
-import type { Model, ModelGroupKey } from './data/models';
+import type { Model, ModelGroupKey, ModelPricingSchedule } from './data/models';
 import {
   formatModelPrice,
   formatModelPriceValue,
@@ -126,9 +126,19 @@ export type ModelCatalogPricingView = {
 
 /**
  * 价格显示方式。参考完整价格体系，标准价/销售价来自现有目录数据；
- * peak/offPeak 仅当区域内存在对应费率变体时才展示（当前 app 层暂不暴露这类数据）。
+ * peak/offPeak 来自官方时段费率（DeepSeek 等厂商的峰谷价）。
  */
-export type ModelCatalogPriceType = 'standard' | 'sale' | 'peak' | 'offPeak';
+export type ModelCatalogPriceType = 'standard' | 'sale' | 'peak' | 'offPeak' | 'batch';
+
+/** 官方费率变体：标准、峰时、谷时、批量，或无法归类的其它时段。 */
+export type ModelCatalogPriceVariant = 'standard' | 'peak' | 'off_peak' | 'batch' | 'time_window';
+
+export type ModelCatalogPriceVariantOption = {
+  key: ModelCatalogPriceVariant;
+  priceType: ModelCatalogPriceType | null;
+  labelKey: string;
+  fallbackLabel: string;
+};
 
 /** 模型卡片可切换的区域选项。 */
 export type ModelCatalogRegionOption = {
@@ -497,11 +507,22 @@ export function modelCatalogRegionLabelKey(regionCode: string): string {
 export function deriveModelCatalogRegionPricingView(
   model: Model,
   regionCode: string,
-  options: { saleMultiplier?: string } = {},
+  options: { saleMultiplier?: string; priceVariant?: ModelCatalogPriceVariant } = {},
 ): ModelCatalogPricingView | null {
-  const regionPrices = regionReferencePrices(model, regionCode);
+  let regionPrices = regionReferencePrices(model, regionCode);
   if (regionPrices.length === 0) {
     return null;
+  }
+  if (options.priceVariant !== undefined && options.priceVariant !== 'standard') {
+    regionPrices = regionPrices.filter((price) => modelReferencePriceVariant(price) === options.priceVariant);
+    if (regionPrices.length === 0) {
+      return null;
+    }
+  } else if (options.priceVariant === 'standard') {
+    regionPrices = regionPrices.filter((price) => modelReferencePriceVariant(price) === 'standard');
+    if (regionPrices.length === 0) {
+      return null;
+    }
   }
   const multiplier = parseSaleMultiplier(options.saleMultiplier);
   const badgeLabel = modelPricingBadgeLabel(model);
@@ -530,6 +551,148 @@ export function deriveModelCatalogRegionPricingView(
       regionPricingTokenCell(regionPrices, currency, 'cachedInput', multiplier, 'cached'),
     ],
   };
+}
+
+/** Classify one official reference rate row as standard / peak / off-peak. */
+export function modelReferencePriceVariant(
+  price: NonNullable<Model['pricing']['referencePrices']>[number],
+): ModelCatalogPriceVariant {
+  if (price.rateVariant === 'batch') {
+    return 'batch';
+  }
+  if (price.rateVariant !== 'time_window') {
+    return 'standard';
+  }
+  const codes = price.schedule?.weeklyWindows.map((window) => window.windowCode) ?? [];
+  if (codes.length > 0 && codes.every((code) => code.startsWith('peak'))) {
+    return 'peak';
+  }
+  if (codes.length > 0 && codes.every((code) => code.startsWith('off_peak'))) {
+    return 'off_peak';
+  }
+  return 'time_window';
+}
+
+/**
+ * Price variants the selected region actually publishes, ordered for tabs.
+ * A model with only `standard` rows yields no extra tabs.
+ */
+export function modelCatalogPricingVariants(
+  model: Model,
+  regionCode?: string,
+): ModelCatalogPriceVariantOption[] {
+  const prices = regionCode
+    ? regionReferencePrices(model, regionCode)
+    : (model.pricing.referencePrices ?? []);
+  const variants = new Set<ModelCatalogPriceVariant>();
+  for (const price of prices) {
+    variants.add(modelReferencePriceVariant(price));
+  }
+  const order: ModelCatalogPriceVariant[] = ['standard', 'peak', 'off_peak', 'batch', 'time_window'];
+  return order
+    .filter((variant) => variants.has(variant))
+    .map((variant) => ({
+      key: variant,
+      priceType: variant === 'standard'
+        ? 'standard'
+        : variant === 'peak'
+          ? 'peak'
+          : variant === 'off_peak'
+            ? 'offPeak'
+            : variant === 'batch'
+              ? 'batch'
+              : null,
+      labelKey: variant === 'standard'
+        ? 'models.priceType.standard'
+        : variant === 'peak'
+          ? 'models.priceType.peak'
+          : variant === 'off_peak'
+            ? 'models.priceType.offPeak'
+            : variant === 'batch'
+              ? 'models.priceType.batch'
+              : 'models.priceType.timeWindow',
+      fallbackLabel: variant === 'standard'
+        ? 'Standard'
+        : variant === 'peak'
+          ? 'Peak'
+          : variant === 'off_peak'
+            ? 'Off-peak'
+            : variant === 'batch'
+              ? 'Batch'
+              : 'Time window',
+    }));
+}
+
+/**
+ * Whether a schedule matches at `now`, mirroring the server's
+ * `PricingSchedule::matched_window_code` in the declared IANA timezone.
+ */
+export function pricingScheduleMatchesAt(
+  schedule: ModelPricingSchedule,
+  now = Date.now(),
+): boolean {
+  let parts: Record<string, string>;
+  try {
+    parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+      timeZone: schedule.timeZone,
+      weekday: 'short',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(new Date(now)).filter((part) => part.type !== 'literal').map((part) => [part.type, part.value]));
+  } catch {
+    return false;
+  }
+  const date = `${parts.year}-${parts.month}-${parts.day}`;
+  if (schedule.excludeDates.includes(date)) return false;
+  const time = `${parts.hour}:${parts.minute}:${parts.second}`;
+  const weekday = ({ Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 } as Record<string, number>)[parts.weekday];
+  if (!weekday) return false;
+  if (schedule.holidayDates.includes(date)) {
+    return schedule.weeklyWindows.some((window) => window.holidayOnly);
+  }
+  return schedule.weeklyWindows.some((window) => {
+    if (window.holidayOnly) return false;
+    const crossesMidnight = window.endDayOffset === 1;
+    const beforeEnd = time < normalizeScheduleClock(window.endTime);
+    const startDate = crossesMidnight && beforeEnd ? shiftIsoDate(date, -1) : date;
+    if (schedule.excludeDates.includes(startDate) || schedule.holidayDates.includes(startDate)) return false;
+    const scheduledDay = window.daysOfWeek.includes(weekdayForIsoDate(startDate));
+    if (!scheduledDay && !schedule.includeDates.includes(startDate)) return false;
+    const start = normalizeScheduleClock(window.startTime);
+    const end = normalizeScheduleClock(window.endTime);
+    return crossesMidnight ? time >= start || time < end : time >= start && time < end;
+  });
+}
+
+export function modelPricingVariantIsCurrent(
+  model: Model,
+  variant: ModelCatalogPriceVariant,
+  now = Date.now(),
+): boolean {
+  const prices = (model.pricing.referencePrices ?? []).filter(
+    (price) => modelReferencePriceVariant(price) === variant,
+  );
+  return prices.some((price) => price.schedule !== undefined && pricingScheduleMatchesAt(price.schedule, now));
+}
+
+function normalizeScheduleClock(value: string): string {
+  return /^\d{2}:\d{2}$/.test(value) ? `${value}:00` : value;
+}
+
+function shiftIsoDate(value: string, days: number): string {
+  const date = new Date(`${value}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function weekdayForIsoDate(value: string): number {
+  const day = new Date(`${value}T00:00:00Z`).getUTCDay();
+  return day === 0 ? 7 : day;
 }
 
 function regionReferencePrices(model: Model, regionCode: string): NonNullable<Model['pricing']['referencePrices']> {
