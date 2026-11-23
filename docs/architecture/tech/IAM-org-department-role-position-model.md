@@ -134,7 +134,16 @@ Audit/SecurityEvent 记录变更与风险
 | 审计 | audit_event / security_event + 变更审计 | 同 | ✅ 基础具备；缺字段级前后值 |
 | 多语言命名 | `label_i18n`/localized seeds | 同 | ✅ |
 
-## 5. 结论与建议
+## 5. v2 对齐更新（迁移 0052）
+
+| 差距（上文） | 现状 |
+| --- | --- |
+| 岗位缺编制/职位层 | `iam_position` 增加 `headcount`、`reports_to_position_id`（可表达编制与岗位汇报线） |
+| 缺人员汇报关系 | `iam_organization_membership` 增加 `reports_to_membership_id` |
+
+两项均已在本地 PostgreSQL 应用（`applied 1 migration`）并通过 `drift-check`。剩余工作是**维护入口与不变量**：编制占用校验、汇报环检测、审批流，而非 schema。
+
+## 6. 结论与建议
 
 **结论**：组织/部门树、任职关系、多部门与主部门、岗位任职、RBAC + 数据范围 + 时效授权这几块**符合行业主流模型**，关键不变量已落库（唯一主部门/主岗位、版本号、闭包）。差距集中在"企业级治理"而非"核心模型"：
 
