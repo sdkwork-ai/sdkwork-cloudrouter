@@ -654,3 +654,68 @@ fn list_models_clamps_internal_zero_page_size_to_one() {
     assert_eq!(1, page.page_size);
     assert_eq!(1, page.items.len());
 }
+
+/// Regression: when the account-route projection is empty (boot, catalog
+/// install/import, or a degraded refresh) no group can serve a model. The
+/// catalog must report an empty membership instead of falling back to "every
+/// group owns the whole catalog", which made the model library render the same
+/// global model count in every group.
+#[test]
+fn list_models_reports_no_group_membership_while_no_account_route_is_callable() {
+    let mut catalog = InMemoryPricingCatalog::default();
+    catalog.add_vendor(ModelVendorDefinition::new(
+        "openai",
+        ModelVendor::OpenAi,
+        "OpenAI",
+    ));
+    catalog.add_model(AiModel::new("gpt-4o", "GPT-4o", "openai", vec!["chat"]));
+    catalog.add_model(AiModel::new("gpt-4o-mini", "GPT-4o mini", "openai", vec!["chat"]));
+    // Configured groups without a single callable upstream account route.
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
+        10,
+        "openai.text",
+        "standard",
+        DecimalValue::parse("1.000000").unwrap(),
+        DecimalValue::parse("1.100000").unwrap(),
+    ));
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new(
+        11,
+        "openai.image",
+        "standard",
+        DecimalValue::parse("1.000000").unwrap(),
+        DecimalValue::parse("1.100000").unwrap(),
+    ));
+    let service = ModelCatalogQueryService::new(&catalog);
+
+    let page = service
+        .list_models(ListModelCatalogQuery {
+            api_key_id: None,
+            billing_meter: BillingMeter::LlmInputToken,
+            vendor_code: None,
+            vendor_codes: Vec::new(),
+            modalities: Vec::new(),
+            capabilities: Vec::new(),
+            categories: Vec::new(),
+            groups: Vec::new(),
+            search_query: None,
+            page_size: Some(20),
+            offset: None,
+        })
+        .unwrap();
+
+    assert_eq!(2, page.items.len());
+    assert_eq!(2, page.groups.len());
+    assert!(
+        page.groups.iter().all(|group| group.model_count == 0),
+        "no group may claim models while no account route is callable: {:?}",
+        page.groups
+    );
+    assert!(
+        page.items.iter().all(|item| item.groups.is_empty()),
+        "models must not advertise group membership without a callable account: {:?}",
+        page.items
+            .iter()
+            .map(|item| (&item.catalog_key, &item.groups))
+            .collect::<Vec<_>>()
+    );
+}
