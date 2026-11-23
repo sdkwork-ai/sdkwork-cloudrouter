@@ -2,7 +2,7 @@
 
 状态：active
 Owner：SDKWork maintainers
-Updated：2026-11-14
+Updated：2026-11-24
 Authority：[`sdkwork-order/specs/ACCOUNT_VALUE_ORDER_SPEC.md`](../../../../sdkwork-order/specs/ACCOUNT_VALUE_ORDER_SPEC.md) §2–§3（跨仓库唯一口径）
 
 本文件只做 Cloud Router 侧的落地映射与现状盘点，不重复规范条文。若与 order/account 规范冲突，以规范为准。
@@ -49,6 +49,9 @@ Authority：[`sdkwork-order/specs/ACCOUNT_VALUE_ORDER_SPEC.md`](../../../../sdkw
 
 - 任何端都不得直接渲染 `commerce_order.subject` 或 `business_type` 原始码。
 - 同一概念只允许一个展示名：`token_bank` 只能是 Compute Credits / 算力额度；`points` 只能是 Membership Points / 会员积分。
+- H5 的 `orders.*` 词表必须由 `packages/sdkwork-cloudrouter-h5-i18n/src/i18n/index.ts` 注册进
+  `SDKWORK_CONSOLE_MESSAGES`；未注册的词表不会进入运行时，页面会静默回落到内联中文默认值（收银台曾因此
+  在 en-US 下整体显示中文、并把会员主题显示成 `membership`）。
 - 新增主题或资产时，先改 order 规范词表，再改各端目录，最后补回归测试。
 
 ## 4. 已知历史债务（Cloud Router 侧）
@@ -78,5 +81,6 @@ Authority：[`sdkwork-order/specs/ACCOUNT_VALUE_ORDER_SPEC.md`](../../../../sdkw
 ## 5. 回归检查
 
 - `apps/sdkwork-cloudrouter-pc/commerce-order-subject-i18n.test.ts`：订单主题/资产标签、收银台 scene、各端词表一致性。
+- `apps/sdkwork-cloudrouter-h5/tests/orders-cashier-i18n.test.mjs`：H5 词表注册（`commerce/orders` 已并入 `SDKWORK_CONSOLE_MESSAGES`）、全部订单主题的 zh-CN/en-US 展示、动态 `orders.*` 键族（支付方式/状态/退款/物流）覆盖，以及收银台不得渲染主题原始码。
 - `sdkwork-order`：`pnpm --filter @sdkwork/order-pc-admin-trade test`（主题/资产目录完整性）。
 - `sdkwork-utils`：`cargo test -p sdkwork-utils-rust commerce_checkout`（收银台 scene 覆盖全部充值主题）。
