@@ -56,7 +56,6 @@ export const en = {
   "admin.menu.iam.oauth.channelReleases": "Channel release board",
   "admin.menu.iam.directory": "Identity Directory",
   "admin.menu.iam.users": "Users",
-  "admin.menu.iam.applications": "Applications",
   "admin.menu.iam.organizations": "Organizations",
   "admin.menu.iam.tenants": "Tenants",
   "admin.menu.iam.accessControl": "Access Control",

@@ -56,7 +56,6 @@ export const zh = {
   "admin.menu.iam.oauth.channelReleases": "渠道发布看板",
   "admin.menu.iam.directory": "身份目录",
   "admin.menu.iam.users": "用户",
-  "admin.menu.iam.applications": "应用列表",
   "admin.menu.iam.organizations": "组织",
   "admin.menu.iam.tenants": "租户",
   "admin.menu.iam.accessControl": "访问控制",

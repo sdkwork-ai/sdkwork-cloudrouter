@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import {
   getCloudRouterDriveImageService,
   readPortalPermissionScope,
-  resolveStoredPortalTenantId,
   subscribePortalSessionChange,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { hasPermissionInScope } from '@sdkwork/iam-contracts';
@@ -143,25 +142,6 @@ const LazyIamTenantsAdmin = lazy(async () => {
           }}
         />
       );
-    },
-  };
-});
-
-const LazyIamApplicationsAdmin = lazy(async () => {
-  const { createSdkworkIamTenantController, SdkworkIamInstallationsAdminWorkspace } = await import('@sdkwork/iam-pc-admin-tenant');
-  return {
-    default: function CloudRouterIamApplicationsAdminContent() {
-      const service = useIamAdminService();
-      const permissionScope = useIamAdminPermissionScope();
-      // The applications page targets the operator's current tenant; the
-      // session-scoped tenant id seeds the controller's initial selection so
-      // no tenant picker is rendered.
-      const selectedTenantId = useMemo(resolveStoredPortalTenantId, []);
-      const controller = useMemo(
-        () => createSdkworkIamTenantController({ permissionScope, selectedTenantId, service }),
-        [permissionScope, selectedTenantId, service],
-      );
-      return <SdkworkIamInstallationsAdminWorkspace controller={controller} />;
     },
   };
 });
@@ -547,7 +527,6 @@ const LazyIamAuditAdmin = lazy(async () => {
 
 export const CloudRouterIamUsersAdmin: ComponentType = createIamAdminRoute(LazyIamUsersAdmin);
 export const CloudRouterIamTenantsAdmin: ComponentType = createIamAdminRoute(LazyIamTenantsAdmin);
-export const CloudRouterIamApplicationsAdmin: ComponentType = createIamAdminRoute(LazyIamApplicationsAdmin);
 export const CloudRouterIamOrganizationsAdmin: ComponentType = createIamAdminRoute(LazyIamOrganizationsAdmin);
 export const CloudRouterIamOrganizationStructureAdmin: ComponentType = createIamAdminRoute(LazyIamOrganizationStructureAdmin);
 export const CloudRouterIamRolesAdmin: ComponentType = createIamAdminRoute(LazyIamRolesAdmin);
