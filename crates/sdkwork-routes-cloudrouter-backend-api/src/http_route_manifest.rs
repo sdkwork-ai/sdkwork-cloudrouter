@@ -6,54 +6,6 @@ use sdkwork_web_core::HttpRouteManifest;
 const HTTP_ROUTES: &[HttpRoute] = &[
     HttpRoute::dual_token(
         HttpMethod::Get,
-        "/backend/v3/api/ai/agent_categories",
-        "ai",
-        "agentCategories.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Put,
-        "/backend/v3/api/ai/agent_categories/{categoryCode}",
-        "ai",
-        "agentCategories.update",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/backend/v3/api/ai/agents",
-        "ai",
-        "agents.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/backend/v3/api/ai/agents",
-        "ai",
-        "agents.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/backend/v3/api/ai/agents/{agentId}",
-        "ai",
-        "agents.retrieve",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Patch,
-        "/backend/v3/api/ai/agents/{agentId}",
-        "ai",
-        "agents.update",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/backend/v3/api/ai/agents/{agentId}/restore",
-        "ai",
-        "agents.restore",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/backend/v3/api/ai/agents/{agentId}/status",
-        "ai",
-        "agents.status.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
         "/backend/v3/api/ai/plugin_categories",
         "ai",
         "pluginCategories.list",
