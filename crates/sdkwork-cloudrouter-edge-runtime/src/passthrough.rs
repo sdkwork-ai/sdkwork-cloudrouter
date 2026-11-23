@@ -1498,6 +1498,7 @@ fn adapter_billing_meter_ordinal(billing_meter: &BillingMeter) -> i64 {
         BillingMeter::ContainerSession => 39,
         BillingMeter::StorageGbDay => 40,
         BillingMeter::BandwidthGb => 41,
+        BillingMeter::DocumentPage => 42,
         BillingMeter::Unknown => 99,
     }
 }
