@@ -776,7 +776,10 @@ export function CloudRouterIamPersonnelWorkspace({
             {t('admin.iam.personnel.exportCsv')}
           </button>
         </div>
-        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+        <div
+          aria-busy={busy || loading}
+          className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800"
+        >
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500 dark:bg-slate-900">
               <tr>
