@@ -601,8 +601,23 @@ export function CloudRouterIamPersonnelWorkspace({
 
   const submitDeleteDepartment = useCallback(async () => {
     if (!deleteTarget) return;
-    await deleteDepartment(deleteTarget.departmentId);
-  }, [deleteDepartment, deleteTarget]);
+    const target = deleteTarget;
+    await deleteDepartment(target.departmentId);
+    if (selectedDepartmentId === target.departmentId) {
+      // Fall back to the parent instead of leaving the tree pointed at a
+      // department that no longer exists.
+      const nextParent = target.parentDepartmentId ?? '';
+      setSelectedDepartmentId(nextParent);
+      await loadRoster(selectedOrganizationId, nextParent, searchQuery);
+    }
+  }, [
+    deleteDepartment,
+    deleteTarget,
+    loadRoster,
+    searchQuery,
+    selectedDepartmentId,
+    selectedOrganizationId,
+  ]);
 
   const startEditingMember = useCallback(
     (member: RosterMember) => {
@@ -683,6 +698,24 @@ export function CloudRouterIamPersonnelWorkspace({
     selectedOrganizationId,
     service,
   ]);
+
+  useEffect(() => {
+    if (!nodeMenuId) return;
+    const closeOnOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('[data-department-menu]')) return;
+      setNodeMenuId('');
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setNodeMenuId('');
+    };
+    document.addEventListener('mousedown', closeOnOutside);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutside);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [nodeMenuId]);
 
   const selectedDepartment = flatDepartments.find(
     (item) => item.department.departmentId === selectedDepartmentId,
@@ -791,7 +824,7 @@ export function CloudRouterIamPersonnelWorkspace({
                     {item.department.name || item.department.code}
                   </button>
                   {canCreateDepartments || canDeleteDepartments ? (
-                    <div className="relative">
+                    <div className="relative" data-department-menu>
                       <button
                         aria-expanded={nodeMenuId === item.department.departmentId}
                         aria-label={`${t('admin.iam.personnel.actions')} ${item.department.name}`}
@@ -957,7 +990,15 @@ export function CloudRouterIamPersonnelWorkspace({
                     </button>
                     <button
                       className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900"
-                      disabled={creating || !formName.trim()}
+                      disabled={
+                        creating ||
+                        !formName.trim() ||
+                        (formMode === 'edit' &&
+                          editingDepartment !== null &&
+                          formName.trim() === editingDepartment.name &&
+                          (formCode.trim() || slugCode(formName)) === editingDepartment.code &&
+                          formSortOrder.trim() === '')
+                      }
                       type="submit"
                     >
                       {formMode === 'edit'
