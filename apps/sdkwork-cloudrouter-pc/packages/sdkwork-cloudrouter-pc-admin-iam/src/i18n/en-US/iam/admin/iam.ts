@@ -112,4 +112,13 @@ export const en = {
   "admin.iam.personnel.prev": "Previous",
   "admin.iam.personnel.next": "Next",
   "admin.iam.personnel.exportCsv": "Export CSV",
+  "admin.iam.personnel.newDepartment": "New department",
+  "admin.iam.personnel.parentDepartment": "Parent",
+  "admin.iam.personnel.rootDepartment": "Organization root",
+  "admin.iam.personnel.departmentCode": "Code",
+  "admin.iam.personnel.departmentCodeHint": "Lowercase letters, digits, hyphen, or underscore; 2-64 characters.",
+  "admin.iam.personnel.sortOrderLabel": "Sort order (optional)",
+  "admin.iam.personnel.sortOrderHint": "Empty appends to the end",
+  "admin.iam.personnel.fieldRequired": "This field is required",
+  "admin.iam.personnel.invalidDepartmentCode": "Use 2-64 lowercase letters, digits, hyphen, or underscore, starting with a letter or digit.",
 };

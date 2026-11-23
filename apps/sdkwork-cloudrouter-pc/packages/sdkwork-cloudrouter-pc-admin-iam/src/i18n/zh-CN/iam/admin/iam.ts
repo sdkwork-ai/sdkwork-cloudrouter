@@ -112,4 +112,13 @@ export const zh = {
   "admin.iam.personnel.prev": "上一页",
   "admin.iam.personnel.next": "下一页",
   "admin.iam.personnel.exportCsv": "导出 CSV",
+  "admin.iam.personnel.newDepartment": "新建部门",
+  "admin.iam.personnel.parentDepartment": "上级部门",
+  "admin.iam.personnel.rootDepartment": "组织根目录",
+  "admin.iam.personnel.departmentCode": "部门编码",
+  "admin.iam.personnel.departmentCodeHint": "小写字母、数字、连字符或下划线，2-64 个字符。",
+  "admin.iam.personnel.sortOrderLabel": "排序（可选）",
+  "admin.iam.personnel.sortOrderHint": "留空则排在末尾",
+  "admin.iam.personnel.fieldRequired": "此项必填",
+  "admin.iam.personnel.invalidDepartmentCode": "需为 2-64 位小写字母、数字、连字符或下划线，且以字母或数字开头。",
 };

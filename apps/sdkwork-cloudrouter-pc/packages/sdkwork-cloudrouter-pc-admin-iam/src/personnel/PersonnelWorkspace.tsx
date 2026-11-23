@@ -240,7 +240,13 @@ export function CloudRouterIamPersonnelWorkspace({
   const [members, setMembers] = useState<RosterMember[]>([]);
   const [draggingId, setDraggingId] = useState('');
   const [confirmingDeleteId, setConfirmingDeleteId] = useState('');
-  const [newDepartmentName, setNewDepartmentName] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
+  const [formName, setFormName] = useState('');
+  const [formCode, setFormCode] = useState('');
+  const [formSortOrder, setFormSortOrder] = useState('');
+  const [formError, setFormError] = useState('');
+  const [codeTouched, setCodeTouched] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [editingMember, setEditingMember] = useState<RosterMember | null>(null);
   const [draftDepartmentIds, setDraftDepartmentIds] = useState<Record<string, boolean>>({});
   const [draftPrimaryId, setDraftPrimaryId] = useState('');
@@ -454,26 +460,75 @@ export function CloudRouterIamPersonnelWorkspace({
     [flatDepartments, moveDepartment],
   );
 
-  const createDepartment = useCallback(async () => {
-    const name = newDepartmentName.trim();
-    if (!name || !selectedOrganizationId) return;
-    setBusy(true);
-    setError('');
+  const openCreateDepartment = useCallback(() => {
+    setFormName('');
+    setFormCode('');
+    setFormSortOrder('');
+    setFormError('');
+    setCodeTouched(false);
+    setCreateOpen(true);
+  }, []);
+
+  const closeCreateDepartment = useCallback(() => {
+    if (creating) return;
+    setCreateOpen(false);
+  }, [creating]);
+
+  const slugCode = useCallback((value: string) => {
+    const slug = value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    return slug.length >= 2 ? slug.slice(0, 64) : `dept-${Date.now().toString(36)}`;
+  }, []);
+
+  const submitCreateDepartment = useCallback(async () => {
+    const name = formName.trim();
+    const code = formCode.trim() || slugCode(name);
+    if (!name) {
+      setFormError(t('admin.iam.personnel.fieldRequired'));
+      return;
+    }
+    if (!/^[a-z0-9][a-z0-9_-]{1,63}$/.test(code)) {
+      setFormError(t('admin.iam.personnel.invalidDepartmentCode'));
+      return;
+    }
+    if (!selectedOrganizationId) return;
+    setCreating(true);
+    setFormError('');
     try {
-      await service.iam.departments.create({
-        code: `dept-${Date.now().toString(36)}`,
+      const payload: Record<string, unknown> = {
+        code,
         name,
         organizationId: selectedOrganizationId,
-        ...(selectedDepartmentId ? { parentDepartmentId: selectedDepartmentId } : {}),
-      });
-      setNewDepartmentName('');
+      };
+      if (selectedDepartmentId) payload.parentDepartmentId = selectedDepartmentId;
+      const sortOrder = Number(formSortOrder);
+      if (formSortOrder.trim() !== '' && Number.isFinite(sortOrder)) {
+        payload.sortOrder = Math.max(0, Math.trunc(sortOrder));
+      }
+      const created = await service.iam.departments.create(payload);
+      const createdId = asText(asRecord(created).departmentId);
+      setCreateOpen(false);
       await loadDepartments(selectedOrganizationId);
+      if (createdId) setSelectedDepartmentId(createdId);
     } catch (reason) {
-      setError(reasonMessage(reason));
+      setFormError(reasonMessage(reason));
     } finally {
-      setBusy(false);
+      setCreating(false);
     }
-  }, [loadDepartments, newDepartmentName, selectedDepartmentId, selectedOrganizationId, service]);
+  }, [
+    formCode,
+    formName,
+    formSortOrder,
+    loadDepartments,
+    selectedDepartmentId,
+    selectedOrganizationId,
+    service,
+    slugCode,
+    t,
+  ]);
 
   const deleteDepartment = useCallback(
     async (departmentId: string) => {
@@ -711,22 +766,115 @@ export function CloudRouterIamPersonnelWorkspace({
           </ul>
 
           {canCreateDepartments ? (
-            <div className="mt-3 flex gap-2">
-              <input
-                aria-label={t('admin.iam.personnel.departmentName')}
-                className="min-w-0 flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-950"
-                onChange={(event) => setNewDepartmentName(event.target.value)}
-                placeholder={t('admin.iam.personnel.departmentName')}
-                value={newDepartmentName}
-              />
-              <button
-                className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900"
-                disabled={busy || !newDepartmentName.trim()}
-                onClick={() => void createDepartment()}
-                type="button"
+            <button
+              className="mt-3 w-full rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs font-medium text-slate-600 hover:border-slate-400 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              onClick={openCreateDepartment}
+              type="button"
+            >
+              + {t('admin.iam.personnel.newDepartment')}
+            </button>
+          ) : null}
+
+          {createOpen ? (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
+              onMouseDown={(event) => {
+                if (event.target === event.currentTarget) closeCreateDepartment();
+              }}
+            >
+              <div
+                aria-labelledby="personnel-create-title"
+                aria-modal="true"
+                className="w-full max-w-lg rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900"
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') closeCreateDepartment();
+                }}
+                role="dialog"
               >
-                {selectedDepartment ? t('admin.iam.personnel.createChild') : t('admin.iam.personnel.create')}
-              </button>
+                <h2 className="text-base font-semibold" id="personnel-create-title">
+                  {t('admin.iam.personnel.newDepartment')}
+                </h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  {t('admin.iam.personnel.parentDepartment')}
+                  {'：'}
+                  {selectedDepartment?.name ?? t('admin.iam.personnel.rootDepartment')}
+                </p>
+                <form
+                  className="mt-4 space-y-4"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void submitCreateDepartment();
+                  }}
+                >
+                  <label className="block">
+                    <span className="text-xs font-medium text-slate-500">
+                      {t('admin.iam.personnel.departmentName')} *
+                    </span>
+                    <input
+                      autoFocus
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-950"
+                      maxLength={64}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setFormName(value);
+                        if (!codeTouched) setFormCode(slugCode(value));
+                      }}
+                      placeholder={t('admin.iam.personnel.departmentName')}
+                      value={formName}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-xs font-medium text-slate-500">
+                      {t('admin.iam.personnel.departmentCode')} *
+                    </span>
+                    <input
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 font-mono text-sm dark:border-slate-700 dark:bg-slate-950"
+                      maxLength={64}
+                      onChange={(event) => {
+                        setCodeTouched(true);
+                        setFormCode(event.target.value.toLowerCase());
+                      }}
+                      value={formCode}
+                    />
+                    <span className="mt-1 block text-[11px] leading-4 text-slate-400">
+                      {t('admin.iam.personnel.departmentCodeHint')}
+                    </span>
+                  </label>
+                  <label className="block">
+                    <span className="text-xs font-medium text-slate-500">
+                      {t('admin.iam.personnel.sortOrderLabel')}
+                    </span>
+                    <input
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-950"
+                      inputMode="numeric"
+                      onChange={(event) => setFormSortOrder(event.target.value.replace(/[^0-9]/g, ''))}
+                      placeholder={t('admin.iam.personnel.sortOrderHint')}
+                      value={formSortOrder}
+                    />
+                  </label>
+                  {formError ? (
+                    <p className="text-xs text-red-600 dark:text-red-400" role="alert">
+                      {formError}
+                    </p>
+                  ) : null}
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button
+                      className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm dark:border-slate-700"
+                      onClick={closeCreateDepartment}
+                      type="button"
+                    >
+                      {t('admin.iam.personnel.cancel')}
+                    </button>
+                    <button
+                      className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900"
+                      disabled={creating || !formName.trim()}
+                      type="submit"
+                    >
+                      {t('admin.iam.personnel.create')}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           ) : null}
         </div>
