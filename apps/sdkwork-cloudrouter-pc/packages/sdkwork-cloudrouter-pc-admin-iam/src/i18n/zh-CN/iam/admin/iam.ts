@@ -97,6 +97,7 @@ export const zh = {
   "admin.iam.personnel.memberCount": "共 {{count}} 人",
   "admin.iam.personnel.name": "姓名",
   "admin.iam.personnel.noOrganization": "暂无组织",
+  "admin.iam.personnel.noRoles": "暂无角色可选",
   "admin.iam.personnel.organization": "组织",
   "admin.iam.personnel.phone": "手机号",
   "admin.iam.personnel.positions": "岗位",

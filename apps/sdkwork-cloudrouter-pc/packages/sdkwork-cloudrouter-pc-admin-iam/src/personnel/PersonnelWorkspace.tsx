@@ -50,6 +50,7 @@ interface RoleRef {
   effect: string;
   roleBindingId: string;
   roleCode: string;
+  roleId: string;
   scopeId: string;
   scopeKind: string;
 }
@@ -63,6 +64,11 @@ interface RosterMember {
   positions: PositionRef[];
   roles: RoleRef[];
   username: string;
+}
+
+interface RoleCatalogEntry {
+  code: string;
+  roleId: string;
 }
 
 interface FlatDepartment {
@@ -144,6 +150,7 @@ function toMember(row: Record<string, unknown>): RosterMember {
         effect: asText(entry.effect),
         roleBindingId: asText(entry.roleBindingId),
         roleCode: asText(entry.roleCode),
+        roleId: asText(entry.roleId),
         scopeId: asText(entry.scopeId),
         scopeKind: asText(entry.scopeKind),
       };
@@ -203,6 +210,8 @@ export function CloudRouterIamPersonnelWorkspace({
   const [editingMember, setEditingMember] = useState<RosterMember | null>(null);
   const [draftDepartmentIds, setDraftDepartmentIds] = useState<Record<string, boolean>>({});
   const [draftPrimaryId, setDraftPrimaryId] = useState('');
+  const [roleCatalog, setRoleCatalog] = useState<RoleCatalogEntry[]>([]);
+  const [draftRoleIds, setDraftRoleIds] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -257,6 +266,27 @@ export function CloudRouterIamPersonnelWorkspace({
   useEffect(() => {
     void loadOrganizations();
   }, [loadOrganizations]);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const payload = await service.iam.roles.list({ pageSize: 200 });
+        if (!active) return;
+        setRoleCatalog(
+          asItems(payload)
+            .map((row) => ({ code: asText(row.code), roleId: asText(row.roleId ?? row.id) }))
+            .filter((entry) => entry.roleId.length > 0),
+        );
+      } catch {
+        // The role catalog is optional for the page: departments still work and
+        // the roster keeps showing the member's current role codes.
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [service]);
 
   useEffect(() => {
     setSelectedDepartmentId('');
@@ -366,6 +396,9 @@ export function CloudRouterIamPersonnelWorkspace({
       setEditingMember(member);
       setDraftDepartmentIds(checked);
       setDraftPrimaryId(primary);
+      const roles: Record<string, boolean> = {};
+      for (const role of member.roles) roles[role.roleId] = true;
+      setDraftRoleIds(roles);
     },
     [],
   );
@@ -385,6 +418,33 @@ export function CloudRouterIamPersonnelWorkspace({
         departments: wanted,
         organizationId: selectedOrganizationId,
       });
+      // Role grants are a diff against the bindings the roster reported: create
+      // the newly checked roles at organization scope and revoke the unchecked
+      // ones. Departments and roles land as two operations by design; a failure
+      // in the second half leaves the applied departments visible on refresh.
+      const desiredRoleIds = new Set(
+        Object.entries(draftRoleIds)
+          .filter(([, checked]) => checked)
+          .map(([roleId]) => roleId),
+      );
+      const currentRoleIds = new Set(editingMember.roles.map((role) => role.roleId));
+      for (const role of roleCatalog) {
+        if (desiredRoleIds.has(role.roleId) && !currentRoleIds.has(role.roleId)) {
+          await service.iam.roleBindings.create({
+            effect: 'allow',
+            principalId: editingMember.membershipId,
+            principalKind: 'organization_membership',
+            roleId: role.roleId,
+            scopeId: selectedOrganizationId,
+            scopeKind: 'organization',
+          });
+        }
+      }
+      for (const role of editingMember.roles) {
+        if (!desiredRoleIds.has(role.roleId) && role.roleBindingId) {
+          await service.iam.roleBindings.delete(role.roleBindingId);
+        }
+      }
       setEditingMember(null);
       await loadRoster(selectedOrganizationId, selectedDepartmentId);
     } catch (reason) {
@@ -396,8 +456,10 @@ export function CloudRouterIamPersonnelWorkspace({
     departments,
     draftDepartmentIds,
     draftPrimaryId,
+    draftRoleIds,
     editingMember,
     loadRoster,
+    roleCatalog,
     selectedDepartmentId,
     selectedOrganizationId,
     service,
@@ -674,6 +736,31 @@ export function CloudRouterIamPersonnelWorkspace({
                           </button>
                         </label>
                       ))}
+                    </div>
+                    <p className="mt-3 mb-1 text-xs font-medium text-slate-500">
+                      {t('admin.iam.personnel.roles')}
+                    </p>
+                    <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
+                      {roleCatalog.length === 0 ? (
+                        <span className="text-xs text-slate-400">{t('admin.iam.personnel.noRoles')}</span>
+                      ) : (
+                        roleCatalog.map((role) => (
+                          <label className="flex items-center gap-2 text-sm" key={role.roleId}>
+                            <input
+                              checked={Boolean(draftRoleIds[role.roleId])}
+                              onChange={(event) => {
+                                const checked = event.target.checked;
+                                setDraftRoleIds((current) => ({
+                                  ...current,
+                                  [role.roleId]: checked,
+                                }));
+                              }}
+                              type="checkbox"
+                            />
+                            <span className="truncate">{role.code}</span>
+                          </label>
+                        ))
+                      )}
                     </div>
                     <div className="mt-3 flex gap-2">
                       <button

@@ -97,6 +97,7 @@ export const en = {
   "admin.iam.personnel.memberCount": "{{count}} members",
   "admin.iam.personnel.name": "Name",
   "admin.iam.personnel.noOrganization": "No organization",
+  "admin.iam.personnel.noRoles": "No roles available",
   "admin.iam.personnel.organization": "Organization",
   "admin.iam.personnel.phone": "Phone",
   "admin.iam.personnel.positions": "Positions",
