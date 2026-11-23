@@ -111,4 +111,5 @@ export const en = {
   "admin.iam.personnel.pageInfo": "Page {{page}} · {{pageSize}}/page · {{total}} members",
   "admin.iam.personnel.prev": "Previous",
   "admin.iam.personnel.next": "Next",
+  "admin.iam.personnel.exportCsv": "Export CSV",
 };

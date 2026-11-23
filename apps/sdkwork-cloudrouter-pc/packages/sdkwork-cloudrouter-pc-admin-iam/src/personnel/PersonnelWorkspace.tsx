@@ -196,6 +196,38 @@ function reasonMessage(reason: unknown): string {
   return message || 'request failed';
 }
 
+function csvCell(value: string): string {
+  const escaped = value.replace(/"/g, '""');
+  return /[",\n]/.test(value) ? `"${escaped}"` : escaped;
+}
+
+function exportRosterCsv(members: RosterMember[]): void {
+  const header = ['name', 'departments', 'email', 'phone', 'positions', 'roles'];
+  const rows = members.map((member) =>
+    [
+      member.displayName,
+      member.departments
+        .map((department) => `${department.name}${department.isPrimary ? ' (primary)' : ''}`)
+        .join(' / '),
+      member.email,
+      member.phone,
+      member.positions.map((position) => position.name).join(' / '),
+      member.roles.map((role) => role.roleCode).join(' / '),
+    ]
+      .map(csvCell)
+      .join(','),
+  );
+  const blob = new Blob([`\ufeff${[header.join(','), ...rows].join('\n')}`], {
+    type: 'text/csv;charset=utf-8',
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `personnel-${new Date().toISOString().slice(0, 10)}.csv`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
 export function CloudRouterIamPersonnelWorkspace({
   can,
   service,
@@ -732,6 +764,14 @@ export function CloudRouterIamPersonnelWorkspace({
           <span className="text-xs text-slate-400">
             {t('admin.iam.personnel.memberCount', { count: members.length })}
           </span>
+          <button
+            className="rounded-md border border-slate-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-slate-700"
+            disabled={members.length === 0}
+            onClick={() => exportRosterCsv(members)}
+            type="button"
+          >
+            {t('admin.iam.personnel.exportCsv')}
+          </button>
         </div>
         <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
           <table className="min-w-full text-sm">

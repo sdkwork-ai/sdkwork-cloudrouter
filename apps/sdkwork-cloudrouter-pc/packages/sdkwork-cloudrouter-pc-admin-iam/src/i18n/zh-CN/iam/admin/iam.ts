@@ -111,4 +111,5 @@ export const zh = {
   "admin.iam.personnel.pageInfo": "第 {{page}} 页 · 每页 {{pageSize}} 条 · 共 {{total}} 人",
   "admin.iam.personnel.prev": "上一页",
   "admin.iam.personnel.next": "下一页",
+  "admin.iam.personnel.exportCsv": "导出 CSV",
 };
