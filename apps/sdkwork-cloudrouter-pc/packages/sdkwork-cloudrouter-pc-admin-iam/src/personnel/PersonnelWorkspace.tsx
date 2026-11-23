@@ -215,6 +215,8 @@ export function CloudRouterIamPersonnelWorkspace({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const canUpdateDepartments = can('iam.departments.update');
   const canCreateDepartments = can('iam.departments.create');
@@ -248,11 +250,12 @@ export function CloudRouterIamPersonnelWorkspace({
   );
 
   const loadRoster = useCallback(
-    async (organizationId: string, departmentId: string) => {
+    async (organizationId: string, departmentId: string, search: string) => {
       try {
         const payload = await service.iam.organizationMemberships.roster.list({
           organizationId,
           ...(departmentId ? { departmentId, includeDescendants: true } : {}),
+          ...(search ? { q: search } : {}),
           pageSize: 200,
         });
         setMembers(asItems(payload).map(toMember).filter((item) => item.membershipId.length > 0));
@@ -297,8 +300,8 @@ export function CloudRouterIamPersonnelWorkspace({
 
   useEffect(() => {
     if (!selectedOrganizationId) return;
-    void loadRoster(selectedOrganizationId, selectedDepartmentId);
-  }, [loadRoster, selectedDepartmentId, selectedOrganizationId]);
+    void loadRoster(selectedOrganizationId, selectedDepartmentId, searchQuery);
+  }, [loadRoster, searchQuery, selectedDepartmentId, selectedOrganizationId]);
 
   const moveDepartment = useCallback(
     async (departmentId: string, parentDepartmentId: string | null, sortOrder?: number) => {
@@ -345,6 +348,40 @@ export function CloudRouterIamPersonnelWorkspace({
     [canUpdateDepartments, draggingId, moveDepartment],
   );
 
+  const moveByKeyboard = useCallback(
+    async (item: FlatDepartment, direction: 'up' | 'down' | 'in' | 'out') => {
+      const parentId = item.department.parentDepartmentId;
+      const siblings = flatDepartments.filter(
+        (entry) => entry.department.parentDepartmentId === parentId,
+      );
+      const index = siblings.findIndex(
+        (entry) => entry.department.departmentId === item.department.departmentId,
+      );
+      if (direction === 'up' || direction === 'down') {
+        const target = siblings[direction === 'up' ? index - 1 : index + 1]?.department;
+        if (!target) return;
+        await moveDepartment(item.department.departmentId, target.parentDepartmentId, target.sortOrder);
+        return;
+      }
+      if (direction === 'out') {
+        const parent = flatDepartments.find(
+          (entry) => entry.department.departmentId === parentId,
+        )?.department;
+        if (!parent) return;
+        await moveDepartment(
+          item.department.departmentId,
+          parent.parentDepartmentId,
+          parent.sortOrder + 1,
+        );
+        return;
+      }
+      const previous = siblings[index - 1]?.department;
+      if (!previous) return;
+      await moveDepartment(item.department.departmentId, previous.departmentId);
+    },
+    [flatDepartments, moveDepartment],
+  );
+
   const createDepartment = useCallback(async () => {
     const name = newDepartmentName.trim();
     if (!name || !selectedOrganizationId) return;
@@ -375,7 +412,7 @@ export function CloudRouterIamPersonnelWorkspace({
         setConfirmingDeleteId('');
         if (selectedDepartmentId === departmentId) setSelectedDepartmentId('');
         await loadDepartments(selectedOrganizationId);
-        await loadRoster(selectedOrganizationId, '');
+        await loadRoster(selectedOrganizationId, '', searchQuery);
       } catch (reason) {
         setError(reasonMessage(reason));
       } finally {
@@ -446,7 +483,7 @@ export function CloudRouterIamPersonnelWorkspace({
         }
       }
       setEditingMember(null);
-      await loadRoster(selectedOrganizationId, selectedDepartmentId);
+      await loadRoster(selectedOrganizationId, selectedDepartmentId, searchQuery);
     } catch (reason) {
       setError(reasonMessage(reason));
     } finally {
@@ -535,6 +572,22 @@ export function CloudRouterIamPersonnelWorkspace({
                     }`}
                     draggable={canUpdateDepartments}
                     onClick={() => setSelectedDepartmentId(item.department.departmentId)}
+                    onKeyDown={(event) => {
+                      if (!event.altKey || !canUpdateDepartments) return;
+                      if (event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        void moveByKeyboard(item, 'up');
+                      } else if (event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        void moveByKeyboard(item, 'down');
+                      } else if (event.key === 'ArrowLeft') {
+                        event.preventDefault();
+                        void moveByKeyboard(item, 'out');
+                      } else if (event.key === 'ArrowRight') {
+                        event.preventDefault();
+                        void moveByKeyboard(item, 'in');
+                      }
+                    }}
                     onDragEnd={() => setDraggingId('')}
                     onDragOver={(event) => {
                       if (canUpdateDepartments) event.preventDefault();
@@ -607,6 +660,27 @@ export function CloudRouterIamPersonnelWorkspace({
             {error}
           </p>
         ) : null}
+        <form
+          className="mb-2 flex gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            setSearchQuery(searchInput.trim());
+          }}
+        >
+          <input
+            aria-label={t('admin.iam.personnel.searchPlaceholder')}
+            className="min-w-0 flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-950"
+            onChange={(event) => setSearchInput(event.target.value)}
+            placeholder={t('admin.iam.personnel.searchPlaceholder')}
+            value={searchInput}
+          />
+          <button
+            className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs dark:border-slate-700"
+            type="submit"
+          >
+            {t('admin.iam.personnel.search')}
+          </button>
+        </form>
         <div className="mb-2 flex items-center justify-between gap-2">
           <h2 className="truncate text-sm font-semibold">
             {selectedDepartment ? selectedDepartment.name : t('admin.iam.personnel.allDepartments')}

@@ -106,4 +106,6 @@ export const en = {
   "admin.iam.personnel.readOnly": "Read only",
   "admin.iam.personnel.roles": "Roles",
   "admin.iam.personnel.save": "Save",
+  "admin.iam.personnel.search": "Search",
+  "admin.iam.personnel.searchPlaceholder": "Search name, username, email, or phone",
 };

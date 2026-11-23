@@ -106,4 +106,6 @@ export const zh = {
   "admin.iam.personnel.readOnly": "只读",
   "admin.iam.personnel.roles": "角色",
   "admin.iam.personnel.save": "保存",
+  "admin.iam.personnel.search": "搜索",
+  "admin.iam.personnel.searchPlaceholder": "搜索姓名、账号、邮箱或手机号",
 };
