@@ -608,7 +608,10 @@ export function CloudRouterIamPersonnelWorkspace({
             <button
               className="rounded-md border border-slate-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-slate-700"
               disabled={!selectedOrganizationId}
-              onClick={() => setSelectedDepartmentId('')}
+              onClick={() => {
+                setSelectedDepartmentId('');
+                setPage(1);
+              }}
               type="button"
             >
               {t('admin.iam.personnel.allDepartments')}
