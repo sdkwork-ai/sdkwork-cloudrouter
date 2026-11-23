@@ -394,6 +394,42 @@ async fn seed_routing_topology(
     provider_a_base_url: &str,
     provider_b_base_url: &str,
 ) -> SeededTopology {
+    // The mock provider is a loopback plain-HTTP server. Stored Base URLs are
+    // held to the production egress boundary by default, so this dev-only
+    // harness opts into loopback cleartext explicitly (public cleartext stays
+    // rejected).
+    std::env::set_var(
+        "SDKWORK_CLOUDROUTER_UPSTREAM_BASE_URL_ALLOW_LOOPBACK",
+        "1",
+    );
+    // The request path resolves the model from `ai_model`; a bare schema has no
+    // bundled catalog rows, so the fixture owns its model row exactly like the
+    // responses e2e fixture does.
+    sqlx::query(
+        r#"
+        INSERT INTO ai_model (
+            id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+            catalog_key, model, display_name, vendor_code, vendor_name_snapshot,
+            family_code, capability, capabilities, modalities, input_modalities,
+            output_modalities, api_format, context_tokens, max_output_tokens,
+            supports_streaming, supports_tools, supports_json_schema,
+            usage_scopes, coding_visible, rank_score, release_stage, shelf_state,
+            routing_state, description
+        ) VALUES (
+            97_001, 'e2e-model-gpt-5.6-sol', 0, 0, 1, 1, '{}'::jsonb,
+            'openai/gpt-5.6-sol', 'gpt-5.6-sol', 'GPT-5.6 Sol', 'openai', 'OpenAI',
+            'gpt-5.6', 1, '["chat"]'::jsonb, '["text"]'::jsonb, '["text"]'::jsonb,
+            '["text"]'::jsonb, 'openai_chat_completions', 120000, 32768,
+            true, true, true, '[]'::jsonb, true, 1220, 1, 1,
+            1, 'E2E chat model'
+        )
+        ON CONFLICT (id) DO NOTHING
+        "#,
+    )
+    .execute(pool)
+    .await
+    .expect("insert ai_model row for gpt-5.6-sol");
+
     // Model route derivation maps account/group/supplier resource entitlements
     // through the `ai_resource` catalog. Without a catalog row for
     // `model:gpt-5.6-sol`, no model route is derived for the group.
@@ -414,6 +450,44 @@ async fn seed_routing_topology(
     .execute(pool)
     .await
     .expect("insert ai_resource catalog row for gpt-5.6-sol");
+
+    // The loader derives account routes from resource entitlements: a binding
+    // that names a single resource (the admin API's `resource("model:...")`
+    // path sets `resource_code`) is expanded through a resource group whose
+    // `group_code` matches that resource code, and the group item names the
+    // resource again. Without both rows the session default-group selector sees
+    // no model-reachable group ("account_group_unavailable").
+    sqlx::query(
+        r#"
+        INSERT INTO ai_resource_group (
+            id, uuid, tenant_id, organization_id, data_scope, status,
+            group_code, group_name, group_type, selection_mode
+        ) VALUES (
+            96_001, 'e2e-resource-group-llm', 0, 0, 1, 1,
+            'model:gpt-5.6-sol', 'E2E LLM resources', 'llm', 'explicit'
+        )
+        ON CONFLICT (id) DO NOTHING
+        "#,
+    )
+    .execute(pool)
+    .await
+    .expect("insert ai_resource_group for the chat e2e model");
+
+    sqlx::query(
+        r#"
+        INSERT INTO ai_resource_group_item (
+            id, uuid, tenant_id, organization_id, data_scope, status,
+            resource_group_id, resource_group_code, item_type, resource_id, resource_code
+        ) VALUES (
+            95_001, 'e2e-resource-group-item', 0, 0, 1, 1,
+            96_001, 'model:gpt-5.6-sol', 'resource', 98_001, 'model:gpt-5.6-sol'
+        )
+        ON CONFLICT (id) DO NOTHING
+        "#,
+    )
+    .execute(pool)
+    .await
+    .expect("insert ai_resource_group_item for the chat e2e model");
 
     let store = PostgresAdminUpstreamStore::new(pool.clone(), codec);
     let subject = upstream_subject(TENANT_ID, ORG_ID);

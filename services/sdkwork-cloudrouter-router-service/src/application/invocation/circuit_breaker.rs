@@ -1875,6 +1875,76 @@ mod tests {
         );
     }
 
+    /// The distributed breaker must keep the same two-window contract as the
+    /// local one: three rate limits open a short window, a success restarts the
+    /// streak, and the window length is stored with the open row.
+    ///
+    /// Runs only against a disposable Redis (`SDKWORK_TEST_REDIS_URL`).
+    #[tokio::test]
+    async fn redis_rate_limits_open_a_short_window_and_a_success_restarts_the_streak() {
+        let Ok(url) = std::env::var("SDKWORK_TEST_REDIS_URL") else {
+            eprintln!("skipping: SDKWORK_TEST_REDIS_URL is not set");
+            return;
+        };
+        let config = CircuitBreakerConfig::default();
+        let prefix = format!("cr-cb-rate-limit-{}", std::process::id());
+        let store =
+            RedisCircuitBreakerStore::try_new(&url, &prefix, &config).expect("redis store");
+        let account = 9_001;
+
+        store.reset(account).await;
+        store.record_rate_limit(account).await;
+        store.record_rate_limit(account).await;
+        assert_eq!(
+            CircuitState::Closed,
+            store.get_state(account).await,
+            "two rate limits are still below the rate-limit streak"
+        );
+
+        store.record_rate_limit(account).await;
+        assert_eq!(
+            CircuitState::Open,
+            store.get_state(account).await,
+            "the third rate limit opens the circuit"
+        );
+        assert_eq!(
+            CircuitCallPermit::Rejected,
+            store.acquire_call_permit(account).await,
+            "an open circuit rejects traffic"
+        );
+
+        // The open row records the short rate-limit window, not the fault one.
+        let key = store.redis_key(account);
+        let open_for: Option<i64> = {
+            let mut conn = store.connection().await.expect("redis connection");
+            redis::cmd("HGET")
+                .arg(&key)
+                .arg("open_for")
+                .query_async(&mut conn)
+                .await
+                .expect("hget open_for")
+        };
+        assert_eq!(
+            Some(RATE_LIMIT_OPEN_DURATION.as_secs() as i64),
+            open_for,
+            "a rate-limited account must cool down for the short window"
+        );
+
+        store.reset(account).await;
+        store.record_rate_limit(account).await;
+        store.record_rate_limit(account).await;
+        store.record_success(account).await;
+        store.record_rate_limit(account).await;
+        store.record_rate_limit(account).await;
+        assert_eq!(
+            CircuitState::Closed,
+            store.get_state(account).await,
+            "a success restarts the distributed rate-limit streak"
+        );
+
+        store.reset(account).await;
+    }
+
     #[test]
     fn test_circuit_open_blocks_calls() {
         let cb = CircuitBreakerInterceptor::new(CircuitBreakerConfig {
