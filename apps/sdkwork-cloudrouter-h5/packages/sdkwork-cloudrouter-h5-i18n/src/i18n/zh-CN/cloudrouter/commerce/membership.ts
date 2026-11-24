@@ -228,6 +228,7 @@ export const membershipMessages: Record<string, string> = {
   'cloudrouter.console.membership.team.seats.summary': "已分配 {{used}} / {{purchased}} 个坐席",
   'cloudrouter.console.membership.team.seats.membersTitle': "组织成员",
   'cloudrouter.console.membership.team.seats.reconcile': "同步离组成员",
+  'cloudrouter.console.membership.team.reconcileSuccess': "已回收离组成员的多余坐席。",
   'cloudrouter.console.membership.team.seats.search': "搜索成员姓名或账号",
   'cloudrouter.console.membership.team.seats.capacityBlocked': "坐席已分配完，请先扩容再分配新成员。",
   'cloudrouter.console.membership.team.seats.seatNo': "坐席 {{no}}",

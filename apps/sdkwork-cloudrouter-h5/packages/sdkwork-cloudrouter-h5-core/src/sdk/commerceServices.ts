@@ -14,13 +14,15 @@ import {
   hasSdkworkMembershipSession,
   unwrapSdkworkMembershipPageItems,
   unwrapSdkworkMembershipResponse,
-  type MembershipAppTransportClient,
   type SdkworkMembershipAppService,
 } from '@sdkwork/membership-service';
 import {
   createClient as createIamAppClient,
   type SdkworkAppClient as IamAppSdkClient,
 } from '@sdkwork/iam-app-sdk';
+
+/** Generated membership app client; the transport type is owned by the service. */
+export type MembershipAppClient = ReturnType<typeof createMembershipAppTransportClient>;
 import {
   configureSdkworkOrderAppServiceProvider,
   configureSdkworkOrderSessionTokenProvider,
@@ -78,7 +80,7 @@ export interface CloudRouterH5CommerceServices {
    * served by the same membership app API and type their responses through this
    * generated client, so the H5 composition root exposes it once.
    */
-  readonly membershipApp: MembershipAppTransportClient;
+  readonly membershipApp: MembershipAppClient;
   readonly membershipCheckout: SdkworkMembershipCheckoutService;
   readonly order: SdkworkOrderAppService;
   /** Token Bank compute-credit recharge (`token_bank_recharge` → `token_bank`). */
@@ -192,23 +194,21 @@ function readIssuedToken(value: unknown, keys: readonly string[]): string | unde
 }
 
 /**
- * Continues an organization-selection login challenge and commits its session.
+ * Rotates the current IAM session into an organization scope.
  *
  * Team endpoints resolve the organization from the authenticated principal, so
- * switching organizations means minting a session scoped to the new
- * organization. The IAM app API can only continue a pending login challenge;
- * when this session has no challenge (the normal already-signed-in case) the
- * endpoint rejects and this returns `false` so the caller can ask the user to
- * sign in again and choose the organization, instead of dropping the session.
+ * switching organizations means re-minting the session context. The IAM app API
+ * rotates the current session (`PATCH /auth/sessions/current` with the target
+ * organization) and answers the new dual tokens plus the organization context;
+ * those tokens are committed to the one shared TokenManager, so every generated
+ * client switches scope without being rebuilt.
  *
  * @param organizationId - IAM organization to scope the session to.
  * @returns `true` when a new dual-token session was committed.
  */
 export async function selectCloudRouterOrganization(organizationId: string): Promise<boolean> {
   const services = getCloudRouterH5CommerceServices();
-  const result = await services.iamApp.auth.sessions.organizationSelection.create({
-    organizationId,
-  });
+  const result = await services.iamApp.auth.sessions.current.update({ organizationId });
   const accessToken = readIssuedToken(result, ['accessToken', 'access_token']);
   const authToken = readIssuedToken(result, ['authToken', 'auth_token']);
   if (!accessToken || !authToken) {

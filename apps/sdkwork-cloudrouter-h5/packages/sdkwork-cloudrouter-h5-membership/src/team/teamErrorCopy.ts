@@ -73,12 +73,3 @@ export function teamRoleLabel(role: TeamMembershipKind | undefined, t: Membershi
       return t('team.role.member', '成员');
   }
 }
-
-export function teamSeatPolicyLabel(
-  policy: 'strict' | 'flex_overflow',
-  t: MembershipTranslate,
-): string {
-  return policy === 'flex_overflow'
-    ? t('team.policy.flexOverflow', '弹性超配')
-    : t('team.policy.strict', '严格匹配');
-}

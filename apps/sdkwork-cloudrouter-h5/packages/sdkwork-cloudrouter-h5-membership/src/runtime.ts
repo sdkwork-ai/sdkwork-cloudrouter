@@ -597,7 +597,7 @@ export function createCloudRouterMembershipRuntime(
     async loadTeamCatalog() {
       try {
         const [packages, groups] = await Promise.all([
-          collectMembershipPages(
+          collectMembershipPages<TeamPackage>(
             (page) => services.membershipApp.memberships.packages.list({
               audience: 'team',
               category: 'token',
@@ -606,7 +606,7 @@ export function createCloudRouterMembershipRuntime(
             }),
             5,
           ),
-          collectMembershipPages(
+          collectMembershipPages<TeamPackageGroup>(
             (page) => services.membershipApp.memberships.packageGroups.list({
               audience: 'team',
               category: 'token',

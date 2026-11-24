@@ -222,7 +222,7 @@ export function TeamPlanCards({
             >
               <header className="flex items-start justify-between gap-2">
                 <h3 className="text-[16px] font-semibold text-ink">
-                  {t('team.plans.planName', group.planName)}
+                  {group.planName}
                 </h3>
                 {group.recommended ? (
                   <span className="rounded bg-brand-soft px-1.5 py-0.5 text-[10px] font-semibold text-brand">

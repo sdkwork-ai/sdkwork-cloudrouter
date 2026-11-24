@@ -226,6 +226,7 @@ export const membershipMessages: Record<string, string> = {
   'cloudrouter.console.membership.team.seats.summary': "{{used}} / {{purchased}} seats assigned",
   'cloudrouter.console.membership.team.seats.membersTitle': "Organization members",
   'cloudrouter.console.membership.team.seats.reconcile': "Sync departed members",
+  'cloudrouter.console.membership.team.reconcileSuccess': "Revoked the surplus seats of departed members.",
   'cloudrouter.console.membership.team.seats.search': "Search member name or account",
   'cloudrouter.console.membership.team.seats.capacityBlocked': "All seats are assigned. Add seats before assigning another member.",
   'cloudrouter.console.membership.team.seats.seatNo': "Seat {{no}}",
