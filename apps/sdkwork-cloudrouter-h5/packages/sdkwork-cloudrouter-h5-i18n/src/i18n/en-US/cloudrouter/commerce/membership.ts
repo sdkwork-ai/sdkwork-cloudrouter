@@ -200,6 +200,10 @@ export const membershipMessages: Record<string, string> = {
   'cloudrouter.console.membership.team.bind.title': "Bind a team organization",
   'cloudrouter.console.membership.team.bind.hint': "This team subscription was bought without an organization. Bind one to assign seats; an organization can hold one team subscription.",
   'cloudrouter.console.membership.team.bind.noEligible': "This account has no owner/admin organization to bind. Join or create one first.",
+  'cloudrouter.console.membership.team.bind.action': "Bind",
+  'cloudrouter.console.membership.team.bind.binding': "Binding…",
+  'cloudrouter.console.membership.team.bind.ineligible': "Needs owner or admin permission",
+  'cloudrouter.console.membership.team.overview.noSubscription': "No team subscription yet. Choose a plan below to subscribe.",
 
   'cloudrouter.console.membership.team.plans.title': "Team plans",
   'cloudrouter.console.membership.team.plans.expandTitle': "Add team seats",

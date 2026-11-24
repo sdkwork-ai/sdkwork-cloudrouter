@@ -83,6 +83,8 @@ H5 的「会员」必须是 Cloud Router 的 Token Plan 会员定义，而不是
 - **超级会员权益**：H5 拉取 rank 4 的真实权益；PC 只拉 0..3 并对 rank 4 使用硬编码「每月7,499算力积分」兜底。H5 保持数据驱动，数据缺失时显示 `-`。
 - **团队/组织会员采用移动端形态**：与 PC 同一套业务规则（团队订阅总览、按坐席计价购买、扩容、席位分配/回收、超员策略、离组同步、未绑定组织绑定），但以「受众切换 + 团队总览卡 + 套餐坐席步进器 + 席位管理列表 + bottom sheet 结算」组织；PC 的团队表格式席位目录与弹窗表单不复刻。
 - **组织切换**：H5 调用 IAM `PATCH /auth/sessions/current` 轮换当前会话到目标组织并提交新双 token（共享 TokenManager 即时生效，无需重建客户端、无需重新登录）；PC 使用登录续期式 `organization_selection`，H5 不具备登录续期上下文，因此走会话轮换路径。轮换失败时保留会话并提示「重新登录并选择组织」，不清空登录态。
+- **绑定先切组织**：绑定要求调用者在目标组织持有 `TEAM_SEAT_MANAGE`，因此 H5 先轮换会话到目标组织再 `teamSubscription.bind`（同一组织轮换为幂等返回）；PC 直接绑定，H5 采用更稳妥的顺序。
+- **组织名本地化**：一次 `iam.organizations.list` 读取组织目录并把 id 映射成名称（无权限时回退 id），避免团队面出现裸组织 id。
 - **扩容只展示当前套餐**：PC 扩容卡片按套餐全量渲染；H5 在扩容模式下只展示当前订阅套餐（按 `overview.planId` 过滤），避免用户对其它套餐发起必然失败的 `add_seats`。
 
 ## 6. 代码落点
@@ -149,6 +151,10 @@ H5 的「会员」必须是 Cloud Router 的 Token Plan 会员定义，而不是
 - `.screenshots/h5/team-membership.png` / `team-membership-full.png`（团队受众：总览、席位管理、成员目录）
 - `.screenshots/h5/team-expand-seats.png`（扩容坐席，仅当前套餐）
 - `.screenshots/h5/team-checkout-sheet.png`（团队结算 bottom sheet）
+- `.screenshots/h5/team-state-subscribe.png`（未开通团队订阅：周期 + 套餐 + 坐席步进）
+- `.screenshots/h5/team-state-unbound.png`（已购未绑定：绑定面板，含无权限组织置灰）
+- `.screenshots/h5/team-state-noorg.png`（未选择组织：组织选择 + 可先购买后绑定）
+- `.screenshots/h5/team-state-guest.png`（未登录团队面）
 
 `.screenshots/h5/membership*.png`、`recharge*.png` 中 2026-11-13 的旧图为演示版页面（已下线），以本轮 `membership-token-plan-*` / `recharge-token-bank` 为准。
 

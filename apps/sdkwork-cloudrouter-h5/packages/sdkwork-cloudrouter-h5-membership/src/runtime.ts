@@ -118,6 +118,11 @@ export interface MembershipTeamCatalog {
   readonly packages: readonly TeamPackage[];
 }
 
+export interface TeamOrganizationSummary {
+  readonly id: string;
+  readonly name?: string;
+}
+
 export interface MembershipTeamCheckoutInput {
   readonly action: TeamCheckoutAction;
   readonly packageId: string;
@@ -150,6 +155,8 @@ export interface CloudRouterH5MembershipRuntime {
   loadOwnTeamMemberships(): Promise<readonly TeamOwnMembership[]>;
   /** Display name of an organization, or undefined when it is not readable. */
   loadTeamOrganizationName(organizationId: string): Promise<string | undefined>;
+  /** Every organization the caller can read, for localizing organization ids. */
+  loadTeamOrganizationDirectory(): Promise<readonly TeamOrganizationSummary[]>;
   /** Every active organization (team) token package and its billing-cycle groups. */
   loadTeamCatalog(): Promise<MembershipTeamCatalog>;
   /** Current organization team subscription overview. */
@@ -574,14 +581,10 @@ export function createCloudRouterMembershipRuntime(
       if (!normalized) {
         return undefined;
       }
-      try {
-        const page = await services.iamApp.iam.organizations.list({ pageSize: 200 });
-        for (const item of page.items) {
-          const name = readOrganizationRecordName(item, normalized);
-          if (name) return name;
-        }
-      } catch {
-        // Permission-gated read: fall through to the tree projection.
+      const directory = await this.loadTeamOrganizationDirectory().catch(() => []);
+      const matched = directory.find((organization) => organization.id === normalized);
+      if (matched?.name) {
+        return matched.name;
       }
       try {
         return searchOrganizationName(
@@ -591,6 +594,27 @@ export function createCloudRouterMembershipRuntime(
         );
       } catch {
         return undefined;
+      }
+    },
+
+    async loadTeamOrganizationDirectory() {
+      try {
+        const page = await services.iamApp.iam.organizations.list({ pageSize: 200 });
+        return page.items.reduce<TeamOrganizationSummary[]>((organizations, item) => {
+          const id = item.id ?? item.organizationId;
+          if (typeof id !== 'string' || !id.trim()) {
+            return organizations;
+          }
+          const name = [item.name, item.displayName]
+            .find((value): value is string => typeof value === 'string' && value.trim().length > 0);
+          organizations.push({
+            id: id.trim(),
+            ...(name ? { name: name.trim() } : {}),
+          });
+          return organizations;
+        }, []);
+      } catch {
+        return [];
       }
     },
 

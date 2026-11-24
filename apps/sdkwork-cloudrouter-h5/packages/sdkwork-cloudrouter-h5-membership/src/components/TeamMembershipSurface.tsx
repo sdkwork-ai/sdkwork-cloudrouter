@@ -249,10 +249,6 @@ export function TeamMembershipSurface({ onNotify, onSignIn, t }: TeamMembershipS
     return null;
   }
 
-  const bindableChoices = organizationChoices.filter(
-    (choice) => choice.role === 'owner' || choice.role === 'admin',
-  );
-
   return (
     <div className="flex flex-col gap-3 px-3 pb-4 pt-3" data-team-membership-surface>
       {/* Overview */}
@@ -295,29 +291,35 @@ export function TeamMembershipSurface({ onNotify, onSignIn, t }: TeamMembershipS
           </button>
         </div>
 
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <div className="rounded-xl bg-white/10 px-3 py-2">
-            <p className="flex items-center gap-1 text-[10px] text-white/70">
-              <Users aria-hidden="true" className="h-3 w-3" />
-              {t('team.overview.seats', '团队坐席')}
-            </p>
-            <p className="mt-0.5 text-[18px] font-bold leading-none tabular-nums">
-              {overview.seatsUsed}
-              <span className="text-[12px] font-medium text-white/70">
-                {' / '}
-                {overview.seatsPurchased}
-              </span>
-            </p>
+        {overview.hasSubscription ? (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="rounded-xl bg-white/10 px-3 py-2">
+              <p className="flex items-center gap-1 text-[10px] text-white/70">
+                <Users aria-hidden="true" className="h-3 w-3" />
+                {t('team.overview.seats', '团队坐席')}
+              </p>
+              <p className="mt-0.5 text-[18px] font-bold leading-none tabular-nums">
+                {overview.seatsUsed}
+                <span className="text-[12px] font-medium text-white/70">
+                  {' / '}
+                  {overview.seatsPurchased}
+                </span>
+              </p>
+            </div>
+            <div className="rounded-xl bg-white/10 px-3 py-2">
+              <p className="text-[10px] text-white/70">
+                {t('team.overview.expiresAt', '到期时间')}
+              </p>
+              <p className="mt-0.5 truncate text-[13px] font-semibold">
+                {formatTeamDate(overview.expiresAt) || '--'}
+              </p>
+            </div>
           </div>
-          <div className="rounded-xl bg-white/10 px-3 py-2">
-            <p className="text-[10px] text-white/70">
-              {t('team.overview.expiresAt', '到期时间')}
-            </p>
-            <p className="mt-0.5 truncate text-[13px] font-semibold">
-              {formatTeamDate(overview.expiresAt) || '--'}
-            </p>
-          </div>
-        </div>
+        ) : (
+          <p className="mt-3 rounded-xl bg-white/10 px-3 py-2 text-[11px] text-white/80">
+            {t('team.overview.noSubscription', '尚未开通团队订阅，选择下方套餐即可开通。')}
+          </p>
+        )}
 
         {!unbound && overview.hasSubscription ? (
           <button
@@ -348,6 +350,7 @@ export function TeamMembershipSurface({ onNotify, onSignIn, t }: TeamMembershipS
           <div className="mt-2 flex flex-col gap-2">
             {organizationChoices.map((choice) => (
               <OrganizationChoiceRow
+                action="switch"
                 busy={switching === choice.organizationId}
                 choice={choice}
                 key={choice.organizationId}
@@ -382,7 +385,7 @@ export function TeamMembershipSurface({ onNotify, onSignIn, t }: TeamMembershipS
             )}
           </p>
           <div className="mt-2 flex flex-col gap-2">
-            {bindableChoices.length === 0 ? (
+            {organizationChoices.length === 0 ? (
               <p className="rounded-lg bg-surface-elevated px-3 py-2 text-[11px] text-ink-subtle">
                 {t(
                   'team.bind.noEligible',
@@ -390,15 +393,20 @@ export function TeamMembershipSurface({ onNotify, onSignIn, t }: TeamMembershipS
                 )}
               </p>
             ) : null}
-            {bindableChoices.map((choice) => (
-              <OrganizationChoiceRow
-                busy={binding === choice.organizationId}
-                choice={choice}
-                key={choice.organizationId}
-                onSelect={() => void handleBind(choice.organizationId)}
-                t={t}
-              />
-            ))}
+            {organizationChoices.map((choice) => {
+              const eligible = choice.role === 'owner' || choice.role === 'admin';
+              return (
+                <OrganizationChoiceRow
+                  action="bind"
+                  busy={binding === choice.organizationId}
+                  choice={choice}
+                  disabled={!eligible}
+                  key={choice.organizationId}
+                  onSelect={() => void handleBind(choice.organizationId)}
+                  t={t}
+                />
+              );
+            })}
           </div>
         </section>
       ) : null}
@@ -528,17 +536,28 @@ export function TeamMembershipSurface({ onNotify, onSignIn, t }: TeamMembershipS
 }
 
 interface OrganizationChoiceRowProps {
+  readonly action: 'bind' | 'switch';
   readonly busy: boolean;
   readonly choice: TeamOrganizationChoice;
+  readonly disabled?: boolean;
   readonly onSelect: () => void;
   readonly t: MembershipTranslate;
 }
 
-function OrganizationChoiceRow({ busy, choice, onSelect, t }: OrganizationChoiceRowProps) {
+function OrganizationChoiceRow({
+  action,
+  busy,
+  choice,
+  disabled = false,
+  onSelect,
+  t,
+}: OrganizationChoiceRowProps) {
+  const current = choice.isCurrent;
+  const inactive = disabled || current;
   return (
     <button
       className="flex min-h-11 items-center justify-between gap-2 rounded-xl border border-line bg-canvas px-3 text-left text-[13px] text-ink disabled:opacity-60"
-      disabled={busy || choice.isCurrent}
+      disabled={busy || inactive}
       onClick={onSelect}
       type="button"
     >
@@ -548,15 +567,20 @@ function OrganizationChoiceRow({ busy, choice, onSelect, t }: OrganizationChoice
         </span>
         <span className="mt-0.5 block text-[10px] text-ink-subtle">
           {teamRoleLabel(choice.role, t)}
-          {choice.isCurrent ? ` · ${t('team.organization.current', '当前组织')}` : ''}
+          {current ? ` · ${t('team.organization.current', '当前组织')}` : ''}
+          {disabled ? ` · ${t('team.bind.ineligible', '需要所有者或管理员权限')}` : ''}
         </span>
       </span>
       <span className="shrink-0 text-[11px] font-medium text-brand">
         {busy
-          ? t('team.organization.switching', '切换中…')
-          : choice.isCurrent
+          ? action === 'bind'
+            ? t('team.bind.binding', '绑定中…')
+            : t('team.organization.switching', '切换中…')
+          : inactive
             ? ''
-            : t('team.organization.switch', '切换')}
+            : action === 'bind'
+              ? t('team.bind.action', '绑定')
+              : t('team.organization.switch', '切换')}
       </span>
     </button>
   );

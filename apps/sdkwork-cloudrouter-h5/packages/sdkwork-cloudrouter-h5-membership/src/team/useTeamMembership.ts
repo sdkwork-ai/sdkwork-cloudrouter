@@ -169,7 +169,19 @@ export function useTeamMembership() {
       const organizationId = scoped
         ? resolveTeamOrganizationId(ownMemberships, nextOverview.organizationId)
         : nextOverview.organizationId.trim();
-      const choices = resolveTeamOrganizationChoices(ownMemberships, nextOverview.organizationId);
+      const baseChoices = resolveTeamOrganizationChoices(ownMemberships, nextOverview.organizationId);
+      // Localize organization ids with one directory read (permission-gated;
+      // the ids stay the fallback labels when the read is not allowed).
+      const organizationDirectory = await runtime.loadTeamOrganizationDirectory().catch(() => []);
+      const nameById = new Map(
+        organizationDirectory
+          .filter((organization) => organization.name)
+          .map((organization) => [organization.id, organization.name as string]),
+      );
+      const choices = baseChoices.map((choice) => {
+        const name = nameById.get(choice.organizationId);
+        return name ? { ...choice, organizationName: name } : choice;
+      });
       const assignments = scoped
         ? await runtime.loadTeamSeatAssignments(TEAM_SEAT_READ_LIMIT)
         : await runtime.loadTeamSeatAssignments(TEAM_SEAT_READ_LIMIT).catch(
@@ -183,7 +195,8 @@ export function useTeamMembership() {
         const walk = await walkTeamRoster(runtime, organizationId);
         roster = walk.items;
         membersTotal = walk.total;
-        name = await runtime.loadTeamOrganizationName(organizationId).catch(() => undefined);
+        name = nameById.get(organizationId)
+          ?? await runtime.loadTeamOrganizationName(organizationId).catch(() => undefined);
       }
 
       if (token !== bootstrapToken.current) {
@@ -248,6 +261,11 @@ export function useTeamMembership() {
     if (!runtime) {
       throw new TeamSubscriptionError('unknown', 'Team membership is not available.');
     }
+    // Binding authorizes the caller's TEAM_SEAT_MANAGE capability in the target
+    // organization, so the session must be scoped to it first. Rotating to the
+    // same organization is a no-op the IAM endpoint answers with the current
+    // session, so this is safe for an already-scoped session.
+    await runtime.switchTeamOrganization(organizationId);
     const bound = await runtime.bindTeamOrganization(organizationId);
     setOverview(bound);
     await bootstrap();

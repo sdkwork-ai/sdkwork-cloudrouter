@@ -202,6 +202,10 @@ export const membershipMessages: Record<string, string> = {
   'cloudrouter.console.membership.team.bind.title': "绑定团队组织",
   'cloudrouter.console.membership.team.bind.hint': "该团队订阅购买时未选择组织，绑定后即可分配坐席；一个组织只能绑定一个团队订阅。",
   'cloudrouter.console.membership.team.bind.noEligible': "当前账号没有可绑定的所有者/管理员组织，请先加入或创建一个组织。",
+  'cloudrouter.console.membership.team.bind.action': "绑定",
+  'cloudrouter.console.membership.team.bind.binding': "绑定中…",
+  'cloudrouter.console.membership.team.bind.ineligible': "需要所有者或管理员权限",
+  'cloudrouter.console.membership.team.overview.noSubscription': "尚未开通团队订阅，选择下方套餐即可开通。",
 
   'cloudrouter.console.membership.team.plans.title': "团队套餐",
   'cloudrouter.console.membership.team.plans.expandTitle': "扩容团队坐席",
