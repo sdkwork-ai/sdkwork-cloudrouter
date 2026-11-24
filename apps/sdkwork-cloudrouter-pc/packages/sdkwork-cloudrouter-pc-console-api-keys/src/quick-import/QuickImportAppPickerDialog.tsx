@@ -38,6 +38,8 @@ interface QuickImportAppPickerDialogProps {
   showAppSelection?: boolean;
   /** Confirm button label in configure mode (e.g. "Import to Birdcoder"). */
   confirmLabel?: string;
+  /** Require a model before producing a manual provider configuration. */
+  requiredModel?: boolean;
 }
 
 interface AppOption {
@@ -107,16 +109,20 @@ export function QuickImportAppPickerDialog({
   closeOnClickOutside = true,
   showAppSelection = true,
   confirmLabel,
+  requiredModel = false,
 }: QuickImportAppPickerDialogProps) {
   const { t } = useTranslation();
   const [name, setName] = useState(keyName || 'Cloud Router');
   const [model, setModel] = useState('');
+  const [manualModel, setManualModel] = useState('');
   const [models, setModels] = useState<string[]>([]);
   const [modelsLoading, setModelsLoading] = useState(true);
   // App selection is a toggle: pick an option, switch to another one, or
   // click the selected option again to clear it — import only happens on the
   // footer confirm button.
   const [selectedApp, setSelectedApp] = useState<CcSwitchApp | null>(null);
+  const selectedModel = (model || manualModel).trim();
+  const canSubmit = !requiredModel || selectedModel.length > 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -133,7 +139,10 @@ export function QuickImportAppPickerDialog({
 
   const submit = (app: CcSwitchApp) => {
     const trimmedName = name.trim();
-    const trimmedModel = model.trim();
+    const trimmedModel = (requiredModel ? selectedModel : model).trim();
+    if (requiredModel && !trimmedModel) {
+      return;
+    }
     onSelect(app, {
       name: trimmedName || keyName || 'Cloud Router',
       ...(trimmedModel ? { model: trimmedModel } : {}),
@@ -221,7 +230,10 @@ export function QuickImportAppPickerDialog({
               <div className="relative">
                 <select
                   value={model}
-                  onChange={(event) => setModel(event.target.value)}
+                  onChange={(event) => {
+                    setModel(event.target.value);
+                    setManualModel('');
+                  }}
                   disabled={modelsLoading}
                   className={`${inputClassName} appearance-none pr-8 disabled:cursor-wait disabled:opacity-60`}
                 >
@@ -245,6 +257,17 @@ export function QuickImportAppPickerDialog({
                     '无法获取该令牌的模型列表，可稍后在应用中设置默认模型',
                   )}
                 </span>
+              )}
+              {requiredModel && !modelsLoading && models.length === 0 && (
+                <input
+                  type="text"
+                  required
+                  value={manualModel}
+                  onChange={(event) => setManualModel(event.target.value)}
+                  placeholder={t('console.apiKeys.quickImport.enterModel', 'Enter an available model ID')}
+                  aria-label={t('console.apiKeys.quickImport.defaultModel', 'Default model')}
+                  className={`${inputClassName} mt-2`}
+                />
               )}
             </label>
           </div>
@@ -327,7 +350,7 @@ export function QuickImportAppPickerDialog({
             {showAppSelection ? (
               <button
                 type="button"
-                disabled={!selectedApp}
+                disabled={!selectedApp || !canSubmit}
                 onClick={() => {
                   if (selectedApp) {
                     submit(selectedApp);
@@ -339,8 +362,9 @@ export function QuickImportAppPickerDialog({
               </button>
             ) : confirmLabel ? (
               <button
+                disabled={!canSubmit}
                 onClick={() => submit('claude')}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-700"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {confirmLabel}
               </button>
