@@ -2,6 +2,7 @@ import { CircleAlert } from 'lucide-react';
 import { useState } from 'react';
 
 import type { MembershipTranslate } from '../catalog/membershipDefinition.js';
+import { formatTeamCnyAmount } from '../team/teamPricing.js';
 import type { TeamBuyDraft } from './TeamPlanCards.js';
 import { PaymentMethodPicker } from './CommerceSheets.js';
 import { MobileSheet } from './MobileSheet.js';
@@ -71,7 +72,7 @@ export function TeamCheckoutSheet({
               </div>
               <div className="text-right">
                 <p className="text-[22px] font-bold leading-none text-brand tabular-nums">
-                  ¥{Math.round(draft.total * 100) / 100}
+                  {formatTeamCnyAmount(draft.total)}
                 </p>
                 {draft.originalPriceLabel ? (
                   <p className="mt-1 text-[11px] text-ink-subtle line-through">

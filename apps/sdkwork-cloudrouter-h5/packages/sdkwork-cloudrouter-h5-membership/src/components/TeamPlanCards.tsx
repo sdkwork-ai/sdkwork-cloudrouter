@@ -141,10 +141,18 @@ export function TeamPlanCards({
   const activeOption: TeamCycleOption | undefined = cycleOptions.find(
     (option) => option.key === activeCycleKey,
   ) ?? cycleOptions[0];
-  const planGroups = useMemo(
-    () => groupTeamPlanPackages(activeOption?.packages ?? []),
-    [activeOption],
-  );
+  const planGroups = useMemo(() => {
+    const groups = groupTeamPlanPackages(activeOption?.packages ?? []);
+    // Expanding seats only applies to the active subscription's plan; showing
+    // another plan's package would offer an add-seats order the server rejects.
+    if (mode === 'expand' && overview?.planId) {
+      const current = groups.filter((group) => group.planId === overview.planId);
+      if (current.length > 0) {
+        return current;
+      }
+    }
+    return groups;
+  }, [activeOption, mode, overview?.planId]);
   const [seatDrafts, setSeatDrafts] = useState<Record<string, number>>({});
 
   if (catalog.packages.length === 0) {
@@ -237,6 +245,7 @@ export function TeamPlanCards({
                 </span>
                 <span className="text-[12px] text-ink-subtle">
                   {t('team.plans.perSeat', '/ 坐席')}
+                  {' · '}
                   {resolveTeamPeriodLabel(cycle, t)}
                 </span>
                 {originalTotal !== null ? (

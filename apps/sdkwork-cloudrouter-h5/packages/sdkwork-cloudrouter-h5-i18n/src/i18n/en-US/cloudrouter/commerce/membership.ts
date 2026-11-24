@@ -257,10 +257,10 @@ export const membershipMessages: Record<string, string> = {
   'cloudrouter.console.membership.team.role.admin': "Admin",
   'cloudrouter.console.membership.team.role.member': "Member",
 
-  'cloudrouter.console.membership.team.period.year': "/ year",
-  'cloudrouter.console.membership.team.period.quarter': "/ quarter",
-  'cloudrouter.console.membership.team.period.once': "/ one month",
-  'cloudrouter.console.membership.team.period.month': "/ month",
+  'cloudrouter.console.membership.team.period.year': "per year",
+  'cloudrouter.console.membership.team.period.quarter': "per quarter",
+  'cloudrouter.console.membership.team.period.once': "one month",
+  'cloudrouter.console.membership.team.period.month': "per month",
 
   'cloudrouter.console.membership.team.cycle.year': "Annual",
   'cloudrouter.console.membership.team.cycle.month': "Monthly",

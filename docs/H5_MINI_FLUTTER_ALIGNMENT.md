@@ -294,5 +294,5 @@ Known constraints:
   `apps/sdkwork-cloudrouter-h5/tests/h5-membership-token-plan-alignment.test.mjs`
   对比 PC mapper 锁定等级映射、权益行、积分公式与可购动作。详见
   [domains/membership/h5-token-plan-alignment.md](domains/membership/h5-token-plan-alignment.md)。
-- 待办：团队/组织会员（席位、组织绑定）尚未移植到 H5。
+- 待办：H5 团队会员已落地（受众切换、团队套餐按坐席购买/扩容、席位分配/回收、超员策略、离组同步、组织绑定/切换）；mini-program 与 Flutter 的会员面仍为 H5 commerce 桥接，原生团队席位面未排期。
 

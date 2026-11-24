@@ -259,10 +259,10 @@ export const membershipMessages: Record<string, string> = {
   'cloudrouter.console.membership.team.role.admin': "管理员",
   'cloudrouter.console.membership.team.role.member': "成员",
 
-  'cloudrouter.console.membership.team.period.year': "/ 年",
-  'cloudrouter.console.membership.team.period.quarter': "/ 季",
-  'cloudrouter.console.membership.team.period.once': "/ 单月",
-  'cloudrouter.console.membership.team.period.month': "/ 月",
+  'cloudrouter.console.membership.team.period.year': "每年",
+  'cloudrouter.console.membership.team.period.quarter': "每季",
+  'cloudrouter.console.membership.team.period.once': "单月",
+  'cloudrouter.console.membership.team.period.month': "每月",
 
   'cloudrouter.console.membership.team.cycle.year': "连续包年",
   'cloudrouter.console.membership.team.cycle.month': "连续包月",

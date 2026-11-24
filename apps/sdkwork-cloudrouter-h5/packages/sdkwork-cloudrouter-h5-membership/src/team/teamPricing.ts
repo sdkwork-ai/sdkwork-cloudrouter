@@ -101,20 +101,20 @@ export function toTeamBillingCycle(value: string | null | undefined): TeamBillin
     : null;
 }
 
-/** The billing-cycle suffix shown after a unit price ("/ 年", "/ 月", …). */
+/** The billing-cycle suffix shown after a unit price ("每年", "每月", …). */
 export function resolveTeamPeriodLabel(
   cycle: TeamBillingCycle | null,
   t: MembershipTranslate,
 ): string {
   switch (cycle) {
     case 'year':
-      return t('team.period.year', '/ 年');
+      return t('team.period.year', '每年');
     case 'quarter':
-      return t('team.period.quarter', '/ 季');
+      return t('team.period.quarter', '每季');
     case 'once':
-      return t('team.period.once', '/ 单月');
+      return t('team.period.once', '单月');
     default:
-      return t('team.period.month', '/ 月');
+      return t('team.period.month', '每月');
   }
 }
 
