@@ -366,7 +366,11 @@ describe('H5 team membership parity with the PC token-plan team surface', () => 
       'TeamSeatManagement',
       'team.bind.title',
       'team.organization.switch',
-      'team.overview.seats',
+      'team.overview.purchasedSeats',
+      'team.overview.assignedSeats',
+      'team.overview.availableSeats',
+      'team.overview.members',
+      'team.status.active',
     ]) {
       assert.ok(surface.includes(token), `team surface composes ${token}`);
     }
@@ -399,5 +403,46 @@ describe('H5 team membership parity with the PC token-plan team surface', () => 
     assert.ok(core.includes('createMembershipAppTransportClient'));
     assert.ok(core.includes('createIamAppClient'));
     assert.ok(core.includes('auth.sessions.current.update'));
+  });
+
+  it('covers the PC token-plan edge states the audit flagged', () => {
+    // No-org sessions still get the organization chooser instead of a dead end.
+    const hook = read(`${MEMBERSHIP_PACKAGE}/src/team/useTeamMembership.ts`);
+    assert.ok(hook.includes("'organization_scope_required'"));
+    assert.ok(hook.includes('loadTeamOrganizationDirectory'));
+    // Bind is attempted directly first; the session only rotates on a scope error.
+    assert.ok(hook.includes('needsOrganizationScope'));
+    assert.ok(/bound = await bind\(\);/u.test(hook));
+    // The single-month cycle is the PC default.
+    const screen = read(`${MEMBERSHIP_PACKAGE}/src/screens/MembershipScreen.tsx`);
+    assert.ok(screen.includes("=== 'once'"));
+    // Super tier fallback stays visible when rank-4 benefits are unseeded.
+    assert.ok(
+      read(`${MEMBERSHIP_PACKAGE}/src/catalog/membershipDefinition.ts`).includes('superMonthly'),
+    );
+    // Redemption is idempotent and carries the grant detail.
+    const runtime = read(`${MEMBERSHIP_PACKAGE}/src/runtime.ts`);
+    assert.ok(runtime.includes('redeem(code, idempotencyKey)'));
+    assert.ok(runtime.includes('totalQuota'));
+    assert.ok(screen.includes('createMembershipOperationKey'));
+    // Recharge keeps the load error, retry, custom amount, and agreement gate.
+    const sheets = read(`${MEMBERSHIP_PACKAGE}/src/components/CommerceSheets.tsx`);
+    for (const token of [
+      'recharge.retry',
+      'recharge.customMode',
+      'recharge.agreement',
+      'parseCustomRechargeAmount',
+      'loadRechargeSettings',
+    ]) {
+      assert.ok(sheets.includes(token) || runtime.includes(token), `recharge composes ${token}`);
+    }
+    // Seat points are membership points with a period, not compute credits.
+    const cards = read(`${MEMBERSHIP_PACKAGE}/src/components/TeamPlanCards.tsx`);
+    assert.ok(cards.includes('会员积分'));
+    assert.ok(cards.includes('resolveTeamPeriodLabel(cycle, t)'));
+    // Reconcile feedback reports the revoked count.
+    assert.ok(
+      read(`${MEMBERSHIP_PACKAGE}/src/components/TeamSeatManagement.tsx`).includes('revokedCount'),
+    );
   });
 });

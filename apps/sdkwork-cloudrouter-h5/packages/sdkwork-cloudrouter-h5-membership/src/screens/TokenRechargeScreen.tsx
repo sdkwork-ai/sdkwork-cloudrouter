@@ -1,14 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PageLayout } from '@sdkwork/ui-mobile-react';
 import { CircleAlert, Loader2, Sparkles } from 'lucide-react';
 
-import { PaymentMethodPicker, RedeemForm } from '../components/CommerceSheets.js';
+import { PaymentMethodPicker, RedeemForm, parseCustomRechargeAmount } from '../components/CommerceSheets.js';
 import type { MembershipTranslate } from '../catalog/membershipDefinition.js';
-import { formatMembershipCurrencyCny, formatMembershipPointsValue } from '../format.js';
+import { formatMembershipCurrency, formatMembershipPointsValue } from '../format.js';
+import { createMembershipOperationKey } from '../operationKey.js';
 import {
   getCloudRouterH5MembershipRuntime,
   type MembershipPaymentMethod,
   type MembershipRechargePackage,
+  type MembershipRechargeSettings,
   type MembershipRedeemOutcome,
 } from '../runtime.js';
 
@@ -22,15 +24,32 @@ export interface TokenRechargeScreenProps {
 
 function describeRedeemResult(outcome: MembershipRedeemOutcome, t: MembershipTranslate): string {
   if (outcome.benefitKind === 'subscription') {
-    return t('redeem.successSubscription', '会员订阅已激活');
+    const expires = outcome.expiresAt ? new Date(outcome.expiresAt) : null;
+    const label = expires && !Number.isNaN(expires.getTime())
+      ? expires.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
+      : '';
+    return t('redeem.successSubscription', '会员订阅已激活')
+      + (label
+        ? ` · ${t('redeem.expiresAt', '有效期至 {{date}}').replace('{{date}}', label)}`
+        : '');
   }
   if (outcome.benefitKind === 'token_bank_credit') {
-    return t('redeem.successTokenBank', '算力积分已到账');
+    return t('redeem.successTokenBank', '算力积分已到账')
+      + (typeof outcome.grantAmount === 'number'
+        ? ` · ${new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 6 }).format(outcome.grantAmount)}`
+        : '');
   }
   if (outcome.benefitKind === 'points_credit') {
-    return t('redeem.successPoints', '会员积分已发放');
+    return t('redeem.successPoints', '会员积分已发放')
+      + (typeof outcome.grantPoints === 'number'
+        ? ` · ${new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 6 }).format(outcome.grantPoints)}`
+        : '');
   }
-  return t('redeem.successCash', '账户余额已到账');
+  const cashAmount = typeof outcome.grantAmount === 'number' ? outcome.grantAmount / 100 : null;
+  return t('redeem.successCash', '账户余额已到账')
+    + (cashAmount !== null
+      ? ` · ${formatMembershipCurrency(cashAmount, outcome.currencyCode ?? 'CNY')}`
+      : '');
 }
 
 /**
@@ -54,6 +73,11 @@ export function TokenRechargeScreen({ initialTab = 'recharge', onSignIn, t }: To
   const [submitting, setSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [redeemResult, setRedeemResult] = useState<string | null>(null);
+  const redeemKeys = useRef(new Map<string, string>());
+  const [settings, setSettings] = useState<MembershipRechargeSettings | null>(null);
+  const [customMode, setCustomMode] = useState(false);
+  const [customAmount, setCustomAmount] = useState('');
+  const [agreementAccepted, setAgreementAccepted] = useState(false);
 
   const signedIn = runtime?.signedIn ?? false;
 
@@ -66,12 +90,14 @@ export function TokenRechargeScreen({ initialTab = 'recharge', onSignIn, t }: To
     setLoading(true);
     setError(null);
     try {
-      const [nextBalance, nextPackages] = await Promise.all([
+      const [nextBalance, nextPackages, nextSettings] = await Promise.all([
         runtime.loadTokenBankBalance().catch(() => null),
         runtime.loadRechargePackages(),
+        runtime.loadRechargeSettings().catch(() => null),
       ]);
       setBalance(nextBalance);
       setPackages(nextPackages);
+      setSettings(nextSettings);
       setSelectedId((current) => current || nextPackages[0]?.id || '');
     } catch (cause: unknown) {
       setError(cause instanceof Error && cause.message
@@ -87,6 +113,20 @@ export function TokenRechargeScreen({ initialTab = 'recharge', onSignIn, t }: To
   }, [load]);
 
   const selectedPackage = packages.find((item) => item.id === selectedId) ?? null;
+  const parsedCustomAmount = parseCustomRechargeAmount(customAmount);
+  const customPreviewPoints = parsedCustomAmount !== null && settings
+    ? parsedCustomAmount * settings.basePointsPerCny
+    : null;
+  const rechargeSelectionValid = customMode
+    ? parsedCustomAmount !== null
+    : selectedPackage !== null;
+  const rechargeTotalLabel = customMode
+    ? parsedCustomAmount !== null
+      ? formatMembershipCurrency(parsedCustomAmount, 'CNY')
+      : t('rechargePage.selectPackage', '请选择充值套餐')
+    : selectedPackage
+      ? formatMembershipCurrency(selectedPackage.priceAmount, selectedPackage.currencyCode)
+      : t('rechargePage.selectPackage', '请选择充值套餐');
 
   const handleRecharge = useCallback(async () => {
     if (!runtime) {
@@ -96,14 +136,17 @@ export function TokenRechargeScreen({ initialTab = 'recharge', onSignIn, t }: To
       onSignIn();
       return;
     }
-    if (!selectedPackage) {
+    const selection = customMode
+      ? (parsedCustomAmount !== null ? { amount: customAmount.trim() } : null)
+      : (selectedPackage ? { packageId: selectedPackage.id } : null);
+    if (!selection) {
       return;
     }
     setSubmitting(true);
     setActionError(null);
     try {
       const outcome = await runtime.createRechargeOrder({
-        packageId: selectedPackage.id,
+        ...selection,
         paymentMethod: method,
       });
       if (outcome.cashierUrl) {
@@ -127,7 +170,7 @@ export function TokenRechargeScreen({ initialTab = 'recharge', onSignIn, t }: To
     } finally {
       setSubmitting(false);
     }
-  }, [load, method, onSignIn, runtime, selectedPackage, t]);
+  }, [customAmount, customMode, load, method, onSignIn, parsedCustomAmount, runtime, selectedPackage, t]);
 
   const handleRedeem = useCallback(async (code: string) => {
     if (!runtime) {
@@ -139,8 +182,12 @@ export function TokenRechargeScreen({ initialTab = 'recharge', onSignIn, t }: To
     }
     setSubmitting(true);
     setActionError(null);
+    const redeemKey = redeemKeys.current.get(code)
+      ?? createMembershipOperationKey('membership-redeem');
+    redeemKeys.current.set(code, redeemKey);
     try {
-      const outcome = await runtime.redeemCode(code);
+      const outcome = await runtime.redeemCode(code, redeemKey);
+      redeemKeys.current.delete(code);
       setRedeemResult(describeRedeemResult(outcome, t));
       await load();
     } catch (cause: unknown) {
@@ -227,54 +274,120 @@ export function TokenRechargeScreen({ initialTab = 'recharge', onSignIn, t }: To
               </div>
             ) : null}
 
-            {!loading && !error && packages.length === 0 ? (
-              <p className="rounded-xl bg-surface px-4 py-8 text-center text-[13px] text-ink-subtle">
-                {t('recharge.empty', '暂无可购买的充值套餐')}
-              </p>
-            ) : null}
+            <div className="grid grid-cols-2 gap-1 rounded-full bg-surface-elevated p-1" role="tablist">
+              {([
+                { key: false, label: t('recharge.packageMode', '选择套餐') },
+                { key: true, label: t('recharge.customMode', '自定义金额') },
+              ] as const).map((option) => {
+                const selected = customMode === option.key;
+                return (
+                  <button
+                    aria-selected={selected}
+                    className={`min-h-9 rounded-full text-[12px] font-semibold ${
+                      selected ? 'bg-surface text-ink shadow-sm' : 'text-ink-muted'
+                    }`}
+                    key={String(option.key)}
+                    onClick={() => setCustomMode(option.key)}
+                    role="tab"
+                    type="button"
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
 
-            {packages.length > 0 ? (
-              <div className="grid grid-cols-2 gap-2" data-token-recharge-packages>
-                {packages.map((item) => {
-                  const selected = item.id === selectedId;
-                  return (
-                    <button
-                      aria-pressed={selected}
-                      className={`min-h-[6rem] rounded-xl border px-3 py-3 text-left ${
-                        selected ? 'border-brand bg-brand-soft' : 'border-line bg-surface'
-                      }`}
-                      key={item.id}
-                      onClick={() => setSelectedId(item.id)}
-                      type="button"
-                    >
-                      <span className="block text-[17px] font-bold tabular-nums text-ink">
-                        {formatMembershipPointsValue(item.points)}
-                      </span>
-                      <span className="block text-[10px] text-ink-subtle">
-                        {t('recharge.pointsUnit', '算力积分')}
-                      </span>
-                      <span className="mt-1 block text-[13px] font-semibold text-brand">
-                        {formatMembershipCurrencyCny(item.priceAmount)}
-                      </span>
-                      {item.bonusPoints > 0 ? (
-                        <span className="mt-0.5 block text-[10px] text-emerald-600">
-                          {t('recharge.bonus', '赠 {points} 算力积分').replace(
-                            '{points}',
-                            formatMembershipPointsValue(item.bonusPoints),
-                          )}
-                        </span>
-                      ) : null}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : null}
-
-            {packages.length > 0 ? (
+            {!customMode ? (
+              <>
+                {!loading && !error && packages.length === 0 ? (
+                  <p className="rounded-xl bg-surface px-4 py-8 text-center text-[13px] text-ink-subtle">
+                    {t('recharge.empty', '暂无可购买的充值套餐')}
+                  </p>
+                ) : null}
+                {packages.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2" data-token-recharge-packages>
+                    {packages.map((item) => {
+                      const selected = item.id === selectedId;
+                      return (
+                        <button
+                          aria-pressed={selected}
+                          className={`min-h-[6rem] rounded-xl border px-3 py-3 text-left ${
+                            selected ? 'border-brand bg-brand-soft' : 'border-line bg-surface'
+                          }`}
+                          key={item.id}
+                          onClick={() => setSelectedId(item.id)}
+                          type="button"
+                        >
+                          <span className="block text-[17px] font-bold tabular-nums text-ink">
+                            {formatMembershipPointsValue(item.points)}
+                          </span>
+                          <span className="block text-[10px] text-ink-subtle">
+                            {t('recharge.pointsUnit', '算力积分')}
+                          </span>
+                          <span className="mt-1 block text-[13px] font-semibold text-brand">
+                            {formatMembershipCurrency(item.priceAmount, item.currencyCode)}
+                          </span>
+                          {item.bonusPoints > 0 ? (
+                            <span className="mt-0.5 block text-[10px] text-emerald-600">
+                              {t('recharge.bonus', '赠 {points} 算力积分').replace(
+                                '{points}',
+                                formatMembershipPointsValue(item.bonusPoints),
+                              )}
+                            </span>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </>
+            ) : (
               <div className="rounded-xl border border-line bg-surface px-3 py-3">
-                <PaymentMethodPicker onChange={setMethod} t={t} value={method} />
+                <label className="block text-[12px] font-medium text-ink-subtle" htmlFor="token-recharge-custom-amount">
+                  {t('recharge.customLabel', '自定义充值金额（元）')}
+                </label>
+                <input
+                  className="mt-1.5 min-h-11 w-full rounded-lg border border-line bg-canvas px-3 text-[15px] font-semibold tabular-nums text-ink outline-none focus:border-brand"
+                  id="token-recharge-custom-amount"
+                  inputMode="decimal"
+                  onChange={(event) => setCustomAmount(event.target.value)}
+                  placeholder={t('recharge.customPlaceholder', '1 – 10000')}
+                  value={customAmount}
+                />
+                <p className="mt-1 text-[10px] text-ink-subtle">
+                  {customPreviewPoints !== null
+                    ? t('recharge.customPreview', '预计到账 {{points}} 算力积分').replace(
+                      '{{points}}',
+                      formatMembershipPointsValue(customPreviewPoints),
+                    )
+                    : t('recharge.customHint', '金额范围 1 – 10000 元，到账额度以服务端为准')}
+                </p>
               </div>
-            ) : null}
+            )}
+
+            <div className="rounded-xl border border-line bg-surface px-3 py-3">
+              <PaymentMethodPicker onChange={setMethod} t={t} value={method} />
+            </div>
+
+            <button
+              aria-pressed={agreementAccepted}
+              className="flex w-full items-start gap-2 rounded-xl border border-line bg-surface px-3 py-2 text-left"
+              onClick={() => setAgreementAccepted((current) => !current)}
+              type="button"
+            >
+              <span
+                className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] ${
+                  agreementAccepted
+                    ? 'border-brand bg-brand-fill text-white'
+                    : 'border-line-strong text-transparent'
+                }`}
+              >
+                ✓
+              </span>
+              <span className="text-[11px] leading-snug text-ink-muted">
+                {t('recharge.agreement', '我已阅读并同意《Token Bank 充值服务协议》')}
+              </span>
+            </button>
 
             {actionError ? (
               <p className="flex items-start gap-1.5 text-[12px] text-danger" role="alert">
@@ -285,16 +398,16 @@ export function TokenRechargeScreen({ initialTab = 'recharge', onSignIn, t }: To
 
             <button
               className="min-h-12 w-full rounded-full bg-brand-fill text-[15px] font-semibold text-on-brand active:bg-brand-fill-strong disabled:opacity-60"
-              disabled={submitting || !selectedPackage}
+              disabled={submitting || !rechargeSelectionValid || !agreementAccepted}
               onClick={() => void handleRecharge()}
               type="button"
             >
               {submitting
                 ? t('recharge.submitting', '正在创建订单…')
-                : selectedPackage
+                : rechargeSelectionValid
                   ? t('rechargePage.payWithAmount', '立即支付 {amount}').replace(
                     '{amount}',
-                    formatMembershipCurrencyCny(selectedPackage.priceAmount),
+                    rechargeTotalLabel,
                   )
                   : t('rechargePage.selectPackage', '请选择充值套餐')}
             </button>

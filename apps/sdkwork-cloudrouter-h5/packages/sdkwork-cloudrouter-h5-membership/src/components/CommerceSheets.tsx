@@ -2,8 +2,12 @@ import { CircleAlert, Wallet } from 'lucide-react';
 import { useState } from 'react';
 
 import type { MembershipTranslate } from '../catalog/membershipDefinition.js';
-import { formatMembershipCurrencyCny, formatMembershipPointsValue } from '../format.js';
-import type { MembershipPaymentMethod, MembershipRechargePackage } from '../runtime.js';
+import { formatMembershipCurrency, formatMembershipPointsValue } from '../format.js';
+import type {
+  MembershipPaymentMethod,
+  MembershipRechargePackage,
+  MembershipRechargeSettings,
+} from '../runtime.js';
 import { MobileSheet } from './MobileSheet.js';
 
 export interface CheckoutPlanSummary {
@@ -143,24 +147,48 @@ export function CheckoutSheet({
   );
 }
 
+export interface RechargeSelection {
+  readonly amount?: string;
+  readonly packageId?: string;
+}
+
 export interface TokenBankRechargeSheetProps {
   readonly balance: number | null;
   readonly error: string | null;
   readonly loading?: boolean;
   readonly onClose: () => void;
-  readonly onConfirm: (packageId: string, method: MembershipPaymentMethod) => void;
+  readonly onConfirm: (selection: RechargeSelection, method: MembershipPaymentMethod) => void;
+  readonly onRetry?: () => void;
   readonly open: boolean;
   readonly packages: readonly MembershipRechargePackage[];
+  readonly settings?: MembershipRechargeSettings | null;
   readonly submitting: boolean;
   readonly t: MembershipTranslate;
+}
+
+/** Supported custom top-up range, mirroring the order service limits. */
+const CUSTOM_RECHARGE_MIN = 1;
+const CUSTOM_RECHARGE_MAX = 10_000;
+
+export function parseCustomRechargeAmount(text: string): number | null {
+  const normalized = text.trim();
+  if (!/^\d+(?:\.\d{1,2})?$/u.test(normalized)) {
+    return null;
+  }
+  const amount = Number(normalized);
+  if (!Number.isFinite(amount) || amount < CUSTOM_RECHARGE_MIN || amount > CUSTOM_RECHARGE_MAX) {
+    return null;
+  }
+  return amount;
 }
 
 /**
  * Token Bank compute-credit recharge sheet.
  *
  * Prices and credited points come from the order-owned recharge package catalog
- * (the same catalog the PC "购买算力积分" dialog lists); the client never invents
- * a grant, and the server prices the credited amount.
+ * (the same catalog the PC "购买算力积分" dialog lists), the custom top-up is
+ * priced by the server's exchange rule, and payment is gated on the recharge
+ * agreement — the three PC dialog behaviors the mobile sheet mirrors.
  */
 export function TokenBankRechargeSheet({
   balance,
@@ -168,14 +196,24 @@ export function TokenBankRechargeSheet({
   loading = false,
   onClose,
   onConfirm,
+  onRetry,
   open,
   packages,
+  settings = null,
   submitting,
   t,
 }: TokenBankRechargeSheetProps) {
+  const [mode, setMode] = useState<'custom' | 'package'>('package');
   const [selectedId, setSelectedId] = useState<string>(packages[0]?.id ?? '');
+  const [customAmount, setCustomAmount] = useState('');
   const [method, setMethod] = useState<MembershipPaymentMethod>('wechat_pay');
+  const [agreementAccepted, setAgreementAccepted] = useState(false);
   const effectiveId = selectedId || packages[0]?.id || '';
+  const parsedAmount = parseCustomRechargeAmount(customAmount);
+  const previewPoints = parsedAmount !== null && settings
+    ? parsedAmount * settings.basePointsPerCny
+    : null;
+  const selectionValid = mode === 'custom' ? parsedAmount !== null : effectiveId.length > 0;
   const busy = submitting || loading;
 
   return (
@@ -185,15 +223,34 @@ export function TokenBankRechargeSheet({
       footer={(
         <div className="flex flex-col gap-2">
           {error ? (
-            <p className="flex items-start gap-1.5 text-[12px] text-danger" role="alert">
-              <CircleAlert aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              {error}
+            <div className="flex items-start justify-between gap-2">
+              <p className="flex items-start gap-1.5 text-[12px] text-danger" role="alert">
+                <CircleAlert aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                {error}
+              </p>
+              {onRetry ? (
+                <button
+                  className="shrink-0 rounded-full border border-line px-2.5 py-1 text-[11px] text-ink-muted"
+                  onClick={onRetry}
+                  type="button"
+                >
+                  {t('recharge.retry', '重新加载')}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+          {!agreementAccepted ? (
+            <p className="text-[11px] text-ink-subtle">
+              {t('recharge.agreementRequired', '请先同意 Token Bank 充值服务协议')}
             </p>
           ) : null}
           <button
             className="min-h-12 w-full rounded-full bg-brand-fill text-[15px] font-semibold text-on-brand active:bg-brand-fill-strong disabled:opacity-60"
-            disabled={busy || !effectiveId}
-            onClick={() => onConfirm(effectiveId, method)}
+            disabled={busy || !selectionValid || !agreementAccepted}
+            onClick={() => onConfirm(
+              mode === 'custom' ? { amount: customAmount.trim() } : { packageId: effectiveId },
+              method,
+            )}
             type="button"
           >
             {busy
@@ -213,55 +270,124 @@ export function TokenBankRechargeSheet({
         </p>
       </div>
 
-      {loading && packages.length === 0 ? (
-        <p className="mt-4 rounded-xl bg-surface-elevated px-3 py-6 text-center text-[13px] text-ink-subtle">
-          {t('recharge.loading', '正在加载充值套餐…')}
-        </p>
-      ) : null}
-      {!loading && packages.length === 0 ? (
-        <p className="mt-4 rounded-xl bg-surface-elevated px-3 py-6 text-center text-[13px] text-ink-subtle">
-          {t('recharge.empty', '暂无可购买的充值套餐')}
-        </p>
+      <div className="mt-3 grid grid-cols-2 gap-1 rounded-full bg-surface-elevated p-1" role="tablist">
+        {([
+          { key: 'package', label: t('recharge.packageMode', '选择套餐') },
+          { key: 'custom', label: t('recharge.customMode', '自定义金额') },
+        ] as const).map((option) => {
+          const selected = mode === option.key;
+          return (
+            <button
+              aria-selected={selected}
+              className={`min-h-9 rounded-full text-[12px] font-semibold ${
+                selected ? 'bg-surface text-ink shadow-sm' : 'text-ink-muted'
+              }`}
+              key={option.key}
+              onClick={() => setMode(option.key)}
+              role="tab"
+              type="button"
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {mode === 'package' ? (
+        <>
+          {loading && packages.length === 0 ? (
+            <p className="mt-3 rounded-xl bg-surface-elevated px-3 py-6 text-center text-[13px] text-ink-subtle">
+              {t('recharge.loading', '正在加载充值套餐…')}
+            </p>
+          ) : null}
+          {!loading && packages.length === 0 ? (
+            <p className="mt-3 rounded-xl bg-surface-elevated px-3 py-6 text-center text-[13px] text-ink-subtle">
+              {t('recharge.empty', '暂无可购买的充值套餐')}
+            </p>
+          ) : (
+            <div className="mt-3 grid grid-cols-2 gap-2" data-membership-recharge-packages>
+              {packages.map((item) => {
+                const selected = item.id === effectiveId;
+                return (
+                  <button
+                    aria-pressed={selected}
+                    className={`min-h-[5.5rem] rounded-xl border px-3 py-2.5 text-left ${
+                      selected
+                        ? 'border-brand bg-brand-soft'
+                        : 'border-line bg-surface'
+                    }`}
+                    key={item.id}
+                    onClick={() => setSelectedId(item.id)}
+                    type="button"
+                  >
+                    <span className="block text-[15px] font-bold text-ink tabular-nums">
+                      {formatMembershipPointsValue(item.points)}
+                    </span>
+                    <span className="block text-[10px] text-ink-subtle">
+                      {t('recharge.pointsUnit', '算力积分')}
+                    </span>
+                    <span className="mt-1 block text-[12px] font-semibold text-brand">
+                      {formatMembershipCurrency(item.priceAmount, item.currencyCode)}
+                    </span>
+                    {item.bonusPoints > 0 ? (
+                      <span className="mt-0.5 block text-[10px] text-emerald-600">
+                        {t('recharge.bonus', '赠 {points} 算力积分').replace(
+                          '{points}',
+                          formatMembershipPointsValue(item.bonusPoints),
+                        )}
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </>
       ) : (
-        <div className="mt-3 grid grid-cols-2 gap-2" data-membership-recharge-packages>
-          {packages.map((item) => {
-            const selected = item.id === effectiveId;
-            return (
-              <button
-                aria-pressed={selected}
-                className={`min-h-[5.5rem] rounded-xl border px-3 py-2.5 text-left ${
-                  selected
-                    ? 'border-brand bg-brand-soft'
-                    : 'border-line bg-surface'
-                }`}
-                key={item.id}
-                onClick={() => setSelectedId(item.id)}
-                type="button"
-              >
-                <span className="block text-[15px] font-bold text-ink tabular-nums">
-                  {formatMembershipPointsValue(item.points)}
-                </span>
-                <span className="block text-[10px] text-ink-subtle">
-                  {t('recharge.pointsUnit', '算力积分')}
-                </span>
-                <span className="mt-1 block text-[12px] font-semibold text-brand">
-                  {formatMembershipCurrencyCny(item.priceAmount)}
-                </span>
-                {item.bonusPoints > 0 ? (
-                  <span className="mt-0.5 block text-[10px] text-emerald-600">
-                    {t('recharge.bonus', '赠 {points} 算力积分').replace(
-                      '{points}',
-                      formatMembershipPointsValue(item.bonusPoints),
-                    )}
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
+        <div className="mt-3 rounded-xl border border-line bg-canvas px-3 py-3">
+          <label className="block text-[12px] font-medium text-ink-subtle" htmlFor="token-bank-custom-amount">
+            {t('recharge.customLabel', '自定义充值金额（元）')}
+          </label>
+          <input
+            className="mt-1.5 min-h-11 w-full rounded-lg border border-line bg-surface px-3 text-[15px] font-semibold tabular-nums text-ink outline-none focus:border-brand"
+            id="token-bank-custom-amount"
+            inputMode="decimal"
+            onChange={(event) => setCustomAmount(event.target.value)}
+            placeholder={t('recharge.customPlaceholder', '1 – 10000')}
+            value={customAmount}
+          />
+          <p className="mt-1 text-[10px] text-ink-subtle">
+            {previewPoints !== null
+              ? t('recharge.customPreview', '预计到账 {{points}} 算力积分').replace(
+                '{{points}}',
+                formatMembershipPointsValue(previewPoints),
+              )
+              : t('recharge.customHint', '金额范围 1 – 10000 元，到账额度以服务端为准')}
+          </p>
         </div>
       )}
 
       <PaymentMethodPicker onChange={setMethod} t={t} value={method} />
+
+      <button
+        aria-pressed={agreementAccepted}
+        className="mt-3 flex w-full items-start gap-2 rounded-xl border border-line bg-surface px-3 py-2 text-left"
+        onClick={() => setAgreementAccepted((current) => !current)}
+        type="button"
+      >
+        <span
+          className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] ${
+            agreementAccepted
+              ? 'border-brand bg-brand-fill text-white'
+              : 'border-line-strong text-transparent'
+          }`}
+        >
+          ✓
+        </span>
+        <span className="text-[11px] leading-snug text-ink-muted">
+          {t('recharge.agreement', '我已阅读并同意《Token Bank 充值服务协议》')}
+        </span>
+      </button>
     </MobileSheet>
   );
 }

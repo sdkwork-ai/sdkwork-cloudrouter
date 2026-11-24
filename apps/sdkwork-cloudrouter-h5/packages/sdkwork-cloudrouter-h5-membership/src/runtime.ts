@@ -84,8 +84,15 @@ export interface MembershipOrderInput {
 }
 
 export interface MembershipRechargeOrderInput {
-  readonly packageId: string;
+  readonly amount?: string;
+  readonly packageId?: string;
   readonly paymentMethod: MembershipPaymentMethod;
+}
+
+export interface MembershipRechargeSettings {
+  readonly baseCurrencyCode: string;
+  /** Compute points credited per one major unit of the base currency. */
+  readonly basePointsPerCny: number;
 }
 
 export interface MembershipOrderOutcome {
@@ -108,9 +115,14 @@ export interface MembershipRechargeOutcome {
 
 export interface MembershipRedeemOutcome {
   readonly benefitKind: 'cash_credit' | 'points_credit' | 'subscription' | 'token_bank_credit';
+  readonly currencyCode?: string;
+  readonly dailyQuota?: number;
+  readonly durationDays?: number;
+  readonly expiresAt?: string;
   readonly grantAmount?: number;
   readonly grantPoints?: number;
   readonly status: 'completed' | 'pending';
+  readonly totalQuota?: number;
 }
 
 export interface MembershipTeamCatalog {
@@ -139,9 +151,11 @@ export interface CloudRouterH5MembershipRuntime {
   loadCatalog(): Promise<MembershipCatalogSnapshot>;
   loadMemberProfile(): Promise<MembershipMemberProfile | null>;
   loadRechargePackages(): Promise<readonly MembershipRechargePackage[]>;
+  /** Points-per-currency rule for the custom top-up preview, when exposed. */
+  loadRechargeSettings(): Promise<MembershipRechargeSettings | null>;
   /** Spendable Token Bank compute credits, or null when unavailable. */
   loadTokenBankBalance(): Promise<number | null>;
-  redeemCode(code: string): Promise<MembershipRedeemOutcome>;
+  redeemCode(code: string, idempotencyKey?: string): Promise<MembershipRedeemOutcome>;
   readonly signedIn: boolean;
 
   // ── Organization (team) membership ──────────────────────────────────────
@@ -441,7 +455,8 @@ export function createCloudRouterMembershipRuntime(
 
     async createRechargeOrder(input) {
       const payment = await services.tokenBankRecharge.createOrder({
-        packageId: input.packageId,
+        ...(input.packageId?.trim() ? { packageId: input.packageId.trim() } : {}),
+        ...(input.amount?.trim() ? { amount: input.amount.trim() } : {}),
         paymentMethod: input.paymentMethod,
         paymentProduct: 'mobile_cashier_h5',
         source: 'cloudrouter-h5-membership',
@@ -486,6 +501,25 @@ export function createCloudRouterMembershipRuntime(
       }));
     },
 
+    async loadRechargeSettings() {
+      const service = services.tokenBankRecharge;
+      if (typeof service.readSettings !== 'function') {
+        return null;
+      }
+      try {
+        const settings = await service.readSettings();
+        if (!settings || !Number.isFinite(settings.basePointsPerCny) || settings.basePointsPerCny <= 0) {
+          return null;
+        }
+        return {
+          baseCurrencyCode: settings.baseCurrencyCode,
+          basePointsPerCny: settings.basePointsPerCny,
+        };
+      } catch {
+        return null;
+      }
+    },
+
     async loadTokenBankBalance() {
       if (!hasCloudRouterCommerceSession()) {
         return null;
@@ -500,11 +534,23 @@ export function createCloudRouterMembershipRuntime(
       }
     },
 
-    async redeemCode(code) {
-      const result = await services.couponRecharge.redeem(code);
+    async redeemCode(code, idempotencyKey) {
+      const result = await services.couponRecharge.redeem(code, idempotencyKey);
       const status = normalizeOrderStatus(result.status);
       return {
         benefitKind: result.benefitKind,
+        ...('currencyCode' in result && typeof result.currencyCode === 'string'
+          ? { currencyCode: result.currencyCode }
+          : {}),
+        ...('dailyQuota' in result && typeof result.dailyQuota === 'number'
+          ? { dailyQuota: result.dailyQuota }
+          : {}),
+        ...('durationDays' in result && typeof result.durationDays === 'number'
+          ? { durationDays: result.durationDays }
+          : {}),
+        ...('expiresAt' in result && typeof result.expiresAt === 'string'
+          ? { expiresAt: result.expiresAt }
+          : {}),
         ...('grantAmount' in result && typeof result.grantAmount === 'number'
           ? { grantAmount: result.grantAmount }
           : {}),
@@ -512,6 +558,9 @@ export function createCloudRouterMembershipRuntime(
           ? { grantPoints: result.grantPoints }
           : {}),
         status: status === 'failed' ? 'pending' : status,
+        ...('totalQuota' in result && typeof result.totalQuota === 'number'
+          ? { totalQuota: result.totalQuota }
+          : {}),
       };
     },
 

@@ -119,6 +119,21 @@ H5 的「会员」必须是 Cloud Router 的 Token Plan 会员定义，而不是
 
 ## 8. 验证记录
 
+### 2026-11-25 第二轮审计修复（PC 对照逐项）
+
+独立对照审计发现并修复了 12 项运行期/展示差异：
+
+- **未选择组织不再是死路**：先读自有组织与组织目录，`organization_scope_required` 时以空总览继续渲染组织选择器与套餐，而不是只显示错误卡。
+- **绑定顺序**：先直接 `teamSubscription.bind`（与 PC 一致），仅在 403/权限错误时轮换会话后重试一次，避免绑定失败却已切换组织。
+- **默认计费周期**：对齐 PC 的「单月购买」默认（存在 `billingCycle=once` 分组时选中），不再默认最贵的包年。
+- **超级会员兜底**：未配置 rank 4 权益时恢复 PC 的「每月 7,499 算力积分」兜底，避免付费等级显示无权益。
+- **团队坐席积分口径**：套餐卡改为「每坐席 {{points}} 会员积分 · {{周期}}」，不再误标为算力积分。
+- **团队总览信息**：新增状态徽标、已购/已分配/可用/组织成员四宫格、订阅周期区间、未分配坐席告警。
+- **兑换幂等与明细**：按兑换码复用 `Idempotency-Key`，成功后释放；展示订阅有效期、算力/会员积分、现金到账（分转元 + 币种）。
+- **Token Bank 充值**：加载失败保留错误 + 重试；新增自定义金额（1–10000 元，汇率预览）；支付前需勾选充值协议；套餐金额按 `currencyCode` 渲染，积分支持 6 位小数。
+- **扩容权限**：扩容入口与扩容套餐仅对 owner/admin 展示。
+- **离组同步/回收**：同步提示带回收数量；回收失败保持确认弹层并就地显示错误。
+
 ### 2026-11-25 回归记录
 
 环境：Windows / Node v24.22.3 / pnpm 10.33.0；H5 应用根 `apps/sdkwork-cloudrouter-h5`。
@@ -126,7 +141,7 @@ H5 的「会员」必须是 Cloud Router 的 Token Plan 会员定义，而不是
 | 命令 | 结果 |
 | --- | --- |
 | `pnpm --dir apps/sdkwork-cloudrouter-h5 typecheck` | exit 0 |
-| `node --test tests/*.test.mjs`（H5 应用根） | 131 tests / 131 pass / 0 fail（含 16 项个人+团队对齐用例） |
+| `node --test tests/*.test.mjs`（H5 应用根） | 132 tests / 132 pass / 0 fail（含 17 项个人+团队对齐用例） |
 | `pnpm build:dev`（canonical browser build，构建前跑 tsc） | PASS → `dist/standalone/dev/` |
 | `node ../sdkwork-specs/tools/check-application-layering.mjs --root .` | passed |
 | `node ../sdkwork-specs/tools/check-i18n-standard.mjs --root .` | passed（9140 files） |
@@ -148,6 +163,8 @@ H5 的「会员」必须是 Cloud Router 的 Token Plan 会员定义，而不是
 - `.screenshots/h5/membership-token-plan-dark.png`（暗色）
 - `.screenshots/h5/membership-checkout-sheet.png`（开通 bottom sheet）
 - `.screenshots/h5/recharge-token-bank.png`（充值套餐，微单位已换算）
+- `.screenshots/h5/membership-recharge-sheet.png`（充值套餐 + 协议勾选）
+- `.screenshots/h5/membership-recharge-custom.png`（自定义金额）
 - `.screenshots/h5/team-membership.png` / `team-membership-full.png`（团队受众：总览、席位管理、成员目录）
 - `.screenshots/h5/team-expand-seats.png`（扩容坐席，仅当前套餐）
 - `.screenshots/h5/team-checkout-sheet.png`（团队结算 bottom sheet）

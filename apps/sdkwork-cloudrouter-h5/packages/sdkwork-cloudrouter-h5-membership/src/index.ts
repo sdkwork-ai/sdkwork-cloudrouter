@@ -11,6 +11,7 @@ export * from './components/TeamSeatManagement.js';
 export * from './components/TierCompareTable.js';
 export * from './format.js';
 export * from './MembershipI18nProvider.js';
+export * from './operationKey.js';
 export * from './routes.js';
 export * from './runtime.js';
 export * from './screens/MembershipScreen.js';

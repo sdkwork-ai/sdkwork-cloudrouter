@@ -158,18 +158,13 @@ export function useTeamMembership() {
     setStatus('loading');
     setError(null);
     try {
-      const nextOverview = await runtime.loadTeamOverview();
-      if (token !== bootstrapToken.current) {
-        return;
-      }
+      // Read the caller's organizations independently of the overview: a
+      // platform/personal session answers `organization_scope_required` for the
+      // team overview, and the mobile surface still has to offer the
+      // organization chooser instead of dead-ending on an error card.
       const ownMemberships = await runtime.loadOwnTeamMemberships().catch(
         () => [] as TeamOwnMembership[],
       );
-      const scoped = hasTeamOrganizationScope(nextOverview);
-      const organizationId = scoped
-        ? resolveTeamOrganizationId(ownMemberships, nextOverview.organizationId)
-        : nextOverview.organizationId.trim();
-      const baseChoices = resolveTeamOrganizationChoices(ownMemberships, nextOverview.organizationId);
       // Localize organization ids with one directory read (permission-gated;
       // the ids stay the fallback labels when the read is not allowed).
       const organizationDirectory = await runtime.loadTeamOrganizationDirectory().catch(() => []);
@@ -178,6 +173,32 @@ export function useTeamMembership() {
           .filter((organization) => organization.name)
           .map((organization) => [organization.id, organization.name as string]),
       );
+      let nextOverview: TeamSubscriptionOverview;
+      try {
+        nextOverview = await runtime.loadTeamOverview();
+      } catch (cause) {
+        const overviewError = toTeamError(cause);
+        if (overviewError.reason !== 'organization_scope_required') {
+          throw overviewError;
+        }
+        nextOverview = {
+          autoAssignSeat: false,
+          hasSubscription: false,
+          organizationId: '',
+          seatPolicy: 'strict',
+          seatsAvailable: 0,
+          seatsPurchased: 0,
+          seatsUsed: 0,
+        };
+      }
+      if (token !== bootstrapToken.current) {
+        return;
+      }
+      const scoped = hasTeamOrganizationScope(nextOverview);
+      const organizationId = scoped
+        ? resolveTeamOrganizationId(ownMemberships, nextOverview.organizationId)
+        : nextOverview.organizationId.trim();
+      const baseChoices = resolveTeamOrganizationChoices(ownMemberships, nextOverview.organizationId);
       const choices = baseChoices.map((choice) => {
         const name = nameById.get(choice.organizationId);
         return name ? { ...choice, organizationName: name } : choice;
@@ -261,12 +282,25 @@ export function useTeamMembership() {
     if (!runtime) {
       throw new TeamSubscriptionError('unknown', 'Team membership is not available.');
     }
-    // Binding authorizes the caller's TEAM_SEAT_MANAGE capability in the target
-    // organization, so the session must be scoped to it first. Rotating to the
-    // same organization is a no-op the IAM endpoint answers with the current
-    // session, so this is safe for an already-scoped session.
-    await runtime.switchTeamOrganization(organizationId);
-    const bound = await runtime.bindTeamOrganization(organizationId);
+    // Bind directly first (the PC behavior). Only when the server rejects the
+    // call because the session is not scoped to that organization do we rotate
+    // the session and retry once, so a failed bind never silently moves the
+    // caller's active organization.
+    const bind = () => runtime.bindTeamOrganization(organizationId);
+    let bound: TeamSubscriptionOverview;
+    try {
+      bound = await bind();
+    } catch (cause) {
+      const bindError = toTeamError(cause);
+      const needsOrganizationScope = bindError.reason === 'seat_management_forbidden'
+        || bindError.reason === 'organization_scope_required'
+        || bindError.httpStatus === 403;
+      if (!needsOrganizationScope) {
+        throw bindError;
+      }
+      await runtime.switchTeamOrganization(organizationId);
+      bound = await bind();
+    }
     setOverview(bound);
     await bootstrap();
   }, [bootstrap, runtime]);

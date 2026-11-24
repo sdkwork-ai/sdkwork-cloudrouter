@@ -257,10 +257,12 @@ export function TeamPlanCards({
               {pointsPerSeat > 0 ? (
                 <p className="mt-1 flex items-center gap-1 text-[11px] text-ink-muted">
                   <Sparkles aria-hidden="true" className="h-3 w-3 text-amber-500" />
-                  {t('team.plans.seatPoints', '每坐席 {{points}} 算力积分').replace(
+                  {t('team.plans.seatPoints', '每坐席 {{points}} 会员积分').replace(
                     '{{points}}',
                     new Intl.NumberFormat('zh-CN').format(pointsPerSeat),
                   )}
+                  {' · '}
+                  {resolveTeamPeriodLabel(cycle, t)}
                 </p>
               ) : null}
 

@@ -45,6 +45,28 @@ function formatTeamDate(value: string | undefined): string {
     : date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
 }
 
+/** Maps the membership subscription status code to localized copy. */
+function teamStatusCopy(
+  status: string | undefined,
+  t: MembershipTranslate,
+): string | undefined {
+  const normalized = status?.trim().toLowerCase();
+  if (!normalized) return undefined;
+  if (normalized === 'active' || normalized === 'enabled') {
+    return t('team.status.active', '生效中');
+  }
+  if (normalized === 'expired') {
+    return t('team.status.expired', '已过期');
+  }
+  if (normalized === 'grace' || normalized === 'grace_period') {
+    return t('team.status.grace', '宽限期');
+  }
+  if (normalized === 'inactive' || normalized === 'cancelled' || normalized === 'canceled') {
+    return t('team.status.inactive', '已失效');
+  }
+  return undefined;
+}
+
 /**
  * Cloud Router mobile organization (team) membership surface.
  *
@@ -83,11 +105,12 @@ export function TeamMembershipSurface({ onNotify, onSignIn, t }: TeamMembershipS
 
   const runtime = team.runtime;
   const unbound = overview ? isTeamSubscriptionUnbound(overview) : false;
+  const canManageSeats = composition?.canManageSeats === true;
   const hasOrgScope = Boolean(overview?.organizationId.trim())
     && !unbound;
   const showPlans = overview !== null
-    && (!overview.hasSubscription || expanding)
-    && !unbound;
+    && !unbound
+    && (!overview.hasSubscription || (expanding && canManageSeats));
 
   useEffect(() => {
     if (!showPlans || catalog || catalogLoading) {
@@ -154,8 +177,7 @@ export function TeamMembershipSurface({ onNotify, onSignIn, t }: TeamMembershipS
   }
 
   async function handleReconcile() {
-    await team.reconcile();
-    onNotify(t('team.reconcileSuccessToast', '已同步组织成员与坐席。'), 'success');
+    return await team.reconcile();
   }
 
   async function handleSavePolicy(input: TeamSeatPolicyInput) {
@@ -279,6 +301,11 @@ export function TeamMembershipSurface({ onNotify, onSignIn, t }: TeamMembershipS
               {overview.planName ? (
                 <span className="rounded bg-white/15 px-1.5 py-0.5">{overview.planName}</span>
               ) : null}
+              {teamStatusCopy(overview.status, t) ? (
+                <span className="rounded bg-white/20 px-1.5 py-0.5 font-semibold">
+                  {teamStatusCopy(overview.status, t)}
+                </span>
+              ) : null}
             </p>
           </div>
           <button
@@ -291,37 +318,66 @@ export function TeamMembershipSurface({ onNotify, onSignIn, t }: TeamMembershipS
           </button>
         </div>
 
-        {overview.hasSubscription ? (
+          {!overview.hasSubscription ? (
+            <p className="mt-3 rounded-xl bg-white/10 px-3 py-2 text-[11px] text-white/80">
+              {t('team.overview.noSubscription', '尚未开通团队订阅，选择下方套餐即可开通。')}
+            </p>
+          ) : null}
+
           <div className="mt-3 grid grid-cols-2 gap-2">
             <div className="rounded-xl bg-white/10 px-3 py-2">
               <p className="flex items-center gap-1 text-[10px] text-white/70">
                 <Users aria-hidden="true" className="h-3 w-3" />
-                {t('team.overview.seats', '团队坐席')}
+                {t('team.overview.purchasedSeats', '已购坐席')}
               </p>
               <p className="mt-0.5 text-[18px] font-bold leading-none tabular-nums">
-                {overview.seatsUsed}
-                <span className="text-[12px] font-medium text-white/70">
-                  {' / '}
-                  {overview.seatsPurchased}
-                </span>
+                {overview.seatsPurchased}
               </p>
             </div>
             <div className="rounded-xl bg-white/10 px-3 py-2">
               <p className="text-[10px] text-white/70">
-                {t('team.overview.expiresAt', '到期时间')}
+                {t('team.overview.assignedSeats', '已分配')}
               </p>
-              <p className="mt-0.5 truncate text-[13px] font-semibold">
-                {formatTeamDate(overview.expiresAt) || '--'}
+              <p className="mt-0.5 text-[18px] font-bold leading-none tabular-nums">
+                {overview.seatsUsed}
+              </p>
+            </div>
+            <div className="rounded-xl bg-white/10 px-3 py-2">
+              <p className="text-[10px] text-white/70">
+                {t('team.overview.availableSeats', '可用坐席')}
+              </p>
+              <p className="mt-0.5 text-[18px] font-bold leading-none tabular-nums">
+                {overview.seatsAvailable}
+              </p>
+            </div>
+            <div className="rounded-xl bg-white/10 px-3 py-2">
+              <p className="text-[10px] text-white/70">
+                {t('team.overview.members', '组织成员')}
+              </p>
+              <p className="mt-0.5 text-[18px] font-bold leading-none tabular-nums">
+                {composition?.membersTotal ?? 0}
               </p>
             </div>
           </div>
-        ) : (
-          <p className="mt-3 rounded-xl bg-white/10 px-3 py-2 text-[11px] text-white/80">
-            {t('team.overview.noSubscription', '尚未开通团队订阅，选择下方套餐即可开通。')}
-          </p>
-        )}
 
-        {!unbound && overview.hasSubscription ? (
+          {overview.expiresAt ? (
+            <p className="mt-2 text-[10px] text-white/75">
+              {t('team.overview.period', '订阅周期 {{start}} – {{end}}')
+                .replace('{{start}}', formatTeamDate(overview.startsAt) || '--')
+                .replace('{{end}}', formatTeamDate(overview.expiresAt))}
+            </p>
+          ) : null}
+
+          {composition?.overSeat ? (
+            <p className="mt-2 rounded-lg bg-amber-400/20 px-2.5 py-1.5 text-[11px] text-white">
+              {t('team.overview.unlicensed', '有 {{count}} 位组织成员尚未分配坐席。').replace(
+                '{{count}}',
+                String(composition.unlicensedMembers),
+              )}
+            </p>
+          ) : null}
+
+        {!unbound && overview.hasSubscription && canManageSeats ? (
           <button
             className="mt-3 min-h-10 w-full rounded-full bg-white/20 text-[13px] font-semibold active:bg-white/30 disabled:opacity-50"
             disabled={expanding}

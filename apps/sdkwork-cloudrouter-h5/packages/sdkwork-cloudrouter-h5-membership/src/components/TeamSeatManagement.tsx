@@ -7,6 +7,7 @@ import type {
   TeamErrorReason,
   TeamSeatPolicyInput,
   TeamSeatPolicy,
+  TeamSeatReconciliation,
   TeamSubscriptionOverview,
 } from '../team/teamContract.js';
 import { teamErrorCopy, teamRoleLabel } from '../team/teamErrorCopy.js';
@@ -17,7 +18,7 @@ export interface TeamSeatManagementProps {
   readonly directory: TeamDirectoryState;
   readonly onAssign: (userId: string) => Promise<void>;
   readonly onLoadMore: () => Promise<void>;
-  readonly onReconcile: () => Promise<void>;
+  readonly onReconcile: () => Promise<TeamSeatReconciliation>;
   readonly onRevoke: (userId: string) => Promise<void>;
   readonly onSearch: (query: string) => Promise<void>;
   readonly onSavePolicy: (input: TeamSeatPolicyInput) => Promise<void>;
@@ -135,8 +136,15 @@ export function TeamSeatManagement({
     setReconciling(true);
     setActionError(null);
     try {
-      await onReconcile();
-      setNotice(t('team.reconcileSuccess', '已回收离组成员的多余坐席。'));
+      const result = await onReconcile();
+      setNotice(
+        result.revokedCount > 0
+          ? t('team.reconcileSuccess', '已回收 {{count}} 个离组成员坐席。').replace(
+            '{{count}}',
+            String(result.revokedCount),
+          )
+          : t('team.reconcileNone', '所有坐席均与组织有效成员一致。'),
+      );
     } catch (cause) {
       setActionError(errorMessage(cause, t));
     } finally {
@@ -168,11 +176,17 @@ export function TeamSeatManagement({
   async function handleRevoke() {
     if (!revokeTarget) return;
     setPendingUser(revokeTarget);
-    await runAction(async () => {
+    setActionError(null);
+    try {
       await onRevoke(revokeTarget);
-    });
-    setPendingUser(null);
-    setRevokeTarget(null);
+      setRevokeTarget(null);
+      setNotice(t('team.seatRevoked', '已回收坐席。'));
+    } catch (cause) {
+      // Keep the confirmation open so the failure is actionable.
+      setActionError(errorMessage(cause, t));
+    } finally {
+      setPendingUser(null);
+    }
   }
 
   return (
