@@ -2,11 +2,13 @@ import type { CloudRouterH5CommerceServices } from '@sdkwork/cloudrouter-h5-core
 import {
   getCloudRouterH5CommerceServices,
   hasCloudRouterCommerceSession,
+  selectCloudRouterOrganization,
   toSdkworkAccountPointsFromMicro,
   unwrapSdkworkAccountResource,
   unwrapSdkworkMembershipPageItems,
   unwrapSdkworkMembershipResponse,
-} from '@sdkwork/cloudrouter-h5-core/sdk';import {
+} from '@sdkwork/cloudrouter-h5-core/sdk';
+import {
   toNullableSdkworkMembershipNumber,
   toSdkworkMembershipOptionalString,
 } from '@sdkwork/membership-service';
@@ -16,6 +18,29 @@ import type {
   RemoteMembershipPackageGroup,
   RemoteMembershipPlan,
 } from './catalog/membershipDefinition.js';
+import {
+  TEAM_ROSTER_PAGE_SIZE,
+  TEAM_SEAT_MAX_PAGES,
+  TEAM_SEAT_PAGE_SIZE,
+  TeamSubscriptionError,
+  normalizeMembershipKind,
+  normalizeTeamError,
+  parseOwnMemberships,
+  readTeamPackageNumericId,
+  type TeamCheckoutAction,
+  type TeamMembershipKind,
+  type TeamOwnMembership,
+  type TeamPackage,
+  type TeamPackageGroup,
+  type TeamRosterMember,
+  type TeamRosterPage,
+  type TeamRosterQuery,
+  type TeamSeatAssignment,
+  type TeamSeatAssignmentResult,
+  type TeamSeatPolicyInput,
+  type TeamSeatReconciliation,
+  type TeamSubscriptionOverview,
+} from './team/teamContract.js';
 
 /**
  * Host-injected data plane for the Cloud Router H5 membership surfaces.
@@ -88,6 +113,19 @@ export interface MembershipRedeemOutcome {
   readonly status: 'completed' | 'pending';
 }
 
+export interface MembershipTeamCatalog {
+  readonly groups: readonly TeamPackageGroup[];
+  readonly packages: readonly TeamPackage[];
+}
+
+export interface MembershipTeamCheckoutInput {
+  readonly action: TeamCheckoutAction;
+  readonly packageId: string;
+  readonly paymentMethod: MembershipPaymentMethod;
+  /** `purchase` sends the total seats; `add_seats` sends the seats to add. */
+  readonly seats: number;
+}
+
 export interface CloudRouterH5MembershipRuntime {
   /** Creates one membership order and returns the cashier hand-off. */
   createMembershipOrder(input: MembershipOrderInput): Promise<MembershipOrderOutcome>;
@@ -100,6 +138,34 @@ export interface CloudRouterH5MembershipRuntime {
   loadTokenBankBalance(): Promise<number | null>;
   redeemCode(code: string): Promise<MembershipRedeemOutcome>;
   readonly signedIn: boolean;
+
+  // ── Organization (team) membership ──────────────────────────────────────
+  /** Assigns the lowest free seat to an active organization member. */
+  assignTeamSeat(userId: string): Promise<TeamSeatAssignmentResult>;
+  /** Binds the caller's unbound team subscription to an organization. */
+  bindTeamOrganization(organizationId: string): Promise<TeamSubscriptionOverview>;
+  /** Creates one team membership order (purchase or add-seats) for the cashier. */
+  createTeamCheckout(input: MembershipTeamCheckoutInput): Promise<MembershipOrderOutcome>;
+  /** The caller's own IAM organization memberships (authoritative org + role). */
+  loadOwnTeamMemberships(): Promise<readonly TeamOwnMembership[]>;
+  /** Display name of an organization, or undefined when it is not readable. */
+  loadTeamOrganizationName(organizationId: string): Promise<string | undefined>;
+  /** Every active organization (team) token package and its billing-cycle groups. */
+  loadTeamCatalog(): Promise<MembershipTeamCatalog>;
+  /** Current organization team subscription overview. */
+  loadTeamOverview(): Promise<TeamSubscriptionOverview>;
+  /** One page of the IAM-owned organization roster. */
+  loadTeamRoster(query: TeamRosterQuery): Promise<TeamRosterPage>;
+  /** Active seat assignments paged internally up to `seatLimit` rows. */
+  loadTeamSeatAssignments(seatLimit: number): Promise<readonly TeamSeatAssignment[]>;
+  /** Reconciles the seat ledger with the IAM-owned roster. */
+  reconcileTeamSeats(): Promise<TeamSeatReconciliation>;
+  /** Revokes an organization member's active seat. */
+  revokeTeamSeat(userId: string): Promise<void>;
+  /** Switches the session to another organization; a fresh sign-in may be required. */
+  switchTeamOrganization(organizationId: string): Promise<void>;
+  /** Updates the over-seat policy and returns the refreshed overview. */
+  updateTeamSeatPolicy(input: TeamSeatPolicyInput): Promise<TeamSubscriptionOverview>;
 }
 
 const CATALOG_PAGE_QUERY = { page: 1, pageSize: 200, category: 'token' as const };
@@ -138,6 +204,137 @@ async function loadBenefitsByRank(
     }),
   );
   return Object.fromEntries(entries);
+}
+
+function toTeamNumber(value: unknown, fallback = 0): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+  return fallback;
+}
+
+function toTeamOptionalInt(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.trunc(value);
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
+
+/** Normalizes wire seats/status so the mobile summary can trust the numbers. */
+function normalizeTeamOverview(raw: TeamSubscriptionOverview): TeamSubscriptionOverview {
+  return {
+    autoAssignSeat: raw.autoAssignSeat === true,
+    hasSubscription: raw.hasSubscription === true,
+    organizationId: typeof raw.organizationId === 'string' ? raw.organizationId : '',
+    seatPolicy: raw.seatPolicy === 'flex_overflow' ? 'flex_overflow' : 'strict',
+    seatsAvailable: toTeamNumber(raw.seatsAvailable),
+    seatsPurchased: toTeamNumber(raw.seatsPurchased),
+    seatsUsed: toTeamNumber(raw.seatsUsed),
+    ...(raw.expiresAt ? { expiresAt: raw.expiresAt } : {}),
+    ...(raw.organizationBindingStatus === 'bound' || raw.organizationBindingStatus === 'unbound'
+      ? { organizationBindingStatus: raw.organizationBindingStatus }
+      : {}),
+    ...(raw.planId ? { planId: String(raw.planId) } : {}),
+    ...(raw.planName ? { planName: raw.planName } : {}),
+    ...(raw.planRank ? { planRank: String(raw.planRank) } : {}),
+    ...(raw.startsAt ? { startsAt: raw.startsAt } : {}),
+    ...(raw.status ? { status: raw.status } : {}),
+    ...(raw.subscriptionId ? { subscriptionId: raw.subscriptionId } : {}),
+  };
+}
+
+function normalizeTeamPackage(raw: TeamPackage): TeamPackage {
+  return {
+    ...raw,
+    id: String(raw.id),
+    planId: String(raw.planId ?? ''),
+    planRank: String(raw.planRank ?? ''),
+    price: String(raw.price ?? '0'),
+    recommended: raw.recommended === true,
+    seatMax: String(raw.seatMax ?? ''),
+    seatMin: String(raw.seatMin ?? '1'),
+    seatPointsAmount: String(raw.seatPointsAmount ?? '0'),
+    sortWeight: String(raw.sortWeight ?? '0'),
+  };
+}
+
+function normalizeTeamGroup(raw: TeamPackageGroup): TeamPackageGroup {
+  return {
+    ...raw,
+    id: String(raw.id),
+    name: raw.name ?? '',
+    packages: (raw.packages ?? []).map(normalizeTeamPackage),
+  };
+}
+
+function normalizeTeamAssignment(raw: TeamSeatAssignment): TeamSeatAssignment {
+  return { ...raw, seatNo: toTeamNumber(raw.seatNo) };
+}
+
+function readOrganizationRecordName(
+  record: Record<string, unknown>,
+  organizationId: string,
+): string | undefined {
+  const id = record.id ?? record.organizationId;
+  if (id !== organizationId) {
+    return undefined;
+  }
+  const name = [record.name, record.displayName]
+    .find((value): value is string => typeof value === 'string' && value.trim().length > 0);
+  return name?.trim();
+}
+
+function searchOrganizationName(
+  value: unknown,
+  organizationId: string,
+  depth: number,
+): string | undefined {
+  if (depth > 6 || value === null || typeof value !== 'object') {
+    return undefined;
+  }
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const found = searchOrganizationName(entry, organizationId, depth + 1);
+      if (found) return found;
+    }
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  const direct = readOrganizationRecordName(record, organizationId);
+  if (direct) return direct;
+  for (const entry of Object.values(record)) {
+    const found = searchOrganizationName(entry, organizationId, depth + 1);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+interface MembershipPage<T> {
+  readonly items: readonly T[];
+  readonly pageInfo?: { readonly hasMore?: boolean } | null;
+}
+
+async function collectMembershipPages<T>(
+  fetchPage: (page: number) => Promise<MembershipPage<T>>,
+  maxPages: number,
+): Promise<T[]> {
+  const collected: T[] = [];
+  for (let page = 1; page <= maxPages; page += 1) {
+    const result = await fetchPage(page);
+    collected.push(...result.items);
+    if (result.pageInfo?.hasMore !== true) {
+      break;
+    }
+  }
+  return collected;
 }
 
 /**
@@ -309,6 +506,229 @@ export function createCloudRouterMembershipRuntime(
           : {}),
         status: status === 'failed' ? 'pending' : status,
       };
+    },
+
+    // ── Organization (team) membership ────────────────────────────────────
+
+    async assignTeamSeat(userId) {
+      try {
+        return normalizeTeamAssignment(
+          await services.membershipApp.memberships.teamSeats.create({ userId }),
+        );
+      } catch (cause) {
+        throw normalizeTeamError(cause);
+      }
+    },
+
+    async bindTeamOrganization(organizationId) {
+      try {
+        return normalizeTeamOverview(
+          await services.membershipApp.memberships.teamSubscription.bind({ organizationId }),
+        );
+      } catch (cause) {
+        throw normalizeTeamError(cause);
+      }
+    },
+
+    async createTeamCheckout(input) {
+      // The catalog serves the package id as an int64 string; the order checkout
+      // takes a number, so it is accepted only when it round-trips exactly.
+      const packageId = readTeamPackageNumericId(input.packageId);
+      try {
+        const payment = await services.membershipCheckout.createCheckout({
+          action: input.action,
+          packageId,
+          paymentMethod: input.paymentMethod,
+          paymentProduct: 'mobile_cashier_h5',
+          quantity: input.seats,
+        });
+        const cashierUrl = toSdkworkMembershipOptionalString(payment.cashierUrl);
+        const orderId = toSdkworkMembershipOptionalString(payment.orderId);
+        const packageName = toSdkworkMembershipOptionalString(payment.packageName);
+        const targetPlanName = toSdkworkMembershipOptionalString(payment.targetLevelName);
+        return {
+          amountCny: payment.amountCny,
+          ...(cashierUrl ? { cashierUrl } : {}),
+          durationDays: payment.durationDays,
+          ...(orderId ? { orderId } : {}),
+          ...(packageName ? { packageName } : {}),
+          status: normalizeOrderStatus(payment.status),
+          ...(targetPlanName ? { targetPlanName } : {}),
+        };
+      } catch (cause) {
+        throw normalizeTeamError(cause);
+      }
+    },
+
+    async loadOwnTeamMemberships() {
+      try {
+        const page = await services.iamApp.iam.organizationMemberships.list({ pageSize: 200 });
+        return parseOwnMemberships(page.items);
+      } catch (cause) {
+        throw normalizeTeamError(cause);
+      }
+    },
+
+    async loadTeamOrganizationName(organizationId) {
+      const normalized = organizationId.trim();
+      if (!normalized) {
+        return undefined;
+      }
+      try {
+        const page = await services.iamApp.iam.organizations.list({ pageSize: 200 });
+        for (const item of page.items) {
+          const name = readOrganizationRecordName(item, normalized);
+          if (name) return name;
+        }
+      } catch {
+        // Permission-gated read: fall through to the tree projection.
+      }
+      try {
+        return searchOrganizationName(
+          await services.iamApp.iam.organizations.tree.retrieve(),
+          normalized,
+          0,
+        );
+      } catch {
+        return undefined;
+      }
+    },
+
+    async loadTeamCatalog() {
+      try {
+        const [packages, groups] = await Promise.all([
+          collectMembershipPages(
+            (page) => services.membershipApp.memberships.packages.list({
+              audience: 'team',
+              category: 'token',
+              page,
+              pageSize: 200,
+            }),
+            5,
+          ),
+          collectMembershipPages(
+            (page) => services.membershipApp.memberships.packageGroups.list({
+              audience: 'team',
+              category: 'token',
+              page,
+              pageSize: 200,
+            }),
+            5,
+          ),
+        ]);
+        return {
+          groups: groups.map(normalizeTeamGroup),
+          packages: packages.map(normalizeTeamPackage),
+        };
+      } catch (cause) {
+        throw normalizeTeamError(cause);
+      }
+    },
+
+    async loadTeamOverview() {
+      try {
+        return normalizeTeamOverview(
+          await services.membershipApp.memberships.teamSubscription.retrieve(),
+        );
+      } catch (cause) {
+        throw normalizeTeamError(cause);
+      }
+    },
+
+    async loadTeamRoster(query) {
+      try {
+        const page = await services.iamApp.iam.organizations.members.list(query.organizationId, {
+          page: query.page,
+          pageSize: query.pageSize,
+          ...(query.q?.trim() ? { q: query.q.trim() } : {}),
+        });
+        const items: TeamRosterMember[] = page.items.map((member) => ({
+          ...(member.displayName ? { displayName: member.displayName } : {}),
+          ...(member.email ? { email: member.email } : {}),
+          membershipId: member.membershipId,
+          membershipKind: normalizeMembershipKind(member.membershipKind) ?? 'member',
+          userId: member.userId,
+          ...(member.username ? { username: member.username } : {}),
+        }));
+        return {
+          hasMore: page.pageInfo?.hasMore === true,
+          items,
+          page: page.pageInfo?.page ?? query.page,
+          pageSize: page.pageInfo?.pageSize ?? query.pageSize,
+          total: toTeamOptionalInt(page.pageInfo?.totalItems) ?? items.length,
+        };
+      } catch (cause) {
+        throw normalizeTeamError(cause);
+      }
+    },
+
+    async loadTeamSeatAssignments(seatLimit) {
+      const cap = Math.max(1, Math.trunc(seatLimit));
+      const collected: TeamSeatAssignment[] = [];
+      try {
+        for (let page = 1; page <= TEAM_SEAT_MAX_PAGES; page += 1) {
+          const result = await services.membershipApp.memberships.teamSeats.list({
+            page,
+            pageSize: TEAM_SEAT_PAGE_SIZE,
+          });
+          collected.push(...result.items.map(normalizeTeamAssignment));
+          if (result.pageInfo?.hasMore !== true || collected.length >= cap) {
+            break;
+          }
+        }
+        return collected.slice(0, cap);
+      } catch (cause) {
+        throw normalizeTeamError(cause);
+      }
+    },
+
+    async reconcileTeamSeats() {
+      try {
+        const result = await services.membershipApp.memberships.teamSeats.reconcile();
+        return {
+          revokedCount: toTeamNumber(result.revokedCount),
+          seatsPurchased: toTeamNumber(result.seatsPurchased),
+          seatsUsed: toTeamNumber(result.seatsUsed),
+        };
+      } catch (cause) {
+        throw normalizeTeamError(cause);
+      }
+    },
+
+    async revokeTeamSeat(userId) {
+      try {
+        await services.membershipApp.memberships.teamSeats.delete(userId);
+      } catch (cause) {
+        throw normalizeTeamError(cause);
+      }
+    },
+
+    async switchTeamOrganization(organizationId) {
+      try {
+        const issued = await selectCloudRouterOrganization(organizationId);
+        if (!issued) {
+          throw new TeamSubscriptionError(
+            'organization_sign_in_required',
+            'This platform requires choosing the organization at sign-in.',
+            400,
+          );
+        }
+      } catch (cause) {
+        throw normalizeTeamError(cause);
+      }
+    },
+
+    async updateTeamSeatPolicy(input) {
+      try {
+        return normalizeTeamOverview(
+          await services.membershipApp.memberships.teamSeats.policy.update({
+            autoAssignSeat: input.autoAssignSeat,
+            seatPolicy: input.seatPolicy,
+          }),
+        );
+      } catch (cause) {
+        throw normalizeTeamError(cause);
+      }
     },
 
     get signedIn() {
