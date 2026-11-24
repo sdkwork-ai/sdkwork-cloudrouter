@@ -185,14 +185,24 @@ export function resolveQuickImportTarget(targetId: QuickImportTargetId): QuickIm
  * gateway API key. Returns null when the key has no plaintext value (for
  * example keys stored in ciphertext-only mode).
  */
-export function buildQuickImportResult(key: ApiKey, targetId: QuickImportTargetId): QuickImportResult | null {
+export function buildQuickImportResult(
+  key: ApiKey,
+  targetId: QuickImportTargetId,
+  options: { model?: string } = {},
+): QuickImportResult | null {
   if (!key.rawKey) {
     return null;
   }
-  const content =
-    targetId === 'deepseek-harness'
-      ? buildDeepseekHarnessContent(key.rawKey)
-      : buildClaudeSettingsEnvContent(key.rawKey, targetId);
+  const model = options.model?.trim();
+  let content: string;
+  if (targetId === 'deepseek-harness') {
+    if (!model) {
+      return null;
+    }
+    content = buildDeepseekHarnessContent(key.rawKey, model);
+  } else {
+    content = buildClaudeSettingsEnvContent(key.rawKey, targetId);
+  }
   return {
     targetId,
     keyId: key.id,
@@ -242,7 +252,7 @@ const DEEPSEEK_HARNESS_CREDENTIAL_KEY = 'CLOUDROUTER_API_KEY';
  * document carries both halves with comments marking which file each belongs
  * to — the user splits them on save.
  */
-function buildDeepseekHarnessContent(rawKey: string): string {
+function buildDeepseekHarnessContent(rawKey: string, model: string): string {
   const { openAiBaseUrl } = resolveCurrentGatewayEndpoints();
   return [
     '# DeepSeek Harness — Cloud Router relay provider.',
@@ -255,7 +265,8 @@ function buildDeepseekHarnessContent(rawKey: string): string {
     `      apiKeyEnv: ${DEEPSEEK_HARNESS_CREDENTIAL_KEY}`,
     '      api: openai-completions',
     `      baseURL: ${toAbsoluteGatewayUrl(openAiBaseUrl)}`,
-    '      # In Settings → Models, click "Fetch available models" to fill the model list.',
+    '      models:',
+    `        - id: ${yamlQuoteString(model)}`,
     '',
     `# Add the credential line below to ~/.dsh/.credentials.yaml (kept at 0600).`,
     `${DEEPSEEK_HARNESS_CREDENTIAL_KEY}: ${yamlQuoteString(rawKey)}`,

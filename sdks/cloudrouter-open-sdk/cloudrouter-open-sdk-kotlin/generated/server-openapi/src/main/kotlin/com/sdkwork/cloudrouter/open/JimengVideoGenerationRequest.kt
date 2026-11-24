@@ -5,8 +5,8 @@ data class JimengVideoGenerationRequest(
     val duration: Int? = null,
     val fps: Int? = null,
     val image: String? = null,
-    val model: String? = null,
-    val prompt: String? = null,
+    val model: String,
+    val prompt: String,
     val ratio: String? = null,
     val seed: Int? = null
 )

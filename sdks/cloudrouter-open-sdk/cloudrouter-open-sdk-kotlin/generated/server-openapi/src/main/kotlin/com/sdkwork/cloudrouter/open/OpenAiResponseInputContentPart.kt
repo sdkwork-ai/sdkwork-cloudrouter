@@ -7,5 +7,5 @@ data class OpenAiResponseInputContentPart(
     val filename: String? = null,
     val imageUrl: String? = null,
     val text: String? = null,
-    val type: String? = null
+    val type: String
 )

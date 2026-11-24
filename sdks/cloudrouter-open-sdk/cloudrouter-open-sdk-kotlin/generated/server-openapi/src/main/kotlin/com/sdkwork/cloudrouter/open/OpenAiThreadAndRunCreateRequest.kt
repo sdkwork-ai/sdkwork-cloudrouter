@@ -1,7 +1,7 @@
 package com.sdkwork.cloudrouter.open
 
 data class OpenAiThreadAndRunCreateRequest(
-    val assistantId: String? = null,
+    val assistantId: String,
     val instructions: String? = null,
     val maxCompletionTokens: Int? = null,
     val maxPromptTokens: Int? = null,

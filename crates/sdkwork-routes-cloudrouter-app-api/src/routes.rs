@@ -179,6 +179,29 @@ fn merge_app_sdk_reference_router(router: Router) -> Router {
     router.merge(app_sdk_reference_router())
 }
 
+/// Mounts the models capability's portable-catalog profile routers (voices and
+/// video profiles) onto an app router.
+///
+/// The models app-api manifest advertises `/app/v3/api/ai/voices`,
+/// `/app/v3/api/ai/models/{modelId}/voices`,
+/// `/app/v3/api/ai/video_profiles`, and
+/// `/app/v3/api/ai/models/{modelId}/video_profiles`, but those handlers live in
+/// the voice-catalog and video-profile routers, not in the pricing-catalog
+/// router. Composing only the pricing-catalog router keeps the manifest
+/// authorizing the four profile paths while the dispatcher answers `404` for
+/// every one of them, which is why this merge is part of the surface contract
+/// rather than an optional extra.
+fn with_models_profile_catalog_routers(
+    router: Router,
+) -> Result<Router, ProductCatalogRouterError> {
+    sdkwork_routes_models_catalog_app_api::merge_profile_catalog_routers_from_env(router)
+        .map_err(|error| {
+            ProductCatalogRouterError::Config(format!(
+                "mount the models voice/video profile app routers failed: {error}"
+            ))
+        })
+}
+
 pub fn router() -> Router {
     merge_app_sdk_reference_router(router_with_database_status(None, None, None))
         .merge(sdkwork_cloudrouter_router_service::api::app_site_settings_router())
@@ -283,7 +306,7 @@ fn is_commerce_dependency_contract_path(path: &str) -> bool {
         .any(|prefix| path == prefix.trim_end_matches('/') || path.starts_with(prefix))
 }
 
-pub fn router_with_product_catalog<C>(catalog: Arc<C>) -> Router
+pub fn router_with_product_catalog<C>(catalog: Arc<C>) -> Result<Router, ProductCatalogRouterError>
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
@@ -293,11 +316,11 @@ where
 fn router_with_product_catalog_and_database_status<C>(
     catalog: Arc<C>,
     config: Option<&DatabaseConfig>,
-) -> Router
+) -> Result<Router, ProductCatalogRouterError>
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
-    merge_app_sdk_reference_router(router_with_database_status(config, None, None))
+    let router = merge_app_sdk_reference_router(router_with_database_status(config, None, None))
         .merge(sdkwork_cloudrouter_router_service::api::app_site_settings_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_dashboard_overview_router())
         .merge(app_model_rankings_router())
@@ -309,7 +332,8 @@ where
         .merge(sdkwork_cloudrouter_router_service::api::app_runtime_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_routing_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_storage_delivery_router())
-        .merge(app_model_catalog_router(Arc::clone(&catalog)))
+        .merge(app_model_catalog_router(Arc::clone(&catalog)));
+    with_models_profile_catalog_routers(router)
 }
 
 async fn finalize_product_router_with_federated_capabilities(
@@ -693,6 +717,7 @@ pub async fn router_with_postgres_product_catalog(
             &tenant_signing_key_resolver_from_pool(&pool),
         ),
     );
+    let model_catalog_router = with_models_profile_catalog_routers(model_catalog_router)?;
     let app_model_group_store = Arc::new(PostgresAppModelGroupStore::new(
         Arc::clone(&model_catalog),
         pool.clone(),
@@ -838,6 +863,7 @@ pub async fn router_with_postgres_shared_runtime(
             &tenant_signing_key_resolver_from_pool(&pool),
         ),
     );
+    let model_catalog_router = with_models_profile_catalog_routers(model_catalog_router)?;
     let payment_intent_runtime_store =
         Arc::new(PostgresPaymentIntentRuntimeStore::new(pool.clone()));
     let payment_provider_registry = bootstrap_postgres_payment_provider_registry(&pool).await;
@@ -1105,6 +1131,7 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
             &app_session_config,
             &tenant_signing_key_resolver_from_pool(&pool),
         ));
+    let model_catalog_router = with_models_profile_catalog_routers(model_catalog_router)?;
     let payment_intent_runtime_store =
         Arc::new(PostgresPaymentIntentRuntimeStore::new(pool.clone()));
     let payment_provider_registry = bootstrap_postgres_payment_provider_registry(&pool).await;
@@ -2279,6 +2306,53 @@ mod tests {
             std::env::set_var(name, value);
         } else {
             std::env::remove_var(name);
+        }
+    }
+}
+
+/// Guard for the composed app surface: the models capability advertises four
+/// portable-catalog profile routes (`voices` and `video_profiles`, collection
+/// and per-model), and the pricing-catalog router does not serve them. If the
+/// composition helper stops merging them the dispatcher answers `404` for every
+/// path while the manifest keeps authorizing it.
+#[cfg(test)]
+mod models_profile_catalog_mount_tests {
+    use super::with_models_profile_catalog_routers;
+    use axum::body::Body;
+    use axum::http::{Request, StatusCode};
+    use axum::Router;
+    use tower::ServiceExt;
+
+    #[tokio::test]
+    async fn app_surface_mounts_every_advertised_models_profile_route() {
+        let router = with_models_profile_catalog_routers(Router::new())
+            .expect("mount the models profile routers");
+
+        for uri in [
+            "/app/v3/api/ai/voices",
+            "/app/v3/api/ai/models/openai%2Fgpt-4o/voices",
+            "/app/v3/api/ai/video_profiles",
+            "/app/v3/api/ai/models/openai%2Fgpt-4o/video_profiles",
+        ] {
+            let response = router
+                .clone()
+                .oneshot(
+                    Request::builder()
+                        .uri(uri)
+                        .body(Body::empty())
+                        .expect("profile request"),
+                )
+                .await
+                .expect("profile response");
+
+            // The probe carries no Web Framework context, so the handler may
+            // still reject it; what must never happen is the dispatcher
+            // answering 404 for a route the models app-api manifest advertises.
+            assert_ne!(
+                StatusCode::NOT_FOUND,
+                response.status(),
+                "GET {uri} must be mounted by the composed app surface"
+            );
         }
     }
 }

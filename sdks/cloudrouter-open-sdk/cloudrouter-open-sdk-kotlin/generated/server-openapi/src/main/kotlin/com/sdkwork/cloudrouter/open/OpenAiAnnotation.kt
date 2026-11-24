@@ -7,6 +7,6 @@ data class OpenAiAnnotation(
     val index: Int? = null,
     val startIndex: Int? = null,
     val title: String? = null,
-    val type: String? = null,
+    val type: String,
     val url: String? = null
 )

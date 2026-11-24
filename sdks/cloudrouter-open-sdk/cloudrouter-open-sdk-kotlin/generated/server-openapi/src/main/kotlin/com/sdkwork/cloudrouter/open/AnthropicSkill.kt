@@ -1,7 +1,7 @@
 package com.sdkwork.cloudrouter.open
 
 data class AnthropicSkill(
-    val skillId: String? = null,
-    val type: String? = null,
+    val skillId: String,
+    val type: String,
     val version: String? = null
 )

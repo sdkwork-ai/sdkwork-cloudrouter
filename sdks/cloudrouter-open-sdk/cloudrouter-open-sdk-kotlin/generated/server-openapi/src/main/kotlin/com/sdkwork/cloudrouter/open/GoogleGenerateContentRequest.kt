@@ -2,7 +2,7 @@ package com.sdkwork.cloudrouter.open
 
 data class GoogleGenerateContentRequest(
     val cachedContent: String? = null,
-    val contents: List<GoogleContent>? = null,
+    val contents: List<GoogleContent>,
     val continuationToken: String? = null,
     val generationConfig: GoogleGenerationConfig? = null,
     val labels: Map<String, String>? = null,

@@ -3,9 +3,9 @@ package com.sdkwork.cloudrouter.open
 data class OpenAiVideoCharacter(
     val createdAt: Int? = null,
     val description: String? = null,
-    val id: String? = null,
+    val id: String,
     val imageUrl: String? = null,
     val metadata: Map<String, String>? = null,
     val name: String? = null,
-    val object_: String? = null
+    val object_: String
 )

@@ -1,9 +1,9 @@
 package com.sdkwork.cloudrouter.open
 
 data class OpenAiTokenUsage(
-    val completionTokens: Int? = null,
+    val completionTokens: Int,
     val completionTokensDetails: OpenAiCompletionTokensDetails? = null,
-    val promptTokens: Int? = null,
+    val promptTokens: Int,
     val promptTokensDetails: OpenAiPromptTokensDetails? = null,
-    val totalTokens: Int? = null
+    val totalTokens: Int
 )

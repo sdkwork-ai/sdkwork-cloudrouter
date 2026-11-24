@@ -30,7 +30,7 @@ data class BlackForestLabsImageGenerationRequest(
     val mode: String? = null,
     val outputFormat: String? = null,
     val person: String? = null,
-    val prompt: String? = null,
+    val prompt: String,
     val promptUpsampling: Boolean? = null,
     val raw: Boolean? = null,
     val referenceOffsetX: Int? = null,

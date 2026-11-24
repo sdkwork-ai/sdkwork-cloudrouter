@@ -1,7 +1,7 @@
 package com.sdkwork.cloudrouter.open
 
 data class OpenAiRealtimeSessionCreateRequest(
-    val clientSecret: Map<String, String>? = null,
+    val clientSecret: Map<String, String>,
     val inputAudioFormat: String? = null,
     val inputAudioTranscription: Map<String, String>? = null,
     val instructions: String? = null,

@@ -18,5 +18,5 @@ data class AnthropicContentBlockParam(
     val title: String? = null,
     val toolUseId: String? = null,
     val toolsetName: String? = null,
-    val type: String? = null
+    val type: String
 )

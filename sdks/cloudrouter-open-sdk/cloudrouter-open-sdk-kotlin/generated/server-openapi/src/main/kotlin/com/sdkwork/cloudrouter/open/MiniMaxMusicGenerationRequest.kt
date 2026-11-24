@@ -8,7 +8,7 @@ data class MiniMaxMusicGenerationRequest(
     val isInstrumental: Boolean? = null,
     val lyrics: String? = null,
     val lyricsOptimizer: Boolean? = null,
-    val model: String? = null,
+    val model: String,
     val outputFormat: String? = null,
     val prompt: String? = null,
     val stream: Boolean? = null

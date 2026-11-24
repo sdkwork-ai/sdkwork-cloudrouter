@@ -5,5 +5,5 @@ data class AnthropicContentBlock(
     val input: Map<String, String>? = null,
     val name: String? = null,
     val text: String? = null,
-    val type: String? = null
+    val type: String
 )

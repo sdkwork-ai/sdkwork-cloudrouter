@@ -12,7 +12,7 @@ data class RunwayTextToImageRequest(
     val outputCount: Int? = null,
     val outputFormat: String? = null,
     val preciseEdit: Boolean? = null,
-    val promptText: String? = null,
+    val promptText: String,
     val quality: String? = null,
     val ratio: String? = null,
     val referenceImages: List<Map<String, String>>? = null,

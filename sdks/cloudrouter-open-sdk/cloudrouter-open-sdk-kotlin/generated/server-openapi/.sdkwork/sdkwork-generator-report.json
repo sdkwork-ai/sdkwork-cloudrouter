@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "7bbe85eecb9c581d295977292a28ea66decd218fe06c3d0f41cbf548379779e9",
+  "changeFingerprint": "830da4c14c55cbb611c1c1ac2cab2b4c1a7f04b5887b3fe7d558fd5121e8906e",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -380,6 +380,8 @@
           "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiJsonSchema.kt",
           "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiJsonSchemaFormat.kt",
           "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiModel.kt",
+          "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiModelGroup.kt",
+          "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiModelGroupList.kt",
           "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiModelList.kt",
           "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiModeration.kt",
           "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiModerationCreateRequest.kt",
@@ -631,8 +633,8 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 489,
-    "models": 410,
+    "totalFiles": 491,
+    "models": 412,
     "apis": 65,
     "types": 0
   },
@@ -640,12 +642,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 489,
+    "writtenFiles": 491,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "7bbe85eecb9c581d295977292a28ea66decd218fe06c3d0f41cbf548379779e9",
+    "changeFingerprint": "830da4c14c55cbb611c1c1ac2cab2b4c1a7f04b5887b3fe7d558fd5121e8906e",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -967,6 +969,8 @@
         "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiJsonSchema.kt",
         "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiJsonSchemaFormat.kt",
         "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiModel.kt",
+        "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiModelGroup.kt",
+        "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiModelGroupList.kt",
         "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiModelList.kt",
         "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiModeration.kt",
         "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiModerationCreateRequest.kt",
@@ -1513,6 +1517,8 @@
             "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiJsonSchema.kt",
             "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiJsonSchemaFormat.kt",
             "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiModel.kt",
+            "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiModelGroup.kt",
+            "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiModelGroupList.kt",
             "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiModelList.kt",
             "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiModeration.kt",
             "src/main/kotlin/com/sdkwork/cloudrouter/open/OpenAiModerationCreateRequest.kt",

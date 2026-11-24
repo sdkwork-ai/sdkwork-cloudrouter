@@ -5,5 +5,5 @@ data class ElevenLabsSoundGenerationRequest(
     val loop: Boolean? = null,
     val modelId: String? = null,
     val promptInfluence: Double? = null,
-    val text: String? = null
+    val text: String
 )

@@ -3100,6 +3100,78 @@ test("api playground request builder focuses validation and rejects managed head
   assert.equal(invalidBody.ok, false);
   assert.equal(invalidBody.activeTab, "body");
   assert.deepEqual(invalidBody.errors, { body: true });
+
+  const missingRequiredModel = buildPlaygroundRequest({
+    baseUrl: "https://api.example.test",
+    endpoint: {
+      method: "POST",
+      path: "/v1/chat/completions",
+      openApiOperation: {
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ChatCompletionRequest" },
+            },
+          },
+        },
+      },
+      openApiSpec: {
+        paths: {},
+        components: {
+          schemas: {
+            ChatCompletionRequest: {
+              type: "object",
+              required: ["model", "messages"],
+              properties: {
+                model: { type: "string" },
+                messages: { type: "array", items: { type: "object" } },
+              },
+            },
+          },
+        },
+      },
+    },
+    pathParams: [],
+    queryParams: [],
+    headerParams: [],
+    bodyValue: JSON.stringify({ messages: [{ role: "user", content: "Hello" }] }),
+    authType: "api_key",
+    apiKey: "sk-test",
+  });
+
+  assert.equal(missingRequiredModel.ok, false);
+  assert.equal(missingRequiredModel.activeTab, "body");
+  assert.deepEqual(missingRequiredModel.errors, { body: true });
+  assert.equal(missingRequiredModel.response.statusText, "Missing Required Body Fields");
+  assert.match(String((missingRequiredModel.response.data as { message: string }).message), /model/u);
+
+  const emptyRequiredModel = buildPlaygroundRequest({
+    baseUrl: "https://api.example.test",
+    endpoint: {
+      method: "POST",
+      path: "/v1/chat/completions",
+      openApiOperation: {
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: { type: "object", required: ["model"] },
+            },
+          },
+        },
+      },
+    },
+    pathParams: [],
+    queryParams: [],
+    headerParams: [],
+    bodyValue: JSON.stringify({ model: "   " }),
+    authType: "api_key",
+    apiKey: "sk-test",
+  });
+
+  assert.equal(emptyRequiredModel.ok, false);
+  assert.equal(emptyRequiredModel.activeTab, "body");
+  assert.equal(emptyRequiredModel.response.statusText, "Missing Required Body Fields");
 });
 
 test("api playground current user send requires login before network requests", () => {

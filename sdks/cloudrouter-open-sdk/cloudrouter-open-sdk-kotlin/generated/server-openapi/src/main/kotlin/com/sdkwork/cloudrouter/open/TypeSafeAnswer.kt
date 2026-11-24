@@ -7,5 +7,5 @@ data class TypeSafeAnswer(
     val noul: Double? = null,
     val probabilities: Map<String, Double>? = null,
     val score: Double? = null,
-    val type: String? = null
+    val type: String
 )

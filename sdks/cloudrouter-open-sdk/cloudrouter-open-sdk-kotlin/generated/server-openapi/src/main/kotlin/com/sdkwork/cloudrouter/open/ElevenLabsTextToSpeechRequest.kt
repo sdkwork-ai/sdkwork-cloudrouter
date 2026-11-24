@@ -12,7 +12,7 @@ data class ElevenLabsTextToSpeechRequest(
     val previousText: String? = null,
     val pronunciationDictionaryLocators: List<ElevenLabsPronunciationDictionaryLocator>? = null,
     val seed: Int? = null,
-    val text: String? = null,
+    val text: String,
     val usePvcAsIvc: Boolean? = null,
     val voiceSettings: ElevenLabsVoiceSettings? = null
 )

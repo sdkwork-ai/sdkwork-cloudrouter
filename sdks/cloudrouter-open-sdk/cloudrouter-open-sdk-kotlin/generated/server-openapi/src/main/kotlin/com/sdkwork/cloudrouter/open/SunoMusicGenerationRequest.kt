@@ -5,7 +5,7 @@ data class SunoMusicGenerationRequest(
     val duration: Double? = null,
     val model: String? = null,
     val negativeTags: String? = null,
-    val prompt: String? = null,
+    val prompt: String,
     val tags: String? = null,
     val title: String? = null
 )

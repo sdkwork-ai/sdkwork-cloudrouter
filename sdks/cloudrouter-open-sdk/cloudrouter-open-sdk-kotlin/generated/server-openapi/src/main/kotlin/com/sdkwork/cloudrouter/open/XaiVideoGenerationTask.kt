@@ -5,7 +5,7 @@ data class XaiVideoGenerationTask(
     val model: String? = null,
     val progress: Int? = null,
     val requestId: String? = null,
-    val status: String? = null,
+    val status: String,
     val usage: XaiUsage? = null,
     val video: XaiVideoUrl? = null
 )

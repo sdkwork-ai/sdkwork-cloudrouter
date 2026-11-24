@@ -7,8 +7,8 @@ data class AnthropicTool(
     val description: String? = null,
     val eagerInputStreaming: Boolean? = null,
     val inputExamples: List<Map<String, String>>? = null,
-    val inputSchema: ProviderJsonSchema? = null,
-    val name: String? = null,
+    val inputSchema: ProviderJsonSchema,
+    val name: String,
     val strict: Boolean? = null,
     val type: String? = null
 )

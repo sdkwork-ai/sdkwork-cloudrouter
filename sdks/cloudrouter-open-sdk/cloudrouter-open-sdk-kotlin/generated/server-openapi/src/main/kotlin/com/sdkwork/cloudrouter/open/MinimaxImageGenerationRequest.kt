@@ -3,9 +3,9 @@ package com.sdkwork.cloudrouter.open
 data class MinimaxImageGenerationRequest(
     val aspectRatio: String? = null,
     val height: Int? = null,
-    val model: String? = null,
+    val model: String,
     val n: Int? = null,
-    val prompt: String? = null,
+    val prompt: String,
     val promptOptimizer: Boolean? = null,
     val responseFormat: String? = null,
     val seed: Int? = null,

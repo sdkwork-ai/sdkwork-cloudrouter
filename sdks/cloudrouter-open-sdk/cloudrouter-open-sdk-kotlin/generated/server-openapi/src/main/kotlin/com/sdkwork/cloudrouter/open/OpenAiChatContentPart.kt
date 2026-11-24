@@ -5,5 +5,5 @@ data class OpenAiChatContentPart(
     val imageUrl: OpenAiChatImageUrl? = null,
     val inputAudio: OpenAiChatInputAudio? = null,
     val text: String? = null,
-    val type: String? = null
+    val type: String
 )

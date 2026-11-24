@@ -1,8 +1,8 @@
 package com.sdkwork.cloudrouter.open
 
 data class OpenAiUploadPart(
-    val createdAt: Int? = null,
-    val id: String? = null,
-    val object_: String? = null,
-    val uploadId: String? = null
+    val createdAt: Int,
+    val id: String,
+    val object_: String,
+    val uploadId: String
 )

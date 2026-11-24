@@ -12,7 +12,7 @@ data class KlingImageGenerationRequest(
     val modelName: String? = null,
     val n: Int? = null,
     val negativePrompt: String? = null,
-    val prompt: String? = null,
+    val prompt: String,
     val resolution: String? = null,
     val watermarkInfo: KlingWatermarkInfo? = null
 )
