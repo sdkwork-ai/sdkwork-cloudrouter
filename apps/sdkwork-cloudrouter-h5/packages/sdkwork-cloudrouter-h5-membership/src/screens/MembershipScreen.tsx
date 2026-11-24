@@ -23,6 +23,7 @@ import {
   type CheckoutPlanSummary,
 } from '../components/CommerceSheets.js';
 import { TierCompareTable } from '../components/TierCompareTable.js';
+import { TeamMembershipSurface } from '../components/TeamMembershipSurface.js';
 import {
   getCloudRouterH5MembershipRuntime,
   type MembershipCatalogSnapshot,
@@ -38,6 +39,8 @@ export interface MembershipScreenProps {
   readonly onSignIn: () => void;
   readonly t: MembershipTranslate;
 }
+
+type MembershipAudience = 'personal' | 'team';
 
 function describeRedeemOutcome(outcome: MembershipRedeemOutcome, t: MembershipTranslate): string {
   if (outcome.benefitKind === 'subscription') {
@@ -79,6 +82,7 @@ export function MembershipScreen({ onSignIn, t }: MembershipScreenProps) {
   const [profile, setProfile] = useState<MembershipMemberProfile | null>(null);
   const [tokenBankBalance, setTokenBankBalance] = useState<number | null>(null);
   const [cycleIndex, setCycleIndex] = useState(0);
+  const [audience, setAudience] = useState<MembershipAudience>('personal');
 
   const [checkoutPlan, setCheckoutPlan] = useState<CheckoutPlanSummary | null>(null);
   const [rechargeOpen, setRechargeOpen] = useState(false);
@@ -346,68 +350,105 @@ export function MembershipScreen({ onSignIn, t }: MembershipScreenProps) {
   return (
     <PageLayout bgClass="bg-canvas" title={t('title', '会员中心')}>
       <div className="flex flex-col pb-8" data-membership-screen>
-        <MembershipHero
-          levelName={levelName}
-          onOpenRedeem={openRedeem}
-          onOpenTokenBankDetails={() => {
-            if (!runtime?.signedIn) {
-              onSignIn();
-              return;
-            }
-            setDetailsOpen(true);
-          }}
-          onOpenTokenBankRecharge={() => void openTokenBankRecharge()}
-          onSignIn={onSignIn}
-          profile={profile}
-          signedIn={signedIn}
-          t={t}
-          tokenBankBalance={signedIn ? tokenBankBalance : null}
-        />
-
-        {loading && !catalog ? (
-          <div className="mx-3 mt-6 flex flex-col items-center gap-2 rounded-xl bg-surface px-4 py-10">
-            <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin text-brand" />
-            <p className="text-[12px] text-ink-subtle">{t('loading', '正在加载会员套餐…')}</p>
+        <div className="px-3 pt-3">
+          <div
+            aria-label={t('audience.title', '会员类型')}
+            className="grid grid-cols-2 gap-1 rounded-full bg-surface-elevated p-1"
+            role="tablist"
+          >
+            {([
+              { key: 'personal', label: t('audience.personal', '个人会员') },
+              { key: 'team', label: t('audience.team', '团队会员') },
+            ] as const).map((option) => {
+              const selected = audience === option.key;
+              return (
+                <button
+                  aria-selected={selected}
+                  className={`min-h-9 rounded-full text-[13px] font-semibold transition-colors ${
+                    selected
+                      ? 'bg-surface text-ink shadow-sm'
+                      : 'text-ink-muted'
+                  }`}
+                  key={option.key}
+                  onClick={() => setAudience(option.key)}
+                  role="tab"
+                  type="button"
+                >
+                  {option.label}
+                </button>
+              );
+            })}
           </div>
-        ) : null}
+        </div>
 
-        {!loading && error ? (
-          <div className="mx-3 mt-4 rounded-xl bg-surface px-4 py-6 text-center">
-            <CircleAlert aria-hidden="true" className="mx-auto h-5 w-5 text-danger" />
-            <p className="mt-2 text-[13px] text-ink-muted">{error}</p>
-            <button
-              className="mt-3 min-h-9 rounded-full border border-line px-4 text-[12px] font-medium text-ink"
-              onClick={() => void load()}
-              type="button"
-            >
-              {t('retry', '重试')}
-            </button>
-          </div>
-        ) : null}
-
-        {catalog ? (
+        {audience === 'team' ? (
+          <TeamMembershipSurface onNotify={pushToast} onSignIn={onSignIn} t={t} />
+        ) : (
           <>
-            <BillingCycleTabs
-              cycles={billingCycles}
-              onSelect={setCycleIndex}
-              selectedIndex={cycleIndex}
+            <MembershipHero
+              levelName={levelName}
+              onOpenRedeem={openRedeem}
+              onOpenTokenBankDetails={() => {
+                if (!runtime?.signedIn) {
+                  onSignIn();
+                  return;
+                }
+                setDetailsOpen(true);
+              }}
+              onOpenTokenBankRecharge={() => void openTokenBankRecharge()}
+              onSignIn={onSignIn}
+              profile={profile}
+              signedIn={signedIn}
               t={t}
+              tokenBankBalance={signedIn ? tokenBankBalance : null}
             />
 
-            <PlanCardList onSelect={openCheckout} plans={planCards} t={t} />
+            {loading && !catalog ? (
+              <div className="mx-3 mt-6 flex flex-col items-center gap-2 rounded-xl bg-surface px-4 py-10">
+                <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin text-brand" />
+                <p className="text-[12px] text-ink-subtle">{t('loading', '正在加载会员套餐…')}</p>
+              </div>
+            ) : null}
 
-            <TierCompareTable
-              categories={comparisonCategories}
-              onSelect={openCheckout}
-              t={t}
-              tierColumns={tierColumns}
-            />
+            {!loading && error ? (
+              <div className="mx-3 mt-4 rounded-xl bg-surface px-4 py-6 text-center">
+                <CircleAlert aria-hidden="true" className="mx-auto h-5 w-5 text-danger" />
+                <p className="mt-2 text-[13px] text-ink-muted">{error}</p>
+                <button
+                  className="mt-3 min-h-9 rounded-full border border-line px-4 text-[12px] font-medium text-ink"
+                  onClick={() => void load()}
+                  type="button"
+                >
+                  {t('retry', '重试')}
+                </button>
+              </div>
+            ) : null}
 
-            <p className="mt-6 px-4 text-center text-[11px] leading-snug text-ink-subtle">
-              {t('footer.note', '会员套餐、算力积分与权益以服务端配置为准，开通后立即生效。')}
-            </p>
+            {catalog ? (
+              <>
+                <BillingCycleTabs
+                  cycles={billingCycles}
+                  onSelect={setCycleIndex}
+                  selectedIndex={cycleIndex}
+                  t={t}
+                />
+
+                <PlanCardList onSelect={openCheckout} plans={planCards} t={t} />
+
+                <TierCompareTable
+                  categories={comparisonCategories}
+                  onSelect={openCheckout}
+                  t={t}
+                  tierColumns={tierColumns}
+                />
+
+                <p className="mt-6 px-4 text-center text-[11px] leading-snug text-ink-subtle">
+                  {t('footer.note', '会员套餐、算力积分与权益以服务端配置为准，开通后立即生效。')}
+                </p>
+              </>
+            ) : null}
           </>
-        ) : null}
+        )}
       </div>
 
       <CheckoutSheet

@@ -4,17 +4,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { MembershipTranslate } from '../catalog/membershipDefinition.js';
 import type { TeamDirectoryState } from '../team/useTeamMembership.js';
 import type {
-  TeamSeatComposition,
+  TeamErrorReason,
   TeamSeatPolicyInput,
   TeamSeatPolicy,
   TeamSubscriptionOverview,
 } from '../team/teamContract.js';
-import { teamRoleLabel } from '../team/teamErrorCopy.js';
+import { teamErrorCopy, teamRoleLabel } from '../team/teamErrorCopy.js';
 import { MobileSheet } from './MobileSheet.js';
 
 export interface TeamSeatManagementProps {
   readonly busy: boolean;
-  readonly composition: TeamSeatComposition;
   readonly directory: TeamDirectoryState;
   readonly onAssign: (userId: string) => Promise<void>;
   readonly onLoadMore: () => Promise<void>;
@@ -27,26 +26,13 @@ export interface TeamSeatManagementProps {
 }
 
 function errorMessage(cause: unknown, t: MembershipTranslate): string {
-  const reason = (cause as { reason?: string } | null)?.reason;
+  const reason = (cause as { reason?: TeamErrorReason } | null)?.reason;
   if (reason) {
-    // Reuse the localized vocabulary from the team error copy.
-    const { teamErrorCopy } = requireTeamErrorCopy();
-    return teamErrorCopy(reason as never, t);
+    return teamErrorCopy(reason, t);
   }
   return cause instanceof Error && cause.message
     ? cause.message
     : t('team.membersLoadFailed', '组织成员加载失败。');
-}
-
-// Kept as a local indirection so the copy module stays tree-shakeable and the
-// component does not import the reason type for a cast-only use.
-function requireTeamErrorCopy() {
-  return {
-    teamErrorCopy: (reason: never, t: MembershipTranslate): string => {
-      const key = `team.error.${String(reason)}`;
-      return t(key, t('team.error.unknown', '团队订阅加载失败，请稍后重试。'));
-    },
-  };
 }
 
 interface ToggleRowProps {
@@ -92,7 +78,6 @@ function ToggleRow({ checked, disabled, label, onChange }: ToggleRowProps) {
  */
 export function TeamSeatManagement({
   busy,
-  composition,
   directory,
   onAssign,
   onLoadMore,
@@ -297,7 +282,7 @@ export function TeamSeatManagement({
         </label>
 
         {capacityBlocked ? (
-          <p className="mt-2 rounded-lg bg-warning-bg px-2.5 py-1.5 text-[11px] text-warning-text">
+          <p className="mt-2 rounded-lg bg-amber-50 px-2.5 py-1.5 text-[11px] text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
             {t('team.seats.capacityBlocked', '坐席已分配完，请先扩容再分配新成员。')}
           </p>
         ) : null}
@@ -396,7 +381,7 @@ export function TeamSeatManagement({
               {t('cancel', '取消')}
             </button>
             <button
-              className="min-h-11 flex-1 rounded-full bg-danger text-[14px] font-semibold text-white disabled:opacity-60"
+              className="min-h-11 flex-1 rounded-full bg-rose-600 text-[14px] font-semibold text-white disabled:opacity-60"
               disabled={pendingUser !== null}
               onClick={() => void handleRevoke()}
               type="button"
