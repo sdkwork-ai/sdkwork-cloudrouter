@@ -154,6 +154,7 @@ export const membershipMessages: Record<string, string> = {
   'cloudrouter.console.membership.redeem.successPoints': "Membership points granted",
   'cloudrouter.console.membership.redeem.successCash': "Account balance credited",
   'cloudrouter.console.membership.redeem.expiresAt': "Valid until {{date}}",
+  'cloudrouter.console.membership.redeem.totalQuota': "Total quota {{quota}}",
 
   'cloudrouter.console.membership.toast.subscribed': "Membership activated",
   'cloudrouter.console.membership.toast.pending': "Payment processing; check your orders shortly",

@@ -156,6 +156,7 @@ export const membershipMessages: Record<string, string> = {
   'cloudrouter.console.membership.redeem.successPoints': "会员积分已发放",
   'cloudrouter.console.membership.redeem.successCash': "账户余额已到账",
   'cloudrouter.console.membership.redeem.expiresAt': "有效期至 {{date}}",
+  'cloudrouter.console.membership.redeem.totalQuota': "总额度 {{quota}}",
 
   'cloudrouter.console.membership.toast.subscribed': "会员开通成功",
   'cloudrouter.console.membership.toast.pending': "支付处理中，请稍后在订单中心查看",

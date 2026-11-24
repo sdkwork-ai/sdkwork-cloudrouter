@@ -29,6 +29,9 @@ function describeRedeemResult(outcome: MembershipRedeemOutcome, t: MembershipTra
       ? expires.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
       : '';
     return t('redeem.successSubscription', '会员订阅已激活')
+      + (typeof outcome.totalQuota === 'number'
+        ? ` · ${t('redeem.totalQuota', '总额度 {{quota}}').replace('{{quota}}', String(outcome.totalQuota))}`
+        : '')
       + (label
         ? ` · ${t('redeem.expiresAt', '有效期至 {{date}}').replace('{{date}}', label)}`
         : '');

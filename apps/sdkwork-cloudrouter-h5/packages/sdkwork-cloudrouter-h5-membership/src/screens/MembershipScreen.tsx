@@ -58,6 +58,9 @@ function describeRedeemOutcome(outcome: MembershipRedeemOutcome, t: MembershipTr
   if (outcome.benefitKind === 'subscription') {
     const expires = formatRedeemDate(outcome.expiresAt);
     return t('redeem.successSubscription', '会员订阅已激活')
+      + (typeof outcome.totalQuota === 'number'
+        ? ` · ${t('redeem.totalQuota', '总额度 {{quota}}').replace('{{quota}}', String(outcome.totalQuota))}`
+        : '')
       + (expires
         ? ` · ${t('redeem.expiresAt', '有效期至 {{date}}').replace('{{date}}', expires)}`
         : '');
