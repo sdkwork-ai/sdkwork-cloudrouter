@@ -30,7 +30,7 @@ use crate::api::openai_invocation::{
     OpenAiInvocationRelayOutcome,
 };
 use crate::api::openai_relay_execution::{
-    guarded_openai_json_response, restore_relayed_model, restore_relayed_streaming_model,
+    guarded_openai_relay_response, restore_relayed_model, restore_relayed_streaming_model,
     OpenAiRelayExecution, OpenAiRouteRelayExecution,
 };
 use crate::api::openai_runtime::{
@@ -1536,9 +1536,12 @@ where
         .await;
         notify_route_fault(plugins, invocation_context, route, &fault).await;
         notify_after_relay_observers(plugins, invocation_context, route, &relay_outcome).await;
-        let response = guarded_openai_json_response(
+        let response = guarded_openai_relay_response(
             status,
             restore_relayed_model(response.body, requested_model),
+            response.body_bytes,
+            response.content_type,
+            response.headers,
             response.memory_guard,
         );
         return if retryable {
@@ -1573,9 +1576,12 @@ where
     }
     notify_route_success(plugins, invocation_context, route, &relay_outcome).await;
     notify_after_relay_observers(plugins, invocation_context, route, &relay_outcome).await;
-    Ok(guarded_openai_json_response(
+    Ok(guarded_openai_relay_response(
         status,
         restore_relayed_model(response.body, requested_model),
+        response.body_bytes,
+        response.content_type,
+        response.headers,
         response.memory_guard,
     ))
 }
@@ -1597,6 +1603,10 @@ pub(crate) struct StreamingUsageRecordingBody {
     usage_extractor: StreamUsageExtractor,
     endpoint: OpenAiInvocationEndpoint,
     event_buffer: Vec<u8>,
+    /// Set while the remainder of an oversized SSE event is being drained. The
+    /// event's bytes are forwarded untouched; only usage parsing pauses until the
+    /// next event boundary.
+    skipping_event: bool,
     usage: Option<OpenAiTokenUsage>,
     recording: Option<GatewayUsageRecordFuture<'static>>,
     recording_is_trace_only: bool,
@@ -1629,6 +1639,7 @@ impl StreamingUsageRecordingBody {
             usage_extractor,
             endpoint,
             event_buffer: Vec::new(),
+            skipping_event: false,
             usage: None,
             recording: None,
             recording_is_trace_only: false,
@@ -1643,13 +1654,26 @@ impl StreamingUsageRecordingBody {
         if self.terminal_error.is_some() {
             return;
         }
+        if self.skipping_event {
+            // Drain the oversized event without retaining it, and resume usage
+            // parsing at the next event boundary. The bytes themselves are
+            // forwarded by the body wrapper regardless of this observer.
+            if let Some(tail) = Self::advance_oversized_event(chunk.as_ref()) {
+                self.skipping_event = false;
+                if !tail.is_empty() {
+                    let tail = Bytes::copy_from_slice(tail);
+                    self.observe_chunk(&tail);
+                }
+            }
+            return;
+        }
         let maximum_probe_bytes =
             MAX_STREAM_USAGE_EVENT_BUFFER_BYTES + MAX_SSE_EVENT_DELIMITER_BYTES;
         let mut remaining = chunk.as_ref();
         while !remaining.is_empty() {
             let available = maximum_probe_bytes.saturating_sub(self.event_buffer.len());
             if available == 0 {
-                self.reject_oversized_event();
+                self.skip_oversized_event();
                 return;
             }
             let take = available.min(remaining.len());
@@ -1660,7 +1684,7 @@ impl StreamingUsageRecordingBody {
                 return;
             }
             if self.event_buffer.len() > MAX_STREAM_USAGE_EVENT_BUFFER_BYTES {
-                self.reject_oversized_event();
+                self.skip_oversized_event();
                 return;
             }
         }
@@ -1672,7 +1696,7 @@ impl StreamingUsageRecordingBody {
             next_sse_event_boundary(&self.event_buffer[consumed..])
         {
             if boundary > MAX_STREAM_USAGE_EVENT_BUFFER_BYTES {
-                self.reject_oversized_event();
+                self.skip_oversized_event();
                 return;
             }
             let event_end = consumed + boundary;
@@ -1691,17 +1715,42 @@ impl StreamingUsageRecordingBody {
         }
     }
 
-    fn reject_oversized_event(&mut self) {
+    /// Stops parsing usage for the current event without failing the stream.
+    ///
+    /// A single provider frame may legitimately carry a non-streamed tool call, a
+    /// long delta, or an inline attachment. Usage arrives in a small terminal
+    /// frame, so skipping one oversized content event costs no billing data, while
+    /// aborting the response would cut the client mid-tool-call.
+    fn skip_oversized_event(&mut self) {
         self.event_buffer.clear();
-        self.terminal_error = Some(format!(
-            "provider streaming usage event exceeds {MAX_STREAM_USAGE_EVENT_BUFFER_BYTES} bytes"
-        ));
+        self.skipping_event = true;
+    }
+
+    /// Advances through an oversized event and returns the bytes after its
+    /// terminating blank line, when that boundary falls inside `chunk`.
+    fn advance_oversized_event(chunk: &[u8]) -> Option<&[u8]> {
+        let mut newlines = 0usize;
+        for (index, byte) in chunk.iter().copied().enumerate() {
+            match byte {
+                b'\r' => {}
+                b'\n' => {
+                    newlines += 1;
+                    if newlines >= 2 {
+                        return Some(&chunk[index + 1..]);
+                    }
+                }
+                _ => newlines = 0,
+            }
+        }
+        None
     }
 
     fn observe_event(&mut self, event: &[u8]) {
         let Ok(event) = std::str::from_utf8(event) else {
-            self.terminal_error =
-                Some("provider streaming usage event contains invalid UTF-8".to_owned());
+            // Usage accounting must never fail the client stream: a garbled
+            // provider frame only costs the usage record for that event, which
+            // surfaces later as `provider_usage_missing`.
+            tracing::warn!("streaming provider usage event contains invalid UTF-8; skipping it");
             return;
         };
         let data = event
@@ -1720,8 +1769,13 @@ impl StreamingUsageRecordingBody {
             Ok(Some(usage)) => self.usage = Some(usage),
             Ok(None) => {}
             Err(error) => {
-                tracing::warn!(error = %redact_error_message(&error), "failed to parse streaming provider usage event");
-                self.terminal_error = Some(error.to_string());
+                // Same containment rule as an oversized event: report the failed
+                // parse, keep the stream alive, and let the missing-usage trace
+                // carry the billing signal.
+                tracing::warn!(
+                    error = %redact_error_message(&error),
+                    "failed to parse streaming provider usage event; skipping it"
+                );
             }
         }
     }

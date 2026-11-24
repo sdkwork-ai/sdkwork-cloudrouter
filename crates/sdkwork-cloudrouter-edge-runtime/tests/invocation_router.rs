@@ -2450,15 +2450,16 @@ async fn invocation_router_bills_partial_usage_when_the_client_disconnects_mid_s
     drop(body);
 
     let commands = wait_for_usage_commands(usage_recorder.as_ref(), 1).await;
-    assert!(!commands.is_empty(), "a disconnected stream must still be billed");
+    assert!(
+        !commands.is_empty(),
+        "a disconnected stream must still be billed"
+    );
     assert!(
         commands.iter().all(|command| command.streaming),
         "interrupted stream usage stays streaming"
     );
     assert!(
-        commands
-            .iter()
-            .any(|command| command.completion_tokens > 0),
+        commands.iter().any(|command| command.completion_tokens > 0),
         "observed output must be estimated and billed: {commands:?}"
     );
     assert!(

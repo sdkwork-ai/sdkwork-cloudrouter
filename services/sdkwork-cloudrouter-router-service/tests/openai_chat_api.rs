@@ -4018,7 +4018,11 @@ async fn openai_chat_completions_accepts_large_chunks_composed_of_bounded_sse_ev
 }
 
 #[tokio::test]
-async fn openai_chat_completions_rejects_oversized_single_sse_event_without_unbounded_buffering() {
+async fn openai_chat_completions_forwards_an_oversized_single_sse_event_without_failing_the_stream() {
+    // A single provider frame may legitimately be very large (a non-streamed tool
+    // call, a long delta, an inline attachment). Usage always arrives in a small
+    // terminal frame, so an oversized content frame must be forwarded byte for
+    // byte instead of cutting the client stream mid-answer.
     let hasher =
         Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
@@ -4031,7 +4035,7 @@ async fn openai_chat_completions_rejects_oversized_single_sse_event_without_unbo
     );
     let stream_relay = Arc::new(RecordingStreamRelay::with_body(
         Arc::clone(&relay_captured),
-        stream_body,
+        stream_body.clone(),
     ));
     let recorder = Arc::new(RecordingUsageRecorder::with_traces(
         Arc::clone(&usage_captured),
@@ -4062,24 +4066,25 @@ async fn openai_chat_completions_rejects_oversized_single_sse_event_without_unbo
         .unwrap();
 
     assert_eq!(StatusCode::OK, response.status());
-    let error = axum::body::to_bytes(response.into_body(), 512 * 1024)
+    let body = axum::body::to_bytes(response.into_body(), 1024 * 1024)
         .await
-        .unwrap_err();
-    assert!(
-        error.to_string().contains("exceeds 262144 bytes"),
-        "{error}"
+        .expect("an oversized content frame must not fail the client stream");
+    assert_eq!(
+        body.len(),
+        stream_body.len(),
+        "every provider byte reaches the client"
     );
+    assert_eq!(String::from_utf8(body.to_vec()).unwrap(), stream_body);
+
+    // The provider sent no usage frame at all, so the recorder reports the
+    // missing usage instead of a failed stream.
     assert!(usage_captured.lock().unwrap().is_empty());
     let traces = trace_captured.lock().unwrap();
     assert_eq!(1, traces.len());
     assert_eq!(
-        Some("provider_usage_record_failed"),
+        Some("provider_usage_missing"),
         traces[0].provider_error_code.as_deref()
     );
-    assert!(traces[0]
-        .error_message_masked
-        .as_deref()
-        .is_some_and(|message| message.contains("exceeds 262144 bytes")));
 }
 
 #[tokio::test]

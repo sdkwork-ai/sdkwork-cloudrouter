@@ -611,7 +611,7 @@
         "Audio/bytedance"
       ],
       "x-sdkwork-wire-protocol": "external",
-      "x-sdkwork-external-protocol-id": "bytedance-ark-v3",
+      "x-sdkwork-external-protocol-id": "bytedance-tts-v1",
       "auth": {
         "mode": "api-key-or-dual-token",
         "required": true
@@ -5791,7 +5791,7 @@
         "Videos/volcengine"
       ],
       "x-sdkwork-wire-protocol": "external",
-      "x-sdkwork-external-protocol-id": "volcengine-v1",
+      "x-sdkwork-external-protocol-id": "volcengine-ark-v3",
       "auth": {
         "mode": "api-key-or-dual-token",
         "required": true
@@ -5819,7 +5819,7 @@
         "Videos/volcengine"
       ],
       "x-sdkwork-wire-protocol": "external",
-      "x-sdkwork-external-protocol-id": "volcengine-v1",
+      "x-sdkwork-external-protocol-id": "volcengine-ark-v3",
       "auth": {
         "mode": "api-key-or-dual-token",
         "required": true
@@ -5847,7 +5847,7 @@
         "Images/volcengine"
       ],
       "x-sdkwork-wire-protocol": "external",
-      "x-sdkwork-external-protocol-id": "volcengine-v1",
+      "x-sdkwork-external-protocol-id": "volcengine-ark-v3",
       "auth": {
         "mode": "api-key-or-dual-token",
         "required": true

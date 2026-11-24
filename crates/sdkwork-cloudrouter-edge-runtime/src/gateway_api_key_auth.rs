@@ -77,19 +77,26 @@ impl IntoResponse for GatewayAuthError {
                 code,
                 error_type,
                 message,
-            } => (
-                status,
-                Json(json!({
+            } => {
+                let mut response = (
+                    status,
+                    Json(json!({
                     "error": {
                         "message": message,
                         "type": error_type,
                         "param": null,
                         "code": code
                     }
-                })),
-            )
-                .into_response(),
-            Self::Forward(response) => response,
+                    })),
+                )
+                    .into_response();
+                sdkwork_cloudrouter_http::mark_gateway_generated_error_response(&mut response);
+                response
+            }
+            Self::Forward(mut response) => {
+                sdkwork_cloudrouter_http::mark_gateway_generated_error_response(&mut response);
+                response
+            }
         }
     }
 }

@@ -36,6 +36,7 @@ use crate::call_chain::CallChainInterceptor;
 use crate::invocation_http::handle_invocation;
 use crate::invocation_provider_adapter::InvocationProviderAdapterResolver;
 use crate::invocation_stream::DEFAULT_STREAM_TOTAL_TIMEOUT;
+use crate::request_identity::generate_server_request_id;
 
 pub(crate) struct InvocationRouterState<C>
 where
@@ -434,6 +435,19 @@ where
             let state = state.clone();
             async move {
                 if let Some(response) = reject_retired_openai_method(&request) {
+                    let mut response = response;
+                    crate::invocation_http::normalize_gateway_error_protocol_for_request(
+                        &mut response,
+                        request.method(),
+                        request.uri().path(),
+                    )
+                    .await;
+                    let request_id = generate_server_request_id();
+                    crate::invocation_http::attach_trace_response_headers(
+                        &mut response,
+                        request_id.as_str(),
+                        None,
+                    );
                     return response;
                 }
                 handle_invocation(state, request).await
@@ -458,6 +472,7 @@ fn reject_retired_openai_method(request: &Request<Body>) -> Option<Response> {
     response
         .headers_mut()
         .insert(ALLOW, HeaderValue::from_static("GET"));
+    sdkwork_cloudrouter_http::mark_gateway_generated_error_response(&mut response);
     Some(response)
 }
 

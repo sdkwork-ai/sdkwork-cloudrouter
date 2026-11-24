@@ -146,6 +146,8 @@ def infer_external_protocol_id(route_path: str) -> str:
     if normalized.startswith("/black_forest_labs/"):
         return "black-forest-labs-v1"
     if normalized.startswith("/bytedance/"):
+        if normalized.startswith("/bytedance/api/v3/tts/unidirectional"):
+            return "bytedance-tts-v1"
         return "bytedance-ark-v3"
     if normalized.startswith("/elevenlabs/"):
         return "elevenlabs-v1"
@@ -178,6 +180,10 @@ def infer_external_protocol_id(route_path: str) -> str:
     if normalized.startswith("/vidu/"):
         return "vidu-v1"
     if normalized.startswith("/volcengine/"):
+        if normalized.startswith("/volcengine/api/v3/audio/speech"):
+            return "volcengine-v1"
+        if normalized.startswith("/volcengine/api/v3/"):
+            return "volcengine-ark-v3"
         return "volcengine-v1"
     if normalized.startswith("/xai/"):
         return "xai-v1"

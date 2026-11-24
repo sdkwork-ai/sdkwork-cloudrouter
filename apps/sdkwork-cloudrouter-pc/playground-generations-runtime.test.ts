@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { runPlaygroundAssetGeneration } from "./packages/sdkwork-cloudrouter-pc-playground/src/playgroundGenerationsService.ts";
+import {
+  fetchPlaygroundGenerationHistoryFromService,
+  runPlaygroundAssetGeneration,
+} from "./packages/sdkwork-cloudrouter-pc-playground/src/playgroundGenerationsService.ts";
 import type { SdkworkGenerationCommandInput } from "@sdkwork/generations-pc-workspace/generation-service";
 import type { GenerationAgentRunCreateInput } from "./packages/sdkwork-cloudrouter-pc-playground/src/playgroundTypes.ts";
 
@@ -372,16 +375,167 @@ test("playground asset generation emits mapped result artifacts and usage from s
   assert.equal(result.steps.length, 2);
 });
 
+test("a queued vendor command is polled to completion before results are read", async () => {
+  const polled: string[] = [];
+  const slept: number[] = [];
+  const statuses = ["running", "succeeded"];
+  const service = {
+    async createGenerationCommand(input: SdkworkGenerationCommandInput) {
+      return {
+        generation: { id: "generation-async", latencyMs: 0, model: "kling", promptPreview: input.prompt, status: "pending", title: input.operationType, tokensUsed: 0, updatedAt: "2026-06-07T00:00:00.000Z" },
+        record: { id: "generation-async", modality: "video", operationType: input.operationType, promptPreview: input.prompt, status: "queued", updatedAt: "2026-06-07T00:00:00.000Z", createdAt: "2026-06-07T00:00:00.000Z" },
+      };
+    },
+    async getGeneration(id: string) {
+      polled.push(id);
+      const status = statuses.shift() ?? "succeeded";
+      return { id, modality: "video", operationType: "text_to_video", promptPreview: "p", status, updatedAt: "2026-06-07T00:00:01.000Z", createdAt: "2026-06-07T00:00:00.000Z" };
+    },
+    async listGenerationResults() {
+      return {
+        items: [{
+          id: "result-async",
+          generationId: "generation-async",
+          resultType: "video",
+          assetId: "asset-async",
+          resourceSnapshot: { kind: "video", publicUrl: "https://cdn.example/async.mp4", source: "generated", url: "https://cdn.example/async.mp4", durationSeconds: 5 },
+          createdAt: "2026-06-07T00:00:01.000Z",
+        }],
+      };
+    },
+  };
+
+  const { result } = await runAssetGeneration({ prompt: "Create video", targetType: "video" }, {}, service, {
+    intervalMs: 10,
+    maxAttempts: 5,
+    sleep: async (ms) => { slept.push(ms); },
+  });
+
+  assert.deepEqual(polled, ["generation-async", "generation-async"], "queued then running each poll once");
+  assert.deepEqual(slept, [10, 10]);
+  assert.equal(result.status, "completed");
+  assert.equal(result.item.videos?.[0]?.url, "https://cdn.example/async.mp4");
+  assert.deepEqual(result.item.results, [{ resultId: "result-async", assetId: "asset-async" }], "the catalog identity rides along on the item");
+});
+
+function queuedCommandService(id: string, model: string) {
+  return {
+    async createGenerationCommand(input: SdkworkGenerationCommandInput) {
+      return {
+        generation: { id, latencyMs: 0, model, promptPreview: input.prompt, status: "pending", title: input.operationType, tokensUsed: 0, updatedAt: "2026-06-07T00:00:00.000Z" },
+        record: { id, modality: "video", operationType: input.operationType, promptPreview: input.prompt, status: "queued", updatedAt: "2026-06-07T00:00:00.000Z", createdAt: "2026-06-07T00:00:00.000Z" },
+      };
+    },
+    async listGenerationResults() {
+      return { items: [] };
+    },
+  };
+}
+
+function recordFor(id: string, status: string) {
+  return { id, modality: "video", operationType: "text_to_video", promptPreview: "p", status, updatedAt: "2026-06-07T00:00:01.000Z", createdAt: "2026-06-07T00:00:00.000Z" };
+}
+
+test("polling can be disabled and a non-terminal deadline is reported as pending", async () => {
+  const fireAndForget = queuedCommandService("generation-ff", "kling");
+  const { result } = await runAssetGeneration({ prompt: "Create video", targetType: "video" }, {}, fireAndForget, { maxAttempts: 0 });
+
+  assert.equal(result.status, "pending");
+  assert.equal(result.item.outputText, "Generation accepted.");
+  assert.deepEqual(result.item.results, []);
+
+  let polls = 0;
+  const deadline = {
+    ...queuedCommandService("generation-deadline", "kling"),
+    async getGeneration(id: string) {
+      polls += 1;
+      return recordFor(id, "running");
+    },
+  };
+  const deadlineResult = await runAssetGeneration({ prompt: "Create video", targetType: "video" }, {}, deadline, { maxAttempts: 3, sleep: async () => undefined });
+  assert.equal(polls, 3, "the deadline bounds the polling");
+  assert.equal(deadlineResult.result.status, "processing", "a running record at the deadline stays non-terminal");
+});
+
+test("a failed poll keeps the last known record and polling continues", async () => {
+  let calls = 0;
+  const media = createAssetGenerationService({ resultType: "video", kind: "video", publicUrl: "https://cdn.example/v.mp4", url: "https://cdn.example/v.mp4" }).service;
+  const flaky = {
+    ...media,
+    createGenerationCommand: queuedCommandService("generation-flaky", "vidu").createGenerationCommand,
+    async getGeneration(id: string) {
+      calls += 1;
+      if (calls === 1) {
+        throw new Error("network blip");
+      }
+      return recordFor(id, "succeeded");
+    },
+  };
+  const { result } = await runAssetGeneration({ prompt: "Create video", targetType: "video" }, {}, flaky, { maxAttempts: 5, sleep: async () => undefined });
+  assert.equal(calls, 2);
+  assert.equal(result.status, "completed");
+  assert.equal(result.item.videos?.[0]?.url, "https://cdn.example/v.mp4");
+});
+
+test("restored history resolves completed asset runs with media and asset catalog state", async () => {
+  const runs = [
+    { id: "gen-done", modality: "image", operationType: "text_to_image", promptPreview: "一只猫", status: "succeeded", createdAt: "2026-06-07T00:00:00.000Z", updatedAt: "2026-06-07T00:00:01.000Z" },
+    { id: "gen-text", modality: "text", operationType: "text_generate", promptPreview: "写一首诗", status: "succeeded", createdAt: "2026-06-07T00:00:00.000Z", updatedAt: "2026-06-07T00:00:01.000Z" },
+    { id: "gen-running", modality: "video", operationType: "text_to_video", promptPreview: "一段视频", status: "running", createdAt: "2026-06-07T00:00:00.000Z", updatedAt: "2026-06-07T00:00:01.000Z" },
+  ];
+  const listed: string[] = [];
+  const service = {
+    async getWorkspace() {
+      return { runs };
+    },
+    async listGenerationResults({ generationId }: { generationId: string }) {
+      listed.push(generationId);
+      if (generationId === "gen-done") {
+        return {
+          items: [{
+            id: "res-done",
+            generationId,
+            resultType: "image",
+            assetId: "asset-done",
+            resourceSnapshot: { kind: "image", publicUrl: "https://cdn.example/cat.png", source: "generated", url: "https://cdn.example/cat.png" },
+            createdAt: "2026-06-07T00:00:01.000Z",
+          }],
+        };
+      }
+      throw new Error("offline");
+    },
+  };
+
+  const items = await fetchPlaygroundGenerationHistoryFromService(service as never);
+
+  assert.deepEqual(listed, ["gen-done"], "only completed asset runs resolve results");
+  assert.equal(items.length, 3);
+  assert.equal(items[0]?.type, "images");
+  assert.equal(items[0]?.images?.[0]?.url, "https://cdn.example/cat.png");
+  assert.deepEqual(items[0]?.results, [{ resultId: "res-done", assetId: "asset-done" }]);
+  assert.equal(items[1]?.type, "text");
+  assert.equal(items[1]?.results, undefined);
+  assert.equal(items[2]?.type, "video");
+  assert.equal(items[2]?.results, undefined, "a pending run keeps no catalog state yet");
+});
+
 async function runAssetGeneration(
   input: GenerationAgentRunCreateInput,
   resultOverrides: Record<string, unknown> = {},
+  service = createAssetGenerationService(resultOverrides).service,
+  poll: { intervalMs?: number; maxAttempts?: number; sleep?: (ms: number) => Promise<void> } = {},
 ) {
-  const { commands, service } = createAssetGenerationService(resultOverrides);
-    const artifacts: unknown[] = [];
+  const commands: SdkworkGenerationCommandInput[] = [];
+  const original = service.createGenerationCommand.bind(service);
+  service.createGenerationCommand = async (command: SdkworkGenerationCommandInput) => {
+    commands.push(command);
+    return original(command);
+  };
+  const artifacts: unknown[] = [];
   const result = await runPlaygroundAssetGeneration({
     ...input,
     onArtifact: (artifact) => artifacts.push(artifact),
-  }, service as never);
+  }, service as never, poll);
 
   return {
     artifacts: artifacts as Awaited<ReturnType<typeof runPlaygroundAssetGeneration>>["item"]["asset"][],

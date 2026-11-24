@@ -1,10 +1,10 @@
 use std::sync::Mutex;
 
 use axum::body::Body;
-use axum::http::{HeaderMap, HeaderName, HeaderValue};
+use axum::http::HeaderMap;
 use bytes::Bytes;
 use futures_util::StreamExt;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 
 use super::{
     DispatchMode, Invocation, InvocationDispatchResponse, InvocationError, InvocationFuture,
@@ -91,7 +91,7 @@ impl InvocationInterceptor for ResponseNormalizationInterceptor {
                 })),
                 body_bytes: None,
                 content_type: Some("application/json".to_owned()),
-                headers: axum::http::HeaderMap::new(),
+                headers: gateway_error_headers(),
                 stream_body: Mutex::new(None),
                 memory_guard: None,
             });
@@ -129,23 +129,32 @@ fn normalize_dispatch_response(
             memory_guard: response.memory_guard.clone(),
         };
     }
-    restore_openai_compatible_model(
-        invocation,
-        InvocationNormalizedResponse {
-            status_code: response.status_code,
-            body: response.body.clone(),
-            body_bytes: response.body_bytes.clone(),
-            content_type: response.content_type.clone().or_else(|| {
-                response
-                    .body
-                    .as_ref()
-                    .map(|_| "application/json".to_owned())
-            }),
-            headers: response.headers.clone(),
-            stream_body: Mutex::new(None),
-            memory_guard: response.memory_guard.clone(),
-        },
-    )
+    let mut normalized = InvocationNormalizedResponse {
+        status_code: response.status_code,
+        body: response.body.clone(),
+        body_bytes: response.body_bytes.clone(),
+        content_type: response.content_type.clone().or_else(|| {
+            response
+                .body
+                .as_ref()
+                .map(|_| "application/json".to_owned())
+        }),
+        headers: response.headers.clone(),
+        stream_body: Mutex::new(None),
+        memory_guard: response.memory_guard.clone(),
+    };
+    if invocation.dispatch.mode == DispatchMode::SyntheticLocalResponse
+        && !(200..300).contains(&normalized.status_code)
+    {
+        sdkwork_cloudrouter_http::mark_gateway_generated_error_header(&mut normalized.headers);
+    }
+    restore_openai_compatible_model(invocation, normalized)
+}
+
+fn gateway_error_headers() -> HeaderMap {
+    let mut headers = HeaderMap::new();
+    sdkwork_cloudrouter_http::mark_gateway_generated_error_header(&mut headers);
+    headers
 }
 
 fn normalize_adapter_response(
@@ -166,7 +175,13 @@ fn normalize_adapter_response(
     let provider_body = body.get("body").cloned();
     let mut headers = response.headers.clone();
     if let Some(adapter_headers) = adapter_headers {
-        headers.extend(preserve_adapter_response_headers(adapter_headers));
+        let safe_headers = adapter_headers
+            .iter()
+            .filter_map(|(name, value)| Some((name.clone(), value.as_str()?.to_owned())))
+            .collect::<std::collections::BTreeMap<_, _>>();
+        headers.extend(sdkwork_cloudrouter_http::preserve_adapter_response_headers(
+            &safe_headers,
+        ));
     }
     headers.remove(axum::http::header::CONTENT_TYPE);
     Some(InvocationNormalizedResponse {
@@ -188,64 +203,6 @@ fn header_value(headers: &serde_json::Map<String, Value>, name: &str) -> Option<
     })
 }
 
-/// Adapter envelopes carry provider response headers as JSON. Apply the same
-/// public response-header allowlist as the direct invocation HTTP transport so
-/// SDK retry, request tracing, and rate-limit behavior stays consistent.
-fn preserve_adapter_response_headers(headers: &serde_json::Map<String, Value>) -> HeaderMap {
-    let connection_headers = header_value(headers, "connection")
-        .into_iter()
-        .flat_map(|value| {
-            value
-                .split(',')
-                .map(|name| name.trim().to_ascii_lowercase())
-                .filter(|name| !name.is_empty())
-                .collect::<Vec<_>>()
-        })
-        .collect::<Vec<_>>();
-    let mut preserved = HeaderMap::new();
-    for (name, value) in headers {
-        let name_lower = name.to_ascii_lowercase();
-        if connection_headers
-            .iter()
-            .any(|connection_name| connection_name == &name_lower)
-            || !is_public_upstream_response_header(name_lower.as_str())
-        {
-            continue;
-        }
-        let (Ok(name), Some(value)) = (
-            HeaderName::from_bytes(name.as_bytes()),
-            value
-                .as_str()
-                .and_then(|value| HeaderValue::from_str(value).ok()),
-        ) else {
-            continue;
-        };
-        preserved.append(name, value);
-    }
-    preserved
-}
-
-fn is_public_upstream_response_header(name: &str) -> bool {
-    matches!(
-        name,
-        "retry-after"
-            | "x-request-id"
-            | "request-id"
-            | "openai-organization"
-            | "openai-version"
-            | "openai-processing-ms"
-            | "x-ratelimit-limit-requests"
-            | "x-ratelimit-limit-tokens"
-            | "x-ratelimit-remaining-requests"
-            | "x-ratelimit-remaining-tokens"
-            | "x-ratelimit-reset-requests"
-            | "x-ratelimit-reset-tokens"
-            | "x-ratelimit-request-ids"
-            | "x-goog-request-id"
-            | "x-goog-ratelimit-last-update-time"
-    )
-}
-
 /// OpenAI-compatible clients send a catalog/alias `model` and must receive that
 /// same id back. The outbound request rewrites `model` to the account's
 /// provider-native id; restore the inbound id on JSON responses so the wire
@@ -254,7 +211,9 @@ fn restore_openai_compatible_model(
     invocation: &Invocation,
     mut normalized: InvocationNormalizedResponse,
 ) -> InvocationNormalizedResponse {
-    if invocation.resource.surface != InvocationSurface::OpenAiCompatible {
+    if invocation.resource.surface != InvocationSurface::OpenAiCompatible
+        || !(200..300).contains(&normalized.status_code)
+    {
         return normalized;
     }
     let Some(requested_model) = invocation

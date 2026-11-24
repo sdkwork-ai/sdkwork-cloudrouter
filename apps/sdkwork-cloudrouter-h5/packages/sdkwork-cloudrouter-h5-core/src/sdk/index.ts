@@ -1,3 +1,4 @@
+export * from './commerceServices.js';
 export * from './consolePorts.js';
 export * from './domainClients.js';
 export * from './orderAppSdkClient.js';

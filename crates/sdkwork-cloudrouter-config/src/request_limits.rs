@@ -56,13 +56,14 @@ impl RequestLimitsConfig {
     /// tighter than the inner budget turns every long non-streaming completion
     /// into a framework 408: the provider keeps generating (and bills) while the
     /// client sees an empty gateway error and the settlement after-chain never
-    /// runs. 120 s clears one full provider hop plus the surrounding billing,
-    /// usage and settlement stages for the common single-account case; raise it
-    /// via `SDKWORK_CLOUDROUTER_GATEWAY_REQUEST_TIMEOUT_MILLIS` / runtime.toml
-    /// when routing across many failover candidates. Streamed responses are not
-    /// bound by this value: their headers are produced long before the body
-    /// finishes.
-    pub const DEFAULT_GATEWAY_REQUEST_TIMEOUT_MILLIS: u64 = 120_000;
+    /// runs. 300 s also covers the header phase of a streamed completion: a
+    /// streaming relay answers the client only after the provider sends its
+    /// response headers, and that first byte may legitimately take minutes for a
+    /// large prompt with extended thinking. Once both headers and body are on the
+    /// wire, this value no longer bounds the response — the stream deadlines do.
+    /// Raise it via `SDKWORK_CLOUDROUTER_GATEWAY_REQUEST_TIMEOUT_MILLIS` /
+    /// runtime.toml when routing across many failover candidates.
+    pub const DEFAULT_GATEWAY_REQUEST_TIMEOUT_MILLIS: u64 = 300_000;
 
     pub fn from_env() -> Result<Self, String> {
         Self::from_env_or_runtime_toml(None)

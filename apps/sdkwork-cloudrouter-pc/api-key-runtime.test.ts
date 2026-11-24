@@ -401,6 +401,33 @@ test("console api key reveal returns the plaintext from the audited endpoint", a
   );
 });
 
+test("console api key reveal waits out the server throttle instead of failing", async () => {
+  let calls = 0;
+  await withApiKeySdkResponder(
+    (request) => {
+      assert.match(request.url, /\/app\/v3\/api\/iam\/api_keys\/key-3\/reveal$/);
+      calls += 1;
+      if (calls === 1) {
+        return {
+          code: "4290",
+          msg: "api key was revealed moments ago; retry in a few seconds",
+          traceId: "trace-api-key-reveal-throttle",
+        };
+      }
+      return {
+        code: 0,
+        traceId: "trace-api-key-reveal-retry",
+        data: { item: { id: "key-3", name: "Throttled" }, rawKey: "sk-live-retried-secret" },
+      };
+    },
+    async () => {
+      const rawKey = await ApiKeyService.revealKey("key-3");
+      assert.equal(rawKey, "sk-live-retried-secret");
+    },
+  );
+  assert.ok(calls >= 2, "the throttled attempt must be retried");
+});
+
 test("console api key list replaces rows with backend metadata across updates", async () => {
   const source = await import("node:fs/promises").then((fs) =>
     fs.readFile(new URL("./packages/sdkwork-cloudrouter-pc-console-api-keys/src/ApiKeysView.tsx", import.meta.url), "utf8"),

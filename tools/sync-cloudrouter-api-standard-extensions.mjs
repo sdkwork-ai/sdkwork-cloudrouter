@@ -94,6 +94,9 @@ function inferExternalProtocolId(routePath) {
     return "black-forest-labs-v1";
   }
   if (normalized.startsWith("/bytedance/")) {
+    if (normalized.startsWith("/bytedance/api/v3/tts/unidirectional")) {
+      return "bytedance-tts-v1";
+    }
     return "bytedance-ark-v3";
   }
   if (normalized.startsWith("/elevenlabs/")) {
@@ -139,6 +142,12 @@ function inferExternalProtocolId(routePath) {
     return "vidu-v1";
   }
   if (normalized.startsWith("/volcengine/")) {
+    if (normalized.startsWith("/volcengine/api/v3/audio/speech")) {
+      return "volcengine-v1";
+    }
+    if (normalized.startsWith("/volcengine/api/v3/")) {
+      return "volcengine-ark-v3";
+    }
     return "volcengine-v1";
   }
   if (normalized.startsWith("/zhipu/")) {

@@ -1,11 +1,11 @@
 use std::sync::LazyLock;
 
 use axum::{
-    Router,
     body::Body,
     extract::Request,
     http::{Method, StatusCode},
     response::IntoResponse,
+    Router,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -46,6 +46,7 @@ struct OwnedOperation {
     /// segment vectors on every attempt.
     static_segments: Vec<String>,
     capability: OpenApiCapability,
+    external_protocol_id: Option<String>,
 }
 
 static OWNED_OPERATIONS: LazyLock<Vec<OwnedOperation>> = LazyLock::new(|| {
@@ -75,6 +76,23 @@ pub fn open_api_capability_for_request(method: &Method, path: &str) -> Option<Op
             })
             .map(|operation| operation.capability)
     })
+}
+
+/// Returns the operation-scoped external wire protocol id declared by the
+/// Cloud Router OpenAPI contract for a matching method and path.
+pub fn external_protocol_id_for_request(method: &Method, path: &str) -> Option<String> {
+    OWNED_OPERATIONS
+        .iter()
+        .find(|operation| {
+            operation.method == *method
+                && path_carries_static_segments(path, &operation.static_segments)
+                && sdkwork_cloudrouter_contract::matches_path_pattern(
+                    operation.path_pattern.as_str(),
+                    path,
+                )
+        })
+        .and_then(|operation| operation.external_protocol_id.as_deref())
+        .map(str::to_owned)
 }
 
 pub fn open_api_capability_router(upstream: Router, capability: OpenApiCapability) -> Router {
@@ -163,6 +181,10 @@ fn append_operations(
                 static_segments: static_path_segments(path),
                 path_pattern: path.clone(),
                 capability: capability(operation),
+                external_protocol_id: operation
+                    .get("x-sdkwork-external-protocol-id")
+                    .and_then(Value::as_str)
+                    .map(str::to_owned),
             });
         }
     }
@@ -224,7 +246,7 @@ fn capability_from_tag(tag: &str) -> OpenApiCapability {
 
 #[cfg(test)]
 mod tests {
-    use super::{CLOUDROUTER_OPEN_API, OpenApiCapability, open_api_capability_for_request};
+    use super::{open_api_capability_for_request, OpenApiCapability, CLOUDROUTER_OPEN_API};
     use axum::http::Method;
 
     #[test]

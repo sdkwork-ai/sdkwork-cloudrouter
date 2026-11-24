@@ -20,7 +20,7 @@ fn request_limits_config_uses_production_defaults_when_absent() {
     assert_eq!(25 * 1024 * 1024, config.gateway_upload_body_max_bytes());
     // The outer backstop must clear the 60 s provider hop plus the billing,
     // usage and settlement stages; 30 s (the framework default) does not.
-    assert_eq!(120_000, config.gateway_request_timeout_millis());
+    assert_eq!(300_000, config.gateway_request_timeout_millis());
 }
 
 #[test]

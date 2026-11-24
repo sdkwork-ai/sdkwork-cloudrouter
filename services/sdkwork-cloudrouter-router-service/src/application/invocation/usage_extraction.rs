@@ -475,6 +475,12 @@ pub struct StreamingUsageAccumulator {
     /// A code interpreter response opens a billable container session; the
     /// session is counted once per response, not once per code cell.
     code_interpreter_session: bool,
+    /// Set while an over-budget line is being drained: its bytes are forwarded
+    /// but not retained, so one huge provider frame cannot fail the stream.
+    skipping_line: bool,
+    /// Set while an SSE event beyond the parse budget is being drained; cleared
+    /// at the event separator, where recording resumes.
+    event_overflowed: bool,
 }
 
 const MAX_STREAM_USAGE_LINE_BYTES: usize = 64 * 1024;
@@ -492,6 +498,8 @@ impl StreamingUsageAccumulator {
             web_search_calls: 0,
             file_search_calls: 0,
             code_interpreter_session: false,
+            skipping_line: false,
+            event_overflowed: false,
         }
     }
 
@@ -500,6 +508,11 @@ impl StreamingUsageAccumulator {
     pub fn observe(&mut self, bytes: &[u8]) -> Result<(), InvocationError> {
         for byte in bytes {
             if *byte == b'\n' {
+                if self.skipping_line {
+                    // An over-budget line ended. Nothing of it was retained.
+                    self.skipping_line = false;
+                    continue;
+                }
                 let mut line = std::mem::take(&mut self.pending_line);
                 if line.last() == Some(&b'\r') {
                     line.pop();
@@ -507,10 +520,24 @@ impl StreamingUsageAccumulator {
                 self.observe_line(&line)?;
                 continue;
             }
+            if self.skipping_line {
+                continue;
+            }
             if self.pending_line.len() >= MAX_STREAM_USAGE_LINE_BYTES {
-                return Err(usage_error(
-                    "stream usage line exceeds the configured limit",
-                ));
+                // A provider frame may legitimately carry one very large line: a
+                // non-streamed tool call, a long text delta, a base64 attachment.
+                // Usage always arrives in a small terminal frame, so dropping this
+                // line costs no billing data — while failing the call would cut a
+                // healthy client stream in the middle of a tool call.
+                self.pending_line.clear();
+                self.skipping_line = true;
+                if self.format == StreamingUsageFormat::ServerSentEvents {
+                    // The rest of the SSE event is unparseable: forward it and
+                    // resume at the event separator.
+                    self.event_overflowed = true;
+                    self.event_data.clear();
+                }
+                continue;
             }
             self.pending_line.push(*byte);
         }
@@ -606,6 +633,14 @@ impl StreamingUsageAccumulator {
     }
 
     fn observe_sse_line(&mut self, line: &[u8]) -> Result<(), InvocationError> {
+        if self.event_overflowed {
+            // The current event is already beyond the parse budget: keep the
+            // bytes on the wire and resume recording at the event separator.
+            if line.iter().all(u8::is_ascii_whitespace) {
+                self.finish_sse_event();
+            }
+            return Ok(());
+        }
         if line.iter().all(u8::is_ascii_whitespace) {
             self.finish_sse_event();
             return Ok(());
@@ -621,9 +656,12 @@ impl StreamingUsageAccumulator {
             .saturating_add(data.len())
             .saturating_add(1);
         if required > MAX_STREAM_USAGE_EVENT_BYTES {
-            return Err(usage_error(
-                "stream usage event exceeds the configured limit",
-            ));
+            // Same reasoning as the oversized line: a single huge event carries
+            // content, not usage. Drop the parse state, forward the frames, and
+            // keep the client stream intact.
+            self.event_data.clear();
+            self.event_overflowed = true;
+            return Ok(());
         }
         self.event_data.extend_from_slice(data);
         self.event_data.push(b'\n');
@@ -631,6 +669,11 @@ impl StreamingUsageAccumulator {
     }
 
     fn finish_sse_event(&mut self) {
+        if self.event_overflowed {
+            self.event_overflowed = false;
+            self.event_data.clear();
+            return;
+        }
         if self.event_data.is_empty() {
             return;
         }
@@ -3129,25 +3172,58 @@ mod tests {
     }
 
     #[test]
-    fn streaming_usage_accumulator_rejects_oversized_line() {
-        let mut accumulator = StreamingUsageAccumulator::new(StreamingUsageFormat::Ndjson);
-        let oversized_line = vec![b'x'; 64 * 1024 + 1];
+    fn streaming_usage_accumulator_skips_an_oversized_line_and_keeps_recording() {
+        let mut accumulator =
+            StreamingUsageAccumulator::new(StreamingUsageFormat::ServerSentEvents);
+        // One over-budget line followed by the event separator, then a normal
+        // usage frame: the oversized line is dropped, the frame after it is not.
+        let oversized = format!("data: {}\n\n", "x".repeat(64 * 1024 + 1));
+        accumulator
+            .observe(oversized.as_bytes())
+            .expect("an oversized line must not fail the stream");
+        accumulator
+            .observe(b"data: {\"usage\":{\"prompt_tokens\":7}}\n\n")
+            .unwrap();
 
-        assert!(accumulator.observe(&oversized_line).is_err());
+        let usage = accumulator
+            .finish()
+            .unwrap()
+            .expect("usage recorded after the oversized line");
+        assert_eq!(
+            Some(7),
+            usage
+                .pointer("/usage/prompt_tokens")
+                .and_then(Value::as_i64)
+        );
     }
 
     #[test]
-    fn streaming_usage_accumulator_rejects_oversized_sse_event() {
+    fn streaming_usage_accumulator_skips_an_oversized_sse_event_and_keeps_recording() {
         let mut accumulator =
             StreamingUsageAccumulator::new(StreamingUsageFormat::ServerSentEvents);
-        let line = format!("data: {}\n", "x".repeat(63 * 1024));
-
+        // Individual lines stay inside the line budget, so these accumulate past
+        // the event budget before the separator arrives.
+        let line = format!("data: {}\n", "x".repeat(60 * 1024));
         for _ in 0..5 {
-            if accumulator.observe(line.as_bytes()).is_err() {
-                return;
-            }
+            accumulator
+                .observe(line.as_bytes())
+                .expect("an oversized event must not fail the stream");
         }
-        panic!("oversized SSE event should be rejected");
+        accumulator.observe(b"\n").unwrap();
+        accumulator
+            .observe(b"data: {\"usage\":{\"prompt_tokens\":9}}\n\n")
+            .unwrap();
+
+        let usage = accumulator
+            .finish()
+            .unwrap()
+            .expect("usage recorded after the oversized event");
+        assert_eq!(
+            Some(9),
+            usage
+                .pointer("/usage/prompt_tokens")
+                .and_then(Value::as_i64)
+        );
     }
 
     #[test]

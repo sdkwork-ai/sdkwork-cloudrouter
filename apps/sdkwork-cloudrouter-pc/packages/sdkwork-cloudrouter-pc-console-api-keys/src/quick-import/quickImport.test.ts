@@ -2,6 +2,8 @@
 // OpenAI 兼容 base，供 Birdcoder 导入时查询 /v1/vendors），cc-switch 链接
 // 不携带；无 vendor 参数（厂商由网关按 key 自动解析）。
 // 运行：pnpm --dir packages/sdkwork-cloudrouter-pc-console-api-keys exec vitest run src/quick-import/quickImport.test.ts --environment jsdom
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import type { ApiKey } from '../apiKeyService';
 import {
@@ -170,3 +172,59 @@ describe('downloadQuickImportContent', () => {
     }
   });
 });
+
+describe('import-to row contract', () => {
+  const viewSource = readApiKeysViewSource();
+
+  it('opens the menu on hover for every key, plaintext or not', () => {
+    expect(viewSource).toContain('onMouseEnter={(event) => openQuickImportMenu(key, event.currentTarget)}');
+    expect(viewSource).not.toMatch(/disabled=\{!key\.rawKey\}/);
+    expect(viewSource).not.toContain('if (!key.rawKey)');
+    expect(viewSource).not.toContain('selectQuickImportExtensionTarget');
+    expect(viewSource).not.toContain('selectQuickImportTarget');
+  });
+
+  it('asks for confirmation with the key name and target before importing', () => {
+    expect(viewSource).toMatch(/beginQuickImport\(\{\n\s*kind: 'extension'/);
+    expect(viewSource).toContain("t('console.apiKeys.quickImport.confirmTitle'");
+    expect(viewSource).toContain("t('console.apiKeys.quickImport.confirmHint'");
+    expect(viewSource).toContain("t('console.apiKeys.quickImport.confirmImport'");
+    expect(viewSource).toContain('pendingQuickImportKey.displayName');
+    expect(viewSource).toContain('pendingQuickImportKey.maskedKey');
+    expect(viewSource).toContain('pendingQuickImport.targetLabel');
+  });
+
+  it('reveals and runs the import only after the confirmation', () => {
+    const confirmHandler = viewSource.slice(
+      viewSource.indexOf('const confirmPendingQuickImport'),
+      viewSource.indexOf('const openImportDeepLink'),
+    );
+    expect(confirmHandler).toMatch(/void runQuickImport\(pending\)/);
+
+    const runHandler = viewSource.slice(
+      viewSource.indexOf('const runQuickImport'),
+      viewSource.indexOf('const confirmPendingQuickImport'),
+    );
+    expect(viewSource).toContain('ApiKeyService.revealKey(key.id)');
+    expect(runHandler).toContain('await resolveImportKey(key)');
+    expect(runHandler.indexOf('await resolveImportKey')).toBeLessThan(
+      runHandler.indexOf('extension.onSelect'),
+    );
+  });
+});
+
+/**
+ * Read the view from disk. Vitest runs it under jsdom, where `import.meta.url`
+ * is an http URL, so the file is resolved against the process working
+ * directory instead of the module URL.
+ */
+function readApiKeysViewSource(): string {
+  const relativePath = 'packages/sdkwork-cloudrouter-pc-console-api-keys/src/ApiKeysView.tsx';
+  for (const root of [process.cwd(), resolve(process.cwd(), 'apps/sdkwork-cloudrouter-pc')]) {
+    const candidate = resolve(root, relativePath);
+    if (existsSync(candidate)) {
+      return readFileSync(candidate, 'utf8');
+    }
+  }
+  throw new Error(`ApiKeysView.tsx was not found under ${process.cwd()}`);
+}

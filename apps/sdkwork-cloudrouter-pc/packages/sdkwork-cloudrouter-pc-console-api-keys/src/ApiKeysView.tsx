@@ -84,6 +84,14 @@ interface CreatedSecret {
   rawKey: string;
 }
 
+/** One menu row the user picked, before the confirmation dialog agrees to it. */
+type QuickImportChoice =
+  | { kind: 'extension'; targetId: string; targetLabel: string }
+  | { kind: 'builtin'; targetId: QuickImportTargetId; targetLabel: string };
+
+/** A picked row plus the key it was picked for; the row is only revealed after confirmation. */
+type PendingQuickImport = QuickImportChoice & { keyId: string };
+
 function getApiKeyProductErrorMessage(error: unknown, fallback: string, t: TranslationFunction): string {
   if (error instanceof Error) {
     const message = error.message.trim();
@@ -175,10 +183,47 @@ export function ApiKeysView() {
     }, 1500);
   };
 
-  const openQuickImportMenu = (key: ApiKey, element: HTMLElement) => {
-    if (!key.rawKey) {
-      return;
+  const [importingKeyId, setImportingKeyId] = useState<string | null>(null);
+  const [importFailedKeyId, setImportFailedKeyId] = useState<string | null>(null);
+  const [pendingQuickImport, setPendingQuickImport] = useState<PendingQuickImport | null>(null);
+  // State lands on the next render, so key it off a ref as well: a second click
+  // in the same tick must not reveal twice, because every reveal writes an
+  // audit row on the server.
+  const revealingKeyIdsRef = useRef<Set<string>>(new Set());
+
+  /**
+   * Resolve the plaintext an import needs. Keys created in this session carry
+   * it; earlier keys reveal it through the same audited endpoint the copy
+   * action uses, so the row never has to be disabled for a missing plaintext.
+   *
+   * @param key Row the import was started from.
+   * @returns The key with `rawKey` set, or `null` when the reveal is already in
+   *   flight or the server refused it; the caller then stops before writing.
+   */
+  const resolveImportKey = async (key: ApiKey): Promise<ApiKey | null> => {
+    if (key.rawKey) {
+      return key;
     }
+    if (revealingKeyIdsRef.current.has(key.id)) {
+      return null;
+    }
+    revealingKeyIdsRef.current.add(key.id);
+    setImportingKeyId(key.id);
+    try {
+      return { ...key, rawKey: await ApiKeyService.revealKey(key.id) };
+    } catch {
+      setImportFailedKeyId(key.id);
+      window.setTimeout(() => {
+        setImportFailedKeyId((current) => (current === key.id ? null : current));
+      }, 1500);
+      return null;
+    } finally {
+      revealingKeyIdsRef.current.delete(key.id);
+      setImportingKeyId((current) => (current === key.id ? null : current));
+    }
+  };
+
+  const openQuickImportMenu = (key: ApiKey, element: HTMLElement) => {
     if (quickImportCloseTimerRef.current !== null) {
       window.clearTimeout(quickImportCloseTimerRef.current);
       quickImportCloseTimerRef.current = null;
@@ -218,71 +263,109 @@ export function ApiKeysView() {
   };
 
   const quickImportExtension = getQuickImportExtension();
+  /** The row being confirmed; the key is looked up live so a refresh cannot stale it. */
+  const pendingQuickImportKey = pendingQuickImport === null
+    ? null
+    : keysData.find((item) => item.id === pendingQuickImport.keyId) ?? null;
 
-  const selectQuickImportExtensionTarget = (targetId: string) => {
-    const extension = getQuickImportExtension();
-    const anchor = quickImportMenu;
+  useEffect(() => {
+    if (pendingQuickImport === null) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setPendingQuickImport(null);
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [pendingQuickImport]);
+
+  /** Close the hover menu and drop its pending close timer. */
+  const dismissQuickImportMenu = () => {
     setQuickImportMenu(null);
     if (quickImportCloseTimerRef.current !== null) {
       window.clearTimeout(quickImportCloseTimerRef.current);
       quickImportCloseTimerRef.current = null;
     }
-    if (!extension || !anchor) {
-      return;
-    }
-    const key = keysData.find((item) => item.id === anchor.keyId);
-    if (!key?.rawKey) {
-      return;
-    }
-    extension.onSelect({
-      targetId,
-      key: {
-        id: key.id,
-        displayName: key.displayName,
-        maskedKey: key.maskedKey,
-        rawKey: key.rawKey,
-      },
-      endpoints: resolveAbsoluteGatewayEndpoints(),
-      homepage: resolveRelayHomepage(),
-    });
   };
 
-  const selectQuickImportTarget = (targetId: QuickImportTargetId) => {
+  /**
+   * A menu row was picked: close the menu and ask for confirmation. Nothing is
+   * revealed yet, so a cancelled confirmation costs no audit entry.
+   */
+  const beginQuickImport = (choice: QuickImportChoice) => {
     const anchor = quickImportMenu;
-    setQuickImportMenu(null);
-    if (quickImportCloseTimerRef.current !== null) {
-      window.clearTimeout(quickImportCloseTimerRef.current);
-      quickImportCloseTimerRef.current = null;
-    }
+    dismissQuickImportMenu();
     if (!anchor) {
       return;
     }
-    const key = keysData.find((item) => item.id === anchor.keyId);
+    setPendingQuickImport({ ...choice, keyId: anchor.keyId });
+  };
+
+  /**
+   * Run the confirmed import: reveal the plaintext through the audited
+   * endpoint, then hand the key to the extension target or the built-in route.
+   */
+  const runQuickImport = async (pending: PendingQuickImport) => {
+    const key = keysData.find((item) => item.id === pending.keyId);
     if (!key) {
       return;
     }
-    const target = resolveQuickImportTarget(targetId);
+    const resolved = await resolveImportKey(key);
+    if (!resolved?.rawKey) {
+      return;
+    }
+    if (pending.kind === 'extension') {
+      const extension = getQuickImportExtension();
+      if (!extension) {
+        return;
+      }
+      extension.onSelect({
+        targetId: pending.targetId,
+        key: {
+          id: resolved.id,
+          displayName: resolved.displayName,
+          maskedKey: resolved.maskedKey,
+          rawKey: resolved.rawKey,
+        },
+        endpoints: resolveAbsoluteGatewayEndpoints(),
+        homepage: resolveRelayHomepage(),
+      });
+      return;
+    }
+    const target = resolveQuickImportTarget(pending.targetId);
     if (target.requiresManualImport) {
       // DeepSeek Harness has no import link. Require a key-reachable model,
       // then generate its route and fresh-session default in the manual config.
-      setQuickImportAppPicker({ key, result: null, targetId });
+      setQuickImportAppPicker({ key: resolved, result: null, targetId: pending.targetId });
       return;
     }
-    const result = buildQuickImportResult(key, targetId);
+    const result = buildQuickImportResult(resolved, pending.targetId);
     if (!result) {
       return;
     }
     if (target.requiresAppSelection) {
       // CC Switch keeps a separate provider list per app; ask which app the
       // relay provider belongs to before building the import link.
-      setQuickImportAppPicker({ key, result, targetId });
+      setQuickImportAppPicker({ key: resolved, result, targetId: pending.targetId });
       return;
     }
     // Birdcoder unifies model configuration: configure name / default model
     // in the same dialog without the app grid, then import directly. The
     // vendors/models are resolved by Birdcoder itself through the gateway
     // `/v1/vendors` endpoint at import time, so no vendor selection here.
-    setQuickImportAppPicker({ key, result, targetId });
+    setQuickImportAppPicker({ key: resolved, result, targetId: pending.targetId });
+  };
+
+  /** Confirmation accepted: dismiss the dialog and start the reveal + import. */
+  const confirmPendingQuickImport = () => {
+    const pending = pendingQuickImport;
+    if (!pending) {
+      return;
+    }
+    setPendingQuickImport(null);
+    void runQuickImport(pending);
   };
 
   const openImportDeepLink = (
@@ -781,7 +864,7 @@ export function ApiKeysView() {
                         >
                           <button
                             type="button"
-                            disabled={!key.rawKey}
+                            aria-busy={importingKeyId === key.id}
                             onClick={(event) => {
                               if (quickImportMenu?.keyId === key.id) {
                                 setQuickImportMenu(null);
@@ -789,16 +872,33 @@ export function ApiKeysView() {
                                 openQuickImportMenu(key, event.currentTarget);
                               }
                             }}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-lobster-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:bg-transparent dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-lobster-400"
-                            title={key.rawKey
-                              ? t('console.apiKeys.quickImport', '导入到')
-                              : t('console.apiKeys.quickImport.noPlaintext', '该令牌无明文值，无法快速导入')}
-                            aria-label={key.rawKey
-                              ? t('console.apiKeys.quickImport', '导入到')
-                              : t('console.apiKeys.quickImport.noPlaintext', '该令牌无明文值，无法快速导入')}
+                            className={`inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-lobster-600 dark:border-white/10 dark:bg-transparent dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-lobster-400${importingKeyId === key.id ? ' cursor-progress' : ''}`}
+                            title={importingKeyId === key.id
+                              ? t('console.apiKeys.revealingKey', '正在获取令牌明文')
+                              : importFailedKeyId === key.id
+                                ? t('console.apiKeys.quickImport.revealFailed', '无法获取明文，请重试')
+                                : t('console.apiKeys.quickImport', '导入到')}
+                            aria-label={importingKeyId === key.id
+                              ? t('console.apiKeys.revealingKey', '正在获取令牌明文')
+                              : importFailedKeyId === key.id
+                                ? t('console.apiKeys.quickImport.revealFailed', '无法获取明文，请重试')
+                                : t('console.apiKeys.quickImport', '导入到')}
                           >
-                            <Download className="h-3.5 w-3.5" />
+                            {importingKeyId === key.id ? (
+                              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+                            ) : importFailedKeyId === key.id ? (
+                              <AlertCircle className="h-3.5 w-3.5 shrink-0 text-rose-500" />
+                            ) : (
+                              <Download className="h-3.5 w-3.5 shrink-0" />
+                            )}
                             {t('console.apiKeys.quickImport', '导入到')}
+                            <span role="status" aria-live="polite" className="sr-only">
+                              {importingKeyId === key.id
+                                ? t('console.apiKeys.revealingKey', '正在获取令牌明文')
+                                : importFailedKeyId === key.id
+                                  ? t('console.apiKeys.quickImport.revealFailed', '无法获取明文，请重试')
+                                  : ''}
+                            </span>
                           </button>
                         </div>
                         <button
@@ -932,7 +1032,13 @@ export function ApiKeysView() {
                   <button
                     key={target.id}
                     type="button"
-                    onClick={() => selectQuickImportExtensionTarget(target.id)}
+                    onClick={() => {
+                      beginQuickImport({
+                        kind: 'extension',
+                        targetId: target.id,
+                        targetLabel: target.label,
+                      });
+                    }}
                     className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition-colors hover:bg-primary-50 hover:text-primary-700 dark:text-slate-200 dark:hover:bg-primary-500/10 dark:hover:text-primary-300"
                   >
                     {target.icon ?? <Repeat className="h-4 w-4 shrink-0 text-primary-500" />}
@@ -943,7 +1049,13 @@ export function ApiKeysView() {
                   <button
                     key={target.id}
                     type="button"
-                    onClick={() => selectQuickImportTarget(target.id)}
+                    onClick={() => {
+                      beginQuickImport({
+                        kind: 'builtin',
+                        targetId: target.id,
+                        targetLabel: t(target.labelKey, target.fallbackLabel),
+                      });
+                    }}
                     className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition-colors hover:bg-primary-50 hover:text-primary-700 dark:text-slate-200 dark:hover:bg-primary-500/10 dark:hover:text-primary-300"
                   >
                     {target.id === 'birdcoder' ? (
@@ -1018,6 +1130,38 @@ export function ApiKeysView() {
         onClose={() => setEditingKey(null)}
         onSubmit={handleEditSubmit}
       />
+
+      {pendingQuickImport && pendingQuickImportKey && (
+        <ConfirmDialog
+          title={t('console.apiKeys.quickImport.confirmTitle', '导入令牌')}
+          description={t('console.apiKeys.quickImport.confirmHint', '导入会从服务端获取该令牌明文，并生成目标工具的配置文件；服务端会记录一次取用审计。')}
+          confirmLabel={t('console.apiKeys.quickImport.confirmImport', '确认导入')}
+          cancelLabel={t('common.actions.cancel', '取消')}
+          onConfirm={confirmPendingQuickImport}
+          onCancel={() => setPendingQuickImport(null)}
+        >
+          <div className="space-y-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs dark:border-white/10 dark:bg-white/5">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-slate-500 dark:text-slate-400">{t('console.apiKeys.name', '名称')}</span>
+              <span className="min-w-0 truncate font-semibold text-slate-800 dark:text-slate-100">
+                {pendingQuickImportKey.displayName}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-slate-500 dark:text-slate-400">{t('console.apiKeys.maskedToken', '脱敏令牌')}</span>
+              <span className="min-w-0 truncate font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                {pendingQuickImportKey.maskedKey}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-slate-500 dark:text-slate-400">{t('console.apiKeys.quickImport.confirmTargetLabel', '目标工具')}</span>
+              <span className="min-w-0 truncate font-semibold text-slate-800 dark:text-slate-100">
+                {pendingQuickImport.targetLabel}
+              </span>
+            </div>
+          </div>
+        </ConfirmDialog>
+      )}
 
       {deletingKey && (
         <ConfirmDialog

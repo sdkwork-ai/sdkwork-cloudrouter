@@ -2,7 +2,9 @@ use crate::gateway_api_key_auth::{
     authenticate_gateway_api_key, sanitize_authenticated_gateway_uri,
 };
 use crate::invocation_dispatcher::outbound_http_proxy_or_warn;
-use crate::invocation_http::{extract_client_ip, response_from_invocation_error};
+use crate::invocation_http::{
+    extract_client_ip, normalize_gateway_error_protocol_for_request, response_from_invocation_error,
+};
 use crate::openai_passthrough_routes::{
     apply_openai_method_passthrough_routes, apply_openai_passthrough_routes,
     apply_stored_chat_completion_passthrough_routes, reject_unsupported_openai_method,
@@ -19,6 +21,7 @@ use axum::extract::State;
 use axum::http::header::{HeaderName, HeaderValue, USER_AGENT};
 use axum::http::HeaderMap;
 use axum::http::{StatusCode, Uri};
+use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
 use axum::routing::MethodRouter;
 use axum::{Json, Router};
@@ -167,11 +170,26 @@ pub fn provider_native_passthrough_providers() -> &'static [&'static str] {
     PROVIDER_NATIVE_PASSTHROUGH_PROVIDERS
 }
 
+fn with_gateway_error_protocol_mapping<S>(router: Router<S>) -> Router<S>
+where
+    S: Clone + Send + Sync + 'static,
+{
+    router.layer(middleware::from_fn(normalize_passthrough_gateway_errors))
+}
+
+async fn normalize_passthrough_gateway_errors(request: Request, next: Next) -> Response {
+    let method = request.method().clone();
+    let path = request.uri().path().to_owned();
+    let mut response = next.run(request).await;
+    normalize_gateway_error_protocol_for_request(&mut response, &method, path.as_str()).await;
+    response
+}
+
 pub fn gateway_passthrough_router() -> Router {
-    apply_provider_native_passthrough_routes(
+    with_gateway_error_protocol_mapping(apply_provider_native_passthrough_routes(
         openai_passthrough_placeholder_router(),
         MethodRouter::new().fallback(provider_passthrough_not_configured),
-    )
+    ))
 }
 
 fn apply_provider_native_passthrough_routes<S>(
@@ -283,7 +301,9 @@ where
     } else {
         openai_passthrough_placeholder_router()
     };
-    openai_router.merge(authenticated_provider_passthrough_router::<C>(state))
+    with_gateway_error_protocol_mapping(
+        openai_router.merge(authenticated_provider_passthrough_router::<C>(state)),
+    )
 }
 
 pub fn authenticated_provider_native_passthrough_router_with_adapter_config<C>(
@@ -322,17 +342,19 @@ pub(crate) fn authenticated_provider_native_passthrough_router_with_adapter_conf
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
-    authenticated_provider_passthrough_router::<C>(AuthenticatedProviderPassthroughState {
-        runtime: ProviderPassthroughRuntime::from_optional_config_with_adapter(
-            config,
-            adapter_config,
-        ),
-        catalog,
-        api_key_hasher,
-        secret_resolver,
-        usage_recorder,
-        query_string_api_key_policy,
-    })
+    with_gateway_error_protocol_mapping(authenticated_provider_passthrough_router::<C>(
+        AuthenticatedProviderPassthroughState {
+            runtime: ProviderPassthroughRuntime::from_optional_config_with_adapter(
+                config,
+                adapter_config,
+            ),
+            catalog,
+            api_key_hasher,
+            secret_resolver,
+            usage_recorder,
+            query_string_api_key_policy,
+        },
+    ))
 }
 
 fn openai_passthrough_placeholder_router() -> Router<()> {
@@ -381,10 +403,10 @@ where
 }
 
 fn provider_passthrough_router_with_runtime(runtime: ProviderPassthroughRuntime) -> Router {
-    apply_provider_native_passthrough_routes(
+    with_gateway_error_protocol_mapping(apply_provider_native_passthrough_routes(
         Router::new(),
         MethodRouter::new().fallback(forward_provider_passthrough),
-    )
+    ))
     .with_state(runtime)
 }
 
@@ -494,7 +516,7 @@ where
 }
 
 fn passthrough_not_configured(code: &'static str, message: &'static str, path: &str) -> Response {
-    (
+    let mut response = (
         StatusCode::NOT_IMPLEMENTED,
         Json(json!({
             "error": {
@@ -506,7 +528,9 @@ fn passthrough_not_configured(code: &'static str, message: &'static str, path: &
             }
         })),
     )
-        .into_response()
+        .into_response();
+    sdkwork_cloudrouter_http::mark_gateway_generated_error_response(&mut response);
+    response
 }
 
 fn passthrough_relay_failed(_code: &'static str, message: String) -> Response {
@@ -538,7 +562,7 @@ fn passthrough_server_error(
     code: &'static str,
     message: &'static str,
 ) -> Response {
-    (
+    let mut response = (
         status,
         Json(json!({
             "error": {
@@ -549,11 +573,13 @@ fn passthrough_server_error(
             }
         })),
     )
-        .into_response()
+        .into_response();
+    sdkwork_cloudrouter_http::mark_gateway_generated_error_response(&mut response);
+    response
 }
 
 fn passthrough_client_error(status: StatusCode, code: &'static str, message: String) -> Response {
-    (
+    let mut response = (
         status,
         Json(json!({
             "error": {
@@ -564,7 +590,9 @@ fn passthrough_client_error(status: StatusCode, code: &'static str, message: Str
             }
         })),
     )
-        .into_response()
+        .into_response();
+    sdkwork_cloudrouter_http::mark_gateway_generated_error_response(&mut response);
+    response
 }
 
 struct AuthenticatedProviderPassthroughState<C> {
@@ -1964,25 +1992,22 @@ fn adapter_invocation_response(response: AdapterInvocationResponse) -> Result<Re
     let status = StatusCode::from_u16(response.status_code)
         .map_err(|error| format!("provider adapter returned invalid status code: {error}"))?;
     let mut builder = Response::builder().status(status);
-    let mut has_content_type = false;
-    for (name, value) in response.headers {
-        if !should_forward_adapter_response_header(name.as_str()) {
-            continue;
-        }
-        let header_name = HeaderName::from_bytes(name.as_bytes()).map_err(|error| {
-            format!("provider adapter returned invalid response header name {name}: {error}")
-        })?;
-        let header_value = HeaderValue::from_str(value.as_str()).map_err(|error| {
-            format!("provider adapter returned invalid response header value for {name}: {error}")
-        })?;
-        if header_name == axum::http::header::CONTENT_TYPE {
-            has_content_type = true;
-        }
-        builder = builder.header(header_name, header_value);
+    let content_type = response
+        .headers
+        .iter()
+        .find(|(name, _)| name.eq_ignore_ascii_case("content-type"))
+        .map(|(_, value)| value.as_str())
+        .map(HeaderValue::from_str)
+        .transpose()
+        .map_err(|error| format!("provider adapter returned invalid response content type: {error}"))?;
+    let preserved_headers = sdkwork_cloudrouter_http::preserve_adapter_response_headers(&response.headers);
+    for (name, value) in &preserved_headers {
+        builder = builder.header(name, value);
     }
-    if !has_content_type {
-        builder = builder.header(axum::http::header::CONTENT_TYPE, "application/json");
-    }
+    builder = builder.header(
+        axum::http::header::CONTENT_TYPE,
+        content_type.unwrap_or_else(|| HeaderValue::from_static("application/json")),
+    );
     let body = serde_json::to_vec(&response.body)
         .map_err(|error| format!("failed to serialize provider adapter response body: {error}"))?;
     builder
@@ -2029,21 +2054,6 @@ fn adapter_streaming_response(
         .map_err(|error| format!("failed to build provider adapter streaming response: {error}"))
 }
 
-fn should_forward_adapter_response_header(name: &str) -> bool {
-    !matches!(
-        name.to_ascii_lowercase().as_str(),
-        "connection"
-            | "keep-alive"
-            | "proxy-authenticate"
-            | "proxy-authorization"
-            | "te"
-            | "trailer"
-            | "transfer-encoding"
-            | "upgrade"
-            | "content-length"
-    )
-}
-
 fn provider_from_passthrough_path(path: &str) -> Option<&str> {
     split_provider_passthrough_path(path).map(|(provider, _)| provider)
 }
@@ -2081,6 +2091,41 @@ mod tests {
         PriceSide, PricingPlan, PricingRateMetadata, UpstreamAccountGroup, UpstreamAccountRoute,
     };
     use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
+    use tower::ServiceExt;
+
+    #[tokio::test]
+    async fn passthrough_gateway_errors_use_the_declared_vendor_protocol() {
+        let path = "/anthropic/v1/messages";
+        let router = with_gateway_error_protocol_mapping(Router::new().route(
+            path,
+            axum::routing::post(|| async {
+                passthrough_not_configured(
+                    "provider_passthrough_not_configured",
+                    "provider route is not configured",
+                    path,
+                )
+            }),
+        ));
+        let request = Request::builder()
+            .method("POST")
+            .uri(path)
+            .body(Body::empty())
+            .expect("passthrough request");
+
+        let response = router.oneshot(request).await.expect("router response");
+        assert_eq!(StatusCode::NOT_IMPLEMENTED, response.status());
+        assert_eq!(
+            "application/json",
+            response.headers()[axum::http::header::CONTENT_TYPE]
+        );
+        let body = axum::body::to_bytes(response.into_body(), 4096)
+            .await
+            .expect("gateway error body");
+        let body: Value = serde_json::from_slice(&body).expect("JSON error body");
+        assert_eq!("error", body["type"]);
+        assert_eq!("api_error", body["error"]["type"]);
+        assert_eq!("provider route is not configured", body["error"]["message"]);
+    }
 
     #[tokio::test]
     async fn provider_passthrough_runtime_enforces_the_injected_request_body_limit() {
