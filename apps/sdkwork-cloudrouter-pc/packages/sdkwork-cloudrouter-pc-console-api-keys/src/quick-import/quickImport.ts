@@ -183,7 +183,8 @@ export function resolveQuickImportTarget(targetId: QuickImportTargetId): QuickIm
 /**
  * Builds the importable config content for a target tool from the plaintext
  * gateway API key. Returns null when the key has no plaintext value (for
- * example keys stored in ciphertext-only mode).
+ * example keys stored in ciphertext-only mode), or when a DeepSeek Harness
+ * import has no selected model.
  */
 export function buildQuickImportResult(
   key: ApiKey,
@@ -413,6 +414,7 @@ export async function fetchGatewayModelList(rawKey: string): Promise<string[]> {
   try {
     const response = await fetch(`${toAbsoluteGatewayUrl(openAiBaseUrl)}/models`, {
       headers: { Authorization: `Bearer ${rawKey}` },
+      signal: AbortSignal.timeout(10_000),
     });
     if (!response.ok) {
       return [];
@@ -440,7 +442,8 @@ export async function fetchGatewayModelList(rawKey: string): Promise<string[]> {
 
 export function downloadQuickImportContent(result: QuickImportResult): void {
   const target = resolveQuickImportTarget(result.targetId);
-  const blob = new Blob([result.content], { type: 'application/json' });
+  const contentType = result.targetId === 'deepseek-harness' ? 'text/yaml' : 'application/json';
+  const blob = new Blob([result.content], { type: contentType });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;

@@ -5,7 +5,7 @@ import {
   downloadQuickImportContent,
   resolveQuickImportTarget,
   type QuickImportResult,
-} from './quickImport';
+} from './quickImport.ts';
 
 interface QuickImportResultDialogProps {
   result: QuickImportResult;

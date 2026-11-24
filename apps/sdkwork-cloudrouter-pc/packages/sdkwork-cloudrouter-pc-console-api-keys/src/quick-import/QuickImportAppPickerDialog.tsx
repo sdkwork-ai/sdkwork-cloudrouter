@@ -18,7 +18,7 @@ import {
   fetchGatewayModelList,
   resolveRelayHomepage,
   type CcSwitchApp,
-} from './quickImport';
+} from './quickImport.ts';
 
 interface QuickImportAppPickerDialogProps {
   keyName: string;
@@ -235,10 +235,14 @@ export function QuickImportAppPickerDialog({
                     setManualModel('');
                   }}
                   disabled={modelsLoading}
+                  required={requiredModel}
+                  aria-required={requiredModel}
                   className={`${inputClassName} appearance-none pr-8 disabled:cursor-wait disabled:opacity-60`}
                 >
                   <option value="">
-                    {t('console.apiKeys.quickImport.noModel', '不指定')}
+                    {requiredModel
+                      ? t('console.apiKeys.quickImport.selectModel', 'Select an available model')
+                      : t('console.apiKeys.quickImport.noModel', 'Not specified')}
                   </option>
                   {models.map((item) => (
                     <option key={item} value={item}>

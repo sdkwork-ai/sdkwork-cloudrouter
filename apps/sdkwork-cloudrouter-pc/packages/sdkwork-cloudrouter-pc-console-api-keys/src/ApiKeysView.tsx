@@ -61,10 +61,10 @@ import {
   type QuickImportDeepLinkOptions,
   type QuickImportResult,
   type QuickImportTargetId,
-} from './quick-import/quickImport';
-import { openDeeplink } from './quick-import/openDeeplink';
-import { QuickImportAppPickerDialog } from './quick-import/QuickImportAppPickerDialog';
-import { QuickImportResultDialog } from './quick-import/QuickImportResultDialog';
+} from './quick-import/quickImport.ts';
+import { openDeeplink } from './quick-import/openDeeplink.ts';
+import { QuickImportAppPickerDialog } from './quick-import/QuickImportAppPickerDialog.tsx';
+import { QuickImportResultDialog } from './quick-import/QuickImportResultDialog.tsx';
 
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
 

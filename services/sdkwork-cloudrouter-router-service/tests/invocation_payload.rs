@@ -235,6 +235,36 @@ async fn required_model_missing_fails_before_routing() {
     assert_eq!(InvocationShape::Json, invocation.dispatch.invocation_shape);
 }
 
+/// An invocation that arrives without a body is a transport failure, and the
+/// rejection must say so: calling it a missing model sends every investigation of
+/// a production 40002 at the caller's request builder instead of the hop that
+/// dropped the payload.
+#[tokio::test]
+async fn empty_body_is_reported_as_an_empty_body_not_a_missing_model() {
+    let mut invocation = classified_invocation(
+        Method::POST,
+        "/v1/chat/completions",
+        InvocationBody::Empty,
+    );
+
+    let error = PayloadExtractionInterceptor
+        .before(&mut invocation)
+        .await
+        .expect_err("required payload");
+
+    assert_eq!(InvocationErrorKind::InvalidRequest, error.kind);
+    assert!(
+        error.message.contains("request body is empty"),
+        "actual error: {}",
+        error.message
+    );
+    assert!(
+        !error.message.contains("model is required"),
+        "an empty body must not be reported as a caller-side model omission: {}",
+        error.message
+    );
+}
+
 use sdkwork_cloudrouter_router_service::application::{StickyMode, StickyScope};
 
 fn assert_session_sticky(invocation: &Invocation, expected_session_id: &str) {

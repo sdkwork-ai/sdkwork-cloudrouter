@@ -339,6 +339,38 @@ fn validate_required_model(invocation: &Invocation) -> Result<(), InvocationErro
             InvocationBody::Bytes(bytes) => bytes.len(),
             InvocationBody::Empty => 0,
         };
+        // An empty body is a transport fact, not a caller mistake: the stage that
+        // was supposed to deliver the payload handed over nothing. Reporting it as
+        // a missing model sent every investigation of this failure at the client's
+        // request builder. Name the real cause and record what actually arrived.
+        if body_bytes == 0 {
+            let declared_content_length = invocation
+                .request
+                .headers
+                .get("content-length")
+                .and_then(|value| value.to_str().ok())
+                .and_then(|value| value.trim().parse::<u64>().ok())
+                .unwrap_or_default();
+            tracing::warn!(
+                stage = "payload_extraction",
+                api_code = %invocation.resource.api_code,
+                route_key = %invocation.resource.route_key,
+                method = %invocation.request.method,
+                path = %invocation.request.path,
+                content_type = invocation.request.content_type.as_deref().unwrap_or(""),
+                declared_content_length,
+                body_bytes,
+                request_id = %invocation.request.request_id,
+                "required route received an empty request body"
+            );
+            return Err(InvocationError::new(
+                InvocationErrorKind::InvalidRequest,
+                format!(
+                    "request body is empty for {}",
+                    invocation.resource.api_code
+                ),
+            ));
+        }
         tracing::warn!(
             stage = "payload_extraction",
             api_code = %invocation.resource.api_code,
