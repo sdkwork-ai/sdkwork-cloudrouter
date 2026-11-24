@@ -195,17 +195,15 @@ export function ApiKeysView() {
     if (!key) {
       return;
     }
-    const result = buildQuickImportResult(key, targetId);
-    if (!result) {
-      return;
-    }
     const target = resolveQuickImportTarget(targetId);
     if (target.requiresManualImport) {
-      // DeepSeek Harness does not accept the `v1/import` deep-link entrypoint
-      // yet: show the manual import dialog directly (config content + install
-      // banner) instead of probing its `dsh://` protocol.
-      setQuickImportAppUnavailable(true);
-      setQuickImportResult(result);
+      // DeepSeek Harness has no import link. Require a key-reachable model,
+      // then generate its route and fresh-session default in the manual config.
+      setQuickImportAppPicker({ key, result: null, targetId });
+      return;
+    }
+    const result = buildQuickImportResult(key, targetId);
+    if (!result) {
       return;
     }
     if (target.requiresAppSelection) {
@@ -878,17 +876,28 @@ export function ApiKeysView() {
           const target = resolveQuickImportTarget(quickImportAppPicker.targetId);
           return (
             <QuickImportAppPickerDialog
-              keyName={quickImportAppPicker.result.keyName}
-              maskedKey={quickImportAppPicker.result.maskedKey}
+              keyName={quickImportAppPicker.key.displayName}
+              maskedKey={quickImportAppPicker.key.maskedKey}
               rawKey={quickImportAppPicker.key.rawKey ?? ''}
               showAppSelection={target.requiresAppSelection ? undefined : false}
+              requiredModel={target.requiresManualImport}
               confirmLabel={target.requiresAppSelection
                 ? undefined
                 : t(target.labelKey, target.fallbackLabel)}
               onSelect={(app, options) => {
                 const picker = quickImportAppPicker;
                 setQuickImportAppPicker(null);
-                openImportDeepLink(picker.key, picker.targetId, app, picker.result, options);
+                if (target.requiresManualImport) {
+                  const result = buildQuickImportResult(picker.key, picker.targetId, options);
+                  if (result) {
+                    setQuickImportAppUnavailable(true);
+                    setQuickImportResult(result);
+                  }
+                  return;
+                }
+                if (picker.result) {
+                  openImportDeepLink(picker.key, picker.targetId, app, picker.result, options);
+                }
               }}
               onClose={() => setQuickImportAppPicker(null)}
             />
@@ -1033,6 +1042,6 @@ interface QuickImportMenuAnchor {
 
 interface QuickImportAppPickerState {
   key: ApiKey;
-  result: QuickImportResult;
+  result: QuickImportResult | null;
   targetId: QuickImportTargetId;
 }

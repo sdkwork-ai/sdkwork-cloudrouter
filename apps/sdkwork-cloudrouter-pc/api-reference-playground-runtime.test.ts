@@ -3192,6 +3192,53 @@ test("api playground current user send requires login before network requests", 
   assert.ok(loginGuardIndex < fetchIndex, "login guard must run before the playground network request");
 });
 
+test("api playground rejects chat completions without a required model before fetch", () => {
+  const result = buildPlaygroundRequest({
+    baseUrl: "https://api.example.test",
+    endpoint: {
+      method: "POST",
+      path: "/v1/chat/completions",
+      openApiOperation: {
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ChatCompletionRequest" },
+            },
+          },
+        },
+      },
+      openApiSpec: {
+        paths: {},
+        components: {
+          schemas: {
+            ChatCompletionRequest: {
+              type: "object",
+              required: ["model", "messages"],
+              properties: {
+                model: { type: "string" },
+                messages: { type: "array", items: { type: "object" } },
+              },
+            },
+          },
+        },
+      },
+    },
+    pathParams: [],
+    queryParams: [],
+    headerParams: [],
+    bodyValue: JSON.stringify({ messages: [{ role: "user", content: "Hello" }] }),
+    authType: "api_key",
+    apiKey: "sk-test",
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.activeTab, "body");
+  assert.deepEqual(result.errors, { body: true });
+  assert.equal(result.response.statusText, "Missing Required Body Fields");
+  assert.match(String((result.response.data as { message: string }).message), /model/u);
+});
+
 test("api playground request builder focuses required header errors on headers tab", () => {
   const result = buildPlaygroundRequest({
     baseUrl: "https://api.example.test",

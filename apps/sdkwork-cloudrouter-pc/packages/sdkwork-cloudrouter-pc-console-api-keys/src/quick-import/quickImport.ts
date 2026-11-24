@@ -154,9 +154,9 @@ export const QUICK_IMPORT_TARGETS: QuickImportTarget[] = [
     stepsKey: 'console.apiKeys.quickImport.deepseekHarnessSteps',
     fallbackSteps: [
       'Download or copy the config content.',
-      'Merge the `llm-pi-ai:` block into ~/.dsh/settings.yaml.',
+      'Merge the `llm-pi-ai:` and `agent-default-model:` blocks into ~/.dsh/settings.yaml.',
       'Add the CLOUDROUTER_API_KEY line to ~/.dsh/.credentials.yaml.',
-      'Open DeepSeek Harness and pick the Cloud Router route in Settings → Models (use "Fetch available models" to populate its model list).',
+      'Restart DeepSeek Harness and start a new conversation. The selected model is saved as the Cloud Router default.',
     ].join('\n'),
     configPathKey: 'console.apiKeys.quickImport.deepseekHarnessConfigPath',
     fallbackConfigPath: '~/.dsh/settings.yaml + ~/.dsh/.credentials.yaml',
@@ -246,8 +246,9 @@ const DEEPSEEK_HARNESS_CREDENTIAL_KEY = 'CLOUDROUTER_API_KEY';
 
 /**
  * DeepSeek Harness desktop (dsh-desktop) import content: an OpenAI-compatible
- * `cloudrouter` route under `llm-pi-ai.providers` in `~/.dsh/settings.yaml`,
- * plus its key in `~/.dsh/.credentials.yaml`. The credentials file is a
+ * `cloudrouter` route under `llm-pi-ai.providers` and an `agent-default-model`
+ * selection in `~/.dsh/settings.yaml`, plus its key in
+ * `~/.dsh/.credentials.yaml`. The credentials file is a
  * strict key-only YAML mapping (any other content is rejected), so one
  * document carries both halves with comments marking which file each belongs
  * to — the user splits them on save.
@@ -267,6 +268,9 @@ function buildDeepseekHarnessContent(rawKey: string, model: string): string {
     `      baseURL: ${toAbsoluteGatewayUrl(openAiBaseUrl)}`,
     '      models:',
     `        - id: ${yamlQuoteString(model)}`,
+    'agent-default-model:',
+    '  provider: cloudrouter',
+    `  model: ${yamlQuoteString(model)}`,
     '',
     `# Add the credential line below to ~/.dsh/.credentials.yaml (kept at 0600).`,
     `${DEEPSEEK_HARNESS_CREDENTIAL_KEY}: ${yamlQuoteString(rawKey)}`,
