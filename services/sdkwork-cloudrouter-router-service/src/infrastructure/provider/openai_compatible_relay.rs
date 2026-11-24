@@ -1783,6 +1783,12 @@ async fn send_openai_json_with_runtime(
 
         let (response, dispatch_permit) = send_provider_request(runtime, http_request).await?;
         let status_code = response.status().as_u16();
+        let content_type = response
+            .headers()
+            .get(CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok())
+            .map(str::to_owned);
+        let headers = preserve_safe_upstream_response_headers(response.headers());
         let memory_guard = runtime
             .response_memory_budget
             .try_reserve(runtime.response_max_bytes)
@@ -1809,9 +1815,17 @@ async fn send_openai_json_with_runtime(
             ))
         })?
         .to_bytes();
-        let body = serde_json::from_slice(&bytes).map_err(|error| {
-            DomainError::new(format!("upstream provider returned invalid JSON: {error}"))
-        })?;
+        let (body, body_bytes) = match serde_json::from_slice(&bytes) {
+            Ok(body) => (body, None),
+            Err(_) if !(200..300).contains(&status_code) => {
+                (Value::Null, Some(bytes.to_vec()))
+            }
+            Err(error) => {
+                return Err(DomainError::new(format!(
+                    "upstream provider returned invalid JSON: {error}"
+                )))
+            }
+        };
         tracing::debug!(
             request_label,
             attempt,
@@ -1836,7 +1850,7 @@ async fn send_openai_json_with_runtime(
                     status_code,
                     "not replaying a non-idempotent provider POST after a status that may have executed"
                 );
-                return Ok((status_code, body, memory_guard));
+                return Ok((status_code, body, body_bytes, content_type, headers, memory_guard));
             }
             drop(body);
             drop(memory_guard);
@@ -1847,7 +1861,7 @@ async fn send_openai_json_with_runtime(
             continue;
         }
 
-        return Ok((status_code, body, memory_guard));
+        return Ok((status_code, body, body_bytes, content_type, headers, memory_guard));
     }
 
     Err(DomainError::new(
