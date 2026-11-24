@@ -13,9 +13,20 @@ pub fn default_security_headers() -> &'static [(&'static str, &'static str)] {
 /// request tracing, and rate-limit handling. Content metadata is carried
 /// separately, and hop-by-hop or unrelated upstream headers are excluded.
 pub fn preserve_safe_upstream_response_headers(headers: &HeaderMap) -> HeaderMap {
+    let connection_headers = headers
+        .get("connection")
+        .and_then(|value| value.to_str().ok())
+        .into_iter()
+        .flat_map(|value| value.split(','))
+        .map(|name| name.trim().to_ascii_lowercase())
+        .filter(|name| !name.is_empty())
+        .collect::<Vec<_>>();
     let mut preserved = HeaderMap::new();
     for (name, value) in headers {
         if is_hop_by_hop_header(name)
+            || connection_headers
+                .iter()
+                .any(|connection_name| connection_name == name.as_str())
             || !matches!(
                 name.as_str(),
                 "retry-after"
