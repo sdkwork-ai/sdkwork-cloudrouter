@@ -609,8 +609,20 @@ fn provider_request_error(message: impl Into<String>) -> InvocationError {
     InvocationError::new(InvocationErrorKind::Dispatch, message)
 }
 
+/// Rejects a request path that resolves to a parent-directory segment.
+///
+/// The comparison runs on the **percent-decoded** path, not the raw one: the
+/// upstream edge decodes the octets and normalises the result before routing,
+/// so `/%2e%2e/x` reaches the same endpoint as `/../x` while only the raw form
+/// is visible here. Decoding first also makes an encoded separator
+/// (`..%2f..`) count as the two parent segments the upstream will see.
+///
+/// `decode_model_path_segment` is the shared percent-decoder already used for
+/// encoded model ids in this builder; a path segment and an opaque id are both
+/// `%`-encoded URL path text, so the decoding rule is the same one.
 fn path_has_parent_segment(path: &str) -> bool {
-    path.trim_matches('/')
+    decode_model_path_segment(path)
+        .trim_matches('/')
         .split('/')
         .any(|segment| segment == "..")
 }
@@ -725,6 +737,45 @@ mod tests {
             "messages": []
         })));
         assert!(body.get("stream_options").is_none());
+    }
+
+    /// 上游请求路径的父段守卫必须按**解码后**的段判断：上游边缘会先解码、再
+    /// 归一化路径，`%2e%2e` 与 `..` 落在同一个端点上；只比对原始文本等于把
+    /// 编码形式放行到上游（请求还带着网关注入的供应商凭据）。
+    #[test]
+    fn parent_segment_guard_sees_percent_encoded_traversal() {
+        for blocked in [
+            "/v1/chat/completions/../admin",
+            "/v1/chat/completions/%2e%2e/admin",
+            "/v1/chat/completions/%2E%2E/admin",
+            "/v1/chat/completions/.%2e/admin",
+            "/v1/chat/completions/%2e./admin",
+            "/v1/chat/completions/..%2f..%2fadmin",
+            "/volcengine/api/v3/%2e%2e/secrets",
+            "..",
+            "/..",
+            "/%2e%2e",
+        ] {
+            assert!(
+                super::path_has_parent_segment(blocked),
+                "must reject traversal: {blocked}"
+            );
+        }
+        // 「看起来像」但不是父段引用的路径不能被守卫误伤：编码过的模型 id、
+        // 名字里带两个点的对象，以及以点开头的合法段都要继续放行。
+        for allowed in [
+            "/v1/chat/completions",
+            "/v1/models/openai%2Fgpt-4o-mini/groups",
+            "/v1/files/file-%2e%2e-report",
+            "/v1/chat/completions/a..b",
+            "/v1beta/models/gemini-2.5-pro:generateContent",
+            "/v1/chat/completions/...",
+        ] {
+            assert!(
+                !super::path_has_parent_segment(allowed),
+                "must allow: {allowed}"
+            );
+        }
     }
 
     #[test]

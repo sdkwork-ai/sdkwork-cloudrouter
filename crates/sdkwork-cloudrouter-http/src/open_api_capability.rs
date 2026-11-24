@@ -1,11 +1,11 @@
 use std::sync::LazyLock;
 
 use axum::{
+    Router,
     body::Body,
     extract::Request,
     http::{Method, StatusCode},
     response::IntoResponse,
-    Router,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -224,8 +224,69 @@ fn capability_from_tag(tag: &str) -> OpenApiCapability {
 
 #[cfg(test)]
 mod tests {
-    use super::{open_api_capability_for_request, OpenApiCapability};
+    use super::{CLOUDROUTER_OPEN_API, OpenApiCapability, open_api_capability_for_request};
     use axum::http::Method;
+
+    #[test]
+    fn every_published_operation_resolves_to_its_tagged_capability() {
+        let document: serde_json::Value =
+            serde_json::from_str(CLOUDROUTER_OPEN_API).expect("OpenAPI document is valid JSON");
+        let paths = document["paths"]
+            .as_object()
+            .expect("OpenAPI document declares paths");
+        let mut operation_count = 0;
+
+        for (path, path_item) in paths {
+            let Some(operations) = path_item.as_object() else {
+                continue;
+            };
+            for (method, operation) in operations {
+                let Ok(method) = Method::from_bytes(method.to_ascii_uppercase().as_bytes()) else {
+                    continue;
+                };
+                if !matches!(
+                    method,
+                    Method::GET
+                        | Method::POST
+                        | Method::PUT
+                        | Method::PATCH
+                        | Method::DELETE
+                        | Method::HEAD
+                        | Method::OPTIONS
+                ) {
+                    continue;
+                }
+
+                let family = operation["tags"]
+                    .as_array()
+                    .and_then(|tags| tags.first())
+                    .and_then(serde_json::Value::as_str)
+                    .map(|tag| tag.split('/').next().unwrap_or(tag))
+                    .unwrap_or("");
+                let expected = match family {
+                    "Assistants" => OpenApiCapability::Agent,
+                    "Audio" | "Music" | "Realtime" => OpenApiCapability::Audio,
+                    "Containers" | "Files" | "Uploads" => OpenApiCapability::Drive,
+                    "Images" => OpenApiCapability::Image,
+                    "Vector Stores" => OpenApiCapability::Knowledgebase,
+                    "Conversations" => OpenApiCapability::Memory,
+                    "Videos" => OpenApiCapability::Video,
+                    _ => OpenApiCapability::Llm,
+                };
+                assert_eq!(
+                    Some(expected),
+                    open_api_capability_for_request(&method, path),
+                    "published operation {method} {path} must reach its {family} capability"
+                );
+                operation_count += 1;
+            }
+        }
+
+        assert!(
+            operation_count > 0,
+            "OpenAPI contract must publish operations"
+        );
+    }
 
     #[test]
     fn resolves_each_open_api_capability_from_authoritative_operations() {

@@ -16,8 +16,9 @@ use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
 use hyper_util::rt::TokioIo;
-use sdkwork_cloudrouter_http::ensure_rustls_crypto_provider;
-use sdkwork_cloudrouter_http::OutboundDnsResolver;
+use sdkwork_cloudrouter_http::{
+    ensure_rustls_crypto_provider, preserve_safe_upstream_response_headers, OutboundDnsResolver,
+};
 use sdkwork_cloudrouter_router_service::application::{
     Invocation, InvocationAccount, InvocationBody, InvocationDispatchResponse,
 };
@@ -266,7 +267,7 @@ impl InvocationDispatcher for InvocationHttpDispatcher {
                 .map(str::trim)
                 .filter(|value| !value.is_empty())
                 .map(str::to_owned);
-            let preserved_headers = preserve_safe_upstream_headers(response.headers());
+            let preserved_headers = preserve_safe_upstream_response_headers(response.headers());
 
             let is_sse_stream = content_type.as_deref().is_some_and(|ct| {
                 let ct_lower = ct.to_lowercase();
@@ -889,43 +890,6 @@ fn is_hop_by_hop_header(name: &HeaderName) -> bool {
     )
 }
 
-/// Preserves a safe subset of upstream response headers for the gateway
-/// client. OpenAI SDKs depend on `retry-after` for 429 backoff and on
-/// `x-request-id` / rate-limit headers for tracing and throttling feedback, so
-/// passing them through keeps the relay's behavior consistent with the
-/// upstream provider. `content-type`, hop-by-hop headers, and anything
-/// unrelated are intentionally excluded (`content-type` is carried separately).
-fn preserve_safe_upstream_headers(headers: &HeaderMap) -> HeaderMap {
-    let mut preserved = HeaderMap::new();
-    for (name, value) in headers.iter() {
-        let name_lower = name.as_str().to_ascii_lowercase();
-        if is_hop_by_hop_header(name) {
-            continue;
-        }
-        if matches!(
-            name_lower.as_str(),
-            "retry-after"
-                | "x-request-id"
-                | "request-id"
-                | "openai-organization"
-                | "openai-version"
-                | "openai-processing-ms"
-                | "x-ratelimit-limit-requests"
-                | "x-ratelimit-limit-tokens"
-                | "x-ratelimit-remaining-requests"
-                | "x-ratelimit-remaining-tokens"
-                | "x-ratelimit-reset-requests"
-                | "x-ratelimit-reset-tokens"
-                | "x-ratelimit-request-ids"
-                | "x-goog-request-id"
-                | "x-goog-ratelimit-last-update-time"
-        ) {
-            preserved.append(name.clone(), value.clone());
-        }
-    }
-    preserved
-}
-
 fn dispatch_error(
     code: impl Into<String>,
     message: impl Into<String>,
@@ -1180,7 +1144,7 @@ mod tests {
         upstream.insert("set-cookie", HeaderValue::from_static("session=abc"));
         upstream.insert("x-secret", HeaderValue::from_static("leak"));
 
-        let preserved = preserve_safe_upstream_headers(&upstream);
+        let preserved = preserve_safe_upstream_response_headers(&upstream);
 
         // SDK-facing headers survive for 429 backoff and tracing.
         assert_eq!(

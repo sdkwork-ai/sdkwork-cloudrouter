@@ -46,6 +46,62 @@ pub(crate) fn guarded_openai_json_response(
     }
 }
 
+/// Builds an OpenAI-compatible response while preserving safe upstream headers,
+/// content type, and non-JSON provider error bytes.
+pub(crate) fn guarded_openai_relay_response(
+    status: StatusCode,
+    body: Value,
+    body_bytes: Option<Vec<u8>>,
+    content_type: Option<String>,
+    headers: axum::http::HeaderMap,
+    memory_guard: Option<ProviderResponseMemoryGuard>,
+) -> Response {
+    let body = if let Some(body_bytes) = body_bytes {
+        let body_bytes = if status.is_success() {
+            body_bytes
+        } else {
+            redact_provider_error_bytes(body_bytes)
+        };
+        Body::from(body_bytes)
+    } else {
+        let body = if status.is_success() {
+            body
+        } else {
+            redact_json_secrets(body)
+        };
+        Body::from(serde_json::to_vec(&body).unwrap_or_else(|_| b"{}".to_vec()))
+    };
+    let mut response = Response::new(body);
+    *response.status_mut() = status;
+    if let Some(content_type) = content_type
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+        .and_then(|value| axum::http::HeaderValue::from_str(value).ok())
+    {
+        response
+            .headers_mut()
+            .insert(axum::http::header::CONTENT_TYPE, content_type);
+    }
+    response.headers_mut().extend(headers);
+    if !response.headers().contains_key(axum::http::header::CONTENT_TYPE) {
+        response.headers_mut().insert(
+            axum::http::header::CONTENT_TYPE,
+            axum::http::HeaderValue::from_static("application/json"),
+        );
+    }
+    match memory_guard {
+        Some(memory_guard) => memory_guard.wrap_response(response),
+        None => response,
+    }
+}
+
+fn redact_provider_error_bytes(body: Vec<u8>) -> Vec<u8> {
+    match std::str::from_utf8(&body) {
+        Ok(text) => crate::redaction::redact_sensitive_tokens(text).into_bytes(),
+        Err(_) => body,
+    }
+}
+
 /// Recursively applies credential redaction to every JSON string value.
 fn redact_json_secrets(value: Value) -> Value {
     match value {

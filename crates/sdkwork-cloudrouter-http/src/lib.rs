@@ -54,7 +54,9 @@ pub use error::{not_implemented_response, NotImplementedData};
 pub use federated_database_env::{
     ensure_workspace_database_env_from_config, materialize_federated_database_env_from_config,
 };
-pub use headers::{default_security_headers, redact_http_header};
+pub use headers::{
+    default_security_headers, preserve_safe_upstream_response_headers, redact_http_header,
+};
 pub use locale::{
     embedded_message_catalog, interpolate_template, localize_problem_payload, normalize_locale_tag,
     parse_accept_language, with_request_locale, CloudRouterLocalePolicy, LocaleSource,

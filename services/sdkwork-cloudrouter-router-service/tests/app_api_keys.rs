@@ -12,6 +12,7 @@ use sdkwork_cloudrouter_router_service::ports::{
     CreatedGatewayApiKey, DeleteGatewayApiKeyCommand, DeleteGatewayApiKeyForOrganizationCommand,
     EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore, GatewayApiKeyListPage,
     GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery,
+    RevealGatewayApiKeySecretCommand, RevealGatewayApiKeySecretOutcome,
     UpdateGatewayApiKeyCommand, UpdatedGatewayApiKey,
 };
 use serde_json::Value;
@@ -148,6 +149,94 @@ async fn app_api_key_list_never_returns_raw_key_material() {
         payload["data"]["items"][0]["accountGroupName"]
     );
     assert!(payload["data"]["pageInfo"].is_object());
+}
+
+#[tokio::test]
+async fn app_api_key_reveal_returns_plaintext_only_on_explicit_request() {
+    let read_store = Arc::new(TestApiKeyReadStore::with_owner_key());
+    let command_store = Arc::new(TestApiKeyCommandStore::default());
+    let router = sdkwork_cloudrouter_router_service::api::app_api_key_router_with_read_store_and_command_store(
+        read_store,
+        command_store,
+        Arc::new(TestHasher),
+        Arc::new(TestSecretGenerator),
+        None,
+    );
+
+    let response = router
+        .oneshot(signed_request(
+            "POST",
+            "/app/v3/api/iam/api_keys/701/reveal",
+            "",
+        ))
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::OK, response.status());
+    let payload = json_payload(response).await;
+    assert_eq!(0, payload["code"].as_i64().unwrap());
+    assert_eq!("sk-test-secret-raw", payload["data"]["rawKey"]);
+    assert!(payload["data"]["item"].get("rawKey").is_none());
+    assert_eq!(
+        "sk-test********CRET",
+        payload["data"]["item"]["maskedKey"]
+    );
+}
+
+#[tokio::test]
+async fn app_api_key_reveal_reports_an_unknown_key_without_secret_material() {
+    let read_store = Arc::new(TestApiKeyReadStore::default());
+    let command_store = Arc::new(TestApiKeyCommandStore::default());
+    let router = sdkwork_cloudrouter_router_service::api::app_api_key_router_with_read_store_and_command_store(
+        read_store,
+        command_store,
+        Arc::new(TestHasher),
+        Arc::new(TestSecretGenerator),
+        None,
+    );
+
+    let response = router
+        .oneshot(signed_request(
+            "POST",
+            "/app/v3/api/iam/api_keys/701/reveal",
+            "",
+        ))
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::NOT_FOUND, response.status());
+    let payload = json_payload(response).await;
+    assert_eq!(40401, payload["code"].as_i64().unwrap());
+    assert!(payload["data"].is_null());
+}
+
+#[tokio::test]
+async fn app_api_key_reveal_rejects_a_request_inside_the_cooldown() {
+    let read_store = Arc::new(TestApiKeyReadStore::with_owner_key());
+    let command_store = Arc::new(TestApiKeyCommandStore::with_reveal_outcome(
+        RevealGatewayApiKeySecretOutcome::Throttled,
+    ));
+    let router = sdkwork_cloudrouter_router_service::api::app_api_key_router_with_read_store_and_command_store(
+        read_store,
+        command_store,
+        Arc::new(TestHasher),
+        Arc::new(TestSecretGenerator),
+        None,
+    );
+
+    let response = router
+        .oneshot(signed_request(
+            "POST",
+            "/app/v3/api/iam/api_keys/701/reveal",
+            "",
+        ))
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::TOO_MANY_REQUESTS, response.status());
+    let payload = json_payload(response).await;
+    assert_eq!(42901, payload["code"].as_i64().unwrap());
+    assert!(payload["data"].is_null());
 }
 
 #[tokio::test]
@@ -331,6 +420,16 @@ impl GatewayApiKeyManagementReadStore for TestApiKeyReadStore {
 struct TestApiKeyCommandStore {
     commands: Mutex<Vec<CreateGatewayApiKeyCommand>>,
     update_commands: Mutex<Vec<UpdateGatewayApiKeyCommand>>,
+    reveal_outcome: Option<RevealGatewayApiKeySecretOutcome>,
+}
+
+impl TestApiKeyCommandStore {
+    fn with_reveal_outcome(outcome: RevealGatewayApiKeySecretOutcome) -> Self {
+        Self {
+            reveal_outcome: Some(outcome),
+            ..Self::default()
+        }
+    }
 }
 
 impl GatewayApiKeyCommandStore for TestApiKeyCommandStore {
@@ -435,6 +534,18 @@ impl GatewayApiKeyCommandStore for TestApiKeyCommandStore {
         _command: DeleteGatewayApiKeyForOrganizationCommand,
     ) -> ApiKeyCommandStoreFuture<'a, bool> {
         Box::pin(async move { Ok(true) })
+    }
+
+    fn reveal_gateway_api_key_secret<'a>(
+        &'a self,
+        command: RevealGatewayApiKeySecretCommand,
+    ) -> ApiKeyCommandStoreFuture<'a, RevealGatewayApiKeySecretOutcome> {
+        Box::pin(async move {
+            assert_eq!(701, command.api_key_id);
+            Ok(self.reveal_outcome.clone().unwrap_or_else(|| {
+                RevealGatewayApiKeySecretOutcome::Revealed("sk-test-secret-raw".to_owned())
+            }))
+        })
     }
 }
 

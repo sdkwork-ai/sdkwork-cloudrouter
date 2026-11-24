@@ -111,3 +111,5 @@ export type { UpdateSettingsResponse } from './update-settings-response';
 export type { UsageLogItem } from './usage-log-item';
 
 export type { UsageLogsResponse } from './usage-logs-response';
+
+export type { RevealApiKeyResponse } from './reveal-api-key-response';

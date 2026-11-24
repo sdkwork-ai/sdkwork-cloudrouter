@@ -43,6 +43,20 @@ export function resolveRelayHomepage(): string {
 }
 
 /**
+ * Absolute gateway endpoints, the form every import projection needs: a
+ * browser-produced config cannot use the relative base a local/standalone
+ * deployment may report.
+ */
+export function resolveAbsoluteGatewayEndpoints() {
+  const { anthropicBaseUrl, openAiBaseUrl, geminiBaseUrl } = resolveCurrentGatewayEndpoints();
+  return {
+    anthropicBaseUrl: toAbsoluteGatewayUrl(anthropicBaseUrl),
+    openAiBaseUrl: toAbsoluteGatewayUrl(openAiBaseUrl),
+    geminiBaseUrl: toAbsoluteGatewayUrl(geminiBaseUrl),
+  };
+}
+
+/**
  * Usage-query script shipped inside the CC Switch import link (Base64 in the
  * `usageScript` param). It follows the CC Switch "通用模板" contract
  * (`{{baseUrl}}/user/balance` + `extractor(response)`) against the gateway's

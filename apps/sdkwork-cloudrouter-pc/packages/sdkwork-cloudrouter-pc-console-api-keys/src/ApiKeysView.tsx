@@ -56,17 +56,28 @@ import {
   buildQuickImportDeepLink,
   buildQuickImportResult,
   QUICK_IMPORT_TARGETS,
+  resolveAbsoluteGatewayEndpoints,
   resolveQuickImportTarget,
+  resolveRelayHomepage,
   type CcSwitchApp,
   type QuickImportDeepLinkOptions,
   type QuickImportResult,
   type QuickImportTargetId,
 } from './quick-import/quickImport.ts';
+import { getQuickImportExtension } from './quick-import/quickImportExtension';
 import { openDeeplink } from './quick-import/openDeeplink.ts';
 import { QuickImportAppPickerDialog } from './quick-import/QuickImportAppPickerDialog.tsx';
 import { QuickImportResultDialog } from './quick-import/QuickImportResultDialog.tsx';
 
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
+
+/**
+ * Height of the hover menu for `count` rows, capped so a long catalog stays
+ * scrollable inside the viewport.
+ */
+function quickImportMenuHeight(count: number): number {
+  return Math.min(count * 40 + 8, 480);
+}
 
 interface CreatedSecret {
   key: ApiKey;
@@ -114,6 +125,7 @@ export function ApiKeysView() {
   const [mutatingKeyId, setMutatingKeyId] = useState<string | null>(null);
   const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
   const [copyFailedKeyId, setCopyFailedKeyId] = useState<string | null>(null);
+  const [revealingKeyId, setRevealingKeyId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [quickImportMenu, setQuickImportMenu] = useState<QuickImportMenuAnchor | null>(null);
   const [quickImportResult, setQuickImportResult] = useState<QuickImportResult | null>(null);
@@ -124,13 +136,30 @@ export function ApiKeysView() {
 
   const itemsPerPage = 10;
 
-  // The row cell copies the raw (plaintext) key only. Keys without stored raw
-  // key material (legacy rows) render masked and are not copyable.
+  // The list always renders the masked key. Clicking it copies the plaintext:
+  // created keys carry it in memory, existing keys reveal it through the
+  // audited endpoint on demand. The revealed value is never cached in state.
   const copyKeyToClipboard = async (key: ApiKey) => {
-    if (!key.rawKey) {
+    if (revealingKeyId === key.id) {
       return;
     }
-    const result = await copyTextToClipboard(key.rawKey);
+    let rawKey = key.rawKey;
+    if (!rawKey) {
+      setRevealingKeyId(key.id);
+      try {
+        rawKey = await ApiKeyService.revealKey(key.id);
+      } catch {
+        setCopiedKeyId(null);
+        setCopyFailedKeyId(key.id);
+        window.setTimeout(() => {
+          setCopyFailedKeyId((current) => (current === key.id ? null : current));
+        }, 1500);
+        return;
+      } finally {
+        setRevealingKeyId((current) => (current === key.id ? null : current));
+      }
+    }
+    const result = await copyTextToClipboard(rawKey);
     if (result.ok) {
       setCopyFailedKeyId(null);
       setCopiedKeyId(key.id);
@@ -156,10 +185,17 @@ export function ApiKeysView() {
     }
     const rect = element.getBoundingClientRect();
     const menuWidth = 200;
-    const menuHeight = 104;
+    const extension = getQuickImportExtension();
+    const menuHeight = quickImportMenuHeight(extension?.targets.length ?? QUICK_IMPORT_TARGETS.length);
+    // The extension menu is taller than the three built-in rows, so neither the
+    // below-row nor the above-row placement is guaranteed to fit; clamp the
+    // chosen side into the viewport instead of letting the card run off-screen.
+    const preferredTop = rect.bottom + menuHeight <= window.innerHeight - 8
+      ? rect.bottom + 6
+      : rect.top - menuHeight - 6;
     setQuickImportMenu({
       keyId: key.id,
-      top: rect.bottom + menuHeight <= window.innerHeight - 8 ? rect.bottom + 6 : rect.top - menuHeight - 6,
+      top: Math.max(8, Math.min(preferredTop, window.innerHeight - menuHeight - 8)),
       left: Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8)),
     });
   };
@@ -179,6 +215,36 @@ export function ApiKeysView() {
       window.clearTimeout(quickImportCloseTimerRef.current);
       quickImportCloseTimerRef.current = null;
     }
+  };
+
+  const quickImportExtension = getQuickImportExtension();
+
+  const selectQuickImportExtensionTarget = (targetId: string) => {
+    const extension = getQuickImportExtension();
+    const anchor = quickImportMenu;
+    setQuickImportMenu(null);
+    if (quickImportCloseTimerRef.current !== null) {
+      window.clearTimeout(quickImportCloseTimerRef.current);
+      quickImportCloseTimerRef.current = null;
+    }
+    if (!extension || !anchor) {
+      return;
+    }
+    const key = keysData.find((item) => item.id === anchor.keyId);
+    if (!key?.rawKey) {
+      return;
+    }
+    extension.onSelect({
+      targetId,
+      key: {
+        id: key.id,
+        displayName: key.displayName,
+        maskedKey: key.maskedKey,
+        rawKey: key.rawKey,
+      },
+      endpoints: resolveAbsoluteGatewayEndpoints(),
+      homepage: resolveRelayHomepage(),
+    });
   };
 
   const selectQuickImportTarget = (targetId: QuickImportTargetId) => {
@@ -578,28 +644,32 @@ export function ApiKeysView() {
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            disabled={!key.rawKey}
+                            disabled={revealingKeyId === key.id}
                             onClick={() => {
                               void copyKeyToClipboard(key);
                             }}
-                            title={key.rawKey ? t('common.actions.copyKey') : undefined}
-                            aria-label={key.rawKey ? t('common.actions.copyKey') : undefined}
-                            className="group/secret inline-flex max-w-full items-center gap-1.5 rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 font-mono text-[11px] font-medium text-slate-600 transition-colors hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700 disabled:cursor-not-allowed dark:border-white/5 dark:bg-[#1e1e1e] dark:text-slate-300 dark:hover:border-primary-500/30 dark:hover:bg-primary-500/10 dark:hover:text-primary-300"
+                            title={t('console.apiKeys.copyKeyHint', '点击复制明文')}
+                            aria-label={t('console.apiKeys.copyKeyHint', '点击复制明文')}
+                            className="group/secret inline-flex max-w-full items-center gap-1.5 rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 font-mono text-[11px] font-medium text-slate-600 transition-colors hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700 disabled:cursor-progress dark:border-white/5 dark:bg-[#1e1e1e] dark:text-slate-300 dark:hover:border-primary-500/30 dark:hover:bg-primary-500/10 dark:hover:text-primary-300"
                           >
-                            <span className="max-w-[240px] truncate">{key.rawKey ?? key.maskedKey}</span>
-                            {copiedKeyId === key.id ? (
+                            <span className="max-w-[240px] truncate">{key.maskedKey}</span>
+                            {revealingKeyId === key.id ? (
+                              <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
+                            ) : copiedKeyId === key.id ? (
                               <Check className="h-3 w-3 shrink-0 text-emerald-500" />
                             ) : copyFailedKeyId === key.id ? (
                               <AlertCircle className="h-3 w-3 shrink-0 text-rose-500" />
-                            ) : key.rawKey ? (
-                              <Copy className="h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover/secret:opacity-100" />
-                            ) : null}
+                            ) : (
+                              <Copy className="h-3 w-3 shrink-0 opacity-60 transition-opacity group-hover/secret:opacity-100" />
+                            )}
                             <span role="status" aria-live="polite" className="sr-only">
-                              {copiedKeyId === key.id
-                                ? t('common.actions.keyCopied')
-                                : copyFailedKeyId === key.id
-                                  ? t('common.actions.copyFailed', '复制失败')
-                                  : ''}
+                              {revealingKeyId === key.id
+                                ? t('console.apiKeys.revealingKey', '正在获取明文')
+                                : copiedKeyId === key.id
+                                  ? t('common.actions.keyCopied')
+                                  : copyFailedKeyId === key.id
+                                    ? t('common.actions.copyFailed', '复制失败')
+                                    : ''}
                             </span>
                           </button>
                         </div>
@@ -846,28 +916,46 @@ export function ApiKeysView() {
       {quickImportMenu &&
         createPortal(
           <div
-            className="fixed z-[200] w-48 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-xl animate-in fade-in zoom-in-95 duration-150 dark:border-white/10 dark:bg-[#1e1e1e]"
-            style={{ top: quickImportMenu.top, left: quickImportMenu.left }}
+            className="fixed z-[200] w-48 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-xl animate-in fade-in zoom-in-95 duration-150 dark:border-white/10 dark:bg-[#1e1e1e]"
+            style={{
+              top: quickImportMenu.top,
+              left: quickImportMenu.left,
+              maxHeight: quickImportMenuHeight(
+                quickImportExtension?.targets.length ?? QUICK_IMPORT_TARGETS.length,
+              ),
+            }}
             onMouseEnter={cancelCloseQuickImportMenu}
             onMouseLeave={scheduleCloseQuickImportMenu}
           >
-            {QUICK_IMPORT_TARGETS.map((target) => (
-              <button
-                key={target.id}
-                type="button"
-                onClick={() => selectQuickImportTarget(target.id)}
-                className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition-colors hover:bg-primary-50 hover:text-primary-700 dark:text-slate-200 dark:hover:bg-primary-500/10 dark:hover:text-primary-300"
-              >
-                {target.id === 'birdcoder' ? (
-                  <Bird className="h-4 w-4 shrink-0 text-lobster-500" />
-                ) : target.id === 'deepseek-harness' ? (
-                  <Bot className="h-4 w-4 shrink-0 text-primary-500" />
-                ) : (
-                  <Repeat className="h-4 w-4 shrink-0 text-primary-500" />
-                )}
-                <span className="truncate">{t(target.labelKey, target.fallbackLabel)}</span>
-              </button>
-            ))}
+            {quickImportExtension
+              ? quickImportExtension.targets.map((target) => (
+                  <button
+                    key={target.id}
+                    type="button"
+                    onClick={() => selectQuickImportExtensionTarget(target.id)}
+                    className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition-colors hover:bg-primary-50 hover:text-primary-700 dark:text-slate-200 dark:hover:bg-primary-500/10 dark:hover:text-primary-300"
+                  >
+                    {target.icon ?? <Repeat className="h-4 w-4 shrink-0 text-primary-500" />}
+                    <span className="truncate">{target.label}</span>
+                  </button>
+                ))
+              : QUICK_IMPORT_TARGETS.map((target) => (
+                  <button
+                    key={target.id}
+                    type="button"
+                    onClick={() => selectQuickImportTarget(target.id)}
+                    className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition-colors hover:bg-primary-50 hover:text-primary-700 dark:text-slate-200 dark:hover:bg-primary-500/10 dark:hover:text-primary-300"
+                  >
+                    {target.id === 'birdcoder' ? (
+                      <Bird className="h-4 w-4 shrink-0 text-lobster-500" />
+                    ) : target.id === 'deepseek-harness' ? (
+                      <Bot className="h-4 w-4 shrink-0 text-primary-500" />
+                    ) : (
+                      <Repeat className="h-4 w-4 shrink-0 text-primary-500" />
+                    )}
+                    <span className="truncate">{t(target.labelKey, target.fallbackLabel)}</span>
+                  </button>
+                ))}
           </div>,
           document.body,
         )}

@@ -9,7 +9,8 @@ use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
 use sdkwork_cloudrouter_config::ProviderRelayHttpPoolSectionConfig;
 use sdkwork_cloudrouter_http::{
-    ensure_rustls_crypto_provider, path_carries_version_prefix, OutboundDnsResolver,
+    ensure_rustls_crypto_provider, path_carries_version_prefix,
+    preserve_safe_upstream_response_headers, OutboundDnsResolver,
 };
 use sdkwork_cloudrouter_security::{redact_url, validate_outbound_base_url, OutboundTargetPolicy};
 use serde_json::Value;
@@ -1534,7 +1535,7 @@ async fn send_chat_completion_with_runtime(
         &request.provider_model,
         "chat completion",
     )?;
-    let (status_code, body, memory_guard) = send_openai_json_with_runtime(
+    let (status_code, body, body_bytes, content_type, headers, memory_guard) = send_openai_json_with_runtime(
         runtime,
         endpoint,
         endpoint.chat_completions_uri()?,
@@ -1544,7 +1545,13 @@ async fn send_chat_completion_with_runtime(
     )
     .await?;
 
-    Ok(ChatCompletionRelayResponse::json(status_code, body).with_memory_guard(memory_guard))
+    let response = match body_bytes {
+        Some(bytes) => ChatCompletionRelayResponse::bytes(status_code, bytes, content_type.clone()),
+        None => ChatCompletionRelayResponse::json(status_code, body),
+    };
+    Ok(response
+        .with_response_metadata(content_type, headers)
+        .with_memory_guard(memory_guard))
 }
 
 async fn send_chat_completion_stream_with_runtime(
@@ -1586,6 +1593,7 @@ async fn send_chat_completion_stream_with_runtime(
         .get(CONTENT_TYPE)
         .and_then(|value| value.to_str().ok())
         .map(str::to_owned);
+    let headers = preserve_safe_upstream_response_headers(response.headers());
     tracing::info!(
         supplier_code = %request.supplier_code,
         provider_account_id = request.provider_account_id,
@@ -1607,7 +1615,8 @@ async fn send_chat_completion_stream_with_runtime(
             )),
             stream_total,
         ),
-    ))
+    )
+    .with_headers(headers))
 }
 
 async fn send_response_with_runtime(
@@ -1617,7 +1626,7 @@ async fn send_response_with_runtime(
 ) -> DomainResult<ResponsesRelayResponse> {
     let body =
         upstream_model_request_body(request.request_body, &request.provider_model, "responses")?;
-    let (status_code, body, memory_guard) = send_openai_json_with_runtime(
+    let (status_code, body, body_bytes, content_type, headers, memory_guard) = send_openai_json_with_runtime(
         runtime,
         endpoint,
         endpoint.responses_uri()?,
@@ -1627,7 +1636,13 @@ async fn send_response_with_runtime(
     )
     .await?;
 
-    Ok(ResponsesRelayResponse::json(status_code, body).with_memory_guard(memory_guard))
+    let response = match body_bytes {
+        Some(bytes) => ResponsesRelayResponse::bytes(status_code, bytes, content_type.clone()),
+        None => ResponsesRelayResponse::json(status_code, body),
+    };
+    Ok(response
+        .with_response_metadata(content_type, headers)
+        .with_memory_guard(memory_guard))
 }
 
 /// Relays a streaming (SSE) Responses API call: the request body already
@@ -1674,6 +1689,7 @@ async fn send_responses_stream_with_runtime(
         .get(CONTENT_TYPE)
         .and_then(|value| value.to_str().ok())
         .map(str::to_owned);
+    let headers = preserve_safe_upstream_response_headers(response.headers());
     tracing::info!(
         supplier_code = %request.supplier_code,
         provider_account_id = request.provider_account_id,
@@ -1688,7 +1704,8 @@ async fn send_responses_stream_with_runtime(
             response.into_body(),
             dispatch_permit,
         )),
-    ))
+    )
+    .with_headers(headers))
 }
 
 async fn send_embedding_with_runtime(
@@ -1698,7 +1715,7 @@ async fn send_embedding_with_runtime(
 ) -> DomainResult<EmbeddingsRelayResponse> {
     let body =
         upstream_model_request_body(request.request_body, &request.provider_model, "embeddings")?;
-    let (status_code, body, memory_guard) = send_openai_json_with_runtime(
+    let (status_code, body, body_bytes, content_type, headers, memory_guard) = send_openai_json_with_runtime(
         runtime,
         endpoint,
         endpoint.embeddings_uri()?,
@@ -1708,7 +1725,13 @@ async fn send_embedding_with_runtime(
     )
     .await?;
 
-    Ok(EmbeddingsRelayResponse::json(status_code, body).with_memory_guard(memory_guard))
+    let response = match body_bytes {
+        Some(bytes) => EmbeddingsRelayResponse::bytes(status_code, bytes, content_type.clone()),
+        None => EmbeddingsRelayResponse::json(status_code, body),
+    };
+    Ok(response
+        .with_response_metadata(content_type, headers)
+        .with_memory_guard(memory_guard))
 }
 
 async fn send_openai_json_with_runtime(
@@ -1718,7 +1741,14 @@ async fn send_openai_json_with_runtime(
     request_body: Value,
     request_label: &str,
     retry_policy: Option<ProviderRetryPolicy>,
-) -> DomainResult<(u16, Value, crate::ports::ProviderResponseMemoryGuard)> {
+) -> DomainResult<(
+    u16,
+    Value,
+    Option<Vec<u8>>,
+    Option<String>,
+    axum::http::HeaderMap,
+    crate::ports::ProviderResponseMemoryGuard,
+)> {
     let body = upstream_request_body(request_body, request_label)?;
     let body_bytes = Bytes::from(body.to_string());
     let retry_policy = retry_policy.unwrap_or_else(|| runtime.default_retry_policy.clone());

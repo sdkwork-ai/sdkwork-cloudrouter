@@ -12,6 +12,7 @@ use crate::ports::{
     AccountGroupBindingInput, ApiKeyCommandStoreFuture, CreateGatewayApiKeyCommand,
     CreatedGatewayApiKey, DeleteGatewayApiKeyCommand, DeleteGatewayApiKeyForOrganizationCommand,
     EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore,
+    RevealGatewayApiKeySecretCommand, RevealGatewayApiKeySecretOutcome,
     UpdateGatewayApiKeyCommand, UpdatedGatewayApiKey,
 };
 
@@ -152,6 +153,93 @@ impl GatewayApiKeyCommandStore for PostgresGatewayApiKeyCommandStore {
                 store_error("failed to commit admin api key delete transaction", error)
             })?;
             Ok(deleted)
+        })
+    }
+
+    fn reveal_gateway_api_key_secret<'a>(
+        &'a self,
+        command: RevealGatewayApiKeySecretCommand,
+    ) -> ApiKeyCommandStoreFuture<'a, RevealGatewayApiKeySecretOutcome> {
+        Box::pin(async move {
+            let mut tx = self.pool.begin().await.map_err(|error| {
+                store_error("failed to begin api key reveal transaction", error)
+            })?;
+            let row = sqlx::query(
+                r#"
+                SELECT
+                    COALESCE(key_secret_mode, '') AS key_secret_mode,
+                    key_secret_plaintext,
+                    key_secret_ciphertext,
+                    key_secret_key_id,
+                    (last_revealed_at IS NOT NULL
+                        AND last_revealed_at > CURRENT_TIMESTAMP - INTERVAL '2 seconds') AS reveal_throttled
+                FROM iam_gateway_api_key
+                WHERE id = $1
+                  AND tenant_id = $2
+                  AND organization_id = $3
+                  AND user_id = $4
+                  AND deleted_at IS NULL
+                  AND revoked_at IS NULL
+                LIMIT 1
+                "#,
+            )
+            .bind(command.api_key_id)
+            .bind(command.tenant_id)
+            .bind(command.organization_id)
+            .bind(command.user_id)
+            .fetch_optional(&mut *tx)
+            .await
+            .map_err(|error| store_error("failed to load api key secret for reveal", error))?;
+            let Some(row) = row else {
+                tx.commit()
+                    .await
+                    .map_err(|error| store_error("failed to finish api key reveal transaction", error))?;
+                return Ok(RevealGatewayApiKeySecretOutcome::NotFound);
+            };
+            let reveal_throttled: bool = row
+                .try_get("reveal_throttled")
+                .map_err(row_error)?;
+            if reveal_throttled {
+                tx.commit()
+                    .await
+                    .map_err(|error| store_error("failed to finish api key reveal transaction", error))?;
+                return Ok(RevealGatewayApiKeySecretOutcome::Throttled);
+            }
+            let secret_mode: String = row
+                .try_get("key_secret_mode")
+                .map_err(row_error)?;
+            let raw_key =
+                decode_stored_api_key_secret(&self.secret_storage, &row, &command, &secret_mode)?;
+            let Some(raw_key) = raw_key else {
+                tx.commit()
+                    .await
+                    .map_err(|error| store_error("failed to finish api key reveal transaction", error))?;
+                return Ok(RevealGatewayApiKeySecretOutcome::NotFound);
+            };
+            sqlx::query(
+                r#"
+                UPDATE iam_gateway_api_key
+                SET last_revealed_at = CURRENT_TIMESTAMP,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = $1
+                  AND tenant_id = $2
+                  AND organization_id = $3
+                  AND user_id = $4
+                  AND deleted_at IS NULL
+                "#,
+            )
+            .bind(command.api_key_id)
+            .bind(command.tenant_id)
+            .bind(command.organization_id)
+            .bind(command.user_id)
+            .execute(&mut *tx)
+            .await
+            .map_err(|error| store_error("failed to stamp api key reveal", error))?;
+            insert_reveal_audit_log(&mut tx, &command, &secret_mode).await?;
+            tx.commit().await.map_err(|error| {
+                store_error("failed to commit api key reveal transaction", error)
+            })?;
+            Ok(RevealGatewayApiKeySecretOutcome::Revealed(raw_key))
         })
     }
 }
@@ -689,6 +777,76 @@ async fn insert_audit_log(
     .await
     .map_err(|error| store_error("failed to write api key audit log", error))?;
     Ok(())
+}
+
+async fn insert_reveal_audit_log(
+    tx: &mut Transaction<'_, Postgres>,
+    command: &RevealGatewayApiKeySecretCommand,
+    secret_mode: &str,
+) -> DomainResult<()> {
+    let change_summary = serde_json::json!({
+        "action": "reveal_api_key_secret",
+        "tenantId": command.tenant_id,
+        "organizationId": command.organization_id,
+        "userId": command.user_id,
+        "operatorId": command.operator_id,
+        "operatorType": command.operator_type,
+        "apiKeyId": command.api_key_id,
+        "secretMode": secret_mode,
+    });
+    sqlx::query(
+        r#"
+        INSERT INTO ops_audit_log
+            (id, uuid, tenant_id, organization_id, action, target_type, target_id, request_id, operator_id, operator_type, change_summary)
+        VALUES
+            ($1, $2, $3, $4, 'reveal_api_key_secret', 1, $5, $6, $7, $8, $9::jsonb)
+        "#,
+    )
+    .bind(next_cloud_runtime_id("ops_audit_log")?)
+    .bind(&command.audit_log_uuid)
+    .bind(command.tenant_id)
+    .bind(command.organization_id)
+    .bind(command.api_key_id)
+    .bind(&command.request_id)
+    .bind(command.operator_id)
+    .bind(command.operator_type)
+    .bind(change_summary.to_string())
+    .execute(&mut **tx)
+    .await
+    .map_err(|error| store_error("failed to write api key reveal audit log", error))?;
+    Ok(())
+}
+
+fn decode_stored_api_key_secret(
+    secret_storage: &ApiKeySecretStorageConfig,
+    row: &sqlx::postgres::PgRow,
+    command: &RevealGatewayApiKeySecretCommand,
+    secret_mode: &str,
+) -> DomainResult<Option<String>> {
+    if secret_mode.eq_ignore_ascii_case(API_KEY_SECRET_MODE_PLAINTEXT) {
+        let plaintext: Option<String> = row.try_get("key_secret_plaintext").map_err(row_error)?;
+        return Ok(plaintext
+            .map(|value| value.trim().to_owned())
+            .filter(|value| !value.is_empty()));
+    }
+    if !secret_mode.eq_ignore_ascii_case(API_KEY_SECRET_MODE_CIPHERTEXT) {
+        return Ok(None);
+    }
+    let ciphertext: Option<String> = row.try_get("key_secret_ciphertext").map_err(row_error)?;
+    let key_id: Option<String> = row.try_get("key_secret_key_id").map_err(row_error)?;
+    let (Some(ciphertext), Some(key_id)) = (ciphertext, key_id) else {
+        return Ok(None);
+    };
+    let context = ApiKeySecretContext::new(
+        command.tenant_id,
+        command.organization_id,
+        command.api_key_id,
+    );
+    secret_storage
+        .codec()
+        .decode_secret(context, &key_id, &ciphertext)
+        .map(Some)
+        .map_err(|_| DomainError::new("gateway API key secret could not be decrypted"))
 }
 
 async fn update_api_key(

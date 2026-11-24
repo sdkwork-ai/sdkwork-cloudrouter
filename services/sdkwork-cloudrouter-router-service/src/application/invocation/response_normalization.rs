@@ -1,9 +1,10 @@
 use std::sync::Mutex;
 
 use axum::body::Body;
+use axum::http::{HeaderMap, HeaderName, HeaderValue};
 use bytes::Bytes;
 use futures_util::StreamExt;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use super::{
     DispatchMode, Invocation, InvocationDispatchResponse, InvocationError, InvocationFuture,
@@ -157,28 +158,92 @@ fn normalize_adapter_response(
         .and_then(Value::as_u64)
         .and_then(|value| u16::try_from(value).ok())
         .unwrap_or(response.status_code);
-    let content_type = body
-        .get("headers")
-        .and_then(Value::as_object)
-        .and_then(|headers| {
-            headers.iter().find_map(|(name, value)| {
-                (name.eq_ignore_ascii_case("content-type"))
-                    .then(|| value.as_str().map(str::to_owned))
-                    .flatten()
-            })
-        })
+    let adapter_headers = body.get("headers").and_then(Value::as_object);
+    let content_type = adapter_headers
+        .and_then(|headers| header_value(headers, "content-type"))
         .or_else(|| response.content_type.clone())
         .or_else(|| Some("application/json".to_owned()));
     let provider_body = body.get("body").cloned();
+    let mut headers = response.headers.clone();
+    if let Some(adapter_headers) = adapter_headers {
+        headers.extend(preserve_adapter_response_headers(adapter_headers));
+    }
+    headers.remove(axum::http::header::CONTENT_TYPE);
     Some(InvocationNormalizedResponse {
         status_code,
         body: provider_body,
         body_bytes: None,
         content_type,
-        headers: response.headers.clone(),
+        headers,
         stream_body: Mutex::new(None),
         memory_guard: response.memory_guard.clone(),
     })
+}
+
+fn header_value(headers: &serde_json::Map<String, Value>, name: &str) -> Option<String> {
+    headers.iter().find_map(|(header_name, value)| {
+        (header_name.eq_ignore_ascii_case(name))
+            .then(|| value.as_str().map(str::to_owned))
+            .flatten()
+    })
+}
+
+/// Adapter envelopes carry provider response headers as JSON. Apply the same
+/// public response-header allowlist as the direct invocation HTTP transport so
+/// SDK retry, request tracing, and rate-limit behavior stays consistent.
+fn preserve_adapter_response_headers(headers: &serde_json::Map<String, Value>) -> HeaderMap {
+    let connection_headers = header_value(headers, "connection")
+        .into_iter()
+        .flat_map(|value| {
+            value
+                .split(',')
+                .map(|name| name.trim().to_ascii_lowercase())
+                .filter(|name| !name.is_empty())
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+    let mut preserved = HeaderMap::new();
+    for (name, value) in headers {
+        let name_lower = name.to_ascii_lowercase();
+        if connection_headers
+            .iter()
+            .any(|connection_name| connection_name == &name_lower)
+            || !is_public_upstream_response_header(name_lower.as_str())
+        {
+            continue;
+        }
+        let (Ok(name), Some(value)) = (
+            HeaderName::from_bytes(name.as_bytes()),
+            value
+                .as_str()
+                .and_then(|value| HeaderValue::from_str(value).ok()),
+        ) else {
+            continue;
+        };
+        preserved.append(name, value);
+    }
+    preserved
+}
+
+fn is_public_upstream_response_header(name: &str) -> bool {
+    matches!(
+        name,
+        "retry-after"
+            | "x-request-id"
+            | "request-id"
+            | "openai-organization"
+            | "openai-version"
+            | "openai-processing-ms"
+            | "x-ratelimit-limit-requests"
+            | "x-ratelimit-limit-tokens"
+            | "x-ratelimit-remaining-requests"
+            | "x-ratelimit-remaining-tokens"
+            | "x-ratelimit-reset-requests"
+            | "x-ratelimit-reset-tokens"
+            | "x-ratelimit-request-ids"
+            | "x-goog-request-id"
+            | "x-goog-ratelimit-last-update-time"
+    )
 }
 
 /// OpenAI-compatible clients send a catalog/alias `model` and must receive that
@@ -326,25 +391,32 @@ async fn next_sse_model_restore_frame(
         Ok(bytes) => {
             for byte in bytes.iter().copied() {
                 if byte == b'\n' {
+                    if state.passthrough_line {
+                        // The oversized line ended; resume rewriting at the next.
+                        state.passthrough_line = false;
+                        output.push(b'\n');
+                        continue;
+                    }
                     let line = take_sse_line(&mut state.pending_line);
                     output
                         .extend_from_slice(&rewrite_sse_model_line(&line, &state.requested_model));
                     output.push(b'\n');
                     continue;
                 }
+                if state.passthrough_line {
+                    output.push(byte);
+                    continue;
+                }
                 if state.pending_line.len() >= MAX_SSE_LINE_BYTES {
-                    // A provider frame that never terminates a line would grow
-                    // this buffer without bound. Real SSE lines are a few KiB;
-                    // stop the stream instead of buffering the rest.
-                    state.terminated = true;
-                    state.pending_line.clear();
-                    return Some((
-                        Err(axum::Error::new(std::io::Error::new(
-                            std::io::ErrorKind::InvalidData,
-                            "provider stream line exceeds the gateway SSE line limit",
-                        ))),
-                        state,
-                    ));
+                    // A line this size cannot be one this service rewrites, and it
+                    // may be a tool call the client is still assembling. Forward
+                    // what is buffered unchanged and keep forwarding to the end of
+                    // the line: the buffer stays bounded, the `model` field on that
+                    // one frame is not restored, and the payload is never truncated.
+                    state.passthrough_line = true;
+                    output.append(&mut state.pending_line);
+                    output.push(byte);
+                    continue;
                 }
                 state.pending_line.push(byte);
             }
@@ -356,10 +428,12 @@ async fn next_sse_model_restore_frame(
 
 /// Hard cap for one buffered SSE line.
 ///
-/// The largest legitimate frame the gateway forwards is a chat completion chunk
-/// (provider usage frames included), far below this bound. The cap exists so a
-/// malformed or hostile upstream cannot make the transformer buffer an unbounded
-/// line: the stream is terminated with an error instead.
+/// The largest legitimate frame the gateway rewrites is a chat completion chunk
+/// (provider usage frames included), far below this bound. Past the bound the
+/// transformer stops rewriting and forwards the rest of that line unchanged: a
+/// line this large may be a tool call the client is still assembling, so cutting
+/// the stream would corrupt it, while buffering it whole would let a malformed or
+/// hostile upstream grow memory without bound.
 const MAX_SSE_LINE_BYTES: usize = 256 * 1024;
 
 /// Moves the buffered line out of the state, dropping the SSE `\r` of a CRLF
@@ -409,6 +483,9 @@ struct SseModelRestoreState {
     pending_line: Vec<u8>,
     requested_model: String,
     terminated: bool,
+    /// Set while an over-budget line is forwarded unchanged; rewriting resumes at
+    /// the next line boundary.
+    passthrough_line: bool,
 }
 
 impl SseModelRestoreState {
@@ -418,6 +495,7 @@ impl SseModelRestoreState {
             pending_line: Vec::new(),
             requested_model,
             terminated: false,
+            passthrough_line: false,
         }
     }
 }
@@ -522,8 +600,9 @@ pub(crate) fn provider_response_succeeded(invocation: &Invocation) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use super::super::InvocationDispatchResponse;
     use super::super::{InvocationError, InvocationErrorKind};
-    use super::{rewrite_sse_model_line, status_code_for_error};
+    use super::{normalize_adapter_response, rewrite_sse_model_line, status_code_for_error};
 
     #[test]
     fn billing_unavailable_maps_to_501() {
@@ -551,6 +630,66 @@ mod tests {
                 assert_eq!(502, status, "upstream faults stay bad-gateway");
             }
         }
+    }
+
+    #[test]
+    fn adapter_response_keeps_public_provider_headers_and_filters_transport_headers() {
+        let response = InvocationDispatchResponse::json(
+            200,
+            serde_json::json!({
+                "statusCode": 429,
+                "headers": {
+                    "Content-Type": "application/problem+json",
+                    "Retry-After": "3",
+                    "X-Request-Id": "provider-request-42",
+                    "x-ratelimit-remaining-requests": "0",
+                    "Connection": "x-private-hop, keep-alive",
+                    "x-private-hop": "discard",
+                    "keep-alive": "timeout=5",
+                    "content-length": "999",
+                    "set-cookie": "session=secret",
+                    "access-control-allow-origin": "*"
+                },
+                "body": { "error": { "type": "rate_limit_error" } }
+            }),
+        );
+
+        let normalized = normalize_adapter_response(&response).expect("adapter envelope");
+        assert_eq!(429, normalized.status_code);
+        assert_eq!(
+            "application/problem+json",
+            normalized.content_type.as_deref().unwrap()
+        );
+        assert_eq!("3", normalized.headers.get("retry-after").unwrap());
+        assert_eq!(
+            "provider-request-42",
+            normalized.headers.get("x-request-id").unwrap()
+        );
+        assert_eq!(
+            "0",
+            normalized
+                .headers
+                .get("x-ratelimit-remaining-requests")
+                .unwrap()
+        );
+        for filtered in [
+            "content-type",
+            "connection",
+            "x-private-hop",
+            "keep-alive",
+            "content-length",
+            "set-cookie",
+            "access-control-allow-origin",
+        ] {
+            assert!(
+                normalized.headers.get(filtered).is_none(),
+                "adapter header {filtered} must not be forwarded"
+            );
+        }
+        assert_eq!(
+            "rate_limit_error",
+            normalized.body.unwrap()["error"]["type"]
+        );
     }
 
     #[test]
@@ -648,21 +787,36 @@ mod tests {
         assert!(super::next_sse_model_restore_frame(state).await.is_none());
     }
 
-    /// A frame that never terminates a line must not be buffered without bound.
+    /// A line beyond the rewrite budget is forwarded unchanged, never cut.
+    ///
+    /// A single oversized `data:` line can be a tool call the client is still
+    /// assembling; terminating the stream there would leave the client holding an
+    /// incomplete payload and blaming the provider's JSON.
     #[tokio::test]
-    async fn oversized_sse_line_terminates_the_stream_instead_of_buffering() {
-        let oversized = "x".repeat(super::MAX_SSE_LINE_BYTES + 1);
-        let upstream = axum::body::Body::from(oversized);
+    async fn oversized_sse_line_is_forwarded_unchanged_instead_of_terminating() {
+        let oversized = "x".repeat(super::MAX_SSE_LINE_BYTES + 1024);
+        let upstream = axum::body::Body::from(format!("{oversized}\n"));
         let state = super::SseModelRestoreState::new(upstream, "gpt-4o-mini".to_owned());
 
-        let (frame, state) = super::next_sse_model_restore_frame(state)
-            .await
-            .expect("oversized frame");
-        assert!(
-            frame.is_err(),
-            "a line beyond the SSE bound must fail the stream"
+        let mut forwarded = Vec::new();
+        let mut state = state;
+        while let Some((frame, next)) = super::next_sse_model_restore_frame(state).await {
+            forwarded
+                .extend_from_slice(&frame.expect("an oversized line must not fail the stream"));
+            state = next;
+        }
+
+        let expected = format!("{oversized}\n");
+        assert_eq!(
+            forwarded.len(),
+            expected.len(),
+            "every byte of the oversized line must reach the client"
         );
-        assert!(super::next_sse_model_restore_frame(state).await.is_none());
+        assert_eq!(
+            String::from_utf8(forwarded).expect("utf8"),
+            expected,
+            "the oversized line is forwarded byte for byte"
+        );
     }
 
     #[test]

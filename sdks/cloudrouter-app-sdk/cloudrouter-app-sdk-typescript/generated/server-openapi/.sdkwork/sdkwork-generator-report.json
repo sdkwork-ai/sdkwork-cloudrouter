@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "a521814767cbcec18ad46ba2bbfbaa61efa5b2164d681a2615f03493513d6c26",
+  "changeFingerprint": "402ca6c78a5d6296a7ac197ba84ac056a820fec0a81079e0fd28a70b1f778e07",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -118,6 +118,7 @@
           "src/types/official-pricing-value-facet.ts",
           "src/types/page-info.ts",
           "src/types/problem-detail.ts",
+          "src/types/reveal-api-key-response.ts",
           "src/types/runtime-artifact-item.ts",
           "src/types/runtime-artifact-list-response.ts",
           "src/types/runtime-artifact-response.ts",
@@ -315,10 +316,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 168,
-    "models": 140,
+    "totalFiles": 170,
+    "models": 142,
     "apis": 5,
-    "types": 142
+    "types": 144
   },
   "warnings": [
     {
@@ -365,12 +366,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 130,
+    "writtenFiles": 131,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "a521814767cbcec18ad46ba2bbfbaa61efa5b2164d681a2615f03493513d6c26",
+    "changeFingerprint": "402ca6c78a5d6296a7ac197ba84ac056a820fec0a81079e0fd28a70b1f778e07",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -470,6 +471,7 @@
         "src/types/official-pricing-value-facet.ts",
         "src/types/page-info.ts",
         "src/types/problem-detail.ts",
+        "src/types/reveal-api-key-response.ts",
         "src/types/runtime-artifact-item.ts",
         "src/types/runtime-artifact-list-response.ts",
         "src/types/runtime-artifact-response.ts",
@@ -617,6 +619,7 @@
             "src/types/official-pricing-value-facet.ts",
             "src/types/page-info.ts",
             "src/types/problem-detail.ts",
+            "src/types/reveal-api-key-response.ts",
             "src/types/runtime-artifact-item.ts",
             "src/types/runtime-artifact-list-response.ts",
             "src/types/runtime-artifact-response.ts",

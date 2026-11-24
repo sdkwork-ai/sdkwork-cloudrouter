@@ -195,6 +195,24 @@ export class ApiKeyService {
       throw rethrowSdkError(error, 'console.apiKeys.errors.deleteFallback');
     }
   }
+
+  /**
+   * Explicitly reveal one key's plaintext through the audited endpoint. The
+   * list never carries secret material, so this is the only way to copy an
+   * existing key; the server stamps `last_revealed_at` and writes an audit row.
+   */
+  static async revealKey(keyId: string): Promise<string> {
+    try {
+      const response = await resolveApiKeyServiceAppClient().iam.apiKeys.reveal(requiredText(keyId, 'apiKeyId'));
+      const rawKey = readString(readApiRecord(response), 'rawKey');
+      if (!rawKey) {
+        throw new Error('API key reveal response is missing key material');
+      }
+      return rawKey;
+    } catch (error) {
+      throw rethrowSdkError(error, 'console.apiKeys.errors.revealFallback');
+    }
+  }
 }
 
 /**

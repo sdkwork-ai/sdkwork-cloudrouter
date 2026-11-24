@@ -377,6 +377,13 @@ No task may replace these chains with direct edits to generated output.
       API-key package/root runtime tests, Rust route tests, every generated-language surface test,
       PC typecheck, and accessibility/security tests.
 
+> Amendment 2026-11-24: copy of an existing key is served by one owner-scoped, audited action,
+> `POST /app/v3/api/iam/api_keys/{apiKeyId}/reveal` (`apiKeys.reveal`). It returns `{ item, rawKey }`
+> only for that explicit click, writes `ops_audit_log`, stamps `last_revealed_at`, and is limited to
+> one reveal per key per two seconds. List, retrieve, and update responses still never carry
+> `rawKey`, and the PC flow still never caches a secret. See
+> [ADR-20261124](../architecture/decisions/ADR-20261124-audited-api-key-reveal.md).
+
 ## Task 7: Reviewed Customer-Key And Provider-Credential Migration
 
 **Database authorities:**
