@@ -330,9 +330,10 @@ let rebuilt = Request::from_parts(
 
 | 项 | 结果 |
 |----|------|
-| `sdkwork-web-framework` 提交 | `6a700ca`（body_contract + problem/interceptors 修复 + 标准 §10.1/§11） |
-| `cargo test -p sdkwork-web-core --lib` | **257 passed / 0 failed**（含 `body_contract` 契约用例） |
+| `sdkwork-web-framework` 提交 | `6a700ca`（body_contract + problem/interceptors 修复 + 标准 §10.1/§11）、`89e546d`（响应侧回归用例） |
+| `cargo test -p sdkwork-web-core --lib` | **258 passed / 0 failed**（含 `body_contract` 契约用例与 `problem::tests::oversized_problem_body_is_left_untouched`"超大 problem body 必须原样到达客户端"） |
 | WSL `cargo check -p sdkwork-cloudrouter-http` | **exit 0**（同时编译了 `sdkwork-web-bootstrap` 与 `sdkwork-iam-web-adapter`，即框架改动的消费方；亦验证了本次 `locale.rs` 修复） |
+| `sdkwork-cloudrouter` 提交 | `884074d7`（locale 修复 + 响应流审计）、`d41f9e9f`（验证记录） |
 
 ### 5.8 待修（需要可编译环境回归）
 
