@@ -1643,9 +1643,9 @@ mod tests {
                 .match_route("GET", path)
                 .unwrap_or_else(|| panic!("{path} must be present in the API assembly manifest"));
             assert_eq!(
-                sdkwork_web_contract::RouteAuth::Public,
+                sdkwork_web_contract::RouteAuth::DualTokenOrAnonymous,
                 route.auth,
-                "{path} must preserve the promotion assembly public auth profile"
+                "{path} must preserve the promotion assembly optional-credential auth profile"
             );
         }
 
