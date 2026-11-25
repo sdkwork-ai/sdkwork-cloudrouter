@@ -300,11 +300,11 @@ impl GatewayBillingStore for PostgresGatewayBillingStore {
                     api_key_id: None,
                 })
                 .await
-                .map_err(|error| DomainError::new(error.to_string()))?;
+                .map_err(|error| DomainError::new(error.message().to_owned()))?;
             match resolved {
                 Some(item) => item
                     .params()
-                    .map_err(|error| DomainError::new(error.to_string())),
+                    .map_err(|error| DomainError::new(error.message().to_owned())),
                 // No stored row means the documented platform policy governs
                 // the subject; the domain defaults are exactly that policy.
                 None => Ok(BillingPolicyParams::default()),
@@ -343,7 +343,7 @@ impl GatewayBillingStore for PostgresGatewayBillingStore {
                     wallet_owner_id: Some(wallet_owner_id),
                 })
                 .await
-                .map_err(|error| DomainError::new(error.to_string()))
+                .map_err(|error| DomainError::new(error.message().to_owned()))
         })
     }
     fn settlement_mode(&self) -> GatewayBillingSettlementMode {

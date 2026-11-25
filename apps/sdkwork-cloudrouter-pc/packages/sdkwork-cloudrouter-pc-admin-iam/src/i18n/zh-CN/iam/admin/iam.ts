@@ -84,6 +84,7 @@ export const zh = {
   "admin.iam.personnel.confirmDelete": "再次点击确认删除",
   "admin.iam.personnel.create": "新建",
   "admin.iam.personnel.createChild": "新建子部门",
+  "admin.iam.personnel.delete": "删除",
   "admin.iam.personnel.department": "部门",
   "admin.iam.personnel.departmentName": "部门名称",
   "admin.iam.personnel.departments": "部门",

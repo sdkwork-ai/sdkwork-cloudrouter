@@ -2938,7 +2938,7 @@ async fn maybe_spawn_postgres_hold_sweep_worker(pool: &PgPool) -> Result<(), Gat
                     "released expired prepaid holds"
                 ),
                 Ok(_) => {}
-                Err(error) => tracing::warn!(error = %error, "hold sweep failed"),
+                Err(error) => tracing::warn!(error = %error.message(), "hold sweep failed"),
             }
             tokio::select! {
                 _ = shutdown_rx.recv() => break,

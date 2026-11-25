@@ -2,6 +2,17 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SdkworkIamService } from '@sdkwork/iam-service';
 
+import {
+  ADMIN_BADGE_NEUTRAL,
+  ADMIN_BUTTON_DANGER_SOLID,
+  ADMIN_BUTTON_PRIMARY,
+  ADMIN_BUTTON_SECONDARY,
+  ADMIN_CONTROL_CLASS,
+  ADMIN_FIELD_LABEL_CLASS,
+  ADMIN_MUTED_TEXT_CLASS,
+} from '../components/adminSurface';
+import { AdminModalShell } from '../components/AdminModalShell';
+
 /**
  * 人员管理 (personnel management) workspace.
  *
@@ -722,584 +733,602 @@ export function CloudRouterIamPersonnelWorkspace({
   )?.department;
 
   return (
-    <div className="flex min-h-full flex-1 flex-col gap-4 px-4 py-4 lg:flex-row">
-      <aside className="w-full shrink-0 lg:w-80 lg:self-stretch" aria-label={t('admin.iam.personnel.directory')}>
-        <div className="flex h-full min-h-[24rem] flex-col rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
-          <label className="block text-xs font-medium text-slate-500" htmlFor="personnel-organization">
-            {t('admin.iam.personnel.organization')}
-          </label>
-          <select
-            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-950"
-            id="personnel-organization"
-            onChange={(event) => setSelectedOrganizationId(event.target.value)}
-            value={selectedOrganizationId}
-          >
-            {organizations.length === 0 ? (
-              <option value="">{t('admin.iam.personnel.noOrganization')}</option>
-            ) : null}
-            {organizations.map((organization) => (
-              <option key={organization.id} value={organization.id}>
-                {organization.name || organization.id}
-              </option>
-            ))}
-          </select>
+    <section className="embedded-fill-page">
+      {error ? (
+        <div className="admin-alert admin-alert--error" role="alert">
+          {error}
+        </div>
+      ) : null}
 
-          <div className="mt-3 flex items-center justify-between gap-2">
-            <span className="text-xs font-medium text-slate-500">
-              {t('admin.iam.personnel.department')}
-            </span>
-            <button
-              className="rounded-md border border-slate-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-slate-700"
-              disabled={!selectedOrganizationId}
-              onClick={() => {
-                setSelectedDepartmentId('');
-                setPage(1);
-              }}
-              type="button"
-            >
-              {t('admin.iam.personnel.allDepartments')}
-            </button>
-          </div>
-          <p className="mt-1 text-[11px] leading-4 text-slate-400">
-            {t('admin.iam.personnel.dragHint')}
-          </p>
-
-          <ul
-            className="mt-2 min-h-0 flex-1 space-y-0.5 overflow-auto"
-            onDragOver={(event) => {
-              if (canUpdateDepartments) event.preventDefault();
-            }}
-            onDrop={(event) => {
-              if (event.target === event.currentTarget) void handleDrop(event, null);
-            }}
-          >
-            {flatDepartments.map((item) => {
-              const active = selectedDepartmentId === item.department.departmentId;
-              return (
-                <li
-                  className="flex items-center gap-1"
-                  key={item.department.departmentId}
-                  style={{ paddingLeft: `${item.depth * 14}px` }}
-                >
-                  <button
-                    aria-current={active ? 'true' : undefined}
-                    className={`min-w-0 flex-1 truncate rounded-md px-2 py-1 text-left text-sm ${
-                      active
-                        ? 'bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300'
-                        : 'hover:bg-slate-50 dark:hover:bg-slate-800'
-                    }`}
-                    draggable={canUpdateDepartments}
-                    onClick={() => {
-                      setSelectedDepartmentId(item.department.departmentId);
-                      setPage(1);
-                    }}
-                    onKeyDown={(event) => {
-                      if (!event.altKey || !canUpdateDepartments) return;
-                      if (event.key === 'ArrowUp') {
-                        event.preventDefault();
-                        void moveByKeyboard(item, 'up');
-                      } else if (event.key === 'ArrowDown') {
-                        event.preventDefault();
-                        void moveByKeyboard(item, 'down');
-                      } else if (event.key === 'ArrowLeft') {
-                        event.preventDefault();
-                        void moveByKeyboard(item, 'out');
-                      } else if (event.key === 'ArrowRight') {
-                        event.preventDefault();
-                        void moveByKeyboard(item, 'in');
-                      }
-                    }}
-                    onDragEnd={() => setDraggingId('')}
-                    onDragOver={(event) => {
-                      if (canUpdateDepartments) event.preventDefault();
-                    }}
-                    onDragStart={(event) => {
-                      setDraggingId(item.department.departmentId);
-                      event.dataTransfer.setData('text/plain', item.department.departmentId);
-                    }}
-                    onDrop={(event) => void handleDrop(event, item)}
-                    type="button"
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto lg:flex-row lg:overflow-hidden">
+        <aside
+          aria-label={t('admin.iam.personnel.directory')}
+          className="flex min-h-[24rem] w-full shrink-0 flex-col lg:min-h-0 lg:w-80"
+        >
+          <div className="data-surface min-h-0 flex-1">
+            <div className="admin-list-toolbar">
+              <div className="admin-list-toolbar__filters">
+                <label className="admin-field admin-field--grow" htmlFor="personnel-organization">
+                  <span className={ADMIN_FIELD_LABEL_CLASS}>
+                    {t('admin.iam.personnel.organization')}
+                  </span>
+                  <select
+                    className={ADMIN_CONTROL_CLASS}
+                    id="personnel-organization"
+                    onChange={(event) => setSelectedOrganizationId(event.target.value)}
+                    value={selectedOrganizationId}
                   >
-                    {item.hasChildren ? '▾ ' : ''}
-                    {item.department.name || item.department.code}
-                  </button>
-                  {canCreateDepartments || canDeleteDepartments ? (
-                    <div className="relative" data-department-menu>
-                      <button
-                        aria-expanded={nodeMenuId === item.department.departmentId}
-                        aria-label={`${t('admin.iam.personnel.actions')} ${item.department.name}`}
-                        className="rounded px-1 text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                        onClick={() =>
-                          setNodeMenuId(
-                            nodeMenuId === item.department.departmentId
-                              ? ''
-                              : item.department.departmentId,
-                          )
-                        }
-                        type="button"
-                      >
-                        ⋯
-                      </button>
-                      {nodeMenuId === item.department.departmentId ? (
-                        <div
-                          className="absolute right-0 top-full z-20 w-36 rounded-lg border border-slate-200 bg-white py-1 text-xs shadow-lg dark:border-slate-700 dark:bg-slate-900"
-                          role="menu"
-                        >
-                          {canCreateDepartments ? (
-                            <button
-                              className="block w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800"
-                              onClick={() => openCreateChild(item.department)}
-                              role="menuitem"
-                              type="button"
-                            >
-                              {t('admin.iam.personnel.createChild')}
-                            </button>
-                          ) : null}
-                          <button
-                            className="block w-full px-3 py-1.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800"
-                            onClick={() => openEditDepartment(item.department)}
-                            role="menuitem"
-                            type="button"
-                          >
-                            {t('admin.iam.personnel.editDepartment')}
-                          </button>
-                          {canDeleteDepartments ? (
-                            <button
-                              className="block w-full px-3 py-1.5 text-left text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                              onClick={() => openDeleteDepartment(item.department)}
-                              role="menuitem"
-                              type="button"
-                            >
-                              {t('admin.iam.personnel.delete')}
-                            </button>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
+                    {organizations.length === 0 ? (
+                      <option value="">{t('admin.iam.personnel.noOrganization')}</option>
+                    ) : null}
+                    {organizations.map((organization) => (
+                      <option key={organization.id} value={organization.id}>
+                        {organization.name || organization.id}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <div className="admin-list-toolbar__actions">
+                <button
+                  className={ADMIN_BUTTON_SECONDARY}
+                  disabled={!selectedOrganizationId}
+                  onClick={() => {
+                    setSelectedDepartmentId('');
+                    setPage(1);
+                  }}
+                  type="button"
+                >
+                  {t('admin.iam.personnel.allDepartments')}
+                </button>
+              </div>
+            </div>
 
-          {canCreateDepartments ? (
-            <button
-              className="mt-3 w-full rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs font-medium text-slate-600 hover:border-slate-400 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-              onClick={openCreateDepartment}
-              type="button"
-            >
-              + {t('admin.iam.personnel.newDepartment')}
-            </button>
-          ) : null}
+            <p className={`px-4 pt-2 text-[11px] leading-4 ${ADMIN_MUTED_TEXT_CLASS}`}>
+              {t('admin.iam.personnel.dragHint')}
+            </p>
 
-          {createOpen ? (
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
-              onMouseDown={(event) => {
-                if (event.target === event.currentTarget) closeCreateDepartment();
+            <ul
+              className="mt-1 min-h-0 flex-1 space-y-0.5 overflow-auto px-2 pb-2"
+              onDragOver={(event) => {
+                if (canUpdateDepartments) event.preventDefault();
+              }}
+              onDrop={(event) => {
+                if (event.target === event.currentTarget) void handleDrop(event, null);
               }}
             >
-              <div
-                aria-labelledby="personnel-create-title"
-                aria-modal="true"
-                className="w-full max-w-lg rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900"
-                onKeyDown={(event) => {
-                  if (event.key === 'Escape') closeCreateDepartment();
-                }}
-                role="dialog"
-              >
-                <h2 className="text-base font-semibold" id="personnel-create-title">
-                  {formMode === 'edit'
-                    ? t('admin.iam.personnel.editDepartment')
-                    : t('admin.iam.personnel.newDepartment')}
-                </h2>
-                <p className="mt-1 text-xs text-slate-500">
-                  {t('admin.iam.personnel.parentDepartment')}
-                  {'：'}
-                  {formParentId
-                    ? flatDepartments.find(
-                        (entry) => entry.department.departmentId === formParentId,
-                      )?.department.name ?? formParentId
-                    : t('admin.iam.personnel.rootDepartment')}
-                </p>
-                <form
-                  className="mt-4 space-y-4"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    void submitCreateDepartment();
-                  }}
-                >
-                  <label className="block">
-                    <span className="text-xs font-medium text-slate-500">
-                      {t('admin.iam.personnel.departmentName')} *
-                    </span>
-                    <input
-                      autoFocus
-                      className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-950"
-                      maxLength={64}
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        setFormName(value);
-                        if (!codeTouched) setFormCode(slugCode(value));
-                      }}
-                      placeholder={t('admin.iam.personnel.departmentName')}
-                      value={formName}
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-xs font-medium text-slate-500">
-                      {t('admin.iam.personnel.departmentCode')} *
-                    </span>
-                    <input
-                      className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 font-mono text-sm dark:border-slate-700 dark:bg-slate-950"
-                      maxLength={64}
-                      onChange={(event) => {
-                        setCodeTouched(true);
-                        setFormCode(event.target.value.toLowerCase());
-                      }}
-                      value={formCode}
-                    />
-                    <span className="mt-1 block text-[11px] leading-4 text-slate-400">
-                      {t('admin.iam.personnel.departmentCodeHint')}
-                    </span>
-                  </label>
-                  <label className="block">
-                    <span className="text-xs font-medium text-slate-500">
-                      {t('admin.iam.personnel.sortOrderLabel')}
-                    </span>
-                    <input
-                      className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-950"
-                      inputMode="numeric"
-                      onChange={(event) => setFormSortOrder(event.target.value.replace(/[^0-9]/g, ''))}
-                      placeholder={t('admin.iam.personnel.sortOrderHint')}
-                      value={formSortOrder}
-                    />
-                  </label>
-                  {formError ? (
-                    <p className="text-xs text-red-600 dark:text-red-400" role="alert">
-                      {formError}
-                    </p>
-                  ) : null}
-                  <div className="flex justify-end gap-2 pt-1">
+              {flatDepartments.map((item) => {
+                const active = selectedDepartmentId === item.department.departmentId;
+                return (
+                  <li
+                    className="flex items-center gap-1"
+                    key={item.department.departmentId}
+                    style={{ paddingLeft: `${item.depth * 14}px` }}
+                  >
                     <button
-                      className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm dark:border-slate-700"
-                      onClick={closeCreateDepartment}
+                      aria-current={active ? 'true' : undefined}
+                      className={`min-w-0 flex-1 truncate rounded-md border-l-2 px-2 py-1 text-left text-sm transition-colors ${
+                        active
+                          ? 'border-[var(--admin-accent)] bg-[var(--admin-accent-soft)] font-semibold text-[var(--admin-surface-text)]'
+                          : 'border-transparent hover:bg-[var(--admin-surface-bg-hover)]'
+                      }`}
+                      draggable={canUpdateDepartments}
+                      onClick={() => {
+                        setSelectedDepartmentId(item.department.departmentId);
+                        setPage(1);
+                      }}
+                      onKeyDown={(event) => {
+                        if (!event.altKey || !canUpdateDepartments) return;
+                        if (event.key === 'ArrowUp') {
+                          event.preventDefault();
+                          void moveByKeyboard(item, 'up');
+                        } else if (event.key === 'ArrowDown') {
+                          event.preventDefault();
+                          void moveByKeyboard(item, 'down');
+                        } else if (event.key === 'ArrowLeft') {
+                          event.preventDefault();
+                          void moveByKeyboard(item, 'out');
+                        } else if (event.key === 'ArrowRight') {
+                          event.preventDefault();
+                          void moveByKeyboard(item, 'in');
+                        }
+                      }}
+                      onDragEnd={() => setDraggingId('')}
+                      onDragOver={(event) => {
+                        if (canUpdateDepartments) event.preventDefault();
+                      }}
+                      onDragStart={(event) => {
+                        setDraggingId(item.department.departmentId);
+                        event.dataTransfer.setData('text/plain', item.department.departmentId);
+                      }}
+                      onDrop={(event) => void handleDrop(event, item)}
                       type="button"
                     >
-                      {t('admin.iam.personnel.cancel')}
+                      {item.hasChildren ? '▾ ' : ''}
+                      {item.department.name || item.department.code}
                     </button>
-                    <button
-                      className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900"
-                      disabled={
-                        creating ||
-                        !formName.trim() ||
-                        (formMode === 'edit' &&
-                          editingDepartment !== null &&
-                          formName.trim() === editingDepartment.name &&
-                          (formCode.trim() || slugCode(formName)) === editingDepartment.code &&
-                          formSortOrder.trim() === '')
-                      }
-                      type="submit"
-                    >
-                      {formMode === 'edit'
-                        ? t('admin.iam.personnel.save')
-                        : t('admin.iam.personnel.create')}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          ) : null}
-
-          {deleteTarget ? (
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
-              onMouseDown={(event) => {
-                if (event.target === event.currentTarget) setDeleteTarget(null);
-              }}
-            >
-              <div
-                aria-labelledby="personnel-delete-title"
-                aria-modal="true"
-                className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900"
-                onKeyDown={(event) => {
-                  if (event.key === 'Escape') setDeleteTarget(null);
-                }}
-                role="dialog"
-              >
-                <h2 className="text-base font-semibold" id="personnel-delete-title">
-                  {t('admin.iam.personnel.deleteDepartmentTitle')}
-                </h2>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                  {t('admin.iam.personnel.deleteDepartmentConfirm', { name: deleteTarget.name })}
-                </p>
-                <div className="mt-4 flex justify-end gap-2">
-                  <button
-                    className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm dark:border-slate-700"
-                    onClick={() => setDeleteTarget(null)}
-                    type="button"
-                  >
-                    {t('admin.iam.personnel.cancel')}
-                  </button>
-                  <button
-                    className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40"
-                    disabled={busy}
-                    onClick={() => void submitDeleteDepartment()}
-                    type="button"
-                  >
-                    {t('admin.iam.personnel.delete')}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </div>
-      </aside>
-
-      <section className="flex min-h-0 min-w-0 flex-1 flex-col" aria-label={t('admin.iam.personnel.member')}>
-        {error ? (
-          <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <form
-          className="mb-2 flex gap-2"
-          onSubmit={(event) => {
-            event.preventDefault();
-            setPage(1);
-            setSearchQuery(searchInput.trim());
-          }}
-        >
-          <input
-            aria-label={t('admin.iam.personnel.searchPlaceholder')}
-            className="min-w-0 flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-950"
-            onChange={(event) => setSearchInput(event.target.value)}
-            placeholder={t('admin.iam.personnel.searchPlaceholder')}
-            value={searchInput}
-          />
-          <button
-            className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs dark:border-slate-700"
-            type="submit"
-          >
-            {t('admin.iam.personnel.search')}
-          </button>
-        </form>
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <h2 className="truncate text-sm font-semibold">
-            {selectedDepartment ? selectedDepartment.name : t('admin.iam.personnel.allDepartments')}
-          </h2>
-          <span className="text-xs text-slate-400">
-            {t('admin.iam.personnel.memberCount', { count: members.length })}
-          </span>
-          <button
-            className="rounded-md border border-slate-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-slate-700"
-            disabled={members.length === 0}
-            onClick={() => exportRosterCsv(members)}
-            type="button"
-          >
-            {t('admin.iam.personnel.exportCsv')}
-          </button>
-        </div>
-        <div
-          aria-busy={busy || loading}
-          className="flex min-h-0 flex-1 flex-col overflow-auto rounded-xl border border-slate-200 dark:border-slate-800"
-        >
-          <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500 dark:bg-slate-900">
-              <tr>
-                <th className="px-3 py-2">{t('admin.iam.personnel.name')}</th>
-                <th className="px-3 py-2">{t('admin.iam.personnel.departments')}</th>
-                <th className="px-3 py-2">{t('admin.iam.personnel.email')}</th>
-                <th className="px-3 py-2">{t('admin.iam.personnel.phone')}</th>
-                <th className="px-3 py-2">{t('admin.iam.personnel.positions')}</th>
-                <th className="px-3 py-2">{t('admin.iam.personnel.roles')}</th>
-                <th className="px-3 py-2">{t('admin.iam.personnel.actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {members.length === 0 ? (
-                <tr>
-                  <td
-                    className="h-[calc(100vh-16rem)] min-h-[18rem] px-3 text-center align-middle text-slate-500"
-                    colSpan={7}
-                  >
-                    {loading ? t('admin.iam.personnel.loading') : t('admin.iam.personnel.empty')}
-                  </td>
-                </tr>
-              ) : null}
-              {members.map((member) => (
-                <tr className="border-t border-slate-100 align-top dark:border-slate-800" key={member.membershipId}>
-                  <td className="px-3 py-2">
-                    <div className="font-medium">{member.displayName}</div>
-                    <div className="text-xs text-slate-400">{member.username}</div>
-                  </td>
-                  <td className="px-3 py-2">
-                    <div className="flex flex-wrap gap-1">
-                      {member.departments.map((department) => (
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-xs ${
-                            department.isPrimary
-                              ? 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300'
-                              : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
-                          }`}
-                          key={department.departmentId}
+                    {canCreateDepartments || canDeleteDepartments ? (
+                      <div className="relative" data-department-menu>
+                        <button
+                          aria-expanded={nodeMenuId === item.department.departmentId}
+                          aria-label={`${t('admin.iam.personnel.actions')} ${item.department.name}`}
+                          className="rounded px-1 text-xs text-[var(--admin-surface-text-muted)] transition-colors hover:text-[var(--admin-surface-text)]"
+                          onClick={() =>
+                            setNodeMenuId(
+                              nodeMenuId === item.department.departmentId
+                                ? ''
+                                : item.department.departmentId,
+                            )
+                          }
+                          type="button"
                         >
-                          {department.name}
-                          {department.isPrimary ? ` · ${t('admin.iam.personnel.primaryBadge')}` : ''}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{member.email || '—'}</td>
-                  <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{member.phone || '—'}</td>
-                  <td className="px-3 py-2 text-slate-600 dark:text-slate-300">
-                    {member.positions.length === 0
-                      ? '—'
-                      : member.positions.map((position) => position.name).join('、')}
-                  </td>
-                  <td className="px-3 py-2">
-                    <div className="flex flex-wrap gap-1">
-                      {member.roles.length === 0 ? (
-                        <span className="text-slate-400">—</span>
-                      ) : (
-                        member.roles.map((role) => (
-                          <span
-                            className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
-                            key={role.roleBindingId}
-                            title={`${role.scopeKind}:${role.scopeId} ${role.dataScopeKind}`}
+                          ⋯
+                        </button>
+                        {nodeMenuId === item.department.departmentId ? (
+                          <div
+                            className="absolute right-0 top-full z-20 w-36 rounded-lg border border-[var(--admin-surface-border)] bg-[var(--admin-surface-bg)] py-1 text-xs shadow-lg"
+                            role="menu"
                           >
-                            {role.roleCode}
-                          </span>
-                        ))
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2">
-                    {canUpdateMemberships ? (
-                      <button
-                        className="rounded-md border border-slate-200 px-2 py-1 text-xs hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
-                        onClick={() => startEditingMember(member)}
-                        type="button"
-                      >
-                        {t('admin.iam.personnel.editDepartments')}
-                      </button>
-                    ) : (
-                      <span className="text-xs text-slate-400">{t('admin.iam.personnel.readOnly')}</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {editingMember ? (
-                <tr className="border-t border-slate-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
-                  <td colSpan={7} className="px-3 py-3">
-                    <p className="mb-2 text-xs font-medium text-slate-500">
-                      {t('admin.iam.personnel.editDepartmentsFor', { name: editingMember.displayName })}
-                    </p>
-                    <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
-                      {departments.map((department) => (
-                        <label className="flex items-center gap-2 text-sm" key={department.departmentId}>
-                          <input
-                            checked={Boolean(draftDepartmentIds[department.departmentId])}
-                            onChange={(event) => {
-                              const checked = event.target.checked;
-                              setDraftDepartmentIds((current) => ({
-                                ...current,
-                                [department.departmentId]: checked,
-                              }));
-                              if (!checked && draftPrimaryId === department.departmentId) {
-                                setDraftPrimaryId('');
-                              }
-                            }}
-                            type="checkbox"
-                          />
-                          <span className="truncate">{department.name}</span>
-                          <button
-                            className={`ml-auto rounded-full px-2 text-[11px] ${
-                              draftPrimaryId === department.departmentId
-                                ? 'bg-sky-600 text-white'
-                                : 'border border-slate-200 text-slate-500 dark:border-slate-700'
-                            }`}
-                            disabled={!draftDepartmentIds[department.departmentId]}
-                            onClick={() => setDraftPrimaryId(department.departmentId)}
-                            type="button"
-                          >
-                            {t('admin.iam.personnel.primary')}
-                          </button>
-                        </label>
-                      ))}
-                    </div>
-                    <p className="mt-3 mb-1 text-xs font-medium text-slate-500">
-                      {t('admin.iam.personnel.roles')}
-                    </p>
-                    <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
-                      {roleCatalog.length === 0 ? (
-                        <span className="text-xs text-slate-400">{t('admin.iam.personnel.noRoles')}</span>
-                      ) : (
-                        roleCatalog.map((role) => (
-                          <label className="flex items-center gap-2 text-sm" key={role.roleId}>
-                            <input
-                              checked={Boolean(draftRoleIds[role.roleId])}
-                              onChange={(event) => {
-                                const checked = event.target.checked;
-                                setDraftRoleIds((current) => ({
-                                  ...current,
-                                  [role.roleId]: checked,
-                                }));
-                              }}
-                              type="checkbox"
-                            />
-                            <span className="truncate">{role.code}</span>
-                          </label>
-                        ))
-                      )}
-                    </div>
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900"
-                        disabled={busy}
-                        onClick={() => void saveMemberDepartments()}
-                        type="button"
-                      >
-                        {t('admin.iam.personnel.save')}
-                      </button>
-                      <button
-                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs dark:border-slate-700"
-                        onClick={() => setEditingMember(null)}
-                        type="button"
-                      >
-                        {t('admin.iam.personnel.cancel')}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
-          <span>
-            {t('admin.iam.personnel.pageInfo', { page, pageSize, total })}
-          </span>
-          <div className="flex gap-2">
+                            {canCreateDepartments ? (
+                              <button
+                                className="block w-full px-3 py-1.5 text-left hover:bg-[var(--admin-surface-bg-hover)]"
+                                onClick={() => openCreateChild(item.department)}
+                                role="menuitem"
+                                type="button"
+                              >
+                                {t('admin.iam.personnel.createChild')}
+                              </button>
+                            ) : null}
+                            <button
+                              className="block w-full px-3 py-1.5 text-left hover:bg-[var(--admin-surface-bg-hover)]"
+                              onClick={() => openEditDepartment(item.department)}
+                              role="menuitem"
+                              type="button"
+                            >
+                              {t('admin.iam.personnel.editDepartment')}
+                            </button>
+                            {canDeleteDepartments ? (
+                              <button
+                                className="block w-full px-3 py-1.5 text-left text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
+                                onClick={() => openDeleteDepartment(item.department)}
+                                role="menuitem"
+                                type="button"
+                              >
+                                {t('admin.iam.personnel.delete')}
+                              </button>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+
+            {canCreateDepartments ? (
+              <div className="admin-list-footer">
+                <button
+                  className={`${ADMIN_BUTTON_SECONDARY} w-full`}
+                  onClick={openCreateDepartment}
+                  type="button"
+                >
+                  + {t('admin.iam.personnel.newDepartment')}
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </aside>
+
+        <section
+          aria-label={t('admin.iam.personnel.member')}
+          className="flex min-h-[20rem] min-w-0 flex-1 flex-col lg:min-h-0"
+        >
+          <div className="data-surface min-h-0 flex-1">
+            <div className="admin-list-toolbar">
+              <form
+                className="admin-list-toolbar__filters"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  setPage(1);
+                  setSearchQuery(searchInput.trim());
+                }}
+              >
+                <label className="admin-field admin-field--search">
+                  <span className={ADMIN_FIELD_LABEL_CLASS}>
+                    {t('admin.iam.personnel.search')}
+                  </span>
+                  <input
+                    aria-label={t('admin.iam.personnel.searchPlaceholder')}
+                    className={ADMIN_CONTROL_CLASS}
+                    onChange={(event) => setSearchInput(event.target.value)}
+                    placeholder={t('admin.iam.personnel.searchPlaceholder')}
+                    value={searchInput}
+                  />
+                </label>
+                <button className={ADMIN_BUTTON_SECONDARY} type="submit">
+                  {t('admin.iam.personnel.search')}
+                </button>
+              </form>
+              <div className="admin-list-toolbar__actions">
+                <button
+                  className={ADMIN_BUTTON_SECONDARY}
+                  disabled={members.length === 0}
+                  onClick={() => exportRosterCsv(members)}
+                  type="button"
+                >
+                  {t('admin.iam.personnel.exportCsv')}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--admin-surface-border)] px-4 py-2">
+              <h2 className="truncate text-sm font-semibold">
+                {selectedDepartment ? selectedDepartment.name : t('admin.iam.personnel.allDepartments')}
+              </h2>
+              <span className={`text-xs ${ADMIN_MUTED_TEXT_CLASS}`}>
+                {t('admin.iam.personnel.memberCount', { count: members.length })}
+              </span>
+            </div>
+
+            <div aria-busy={busy || loading} className="table-frame">
+              {members.length === 0 ? (
+                <div className="admin-list-state min-h-full">
+                  <span>
+                    {loading ? t('admin.iam.personnel.loading') : t('admin.iam.personnel.empty')}
+                  </span>
+                </div>
+              ) : (
+                <table className="admin-list-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">{t('admin.iam.personnel.name')}</th>
+                      <th scope="col">{t('admin.iam.personnel.departments')}</th>
+                      <th scope="col">{t('admin.iam.personnel.email')}</th>
+                      <th scope="col">{t('admin.iam.personnel.phone')}</th>
+                      <th scope="col">{t('admin.iam.personnel.positions')}</th>
+                      <th scope="col">{t('admin.iam.personnel.roles')}</th>
+                      <th className="text-right" scope="col">
+                        {t('admin.iam.personnel.actions')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {members.map((member) => (
+                      <tr key={member.membershipId}>
+                        <td>
+                          <span className="admin-list-table__primary">{member.displayName}</span>
+                          <span className="admin-list-table__secondary">{member.username}</span>
+                        </td>
+                        <td>
+                          <div className="flex flex-wrap gap-1">
+                            {member.departments.map((department) => (
+                              <span
+                                className={
+                                  department.isPrimary
+                                    ? 'admin-badge admin-badge--info'
+                                    : ADMIN_BADGE_NEUTRAL
+                                }
+                                key={department.departmentId}
+                              >
+                                {department.name}
+                                {department.isPrimary
+                                  ? ` · ${t('admin.iam.personnel.primaryBadge')}`
+                                  : ''}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td>{member.email || '—'}</td>
+                        <td>{member.phone || '—'}</td>
+                        <td>
+                          {member.positions.length === 0
+                            ? '—'
+                            : member.positions.map((position) => position.name).join('、')}
+                        </td>
+                        <td>
+                          <div className="flex flex-wrap gap-1">
+                            {member.roles.length === 0 ? (
+                              <span className={ADMIN_MUTED_TEXT_CLASS}>—</span>
+                            ) : (
+                              member.roles.map((role) => (
+                                <span
+                                  className="admin-badge admin-badge--success"
+                                  key={role.roleBindingId}
+                                  title={`${role.scopeKind}:${role.scopeId} ${role.dataScopeKind}`}
+                                >
+                                  {role.roleCode}
+                                </span>
+                              ))
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="flex justify-end">
+                            {canUpdateMemberships ? (
+                              <button
+                                className={ADMIN_BUTTON_SECONDARY}
+                                onClick={() => startEditingMember(member)}
+                                type="button"
+                              >
+                                {t('admin.iam.personnel.editDepartments')}
+                              </button>
+                            ) : (
+                              <span className={`text-xs ${ADMIN_MUTED_TEXT_CLASS}`}>
+                                {t('admin.iam.personnel.readOnly')}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {editingMember ? (
+                      <tr className="bg-[var(--admin-surface-bg-muted)] align-top">
+                        <td colSpan={7}>
+                          <p className={`text-xs font-medium ${ADMIN_MUTED_TEXT_CLASS}`}>
+                            {t('admin.iam.personnel.editDepartmentsFor', {
+                              name: editingMember.displayName,
+                            })}
+                          </p>
+                          <div className="mt-2 grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
+                            {departments.map((department) => (
+                              <label
+                                className="flex items-center gap-2 text-sm"
+                                key={department.departmentId}
+                              >
+                                <input
+                                  checked={Boolean(draftDepartmentIds[department.departmentId])}
+                                  onChange={(event) => {
+                                    const checked = event.target.checked;
+                                    setDraftDepartmentIds((current) => ({
+                                      ...current,
+                                      [department.departmentId]: checked,
+                                    }));
+                                    if (!checked && draftPrimaryId === department.departmentId) {
+                                      setDraftPrimaryId('');
+                                    }
+                                  }}
+                                  type="checkbox"
+                                />
+                                <span className="truncate">{department.name}</span>
+                                <button
+                                  className={`ml-auto rounded-full px-2 text-[11px] ${
+                                    draftPrimaryId === department.departmentId
+                                      ? 'bg-[var(--admin-accent)] font-semibold text-white'
+                                      : 'border border-[var(--admin-surface-border-strong)] text-[var(--admin-surface-text-muted)]'
+                                  }`}
+                                  disabled={!draftDepartmentIds[department.departmentId]}
+                                  onClick={() => setDraftPrimaryId(department.departmentId)}
+                                  /* The host table rule raises every in-cell button to the
+                                     control height (36px); this is a small pill inside an
+                                     editor row, so it keeps its inline height. */
+                                  style={{ minHeight: '1.5rem' }}
+                                  type="button"
+                                >
+                                  {t('admin.iam.personnel.primary')}
+                                </button>
+                              </label>
+                            ))}
+                          </div>
+                          <p className={`mt-3 mb-1 text-xs font-medium ${ADMIN_MUTED_TEXT_CLASS}`}>
+                            {t('admin.iam.personnel.roles')}
+                          </p>
+                          <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
+                            {roleCatalog.length === 0 ? (
+                              <span className={`text-xs ${ADMIN_MUTED_TEXT_CLASS}`}>
+                                {t('admin.iam.personnel.noRoles')}
+                              </span>
+                            ) : (
+                              roleCatalog.map((role) => (
+                                <label
+                                  className="flex items-center gap-2 text-sm"
+                                  key={role.roleId}
+                                >
+                                  <input
+                                    checked={Boolean(draftRoleIds[role.roleId])}
+                                    onChange={(event) => {
+                                      const checked = event.target.checked;
+                                      setDraftRoleIds((current) => ({
+                                        ...current,
+                                        [role.roleId]: checked,
+                                      }));
+                                    }}
+                                    type="checkbox"
+                                  />
+                                  <span className="truncate">{role.code}</span>
+                                </label>
+                              ))
+                            )}
+                          </div>
+                          <div className="mt-3 flex gap-2">
+                            <button
+                              className={ADMIN_BUTTON_PRIMARY}
+                              disabled={busy}
+                              onClick={() => void saveMemberDepartments()}
+                              type="button"
+                            >
+                              {t('admin.iam.personnel.save')}
+                            </button>
+                            <button
+                              className={ADMIN_BUTTON_SECONDARY}
+                              onClick={() => setEditingMember(null)}
+                              type="button"
+                            >
+                              {t('admin.iam.personnel.cancel')}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            <div className="admin-list-footer">
+              <span>{t('admin.iam.personnel.pageInfo', { page, pageSize, total })}</span>
+              <div className="flex items-center gap-2">
+                <button
+                  className={ADMIN_BUTTON_SECONDARY}
+                  disabled={page <= 1 || busy}
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  type="button"
+                >
+                  {t('admin.iam.personnel.prev')}
+                </button>
+                <button
+                  className={ADMIN_BUTTON_SECONDARY}
+                  disabled={busy || page * pageSize >= total}
+                  onClick={() => setPage((current) => current + 1)}
+                  type="button"
+                >
+                  {t('admin.iam.personnel.next')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {createOpen ? (
+        <AdminModalShell
+          labelledBy="personnel-create-title"
+          onClose={closeCreateDepartment}
+          widthClass="max-w-lg"
+        >
+          <h2 className="text-base font-semibold" id="personnel-create-title">
+            {formMode === 'edit'
+              ? t('admin.iam.personnel.editDepartment')
+              : t('admin.iam.personnel.newDepartment')}
+          </h2>
+          <p className={`mt-1 text-xs ${ADMIN_MUTED_TEXT_CLASS}`}>
+            {t('admin.iam.personnel.parentDepartment')}
+            {'：'}
+            {formParentId
+              ? flatDepartments.find(
+                  (entry) => entry.department.departmentId === formParentId,
+                )?.department.name ?? formParentId
+              : t('admin.iam.personnel.rootDepartment')}
+          </p>
+          <form
+            className="mt-4 space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void submitCreateDepartment();
+            }}
+          >
+            <label className="admin-field">
+              <span className={ADMIN_FIELD_LABEL_CLASS}>
+                {t('admin.iam.personnel.departmentName')} *
+              </span>
+              <input
+                autoFocus
+                className={ADMIN_CONTROL_CLASS}
+                maxLength={64}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setFormName(value);
+                  if (!codeTouched) setFormCode(slugCode(value));
+                }}
+                placeholder={t('admin.iam.personnel.departmentName')}
+                value={formName}
+              />
+            </label>
+            <label className="admin-field">
+              <span className={ADMIN_FIELD_LABEL_CLASS}>
+                {t('admin.iam.personnel.departmentCode')} *
+              </span>
+              <input
+                className={ADMIN_CONTROL_CLASS}
+                maxLength={64}
+                onChange={(event) => {
+                  setCodeTouched(true);
+                  setFormCode(event.target.value.toLowerCase());
+                }}
+                value={formCode}
+              />
+              <span className={`text-[11px] leading-4 ${ADMIN_MUTED_TEXT_CLASS}`}>
+                {t('admin.iam.personnel.departmentCodeHint')}
+              </span>
+            </label>
+            <label className="admin-field">
+              <span className={ADMIN_FIELD_LABEL_CLASS}>
+                {t('admin.iam.personnel.sortOrderLabel')}
+              </span>
+              <input
+                className={ADMIN_CONTROL_CLASS}
+                inputMode="numeric"
+                onChange={(event) => setFormSortOrder(event.target.value.replace(/[^0-9]/g, ''))}
+                placeholder={t('admin.iam.personnel.sortOrderHint')}
+                value={formSortOrder}
+              />
+            </label>
+            {formError ? (
+              <p className="text-xs text-red-600 dark:text-red-400" role="alert">
+                {formError}
+              </p>
+            ) : null}
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                className={ADMIN_BUTTON_SECONDARY}
+                onClick={closeCreateDepartment}
+                type="button"
+              >
+                {t('admin.iam.personnel.cancel')}
+              </button>
+              <button
+                className={ADMIN_BUTTON_PRIMARY}
+                disabled={
+                  creating ||
+                  !formName.trim() ||
+                  (formMode === 'edit' &&
+                    editingDepartment !== null &&
+                    formName.trim() === editingDepartment.name &&
+                    (formCode.trim() || slugCode(formName)) === editingDepartment.code &&
+                    formSortOrder.trim() === '')
+                }
+                type="submit"
+              >
+                {formMode === 'edit'
+                  ? t('admin.iam.personnel.save')
+                  : t('admin.iam.personnel.create')}
+              </button>
+            </div>
+          </form>
+        </AdminModalShell>
+      ) : null}
+
+      {deleteTarget ? (
+        <AdminModalShell
+          labelledBy="personnel-delete-title"
+          onClose={() => setDeleteTarget(null)}
+          widthClass="max-w-md"
+        >
+          <h2 className="text-base font-semibold" id="personnel-delete-title">
+            {t('admin.iam.personnel.deleteDepartmentTitle')}
+          </h2>
+          <p className={`mt-2 text-sm ${ADMIN_MUTED_TEXT_CLASS}`}>
+            {t('admin.iam.personnel.deleteDepartmentConfirm', { name: deleteTarget.name })}
+          </p>
+          <div className="mt-4 flex justify-end gap-2">
             <button
-              className="rounded-md border border-slate-200 px-2 py-1 disabled:opacity-40 dark:border-slate-700"
-              disabled={page <= 1 || busy}
-              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              className={ADMIN_BUTTON_SECONDARY}
+              onClick={() => setDeleteTarget(null)}
               type="button"
             >
-              {t('admin.iam.personnel.prev')}
+              {t('admin.iam.personnel.cancel')}
             </button>
             <button
-              className="rounded-md border border-slate-200 px-2 py-1 disabled:opacity-40 dark:border-slate-700"
-              disabled={busy || page * pageSize >= total}
-              onClick={() => setPage((current) => current + 1)}
+              className={ADMIN_BUTTON_DANGER_SOLID}
+              disabled={busy}
+              onClick={() => void submitDeleteDepartment()}
               type="button"
             >
-              {t('admin.iam.personnel.next')}
+              {t('admin.iam.personnel.delete')}
             </button>
           </div>
-        </div>
-      </section>
-    </div>
+        </AdminModalShell>
+      ) : null}
+    </section>
   );
 }

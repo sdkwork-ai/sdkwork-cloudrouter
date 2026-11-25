@@ -24,7 +24,7 @@ import { SDKWORK_IAM_TENANT_ADMIN_I18N_CATALOG } from '@sdkwork/iam-pc-admin-ten
 export const cloudRouterIamAdminMessages = { en, zh };
 
 /**
- * Module catalogs the 身份与访问 routes resolve their copy through.
+ * Module catalogs the Identity & Access routes resolve their copy through.
  *
  * Each IAM admin package reads its own namespace with
  * `useSdkworkModuleMessages`, which returns the catalog's default locale unless

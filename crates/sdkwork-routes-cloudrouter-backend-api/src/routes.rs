@@ -342,6 +342,7 @@ where
         model_rate_limit_store,
         model_store,
         finance_store,
+        admin_billing_decision_store,
         marketing_store,
         pricing_store,
         official_pricing_read_store,

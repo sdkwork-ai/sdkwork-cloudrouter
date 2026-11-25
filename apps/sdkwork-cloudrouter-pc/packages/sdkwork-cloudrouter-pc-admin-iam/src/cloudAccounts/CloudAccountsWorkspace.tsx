@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Plus, RefreshCw } from 'lucide-react';
 import {
   IAM_CLOUD_ACCOUNT_KNOWN_CAPABILITY_CODES,
   IAM_CLOUD_ACCOUNT_KNOWN_VENDOR_CODES,
@@ -11,6 +12,21 @@ import {
 import type { SdkWorkPageInfo } from '@sdkwork/iam-contracts';
 import type { SdkworkIamService } from '@sdkwork/iam-service';
 import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
+
+import {
+  ADMIN_BADGE_NEUTRAL,
+  ADMIN_BUTTON_DANGER,
+  ADMIN_BUTTON_DANGER_SOLID,
+  ADMIN_BUTTON_GHOST,
+  ADMIN_BUTTON_PRIMARY,
+  ADMIN_BUTTON_SECONDARY,
+  ADMIN_CONTROL_CLASS,
+  ADMIN_FIELD_LABEL_CLASS,
+  ADMIN_MODAL_SURFACE_CLASS,
+  ADMIN_MUTED_TEXT_CLASS,
+  ADMIN_SECTION_TITLE_CLASS,
+} from '../components/adminSurface';
+import { AdminModalShell } from '../components/AdminModalShell';
 
 import {
   CLOUD_ACCOUNT_SCOPE_ORDER,
@@ -74,15 +90,20 @@ const DEFAULT_VENDOR = 'aliyun';
 const DEFAULT_ACCOUNT_TYPE = 'long_term_key';
 const DEFAULT_ENVIRONMENT = 'production';
 
-const inputClass =
-  'mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-950';
-const labelClass = 'block text-xs font-medium text-slate-500';
-const primaryButtonClass =
-  'rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900';
-const secondaryButtonClass =
-  'rounded-lg border border-slate-200 px-3 py-1.5 text-sm disabled:opacity-40 dark:border-slate-700';
-const tableActionClass =
-  'rounded-md border border-slate-200 px-2 py-1 text-xs hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800';
+/**
+ * Host admin list surface contract (see `../components/adminSurface`).
+ *
+ * The page renders inside this application's admin shell, whose canonical list
+ * chrome is authored once in `src/index.css` (`embedded-fill-page`,
+ * `data-surface`, `admin-list-toolbar`, `admin-list-table`, `admin-list-footer`,
+ * `admin-control`, `admin-button`, `admin-badge`, `admin-alert`). Those hooks
+ * carry the shell's neutral surface palette, one control geometry and one accent
+ * color for light and dark, so a locally authored list page matches the composed
+ * admin pages mounted in the same shell instead of restating a second, bluish
+ * slate theme. Page-specific styling therefore only ever composes these names —
+ * the shared strings live in `../components/adminSurface` so the personnel page
+ * cannot drift from this one.
+ */
 
 export interface CloudRouterIamCloudAccountsWorkspaceProps {
   service: SdkworkIamService;
@@ -123,67 +144,30 @@ function toDraft(account: CloudAccountRecord): CloudAccountDraft {
   };
 }
 
-function statusTone(status: string | undefined): string {
+/** Status badge tone on the host admin badge contract. */
+function statusBadgeClass(status: string | undefined): string {
   if (status === 'active') {
-    return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
+    return 'admin-badge admin-badge--success';
   }
   if (status === 'disabled') {
-    return 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300';
+    return 'admin-badge admin-badge--warning';
   }
-  return 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300';
+  return ADMIN_BADGE_NEUTRAL;
 }
 
-function scopeTone(scopeType: string): string {
-  switch (scopeType) {
-    case 'platform':
-      return 'bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-300';
-    case 'tenant':
-      return 'bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300';
-    case 'organization':
-      return 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300';
-    default:
-      return 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300';
-  }
+/**
+ * Ownership badge tone.
+ *
+ * A platform-wide account is the only level that resolves for every tenant, so
+ * it is the one level that gets the accent tone; the narrower levels stay
+ * neutral and are told apart by their localized label.
+ */
+function scopeBadgeClass(scopeType: string): string {
+  return scopeType === 'platform' ? 'admin-badge admin-badge--info' : ADMIN_BADGE_NEUTRAL;
 }
 
-function ModalShell({
-  children,
-  labelledBy,
-  onClose,
-  widthClass = 'max-w-2xl',
-}: {
-  children: ReactNode;
-  labelledBy: string;
-  onClose: () => void;
-  widthClass?: string;
-}) {
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [onClose]);
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <div
-        aria-labelledby={labelledBy}
-        aria-modal="true"
-        className={`max-h-[90vh] w-full overflow-auto rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900 ${widthClass}`}
-        role="dialog"
-      >
-        {children}
-      </div>
-    </div>
-  );
+function credentialBadgeClass(configured: boolean): string {
+  return configured ? 'admin-badge admin-badge--success' : 'admin-badge admin-badge--warning';
 }
 
 export function CloudRouterIamCloudAccountsWorkspace({
@@ -671,265 +655,261 @@ export function CloudRouterIamCloudAccountsWorkspace({
   const filterScopeOptions = CLOUD_ACCOUNT_SCOPE_ORDER;
 
   return (
-    <div className="flex min-h-full flex-1 flex-col gap-4 px-4 py-4">
-      <section
-        aria-busy={loading || busy}
-        className="flex min-h-0 flex-1 flex-col rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
-      >
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-base font-semibold">
-              {t('admin.iam.cloudAccounts.title', 'Cloud account management')}
-            </h1>
-            <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-500">
-              {t(
-                'admin.iam.cloudAccounts.description',
-                'Every cloud provider account the caller can reach: platform defaults, tenant and organization shared accounts, and personal ones. Credentials are sealed by IAM; this listing exposes only masked labels and fingerprints.',
-              )}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-slate-400">
-              {t('admin.iam.cloudAccounts.total', '{{total}} cloud accounts', { total })}
-            </span>
-            <button className={secondaryButtonClass} disabled={loading || busy} onClick={reload} type="button">
-              {t('admin.iam.cloudAccounts.refresh', 'Refresh')}
-            </button>
-            {canCreate ? (
-              <button className={primaryButtonClass} disabled={busy} onClick={openCreate} type="button">
-                {t('admin.iam.cloudAccounts.create', 'New account')}
-              </button>
-            ) : null}
-          </div>
+    <section aria-busy={loading || busy} className="embedded-fill-page">
+      <header className="admin-page-header">
+        <div className="min-w-0">
+          <h1 className="admin-page-header__title">
+            {t('admin.iam.cloudAccounts.title', 'Cloud account management')}
+          </h1>
+          <p className="admin-page-header__description">
+            {t(
+              'admin.iam.cloudAccounts.description',
+              'Every cloud provider account the caller can reach: platform defaults, tenant and organization shared accounts, and personal ones. Credentials are sealed by IAM; this listing exposes only masked labels and fingerprints.',
+            )}
+          </p>
         </div>
+        <div className="admin-page-header__actions">
+          <button className={ADMIN_BUTTON_SECONDARY} disabled={loading || busy} onClick={reload} type="button">
+            <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />
+            {t('admin.iam.cloudAccounts.refresh', 'Refresh')}
+          </button>
+          {canCreate ? (
+            <button className={ADMIN_BUTTON_PRIMARY} disabled={busy} onClick={openCreate} type="button">
+              <Plus aria-hidden="true" className="h-3.5 w-3.5" />
+              {t('admin.iam.cloudAccounts.create', 'New account')}
+            </button>
+          ) : null}
+        </div>
+      </header>
 
-        <div className="mt-4 flex flex-wrap items-end gap-2">
+      {error ? (
+        <div className="admin-alert admin-alert--error" role="alert">
+          {error}
+        </div>
+      ) : null}
+      {notice ? (
+        <div className="admin-alert admin-alert--success" role="status">
+          {notice}
+        </div>
+      ) : null}
+
+      <div className="data-surface">
+        <div className="admin-list-toolbar">
           <form
-            className="flex min-w-[16rem] flex-1 items-end gap-2"
+            className="admin-list-toolbar__filters"
             onSubmit={(event) => {
               event.preventDefault();
               submitFilters();
             }}
           >
-            <label className="min-w-0 flex-1">
-              <span className="sr-only">{t('admin.iam.cloudAccounts.search', 'Search')}</span>
+            <label className="admin-field admin-field--search">
+              <span className={ADMIN_FIELD_LABEL_CLASS}>
+                {t('admin.iam.cloudAccounts.search', 'Search')}
+              </span>
               <input
-                aria-label={t('admin.iam.cloudAccounts.search', 'Search')}
-                className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-950"
+                className={ADMIN_CONTROL_CLASS}
                 onChange={(event) => setQueryInput(event.target.value)}
                 placeholder={t('admin.iam.cloudAccounts.searchPlaceholder', 'Search name or account code')}
                 type="search"
                 value={queryInput}
               />
             </label>
-            <button className={secondaryButtonClass} type="submit">
+
+            <label className="admin-field admin-field--compact">
+              <span className={ADMIN_FIELD_LABEL_CLASS}>
+                {t('admin.iam.cloudAccounts.filter.vendor', 'Provider')}
+              </span>
+              <select
+                className={ADMIN_CONTROL_CLASS}
+                onChange={(event) => {
+                  setVendorFilter(event.target.value);
+                  setPage(1);
+                }}
+                value={vendorFilter}
+              >
+                <option value="">{t('admin.iam.cloudAccounts.filter.allVendors', 'All providers')}</option>
+                {vendorOptions.map((code) => (
+                  <option key={code} value={code}>
+                    {vendorLabel(code)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="admin-field admin-field--compact">
+              <span className={ADMIN_FIELD_LABEL_CLASS}>
+                {t('admin.iam.cloudAccounts.filter.scope', 'Ownership')}
+              </span>
+              <select
+                className={ADMIN_CONTROL_CLASS}
+                onChange={(event) => {
+                  setScopeFilter(event.target.value);
+                  setPage(1);
+                }}
+                value={scopeFilter}
+              >
+                <option value="">{t('admin.iam.cloudAccounts.filter.allScopes', 'All levels')}</option>
+                {filterScopeOptions.map((scope) => (
+                  <option key={scope} value={scope}>
+                    {labelFor(cloudAccountScopeLabelKey(scope), scope)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="admin-field admin-field--compact">
+              <span className={ADMIN_FIELD_LABEL_CLASS}>
+                {t('admin.iam.cloudAccounts.filter.status', 'Status')}
+              </span>
+              <select
+                className={ADMIN_CONTROL_CLASS}
+                onChange={(event) => {
+                  setStatusFilter(event.target.value);
+                  setPage(1);
+                }}
+                value={statusFilter}
+              >
+                <option value="">{t('admin.iam.cloudAccounts.filter.allStatuses', 'All statuses')}</option>
+                {['active', 'disabled'].map((status) => (
+                  <option key={status} value={status}>
+                    {labelFor(cloudAccountStatusLabelKey(status), status)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <button className={ADMIN_BUTTON_SECONDARY} type="submit">
               {t('admin.iam.cloudAccounts.search', 'Search')}
             </button>
           </form>
-
-          <label>
-            <span className={labelClass}>{t('admin.iam.cloudAccounts.filter.vendor', 'Provider')}</span>
-            <select
-              className={inputClass}
-              onChange={(event) => {
-                setVendorFilter(event.target.value);
-                setPage(1);
-              }}
-              value={vendorFilter}
-            >
-              <option value="">{t('admin.iam.cloudAccounts.filter.allVendors', 'All providers')}</option>
-              {vendorOptions.map((code) => (
-                <option key={code} value={code}>
-                  {vendorLabel(code)}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            <span className={labelClass}>{t('admin.iam.cloudAccounts.filter.scope', 'Ownership')}</span>
-            <select
-              className={inputClass}
-              onChange={(event) => {
-                setScopeFilter(event.target.value);
-                setPage(1);
-              }}
-              value={scopeFilter}
-            >
-              <option value="">{t('admin.iam.cloudAccounts.filter.allScopes', 'All levels')}</option>
-              {filterScopeOptions.map((scope) => (
-                <option key={scope} value={scope}>
-                  {labelFor(cloudAccountScopeLabelKey(scope), scope)}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            <span className={labelClass}>{t('admin.iam.cloudAccounts.filter.status', 'Status')}</span>
-            <select
-              className={inputClass}
-              onChange={(event) => {
-                setStatusFilter(event.target.value);
-                setPage(1);
-              }}
-              value={statusFilter}
-            >
-              <option value="">{t('admin.iam.cloudAccounts.filter.allStatuses', 'All statuses')}</option>
-              {['active', 'disabled'].map((status) => (
-                <option key={status} value={status}>
-                  {labelFor(cloudAccountStatusLabelKey(status), status)}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <button className={secondaryButtonClass} onClick={resetFilters} type="button">
-            {t('admin.iam.cloudAccounts.reset', 'Reset filters')}
-          </button>
+          <div className="admin-list-toolbar__actions">
+            <button className={ADMIN_BUTTON_GHOST} onClick={resetFilters} type="button">
+              {t('admin.iam.cloudAccounts.reset', 'Reset filters')}
+            </button>
+          </div>
         </div>
 
-        {error ? (
-          <p
-            className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"
-            role="alert"
-          >
-            {error}
-          </p>
-        ) : null}
-        {notice ? (
-          <p
-            className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
-            role="status"
-          >
-            {notice}
-          </p>
-        ) : null}
-
-        <div className="mt-3 min-h-0 flex-1 overflow-auto rounded-xl border border-slate-200 dark:border-slate-800">
-          <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500 dark:bg-slate-950">
-              <tr>
-                <th className="px-3 py-2" scope="col">
-                  {t('admin.iam.cloudAccounts.columns.name', 'Name')}
-                </th>
-                <th className="px-3 py-2" scope="col">
-                  {t('admin.iam.cloudAccounts.columns.vendor', 'Provider')}
-                </th>
-                <th className="px-3 py-2" scope="col">
-                  {t('admin.iam.cloudAccounts.columns.scope', 'Ownership')}
-                </th>
-                <th className="px-3 py-2" scope="col">
-                  {t('admin.iam.cloudAccounts.columns.accountType', 'Type')}
-                </th>
-                <th className="px-3 py-2" scope="col">
-                  {t('admin.iam.cloudAccounts.columns.environment', 'Environment')}
-                </th>
-                <th className="px-3 py-2" scope="col">
-                  {t('admin.iam.cloudAccounts.columns.status', 'Status')}
-                </th>
-                <th className="px-3 py-2" scope="col">
-                  {t('admin.iam.cloudAccounts.columns.credential', 'Credential')}
-                </th>
-                <th className="px-3 py-2" scope="col">
-                  {t('admin.iam.cloudAccounts.columns.updatedAt', 'Updated')}
-                </th>
-                <th className="px-3 py-2" scope="col">
-                  {t('admin.iam.cloudAccounts.actions', 'Actions')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.length === 0 ? (
-                <tr>
-                  <td
-                    className="min-h-[18rem] px-3 py-16 text-center align-middle text-slate-500"
-                    colSpan={9}
-                  >
-                    {loading ? (
-                      t('admin.iam.cloudAccounts.loading', 'Loading cloud accounts…')
-                    ) : (
-                      <>
-                        <div>{t('admin.iam.cloudAccounts.empty', 'No cloud accounts yet.')}</div>
-                        <div className="mt-1 text-xs text-slate-400">
-                          {t(
-                            'admin.iam.cloudAccounts.emptyHint',
-                            'Register a provider account first; once its credential is stored, consumers can resolve it.',
-                          )}
-                        </div>
-                      </>
+        <div className="table-frame">
+          {items.length === 0 ? (
+            <div className="admin-list-state min-h-full">
+              {loading ? (
+                <span>{t('admin.iam.cloudAccounts.loading', 'Loading cloud accounts…')}</span>
+              ) : (
+                <>
+                  <span className="text-sm font-semibold text-[var(--admin-surface-text)]">
+                    {t('admin.iam.cloudAccounts.empty', 'No cloud accounts yet.')}
+                  </span>
+                  <span>
+                    {t(
+                      'admin.iam.cloudAccounts.emptyHint',
+                      'Register a provider account first; once its credential is stored, consumers can resolve it.',
                     )}
-                  </td>
+                  </span>
+                </>
+              )}
+            </div>
+          ) : (
+            <table className="admin-list-table">
+              <thead>
+                <tr>
+                  <th scope="col">{t('admin.iam.cloudAccounts.columns.name', 'Name')}</th>
+                  <th scope="col">{t('admin.iam.cloudAccounts.columns.vendor', 'Provider')}</th>
+                  <th scope="col">{t('admin.iam.cloudAccounts.columns.scope', 'Ownership')}</th>
+                  <th scope="col">{t('admin.iam.cloudAccounts.columns.accountType', 'Type')}</th>
+                  <th scope="col">{t('admin.iam.cloudAccounts.columns.environment', 'Environment')}</th>
+                  <th scope="col">{t('admin.iam.cloudAccounts.columns.status', 'Status')}</th>
+                  <th scope="col">{t('admin.iam.cloudAccounts.columns.credential', 'Credential')}</th>
+                  <th scope="col">{t('admin.iam.cloudAccounts.columns.updatedAt', 'Updated')}</th>
+                  <th className="text-right" scope="col">
+                    {t('admin.iam.cloudAccounts.actions', 'Actions')}
+                  </th>
                 </tr>
-              ) : null}
-              {items.map((account) => (
-                <tr
-                  className="border-t border-slate-100 align-top dark:border-slate-800"
-                  key={account.id}
-                >
-                  <td className="px-3 py-2">
-                    <div className="font-medium">{account.displayName || '—'}</div>
-                    <div className="font-mono text-xs text-slate-400">{account.accountCode}</div>
-                  </td>
-                  <td className="px-3 py-2 text-slate-600 dark:text-slate-300">
-                    {vendorLabel(account.vendorCode)}
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${scopeTone(account.scopeType)}`}>
-                      {labelFor(cloudAccountScopeLabelKey(account.scopeType), account.scopeType)}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 text-slate-600 dark:text-slate-300">
-                    {labelFor(cloudAccountTypeLabelKey(account.accountType ?? ''), account.accountType ?? '')}
-                  </td>
-                  <td className="px-3 py-2 text-slate-600 dark:text-slate-300">
-                    <div>{labelFor(cloudAccountEnvironmentLabelKey(account.environment ?? ''), account.environment ?? '')}</div>
-                    {account.regionCode ? (
-                      <div className="font-mono text-xs text-slate-400">{account.regionCode}</div>
-                    ) : null}
-                  </td>
-                  <td className="px-3 py-2">
-                    <div className="flex flex-wrap gap-1">
-                      <span className={`rounded-full px-2 py-0.5 text-xs ${statusTone(account.status)}`}>
-                        {labelFor(cloudAccountStatusLabelKey(account.status ?? ''), account.status ?? '')}
+              </thead>
+              <tbody>
+                {items.map((account) => (
+                  <tr key={account.id}>
+                    <td>
+                      <span className="admin-list-table__primary">
+                        {account.displayName || '—'}
                       </span>
-                      {account.isDefault ? (
-                        <span className="rounded-full bg-slate-900 px-2 py-0.5 text-xs text-white dark:bg-slate-100 dark:text-slate-900">
-                          {t('admin.iam.cloudAccounts.columns.default', 'Default')}
+                      <span className="admin-list-table__secondary font-mono">
+                        {account.accountCode}
+                      </span>
+                    </td>
+                    <td>{vendorLabel(account.vendorCode)}</td>
+                    <td>
+                      <span className={scopeBadgeClass(account.scopeType)}>
+                        {labelFor(cloudAccountScopeLabelKey(account.scopeType), account.scopeType)}
+                      </span>
+                    </td>
+                    <td>
+                      {labelFor(cloudAccountTypeLabelKey(account.accountType ?? ''), account.accountType ?? '')}
+                    </td>
+                    <td>
+                      <span className="block">
+                        {labelFor(
+                          cloudAccountEnvironmentLabelKey(account.environment ?? ''),
+                          account.environment ?? '',
+                        )}
+                      </span>
+                      {account.regionCode ? (
+                        <span className={`admin-list-table__secondary font-mono ${ADMIN_MUTED_TEXT_CLASS}`}>
+                          {account.regionCode}
                         </span>
                       ) : null}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2">
-                    {account.credentialConfigured ? (
-                      <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-                        {t('admin.iam.cloudAccounts.credentialCount', '{{count}} credentials', {
-                          count: account.credentialCount,
-                        })}
+                    </td>
+                    <td>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className={statusBadgeClass(account.status)}>
+                          {labelFor(cloudAccountStatusLabelKey(account.status ?? ''), account.status ?? '')}
+                        </span>
+                        {account.isDefault ? (
+                          <span className="admin-badge admin-badge--info">
+                            {t('admin.iam.cloudAccounts.columns.default', 'Default')}
+                          </span>
+                        ) : null}
+                      </div>
+                    </td>
+                    <td>
+                      <span className={credentialBadgeClass(account.credentialConfigured)}>
+                        {account.credentialConfigured
+                          ? t('admin.iam.cloudAccounts.credentialCount', '{{count}} credentials', {
+                              count: account.credentialCount,
+                            })
+                          : t('admin.iam.cloudAccounts.credentialMissing', 'Missing')}
                       </span>
-                    ) : (
-                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-                        {t('admin.iam.cloudAccounts.credentialMissing', 'Missing')}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-xs text-slate-500">{formatTimestamp(account.updatedAt)}</td>
-                  <td className="px-3 py-2">
-                    <button
-                      className={tableActionClass}
-                      onClick={() => setDetailId(account.id)}
-                      type="button"
-                    >
-                      {t('admin.iam.cloudAccounts.detail', 'Details')}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </td>
+                    <td className="whitespace-nowrap text-xs">{formatTimestamp(account.updatedAt)}</td>
+                    <td>
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        <button
+                          className={ADMIN_BUTTON_SECONDARY}
+                          disabled={busy}
+                          onClick={() => setDetailId(account.id)}
+                          type="button"
+                        >
+                          {t('admin.iam.cloudAccounts.detail', 'Details')}
+                        </button>
+                        {canUpdate ? (
+                          <button
+                            className={ADMIN_BUTTON_SECONDARY}
+                            disabled={busy}
+                            onClick={() => openEdit(account)}
+                            type="button"
+                          >
+                            {t('admin.iam.cloudAccounts.edit', 'Edit')}
+                          </button>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
-        <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+        <div className="admin-list-footer">
           <span>
             {t('admin.iam.cloudAccounts.pageInfo', 'Page {{page}} · {{pageSize}}/page · {{total}} accounts', {
               page,
@@ -937,9 +917,9 @@ export function CloudRouterIamCloudAccountsWorkspace({
               total,
             })}
           </span>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <button
-              className="rounded-md border border-slate-200 px-2 py-1 disabled:opacity-40 dark:border-slate-700"
+              className={ADMIN_BUTTON_SECONDARY}
               disabled={page <= 1 || loading || busy}
               onClick={() => setPage((current) => Math.max(1, current - 1))}
               type="button"
@@ -947,7 +927,7 @@ export function CloudRouterIamCloudAccountsWorkspace({
               {t('admin.iam.cloudAccounts.prev', 'Previous')}
             </button>
             <button
-              className="rounded-md border border-slate-200 px-2 py-1 disabled:opacity-40 dark:border-slate-700"
+              className={ADMIN_BUTTON_SECONDARY}
               disabled={!hasNext || loading || busy}
               onClick={() => setPage((current) => current + 1)}
               type="button"
@@ -956,10 +936,10 @@ export function CloudRouterIamCloudAccountsWorkspace({
             </button>
           </div>
         </div>
-      </section>
+      </div>
 
       {detailAccount ? (
-        <ModalShell
+        <AdminModalShell
           labelledBy="cloud-account-detail-title"
           onClose={() => setDetailId('')}
           widthClass="max-w-3xl"
@@ -969,7 +949,7 @@ export function CloudRouterIamCloudAccountsWorkspace({
               <h2 className="text-base font-semibold" id="cloud-account-detail-title">
                 {detailAccount.displayName || detailAccount.accountCode}
               </h2>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className={`mt-1 text-xs ${ADMIN_MUTED_TEXT_CLASS}`}>
                 {vendorLabel(detailAccount.vendorCode)}
                 {' · '}
                 {labelFor(cloudAccountScopeLabelKey(detailAccount.scopeType), detailAccount.scopeType)}
@@ -980,7 +960,7 @@ export function CloudRouterIamCloudAccountsWorkspace({
             <div className="flex flex-wrap gap-2">
               {canUpdate ? (
                 <button
-                  className={secondaryButtonClass}
+                  className={ADMIN_BUTTON_SECONDARY}
                   onClick={() => {
                     openEdit(detailAccount);
                     setDetailId('');
@@ -992,7 +972,7 @@ export function CloudRouterIamCloudAccountsWorkspace({
               ) : null}
               {canUpdate && !detailAccount.isDefault ? (
                 <button
-                  className={secondaryButtonClass}
+                  className={ADMIN_BUTTON_SECONDARY}
                   disabled={busy}
                   onClick={() => void promoteToDefault(detailAccount)}
                   type="button"
@@ -1002,7 +982,7 @@ export function CloudRouterIamCloudAccountsWorkspace({
               ) : null}
               {canUpdate ? (
                 <button
-                  className={secondaryButtonClass}
+                  className={ADMIN_BUTTON_SECONDARY}
                   disabled={busy}
                   onClick={() => void toggleStatus(detailAccount)}
                   type="button"
@@ -1014,7 +994,7 @@ export function CloudRouterIamCloudAccountsWorkspace({
               ) : null}
               {canDelete ? (
                 <button
-                  className="rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-600 disabled:opacity-40 dark:border-red-900 dark:text-red-400"
+                  className={ADMIN_BUTTON_DANGER}
                   disabled={busy}
                   onClick={() => setDeleteTarget(detailAccount)}
                   type="button"
@@ -1025,7 +1005,7 @@ export function CloudRouterIamCloudAccountsWorkspace({
             </div>
           </div>
 
-          <h3 className="mt-5 text-xs font-semibold uppercase text-slate-400">
+          <h3 className={`mt-5 ${ADMIN_SECTION_TITLE_CLASS}`}>
             {t('admin.iam.cloudAccounts.detail.facts', 'Account facts')}
           </h3>
           <dl className="mt-2 grid gap-x-8 gap-y-2 text-sm md:grid-cols-2">
@@ -1059,10 +1039,7 @@ export function CloudRouterIamCloudAccountsWorkspace({
               ) : (
                 <span className="flex flex-wrap gap-1">
                   {detailAccount.capabilityCodes.map((code) => (
-                    <span
-                      className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-                      key={code}
-                    >
+                    <span className={ADMIN_BADGE_NEUTRAL} key={code}>
                       {labelFor(cloudAccountCapabilityLabelKey(code), code)}
                     </span>
                   ))}
@@ -1078,12 +1055,12 @@ export function CloudRouterIamCloudAccountsWorkspace({
           </dl>
 
           <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-xs font-semibold uppercase text-slate-400">
+            <h3 className={ADMIN_SECTION_TITLE_CLASS}>
               {t('admin.iam.cloudAccounts.detail.credentials', 'Credentials')}
             </h3>
             {canWriteCredential ? (
               <button
-                className={secondaryButtonClass}
+                className={ADMIN_BUTTON_SECONDARY}
                 disabled={busy}
                 onClick={() => {
                   openCreateCredential(detailAccount);
@@ -1096,69 +1073,69 @@ export function CloudRouterIamCloudAccountsWorkspace({
             ) : null}
           </div>
           {!canReadCredentials ? (
-            <p className="mt-2 text-xs text-slate-500">
+            <p className={`mt-2 text-xs ${ADMIN_MUTED_TEXT_CLASS}`}>
               {t(
                 'admin.iam.cloudAccounts.credentials.forbidden',
                 'Your role can manage the account but cannot read its credential slots.',
               )}
             </p>
           ) : credentialLoading ? (
-            <p className="mt-2 text-xs text-slate-500">
+            <p className={`mt-2 text-xs ${ADMIN_MUTED_TEXT_CLASS}`}>
               {t('admin.iam.cloudAccounts.loadingCredentials', 'Loading credentials…')}
             </p>
           ) : credentials.length === 0 ? (
-            <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
+            <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
               {t(
                 'admin.iam.cloudAccounts.credentialNone',
                 'This account has no active credential yet, so consumers cannot resolve it.',
               )}
             </p>
           ) : (
-            <div className="mt-2 overflow-auto rounded-xl border border-slate-200 dark:border-slate-800">
-              <table className="min-w-full text-sm">
-                <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500 dark:bg-slate-950">
+            <div className={`mt-2 ${ADMIN_MODAL_SURFACE_CLASS}`}>
+              <table className="admin-list-table">
+                <thead>
                   <tr>
-                    <th className="px-3 py-2" scope="col">
+                    <th scope="col">
                       {t('admin.iam.cloudAccounts.credentialColumns.kind', 'Kind')}
                     </th>
-                    <th className="px-3 py-2" scope="col">
+                    <th scope="col">
                       {t('admin.iam.cloudAccounts.credentialColumns.name', 'Name')}
                     </th>
-                    <th className="px-3 py-2" scope="col">
+                    <th scope="col">
                       {t('admin.iam.cloudAccounts.credentialColumns.maskedLabel', 'Masked')}
                     </th>
-                    <th className="px-3 py-2" scope="col">
+                    <th scope="col">
                       {t('admin.iam.cloudAccounts.credentialColumns.fingerprint', 'Fingerprint')}
                     </th>
-                    <th className="px-3 py-2" scope="col">
+                    <th scope="col">
                       {t('admin.iam.cloudAccounts.credentialColumns.status', 'Status')}
                     </th>
-                    <th className="px-3 py-2" scope="col">
+                    <th scope="col">
                       {t('admin.iam.cloudAccounts.credentialColumns.expiresAt', 'Expires')}
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {credentials.map((credential) => (
-                    <tr className="border-t border-slate-100 dark:border-slate-800" key={credential.id}>
-                      <td className="px-3 py-2">
+                    <tr key={credential.id}>
+                      <td>
                         {labelFor(
                           cloudAccountCredentialKindLabelKey(credential.credentialKind ?? ''),
                           credential.credentialKind ?? '',
                         )}
                       </td>
-                      <td className="px-3 py-2">{credential.credentialName ?? '—'}</td>
-                      <td className="px-3 py-2 font-mono text-xs">{credential.maskedLabel ?? '—'}</td>
-                      <td className="px-3 py-2 font-mono text-xs">{credential.secretFingerprint ?? '—'}</td>
-                      <td className="px-3 py-2">
-                        <span className={`rounded-full px-2 py-0.5 text-xs ${statusTone(credential.status)}`}>
+                      <td>{credential.credentialName ?? '—'}</td>
+                      <td className="font-mono text-xs">{credential.maskedLabel ?? '—'}</td>
+                      <td className="font-mono text-xs">{credential.secretFingerprint ?? '—'}</td>
+                      <td>
+                        <span className={statusBadgeClass(credential.status)}>
                           {labelFor(
                             cloudAccountCredentialStatusLabelKey(credential.status ?? ''),
                             credential.status ?? '',
                           )}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-xs text-slate-500">
+                      <td className="whitespace-nowrap text-xs">
                         {formatTimestamp(credential.expiresAt)}
                       </td>
                     </tr>
@@ -1169,15 +1146,15 @@ export function CloudRouterIamCloudAccountsWorkspace({
           )}
 
           <div className="mt-5 flex justify-end">
-            <button className={secondaryButtonClass} onClick={() => setDetailId('')} type="button">
+            <button className={ADMIN_BUTTON_SECONDARY} onClick={() => setDetailId('')} type="button">
               {t('admin.iam.cloudAccounts.close', 'Close')}
             </button>
           </div>
-        </ModalShell>
+        </AdminModalShell>
       ) : null}
 
       {editorMode ? (
-        <ModalShell
+        <AdminModalShell
           labelledBy="cloud-account-editor-title"
           onClose={closeEditor}
         >
@@ -1185,6 +1162,11 @@ export function CloudRouterIamCloudAccountsWorkspace({
             {editorMode === 'edit'
               ? t('admin.iam.cloudAccounts.form.editTitle', 'Edit cloud account')
               : t('admin.iam.cloudAccounts.form.createTitle', 'New cloud account')}
+            {editorMode === 'edit' && editing ? (
+              <span className={`ml-2 text-xs font-normal ${ADMIN_MUTED_TEXT_CLASS}`}>
+                {editing.displayName || editing.accountCode}
+              </span>
+            ) : null}
           </h2>
           <form
             className="mt-4 space-y-4"
@@ -1195,11 +1177,11 @@ export function CloudRouterIamCloudAccountsWorkspace({
           >
             {editorMode === 'create' ? (
               <div className="grid gap-4 sm:grid-cols-2">
-                <label>
-                  <span className={labelClass}>{t('admin.iam.cloudAccounts.form.vendor', 'Provider')} *</span>
+                <label className="admin-field">
+                  <span className={ADMIN_FIELD_LABEL_CLASS}>{t('admin.iam.cloudAccounts.form.vendor', 'Provider')} *</span>
                   <select
                     autoFocus
-                    className={inputClass}
+                    className={ADMIN_CONTROL_CLASS}
                     onChange={(event) => {
                       const vendorCode = event.target.value;
                       setDraft((current) => ({ ...current, vendorCode }));
@@ -1213,10 +1195,10 @@ export function CloudRouterIamCloudAccountsWorkspace({
                     ))}
                   </select>
                 </label>
-                <label>
-                  <span className={labelClass}>{t('admin.iam.cloudAccounts.form.scope', 'Ownership level')} *</span>
+                <label className="admin-field">
+                  <span className={ADMIN_FIELD_LABEL_CLASS}>{t('admin.iam.cloudAccounts.form.scope', 'Ownership level')} *</span>
                   <select
-                    className={inputClass}
+                    className={ADMIN_CONTROL_CLASS}
                     onChange={(event) => {
                       const scopeType = event.target.value as CloudAccountDraft['scopeType'];
                       setDraft((current) => ({ ...current, scopeType }));
@@ -1230,10 +1212,10 @@ export function CloudRouterIamCloudAccountsWorkspace({
                     ))}
                   </select>
                 </label>
-                <label>
-                  <span className={labelClass}>{t('admin.iam.cloudAccounts.form.accountCode', 'Account code')} *</span>
+                <label className="admin-field">
+                  <span className={ADMIN_FIELD_LABEL_CLASS}>{t('admin.iam.cloudAccounts.form.accountCode', 'Account code')} *</span>
                   <input
-                    className={inputClass}
+                    className={ADMIN_CONTROL_CLASS}
                     maxLength={64}
                     onChange={(event) => {
                       const accountCode = event.target.value.toLowerCase();
@@ -1241,17 +1223,17 @@ export function CloudRouterIamCloudAccountsWorkspace({
                     }}
                     value={draft.accountCode}
                   />
-                  <span className="mt-1 block text-[11px] leading-4 text-slate-400">
+                  <span className={`text-[11px] leading-4 ${ADMIN_MUTED_TEXT_CLASS}`}>
                     {t(
                       'admin.iam.cloudAccounts.form.accountCodeHint',
                       'Lowercase letters, digits, dot, hyphen, or underscore; 2-64 characters.',
                     )}
                   </span>
                 </label>
-                <label>
-                  <span className={labelClass}>{t('admin.iam.cloudAccounts.form.displayName', 'Display name')} *</span>
+                <label className="admin-field">
+                  <span className={ADMIN_FIELD_LABEL_CLASS}>{t('admin.iam.cloudAccounts.form.displayName', 'Display name')} *</span>
                   <input
-                    className={inputClass}
+                    className={ADMIN_CONTROL_CLASS}
                     maxLength={128}
                     onChange={(event) => {
                       const displayName = event.target.value;
@@ -1262,11 +1244,11 @@ export function CloudRouterIamCloudAccountsWorkspace({
                 </label>
               </div>
             ) : (
-              <label>
-                <span className={labelClass}>{t('admin.iam.cloudAccounts.form.displayName', 'Display name')} *</span>
+              <label className="admin-field">
+                <span className={ADMIN_FIELD_LABEL_CLASS}>{t('admin.iam.cloudAccounts.form.displayName', 'Display name')} *</span>
                 <input
                   autoFocus
-                  className={inputClass}
+                  className={ADMIN_CONTROL_CLASS}
                   maxLength={128}
                   onChange={(event) => {
                     const displayName = event.target.value;
@@ -1278,10 +1260,10 @@ export function CloudRouterIamCloudAccountsWorkspace({
             )}
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <label>
-                <span className={labelClass}>{t('admin.iam.cloudAccounts.form.accountType', 'Identity shape')}</span>
+              <label className="admin-field">
+                <span className={ADMIN_FIELD_LABEL_CLASS}>{t('admin.iam.cloudAccounts.form.accountType', 'Identity shape')}</span>
                 <select
-                  className={inputClass}
+                  className={ADMIN_CONTROL_CLASS}
                   onChange={(event) => {
                     const accountType = event.target.value;
                     setDraft((current) => ({ ...current, accountType }));
@@ -1300,10 +1282,10 @@ export function CloudRouterIamCloudAccountsWorkspace({
                   ))}
                 </select>
               </label>
-              <label>
-                <span className={labelClass}>{t('admin.iam.cloudAccounts.form.environment', 'Environment')}</span>
+              <label className="admin-field">
+                <span className={ADMIN_FIELD_LABEL_CLASS}>{t('admin.iam.cloudAccounts.form.environment', 'Environment')}</span>
                 <select
-                  className={inputClass}
+                  className={ADMIN_CONTROL_CLASS}
                   onChange={(event) => {
                     const environment = event.target.value;
                     setDraft((current) => ({ ...current, environment }));
@@ -1317,10 +1299,10 @@ export function CloudRouterIamCloudAccountsWorkspace({
                   ))}
                 </select>
               </label>
-              <label>
-                <span className={labelClass}>{t('admin.iam.cloudAccounts.form.region', 'Region (optional)')}</span>
+              <label className="admin-field">
+                <span className={ADMIN_FIELD_LABEL_CLASS}>{t('admin.iam.cloudAccounts.form.region', 'Region (optional)')}</span>
                 <input
-                  className={inputClass}
+                  className={ADMIN_CONTROL_CLASS}
                   onChange={(event) => {
                     const regionCode = event.target.value;
                     setDraft((current) => ({ ...current, regionCode }));
@@ -1328,12 +1310,12 @@ export function CloudRouterIamCloudAccountsWorkspace({
                   value={draft.regionCode}
                 />
               </label>
-              <label>
-                <span className={labelClass}>
+              <label className="admin-field">
+                <span className={ADMIN_FIELD_LABEL_CLASS}>
                   {t('admin.iam.cloudAccounts.form.externalAccountId', 'Provider account ID (optional)')}
                 </span>
                 <input
-                  className={inputClass}
+                  className={ADMIN_CONTROL_CLASS}
                   onChange={(event) => {
                     const externalAccountId = event.target.value;
                     setDraft((current) => ({ ...current, externalAccountId }));
@@ -1344,7 +1326,7 @@ export function CloudRouterIamCloudAccountsWorkspace({
             </div>
 
             <fieldset>
-              <legend className={labelClass}>
+              <legend className={ADMIN_FIELD_LABEL_CLASS}>
                 {t('admin.iam.cloudAccounts.form.capabilities', 'Capabilities (optional)')}
               </legend>
               <div className="mt-1 grid gap-1 sm:grid-cols-2">
@@ -1359,7 +1341,7 @@ export function CloudRouterIamCloudAccountsWorkspace({
                   </label>
                 ))}
               </div>
-              <p className="mt-1 text-[11px] leading-4 text-slate-400">
+              <p className={`mt-1 text-[11px] leading-4 ${ADMIN_MUTED_TEXT_CLASS}`}>
                 {t(
                   'admin.iam.cloudAccounts.form.capabilitiesHint',
                   'Leave every capability unchecked to let the account serve every capability of its provider.',
@@ -1381,9 +1363,9 @@ export function CloudRouterIamCloudAccountsWorkspace({
                   <span>{t('admin.iam.cloudAccounts.form.isDefault', 'Make it the default for this provider')}</span>
                 </label>
 
-                <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+                <div className="rounded-lg border border-slate-200 p-3 dark:border-white/10">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-slate-500">
+                    <span className={`text-xs font-semibold ${ADMIN_MUTED_TEXT_CLASS}`}>
                       {t('admin.iam.cloudAccounts.form.credentialSection', 'Credential')}
                     </span>
                     {createCredentialKind ? (
@@ -1397,14 +1379,14 @@ export function CloudRouterIamCloudAccountsWorkspace({
                       </label>
                     ) : null}
                   </div>
-                  <p className="mt-1 text-[11px] leading-4 text-slate-400">
+                  <p className={`mt-1 text-[11px] leading-4 ${ADMIN_MUTED_TEXT_CLASS}`}>
                     {t(
                       'admin.iam.cloudAccounts.credentialHint',
                       'IAM seals credentials with AES-256-GCM; after a write only the masked label and fingerprint are readable. Writing again rotates the credential.',
                     )}
                   </p>
                   {createCredentialFields.length === 0 ? (
-                    <p className="mt-2 text-xs text-slate-500">
+                    <p className={`mt-2 text-xs ${ADMIN_MUTED_TEXT_CLASS}`}>
                       {t(
                         'admin.iam.cloudAccounts.credentialSecretless',
                         'This identity shape resolves out of band on the provider side; no secret is stored here.',
@@ -1413,11 +1395,11 @@ export function CloudRouterIamCloudAccountsWorkspace({
                   ) : writeCredential ? (
                     <div className="mt-2 grid gap-3 sm:grid-cols-2">
                       {createCredentialFields.map((field) => (
-                        <label key={field}>
-                          <span className={labelClass}>{labelFor(cloudAccountCredentialFieldLabelKey(field), field)} *</span>
+                        <label className="admin-field" key={field}>
+                          <span className={ADMIN_FIELD_LABEL_CLASS}>{labelFor(cloudAccountCredentialFieldLabelKey(field), field)} *</span>
                           <input
                             autoComplete="off"
-                            className={inputClass}
+                            className={ADMIN_CONTROL_CLASS}
                             onChange={(event) => {
                               const value = event.target.value;
                               setCreateCredentialDraft((current) => credentialDraftWithField(current, field, value));
@@ -1440,25 +1422,25 @@ export function CloudRouterIamCloudAccountsWorkspace({
             ) : null}
             <div className="flex justify-end gap-2 pt-1">
               <button
-                className={secondaryButtonClass}
+                className={ADMIN_BUTTON_SECONDARY}
                 disabled={busy}
                 onClick={closeEditor}
                 type="button"
               >
                 {t('admin.iam.cloudAccounts.cancel', 'Cancel')}
               </button>
-              <button className={primaryButtonClass} disabled={busy} type="submit">
+              <button className={ADMIN_BUTTON_PRIMARY} disabled={busy} type="submit">
                 {editorMode === 'edit'
                   ? t('admin.iam.cloudAccounts.form.saveChanges', 'Save changes')
                   : t('admin.iam.cloudAccounts.create', 'New account')}
               </button>
             </div>
           </form>
-        </ModalShell>
+        </AdminModalShell>
       ) : null}
 
       {credentialTarget ? (
-        <ModalShell
+        <AdminModalShell
           labelledBy="cloud-account-credential-title"
           onClose={() => {
             if (!busy) setCredentialTarget(undefined);
@@ -1469,7 +1451,7 @@ export function CloudRouterIamCloudAccountsWorkspace({
             {' · '}
             {credentialTarget.displayName || credentialTarget.accountCode}
           </h2>
-          <p className="mt-1 text-xs leading-5 text-slate-500">
+          <p className={`mt-1 text-xs leading-5 ${ADMIN_MUTED_TEXT_CLASS}`}>
             {t(
               'admin.iam.cloudAccounts.credentialHint',
               'IAM seals credentials with AES-256-GCM; after a write only the masked label and fingerprint are readable. Writing again rotates the credential.',
@@ -1483,11 +1465,11 @@ export function CloudRouterIamCloudAccountsWorkspace({
             }}
           >
             <div className="grid gap-4 sm:grid-cols-2">
-              <label>
-                <span className={labelClass}>{t('admin.iam.cloudAccounts.credentialKind', 'Credential kind')}</span>
+              <label className="admin-field">
+                <span className={ADMIN_FIELD_LABEL_CLASS}>{t('admin.iam.cloudAccounts.credentialKind', 'Credential kind')}</span>
                 <select
                   autoFocus
-                  className={inputClass}
+                  className={ADMIN_CONTROL_CLASS}
                   onChange={(event) => {
                     const credentialKind = event.target.value;
                     setRotateDraft((current) => ({ ...current, credentialKind }));
@@ -1501,10 +1483,10 @@ export function CloudRouterIamCloudAccountsWorkspace({
                   ))}
                 </select>
               </label>
-              <label>
-                <span className={labelClass}>{t('admin.iam.cloudAccounts.credentialName', 'Credential name')}</span>
+              <label className="admin-field">
+                <span className={ADMIN_FIELD_LABEL_CLASS}>{t('admin.iam.cloudAccounts.credentialName', 'Credential name')}</span>
                 <input
-                  className={inputClass}
+                  className={ADMIN_CONTROL_CLASS}
                   maxLength={64}
                   onChange={(event) => {
                     const credentialName = event.target.value;
@@ -1516,11 +1498,11 @@ export function CloudRouterIamCloudAccountsWorkspace({
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               {rotateCredentialFields.map((field) => (
-                <label key={field}>
-                  <span className={labelClass}>{labelFor(cloudAccountCredentialFieldLabelKey(field), field)} *</span>
+                <label className="admin-field" key={field}>
+                  <span className={ADMIN_FIELD_LABEL_CLASS}>{labelFor(cloudAccountCredentialFieldLabelKey(field), field)} *</span>
                   <input
                     autoComplete="off"
-                    className={inputClass}
+                    className={ADMIN_CONTROL_CLASS}
                     onChange={(event) => {
                       const value = event.target.value;
                       setRotateDraft((current) => credentialDraftWithField(current, field, value));
@@ -1531,10 +1513,10 @@ export function CloudRouterIamCloudAccountsWorkspace({
                 </label>
               ))}
             </div>
-            <label>
-              <span className={labelClass}>{t('admin.iam.cloudAccounts.credentialExpiresAt', 'Expires at (optional)')}</span>
+            <label className="admin-field">
+              <span className={ADMIN_FIELD_LABEL_CLASS}>{t('admin.iam.cloudAccounts.credentialExpiresAt', 'Expires at (optional)')}</span>
               <input
-                className={inputClass}
+                className={ADMIN_CONTROL_CLASS}
                 onChange={(event) => {
                   const expiresAt = event.target.value;
                   setRotateDraft((current) => ({ ...current, expiresAt }));
@@ -1550,23 +1532,23 @@ export function CloudRouterIamCloudAccountsWorkspace({
             ) : null}
             <div className="flex justify-end gap-2 pt-1">
               <button
-                className={secondaryButtonClass}
+                className={ADMIN_BUTTON_SECONDARY}
                 disabled={busy}
                 onClick={() => setCredentialTarget(undefined)}
                 type="button"
               >
                 {t('admin.iam.cloudAccounts.cancel', 'Cancel')}
               </button>
-              <button className={primaryButtonClass} disabled={busy} type="submit">
+              <button className={ADMIN_BUTTON_PRIMARY} disabled={busy} type="submit">
                 {t('admin.iam.cloudAccounts.credentialWrite', 'Write')}
               </button>
             </div>
           </form>
-        </ModalShell>
+        </AdminModalShell>
       ) : null}
 
       {deleteTarget ? (
-        <ModalShell
+        <AdminModalShell
           labelledBy="cloud-account-delete-title"
           onClose={() => {
             if (!busy) setDeleteTarget(undefined);
@@ -1576,7 +1558,7 @@ export function CloudRouterIamCloudAccountsWorkspace({
           <h2 className="text-base font-semibold" id="cloud-account-delete-title">
             {t('admin.iam.cloudAccounts.deleteTitle', 'Delete cloud account')}
           </h2>
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+          <p className={`mt-2 text-sm ${ADMIN_MUTED_TEXT_CLASS}`}>
             {t(
               'admin.iam.cloudAccounts.deleteConfirm',
               'Delete "{{name}}"? It stops resolving immediately and its stored credential is retired.',
@@ -1585,7 +1567,7 @@ export function CloudRouterIamCloudAccountsWorkspace({
           </p>
           <div className="mt-4 flex justify-end gap-2">
             <button
-              className={secondaryButtonClass}
+              className={ADMIN_BUTTON_SECONDARY}
               disabled={busy}
               onClick={() => setDeleteTarget(undefined)}
               type="button"
@@ -1593,7 +1575,7 @@ export function CloudRouterIamCloudAccountsWorkspace({
               {t('admin.iam.cloudAccounts.cancel', 'Cancel')}
             </button>
             <button
-              className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40"
+              className={ADMIN_BUTTON_DANGER_SOLID}
               disabled={busy}
               onClick={() => void confirmDelete()}
               type="button"
@@ -1601,16 +1583,16 @@ export function CloudRouterIamCloudAccountsWorkspace({
               {t('admin.iam.cloudAccounts.confirm', 'Confirm')}
             </button>
           </div>
-        </ModalShell>
+        </AdminModalShell>
       ) : null}
-    </div>
+    </section>
   );
 }
 
 function Fact({ children, label }: { children: ReactNode; label: string }) {
   return (
     <div className="flex min-w-0 flex-col">
-      <dt className="text-[11px] uppercase tracking-wide text-slate-400">{label}</dt>
+      <dt className={`text-[11px] uppercase tracking-wide ${ADMIN_MUTED_TEXT_CLASS}`}>{label}</dt>
       <dd className="mt-0.5 min-w-0 break-words text-sm">{children}</dd>
     </div>
   );

@@ -84,6 +84,7 @@ export const en = {
   "admin.iam.personnel.confirmDelete": "Click again to delete",
   "admin.iam.personnel.create": "Create",
   "admin.iam.personnel.createChild": "Create child",
+  "admin.iam.personnel.delete": "Delete",
   "admin.iam.personnel.department": "Departments",
   "admin.iam.personnel.departmentName": "Department name",
   "admin.iam.personnel.departments": "Departments",
