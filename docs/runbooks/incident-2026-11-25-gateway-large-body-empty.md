@@ -312,46 +312,80 @@ let rebuilt = Request::from_parts(
 | cloudrouter-http `locale::read_problem_payload` | 读失败 → `Body::empty()` | ✅ **已修**：放不下→跳过本地化、响应原样；传输失败→显式 problem |
 | `sdkwork-log` `CaptureBody`（响应 tee） | 一直是旁路 tee | ✅ 安全（不变） |
 | cloudrouter `invocation_http::normalize_gateway_error_protocol` | 读 64 KiB 后**有意**改写为协议错误信封 | ✅ 安全（有意替换，不是静默丢失） |
-| `sdkwork-webserver` `data_plane/subrequest.rs:363` | 响应体不可缓冲 → `Body::empty()` | ⚠️ **已定位，待修**（不在 `/v1` 路径；见 §5.8） |
-| `sdkwork-webserver` `data_plane/cgi_cache.rs:205` | 响应体读取失败 → `Body::empty()` | ⚠️ **已定位，待修**（同上） |
+| `sdkwork-api-cloudrouter-assembly::provision_accounts_after_registration` | 注册成功的响应体读取失败 → `Body::empty()`：**2xx 却返回空 body** | ✅ **已修**：先判预算→放不下则跳过开通并原样返回；传输失败→显式 502 |
+| `sdkwork-webserver` `data_plane/subrequest.rs` | 尺寸/未知长度分支本就原样透传；仅传输失败分支 → `Body::empty()` | ✅ **已修**：传输失败→显式 502 problem |
+| `sdkwork-webserver` `data_plane/cgi_cache.rs` | 同上（尺寸分支已透传未缓存） | ✅ **已修**：传输失败→显式 502 problem（并保留 HEAD 抑制语义） |
 
 ### 5.7 框架级契约（已写入标准，防止再犯）
 
-规则已固化到框架标准 **`specs/WEB_FRAMEWORK_STANDARD.md` §10.1「Body observation MUST NOT be destructive」**，
-并配套新增可执行契约模块 `sdkwork_web_core::body_contract`：
+规则已固化到两处权威：
+
+- **跨仓权威**：`sdkwork-specs/WEB_FRAMEWORK_SPEC.md` **§11.1「Non-Destructive Body Observation」**
+  + §14 回归要求（提交 `28158a2`）；
+- **框架仓标准**：`sdkwork-web-framework/specs/WEB_FRAMEWORK_STANDARD.md` **§10.1** + §11（提交 `6a700ca`）。
+
+并配套可执行契约模块 `sdkwork_web_core::body_contract`：
 
 - `may_buffer_whole(body, budget)`：**在读取之前**判断"这个 body 能否整包缓冲并回放"。
   未声明长度（chunked/streaming）一律判为不可，从而强制走"不读 / tee"。
 - 模块文档（`crates/sdkwork-web-core/src/body_contract.rs`）写明两种合法形态（回放 / 透传）、
   禁止写法（`unwrap_or_else(Body::empty)` 重建消息）、以及这次的故障成因。
-- 标准 §11 增补回归要求：每个读取类阶段都要有"原始字节仍能到达下一位读者/客户端"的用例。
 
-落地提交与验证：
+**落地提交与验证（全量）**
 
-| 项 | 结果 |
-|----|------|
-| `sdkwork-web-framework` 提交 | `6a700ca`（body_contract + problem/interceptors 修复 + 标准 §10.1/§11）、`89e546d`（响应侧回归用例） |
-| `cargo test -p sdkwork-web-core --lib` | **258 passed / 0 failed**（含 `body_contract` 契约用例与 `problem::tests::oversized_problem_body_is_left_untouched`"超大 problem body 必须原样到达客户端"） |
-| WSL `cargo check -p sdkwork-cloudrouter-http` | **exit 0**（同时编译了 `sdkwork-web-bootstrap` 与 `sdkwork-iam-web-adapter`，即框架改动的消费方；亦验证了本次 `locale.rs` 修复） |
-| `sdkwork-cloudrouter` 提交 | `884074d7`（locale 修复 + 响应流审计）、`d41f9e9f`（验证记录） |
+| 仓库 | 提交 | 内容 |
+|------|------|------|
+| `sdkwork-specs` | `28158a2` | §11.1 规范 + §14 回归要求 |
+| `sdkwork-web-framework` | `6a700ca`、`89e546d` | body_contract、problem/interceptors 响应修复、标准 §10.1、响应侧回归用例 |
+| `sdkwork-log` | `dc89d05`、`d18fb4a`、`82fee4a` | 请求日志 tee、混合回放、捕获预算 1 MiB 可配 |
+| `sdkwork-cloudrouter` | `884074d7`、`d41f9e9f`、`44507a5b`、`919de7ad`、`0c9b44e8`、`38d806dc`、`7bafaf6f` | locale 本地化、注册响应、请求日志接入说明、runbook |
+| `sdkwork-webserver` | `24ad62db` | subrequest / cgi_cache 传输失败显式 502 |
+| `sdkwork-api-cloud-gateway` | `c2bec55`、`2c94b16` | 依赖错误体观测、`Cargo.lock` 锁定一致性 |
 
-### 5.8 待修（需要可编译环境回归）
+| 验证命令 | 结果 |
+|---|---|
+| `cargo test -p sdkwork-web-core --lib` | **258 passed / 0 failed**（含 `body_contract` 契约用例与 `problem::tests::oversized_problem_body_is_left_untouched`） |
+| `cargo test -p sdkwork-log-tower-adapter --lib` | **11 passed**（含 1 MiB / 8 MiB 逐字节转发） |
+| `cargo test -p sdkwork-api-log-assembly --lib` | **3 passed**（捕获预算） |
+| WSL `cargo check -p sdkwork-cloudrouter-http` | **exit 0**（连带 `sdkwork-web-bootstrap`、`sdkwork-iam-web-adapter`） |
+| WSL `cargo check -p sdkwork-api-cloudrouter-assembly` | **exit 0**（连带 `sdkwork-cloudrouter-edge-runtime` 全模块） |
+| WSL `cargo check -p sdkwork-api-cloud-gateway --lib` | **exit 0** |
+| WSL `cargo check -p sdkwork-api-webserver-standalone-gateway` | **exit 0** |
+| WSL `cargo metadata --locked`（gateway） | **exit 0** |
 
-`src\data_plane\subrequest.rs:363` 与 `src\data_plane\cgi_cache.rs:205`（`sdkwork-webserver`）仍是
-"不可缓冲 → 空 body"的形状。修复方式与本次一致，两步：
+> Windows 本机因 MSVC `lib.exe` 无法创建临时文件（`LNK1104`，环境问题）无法编译含 C 依赖的 crate，
+> 因此跨仓库验证统一在 WSL/Linux 完成——这也与生产镜像的构建环境一致。
 
-1. 在 `into_parts()` 之后、消费 body 之前，用 `may_buffer_whole(&body, budget)` 判断；
-   不可缓冲则 `Response::from_parts(parts, body)` **原样返回**（跳过分组/缓存）。
-2. 保留的 `Err` 分支只可能在传输故障时出现，应返回显式 5xx problem 而不是空 body。
+### 5.8 穷尽核对结果：0 处待修
 
-> 本次未直接改：该仓库的 C 依赖（`aws-lc-sys`）在本机 Windows 链接器上持续失败
-> （`LNK1104` 无法创建 `lib.exe` 临时文件，属环境问题），无法完成"改完即编译回归"；
-> 按"未验证代码不入库"的纪律留作独立变更，并已在本表登记。
+对"读取后可能丢内容"的形态做了三轮全工作区扫描（排除 `external/`、`target/`、`tests/` 目录）：
+
+| 扫描 | 判据 | 命中 | 结论 |
+|------|------|------|------|
+| ① 请求方向读取 | `to_bytes(` / `BodyExt::collect` / `body_hint` / `AxumBody::empty` | 423 处 `to_bytes` 调用点 | 逐点分类见 §5.3；请求侧破坏点只有 request log 一处（已修），其余为回填/拒绝/末端单次读取 |
+| ② 响应方向读取 | `response.into_body()` / `body_mut()` / `into_parts()` | 257 处 | 破坏性"读完用空 body 顶上"共 **4 处**，全部定位并处置（见 §5.6） |
+| ③ 空 body 重建 | `from_parts(parts, Body::empty())` | 4 处 | 3 处属设计（①`drain_bounded_request_body` 把 body 取成 `collected` 交给调用方；②`drain_bounded_request_body` 有意丢弃；③WebSocket 101 无 body），1 处真缺陷（注册响应）已修 |
+
+结论：**请求流与响应流的"读取后丢内容"形态已全部处置，待修 0 处。**
 
 ### 5.9 修复上线前的客户端止血
 
 在 **< 256 KiB 请求体**内完成会话（提前压缩/裁剪上下文，或拆分会话）——这是唯一不依赖发版的规避手段。
 （发版后该限制消失：`/v1` 链路可正常接收至框架 16 MiB / 网关与 CloudRouter 25 MiB。）
+
+### 5.10 商业化交付清单
+
+| 交付项 | 状态 |
+|--------|------|
+| 根因定位（可复现、边界精确 262144） | ✅ |
+| 非破坏性读取契约（跨仓规范 §11.1 + 框架标准 §10.1 + 可执行模块 `body_contract`） | ✅ |
+| 全工作区穷尽核对（请求 423 点 / 响应 257 点 / 空 body 重建 4 点） | ✅ 0 处待修 |
+| 修复实现（6 个仓库）+ 回归用例 | ✅ |
+| 跨仓编译验证（WSL/Linux：cloudrouter-http、cloudrouter-assembly、gateway、webserver） | ✅ |
+| 单测（web-core 258、log-adapter 11、log-assembly 3） | ✅ |
+| 运行手册（证据链 / 复现脚本 / 尺寸上限链 / 提交清单） | ✅ |
+| 版本号 + 镜像构建 `0.1.133` | ⏳ 待执行 |
+| 生产部署 + 冒烟 + 回滚预案（`rollback --to 0.1.132`） | ⏳ 待人工确认窗口 |
 
 ---
 
