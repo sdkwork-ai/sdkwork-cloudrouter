@@ -279,7 +279,7 @@ let rebuilt = Request::from_parts(
 5. `invocation_body_from_http` 仍建议补齐诚实化：`declared_content_length > 0 && bytes.is_empty()` 时返回
    5xx `request_body_not_delivered`（一并记录 declared/read 两个数字），而不是 `400 request body is empty`。
 
-### 5.6 请求体大小上限链（从外到内）与"调大"的正确位置
+### 5.5 请求体大小上限链（从外到内）与"调大"的正确位置
 
 丢包已由 tee 消除，剩下的只是"**收不收**"（413）而不是"丢不丢"。各环节当前值：
 
@@ -299,7 +299,47 @@ let rebuilt = Request::from_parts(
 3. 网关与 CloudRouter 都是**整包内存缓冲**，上限与并发数共同决定内存占用，不要盲目调大。
 4. 日志捕获预算**不再参与**"能否收下"，只决定审计里能保留多少字节；1 MiB 已覆盖常见长对话 prompt，可按磁盘预算继续调大。
 
-### 5.5 修复上线前的客户端止血
+### 5.6 响应流审计与修复（与请求流同一套规则）
+
+响应体同样只能被读一次；"读完用空 body 顶上"会把上游真实答案变成空响应。
+
+| 位置 | 修复前 | 现在 |
+|------|--------|------|
+| `sdkwork-web-core::problem::enrich_problem_response`（problem+json 富化） | 先读后判；读失败 → `Err` → 调用方用通用 problem 覆盖，**丢掉上游 detail** | ✅ **已修**：先用 `may_buffer_whole` 判预算，放不下→不读、原样透传 |
+| `sdkwork-web-core::problem::normalize_problem_response` | 继承上面的失败路径 | ✅ 随上一条改善（只有"已判定可缓冲但传输失败"才回退通用 problem） |
+| `sdkwork-web-core::interceptors` 幂等 `after`（响应写入重放缓存） | 超过缓存上限 → `Err` → 整个响应用 problem 覆盖 | ✅ **已修**：放不下→释放租约、原样透传（不再吞掉响应） |
+| gateway `dependency_error_observer` | 读失败 → `Body::empty()`，**丢掉上游错误详情** | ✅ **已修**：放不下→原样转发；仅传输失败时返回显式 502 problem |
+| cloudrouter-http `locale::read_problem_payload` | 读失败 → `Body::empty()` | ✅ **已修**：放不下→跳过本地化、响应原样；传输失败→显式 problem |
+| `sdkwork-log` `CaptureBody`（响应 tee） | 一直是旁路 tee | ✅ 安全（不变） |
+| cloudrouter `invocation_http::normalize_gateway_error_protocol` | 读 64 KiB 后**有意**改写为协议错误信封 | ✅ 安全（有意替换，不是静默丢失） |
+| `sdkwork-webserver` `data_plane/subrequest.rs:363` | 响应体不可缓冲 → `Body::empty()` | ⚠️ **已定位，待修**（不在 `/v1` 路径；见 §5.8） |
+| `sdkwork-webserver` `data_plane/cgi_cache.rs:205` | 响应体读取失败 → `Body::empty()` | ⚠️ **已定位，待修**（同上） |
+
+### 5.7 框架级契约（已写入标准，防止再犯）
+
+规则已固化到框架标准 **`specs/WEB_FRAMEWORK_STANDARD.md` §10.1「Body observation MUST NOT be destructive」**，
+并配套新增可执行契约模块 `sdkwork_web_core::body_contract`：
+
+- `may_buffer_whole(body, budget)`：**在读取之前**判断"这个 body 能否整包缓冲并回放"。
+  未声明长度（chunked/streaming）一律判为不可，从而强制走"不读 / tee"。
+- 模块文档（`crates/sdkwork-web-core/src/body_contract.rs`）写明两种合法形态（回放 / 透传）、
+  禁止写法（`unwrap_or_else(Body::empty)` 重建消息）、以及这次的故障成因。
+- 标准 §11 增补回归要求：每个读取类阶段都要有"原始字节仍能到达下一位读者/客户端"的用例。
+
+### 5.8 待修（需要可编译环境回归）
+
+`src\data_plane\subrequest.rs:363` 与 `src\data_plane\cgi_cache.rs:205`（`sdkwork-webserver`）仍是
+"不可缓冲 → 空 body"的形状。修复方式与本次一致，两步：
+
+1. 在 `into_parts()` 之后、消费 body 之前，用 `may_buffer_whole(&body, budget)` 判断；
+   不可缓冲则 `Response::from_parts(parts, body)` **原样返回**（跳过分组/缓存）。
+2. 保留的 `Err` 分支只可能在传输故障时出现，应返回显式 5xx problem 而不是空 body。
+
+> 本次未直接改：该仓库的 C 依赖（`aws-lc-sys`）在本机 Windows 链接器上持续失败
+> （`LNK1104` 无法创建 `lib.exe` 临时文件，属环境问题），无法完成"改完即编译回归"；
+> 按"未验证代码不入库"的纪律留作独立变更，并已在本表登记。
+
+### 5.9 修复上线前的客户端止血
 
 在 **< 256 KiB 请求体**内完成会话（提前压缩/裁剪上下文，或拆分会话）——这是唯一不依赖发版的规避手段。
 （发版后该限制消失：`/v1` 链路可正常接收至框架 16 MiB / 网关与 CloudRouter 25 MiB。）
@@ -312,7 +352,7 @@ let rebuilt = Request::from_parts(
 |--------|------|------|
 | ~~P0~~ | ~~构建 `0.1.133`（仅加埋点）并部署~~ | 已不需要：消费点由 §3.4 的代码审阅 + 边界实验直接确认 |
 | ~~P0~~ | ~~埋点确认后修消费点 + 回归用例~~ | 已由 §5.1 完成 |
-| **P1** | 客户端止血 | 见 §5.5 |
+| **P1** | 客户端止血 | 见 §5.9 |
 | **P1** | `invocation_body_from_http` 的诚实化 | 见 §5.4 第 5 条 |
 | **P2** | 观测补齐 | 网关访问事件记录"缓冲后长度"，使此类问题不必再靠 WARN 反推 |
 
@@ -348,5 +388,8 @@ done
 docker logs sdkwork-api-cloud-gateway-production-i1-gateway-1 --since 10m 2>&1 \
   | sed -e 's/\x1b\[[0-9;]*m//g' | grep 'received an empty request body' | cut -c1-400
 ```
+
+
+
 
 
