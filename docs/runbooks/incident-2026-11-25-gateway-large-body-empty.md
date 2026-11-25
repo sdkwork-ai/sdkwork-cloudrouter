@@ -331,6 +331,13 @@ let rebuilt = Request::from_parts(
 - 模块文档（`crates/sdkwork-web-core/src/body_contract.rs`）写明两种合法形态（回放 / 透传）、
   禁止写法（`unwrap_or_else(Body::empty)` 重建消息）、以及这次的故障成因。
 
+**闸门分两层落地**（只有声明层不够——声明不会自己跑）：
+
+| 层 | 位置 | 状态 |
+|----|------|------|
+| 声明层 | `specs/component.spec.json → verification.commands` | ✅ 四仓（gateway / cloudrouter / webserver / log）都已登记 |
+| 执行层 | `package.json` 的 `check:body-read-contract`，并接入 `_sdkwork:check`（gateway 走 `check:standards`） | ✅ 四仓 `pnpm check:body-read-contract` 实测 `body read contract check passed`，并同时通过 `check-pnpm-script-standard`；因此 `pnpm check` / `pnpm verify` 会真正运行它 |
+
 **落地提交与验证（全量）**
 
 | 仓库 | 提交 | 内容 |
@@ -369,8 +376,9 @@ let rebuilt = Request::from_parts(
 | ① 请求方向读取 | `to_bytes(` / `BodyExt::collect` / `body_hint` / `AxumBody::empty` | 423 处 `to_bytes` 调用点 | 逐点分类见 §5.3；请求侧破坏点只有 request log 一处（已修），其余为回填/拒绝/末端单次读取 |
 | ② 响应方向读取 | `response.into_body()` / `body_mut()` / `into_parts()` | 257 处 | 破坏性"读完用空 body 顶上"共 **4 处**，全部定位并处置（见 §5.6） |
 | ③ 空 body 重建 | `from_parts(parts, Body::empty())` | 4 处 | 3 处属设计（①`drain_bounded_request_body` 把 body 取成 `collected` 交给调用方；②`drain_bounded_request_body` 有意丢弃；③WebSocket 101 无 body），1 处真缺陷（注册响应）已修 |
+| ④ 流式丢帧 / 空默认体 | `let Ok(frame) = frame`、`Body::default()`、`to_bytes().unwrap_or_default()` | 31 处候选 | 逐一核对：30 处为 JSON 解析 / DB 行默认值 / 生成代码 / tonic 默认体；**仅 1 处 body 流式丢帧**（provider 错误体脱敏，溢出时整体扣留，属有意语义）→ 已作为**带理由的白名单**纳入闸门规则 `stream-frame-drop` |
 
-结论：**请求流与响应流的"读取后丢内容"形态已全部处置，待修 0 处。**
+结论：**请求流与响应流的"读取后丢内容"形态已全部处置，待修 0 处**；四类形态（读取后置空、可选捕获降级、读取后重建、流式丢帧）现由闸门 `check-body-read-contract` 持续守护。
 
 ### 5.9 修复上线前的客户端止血
 
@@ -388,21 +396,23 @@ let rebuilt = Request::from_parts(
 | 跨仓编译验证（WSL/Linux：cloudrouter-http、cloudrouter-assembly、gateway、webserver） | ✅ |
 | 单测（web-core 258、log-adapter 11、log-assembly 3） | ✅ |
 | 运行手册（证据链 / 复现脚本 / 尺寸上限链 / 提交清单 / 交付清单） | ✅ |
-| 版本号 + release notes | ✅ `0.1.134`（gateway `4d52eee`，已推送）；同时修正 `--locked` 依赖图（`2c94b16`） |
-| release 二进制（WSL/Linux，`--release`） | ✅ `sdkwork-api-cloud-gateway` 38.8 MB（8m07s）、sidecar `sdkwork-intelligence-knowledgebase-rpc-bin` 41.2 MB（5m52s） |
-| 安装包产出（`package-server.mjs`，无需 Docker） | ✅ `dist/server/sdkwork-api-cloud-gateway-0.1.134-linux-x64-standalone-server.tar.gz`（71 MB，**validated**；含两个二进制、config、模型数据、`checksums.sha256`）——这正是 `docker build` 的上下文输入 |
-| 镜像构建 `registry.sdkwork.com/apps/sdkwork-api-cloud-gateway:0.1.134` | ⛔ 仅剩 `docker build` 一步：本机 Windows 无 `docker`、WSL 无 daemon → 需 Docker 构建机或经 `DOCKER_HOST=ssh://主机` |
+| 版本号 + release notes | ✅ **0.1.133**（与 `package.json` 一致；`agent.app.config.json` 单一版本、单一 note 同时承载 IAM JSONB 与 body 观测两项修复）；同时修正 `--locked` 依赖图（`2c94b16`） |
+| 闸门执行层（不是只有声明） | ✅ 四仓新增 `check:body-read-contract` 并接入 `_sdkwork:check` / `check:standards`；实测 `pnpm check:body-read-contract` 通过且不破坏 `check-pnpm-script-standard` |
+| release 二进制（WSL/Linux，`--release`） | ✅ `sdkwork-api-cloud-gateway` 38.8 MB、sidecar `sdkwork-intelligence-knowledgebase-rpc-bin` 41.2 MB |
+| 安装包产出（`package-server.mjs`，无需 Docker） | ✅ `dist/server/sdkwork-api-cloud-gateway-0.1.133-linux-x64-standalone-server.tar.gz`（**validated**；含两个二进制、config、模型数据、`checksums.sha256`）——正是 `docker build` 的上下文输入；二进制另存 `_tmp/bin-0.1.133/` 以防 `/tmp` 清理 |
+| 交付物自检 | ✅ `sha256sum -c` → **OK**；包内 `agent.app.config.json` 的 `currentVersion=0.1.133`、`notes[0]=0.1.133`、11 条 highlights 且含 body 观测修复说明 |
+| 镜像构建 `registry.sdkwork.com/apps/sdkwork-api-cloud-gateway:0.1.133` | ⛔ 仅剩 `docker build`：本机无 `docker`、WSL 无 `dockerd`/无免密 sudo、CI 缺 registry 凭据与 repo vars → 需 Docker 构建机或授权 `DOCKER_HOST=ssh://主机` |
 | 生产部署 + 冒烟 + 回滚预案 | ⏳ 待人工确认窗口（回滚目标 `0.1.132`） |
 
 **构建/部署命令卡（在具备 Docker 的 Linux 构建机上执行）**
 
 ```bash
-# 1) 构建（tag 来自 agent.app.config.json -> release.currentVersion = 0.1.134）
-bin/docker-image.sh build --image-tag 0.1.134
-bin/docker-image.sh push  --image-tag 0.1.134     # 推到 registry.sdkwork.com
+# 1) 构建（tag 来自 agent.app.config.json -> release.currentVersion = 0.1.133）
+bin/docker-image.sh build --image-tag 0.1.133
+bin/docker-image.sh push  --image-tag 0.1.133     # 推到 registry.sdkwork.com
 
 # 2) 部署（生产变更需 --yes 与人工确认窗口）
-bin/docker-deploy.sh upgrade --environment production --image-tag 0.1.134 --yes
+bin/docker-deploy.sh upgrade --environment production --image-tag 0.1.133 --yes
 
 # 3) 冒烟（判据见 §4.3：262146 / 268301 / 1422525 应返回 503 model is not available…）
 bin/docker-deploy.sh status --environment production
@@ -426,7 +436,7 @@ bin/docker-deploy.sh rollback --environment production --to 0.1.132 --yes
 因此只有两种可行路径：
 
 - **A（推荐）**：一台同时具备 `cargo` + `docker` 的 Linux/CI 构建机，直接
-  `bin/docker-image.sh build --image-tag 0.1.134`；镜像上下文需要两个 release 二进制
+  `bin/docker-image.sh build --image-tag 0.1.133`；镜像上下文需要两个 release 二进制
   （`sdkwork-api-cloud-gateway` 与 sidecar `sdkwork-intelligence-knowledgebase-rpc-bin`）。
 - **B（两段式）**：WSL 内 `cargo build --release` 产出上述两个二进制 → 以
   `DOCKER_HOST=ssh://ubuntu@api.birdcoder.com` 运行同一个打包脚本，让 `docker build` 在主机
@@ -482,6 +492,7 @@ done
 docker logs sdkwork-api-cloud-gateway-production-i1-gateway-1 --since 10m 2>&1 \
   | sed -e 's/\x1b\[[0-9;]*m//g' | grep 'received an empty request body' | cut -c1-400
 ```
+
 
 
 

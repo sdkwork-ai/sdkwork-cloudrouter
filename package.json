@@ -172,7 +172,7 @@
     "db:postgres:recreate": "bash ../sdkwork-specs/tools/postgres/recreate-dev-database.sh",
     "_sdkwork:build": "node scripts/build-cloud-router-production.mjs",
     "_sdkwork:test": "pnpm topology:validate && pnpm test:topology && node scripts/run-cloud-router-application.test.mjs",
-    "_sdkwork:check": "pnpm check:dev-bootstrap && pnpm check:application-env && pnpm check:gateway-request-identity && pnpm check:app-composition && pnpm check:vendor-workspace && pnpm check:rust-dependency-singularity && pnpm api:ai-routing-consistency:check && pnpm models:vendor-catalog:check && pnpm check:commerce-debt && pnpm check:workflow-integration && node scripts/run-cloud-router-application.mjs check",
+    "_sdkwork:check": "pnpm check:dev-bootstrap && pnpm check:application-env && pnpm check:gateway-request-identity && pnpm check:app-composition && pnpm check:vendor-workspace && pnpm check:rust-dependency-singularity && pnpm api:ai-routing-consistency:check && pnpm models:vendor-catalog:check && pnpm check:commerce-debt && pnpm check:workflow-integration && node scripts/run-cloud-router-application.mjs check && pnpm check:body-read-contract",
     "_sdkwork:verify": "node scripts/verify-cloud-router-application.mjs && pnpm run check:app-composition && pnpm check:cors-standard",
     "_sdkwork:clean": "node scripts/clean-cloud-router-workspace.mjs",
     "dev:standalone": "node scripts/lib/ensure-cloud-router-node-deps.mjs && pnpm exec sdkwork-app dev --deployment-profile standalone",
@@ -213,7 +213,8 @@
     "build:h5:prod:cloud": "node ../sdkwork-specs/tools/build-browser-client.mjs --root . --architecture h5 --environment prod --deployment-profile cloud",
     "check:fresh-cluster-init": "node scripts/regression/fresh-cluster-init.mjs",
     "test:fresh-cluster-init:db": "node scripts/regression/fresh-cluster-init.mjs --db",
-    "check:release-access-token:require-anchor": "node ../sdkwork-specs/tools/check-release-access-token-env.mjs --root . --require-anchor"
+    "check:release-access-token:require-anchor": "node ../sdkwork-specs/tools/check-release-access-token-env.mjs --root . --require-anchor",
+    "check:body-read-contract": "node ../sdkwork-specs/tools/check-body-read-contract.mjs --root ."
   },
   "pnpm": {
     "overrides": {
