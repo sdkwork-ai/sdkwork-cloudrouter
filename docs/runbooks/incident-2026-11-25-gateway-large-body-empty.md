@@ -376,8 +376,9 @@ let rebuilt = Request::from_parts(
 | ① 请求方向读取 | `to_bytes(` / `BodyExt::collect` / `body_hint` / `AxumBody::empty` | 423 处 `to_bytes` 调用点 | 逐点分类见 §5.3；请求侧破坏点只有 request log 一处（已修），其余为回填/拒绝/末端单次读取 |
 | ② 响应方向读取 | `response.into_body()` / `body_mut()` / `into_parts()` | 257 处 | 破坏性"读完用空 body 顶上"共 **4 处**，全部定位并处置（见 §5.6） |
 | ③ 空 body 重建 | `from_parts(parts, Body::empty())` | 4 处 | 3 处属设计（①`drain_bounded_request_body` 把 body 取成 `collected` 交给调用方；②`drain_bounded_request_body` 有意丢弃；③WebSocket 101 无 body），1 处真缺陷（注册响应）已修 |
+| ④ 流式丢帧 / 空默认体 | `let Ok(frame) = frame`、`Body::default()`、`to_bytes().unwrap_or_default()` | 31 处候选 | 逐一核对：30 处为 JSON 解析 / DB 行默认值 / 生成代码 / tonic 默认体；**仅 1 处 body 流式丢帧**（provider 错误体脱敏，溢出时整体扣留，属有意语义）→ 已作为**带理由的白名单**纳入闸门规则 `stream-frame-drop` |
 
-结论：**请求流与响应流的"读取后丢内容"形态已全部处置，待修 0 处。**
+结论：**请求流与响应流的"读取后丢内容"形态已全部处置，待修 0 处**；四类形态（读取后置空、可选捕获降级、读取后重建、流式丢帧）现由闸门 `check-body-read-contract` 持续守护。
 
 ### 5.9 修复上线前的客户端止血
 
