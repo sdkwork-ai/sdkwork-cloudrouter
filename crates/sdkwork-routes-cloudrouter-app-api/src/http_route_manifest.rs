@@ -6,6 +6,12 @@ use sdkwork_web_core::HttpRouteManifest;
 const HTTP_ROUTES: &[HttpRoute] = &[
     HttpRoute::dual_token(
         HttpMethod::Get,
+        "/app/v3/api/ai/agents",
+        "ai",
+        "agents.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
         "/app/v3/api/ai/dashboard/overview",
         "ai",
         "dashboard.overview.retrieve",
@@ -30,15 +36,15 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
-        "/app/v3/api/ai/routing/model_group_catalog",
+        "/app/v3/api/ai/routing/api_keys",
         "ai",
-        "routing.modelGroupCatalog.retrieve",
+        "routing.apiKeys.list",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
-        "/app/v3/api/ai/routing/model_groups",
+        "/app/v3/api/ai/routing/model_group_catalog",
         "ai",
-        "routing.modelGroups.retrieve",
+        "routing.modelGroupCatalog.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -54,9 +60,9 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
-        "/app/v3/api/ai/routing/api_keys",
+        "/app/v3/api/ai/routing/model_groups",
         "ai",
-        "routing.apiKeys.list",
+        "routing.modelGroups.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -93,12 +99,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/app/v3/api/iam/api_keys",
         "iam",
         "apiKeys.create",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/iam/api_keys/{apiKeyId}/reveal",
-        "iam",
-        "apiKeys.reveal",
     ),
     HttpRoute::dual_token(
         HttpMethod::Delete,
@@ -141,6 +141,18 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/app/v3/api/iam/users/settings",
         "iam",
         "users.settings.update",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/iot/devices",
+        "system",
+        "iot.devices.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/iot/firmware",
+        "system",
+        "iot.firmware.list",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -214,17 +226,17 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "runtime",
         "invocations.events.stream.retrieve",
     ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/storage/generation_delivery",
-        "storage",
-        "generationDelivery.resolve",
-    ),
     HttpRoute::public(
         HttpMethod::Get,
         "/app/v3/api/system/site/runtime",
         "system",
         "site.runtime.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/iam/api_keys/{apiKeyId}/reveal",
+        "iam",
+        "apiKeys.reveal",
     ),
 ];
 
