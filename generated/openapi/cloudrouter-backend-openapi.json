@@ -7437,7 +7437,7 @@
           }
         ],
         "description": "Memory admin records list result schema exposed by Cloud Router.",
-        "x-operation-id": "memoryAdmin.records.list"
+        "x-operation-id": "memories.list"
       },
       "MemoryAdminSpacesListResult": {
         "allOf": [
@@ -7464,7 +7464,7 @@
           }
         ],
         "description": "Memory admin spaces list result schema exposed by Cloud Router.",
-        "x-operation-id": "memoryAdmin.spaces.list"
+        "x-operation-id": "spaces.list"
       },
       "ModelLimitRuleItem": {
         "additionalProperties": false,
@@ -25266,7 +25266,7 @@
     "/backend/v3/api/memory/memories": {
       "get": {
         "description": "List memory records. Reads ai_record. Writes none. File targets none.",
-        "operationId": "memoryAdmin.records.list",
+        "operationId": "memories.list",
         "parameters": [],
         "responses": {
           "200": {
@@ -25342,7 +25342,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "memory",
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-resource": "memoryAdmin.records",
+        "x-sdkwork-resource": "memories",
         "x-source-file": "../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-core/src/sdk/index.tsx",
         "x-write-tables": []
       }
@@ -25350,7 +25350,7 @@
     "/backend/v3/api/memory/spaces": {
       "get": {
         "description": "List memory categories. Reads ai_space. Writes none. File targets none.",
-        "operationId": "memoryAdmin.spaces.list",
+        "operationId": "spaces.list",
         "parameters": [],
         "responses": {
           "200": {
@@ -25426,7 +25426,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-domain": "memory",
         "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-resource": "memoryAdmin.spaces",
+        "x-sdkwork-resource": "spaces",
         "x-source-file": "../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-core/src/sdk/index.tsx",
         "x-write-tables": []
       }

@@ -9,7 +9,7 @@ frontend_operations:
   - route: /admin/memory/categories
     source: ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-core/src/sdk/index.tsx
     operation: fetchMemoryCategories
-    operation_id: memoryAdmin.spaces.list
+    operation_id: spaces.list
     kind: read
     api_surface: backend
     api_method: GET
@@ -29,7 +29,7 @@ frontend_operations:
   - route: /admin/memory
     source: ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-core/src/sdk/index.tsx
     operation: fetchMemoryRecords
-    operation_id: memoryAdmin.records.list
+    operation_id: memories.list
     kind: read
     api_surface: backend
     api_method: GET
