@@ -389,7 +389,9 @@ let rebuilt = Request::from_parts(
 | 单测（web-core 258、log-adapter 11、log-assembly 3） | ✅ |
 | 运行手册（证据链 / 复现脚本 / 尺寸上限链 / 提交清单 / 交付清单） | ✅ |
 | 版本号 + release notes | ✅ `0.1.134`（gateway `4d52eee`，已推送）；同时修正 `--locked` 依赖图（`2c94b16`） |
-| 镜像构建 `registry.sdkwork.com/apps/sdkwork-api-cloud-gateway:0.1.134` | ⛔ **本机无 Docker**（Windows 无 `docker`，WSL 无 daemon）→ 必须在具备 Docker 的 Linux/WSL 构建机上执行（命令见下） |
+| release 二进制（WSL/Linux，`--release`） | ✅ `sdkwork-api-cloud-gateway` 38.8 MB（8m07s）、sidecar `sdkwork-intelligence-knowledgebase-rpc-bin` 41.2 MB（5m52s） |
+| 安装包产出（`package-server.mjs`，无需 Docker） | ✅ `dist/server/sdkwork-api-cloud-gateway-0.1.134-linux-x64-standalone-server.tar.gz`（71 MB，**validated**；含两个二进制、config、模型数据、`checksums.sha256`）——这正是 `docker build` 的上下文输入 |
+| 镜像构建 `registry.sdkwork.com/apps/sdkwork-api-cloud-gateway:0.1.134` | ⛔ 仅剩 `docker build` 一步：本机 Windows 无 `docker`、WSL 无 daemon → 需 Docker 构建机或经 `DOCKER_HOST=ssh://主机` |
 | 生产部署 + 冒烟 + 回滚预案 | ⏳ 待人工确认窗口（回滚目标 `0.1.132`） |
 
 **构建/部署命令卡（在具备 Docker 的 Linux 构建机上执行）**
