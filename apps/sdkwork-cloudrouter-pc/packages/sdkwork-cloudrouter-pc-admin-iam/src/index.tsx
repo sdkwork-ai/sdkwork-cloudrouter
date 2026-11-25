@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   getCloudRouterDriveImageService,
   readPortalPermissionScope,
+  resolveStoredPortalTenantId,
   subscribePortalSessionChange,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { hasPermissionInScope } from '@sdkwork/iam-contracts';
@@ -63,6 +64,24 @@ function useIamAdminPermission(): (permission: string) => boolean {
   return (permission) => hasPermissionInScope(permissionScope, permission);
 }
 
+/**
+ * Session tenant of the signed-in operator.
+ *
+ * The cloud account center decides the `platform` ownership level by comparing
+ * the caller's tenant against the platform tenant, so the page needs the same
+ * fact the server reads. It is taken from the stored app session and refreshed
+ * on session change, never from an environment variable.
+ */
+function useIamAdminTenantId(): string | undefined {
+  const [tenantId, setTenantId] = useState<string | undefined>(() => resolveStoredPortalTenantId());
+  useEffect(() => {
+    const syncTenantId = () => setTenantId(resolveStoredPortalTenantId());
+    syncTenantId();
+    return subscribePortalSessionChange(syncTenantId);
+  }, []);
+  return tenantId;
+}
+
 function createIamAdminRoute(LazyComponent: LazyExoticComponent<ComponentType>): ComponentType {
   return function CloudRouterIamAdminRouteEntry() {
     return (
@@ -97,6 +116,24 @@ const LazyIamUsersAdmin = lazy(async () => {
             delete: can('iam.users.delete'),
             update: can('iam.users.update'),
           }}
+        />
+      );
+    },
+  };
+});
+
+const LazyIamCloudAccountsAdmin = lazy(async () => {
+  const { CloudRouterIamCloudAccountsWorkspace } = await import('./cloudAccounts/CloudAccountsWorkspace');
+  return {
+    default: function CloudRouterIamCloudAccountsAdminContent() {
+      const service = useIamAdminService();
+      const permissionScope = useIamAdminPermissionScope();
+      const tenantId = useIamAdminTenantId();
+      return (
+        <CloudRouterIamCloudAccountsWorkspace
+          permissionScope={permissionScope}
+          service={service}
+          tenantId={tenantId}
         />
       );
     },
@@ -537,6 +574,7 @@ const LazyIamAuditAdmin = lazy(async () => {
 });
 
 export const CloudRouterIamUsersAdmin: ComponentType = createIamAdminRoute(LazyIamUsersAdmin);
+export const CloudRouterIamCloudAccountsAdmin: ComponentType = createIamAdminRoute(LazyIamCloudAccountsAdmin);
 export const CloudRouterIamTenantsAdmin: ComponentType = createIamAdminRoute(LazyIamTenantsAdmin);
 export const CloudRouterIamPersonnelAdmin: ComponentType = createIamAdminRoute(LazyIamPersonnelAdmin);
 export const CloudRouterIamOrganizationsAdmin: ComponentType = createIamAdminRoute(LazyIamOrganizationsAdmin);

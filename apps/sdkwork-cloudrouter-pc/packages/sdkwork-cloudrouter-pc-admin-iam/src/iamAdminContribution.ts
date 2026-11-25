@@ -1,4 +1,4 @@
-import { BarChart3, Building2, KeyRound, KeySquare, Link2, MessageCircle, Network, QrCode, ScrollText, Server, ShieldAlert, ShieldCheck, Smartphone, UserCog, Users, UsersRound, type LucideIcon } from 'lucide-react';
+import { BarChart3, Building2, CloudCog, KeyRound, KeySquare, Link2, MessageCircle, Network, QrCode, ScrollText, Server, ShieldAlert, ShieldCheck, Smartphone, UserCog, Users, UsersRound, type LucideIcon } from 'lucide-react';
 
 /**
  * Cloud Router IAM admin contribution metadata.
@@ -49,14 +49,17 @@ export const IAM_ADMIN_MENU: CloudRouterIamAdminMenu = {
   groups: [
     {
       groupKey: 'admin.menu.iam.directory',
-      // The identity directory keeps principals only (users, organizations,
-      // tenants). The deployed application list is owned by the application
-      // center (`/admin/applications/deploy`); IAM never duplicates it.
+      // The identity directory keeps the principals (users, organizations,
+      // tenants) and the service identities the platform holds: the cloud
+      // accounts IAM's account center owns, with their sealed credentials. The
+      // deployed application list is owned by the application center
+      // (`/admin/applications/deploy`); IAM never duplicates it.
       items: [
         { path: '/admin/iam/users', labelKey: 'admin.menu.iam.users', icon: Users },
         { path: '/admin/iam/organizations', labelKey: 'admin.menu.iam.organizations', icon: Building2 },
         { path: '/admin/iam/tenants', labelKey: 'admin.menu.iam.tenants', icon: Network },
         { path: '/admin/iam/personnel', labelKey: 'admin.menu.iam.personnel', icon: UsersRound },
+        { path: '/admin/iam/cloud-accounts', labelKey: 'admin.menu.iam.cloudAccounts', icon: CloudCog },
       ],
     },
     {
@@ -106,6 +109,10 @@ export interface CloudRouterIamAdminRouteRecord {
 export const IAM_ADMIN_ROUTE_RECORDS: readonly CloudRouterIamAdminRouteRecord[] = [
   { path: 'iam', requiredPermission: 'iam.users.read', redirectTo: '/admin/iam/users' },
   { path: 'iam/users', requiredPermission: 'iam.users.read' },
+  // The cloud account center is IAM's own aggregate: every ownership level
+  // (platform / tenant / organization / personal) is decided by the caller's
+  // rights server-side, so the route only needs the read code.
+  { path: 'iam/cloud-accounts', requiredPermission: 'iam.provider_accounts.read' },
   { path: 'iam/personnel', requiredPermission: 'iam.memberships.read' },
   { path: 'iam/tenants', requiredPermission: 'iam.tenants.read' },
   { path: 'iam/tenants/:tenantId/applications', requiredPermission: 'iam.tenants.read' },
@@ -141,6 +148,7 @@ export interface CloudRouterIamAdminPermissionHint {
 export const IAM_ADMIN_PERMISSION_HINTS: readonly CloudRouterIamAdminPermissionHint[] = [
   { pathPrefix: '/admin/iam', requiredPermission: 'iam.users.read' },
   { pathPrefix: '/admin/iam/users', requiredPermission: 'iam.users.read' },
+  { pathPrefix: '/admin/iam/cloud-accounts', requiredPermission: 'iam.provider_accounts.read' },
   { pathPrefix: '/admin/iam/personnel', requiredPermission: 'iam.memberships.read' },
   { pathPrefix: '/admin/iam/tenants', requiredPermission: 'iam.tenants.read' },
   { pathPrefix: '/admin/iam/organizations', requiredPermission: 'iam.organizations.read' },
