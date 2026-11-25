@@ -768,4 +768,31 @@ mod tests {
             payload["detail"].as_str().unwrap()
         );
     }
+
+    /// Localization must never cost the client its problem detail: a body that
+    /// cannot be buffered inside the localization budget is skipped, not read and
+    /// emptied (WEB_FRAMEWORK_SPEC §11.1).
+    #[tokio::test]
+    async fn oversized_problem_body_is_left_untouched() {
+        let mut payload = b"{\"title\":\"".to_vec();
+        payload.extend(std::iter::repeat(b'x').take(PROBLEM_LOCALIZATION_MAX_BYTES));
+        payload.extend_from_slice(b"\"}");
+        let mut response = Response::builder()
+            .status(StatusCode::BAD_REQUEST)
+            .header(header::CONTENT_TYPE, "application/problem+json")
+            .body(Body::from(payload.clone()))
+            .expect("response");
+
+        let localized = read_problem_payload(&mut response).await;
+
+        assert!(localized.is_none(), "localization is skipped, not failed");
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("body");
+        assert_eq!(
+            payload,
+            bytes.to_vec(),
+            "an unbufferable problem body must reach the client unchanged"
+        );
+    }
 }
