@@ -61,8 +61,17 @@ export function RouteFallback() {
   return <div className="min-h-[40vh] bg-white dark:bg-slate-950" />;
 }
 
+/**
+ * Portal routes whose content starts at the top of the viewport and therefore
+ * has to be pushed below the fixed navbar by the shell.
+ *
+ * `community` belongs here: its pages are ordinary workspace pages with no hero
+ * or self-owned top inset, so without the offset the circle title renders under
+ * the fixed header. Storefront-style routes such as `/hardware-market` are
+ * deliberately absent — they own their inset inside the page component.
+ */
 const PORTAL_HOST_OFFSET_ROUTE_PATTERN =
-  /^\/(?:pricing|product-docs|docs|dev-docs|api-reference|sdk-reference|token-plan|partner-join|privacy|terms|cookies)(?:\/|$)/;
+  /^\/(?:pricing|product-docs|docs|dev-docs|api-reference|sdk-reference|token-plan|partner-join|community|privacy|terms|cookies)(?:\/|$)/;
 
 export function AppShellLayout({
   isDark,

@@ -794,6 +794,20 @@ test("portal shell offsets embedded documents routes below the fixed navbar", ()
   assert.match(indexCssSource, /\.sdkwork-documents-shell-sticky-sidebar \{/);
 });
 
+test("portal shell offsets community workspace routes below the fixed navbar", () => {
+  const shellSource = readPortalSource("./packages/sdkwork-cloudrouter-pc-shell/src/AppShellLayout.tsx");
+  const indexCssSource = readPortalSource("./src/index.css");
+
+  // Circle pages are ordinary workspace pages: no hero and no self-owned top
+  // inset, so the fixed navbar would otherwise render on top of the circle
+  // title. The offset ships with the shell's existing host-offset class.
+  assert.match(shellSource, /\|partner-join\|community\|privacy/);
+  assert.match(
+    indexCssSource,
+    /\.sdkwork-cloudrouter-documents-host-offset \{\s*padding-top: var\(--sdkwork-portal-navbar-height, 4rem\);/,
+  );
+});
+
 test("portal shell offsets playground routes below the fixed navbar", () => {
   const shellSource = readPortalSource("./packages/sdkwork-cloudrouter-pc-shell/src/AppShellLayout.tsx");
   const pageSource = readPortalSource("./packages/sdkwork-cloudrouter-pc-playground/src/pages/Playground.tsx");
