@@ -1,8 +1,8 @@
 package com.sdkwork.cloudrouter.open
 
 data class ZhipuImageGenerationRequest(
-    val model: String? = null,
-    val prompt: String? = null,
+    val model: String,
+    val prompt: String,
     val quality: String? = null,
     val size: String? = null,
     val userId: String? = null,

@@ -6,8 +6,8 @@ data class MinimaxVideoGenerationRequest(
     val fastPretreatment: Boolean? = null,
     val firstFrameImage: String? = null,
     val lastFrameImage: String? = null,
-    val model: String? = null,
-    val prompt: String? = null,
+    val model: String,
+    val prompt: String,
     val promptOptimizer: Boolean? = null,
     val resolution: String? = null
 )

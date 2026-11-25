@@ -32,7 +32,7 @@ Source of truth: `apps/sdkwork-cloudrouter-h5` (H5 renderer) and
 | 我的 | `ConsoleProfileScreen` | identity/balance card (placeholder wallet), operation records, help, settings, other, privacy |
 | 设置 | `@sdkwork/settings-mobile-react` | shared settings center: appearance/theme, voice, notifications, about; uses appbase defaults |
 | 用量 / API Key | console packages | protected, reachable from Home |
-| Membership / Recharge | shared commerce prototypes | home entry points |
+| 会员中心 / 充值 | `@sdkwork/cloudrouter-h5-membership`（`MembershipScreen` / `TokenRechargeScreen`） | Cloud Router Token Plan 会员定义（PC `/token-plan` 同源）：等级套餐、算力积分、权益对照、开通/充值/兑换 + H5 收银台 |
 | Auth | shared `@sdkwork/iam-h5-auth` | IAM login/back |
 
 ## 2. Mini-program current state (audit)
@@ -283,4 +283,16 @@ Known constraints:
 - Remaining in Phase 1: native mini inline IM/Agents (the user accepted the H5
   full-screen bridge), and finish visual parity review with goldens/screenshots
   for profile, settings, messages, and playground.
+- 2026-11-25: H5 会员中心与 PC `/token-plan` 会员定义对齐。`/membership` 与
+  `/recharge` 不再挂载共享会员包里的演示版 `VipSubscriptionPage` /
+  `TokenRechargePage`（硬编码 VIP 套餐与演示 SKU），改由
+  `@sdkwork/cloudrouter-h5-membership` 渲染 Cloud Router Token Plan 定义：
+  membership catalog（计费周期分组 / 等级 / 权益）+ Token Bank 余额 + order 域
+  开通/充值/兑换，支付统一交给 H5 收银台（`mobile_cashier_h5`）。数据面在 H5
+  core 新增 `commerceServices`；定义映射按移动端重做版式但字段与算力/权益口径与
+  PC 同源，回归门禁
+  `apps/sdkwork-cloudrouter-h5/tests/h5-membership-token-plan-alignment.test.mjs`
+  对比 PC mapper 锁定等级映射、权益行、积分公式与可购动作。详见
+  [domains/membership/h5-token-plan-alignment.md](domains/membership/h5-token-plan-alignment.md)。
+- 待办：团队/组织会员（席位、组织绑定）尚未移植到 H5。
 

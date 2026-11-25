@@ -16,8 +16,9 @@ use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
 use hyper_util::rt::TokioIo;
-use sdkwork_cloudrouter_http::ensure_rustls_crypto_provider;
-use sdkwork_cloudrouter_http::OutboundDnsResolver;
+use sdkwork_cloudrouter_http::{
+    ensure_rustls_crypto_provider, preserve_safe_upstream_response_headers, OutboundDnsResolver,
+};
 use sdkwork_cloudrouter_router_service::application::{
     Invocation, InvocationAccount, InvocationBody, InvocationDispatchResponse,
 };
@@ -266,13 +267,27 @@ impl InvocationDispatcher for InvocationHttpDispatcher {
                 .map(str::trim)
                 .filter(|value| !value.is_empty())
                 .map(str::to_owned);
-            let preserved_headers = preserve_safe_upstream_headers(response.headers());
+            let preserved_headers = preserve_safe_upstream_response_headers(response.headers());
+            if let Some(encoding) = unsupported_provider_response_encoding(response.headers()) {
+                if !(200..300).contains(&status_code) {
+                    let mut withheld = InvocationDispatchResponse::bytes(
+                        status_code,
+                        b"{\"error\":{\"message\":\"compressed provider error body was withheld\",\"code\":\"provider_error_body_withheld\"}}".to_vec(),
+                        Some("application/json".to_owned()),
+                    );
+                    withheld.headers = preserved_headers;
+                    return Ok(withheld);
+                }
+                return Err(dispatch_error(
+                    "provider_response_encoding_unsupported",
+                    format!("provider response used unsupported content encoding: {encoding}"),
+                    Some(status_code),
+                    false,
+                ));
+            }
 
-            let is_sse_stream = content_type.as_deref().is_some_and(|ct| {
-                let ct_lower = ct.to_lowercase();
-                ct_lower.starts_with("text/event-stream")
-                    || ct_lower.starts_with("application/x-ndjson")
-            });
+            let is_sse_stream =
+                provider_response_should_stream(status_code, content_type.as_deref());
 
             if is_sse_stream {
                 // For SSE streaming responses, don't buffer — pass the body through
@@ -313,6 +328,14 @@ impl InvocationDispatcher for InvocationHttpDispatcher {
             )
             .await?;
 
+            if !(200..300).contains(&status_code) {
+                let mut response =
+                    InvocationDispatchResponse::bytes(status_code, body.to_vec(), content_type)
+                        .with_memory_guard(memory_guard);
+                response.headers = preserved_headers;
+                return Ok(response);
+            }
+
             if body.is_empty() {
                 let mut response = InvocationDispatchResponse::empty(status_code);
                 response.headers = preserved_headers;
@@ -325,23 +348,6 @@ impl InvocationDispatcher for InvocationHttpDispatcher {
                         response.content_type = content_type;
                         response.headers = preserved_headers;
                         return Ok(response.with_memory_guard(memory_guard));
-                    }
-                    // A vendor rejection is the caller's answer: keep its status
-                    // and body verbatim. Providers routinely answer 4xx with an
-                    // HTML page, a plain-text message, or a truncated body while
-                    // the content-type still claims `application/json`; failing
-                    // the dispatch there replaced both the vendor status and the
-                    // body with a gateway 502 (`provider_json_invalid`), so SDKs
-                    // could not see the documented rejection.
-                    Err(_) if !(200..300).contains(&status_code) => {
-                        let mut response = InvocationDispatchResponse::bytes(
-                            status_code,
-                            body.to_vec(),
-                            content_type,
-                        )
-                        .with_memory_guard(memory_guard);
-                        response.headers = preserved_headers;
-                        return Ok(response);
                     }
                     Err(error) => {
                         return Err(dispatch_error(
@@ -753,6 +759,12 @@ fn build_upstream_request(
             builder = builder.header(name, value);
         }
     }
+    if let Some(headers) = builder.headers_mut() {
+        headers.insert(
+            header::ACCEPT_ENCODING,
+            HeaderValue::from_static("identity"),
+        );
+    }
     builder = apply_body_content_type(builder, &provider_request.body)?;
     builder
         .body(Full::new(body_bytes(&provider_request.body)?))
@@ -812,6 +824,27 @@ fn response_body_should_parse_json(content_type: Option<&str>, bytes: &[u8]) -> 
         })
 }
 
+fn unsupported_provider_response_encoding(headers: &HeaderMap) -> Option<String> {
+    let encodings = headers
+        .get_all(header::CONTENT_ENCODING)
+        .iter()
+        .filter_map(|value| value.to_str().ok())
+        .flat_map(|value| value.split(','))
+        .map(str::trim)
+        .filter(|value| !value.is_empty() && !value.eq_ignore_ascii_case("identity"))
+        .collect::<Vec<_>>();
+    (!encodings.is_empty()).then(|| encodings.join(", "))
+}
+
+fn provider_response_should_stream(status_code: u16, content_type: Option<&str>) -> bool {
+    (200..300).contains(&status_code)
+        && content_type.is_some_and(|content_type| {
+            let content_type = content_type.to_ascii_lowercase();
+            content_type.starts_with("text/event-stream")
+                || content_type.starts_with("application/x-ndjson")
+        })
+}
+
 fn should_forward_header(name: &HeaderName, connection_header_names: &HashSet<String>) -> bool {
     !is_hop_by_hop_header(name)
         && !connection_header_names.contains(name.as_str())
@@ -834,7 +867,7 @@ fn should_forward_header(name: &HeaderName, connection_header_names: &HashSet<St
 /// The remaining entries are gateway-edge identity material: a caller's session
 /// cookie and the proxy/forwarding chain belong to this gateway, not to a
 /// third-party provider, and must not be replayed upstream.
-fn is_gateway_owned_request_header(name: &HeaderName) -> bool {
+pub(crate) fn is_gateway_owned_request_header(name: &HeaderName) -> bool {
     let name = name.as_str();
     // `forwarded`/`x-forwarded-*`/`x-real-ip`/`x-scheme` describe the edge that
     // received the request. Replaying them upstream would let a caller forge the
@@ -851,6 +884,7 @@ fn is_gateway_owned_request_header(name: &HeaderName) -> bool {
     matches!(
         name,
         "accept-encoding"
+            | "access-token"
             | "cookie"
             | "forwarded"
             | "x-forwarded-for"
@@ -889,43 +923,6 @@ fn is_hop_by_hop_header(name: &HeaderName) -> bool {
     )
 }
 
-/// Preserves a safe subset of upstream response headers for the gateway
-/// client. OpenAI SDKs depend on `retry-after` for 429 backoff and on
-/// `x-request-id` / rate-limit headers for tracing and throttling feedback, so
-/// passing them through keeps the relay's behavior consistent with the
-/// upstream provider. `content-type`, hop-by-hop headers, and anything
-/// unrelated are intentionally excluded (`content-type` is carried separately).
-fn preserve_safe_upstream_headers(headers: &HeaderMap) -> HeaderMap {
-    let mut preserved = HeaderMap::new();
-    for (name, value) in headers.iter() {
-        let name_lower = name.as_str().to_ascii_lowercase();
-        if is_hop_by_hop_header(name) {
-            continue;
-        }
-        if matches!(
-            name_lower.as_str(),
-            "retry-after"
-                | "x-request-id"
-                | "request-id"
-                | "openai-organization"
-                | "openai-version"
-                | "openai-processing-ms"
-                | "x-ratelimit-limit-requests"
-                | "x-ratelimit-limit-tokens"
-                | "x-ratelimit-remaining-requests"
-                | "x-ratelimit-remaining-tokens"
-                | "x-ratelimit-reset-requests"
-                | "x-ratelimit-reset-tokens"
-                | "x-ratelimit-request-ids"
-                | "x-goog-request-id"
-                | "x-goog-ratelimit-last-update-time"
-        ) {
-            preserved.append(name.clone(), value.clone());
-        }
-    }
-    preserved
-}
-
 fn dispatch_error(
     code: impl Into<String>,
     message: impl Into<String>,
@@ -938,6 +935,26 @@ fn dispatch_error(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn only_successful_sse_responses_stream_without_error_body_buffering() {
+        assert!(provider_response_should_stream(
+            200,
+            Some("text/event-stream")
+        ));
+        assert!(provider_response_should_stream(
+            202,
+            Some("application/x-ndjson")
+        ));
+        assert!(!provider_response_should_stream(
+            429,
+            Some("text/event-stream")
+        ));
+        assert!(!provider_response_should_stream(
+            500,
+            Some("application/x-ndjson")
+        ));
+    }
 
     /// Serializes env-mutating proxy tests: `std::env` is process-global.
     fn proxy_env_guard() -> &'static std::sync::Mutex<()> {
@@ -1167,9 +1184,14 @@ mod tests {
         let mut upstream = HeaderMap::new();
         upstream.insert(header::RETRY_AFTER, HeaderValue::from_static("30"));
         upstream.insert("x-request-id", HeaderValue::from_static("req_123"));
+        upstream.append("x-request-id", HeaderValue::from_static("req_456"));
         upstream.insert(
             "x-ratelimit-limit-tokens",
             HeaderValue::from_static("100000"),
+        );
+        upstream.insert(
+            "anthropic-ratelimit-requests-reset",
+            HeaderValue::from_static("2026-01-01T00:00:00Z"),
         );
         upstream.insert("openai-organization", HeaderValue::from_static("org-x"));
         upstream.insert(
@@ -1180,7 +1202,7 @@ mod tests {
         upstream.insert("set-cookie", HeaderValue::from_static("session=abc"));
         upstream.insert("x-secret", HeaderValue::from_static("leak"));
 
-        let preserved = preserve_safe_upstream_headers(&upstream);
+        let preserved = preserve_safe_upstream_response_headers(&upstream);
 
         // SDK-facing headers survive for 429 backoff and tracing.
         assert_eq!(
@@ -1194,6 +1216,14 @@ mod tests {
             preserved.get("x-request-id").and_then(|v| v.to_str().ok())
         );
         assert_eq!(
+            vec!["req_123", "req_456"],
+            preserved
+                .get_all("x-request-id")
+                .iter()
+                .map(|value| value.to_str().unwrap())
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(
             Some("100000"),
             preserved
                 .get("x-ratelimit-limit-tokens")
@@ -1204,6 +1234,12 @@ mod tests {
             preserved
                 .get("openai-organization")
                 .and_then(|v| v.to_str().ok())
+        );
+        assert_eq!(
+            Some("2026-01-01T00:00:00Z"),
+            preserved
+                .get("anthropic-ratelimit-requests-reset")
+                .and_then(|value| value.to_str().ok())
         );
         // Content-type travels separately; hop-by-hop and sensitive headers
         // must never leak.
@@ -1283,6 +1319,50 @@ mod tests {
         // still reach the provider.
         assert!(forwarded.contains(&"authorization"), "{forwarded:?}");
         assert!(forwarded.contains(&"content-type"), "{forwarded:?}");
+    }
+
+    #[test]
+    fn upstream_requests_force_identity_content_encoding() {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            header::ACCEPT_ENCODING,
+            HeaderValue::from_static("gzip, br"),
+        );
+        let provider_request =
+            sdkwork_cloudrouter_router_service::application::InvocationProviderRequest {
+                method: axum::http::Method::POST,
+                url: Some("https://provider.example/v1/invoke".to_owned()),
+                path: "/v1/invoke".to_owned(),
+                query: None,
+                headers,
+                body: InvocationBody::Empty,
+            };
+
+        let request = build_upstream_request(
+            &provider_request,
+            "https://provider.example/v1/invoke".parse().unwrap(),
+        )
+        .expect("provider request");
+
+        assert_eq!("identity", request.headers()[header::ACCEPT_ENCODING]);
+    }
+
+    #[test]
+    fn compressed_provider_responses_are_detected_across_header_values() {
+        let mut headers = HeaderMap::new();
+        headers.append(header::CONTENT_ENCODING, HeaderValue::from_static("gzip"));
+        headers.append(header::CONTENT_ENCODING, HeaderValue::from_static("br"));
+        assert_eq!(
+            Some("gzip, br".to_owned()),
+            unsupported_provider_response_encoding(&headers)
+        );
+
+        headers.remove(header::CONTENT_ENCODING);
+        headers.insert(
+            header::CONTENT_ENCODING,
+            HeaderValue::from_static("identity"),
+        );
+        assert_eq!(None, unsupported_provider_response_encoding(&headers));
     }
 
     #[test]

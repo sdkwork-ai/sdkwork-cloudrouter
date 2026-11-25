@@ -1,7 +1,7 @@
 package com.sdkwork.cloudrouter.open
 
 data class GoogleEmbedContentRequest(
-    val content: GoogleContent? = null,
+    val content: GoogleContent,
     val embedContentConfig: Map<String, String>? = null,
     val model: String? = null,
     val outputDimensionality: Int? = null,

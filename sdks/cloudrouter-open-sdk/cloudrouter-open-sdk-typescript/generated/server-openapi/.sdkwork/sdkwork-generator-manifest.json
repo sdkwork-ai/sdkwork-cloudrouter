@@ -419,6 +419,10 @@
       "sha256": "f67b19d13fff7c6ac3c2d37780d29d28c74ce2b59ece3415832990619fd72512"
     },
     {
+      "path": "src/types/anthropic-error-envelope.ts",
+      "sha256": "283d6014924444d371983393d1f41aa5a461e2f293ebed6cf60fa8a68c6f7294"
+    },
+    {
       "path": "src/types/anthropic-file-list-response.ts",
       "sha256": "d7320f91d3b1632d2562dfcb0c2dee66ed2e72cfc17edfda23a8ab006ba273fe"
     },
@@ -515,6 +519,10 @@
       "sha256": "c58b71aedd3fda42fd4c390e66384e7d523b2793fd8edf72d7ea6f8445f8683f"
     },
     {
+      "path": "src/types/ark-error-envelope.ts",
+      "sha256": "3b32995785b88240ef64a46070f81168ee4e46672529db4668f68c9aaceeb771"
+    },
+    {
       "path": "src/types/ark-image-generation-data.ts",
       "sha256": "68901b15a514b56d669bf537361d0d2a70d7ff72a43217a213837312778efbf9"
     },
@@ -561,6 +569,10 @@
     {
       "path": "src/types/black-forest-labs-video-generation-task.ts",
       "sha256": "3b0dccea29b830817052270bbba99917647e003ac7260945f113419dbc219ec1"
+    },
+    {
+      "path": "src/types/byte-dance-tts-error-envelope.ts",
+      "sha256": "fd9c6c95f9e6548a76b21bfcb89145fd3b6436bcd5833d429198df9274dd40f1"
     },
     {
       "path": "src/types/bytedance-image-generation-request.ts",
@@ -649,6 +661,10 @@
     {
       "path": "src/types/eleven-labs-voice-settings.ts",
       "sha256": "a55c9f11dca044dcb100373be9c9a296fd12799053502c5db23413e859afe01e"
+    },
+    {
+      "path": "src/types/external-provider-error-envelope.ts",
+      "sha256": "f76e87c67f67c41a11e36fa7eb3f2d74ffb789e38250dac26348abbd41af5dba"
     },
     {
       "path": "src/types/gemini-image-generation-request.ts",
@@ -783,6 +799,14 @@
       "sha256": "2eecf683f9c4117da367198d478cd8ecf034455663ad4ce39435cf0bf9d0c7fa"
     },
     {
+      "path": "src/types/google-gemini-error-detail.ts",
+      "sha256": "0d211560b660f16be8f7e55c10323b4d0fb2b637a751164cecaad19bc177b8f1"
+    },
+    {
+      "path": "src/types/google-gemini-error-envelope.ts",
+      "sha256": "48cdd33b60ad3c64f2c1657821702924208c78c552e8811ead88ba116c0dfd9c"
+    },
+    {
       "path": "src/types/google-generate-content-request.ts",
       "sha256": "0805dd1c1faeb611bc3aef381efecb7a25692134879301623c3f5066b9d24470"
     },
@@ -840,7 +864,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "915cd604dc0ae84176e7d1c2d0c28c8718c0d84fa1caa9c265b7c55296d5fe3d"
+      "sha256": "b0694a458720fe1ad78b53dc3d9f71d851aba2c108628c2a0a14b4cf52e9af15"
     },
     {
       "path": "src/types/jimeng-video-generation-request.ts",
@@ -909,6 +933,10 @@
     {
       "path": "src/types/luma-concept.ts",
       "sha256": "3edca6daa95420607dded03f089ef3291f7007e9bf6ba9a6e61a8cbb581d65da"
+    },
+    {
+      "path": "src/types/luma-error-envelope.ts",
+      "sha256": "50682fbbd504ded91c37d108ee15d99adefb28c529b9ea8e7efc21f77aa75120"
     },
     {
       "path": "src/types/luma-generation-assets.ts",
@@ -1696,7 +1724,7 @@
     },
     {
       "path": "src/types/open-ai-video-extend-request.ts",
-      "sha256": "87f5326d6802156b2c4853867d5003d8ace26469daeb2b58fb4a041423276d98"
+      "sha256": "6618930817353add4757c97e9e4a9270e816f7e14ef3ec26628f5ddcac3b9d82"
     },
     {
       "path": "src/types/open-ai-video-list.ts",

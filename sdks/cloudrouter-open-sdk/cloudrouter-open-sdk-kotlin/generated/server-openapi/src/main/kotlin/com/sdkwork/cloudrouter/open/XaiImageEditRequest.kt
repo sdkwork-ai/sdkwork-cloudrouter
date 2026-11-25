@@ -8,7 +8,7 @@ data class XaiImageEditRequest(
     val model: String? = null,
     val n: Int? = null,
     val output: Map<String, String>? = null,
-    val prompt: String? = null,
+    val prompt: String,
     val resolution: String? = null,
     val responseFormat: String? = null,
     val storageOptions: Map<String, String>? = null,

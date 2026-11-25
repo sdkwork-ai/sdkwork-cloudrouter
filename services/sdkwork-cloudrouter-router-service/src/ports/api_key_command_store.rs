@@ -105,6 +105,31 @@ pub struct DeleteGatewayApiKeyForOrganizationCommand {
     pub request_id: String,
 }
 
+/// Explicit, audited disclose of one key's stored secret to its owner. The
+/// command carries the audit identity because every successful reveal writes
+/// an `ops_audit_log` row before the plaintext leaves the store.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RevealGatewayApiKeySecretCommand {
+    pub audit_log_uuid: String,
+    pub tenant_id: i64,
+    pub organization_id: i64,
+    pub user_id: i64,
+    pub operator_id: i64,
+    pub operator_type: i32,
+    pub api_key_id: i64,
+    pub requested_at: String,
+    pub request_id: String,
+}
+
+/// Result of one explicit reveal attempt. A throttled or unknown key never
+/// returns secret material and never writes the audit row.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RevealGatewayApiKeySecretOutcome {
+    Revealed(String),
+    NotFound,
+    Throttled,
+}
+
 impl CreateGatewayApiKeyCommand {
     pub fn requires_access_policy(&self) -> bool {
         !self.allowed_capabilities.is_empty() || !self.ip_allowlist.is_empty()
@@ -167,4 +192,13 @@ pub trait GatewayApiKeyCommandStore {
         &'a self,
         command: DeleteGatewayApiKeyForOrganizationCommand,
     ) -> ApiKeyCommandStoreFuture<'a, bool>;
+
+    /// Disclose the stored secret of one owned key after writing the audit row.
+    /// `NotFound` covers an unknown key and a legacy row without stored
+    /// material; decode or audit failures surface as errors. A reveal within
+    /// the per-key cooldown returns `Throttled` and writes no audit row.
+    fn reveal_gateway_api_key_secret<'a>(
+        &'a self,
+        command: RevealGatewayApiKeySecretCommand,
+    ) -> ApiKeyCommandStoreFuture<'a, RevealGatewayApiKeySecretOutcome>;
 }

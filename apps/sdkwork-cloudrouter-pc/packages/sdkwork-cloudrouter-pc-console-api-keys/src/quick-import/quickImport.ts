@@ -43,6 +43,20 @@ export function resolveRelayHomepage(): string {
 }
 
 /**
+ * Absolute gateway endpoints, the form every import projection needs: a
+ * browser-produced config cannot use the relative base a local/standalone
+ * deployment may report.
+ */
+export function resolveAbsoluteGatewayEndpoints() {
+  const { anthropicBaseUrl, openAiBaseUrl, geminiBaseUrl } = resolveCurrentGatewayEndpoints();
+  return {
+    anthropicBaseUrl: toAbsoluteGatewayUrl(anthropicBaseUrl),
+    openAiBaseUrl: toAbsoluteGatewayUrl(openAiBaseUrl),
+    geminiBaseUrl: toAbsoluteGatewayUrl(geminiBaseUrl),
+  };
+}
+
+/**
  * Usage-query script shipped inside the CC Switch import link (Base64 in the
  * `usageScript` param). It follows the CC Switch "通用模板" contract
  * (`{{baseUrl}}/user/balance` + `extractor(response)`) against the gateway's
@@ -154,9 +168,9 @@ export const QUICK_IMPORT_TARGETS: QuickImportTarget[] = [
     stepsKey: 'console.apiKeys.quickImport.deepseekHarnessSteps',
     fallbackSteps: [
       'Download or copy the config content.',
-      'Merge the `llm-pi-ai:` block into ~/.dsh/settings.yaml.',
+      'Merge the `llm-pi-ai:` and `agent-default-model:` blocks into ~/.dsh/settings.yaml.',
       'Add the CLOUDROUTER_API_KEY line to ~/.dsh/.credentials.yaml.',
-      'Open DeepSeek Harness and pick the Cloud Router route in Settings → Models (use "Fetch available models" to populate its model list).',
+      'Restart DeepSeek Harness and start a new conversation. The selected model is saved as the Cloud Router default.',
     ].join('\n'),
     configPathKey: 'console.apiKeys.quickImport.deepseekHarnessConfigPath',
     fallbackConfigPath: '~/.dsh/settings.yaml + ~/.dsh/.credentials.yaml',
@@ -183,16 +197,27 @@ export function resolveQuickImportTarget(targetId: QuickImportTargetId): QuickIm
 /**
  * Builds the importable config content for a target tool from the plaintext
  * gateway API key. Returns null when the key has no plaintext value (for
- * example keys stored in ciphertext-only mode).
+ * example keys stored in ciphertext-only mode), or when a DeepSeek Harness
+ * import has no selected model.
  */
-export function buildQuickImportResult(key: ApiKey, targetId: QuickImportTargetId): QuickImportResult | null {
+export function buildQuickImportResult(
+  key: ApiKey,
+  targetId: QuickImportTargetId,
+  options: { model?: string } = {},
+): QuickImportResult | null {
   if (!key.rawKey) {
     return null;
   }
-  const content =
-    targetId === 'deepseek-harness'
-      ? buildDeepseekHarnessContent(key.rawKey)
-      : buildClaudeSettingsEnvContent(key.rawKey, targetId);
+  const model = options.model?.trim();
+  let content: string;
+  if (targetId === 'deepseek-harness') {
+    if (!model) {
+      return null;
+    }
+    content = buildDeepseekHarnessContent(key.rawKey, model);
+  } else {
+    content = buildClaudeSettingsEnvContent(key.rawKey, targetId);
+  }
   return {
     targetId,
     keyId: key.id,
@@ -236,13 +261,14 @@ const DEEPSEEK_HARNESS_CREDENTIAL_KEY = 'CLOUDROUTER_API_KEY';
 
 /**
  * DeepSeek Harness desktop (dsh-desktop) import content: an OpenAI-compatible
- * `cloudrouter` route under `llm-pi-ai.providers` in `~/.dsh/settings.yaml`,
- * plus its key in `~/.dsh/.credentials.yaml`. The credentials file is a
+ * `cloudrouter` route under `llm-pi-ai.providers` and an `agent-default-model`
+ * selection in `~/.dsh/settings.yaml`, plus its key in
+ * `~/.dsh/.credentials.yaml`. The credentials file is a
  * strict key-only YAML mapping (any other content is rejected), so one
  * document carries both halves with comments marking which file each belongs
  * to — the user splits them on save.
  */
-function buildDeepseekHarnessContent(rawKey: string): string {
+function buildDeepseekHarnessContent(rawKey: string, model: string): string {
   const { openAiBaseUrl } = resolveCurrentGatewayEndpoints();
   return [
     '# DeepSeek Harness — Cloud Router relay provider.',
@@ -255,7 +281,11 @@ function buildDeepseekHarnessContent(rawKey: string): string {
     `      apiKeyEnv: ${DEEPSEEK_HARNESS_CREDENTIAL_KEY}`,
     '      api: openai-completions',
     `      baseURL: ${toAbsoluteGatewayUrl(openAiBaseUrl)}`,
-    '      # In Settings → Models, click "Fetch available models" to fill the model list.',
+    '      models:',
+    `        - id: ${yamlQuoteString(model)}`,
+    'agent-default-model:',
+    '  provider: cloudrouter',
+    `  model: ${yamlQuoteString(model)}`,
     '',
     `# Add the credential line below to ~/.dsh/.credentials.yaml (kept at 0600).`,
     `${DEEPSEEK_HARNESS_CREDENTIAL_KEY}: ${yamlQuoteString(rawKey)}`,
@@ -398,6 +428,7 @@ export async function fetchGatewayModelList(rawKey: string): Promise<string[]> {
   try {
     const response = await fetch(`${toAbsoluteGatewayUrl(openAiBaseUrl)}/models`, {
       headers: { Authorization: `Bearer ${rawKey}` },
+      signal: AbortSignal.timeout(10_000),
     });
     if (!response.ok) {
       return [];
@@ -425,7 +456,8 @@ export async function fetchGatewayModelList(rawKey: string): Promise<string[]> {
 
 export function downloadQuickImportContent(result: QuickImportResult): void {
   const target = resolveQuickImportTarget(result.targetId);
-  const blob = new Blob([result.content], { type: 'application/json' });
+  const contentType = result.targetId === 'deepseek-harness' ? 'text/yaml' : 'application/json';
+  const blob = new Blob([result.content], { type: contentType });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;

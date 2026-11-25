@@ -5,9 +5,9 @@ data class AnthropicMessageBatch(
     val createdAt: String? = null,
     val endedAt: String? = null,
     val expiresAt: String? = null,
-    val id: String? = null,
-    val processingStatus: String? = null,
-    val requestCounts: AnthropicMessageBatchRequestCounts? = null,
+    val id: String,
+    val processingStatus: String,
+    val requestCounts: AnthropicMessageBatchRequestCounts,
     val resultsUrl: String? = null,
-    val type: String? = null
+    val type: String
 )

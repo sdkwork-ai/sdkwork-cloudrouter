@@ -7,12 +7,18 @@ import {
 import { trim } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 import {
   mapSdkworkGenerationArtifactsToHistoryMedia,
+  mapSdkworkGenerationHistoryTypeToModality,
   mapSdkworkGenerationModalityToHistoryType,
 } from '@sdkwork/generations-pc-workspace/generation-history';
+import type {
+  SdkworkGenerationAssetModality,
+} from '@sdkwork/generations-pc-workspace/generation-asset-config';
 import type {
   SdkworkGenerationCommandInput,
   SdkworkGenerationCommandModality,
   SdkworkGenerationOperationType,
+  SdkworkGenerationRecord,
+  SdkworkGenerationResult,
   SdkworkGenerationRun,
   SdkworkGenerationService,
 } from '@sdkwork/generations-pc-workspace/generation-service';
@@ -31,20 +37,115 @@ import type {
 } from './playgroundTypes.ts';
 import type { GenerationAgentRunCreateInput } from './playgroundTypes.ts';
 
+/** Terminal wire statuses of a generations record. */
+const TERMINAL_GENERATION_STATUSES: ReadonlySet<string> = new Set(['succeeded', 'failed', 'canceled']);
+
+/** Vendor media tasks (Seedance / Kling / Suno) run for minutes. */
+const DEFAULT_POLL_INTERVAL_MS = 1_500;
+const DEFAULT_POLL_ATTEMPTS = 400;
+/** Restored history resolves results for at most this many recent completed runs. */
+const MAX_RESTORED_RESULT_RUNS = 20;
+const RESTORED_RESULT_CONCURRENCY = 4;
+
+/** Polling knobs of an asset generation whose command returns non-terminal. */
+export interface PlaygroundGenerationPollOptions {
+  intervalMs?: number;
+  maxAttempts?: number;
+  sleep?: (milliseconds: number) => Promise<void>;
+}
+
+function defaultSleep(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+function isTerminalGenerationStatus(status: string | undefined): boolean {
+  return TERMINAL_GENERATION_STATUSES.has((status ?? '').trim());
+}
+
+/** A restored run keeps the raw wire status; only a succeeded one has results. */
+function isSucceededGenerationStatus(status: string | undefined): boolean {
+  return (status ?? '').trim() === 'succeeded';
+}
+
+/**
+ * Restored history: completed asset runs resolve their results so the list
+ * shows the media again and carries each result's asset-catalog state. Result
+ * fetches run in bounded concurrency and a failed fetch degrades to a
+ * media-less item instead of failing the whole history read.
+ */
 export async function fetchPlaygroundGenerationHistoryFromService(
   service: SdkworkGenerationService,
 ): Promise<PlaygroundHistoryItem[]> {
   const workspace = await service.getWorkspace();
-  return workspace.runs.map(mapWorkspaceRunToHistoryItem);
+  const items = workspace.runs.map(mapWorkspaceRunToHistoryItem);
+  const restorable = items
+    .filter((item) => isSucceededGenerationStatus(item.status) && item.type !== 'text')
+    .slice(0, MAX_RESTORED_RESULT_RUNS);
+  const resultsByRun = new Map<string, readonly SdkworkGenerationResult[]>();
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(RESTORED_RESULT_CONCURRENCY, restorable.length) }, async () => {
+    while (cursor < restorable.length) {
+      const item = restorable[cursor];
+      cursor += 1;
+      const results = await listRestoredResults(service, item.id);
+      if (results) {
+        resultsByRun.set(item.id, results);
+      }
+    }
+  });
+  await Promise.all(workers);
+  return items.map((item) => attachRestoredResults(item, resultsByRun.get(item.id)));
+}
+
+async function listRestoredResults(
+  service: SdkworkGenerationService,
+  generationId: string,
+): Promise<readonly SdkworkGenerationResult[] | undefined> {
+  try {
+    const page = await service.listGenerationResults({ generationId, pageSize: 20 });
+    return page?.items ?? [];
+  } catch {
+    // A degraded result read (offline, legacy host without the operation)
+    // leaves the item media-less instead of failing the whole history list.
+    return undefined;
+  }
+}
+
+function attachRestoredResults(
+  item: PlaygroundHistoryItem,
+  results: readonly SdkworkGenerationResult[] | undefined,
+): PlaygroundHistoryItem {
+  if (!results || results.length === 0 || item.type === 'text') {
+    return item;
+  }
+  const targetType = mapSdkworkGenerationHistoryTypeToModality(item.type);
+  if (!targetType) {
+    return item;
+  }
+  const artifacts = mapGenerationResultsToArtifacts(results, targetType);
+  const media = mapSdkworkGenerationArtifactsToHistoryMedia(artifacts, targetType);
+  return {
+    ...item,
+    asset: media.asset,
+    images: media.images,
+    videos: media.videos,
+    durationSeconds: media.durationSeconds ?? item.durationSeconds,
+    results: results.map((result) => ({ resultId: result.id, assetId: result.assetId })),
+  };
 }
 
 function mapWorkspaceRunToHistoryItem(run: SdkworkGenerationRun): PlaygroundHistoryItem {
   const timestamp = run.updatedAt;
+  const modality = run.modality?.trim();
   return {
     id: run.id,
     date: timestamp.slice(0, 10),
     prompt: run.promptPreview || run.title,
-    type: 'text',
+    // A restored run carries its modality; the history list renders the right
+    // preview kind (image grid / video / audio) instead of a text bubble.
+    type: mapSdkworkGenerationModalityToHistoryType(
+      modality as SdkworkGenerationAssetModality | undefined,
+    ),
     modelInfo: run.model,
     status: run.status,
     createdAt: timestamp,
@@ -55,6 +156,7 @@ function mapWorkspaceRunToHistoryItem(run: SdkworkGenerationRun): PlaygroundHist
 export async function runPlaygroundAssetGeneration(
   input: GenerationAgentRunCreateInput,
   service: SdkworkGenerationService,
+  poll: PlaygroundGenerationPollOptions = {},
 ): Promise<GenerationAgentRunCreateResult> {
   const prompt = trim(input.prompt ?? '');
   if (!prompt) {
@@ -64,8 +166,13 @@ export async function runPlaygroundAssetGeneration(
   const targetType = requireAssetTargetType(input.targetType);
   const command = createGenerationCommandInput(input, prompt, targetType);
   const commandResult = await service.createGenerationCommand(command);
+  // Async vendors (Kling / Vidu / Seedance / Suno) answer the command with a
+  // queued or running record; poll it to a terminal state so the results — and
+  // the server-side asset auto-save that runs on every refresh — land before
+  // the turn is rendered. `maxAttempts: 0` keeps the previous fire-and-forget.
+  const record = await waitForGenerationRecord(service, commandResult.record, poll);
   const resultsPage = await service.listGenerationResults({
-    generationId: commandResult.record.id,
+    generationId: record.id,
     pageSize: 20,
   });
   const artifacts = mapGenerationResultsToArtifacts(resultsPage.items ?? [], targetType);
@@ -73,8 +180,8 @@ export async function runPlaygroundAssetGeneration(
     input.onArtifact?.(artifact);
   }
 
-  const status = mapGenerationRecordStatus(commandResult.record.status);
-  const updatedAt = commandResult.record.updatedAt || new Date().toISOString();
+  const status = mapGenerationRecordStatus(record.status);
+  const updatedAt = record.updatedAt || new Date().toISOString();
   return {
     agent: {
       id: 'sdkwork-generations',
@@ -89,15 +196,32 @@ export async function runPlaygroundAssetGeneration(
       status,
       targetType,
       timestamp: updatedAt,
-      generationId: commandResult.record.id,
+      generationId: record.id,
+      results: resultsPage.items ?? [],
     }),
     meteringEvents: [],
-    run: mapGenerationCommandToRunSnapshot(commandResult.record.id, status),
-    steps: mapGenerationCommandToSteps(commandResult.record.id, status, artifacts),
+    run: mapGenerationCommandToRunSnapshot(record.id, status),
+    steps: mapGenerationCommandToSteps(record.id, status, artifacts),
     targetType,
     status,
     usage: mapGenerationCommandUsage(artifacts),
   };
+}
+
+async function waitForGenerationRecord(
+  service: SdkworkGenerationService,
+  initial: SdkworkGenerationRecord,
+  poll: PlaygroundGenerationPollOptions,
+): Promise<SdkworkGenerationRecord> {
+  let record = initial;
+  const maxAttempts = poll.maxAttempts ?? DEFAULT_POLL_ATTEMPTS;
+  const sleep = poll.sleep ?? defaultSleep;
+  for (let attempt = 0; attempt < maxAttempts && !isTerminalGenerationStatus(record.status); attempt += 1) {
+    await sleep(poll.intervalMs ?? DEFAULT_POLL_INTERVAL_MS);
+    // A failed poll keeps the last known record; the next attempt polls again.
+    record = await service.getGeneration(record.id).catch(() => record);
+  }
+  return record;
 }
 
 function createGenerationCommandInput(
@@ -166,6 +290,8 @@ function mapGenerationTargetToCommandModality(
 
 function mapGenerationResultsToArtifacts(
   results: readonly {
+    assetId?: string;
+    id?: string;
     previewText?: string;
     resourceSnapshot?: unknown;
     resultType: string;
@@ -179,6 +305,8 @@ function mapGenerationResultsToArtifacts(
 
 function mapGenerationResultToArtifact(
   result: {
+    assetId?: string;
+    id?: string;
     previewText?: string;
     resourceSnapshot?: unknown;
     resultType: string;
@@ -193,6 +321,9 @@ function mapGenerationResultToArtifact(
   return {
     asset: resource,
     modality: targetType,
+    // Result identity + catalog state ride along for the asset actions.
+    ...(result.id?.trim() ? { resultId: result.id.trim() } : {}),
+    ...(result.assetId?.trim() ? { assetId: result.assetId.trim() } : {}),
   };
 }
 
@@ -278,6 +409,7 @@ function mapGenerationCommandToHistoryItem({
   generationId,
   input,
   prompt,
+  results,
   status,
   targetType,
   timestamp,
@@ -286,6 +418,7 @@ function mapGenerationCommandToHistoryItem({
   generationId: string;
   input: GenerationAgentRunCreateInput;
   prompt: string;
+  results: readonly SdkworkGenerationResult[];
   status: PlaygroundGenerationRunStatus;
   targetType: PlaygroundGenerationTargetType;
   timestamp: string;
@@ -304,6 +437,7 @@ function mapGenerationCommandToHistoryItem({
     modelInfo: input.selectedModel,
     outputText: artifacts.length === 0 ? 'Generation accepted.' : undefined,
     prompt,
+    results: results.map((result) => ({ resultId: result.id, assetId: result.assetId })),
     status,
     type: mapSdkworkGenerationModalityToHistoryType(targetType),
     updatedAt: timestamp,

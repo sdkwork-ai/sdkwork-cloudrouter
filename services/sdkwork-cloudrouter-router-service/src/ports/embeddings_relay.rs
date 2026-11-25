@@ -1,6 +1,7 @@
 use std::future::Future;
 use std::pin::Pin;
 
+use axum::http::HeaderMap;
 use serde_json::Value;
 
 use crate::domain::{DomainResult, ProviderAuthProfile, ProviderRetryPolicy};
@@ -40,6 +41,9 @@ pub struct EmbeddingsRelayRequest {
 pub struct EmbeddingsRelayResponse {
     pub status_code: u16,
     pub body: Value,
+    pub body_bytes: Option<Vec<u8>>,
+    pub content_type: Option<String>,
+    pub headers: HeaderMap,
     pub memory_guard: Option<ProviderResponseMemoryGuard>,
 }
 
@@ -48,8 +52,32 @@ impl EmbeddingsRelayResponse {
         Self {
             status_code,
             body,
+            body_bytes: None,
+            content_type: Some("application/json".to_owned()),
+            headers: HeaderMap::new(),
             memory_guard: None,
         }
+    }
+
+    pub fn bytes(status_code: u16, body: Vec<u8>, content_type: Option<String>) -> Self {
+        Self {
+            status_code,
+            body: Value::Null,
+            body_bytes: Some(body),
+            content_type,
+            headers: HeaderMap::new(),
+            memory_guard: None,
+        }
+    }
+
+    pub fn with_response_metadata(
+        mut self,
+        content_type: Option<String>,
+        headers: HeaderMap,
+    ) -> Self {
+        self.content_type = content_type;
+        self.headers = headers;
+        self
     }
 
     pub fn with_memory_guard(mut self, memory_guard: ProviderResponseMemoryGuard) -> Self {

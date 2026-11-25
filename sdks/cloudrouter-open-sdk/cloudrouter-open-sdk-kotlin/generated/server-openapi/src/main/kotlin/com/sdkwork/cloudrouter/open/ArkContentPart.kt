@@ -6,6 +6,6 @@ data class ArkContentPart(
     val imageUrl: ArkImageSource? = null,
     val role: String? = null,
     val text: String? = null,
-    val type: String? = null,
+    val type: String,
     val videoUrl: ArkVideoSource? = null
 )

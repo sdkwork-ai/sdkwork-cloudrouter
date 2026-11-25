@@ -1,10 +1,16 @@
 import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
-import { useMemo, type ReactNode } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { humanizeCode, regionDisplayName, vendorDisplayName } from '../catalog/dataNames';
 import { groupRatesByModel, type ModelGroup } from '../types/compare';
 import type { OfficialPricingFormula, OfficialPricingRate } from '../types/pricing';
+import {
+  pricingGroupMultiplier,
+  pricingGroupsServingRates,
+  type PricingGroupOption,
+} from '../types/pricingGroup';
+import { multiplyPriceByMultiplier } from '../types/pricingPrice';
 import {
   formatPricingScheduleLines,
   pricingRateIsActiveAt,
@@ -16,24 +22,27 @@ interface PricingRateTableProps {
   items: readonly OfficialPricingRate[];
   selectedKeys: ReadonlySet<string>;
   onToggleSelection: (rate: OfficialPricingRate) => void;
+  /** 参与列计算的分组（已按标签/分组筛选收窄；空表示不展示分组列）。 */
+  groups: readonly PricingGroupOption[];
 }
 
 /**
- * 价格列表：每个模型一张卡片（参考“卡片式价格”展示），
- * 卡片内按区域列出各计量项价格、模型能力与计费策略，保留比价勾选。
- * 桌面端与移动端共用同一套卡片，不再维护独立的表格视图。
+ * 价格列表：**一行一个模型**，行内横向排列价格卡片。
+ * 第一列固定是官方分组（默认分组，×1.0 官方价），其后每个账号分组一列，
+ * 价格按该分组的销售倍率折算为真实销售价；分组列按倍率从低到高排序。
  */
-export function PricingRateTable({ items, selectedKeys, onToggleSelection }: PricingRateTableProps) {
+export function PricingRateTable({ items, selectedKeys, onToggleSelection, groups }: PricingRateTableProps) {
   const { i18n } = useTranslation();
-  const groups = useMemo(() => groupRatesByModel(items), [items]);
+  const models = useMemo(() => groupRatesByModel(items), [items]);
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3" data-testid="pricing-rate-cards">
-      {groups.map((group) => (
-        <ModelPriceCard
-          key={group.key}
-          group={group}
+    <div className="space-y-4" data-testid="pricing-model-rows">
+      {models.map((model) => (
+        <ModelPriceRow
+          key={model.key}
+          group={model}
           language={i18n.language}
+          groups={groups}
           selectedKeys={selectedKeys}
           onToggleSelection={onToggleSelection}
         />
@@ -42,14 +51,16 @@ export function PricingRateTable({ items, selectedKeys, onToggleSelection }: Pri
   );
 }
 
-function ModelPriceCard({
+function ModelPriceRow({
   group,
   language,
+  groups,
   selectedKeys,
   onToggleSelection,
 }: {
   group: ModelGroup;
   language: string;
+  groups: readonly PricingGroupOption[];
   selectedKeys: ReadonlySet<string>;
   onToggleSelection: (rate: OfficialPricingRate) => void;
 }) {
@@ -57,6 +68,10 @@ function ModelPriceCard({
   const rate = group.rates[0];
   const regions = uniqueValues(group.rates, (entry) => entry.regionCode);
   const regionGroups = useMemo(() => groupByRegion(group.rates), [group.rates]);
+  const servingGroups = useMemo(
+    () => pricingGroupsServingRates(groups, group.rates),
+    [group.rates, groups],
+  );
   const hasTiers = group.rates.some((entry) => entry.tiers.length > 0);
   const hasFormula = group.rates.some((entry) => isPricingFormula(entry.formula));
   const hasTimeWindow = group.rates.some((entry) => entry.rateVariant === 'time_window');
@@ -64,31 +79,33 @@ function ModelPriceCard({
 
   return (
     <article
-      className={`flex min-w-0 flex-col rounded-xl border bg-white p-4 transition-colors dark:bg-[#0d0d0d] ${
+      className={`rounded-xl border bg-white transition-colors dark:bg-[#0d0d0d] ${
         selected
           ? 'border-lobster-400/70 ring-1 ring-lobster-400/30 dark:border-lobster-500/45'
           : 'border-slate-200 hover:border-slate-300 dark:border-white/10 dark:hover:border-white/20'
       }`}
     >
-      <header className="flex items-start gap-3">
-        <input
-          type="checkbox"
-          checked={selected}
-          onChange={() => onToggleSelection(rate)}
-          aria-label={t('pricing.compare.selectRow', { name: rate.resourceCode })}
-          className="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 accent-lobster-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lobster-500 dark:border-white/20"
-        />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="break-all text-sm font-semibold text-slate-950 dark:text-white">{rate.resourceCode}</h2>
-            <span className="inline-flex shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
-              {t(`pricing.category.${group.category}`)}
-            </span>
-          </div>
-          <p className="mt-1 break-words text-xs text-slate-500 dark:text-slate-400">{rate.productDisplayName}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-            <span className="font-medium text-slate-700 dark:text-slate-200">{vendorDisplayName(rate.vendorCode, language)}</span>
-            <span className="flex flex-wrap gap-1">
+      <header className="flex flex-wrap items-start justify-between gap-3 px-4 pt-4">
+        <div className="flex min-w-0 items-start gap-3">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={() => onToggleSelection(rate)}
+            aria-label={t('pricing.compare.selectRow', { name: rate.resourceCode })}
+            className="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 accent-lobster-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lobster-500 dark:border-white/20"
+          />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="break-all text-sm font-semibold text-slate-950 dark:text-white">{rate.resourceCode}</h2>
+              <span className="inline-flex shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+                {t(`pricing.category.${group.category}`)}
+              </span>
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                {vendorDisplayName(rate.vendorCode, language)}
+              </span>
+            </div>
+            <p className="mt-1 break-words text-xs text-slate-500 dark:text-slate-400">{rate.productDisplayName}</p>
+            <div className="mt-1.5 flex flex-wrap gap-1">
               {regions.map((code) => (
                 <span
                   key={code}
@@ -97,14 +114,128 @@ function ModelPriceCard({
                   {regionDisplayName(code, language)}
                 </span>
               ))}
-            </span>
+            </div>
           </div>
         </div>
-        <BillabilityBadge billability={rate.billability} t={t} />
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <BillabilityBadge billability={rate.billability} t={t} />
+          <span className="text-[11px] tabular-nums text-slate-400">
+            {t('pricing.columns.groupCount', { count: servingGroups.length })}
+          </span>
+        </div>
       </header>
 
-      <div className="mt-3 flex-1 space-y-3 border-t border-slate-100 pt-3 dark:border-white/5">
-        {regionGroups.map(([regionCode, entries]) => (
+      <div
+        className="mt-3 overflow-x-auto px-4 pb-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lobster-500/40"
+        role="group"
+        aria-label={rate.resourceCode}
+        tabIndex={0}
+      >
+        <div className="flex min-w-max gap-2.5">
+          <PriceColumn
+            title={t('pricing.columns.official')}
+            subtitle="default"
+            multiplier="1"
+            regionGroups={regionGroups}
+            language={language}
+            t={t}
+            official
+          />
+          {servingGroups.map((pricingGroup) => (
+            <PriceColumn
+              key={pricingGroup.code}
+              title={pricingGroup.name}
+              subtitle={pricingGroup.code}
+              multiplier={pricingGroupMultiplier(pricingGroup)}
+              regionGroups={regionGroups}
+              language={language}
+              t={t}
+            />
+          ))}
+        </div>
+      </div>
+
+      <footer className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-slate-100 px-4 py-3 dark:border-white/5">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <ModelCapabilities rate={rate} t={t} />
+          <span className="flex flex-wrap gap-1.5">
+            {uniqueValues(group.rates, (entry) => entry.calculationMode).map((mode) => (
+              <PolicyBadge key={mode}>{calculationLabel(mode, t)}</PolicyBadge>
+            ))}
+            {hasTiers ? <PolicyBadge>{t('pricing.policy.tiers')}</PolicyBadge> : null}
+            {hasFormula ? <PolicyBadge>{t('pricing.policy.formula')}</PolicyBadge> : null}
+            {hasTimeWindow ? <PolicyBadge>{t('pricing.policy.timeWindow')}</PolicyBadge> : null}
+          </span>
+        </div>
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-400">
+          <span>{t('pricing.policy.rateCount', { count: group.rates.length })}</span>
+          <span aria-hidden="true">·</span>
+          <span>{t('pricing.effective', { date: dateOnly(rate.effectiveFrom) })}</span>
+          <a
+            href={rate.sourceUrl}
+            target="_blank"
+            rel="noreferrer"
+            title={t('pricing.source')}
+            aria-label={t('pricing.source')}
+            className="inline-flex items-center gap-1 text-slate-500 hover:text-lobster-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lobster-500 dark:text-slate-400"
+          >
+            {t('pricing.source')}
+            <ExternalLink className="h-3 w-3" aria-hidden="true" />
+          </a>
+        </span>
+      </footer>
+    </article>
+  );
+}
+
+/**
+ * 单个价格列（官方分组或某个账号分组）：同一模型的全部区域/计量行，
+ * 组列的价格 = 官方价 × 该分组销售倍率。
+ */
+function PriceColumn({
+  title,
+  subtitle,
+  multiplier,
+  regionGroups,
+  language,
+  t,
+  official = false,
+}: {
+  title: string;
+  subtitle: string;
+  multiplier: string;
+  regionGroups: ReadonlyArray<[string, OfficialPricingRate[]]>;
+  language: string;
+  t: TFunction;
+  official?: boolean;
+}) {
+  const isOfficial = official;
+  return (
+    <section
+      aria-label={title}
+      className={`w-60 shrink-0 rounded-lg border p-3 ${
+        isOfficial
+          ? 'border-lobster-200/80 bg-lobster-50/50 dark:border-lobster-500/25 dark:bg-lobster-500/[0.06]'
+          : 'border-slate-200 bg-slate-50/70 dark:border-white/10 dark:bg-white/[0.03]'
+      }`}
+    >
+      <header className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="truncate text-xs font-semibold text-slate-900 dark:text-white" title={title}>{title}</h3>
+          <p className="truncate font-mono text-[10px] text-slate-400" title={subtitle}>{subtitle}</p>
+        </div>
+        <span
+          className={`inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
+            isOfficial
+              ? 'bg-lobster-500/15 text-lobster-700 dark:text-lobster-300'
+              : 'bg-slate-200/70 text-slate-600 dark:bg-white/10 dark:text-slate-300'
+          }`}
+        >
+          ×{formatDecimal(multiplier)}
+        </span>
+      </header>
+      <div className="mt-2 space-y-2">
+        {regionGroups.map(([regionCode, rates]) => (
           <div key={regionCode}>
             {regionGroups.length > 1 ? (
               <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
@@ -112,48 +243,59 @@ function ModelPriceCard({
               </div>
             ) : null}
             <div className="space-y-1.5">
-              {entries.map((entry) => (
-                <MeterPriceLine key={entry.rateCode} entry={entry} t={t} />
+              {rates.map((entry) => (
+                <ColumnPriceLine key={entry.rateCode} entry={entry} multiplier={multiplier} t={t} />
               ))}
             </div>
           </div>
         ))}
       </div>
+    </section>
+  );
+}
 
-      <div className="mt-3 border-t border-slate-100 pt-3 dark:border-white/5">
-        <ModelCapabilities rate={rate} t={t} />
-      </div>
+function ColumnPriceLine({ entry, multiplier, t }: { entry: OfficialPricingRate; multiplier: string; t: TFunction }) {
+  const variant = pricingRateVariantKey(entry);
+  const active = pricingRateIsActiveAt(entry);
+  const scheduleLines = formatPricingScheduleLines(entry.schedule, t);
+  const price = multiplyPriceByMultiplier(entry.unitPrice, multiplier);
+  const officialPrice = formatDecimal(entry.unitPrice);
+  const discounted = multiplier !== '1';
+  const title = scheduleLines.length > 0 ? scheduleLines.join('\n') : undefined;
 
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {uniqueValues(group.rates, (entry) => entry.calculationMode).map((mode) => (
-          <PolicyBadge key={mode}>{calculationLabel(mode, t)}</PolicyBadge>
-        ))}
-        {hasTiers ? <PolicyBadge>{t('pricing.policy.tiers')}</PolicyBadge> : null}
-        {hasFormula ? <PolicyBadge>{t('pricing.policy.formula')}</PolicyBadge> : null}
-        {hasTimeWindow ? <PolicyBadge>{t('pricing.policy.timeWindow')}</PolicyBadge> : null}
-      </div>
-
-      <footer className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-slate-100 pt-3 text-[11px] text-slate-400 dark:border-white/5">
-        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span>{t('pricing.policy.rateCount', { count: group.rates.length })}</span>
-          <span aria-hidden="true">·</span>
-          <span>{t('pricing.effective', { date: dateOnly(rate.effectiveFrom) })}</span>
-          <span aria-hidden="true">·</span>
-          <span>{t('pricing.updated', { date: formatDate(rate.sourceObservedAt, language) })}</span>
+  return (
+    <div title={title}>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="flex min-w-0 items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
+          {variant !== 'standard' ? (
+            <span
+              className={`inline-flex shrink-0 rounded border px-1 text-[9px] font-semibold ${
+                active
+                  ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300'
+                  : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300'
+              }`}
+            >
+              {t(pricingRateVariantLabelKey(variant))}
+            </span>
+          ) : null}
+          <span className="truncate">{entry.meterDisplayName || humanizeCode(entry.meterCode)}</span>
         </span>
-        <a
-          href={rate.sourceUrl}
-          target="_blank"
-          rel="noreferrer"
-          title={t('pricing.source')}
-          aria-label={t('pricing.source')}
-          className="inline-flex items-center gap-1 text-slate-500 hover:text-lobster-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lobster-500 dark:text-slate-400"
-        >
-          {t('pricing.source')}
-          <ExternalLink className="h-3 w-3" aria-hidden="true" />
-        </a>
-      </footer>
-    </article>
+        <span className="shrink-0 tabular-nums text-sm font-semibold text-slate-950 dark:text-white">{price}</span>
+      </div>
+      <div className="flex items-baseline justify-between gap-2 text-[10px] text-slate-400">
+        <span className="truncate">
+          {entry.currencyCode} / {formatDecimal(entry.unitSize)} {unitLabel(entry.unitCode, t)}
+        </span>
+        {discounted ? (
+          <span
+            className="shrink-0 tabular-nums"
+            title={t('pricing.columns.officialPriceTitle', { price: officialPrice, multiplier })}
+          >
+            {t('pricing.columns.originalPrice', { price: officialPrice })}
+          </span>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
@@ -162,9 +304,9 @@ function uniqueValues<T>(rates: readonly OfficialPricingRate[], pick: (rate: Off
 }
 
 /**
- * Groups a model's rates by region while preserving first-seen region order,
- * so each card renders one region block instead of repeating the region on
- * every price line.
+ * Group a model's rates by region while preserving first-seen region order,
+ * so each card column renders one region block instead of repeating the region
+ * on every price line.
  */
 function groupByRegion(rates: readonly OfficialPricingRate[]): Array<[string, OfficialPricingRate[]]> {
   const order: string[] = []; const buckets = new Map<string, OfficialPricingRate[]>();
@@ -178,35 +320,6 @@ function groupByRegion(rates: readonly OfficialPricingRate[]): Array<[string, Of
     }
   }
   return order.map((code) => [code, buckets.get(code)!]);
-}
-
-function MeterPriceLine({ entry, t }: { entry: OfficialPricingRate; t: TFunction }): ReactNode {
-  const variant = pricingRateVariantKey(entry);
-  const scheduleLines = formatPricingScheduleLines(entry.schedule, t);
-  const active = pricingRateIsActiveAt(entry);
-  const title = scheduleLines.length > 0 ? scheduleLines.join('\n') : undefined;
-  return (
-    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs" title={title}>
-      {variant !== 'standard' ? (
-        <span
-          className={`inline-flex items-center gap-1 rounded border px-1 py-0.5 text-[10px] font-semibold ${
-            active
-              ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300'
-              : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300'
-          }`}
-        >
-          {active ? <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" /> : null}
-          {t(pricingRateVariantLabelKey(variant))}
-        </span>
-      ) : null}
-      <span className="text-slate-600 dark:text-slate-300">{entry.meterDisplayName || humanizeCode(entry.meterCode)}</span>
-      <span className="tabular-nums font-semibold text-slate-950 dark:text-white">{formatDecimal(entry.unitPrice)}</span>
-      <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">{entry.currencyCode}</span>
-      <span className="text-[10px] text-slate-400">
-        / {formatDecimal(entry.unitSize)} {unitLabel(entry.unitCode, t)}
-      </span>
-    </div>
-  );
 }
 
 export function PricingPagination({
@@ -279,39 +392,31 @@ function ModelCapabilities({ rate, t }: { rate: OfficialPricingRate; t: TFunctio
   const hasTokens = Boolean(contextTokens || maxOutputTokens);
   const hasFeatures = Boolean(supportsStreaming || supportsTools || supportsJsonSchema);
   if (!inputModalities?.length && !outputModalities?.length && !hasTokens && !hasFeatures && !usageScopes?.length) {
-    return <span className="text-xs text-slate-400 dark:text-slate-500">—</span>;
+    return null;
   }
   return (
-    <div className="space-y-2 text-xs">
+    <span className="flex flex-wrap items-center gap-1">
       {inputModalities?.length ? (
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="flex flex-wrap items-center gap-1">
           <span className="text-[11px] text-slate-400">{t('pricing.capability.input')}</span>
-          <span className="flex flex-wrap gap-1">
-            {inputModalities.map((code) => <CapabilityBadge key={code}>{modalityLabel(code, t)}</CapabilityBadge>)}
-          </span>
-        </div>
+          {inputModalities.map((code) => <CapabilityBadge key={code}>{modalityLabel(code, t)}</CapabilityBadge>)}
+        </span>
       ) : null}
       {outputModalities?.length ? (
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="flex flex-wrap items-center gap-1">
           <span className="text-[11px] text-slate-400">{t('pricing.capability.output')}</span>
-          <span className="flex flex-wrap gap-1">
-            {outputModalities.map((code) => <CapabilityBadge key={code}>{modalityLabel(code, t)}</CapabilityBadge>)}
-          </span>
-        </div>
+          {outputModalities.map((code) => <CapabilityBadge key={code}>{modalityLabel(code, t)}</CapabilityBadge>)}
+        </span>
       ) : null}
-      {hasTokens || hasFeatures ? (
-        <div className="flex flex-wrap gap-1.5">
-          {contextTokens ? <FeatureBadge>{t('pricing.tokens.context', { value: formatCompactTokens(contextTokens) })}</FeatureBadge> : null}
-          {maxOutputTokens ? <FeatureBadge>{t('pricing.tokens.maxOutput', { value: formatCompactTokens(maxOutputTokens) })}</FeatureBadge> : null}
-          {supportsStreaming ? <FeatureBadge>{t('pricing.feature.streaming')}</FeatureBadge> : null}
-          {supportsTools ? <FeatureBadge>{t('pricing.feature.tools')}</FeatureBadge> : null}
-          {supportsJsonSchema ? <FeatureBadge>{t('pricing.feature.jsonSchema')}</FeatureBadge> : null}
-        </div>
-      ) : null}
+      {contextTokens ? <FeatureBadge>{t('pricing.tokens.context', { value: formatCompactTokens(contextTokens) })}</FeatureBadge> : null}
+      {maxOutputTokens ? <FeatureBadge>{t('pricing.tokens.maxOutput', { value: formatCompactTokens(maxOutputTokens) })}</FeatureBadge> : null}
+      {supportsStreaming ? <FeatureBadge>{t('pricing.feature.streaming')}</FeatureBadge> : null}
+      {supportsTools ? <FeatureBadge>{t('pricing.feature.tools')}</FeatureBadge> : null}
+      {supportsJsonSchema ? <FeatureBadge>{t('pricing.feature.jsonSchema')}</FeatureBadge> : null}
       {usageScopes?.length ? (
-        <div className="text-[11px] text-slate-400">{usageScopes.map((scope) => usageScopeLabel(scope, t)).join(' · ')}</div>
+        <span className="text-[11px] text-slate-400">{usageScopes.map((scope) => usageScopeLabel(scope, t)).join(' · ')}</span>
       ) : null}
-    </div>
+    </span>
   );
 }
 
@@ -379,9 +484,4 @@ function calculationLabel(mode: OfficialPricingRate['calculationMode'], t: TFunc
 
 function dateOnly(value: string): string {
   return value.match(/^\d{4}-\d{2}-\d{2}/u)?.[0] ?? value;
-}
-
-function formatDate(value: string, locale: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? dateOnly(value) : new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(date);
 }

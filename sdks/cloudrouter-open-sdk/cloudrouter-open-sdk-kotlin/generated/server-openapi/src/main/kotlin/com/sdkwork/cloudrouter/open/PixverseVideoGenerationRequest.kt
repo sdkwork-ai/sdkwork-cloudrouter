@@ -1,13 +1,13 @@
 package com.sdkwork.cloudrouter.open
 
 data class PixverseVideoGenerationRequest(
-    val aspectRatio: String? = null,
-    val duration: Int? = null,
+    val aspectRatio: String,
+    val duration: Int,
     val generateAudioSwitch: Boolean? = null,
     val generateMultiClipSwitch: Boolean? = null,
-    val model: String? = null,
-    val prompt: String? = null,
-    val quality: String? = null,
+    val model: String,
+    val prompt: String,
+    val quality: String,
     val seed: Int? = null,
     val webhookId: String? = null
 )

@@ -1,10 +1,12 @@
 import {
   createCloudRouterH5ConsolePorts,
   initCloudRouterH5AppSdkClient,
+  initCloudRouterH5CommerceServices,
   initCloudRouterH5OrderAppSdkClient,
   resolveCloudRouterAppApiBaseUrl,
 } from '@sdkwork/cloudrouter-h5-core/sdk';
 import { configureCloudRouterOrderRuntime } from '@sdkwork/cloudrouter-h5-orders/runtime';
+import { bootstrapCloudRouterH5Membership } from '@sdkwork/cloudrouter-h5-membership/runtime';
 import { configureCloudRouterPlayground } from '@sdkwork/cloudrouter-h5-playground';
 import { configureCloudRouterIm } from '@sdkwork/cloudrouter-h5-messages';
 import { resolveConsoleLocale } from '@sdkwork/cloudrouter-h5-i18n';
@@ -39,5 +41,10 @@ export function bootstrapH5SdkClients(): CloudRouterH5SdkBootstrap {
   // The Playground is an owned Agents H5 capability; bind it to the same dual-
   // token session and API base as the console/order clients.
   configureCloudRouterPlayground({ locale: resolveConsoleLocale() });
+  // Membership/account/order domain services feed the token-plan and Token Bank
+  // surfaces; the membership runtime is bound to them here so the feature
+  // package never builds SDK clients (APP_SDK_INTEGRATION_SPEC.md section 4).
+  initCloudRouterH5CommerceServices();
+  bootstrapCloudRouterH5Membership();
   return { appApiBaseUrl, consolePorts: createCloudRouterH5ConsolePorts() };
 }

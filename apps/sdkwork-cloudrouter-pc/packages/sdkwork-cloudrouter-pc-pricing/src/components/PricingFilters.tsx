@@ -1,7 +1,8 @@
 import { Search, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { regionDisplayName, vendorDisplayName } from '../catalog/dataNames';
+import { regionDisplayName } from '../catalog/dataNames';
 import { PricingGroupFilter } from './PricingGroupFilter';
+import { PricingVendorFilter } from './PricingVendorFilter';
 import type {
   OfficialPricingMeterFacet,
   OfficialPricingRegionFacet,
@@ -47,7 +48,12 @@ export function PricingFilters(props: PricingFiltersProps) {
 
   return (
     <div className="border-y border-slate-200 bg-white py-4 dark:border-white/10 dark:bg-[#0d0d0d]">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(16rem,1fr)_11rem_10rem_11rem_7rem_auto]">
+      <PricingVendorFilter
+        vendors={props.vendors}
+        vendorCode={props.vendorCode}
+        onChange={props.onVendorChange}
+      />
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(16rem,1fr)_10rem_11rem_7rem_auto]">
         <label className="relative block sm:col-span-2 xl:col-span-1">
           <span className="sr-only">{t('pricing.search')}</span>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
@@ -59,13 +65,6 @@ export function PricingFilters(props: PricingFiltersProps) {
             className="h-10 w-full rounded-md border border-slate-300 bg-white pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/20 dark:border-white/10 dark:bg-[#151515] dark:text-white"
           />
         </label>
-        <FacetSelect
-          label={t('pricing.filters.vendor')}
-          allLabel={t('pricing.filters.allVendors')}
-          value={props.vendorCode}
-          options={props.vendors.map((item) => ({ value: item.code, label: vendorDisplayName(item.code, language), count: item.count }))}
-          onChange={props.onVendorChange}
-        />
         <FacetSelect
           label={t('pricing.filters.region')}
           allLabel={t('pricing.filters.allRegions')}

@@ -650,6 +650,7 @@ class CloudRouterGatewayOpenApiGenerator:
         components = self._components()
         self._normalize_component_schema_descriptions(components)
         paths = self._paths()
+        self._complete_external_error_responses(paths, components)
         spec = {
             "openapi": "3.1.2",
             "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
@@ -700,6 +701,204 @@ class CloudRouterGatewayOpenApiGenerator:
         self._normalize_vendor_object_component_closure(spec)
         self._prune_unreachable_schemas(spec)
         return spec
+
+    @staticmethod
+    def _complete_external_error_responses(
+        paths: dict[str, Any],
+        components: dict[str, Any],
+    ) -> None:
+        schemas = components["schemas"]
+        schemas["AnthropicErrorEnvelope"] = {
+            "type": "object",
+            "required": ["type", "error", "request_id"],
+            "properties": {
+                "type": {"type": "string", "const": "error", "description": "Anthropic error event type."},
+                "request_id": {"type": "string", "description": "Gateway request identifier."},
+                "error": {
+                    "type": "object",
+                    "required": ["type", "message"],
+                    "properties": {
+                        "type": {"type": "string", "description": "Anthropic error category."},
+                        "message": {"type": "string", "description": "Human-readable error message."},
+                    },
+                    "additionalProperties": True,
+                    "description": "Anthropic Messages error details.",
+                },
+            },
+            "additionalProperties": True,
+            "description": "Error envelope returned by the Anthropic Messages API.",
+        }
+        schemas["GoogleGeminiErrorEnvelope"] = {
+            "type": "object",
+            "required": ["error"],
+            "properties": {
+                "error": {
+                    "type": "object",
+                    "required": ["code", "message", "status"],
+                    "properties": {
+                        "code": {"type": "integer", "description": "HTTP status code returned by Gemini."},
+                        "message": {"type": "string", "description": "Human-readable error message."},
+                        "status": {"type": "string", "description": "Google RPC status name."},
+                        "details": {"type": "array", "items": {"$ref": "#/components/schemas/GoogleGeminiErrorDetail"}, "description": "Structured Google error details."},
+                    },
+                    "additionalProperties": True,
+                    "description": "Google Gemini error details.",
+                },
+            },
+            "additionalProperties": True,
+            "description": "Error envelope returned by the Google Gemini API.",
+        }
+        schemas["ExternalProviderErrorEnvelope"] = {
+            "type": "object",
+            "additionalProperties": True,
+            "description": "Provider-defined JSON error body preserved by the Cloud Router gateway.",
+        }
+        schemas["LumaErrorEnvelope"] = {
+            "type": "object",
+            "required": ["detail"],
+            "properties": {
+                "detail": {
+                    "type": "string",
+                    "description": "Human-readable Luma Dream Machine API error detail.",
+                },
+            },
+            "description": "Error response defined by the Luma Dream Machine API.",
+        }
+        schemas["ArkErrorEnvelope"] = {
+            "type": "object",
+            "required": ["error"],
+            "properties": {
+                "error": {
+                    "type": "object",
+                    "required": ["message", "type", "request_id"],
+                    "properties": {
+                        "code": {"type": "string", "description": "Ark error code."},
+                        "message": {"type": "string", "description": "Human-readable Ark error message."},
+                        "param": {"type": ["string", "null"], "description": "Request parameter related to the error when available."},
+                        "type": {"type": "string", "description": "Ark error type."},
+                        "request_id": {"type": "string", "description": "Ark provider request identifier."},
+                    },
+                    "additionalProperties": True,
+                },
+            },
+            "additionalProperties": True,
+            "description": "Error envelope defined by the Volcengine Ark Runtime API.",
+        }
+        schemas["ByteDanceTtsErrorEnvelope"] = {
+            "type": "object",
+            "additionalProperties": True,
+            "properties": {
+                "code": {"type": "integer", "description": "ByteDance OpenSpeech business error code."},
+                "message": {"type": "string", "description": "ByteDance OpenSpeech error message."},
+                "reqid": {"type": "string", "description": "ByteDance OpenSpeech request identifier."},
+            },
+            "description": "Error body defined by the ByteDance OpenSpeech TTS API.",
+        }
+        schemas["GoogleGeminiErrorDetail"] = {
+            "type": "object",
+            "additionalProperties": True,
+            "description": "A structured Google RPC error detail.",
+        }
+
+        common_errors = {
+            "402": "Gateway rejected the request because the caller has insufficient balance.",
+            "403": "Gateway rejected the caller or the provider denied the request.",
+            "408": "The request or upstream response timed out.",
+            "409": "The request conflicted with a prior operation or provider state.",
+            "413": "The request body exceeds a configured size limit.",
+            "422": "The gateway or provider could not process the request content.",
+            "429": "The caller or provider exceeded a rate limit.",
+            "503": "No callable upstream route is currently available.",
+            "504": "The upstream provider did not respond before its deadline.",
+        }
+        protocol_prefixes = (
+            ("/v1/", "openai-v1"),
+            ("/alibaba/", "alibaba-dashscope-v1"),
+            ("/anthropic/", "anthropic-messages"),
+            ("/black_forest_labs/", "black-forest-labs-v1"),
+            ("/bytedance/", "bytedance-ark-v3"),
+            ("/elevenlabs/", "elevenlabs-v1"),
+            ("/google/", "google-gemini-v1beta"),
+            ("/jimeng/", "jimeng-v1"),
+            ("/kling/", "kling-v1"),
+            ("/luma_ai/", "luma-dream-machine-v1"),
+            ("/minimax/", "minimax-v1"),
+            ("/mureka/", "mureka-v1"),
+            ("/pixverse/", "pixverse-openapi-v2"),
+            ("/runway/", "runway-v1"),
+            ("/stability_ai/", "stability-ai-v2beta"),
+            ("/suno/", "suno-v1"),
+            ("/vidu/", "vidu-v1"),
+            ("/volcengine/", "volcengine-v1"),
+            ("/xai/", "xai-v1"),
+            ("/zhipu/", "zhipu-v4"),
+            ("/typesafe/", "typesafe-v1"),
+        )
+        schema_by_protocol = {
+            "openai-v1": "OpenAiErrorEnvelope",
+            "anthropic-messages": "AnthropicErrorEnvelope",
+            "google-gemini-v1beta": "GoogleGeminiErrorEnvelope",
+            "luma-dream-machine-v1": "LumaErrorEnvelope",
+            "bytedance-ark-v3": "ArkErrorEnvelope",
+            "bytedance-tts-v1": "ByteDanceTtsErrorEnvelope",
+            "volcengine-ark-v3": "ArkErrorEnvelope",
+        }
+
+        def error_content(schema_ref: str) -> dict[str, Any]:
+            return {
+                "application/json": {"schema": {"$ref": schema_ref}},
+                "*/*": {
+                    "schema": {
+                        "type": "string",
+                        "format": "binary",
+                        "description": "Unmodified upstream error body for non-JSON response media types.",
+                    }
+                },
+            }
+
+        for path, path_item in paths.items():
+            protocol_id = next(
+                (protocol for prefix, protocol in protocol_prefixes if path.startswith(prefix)),
+                None,
+            )
+            if protocol_id is None:
+                continue
+            schema_name = schema_by_protocol.get(protocol_id, "ExternalProviderErrorEnvelope")
+            schema_ref = f"#/components/schemas/{schema_name}"
+            for method, operation in path_item.items():
+                if method.startswith("x-") or not isinstance(operation, dict):
+                    continue
+                # Keep the generator self-contained. The post-generation
+                # extension synchronizer also infers these ids, but the
+                # canonical OpenAPI authority must carry the same protocol
+                # when it is generated directly. ByteDance TTS and
+                # Volcengine Ark share a URL prefix with other vendor routes
+                # while exposing different error wires.
+                inferred_protocol_id = protocol_id
+                if path.startswith("/bytedance/api/v3/tts/unidirectional"):
+                    inferred_protocol_id = "bytedance-tts-v1"
+                elif path.startswith("/volcengine/api/v3/") and path != "/volcengine/api/v3/audio/speech":
+                    inferred_protocol_id = "volcengine-ark-v3"
+                operation["x-sdkwork-external-protocol-id"] = inferred_protocol_id
+                operation_schema_name = schema_by_protocol.get(
+                    inferred_protocol_id,
+                    "ExternalProviderErrorEnvelope",
+                )
+                operation_schema_ref = f"#/components/schemas/{operation_schema_name}"
+                responses = operation.get("responses")
+                if not isinstance(responses, dict):
+                    continue
+                for status, response in responses.items():
+                    if status == "default" or (status.isdigit() and int(status) >= 400):
+                        response["content"] = error_content(operation_schema_ref)
+                for status, description in common_errors.items():
+                    response = responses.setdefault(status, {"description": description})
+                    response["description"] = response.get("description") or description
+                    response["content"] = error_content(operation_schema_ref)
+                responses["default"] = {
+                    "description": "Unlisted upstream provider error status and response body.",
+                    "content": error_content(operation_schema_ref),
+                }
 
     @staticmethod
     def _prune_unreachable_schemas(spec: dict[str, Any]) -> None:

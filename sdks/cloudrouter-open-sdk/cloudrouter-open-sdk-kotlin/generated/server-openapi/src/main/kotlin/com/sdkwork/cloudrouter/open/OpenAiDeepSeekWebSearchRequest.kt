@@ -5,5 +5,5 @@ data class OpenAiDeepSeekWebSearchRequest(
     val localization: String? = null,
     val needContent: Boolean? = null,
     val oriQuestion: String? = null,
-    val query: String? = null
+    val query: String
 )

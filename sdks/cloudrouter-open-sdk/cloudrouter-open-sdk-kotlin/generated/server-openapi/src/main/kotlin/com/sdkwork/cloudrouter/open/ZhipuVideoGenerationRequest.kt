@@ -4,7 +4,7 @@ data class ZhipuVideoGenerationRequest(
     val duration: Int? = null,
     val fps: Int? = null,
     val imageUrl: String? = null,
-    val model: String? = null,
+    val model: String,
     val prompt: String? = null,
     val quality: String? = null,
     val requestId: String? = null,

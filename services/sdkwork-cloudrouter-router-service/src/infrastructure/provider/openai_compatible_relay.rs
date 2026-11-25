@@ -1,7 +1,9 @@
 use axum::body::Body;
 use bytes::Bytes;
 use http_body_util::{BodyExt, Full, Limited};
-use hyper::header::{HeaderName, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
+use hyper::header::{
+    HeaderName, HeaderValue, ACCEPT_ENCODING, AUTHORIZATION, CONTENT_ENCODING, CONTENT_TYPE,
+};
 use hyper::{Method, Request, Uri};
 use hyper_rustls::HttpsConnector;
 use hyper_util::client::legacy::connect::HttpConnector;
@@ -9,7 +11,8 @@ use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
 use sdkwork_cloudrouter_config::ProviderRelayHttpPoolSectionConfig;
 use sdkwork_cloudrouter_http::{
-    ensure_rustls_crypto_provider, path_carries_version_prefix, OutboundDnsResolver,
+    ensure_rustls_crypto_provider, path_carries_version_prefix,
+    preserve_safe_upstream_response_headers, OutboundDnsResolver,
 };
 use sdkwork_cloudrouter_security::{redact_url, validate_outbound_base_url, OutboundTargetPolicy};
 use serde_json::Value;
@@ -48,6 +51,17 @@ pub const DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS: u64 = 60_000;
 /// leak-prevention ceiling, not the operant SLA. Override per deployment with
 /// `SDKWORK_CLOUDROUTER_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS`.
 pub const DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS: u64 = 1_800_000;
+/// Default time a streaming relay waits for the provider's response headers.
+///
+/// For a streamed completion the response headers arrive when the provider
+/// accepts the request and starts generating, so this deadline is the
+/// caller-visible time to first byte. A large prompt with extended thinking can
+/// legitimately take minutes before the provider starts streaming, and the direct
+/// provider path binds that wait only by the caller's own idle tolerance (300 s in
+/// the Harness client). The non-streaming 60-second response timeout is therefore
+/// too tight for streams and turned healthy long-context turns into relay errors.
+/// The total stream deadline still bounds the whole call.
+const DEFAULT_PROVIDER_STREAM_HEADER_TIMEOUT: Duration = Duration::from_secs(300);
 /// Default cap on a non-streaming provider response body (64 MiB).
 pub const DEFAULT_PROVIDER_RESPONSE_MAX_BYTES: u64 = 64 * 1024 * 1024;
 /// Hard cap for configurable non-streaming provider responses (256 MiB).
@@ -337,7 +351,8 @@ impl UpstreamProviderEndpoint {
                 ))
             })?;
         let started_at = std::time::Instant::now();
-        let (response, _dispatch_permit) = send_provider_request(&runtime, request).await?;
+        let (response, _dispatch_permit) =
+            send_provider_request(&runtime, request, runtime.response_timeout).await?;
         let latency_ms = u64::try_from(started_at.elapsed().as_millis()).unwrap_or(u64::MAX);
         let status_code = response.status().as_u16();
         let _memory_guard = runtime
@@ -1534,17 +1549,24 @@ async fn send_chat_completion_with_runtime(
         &request.provider_model,
         "chat completion",
     )?;
-    let (status_code, body, memory_guard) = send_openai_json_with_runtime(
-        runtime,
-        endpoint,
-        endpoint.chat_completions_uri()?,
-        body,
-        "chat completion",
-        request.provider_retry_policy,
-    )
-    .await?;
+    let (status_code, body, body_bytes, content_type, headers, memory_guard) =
+        send_openai_json_with_runtime(
+            runtime,
+            endpoint,
+            endpoint.chat_completions_uri()?,
+            body,
+            "chat completion",
+            request.provider_retry_policy,
+        )
+        .await?;
 
-    Ok(ChatCompletionRelayResponse::json(status_code, body).with_memory_guard(memory_guard))
+    let response = match body_bytes {
+        Some(bytes) => ChatCompletionRelayResponse::bytes(status_code, bytes, content_type.clone()),
+        None => ChatCompletionRelayResponse::json(status_code, body),
+    };
+    Ok(response
+        .with_response_metadata(content_type, headers)
+        .with_memory_guard(memory_guard))
 }
 
 async fn send_chat_completion_stream_with_runtime(
@@ -1579,13 +1601,19 @@ async fn send_chat_completion_stream_with_runtime(
             ))
         })?;
 
-    let (response, dispatch_permit) = send_provider_request(runtime, http_request).await?;
+    let (response, dispatch_permit) = send_provider_request(
+        runtime,
+        http_request,
+        DEFAULT_PROVIDER_STREAM_HEADER_TIMEOUT.min(runtime.stream_response_timeout),
+    )
+    .await?;
     let status_code = response.status().as_u16();
     let content_type = response
         .headers()
         .get(CONTENT_TYPE)
         .and_then(|value| value.to_str().ok())
         .map(str::to_owned);
+    let headers = preserve_safe_upstream_response_headers(response.headers());
     tracing::info!(
         supplier_code = %request.supplier_code,
         provider_account_id = request.provider_account_id,
@@ -1607,7 +1635,8 @@ async fn send_chat_completion_stream_with_runtime(
             )),
             stream_total,
         ),
-    ))
+    )
+    .with_headers(headers))
 }
 
 async fn send_response_with_runtime(
@@ -1617,17 +1646,24 @@ async fn send_response_with_runtime(
 ) -> DomainResult<ResponsesRelayResponse> {
     let body =
         upstream_model_request_body(request.request_body, &request.provider_model, "responses")?;
-    let (status_code, body, memory_guard) = send_openai_json_with_runtime(
-        runtime,
-        endpoint,
-        endpoint.responses_uri()?,
-        body,
-        "responses",
-        request.provider_retry_policy,
-    )
-    .await?;
+    let (status_code, body, body_bytes, content_type, headers, memory_guard) =
+        send_openai_json_with_runtime(
+            runtime,
+            endpoint,
+            endpoint.responses_uri()?,
+            body,
+            "responses",
+            request.provider_retry_policy,
+        )
+        .await?;
 
-    Ok(ResponsesRelayResponse::json(status_code, body).with_memory_guard(memory_guard))
+    let response = match body_bytes {
+        Some(bytes) => ResponsesRelayResponse::bytes(status_code, bytes, content_type.clone()),
+        None => ResponsesRelayResponse::json(status_code, body),
+    };
+    Ok(response
+        .with_response_metadata(content_type, headers)
+        .with_memory_guard(memory_guard))
 }
 
 /// Relays a streaming (SSE) Responses API call: the request body already
@@ -1667,13 +1703,19 @@ async fn send_responses_stream_with_runtime(
             ))
         })?;
 
-    let (response, dispatch_permit) = send_provider_request(runtime, http_request).await?;
+    let (response, dispatch_permit) = send_provider_request(
+        runtime,
+        http_request,
+        DEFAULT_PROVIDER_STREAM_HEADER_TIMEOUT.min(runtime.stream_response_timeout),
+    )
+    .await?;
     let status_code = response.status().as_u16();
     let content_type = response
         .headers()
         .get(CONTENT_TYPE)
         .and_then(|value| value.to_str().ok())
         .map(str::to_owned);
+    let headers = preserve_safe_upstream_response_headers(response.headers());
     tracing::info!(
         supplier_code = %request.supplier_code,
         provider_account_id = request.provider_account_id,
@@ -1688,7 +1730,8 @@ async fn send_responses_stream_with_runtime(
             response.into_body(),
             dispatch_permit,
         )),
-    ))
+    )
+    .with_headers(headers))
 }
 
 async fn send_embedding_with_runtime(
@@ -1698,17 +1741,24 @@ async fn send_embedding_with_runtime(
 ) -> DomainResult<EmbeddingsRelayResponse> {
     let body =
         upstream_model_request_body(request.request_body, &request.provider_model, "embeddings")?;
-    let (status_code, body, memory_guard) = send_openai_json_with_runtime(
-        runtime,
-        endpoint,
-        endpoint.embeddings_uri()?,
-        body,
-        "embeddings",
-        request.provider_retry_policy,
-    )
-    .await?;
+    let (status_code, body, body_bytes, content_type, headers, memory_guard) =
+        send_openai_json_with_runtime(
+            runtime,
+            endpoint,
+            endpoint.embeddings_uri()?,
+            body,
+            "embeddings",
+            request.provider_retry_policy,
+        )
+        .await?;
 
-    Ok(EmbeddingsRelayResponse::json(status_code, body).with_memory_guard(memory_guard))
+    let response = match body_bytes {
+        Some(bytes) => EmbeddingsRelayResponse::bytes(status_code, bytes, content_type.clone()),
+        None => EmbeddingsRelayResponse::json(status_code, body),
+    };
+    Ok(response
+        .with_response_metadata(content_type, headers)
+        .with_memory_guard(memory_guard))
 }
 
 async fn send_openai_json_with_runtime(
@@ -1718,7 +1768,14 @@ async fn send_openai_json_with_runtime(
     request_body: Value,
     request_label: &str,
     retry_policy: Option<ProviderRetryPolicy>,
-) -> DomainResult<(u16, Value, crate::ports::ProviderResponseMemoryGuard)> {
+) -> DomainResult<(
+    u16,
+    Value,
+    Option<Vec<u8>>,
+    Option<String>,
+    axum::http::HeaderMap,
+    crate::ports::ProviderResponseMemoryGuard,
+)> {
     let body = upstream_request_body(request_body, request_label)?;
     let body_bytes = Bytes::from(body.to_string());
     let retry_policy = retry_policy.unwrap_or_else(|| runtime.default_retry_policy.clone());
@@ -1741,7 +1798,8 @@ async fn send_openai_json_with_runtime(
         let builder = Request::builder()
             .method(Method::POST)
             .uri(endpoint.authenticated_uri(uri.clone())?)
-            .header(CONTENT_TYPE, "application/json");
+            .header(CONTENT_TYPE, "application/json")
+            .header(ACCEPT_ENCODING, "identity");
         let http_request = endpoint
             .apply_auth_headers(builder)?
             .body(Full::new(body_bytes.clone()))
@@ -1751,8 +1809,15 @@ async fn send_openai_json_with_runtime(
                 ))
             })?;
 
-        let (response, dispatch_permit) = send_provider_request(runtime, http_request).await?;
+        let (response, dispatch_permit) =
+            send_provider_request(runtime, http_request, runtime.response_timeout).await?;
         let status_code = response.status().as_u16();
+        let mut content_type = response
+            .headers()
+            .get(CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok())
+            .map(str::to_owned);
+        let headers = preserve_safe_upstream_response_headers(response.headers());
         let memory_guard = runtime
             .response_memory_budget
             .try_reserve(runtime.response_max_bytes)
@@ -1760,28 +1825,52 @@ async fn send_openai_json_with_runtime(
         // H-3: bound the response body to defend against oversized/trickling
         // upstream responses. `Limited` aborts collection once the configured
         // byte cap is exceeded.
-        let bytes = tokio::time::timeout(
-            runtime.response_timeout,
-            Limited::new(
-                response.into_body(),
-                usize::try_from(runtime.response_max_bytes)
-                    .unwrap_or(usize::MAX)
-                    .min(MAX_PROVIDER_RESPONSE_MAX_BYTES as usize),
+        let (body, body_bytes) = if unsupported_provider_response_encoding(response.headers())
+            .is_some()
+        {
+            if (200..300).contains(&status_code) {
+                return Err(DomainError::new(
+                    "upstream provider returned an unsupported compressed success response",
+                ));
+            }
+            content_type = Some("application/json".to_owned());
+            (
+                Value::Null,
+                Some(
+                    b"{\"error\":{\"message\":\"compressed provider error body was withheld\",\"code\":\"provider_error_body_withheld\"}}"
+                        .to_vec(),
+                ),
             )
-            .collect(),
-        )
-        .await
-        .map_err(|_| DomainError::new("upstream provider body timed out"))?
-        .map_err(|error| {
-            DomainError::new(format!(
-                "upstream provider body failed (limit {} bytes): {error}",
-                runtime.response_max_bytes
-            ))
-        })?
-        .to_bytes();
-        let body = serde_json::from_slice(&bytes).map_err(|error| {
-            DomainError::new(format!("upstream provider returned invalid JSON: {error}"))
-        })?;
+        } else {
+            let bytes = tokio::time::timeout(
+                runtime.response_timeout,
+                Limited::new(
+                    response.into_body(),
+                    usize::try_from(runtime.response_max_bytes)
+                        .unwrap_or(usize::MAX)
+                        .min(MAX_PROVIDER_RESPONSE_MAX_BYTES as usize),
+                )
+                .collect(),
+            )
+            .await
+            .map_err(|_| DomainError::new("upstream provider body timed out"))?
+            .map_err(|error| {
+                DomainError::new(format!(
+                    "upstream provider body failed (limit {} bytes): {error}",
+                    runtime.response_max_bytes
+                ))
+            })?
+            .to_bytes();
+            match serde_json::from_slice(&bytes) {
+                Ok(body) => (body, None),
+                Err(_) if !(200..300).contains(&status_code) => (Value::Null, Some(bytes.to_vec())),
+                Err(error) => {
+                    return Err(DomainError::new(format!(
+                        "upstream provider returned invalid JSON: {error}"
+                    )))
+                }
+            }
+        };
         tracing::debug!(
             request_label,
             attempt,
@@ -1806,7 +1895,14 @@ async fn send_openai_json_with_runtime(
                     status_code,
                     "not replaying a non-idempotent provider POST after a status that may have executed"
                 );
-                return Ok((status_code, body, memory_guard));
+                return Ok((
+                    status_code,
+                    body,
+                    body_bytes,
+                    content_type,
+                    headers,
+                    memory_guard,
+                ));
             }
             drop(body);
             drop(memory_guard);
@@ -1817,12 +1913,31 @@ async fn send_openai_json_with_runtime(
             continue;
         }
 
-        return Ok((status_code, body, memory_guard));
+        return Ok((
+            status_code,
+            body,
+            body_bytes,
+            content_type,
+            headers,
+            memory_guard,
+        ));
     }
 
     Err(DomainError::new(
         "upstream provider retry policy is invalid",
     ))
+}
+
+fn unsupported_provider_response_encoding(headers: &axum::http::HeaderMap) -> Option<String> {
+    let encodings = headers
+        .get_all(CONTENT_ENCODING)
+        .iter()
+        .filter_map(|value| value.to_str().ok())
+        .flat_map(|value| value.split(','))
+        .map(str::trim)
+        .filter(|value| !value.is_empty() && !value.eq_ignore_ascii_case("identity"))
+        .collect::<Vec<_>>();
+    (!encodings.is_empty()).then(|| encodings.join(", "))
 }
 
 fn provider_response_memory_error(error: ProviderResponseMemoryBudgetError) -> DomainError {
@@ -1837,6 +1952,7 @@ fn provider_response_memory_error(error: ProviderResponseMemoryBudgetError) -> D
 async fn send_provider_request(
     runtime: &ProviderRelayRuntime,
     http_request: Request<RequestBody>,
+    header_timeout: Duration,
 ) -> DomainResult<(
     hyper::Response<hyper::body::Incoming>,
     super::dispatch_gate::ProviderDispatchPermit,
@@ -1845,16 +1961,13 @@ async fn send_provider_request(
     // permit alive through the response body (`PermitHoldingBody`); buffered
     // JSON relays hold it until the body is collected.
     let dispatch_permit = ProviderDispatchGate::shared()
-        .acquire(runtime.response_timeout)
+        .acquire(header_timeout)
         .await
         .map_err(|error| DomainError::new(format!("provider_dispatch_saturated: {error}")))?;
-    let response = tokio::time::timeout(
-        runtime.response_timeout,
-        runtime.client.request(http_request),
-    )
-    .await
-    .map_err(|_| DomainError::new("upstream provider response timed out"))?
-    .map_err(|error| DomainError::new(format!("upstream provider request failed: {error}")))?;
+    let response = tokio::time::timeout(header_timeout, runtime.client.request(http_request))
+        .await
+        .map_err(|_| DomainError::new("upstream provider response timed out"))?
+        .map_err(|error| DomainError::new(format!("upstream provider request failed: {error}")))?;
     Ok((response, dispatch_permit))
 }
 
@@ -1933,6 +2046,23 @@ fn upstream_model_request_body(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn provider_response_encoding_detects_compressed_values() {
+        let mut headers = axum::http::HeaderMap::new();
+        assert_eq!(None, unsupported_provider_response_encoding(&headers));
+
+        headers.append(CONTENT_ENCODING, HeaderValue::from_static("gzip"));
+        headers.append(CONTENT_ENCODING, HeaderValue::from_static("br"));
+        assert_eq!(
+            Some("gzip, br".to_owned()),
+            unsupported_provider_response_encoding(&headers)
+        );
+
+        headers.remove(CONTENT_ENCODING);
+        headers.insert(CONTENT_ENCODING, HeaderValue::from_static("identity"));
+        assert_eq!(None, unsupported_provider_response_encoding(&headers));
+    }
 
     fn endpoint_for(base_url: &str) -> DomainResult<UpstreamProviderEndpoint> {
         UpstreamProviderEndpoint::new(base_url, "test-bearer-token")

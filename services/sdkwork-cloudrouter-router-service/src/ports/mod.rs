@@ -229,6 +229,7 @@ pub use api_key_command_store::{
     AccountGroupBindingInput, ApiKeyCommandStoreFuture, CreateGatewayApiKeyCommand,
     CreatedGatewayApiKey, DeleteGatewayApiKeyCommand, DeleteGatewayApiKeyForOrganizationCommand,
     EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore,
+    RevealGatewayApiKeySecretCommand, RevealGatewayApiKeySecretOutcome,
     UpdateGatewayApiKeyCommand, UpdatedGatewayApiKey,
 };
 pub use api_key_management_read_store::{

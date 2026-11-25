@@ -3,7 +3,7 @@ import { BookOpen, CheckSquare, ChevronDown, Key, Terminal, X } from 'lucide-rea
 import { useTranslation } from 'react-i18next';
 import { CopyButton } from '@sdkwork/cloudroutes-pc-commons/components/CopyButton';
 import type { ApiKey } from '../apiKeyService';
-import { fetchGatewayModelList } from '../quick-import/quickImport';
+import { fetchGatewayModelList } from '../quick-import/quickImport.ts';
 import { ConfigCodeEditor } from './ConfigCodeEditor';
 import {
   API_KEY_USAGE_TOOL_PROFILES,

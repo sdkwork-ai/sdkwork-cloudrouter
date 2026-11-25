@@ -4,9 +4,9 @@ data class ViduTimingToAudioRequest(
     val bgm: Boolean? = null,
     val callbackUrl: String? = null,
     val duration: Double? = null,
-    val model: String? = null,
+    val model: String,
     val offPeak: Boolean? = null,
     val payload: String? = null,
     val seed: Int? = null,
-    val timingPrompts: List<Map<String, String>>? = null
+    val timingPrompts: List<Map<String, String>>
 )

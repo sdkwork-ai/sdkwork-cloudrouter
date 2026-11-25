@@ -15,7 +15,7 @@
 | # | 故障 | 次数（24h） | 状态 | 根因 |
 |---|------|------------|------|------|
 | P0 | `503 Service unavailable` — `upstream route snapshot is empty` | 25 | **已恢复**（08:00:03Z 启用上游账号） | 唯一上游账号被禁用，路由池为空 |
-| P1 | `400 40002 model is required for openai.chat_completions` | 6（最近 11:42:40Z，**仍在发生**） | 未修复 | **客户端请求体未携带 `model` 字段**，非网关回归 |
+| P1 | `400 40002 model is required for openai.chat_completions` | 6（最近 11:42:40Z，**仍在发生**） | 新的 DeepSeek Harness 快速导入配置已修复；已导入的本地配置需重新合并 | **客户端请求体未携带 `model` 字段**，非网关回归 |
 | P1 | `402` 计费/额度拒绝 | 3 | 观测 | 启用账号后立即触发的计费闸门 |
 | P2 | `403` 鉴权拒绝 | 3 | 观测 | 授权决策拒绝（有 audit 事件） |
 
@@ -158,11 +158,9 @@ endpoint = /v1/chat/completions | api_key_id 0 | account_id 0
 
 **旁证（同一现象在 4 个不同时刻重复）：** `02:34:29Z`、`10:02:06Z`、`11:38:51Z`、`11:42:40Z`，每次都是“400 后 1–2 秒内同一客户端出现 200”，即客户端换用带 `model` 的请求重试成功。
 
-**影响：** 该 400 直接导致用户侧一次对话请求失败（本次会话首条报错即此请求）。截至 11:49:57Z，最近 45 分钟内仍有 `2×400 / 1×200`，说明**问题仍在持续发生**。
+**影响：** 该 400 直接导致用户侧一次对话请求失败（本次会话首条报错即此请求）。截至 11:49:57Z，最近 45 分钟内仍有 `2×400 / 1×200`，说明**问题仍在持续发生**。Cloud Router 后续已修复 DeepSeek Harness 的新快速导入配置，要求选择该 API key 可用模型并将其写入 provider 模型目录与 Harness 默认模型。此更新不会改写用户电脑上的既有 `~/.dsh/settings.yaml`，此前导入的用户需要重新合并新配置或在 Harness 中设置默认模型。
 
-**修复方向（二选一，见 §5）：**
-- 客户端：在 DSH provider 配置中补齐 model（根因侧修复）；
-- 网关侧：对 `/v1/chat/completions` 在“请求未带 model”时回落到已配置的用户/分组默认模型（新版本 `model_group_defaults` 能力已存在，但部署的 0.1.115 没有该端点，见 §4.6）。
+**后续处置：** 新生成的 DSH 配置已在 provider 和新会话默认模型中指定 model。既有本地配置需由用户重新合并；网关继续按 OpenAI 请求契约拒绝缺少 model 的请求。
 
 ### 4.3 P1/P2：`402` 与 `403`
 
@@ -489,6 +487,6 @@ normalized.contains("<script") || … || normalized.contains("union select")
 | 症状 | 触发 | 归属 |
 |------|------|------|
 | `403 waf_baseline_signature` | 对话内容里出现 `../`、`/etc/passwd`、`or 1=1` 等 | **网关缺陷，已修**（§12.3） |
-| `400 40002 model is required` | 请求体顶层没有 `model` | 调用方未带模型；网关行为正确（§4.2） |
+| `400 40002 model is required` | 请求体顶层没有 `model` | 调用方未带模型；网关行为正确（§4.2）。已在 Cloud Router 的 DeepSeek Harness 快速导入中要求选择可用模型，并将其写入 provider 模型目录和 Harness 默认模型配置。 |
 
-本仓库唯一会把调用方留成“无模型”状态的地方是 DSH 快速导入模板：`buildDeepseekHarnessContent()` 生成的 `llm-pi-ai.providers.cloudrouter` **不含任何 model**，`docs/guides/developer/README.md:342` 也明确写着“由 harness 在 设置 → 模型 里点『获取可用模型』自行解析”。用户若跳过这一步，聊天就会以无模型请求打到网关并得到 40002。补齐该模板需要 DSH `llm-pi-ai` 的 `models` 字段契约（本仓库无此 schema，不能臆造键名），因此这项仍需 DSH 侧确认后再改。
+本仓库定位到的调用方缺口是 DSH 快速导入模板：旧版 `buildDeepseekHarnessContent()` 未配置 provider 模型，也未选择 Harness fresh-agent 默认模型，用户未在 Harness 中另外选模型时，客户端可能省略 `model`。现有 DSH `llm-pi-ai` schema 明确支持 `models: [{ id }]`，`agent-default-model` 配置明确要求 `provider` 和 `model`。快速导入现已先读取该 API key 可用模型并要求选择，再把所选模型写入两项配置；模型目录无法读取时，Harness 导入要求用户输入可用模型 ID。API Reference Playground 也按 OpenAPI request-body schema 检查 required 字段，`model` 缺失时在本地拦截请求。网关仍保留标准必填校验。

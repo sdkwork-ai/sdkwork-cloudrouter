@@ -1,7 +1,7 @@
 package com.sdkwork.cloudrouter.open
 
 data class AlibabaImageGenerationRequest(
-    val input: Map<String, String>? = null,
-    val model: String? = null,
+    val input: Map<String, String>,
+    val model: String,
     val parameters: Map<String, String>? = null
 )

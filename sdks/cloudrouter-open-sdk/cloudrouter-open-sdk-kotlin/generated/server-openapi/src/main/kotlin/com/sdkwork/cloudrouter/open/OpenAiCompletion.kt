@@ -1,11 +1,11 @@
 package com.sdkwork.cloudrouter.open
 
 data class OpenAiCompletion(
-    val choices: List<CreateCompletionChoice>? = null,
-    val created: Int? = null,
-    val id: String? = null,
-    val model: String? = null,
-    val object_: String? = null,
+    val choices: List<CreateCompletionChoice>,
+    val created: Int,
+    val id: String,
+    val model: String,
+    val object_: String,
     val systemFingerprint: String? = null,
     val usage: OpenAiTokenUsage? = null
 )

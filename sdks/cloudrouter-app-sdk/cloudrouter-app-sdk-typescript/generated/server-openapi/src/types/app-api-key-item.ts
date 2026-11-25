@@ -28,8 +28,6 @@ export interface AppApiKeyItem {
   quota: string;
   /** Rate field on app api key item. */
   rate?: string | null;
-  /** Raw key field on app api key item. */
-  rawKey?: string | null;
   /** Status field on app api key item. */
   status: 'enabled' | 'disabled';
   /** Used quota field on app api key item. */

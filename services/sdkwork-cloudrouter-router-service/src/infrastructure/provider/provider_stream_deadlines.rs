@@ -22,12 +22,15 @@ pub(crate) const DEFAULT_PROVIDER_STREAM_TOTAL: Duration = Duration::from_secs(1
 /// timer restarts on every frame. A stalled stream fails the body with a
 /// typed error so the gateway can settle partial usage and free the slot.
 ///
-/// `total_timeout` bounds the whole stream lifetime; the idle gap is clamped
-/// to `1..=60` seconds so a dead upstream is detected promptly. The idle
-/// bound also acts as the first-frame deadline.
+/// `total_timeout` bounds the whole stream lifetime; the idle gap is clamped to
+/// `1..=300` seconds so a dead upstream is still detected, while a provider that
+/// legitimately pauses to think is not cut mid-answer. The caller-visible
+/// tolerance on the direct provider path is the same 300 s, so the relay is never
+/// the stricter party; a tighter relay gap truncated tool-call argument streams
+/// mid-document. The idle bound also acts as the first-frame deadline.
 pub(crate) fn apply_provider_stream_deadlines(body: Body, total_timeout: Duration) -> Body {
     let idle = total_timeout
-        .min(Duration::from_secs(60))
+        .min(Duration::from_secs(300))
         .max(Duration::from_secs(1));
     Body::new(ProviderStreamDeadlineBody {
         inner: body,

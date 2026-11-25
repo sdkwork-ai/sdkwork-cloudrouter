@@ -133,11 +133,113 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
             self.assertNotIn("x-provider", operation)
             self.assertNotIn("x-passthrough", operation)
             self.assertEqual(
-                {"$ref": "#/components/schemas/OpenAiErrorEnvelope"},
+                {"$ref": "#/components/schemas/GoogleGeminiErrorEnvelope"},
                 operation["responses"]["501"]["content"]["application/json"]["schema"],
             )
+            self.assertIn("default", operation["responses"])
+            self.assertIn("429", operation["responses"])
             self.assertNotIn("/google/{path}", spec["paths"])
             self.assertNotIn("/vidu/{path}", spec["paths"])
+
+    def test_vendor_error_contracts_follow_each_protocol_family(self) -> None:
+        spec = CloudRouterGatewayOpenApiGenerator(root=Path.cwd()).generate()
+        for path, schema_name in [
+            ("/v1/chat/completions", "OpenAiErrorEnvelope"),
+            ("/anthropic/v1/messages", "AnthropicErrorEnvelope"),
+            ("/google/v1beta/models/{model}:generateContent", "GoogleGeminiErrorEnvelope"),
+            ("/luma_ai/dream-machine/v1/generations", "LumaErrorEnvelope"),
+            ("/bytedance/api/v3/images/generations", "ArkErrorEnvelope"),
+            ("/bytedance/api/v3/tts/unidirectional", "ByteDanceTtsErrorEnvelope"),
+            ("/volcengine/api/v3/images/generations", "ArkErrorEnvelope"),
+            ("/kling/v1/videos/generations", "ExternalProviderErrorEnvelope"),
+        ]:
+            operation = next(iter(spec["paths"][path].values()))
+            expected_protocol = {
+                "/bytedance/api/v3/tts/unidirectional": "bytedance-tts-v1",
+                "/bytedance/api/v3/images/generations": "bytedance-ark-v3",
+                "/volcengine/api/v3/images/generations": "volcengine-ark-v3",
+            }.get(path)
+            if expected_protocol is not None:
+                self.assertEqual(expected_protocol, operation["x-sdkwork-external-protocol-id"])
+            for status, response in operation["responses"].items():
+                if status == "default" or status.startswith(("4", "5")):
+                    self.assertEqual(
+                        {"$ref": f"#/components/schemas/{schema_name}"},
+                        response["content"]["application/json"]["schema"],
+                        f"{status} {path}",
+                    )
+                    self.assertEqual(
+                        {"type": "string", "format": "binary"},
+                        {
+                            key: value
+                            for key, value in response["content"]["*/*"]["schema"].items()
+                            if key in {"type", "format"}
+                        },
+                        f"{status} {path} must preserve non-JSON upstream errors",
+                    )
+
+    def test_every_external_operation_declares_protocol_specific_errors(self) -> None:
+        spec = CloudRouterGatewayOpenApiGenerator(root=Path.cwd()).generate()
+        protocol_prefixes = {
+            "/v1/": "OpenAiErrorEnvelope",
+            "/alibaba/": "ExternalProviderErrorEnvelope",
+            "/anthropic/": "AnthropicErrorEnvelope",
+            "/black_forest_labs/": "ExternalProviderErrorEnvelope",
+            "/bytedance/": "ArkErrorEnvelope",
+            "/elevenlabs/": "ExternalProviderErrorEnvelope",
+            "/google/": "GoogleGeminiErrorEnvelope",
+            "/jimeng/": "ExternalProviderErrorEnvelope",
+            "/kling/": "ExternalProviderErrorEnvelope",
+            "/luma_ai/": "LumaErrorEnvelope",
+            "/minimax/": "ExternalProviderErrorEnvelope",
+            "/mureka/": "ExternalProviderErrorEnvelope",
+            "/pixverse/": "ExternalProviderErrorEnvelope",
+            "/runway/": "ExternalProviderErrorEnvelope",
+            "/stability_ai/": "ExternalProviderErrorEnvelope",
+            "/suno/": "ExternalProviderErrorEnvelope",
+            "/vidu/": "ExternalProviderErrorEnvelope",
+            "/volcengine/": "ExternalProviderErrorEnvelope",
+            "/xai/": "ExternalProviderErrorEnvelope",
+            "/zhipu/": "ExternalProviderErrorEnvelope",
+            "/typesafe/": "ExternalProviderErrorEnvelope",
+        }
+        external_operation_count = 0
+        required_statuses = {"402", "403", "408", "409", "413", "422", "429", "503", "504"}
+
+        for path, path_item in spec["paths"].items():
+            schema_name = next(
+                (schema for prefix, schema in protocol_prefixes.items() if path.startswith(prefix)),
+                None,
+            )
+            if schema_name is None:
+                continue
+            for method, operation in path_item.items():
+                if method.startswith("x-"):
+                    continue
+                external_operation_count += 1
+                responses = operation["responses"]
+                operation_schema_name = {
+                    "bytedance-ark-v3": "ArkErrorEnvelope",
+                    "bytedance-tts-v1": "ByteDanceTtsErrorEnvelope",
+                    "volcengine-ark-v3": "ArkErrorEnvelope",
+                    "luma-dream-machine-v1": "LumaErrorEnvelope",
+                }.get(operation.get("x-sdkwork-external-protocol-id"), schema_name)
+                self.assertIn("default", responses, f"{method.upper()} {path}")
+                self.assertTrue(required_statuses.issubset(responses), f"{method.upper()} {path}")
+                for status, response in responses.items():
+                    if status == "default" or (status.isdigit() and int(status) >= 400):
+                        self.assertEqual(
+                            {"$ref": f"#/components/schemas/{operation_schema_name}"},
+                            response["content"]["application/json"]["schema"],
+                            f"{status} {method.upper()} {path}",
+                        )
+                        self.assertEqual(
+                            "binary",
+                            response["content"]["*/*"]["schema"]["format"],
+                            f"{status} {method.upper()} {path} must preserve non-JSON upstream errors",
+                        )
+
+        self.assertEqual(219, external_operation_count)
 
     def test_public_openai_surface_excludes_provider_control_plane_operations(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -2811,8 +2913,10 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
             # Seed TTS speech doors, and the FLUX 3 video door): every published
             # door contributes its request/response payload components as roots,
             # and the vendor-relay envelopes they reference resolve transitively.
-            # 124 -> 125 by the Vidu scene-template response schema.
-            self.assertEqual(125, len(audit.root_schema_names))
+            # 124 -> 125 by the Vidu scene-template response schema, then
+            # protocol-specific error schemas add Anthropic, Gemini, Luma, and
+            # the provider-defined fallback roots.
+            self.assertEqual(130, len(audit.root_schema_names))
             self.assertIn("ProviderJsonNull", audit.reachable_schema_names)
             self.assertEqual([], audit.unresolved_refs)
             self.assertEqual([], audit.non_component_payload_schemas)
@@ -3644,9 +3748,9 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
         search, fetch = self._deepseek_web_tool_operations()
 
         # DeepSeek answers 403 (safety policy) and 404 (no extractable content)
-        # only for page reads, i.e. Fetch. Publishing either on Search would
-        # advertise a retry branch that cannot happen.
-        self.assertNotIn("403", search["responses"])
+        # only for page reads, i.e. Fetch. Search can still receive gateway 403
+        # authorization failures, while its provider 404 remains undocumented.
+        self.assertIn("403", search["responses"])
         self.assertNotIn("404", search["responses"])
         self.assertIn("403", fetch["responses"])
         self.assertIn("404", fetch["responses"])
@@ -3654,11 +3758,11 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
         # 404 must not survive on Search as the generic gateway "route target not
         # found": the route is mounted by contract.
         self.assertEqual(
-            {"402", "408", "413", "429", "500", "501", "502", "504"},
+            {"402", "403", "408", "409", "413", "422", "429", "500", "501", "502", "503", "504", "default"},
             set(search["responses"]) - {"200", "400", "401"},
         )
         self.assertEqual(
-            {"402", "403", "404", "408", "413", "429", "500", "501", "502", "504"},
+            {"402", "403", "404", "408", "409", "413", "422", "429", "500", "501", "502", "503", "504", "default"},
             set(fetch["responses"]) - {"200", "400", "401"},
         )
         self.assertIn("extract", fetch["responses"]["404"]["description"])

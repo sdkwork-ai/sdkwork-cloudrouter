@@ -51,6 +51,18 @@ const COMPAT_FACE_PAIRS = new Map([
     "bytedance/music",
     "Seed-Music GenSong V4 is served through Volcengine's Action-style RPC (open.volcengineapi.com?Action=GenSongV4), not a REST path the router's vendor-relay planner can name; the vendor.json apiEndpoints record only the Ark /api/v3 OpenAI-compatible host, which carries no music surface. No vendor-native REST door exists to publish — the pair is ledgered rather than wired to a path the vendor does not serve.",
   ],
+  [
+    "stepfun/audio",
+    "StepFun audio models are present in the shared catalog, but the Cloud Router seed exposes only StepFun chat and Anthropic message endpoints. No StepFun audio vendor-native API endpoint, resource grant, or priced route exists to publish.",
+  ],
+  [
+    "stepfun/music",
+    "StepFun music models are present in the shared catalog, but the Cloud Router seed exposes only StepFun chat and Anthropic message endpoints. No StepFun music vendor-native API endpoint, resource grant, or priced route exists to publish.",
+  ],
+  [
+    "zhipu/audio",
+    "Zhipu realtime audio models are present in the shared catalog, but the Cloud Router seed exposes only Zhipu chat, image, and video endpoints. No Zhipu audio vendor-native API endpoint, resource grant, or priced route exists to publish.",
+  ],
 ]);
 
 /**

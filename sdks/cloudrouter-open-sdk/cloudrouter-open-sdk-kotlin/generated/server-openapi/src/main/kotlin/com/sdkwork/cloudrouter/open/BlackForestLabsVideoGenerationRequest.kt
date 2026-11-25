@@ -7,7 +7,7 @@ data class BlackForestLabsVideoGenerationRequest(
     val duration: Int? = null,
     val generateAudio: Boolean? = null,
     val keyframes: String? = null,
-    val mode: String? = null,
+    val mode: String,
     val prompt: String? = null,
     val resolution: String? = null,
     val safetyTolerance: Int? = null,

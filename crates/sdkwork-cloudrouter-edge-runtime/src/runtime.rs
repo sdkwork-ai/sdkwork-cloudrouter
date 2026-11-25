@@ -3211,8 +3211,10 @@ fn log_gateway_runtime_catalog_snapshot_summary(
     // A snapshot with no callable upstream account route means every model
     // request will answer 503 while the process itself is healthy. Readiness
     // stays green in that state (the gateway is correctly serving admin and
-    // problem responses), so without this line a fully broken model surface
-    // looks like a healthy deployment in the logs.
+    // problem responses), so without an alarmable signal a fully broken model
+    // surface looks like a healthy deployment.
+    callable_upstream_account_routes_gauge()
+        .set(i64::try_from(summary.callable_upstream_account_routes).unwrap_or(i64::MAX));
     if phase == "startup" && summary.callable_upstream_account_routes == 0 {
         tracing::error!(
             service = "sdkwork-cloudrouter-edge-runtime",
@@ -3227,6 +3229,27 @@ fn log_gateway_runtime_catalog_snapshot_summary(
              base URL, and a group membership exist in the database"
         );
     }
+}
+
+/// Callable upstream account routes in the current catalog snapshot.
+///
+/// Exported so a deployment can alarm on a model surface that is serving 503 for
+/// every request while the process stays healthy: readiness deliberately stays
+/// green in that state because admin and problem responses still work, so the
+/// log line alone is not observable by an orchestrator.
+fn callable_upstream_account_routes_gauge() -> prometheus::IntGauge {
+    static METRIC: std::sync::OnceLock<prometheus::IntGauge> = std::sync::OnceLock::new();
+    METRIC
+        .get_or_init(|| {
+            let metric = prometheus::IntGauge::new(
+                "cloudrouter_callable_upstream_account_routes",
+                "Upstream account routes in the loaded catalog that can serve a model request.",
+            )
+            .expect("callable upstream account routes metric");
+            let _ = prometheus::register(Box::new(metric.clone()));
+            metric
+        })
+        .clone()
 }
 
 fn parse_positive_u64_config(

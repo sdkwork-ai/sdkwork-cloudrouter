@@ -6,7 +6,7 @@ use crate::api::app_sql_subject::{RequiredAppSqlScopedSubject, SqlScopedSubject}
 use axum::extract::{Path, Query, State};
 use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
-use axum::routing::{get, patch};
+use axum::routing::{get, patch, post};
 use axum::{Json, Router};
 use sdkwork_web_chain::ChainPolicy;
 use serde::{Deserialize, Serialize};
@@ -28,6 +28,7 @@ use crate::ports::{
     CreateGatewayApiKeyCommand, DeleteGatewayApiKeyCommand,
     EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore,
     GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery,
+    RevealGatewayApiKeySecretCommand, RevealGatewayApiKeySecretOutcome,
     UpdateGatewayApiKeyCommand, UpsertChainPolicyCommand, ADMIN_CHAIN_POLICY_SCOPE_API_KEY,
 };
 use sdkwork_utils_rust::datetime::current_timestamp_string;
@@ -103,6 +104,25 @@ impl std::fmt::Debug for AppApiKeyCreateResponse {
 #[serde(rename_all = "camelCase")]
 struct AppApiKeyUpdateResponse {
     item: AppApiKeyItemResponse,
+}
+
+/// Explicit, audited disclose of one key's plaintext to its owner. The
+/// plaintext lives only at the top level, never on the metadata item.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AppApiKeyRevealResponse {
+    item: AppApiKeyItemResponse,
+    raw_key: String,
+}
+
+impl std::fmt::Debug for AppApiKeyRevealResponse {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("AppApiKeyRevealResponse")
+            .field("item", &self.item)
+            .field("raw_key", &"<redacted>")
+            .finish()
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -217,6 +237,10 @@ pub fn app_api_key_router_with_read_store_and_command_store(
             "/app/v3/api/iam/api_keys/{api_key_id}",
             patch(update_key).delete(delete_key),
         )
+        .route(
+            "/app/v3/api/iam/api_keys/{api_key_id}/reveal",
+            post(reveal_key),
+        )
         .with_state(AppApiKeyState {
             read_store,
             command_store,
@@ -306,6 +330,12 @@ async fn create_key(
         Err(AppApiKeyCreateError::Conflict(message)) => {
             problem_from_wire_code("4090", message).into_response()
         }
+        Err(AppApiKeyCreateError::NotFound(message)) => {
+            problem_from_wire_code("4040", message).into_response()
+        }
+        Err(AppApiKeyCreateError::RateLimited(message)) => {
+            problem_from_wire_code("rate_limited", message).into_response()
+        }
     }
 }
 
@@ -327,6 +357,12 @@ async fn update_key(
         Err(AppApiKeyCreateError::Conflict(message)) => {
             problem_from_wire_code("4090", message).into_response()
         }
+        Err(AppApiKeyCreateError::NotFound(message)) => {
+            problem_from_wire_code("4040", message).into_response()
+        }
+        Err(AppApiKeyCreateError::RateLimited(message)) => {
+            problem_from_wire_code("rate_limited", message).into_response()
+        }
     }
 }
 
@@ -347,7 +383,99 @@ async fn delete_key(
         Err(AppApiKeyCreateError::Conflict(message)) => {
             problem_from_wire_code("4090", message).into_response()
         }
+        Err(AppApiKeyCreateError::NotFound(message)) => {
+            problem_from_wire_code("4040", message).into_response()
+        }
+        Err(AppApiKeyCreateError::RateLimited(message)) => {
+            problem_from_wire_code("rate_limited", message).into_response()
+        }
     }
+}
+
+/// Explicit owner action: decrypt the stored secret and return it once. Every
+/// success writes `ops_audit_log` and stamps `last_revealed_at`; the metadata
+/// item never carries the plaintext.
+async fn reveal_key(
+    State(state): State<AppApiKeyState>,
+    RequiredAppSqlScopedSubject(scope): RequiredAppSqlScopedSubject,
+    Path(api_key_id): Path<i64>,
+) -> Response {
+    match reveal_key_inner(state, scope, api_key_id).await {
+        Ok(response) => Json(success_envelope(response)).into_response(),
+        Err(AppApiKeyCreateError::BadRequest(message)) => {
+            problem_from_wire_code("4001", message).into_response()
+        }
+        Err(AppApiKeyCreateError::System(message)) => {
+            problem_from_wire_code("5000", message).into_response()
+        }
+        Err(AppApiKeyCreateError::Conflict(message)) => {
+            problem_from_wire_code("4090", message).into_response()
+        }
+        Err(AppApiKeyCreateError::NotFound(message)) => {
+            problem_from_wire_code("4040", message).into_response()
+        }
+        Err(AppApiKeyCreateError::RateLimited(message)) => {
+            problem_from_wire_code("rate_limited", message).into_response()
+        }
+    }
+}
+
+async fn reveal_key_inner(
+    state: AppApiKeyState,
+    subject: SqlScopedSubject,
+    api_key_id: i64,
+) -> Result<AppApiKeyRevealResponse, AppApiKeyCreateError> {
+    let request_id = generate_server_request_id().map_err(app_api_key_request_id_error)?;
+    let snapshot = state
+        .read_store
+        .load_gateway_api_key_management_snapshot()
+        .await
+        .map_err(system_error)?
+        .for_subject(subject.tenant_id, subject.organization_id, subject.user_id);
+    let api_key = snapshot
+        .find_api_key_for_subject(
+            api_key_id,
+            subject.tenant_id,
+            subject.organization_id,
+            subject.user_id,
+        )
+        .ok_or_else(|| AppApiKeyCreateError::NotFound("api key was not found".to_owned()))?;
+    let command = RevealGatewayApiKeySecretCommand {
+        audit_log_uuid: state
+            .secret_generator
+            .generate_entity_uuid()
+            .map_err(system_error)?,
+        tenant_id: subject.tenant_id,
+        organization_id: subject.organization_id,
+        user_id: subject.user_id,
+        operator_id: subject.operator_id(),
+        operator_type: SqlScopedSubject::operator_type(),
+        api_key_id,
+        requested_at: current_timestamp_string(),
+        request_id,
+    };
+    let raw_key = match state
+        .command_store
+        .reveal_gateway_api_key_secret(command)
+        .await
+        .map_err(store_error)?
+    {
+        RevealGatewayApiKeySecretOutcome::Revealed(raw_key) => raw_key,
+        RevealGatewayApiKeySecretOutcome::NotFound => {
+            return Err(AppApiKeyCreateError::Conflict(
+                "api key has no stored plaintext; create a new key to copy its value".to_owned(),
+            ))
+        }
+        RevealGatewayApiKeySecretOutcome::Throttled => {
+            return Err(AppApiKeyCreateError::RateLimited(
+                "api key was revealed moments ago; retry in a few seconds".to_owned(),
+            ))
+        }
+    };
+    Ok(AppApiKeyRevealResponse {
+        item: to_item_response(&snapshot, api_key),
+        raw_key,
+    })
 }
 
 async fn create_key_inner(
@@ -1540,6 +1668,8 @@ fn store_error(error: DomainError) -> AppApiKeyCreateError {
 enum AppApiKeyCreateError {
     BadRequest(String),
     Conflict(String),
+    NotFound(String),
+    RateLimited(String),
     System(String),
 }
 

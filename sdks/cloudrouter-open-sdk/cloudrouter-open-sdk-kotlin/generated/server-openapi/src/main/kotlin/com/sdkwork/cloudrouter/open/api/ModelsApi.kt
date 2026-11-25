@@ -20,6 +20,12 @@ class ModelsApi(private val client: HttpClient) {
         return client.convertValue(raw, object : TypeReference<OpenAiModel>() {})
     }
 
+    /** List model account groups */
+    suspend fun listGroups(model: String): OpenAiModelGroupList? {
+        val raw = client.get(ApiPaths.aiPath("/models/${serializePathParameter(model, PathParameterSpec("model", "simple", false))}/groups"))
+        return client.convertValue(raw, object : TypeReference<OpenAiModelGroupList>() {})
+    }
+
     private data class PathParameterSpec(val name: String, val style: String, val explode: Boolean)
 
     private fun serializePathParameter(value: Any?, spec: PathParameterSpec): String {

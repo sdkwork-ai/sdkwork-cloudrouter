@@ -119,6 +119,8 @@ const UNRESTRICTED_MODALITIES: ApiKeyModality[] = ['text', 'image', 'video', 'au
 
 const MAX_API_KEY_LIST_PAGE_SIZE = 200;
 const MAX_API_KEY_LIST_QUERY_TEXT_LENGTH = 128;
+/** The server admits one reveal per key every two seconds; wait just past that. */
+const API_KEY_REVEAL_THROTTLE_WAIT_MS = 2200;
 
 type ApiKeyListFilters = Record<string, unknown>;
 
@@ -195,6 +197,69 @@ export class ApiKeyService {
       throw rethrowSdkError(error, 'console.apiKeys.errors.deleteFallback');
     }
   }
+
+  /**
+   * Explicitly reveal one key's plaintext through the audited endpoint. The
+   * list never carries secret material, so this is the only way to copy an
+   * existing key; the server stamps `last_revealed_at` and writes an audit row.
+   *
+   * The server admits one reveal per key every two seconds, and the usual
+   * trigger is a copy or import moments after the previous reveal, so a
+   * throttled call waits out that window once instead of failing.
+   */
+  static async revealKey(keyId: string): Promise<string> {
+    const apiKeyId = requiredText(keyId, 'apiKeyId');
+    try {
+      return await revealApiKeyPlaintext(apiKeyId);
+    } catch (error) {
+      if (!isRevealThrottled(error)) {
+        throw error;
+      }
+      await wait(API_KEY_REVEAL_THROTTLE_WAIT_MS);
+      return revealApiKeyPlaintext(apiKeyId);
+    }
+  }
+}
+
+/**
+ * One reveal attempt: call the endpoint, surface a refusal as its own message
+ * so a caller can tell throttling from a key without stored material.
+ */
+async function revealApiKeyPlaintext(apiKeyId: string): Promise<string> {
+  try {
+    const response = await resolveApiKeyServiceAppClient().iam.apiKeys.reveal(apiKeyId);
+    ensureSdkworkApiSuccess(response, 'console.apiKeys.errors.revealFallback');
+    const rawKey = readString(readApiRecord(response), 'rawKey');
+    if (!rawKey) {
+      throw new Error('API key reveal response is missing key material');
+    }
+    return rawKey;
+  } catch (error) {
+    throw rethrowSdkError(error, 'console.apiKeys.errors.revealFallback');
+  }
+}
+
+/** Whether the reveal was refused only because the key was revealed a moment ago. */
+function isRevealThrottled(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  if (error.name === 'RateLimitError' || /retry in a few seconds/i.test(error.message)) {
+    return true;
+  }
+  if (!isRecord(error)) {
+    return false;
+  }
+  if (error.httpStatus === 429) {
+    return true;
+  }
+  return isRecord(error.problem) && error.problem.status === 429;
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 /**

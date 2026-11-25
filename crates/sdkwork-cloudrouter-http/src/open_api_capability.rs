@@ -46,6 +46,7 @@ struct OwnedOperation {
     /// segment vectors on every attempt.
     static_segments: Vec<String>,
     capability: OpenApiCapability,
+    external_protocol_id: Option<String>,
 }
 
 static OWNED_OPERATIONS: LazyLock<Vec<OwnedOperation>> = LazyLock::new(|| {
@@ -75,6 +76,23 @@ pub fn open_api_capability_for_request(method: &Method, path: &str) -> Option<Op
             })
             .map(|operation| operation.capability)
     })
+}
+
+/// Returns the operation-scoped external wire protocol id declared by the
+/// Cloud Router OpenAPI contract for a matching method and path.
+pub fn external_protocol_id_for_request(method: &Method, path: &str) -> Option<String> {
+    OWNED_OPERATIONS
+        .iter()
+        .find(|operation| {
+            operation.method == *method
+                && path_carries_static_segments(path, &operation.static_segments)
+                && sdkwork_cloudrouter_contract::matches_path_pattern(
+                    operation.path_pattern.as_str(),
+                    path,
+                )
+        })
+        .and_then(|operation| operation.external_protocol_id.as_deref())
+        .map(str::to_owned)
 }
 
 pub fn open_api_capability_router(upstream: Router, capability: OpenApiCapability) -> Router {
@@ -163,6 +181,10 @@ fn append_operations(
                 static_segments: static_path_segments(path),
                 path_pattern: path.clone(),
                 capability: capability(operation),
+                external_protocol_id: operation
+                    .get("x-sdkwork-external-protocol-id")
+                    .and_then(Value::as_str)
+                    .map(str::to_owned),
             });
         }
     }
@@ -224,8 +246,69 @@ fn capability_from_tag(tag: &str) -> OpenApiCapability {
 
 #[cfg(test)]
 mod tests {
-    use super::{open_api_capability_for_request, OpenApiCapability};
+    use super::{open_api_capability_for_request, OpenApiCapability, CLOUDROUTER_OPEN_API};
     use axum::http::Method;
+
+    #[test]
+    fn every_published_operation_resolves_to_its_tagged_capability() {
+        let document: serde_json::Value =
+            serde_json::from_str(CLOUDROUTER_OPEN_API).expect("OpenAPI document is valid JSON");
+        let paths = document["paths"]
+            .as_object()
+            .expect("OpenAPI document declares paths");
+        let mut operation_count = 0;
+
+        for (path, path_item) in paths {
+            let Some(operations) = path_item.as_object() else {
+                continue;
+            };
+            for (method, operation) in operations {
+                let Ok(method) = Method::from_bytes(method.to_ascii_uppercase().as_bytes()) else {
+                    continue;
+                };
+                if !matches!(
+                    method,
+                    Method::GET
+                        | Method::POST
+                        | Method::PUT
+                        | Method::PATCH
+                        | Method::DELETE
+                        | Method::HEAD
+                        | Method::OPTIONS
+                ) {
+                    continue;
+                }
+
+                let family = operation["tags"]
+                    .as_array()
+                    .and_then(|tags| tags.first())
+                    .and_then(serde_json::Value::as_str)
+                    .map(|tag| tag.split('/').next().unwrap_or(tag))
+                    .unwrap_or("");
+                let expected = match family {
+                    "Assistants" => OpenApiCapability::Agent,
+                    "Audio" | "Music" | "Realtime" => OpenApiCapability::Audio,
+                    "Containers" | "Files" | "Uploads" => OpenApiCapability::Drive,
+                    "Images" => OpenApiCapability::Image,
+                    "Vector Stores" => OpenApiCapability::Knowledgebase,
+                    "Conversations" => OpenApiCapability::Memory,
+                    "Videos" => OpenApiCapability::Video,
+                    _ => OpenApiCapability::Llm,
+                };
+                assert_eq!(
+                    Some(expected),
+                    open_api_capability_for_request(&method, path),
+                    "published operation {method} {path} must reach its {family} capability"
+                );
+                operation_count += 1;
+            }
+        }
+
+        assert!(
+            operation_count > 0,
+            "OpenAPI contract must publish operations"
+        );
+    }
 
     #[test]
     fn resolves_each_open_api_capability_from_authoritative_operations() {

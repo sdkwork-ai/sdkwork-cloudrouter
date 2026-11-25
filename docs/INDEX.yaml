@@ -158,6 +158,12 @@ entries:
     status: in-progress
     owner: sdkwork-platform
     title: Console agent management functional design and implementation plan
+  - id: PLAN-2026-0007
+    path: docs/engineering/plans/PLAN-2026-0007-dev-surface-online-api-mode.md
+    kind: plan
+    status: in-review
+    owner: sdkwork-platform
+    title: Local dev surface against the deployed online API startup-mode design
   - id: REVIEW-20260705
     path: docs/engineering/reviews/REVIEW-20260705-commercial-readiness-audit.md
     kind: review

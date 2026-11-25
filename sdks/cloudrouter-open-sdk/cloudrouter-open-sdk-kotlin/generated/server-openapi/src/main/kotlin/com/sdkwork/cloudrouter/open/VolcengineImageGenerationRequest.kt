@@ -4,7 +4,7 @@ data class VolcengineImageGenerationRequest(
     val background: String? = null,
     val image: String? = null,
     val layerDecomposition: Boolean? = null,
-    val model: String? = null,
+    val model: String,
     val optimizePromptOptions: Map<String, String>? = null,
     val outputFormat: String? = null,
     val prompt: String? = null,

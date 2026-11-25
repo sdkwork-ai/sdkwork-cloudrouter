@@ -2,6 +2,7 @@ use std::future::Future;
 use std::pin::Pin;
 
 use axum::body::Body;
+use axum::http::HeaderMap;
 
 use crate::domain::DomainResult;
 use crate::ports::ResponsesRelayRequest;
@@ -25,6 +26,7 @@ pub trait ResponsesStreamRelay {
 pub struct ResponsesStreamRelayResponse {
     pub status_code: u16,
     pub content_type: Option<String>,
+    pub headers: HeaderMap,
     pub body: Body,
 }
 
@@ -33,8 +35,14 @@ impl ResponsesStreamRelayResponse {
         Self {
             status_code,
             content_type,
+            headers: HeaderMap::new(),
             body,
         }
+    }
+
+    pub fn with_headers(mut self, headers: HeaderMap) -> Self {
+        self.headers = headers;
+        self
     }
 }
 
@@ -43,6 +51,7 @@ impl std::fmt::Debug for ResponsesStreamRelayResponse {
         f.debug_struct("ResponsesStreamRelayResponse")
             .field("status_code", &self.status_code)
             .field("content_type", &self.content_type)
+            .field("headers", &self.headers)
             .field("body", &"[stream]")
             .finish()
     }

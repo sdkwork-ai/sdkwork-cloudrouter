@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
-import type { AppApiKeyItem, AppApiKeyListResponse, AppInviteClaimRequest, AppInviteClaimResponse, AppInvitePolicyResponse, AppInviteValidateRequest, AppInviteValidateResponse, CreateApiKeyRequest, CreateApiKeyResponse, SettingsDataResponse, UpdateApiKeyRequest, UpdateSettingsRequest, UpdateSettingsResponse } from '../types';
+import type { AppApiKeyItem, AppApiKeyListResponse, AppInviteClaimRequest, AppInviteClaimResponse, AppInvitePolicyResponse, AppInviteValidateRequest, AppInviteValidateResponse, CreateApiKeyRequest, CreateApiKeyResponse, RevealApiKeyResponse, SettingsDataResponse, UpdateApiKeyRequest, UpdateSettingsRequest, UpdateSettingsResponse } from '../types';
 
 
 export class IamUsersSettingsApi {
@@ -143,6 +143,11 @@ export class IamApiKeysApi {
 /** Update key */
   async update(apiKeyId: string, body: UpdateApiKeyRequest, requestOptions?: ApiRequestOptions): Promise<AppApiKeyItem> {
     return this.client.request<AppApiKeyItem>(appApiPath(`/iam/api_keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
+  }
+
+/** Reveal key */
+  async reveal(apiKeyId: string, requestOptions?: ApiRequestOptions): Promise<RevealApiKeyResponse> {
+    return this.client.request<RevealApiKeyResponse>(appApiPath(`/iam/api_keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}/reveal`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 

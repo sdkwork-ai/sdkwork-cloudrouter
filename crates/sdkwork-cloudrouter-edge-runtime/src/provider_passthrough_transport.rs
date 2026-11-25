@@ -9,19 +9,19 @@ use http_body::Frame;
 use http_body_util::{BodyExt, Full};
 use hyper::Request as HyperRequest;
 use hyper_rustls::HttpsConnector;
-use hyper_util::client::legacy::connect::proxy::Tunnel;
-use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::client::legacy::Client;
+use hyper_util::client::legacy::connect::HttpConnector;
+use hyper_util::client::legacy::connect::proxy::Tunnel;
 use hyper_util::rt::TokioExecutor;
 use sdkwork_cloudrouter_config::{
     ProviderPassthroughAuth, ProviderPassthroughAuthType, ProviderPassthroughHeader,
 };
 use sdkwork_cloudrouter_http::ensure_rustls_crypto_provider;
 use sdkwork_cloudrouter_http::{
-    path_carries_version_prefix, upsert_query_parameter, OutboundDnsResolver,
+    OutboundDnsResolver, path_carries_version_prefix, upsert_query_parameter,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::provider::ProviderRelayHttpPoolConfig;
-use sdkwork_cloudrouter_security::{validate_outbound_url, OutboundTargetPolicy};
+use sdkwork_cloudrouter_security::{OutboundTargetPolicy, validate_outbound_url};
 use std::collections::HashSet;
 use std::future::Future;
 use std::pin::Pin;
@@ -174,6 +174,12 @@ pub(crate) async fn forward_provider_passthrough_to_target(
         }
     }
     builder = apply_provider_passthrough_default_headers(builder, target)?;
+    if let Some(headers) = builder.headers_mut() {
+        headers.insert(
+            header::ACCEPT_ENCODING,
+            HeaderValue::from_static("identity"),
+        );
+    }
     builder = apply_provider_passthrough_auth(builder, target)?;
     let upstream_request = builder
         .body(Full::new(body))
@@ -375,6 +381,12 @@ async fn upstream_to_axum_response(
     upstream_response: hyper::Response<hyper::body::Incoming>,
 ) -> Response {
     let (mut parts, body) = upstream_response.into_parts();
+    let content_type = parts
+        .headers
+        .get(header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_owned);
+    let mut error_body_withheld = false;
     let mut response = if parts.status.is_success() {
         Response::new(axum::body::Body::new(body))
     } else {
@@ -382,7 +394,7 @@ async fn upstream_to_axum_response(
         // echoed credential material on the client), so it is withheld whole.
         // Providers should not compress in the first place: `accept-encoding`
         // is stripped from forwarded requests.
-        let compressed = parts.headers.contains_key(header::CONTENT_ENCODING);
+        let compressed = provider_response_is_encoded(&parts.headers);
         let mut buffered = bytes::BytesMut::new();
         let mut overflow = compressed;
         let mut body = body;
@@ -402,11 +414,14 @@ async fn upstream_to_axum_response(
             }
         }
         let body: axum::body::Body = if overflow {
+            error_body_withheld = true;
             axum::body::Body::from(withheld_provider_error_body())
         } else {
-            axum::body::Body::from(
-                redact_sensitive_tokens(&String::from_utf8_lossy(&buffered)).into_bytes(),
-            )
+            let safe_body = match std::str::from_utf8(&buffered) {
+                Ok(text) => redact_sensitive_tokens(text).into_bytes(),
+                Err(_) => buffered.to_vec(),
+            };
+            axum::body::Body::from(safe_body)
         };
         if overflow {
             parts.headers.remove(header::CONTENT_ENCODING);
@@ -414,10 +429,34 @@ async fn upstream_to_axum_response(
         Response::new(body)
     };
     *response.status_mut() = parts.status;
-    let connection_header_names = connection_header_names(&parts.headers);
-    for (name, value) in parts.headers.iter() {
-        if should_forward_provider_response_header(name, &connection_header_names) {
-            response.headers_mut().append(name, value.clone());
+    let preserved_headers =
+        sdkwork_cloudrouter_http::preserve_safe_upstream_response_headers(&parts.headers);
+    for (name, value) in preserved_headers.iter() {
+        response.headers_mut().append(name.clone(), value.clone());
+    }
+    if parts.status.is_success() {
+        if let Some(content_type) = content_type {
+            if let Ok(value) = HeaderValue::from_str(content_type.as_str()) {
+                response.headers_mut().insert(header::CONTENT_TYPE, value);
+            }
+        }
+        for value in parts.headers.get_all(header::CONTENT_ENCODING).iter() {
+            response
+                .headers_mut()
+                .append(header::CONTENT_ENCODING, value.clone());
+        }
+    } else {
+        response.headers_mut().remove(header::CONTENT_LENGTH);
+        response.headers_mut().remove(header::CONTENT_ENCODING);
+        let content_type = if error_body_withheld {
+            Some("application/json")
+        } else {
+            content_type.as_deref()
+        };
+        if let Some(content_type) = content_type {
+            if let Ok(value) = HeaderValue::from_str(content_type) {
+                response.headers_mut().insert(header::CONTENT_TYPE, value);
+            }
         }
     }
     response
@@ -435,6 +474,7 @@ fn should_forward_provider_request_header(
     !is_hop_by_hop_header(name)
         && !connection_header_names.contains(name.as_str())
         && !configured_header_names.contains(name.as_str())
+        && !crate::invocation_dispatcher::is_gateway_owned_request_header(name)
         && name != header::HOST
         && name != header::AUTHORIZATION
         && name != header::CONTENT_LENGTH
@@ -452,18 +492,6 @@ fn should_forward_provider_request_header(
         && name.as_str() != "x-real-ip"
 }
 
-fn should_forward_provider_response_header(
-    name: &HeaderName,
-    connection_header_names: &HashSet<String>,
-) -> bool {
-    !is_hop_by_hop_header(name)
-        && !connection_header_names.contains(name.as_str())
-        && name != header::CONTENT_LENGTH
-        && name != header::TRANSFER_ENCODING
-        && name != header::SET_COOKIE
-        && !name.as_str().starts_with("access-control-")
-}
-
 fn connection_header_names(headers: &HeaderMap) -> HashSet<String> {
     headers
         .get_all(header::CONNECTION)
@@ -473,6 +501,20 @@ fn connection_header_names(headers: &HeaderMap) -> HashSet<String> {
         .map(|value| value.trim().to_ascii_lowercase())
         .filter(|value| !value.is_empty())
         .collect()
+}
+
+fn provider_response_is_encoded(headers: &HeaderMap) -> bool {
+    headers
+        .get_all(header::CONTENT_ENCODING)
+        .iter()
+        .any(|value| {
+            value.to_str().map_or(true, |value| {
+                value.split(',').any(|encoding| {
+                    let encoding = encoding.trim();
+                    !encoding.is_empty() && !encoding.eq_ignore_ascii_case("identity")
+                })
+            })
+        })
 }
 
 fn is_hop_by_hop_header(name: &HeaderName) -> bool {
@@ -492,13 +534,12 @@ fn is_hop_by_hop_header(name: &HeaderName) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        build_provider_passthrough_client, forward_provider_passthrough_to_target,
-        should_forward_provider_request_header, should_forward_provider_response_header,
-        ProviderPassthroughTarget,
+        ProviderPassthroughTarget, build_provider_passthrough_client,
+        forward_provider_passthrough_to_target, should_forward_provider_request_header,
     };
-    use axum::http::{header, Request};
-    use axum::routing::post;
     use axum::Router;
+    use axum::http::{HeaderName, HeaderValue, Request, header};
+    use axum::routing::post;
     use bytes::Bytes;
     use sdkwork_cloudrouter_config::ProviderPassthroughAuth;
     use sdkwork_cloudrouter_router_service::infrastructure::provider::ProviderRelayHttpPoolConfig;
@@ -676,11 +717,10 @@ mod tests {
     #[test]
     fn development_policy_allows_explicit_local_http_target() {
         let uri = "http://127.0.0.1:8080/v1/invoke".parse().unwrap();
-        assert!(super::validate_provider_passthrough_target(
-            &uri,
-            OutboundTargetPolicy::Development
-        )
-        .is_ok());
+        assert!(
+            super::validate_provider_passthrough_target(&uri, OutboundTargetPolicy::Development)
+                .is_ok()
+        );
     }
 
     #[test]
@@ -693,19 +733,55 @@ mod tests {
             &connection_header_names,
             &configured_header_names,
         ));
-        assert!(!should_forward_provider_response_header(
-            &header::SET_COOKIE,
-            &connection_header_names,
-        ));
+        for name in [
+            "access-token",
+            "x-sdkwork-internal-tenant-id",
+            "idempotency-key",
+            "x-forwarded-port",
+        ] {
+            assert!(
+                !should_forward_provider_request_header(
+                    &HeaderName::from_static(name),
+                    &connection_header_names,
+                    &configured_header_names,
+                ),
+                "{name} must not reach an upstream provider"
+            );
+        }
         assert!(should_forward_provider_request_header(
             &header::ACCEPT,
             &connection_header_names,
             &configured_header_names,
         ));
-        assert!(should_forward_provider_response_header(
-            &header::CONTENT_TYPE,
-            &connection_header_names,
-        ));
+        // Content metadata is carried separately: the passthrough re-inserts the
+        // upstream content type explicitly (both for success and scrubbed error
+        // bodies), so the generic metadata predicate must not forward a second
+        // copy of it.
+        let mut response_headers = axum::http::HeaderMap::new();
+        response_headers.insert(header::SET_COOKIE, HeaderValue::from_static("secret"));
+        response_headers.insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static("application/json"),
+        );
+        response_headers.insert("x-request-id", HeaderValue::from_static("request-1"));
+        let preserved =
+            sdkwork_cloudrouter_http::preserve_safe_upstream_response_headers(&response_headers);
+        assert!(!preserved.contains_key(header::SET_COOKIE));
+        assert!(!preserved.contains_key(header::CONTENT_TYPE));
+        assert_eq!(
+            Some("request-1"),
+            preserved.get("x-request-id").and_then(|v| v.to_str().ok())
+        );
+    }
+
+    #[test]
+    fn identity_content_encoding_does_not_disable_error_redaction() {
+        let mut headers = axum::http::HeaderMap::new();
+        headers.insert(header::CONTENT_ENCODING, "identity".parse().unwrap());
+        assert!(!super::provider_response_is_encoded(&headers));
+
+        headers.append(header::CONTENT_ENCODING, "gzip".parse().unwrap());
+        assert!(super::provider_response_is_encoded(&headers));
     }
 
     #[tokio::test]
@@ -890,6 +966,91 @@ mod tests {
             body["choices"][0]["message"]["content"],
             serde_json::Value::String("ok".to_owned())
         );
+        server.abort();
+    }
+
+    #[tokio::test]
+    async fn passthrough_success_preserves_content_encoding_and_raw_bytes() {
+        use std::sync::{Arc, Mutex};
+
+        let compressed_body = vec![
+            0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcb, 0x48, 0xcd, 0xc9,
+            0xc9, 0xe7, 0x02, 0x00, 0x20, 0x30, 0x3a, 0x36, 0x06, 0x00, 0x00, 0x00,
+        ];
+        let upstream_body = compressed_body.clone();
+        let observed_encoding = Arc::new(Mutex::new(None));
+        let upstream_observed_encoding = Arc::clone(&observed_encoding);
+        let upstream = Router::new().route(
+            "/v1/invoke",
+            post(move |request: axum::extract::Request| {
+                let body = upstream_body.clone();
+                async move {
+                    *upstream_observed_encoding.lock().expect("encoding lock") = request
+                        .headers()
+                        .get(header::ACCEPT_ENCODING)
+                        .and_then(|value| value.to_str().ok())
+                        .map(str::to_owned);
+                    let mut response = axum::response::Response::new(axum::body::Body::from(body));
+                    response.headers_mut().insert(
+                        header::CONTENT_TYPE,
+                        "application/json".parse().expect("content type"),
+                    );
+                    response.headers_mut().append(
+                        header::CONTENT_ENCODING,
+                        "gzip".parse().expect("content encoding"),
+                    );
+                    response
+                }
+            }),
+        );
+        let (address, server) = spawn_upstream(upstream).await;
+        let target = ProviderPassthroughTarget::new(
+            "test-provider",
+            format!("http://{address}"),
+            ProviderPassthroughAuth::bearer("provider-secret").expect("test provider auth"),
+            Vec::new(),
+        );
+        let (parts, _) = Request::builder()
+            .method("POST")
+            .uri("/test-provider/v1/invoke")
+            .body(())
+            .expect("test passthrough request")
+            .into_parts();
+        let upstream_uri = format!("http://{address}/v1/invoke")
+            .parse()
+            .expect("test upstream URI");
+
+        let response = forward_provider_passthrough_to_target(
+            &build_provider_passthrough_client(
+                OutboundTargetPolicy::Development,
+                ProviderRelayHttpPoolConfig::default(),
+                None,
+            ),
+            OutboundTargetPolicy::Development,
+            parts,
+            Bytes::new(),
+            &target,
+            upstream_uri,
+            Duration::from_secs(5),
+        )
+        .await
+        .expect("forwarding must succeed");
+
+        assert_eq!(
+            Some("identity".to_owned()),
+            *observed_encoding.lock().expect("encoding lock")
+        );
+        assert_eq!(
+            "gzip",
+            response
+                .headers()
+                .get(header::CONTENT_ENCODING)
+                .expect("encoding metadata must match the raw body")
+        );
+        let body = axum::body::to_bytes(response.into_body(), 64 * 1024)
+            .await
+            .expect("read forwarded body");
+        assert_eq!(compressed_body, body.as_ref());
         server.abort();
     }
 }

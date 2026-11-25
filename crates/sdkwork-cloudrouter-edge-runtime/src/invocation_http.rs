@@ -33,12 +33,20 @@ where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let (parts, body) = request.into_parts();
+    let error_protocol =
+        sdkwork_cloudrouter_http::external_protocol_id_for_request(&parts.method, parts.uri.path());
     // Every response needs a correlation id, including the ones that never reach
     // the pipeline (authentication rejection, malformed query, unroutable path).
     // Those paths used to return a bare body, so a client reporting a failure had
     // no id to quote and no way to find the matching gateway log line.
     let request_id = generate_server_request_id();
     let mut response = handle_public_invocation(state, parts, body, request_id.as_str()).await;
+    normalize_gateway_error_protocol(
+        &mut response,
+        error_protocol.as_deref(),
+        Some(request_id.as_str()),
+    )
+    .await;
     // The pipeline attaches the invocation's own trace ids; only fill in the
     // paths that produced none, so a dispatched response keeps correlating with
     // the invocation log instead of the outer fallback id.
@@ -46,6 +54,108 @@ where
         attach_trace_response_headers(&mut response, request_id.as_str(), None);
     }
     response
+}
+
+async fn normalize_gateway_error_protocol(
+    response: &mut Response,
+    protocol_id: Option<&str>,
+    request_id: Option<&str>,
+) {
+    if response.status().is_success() || protocol_id.is_none() {
+        return;
+    }
+    let is_gateway_error =
+        sdkwork_cloudrouter_http::take_gateway_generated_error_response(response);
+    if !is_gateway_error {
+        return;
+    }
+    let Some(protocol_id) = protocol_id else {
+        return;
+    };
+    if !crate::protocol_error::supports_protocol(protocol_id) {
+        return;
+    }
+    let request_id = request_id
+        .map(str::to_owned)
+        .or_else(|| {
+            response
+                .headers()
+                .get("x-request-id")
+                .and_then(|value| value.to_str().ok())
+                .map(str::to_owned)
+        })
+        .unwrap_or_else(generate_server_request_id);
+    let original_body = std::mem::replace(response.body_mut(), Body::empty());
+    let Ok(body) = to_bytes(original_body, 64 * 1024).await else {
+        if let Some(error_body) = crate::protocol_error::error_body(
+            protocol_id,
+            response.status().as_u16(),
+            "gateway_error",
+            "the gateway could not complete the request",
+            request_id.as_str(),
+        ) {
+            *response.body_mut() = Body::from(serde_json::to_vec(&error_body).unwrap_or_default());
+            response.headers_mut().remove(header::CONTENT_LENGTH);
+            response.headers_mut().remove(header::CONTENT_ENCODING);
+            response.headers_mut().insert(
+                header::CONTENT_TYPE,
+                HeaderValue::from_static("application/json"),
+            );
+        }
+        return;
+    };
+    let Ok(value) = serde_json::from_slice::<Value>(&body) else {
+        *response.body_mut() = Body::from(body);
+        return;
+    };
+    let error = value.get("error").unwrap_or(&value);
+    let message = error
+        .get("message")
+        .or_else(|| error.get("detail"))
+        .and_then(Value::as_str)
+        .unwrap_or("the gateway could not complete the request");
+    let code = error
+        .get("code")
+        .and_then(Value::as_str)
+        .map(str::to_owned)
+        .or_else(|| {
+            error
+                .get("code")
+                .and_then(Value::as_u64)
+                .map(|value| value.to_string())
+        })
+        .unwrap_or_else(|| "gateway_error".to_owned());
+    let Some(error_body) = crate::protocol_error::error_body(
+        protocol_id,
+        response.status().as_u16(),
+        code.as_str(),
+        message,
+        request_id.as_str(),
+    ) else {
+        *response.body_mut() = Body::from(body);
+        return;
+    };
+    *response.body_mut() = Body::from(serde_json::to_vec(&error_body).unwrap_or_default());
+    response.headers_mut().remove(header::CONTENT_LENGTH);
+    response.headers_mut().remove(header::CONTENT_ENCODING);
+    response.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("application/json"),
+    );
+    if !response.headers().contains_key("x-request-id") {
+        if let Ok(value) = HeaderValue::from_str(request_id.as_str()) {
+            response.headers_mut().insert("x-request-id", value);
+        }
+    }
+}
+
+pub(crate) async fn normalize_gateway_error_protocol_for_request(
+    response: &mut Response,
+    method: &axum::http::Method,
+    path: &str,
+) {
+    let protocol_id = sdkwork_cloudrouter_http::external_protocol_id_for_request(method, path);
+    normalize_gateway_error_protocol(response, protocol_id.as_deref(), None).await;
 }
 
 async fn handle_public_invocation<C>(
@@ -312,7 +422,10 @@ where
                 requested_group,
             ) {
                 Ok(context) => context,
-                Err(response) => return *response,
+                Err(mut response) => {
+                    sdkwork_cloudrouter_http::mark_gateway_generated_error_response(&mut response);
+                    return *response;
+                }
             }
         }
     };
@@ -607,7 +720,7 @@ fn sanitized_route_reason(reason: &str) -> &str {
 /// correlate their logs with the gateway's invocation logs on both sides of
 /// the wire. The trace id is taken from the parsed inbound trace context and
 /// falls back to the request id when absent.
-fn attach_trace_response_headers(
+pub(crate) fn attach_trace_response_headers(
     response: &mut Response,
     request_id: &str,
     trace_id: Option<&str>,
@@ -726,6 +839,15 @@ fn deferred_stream_response_to_http(
     response
         .headers_mut()
         .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-cache"));
+    // Ask buffering reverse proxies (nginx and anything else that honours the
+    // de-facto X-Accel-Buffering contract) to flush every frame as it arrives.
+    // With proxy buffering left on, a proxy holds small SSE frames until its
+    // buffer fills, which turns token-at-a-time delivery into bursts and lets a
+    // long tool-call argument stream look stalled to the caller.
+    response.headers_mut().insert(
+        header::HeaderName::from_static("x-accel-buffering"),
+        HeaderValue::from_static("no"),
+    );
     response
 }
 
@@ -778,7 +900,8 @@ fn is_vendor_upload_path(path: &str) -> bool {
         || path.starts_with("/google/v1beta/files/")
 }
 
-fn request_body_should_parse_json(headers: &HeaderMap, bytes: &[u8]) -> bool {    headers
+fn request_body_should_parse_json(headers: &HeaderMap, bytes: &[u8]) -> bool {
+    headers
         .get(header::CONTENT_TYPE)
         .and_then(|value| value.to_str().ok())
         .map(|value| value.to_ascii_lowercase().contains("application/json"))
@@ -1027,9 +1150,8 @@ fn apply_gateway_dispatch_defaults<C>(
             .find(|group| group.id == account_group_id)
             .map(|group| (group.tenant_id, group.organization_id))
             .unwrap_or((0, 0));
-        let found = sdkwork_cloudrouter_router_service::application::resolve_catalog_model(
-            catalog, model,
-        );
+        let found =
+            sdkwork_cloudrouter_router_service::application::resolve_catalog_model(catalog, model);
         let not_found = found.is_none();
         let response = match found {
             Some(found) => {
@@ -1206,10 +1328,12 @@ fn normalized_response_to_http(
         body,
         body_bytes,
         content_type,
-        headers,
+        mut headers,
         stream_body,
         memory_guard,
     } = normalized;
+    let gateway_generated_error =
+        sdkwork_cloudrouter_http::take_gateway_generated_error(&mut headers);
     let status = StatusCode::from_u16(status_code).unwrap_or(StatusCode::BAD_GATEWAY);
 
     // For streaming responses, return the body directly without buffering
@@ -1224,6 +1348,9 @@ fn normalized_response_to_http(
             response.headers_mut().insert(header::CONTENT_TYPE, ct);
         }
         response.headers_mut().extend(headers);
+        if gateway_generated_error {
+            sdkwork_cloudrouter_http::mark_gateway_generated_error_response(&mut response);
+        }
         return response;
     }
 
@@ -1262,6 +1389,9 @@ fn normalized_response_to_http(
             .insert(header::CONTENT_TYPE, content_type);
     }
     response.headers_mut().extend(headers);
+    if gateway_generated_error {
+        sdkwork_cloudrouter_http::mark_gateway_generated_error_response(&mut response);
+    }
     response
 }
 
@@ -1328,6 +1458,7 @@ fn forbidden_billing_subject_response(organization_id: i64) -> Response {
         header::CONTENT_TYPE,
         HeaderValue::from_static("application/json"),
     );
+    sdkwork_cloudrouter_http::mark_gateway_generated_error_response(&mut response);
     response
 }
 
@@ -1361,6 +1492,7 @@ pub(crate) fn response_from_policy_violation(
             if let Ok(value) = HeaderValue::from_str(&retry_after_secs.to_string()) {
                 response.headers_mut().insert(header::RETRY_AFTER, value);
             }
+            sdkwork_cloudrouter_http::mark_gateway_generated_error_response(&mut response);
             response
         }
     }
@@ -1435,6 +1567,7 @@ pub(crate) fn response_from_invocation_error(error: &InvocationError) -> Respons
             }
         }
     }
+    sdkwork_cloudrouter_http::mark_gateway_generated_error_response(&mut response);
     response
 }
 
@@ -1454,6 +1587,7 @@ fn not_found_response() -> Response {
         header::CONTENT_TYPE,
         HeaderValue::from_static("application/json"),
     );
+    sdkwork_cloudrouter_http::mark_gateway_generated_error_response(&mut response);
     response
 }
 
@@ -1958,5 +2092,50 @@ mod trace_header_tests {
                 .get("x-request-id")
                 .and_then(|value| value.to_str().ok())
         );
+    }
+}
+
+#[cfg(test)]
+mod protocol_error_mapping_tests {
+    use axum::body::Body;
+    use axum::http::{header, HeaderValue, StatusCode};
+    use axum::response::Response;
+
+    use super::normalize_gateway_error_protocol;
+
+    #[tokio::test]
+    async fn upstream_protocol_error_is_forwarded_without_rewriting() {
+        let upstream_body = r#"{"type":"error","error":{"type":"overloaded_error","message":"busy","retry_after":2}}"#;
+        let mut response = Response::new(Body::from(upstream_body));
+        *response.status_mut() = StatusCode::TOO_MANY_REQUESTS;
+        response.headers_mut().insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static("application/json"),
+        );
+        normalize_gateway_error_protocol(&mut response, Some("anthropic-messages"), None).await;
+        let body = axum::body::to_bytes(response.into_body(), 2048)
+            .await
+            .expect("upstream response body");
+        assert_eq!(
+            upstream_body,
+            std::str::from_utf8(&body).expect("utf8 body")
+        );
+    }
+
+    #[tokio::test]
+    async fn marked_gateway_error_is_converted_to_anthropic_wire_shape() {
+        let mut response = Response::new(Body::from(
+            r#"{"error":{"message":"invalid input","type":"invalid_request_error","code":"bad_request"}}"#,
+        ));
+        *response.status_mut() = StatusCode::BAD_REQUEST;
+        sdkwork_cloudrouter_http::mark_gateway_generated_error_response(&mut response);
+        normalize_gateway_error_protocol(&mut response, Some("anthropic-messages"), None).await;
+        let body = axum::body::to_bytes(response.into_body(), 2048)
+            .await
+            .expect("gateway response body");
+        let body: serde_json::Value = serde_json::from_slice(&body).expect("JSON error");
+        assert_eq!("error", body["type"]);
+        assert_eq!("invalid_request_error", body["error"]["type"]);
+        assert_eq!("invalid input", body["error"]["message"]);
     }
 }

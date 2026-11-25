@@ -8,7 +8,7 @@ data class LumaVideoGenerationRequest(
     val generationType: String? = null,
     val keyframes: LumaKeyframes? = null,
     val loop: Boolean? = null,
-    val model: String? = null,
+    val model: String,
     val prompt: String? = null,
     val resolution: String? = null
 )

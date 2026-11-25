@@ -16,6 +16,7 @@ mod invocation_sticky_store;
 mod invocation_stream;
 mod openai_passthrough_routes;
 mod passthrough;
+mod protocol_error;
 mod provider_account_auth;
 pub mod provider_adapter_transport;
 mod provider_passthrough_transport;

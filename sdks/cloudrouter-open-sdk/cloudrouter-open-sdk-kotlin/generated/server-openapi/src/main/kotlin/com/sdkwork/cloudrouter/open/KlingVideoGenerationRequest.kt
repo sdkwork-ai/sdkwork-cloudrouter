@@ -10,5 +10,5 @@ data class KlingVideoGenerationRequest(
     val mode: String? = null,
     val model: String? = null,
     val negativePrompt: String? = null,
-    val prompt: String? = null
+    val prompt: String
 )

@@ -439,7 +439,26 @@ export const adminDomainCenterMessages: I18nMessageBundle = {
     'admin.domainCenter.verificationFiles.autoVerify': 'Verify domain ownership at the hostname level',
     'admin.domainCenter.verificationFiles.autoVerifyDesc':
       'The DNS TXT ownership proof is managed on the hostname row (apex included). Files here only satisfy platforms that require a file-based proof.',
-  },
+    'admin.domainCenter.verificationFiles.pickFile': 'Choose the issued file',
+    'admin.domainCenter.verificationFiles.autoFillName': 'Derive file name',
+    'admin.domainCenter.verificationFiles.add': 'Upload',
+    'admin.domainCenter.verificationFiles.copyUrl': 'Copy public URL',
+    'admin.domainCenter.verificationFiles.fileTooLarge': 'The file is larger than 4 KB, which the control plane cannot store',
+    'admin.domainCenter.verificationFiles.fileReadFailed': 'The file could not be read',
+    'admin.domainCenter.verificationFiles.issuedBy.WECHAT_OFFICIAL_ACCOUNT':
+      'WeChat MP console: 设置与开发 → 公众号设置 → 功能设置 (JS接口安全域名 / 网页授权域名 / 业务域名)',
+    'admin.domainCenter.verificationFiles.issuedBy.WECHAT_MINI_PROGRAM':
+      'WeChat mini program console: 开发管理 → 开发设置 → 服务器域名',
+    'admin.domainCenter.verificationFiles.issuedBy.ALIPAY':
+      'Alipay mini program console: 开发设置 → 服务器域名白名单',
+    'admin.domainCenter.verificationFiles.issuedBy.BYTEDANCE':
+      'Douyin / ByteDance mini program console: 开发设置 → 服务器域名',
+    'admin.domainCenter.verificationFiles.issuedBy.APPLE':
+      'Apple Developer: Certificates, Identifiers & Profiles → Associated Domains',
+    'admin.domainCenter.verificationFiles.issuedBy.GOOGLE':
+      'Google Search Console: 设置 → 所有权验证 → HTML 文件',
+    'admin.domainCenter.verificationFiles.issuedBy.CUSTOM':
+      'Other platform (Bing, Baidu, 微信开放平台…): use the file it issued',  },
   zh: {
     // Navigation and module header
     'admin.header.domainCenter': '域名中心',
@@ -862,5 +881,24 @@ export const adminDomainCenterMessages: I18nMessageBundle = {
     'admin.domainCenter.verificationFiles.autoVerify': '在主机名层验证域名归属',
     'admin.domainCenter.verificationFiles.autoVerifyDesc':
       'DNS TXT 归属证明由主机名记录（含顶点）管理；此处的文件仅用于要求文件校验的平台。',
-  },
+    'admin.domainCenter.verificationFiles.pickFile': '选择平台签发的文件',
+    'admin.domainCenter.verificationFiles.autoFillName': '自动带出文件名',
+    'admin.domainCenter.verificationFiles.add': '上传',
+    'admin.domainCenter.verificationFiles.copyUrl': '复制公网地址',
+    'admin.domainCenter.verificationFiles.fileTooLarge': '文件超过 4 KB，控制面无法存储',
+    'admin.domainCenter.verificationFiles.fileReadFailed': '文件读取失败',
+    'admin.domainCenter.verificationFiles.issuedBy.WECHAT_OFFICIAL_ACCOUNT':
+      '微信公众平台：设置与开发 → 公众号设置 → 功能设置（JS接口安全域名 / 网页授权域名 / 业务域名）',
+    'admin.domainCenter.verificationFiles.issuedBy.WECHAT_MINI_PROGRAM':
+      '微信小程序后台：开发管理 → 开发设置 → 服务器域名',
+    'admin.domainCenter.verificationFiles.issuedBy.ALIPAY':
+      '支付宝小程序后台：开发设置 → 服务器域名白名单',
+    'admin.domainCenter.verificationFiles.issuedBy.BYTEDANCE':
+      '抖音 / 字节跳动小程序后台：开发设置 → 服务器域名',
+    'admin.domainCenter.verificationFiles.issuedBy.APPLE':
+      'Apple Developer：Certificates, Identifiers & Profiles → Associated Domains',
+    'admin.domainCenter.verificationFiles.issuedBy.GOOGLE':
+      'Google Search Console：设置 → 所有权验证 → HTML 文件',
+    'admin.domainCenter.verificationFiles.issuedBy.CUSTOM':
+      '其他平台（Bing、百度、微信开放平台…）：使用它签发的文件',  },
 };

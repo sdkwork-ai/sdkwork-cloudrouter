@@ -17,6 +17,32 @@
   "routes": [
     {
       "method": "GET",
+      "path": "/app/v3/api/ai/agents",
+      "operationId": "agents.list",
+      "tags": [
+        "ai"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
       "path": "/app/v3/api/ai/dashboard/overview",
       "operationId": "dashboard.overview.retrieve",
       "tags": [
@@ -121,8 +147,8 @@
     },
     {
       "method": "GET",
-      "path": "/app/v3/api/ai/routing/model_group_catalog",
-      "operationId": "routing.modelGroupCatalog.retrieve",
+      "path": "/app/v3/api/ai/routing/api_keys",
+      "operationId": "routing.apiKeys.list",
       "tags": [
         "ai"
       ],
@@ -147,8 +173,8 @@
     },
     {
       "method": "GET",
-      "path": "/app/v3/api/ai/routing/model_groups",
-      "operationId": "routing.modelGroups.retrieve",
+      "path": "/app/v3/api/ai/routing/model_group_catalog",
+      "operationId": "routing.modelGroupCatalog.retrieve",
       "tags": [
         "ai"
       ],
@@ -225,8 +251,8 @@
     },
     {
       "method": "GET",
-      "path": "/app/v3/api/ai/routing/api_keys",
-      "operationId": "routing.apiKeys.list",
+      "path": "/app/v3/api/ai/routing/model_groups",
+      "operationId": "routing.modelGroups.retrieve",
       "tags": [
         "ai"
       ],
@@ -589,6 +615,58 @@
     },
     {
       "method": "GET",
+      "path": "/app/v3/api/iot/devices",
+      "operationId": "iot.devices.list",
+      "tags": [
+        "system"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
+      "path": "/app/v3/api/iot/firmware",
+      "operationId": "iot.firmware.list",
+      "tags": [
+        "system"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-app-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-app-api",
+        "openApiAuthority": "apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "app-api"
+    },
+    {
+      "method": "GET",
       "path": "/app/v3/api/notification/notifications",
       "operationId": "notifications.list",
       "tags": [
@@ -901,14 +979,14 @@
     },
     {
       "method": "GET",
-      "path": "/app/v3/api/storage/generation_delivery",
-      "operationId": "generationDelivery.resolve",
+      "path": "/app/v3/api/system/site/runtime",
+      "operationId": "site.runtime.retrieve",
       "tags": [
-        "storage"
+        "system"
       ],
       "auth": {
-        "mode": "dual-token",
-        "required": true
+        "mode": "public",
+        "required": false
       },
       "handler": {
         "module": "crate::routes",
@@ -926,15 +1004,15 @@
       "apiSurface": "app-api"
     },
     {
-      "method": "GET",
-      "path": "/app/v3/api/system/site/runtime",
-      "operationId": "site.runtime.retrieve",
+      "method": "POST",
+      "path": "/app/v3/api/iam/api_keys/{apiKeyId}/reveal",
+      "operationId": "apiKeys.reveal",
       "tags": [
-        "system"
+        "iam"
       ],
       "auth": {
-        "mode": "public",
-        "required": false
+        "mode": "dual-token",
+        "required": true
       },
       "handler": {
         "module": "crate::routes",

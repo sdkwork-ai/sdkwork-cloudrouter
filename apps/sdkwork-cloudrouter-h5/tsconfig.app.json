@@ -8,6 +8,7 @@
     "packages/sdkwork-cloudrouter-h5-shell/src",
     "packages/sdkwork-cloudrouter-h5-i18n/src",
     "packages/sdkwork-cloudrouter-h5-orders/src",
+    "packages/sdkwork-cloudrouter-h5-membership/src",
     "packages/sdkwork-cloudrouter-h5-community/src",
     "packages/sdkwork-cloudrouter-h5-messages/src",
     "packages/sdkwork-cloudrouter-h5-playground/src",

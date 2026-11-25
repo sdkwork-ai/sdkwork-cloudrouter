@@ -7,6 +7,8 @@ import {
   hasPricingGroupSelection,
   pricingGroupHasTags,
   pricingGroupMatchesRate,
+  pricingGroupMultiplier,
+  pricingGroupsServingRates,
   resolveSelectedPricingGroups,
   toggleSelectionValue,
   type PricingGroupOption,
@@ -110,5 +112,33 @@ describe('pricing group rate matching', () => {
 
     const emptyMatcher = buildPricingGroupRateMatcher(groups, { tags: ['promotion'], groupCodes: [] });
     expect(emptyMatcher(rate(['all', 'llm']))).toBe(false);
+  });
+});
+
+describe('pricing group price columns', () => {
+  it('defaults a missing sale multiplier to 1.0', () => {
+    expect(pricingGroupMultiplier(group({ saleMultiplier: undefined }))).toBe('1');
+    expect(pricingGroupMultiplier(group({ saleMultiplier: '  ' }))).toBe('1');
+    expect(pricingGroupMultiplier(group({ saleMultiplier: '0.08' }))).toBe('0.08');
+  });
+
+  it('lists only groups serving the model, ordered by multiplier then name', () => {
+    const groups = [
+      group({ code: 'full', name: 'Full price', saleMultiplier: '1' }),
+      group({ code: 'promo', name: 'Promo', saleMultiplier: '0.5' }),
+      group({ code: 'premium', name: 'Premium', saleMultiplier: '1.5' }),
+      group({ code: 'foreign', name: 'Foreign', vendorCode: 'anthropic' }),
+      group({ code: 'image-only', name: 'Image only', modalities: ['image'] }),
+    ];
+    expect(pricingGroupsServingRates(groups, [rate(['all', 'llm'])]).map((item) => item.code)).toEqual([
+      'promo',
+      'full',
+      'premium',
+    ]);
+  });
+
+  it('returns no columns when no group serves the rates', () => {
+    const groups = [group({ code: 'image-only', modalities: ['image'] })];
+    expect(pricingGroupsServingRates(groups, [rate(['all', 'llm'])])).toEqual([]);
   });
 });

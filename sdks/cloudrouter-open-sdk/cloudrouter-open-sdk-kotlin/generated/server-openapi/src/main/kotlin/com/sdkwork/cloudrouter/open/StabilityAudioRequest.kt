@@ -5,7 +5,7 @@ data class StabilityAudioRequest(
     val duration: Double? = null,
     val model: String? = null,
     val outputFormat: String? = null,
-    val prompt: String? = null,
+    val prompt: String,
     val seed: Int? = null,
     val steps: Int? = null
 )

@@ -64,6 +64,7 @@ const CAPABILITY_DIRS = [
   'sdkwork-cloudrouter-h5-shell',
   'sdkwork-cloudrouter-h5-i18n',
   'sdkwork-cloudrouter-h5-orders',
+  'sdkwork-cloudrouter-h5-membership',
   'sdkwork-cloudrouter-h5-console-dashboard',
   'sdkwork-cloudrouter-h5-console-usage',
   'sdkwork-cloudrouter-h5-console-api-keys',

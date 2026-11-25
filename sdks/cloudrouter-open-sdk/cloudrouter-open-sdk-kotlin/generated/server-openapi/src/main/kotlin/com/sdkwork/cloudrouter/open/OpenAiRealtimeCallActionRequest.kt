@@ -14,5 +14,5 @@ data class OpenAiRealtimeCallActionRequest(
     val tools: List<Map<String, String>>? = null,
     val tracing: Map<String, String>? = null,
     val truncation: Map<String, String>? = null,
-    val type: String? = null
+    val type: String
 )

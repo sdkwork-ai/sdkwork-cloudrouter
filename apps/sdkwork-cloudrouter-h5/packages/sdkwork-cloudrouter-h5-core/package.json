@@ -54,6 +54,7 @@
     "vite": "catalog:"
   },
   "dependencies": {
+    "@sdkwork/account-service": "workspace:*",
     "@sdkwork/cloudrouter-app-sdk": "workspace:*",
     "@sdkwork/cloudrouter-contracts": "workspace:*",
     "@sdkwork/cloudrouter-sdk-ports": "workspace:*",
@@ -61,7 +62,9 @@
     "@sdkwork/community-app-sdk": "workspace:*",
     "@sdkwork/drive-app-sdk": "workspace:*",
     "@sdkwork/feeds-sdk": "workspace:*",
+    "@sdkwork/membership-service": "workspace:*",
     "@sdkwork/order-app-sdk": "workspace:*",
+    "@sdkwork/order-service": "workspace:*",
     "@sdkwork/sdk-common": "workspace:*"
   }
 }

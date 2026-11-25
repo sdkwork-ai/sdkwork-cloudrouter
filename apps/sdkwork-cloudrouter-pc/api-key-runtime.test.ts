@@ -279,21 +279,23 @@ test("console api key page lazily loads groups only when group choices are opene
   assert.doesNotMatch(source, /ApiKeyService\.fetchKeys\(\)[\s\S]*\.then\(\(data\) =>[\s\S]*setGroups/);
 });
 
-test("console api key row cell copies the plaintext key only", async () => {
+test("console api key row cell keeps the masked key and reveals on click", async () => {
   const source = await import("node:fs/promises").then((fs) =>
     fs.readFile(new URL("./packages/sdkwork-cloudrouter-pc-console-api-keys/src/ApiKeysView.tsx", import.meta.url), "utf8"),
   );
 
   assert.doesNotMatch(source, /CopyButton[\s\S]*text=\{key\.maskedKey\}/);
   assert.doesNotMatch(source, /copyableKey/);
-  assert.match(source, /key\.rawKey \?\? key\.maskedKey/);
-  // The row cell must copy the plaintext key only; masked material is never copied.
+  // Rows always render the masked value; plaintext never sits in list state.
+  assert.match(source, />\{key\.maskedKey\}<\/span>/);
+  assert.doesNotMatch(source, /key\.rawKey \?\? key\.maskedKey/);
   const copyKeyToClipboardSource = source.split("const copyKeyToClipboard = async")[1]?.split("const loadKeys")[0] ?? "";
-  assert.match(copyKeyToClipboardSource, /copyTextToClipboard\(key\.rawKey\)/);
-  assert.doesNotMatch(copyKeyToClipboardSource, /maskedKey/);
+  assert.match(copyKeyToClipboardSource, /ApiKeyService\.revealKey\(key\.id\)/);
+  assert.match(copyKeyToClipboardSource, /copyTextToClipboard\(rawKey\)/);
+  assert.doesNotMatch(copyKeyToClipboardSource, /copyTextToClipboard\(key\.maskedKey\)/);
 });
 
-test("console api key list returns stored raw key material from the list endpoint", async () => {
+test("console api key list returns only masked metadata from the list endpoint", async () => {
   await withApiKeySdkResponder(
     (request) => {
       if (request.method === "POST") {
@@ -329,7 +331,6 @@ test("console api key list returns stored raw key material from the list endpoin
               id: "key-2",
               name: "Created",
               maskedKey: "sk-****wxyz",
-              rawKey: "sk-live-created-secret",
               accountGroup: "default",
               rate: null,
               quota: "0.000000",
@@ -359,9 +360,72 @@ test("console api key list returns stored raw key material from the list endpoin
       assert.equal(created.rawKey, "sk-live-created-secret");
       assert.equal("copyableKey" in created.key, false);
       assert.equal("copyableKey" in fetched.keys[0], false);
-      assert.equal(fetched.keys[0].rawKey, "sk-live-created-secret");
+      // The list contract stays write-only: secret material only arrives from
+      // the explicit reveal endpoint.
+      assert.equal(fetched.keys[0].rawKey, null);
     },
   );
+});
+
+test("console api key reveal returns the plaintext from the audited endpoint", async () => {
+  await withApiKeySdkResponder(
+    (request) => {
+      assert.match(request.url, /\/app\/v3\/api\/iam\/api_keys\/key-2\/reveal$/);
+      assert.equal(request.method, "POST");
+      return {
+        code: 0,
+        traceId: "trace-api-key-reveal",
+        data: {
+          item: {
+            id: "key-2",
+            name: "Created",
+            maskedKey: "sk-****wxyz",
+            accountGroup: "default",
+            rate: null,
+            quota: "0.000000",
+            usedQuota: "0.000000",
+            modalities: ["text"],
+            ipLimit: "unrestricted",
+            created: "2026-05-05T09:00:00Z",
+            expires: "never",
+            status: "enabled",
+          },
+          rawKey: "sk-live-revealed-secret",
+        },
+      };
+    },
+    async () => {
+      const rawKey = await ApiKeyService.revealKey("key-2");
+      assert.equal(rawKey, "sk-live-revealed-secret");
+    },
+  );
+});
+
+test("console api key reveal waits out the server throttle instead of failing", async () => {
+  let calls = 0;
+  await withApiKeySdkResponder(
+    (request) => {
+      assert.match(request.url, /\/app\/v3\/api\/iam\/api_keys\/key-3\/reveal$/);
+      calls += 1;
+      if (calls === 1) {
+        return {
+          code: "4290",
+          msg: "api key was revealed moments ago; retry in a few seconds",
+          traceId: "trace-api-key-reveal-throttle",
+        };
+      }
+      return {
+        code: 0,
+        traceId: "trace-api-key-reveal-retry",
+        data: { item: { id: "key-3", name: "Throttled" }, rawKey: "sk-live-retried-secret" },
+      };
+    },
+    async () => {
+      const rawKey = await ApiKeyService.revealKey("key-3");
+      assert.equal(rawKey, "sk-live-retried-secret");
+    },
+  );
+  assert.ok(calls >= 2, "the throttled attempt must be retried");
 });
 
 test("console api key list replaces rows with backend metadata across updates", async () => {

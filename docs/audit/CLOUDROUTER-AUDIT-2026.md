@@ -126,6 +126,7 @@
    - `api_key_command_store.rs:383-425` INSERT 直接写 `key_secret_plaintext`；`queries/snapshot.rs:1102-1105` 把**全租户明文 key 载入每个网关进程内存**。
    - `services/.../api/app_api_keys.rs:681`：列表/详情响应带 `raw_key` 全文；前端 `ApiKeysView.tsx:578` 列表内联明文回显可反复复制。
    - 违反 IAM_SPEC §5（write-only/哈希存储）。修复：生产强制 ciphertext + 启动拒绝 plaintext；列表契约移除 rawKey（仅 create 一次性返回）；快照不装载明文。
+   - 2026-11-24 复核：列表/详情/更新契约已移除 `rawKey`（`AppApiKeyItem` 仅保留掩码元数据）。既有 Key 的复制改为一次显式、按所有者、可审计的 `POST /app/v3/api/iam/api_keys/{apiKeyId}/reveal`：服务端解密、写 `ops_audit_log`（`reveal_api_key_secret`）、更新 `last_revealed_at`，同一 Key 2 秒内只允许一次；客户端不缓存明文。见 [ADR-20261124](../architecture/decisions/ADR-20261124-audited-api-key-reveal.md)。
 
 2. **支付 provider account 后端零细粒度授权 + GET /credentials 返回明文**（跨 sdkwork-payment 仓库，本人验证）
    - `../sdkwork-payment/crates/sdkwork-routes-payment-backend-api/src/http_route_manifest.rs:92-138`：全部 `HttpRoute::dual_token(...)` 无 `required_permission`；`subject.rs:20-32` 仅 `can_access_backend_api()` 成员级检查。

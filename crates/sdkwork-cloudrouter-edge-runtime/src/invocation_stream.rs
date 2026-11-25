@@ -6,8 +6,8 @@ use axum::body::{Body, Bytes};
 use futures_util::stream::{self, BoxStream};
 use futures_util::StreamExt;
 use sdkwork_cloudrouter_router_service::application::{
-    DeferredStreamInvocation, InvocationCancellationSignal, InvocationError,
-    StreamTerminalOutcome, StreamingUsageAccumulator, StreamingUsageFormat,
+    DeferredStreamInvocation, InvocationCancellationSignal, InvocationError, StreamTerminalOutcome,
+    StreamingUsageAccumulator, StreamingUsageFormat,
 };
 use tokio::sync::{mpsc, oneshot};
 use tokio::time::{timeout_at, Instant as TokioInstant};
@@ -18,11 +18,25 @@ use tokio::time::{timeout_at, Instant as TokioInstant};
 /// 120-second total truncated healthy streams with
 /// `provider stream total deadline exceeded`. Stream health is still enforced
 /// per-frame by `DEFAULT_STREAM_FIRST_FRAME_TIMEOUT` and
-/// `DEFAULT_STREAM_IDLE_TIMEOUT`, so a stalled upstream is cut within seconds
-/// regardless of this ceiling.
+/// `DEFAULT_STREAM_IDLE_TIMEOUT`, so a stalled upstream is cut without this
+/// ceiling ever being the operant limit.
 pub(crate) const DEFAULT_STREAM_TOTAL_TIMEOUT: Duration = Duration::from_secs(1800);
-const DEFAULT_STREAM_FIRST_FRAME_TIMEOUT: Duration = Duration::from_secs(30);
-const DEFAULT_STREAM_IDLE_TIMEOUT: Duration = Duration::from_secs(30);
+/// Time to the first data frame of an established stream.
+///
+/// This is the caller-visible time-to-first-token for a streamed completion. A
+/// large prompt with extended thinking can legitimately spend minutes before the
+/// first frame: the direct provider path tolerates that (the Harness client's own
+/// idle watchdog is 300 s), so the relay must not be the stricter party. Keeping
+/// this below the client's tolerance made the relay cut turns, and tool calls in
+/// particular, that the same provider accepts when called directly.
+const DEFAULT_STREAM_FIRST_FRAME_TIMEOUT: Duration = Duration::from_secs(300);
+/// Longest tolerated gap between two frames of an established stream.
+///
+/// Matched to the same 300 s caller tolerance for the same reason: provider
+/// streams legitimately pause while a model thinks, and a relay-side 30 s gap
+/// limit truncated tool-call argument streams mid-document — which the client can
+/// only reject as malformed tool input.
+const DEFAULT_STREAM_IDLE_TIMEOUT: Duration = Duration::from_secs(300);
 
 /// Time limits applied to an already-established provider stream. The total
 /// deadline is intentionally separate from the upstream response-header

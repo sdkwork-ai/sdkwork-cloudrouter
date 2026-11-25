@@ -286,7 +286,11 @@ fn catalog_with_backup_pool_and_user_rule(user_rule_group: Option<i64>) -> InMem
 async fn invoke_auth_token_chat(
     catalog: InMemoryPricingCatalog,
     group_header: Option<&str>,
-) -> (StatusCode, String, Arc<Mutex<Vec<ChatCompletionRelayRequest>>>) {
+) -> (
+    StatusCode,
+    String,
+    Arc<Mutex<Vec<ChatCompletionRelayRequest>>>,
+) {
     let captured = Arc::new(Mutex::new(Vec::new()));
     let relay = Arc::new(GatewayRecordingRelay::new(Arc::clone(&captured)));
     let router = openai_chat_completions_router_with_auth_extensions(
@@ -323,7 +327,11 @@ async fn invoke_auth_token_chat(
     let body = axum::body::to_bytes(response.into_body(), usize::MAX)
         .await
         .unwrap();
-    (status, String::from_utf8_lossy(&body).into_owned(), captured)
+    (
+        status,
+        String::from_utf8_lossy(&body).into_owned(),
+        captured,
+    )
 }
 
 #[tokio::test]
@@ -363,8 +371,7 @@ async fn selector_header_overrides_the_user_rule_for_auth_token_traffic() {
 #[tokio::test]
 async fn unusable_user_rule_falls_back_to_the_account_default_pool() {
     let (status, body, captured) =
-        invoke_auth_token_chat(catalog_with_backup_pool_and_user_rule(Some(999_999)), None)
-            .await;
+        invoke_auth_token_chat(catalog_with_backup_pool_and_user_rule(Some(999_999)), None).await;
     assert_eq!(StatusCode::OK, status, "expected 200, got {status}: {body}");
     let request = captured
         .lock()

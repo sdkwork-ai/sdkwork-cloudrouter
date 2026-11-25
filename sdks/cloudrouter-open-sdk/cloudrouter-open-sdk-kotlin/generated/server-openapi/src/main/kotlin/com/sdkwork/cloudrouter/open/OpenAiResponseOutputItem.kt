@@ -5,5 +5,5 @@ data class OpenAiResponseOutputItem(
     val id: String? = null,
     val role: String? = null,
     val status: String? = null,
-    val type: String? = null
+    val type: String
 )

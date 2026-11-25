@@ -8,7 +8,7 @@ data class StabilityImageGenerationRequest(
     val model: String? = null,
     val negativePrompt: String? = null,
     val outputFormat: String? = null,
-    val prompt: String? = null,
+    val prompt: String,
     val seed: Int? = null,
     val strength: Double? = null,
     val stylePreset: String? = null

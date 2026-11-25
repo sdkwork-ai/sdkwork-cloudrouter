@@ -95,6 +95,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "apiKeys.create",
     ),
     HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/app/v3/api/iam/api_keys/{apiKeyId}/reveal",
+        "iam",
+        "apiKeys.reveal",
+    ),
+    HttpRoute::dual_token(
         HttpMethod::Delete,
         "/app/v3/api/iam/api_keys/{apiKeyId}",
         "iam",

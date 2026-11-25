@@ -14,11 +14,17 @@ import {
 import { fetchOfficialPricingRates } from '../services/pricingService';
 import { fetchPricingGroups } from '../services/pricingGroupService';
 import { compareKeyOf, rateCategory } from '../types/compare';
-import type { OfficialPricingCatalogResponse, OfficialPricingRate, PricingCategoryCode } from '../types/pricing';
+import type {
+  OfficialPricingCatalogResponse,
+  OfficialPricingRate,
+  OfficialPricingValueFacet,
+  PricingCategoryCode,
+} from '../types/pricing';
 import {
   buildPricingGroupRateMatcher,
   buildPricingGroupTagFacets,
   hasPricingGroupSelection,
+  resolveSelectedPricingGroups,
   type PricingGroupOption,
 } from '../types/pricingGroup';
 import { pricingRateIsActiveAt, pricingRateVariantKey, pricingRateVariantLabel } from '../types/pricingVariant';
@@ -50,6 +56,12 @@ export function PricingPage() {
     tags: [],
     groupCodes: [],
   });
+  // 厂商分类行需要在「已选中某厂商」时仍展示完整厂商列表：
+  // 服务端 facet 会随 vendorCode 收窄，这里缓存无厂商筛选时的分类结果。
+  const [vendorFacetCache, setVendorFacetCache] = useState<{
+    key: string;
+    vendors: readonly OfficialPricingValueFacet[];
+  }>({ key: '', vendors: [] });
   const mismatchTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -80,6 +92,11 @@ export function PricingPage() {
   const groupMatcher = useMemo(
     () => buildPricingGroupRateMatcher(pricingGroups, groupSelection),
     [groupSelection, pricingGroups],
+  );
+  // 表格列：未筛选时展示全部公开分组，筛选后只保留命中的分组列。
+  const activeGroups = useMemo(
+    () => (groupFilterActive ? resolveSelectedPricingGroups(pricingGroups, groupSelection) : pricingGroups),
+    [groupFilterActive, groupSelection, pricingGroups],
   );
 
   const showMismatchHint = (categoryCode: PricingCategoryCode) => {
@@ -153,6 +170,14 @@ export function PricingPage() {
     () => new Map((catalog?.groups ?? []).map((group) => [group.code, group.count])),
     [catalog?.groups],
   );
+  const vendorFacetKey = `${category}|${searchQuery}|${regionCode}|${meterCode}|${currencyCode}`;
+  useEffect(() => {
+    if (!catalog || vendorCode !== '') return;
+    setVendorFacetCache({ key: vendorFacetKey, vendors: catalog.vendors });
+  }, [catalog, vendorCode, vendorFacetKey]);
+  const vendorFacets = vendorCode !== '' && vendorFacetCache.key === vendorFacetKey
+    ? vendorFacetCache.vendors
+    : (catalog?.vendors ?? []);
   const totalItems = catalog?.pageInfo.totalItems ?? '0';
   const visibleItems = useMemo(
     () => (catalog?.items ?? []).filter((rate) => groupMatcher(rate)),
@@ -236,7 +261,7 @@ export function PricingPage() {
             regionCode={regionCode}
             meterCode={meterCode}
             currencyCode={currencyCode}
-            vendors={catalog?.vendors ?? []}
+            vendors={vendorFacets}
             regions={catalog?.regions ?? []}
             meters={catalog?.meters ?? []}
             currencies={catalog?.currencies ?? []}
@@ -314,6 +339,7 @@ export function PricingPage() {
                   items={visibleItems}
                   selectedKeys={selectedKeys}
                   onToggleSelection={toggleSelection}
+                  groups={activeGroups}
                 />
                 <PricingPagination
                   page={catalog.pageInfo.page ?? page}

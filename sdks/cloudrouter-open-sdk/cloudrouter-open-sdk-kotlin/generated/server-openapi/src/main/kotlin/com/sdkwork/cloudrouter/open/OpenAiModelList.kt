@@ -1,6 +1,6 @@
 package com.sdkwork.cloudrouter.open
 
 data class OpenAiModelList(
-    val data_: List<OpenAiModel>? = null,
-    val object_: String? = null
+    val data_: List<OpenAiModel>,
+    val object_: String
 )

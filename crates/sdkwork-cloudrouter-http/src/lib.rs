@@ -54,7 +54,13 @@ pub use error::{not_implemented_response, NotImplementedData};
 pub use federated_database_env::{
     ensure_workspace_database_env_from_config, materialize_federated_database_env_from_config,
 };
-pub use headers::{default_security_headers, redact_http_header};
+pub use headers::{
+    default_security_headers, is_public_upstream_response_header,
+    mark_gateway_generated_error_header, mark_gateway_generated_error_response,
+    preserve_adapter_response_headers, preserve_safe_upstream_response_headers, redact_http_header,
+    take_gateway_generated_error, take_gateway_generated_error_response,
+    GATEWAY_GENERATED_ERROR_HEADER,
+};
 pub use locale::{
     embedded_message_catalog, interpolate_template, localize_problem_payload, normalize_locale_tag,
     parse_accept_language, with_request_locale, CloudRouterLocalePolicy, LocaleSource,
@@ -65,7 +71,8 @@ pub use metrics::{
     shared_http_metrics_registry,
 };
 pub use open_api_capability::{
-    open_api_capability_for_request, open_api_capability_router, OpenApiCapability,
+    external_protocol_id_for_request, open_api_capability_for_request, open_api_capability_router,
+    OpenApiCapability,
 };
 pub use outbound_dns::OutboundDnsResolver;
 pub use query_string::{

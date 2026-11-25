@@ -11,8 +11,8 @@ data class AnthropicServerTool(
     val displayWidthPx: Int? = null,
     val maxCharacters: Int? = null,
     val maxUses: Int? = null,
-    val name: String? = null,
+    val name: String,
     val strict: Boolean? = null,
-    val type: String? = null,
+    val type: String,
     val userLocation: Map<String, String>? = null
 )

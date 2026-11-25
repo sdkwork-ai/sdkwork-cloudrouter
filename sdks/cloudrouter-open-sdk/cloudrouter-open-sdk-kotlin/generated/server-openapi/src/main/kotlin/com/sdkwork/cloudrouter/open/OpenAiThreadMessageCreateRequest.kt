@@ -2,7 +2,7 @@ package com.sdkwork.cloudrouter.open
 
 data class OpenAiThreadMessageCreateRequest(
     val attachments: List<String>? = null,
-    val content: String? = null,
+    val content: String,
     val metadata: Map<String, String>? = null,
-    val role: String? = null
+    val role: String
 )

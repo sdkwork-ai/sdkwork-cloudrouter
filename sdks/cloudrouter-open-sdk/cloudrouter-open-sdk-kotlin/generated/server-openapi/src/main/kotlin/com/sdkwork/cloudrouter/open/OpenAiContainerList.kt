@@ -1,9 +1,9 @@
 package com.sdkwork.cloudrouter.open
 
 data class OpenAiContainerList(
-    val data_: List<OpenAiContainer>? = null,
+    val data_: List<OpenAiContainer>,
     val firstId: String? = null,
     val hasMore: Boolean? = null,
     val lastId: String? = null,
-    val object_: String? = null
+    val object_: String
 )

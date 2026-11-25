@@ -2,8 +2,7 @@ use std::sync::Arc;
 
 use axum::body::Body;
 use axum::http::StatusCode;
-use axum::response::{IntoResponse, Response};
-use axum::Json;
+use axum::response::Response;
 use bytes::Bytes;
 use futures_util::StreamExt;
 use serde_json::Value;
@@ -22,27 +21,62 @@ use crate::ports::{GatewayUsageRecorder, ProviderResponseMemoryGuard};
 /// `pending_line` for the whole stream lifetime.
 const RELAY_SSE_MAX_PENDING_LINE_BYTES: usize = 1024 * 1024;
 
-pub(crate) fn guarded_openai_json_response(
+/// Builds an OpenAI-compatible response while preserving safe upstream headers,
+/// content type, and non-JSON provider error bytes.
+pub(crate) fn guarded_openai_relay_response(
     status: StatusCode,
     body: Value,
+    body_bytes: Option<Vec<u8>>,
+    content_type: Option<String>,
+    headers: axum::http::HeaderMap,
     memory_guard: Option<ProviderResponseMemoryGuard>,
 ) -> Response {
-    // A provider rejection can echo the shared upstream credential it was
-    // dialed with (`sk-...`, `Bearer ...`, Google's `API key not valid`, Groq's
-    // `Invalid API Key`). The metered invocation pipeline already scrubs
-    // non-2xx provider bodies before returning them; this legacy relay path
-    // returned them verbatim, which would hand a platform upstream key to the
-    // calling tenant. Redact string values only, so the JSON structure and any
-    // non-secret prose the SDK branches on stay intact.
-    let body = if status.is_success() {
-        body
+    let body = if let Some(body_bytes) = body_bytes {
+        let body_bytes = if status.is_success() {
+            body_bytes
+        } else {
+            redact_provider_error_bytes(body_bytes)
+        };
+        Body::from(body_bytes)
     } else {
-        redact_json_secrets(body)
+        let body = if status.is_success() {
+            body
+        } else {
+            redact_json_secrets(body)
+        };
+        Body::from(serde_json::to_vec(&body).unwrap_or_else(|_| b"{}".to_vec()))
     };
-    let response = (status, Json(body)).into_response();
+    let mut response = Response::new(body);
+    *response.status_mut() = status;
+    if let Some(content_type) = content_type
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+        .and_then(|value| axum::http::HeaderValue::from_str(value).ok())
+    {
+        response
+            .headers_mut()
+            .insert(axum::http::header::CONTENT_TYPE, content_type);
+    }
+    response.headers_mut().extend(headers);
+    if !response
+        .headers()
+        .contains_key(axum::http::header::CONTENT_TYPE)
+    {
+        response.headers_mut().insert(
+            axum::http::header::CONTENT_TYPE,
+            axum::http::HeaderValue::from_static("application/json"),
+        );
+    }
     match memory_guard {
         Some(memory_guard) => memory_guard.wrap_response(response),
         None => response,
+    }
+}
+
+fn redact_provider_error_bytes(body: Vec<u8>) -> Vec<u8> {
+    match std::str::from_utf8(&body) {
+        Ok(text) => crate::redaction::redact_sensitive_tokens(text).into_bytes(),
+        Err(_) => body,
     }
 }
 
@@ -52,9 +86,7 @@ fn redact_json_secrets(value: Value) -> Value {
         Value::String(text) => {
             Value::String(crate::redaction::redact_sensitive_tokens(text.as_str()))
         }
-        Value::Array(items) => {
-            Value::Array(items.into_iter().map(redact_json_secrets).collect())
-        }
+        Value::Array(items) => Value::Array(items.into_iter().map(redact_json_secrets).collect()),
         Value::Object(entries) => Value::Object(
             entries
                 .into_iter()
@@ -254,9 +286,18 @@ mod tests {
         });
         let redacted = redact_json_secrets(body);
         let text = redacted.to_string();
-        assert!(!text.contains("sk-live1234567890abcdef"), "gateway key leaked: {text}");
-        assert!(!text.contains("abcdefghijklmnop"), "bearer token leaked: {text}");
-        assert!(!text.contains("gsk_abcdefgh1234"), "provider key leaked: {text}");
+        assert!(
+            !text.contains("sk-live1234567890abcdef"),
+            "gateway key leaked: {text}"
+        );
+        assert!(
+            !text.contains("abcdefghijklmnop"),
+            "bearer token leaked: {text}"
+        );
+        assert!(
+            !text.contains("gsk_abcdefgh1234"),
+            "provider key leaked: {text}"
+        );
         assert_eq!("invalid_request_error", redacted["error"]["type"]);
         assert_eq!("invalid_api_key", redacted["error"]["code"]);
         assert!(redacted["error"]["message"]
