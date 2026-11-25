@@ -431,6 +431,12 @@ bin/docker-deploy.sh rollback --environment production --to 0.1.132 --yes
 - **B（两段式）**：WSL 内 `cargo build --release` 产出上述两个二进制 → 以
   `DOCKER_HOST=ssh://ubuntu@api.birdcoder.com` 运行同一个打包脚本，让 `docker build` 在主机
   daemon 上完成（上下文含二进制，随 SSH 传输）。属生产资源争用，需窗口。
+- **C（CI）**：`gh` 已登录 `sdkwork-ai`，`package.yml` 支持 `workflow_dispatch`
+  （`tag` / `package_version` / `deployment_profile` / `runtime_target` / `platform` /
+  `architecture`）。**但当前不可用**：仓库只有 `SDKWORK_RELEASE_SIGNING_PRIVATE_KEY` 与
+  `SDKWORK_RELEASE_TOKEN` 两个 secret，缺 `SDKWORK_CONTAINER_REGISTRY_USERNAME` /
+  `SDKWORK_CONTAINER_REGISTRY_PASSWORD`（容器发布钩子需要），且没有任何 repo vars
+  （`dependency_refs_json` 里的 `SDKWORK_*_REF` 全为空）。补上这两组配置即可用 CI 出镜像。
 
 ---
 
