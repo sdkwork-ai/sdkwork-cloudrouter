@@ -758,6 +758,20 @@ async fn provision_accounts_after_registration(
         return response;
     }
     let (parts, body) = response.into_parts();
+    // Provisioning is a post-success side effect and must never cost the caller
+    // its registration response. Only inspect a body that can be buffered and
+    // replayed whole; an unprovable or oversized one is forwarded untouched and
+    // provisioning is skipped (the lazy provision-on-read path still covers it).
+    if !sdkwork_web_core::body_contract::may_buffer_whole(
+        &body,
+        REGISTRATION_RESPONSE_BODY_LIMIT,
+    ) {
+        tracing::warn!(
+            target = "cloudrouter.assembly.registration",
+            "registration response body exceeds the provisioning budget; skipping account provisioning"
+        );
+        return Response::from_parts(parts, body);
+    }
     let body_bytes = match axum::body::to_bytes(body, REGISTRATION_RESPONSE_BODY_LIMIT).await {
         Ok(bytes) => bytes,
         Err(error) => {
@@ -766,7 +780,20 @@ async fn provision_accounts_after_registration(
                 error = %error,
                 "registration response body read failed; skipping account provisioning"
             );
-            return Response::from_parts(parts, Body::empty());
+            // The budget check above proved the declared size fits, so this is a
+            // transport fault. Never hand the client an empty success body.
+            let mut failure = Response::from_parts(
+                parts,
+                Body::from(
+                    r#"{"type":"about:blank","title":"Bad gateway","status":502,"detail":"the registration response body could not be read"}"#,
+                ),
+            );
+            *failure.status_mut() = axum::http::StatusCode::BAD_GATEWAY;
+            failure.headers_mut().insert(
+                axum::http::header::CONTENT_TYPE,
+                axum::http::HeaderValue::from_static("application/problem+json"),
+            );
+            return failure;
         }
     };
     let Some((tenant_id, user_id)) = registration_user_subject(&body_bytes) else {

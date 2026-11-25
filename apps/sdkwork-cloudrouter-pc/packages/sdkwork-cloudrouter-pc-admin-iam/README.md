@@ -14,6 +14,11 @@ integration shape as `sdkwork-manager-pc-admin-iam` in the sdkwork-manager app.
 Package root (`@sdkwork/cloudrouter-pc-admin-iam`):
 
 - `CloudRouterIamUsersAdmin` — user directory workspace (`/admin/iam/users`)
+- `CloudRouterIamCloudAccountsAdmin` — cloud account center (`/admin/iam/cloud-accounts`):
+  lists every IAM provider account the operator can reach (platform defaults,
+  tenant/organization shared accounts, personal ones) with masked credentials,
+  and lets a permitted operator register, edit, disable, promote, or delete one
+  and write its credential envelope.
 - `CloudRouterIamTenantsAdmin` — tenant workspace (`/admin/iam/tenants`)
 - `CloudRouterIamOrganizationsAdmin` — organization workspace (`/admin/iam/organizations`)
 - `CloudRouterIamOrganizationStructureAdmin` — organization structure workspace
@@ -43,6 +48,12 @@ i18n subpath (`@sdkwork/cloudrouter-pc-admin-iam/i18n`):
 - All remote calls flow through `@sdkwork/iam-backend-sdk` (via `@sdkwork/iam-service`)
   using the shared token manager and session auth boundary from
   `@sdkwork/cloudroutes-pc-commons`; no HTTP client is created by this package.
+- The cloud account center is a projection over the platform IAM account center
+  (`/backend/v3/api/iam/provider_accounts`). IAM owns the aggregate, the ownership
+  levels, and the AES-256-GCM credential envelopes; the page renders only the
+  masked credential projection. Which ownership levels the page offers is
+  delegated to `resolveIamCloudAccountManageableScopeLevels`, so the admin
+  surface and the tenant console cannot drift from the server's gates.
 - Capability workspaces are lazy-loaded per route with `React.lazy` + `Suspense`.
 - Permission maps are derived from the portal session's `permissionScope`
   (`iam.*` codes, `*` wildcard) and refresh on session change.

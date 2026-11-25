@@ -35,6 +35,11 @@ H5 的「会员」必须是 Cloud Router 的 Token Plan 会员定义，而不是
 | 开通/续费/升级 | `memberships.orders.create`（经 `createSdkworkMembershipCheckoutService`） | `action` 由当前 rank 与目标 rank 推导；`paymentProduct = mobile_cashier_h5` |
 | 算力积分充值 | `recharges.orders.create`（经 `createSdkworkTokenBankRechargeService`） | `subject = token_bank_recharge`、`targetAsset = token_bank`，金额/到账由服务端定价 |
 | 会员兑换 | `orders.couponRedemptions.create`（经 `createSdkworkCouponRechargeService`） | 支持算力积分 / 会员积分 / 订阅 / 余额四类权益 |
+| 团队订阅总览 | `memberships.teamSubscription.retrieve` / `.bind` | 组织态、坐席数、超员策略、绑定状态 |
+| 团队套餐 | `memberships.packages.list` / `packageGroups.list`（`audience=team`） | 按坐席计价；分组驱动计费周期 |
+| 团队席位 | `memberships.teamSeats.list/create/delete`、`.policy.update`、`.reconcile` | 分配/回收/策略/离组同步 |
+| 组织与成员 | `iam.organizationMemberships.list`、`iam.organizations.list/tree`、`iam.organizations.members.list` | 自有组织、组织名、成员目录 |
+| 组织切换 | `auth.sessions.current.update({organizationId})` | 轮换会话到目标组织并提交新双 token |
 
 支付统一交给 H5 收银台：订单返回的 `cashierUrl`（`/cashier/s1.*` 短链）直接跳转，支付协议由 order/payment 域负责，会员页不自行轮询二维码。
 
@@ -56,6 +61,15 @@ H5 的「会员」必须是 Cloud Router 的 Token Plan 会员定义，而不是
 | 购买算力积分 | `SdkworkPointsRechargeDialog` | 真实充值套餐 bottom sheet + `/recharge` 独立页 |
 | 会员兑换 | `SdkworkCouponRedemptionDialog` | 兑换 bottom sheet + `/recharge` 兑换页签 |
 | 未登录 | 目录公开、购买时跳登录 | 目录公开、Hero 显示「去登录」、任何购买/兑换动作跳 `/sign-in` |
+| 团队受众切换 | 个人 / 团队 tab | 个人会员 / 团队会员分段控件 |
+| 团队订阅总览 | 组织、等级、坐席、有效期、角色、绑定态 | 同字段（团队总览卡） |
+| 团队套餐与坐席计价 | 按坐席单价 × 坐席数，`purchase` 传总量 | 同一公式与 action 语义；坐席步进器默认/边界同 PC |
+| 团队扩容 | `add_seats` 传新增数 | 同 action/quantity；仅展示当前套餐 |
+| 席位目录 | 组织成员 + 坐席状态 + 分配/回收 + 搜索 + 分页 | 同数据与操作（列表 + 下拉加载） |
+| 超员策略 | 严格/弹性 + 自动分配开关 | 同字段与默认值 |
+| 离组同步 | `teamSeats.reconcile` | 同接口；`revokedCount` 结果提示 |
+| 组织绑定 | 未绑定订阅绑定 owner/admin 组织 | 同规则与错误文案 |
+| 组织切换 | 登录续期式选择 | 会话轮换（`auth/sessions/current`） |
 
 ## 5. 移动端自有设计（有意差异）
 
@@ -66,8 +80,12 @@ H5 的「会员」必须是 Cloud Router 的 Token Plan 会员定义，而不是
 - **算力积分单位**：充值套餐在 wire 上是微单位（1 分 = 1e6），H5 统一换算一次后展示（与 PC 充值弹窗 `sdkworkTokenBankPointsMicroToDecimal` 一致），不再出现 `5,000,000,000` 这类原始值。
 - **Bottom sheet 完成交易**：开通、充值、兑换都从底部弹出，不复刻 PC 居中弹窗。
 - **当前计划判定**：H5 以 `planRank` 精确比较（PC 仅比较 tier key，导致 rank 2/3 共用 `peak` 时互相误判为「当前计划」）；tier key 比较保留为无 rank 时的兜底。
-- **超级会员权益**：H5 拉取 rank 4 的真实权益；PC 只拉 0..3 并对 rank 4 使用硬编码「每月7,499算力积分」兜底。H5 保持数据驱动，数据缺失时显示 `-`。
-- **不含团队/组织受众切换**：PC 公开页的团队席位面由 `SdkworkSubscriptionCatalogTeamProps` 与 CloudRouter 团队端口驱动；H5 本轮只做个人会员（与控制台会员页一致），团队面另行立项。
+- **超级会员权益**：H5 拉取 rank 4 的真实权益；数据缺失时复用 PC 的「每月7,499算力积分」兜底（不在未配置时显示为空权益）。
+- **团队/组织会员采用移动端形态**：与 PC 同一套业务规则（团队订阅总览、按坐席计价购买、扩容、席位分配/回收、超员策略、离组同步、未绑定组织绑定），但以「受众切换 + 团队总览卡 + 套餐坐席步进器 + 席位管理列表 + bottom sheet 结算」组织；PC 的团队表格式席位目录与弹窗表单不复刻。
+- **组织切换**：H5 调用 IAM `PATCH /auth/sessions/current` 轮换当前会话到目标组织并提交新双 token（共享 TokenManager 即时生效，无需重建客户端、无需重新登录）；PC 使用登录续期式 `organization_selection`，H5 不具备登录续期上下文，因此走会话轮换路径。轮换失败时保留会话并提示「重新登录并选择组织」，不清空登录态。
+- **绑定先切组织**：绑定要求调用者在目标组织持有 `TEAM_SEAT_MANAGE`，因此 H5 先轮换会话到目标组织再 `teamSubscription.bind`（同一组织轮换为幂等返回）；PC 直接绑定，H5 采用更稳妥的顺序。
+- **组织名本地化**：一次 `iam.organizations.list` 读取组织目录并把 id 映射成名称（无权限时回退 id），避免团队面出现裸组织 id。
+- **扩容只展示当前套餐**：PC 扩容卡片按套餐全量渲染；H5 在扩容模式下只展示当前订阅套餐（按 `overview.planId` 过滤），避免用户对其它套餐发起必然失败的 `add_seats`。
 
 ## 6. 代码落点
 
@@ -75,7 +93,9 @@ H5 的「会员」必须是 Cloud Router 的 Token Plan 会员定义，而不是
 | --- | --- |
 | 会员定义映射（等级、周期、积分、权益、对照表） | `apps/sdkwork-cloudrouter-h5/packages/sdkwork-cloudrouter-h5-membership/src/catalog/membershipDefinition.ts` |
 | 运行时端口与默认实现 | `.../src/runtime.ts` |
-| 会员中心页面 | `.../src/screens/MembershipScreen.tsx` |
+| 会员中心页面 | `.../src/screens/MembershipScreen.tsx`（个人/团队受众切换） |
+| 团队会员面 | `.../src/components/TeamMembershipSurface.tsx`、`TeamPlanCards.tsx`、`TeamSeatManagement.tsx`、`TeamCheckoutSheet.tsx` |
+| 团队契约与定价 | `.../src/team/teamContract.ts`、`teamPricing.ts`、`teamErrorCopy.ts`、`useTeamMembership.ts` |
 | 充值/兑换页面 | `.../src/screens/TokenRechargeScreen.tsx` |
 | 移动端组件 | `.../src/components/*.tsx` |
 | 域服务数据面 | `apps/sdkwork-cloudrouter-h5/packages/sdkwork-cloudrouter-h5-core/src/sdk/commerceServices.ts` |
@@ -99,6 +119,21 @@ H5 的「会员」必须是 Cloud Router 的 Token Plan 会员定义，而不是
 
 ## 8. 验证记录
 
+### 2026-11-25 第二轮审计修复（PC 对照逐项）
+
+独立对照审计发现并修复了 12 项运行期/展示差异：
+
+- **未选择组织不再是死路**：先读自有组织与组织目录，`organization_scope_required` 时以空总览继续渲染组织选择器与套餐，而不是只显示错误卡。
+- **绑定顺序**：先直接 `teamSubscription.bind`（与 PC 一致），仅在 403/权限错误时轮换会话后重试一次，避免绑定失败却已切换组织。
+- **默认计费周期**：对齐 PC 的「单月购买」默认（存在 `billingCycle=once` 分组时选中），不再默认最贵的包年。
+- **超级会员兜底**：未配置 rank 4 权益时恢复 PC 的「每月 7,499 算力积分」兜底，避免付费等级显示无权益。
+- **团队坐席积分口径**：套餐卡改为「每坐席 {{points}} 会员积分 · {{周期}}」，不再误标为算力积分。
+- **团队总览信息**：新增状态徽标、已购/已分配/可用/组织成员四宫格、订阅周期区间、未分配坐席告警。
+- **兑换幂等与明细**：按兑换码复用 `Idempotency-Key`，成功后释放；展示订阅有效期、算力/会员积分、现金到账（分转元 + 币种）。
+- **Token Bank 充值**：加载失败保留错误 + 重试；新增自定义金额（1–10000 元，汇率预览）；支付前需勾选充值协议；套餐金额按 `currencyCode` 渲染，积分支持 6 位小数。
+- **扩容权限**：扩容入口与扩容套餐仅对 owner/admin 展示。
+- **离组同步/回收**：同步提示带回收数量；回收失败保持确认弹层并就地显示错误。
+
 ### 2026-11-25 回归记录
 
 环境：Windows / Node v24.22.3 / pnpm 10.33.0；H5 应用根 `apps/sdkwork-cloudrouter-h5`。
@@ -106,7 +141,7 @@ H5 的「会员」必须是 Cloud Router 的 Token Plan 会员定义，而不是
 | 命令 | 结果 |
 | --- | --- |
 | `pnpm --dir apps/sdkwork-cloudrouter-h5 typecheck` | exit 0 |
-| `node --test tests/*.test.mjs`（H5 应用根） | 125 tests / 125 pass / 0 fail |
+| `node --test tests/*.test.mjs`（H5 应用根） | 132 tests / 132 pass / 0 fail（含 17 项个人+团队对齐用例） |
 | `pnpm build:dev`（canonical browser build，构建前跑 tsc） | PASS → `dist/standalone/dev/` |
 | `node ../sdkwork-specs/tools/check-application-layering.mjs --root .` | passed |
 | `node ../sdkwork-specs/tools/check-i18n-standard.mjs --root .` | passed（9140 files） |
@@ -116,7 +151,7 @@ H5 的「会员」必须是 Cloud Router 的 Token Plan 会员定义，而不是
 | `pnpm check:pnpm-script-standard` | ok |
 | `pnpm check:agent-workflow-standard` | ok |
 
-依赖安装：`pnpm install --prefer-offline --ignore-scripts` 新增 `@sdkwork/cloudrouter-h5-membership`、membership/account/order 域服务的 workspace link，并更新 `pnpm-lock.yaml`（同时同步了一条兄弟仓库新增包的 importer，属 workspace glob 一致性回写）。
+依赖安装：`pnpm install --prefer-offline --ignore-scripts` 新增 `@sdkwork/cloudrouter-h5-membership`、`@sdkwork/iam-app-sdk` 与 membership/account/order 域服务的 workspace link，并更新 `pnpm-lock.yaml`（同时同步了一条兄弟仓库新增包的 importer，属 workspace glob 一致性回写）。
 
 ### 视觉证据（本地静态包 + Playwright mock API，390×844 / 长视口）
 
@@ -128,6 +163,15 @@ H5 的「会员」必须是 Cloud Router 的 Token Plan 会员定义，而不是
 - `.screenshots/h5/membership-token-plan-dark.png`（暗色）
 - `.screenshots/h5/membership-checkout-sheet.png`（开通 bottom sheet）
 - `.screenshots/h5/recharge-token-bank.png`（充值套餐，微单位已换算）
+- `.screenshots/h5/membership-recharge-sheet.png`（充值套餐 + 协议勾选）
+- `.screenshots/h5/membership-recharge-custom.png`（自定义金额）
+- `.screenshots/h5/team-membership.png` / `team-membership-full.png`（团队受众：总览、席位管理、成员目录）
+- `.screenshots/h5/team-expand-seats.png`（扩容坐席，仅当前套餐）
+- `.screenshots/h5/team-checkout-sheet.png`（团队结算 bottom sheet）
+- `.screenshots/h5/team-state-subscribe.png`（未开通团队订阅：周期 + 套餐 + 坐席步进）
+- `.screenshots/h5/team-state-unbound.png`（已购未绑定：绑定面板，含无权限组织置灰）
+- `.screenshots/h5/team-state-noorg.png`（未选择组织：组织选择 + 可先购买后绑定）
+- `.screenshots/h5/team-state-guest.png`（未登录团队面）
 
 `.screenshots/h5/membership*.png`、`recharge*.png` 中 2026-11-13 的旧图为演示版页面（已下线），以本轮 `membership-token-plan-*` / `recharge-token-bank` 为准。
 
@@ -140,6 +184,8 @@ H5 的「会员」必须是 Cloud Router 的 Token Plan 会员定义，而不是
 
 ## 9. 剩余事项
 
-- 团队/组织会员（席位、组织绑定、团队套餐）尚未移植到 H5；PC 公开页的受众切换是后续独立工作项。
+- 团队/组织会员的 **权限边界**：席位分配、回收、策略、绑定、离组同步都需要 IAM `TEAM_SEAT_MANAGE`；H5 已按 `viewerRole` 只对 owner/admin 展示管理面，但最终以服务端 403 `seat_management_forbidden` 为准。
+- **一个组织只能绑定一个团队订阅**，一个账号只能持有一笔未绑定订阅（后端约束）；H5 绑定面板只列出 owner/admin 组织，绑定失败按 reason 展示本地化提示。
+- **组织切换会轮换会话**：切换成功后旧 token 失效；页面已用新 token 继续请求。若目标组织不可用（`iam_session_organization_unavailable`），保留会话并展示通用失败提示。
 - H5 无独立钱包页，「算力积分详情」以余额 + 规则 + 充值/兑换入口承接；PC 详情弹窗跳转控制台钱包。
 - 会员状态在页面加载时读取；支付跳转返回后由收银台页面承接，返回会员中心会重新拉取状态。

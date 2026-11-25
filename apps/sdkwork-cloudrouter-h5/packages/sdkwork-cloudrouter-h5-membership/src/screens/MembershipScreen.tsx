@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PageLayout } from '@sdkwork/ui-mobile-react';
 import { CircleAlert, Loader2 } from 'lucide-react';
 
@@ -21,8 +21,12 @@ import {
   TokenBankDetailsSheet,
   TokenBankRechargeSheet,
   type CheckoutPlanSummary,
+  type RechargeSelection,
 } from '../components/CommerceSheets.js';
 import { TierCompareTable } from '../components/TierCompareTable.js';
+import { TeamMembershipSurface } from '../components/TeamMembershipSurface.js';
+import { formatMembershipCurrency } from '../format.js';
+import { createMembershipOperationKey } from '../operationKey.js';
 import {
   getCloudRouterH5MembershipRuntime,
   type MembershipCatalogSnapshot,
@@ -30,6 +34,7 @@ import {
   type MembershipOrderOutcome,
   type MembershipPaymentMethod,
   type MembershipRechargePackage,
+  type MembershipRechargeSettings,
   type MembershipRedeemOutcome,
 } from '../runtime.js';
 
@@ -39,23 +44,47 @@ export interface MembershipScreenProps {
   readonly t: MembershipTranslate;
 }
 
+type MembershipAudience = 'personal' | 'team';
+
+function formatRedeemDate(value: string | undefined): string {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+}
+
 function describeRedeemOutcome(outcome: MembershipRedeemOutcome, t: MembershipTranslate): string {
   if (outcome.benefitKind === 'subscription') {
-    return t('redeem.successSubscription', '会员订阅已激活');
+    const expires = formatRedeemDate(outcome.expiresAt);
+    return t('redeem.successSubscription', '会员订阅已激活')
+      + (typeof outcome.totalQuota === 'number'
+        ? ` · ${t('redeem.totalQuota', '总额度 {{quota}}').replace('{{quota}}', String(outcome.totalQuota))}`
+        : '')
+      + (expires
+        ? ` · ${t('redeem.expiresAt', '有效期至 {{date}}').replace('{{date}}', expires)}`
+        : '');
   }
   if (outcome.benefitKind === 'token_bank_credit') {
     return t('redeem.successTokenBank', '算力积分已到账')
       + (typeof outcome.grantAmount === 'number'
-        ? ` · ${new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 2 }).format(outcome.grantAmount)}`
+        ? ` · ${new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 6 }).format(outcome.grantAmount)}`
         : '');
   }
   if (outcome.benefitKind === 'points_credit') {
     return t('redeem.successPoints', '会员积分已发放')
       + (typeof outcome.grantPoints === 'number'
-        ? ` · ${new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 2 }).format(outcome.grantPoints)}`
+        ? ` · ${new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 6 }).format(outcome.grantPoints)}`
         : '');
   }
-  return t('redeem.successCash', '账户余额已到账');
+  // Cash grants are carried in the currency minor unit (1250 = 12.50).
+  const cashAmount = typeof outcome.grantAmount === 'number'
+    ? outcome.grantAmount / 100
+    : null;
+  return t('redeem.successCash', '账户余额已到账')
+    + (cashAmount !== null
+      ? ` · ${formatMembershipCurrency(cashAmount, outcome.currencyCode ?? 'CNY')}`
+      : '');
 }
 
 /**
@@ -79,18 +108,24 @@ export function MembershipScreen({ onSignIn, t }: MembershipScreenProps) {
   const [profile, setProfile] = useState<MembershipMemberProfile | null>(null);
   const [tokenBankBalance, setTokenBankBalance] = useState<number | null>(null);
   const [cycleIndex, setCycleIndex] = useState(0);
-
+  const [audience, setAudience] = useState<MembershipAudience>('personal');
   const [checkoutPlan, setCheckoutPlan] = useState<CheckoutPlanSummary | null>(null);
   const [rechargeOpen, setRechargeOpen] = useState(false);
   const [redeemOpen, setRedeemOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const redeemKeys = useRef(new Map<string, string>());
   const [rechargePackages, setRechargePackages] = useState<readonly MembershipRechargePackage[]>([]);
   const [rechargePackagesLoading, setRechargePackagesLoading] = useState(false);
+  const [rechargeSettings, setRechargeSettings] = useState<MembershipRechargeSettings | null>(null);
+  const [rechargeError, setRechargeError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [sheetError, setSheetError] = useState<string | null>(null);
   const [redeemResult, setRedeemResult] = useState<string | null>(null);
 
   const signedIn = runtime?.signedIn ?? false;
+  // The PC token-plan page defaults to the single-month cycle; initialize the
+  // mobile cycle rail once, then let the buyer's own selection win.
+  const cycleInitialized = useRef(false);
 
   const load = useCallback(async (options: { silent?: boolean } = {}) => {
     if (!runtime) {
@@ -112,7 +147,15 @@ export function MembershipScreen({ onSignIn, t }: MembershipScreenProps) {
       setProfile(nextProfile);
       setTokenBankBalance(nextBalance);
       setCycleIndex((current) => {
-        const maxIndex = Math.max(nextCatalog.groups.length - 1, 0);
+        const sorted = sortMembershipPackageGroups(nextCatalog.groups);
+        const maxIndex = Math.max(sorted.length - 1, 0);
+        if (!cycleInitialized.current && sorted.length > 0) {
+          cycleInitialized.current = true;
+          const singleMonth = sorted.findIndex(
+            (group) => (group.billingCycle ?? '').trim().toLowerCase() === 'once',
+          );
+          return singleMonth >= 0 ? singleMonth : 0;
+        }
         return Math.min(current, maxIndex);
       });
     } catch (cause: unknown) {
@@ -187,6 +230,29 @@ export function MembershipScreen({ onSignIn, t }: MembershipScreenProps) {
     });
   }, [onSignIn, planCards, runtime]);
 
+  const loadRechargeData = useCallback(async () => {
+    if (!runtime) {
+      return;
+    }
+    setRechargePackagesLoading(true);
+    setRechargeError(null);
+    try {
+      const [packages, settings] = await Promise.all([
+        runtime.loadRechargePackages(),
+        runtime.loadRechargeSettings().catch(() => null),
+      ]);
+      setRechargePackages(packages);
+      setRechargeSettings(settings);
+    } catch (cause) {
+      setRechargePackages([]);
+      setRechargeError(cause instanceof Error && cause.message
+        ? cause.message
+        : t('recharge.loadFailed', '充值套餐加载失败，请重试。'));
+    } finally {
+      setRechargePackagesLoading(false);
+    }
+  }, [runtime, t]);
+
   const openTokenBankRecharge = useCallback(async () => {
     if (!runtime) {
       return;
@@ -196,17 +262,10 @@ export function MembershipScreen({ onSignIn, t }: MembershipScreenProps) {
       return;
     }
     setSheetError(null);
+    setRechargeError(null);
     setRechargeOpen(true);
-    setRechargePackagesLoading(true);
-    try {
-      const packages = await runtime.loadRechargePackages();
-      setRechargePackages(packages);
-    } catch {
-      setRechargePackages([]);
-    } finally {
-      setRechargePackagesLoading(false);
-    }
-  }, [onSignIn, runtime]);
+    await loadRechargeData();
+  }, [loadRechargeData, onSignIn, runtime]);
 
   const openRedeem = useCallback(() => {
     if (!runtime) {
@@ -280,7 +339,7 @@ export function MembershipScreen({ onSignIn, t }: MembershipScreenProps) {
   }, [checkoutPlan, handOffToCashier, load, onSignIn, pushToast, runtime, t]);
 
   const handleConfirmRecharge = useCallback(async (
-    packageId: string,
+    selection: RechargeSelection,
     method: MembershipPaymentMethod,
   ) => {
     if (!runtime) {
@@ -294,7 +353,11 @@ export function MembershipScreen({ onSignIn, t }: MembershipScreenProps) {
     setSubmitting(true);
     setSheetError(null);
     try {
-      const outcome = await runtime.createRechargeOrder({ packageId, paymentMethod: method });
+      const outcome = await runtime.createRechargeOrder({
+        ...(selection.packageId ? { packageId: selection.packageId } : {}),
+        ...(selection.amount ? { amount: selection.amount } : {}),
+        paymentMethod: method,
+      });
       if (handOffToCashier(outcome)) {
         return;
       }
@@ -330,8 +393,14 @@ export function MembershipScreen({ onSignIn, t }: MembershipScreenProps) {
     }
     setSubmitting(true);
     setSheetError(null);
+    // One idempotency key per code, reused across retries until the redemption
+    // succeeds, so a retry after a partial failure never consumes the code twice.
+    const redeemKey = redeemKeys.current.get(code)
+      ?? createMembershipOperationKey('membership-redeem');
+    redeemKeys.current.set(code, redeemKey);
     try {
-      const outcome = await runtime.redeemCode(code);
+      const outcome = await runtime.redeemCode(code, redeemKey);
+      redeemKeys.current.delete(code);
       setRedeemResult(describeRedeemOutcome(outcome, t));
       await load({ silent: true });
     } catch (cause: unknown) {
@@ -346,68 +415,105 @@ export function MembershipScreen({ onSignIn, t }: MembershipScreenProps) {
   return (
     <PageLayout bgClass="bg-canvas" title={t('title', '会员中心')}>
       <div className="flex flex-col pb-8" data-membership-screen>
-        <MembershipHero
-          levelName={levelName}
-          onOpenRedeem={openRedeem}
-          onOpenTokenBankDetails={() => {
-            if (!runtime?.signedIn) {
-              onSignIn();
-              return;
-            }
-            setDetailsOpen(true);
-          }}
-          onOpenTokenBankRecharge={() => void openTokenBankRecharge()}
-          onSignIn={onSignIn}
-          profile={profile}
-          signedIn={signedIn}
-          t={t}
-          tokenBankBalance={signedIn ? tokenBankBalance : null}
-        />
-
-        {loading && !catalog ? (
-          <div className="mx-3 mt-6 flex flex-col items-center gap-2 rounded-xl bg-surface px-4 py-10">
-            <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin text-brand" />
-            <p className="text-[12px] text-ink-subtle">{t('loading', '正在加载会员套餐…')}</p>
+        <div className="px-3 pt-3">
+          <div
+            aria-label={t('audience.title', '会员类型')}
+            className="grid grid-cols-2 gap-1 rounded-full bg-surface-elevated p-1"
+            role="tablist"
+          >
+            {([
+              { key: 'personal', label: t('audience.personal', '个人会员') },
+              { key: 'team', label: t('audience.team', '团队会员') },
+            ] as const).map((option) => {
+              const selected = audience === option.key;
+              return (
+                <button
+                  aria-selected={selected}
+                  className={`min-h-9 rounded-full text-[13px] font-semibold transition-colors ${
+                    selected
+                      ? 'bg-surface text-ink shadow-sm'
+                      : 'text-ink-muted'
+                  }`}
+                  key={option.key}
+                  onClick={() => setAudience(option.key)}
+                  role="tab"
+                  type="button"
+                >
+                  {option.label}
+                </button>
+              );
+            })}
           </div>
-        ) : null}
+        </div>
 
-        {!loading && error ? (
-          <div className="mx-3 mt-4 rounded-xl bg-surface px-4 py-6 text-center">
-            <CircleAlert aria-hidden="true" className="mx-auto h-5 w-5 text-danger" />
-            <p className="mt-2 text-[13px] text-ink-muted">{error}</p>
-            <button
-              className="mt-3 min-h-9 rounded-full border border-line px-4 text-[12px] font-medium text-ink"
-              onClick={() => void load()}
-              type="button"
-            >
-              {t('retry', '重试')}
-            </button>
-          </div>
-        ) : null}
-
-        {catalog ? (
+        {audience === 'team' ? (
+          <TeamMembershipSurface onNotify={pushToast} onSignIn={onSignIn} t={t} />
+        ) : (
           <>
-            <BillingCycleTabs
-              cycles={billingCycles}
-              onSelect={setCycleIndex}
-              selectedIndex={cycleIndex}
+            <MembershipHero
+              levelName={levelName}
+              onOpenRedeem={openRedeem}
+              onOpenTokenBankDetails={() => {
+                if (!runtime?.signedIn) {
+                  onSignIn();
+                  return;
+                }
+                setDetailsOpen(true);
+              }}
+              onOpenTokenBankRecharge={() => void openTokenBankRecharge()}
+              onSignIn={onSignIn}
+              profile={profile}
+              signedIn={signedIn}
               t={t}
+              tokenBankBalance={signedIn ? tokenBankBalance : null}
             />
 
-            <PlanCardList onSelect={openCheckout} plans={planCards} t={t} />
+            {loading && !catalog ? (
+              <div className="mx-3 mt-6 flex flex-col items-center gap-2 rounded-xl bg-surface px-4 py-10">
+                <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin text-brand" />
+                <p className="text-[12px] text-ink-subtle">{t('loading', '正在加载会员套餐…')}</p>
+              </div>
+            ) : null}
 
-            <TierCompareTable
-              categories={comparisonCategories}
-              onSelect={openCheckout}
-              t={t}
-              tierColumns={tierColumns}
-            />
+            {!loading && error ? (
+              <div className="mx-3 mt-4 rounded-xl bg-surface px-4 py-6 text-center">
+                <CircleAlert aria-hidden="true" className="mx-auto h-5 w-5 text-danger" />
+                <p className="mt-2 text-[13px] text-ink-muted">{error}</p>
+                <button
+                  className="mt-3 min-h-9 rounded-full border border-line px-4 text-[12px] font-medium text-ink"
+                  onClick={() => void load()}
+                  type="button"
+                >
+                  {t('retry', '重试')}
+                </button>
+              </div>
+            ) : null}
 
-            <p className="mt-6 px-4 text-center text-[11px] leading-snug text-ink-subtle">
-              {t('footer.note', '会员套餐、算力积分与权益以服务端配置为准，开通后立即生效。')}
-            </p>
+            {catalog ? (
+              <>
+                <BillingCycleTabs
+                  cycles={billingCycles}
+                  onSelect={setCycleIndex}
+                  selectedIndex={cycleIndex}
+                  t={t}
+                />
+
+                <PlanCardList onSelect={openCheckout} plans={planCards} t={t} />
+
+                <TierCompareTable
+                  categories={comparisonCategories}
+                  onSelect={openCheckout}
+                  t={t}
+                  tierColumns={tierColumns}
+                />
+
+                <p className="mt-6 px-4 text-center text-[11px] leading-snug text-ink-subtle">
+                  {t('footer.note', '会员套餐、算力积分与权益以服务端配置为准，开通后立即生效。')}
+                </p>
+              </>
+            ) : null}
           </>
-        ) : null}
+        )}
       </div>
 
       <CheckoutSheet
@@ -425,15 +531,17 @@ export function MembershipScreen({ onSignIn, t }: MembershipScreenProps) {
 
       <TokenBankRechargeSheet
         balance={signedIn ? tokenBankBalance : null}
-        error={sheetError}
+        error={sheetError ?? rechargeError}
         loading={rechargePackagesLoading}
         onClose={() => {
           if (submitting) return;
           setRechargeOpen(false);
         }}
-        onConfirm={(packageId, method) => void handleConfirmRecharge(packageId, method)}
+        onConfirm={(selection, method) => void handleConfirmRecharge(selection, method)}
+        onRetry={() => void loadRechargeData()}
         open={rechargeOpen}
         packages={rechargePackages}
+        settings={rechargeSettings}
         submitting={submitting}
         t={t}
       />

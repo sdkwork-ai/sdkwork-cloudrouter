@@ -10,11 +10,19 @@ import {
 import {
   bootstrapSdkworkMembershipAppService,
   configureSdkworkMembershipSessionTokenProvider,
+  createMembershipAppTransportClient,
   hasSdkworkMembershipSession,
   unwrapSdkworkMembershipPageItems,
   unwrapSdkworkMembershipResponse,
   type SdkworkMembershipAppService,
 } from '@sdkwork/membership-service';
+import {
+  createClient as createIamAppClient,
+  type SdkworkAppClient as IamAppSdkClient,
+} from '@sdkwork/iam-app-sdk';
+
+/** Generated membership app client; the transport type is owned by the service. */
+export type MembershipAppClient = ReturnType<typeof createMembershipAppTransportClient>;
 import {
   configureSdkworkOrderAppServiceProvider,
   configureSdkworkOrderSessionTokenProvider,
@@ -32,7 +40,7 @@ import {
 } from '@sdkwork/order-service';
 
 import { readCloudRouterSession } from '../session/sessionStore.js';
-import { getCloudRouterTokenManager } from '../session/tokenManager.js';
+import { applyCloudRouterSessionTokens, getCloudRouterTokenManager } from '../session/tokenManager.js';
 import { getCloudRouterH5OrderAppSdkClient } from './orderAppSdkClient.js';
 import { resolveCloudRouterAppApiBaseUrl } from './runtimeEnv.js';
 
@@ -57,7 +65,22 @@ export interface CloudRouterH5CommerceServices {
   readonly account: SdkworkAccountAppService;
   /** Coupon/code redemption (membership activation or Token Bank credit). */
   readonly couponRecharge: SdkworkCouponRechargeService;
+  /**
+   * IAM app client for the organization (team) facts: the caller's own
+   * organization memberships, the organization roster, organization names, and
+   * the organization-selection login hand-off.
+   */
+  readonly iamApp: IamAppSdkClient;
   readonly membership: SdkworkMembershipAppService;
+  /**
+   * Generated membership app client for the team surface.
+   *
+   * The membership domain service exposes the personal catalog/status commands
+   * only; the organization (team) subscription, seat ledger, and seat policy are
+   * served by the same membership app API and type their responses through this
+   * generated client, so the H5 composition root exposes it once.
+   */
+  readonly membershipApp: MembershipAppClient;
   readonly membershipCheckout: SdkworkMembershipCheckoutService;
   readonly order: SdkworkOrderAppService;
   /** Token Bank compute-credit recharge (`token_bank_recharge` → `token_bank`). */
@@ -97,6 +120,8 @@ export function createCloudRouterH5CommerceServices(): CloudRouterH5CommerceServ
 
   const membership = bootstrapSdkworkMembershipAppService({ baseUrl, platform: 'H5', tokenManager });
   const account = bootstrapSdkworkAccountAppService({ baseUrl, platform: 'H5', tokenManager });
+  const membershipApp = createMembershipAppTransportClient({ baseUrl, platform: 'H5', tokenManager });
+  const iamApp = createIamAppClient({ baseUrl, platform: 'H5', tokenManager });
   const order = createSdkworkOrderAppService({ appClient: getCloudRouterH5OrderAppSdkClient() });
   configureSdkworkOrderAppServiceProvider(() => order);
   bindSessionTokenProviders();
@@ -104,7 +129,9 @@ export function createCloudRouterH5CommerceServices(): CloudRouterH5CommerceServ
   return {
     account,
     couponRecharge: createSdkworkCouponRechargeService({ appService: order }),
+    iamApp,
     membership,
+    membershipApp,
     membershipCheckout: createSdkworkMembershipCheckoutService({ appService: order }),
     order,
     tokenBankRecharge: createSdkworkTokenBankRechargeService({ appService: order }),
@@ -137,6 +164,58 @@ export function resetCloudRouterH5CommerceServices(): void {
  */
 export function hasCloudRouterCommerceSession(): boolean {
   return readCloudRouterSession().authenticated;
+}
+
+function readIssuedToken(value: unknown, keys: readonly string[]): string | undefined {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  for (const key of keys) {
+    const candidate = record[key];
+    if (typeof candidate === 'string' && candidate.trim()) {
+      return candidate.trim();
+    }
+  }
+  for (const nestedKey of ['session', 'item', 'data']) {
+    const nested = record[nestedKey];
+    if (!nested || typeof nested !== 'object') {
+      continue;
+    }
+    const nestedRecord = nested as Record<string, unknown>;
+    for (const key of keys) {
+      const candidate = nestedRecord[key];
+      if (typeof candidate === 'string' && candidate.trim()) {
+        return candidate.trim();
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Rotates the current IAM session into an organization scope.
+ *
+ * Team endpoints resolve the organization from the authenticated principal, so
+ * switching organizations means re-minting the session context. The IAM app API
+ * rotates the current session (`PATCH /auth/sessions/current` with the target
+ * organization) and answers the new dual tokens plus the organization context;
+ * those tokens are committed to the one shared TokenManager, so every generated
+ * client switches scope without being rebuilt.
+ *
+ * @param organizationId - IAM organization to scope the session to.
+ * @returns `true` when a new dual-token session was committed.
+ */
+export async function selectCloudRouterOrganization(organizationId: string): Promise<boolean> {
+  const services = getCloudRouterH5CommerceServices();
+  const result = await services.iamApp.auth.sessions.current.update({ organizationId });
+  const accessToken = readIssuedToken(result, ['accessToken', 'access_token']);
+  const authToken = readIssuedToken(result, ['authToken', 'auth_token']);
+  if (!accessToken || !authToken) {
+    return false;
+  }
+  applyCloudRouterSessionTokens(accessToken, authToken);
+  return true;
 }
 
 export {

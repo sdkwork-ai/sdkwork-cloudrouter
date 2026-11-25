@@ -79,6 +79,57 @@ test("application center is an app-factory header module with grouped views", ()
   assert.equal(isSidebarItemActive("/admin/applications/categories", deployItem, appCenterMenu), false);
 });
 
+test("identity directory exposes the cloud account center beside the principals", () => {
+  const iamMenu = getAdminModuleMenu("iam");
+  const directoryGroup = iamMenu.groups.find((group) => group.groupKey === "admin.menu.iam.directory");
+
+  assert.ok(directoryGroup, "the identity directory group must exist");
+  assert.deepEqual(directoryGroup.items.map((item) => item.path), [
+    "/admin/iam/users",
+    "/admin/iam/organizations",
+    "/admin/iam/tenants",
+    "/admin/iam/personnel",
+    "/admin/iam/cloud-accounts",
+  ]);
+
+  const cloudAccountsItem = directoryGroup.items.find(
+    (item) => item.path === "/admin/iam/cloud-accounts",
+  );
+  assert.ok(cloudAccountsItem, "the cloud account entry must exist");
+  assert.equal(
+    cloudAccountsItem.labelKey,
+    "admin.menu.iam.cloudAccounts",
+    "the entry must resolve its label through i18n",
+  );
+  assert.equal(
+    isSidebarItemActive("/admin/iam/cloud-accounts", cloudAccountsItem, iamMenu),
+    true,
+  );
+  assert.equal(isSidebarItemActive("/admin/iam/users", cloudAccountsItem, iamMenu), false);
+
+  // The entry is gated by the provider-account read code, not by the user
+  // directory code: a principal admin without `iam.provider_accounts.read`
+  // must not see a page it would be refused.
+  const withoutProviderAccounts = getFilteredAdminModuleMenu("iam", ["iam.users.read"]);
+  const hiddenDirectory = withoutProviderAccounts.groups.find(
+    (group) => group.groupKey === "admin.menu.iam.directory",
+  );
+  assert.equal(
+    hiddenDirectory?.items.some((item) => item.path === "/admin/iam/cloud-accounts"),
+    false,
+  );
+
+  const withProviderAccounts = getFilteredAdminModuleMenu("iam", ["iam.provider_accounts.read"]);
+  const visibleDirectory = withProviderAccounts.groups.find(
+    (group) => group.groupKey === "admin.menu.iam.directory",
+  );
+  assert.deepEqual(
+    visibleDirectory?.items.map((item) => item.path),
+    ["/admin/iam/cloud-accounts"],
+    "the provider-account read code is enough to show the cloud account entry",
+  );
+});
+
 test("admin module manager catalog mirrors the header registry order", () => {
   assert.deepEqual(
     ADMIN_MODULES.map((module) => module.id),

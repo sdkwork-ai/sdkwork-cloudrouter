@@ -439,6 +439,16 @@ fn append_vary_accept_language(response: &mut Response) {
 }
 
 async fn read_problem_payload(response: &mut Response) -> Option<Value> {
+    // Observation must not cost the client its problem detail. Decide before
+    // polling: when the body cannot be proven to fit the localization budget it
+    // cannot be replayed after reading, so it is left exactly where it is and
+    // only the localization is skipped.
+    if !sdkwork_web_core::body_contract::may_buffer_whole(
+        response.body(),
+        PROBLEM_LOCALIZATION_MAX_BYTES,
+    ) {
+        return None;
+    }
     let (parts, body) = std::mem::replace(response, Response::new(Body::empty())).into_parts();
     match axum::body::to_bytes(body, PROBLEM_LOCALIZATION_MAX_BYTES).await {
         Ok(bytes) => {
@@ -448,7 +458,19 @@ async fn read_problem_payload(response: &mut Response) -> Option<Value> {
         }
         Err(error) => {
             tracing::warn!(%error, "failed to read problem response body for localization");
-            *response = Response::from_parts(parts, Body::empty());
+            // Never hand the client an empty body where its problem detail was:
+            // the budget check above already proved the declared size fits, so
+            // this is a transport fault and stating it is the honest outcome.
+            let fallback = serde_json::json!({
+                "type": "about:blank",
+                "title": "Bad gateway",
+                "status": parts.status.as_u16(),
+                "detail": "the problem response body could not be read for localization",
+            });
+            *response = Response::from_parts(
+                parts,
+                Body::from(serde_json::to_vec(&fallback).unwrap_or_default()),
+            );
             None
         }
     }
@@ -744,6 +766,33 @@ mod tests {
         assert_eq!(
             "supplier was not found",
             payload["detail"].as_str().unwrap()
+        );
+    }
+
+    /// Localization must never cost the client its problem detail: a body that
+    /// cannot be buffered inside the localization budget is skipped, not read and
+    /// emptied (WEB_FRAMEWORK_SPEC §11.1).
+    #[tokio::test]
+    async fn oversized_problem_body_is_left_untouched() {
+        let mut payload = b"{\"title\":\"".to_vec();
+        payload.extend(std::iter::repeat(b'x').take(PROBLEM_LOCALIZATION_MAX_BYTES));
+        payload.extend_from_slice(b"\"}");
+        let mut response = Response::builder()
+            .status(StatusCode::BAD_REQUEST)
+            .header(header::CONTENT_TYPE, "application/problem+json")
+            .body(Body::from(payload.clone()))
+            .expect("response");
+
+        let localized = read_problem_payload(&mut response).await;
+
+        assert!(localized.is_none(), "localization is skipped, not failed");
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("body");
+        assert_eq!(
+            payload,
+            bytes.to_vec(),
+            "an unbufferable problem body must reach the client unchanged"
         );
     }
 }

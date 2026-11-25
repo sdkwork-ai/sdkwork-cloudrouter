@@ -43,6 +43,7 @@ export interface RemoteMembershipPackage {
 }
 
 export interface RemoteMembershipPackageGroup {
+  readonly billingCycle?: string | null;
   readonly description?: string;
   readonly durationDays?: number | string;
   readonly id?: number | string;
@@ -249,6 +250,14 @@ const COMPARE_BENEFIT_ROWS: readonly ComparisonBenefitRow[] = [
     valueForRank: (rank, benefits, t) => {
       if (rank <= 0 && !hasActiveBenefit(benefits, 'daily_points')) {
         return '-';
+      }
+      if (
+        rank >= CLOUDROUTER_MEMBERSHIP_SUPER_RANK
+        && !hasActiveBenefit(benefits, 'daily_points')
+      ) {
+        // Inherited PC token-plan fallback for an unseeded top tier: without it
+        // the paid super level would render as having no monthly credits.
+        return t('compare.value.superMonthly', '每月7,499算力积分');
       }
       const benefit = findBenefit(benefits, 'daily_points');
       const quantity = toNullableSdkworkMembershipNumber(benefit?.usageLimit);

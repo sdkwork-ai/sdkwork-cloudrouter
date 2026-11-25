@@ -62,6 +62,7 @@
     "@sdkwork/community-app-sdk": "workspace:*",
     "@sdkwork/drive-app-sdk": "workspace:*",
     "@sdkwork/feeds-sdk": "workspace:*",
+    "@sdkwork/iam-app-sdk": "workspace:*",
     "@sdkwork/membership-service": "workspace:*",
     "@sdkwork/order-app-sdk": "workspace:*",
     "@sdkwork/order-service": "workspace:*",
