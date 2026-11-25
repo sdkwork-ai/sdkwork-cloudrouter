@@ -18,11 +18,11 @@
 | 触发条件是**体积**，不是内容 | **已确认** | 边界精确落在 **262144 字节**：262126 正常，262146 失败（§4） |
 | 影响范围是全部 `/v1/*` | **已确认** | chat / embeddings / responses / audio 全部复现；`images/generations` 亦受影响（§4.2） |
 | 之前的"guard 修复"没有解决该问题 | **已确认** | 部署版已把 `/v1` 声明为 external protocol，guard 不再介入（`tenant_id` 探测不再返回 40001），但丢包依旧 |
+| **根因：请求日志捕获层把请求体读掉后转发了空 body** | **已定位并修复** | `sdkwork-log-tower-adapter` 的 `RequestLoggingMiddleware` 只在声明长度 ≤ 捕获上限（默认 **256 KiB**）时缓冲请求体，然后用缓冲结果重建转发请求；**超限时它根本没读 body，却仍然转发 `AxumBody::empty()`**。CloudRouter 把这一层套在整个 `/v1` 路由上（`runtime.rs:2258`） |
 
-**一句话**：中转站对 `POST /v1/*` 的请求体在**超过 262144 字节**时会在网关内部某一步被消费掉，
-下游 CloudRouter 只看到空请求体，于是返回
-`400 40002 request body is empty for openai.chat_completions`。
-客户端和 nginx 都是清白的。
+**一句话**：CloudRouter 套在 `/v1/*` 上的**请求日志捕获层**，只在请求体声明长度 ≤ 256 KiB 时才读取并转交请求体；
+超过上限时它既不读、也不转交，直接把**空 body** 交给下游。CloudRouter 的 payload 提取因此读到 0 字节，返回
+`400 40002 request body is empty for openai.chat_completions`。客户端和 nginx 都是清白的。
 
 ---
 
@@ -99,10 +99,62 @@ nginx → gateway(0.1.132)
 | CloudRouter 调用体上限 | 非本次阈值 | 配置/默认为 25 MiB（`DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES`） |
 | WAF `inspectJsonBody` | 非本次阈值 | 上限 1 MiB 且 chat/audio/embeddings/responses 均属 prompt 路径，直接跳过 |
 
-> 代码侧（`sdkwork-web-framework`、`sdkwork-api-cloud-gateway`、`sdkwork-cloudrouter` 的
-> `main`）在上述链路中**没有** 262144 字节的请求体上限，也没有"读失败后继续用空 body"
-> 的实现；且三个仓库的本地 `main` 与 `origin/main` 一致（无未推送提交），部署镜像即这些
-> 提交。因此**确切的消费点仍需一次带埋点的构建（0.1.133）来承接**，见 §5。
+> 代码侧（`sdkwork-web-framework`、`sdkwork-api-cloud-gateway`）在上述链路中**没有**
+> 请求体上限，也没有"读失败后继续用空 body"的实现；三个仓库的本地 `main` 与
+> `origin/main` 一致（无未推送提交），部署镜像即这些提交。
+>
+> **消费点已确认在 CloudRouter 侧**：见 §3.4。
+
+### 3.4 根因：请求日志捕获层（`sdkwork-log-tower-adapter`）
+
+CloudRouter 的 edge runtime 把请求日志捕获层套在**整个 open-api 路由**上：
+
+```rust
+// crates/sdkwork-cloudrouter-edge-runtime/src/runtime.rs:2249-2258
+let open_log_assembly = sdkwork_api_log_assembly::assemble_backend_business_router_with_pool(
+    &context.database_pool,
+    "sdkwork-cloudrouter-open",
+    Some(open_retention_policy),       // 外部消费者计费流量 → Permanent 保留
+    Some(open_surface_resolver),       // 全部标为 OpenApi
+    context.trust_forwarded_headers,
+).await?;
+let gateway_router = gateway_router.layer(open_log_assembly.capture_layer);
+```
+
+该层的默认捕获上限 `DEFAULT_MAX_BODY_BUFFER_BYTES = 256 * 1024` —— 与实测边界完全一致。
+修复前的实现（`crates/sdkwork-log-tower-adapter/src/middleware.rs`）：
+
+```rust
+let body_hint = request.body().size_hint();
+let capture_request_body = body_hint
+    .upper()
+    .map(|upper| upper <= max_body_bytes as u64)
+    .unwrap_or(true);                       // 声明长度超限 ⇒ 不捕获
+let request_body_bytes = if capture_request_body {
+    match body.collect().await { Ok(c) => Some(c.to_bytes()), Err(..) => None }  // 失败 ⇒ None
+} else {
+    None                                    // 超限 ⇒ None（body 未被读取，也没有被转交）
+};
+let rebuilt = Request::from_parts(
+    parts,
+    request_body_bytes.map(AxumBody::from).unwrap_or_else(AxumBody::empty),  // ⇒ 空 body
+);
+```
+
+即：**日志层按"上限"决定是否读，但无论读没读，转发给下游的 body 都只来自那次捕获**。
+当声明长度超过 256 KiB 时，捕获被跳过，下游因此收到空 body；而 `content-length` 头原样保留，
+于是 CloudRouter 的 payload 提取读到 0 字节 —— 与全部实测现象一一对应：
+
+| 观察 | 解释 |
+|------|------|
+| ≤ 262144 正常、> 262144 必失败 | 声明长度与捕获上限比较 |
+| 所有 `/v1/*` 都受影响 | 该层套在整个 open-api 路由上 |
+| 网关日志 `declared_content_length` 仍是真实长度 | 日志层只重建 body，不改头 |
+| `/app` 8 MB 请求体能被 guard 读到 | `/app` 不经过这一层（guard 属于框架管线，且在其之前） |
+| 之前"guard 修复"无效 | 消费点根本不在 guard |
+
+**这是"观测型读取不得破坏数据面"的典型违例**：请求体只能读一次，读它的任何步骤
+（请求日志、审计、上下文构建）都必须把同样的字节交还下游，或者根本不碰这条流。
 
 ---
 
@@ -148,14 +200,67 @@ nginx → gateway(0.1.132)
 
 ---
 
-## 5. 下一步（按顺序）
+## 5. 修复与验证
+
+### 5.1 已落地（兄弟仓库 `sdkwork-log`，提交 `dc89d05`）
+
+捕获改为**旁路 tee**：转发给下游的永远是原始字节流，日志只保留有界前缀。
+
+| 文件 | 变更 |
+|------|------|
+| `crates/sdkwork-log-tower-adapter/src/capture.rs` | 新增 `RequestCaptureBody<B>`：逐帧原样透传，最多把 `max_body_bytes` 字节写入共享缓冲；错误帧原样上抛 |
+| `crates/sdkwork-log-tower-adapter/src/middleware.rs` | 删除"按上限决定是否读取、再用手里的捕获结果重建请求"的逻辑，改为 `AxumBody::new(RequestCaptureBody::new(body, ..))`；`request_body` 在 save 任务里从共享缓冲生成 |
+| `crates/sdkwork-log-tower-adapter/src/lib.rs` | 导出 `RequestCaptureBody`；`DEFAULT_MAX_BODY_BUFFER_BYTES` 文档改为"保留前缀"而非"超限跳过" |
+| `crates/sdkwork-log-tower-adapter/Cargo.toml` + `Cargo.lock` | dev-dependencies 补 `async-trait` 与 `sdkwork-log-store-sqlx` 的 `postgres` feature（否则测试图里 `DatabasePool` 没有变体） |
+
+修复后语义：
+
+- 任意大小 / 任意 framing（含 chunked）的请求体 **逐字节**到达 handler；
+- 日志行只保存 ≤ 256 KiB 的红acted 前缀（`[TRUNCATED]` 标记），内存与存储仍有界；
+- 传输错误按原样上抛，不再出现"静默空 body"。
+
+验证命令与结果：
+
+| 命令 | 结果 |
+|------|------|
+| `cargo test -p sdkwork-log-tower-adapter --lib --offline` | **9 passed / 0 failed**（含新增 `oversized_request_body_is_forwarded_byte_for_byte`、`small_request_body_is_forwarded_and_recorded_in_full`） |
+| `cargo test -p sdkwork-log-tower-adapter --offline` | **全绿**（含既有持久化集成用例） |
+| `cargo check -p sdkwork-api-log-assembly` | **exit 0** |
+| `cargo check -p sdkwork-log-tower-adapter --lib` | **exit 0** |
+
+> 未能在本机编译 `sdkwork-cloudrouter-edge-runtime` 做端到端确认：该 crate 存在既有阻塞
+> （`passthrough.rs` 对 `BillingMeter::DocumentPage` 的非穷尽匹配，与本修复无关）。
+> 本修复没有改动该层的公共 API（仅新增一个导出类型），消费侧无需改动。
+
+### 5.2 上线所需动作（还需一次发版）
+
+1. bump `release.currentVersion` 后用 `bin/docker-image.sh build` 重建网关镜像（镜像内嵌 `sdkwork-log` 的编译产物）。
+2. `bin/docker-deploy.sh upgrade --environment production --yes`。
+3. 回归判据（§4.3）：`262146 / 268301 / 1422525` 应返回 `503 50301 model is not available…`（说明 body 已送达），
+   `≤262144` 仍正常；同时确认 request log 行仍按前缀记录、`Permanent` 保留策略不变。
+
+### 5.3 同模式缺陷（已发现，本次未改）
+
+| 位置 | 问题 |
+|------|------|
+| `sdkwork-webserver/.../data_plane/subrequest.rs:242` | `Ok(collected) => Some(..), Err(_) => None`，同样是"读取失败后继续用空 body" |
+| `sdkwork-webserver/.../data_plane/cgi_cache.rs:206` | 同上 |
+| `invocation_body_from_http` | 建议把 `declared_content_length > 0 && bytes.is_empty()` 判为 5xx `request_body_not_delivered`，而不是误导性的 400 "request body is empty" |
+
+### 5.4 修复上线前的客户端止血
+
+在 **< 256 KiB 请求体**内完成会话（提前压缩/裁剪上下文，或拆分会话）——这是唯一不依赖发版的规避手段。
+
+---
+
+## 附录 A：原始排查计划（已被 §3.4 直接确认取代）
 
 | 优先级 | 动作 | 说明 |
 |--------|------|------|
-| **P0** | 构建 `0.1.133`（仅加埋点）并部署 | 在两个位置各打一条 WARN：`enforce_request_body_limit` 结束时的 `buffered_len`（含原始 `content-length`）、`dispatch_application_request` 进入 `oneshot` 前的 `body.size_hint()`；再补一条 `invocation_body_from_http` 读取前的 `size_hint`。即可一次性锁定消费点 |
-| **P0** | 埋点确认后修消费点 + 回归用例 | 用例直接复用 §4.3 的判据，把 `262144`/`262145` 固化为边界回归 |
-| **P1** | `invocation_body_from_http` 的诚实化 | `declared_content_length > 0 && bytes.is_empty()` 时应返回 5xx `request_body_not_delivered`（而不是 400 误导性 "request body is empty"），并保留 `declared/read` 两个数字 |
-| **P1** | 客户端止血 | 在修复上线前，让会话在 **< 256 KiB 请求体**内完成（提前压缩/裁剪上下文，或拆分会话）；这是唯一不依赖发版的缓解手段 |
+| ~~P0~~ | ~~构建 `0.1.133`（仅加埋点）并部署~~ | 已不需要：消费点由 §3.4 的代码审阅 + 边界实验直接确认 |
+| ~~P0~~ | ~~埋点确认后修消费点 + 回归用例~~ | 已由 §5.1 完成 |
+| **P1** | 客户端止血 | 见 §5.4 |
+| **P1** | `invocation_body_from_http` 的诚实化 | 见 §5.3 |
 | **P2** | 观测补齐 | 网关访问事件记录"缓冲后长度"，使此类问题不必再靠 WARN 反推 |
 
 ---
