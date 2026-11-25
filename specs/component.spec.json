@@ -211,7 +211,8 @@
       "pnpm topology:validate",
       "pnpm check",
       "pnpm verify",
-      "cargo test --workspace"
+      "cargo test --workspace",
+      "node ../sdkwork-specs/tools/check-body-read-contract.mjs --root ."
     ]
   }
 }
