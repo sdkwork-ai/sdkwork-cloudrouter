@@ -202,34 +202,41 @@ let rebuilt = Request::from_parts(
 
 ## 5. 修复与验证
 
-### 5.1 已落地（兄弟仓库 `sdkwork-log`，提交 `dc89d05`）
+### 5.1 已落地（兄弟仓库 `sdkwork-log`，提交 `dc89d05` + `d18fb4a`）
 
-捕获改为**旁路 tee**：转发给下游的永远是原始字节流，日志只保留有界前缀。
+捕获策略按"声明长度"分流，两条路径都保证 payload 不丢：
+
+| 声明长度 | 读取方式 | 转发给下游 | 日志行 |
+|----------|----------|-----------|--------|
+| ≤ 捕获上限（默认 256 KiB） | 一次性缓冲 | 用同一份字节回放（与修复前一致） | 完整 body（redacted） |
+| > 上限，或长度未知（chunked） | **不预读**，改用旁路 tee | **原始字节流逐帧透传** | 有界前缀（`[TRUNCATED]`） |
+| ≤ 上限但读取失败（传输错误） | 已消耗、无法回放 | **502 `request body could not be read`**（不再静默空 body） | 记录 502 |
 
 | 文件 | 变更 |
 |------|------|
 | `crates/sdkwork-log-tower-adapter/src/capture.rs` | 新增 `RequestCaptureBody<B>`：逐帧原样透传，最多把 `max_body_bytes` 字节写入共享缓冲；错误帧原样上抛 |
-| `crates/sdkwork-log-tower-adapter/src/middleware.rs` | 删除"按上限决定是否读取、再用手里的捕获结果重建请求"的逻辑，改为 `AxumBody::new(RequestCaptureBody::new(body, ..))`；`request_body` 在 save 任务里从共享缓冲生成 |
+| `crates/sdkwork-log-tower-adapter/src/middleware.rs` | 删除"无论读没读都用捕获结果重建请求"的逻辑：≤上限走缓冲回放，>上限/未知长度走 tee，读取失败返回 502；`request_body` 在 save 任务里从共享缓冲生成 |
 | `crates/sdkwork-log-tower-adapter/src/lib.rs` | 导出 `RequestCaptureBody`；`DEFAULT_MAX_BODY_BUFFER_BYTES` 文档改为"保留前缀"而非"超限跳过" |
 | `crates/sdkwork-log-tower-adapter/Cargo.toml` + `Cargo.lock` | dev-dependencies 补 `async-trait` 与 `sdkwork-log-store-sqlx` 的 `postgres` feature（否则测试图里 `DatabasePool` 没有变体） |
 
 修复后语义：
 
 - 任意大小 / 任意 framing（含 chunked）的请求体 **逐字节**到达 handler；
-- 日志行只保存 ≤ 256 KiB 的红acted 前缀（`[TRUNCATED]` 标记），内存与存储仍有界；
-- 传输错误按原样上抛，不再出现"静默空 body"。
+- 小 body 仍完整入账（不影响既有审计口径），大 body 只保留有界前缀，内存与存储有界；
+- 传输错误不再被"翻译"成空 body：要么原样上抛，要么显式 502。
 
 验证命令与结果：
 
 | 命令 | 结果 |
 |------|------|
 | `cargo test -p sdkwork-log-tower-adapter --lib --offline` | **9 passed / 0 failed**（含新增 `oversized_request_body_is_forwarded_byte_for_byte`、`small_request_body_is_forwarded_and_recorded_in_full`） |
-| `cargo test -p sdkwork-log-tower-adapter --offline` | **全绿**（含既有持久化集成用例） |
+| `cargo test -p sdkwork-log-tower-adapter --offline` | **全绿**（11 passed，含既有持久化集成用例） |
 | `cargo check -p sdkwork-api-log-assembly` | **exit 0** |
 | `cargo check -p sdkwork-log-tower-adapter --lib` | **exit 0** |
 
 > 未能在本机编译 `sdkwork-cloudrouter-edge-runtime` 做端到端确认：该 crate 存在既有阻塞
-> （`passthrough.rs` 对 `BillingMeter::DocumentPage` 的非穷尽匹配，与本修复无关）。
+> （`passthrough.rs` 对 `BillingMeter::DocumentPage` 的非穷尽匹配，与本修复无关）；本机
+> Windows 链接 `aws-lc-sys` 时还遇到一次 `LNK1104` 临时文件错误（环境问题）。
 > 本修复没有改动该层的公共 API（仅新增一个导出类型），消费侧无需改动。
 
 ### 5.2 上线所需动作（还需一次发版）
@@ -239,15 +246,38 @@ let rebuilt = Request::from_parts(
 3. 回归判据（§4.3）：`262146 / 268301 / 1422525` 应返回 `503 50301 model is not available…`（说明 body 已送达），
    `≤262144` 仍正常；同时确认 request log 行仍按前缀记录、`Permanent` 保留策略不变。
 
-### 5.3 同模式缺陷（已发现，本次未改）
+### 5.3 全量审计：框架里"读请求体"的位置（本次逐一核对）
 
-| 位置 | 问题 |
-|------|------|
-| `sdkwork-webserver/.../data_plane/subrequest.rs:242` | `Ok(collected) => Some(..), Err(_) => None`，同样是"读取失败后继续用空 body" |
-| `sdkwork-webserver/.../data_plane/cgi_cache.rs:206` | 同上 |
-| `invocation_body_from_http` | 建议把 `declared_content_length > 0 && bytes.is_empty()` 判为 5xx `request_body_not_delivered`，而不是误导性的 400 "request body is empty" |
+请求体只能被读一次，所以每个读者都必须满足三者之一：不读、读满后**原样回填**、或用 **tee** 旁路。
+本次按此标准核对了全工作区所有请求方向的读取点：
 
-### 5.4 修复上线前的客户端止血
+| 位置 | 读取方式 | 判定 |
+|------|----------|------|
+| `sdkwork-log-tower-adapter`（请求日志） | 见 §5.1 | ❌→✅ **本次根因，已修** |
+| `sdkwork-web-core` `client_context_guard` | 声明超限先拒绝；否则读满后 `Request::from_parts(parts, Body::from(bytes))` 回填；读取失败即拒绝 | ✅ 安全；且对 `/v1` 等 external protocol 前缀整段跳过，根本不读 |
+| gateway `security::inspect_json_body`（WAF） | 读满后回填；超限 413；prompt 推理路径整段跳过 | ✅ 安全 |
+| gateway `runtime::enforce_request_body_limit` | 读满后重建 body，并用缓冲长度覆盖 `content-length` | ✅ 安全（**只保护到"交给依赖"为止**——本次问题正发生在它之后） |
+| gateway `comments_proxy` | 读满后自行转发 | ✅ 区域内安全 |
+| cloudrouter `invocation_body_from_http` | 链路末端读一次，立即构造 `InvocationBody` | ✅ 安全（应当是最后一位读者） |
+| cloudrouter `handle_internal_invocation` | 读满 → HMAC 校验 → `Body::from(body)` 回填 | ✅ 安全 |
+| cloudrouter `edge_server` portal tool API | 读一次后自行处理 | ✅ 区域内安全 |
+| `sdkwork-kernel` 幂等中间件（`idempotency.rs`） | 读满后 `Body::from(body.clone())` 回填；读取失败返回 413 | ✅ 安全 |
+| `sdkwork-webserver/.../data_plane/subrequest.rs:242` | `Ok(..) => Some(bytes), Err(_) => None`，随后按该 `Option` 重建请求 | ❌ **同型缺陷**（反向代理数据面） |
+| `sdkwork-webserver/.../data_plane/cgi_cache.rs:206` | 同上形状 | ❌ **同型缺陷** |
+
+### 5.4 建议固化为框架规则（防复发）
+
+1. 任何读取请求体的中间件，转发给下游的 body **必须**来自同一份字节（缓冲回放）**或**原始流（tee）。
+2. **禁止**这种写法：`collect()`/`to_bytes()` 得到 `Option<Bytes>`，再 `unwrap_or_else(Body::empty)` 重建请求 ——
+   失败与"超限跳过"两种情况都会让下游收到空 body。读取失败应当是显式错误（4xx/5xx），超限应当是 tee。
+3. 观测类中间件（request log / audit / trace / 上下文构建）默认按"旁路"实现；只有需要完整审计 body 时才做
+   有界预读，且预读上限必须与 `content-length` 判定一致。
+4. 回归判据统一用"真实字节是否到达 handler"，而不是"状态码看起来对"：本次 `400` 的文案一直指向调用方，
+   正是缺少这类判据。
+5. `invocation_body_from_http` 仍建议补齐诚实化：`declared_content_length > 0 && bytes.is_empty()` 时返回
+   5xx `request_body_not_delivered`（一并记录 declared/read 两个数字），而不是 `400 request body is empty`。
+
+### 5.5 修复上线前的客户端止血
 
 在 **< 256 KiB 请求体**内完成会话（提前压缩/裁剪上下文，或拆分会话）——这是唯一不依赖发版的规避手段。
 
@@ -259,8 +289,8 @@ let rebuilt = Request::from_parts(
 |--------|------|------|
 | ~~P0~~ | ~~构建 `0.1.133`（仅加埋点）并部署~~ | 已不需要：消费点由 §3.4 的代码审阅 + 边界实验直接确认 |
 | ~~P0~~ | ~~埋点确认后修消费点 + 回归用例~~ | 已由 §5.1 完成 |
-| **P1** | 客户端止血 | 见 §5.4 |
-| **P1** | `invocation_body_from_http` 的诚实化 | 见 §5.3 |
+| **P1** | 客户端止血 | 见 §5.5 |
+| **P1** | `invocation_body_from_http` 的诚实化 | 见 §5.4 第 5 条 |
 | **P2** | 观测补齐 | 网关访问事件记录"缓冲后长度"，使此类问题不必再靠 WARN 反推 |
 
 ---
@@ -295,3 +325,5 @@ done
 docker logs sdkwork-api-cloud-gateway-production-i1-gateway-1 --since 10m 2>&1 \
   | sed -e 's/\x1b\[[0-9;]*m//g' | grep 'received an empty request body' | cut -c1-400
 ```
+
+
