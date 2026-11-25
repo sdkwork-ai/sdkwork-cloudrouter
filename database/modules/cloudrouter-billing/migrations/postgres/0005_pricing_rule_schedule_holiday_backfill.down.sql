@@ -1,0 +1,15 @@
+-- sdkwork:migration
+-- id: 0005_pricing_rule_schedule_holiday_backfill
+-- engine: postgres
+-- module: cloudrouter-billing
+-- purpose: No-op rollback. The holiday keys are required by the 0004 payload
+--   guard, so stripping them again would make every schedule invalid.
+-- reversible: true
+-- rollback: forward-fix
+-- transactional: true
+-- lock: table
+-- lock_timeout: 5s
+-- statement_timeout: 60s
+-- contract_version: 0.5.0
+
+-- Intentionally empty: forward-fix only.

@@ -488,8 +488,8 @@ mod tests {
     fn composed_manifest_includes_iam_backend_routes() {
         let manifest = cloud_router_backend_composed_route_manifest();
         let route = manifest
-            .match_route("POST", "/backend/v3/api/iam/applications/register")
-            .expect("IAM applications.register must be registered");
+            .match_route("POST", "/backend/v3/api/iam/service_account_tokens")
+            .expect("IAM serviceAccountTokens.create must be registered");
         assert_eq!(
             RouteAuth::BootstrapBody,
             route.auth,
@@ -966,7 +966,7 @@ mod tests {
         let manifest =
             cloud_router_backend_prepared_route_manifest(http_route_manifest(), &prefixes);
         let route = manifest
-            .match_route("POST", "/backend/v3/api/iam/applications/register")
+            .match_route("POST", "/backend/v3/api/iam/service_account_tokens")
             .expect("IAM backend bootstrap route must stay registered");
         assert_eq!(RouteAuth::BootstrapBody, route.auth);
     }
