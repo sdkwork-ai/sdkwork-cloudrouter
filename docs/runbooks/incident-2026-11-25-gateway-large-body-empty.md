@@ -380,12 +380,34 @@ let rebuilt = Request::from_parts(
 | 根因定位（可复现、边界精确 262144） | ✅ |
 | 非破坏性读取契约（跨仓规范 §11.1 + 框架标准 §10.1 + 可执行模块 `body_contract`） | ✅ |
 | 全工作区穷尽核对（请求 423 点 / 响应 257 点 / 空 body 重建 4 点） | ✅ 0 处待修 |
-| 修复实现（6 个仓库）+ 回归用例 | ✅ |
+| 修复实现（6 个仓库）+ 回归用例 | ✅ 全部已提交并推送 `main` |
 | 跨仓编译验证（WSL/Linux：cloudrouter-http、cloudrouter-assembly、gateway、webserver） | ✅ |
 | 单测（web-core 258、log-adapter 11、log-assembly 3） | ✅ |
-| 运行手册（证据链 / 复现脚本 / 尺寸上限链 / 提交清单） | ✅ |
-| 版本号 + 镜像构建 `0.1.133` | ⏳ 待执行 |
-| 生产部署 + 冒烟 + 回滚预案（`rollback --to 0.1.132`） | ⏳ 待人工确认窗口 |
+| 运行手册（证据链 / 复现脚本 / 尺寸上限链 / 提交清单 / 交付清单） | ✅ |
+| 版本号 + release notes | ✅ `0.1.134`（gateway `4d52eee`，已推送）；同时修正 `--locked` 依赖图（`2c94b16`） |
+| 镜像构建 `registry.sdkwork.com/apps/sdkwork-api-cloud-gateway:0.1.134` | ⛔ **本机无 Docker**（Windows 无 `docker`，WSL 无 daemon）→ 必须在具备 Docker 的 Linux/WSL 构建机上执行（命令见下） |
+| 生产部署 + 冒烟 + 回滚预案 | ⏳ 待人工确认窗口（回滚目标 `0.1.132`） |
+
+**构建/部署命令卡（在具备 Docker 的 Linux 构建机上执行）**
+
+```bash
+# 1) 构建（tag 来自 agent.app.config.json -> release.currentVersion = 0.1.134）
+bin/docker-image.sh build --image-tag 0.1.134
+bin/docker-image.sh push  --image-tag 0.1.134     # 推到 registry.sdkwork.com
+
+# 2) 部署（生产变更需 --yes 与人工确认窗口）
+bin/docker-deploy.sh upgrade --environment production --image-tag 0.1.134 --yes
+
+# 3) 冒烟（判据见 §4.3：262146 / 268301 / 1422525 应返回 503 model is not available…）
+bin/docker-deploy.sh status --environment production
+
+# 4) 回滚预案
+bin/docker-deploy.sh rollback --environment production --to 0.1.132 --yes
+```
+
+> 备选：若构建机与生产主机之间可 SSH，也可用 `DOCKER_HOST=ssh://ubuntu@api.birdcoder.com`
+> 借生产主机 daemon 构建（脚本用 `spawn docker`，会继承该环境变量）。但这会把一次完整
+> release 编译压在生产机上，**只在确认窗口内、并接受短时资源争用时**才使用。
 
 ---
 
