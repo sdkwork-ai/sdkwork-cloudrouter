@@ -326,6 +326,14 @@ let rebuilt = Request::from_parts(
   禁止写法（`unwrap_or_else(Body::empty)` 重建消息）、以及这次的故障成因。
 - 标准 §11 增补回归要求：每个读取类阶段都要有"原始字节仍能到达下一位读者/客户端"的用例。
 
+落地提交与验证：
+
+| 项 | 结果 |
+|----|------|
+| `sdkwork-web-framework` 提交 | `6a700ca`（body_contract + problem/interceptors 修复 + 标准 §10.1/§11） |
+| `cargo test -p sdkwork-web-core --lib` | **257 passed / 0 failed**（含 `body_contract` 契约用例） |
+| WSL `cargo check -p sdkwork-cloudrouter-http` | **exit 0**（同时编译了 `sdkwork-web-bootstrap` 与 `sdkwork-iam-web-adapter`，即框架改动的消费方；亦验证了本次 `locale.rs` 修复） |
+
 ### 5.8 待修（需要可编译环境回归）
 
 `src\data_plane\subrequest.rs:363` 与 `src\data_plane\cgi_cache.rs:205`（`sdkwork-webserver`）仍是
