@@ -400,6 +400,7 @@ let rebuilt = Request::from_parts(
 | 闸门执行层（不是只有声明） | ✅ 四仓新增 `check:body-read-contract` 并接入 `_sdkwork:check` / `check:standards`；实测 `pnpm check:body-read-contract` 通过且不破坏 `check-pnpm-script-standard` |
 | release 二进制（WSL/Linux，`--release`） | ✅ `sdkwork-api-cloud-gateway` 38.8 MB、sidecar `sdkwork-intelligence-knowledgebase-rpc-bin` 41.2 MB |
 | 安装包产出（`package-server.mjs`，无需 Docker） | ✅ `dist/server/sdkwork-api-cloud-gateway-0.1.133-linux-x64-standalone-server.tar.gz`（**validated**；含两个二进制、config、模型数据、`checksums.sha256`）——正是 `docker build` 的上下文输入；二进制另存 `_tmp/bin-0.1.133/` 以防 `/tmp` 清理 |
+| 交付物自检 | ✅ `sha256sum -c` → **OK**；包内 `agent.app.config.json` 的 `currentVersion=0.1.133`、`notes[0]=0.1.133`、11 条 highlights 且含 body 观测修复说明 |
 | 镜像构建 `registry.sdkwork.com/apps/sdkwork-api-cloud-gateway:0.1.133` | ⛔ 仅剩 `docker build`：本机无 `docker`、WSL 无 `dockerd`/无免密 sudo、CI 缺 registry 凭据与 repo vars → 需 Docker 构建机或授权 `DOCKER_HOST=ssh://主机` |
 | 生产部署 + 冒烟 + 回滚预案 | ⏳ 待人工确认窗口（回滚目标 `0.1.132`） |
 
