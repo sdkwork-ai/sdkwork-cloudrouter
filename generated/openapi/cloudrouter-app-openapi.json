@@ -3001,33 +3001,6 @@
         "description": "Invocations retrieve result schema exposed by Cloud Router.",
         "x-operation-id": "invocations.retrieve"
       },
-      "IotDevicesListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by iot devices list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Iot devices list result schema exposed by Cloud Router.",
-        "x-operation-id": "iot.devices.list"
-      },
       "IotFirmwareListResult": {
         "allOf": [
           {
@@ -9479,90 +9452,6 @@
           "iam_user_preference",
           "integration_webhook_endpoint"
         ]
-      }
-    },
-    "/app/v3/api/iot/devices": {
-      "get": {
-        "description": "Resolve console hardware devices. Reads aiot_device. Writes none. File targets none.",
-        "operationId": "iot.devices.list",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IotDevicesListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Resolve console hardware devices",
-        "tags": [
-          "system"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "aiot_device"
-        ],
-        "x-route-scope": "console",
-        "x-sdk-domain": "system",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter-app-api",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-domain": "system",
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-resource": "iot.devices",
-        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-hardware/src/cloudRouterHardwareService.ts",
-        "x-write-tables": []
       }
     },
     "/app/v3/api/iot/firmware": {

@@ -138,12 +138,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
-        "/app/v3/api/iot/devices",
-        "system",
-        "iot.devices.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
         "/app/v3/api/iot/firmware",
         "system",
         "iot.firmware.list",
