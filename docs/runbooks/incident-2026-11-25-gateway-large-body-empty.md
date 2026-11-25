@@ -202,7 +202,7 @@ let rebuilt = Request::from_parts(
 
 ## 5. 修复与验证
 
-### 5.1 已落地（兄弟仓库 `sdkwork-log`，提交 `dc89d05` + `d18fb4a`）
+### 5.1 已落地（兄弟仓库 `sdkwork-log`，提交 `dc89d05` + `d18fb4a` + `82fee4a`）
 
 捕获策略按"声明长度"分流，两条路径都保证 payload 不丢：
 
@@ -217,6 +217,7 @@ let rebuilt = Request::from_parts(
 | `crates/sdkwork-log-tower-adapter/src/capture.rs` | 新增 `RequestCaptureBody<B>`：逐帧原样透传，最多把 `max_body_bytes` 字节写入共享缓冲；错误帧原样上抛 |
 | `crates/sdkwork-log-tower-adapter/src/middleware.rs` | 删除"无论读没读都用捕获结果重建请求"的逻辑：≤上限走缓冲回放，>上限/未知长度走 tee，读取失败返回 502；`request_body` 在 save 任务里从共享缓冲生成 |
 | `crates/sdkwork-log-tower-adapter/src/lib.rs` | 导出 `RequestCaptureBody`；`DEFAULT_MAX_BODY_BUFFER_BYTES` 文档改为"保留前缀"而非"超限跳过" |
+| `crates/sdkwork-api-log-assembly/src/bootstrap.rs` | 捕获预算上调为 **1 MiB** 且可配置（`SDKWORK_LOG_CAPTURE_BODY_MAX_BYTES`），并应用到它交给宿主的每一个捕获层；非法值回落默认 |
 | `crates/sdkwork-log-tower-adapter/Cargo.toml` + `Cargo.lock` | dev-dependencies 补 `async-trait` 与 `sdkwork-log-store-sqlx` 的 `postgres` feature（否则测试图里 `DatabasePool` 没有变体） |
 
 修复后语义：
@@ -229,8 +230,9 @@ let rebuilt = Request::from_parts(
 
 | 命令 | 结果 |
 |------|------|
-| `cargo test -p sdkwork-log-tower-adapter --lib --offline` | **9 passed / 0 failed**（含新增 `oversized_request_body_is_forwarded_byte_for_byte`、`small_request_body_is_forwarded_and_recorded_in_full`） |
-| `cargo test -p sdkwork-log-tower-adapter --offline` | **全绿**（11 passed，含既有持久化集成用例） |
+| `cargo test -p sdkwork-log-tower-adapter --lib --offline` | **11 passed / 0 failed**（含 `oversized_request_body_is_forwarded_byte_for_byte`、`megabyte_scale_bodies_are_forwarded_without_loss`（1 MiB / 8 MiB）、`bodies_within_a_raised_capture_budget_are_recorded_in_full`、`small_request_body_is_forwarded_and_recorded_in_full`） |
+| `cargo test -p sdkwork-api-log-assembly --lib --offline` | **3 passed / 0 failed**（捕获预算解析：默认 1 MiB、可配置、非法值回落） |
+| `cargo test -p sdkwork-log-tower-adapter --offline` | **全绿**（含既有持久化集成用例） |
 | `cargo check -p sdkwork-api-log-assembly` | **exit 0** |
 | `cargo check -p sdkwork-log-tower-adapter --lib` | **exit 0** |
 
@@ -277,9 +279,30 @@ let rebuilt = Request::from_parts(
 5. `invocation_body_from_http` 仍建议补齐诚实化：`declared_content_length > 0 && bytes.is_empty()` 时返回
    5xx `request_body_not_delivered`（一并记录 declared/read 两个数字），而不是 `400 request body is empty`。
 
+### 5.6 请求体大小上限链（从外到内）与"调大"的正确位置
+
+丢包已由 tee 消除，剩下的只是"**收不收**"（413）而不是"丢不丢"。各环节当前值：
+
+| 环节 | 当前值 | 配置位置 | 超限表现 | 调大方式 |
+|------|--------|----------|----------|----------|
+| nginx `client_max_body_size` | 100 MB | vhost | nginx 413 | 改 vhost |
+| 网关 `[request] maxBodyBytes` | 32 MiB | `config.toml` | `413 request_body_too_large` | 改配置 + 重启 |
+| 网关策略 `default-write-limit` | 25 MiB | `config.toml [policy]` | 同上 | 改配置 + 重启 |
+| 框架 content-length 策略 | **16 MiB**（production 默认） | `RequestSizeLimitPolicy::default()`；可被**租户运行时档案** `max_content_length` 覆盖 | `413 request content length exceeds API policy` | 管理端写租户运行时档案（`maxContentLength`），或调整代码默认值 |
+| CloudRouter 调用体预算 | 25 MiB | `SDKWORK_CLOUDROUTER_GATEWAY_INVOCATION_BODY_MAX_BYTES` / runtime.toml | `400 request body exceeds the maximum allowed size of N bytes` | 环境变量 / runtime.toml |
+| **请求日志捕获预算** | **1 MiB**（本次由 256 KiB 上调） | `SDKWORK_LOG_CAPTURE_BODY_MAX_BYTES`（默认 `DEFAULT_CAPTURE_BODY_MAX_BYTES`） | **不拒绝、不丢包**，只截断记录 | 环境变量 |
+
+要点：
+
+1. 真正决定"能否收下"的最紧一环是**框架的 16 MiB**，其次才是网关与 CloudRouter 的 25 MiB；nginx 与网关请求上限更宽。
+2. 要让单个请求超过 16 MiB：优先写**租户运行时档案**的 `max_content_length`（管理端能力，无需发版）；超过 25 MiB 还需同步调大网关 `[policy]` 与 CloudRouter 调用体预算。
+3. 网关与 CloudRouter 都是**整包内存缓冲**，上限与并发数共同决定内存占用，不要盲目调大。
+4. 日志捕获预算**不再参与**"能否收下"，只决定审计里能保留多少字节；1 MiB 已覆盖常见长对话 prompt，可按磁盘预算继续调大。
+
 ### 5.5 修复上线前的客户端止血
 
 在 **< 256 KiB 请求体**内完成会话（提前压缩/裁剪上下文，或拆分会话）——这是唯一不依赖发版的规避手段。
+（发版后该限制消失：`/v1` 链路可正常接收至框架 16 MiB / 网关与 CloudRouter 25 MiB。）
 
 ---
 
