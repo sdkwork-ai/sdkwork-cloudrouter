@@ -409,6 +409,23 @@ bin/docker-deploy.sh rollback --environment production --to 0.1.132 --yes
 > 借生产主机 daemon 构建（脚本用 `spawn docker`，会继承该环境变量）。但这会把一次完整
 > release 编译压在生产机上，**只在确认窗口内、并接受短时资源争用时**才使用。
 
+**构建能力实测矩阵（2026-11-25）**
+
+| 环境 | `cargo` | `docker` | 可用于 |
+|------|---------|----------|--------|
+| 本机 Windows | ✗ | ✗ | 仅代码/校验 |
+| WSL `Ubuntu-22.04` | ✓ `cargo 1.99.1` | CLI 有、**daemon 无** | 只能产出 release 二进制 |
+| 生产主机 `api.birdcoder.com` | ✗ | ✓ `docker 29.7.2`（8 核 / 30 GB） | 只能 `docker build` |
+
+因此只有两种可行路径：
+
+- **A（推荐）**：一台同时具备 `cargo` + `docker` 的 Linux/CI 构建机，直接
+  `bin/docker-image.sh build --image-tag 0.1.134`；镜像上下文需要两个 release 二进制
+  （`sdkwork-api-cloud-gateway` 与 sidecar `sdkwork-intelligence-knowledgebase-rpc-bin`）。
+- **B（两段式）**：WSL 内 `cargo build --release` 产出上述两个二进制 → 以
+  `DOCKER_HOST=ssh://ubuntu@api.birdcoder.com` 运行同一个打包脚本，让 `docker build` 在主机
+  daemon 上完成（上下文含二进制，随 SSH 传输）。属生产资源争用，需窗口。
+
 ---
 
 ## 附录 A：原始排查计划（已被 §3.4 直接确认取代）
