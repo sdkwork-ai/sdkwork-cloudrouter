@@ -3,6 +3,7 @@ use std::pin::Pin;
 
 use crate::domain::{BillingOwnerKind, DomainResult};
 use crate::ports::RechargeSettingsModel;
+use sdkwork_contract_service::{AdmissionDecision, BillingAdmission, BillingPolicyParams};
 
 pub type GatewayBillingFuture<'a, T> = Pin<Box<dyn Future<Output = DomainResult<T>> + Send + 'a>>;
 
@@ -197,5 +198,43 @@ pub trait GatewayBillingStore: Send + Sync {
         _reason: String,
     ) -> GatewayBillingFuture<'a, ()> {
         Box::pin(async { Ok(()) })
+    }
+    /// Resolves the funding policy that governs the caller.
+    ///
+    /// The account service owns the policy (`acct_billing_policy`) together with
+    /// the rules that apply it. This port carries only the resolved parameters,
+    /// so estimation can honour the operator's output ceiling and admission can
+    /// ask the account side for a decision; the routing runtime keeps no funding
+    /// rules of its own.
+    ///
+    /// The default is the documented platform policy, which is exactly what an
+    /// empty policy table means. Test doubles and deployments without a policy
+    /// provider therefore keep their previous behaviour.
+    fn billing_policy<'a>(
+        &'a self,
+        _context: GatewayBillingContext,
+    ) -> GatewayBillingFuture<'a, BillingPolicyParams> {
+        Box::pin(async { Ok(BillingPolicyParams::default()) })
+    }
+
+    /// Decides whether an estimated charge may proceed.
+    ///
+    /// A store backed by the account service overrides this with the account
+    /// admission decision (balance, credit line, envelope, allowance). The
+    /// default admits the full estimate as a hold, which is this trait's legacy
+    /// behaviour and keeps existing deployments byte-compatible.
+    fn authorize_charge<'a>(
+        &'a self,
+        _context: GatewayBillingContext,
+        estimated: GatewayBillingAmount,
+    ) -> GatewayBillingFuture<'a, BillingAdmission> {
+        let hold_points = estimated.amount.parse::<i64>().unwrap_or(0);
+        Box::pin(async move {
+            Ok(BillingAdmission {
+                decision: AdmissionDecision::Admit { hold_points },
+                policy_id: None,
+                hold_points,
+            })
+        })
     }
 }

@@ -16780,6 +16780,97 @@
           }
         },
         "type": "object"
+      },
+      "AdminBillingDecision": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "invocationId",
+          "verdict"
+        ],
+        "properties": {
+          "invocationId": {
+            "type": "string"
+          },
+          "holdAmount": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Frozen points, exact integer text."
+          },
+          "holdSettledAmount": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Points captured from the hold."
+          },
+          "holdStatus": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "1 held, 2 settled, 3 released, 4 expired."
+          },
+          "holdExpiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "chargeLineCount": {
+            "type": "string",
+            "description": "int64 rendered as a string."
+          },
+          "chargeAmount": {
+            "type": "string"
+          },
+          "debitPoints": {
+            "type": "string",
+            "description": "int64 rendered as a string."
+          },
+          "measuredQuantity": {
+            "type": "string"
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "not_billed",
+              "held",
+              "overdue",
+              "settled",
+              "released",
+              "expired"
+            ]
+          }
+        }
+      },
+      "AdminBillingDecisionResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminBillingDecision"
+                  }
+                ],
+                "description": "Data field on the billing decision result."
+              }
+            }
+          }
+        ],
+        "description": "Billing decision diagnostics schema exposed by Cloud Router.",
+        "x-operation-id": "decision.retrieve"
       }
     },
     "securitySchemes": {
@@ -34504,6 +34595,70 @@
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
         "x-sdkwork-permission": "cloudrouter.site_settings.manage",
         "x-sdkwork-required-surface": "organizationMember"
+      }
+    },
+    "/backend/v3/api/billing/decision": {
+      "get": {
+        "tags": [
+          "billing"
+        ],
+        "operationId": "decision.retrieve",
+        "description": "Reads the four-stage billing snapshot of one request: admission, hold, charge and usage. Read-only; it never creates or mutates a hold.",
+        "parameters": [
+          {
+            "name": "invocation_id",
+            "in": "query",
+            "required": true,
+            "description": "Routing invocation id from the gateway access log.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminBillingDecisionResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "x-contract-kind": "read",
+        "x-route-scope": "admin",
+        "x-sdk-domain": "billing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "billing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-permission": "cloudrouter.billing_decision.read",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-resource": "billing_decision",
+        "x-read-sources": "acct_hold,cloudrouter_charge_line,cloudrouter_usage_measurement",
+        "x-write-tables": [],
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
+        "x-source-file": "crates/sdkwork-routes-cloudrouter-backend-api/src/routes.rs"
       }
     }
   },

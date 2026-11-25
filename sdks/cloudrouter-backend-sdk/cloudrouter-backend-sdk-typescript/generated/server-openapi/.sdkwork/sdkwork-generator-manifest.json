@@ -60,7 +60,7 @@
     },
     {
       "path": "src/api/billing.ts",
-      "sha256": "d90b43a1ae63342232baa7c4dfb7aae863ac5716a052c9335ab8c175bb171572"
+      "sha256": "1fd3b79c595d748722f85ca9f40ab4196b848ff308018193372e3e2b09b44824"
     },
     {
       "path": "src/api/index.ts",
@@ -169,6 +169,10 @@
     {
       "path": "src/types/admin-auth-settings-update-request.ts",
       "sha256": "e90733418d8b7acab778eb924726423614d7039d15fa8766e14c8ad97f515d58"
+    },
+    {
+      "path": "src/types/admin-billing-decision.ts",
+      "sha256": "d260660d2736b017171a5aad374bd1d4cdb09d38c805e4b93a616456e43a9437"
     },
     {
       "path": "src/types/admin-dashboard-overview.ts",
@@ -468,7 +472,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "19708cecfe40b91a21f09ee7a806aa2e7537a1bce5abde263cf1aa5574f86e2e"
+      "sha256": "96a6a0641b21bef56d9bd63a3fc64235f528791c3062271f382f7e0eefdd5a92"
     },
     {
       "path": "src/types/installation-status-response.ts",

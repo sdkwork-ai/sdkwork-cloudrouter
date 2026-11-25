@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
 use chrono::{Duration, Utc};
-use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
+use sdkwork_account_repository_sqlx::{PostgresBillingPolicyStore, PostgresCommerceAccountStore};
 use sdkwork_account_service::{
-    AppendLedgerEntryCommand, CreateAccountHoldCommand, ReleaseAccountHoldCommand,
-    SettleAccountHoldCommand, WalletAccountListQuery,
+    AppendLedgerEntryCommand, BillingAuthorizationQuery, BillingPolicyResolveQuery,
+    CreateAccountHoldCommand, ReleaseAccountHoldCommand, SettleAccountHoldCommand,
+    WalletAccountListQuery,
 };
 use sdkwork_cloudrouter_router_service::domain::DomainError;
 use sdkwork_cloudrouter_router_service::ports::{
@@ -12,8 +13,8 @@ use sdkwork_cloudrouter_router_service::ports::{
     GatewayBillingFuture, GatewayBillingSettlementMode, GatewayBillingStore, RechargeSettingsModel,
 };
 use sdkwork_contract_service::{
-    CommerceAccountAssetType, CommerceLedgerDirection, CommerceMoney, CommerceRequestHash,
-    CommerceServiceError, CommerceServiceErrorKind,
+    BillingAdmission, BillingPolicyParams, CommerceAccountAssetType, CommerceLedgerDirection,
+    CommerceMoney, CommerceRequestHash, CommerceServiceError, CommerceServiceErrorKind,
 };
 use sqlx::{PgPool, Row};
 use std::collections::BTreeMap;
@@ -281,6 +282,70 @@ impl PostgresGatewayBillingStore {
 }
 
 impl GatewayBillingStore for PostgresGatewayBillingStore {
+    /// Reads the funding policy the account service resolved for this subject.
+    ///
+    /// The policy store is a pool wrapper, so building one per call costs a
+    /// clone and keeps this adapter free of a second injected dependency.
+    fn billing_policy<'a>(
+        &'a self,
+        context: GatewayBillingContext,
+    ) -> GatewayBillingFuture<'a, BillingPolicyParams> {
+        let policy_store = PostgresBillingPolicyStore::new(self.pool.clone());
+        Box::pin(async move {
+            let resolved = policy_store
+                .resolve_billing_policy(&BillingPolicyResolveQuery {
+                    tenant_id: context.tenant_id.to_string(),
+                    organization_id: Some(context.organization_id.to_string()),
+                    owner_user_id: context.user_id.to_string(),
+                    api_key_id: None,
+                })
+                .await
+                .map_err(|error| DomainError::new(error.to_string()))?;
+            match resolved {
+                Some(item) => item
+                    .params()
+                    .map_err(|error| DomainError::new(error.to_string())),
+                // No stored row means the documented platform policy governs
+                // the subject; the domain defaults are exactly that policy.
+                None => Ok(BillingPolicyParams::default()),
+            }
+        })
+    }
+
+    /// Asks the account service whether the estimated charge may proceed.
+    fn authorize_charge<'a>(
+        &'a self,
+        context: GatewayBillingContext,
+        estimated: GatewayBillingAmount,
+    ) -> GatewayBillingFuture<'a, BillingAdmission> {
+        let wallet_owner_type = match context.billing_owner {
+            sdkwork_cloudrouter_router_service::domain::BillingOwnerKind::Organization => {
+                "ORGANIZATION"
+            }
+            sdkwork_cloudrouter_router_service::domain::BillingOwnerKind::Personal => "USER",
+        };
+        let wallet_owner_id = context.wallet_owner_user_id();
+        let policy_store = PostgresBillingPolicyStore::new(self.pool.clone());
+        Box::pin(async move {
+            let points = estimated.amount.parse::<i64>().map_err(|error| {
+                DomainError::new(format!(
+                    "estimated charge must be an integer point amount: {error}"
+                ))
+            })?;
+            policy_store
+                .evaluate_billing(&BillingAuthorizationQuery {
+                    tenant_id: context.tenant_id.to_string(),
+                    organization_id: Some(context.organization_id.to_string()),
+                    owner_user_id: context.user_id.to_string(),
+                    api_key_id: None,
+                    estimated_points: points,
+                    wallet_owner_type: Some(wallet_owner_type.to_owned()),
+                    wallet_owner_id: Some(wallet_owner_id),
+                })
+                .await
+                .map_err(|error| DomainError::new(error.to_string()))
+        })
+    }
     fn settlement_mode(&self) -> GatewayBillingSettlementMode {
         self.settlement_mode
     }

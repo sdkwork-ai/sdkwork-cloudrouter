@@ -14,8 +14,7 @@ use crate::domain::{
     SessionAccountGroupModality,
 };
 
-pub type AppModelGroupFuture<'a, T> =
-    Pin<Box<dyn Future<Output = DomainResult<T>> + Send + 'a>>;
+pub type AppModelGroupFuture<'a, T> = Pin<Box<dyn Future<Output = DomainResult<T>> + Send + 'a>>;
 
 /// Authenticated caller scope of a console model-group request.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

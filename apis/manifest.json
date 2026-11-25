@@ -29,7 +29,7 @@
       "source": "generated/openapi/cloudrouter-backend-openapi.json",
       "apiAuthority": "sdkwork-cloudrouter-backend-api",
       "sdkFamily": "cloudrouter-backend-sdk",
-      "sha256": "4937cfeba6ca62d8c1f4867bbee9559f5f8de68ca94adf19c958d195fc3e7ec3"
+      "sha256": "beead88d5e0bf711c8181167d738555ee8325ddbbda882ef40723dd8936e4593"
     }
   ],
   "materializeScript": "scripts/materialize-apis-contracts.mjs",

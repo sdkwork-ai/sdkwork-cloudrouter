@@ -76,7 +76,9 @@ mod tests {
 
     #[test]
     fn external_references_are_not_governed_by_the_managed_invariant() {
-        assert!(ensure_managed_secret_belongs_to_account("vault://provider/openrouter", None).is_ok());
+        assert!(
+            ensure_managed_secret_belongs_to_account("vault://provider/openrouter", None).is_ok()
+        );
         assert!(ensure_managed_secret_belongs_to_account("env:OPENAI_KEY", None).is_ok());
         assert_eq!(
             Some(77),

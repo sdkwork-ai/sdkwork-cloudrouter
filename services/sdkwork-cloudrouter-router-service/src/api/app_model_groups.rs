@@ -111,9 +111,7 @@ struct ModelGroupDefaultsItemResponse {
     defaults: Vec<ModelGroupDefaultItemResponse>,
 }
 
-pub fn app_model_group_router(
-    store: Arc<dyn AppModelGroupStore + Send + Sync>,
-) -> Router {
+pub fn app_model_group_router(store: Arc<dyn AppModelGroupStore + Send + Sync>) -> Router {
     Router::new()
         .route(
             "/app/v3/api/ai/routing/model_group_catalog",
@@ -238,7 +236,9 @@ async fn set_model_group_default(
     }
 }
 
-fn to_store_subject(subject: crate::api::app_sql_subject::SqlScopedSubject) -> AppModelGroupSubject {
+fn to_store_subject(
+    subject: crate::api::app_sql_subject::SqlScopedSubject,
+) -> AppModelGroupSubject {
     map_required_app_sql_subject(subject, |subject| AppModelGroupSubject {
         tenant_id: subject.tenant_id,
         organization_id: subject.organization_id,

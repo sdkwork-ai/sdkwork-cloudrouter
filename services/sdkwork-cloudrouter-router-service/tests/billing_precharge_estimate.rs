@@ -31,6 +31,9 @@ use sdkwork_cloudrouter_router_service::ports::{
     CustomerChargeMode, GatewayBillingAmount, GatewayBillingContext, GatewayBillingFuture,
     GatewayBillingSettlementMode, GatewayBillingStore, RechargeSettingsModel,
 };
+use sdkwork_contract_service::{
+    AdmissionDecision, AdmissionRejectCode, BillingAdmission, BillingPolicyParams,
+};
 use serde_json::{json, Value};
 
 const TENANT_ID: i64 = 10;
@@ -54,6 +57,11 @@ fn exchange_settings() -> RechargeSettingsModel {
 #[derive(Default)]
 struct RecordingBillingStore {
     holds: Mutex<Vec<GatewayBillingAmount>>,
+    /// Admission the account side would return; `None` keeps the trait
+    /// default of admitting the full estimate.
+    admission: Mutex<Option<BillingAdmission>>,
+    /// Policy the account side would resolve; `None` keeps the platform default.
+    policy: Mutex<Option<BillingPolicyParams>>,
 }
 
 impl RecordingBillingStore {
@@ -63,6 +71,32 @@ impl RecordingBillingStore {
 }
 
 impl GatewayBillingStore for RecordingBillingStore {
+    fn billing_policy<'a>(
+        &'a self,
+        _context: GatewayBillingContext,
+    ) -> GatewayBillingFuture<'a, BillingPolicyParams> {
+        let policy = self.policy.lock().expect("policy lock").clone();
+        Box::pin(async move { Ok(policy.unwrap_or_default()) })
+    }
+
+    fn authorize_charge<'a>(
+        &'a self,
+        _context: GatewayBillingContext,
+        estimated: GatewayBillingAmount,
+    ) -> GatewayBillingFuture<'a, BillingAdmission> {
+        let configured = self.admission.lock().expect("admission lock").clone();
+        Box::pin(async move {
+            if let Some(admission) = configured {
+                return Ok(admission);
+            }
+            let hold_points = estimated.amount.parse::<i64>().unwrap_or(0);
+            Ok(BillingAdmission {
+                decision: AdmissionDecision::Admit { hold_points },
+                policy_id: None,
+                hold_points,
+            })
+        })
+    }
     fn customer_charge_mode<'a>(
         &'a self,
         _context: GatewayBillingContext,
@@ -271,6 +305,20 @@ async fn invocation_with_quotes(
     invocation
 }
 
+/// 用指定桩跑一次预扣，返回冻结的金额（Token Bank micro 点）。
+async fn reserved_amount_with(
+    store: Arc<RecordingBillingStore>,
+    invocation: &mut Invocation,
+) -> String {
+    BillingTransactionInterceptor::new(store.clone())
+        .before(invocation)
+        .await
+        .expect("precharge");
+    let holds = store.reserved();
+    assert_eq!(1, holds.len(), "expected exactly one hold, got {holds:?}");
+    holds[0].amount.clone()
+}
+
 /// 跑一次预扣，返回冻结的金额（Token Bank micro 点）。
 async fn reserved_amount(invocation: &mut Invocation) -> String {
     let store = Arc::new(RecordingBillingStore::default());
@@ -410,6 +458,23 @@ async fn token_requests_keep_the_max_tokens_upper_bound() {
     )
     .await;
     assert_micro("64", &reserved_amount(&mut invocation).await);
+}
+
+/// `max_tokens` 是模型级上限，不是这次请求的输出量。中继为 DeepSeek 路由宣布
+/// 393,216，按它冻结等于每次都预扣「整个输出区间」：实测一次对话结算约
+/// 0.002 CNY，而冻结额是 1.57 CNY（737 倍），7.5 CNY 的钱包因此在第二次并发
+/// agent 调用时就返回 402 "insufficient available balance"。预扣只按输出上界
+/// 估算，超出部分由结算阶段的 postpaid 补收覆盖。
+#[tokio::test]
+async fn a_model_wide_output_cap_does_not_freeze_the_whole_wallet() {
+    let mut invocation = invocation_with_quote(
+        Method::POST,
+        "/v1/chat/completions",
+        json!({"model": "deepseek-flash", "max_tokens": 393216, "messages": [{"role": "user", "content": "hi"}]}),
+        BillingMeter::LlmOutputToken,
+    )
+    .await;
+    assert_micro("32768", &reserved_amount(&mut invocation).await);
 }
 
 /// 关键设计点：视频秒的**结算量**来自响应（`ResponseBody`），但预扣发生在
@@ -575,4 +640,106 @@ async fn synthetic_local_response_never_reserves_or_settles() {
         !invocation.charging.settled,
         "a replay must not book a second settlement"
     );
+
+    /// 准入被账户侧拒绝时，请求以 402 的欠费类错误失败，且不产生任何冻结。
+    #[tokio::test]
+    async fn an_admission_rejection_reaches_the_client_as_insufficient_balance() {
+        let mut invocation = invocation_with_quote(
+        Method::POST,
+        "/v1/chat/completions",
+        json!({"model": "gpt-4o", "max_tokens": 64, "messages": [{"role": "user", "content": "hi"}]}),
+        BillingMeter::LlmOutputToken,
+    )
+    .await;
+        let store = Arc::new(RecordingBillingStore::default());
+        *store.admission.lock().expect("admission lock") = Some(BillingAdmission {
+            decision: AdmissionDecision::Reject {
+                code: AdmissionRejectCode::InsufficientBalance,
+            },
+            policy_id: Some("policy-1".to_owned()),
+            hold_points: 0,
+        });
+        let error = BillingTransactionInterceptor::new(store.clone())
+            .before(&mut invocation)
+            .await
+            .expect_err("a rejected admission must fail the request");
+        assert_eq!("insufficient_balance", error.kind.code());
+        assert!(
+            error.message.contains("insufficient_balance"),
+            "the rejection code must be visible to operators: {}",
+            error.message
+        );
+        assert!(store.reserved().is_empty(), "a rejection freezes nothing");
+    }
+
+    /// 延后结算的准入不产生冻结，请求照常放行。
+    #[tokio::test]
+    async fn a_deferred_admission_freezes_nothing() {
+        let mut invocation = invocation_with_quote(
+        Method::POST,
+        "/v1/chat/completions",
+        json!({"model": "gpt-4o", "max_tokens": 64, "messages": [{"role": "user", "content": "hi"}]}),
+        BillingMeter::LlmOutputToken,
+    )
+    .await;
+        let store = Arc::new(RecordingBillingStore::default());
+        *store.admission.lock().expect("admission lock") = Some(BillingAdmission {
+            decision: AdmissionDecision::AdmitDeferred,
+            policy_id: None,
+            hold_points: 0,
+        });
+        BillingTransactionInterceptor::new(store.clone())
+            .before(&mut invocation)
+            .await
+            .expect("a deferred admission admits the request");
+        assert!(
+            store.reserved().is_empty(),
+            "deferred admission freezes nothing"
+        );
+    }
+
+    /// 免收费准入（BYOK / 试用）不产生冻结。
+    #[tokio::test]
+    async fn a_free_admission_freezes_nothing() {
+        let mut invocation = invocation_with_quote(
+        Method::POST,
+        "/v1/chat/completions",
+        json!({"model": "gpt-4o", "max_tokens": 64, "messages": [{"role": "user", "content": "hi"}]}),
+        BillingMeter::LlmOutputToken,
+    )
+    .await;
+        let store = Arc::new(RecordingBillingStore::default());
+        *store.admission.lock().expect("admission lock") = Some(BillingAdmission {
+            decision: AdmissionDecision::AdmitFree,
+            policy_id: None,
+            hold_points: 0,
+        });
+        BillingTransactionInterceptor::new(store.clone())
+            .before(&mut invocation)
+            .await
+            .expect("a free admission admits the request");
+        assert!(
+            store.reserved().is_empty(),
+            "a free admission freezes nothing"
+        );
+    }
+
+    /// 账户策略里的输出上限决定冻结量：客户端声明 100_000 也只按 8192 冻结。
+    #[tokio::test]
+    async fn the_account_policy_ceiling_bounds_the_reservation() {
+        let mut invocation = invocation_with_quote(
+        Method::POST,
+        "/v1/chat/completions",
+        json!({"model": "gpt-4o", "max_tokens": 100000, "messages": [{"role": "user", "content": "hi"}]}),
+        BillingMeter::LlmOutputToken,
+    )
+    .await;
+        let store = Arc::new(RecordingBillingStore::default());
+        *store.policy.lock().expect("policy lock") = Some(BillingPolicyParams {
+            output_token_ceiling: 8_192,
+            ..BillingPolicyParams::default()
+        });
+        let reserved = reserved_amount_with(store, &mut invocation).await;
+        assert_micro("8192", &reserved);
+    }
 }

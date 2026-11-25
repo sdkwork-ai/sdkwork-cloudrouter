@@ -2,7 +2,7 @@ import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import { SdkworkI18nProvider } from '@sdkwork/i18n-pc-react';
 import { agentsWorkbenchI18nCatalogs } from '@sdkwork/cloudrouter-pc-playground/i18n';
-import { SDKWORK_OFFICIAL_ACCOUNTS_I18N_CATALOG } from '@sdkwork/iam-pc-official-accounts';
+import { CLOUD_ROUTER_IAM_ADMIN_I18N_CATALOGS } from '@sdkwork/cloudrouter-pc-admin-iam/i18n';
 import {
   cloudRouterI18nCatalog,
   cloudRouterI18nRuntimeConfig,
@@ -37,10 +37,11 @@ createRoot(document.getElementById('root')!).render(
         catalogs={[
           cloudRouterI18nCatalog,
           ...agentsWorkbenchI18nCatalogs,
-          // The shared official-account panel resolves its own namespace; without
-          // this entry it would fall back to the catalog's default locale instead
-          // of the console's active one.
-          SDKWORK_OFFICIAL_ACCOUNTS_I18N_CATALOG,
+          // Every IAM admin page resolves its own module namespace; the list is
+          // owned by the IAM admin package so this surface registers the whole
+          // 身份与访问 family at once (a single missing entry falls back to that
+          // catalog's default locale instead of the console's active one).
+          ...CLOUD_ROUTER_IAM_ADMIN_I18N_CATALOGS,
         ]}
         config={cloudRouterI18nRuntimeConfig}
         defaultVariables={{ platformName: 'Cloud Router' }}

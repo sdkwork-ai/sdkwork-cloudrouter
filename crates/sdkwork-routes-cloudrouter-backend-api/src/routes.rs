@@ -37,16 +37,18 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::installer::{
 use sdkwork_cloudrouter_router_service::infrastructure::sql::pool::connect_standard_database_pool;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
     PostgresAdminAnnouncementStore, PostgresAdminApiKeyRateLimitStore,
-    PostgresAdminAuthSettingsStore, PostgresAdminChainPolicyStore, PostgresAdminFinanceStore,
-    PostgresAdminFirewallRuleStore, PostgresAdminIpRateLimitStore, PostgresAdminMarketingStore,
-    PostgresAdminModelRateLimitStore, PostgresAdminModuleEntryStore, PostgresAdminPricingStore,
-    PostgresAdminRecordStore, PostgresAdminReferralStore, PostgresAdminServiceNodeStore,
-    PostgresAdminStorageStore, PostgresAdminTransactionCenterStore,
-    PostgresAdminUpstreamAccountVerifier, PostgresAdminUpstreamStore, PostgresCatalogLoadError,
-    PostgresGatewayApiKeyCommandStore, PostgresOfficialPricingCatalogReadStore,
-    PostgresPricingCatalogLoader, PostgresRuntimeRegionSettingsStore, PostgresSiteSettingsStore,
+    PostgresAdminAuthSettingsStore, PostgresAdminBillingDecisionStore,
+    PostgresAdminChainPolicyStore, PostgresAdminFinanceStore, PostgresAdminFirewallRuleStore,
+    PostgresAdminIpRateLimitStore, PostgresAdminMarketingStore, PostgresAdminModelRateLimitStore,
+    PostgresAdminModuleEntryStore, PostgresAdminPricingStore, PostgresAdminRecordStore,
+    PostgresAdminReferralStore, PostgresAdminServiceNodeStore, PostgresAdminStorageStore,
+    PostgresAdminTransactionCenterStore, PostgresAdminUpstreamAccountVerifier,
+    PostgresAdminUpstreamStore, PostgresCatalogLoadError, PostgresGatewayApiKeyCommandStore,
+    PostgresOfficialPricingCatalogReadStore, PostgresPricingCatalogLoader,
+    PostgresRuntimeRegionSettingsStore, PostgresSiteSettingsStore,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::OsApiKeySecretGenerator;
+use sdkwork_cloudrouter_router_service::ports::AdminBillingDecisionStore;
 use sdkwork_cloudrouter_router_service::ports::{
     AdminAnalyticsReadStore, AdminAnnouncementStore, AdminApiKeyRateLimitStore,
     AdminAuthSettingsStore, AdminChainPolicyStore, AdminDashboardReadStore, AdminFinanceStore,
@@ -105,6 +107,7 @@ type AdminApiKeyRateLimitRuntimeStore = Arc<dyn AdminApiKeyRateLimitStore + Send
 type AdminModelRateLimitRuntimeStore = Arc<dyn AdminModelRateLimitStore + Send + Sync>;
 type AdminModelRuntimeStore = Arc<dyn ModelCatalogAdminStore + Send + Sync>;
 type AdminFinanceRuntimeStore = Arc<dyn AdminFinanceStore + Send + Sync>;
+type AdminBillingDecisionRuntimeStore = Arc<dyn AdminBillingDecisionStore + Send + Sync>;
 type AdminMarketingRuntimeStore = Arc<dyn AdminMarketingStore + Send + Sync>;
 type AdminPricingRuntimeStore = Arc<dyn AdminPricingStore + Send + Sync>;
 type OfficialPricingRuntimeReadStore = Arc<dyn OfficialPricingCatalogReadStore + Send + Sync>;
@@ -185,6 +188,7 @@ struct AdminRouterRuntime<'a> {
     model_rate_limit_store: Option<AdminModelRateLimitRuntimeStore>,
     model_store: Option<AdminModelRuntimeStore>,
     finance_store: Option<AdminFinanceRuntimeStore>,
+    admin_billing_decision_store: Option<AdminBillingDecisionRuntimeStore>,
     marketing_store: Option<AdminMarketingRuntimeStore>,
     pricing_store: Option<AdminPricingRuntimeStore>,
     official_pricing_read_store: Option<OfficialPricingRuntimeReadStore>,
@@ -617,6 +621,14 @@ where
                 sdkwork_cloudrouter_router_service::api::admin_finance_router_with_store(store),
             ));
         }
+        if let Some(store) = admin_billing_decision_store {
+            router = router.merge(layer_with_admin_subject_boundary(
+                admin_subject_boundary_config.clone(),
+                sdkwork_cloudrouter_router_service::api::admin_billing_decision_router_with_store(
+                    store,
+                ),
+            ));
+        }
         if let Some(store) = marketing_store {
             router = router.merge(layer_with_admin_subject_boundary(
                 admin_subject_boundary_config.clone(),
@@ -879,6 +891,8 @@ pub async fn router_with_postgres_shared_runtime(
     );
     let finance_store: AdminFinanceRuntimeStore =
         Arc::new(PostgresAdminFinanceStore::new(pool.clone()));
+    let admin_billing_decision_store: AdminBillingDecisionRuntimeStore =
+        Arc::new(PostgresAdminBillingDecisionStore::new(pool.clone()));
     let marketing_store: AdminMarketingRuntimeStore =
         Arc::new(PostgresAdminMarketingStore::new(pool.clone()));
     let pricing_store: AdminPricingRuntimeStore =
@@ -985,6 +999,7 @@ pub async fn router_with_postgres_shared_runtime(
             model_rate_limit_store: Some(model_rate_limit_store),
             model_store: Some(model_store),
             finance_store: Some(finance_store),
+            admin_billing_decision_store: Some(admin_billing_decision_store),
             marketing_store: Some(marketing_store),
             pricing_store: Some(pricing_store),
             official_pricing_read_store: Some(official_pricing_read_store),
@@ -1195,6 +1210,8 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
         ));
     let finance_store: AdminFinanceRuntimeStore =
         Arc::new(PostgresAdminFinanceStore::new(pool.clone()));
+    let admin_billing_decision_store: AdminBillingDecisionRuntimeStore =
+        Arc::new(PostgresAdminBillingDecisionStore::new(pool.clone()));
     let marketing_store: AdminMarketingRuntimeStore =
         Arc::new(PostgresAdminMarketingStore::new(pool.clone()));
     let pricing_store: AdminPricingRuntimeStore =
@@ -1246,6 +1263,7 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
                     model_rate_limit_store: Some(model_rate_limit_store),
                     model_store: Some(model_store),
                     finance_store: Some(finance_store),
+            admin_billing_decision_store: Some(admin_billing_decision_store),
                     marketing_store: Some(marketing_store),
                     pricing_store: Some(pricing_store),
                     official_pricing_read_store: Some(official_pricing_read_store),

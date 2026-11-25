@@ -74,6 +74,7 @@ export class PlaygroundService {
         prompt: input.prompt,
         targetType: input.targetType ?? input.selectedModality,
         selectedModel: input.selectedModel,
+        selectedVendorCode: input.selectedVendorCode,
         generationConfig: input.generationConfig,
         referenceAssets: input.referenceAssets,
         referenceImages: input.referenceImages,

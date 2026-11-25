@@ -10,9 +10,7 @@ use std::sync::Arc;
 
 use sqlx::{PgPool, Row};
 
-use crate::application::{
-    build_model_group_catalog, ModelGroupRoutingIndex,
-};
+use crate::application::{build_model_group_catalog, ModelGroupRoutingIndex};
 use crate::domain::{
     upstream_account_group_in_subject_scope, AccountGroupRouteScope, AiModel, DomainError,
     DomainResult, ModelGroupCatalogModality, ModelGroupOption, SessionAccountGroupModality,
@@ -20,9 +18,8 @@ use crate::domain::{
 };
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::ports::{
-    AppModelGroupCatalogQuery, AppModelGroupDefaultItem, AppModelGroupFuture,
-    AppModelGroupStore, AppModelGroupSubject, SetAppModelGroupDefaultCommand,
-    UpstreamAccountRouteCatalog,
+    AppModelGroupCatalogQuery, AppModelGroupDefaultItem, AppModelGroupFuture, AppModelGroupStore,
+    AppModelGroupSubject, SetAppModelGroupDefaultCommand, UpstreamAccountRouteCatalog,
 };
 
 pub struct PostgresAppModelGroupStore {
@@ -35,10 +32,7 @@ impl PostgresAppModelGroupStore {
     where
         C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
     {
-        Self {
-            catalog,
-            pool,
-        }
+        Self { catalog, pool }
     }
 
     async fn load_routes(
@@ -435,8 +429,7 @@ impl AppModelGroupStore for PostgresAppModelGroupStore {
             Ok(rows
                 .into_iter()
                 .filter_map(|row| {
-                    let scope =
-                        AccountGroupRouteScope::parse(&row.get::<String, _>("scope_type"))?;
+                    let scope = AccountGroupRouteScope::parse(&row.get::<String, _>("scope_type"))?;
                     Some(AppModelGroupDefaultItem {
                         scope,
                         modality: row.get("modality"),
@@ -453,7 +446,10 @@ impl AppModelGroupStore for PostgresAppModelGroupStore {
     }
 }
 
-fn find_model(catalog: &(dyn UpstreamAccountRouteCatalog + Send + Sync), model: &str) -> Option<AiModel> {
+fn find_model(
+    catalog: &(dyn UpstreamAccountRouteCatalog + Send + Sync),
+    model: &str,
+) -> Option<AiModel> {
     crate::application::resolve_catalog_model(catalog, model)
 }
 
@@ -620,10 +616,7 @@ mod tests {
         let writes = scope_route_writes(&normalized.account_groups);
 
         assert_eq!(
-            vec![
-                (0, 20, "pool-b".to_owned()),
-                (10, 10, "pool-a".to_owned()),
-            ],
+            vec![(0, 20, "pool-b".to_owned()), (10, 10, "pool-a".to_owned()),],
             writes,
             "both groups must persist for the same model, in caller priority order",
         );
@@ -640,10 +633,7 @@ mod tests {
     async fn an_empty_group_list_clears_the_scope() {
         let store = model_scope_store();
         let normalized = store
-            .normalize_command(
-                model_scope_subject(),
-                model_scope_command(Vec::new()),
-            )
+            .normalize_command(model_scope_subject(), model_scope_command(Vec::new()))
             .expect("an empty list clears the scope");
 
         assert!(normalized.account_groups.is_empty());

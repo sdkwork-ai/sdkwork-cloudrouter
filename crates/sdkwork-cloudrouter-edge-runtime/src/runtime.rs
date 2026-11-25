@@ -1675,6 +1675,7 @@ async fn router_with_database_bootstrap(
         )
         .await?;
         maybe_spawn_postgres_runtime_invocation_reaper(&pool).await?;
+        maybe_spawn_postgres_hold_sweep_worker(&pool).await?;
         let primary_usage_recorder = wrap_usage_recorder_with_settlement_wakeup(
             Arc::new(PostgresGatewayUsageRecorder::new_with_attribution(
                 pool.clone(),
@@ -2504,6 +2505,9 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
         )
         .await
         .map_err(anyhow::Error::new)?;
+        maybe_spawn_postgres_hold_sweep_worker(&commerce_pool)
+            .await
+            .map_err(anyhow::Error::new)?;
         maybe_spawn_postgres_runtime_invocation_reaper(&commerce_pool)
             .await
             .map_err(anyhow::Error::new)?;
@@ -2906,6 +2910,53 @@ async fn maybe_spawn_postgres_payment_reconciliation_worker(
         tracing::info!("payment reconciliation worker stopped");
     });
     Ok(())
+}
+
+/// Releases prepaid holds whose lifetime elapsed, across every tenant.
+///
+/// A hold is created per request and normally settled within seconds. An aborted
+/// stream leaves one behind, and until now nothing but an operator-triggered
+/// per-tenant sweep released it, so the frozen amount stayed unavailable for the
+/// whole TTL (44% of a wallet in the production incident). Releasing here does
+/// not forgive a charge: recorded usage is captured by the settlement path, which
+/// handles an expired hold through its own capture suffix.
+async fn maybe_spawn_postgres_hold_sweep_worker(pool: &PgPool) -> Result<(), GatewayRouterError> {
+    let interval_seconds = hold_sweep_interval_seconds();
+    if interval_seconds == 0 {
+        tracing::info!("hold sweep worker disabled by configuration");
+        return Ok(());
+    }
+    let store = Arc::new(PostgresCommerceAccountStore::new(pool.clone()));
+    let interval = Duration::from_secs(interval_seconds);
+    let mut shutdown_rx = sdkwork_cloudrouter_http::subscribe_shutdown_signal();
+    tokio::spawn(async move {
+        loop {
+            match store.sweep_expired_holds().await {
+                Ok(outcome) if outcome.expired_hold_count > 0 => tracing::info!(
+                    expired_hold_count = outcome.expired_hold_count,
+                    released_points = %outcome.released_amount_total,
+                    "released expired prepaid holds"
+                ),
+                Ok(_) => {}
+                Err(error) => tracing::warn!(error = %error, "hold sweep failed"),
+            }
+            tokio::select! {
+                _ = shutdown_rx.recv() => break,
+                _ = sleep(interval) => {}
+            }
+        }
+        tracing::info!("hold sweep worker stopped");
+    });
+    Ok(())
+}
+
+/// Sweep cadence. `0` disables the worker; the default keeps an abandoned
+/// reservation from outliving its request by more than a minute.
+fn hold_sweep_interval_seconds() -> u64 {
+    std::env::var("SDKWORK_CLOUDROUTER_HOLD_SWEEP_INTERVAL_SECONDS")
+        .ok()
+        .and_then(|value| value.trim().parse::<u64>().ok())
+        .unwrap_or(60)
 }
 
 async fn maybe_spawn_postgres_upstream_credential_rotation_worker(

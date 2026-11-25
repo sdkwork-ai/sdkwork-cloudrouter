@@ -1,0 +1,44 @@
+{
+  "name": "@sdkwork/cloudrouter-pc-admin-billing",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Read-only billing decision diagnostics for the Cloud Router admin console.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "vitest run --root ../.. packages/sdkwork-cloudrouter-pc-admin-billing/tests",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "^4.1.10"
+  },
+  "peerDependencies": {
+    "react": ">=18.2.0 <20.0.0",
+    "react-dom": ">=18.2.0 <20.0.0"
+  },
+  "sdkwork": {
+    "workspace": "sdkwork-cloudrouter",
+    "architecture": "pc-react",
+    "domain": "commerce",
+    "capability": "billing",
+    "surface": "backend-admin",
+    "status": "scaffold"
+  }
+}

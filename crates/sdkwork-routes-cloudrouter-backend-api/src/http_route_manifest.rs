@@ -516,6 +516,18 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
+        "/backend/v3/api/memory/memories",
+        "memory",
+        "memoryAdmin.records.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/backend/v3/api/memory/spaces",
+        "memory",
+        "memoryAdmin.spaces.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
         "/backend/v3/api/payments/providers",
         "payments",
         "providers.list",
@@ -714,18 +726,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
-        "/backend/v3/api/storage/generation_delivery_policies",
-        "storage",
-        "generationDelivery.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Put,
-        "/backend/v3/api/storage/generation_delivery_policies/{scopeType}/{scopeId}",
-        "storage",
-        "generationDelivery.update",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
         "/backend/v3/api/storage/quotas",
         "storage",
         "oss.quotas.list",
@@ -753,18 +753,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/backend/v3/api/storage/usage",
         "storage",
         "oss.usage.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/backend/v3/api/storage/vendor_asset_ttls",
-        "storage",
-        "vendorAssetTtl.list",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Put,
-        "/backend/v3/api/storage/vendor_asset_ttls/{vendorCode}/{mediaKind}",
-        "storage",
-        "vendorAssetTtl.update",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,

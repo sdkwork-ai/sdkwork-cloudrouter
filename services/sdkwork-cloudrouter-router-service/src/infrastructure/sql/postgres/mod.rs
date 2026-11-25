@@ -69,8 +69,8 @@ pub use admin_upstream_store::{PostgresAdminUpstreamAccountVerifier, PostgresAdm
 pub use api_key_command_store::PostgresGatewayApiKeyCommandStore;
 pub use app_gateway_traces_read_store::PostgresAppGatewayTracesReadStore;
 pub use app_invite_store::PostgresAppInviteStore;
-pub use app_notification_store::PostgresAppNotificationStore;
 pub use app_model_group_store::PostgresAppModelGroupStore;
+pub use app_notification_store::PostgresAppNotificationStore;
 pub use app_routing_read_store::PostgresAppRoutingReadStore;
 pub use app_runtime_store::PostgresAppRuntimeStore;
 pub use async_usage_task_store::PostgresAsyncUsageTaskStore;
@@ -95,3 +95,6 @@ pub use upstream_credential_rotation_store::PostgresUpstreamCredentialRotationSt
 pub use usage_logs_read_store::PostgresUsageLogsReadStore;
 pub use usage_retention_store::PostgresUsageRetentionStore;
 pub use usage_settlement_store::PostgresUsageSettlementStore;
+
+mod admin_billing_decision_store;
+pub use admin_billing_decision_store::PostgresAdminBillingDecisionStore;

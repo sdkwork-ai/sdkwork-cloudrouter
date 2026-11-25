@@ -389,16 +389,24 @@ mod filter_code_tests {
     fn a_filter_code_is_open_but_shaped() {
         // A channel this build does not know must still be filterable: providers
         // and methods are deployment configuration, not enum variants.
-        for code in ["wechat_native", "alipay_pc", "stripe", "some_new_channel", "acme.pay"] {
+        for code in [
+            "wechat_native",
+            "alipay_pc",
+            "stripe",
+            "some_new_channel",
+            "acme.pay",
+        ] {
             assert!(
-                super::normalize_optional_filter_code(Some(code.to_owned()), "providerCode").is_ok(),
+                super::normalize_optional_filter_code(Some(code.to_owned()), "providerCode")
+                    .is_ok(),
                 "{code} must be accepted"
             );
         }
         // Shape is still enforced.
         for bad in ["we chat", "wechat/pay", "-leading", "_leading"] {
             assert!(
-                super::normalize_optional_filter_code(Some(bad.to_owned()), "providerCode").is_err(),
+                super::normalize_optional_filter_code(Some(bad.to_owned()), "providerCode")
+                    .is_err(),
                 "{bad:?} must be rejected"
             );
         }
@@ -407,8 +415,11 @@ mod filter_code_tests {
             .is_none());
         // Case is normalized so filters are case-insensitive at the API edge.
         assert_eq!(
-            super::normalize_optional_filter_code(Some("  WeChat_Native ".to_owned()), "providerCode")
-                .expect("normalized"),
+            super::normalize_optional_filter_code(
+                Some("  WeChat_Native ".to_owned()),
+                "providerCode"
+            )
+            .expect("normalized"),
             Some("wechat_native".to_owned())
         );
     }

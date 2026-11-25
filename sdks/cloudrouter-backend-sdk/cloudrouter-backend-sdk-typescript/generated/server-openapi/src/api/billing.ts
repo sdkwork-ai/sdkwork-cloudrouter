@@ -1,8 +1,28 @@
 import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
-import type { AdminExchangeRule, AdminExchangeRuleListResponse, AdminRechargeRecord, AdminRechargeRecordPage, AdminReferralRelationListResponse, AdminReferralStatListResponse, AdminReferralStrategy, AdminReferralStrategyListResponse, AdminReferralStrategyMutationRequest, ExchangeRuleMutationRequest } from '../types';
+import type { AdminBillingDecision, AdminExchangeRule, AdminExchangeRuleListResponse, AdminRechargeRecord, AdminRechargeRecordPage, AdminReferralRelationListResponse, AdminReferralStatListResponse, AdminReferralStrategy, AdminReferralStrategyListResponse, AdminReferralStrategyMutationRequest, ExchangeRuleMutationRequest } from '../types';
 
+
+export interface BillingDecisionRetrieveParams {
+  invocationId: string;
+}
+
+export class BillingDecisionApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+async retrieve(params: BillingDecisionRetrieveParams, requestOptions?: ApiRequestOptions): Promise<AdminBillingDecision> {
+    const query = buildQueryString([
+      { name: 'invocation_id', value: params.invocationId, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<AdminBillingDecision>(appendQueryString(backendApiPath(`/billing/decision`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+  }
+}
 
 export interface BillingReferralStatsListParams {
   page?: number;
@@ -167,6 +187,7 @@ export class BillingApi {
   public readonly referralStrategies: BillingReferralStrategiesApi;
   public readonly referralRelations: BillingReferralRelationsApi;
   public readonly referralStats: BillingReferralStatsApi;
+  public readonly decision: BillingDecisionApi;
 
   constructor(client: HttpClient) {
     this.exchangeRules = new BillingExchangeRulesApi(client);
@@ -174,6 +195,7 @@ export class BillingApi {
     this.referralStrategies = new BillingReferralStrategiesApi(client);
     this.referralRelations = new BillingReferralRelationsApi(client);
     this.referralStats = new BillingReferralStatsApi(client);
+    this.decision = new BillingDecisionApi(client);
   }
 
 }

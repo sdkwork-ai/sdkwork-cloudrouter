@@ -70,11 +70,7 @@ where
     C: UpstreamAccountRouteCatalog,
 {
     authenticated_context_from_auth_token_identity_with_routing(
-        catalog,
-        identity,
-        capability,
-        None,
-        None,
+        catalog, identity, capability, None, None,
     )
 }
 
@@ -225,11 +221,9 @@ where
         .map(|binding| binding.account_group_id)
         .collect::<Vec<_>>();
     let groups = catalog.list_upstream_account_groups();
-    let Some(group) = crate::domain::select_api_key_account_group_override(
-        &bound_group_ids,
-        &groups,
-        Some(raw),
-    ) else {
+    let Some(group) =
+        crate::domain::select_api_key_account_group_override(&bound_group_ids, &groups, Some(raw))
+    else {
         tracing::warn!(
             api_key_id = context.api_key_id,
             requested = raw,

@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "96e2cf7fadd498a4aa713de598e145c0859157c9c1bf9ff530f7c93106e9d611",
+  "changeFingerprint": "a975c9aa6b39c6a8461a3bf2272f6f1b8777606a361123e8c2ac5956910be5ee",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -61,6 +61,7 @@
           "src/types/admin-auth-invite-code-policy.ts",
           "src/types/admin-auth-settings-response.ts",
           "src/types/admin-auth-settings-update-request.ts",
+          "src/types/admin-billing-decision.ts",
           "src/types/admin-dashboard-overview.ts",
           "src/types/admin-dashboard-pie-chart-item.ts",
           "src/types/admin-dashboard-recent-usage-item.ts",
@@ -426,10 +427,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 384,
-    "models": 352,
+    "totalFiles": 386,
+    "models": 354,
     "apis": 9,
-    "types": 354
+    "types": 356
   },
   "warnings": [
     {
@@ -488,12 +489,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 241,
+    "writtenFiles": 242,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "96e2cf7fadd498a4aa713de598e145c0859157c9c1bf9ff530f7c93106e9d611",
+    "changeFingerprint": "a975c9aa6b39c6a8461a3bf2272f6f1b8777606a361123e8c2ac5956910be5ee",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -536,6 +537,7 @@
         "src/types/admin-auth-invite-code-policy.ts",
         "src/types/admin-auth-settings-response.ts",
         "src/types/admin-auth-settings-update-request.ts",
+        "src/types/admin-billing-decision.ts",
         "src/types/admin-dashboard-overview.ts",
         "src/types/admin-dashboard-pie-chart-item.ts",
         "src/types/admin-dashboard-recent-usage-item.ts",
@@ -794,6 +796,7 @@
             "src/types/admin-auth-invite-code-policy.ts",
             "src/types/admin-auth-settings-response.ts",
             "src/types/admin-auth-settings-update-request.ts",
+            "src/types/admin-billing-decision.ts",
             "src/types/admin-dashboard-overview.ts",
             "src/types/admin-dashboard-pie-chart-item.ts",
             "src/types/admin-dashboard-recent-usage-item.ts",

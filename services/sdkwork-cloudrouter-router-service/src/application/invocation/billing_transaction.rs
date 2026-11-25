@@ -13,6 +13,7 @@ use crate::ports::{
     token_points_for_charge, CustomerChargeMode, GatewayBillingAmount, GatewayBillingContext,
     GatewayBillingStore, RechargeSettingsModel,
 };
+use sdkwork_contract_service::{AdmissionDecision, BillingPolicyParams};
 
 #[derive(Clone)]
 pub struct BillingTransactionInterceptor {
@@ -98,10 +99,62 @@ impl InvocationInterceptor for BillingTransactionInterceptor {
                 );
                 return Ok(());
             }
-            let Some(amount) = estimated_amount(invocation, &settings) else {
+            // Funding rules belong to the account service: it resolves the
+            // policy and decides whether this call may proceed. The routing
+            // runtime only estimates the charge, so a model-wide output cap can
+            // never turn into a wallet-wide reservation on its own.
+            let policy = self
+                .store
+                .billing_policy(context.clone())
+                .await
+                .map_err(billing_error)?;
+            let Some(estimated) = estimated_amount(invocation, &settings, &policy) else {
                 return Err(billing_error(
                     "unable to establish a conservative precharge",
                 ));
+            };
+            if estimated.amount == "0" {
+                return Ok(());
+            }
+            let admission = self
+                .store
+                .authorize_charge(context.clone(), estimated.clone())
+                .await
+                .map_err(billing_port_error)?;
+            let amount = match admission.decision {
+                AdmissionDecision::Reject { code } => {
+                    return Err(InvocationError::new(
+                        InvocationErrorKind::InsufficientBalance,
+                        format!("account admission rejected the charge: {}", code.as_str()),
+                    ));
+                }
+                AdmissionDecision::AdmitFree => {
+                    // Reuse the existing waived-charge path: it releases whatever
+                    // the precharge reserved, skips settlement and writes no ledger
+                    // entry — exactly what a waived admission means (the account
+                    // decided this call must not spend the balance, e.g. BYOK).
+                    invocation.charging.waived = Some("account_admission_free".to_owned());
+                    tracing::debug!(
+                        stage = "billing_precharge",
+                        request_id = %invocation.request.request_id,
+                        trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+                        "billing precharge waived by the account admission decision"
+                    );
+                    return Ok(());
+                }
+                AdmissionDecision::AdmitDeferred => {
+                    tracing::debug!(
+                        stage = "billing_precharge",
+                        request_id = %invocation.request.request_id,
+                        trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+                        "billing precharge deferred by the account admission decision"
+                    );
+                    return Ok(());
+                }
+                AdmissionDecision::Admit { hold_points } => GatewayBillingAmount {
+                    amount: hold_points.to_string(),
+                    currency: estimated.currency.clone(),
+                },
             };
             if amount.amount == "0" {
                 return Ok(());
@@ -575,6 +628,7 @@ fn single_pricing_currency(invocation: &Invocation) -> bool {
 fn estimated_amount(
     invocation: &Invocation,
     settings: &RechargeSettingsModel,
+    policy: &BillingPolicyParams,
 ) -> Option<GatewayBillingAmount> {
     let first = invocation.usage.pricing_quotes.first()?;
     let currency = first.customer_charge_unit_price.currency.clone();
@@ -585,7 +639,7 @@ fn estimated_amount(
     // 上界；输出与媒体计量仍逐项相加。
     let mut input_pool_max = DecimalValue::ZERO;
     let input_units = conservative_input_units(invocation);
-    let output_units = conservative_output_units(invocation);
+    let output_units = conservative_output_units(invocation, policy.output_token_ceiling);
     let request_body = request_body_json(invocation);
     for quote in &invocation.usage.pricing_quotes {
         if quote.customer_charge_unit_price.currency != currency {
@@ -685,7 +739,14 @@ fn conservative_input_units(invocation: &Invocation) -> i64 {
     (bytes / 4).saturating_add(1).clamp(1, 1_000_000)
 }
 
-fn conservative_output_units(invocation: &Invocation) -> i64 {
+/// Output quantity a reservation may assume.
+///
+/// The client's `max_tokens` is a model-wide upper bound (relays advertise
+/// hundreds of thousands of tokens), not an expectation. The account policy owns
+/// the ceiling applied to it, so estimation never freezes a wallet against a cap
+/// the model will not reach. Over-ceiling usage is still billed at settlement
+/// through the recorded overage path.
+fn conservative_output_units(invocation: &Invocation, ceiling: i64) -> i64 {
     let requested = match &invocation.request.body {
         super::InvocationBody::Json(value) => value
             .get("max_completion_tokens")
@@ -701,7 +762,10 @@ fn conservative_output_units(invocation: &Invocation) -> i64 {
     }
     .unwrap_or(1)
     .clamp(1, 32);
-    requested.saturating_mul(n).clamp(1, 1_000_000)
+    requested
+        .saturating_mul(n)
+        .clamp(1, 1_000_000)
+        .min(ceiling.max(1))
 }
 
 fn unit_size_or_default(meter: &BillingMeter, persisted: &str) -> Option<DecimalValue> {

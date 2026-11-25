@@ -90,6 +90,9 @@ pub use app_dashboard::app_dashboard_overview_router;
 pub use app_dashboard::app_dashboard_overview_router_with_read_store;
 pub use app_gateway::{app_gateway_traces_router, app_gateway_traces_router_with_read_store};
 pub use app_invite::app_invite_router_with_store;
+pub use app_model_groups::{
+    app_model_group_router, empty_app_model_group_router, APP_MODEL_GROUP_ROUTES,
+};
 pub use app_notification::app_notification_router;
 pub use app_notification::app_notification_router_with_store;
 pub use app_pricing::{
@@ -97,9 +100,6 @@ pub use app_pricing::{
     app_pricing_router_with_read_store,
 };
 pub use app_routing::app_routing_router;
-pub use app_model_groups::{
-    app_model_group_router, empty_app_model_group_router, APP_MODEL_GROUP_ROUTES,
-};
 pub use app_routing::app_routing_router_with_read_store;
 pub use app_runtime::app_runtime_router;
 pub use app_runtime::app_runtime_router_with_store;
@@ -184,3 +184,6 @@ pub use sdkwork_models_catalog_service::{
 pub use site_settings::admin_site_settings_router_with_store;
 pub use site_settings::app_site_settings_router;
 pub use site_settings::app_site_settings_router_with_store;
+
+mod admin_billing_decision;
+pub use admin_billing_decision::admin_billing_decision_router_with_store;

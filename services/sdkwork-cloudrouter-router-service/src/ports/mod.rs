@@ -229,8 +229,8 @@ pub use api_key_command_store::{
     AccountGroupBindingInput, ApiKeyCommandStoreFuture, CreateGatewayApiKeyCommand,
     CreatedGatewayApiKey, DeleteGatewayApiKeyCommand, DeleteGatewayApiKeyForOrganizationCommand,
     EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore,
-    RevealGatewayApiKeySecretCommand, RevealGatewayApiKeySecretOutcome,
-    UpdateGatewayApiKeyCommand, UpdatedGatewayApiKey,
+    RevealGatewayApiKeySecretCommand, RevealGatewayApiKeySecretOutcome, UpdateGatewayApiKeyCommand,
+    UpdatedGatewayApiKey,
 };
 pub use api_key_management_read_store::{
     ApiKeyManagementReadFuture, GatewayApiKeyListPage, GatewayApiKeyManagementReadStore,
@@ -409,4 +409,10 @@ pub use usage_retention_store::{
 pub(crate) use usage_settlement_store::MAX_USAGE_SETTLEMENT_BATCH_SIZE;
 pub use usage_settlement_store::{
     UsageSettlementCommand, UsageSettlementFuture, UsageSettlementOutcome, UsageSettlementStore,
+};
+
+mod admin_billing_decision_store;
+pub use admin_billing_decision_store::{
+    AdminBillingDecision, AdminBillingDecisionFuture, AdminBillingDecisionStore,
+    AdminBillingDecisionSubject, AdminBillingDecisionVerdict,
 };

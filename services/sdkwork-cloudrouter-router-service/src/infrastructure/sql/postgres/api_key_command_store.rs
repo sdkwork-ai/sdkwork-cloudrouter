@@ -12,8 +12,8 @@ use crate::ports::{
     AccountGroupBindingInput, ApiKeyCommandStoreFuture, CreateGatewayApiKeyCommand,
     CreatedGatewayApiKey, DeleteGatewayApiKeyCommand, DeleteGatewayApiKeyForOrganizationCommand,
     EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore,
-    RevealGatewayApiKeySecretCommand, RevealGatewayApiKeySecretOutcome,
-    UpdateGatewayApiKeyCommand, UpdatedGatewayApiKey,
+    RevealGatewayApiKeySecretCommand, RevealGatewayApiKeySecretOutcome, UpdateGatewayApiKeyCommand,
+    UpdatedGatewayApiKey,
 };
 
 const API_KEY_STATUS_REVOKED: i32 = 4;
@@ -191,29 +191,25 @@ impl GatewayApiKeyCommandStore for PostgresGatewayApiKeyCommandStore {
             .await
             .map_err(|error| store_error("failed to load api key secret for reveal", error))?;
             let Some(row) = row else {
-                tx.commit()
-                    .await
-                    .map_err(|error| store_error("failed to finish api key reveal transaction", error))?;
+                tx.commit().await.map_err(|error| {
+                    store_error("failed to finish api key reveal transaction", error)
+                })?;
                 return Ok(RevealGatewayApiKeySecretOutcome::NotFound);
             };
-            let reveal_throttled: bool = row
-                .try_get("reveal_throttled")
-                .map_err(row_error)?;
+            let reveal_throttled: bool = row.try_get("reveal_throttled").map_err(row_error)?;
             if reveal_throttled {
-                tx.commit()
-                    .await
-                    .map_err(|error| store_error("failed to finish api key reveal transaction", error))?;
+                tx.commit().await.map_err(|error| {
+                    store_error("failed to finish api key reveal transaction", error)
+                })?;
                 return Ok(RevealGatewayApiKeySecretOutcome::Throttled);
             }
-            let secret_mode: String = row
-                .try_get("key_secret_mode")
-                .map_err(row_error)?;
+            let secret_mode: String = row.try_get("key_secret_mode").map_err(row_error)?;
             let raw_key =
                 decode_stored_api_key_secret(&self.secret_storage, &row, &command, &secret_mode)?;
             let Some(raw_key) = raw_key else {
-                tx.commit()
-                    .await
-                    .map_err(|error| store_error("failed to finish api key reveal transaction", error))?;
+                tx.commit().await.map_err(|error| {
+                    store_error("failed to finish api key reveal transaction", error)
+                })?;
                 return Ok(RevealGatewayApiKeySecretOutcome::NotFound);
             };
             sqlx::query(

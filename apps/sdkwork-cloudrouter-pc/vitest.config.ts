@@ -9,6 +9,7 @@ export default defineConfig({
       'packages/sdkwork-cloudrouter-pc-console-api-keys/src/quick-import/quickImport.test.ts',
       'packages/sdkwork-cloudroutes-pc-commons/src/file-upload/upload-declaration.test.ts',
       'packages/sdkwork-cloudroutes-pc-commons/src/drive-media.test.ts',
+      'packages/sdkwork-cloudrouter-pc-admin-billing/tests/**/*.test.ts',
     ],
   },
 });

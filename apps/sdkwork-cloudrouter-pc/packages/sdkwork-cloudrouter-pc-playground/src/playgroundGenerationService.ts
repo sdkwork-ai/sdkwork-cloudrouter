@@ -90,7 +90,13 @@ export async function runPlaygroundGeneration(input: GenerationAgentRunCreateInp
   }
 
   const selectedModel = trim(input.selectedModel ?? '');
-  const requestedTargetType = input.targetType;
+  const selectedVendorCode = resolveSelectedVendorCode(input);
+  // The app-runtime gateway routes a media invocation by `requestJson.targetType`
+  // (`runtime_gateway_api` in the router service): without it every image /
+  // video / music / speech command is classified as a chat completion, so the
+  // media result never appears. A caller that names no target type still gets
+  // the modality carried by its reference assets instead of a chat route.
+  const requestedTargetType = input.targetType ?? inferTargetTypeFromReferences(input);
   const runId = createClientOperationToken('playground-runtime-run');
   const runtimeInvocation = await createPlaygroundRuntimeInvocation({
     input,
@@ -98,6 +104,7 @@ export async function runPlaygroundGeneration(input: GenerationAgentRunCreateInp
     requestedTargetType,
     runId,
     selectedModel,
+    selectedVendorCode,
   });
 
   let generationOutput: RuntimeGenerationOutput;
@@ -172,12 +179,14 @@ async function createPlaygroundRuntimeInvocation(
     requestedTargetType,
     runId,
     selectedModel,
+    selectedVendorCode,
   }: {
     input: GenerationAgentRunCreateInput;
     prompt: string;
     requestedTargetType?: PlaygroundGenerationTargetType;
     runId: string;
     selectedModel: string;
+    selectedVendorCode?: string;
   },
 ): Promise<RuntimeInvocationItem> {
   const result = await createRuntimeInvocation(
@@ -191,14 +200,16 @@ async function createPlaygroundRuntimeInvocation(
         targetType: requestedTargetType,
       }),
       model: selectedModel || undefined,
-      provider: selectedModel ? readProviderFromModel(selectedModel) : undefined,
+      provider: selectedVendorCode,
       requestJson: compactJsonObject({
         generationConfig: input.generationConfig,
+        generationMode: mapReferenceModeToRuntimeGenerationMode(input.referenceMode),
         prompt,
         referenceAssets: input.referenceAssets,
         referenceImages: input.referenceImages,
         referenceMode: input.referenceMode,
         selectedModel: selectedModel || undefined,
+        vendor: selectedVendorCode,
         targetType: requestedTargetType,
       }),
       runtime: RUNTIME_ADAPTER,
@@ -844,6 +855,66 @@ function mapPlaygroundGenerationStatus(status: AgentRunItem['status']): Playgrou
     case 'failed':
     default:
       return 'failed';
+  }
+}
+
+/**
+ * Vendor code the agent runtime should dispatch to.
+ *
+ * The catalog option carries the authoritative `vendorCode`; a `vendor/model`
+ * catalog key is the only other source. The previous implementation derived
+ * the provider from the part before the first `/` of the bare model id, which
+ * is empty for every catalog model id and left the runtime on the modality
+ * default vendor.
+ */
+function resolveSelectedVendorCode(input: GenerationAgentRunCreateInput): string | undefined {
+  const explicit = trim(input.selectedVendorCode ?? '');
+  if (explicit) {
+    return explicit;
+  }
+  return readProviderFromModel(trim(input.selectedModel ?? ''));
+}
+
+/**
+ * Modality an agent-mode submit targets when the caller names none.
+ *
+ * A video reference means a video command; otherwise an attached reference
+ * image means an image edit. Returning `undefined` keeps a plain chat turn on
+ * the assistant route instead of fabricating a media target.
+ */
+function inferTargetTypeFromReferences(
+  input: GenerationAgentRunCreateInput,
+): PlaygroundGenerationTargetType | undefined {
+  const hasVideoReference = (input.referenceAssets ?? [])
+    .some((asset) => asset.kind === 'video' || asset.role === 'reference_video');
+  if (hasVideoReference) {
+    return 'video';
+  }
+  const hasImageReference = (input.referenceImages?.length ?? 0) > 0
+    || (input.referenceAssets ?? []).some((asset) => asset.kind === 'image');
+  return hasImageReference ? 'image' : undefined;
+}
+
+/**
+ * Reference mode the agent runtime should dispatch.
+ *
+ * Mirrors the generations adapter vocabulary so the runtime receives the same
+ * surface name a direct asset command carries (`start_end_frame`,
+ * `reference_to_video`, ...) instead of the composer-only mode name.
+ */
+function mapReferenceModeToRuntimeGenerationMode(
+  referenceMode: GenerationAgentRunCreateInput['referenceMode'],
+): string | undefined {
+  switch (referenceMode) {
+    case 'first_last_frame':
+      return 'start_end_frame';
+    case 'first_frame':
+      return 'image_to_video';
+    case 'multi_reference':
+    case 'omni_reference':
+      return 'reference_to_video';
+    default:
+      return undefined;
   }
 }
 

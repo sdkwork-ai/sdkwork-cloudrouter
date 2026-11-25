@@ -62,6 +62,16 @@ export interface GenerationAgentRunCreateInput {
   prompt: string;
   targetType?: PlaygroundGenerationTargetType;
   selectedModel?: string;
+  /**
+   * Catalog vendor code of the selected model (`openai`, `kuaishou`,
+   * `bytedance`, `vidu`, `google`, `suno`, `elevenlabs`, `minimax`).
+   *
+   * The generations provider adapter resolves the vendor from
+   * `parameters.vendor` before falling back to the modality default, so a
+   * catalog `vendorCode` that is not encoded in the model id must travel here
+   * or the command is dispatched to the wrong upstream.
+   */
+  selectedVendorCode?: string;
   generationConfig?: PlaygroundGenerationConfig;
   referenceAssets?: PlaygroundReferenceAssetInput[];
   referenceImages?: PlaygroundReferenceImageInput[];
@@ -75,6 +85,8 @@ export interface PlaygroundGenerationSubmitInput {
   selectedModality: PlaygroundGenerationTargetType | 'agent';
   targetType?: PlaygroundGenerationTargetType;
   selectedModel?: string;
+  /** Catalog vendor code of the selected model (see `GenerationAgentRunCreateInput`). */
+  selectedVendorCode?: string;
   generationConfig?: PlaygroundGenerationConfig;
   referenceAssets?: PlaygroundReferenceAssetInput[];
   referenceImages?: PlaygroundReferenceImageInput[];

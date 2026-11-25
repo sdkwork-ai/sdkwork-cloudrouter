@@ -282,6 +282,119 @@ test("playground asset generation maps every video reference mode to sdkwork-gen
   }
 });
 
+test("playground reference modes reach the vendor adapter surface as parameters.generationMode", async () => {
+  // The composer names video modes by intent; the generations provider adapter
+  // switches on vendor surfaces. Without the translation every referenced
+  // video submit fell through to the operation-type default and silently lost
+  // its tail frame or its extra references.
+  const expectedGenerationMode: Record<string, string> = {
+    first_frame: "image_to_video",
+    first_last_frame: "start_end_frame",
+    multi_reference: "reference_to_video",
+    omni_reference: "reference_to_video",
+  };
+  const frameResource = (url: string) => ({
+    kind: "image",
+    publicUrl: url,
+    source: "external_url",
+    url,
+  }) as const;
+
+  for (const [referenceMode, generationMode] of Object.entries(expectedGenerationMode)) {
+    const { commands } = await runAssetGeneration({
+      prompt: "Create referenced video",
+      targetType: "video",
+      referenceMode: referenceMode as never,
+      referenceAssets: [
+        { kind: "image", role: "first_frame", name: "first.png", resource: frameResource("https://cdn.example/first.png") },
+        { kind: "image", role: "last_frame", name: "last.png", resource: frameResource("https://cdn.example/last.png") },
+      ],
+    }, {
+      resultType: "video",
+      kind: "video",
+      publicUrl: "https://cdn.example/generated.mp4",
+      url: "https://cdn.example/generated.mp4",
+    });
+
+    assert.equal(commands[0]?.parameters?.generationMode, generationMode, `${referenceMode} must resolve to ${generationMode}`);
+    // The routed operation stays inside the app-API enum the generations SDK
+    // maps onto a command endpoint.
+    assert.equal(commands[0]?.operationType, "image_to_video");
+    assert.deepEqual(commands[0]?.parameters?.referenceAssets, [
+      {
+        kind: "image",
+        name: "first.png",
+        resource: frameResource("https://cdn.example/first.png"),
+        role: "first_frame",
+        url: "https://cdn.example/first.png",
+      },
+      {
+        kind: "image",
+        name: "last.png",
+        resource: frameResource("https://cdn.example/last.png"),
+        role: "last_frame",
+        url: "https://cdn.example/last.png",
+      },
+    ]);
+  }
+
+  // A plain text-to-video submit carries no generation mode at all.
+  const textOnly = await runAssetGeneration({
+    prompt: "Create video",
+    targetType: "video",
+    referenceMode: "text_to_video",
+  }, {
+    resultType: "video",
+    kind: "video",
+    publicUrl: "https://cdn.example/generated.mp4",
+    url: "https://cdn.example/generated.mp4",
+  });
+  assert.equal(textOnly.commands[0]?.parameters?.generationMode, undefined);
+  assert.equal(textOnly.commands[0]?.operationType, "text_to_video");
+});
+
+test("playground commands carry the selected catalog vendor code so non-default vendors are reached", async () => {
+  // The generations provider adapter resolves the vendor from
+  // `parameters.vendor` before the modality default; a bare catalog model id
+  // without it was dispatched to the default vendor.
+  const cases: Array<[string, string, string]> = [
+    ["kuaishou", "kling-v3", "kuaishou"],
+    ["bytedance", "doubao-seedance-2-0", "bytedance"],
+    ["vidu", "viduq3-pro", "vidu"],
+    ["google", "veo-3.1-generate-preview", "google"],
+    ["openai", "sora-2", "openai"],
+  ];
+  for (const [vendorCode, model, expectedVendor] of cases) {
+    const { commands } = await runAssetGeneration({
+      prompt: "Create video",
+      targetType: "video",
+      selectedModel: model,
+      selectedVendorCode: vendorCode,
+    }, {
+      resultType: "video",
+      kind: "video",
+      publicUrl: "https://cdn.example/generated.mp4",
+      url: "https://cdn.example/generated.mp4",
+    });
+    assert.equal(commands[0]?.parameters?.vendor, expectedVendor);
+    assert.equal(commands[0]?.model, model, "the wire model stays the bare catalog model id");
+  }
+
+  // A `vendor/model` catalog key also resolves the vendor.
+  const { commands } = await runAssetGeneration({
+    prompt: "Create image",
+    targetType: "image",
+    selectedModel: "kuaishou/kling-image-v1",
+  }, {
+    resultType: "image",
+    kind: "image",
+    publicUrl: "https://cdn.example/generated.png",
+    url: "https://cdn.example/generated.png",
+  });
+  assert.equal(commands[0]?.parameters?.vendor, "kuaishou");
+  assert.equal(commands[0]?.model, "kuaishou/kling-image-v1");
+});
+
 test("playground asset generation passes music speech and sound effect configuration to sdkwork-generations", async () => {
   const cases = [
     [

@@ -33,6 +33,7 @@ import type {
   PlaygroundGenerationTargetType,
   PlaygroundHistoryItem,
   PlaygroundReferenceAssetInput,
+  PlaygroundReferenceAssetMode,
   PlaygroundReferenceImageInput,
 } from './playgroundTypes.ts';
 import type { GenerationAgentRunCreateInput } from './playgroundTypes.ts';
@@ -240,17 +241,77 @@ function createGenerationCommandInput(
   };
 }
 
+/**
+ * Translate a Playground reference mode onto the `generationMode` vocabulary
+ * the generations provider adapter dispatches.
+ *
+ * The Playground composer names its video modes by intent
+ * (`first_frame` / `first_last_frame` / `multi_reference` / `omni_reference`),
+ * while the adapter switches on vendor surfaces (`start_end_frame` /
+ * `reference_to_video` / `image_to_video`). Without this translation every
+ * reference-driven video submit fell through to the operation-type default and
+ * silently lost its tail frame or its extra references.
+ *
+ * The resolved mode rides `parameters.generationMode`; the routed operation
+ * stays inside the app-API `SdkworkGenerationOperationType` enum, which the
+ * generations SDK maps one-to-one onto a command endpoint.
+ */
+function mapReferenceModeToGenerationMode(
+  referenceMode: PlaygroundReferenceAssetMode | undefined,
+): string | undefined {
+  switch (referenceMode) {
+    case 'first_last_frame':
+      return 'start_end_frame';
+    case 'first_frame':
+      return 'image_to_video';
+    case 'multi_reference':
+    case 'omni_reference':
+      return 'reference_to_video';
+    default:
+      return undefined;
+  }
+}
+
 function createGenerationCommandParameters(
   input: GenerationAgentRunCreateInput,
   targetType: PlaygroundGenerationTargetType,
 ): Record<string, unknown> {
+  const generationMode = mapReferenceModeToGenerationMode(input.referenceMode);
   return compactRecord({
     generationConfig: input.generationConfig,
+    // The adapter resolves the vendor from `parameters.vendor` before the
+    // `vendor/` model prefix; sending it explicitly keeps a catalog
+    // `vendorCode` (`kuaishou`, `bytedance`, ...) routed to its own surface
+    // instead of the modality default vendor.
+    vendor: resolveCommandVendor(input),
+    generationMode,
     referenceAssets: mapReferenceAssets(input.referenceAssets),
     referenceImages: mapReferenceImages(input.referenceImages),
     referenceMode: input.referenceMode,
     targetType,
   });
+}
+
+/**
+ * Vendor code a Playground command routes to.
+ *
+ * The catalog option carries the authoritative `vendorCode`; a `vendor/model`
+ * catalog key is the fallback for callers that only know the model id. Both
+ * spellings reach the adapter as `parameters.vendor`, and `resolve_vendor`
+ * strips a redundant matching prefix, so the wire model stays the
+ * vendor-stripped id.
+ */
+function resolveCommandVendor(input: GenerationAgentRunCreateInput): string | undefined {
+  const explicit = trim(input.selectedVendorCode ?? '');
+  if (explicit) {
+    return explicit;
+  }
+  const normalized = trim(input.selectedModel ?? '');
+  if (!normalized) {
+    return undefined;
+  }
+  const [prefix, rest] = normalized.split('/', 2);
+  return prefix && rest ? prefix.trim() : undefined;
 }
 
 function resolveGenerationOperationType(
@@ -264,6 +325,8 @@ function resolveGenerationOperationType(
     return hasReferences(input.referenceImages, input.referenceAssets) ? 'image_edit' : 'text_to_image';
   }
   if (targetType === 'video') {
+    // The precise reference mode rides `parameters.generationMode`; the routed
+    // operation stays one the app API dispatches.
     if (input.referenceMode === 'first_frame' || input.referenceMode === 'first_last_frame' || input.referenceMode === 'multi_reference' || input.referenceMode === 'omni_reference') {
       return 'image_to_video';
     }
@@ -562,8 +625,10 @@ function mapReferenceAssets(
     kind: referenceAsset.kind,
     mimeType: referenceAsset.mimeType,
     name: referenceAsset.name,
-    resource: referenceAsset.resource,
+    // The adapter derives `imageTail` / `audioUrl` / driving videos from this
+    // role; a role-less entry is a plain `reference_image`.
     role: referenceAsset.role,
+    resource: referenceAsset.resource,
     sizeBytes: referenceAsset.sizeBytes,
     url: readMediaResourceUrl(referenceAsset.resource),
   }));
