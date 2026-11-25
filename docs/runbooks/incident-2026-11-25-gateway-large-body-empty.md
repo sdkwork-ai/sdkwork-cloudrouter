@@ -347,11 +347,15 @@ let rebuilt = Request::from_parts(
 | `cargo test -p sdkwork-web-core --lib` | **258 passed / 0 failed**（含 `body_contract` 契约用例与 `problem::tests::oversized_problem_body_is_left_untouched`） |
 | `cargo test -p sdkwork-log-tower-adapter --lib` | **11 passed**（含 1 MiB / 8 MiB 逐字节转发） |
 | `cargo test -p sdkwork-api-log-assembly --lib` | **3 passed**（捕获预算） |
+| WSL `cargo test -p sdkwork-cloudrouter-http --lib locale` | **16 passed**（含 `oversized_problem_body_is_left_untouched`） |
+| WSL `cargo test -p sdkwork-api-cloud-gateway --lib dependency_error_observer` | **2 passed**（超预算 5xx 原样透传 / 预算内逐字节回放） |
 | WSL `cargo check -p sdkwork-cloudrouter-http` | **exit 0**（连带 `sdkwork-web-bootstrap`、`sdkwork-iam-web-adapter`） |
 | WSL `cargo check -p sdkwork-api-cloudrouter-assembly` | **exit 0**（连带 `sdkwork-cloudrouter-edge-runtime` 全模块） |
 | WSL `cargo check -p sdkwork-api-cloud-gateway --lib` | **exit 0** |
 | WSL `cargo check -p sdkwork-api-webserver-standalone-gateway` | **exit 0** |
 | WSL `cargo metadata --locked`（gateway） | **exit 0** |
+| `node ../sdkwork-specs/tools/check-body-read-contract.mjs --workspace .` | **exit 0**（全工作区 3 处带理由白名单，0 违规） |
+| `node --test tools/check-body-read-contract.test.mjs` | **7 passed** |
 
 > Windows 本机因 MSVC `lib.exe` 无法创建临时文件（`LNK1104`，环境问题）无法编译含 C 依赖的 crate，
 > 因此跨仓库验证统一在 WSL/Linux 完成——这也与生产镜像的构建环境一致。
